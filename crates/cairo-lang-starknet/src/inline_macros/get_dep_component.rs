@@ -4,8 +4,10 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin, PluginDiagnostic,
     PluginGeneratedFile,
 };
+use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::extract_matches;
 
 /// Macro for getting a component given a contract state that has it.
@@ -49,24 +51,38 @@ fn get_dep_component_generate_code_helper(
     syntax: &ast::ExprInlineMacro,
     is_mut: bool,
 ) -> InlinePluginResult {
-    let [contract_arg, component_impl_arg] =
-        extract_macro_unnamed_args!(db, syntax, 2, ast::WrappedArgList::ParenthesizedArgList(_));
+    let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
+        return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
+            syntax.as_syntax_node().stable_ptr(db),
+        ));
+    };
+    let [contract_arg, component_impl_arg] = extract_macro_unnamed_args!(
+        db,
+        &legacy_inline_macro,
+        2,
+        ast::WrappedArgList::ParenthesizedArgList(_),
+        syntax.stable_ptr(db)
+    );
 
     if is_mut {
         // `extract_macro_unnamed_args` above guarantees that we have `ParenthesizedArgList`.
-        let contract_arg_modifiers =
-            extract_matches!(syntax.arguments(db), ast::WrappedArgList::ParenthesizedArgList)
-                .arguments(db)
-                .elements(db)[0]
-                .modifiers(db)
-                .elements(db);
+        let contract_arg_modifiers = extract_matches!(
+            legacy_inline_macro.arguments(db),
+            ast::WrappedArgList::ParenthesizedArgList
+        )
+        .arguments(db)
+        .elements(db)[0]
+            .modifiers(db)
+            .elements(db);
 
         // Verify the first element has only a `ref` modifier.
         if !matches!(&contract_arg_modifiers[..], &[ast::Modifier::Ref(_)]) {
             // TODO(Gil): The generated diagnostics points to the whole inline macro, it should
             // point to the arg.
-            let diagnostics = vec![PluginDiagnostic::error(
-                contract_arg.stable_ptr(db).untyped(),
+            let diagnostics = vec![PluginDiagnostic::error_with_inner_span(
+                db,
+                syntax.stable_ptr(db),
+                contract_arg.as_syntax_node(),
                 format!(
                     "The first argument of `{}` macro must have only a `ref` modifier.",
                     GetDepComponentMutMacro::NAME

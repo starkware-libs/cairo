@@ -65,7 +65,7 @@ pub trait AstPathExtract {
 }
 impl AstPathExtract for ast::ExprPath {
     fn is_identifier(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool {
-        let type_path_elements = self.elements(db);
+        let type_path_elements = self.segments(db).elements(db);
         let [ast::PathSegment::Simple(arg_segment)] = type_path_elements.as_slice() else {
             return false;
         };
@@ -74,7 +74,7 @@ impl AstPathExtract for ast::ExprPath {
     }
 
     fn is_name_with_arg(&self, db: &dyn SyntaxGroup, name: &str, generic_arg: &str) -> bool {
-        let type_path_elements = self.elements(db);
+        let type_path_elements = self.segments(db).elements(db);
         let [ast::PathSegment::WithGenericArgs(path_segment_with_generics)] =
             type_path_elements.as_slice()
         else {

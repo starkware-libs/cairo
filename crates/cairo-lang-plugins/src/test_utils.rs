@@ -78,7 +78,11 @@ impl DiagnosticEntry for TestDiagnosticEntry {
         self.0.message.to_string()
     }
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        StableLocation::new(self.0.stable_ptr).diagnostic_location(db)
+        match self.0.inner_span {
+            Some(inner_span) => StableLocation::with_inner_span(self.0.stable_ptr, inner_span)
+                .diagnostic_location(db),
+            None => StableLocation::new(self.0.stable_ptr).diagnostic_location(db),
+        }
     }
     fn severity(&self) -> Severity {
         self.0.severity

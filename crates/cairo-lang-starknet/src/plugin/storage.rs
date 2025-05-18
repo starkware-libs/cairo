@@ -154,7 +154,7 @@ fn get_substorage_member_code(
     };
     match member.type_clause(db).ty(db) {
         ast::Expr::Path(type_path) => {
-            let elements = &type_path.elements(db);
+            let elements = &type_path.segments(db).elements(db);
             // The path has at least one element.
             let (last, path_prefix) = elements.split_last().unwrap();
             match last {

@@ -313,7 +313,7 @@ fn extract_config_predicate_part(
 ) -> Option<ConfigPredicatePart> {
     match &arg.variant {
         AttributeArgVariant::Unnamed(ast::Expr::Path(path)) => {
-            let segments = path.elements(db);
+            let segments = path.segments(db).elements(db);
             if let [ast::PathSegment::Simple(segment)] = &segments[..] {
                 Some(ConfigPredicatePart::Cfg(Cfg::name(segment.ident(db).text(db).to_string())))
             } else {

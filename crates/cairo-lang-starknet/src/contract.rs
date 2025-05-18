@@ -184,7 +184,7 @@ fn get_impl_aliases_abi_functions(
             ),
         );
 
-        let impl_path_elements = impl_alias.impl_path(db).elements(db);
+        let impl_path_elements = impl_alias.impl_path(db).segments(db).elements(db);
         let Some((impl_final_part, impl_module)) = impl_path_elements.split_last() else {
             unreachable!("impl_path should have at least one segment")
         };

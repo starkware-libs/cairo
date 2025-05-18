@@ -2,7 +2,6 @@
 name = "cairo-lang-defs"
 version.workspace = true
 edition.workspace = true
-rust-version.workspace = true
 repository.workspace = true
 license-file.workspace = true
 description = "Handling of definitions of language items in Cairo."

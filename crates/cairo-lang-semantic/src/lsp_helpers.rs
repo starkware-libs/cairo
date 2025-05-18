@@ -184,6 +184,9 @@ fn visible_importables_in_module_ex(
             }
             ResolvedGenericItem::Trait(item_id) => (ImportableId::Trait(item_id), item_id.name(db)),
             ResolvedGenericItem::Impl(item_id) => (ImportableId::Impl(item_id), item_id.name(db)),
+            ResolvedGenericItem::Macro(item_id) => {
+                (ImportableId::MacroDeclaration(item_id), item_id.name(db))
+            }
             ResolvedGenericItem::Variable(_)
             | ResolvedGenericItem::TraitItem(_)
             | ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(_)) => continue,

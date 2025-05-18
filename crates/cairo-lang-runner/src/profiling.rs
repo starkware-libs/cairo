@@ -442,7 +442,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
                     |idx| {
                         let lowering_function_id =
                             self.sierra_program.funcs[*idx].id.clone().lookup_intern(db);
-                        lowering_function_id.semantic_full_path(db)
+                        lowering_function_id.semantic_full_path(db.upcast())
                     },
                     |x, y| x + y,
                     &0,

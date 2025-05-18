@@ -2,7 +2,6 @@
 name = "cairo-lang-test-runner"
 version.workspace = true
 edition.workspace = true
-rust-version.workspace = true
 repository.workspace = true
 license-file.workspace = true
 description = "Cairo tests runner. Used to run tests written in Cairo."
