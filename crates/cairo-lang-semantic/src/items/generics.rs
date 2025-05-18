@@ -464,8 +464,8 @@ pub fn semantic_generic_params_ex(
                 resolver.add_generic_param(generic_param_id);
                 resolver
                     .data
-                    .used_items
-                    .extend(generic_param_data.resolver_data.used_items.iter().copied());
+                    .used_uses
+                    .extend(generic_param_data.resolver_data.used_uses.iter().copied());
                 generic_param.ok()
             })
             .collect(),
