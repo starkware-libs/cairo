@@ -22,12 +22,16 @@ ExprFor
 └── Top level kind: ExprFor
     ├── for_kw (kind: TokenFor): 'for'
     ├── pattern (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentSimple)
-    │       └── ident (kind: TokenIdentifier): 'index'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'index'
     ├── identifier (kind: TokenIdentifier): 'in'
     ├── expr (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentSimple)
-    │       └── ident (kind: TokenIdentifier): 'array'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'array'
     └── body (kind: ExprBlock)
         ├── lbrace (kind: TokenLBrace): '{'
         ├── statements (kind: StatementList)
@@ -67,12 +71,16 @@ error: Skipped tokens. Expected: 'in'.
 └── Top level kind: ExprFor
     ├── for_kw (kind: TokenFor): 'for'
     ├── pattern (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentSimple)
-    │       └── ident (kind: TokenIdentifier): 'index'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'index'
     ├── identifier: Missing
     ├── expr (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentSimple)
-    │       └── ident (kind: TokenIdentifier): 'array'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'array'
     └── body (kind: ExprBlock)
         ├── lbrace (kind: TokenLBrace): '{'
         ├── statements (kind: StatementList)

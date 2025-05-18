@@ -32,7 +32,7 @@ pub struct DatabaseForTesting {
 impl salsa::Database for DatabaseForTesting {}
 impl ExternalFiles for DatabaseForTesting {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
-        try_ext_as_virtual_impl(self, external_id)
+        try_ext_as_virtual_impl(self.upcast(), external_id)
     }
 }
 impl Default for DatabaseForTesting {
@@ -480,6 +480,6 @@ fn test_unknown_item_macro() {
         format!("{:?}", db.module_plugin_diagnostics(module_id).unwrap()),
         "[(ModuleFileId(CrateRoot(CrateId(0)), FileIndex(0)), PluginDiagnostic { stable_ptr: \
          SyntaxStablePtrId(3), relative_span: None, message: \"Unknown inline item macro: \
-         'unknown_item_macro'.\", severity: Error })]"
+         'unknown_item_macro'.\", severity: Error, inner_span: None })]"
     )
 }

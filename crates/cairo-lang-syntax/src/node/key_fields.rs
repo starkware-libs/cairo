@@ -37,10 +37,16 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::PathSegmentWithGenericArgs => {
             vec![]
         }
+        SyntaxKind::ExprPath => {
+            vec![]
+        }
+        SyntaxKind::OptionTerminalDollarEmpty => {
+            vec![]
+        }
         SyntaxKind::PathSegmentMissing => {
             vec![]
         }
-        SyntaxKind::ExprPath => vec![],
+        SyntaxKind::ExprPathInner => vec![],
         SyntaxKind::ExprParenthesized => {
             vec![]
         }
@@ -108,9 +114,6 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::ExprIndexed => {
             vec![]
         }
-        SyntaxKind::ExprInlineMacro => {
-            vec![]
-        }
         SyntaxKind::ExprFixedSizeArray => {
             vec![]
         }
@@ -124,6 +127,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::ClosureParamWrapperNAry => {
+            vec![]
+        }
+        SyntaxKind::ExprPlaceholder => {
             vec![]
         }
         SyntaxKind::StructArgExpr => {
@@ -313,9 +319,6 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::ItemImpl => {
             vec![/* name */ children[3]]
         }
-        SyntaxKind::ItemInlineMacro => {
-            vec![]
-        }
         SyntaxKind::ItemHeaderDoc => {
             vec![]
         }
@@ -405,6 +408,93 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::GenericParamNegativeImpl => {
             vec![]
         }
+        SyntaxKind::TokenList => vec![],
+        SyntaxKind::TokenTreeLeaf => {
+            vec![]
+        }
+        SyntaxKind::TokenTreeNode => {
+            vec![]
+        }
+        SyntaxKind::TokenTreeRepetition => {
+            vec![]
+        }
+        SyntaxKind::TokenTreeParam => {
+            vec![]
+        }
+        SyntaxKind::TokenTreeMissing => {
+            vec![]
+        }
+        SyntaxKind::WrappedTokenTreeMissing => {
+            vec![]
+        }
+        SyntaxKind::ParenthesizedTokenTree => {
+            vec![]
+        }
+        SyntaxKind::BracedTokenTree => {
+            vec![]
+        }
+        SyntaxKind::BracketedTokenTree => {
+            vec![]
+        }
+        SyntaxKind::ExprInlineMacro => {
+            vec![]
+        }
+        SyntaxKind::ItemInlineMacro => {
+            vec![]
+        }
+        SyntaxKind::ItemMacroDeclaration => {
+            vec![/* name */ children[3]]
+        }
+        SyntaxKind::MacroRulesList => vec![],
+        SyntaxKind::MacroRule => {
+            vec![]
+        }
+        SyntaxKind::ParamKind => {
+            vec![]
+        }
+        SyntaxKind::OptionParamKindEmpty => {
+            vec![]
+        }
+        SyntaxKind::MacroParam => {
+            vec![]
+        }
+        SyntaxKind::MacroRepetition => {
+            vec![]
+        }
+        SyntaxKind::OptionTerminalCommaEmpty => {
+            vec![]
+        }
+        SyntaxKind::MacroRepetitionOperatorMissing => {
+            vec![]
+        }
+        SyntaxKind::ParamIdent => {
+            vec![]
+        }
+        SyntaxKind::ParamExpr => {
+            vec![]
+        }
+        SyntaxKind::MacroParamKindMissing => {
+            vec![]
+        }
+        SyntaxKind::MacroElements => vec![],
+        SyntaxKind::MacroWrapper => {
+            vec![]
+        }
+        SyntaxKind::ParenthesizedMacro => {
+            vec![]
+        }
+        SyntaxKind::BracedMacro => {
+            vec![]
+        }
+        SyntaxKind::BracketedMacro => {
+            vec![]
+        }
+        SyntaxKind::LegacyExprInlineMacro => {
+            vec![]
+        }
+        SyntaxKind::LegacyItemInlineMacro => {
+            vec![]
+        }
         SyntaxKind::TriviumSkippedNode => {
             vec![]
         }
@@ -478,6 +568,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         }
         SyntaxKind::TokenLet => vec![],
         SyntaxKind::TerminalLet => {
+            vec![]
+        }
+        SyntaxKind::TokenMacro => vec![],
+        SyntaxKind::TerminalMacro => {
             vec![]
         }
         SyntaxKind::TokenMatch => vec![],
@@ -578,6 +672,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         }
         SyntaxKind::TokenDivEq => vec![],
         SyntaxKind::TerminalDivEq => {
+            vec![]
+        }
+        SyntaxKind::TokenDollar => vec![],
+        SyntaxKind::TerminalDollar => {
             vec![]
         }
         SyntaxKind::TokenDot => vec![],

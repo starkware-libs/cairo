@@ -29,14 +29,14 @@ fn test_filesystem() {
 
 #[test]
 fn test_flags() {
-    let db = &mut FilesDatabaseForTesting::default();
+    let mut db = FilesDatabaseForTesting::default();
 
-    let add_withdraw_gas_flag_id = FlagId::new(db, "add_withdraw_gas");
+    let add_withdraw_gas_flag_id = FlagId::new(&db, "add_withdraw_gas");
 
     db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
 
     assert_eq!(*db.get_flag(add_withdraw_gas_flag_id).unwrap(), Flag::AddWithdrawGas(false));
-    assert!(db.get_flag(FlagId::new(db, "non_existing_flag")).is_none());
+    assert!(db.get_flag(FlagId::new(&db, "non_existing_flag")).is_none());
 }
 
 #[test]

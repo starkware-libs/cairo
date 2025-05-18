@@ -42,18 +42,22 @@ FunctionWithBody
         │   └── rangle (kind: TokenGT): '>'
         ├── of_kw (kind: TokenOf): 'of'
         ├── trait_path (kind: ExprPath)
-        │   └── item #0 (kind: PathSegmentWithGenericArgs)
-        │       ├── ident (kind: TokenIdentifier): 'Foo'
-        │       ├── separator (kind: OptionTerminalColonColonEmpty) []
-        │       └── generic_args (kind: GenericArgs)
-        │           ├── langle (kind: TokenLT): '<'
-        │           ├── generic_args (kind: GenericArgList)
-        │           │   └── item #0 (kind: GenericArgUnnamed)
-        │           │       └── value (kind: GenericArgValueExpr)
-        │           │           └── expr (kind: ExprPath)
-        │           │               └── item #0 (kind: PathSegmentSimple)
-        │           │                   └── ident (kind: TokenIdentifier): 'S'
-        │           └── rangle (kind: TokenGT): '>'
+        │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │   └── segments (kind: ExprPathInner)
+        │       └── item #0 (kind: PathSegmentWithGenericArgs)
+        │           ├── ident (kind: TokenIdentifier): 'Foo'
+        │           ├── separator (kind: OptionTerminalColonColonEmpty) []
+        │           └── generic_args (kind: GenericArgs)
+        │               ├── langle (kind: TokenLT): '<'
+        │               ├── generic_args (kind: GenericArgList)
+        │               │   └── item #0 (kind: GenericArgUnnamed)
+        │               │       └── value (kind: GenericArgValueExpr)
+        │               │           └── expr (kind: ExprPath)
+        │               │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │               │               └── segments (kind: ExprPathInner)
+        │               │                   └── item #0 (kind: PathSegmentSimple)
+        │               │                       └── ident (kind: TokenIdentifier): 'S'
+        │               └── rangle (kind: TokenGT): '>'
         └── body (kind: ImplBody)
             ├── lbrace (kind: TokenLBrace): '{'
             ├── items (kind: ImplItemList) []
@@ -112,11 +116,13 @@ FunctionWithBody
         │       ├── hash (kind: TokenHash): '#'
         │       ├── lbrack (kind: TokenLBrack): '['
         │       ├── attr (kind: ExprPath)
-        │       │   ├── item #0 (kind: PathSegmentSimple)
-        │       │   │   └── ident (kind: TokenIdentifier): 'cairofmt'
-        │       │   ├── separator #0 (kind: TokenColonColon): '::'
-        │       │   └── item #1 (kind: PathSegmentSimple)
-        │       │       └── ident (kind: TokenIdentifier): 'skip'
+        │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │       │   └── segments (kind: ExprPathInner)
+        │       │       ├── item #0 (kind: PathSegmentSimple)
+        │       │       │   └── ident (kind: TokenIdentifier): 'cairofmt'
+        │       │       ├── separator #0 (kind: TokenColonColon): '::'
+        │       │       └── item #1 (kind: PathSegmentSimple)
+        │       │           └── ident (kind: TokenIdentifier): 'skip'
         │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
         │       └── rbrack (kind: TokenRBrack): ']'
         ├── visibility (kind: VisibilityDefault) []
@@ -130,18 +136,22 @@ FunctionWithBody
         │   └── rangle (kind: TokenGT): '>'
         ├── of_kw (kind: TokenOf): 'of'
         ├── trait_path (kind: ExprPath)
-        │   └── item #0 (kind: PathSegmentWithGenericArgs)
-        │       ├── ident (kind: TokenIdentifier): 'Foo'
-        │       ├── separator (kind: TokenColonColon): '::'
-        │       └── generic_args (kind: GenericArgs)
-        │           ├── langle (kind: TokenLT): '<'
-        │           ├── generic_args (kind: GenericArgList)
-        │           │   └── item #0 (kind: GenericArgUnnamed)
-        │           │       └── value (kind: GenericArgValueExpr)
-        │           │           └── expr (kind: ExprPath)
-        │           │               └── item #0 (kind: PathSegmentSimple)
-        │           │                   └── ident (kind: TokenIdentifier): 'u8'
-        │           └── rangle (kind: TokenGT): '>'
+        │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │   └── segments (kind: ExprPathInner)
+        │       └── item #0 (kind: PathSegmentWithGenericArgs)
+        │           ├── ident (kind: TokenIdentifier): 'Foo'
+        │           ├── separator (kind: TokenColonColon): '::'
+        │           └── generic_args (kind: GenericArgs)
+        │               ├── langle (kind: TokenLT): '<'
+        │               ├── generic_args (kind: GenericArgList)
+        │               │   └── item #0 (kind: GenericArgUnnamed)
+        │               │       └── value (kind: GenericArgValueExpr)
+        │               │           └── expr (kind: ExprPath)
+        │               │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │               │               └── segments (kind: ExprPathInner)
+        │               │                   └── item #0 (kind: PathSegmentSimple)
+        │               │                       └── ident (kind: TokenIdentifier): 'u8'
+        │               └── rangle (kind: TokenGT): '>'
         └── body (kind: ImplBody)
             ├── lbrace (kind: TokenLBrace): '{'
             ├── items (kind: ImplItemList)
@@ -266,8 +276,10 @@ ImplBody
     │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     │       ├── eq (kind: TokenEq): '='
     │       ├── ty (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentSimple)
-    │       │       └── ident (kind: TokenIdentifier): 'u32'
+    │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   └── segments (kind: ExprPathInner)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'u32'
     │       └── semicolon (kind: TokenSemicolon): ';'
     └── rbrace (kind: TokenRBrace): '}'
 
@@ -343,18 +355,22 @@ ImplBody
     │       │   └── rangle (kind: TokenGT): '>'
     │       ├── eq (kind: TokenEq): '='
     │       ├── ty (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentWithGenericArgs)
-    │       │       ├── ident (kind: TokenIdentifier): 'Array'
-    │       │       ├── separator (kind: OptionTerminalColonColonEmpty) []
-    │       │       └── generic_args (kind: GenericArgs)
-    │       │           ├── langle (kind: TokenLT): '<'
-    │       │           ├── generic_args (kind: GenericArgList)
-    │       │           │   └── item #0 (kind: GenericArgUnnamed)
-    │       │           │       └── value (kind: GenericArgValueExpr)
-    │       │           │           └── expr (kind: ExprPath)
-    │       │           │               └── item #0 (kind: PathSegmentSimple)
-    │       │           │                   └── ident (kind: TokenIdentifier): 'T'
-    │       │           └── rangle (kind: TokenGT): '>'
+    │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   └── segments (kind: ExprPathInner)
+    │       │       └── item #0 (kind: PathSegmentWithGenericArgs)
+    │       │           ├── ident (kind: TokenIdentifier): 'Array'
+    │       │           ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │       │           └── generic_args (kind: GenericArgs)
+    │       │               ├── langle (kind: TokenLT): '<'
+    │       │               ├── generic_args (kind: GenericArgList)
+    │       │               │   └── item #0 (kind: GenericArgUnnamed)
+    │       │               │       └── value (kind: GenericArgValueExpr)
+    │       │               │           └── expr (kind: ExprPath)
+    │       │               │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │               │               └── segments (kind: ExprPathInner)
+    │       │               │                   └── item #0 (kind: PathSegmentSimple)
+    │       │               │                       └── ident (kind: TokenIdentifier): 'T'
+    │       │               └── rangle (kind: TokenGT): '>'
     │       └── semicolon (kind: TokenSemicolon): ';'
     └── rbrace (kind: TokenRBrace): '}'
 
@@ -388,8 +404,10 @@ TraitBody
     │       ├── type_clause (kind: TypeClause)
     │       │   ├── colon (kind: TokenColon): ':'
     │       │   └── ty (kind: ExprPath)
-    │       │       └── item #0 (kind: PathSegmentSimple)
-    │       │           └── ident (kind: TokenIdentifier): 'u32'
+    │       │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       └── segments (kind: ExprPathInner)
+    │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │               └── ident (kind: TokenIdentifier): 'u32'
     │       └── semicolon (kind: TokenSemicolon): ';'
     └── rbrace (kind: TokenRBrace): '}'
 
@@ -424,8 +442,10 @@ ImplBody
     │       ├── type_clause (kind: TypeClause)
     │       │   ├── colon (kind: TokenColon): ':'
     │       │   └── ty (kind: ExprPath)
-    │       │       └── item #0 (kind: PathSegmentSimple)
-    │       │           └── ident (kind: TokenIdentifier): 'u32'
+    │       │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       └── segments (kind: ExprPathInner)
+    │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │               └── ident (kind: TokenIdentifier): 'u32'
     │       ├── eq (kind: TokenEq): '='
     │       ├── value (kind: TokenLiteralNumber): '3'
     │       └── semicolon (kind: TokenSemicolon): ';'
@@ -460,8 +480,10 @@ TraitBody
     │       ├── name (kind: TokenIdentifier): 'MyImpl'
     │       ├── colon (kind: TokenColon): ':'
     │       ├── trait_path (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentSimple)
-    │       │       └── ident (kind: TokenIdentifier): 'OtherTrait'
+    │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   └── segments (kind: ExprPathInner)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'OtherTrait'
     │       └── semicolon (kind: TokenSemicolon): ';'
     └── rbrace (kind: TokenRBrace): '}'
 
@@ -496,7 +518,9 @@ ImplBody
     │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     │       ├── eq (kind: TokenEq): '='
     │       ├── impl_path (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentSimple)
-    │       │       └── ident (kind: TokenIdentifier): 'AnotherImpl'
+    │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   └── segments (kind: ExprPathInner)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'AnotherImpl'
     │       └── semicolon (kind: TokenSemicolon): ';'
     └── rbrace (kind: TokenRBrace): '}'
