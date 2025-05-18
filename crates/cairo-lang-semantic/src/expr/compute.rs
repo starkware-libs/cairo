@@ -22,19 +22,20 @@ use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast::{
     BinaryOperator, BlockOrIf, ClosureParamWrapper, ExprPtr, OptionReturnTypeClause, PatternListOr,
-    PatternStructParam, UnaryOperator,
+    PatternStructParam, TerminalIdentifier, UnaryOperator,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils as utils;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{Intern, LookupIntern, OptionHelper, extract_matches, try_extract_matches};
+use cairo_lang_utils::{
+    self as utils, Intern, LookupIntern, OptionHelper, extract_matches, try_extract_matches,
+};
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
@@ -67,12 +68,15 @@ use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
 use crate::items::imp::{ImplLookupContext, filter_candidate_traits, infer_impl_by_self};
+use crate::items::macro_declaration::{
+    MacroExpansionResult, MatcherContext, expand_macro_rule, is_macro_rule_match,
+};
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
 use crate::resolve::{
-    EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext, ResolvedConcreteItem,
-    ResolvedGenericItem, Resolver,
+    AsSegments, EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext, ResolvedConcreteItem,
+    ResolvedGenericItem, Resolver, ResolverMacroData,
 };
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
 use crate::substitution::SemanticRewriter;
@@ -192,15 +196,41 @@ impl<'ctx> ComputationContext<'ctx> {
     }
 
     /// Runs a function with a modified context, with a new environment for a subscope.
-    /// This environment holds no variable of its own, but points to the current environment as a
-    /// parent.
-    /// Used for block expressions.
+    /// This environment holds no variables of its own, but points to the current environment as a
+    /// parent. Used for blocks of code that introduce a new scope like function bodies, if
+    /// blocks, loops, etc.
     fn run_in_subscope<T, F>(&mut self, f: F) -> T
     where
         F: FnOnce(&mut Self) -> T,
     {
+        self.run_in_subscope_ex(f, None)
+    }
+
+    /// Similar to run_in_subscope, but for macro expanded code. It creates a new environment
+    /// that points to the current environment as a parent, and also contains the macro expansion
+    /// data. When looking up variables, we will get out of the macro expansion environment if
+    /// and only if the text was originated from expanding a placeholder.
+    fn run_in_macro_subscope<T, F>(&mut self, f: F, macro_expansion_data: MacroExpansionResult) -> T
+    where
+        F: FnOnce(&mut Self) -> T,
+    {
+        self.run_in_subscope_ex(f, Some(macro_expansion_data))
+    }
+
+    /// Runs a function with a modified context, with a new environment for a subscope.
+    /// Shouldn't be called directly, use [Self::run_in_subscope] or [Self::run_in_macro_subscope]
+    /// instead.
+    fn run_in_subscope_ex<T, F>(
+        &mut self,
+        f: F,
+        macro_expansion_data: Option<MacroExpansionResult>,
+    ) -> T
+    where
+        F: FnOnce(&mut Self) -> T,
+    {
         // Push an environment to the stack.
-        let new_environment = Box::new(Environment::empty());
+        let mut new_environment = Box::new(Environment::empty());
+        new_environment.macro_code_mappings = macro_expansion_data;
         let old_environment = std::mem::replace(&mut self.environment, new_environment);
         self.environment.parent = Some(old_environment);
 
@@ -316,6 +346,9 @@ pub struct Environment {
     used_variables: UnorderedHashSet<semantic::VarId>,
     use_items: EnvItems,
     used_use_items: UnorderedHashSet<SmolStr>,
+    /// The macro code mappings for the current environment, only exists if the environment is
+    /// created from expanding a macro.
+    macro_code_mappings: Option<MacroExpansionResult>,
 }
 impl Environment {
     /// Adds a parameter to the environment.
@@ -347,6 +380,7 @@ impl Environment {
             used_variables: Default::default(),
             use_items: Default::default(),
             used_use_items: Default::default(),
+            macro_code_mappings: None,
         }
     }
 }
@@ -437,6 +471,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
         ast::Expr::For(expr) => compute_expr_for_semantic(ctx, expr),
         ast::Expr::Closure(expr) => compute_expr_closure_semantic(ctx, expr, None),
+        ast::Expr::Placeholder(_) => todo!(),
     }
 }
 
@@ -445,19 +480,8 @@ fn compute_expr_inline_macro_semantic(
     syntax: &ast::ExprInlineMacro,
 ) -> Maybe<Expr> {
     let db = ctx.db;
-
+    let macro_name = syntax.path(db).identifier(ctx.db).to_string();
     let crate_id = ctx.resolver.owning_crate_id;
-
-    let macro_name = syntax.path(db).as_syntax_node().get_text_without_trivia(db);
-    let Some(macro_plugin_id) =
-        ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name).cloned()
-    else {
-        return Err(ctx
-            .diagnostics
-            .report(syntax.stable_ptr(db), InlineMacroNotFound(macro_name.into())));
-    };
-    let macro_plugin = ctx.db.lookup_intern_inline_macro_plugin(macro_plugin_id);
-
     // Skipping expanding an inline macro if it had a parser error.
     if syntax.as_syntax_node().descendants(db).any(|node| {
         matches!(
@@ -474,40 +498,109 @@ fn compute_expr_inline_macro_semantic(
     }) {
         return Err(skip_diagnostic());
     }
-
-    let result = macro_plugin.generate_code(
-        db,
-        syntax,
-        &MacroPluginMetadata {
-            cfg_set: &ctx.cfg_set,
-            declared_derives: &ctx.db.declared_derives(crate_id),
-            allowed_features: &ctx.resolver.data.feature_config.allowed_features,
-            edition: ctx.resolver.settings.edition,
-        },
+    // We call the resolver with a new diagnostics, since the diagnostics should not be reported
+    // if the macro was found as a plugin.
+    let user_defined_macro = ctx.resolver.resolve_generic_path(
+        &mut Default::default(),
+        &syntax.path(db),
+        NotFoundItemType::Macro,
+        ResolutionContext::Statement(&mut ctx.environment),
     );
-    let mut diag_added = None;
-    for diagnostic in result.diagnostics {
-        diag_added =
-            Some(ctx.diagnostics.report(diagnostic.stable_ptr, PluginDiagnostic(diagnostic)));
-    }
+    let inference_id = ctx.resolver.inference().inference_id;
+    let prev_macro_resolver_data = ctx.resolver.macro_call_data.clone();
+    let callsite_resolver = ctx.resolver.data.clone_with_inference_id(ctx.db, inference_id);
+    let (content, name, mappings, is_macro_rule) =
+        if let Ok(ResolvedGenericItem::Macro(macro_declaration_id)) = user_defined_macro {
+            let macro_rules = ctx.db.macro_declaration_rules(macro_declaration_id)?;
+            let Some((rule, (captures, placeholder_to_rep_id))) =
+                macro_rules.iter().find_map(|rule| {
+                    is_macro_rule_match(ctx.db, rule, &syntax.arguments(db)).map(|res| (rule, res))
+                })
+            else {
+                return Err(ctx.diagnostics.report(
+                    syntax.stable_ptr(ctx.db),
+                    InlineMacroNoMatchingRule(macro_name.into()),
+                ));
+            };
+            let mut matcher_ctx =
+                MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
+            let expanded_code = expand_macro_rule(ctx.db, rule, &mut matcher_ctx)?;
 
-    let Some(code) = result.code else {
-        return Err(diag_added.unwrap_or_else(|| {
-            ctx.diagnostics.report(syntax.stable_ptr(db), InlineMacroFailed(macro_name.into()))
-        }));
-    };
+            let macro_defsite_resolver_data =
+                ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
+            let parent_macro_call_data = ctx.resolver.macro_call_data.clone();
+            ctx.resolver.macro_call_data = Some(ResolverMacroData {
+                defsite_data: macro_defsite_resolver_data,
+                callsite_data: callsite_resolver
+                    .clone_with_inference_id(ctx.db, inference_id)
+                    .into(),
+                expansion_result: expanded_code.clone().into(),
+                parent_macro_call_data: parent_macro_call_data.map(|data| data.into()),
+            });
+            (expanded_code.text, macro_name.into(), expanded_code.code_mappings, true)
+        } else if let Some(macro_plugin_id) =
+            ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name).cloned()
+        {
+            let macro_plugin = ctx.db.lookup_intern_inline_macro_plugin(macro_plugin_id);
+            let result = macro_plugin.generate_code(
+                db,
+                syntax,
+                &MacroPluginMetadata {
+                    cfg_set: &ctx.cfg_set,
+                    declared_derives: &ctx.db.declared_derives(crate_id),
+                    allowed_features: &ctx.resolver.data.feature_config.allowed_features,
+                    edition: ctx.resolver.settings.edition,
+                },
+            );
+            let mut diag_added = None;
+            for diagnostic in result.diagnostics {
+                diag_added = match diagnostic.inner_span {
+                    None => Some(
+                        ctx.diagnostics.report(diagnostic.stable_ptr, PluginDiagnostic(diagnostic)),
+                    ),
+                    Some((offset, width)) => Some(ctx.diagnostics.report_with_inner_span(
+                        diagnostic.stable_ptr,
+                        (offset, width),
+                        PluginDiagnostic(diagnostic),
+                    )),
+                }
+            }
+
+            let Some(code) = result.code else {
+                return Err(diag_added.unwrap_or_else(|| {
+                    ctx.diagnostics
+                        .report(syntax.stable_ptr(ctx.db), InlineMacroNotFound(macro_name.into()))
+                }));
+            };
+            (code.content, code.name, code.code_mappings, false)
+        } else {
+            return Err(ctx.diagnostics.report(
+                syntax.stable_ptr(ctx.db),
+                InlineMacroNotFound(
+                    syntax.path(db).as_syntax_node().get_text_without_trivia(db).into(),
+                ),
+            ));
+        };
 
     // Create a file
     let new_file = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr(db).untyped().file_id(ctx.db)),
-        name: code.name,
-        content: code.content.into(),
-        code_mappings: code.code_mappings.into(),
+        parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
+        name,
+        content: content.clone().into(),
+        code_mappings: mappings.clone().into(),
         kind: FileKind::Expr,
     })
     .intern(ctx.db);
     let expr_syntax = ctx.db.file_expr_syntax(new_file)?;
-    let expr = compute_expr_semantic(ctx, &expr_syntax);
+    let expr = if is_macro_rule {
+        ctx.run_in_macro_subscope(
+            |ctx| compute_expr_semantic(ctx, &expr_syntax),
+            MacroExpansionResult { text: content, code_mappings: mappings },
+        )
+    } else {
+        compute_expr_semantic(ctx, &expr_syntax)
+    };
+    ctx.resolver.macro_call_data = prev_macro_resolver_data;
     Ok(expr.expr)
 }
 
@@ -880,13 +973,15 @@ fn compute_expr_function_call_semantic(
     let path = syntax.path(db);
     let args_syntax = syntax.arguments(db).arguments(db);
     // Check if this is a variable.
-    let segments = path.elements(db);
     let mut is_shadowed_by_variable = false;
-    if let [PathSegment::Simple(ident_segment)] = &segments[..] {
-        let identifier = ident_segment.ident(db);
+    if let Some((identifier, is_callsite_prefixed)) = try_extract_identifier_from_path(db, &path) {
         let variable_name = identifier.text(ctx.db);
-        if let Some(var) = get_binded_expr_by_name(ctx, &variable_name, path.stable_ptr(db).into())
-        {
+        if let Some(var) = get_binded_expr_by_name(
+            ctx,
+            &variable_name,
+            is_callsite_prefixed,
+            path.stable_ptr(ctx.db).into(),
+        ) {
             is_shadowed_by_variable = true;
             // if closures are not in context, we want to call the function instead of the variable.
             if ctx.are_closures_in_context {
@@ -1013,9 +1108,14 @@ fn compute_expr_function_call_semantic(
         ResolvedConcreteItem::Function(function) => {
             if is_shadowed_by_variable {
                 return Err(ctx.diagnostics.report(
-                    path.stable_ptr(db),
+                    path.stable_ptr(ctx.db),
                     CallingShadowedFunction {
-                        shadowed_function_name: path.elements(db).first().unwrap().identifier(db),
+                        shadowed_function_name: path
+                            .segments(db)
+                            .elements(db)
+                            .first()
+                            .unwrap()
+                            .identifier(db),
                     },
                 ));
             }
@@ -1682,7 +1782,7 @@ fn compute_loop_body_semantic(
     syntax: ast::ExprBlock,
     kind: InnerContextKind,
 ) -> (ExprId, InnerContext) {
-    let db = ctx.db;
+    let db: &dyn SemanticGroup = ctx.db;
 
     ctx.run_in_subscope(|new_ctx| {
         let return_type = new_ctx.get_return_type().unwrap();
@@ -2280,11 +2380,11 @@ fn maybe_compute_pattern_semantic(
             // Paths with a single element are treated as identifiers, which will result in a
             // variable pattern if no matching enum variant is found. If a matching enum
             // variant exists, it is resolved to the corresponding concrete variant.
-            if path.elements(db).len() > 1 {
-                return Err(ctx.diagnostics.report(path.stable_ptr(db), Unsupported));
+            if path.segments(db).elements(db).len() > 1 {
+                return Err(ctx.diagnostics.report(path.stable_ptr(ctx.db), Unsupported));
             }
             // TODO(spapini): Make sure this is a simple identifier. In particular, no generics.
-            let identifier = path.elements(db)[0].identifier_ast(db);
+            let identifier = path.segments(db).elements(db)[0].identifier_ast(db);
             create_variable_pattern(
                 ctx,
                 identifier,
@@ -2949,6 +3049,24 @@ fn string_literal_to_semantic(
 
     new_string_literal_expr(ctx, value, stable_ptr.into())
 }
+/// Given path, if it's a single segment or a $callsite-prefixed segment,
+/// returns a tuple of (identifier, is_callsite_prefixed).
+/// Otherwise, returns None.
+fn try_extract_identifier_from_path(
+    db: &dyn SyntaxGroup,
+    path: &ast::ExprPath,
+) -> Option<(TerminalIdentifier, bool)> {
+    let segments = path.segments(db).elements(db);
+    match segments.as_slice() {
+        [PathSegment::Simple(ident_segment)] => Some((ident_segment.ident(db), false)),
+        [PathSegment::Simple(prefix), PathSegment::Simple(ident_segment)]
+            if prefix.ident(db).text(db) == "callsite" && path.is_placeholder(db) =>
+        {
+            Some((ident_segment.ident(db), true))
+        }
+        _ => None,
+    }
+}
 
 /// Given an expression syntax, if it's an identifier, returns it. Otherwise, returns the proper
 /// error.
@@ -2957,7 +3075,7 @@ fn expr_as_identifier(
     path: &ast::ExprPath,
     db: &dyn SyntaxGroup,
 ) -> Maybe<SmolStr> {
-    let segments = path.elements(db);
+    let segments = path.segments(db).elements(db);
     if segments.len() == 1 {
         return Ok(segments[0].identifier(db));
     }
@@ -3008,8 +3126,8 @@ fn method_call_expr(
     // TODO(spapini): Look also in uses.
     let db = ctx.db;
     let path = expr.path(db);
-    let Ok([segment]): Result<[_; 1], _> = path.elements(db).try_into() else {
-        return Err(ctx.diagnostics.report(expr.stable_ptr(db), InvalidMemberExpression));
+    let Ok([segment]): Result<[_; 1], _> = path.segments(db).elements(db).try_into() else {
+        return Err(ctx.diagnostics.report(expr.stable_ptr(ctx.db), InvalidMemberExpression));
     };
     let func_name = segment.identifier(db);
     let generic_args_syntax = segment.generic_args(db);
@@ -3352,17 +3470,20 @@ fn finalized_snapshot_peeled_ty(
 /// Resolves a variable or a constant given a context and a path expression.
 fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> Maybe<Expr> {
     let db = ctx.db;
-    let segments = path.elements(db);
+    let segments = path.segments(db).elements(db);
     if segments.is_empty() {
         return Err(ctx.diagnostics.report(path.stable_ptr(db), Unsupported));
     }
 
     // Check if this is a variable.
-    if let [PathSegment::Simple(ident_segment)] = &segments[..] {
-        let identifier = ident_segment.ident(db);
-        let variable_name = identifier.text(db);
-        if let Some(res) = get_binded_expr_by_name(ctx, &variable_name, path.stable_ptr(db).into())
-        {
+    if let Some((identifier, is_callsite_prefixed)) = try_extract_identifier_from_path(db, path) {
+        let variable_name = identifier.text(ctx.db);
+        if let Some(res) = get_binded_expr_by_name(
+            ctx,
+            &variable_name,
+            is_callsite_prefixed,
+            path.stable_ptr(ctx.db).into(),
+        ) {
             match res.clone() {
                 Expr::Var(expr_var) => {
                     let item = ResolvedGenericItem::Variable(expr_var.var);
@@ -3423,6 +3544,8 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
 }
 
 /// Resolves a variable given a context and a simple name.
+/// It is used where resolving a variable where only a single identifier is allowed, specifically
+/// named function call and struct constructor arguments.
 ///
 /// Reports a diagnostic if the variable was not found.
 pub fn resolve_variable_by_name(
@@ -3430,13 +3553,12 @@ pub fn resolve_variable_by_name(
     identifier: &ast::TerminalIdentifier,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
-    let db = ctx.db;
-    let variable_name = identifier.text(db);
-    let res = get_binded_expr_by_name(ctx, &variable_name, stable_ptr).ok_or_else(|| {
-        ctx.diagnostics.report(identifier.stable_ptr(db), VariableNotFound(variable_name))
+    let variable_name = identifier.text(ctx.db);
+    let res = get_binded_expr_by_name(ctx, &variable_name, false, stable_ptr).ok_or_else(|| {
+        ctx.diagnostics.report(identifier.stable_ptr(ctx.db), VariableNotFound(variable_name))
     })?;
     let item = ResolvedGenericItem::Variable(extract_matches!(&res, Expr::Var).var);
-    ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(db), item);
+    ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(ctx.db), item);
     Ok(res)
 }
 
@@ -3444,22 +3566,45 @@ pub fn resolve_variable_by_name(
 pub fn get_binded_expr_by_name(
     ctx: &mut ComputationContext<'_>,
     variable_name: &SmolStr,
+    is_callsite_prefixed: bool,
     stable_ptr: ast::ExprPtr,
 ) -> Option<Expr> {
     let mut maybe_env = Some(&mut *ctx.environment);
+    let mut cur_offset = stable_ptr.lookup(ctx.db).as_syntax_node().offset(ctx.db);
+    let mut found_callsite_scope = false;
     while let Some(env) = maybe_env {
-        if let Some(var) = env.variables.get(variable_name) {
-            env.used_variables.insert(var.id());
-            return match var {
-                Binding::LocalItem(local_const) => match local_const.kind.clone() {
-                    crate::StatementItemKind::Constant(const_value_id, ty) => {
-                        Some(Expr::Constant(ExprConstant { const_value_id, ty, stable_ptr }))
+        // If a variable is from an expanded macro placeholder, we need to look for it in the parent
+        // env.
+        if let Some(macro_expansion) = &env.macro_code_mappings {
+            if let Some(placeholder_expansion) = macro_expansion.get_placeholder_at(cur_offset) {
+                maybe_env = env.parent.as_deref_mut();
+                cur_offset = placeholder_expansion.origin.as_span().unwrap().start;
+                continue;
+            }
+        }
+        if !is_callsite_prefixed || found_callsite_scope {
+            if let Some(var) = env.variables.get(variable_name) {
+                env.used_variables.insert(var.id());
+                return match var {
+                    Binding::LocalItem(local_const) => match local_const.kind.clone() {
+                        crate::StatementItemKind::Constant(const_value_id, ty) => {
+                            Some(Expr::Constant(ExprConstant { const_value_id, ty, stable_ptr }))
+                        }
+                    },
+                    Binding::LocalVar(_) | Binding::Param(_) => {
+                        Some(Expr::Var(ExprVar { var: var.id(), ty: var.ty(), stable_ptr }))
                     }
-                },
-                Binding::LocalVar(_) | Binding::Param(_) => {
-                    Some(Expr::Var(ExprVar { var: var.id(), ty: var.ty(), stable_ptr }))
-                }
-            };
+                };
+            }
+        }
+
+        // Don't look inside a callsite environment unless explicitly stated.
+        if env.macro_code_mappings.is_some() {
+            if is_callsite_prefixed && !found_callsite_scope {
+                found_callsite_scope = true;
+            } else {
+                break;
+            }
         }
         maybe_env = env.parent.as_deref_mut();
     }
@@ -3929,7 +4074,8 @@ pub fn compute_statement_semantic(
                             | ResolvedGenericItem::Trait(_)
                             | ResolvedGenericItem::Impl(_)
                             | ResolvedGenericItem::Variable(_)
-                            | ResolvedGenericItem::TraitItem(_) => {
+                            | ResolvedGenericItem::TraitItem(_)
+                            | ResolvedGenericItem::Macro(_) => {
                                 return Err(ctx
                                     .diagnostics
                                     .report(stable_ptr, UnsupportedUseItemInStatement));
@@ -3956,6 +4102,7 @@ pub fn compute_statement_semantic(
                 ast::ModuleItem::InlineMacro(_) => unreachable!("InlineMacro type not supported."),
                 ast::ModuleItem::HeaderDoc(_) => unreachable!("HeaderDoc type not supported."),
                 ast::ModuleItem::Missing(_) => unreachable!("Missing type not supported."),
+                ast::ModuleItem::MacroDeclaration(_) => todo!(),
             }
             semantic::Statement::Item(semantic::StatementItem { stable_ptr: syntax.stable_ptr(db) })
         }

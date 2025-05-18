@@ -13,9 +13,10 @@ use cairo_lang_diagnostics::{
     ErrorCode, Severity, error_code,
 };
 use cairo_lang_filesystem::db::Edition;
+use cairo_lang_filesystem::span::TextWidth;
+use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
-use cairo_lang_syntax::{self as syntax};
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -47,6 +48,14 @@ pub trait SemanticDiagnosticsBuilder {
         stable_ptr: impl Into<SyntaxStablePtrId>,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded;
+    /// Report a diagnostic in a sub-span of the location of the given ptr. The inner span is
+    /// specified by an offset from the start of the pointer location and a width.
+    fn report_with_inner_span(
+        &mut self,
+        stable_ptr: impl Into<SyntaxStablePtrId>,
+        inner_span: (TextWidth, TextWidth),
+        kind: SemanticDiagnosticKind,
+    ) -> DiagnosticAdded;
 }
 impl SemanticDiagnosticsBuilder for SemanticDiagnostics {
     fn report(
@@ -62,6 +71,17 @@ impl SemanticDiagnosticsBuilder for SemanticDiagnostics {
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
         self.add(SemanticDiagnostic::new_after(StableLocation::new(stable_ptr.into()), kind))
+    }
+    fn report_with_inner_span(
+        &mut self,
+        stable_ptr: impl Into<SyntaxStablePtrId>,
+        inner_span: (TextWidth, TextWidth),
+        kind: SemanticDiagnosticKind,
+    ) -> DiagnosticAdded {
+        self.add(SemanticDiagnostic::new(
+            StableLocation::with_inner_span(stable_ptr.into(), inner_span),
+            kind,
+        ))
     }
 }
 
@@ -116,21 +136,23 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 trait_id,
                 item_kind,
             } => {
+                let defs_db = db;
                 format!(
                     "Impl item {item_kind} `{}::{}` is not a member of trait `{}`.",
-                    impl_def_id.name(db),
+                    impl_def_id.name(defs_db),
                     impl_item_name,
-                    trait_id.name(db)
+                    trait_id.name(defs_db)
                 )
             }
             SemanticDiagnosticKind::ImplicitImplNotInferred {
                 trait_impl_id,
                 concrete_trait_id,
             } => {
+                let defs_db = db;
                 format!(
                     "Cannot infer implicit impl `{}.`\nCould not find implementation of trait \
                      `{:?}`",
-                    trait_impl_id.name(db),
+                    trait_impl_id.name(defs_db),
                     concrete_trait_id.debug(db)
                 )
             }
@@ -169,13 +191,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 expected,
                 actual,
             } => {
-                let function_name = impl_function_id.name(db);
+                let defs_db = db;
+                let function_name = impl_function_id.name(defs_db);
                 format!(
                     "The number of parameters in the impl function `{}::{}` is incompatible with \
                      `{}::{}`. Expected: {}, actual: {}.",
-                    impl_def_id.name(db),
+                    impl_def_id.name(defs_db),
                     function_name,
-                    trait_id.name(db),
+                    trait_id.name(defs_db),
                     function_name,
                     expected,
                     actual,
@@ -191,13 +214,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 expected_ty,
                 actual_ty,
             } => {
-                let function_name = impl_function_id.name(db);
+                let defs_db = db;
+                let function_name = impl_function_id.name(defs_db);
                 format!(
                     "Parameter type of impl function `{}::{}` is incompatible with `{}::{}`. \
                      Expected: `{}`, actual: `{}`.",
-                    impl_def_id.name(db),
+                    impl_def_id.name(defs_db),
                     function_name,
-                    trait_id.name(db),
+                    trait_id.name(defs_db),
                     function_name,
                     expected_ty.format(db),
                     actual_ty.format(db)
@@ -207,10 +231,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Variant constructor argument must be immutable.".to_string()
             }
             SemanticDiagnosticKind::TraitParamMutable { trait_id, function_id } => {
+                let defs_db = db;
                 format!(
                     "Parameter of trait function `{}::{}` can't be defined as mutable.",
-                    trait_id.name(db),
-                    function_id.name(db),
+                    trait_id.name(defs_db),
+                    function_id.name(defs_db),
                 )
             }
             SemanticDiagnosticKind::ParameterShouldBeReference {
@@ -218,13 +243,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 impl_function_id,
                 trait_id,
             } => {
-                let function_name = impl_function_id.name(db);
+                let defs_db = db;
+                let function_name = impl_function_id.name(defs_db);
                 format!(
                     "Parameter of impl function {}::{} is incompatible with {}::{}. It should be \
                      a reference.",
-                    impl_def_id.name(db),
+                    impl_def_id.name(defs_db),
                     function_name,
-                    trait_id.name(db),
+                    trait_id.name(defs_db),
                     function_name,
                 )
             }
@@ -233,13 +259,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 impl_function_id,
                 trait_id,
             } => {
-                let function_name = impl_function_id.name(db);
+                let defs_db = db;
+                let function_name = impl_function_id.name(defs_db);
                 format!(
                     "Parameter of impl function {}::{} is incompatible with {}::{}. It should not \
                      be a reference.",
-                    impl_def_id.name(db),
+                    impl_def_id.name(defs_db),
                     function_name,
-                    trait_id.name(db),
+                    trait_id.name(defs_db),
                     function_name,
                 )
             }
@@ -249,12 +276,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 trait_id,
                 expected_name,
             } => {
-                let function_name = impl_function_id.name(db);
+                let defs_db = db;
+                let function_name = impl_function_id.name(defs_db);
                 format!(
                     "Parameter name of impl function {}::{function_name} is incompatible with \
                      {}::{function_name} parameter `{expected_name}`.",
-                    impl_def_id.name(db),
-                    trait_id.name(db),
+                    impl_def_id.name(defs_db),
+                    trait_id.name(defs_db),
                 )
             }
             SemanticDiagnosticKind::WrongType { expected_ty, actual_ty } => {
@@ -316,13 +344,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 expected_ty,
                 actual_ty,
             } => {
-                let function_name = impl_function_id.name(db);
+                let defs_db = db;
+                let function_name = impl_function_id.name(defs_db);
                 format!(
                     "Return type of impl function `{}::{}` is incompatible with `{}::{}`. \
                      Expected: `{}`, actual: `{}`.",
-                    impl_def_id.name(db),
+                    impl_def_id.name(defs_db),
                     function_name,
-                    trait_id.name(db),
+                    trait_id.name(defs_db),
                     function_name,
                     expected_ty.format(db),
                     actual_ty.format(db)
@@ -336,13 +365,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 expected_trait,
                 actual_trait,
             } => {
-                let function_name = impl_function_id.name(db);
+                let defs_db = db;
+                let function_name = impl_function_id.name(defs_db);
                 format!(
                     "Generic parameter trait of impl function `{}::{}` is incompatible with \
                      `{}::{}`. Expected: `{:?}`, actual: `{:?}`.",
-                    impl_def_id.name(db),
+                    impl_def_id.name(defs_db),
                     function_name,
-                    trait_id.name(db),
+                    trait_id.name(defs_db),
                     function_name,
                     expected_trait.debug(db),
                     actual_trait.debug(db)
@@ -355,13 +385,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 expected_kind,
                 actual_kind,
             } => {
-                let function_name = impl_function_id.name(db);
+                let defs_db = db;
+                let function_name = impl_function_id.name(defs_db);
                 format!(
                     "Generic parameter kind of impl function `{}::{}` is incompatible with \
                      `{}::{}`. Expected: `{:?}`, actual: `{:?}`.",
-                    impl_def_id.name(db),
+                    impl_def_id.name(defs_db),
                     function_name,
-                    trait_id.name(db),
+                    trait_id.name(defs_db),
                     function_name,
                     expected_kind,
                     actual_kind
@@ -546,6 +577,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 NotFoundItemType::Type => "Type not found.".into(),
                 NotFoundItemType::Trait => "Trait not found.".into(),
                 NotFoundItemType::Impl => "Impl not found.".into(),
+                NotFoundItemType::Macro => "Macro not found.".into(),
             },
             SemanticDiagnosticKind::AmbiguousPath(module_items) => {
                 format!(
@@ -866,6 +898,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InlineMacroFailed(macro_name) => {
                 format!("Inline macro `{macro_name}` failed.")
             }
+            SemanticDiagnosticKind::InlineMacroNoMatchingRule(macro_name) => {
+                format!("No matching rule found in inline macro `{macro_name}`.")
+            }
             SemanticDiagnosticKind::UnknownGenericParam(name) => {
                 format!("Unknown generic parameter `{name}`.")
             }
@@ -923,6 +958,20 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::SelfMustBeFirst => {
                 "`Self` can only be the first segment of a path.".into()
+            }
+            SemanticDiagnosticKind::ResolverModifierNotSupportedInContext => {
+                "`$defsite` is not supported in this context.".into()
+            }
+            SemanticDiagnosticKind::UnknownResolverModifier { modifier } => {
+                format!("`${modifier}` is not supported.")
+            }
+            SemanticDiagnosticKind::EmptyPathAfterResolverModifier => {
+                "Empty path after `$defsite` is not allowed.".into()
+            }
+            SemanticDiagnosticKind::PathInMacroWithoutModifier => {
+                "Path in a macro without a resolver modifier ($callsite or $defsite) - currently \
+                 resolving as $callsite but this will not be supported in future versions."
+                    .into()
             }
             SemanticDiagnosticKind::CannotCreateInstancesOfPhantomTypes => {
                 "Can not create instances of phantom types.".into()
@@ -1016,8 +1065,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::PatternMissingArgs(path) => {
                 format!(
                     "Pattern missing subpattern for the payload of variant. Consider using `{}(_)`",
-                    path.elements(db).into_iter().map(|seg| seg.identifier(db)).join("::")
+                    path.segments(db)
+                        .elements(db)
+                        .into_iter()
+                        .map(|seg| seg.identifier(db))
+                        .join("::")
                 )
+            }
+            SemanticDiagnosticKind::UndefinedMacroPlaceholder(name) => {
+                format!("Undefined macro placeholder: '{name}'.")
             }
         }
     }
@@ -1057,7 +1113,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::UnusedConstant
             | SemanticDiagnosticKind::UnusedUse
             | SemanticDiagnosticKind::PatternMissingArgs(_)
-            | SemanticDiagnosticKind::UnsupportedAllowAttrArguments => Severity::Warning,
+            | SemanticDiagnosticKind::UnsupportedAllowAttrArguments
+            | SemanticDiagnosticKind::PathInMacroWithoutModifier => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -1404,6 +1461,7 @@ pub enum SemanticDiagnosticKind {
     UnknownStatementAttribute,
     InlineMacroNotFound(SmolStr),
     InlineMacroFailed(SmolStr),
+    InlineMacroNoMatchingRule(SmolStr),
     UnknownGenericParam(SmolStr),
     PositionalGenericAfterNamed,
     GenericArgDuplicate(SmolStr),
@@ -1423,6 +1481,12 @@ pub enum SemanticDiagnosticKind {
     FixedSizeArraySizeTooBig,
     SelfNotSupportedInContext,
     SelfMustBeFirst,
+    ResolverModifierNotSupportedInContext,
+    UnknownResolverModifier {
+        modifier: SmolStr,
+    },
+    EmptyPathAfterResolverModifier,
+    PathInMacroWithoutModifier,
     DerefCycle {
         deref_chain: String,
     },
@@ -1449,6 +1513,7 @@ pub enum SemanticDiagnosticKind {
     },
     TypeConstraintsSyntaxNotEnabled,
     PatternMissingArgs(ast::ExprPath),
+    UndefinedMacroPlaceholder(String),
 }
 
 /// The kind of an expression with multiple possible return types.
@@ -1475,6 +1540,7 @@ impl SemanticDiagnosticKind {
     }
 }
 
+// TODO(Gil): It seems to have the same functionality as ElementKind, maybe we can merge them.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum NotFoundItemType {
     Identifier,
@@ -1482,6 +1548,7 @@ pub enum NotFoundItemType {
     Type,
     Trait,
     Impl,
+    Macro,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -1500,6 +1567,7 @@ pub enum ElementKind {
     Variant,
     Trait,
     Impl,
+    Macro,
 }
 impl From<&ResolvedConcreteItem> for ElementKind {
     fn from(val: &ResolvedConcreteItem) -> Self {
@@ -1513,6 +1581,7 @@ impl From<&ResolvedConcreteItem> for ElementKind {
                 ElementKind::Trait
             }
             ResolvedConcreteItem::Impl(_) => ElementKind::Impl,
+            ResolvedConcreteItem::Macro(_) => ElementKind::Macro,
         }
     }
 }
@@ -1533,6 +1602,7 @@ impl From<&ResolvedGenericItem> for ElementKind {
             | ResolvedGenericItem::GenericImplAlias(_)
             | ResolvedGenericItem::TraitItem(TraitItemId::Impl(_)) => ElementKind::Impl,
             ResolvedGenericItem::Variable(_) => ElementKind::Variable,
+            ResolvedGenericItem::Macro(_) => ElementKind::Macro,
         }
     }
 }
@@ -1547,6 +1617,7 @@ impl Display for ElementKind {
             ElementKind::Variant => "variant",
             ElementKind::Trait => "trait",
             ElementKind::Impl => "impl",
+            ElementKind::Macro => "macro",
         };
         write!(f, "{res}")
     }

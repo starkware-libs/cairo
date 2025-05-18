@@ -95,6 +95,10 @@ pub fn priv_module_semantic_data(
                 let item = &db.module_extern_functions(module_id)?[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
+            ModuleItemId::MacroDeclaration(item_id) => {
+                let item = &db.module_macro_declarations(module_id)?[item_id];
+                (item_id.name(db), item.attributes(db), item.visibility(db))
+            }
         };
         let visibility = Visibility::from_ast(db, &mut diagnostics, &visibility);
         let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);

@@ -18,22 +18,26 @@ ExprFunctionCall
 //! > expected_tree
 └── Top level kind: ExprFunctionCall
     ├── path (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentWithGenericArgs)
-    │       ├── ident (kind: TokenIdentifier): 'f'
-    │       ├── separator (kind: TokenColonColon): '::'
-    │       └── generic_args (kind: GenericArgs)
-    │           ├── langle (kind: TokenLT): '<'
-    │           ├── generic_args (kind: GenericArgList)
-    │           │   ├── item #0 (kind: GenericArgUnnamed)
-    │           │   │   └── value (kind: GenericArgValueExpr)
-    │           │   │       └── expr (kind: ExprPath)
-    │           │   │           └── item #0 (kind: PathSegmentSimple)
-    │           │   │               └── ident (kind: TokenIdentifier): 'felt252'
-    │           │   ├── separator #0 (kind: TokenComma): ','
-    │           │   └── item #1 (kind: GenericArgUnnamed)
-    │           │       └── value (kind: GenericArgValueExpr)
-    │           │           └── expr (kind: TokenLiteralNumber): '7'
-    │           └── rangle (kind: TokenGT): '>'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentWithGenericArgs)
+    │           ├── ident (kind: TokenIdentifier): 'f'
+    │           ├── separator (kind: TokenColonColon): '::'
+    │           └── generic_args (kind: GenericArgs)
+    │               ├── langle (kind: TokenLT): '<'
+    │               ├── generic_args (kind: GenericArgList)
+    │               │   ├── item #0 (kind: GenericArgUnnamed)
+    │               │   │   └── value (kind: GenericArgValueExpr)
+    │               │   │       └── expr (kind: ExprPath)
+    │               │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │               │   │           └── segments (kind: ExprPathInner)
+    │               │   │               └── item #0 (kind: PathSegmentSimple)
+    │               │   │                   └── ident (kind: TokenIdentifier): 'felt252'
+    │               │   ├── separator #0 (kind: TokenComma): ','
+    │               │   └── item #1 (kind: GenericArgUnnamed)
+    │               │       └── value (kind: GenericArgValueExpr)
+    │               │           └── expr (kind: TokenLiteralNumber): '7'
+    │               └── rangle (kind: TokenGT): '>'
     └── arguments (kind: ArgListParenthesized)
         ├── lparen (kind: TokenLParen): '('
         ├── arguments (kind: ArgList)
@@ -47,8 +51,10 @@ ExprFunctionCall
         │   │   └── arg_clause (kind: ArgClauseUnnamed)
         │   │       └── value (kind: ExprBinary)
         │   │           ├── lhs (kind: ExprPath)
-        │   │           │   └── item #0 (kind: PathSegmentSimple)
-        │   │           │       └── ident (kind: TokenIdentifier): 'a'
+        │   │           │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │   │           │   └── segments (kind: ExprPathInner)
+        │   │           │       └── item #0 (kind: PathSegmentSimple)
+        │   │           │           └── ident (kind: TokenIdentifier): 'a'
         │   │           ├── op (kind: TokenPlus): '+'
         │   │           └── rhs (kind: TokenLiteralNumber): '3'
         │   ├── separator #1 (kind: TokenComma): ','
@@ -57,8 +63,10 @@ ExprFunctionCall
         │       │   └── child #0 (kind: TokenRef): 'ref'
         │       └── arg_clause (kind: ArgClauseUnnamed)
         │           └── value (kind: ExprPath)
-        │               └── item #0 (kind: PathSegmentSimple)
-        │                   └── ident (kind: TokenIdentifier): 'b'
+        │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │               └── segments (kind: ExprPathInner)
+        │                   └── item #0 (kind: PathSegmentSimple)
+        │                       └── ident (kind: TokenIdentifier): 'b'
         └── rparen (kind: TokenRParen): ')'
 
 //! > ==========================================================================
@@ -83,8 +91,10 @@ ExprFunctionCall
 //! > expected_tree
 └── Top level kind: ExprFunctionCall
     ├── path (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentSimple)
-    │       └── ident (kind: TokenIdentifier): 'f'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'f'
     └── arguments (kind: ArgListParenthesized)
         ├── lparen (kind: TokenLParen): '('
         ├── arguments (kind: ArgList)
@@ -100,8 +110,10 @@ ExprFunctionCall
         │   │       ├── colon (kind: TokenColon): ':'
         │   │       └── value (kind: ExprBinary)
         │   │           ├── lhs (kind: ExprPath)
-        │   │           │   └── item #0 (kind: PathSegmentSimple)
-        │   │           │       └── ident (kind: TokenIdentifier): 'a'
+        │   │           │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │   │           │   └── segments (kind: ExprPathInner)
+        │   │           │       └── item #0 (kind: PathSegmentSimple)
+        │   │           │           └── ident (kind: TokenIdentifier): 'a'
         │   │           ├── op (kind: TokenPlus): '+'
         │   │           └── rhs (kind: TokenLiteralNumber): '3'
         │   ├── separator #1 (kind: TokenComma): ','

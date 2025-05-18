@@ -272,14 +272,14 @@ pub fn get_inline_config(
                 AttributeArg {
                     variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
-            ] if &path.node.get_text(db) == "always" => {
+            ] if &path.as_syntax_node().get_text(db) == "always" => {
                 config = InlineConfiguration::Always(attr.clone());
             }
             [
                 AttributeArg {
                     variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
-            ] if &path.node.get_text(db) == "never" => {
+            ] if &path.as_syntax_node().get_text(db) == "never" => {
                 config = InlineConfiguration::Never(attr.clone());
             }
             [] => {

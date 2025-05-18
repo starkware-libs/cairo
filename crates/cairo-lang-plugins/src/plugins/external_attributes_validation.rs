@@ -54,7 +54,8 @@ fn get_diagnostics<Item: QueryAttrs>(
                     ));
                     return;
                 };
-                let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] else {
+                let [ast::PathSegment::Simple(segment)] = &path.segments(db).elements(db)[..]
+                else {
                     diagnostics.push(PluginDiagnostic::error(
                         path.stable_ptr(db),
                         "Wrong type of argument. Currently only #[doc(hidden)] is supported."

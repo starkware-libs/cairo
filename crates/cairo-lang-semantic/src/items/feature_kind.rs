@@ -262,8 +262,9 @@ pub fn extract_feature_config(
     syntax: &impl QueryAttrs,
     diagnostics: &mut SemanticDiagnostics,
 ) -> FeatureConfig {
-    let mut current_module_id = element_id.parent_module(db);
-    let crate_id = current_module_id.owning_crate(db);
+    let defs_db = db;
+    let mut current_module_id = element_id.parent_module(defs_db);
+    let crate_id = current_module_id.owning_crate(defs_db);
     let mut config_stack = vec![extract_item_feature_config(db, crate_id, syntax, diagnostics)];
     let mut config = loop {
         match current_module_id {
@@ -277,7 +278,7 @@ pub fn extract_feature_config(
                 };
             }
             ModuleId::Submodule(id) => {
-                current_module_id = id.parent_module(db);
+                current_module_id = id.parent_module(defs_db);
                 let module = &db.module_submodules(current_module_id).unwrap()[&id];
                 // TODO(orizi): Add parent module diagnostics.
                 let ignored = &mut SemanticDiagnostics::default();

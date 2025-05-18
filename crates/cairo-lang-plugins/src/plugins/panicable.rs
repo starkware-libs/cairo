@@ -154,7 +154,8 @@ fn extract_success_ty_and_variants(
     let ret_ty_path = try_extract_matches!(ret_ty_expr, ast::Expr::Path)?;
 
     // Currently only wrapping functions returning an Option<T>.
-    let [ast::PathSegment::WithGenericArgs(segment)] = &ret_ty_path.elements(db)[..] else {
+    let [ast::PathSegment::WithGenericArgs(segment)] = &ret_ty_path.segments(db).elements(db)[..]
+    else {
         return None;
     };
     let ty = segment.ident(db).text(db);
@@ -190,7 +191,7 @@ fn parse_arguments(
         return None;
     };
 
-    let [ast::PathSegment::Simple(segment)] = &name.elements(db)[..] else {
+    let [ast::PathSegment::Simple(segment)] = &name.segments(db).elements(db)[..] else {
         return None;
     };
 

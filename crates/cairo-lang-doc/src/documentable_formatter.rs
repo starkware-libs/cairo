@@ -89,6 +89,7 @@ pub fn get_item_signature_with_links(
                 ModuleItemId::ExternFunction(item_id) => item_id.get_signature_with_links(&mut f),
                 ModuleItemId::Submodule(_) => (None, vec![]),
                 ModuleItemId::Use(_) => (None, vec![]),
+                ModuleItemId::MacroDeclaration(_) => (None, vec![]),
             },
             LookupItemId::TraitItem(item_id) => match item_id {
                 TraitItemId::Function(item_id) => item_id.get_signature_with_links(&mut f),

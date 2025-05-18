@@ -425,6 +425,11 @@ impl SyntaxNode {
     pub fn grandparent_kind(&self, db: &dyn SyntaxGroup) -> Option<SyntaxKind> {
         Some(self.parent(db)?.parent(db)?.kind(db))
     }
+
+    /// Gets the kind of the given node's grandrandparent if it exists.
+    pub fn grandgrandparent_kind(&self, db: &dyn SyntaxGroup) -> Option<SyntaxKind> {
+        Some(self.parent(db)?.parent(db)?.parent(db)?.kind(db))
+    }
 }
 
 /// Trait for the typed view of the syntax tree. All the internal node implementations are under
