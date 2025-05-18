@@ -700,7 +700,7 @@ fn baz<T, +Drop<T>, +MyTrait<T>>(a: T) -> T {
 }
 
 //! > expected_diagnostics
-error: Trait `test::MyTrait::<T>` has multiple implementations, in: `+MyTrait<T>`, `test::MyIpls::<T, +Drop<T>>`
+error: Trait `test::MyTrait::<T>` has multiple implementations, in: `test::MyIpls::<T, +Drop<T>>`, `+MyTrait<T>`
  --> lib.cairo:12:5
     baz(a)
     ^^^
