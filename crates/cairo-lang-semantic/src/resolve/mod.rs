@@ -10,6 +10,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
+use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
@@ -49,13 +50,14 @@ use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{
     ConcreteImplId, ConcreteImplLongId, DerefInfo, ImplImplId, ImplLongId, ImplLookupContext,
 };
+use crate::items::macro_declaration::MacroExpansionResult;
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{
     ConcreteTraitConstantLongId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
     ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId,
 };
 use crate::items::{TraitOrImplContext, visibility};
-use crate::keyword::{CRATE_KW, SELF_TYPE_KW, SUPER_KW};
+use crate::keyword::{CRATE_KW, MACRO_CALL_SITE, MACRO_DEF_SITE, SELF_TYPE_KW, SUPER_KW};
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ConcreteEnumLongId, ImplTypeId, are_coupons_enabled, resolve_type};
 use crate::{
@@ -203,10 +205,31 @@ impl ResolverData {
     }
 }
 
+/// Resolving data needed for resolving macro expanded code in the correct context.
+#[derive(Debug, Clone)]
+pub struct ResolverMacroData {
+    /// The resolver data of the macro definition site. Is used if the path begins with `$defsite`.
+    pub defsite_data: Arc<ResolverData>,
+    /// The resolver data of the macro call site. Items are resolved in this context in two cases:
+    /// 1. The path begins with `$callsite`.
+    /// 2. The path was supplied as a macro argument. In other words, the path is an expansion of a
+    ///    placeholder and is not a part of the macro expansion template.
+    pub callsite_data: Arc<ResolverData>,
+    /// This is the result of the macro expansion. It is used to determine if a part of the code
+    /// came from a macro argument or from the macro expansion template.
+    pub expansion_result: Arc<MacroExpansionResult>,
+    /// The parent macro data. Exists in case of a macro calling another macro, and is used if we
+    /// climp to the callsite environment.
+    pub parent_macro_call_data: Option<Box<ResolverMacroData>>,
+}
+
 /// Resolves paths semantically.
 pub struct Resolver<'db> {
     db: &'db dyn SemanticGroup,
     pub data: ResolverData,
+    /// The resolving context for macro related resolving. Should be `Some` only if the current
+    /// code is an expansion of a macro.
+    pub macro_call_data: Option<ResolverMacroData>,
     pub owning_crate_id: CrateId,
     pub settings: CrateSettings,
 }
@@ -259,15 +282,37 @@ enum UseStarResult {
 /// A trait for things that can be interpreted as a path of segments.
 pub trait AsSegments {
     fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment>;
+    /// Is the path prefixed with a `$`, indicating a resolver site modifier.
+    fn is_placeholder(&self, db: &dyn SyntaxGroup) -> bool;
+    /// The offset of the path in the file.
+    fn offset(&self, db: &dyn SyntaxGroup) -> Option<TextOffset>;
 }
 impl AsSegments for &ast::ExprPath {
     fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
-        self.elements(db)
+        self.segments(db).elements(db)
+    }
+    fn is_placeholder(&self, db: &dyn SyntaxGroup) -> bool {
+        match self.dollar(db) {
+            ast::OptionTerminalDollar::Empty(_) => false,
+            ast::OptionTerminalDollar::TerminalDollar(_) => true,
+        }
+    }
+
+    fn offset(&self, db: &dyn SyntaxGroup) -> Option<TextOffset> {
+        Some(self.as_syntax_node().offset(db))
     }
 }
 impl AsSegments for Vec<ast::PathSegment> {
     fn to_segments(self, _: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
         self
+    }
+    fn is_placeholder(&self, _: &dyn SyntaxGroup) -> bool {
+        // A dollar can prefix only the first segment of a path, thus irrelevant to a list of
+        // segments.
+        false
+    }
+    fn offset(&self, db: &dyn SyntaxGroup) -> Option<TextOffset> {
+        self.first().map(|segment| segment.as_syntax_node().offset(db))
     }
 }
 
@@ -283,7 +328,7 @@ impl<'db> Resolver<'db> {
     pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
         let owning_crate_id = data.module_file_id.0.owning_crate(db);
         let settings = db.crate_config(owning_crate_id).map(|c| c.settings).unwrap_or_default();
-        Self { owning_crate_id, settings, db, data }
+        Self { owning_crate_id, settings, db, data, macro_call_data: None }
     }
 
     pub fn inference(&mut self) -> Inference<'_> {
@@ -331,12 +376,35 @@ impl<'db> Resolver<'db> {
         >,
     ) -> Maybe<ResolvedItem> {
         let db = self.db;
+        let is_placeholder = path.is_placeholder(db);
+
+        let mut cur_offset = path.offset(db).expect("Trying to resolve an empty path.");
         let elements_vec = path.to_segments(db);
         let mut segments = elements_vec.iter().peekable();
-
+        let segments_stable_ptr =
+            segments.peek().expect("Trying to resolve an empty path.").stable_ptr(db);
+        let mut cur_macro_call_data = self.macro_call_data.clone();
+        while let Some(macro_call_data) = cur_macro_call_data.clone() {
+            if let Some(placeholder_expansion) =
+                macro_call_data.expansion_result.get_placeholder_at(cur_offset)
+            {
+                cur_macro_call_data = macro_call_data.parent_macro_call_data.map(|x| (*x).clone());
+                cur_offset = placeholder_expansion.origin.as_span().unwrap().start;
+                continue;
+            }
+            break;
+        }
+        let active_resolver = if is_placeholder {
+            &mut self.resolve_placeholder(diagnostics, &mut segments, cur_macro_call_data)?
+        } else {
+            if cur_macro_call_data.is_some() {
+                diagnostics.report(segments_stable_ptr, PathInMacroWithoutModifier);
+            }
+            self
+        };
         // Find where the first segment lies in.
         let mut item: ResolvedItem =
-            (callbacks.resolve_path_first_segment)(self, diagnostics, &mut segments)?;
+            (callbacks.resolve_path_first_segment)(active_resolver, diagnostics, &mut segments)?;
 
         // Follow modules.
         while let Some(segment) = segments.next() {
@@ -349,13 +417,13 @@ impl<'db> Resolver<'db> {
             // `?` is ok here as the rest of the segments have no meaning if the current one can't
             // be resolved.
             item = (callbacks.resolve_path_next_segment)(
-                self,
+                active_resolver,
                 diagnostics,
                 &item,
                 segment,
                 cur_item_type,
             )?;
-            (callbacks.mark)(&mut self.resolved_items, db, segment, item.clone());
+            (callbacks.mark)(&mut active_resolver.resolved_items, db, segment, item.clone());
         }
         Ok(item)
     }
@@ -415,9 +483,8 @@ impl<'db> Resolver<'db> {
         inner_item_info: ModuleItemInfo,
         segment: &ast::PathSegment,
     ) -> Maybe<ResolvedConcreteItem> {
-        let db = self.db;
-        let generic_args_syntax = segment.generic_args(db);
-        let segment_stable_ptr = segment.stable_ptr(db).untyped();
+        let generic_args_syntax = segment.generic_args(self.db);
+        let segment_stable_ptr = segment.stable_ptr(self.db).untyped();
         self.validate_module_item_usability(diagnostics, module_id, identifier, &inner_item_info);
         self.insert_used_use(inner_item_info.item_id);
         let inner_generic_item =
@@ -428,7 +495,7 @@ impl<'db> Resolver<'db> {
             inner_generic_item.clone(),
             generic_args_syntax.clone(),
         )?;
-        self.data.resolved_items.generic.insert(identifier.stable_ptr(db), inner_generic_item);
+        self.data.resolved_items.generic.insert(identifier.stable_ptr(self.db), inner_generic_item);
         self.handle_same_impl_trait(
             diagnostics,
             &mut specialized_item,
@@ -1205,6 +1272,9 @@ impl<'db> Resolver<'db> {
                 )?)
                 .intern(self.db),
             ),
+            ResolvedGenericItem::Macro(macro_declaration_id) => {
+                ResolvedConcreteItem::Macro(macro_declaration_id)
+            }
             ResolvedGenericItem::Variant(var) => {
                 ResolvedConcreteItem::Variant(self.specialize_variant(
                     diagnostics,
@@ -1883,9 +1953,10 @@ impl<'db> Resolver<'db> {
         item_info: &ModuleItemInfo,
         user_module: ModuleId,
     ) -> bool {
+        let db = self.db;
         self.ignore_visibility_checks(containing_module_id)
             || visibility::peek_visible_in(
-                self.db,
+                db,
                 item_info.visibility,
                 containing_module_id,
                 user_module,
@@ -2113,6 +2184,61 @@ impl<'db> Resolver<'db> {
             segment_stable_ptr,
         );
         specialized_item
+    }
+
+    /// Resolves the path prefix first segment assuming it is a valid resolver modifier (currently
+    /// only `$defsite`). If it's a valid modifier and there is a macro defsite resolver data in
+    /// context, returns the resolver for the context.
+    fn resolve_placeholder(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+        macro_call_data: Option<ResolverMacroData>,
+    ) -> Maybe<Resolver<'db>> {
+        if segments.len() == 1 {
+            return Err(diagnostics.report(
+                segments.next().unwrap().stable_ptr(self.db),
+                EmptyPathAfterResolverModifier,
+            ));
+        }
+        match segments.peek() {
+            Some(ast::PathSegment::Simple(path_segment_simple)) => {
+                let ident = path_segment_simple.ident(self.db);
+                let ident_text = ident.text(self.db);
+                match ident_text.as_str() {
+                    MACRO_DEF_SITE | MACRO_CALL_SITE => {
+                        segments.next();
+                        if let Some(macro_call_data) = macro_call_data {
+                            let resolver_data = if ident_text.as_str() == MACRO_DEF_SITE {
+                                macro_call_data.defsite_data
+                            } else {
+                                macro_call_data.callsite_data
+                            };
+                            Ok(Resolver::with_data(
+                                self.db,
+                                resolver_data.clone_with_inference_id(
+                                    self.db,
+                                    self.inference_data.inference_id,
+                                ),
+                            ))
+                        } else {
+                            Err(diagnostics.report(
+                                ident.stable_ptr(self.db),
+                                ResolverModifierNotSupportedInContext,
+                            ))
+                        }
+                    }
+                    _ => Err(diagnostics.report(
+                        ident.stable_ptr(self.db),
+                        UnknownResolverModifier { modifier: ident_text },
+                    )),
+                }
+            }
+            _ => {
+                // Empty path segment after a `$`, diagnostic was added in the parser.
+                Err(skip_diagnostic())
+            }
+        }
     }
 }
 

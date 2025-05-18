@@ -311,7 +311,7 @@ fn handle_component_impl(
 
 /// Returns a RewriteNode of a path similar to the given path, but without generic params.
 fn remove_generics_from_path(db: &dyn SyntaxGroup, trait_path: &ast::ExprPath) -> RewriteNode {
-    let elements = trait_path.elements(db);
+    let elements = trait_path.segments(db).elements(db);
     let (last, prefix) = elements.split_last().unwrap();
     let last_without_generics = RewriteNode::from_ast_trimmed(&last.identifier_ast(db));
 

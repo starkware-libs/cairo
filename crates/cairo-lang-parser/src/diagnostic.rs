@@ -105,6 +105,10 @@ pub enum ParserDiagnosticKind {
     MissingTypeExpression,
     MissingWrappedArgList,
     MissingPattern,
+    MissingMacroRuleParamKind,
+    InvalidPlaceholderPath,
+    InvalidParamKindInMacroExpansion,
+    InvalidParamKindInMacroRule,
     ExpectedInToken,
     ItemInlineMacroWithoutBang { identifier: SmolStr, bracket_type: SyntaxKind },
     ReservedIdentifier { identifier: SmolStr },
@@ -130,6 +134,12 @@ impl DiagnosticEntry for ParserDiagnostic {
 
     fn format(&self, _db: &dyn FilesGroup) -> String {
         match &self.kind {
+            ParserDiagnosticKind::InvalidParamKindInMacroExpansion => {
+                "Parameter kinds are not allowed in macro expansion.".to_string()
+            }
+            ParserDiagnosticKind::InvalidParamKindInMacroRule => {
+                "Macro parameter must have a kind.".to_string()
+            }
             ParserDiagnosticKind::SkippedElement { element_name } => {
                 format!("Skipped tokens. Expected: {element_name}.")
             }
@@ -155,6 +165,13 @@ impl DiagnosticEntry for ParserDiagnostic {
             ParserDiagnosticKind::MissingPattern => {
                 "Missing tokens. Expected a pattern.".to_string()
             }
+            ParserDiagnosticKind::MissingMacroRuleParamKind => {
+                "Missing tokens. Expected a macro rule parameter kind.".to_string()
+            }
+            ParserDiagnosticKind::InvalidPlaceholderPath => "Placeholder expression ($expression) \
+                                                             is allowed only in the context of a \
+                                                             macro rule."
+                .to_string(),
             ParserDiagnosticKind::ExpectedInToken => {
                 "Missing identifier token, expected 'in'.".to_string()
             }

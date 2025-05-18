@@ -78,6 +78,8 @@ pub trait DefsGroup: ParserGroup {
     #[salsa::interned]
     fn intern_extern_function(&self, id: ExternFunctionLongId) -> ExternFunctionId;
     #[salsa::interned]
+    fn intern_macro_declaration(&self, id: MacroDeclarationLongId) -> MacroDeclarationId;
+    #[salsa::interned]
     fn intern_param(&self, id: ParamLongId) -> ParamId;
     #[salsa::interned]
     fn intern_generic_param(&self, id: GenericParamLongId) -> GenericParamId;
@@ -278,6 +280,21 @@ pub trait DefsGroup: ParserGroup {
         &self,
         extern_function_id: ExternFunctionId,
     ) -> Maybe<Option<ast::ItemExternFunction>>;
+    /// Returns the macro declarations in the module.
+    fn module_macro_declarations(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<Arc<OrderedHashMap<MacroDeclarationId, ast::ItemMacroDeclaration>>>;
+    /// Returns the IDs of the macro declarations in the module.
+    fn module_macro_declarations_ids(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<Arc<[MacroDeclarationId]>>;
+    /// Returns the macro declaration by its ID.
+    fn module_macro_declaration_by_id(
+        &self,
+        macro_declaration_id: MacroDeclarationId,
+    ) -> Maybe<Option<ast::ItemMacroDeclaration>>;
     fn module_ancestors(&self, module_id: ModuleId) -> OrderedHashSet<ModuleId>;
     fn module_generated_file_aux_data(
         &self,
@@ -480,6 +497,8 @@ pub struct ModuleData {
     pub(crate) impls: Arc<OrderedHashMap<ImplDefId, ast::ItemImpl>>,
     pub(crate) extern_types: Arc<OrderedHashMap<ExternTypeId, ast::ItemExternType>>,
     pub(crate) extern_functions: Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>,
+    pub(crate) macro_declarations:
+        Arc<OrderedHashMap<MacroDeclarationId, ast::ItemMacroDeclaration>>,
     pub(crate) global_uses: Arc<OrderedHashMap<GlobalUseId, ast::UsePathStar>>,
 
     pub(crate) files: Arc<[FileId]>,
@@ -552,6 +571,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
     let mut impls = OrderedHashMap::default();
     let mut extern_types = OrderedHashMap::default();
     let mut extern_functions = OrderedHashMap::default();
+    let mut macro_declarations = OrderedHashMap::default();
     let mut global_uses = OrderedHashMap::default();
     let mut aux_data = Vec::new();
     let mut files = Vec::new();
@@ -647,6 +667,13 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     impl_aliases.insert(item_id, impl_alias);
                     items.push(ModuleItemId::ImplAlias(item_id));
                 }
+                ast::ModuleItem::MacroDeclaration(macro_declaration) => {
+                    let item_id =
+                        MacroDeclarationLongId(module_file_id, macro_declaration.stable_ptr(db))
+                            .intern(db);
+                    macro_declarations.insert(item_id, macro_declaration);
+                    items.push(ModuleItemId::MacroDeclaration(item_id));
+                }
                 ast::ModuleItem::InlineMacro(inline_macro_ast) => plugin_diagnostics.push((
                     module_file_id,
                     PluginDiagnostic::error(
@@ -676,6 +703,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         impls: impls.into(),
         extern_types: extern_types.into(),
         extern_functions: extern_functions.into(),
+        macro_declarations: macro_declarations.into(),
         global_uses: global_uses.into(),
         files: files.into(),
         generated_file_aux_data: aux_data.into(),
@@ -830,7 +858,8 @@ fn collect_extra_allowed_attributes(
             }
             for arg in args {
                 if let Some(ast::Expr::Path(path)) = try_extract_unnamed_arg(db, &arg.arg) {
-                    if let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] {
+                    if let [ast::PathSegment::Simple(segment)] = &path.segments(db).elements(db)[..]
+                    {
                         extra_allowed_attributes.insert(segment.ident(db).text(db).into());
                         continue;
                     }
@@ -1196,6 +1225,30 @@ pub fn module_extern_type_by_id(
     Ok(module_extern_types.get(&extern_type_id).cloned())
 }
 
+/// Returns all the macro declarations of the given module.
+pub fn module_macro_declarations(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<Arc<OrderedHashMap<MacroDeclarationId, ast::ItemMacroDeclaration>>> {
+    Ok(db.priv_module_data(module_id)?.macro_declarations)
+}
+/// Returns all the ids of the macro declarations of the given module.
+pub fn module_macro_declarations_ids(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<Arc<[MacroDeclarationId]>> {
+    Ok(db.module_macro_declarations(module_id)?.keys().copied().collect_vec().into())
+}
+/// Returns the macro declaration of the given id.
+pub fn module_macro_declaration_by_id(
+    db: &dyn DefsGroup,
+    macro_declaration_id: MacroDeclarationId,
+) -> Maybe<Option<ast::ItemMacroDeclaration>> {
+    let module_macro_declarations =
+        db.module_macro_declarations(macro_declaration_id.module_file_id(db).0)?;
+    Ok(module_macro_declarations.get(&macro_declaration_id).cloned())
+}
+
 /// Returns all the extern_functions of the given module.
 pub fn module_extern_functions(
     db: &dyn DefsGroup,
@@ -1287,6 +1340,9 @@ fn module_item_name_stable_ptr(
         ModuleItemId::ExternType(id) => data.extern_types[id].name(db).stable_ptr(db).untyped(),
         ModuleItemId::ExternFunction(id) => {
             data.extern_functions[id].declaration(db).name(db).stable_ptr(db).untyped()
+        }
+        ModuleItemId::MacroDeclaration(id) => {
+            data.macro_declarations[id].name(db).stable_ptr(db).untyped()
         }
     })
 }

@@ -451,6 +451,9 @@ impl ToDocumentableItemId<DocumentableItemId> for ResolvedGenericItem {
             ResolvedGenericItem::Impl(id) => Some(DocumentableItemId::LookupItem(
                 LookupItemId::ModuleItem(ModuleItemId::Impl(id)),
             )),
+            ResolvedGenericItem::Macro(id) => Some(DocumentableItemId::LookupItem(
+                LookupItemId::ModuleItem(ModuleItemId::MacroDeclaration(id)),
+            )),
             ResolvedGenericItem::GenericType(GenericTypeId::Extern(id)) => {
                 Some(DocumentableItemId::LookupItem(LookupItemId::ModuleItem(
                     ModuleItemId::ExternType(id),
