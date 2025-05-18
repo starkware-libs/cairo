@@ -857,6 +857,14 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+error: Missing match arm: `Some(None)` not covered.
+ --> lib.cairo:2:5-5:5
+      match a {
+ _____^
+| ...
+|     }
+|_____^
+
 error: Inner patterns are not allowed in this context.
  --> lib.cairo:3:14
         Some(Some(x)) => x,
@@ -2167,3 +2175,109 @@ Statements:
   (v1: core::felt252) <- 2
 End:
   Return(v1)
+
+//! > ==========================================================================
+
+//! > Test empty enum match on empty enum with otherwise.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo(e: EmptyEnum) -> felt252 {
+    match e {
+        _ => { 1 },
+    }
+}
+
+fn bar(e: Option<EmptyEnum>) -> felt252 {
+    if let Some(e) = e {
+        foo(e)
+    } else {
+        0
+    }
+}
+
+//! > function_name
+bar
+
+//! > module_code
+#[derive(Copy, Drop)]
+enum EmptyEnum {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<test::EmptyEnum>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v1) {
+  })
+
+blk2:
+Statements:
+  (v3: core::felt252) <- 0
+End:
+  Return(v3)
+
+//! > ==========================================================================
+
+//! > Match with complex patterns and don't double report errors.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function
+fn foo(a: Option<Option<A>>) -> felt252 {
+    match a {
+        Some(Some(A::One)) => 3,
+        // Creates two patterns in variant tree.
+        Some(Some(_)) => 2,
+        None(_) => 1,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+    One: (),
+    Two: (),
+    Three: (),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Missing match arm: `Some(None)` not covered.
+ --> lib.cairo:7:5-12:5
+      match a {
+ _____^
+| ...
+|     }
+|_____^
+
+error: Inner patterns are not allowed in this context.
+ --> lib.cairo:8:14
+        Some(Some(A::One)) => 3,
+             ^^^^^^^^^^^^
+
+error: Inner patterns are not allowed in this context.
+ --> lib.cairo:10:14
+        Some(Some(_)) => 2,
+             ^^^^^^^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
