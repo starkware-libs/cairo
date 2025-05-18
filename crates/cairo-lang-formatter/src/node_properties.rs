@@ -1,5 +1,7 @@
+use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 
@@ -1029,6 +1031,9 @@ impl SyntaxNodeFormat for SyntaxNode {
             SyntaxKind::ItemUse => SortKind::UseItem,
             _ => SortKind::Immovable,
         }
+    }
+    fn should_ignore_node_format(&self, db: &dyn SyntaxGroup) -> bool {
+        self.has_attr(db, FMT_SKIP_ATTR)
     }
 }
 
