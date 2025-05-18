@@ -8,14 +8,12 @@ use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_parser::macro_helpers::token_tree_as_wrapped_arg_list;
 use cairo_lang_parser::parser::Parser;
 use cairo_lang_syntax as syntax;
-use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
 use cairo_lang_syntax::node::ast::{TokenTreeNode, UsePath};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{Itertools, chain};
-use syntax::node::helpers::QueryAttrs;
 use syntax::node::kind::SyntaxKind;
 
 use crate::FormatterConfig;
@@ -915,6 +913,8 @@ pub trait SyntaxNodeFormat {
     /// Returns the sorting kind of the syntax node. This method will be used to sections in the
     /// syntax tree.
     fn as_sort_kind(&self, db: &dyn SyntaxGroup) -> SortKind;
+    /// Gets a syntax node and returns if the node has an cairofmt::skip attribute.
+    fn should_ignore_node_format(&self, db: &dyn SyntaxGroup) -> bool;
 }
 
 pub struct FormatterImpl<'a> {
@@ -987,7 +987,7 @@ impl<'a> FormatterImpl<'a> {
         if syntax_node.force_no_space_before(self.db) {
             self.line_state.prevent_next_space = true;
         }
-        if self.should_ignore_node_format(syntax_node) {
+        if syntax_node.should_ignore_node_format(self.db) {
             self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
         } else if syntax_node.kind(self.db).is_terminal() {
             self.format_terminal(syntax_node);
@@ -1062,7 +1062,8 @@ impl<'a> FormatterImpl<'a> {
                 OrderedHashMap::default();
 
             for node in section_nodes {
-                if !self.has_only_whitespace_trivia(node) || self.should_ignore_node_format(node) {
+                if !self.has_only_whitespace_trivia(node) || node.should_ignore_node_format(self.db)
+                {
                     new_children.push(*node);
                     continue;
                 }
@@ -1254,11 +1255,6 @@ impl<'a> FormatterImpl<'a> {
             self.line_state.line_buffer.push_break_line_point(properties);
             self.line_state.prevent_next_space = true;
         }
-    }
-
-    /// Gets a syntax node and returns if the node has an cairofmt::skip attribute.
-    pub fn should_ignore_node_format(&self, syntax_node: &SyntaxNode) -> bool {
-        syntax_node.has_attr(self.db, FMT_SKIP_ATTR)
     }
 }
 
