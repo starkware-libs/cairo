@@ -65,7 +65,7 @@ impl RewriteNode {
         match self {
             RewriteNode::Copied(syntax_node) => {
                 *self = RewriteNode::new_modified(
-                    syntax_node.get_children(db).into_iter().map(RewriteNode::Copied).collect(),
+                    syntax_node.get_children(db).iter().copied().map(RewriteNode::Copied).collect(),
                 );
                 extract_matches!(self, RewriteNode::Modified)
             }

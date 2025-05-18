@@ -919,7 +919,7 @@ impl TypedSyntaxNode for Arg {
             kind,
             SyntaxKind::Arg
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -1130,7 +1130,7 @@ impl TypedSyntaxNode for ArgClauseNamed {
             kind,
             SyntaxKind::ArgClauseNamed
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -1215,7 +1215,7 @@ impl TypedSyntaxNode for ArgClauseUnnamed {
             kind,
             SyntaxKind::ArgClauseUnnamed
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -1311,7 +1311,7 @@ impl TypedSyntaxNode for ArgClauseFieldInitShorthand {
             kind,
             SyntaxKind::ArgClauseFieldInitShorthand
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -1399,7 +1399,7 @@ impl TypedSyntaxNode for ExprFieldInitShorthand {
             kind,
             SyntaxKind::ExprFieldInitShorthand
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -1569,7 +1569,7 @@ impl TypedSyntaxNode for ExprMissing {
             kind,
             SyntaxKind::ExprMissing
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -1766,7 +1766,7 @@ impl TypedSyntaxNode for PathSegmentSimple {
             kind,
             SyntaxKind::PathSegmentSimple
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -1936,7 +1936,7 @@ impl TypedSyntaxNode for OptionTerminalColonColonEmpty {
             kind,
             SyntaxKind::OptionTerminalColonColonEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -2038,7 +2038,7 @@ impl TypedSyntaxNode for PathSegmentWithGenericArgs {
             kind,
             SyntaxKind::PathSegmentWithGenericArgs
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -2126,7 +2126,7 @@ impl TypedSyntaxNode for PathSegmentMissing {
             kind,
             SyntaxKind::PathSegmentMissing
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -2325,7 +2325,7 @@ impl TypedSyntaxNode for ExprParenthesized {
             kind,
             SyntaxKind::ExprParenthesized
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -2418,7 +2418,7 @@ impl TypedSyntaxNode for ExprUnary {
             kind,
             SyntaxKind::ExprUnary
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -2663,7 +2663,7 @@ impl TypedSyntaxNode for ExprBinary {
             kind,
             SyntaxKind::ExprBinary
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -3285,7 +3285,7 @@ impl TypedSyntaxNode for ExprListParenthesized {
             kind,
             SyntaxKind::ExprListParenthesized
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -3378,7 +3378,7 @@ impl TypedSyntaxNode for ExprFunctionCall {
             kind,
             SyntaxKind::ExprFunctionCall
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -3480,7 +3480,7 @@ impl TypedSyntaxNode for ArgListParenthesized {
             kind,
             SyntaxKind::ArgListParenthesized
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -3655,7 +3655,7 @@ impl TypedSyntaxNode for OptionArgListParenthesizedEmpty {
             kind,
             SyntaxKind::OptionArgListParenthesizedEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -3748,7 +3748,7 @@ impl TypedSyntaxNode for ExprStructCtorCall {
             kind,
             SyntaxKind::ExprStructCtorCall
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -3850,7 +3850,7 @@ impl TypedSyntaxNode for StructArgListBraced {
             kind,
             SyntaxKind::StructArgListBraced
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -3952,7 +3952,7 @@ impl TypedSyntaxNode for ExprBlock {
             kind,
             SyntaxKind::ExprBlock
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -4062,7 +4062,7 @@ impl TypedSyntaxNode for ExprMatch {
             kind,
             SyntaxKind::ExprMatch
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -4257,7 +4257,7 @@ impl TypedSyntaxNode for MatchArm {
             kind,
             SyntaxKind::MatchArm
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -4361,7 +4361,7 @@ impl TypedSyntaxNode for ExprIf {
             kind,
             SyntaxKind::ExprIf
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -4551,7 +4551,7 @@ impl TypedSyntaxNode for ConditionLet {
             kind,
             SyntaxKind::ConditionLet
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -4632,7 +4632,7 @@ impl TypedSyntaxNode for ConditionExpr {
             kind,
             SyntaxKind::ConditionExpr
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -4807,7 +4807,7 @@ impl TypedSyntaxNode for ExprLoop {
             kind,
             SyntaxKind::ExprLoop
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -4905,7 +4905,7 @@ impl TypedSyntaxNode for ExprWhile {
             kind,
             SyntaxKind::ExprWhile
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5032,7 +5032,7 @@ impl TypedSyntaxNode for ExprFor {
             kind,
             SyntaxKind::ExprFor
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5121,7 +5121,7 @@ impl TypedSyntaxNode for ElseClause {
             kind,
             SyntaxKind::ElseClause
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5287,7 +5287,7 @@ impl TypedSyntaxNode for OptionElseClauseEmpty {
             kind,
             SyntaxKind::OptionElseClauseEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5380,7 +5380,7 @@ impl TypedSyntaxNode for ExprErrorPropagate {
             kind,
             SyntaxKind::ExprErrorPropagate
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5488,7 +5488,7 @@ impl TypedSyntaxNode for ExprIndexed {
             kind,
             SyntaxKind::ExprIndexed
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5586,7 +5586,7 @@ impl TypedSyntaxNode for ExprInlineMacro {
             kind,
             SyntaxKind::ExprInlineMacro
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5694,7 +5694,7 @@ impl TypedSyntaxNode for ExprFixedSizeArray {
             kind,
             SyntaxKind::ExprFixedSizeArray
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5787,7 +5787,7 @@ impl TypedSyntaxNode for FixedSizeArraySize {
             kind,
             SyntaxKind::FixedSizeArraySize
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5957,7 +5957,7 @@ impl TypedSyntaxNode for OptionFixedSizeArraySizeEmpty {
             kind,
             SyntaxKind::OptionFixedSizeArraySizeEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -6065,7 +6065,7 @@ impl TypedSyntaxNode for ExprClosure {
             kind,
             SyntaxKind::ExprClosure
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -6256,7 +6256,7 @@ impl TypedSyntaxNode for ClosureParamWrapperNAry {
             kind,
             SyntaxKind::ClosureParamWrapperNAry
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -6349,7 +6349,7 @@ impl TypedSyntaxNode for StructArgExpr {
             kind,
             SyntaxKind::StructArgExpr
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -6519,7 +6519,7 @@ impl TypedSyntaxNode for OptionStructArgExprEmpty {
             kind,
             SyntaxKind::OptionStructArgExprEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -6624,7 +6624,7 @@ impl TypedSyntaxNode for StructArgSingle {
             kind,
             SyntaxKind::StructArgSingle
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -6717,7 +6717,7 @@ impl TypedSyntaxNode for StructArgTail {
             kind,
             SyntaxKind::StructArgTail
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -7006,7 +7006,7 @@ impl TypedSyntaxNode for ArgListBraced {
             kind,
             SyntaxKind::ArgListBraced
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -7108,7 +7108,7 @@ impl TypedSyntaxNode for ArgListBracketed {
             kind,
             SyntaxKind::ArgListBracketed
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -7319,7 +7319,7 @@ impl TypedSyntaxNode for WrappedArgListMissing {
             kind,
             SyntaxKind::WrappedArgListMissing
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -7689,7 +7689,7 @@ impl TypedSyntaxNode for PatternIdentifier {
             kind,
             SyntaxKind::PatternIdentifier
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -7797,7 +7797,7 @@ impl TypedSyntaxNode for PatternStruct {
             kind,
             SyntaxKind::PatternStruct
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -7996,7 +7996,7 @@ impl TypedSyntaxNode for PatternTuple {
             kind,
             SyntaxKind::PatternTuple
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -8094,7 +8094,7 @@ impl TypedSyntaxNode for PatternFixedSizeArray {
             kind,
             SyntaxKind::PatternFixedSizeArray
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -8512,7 +8512,7 @@ impl TypedSyntaxNode for PatternStructParamWithExpr {
             kind,
             SyntaxKind::PatternStructParamWithExpr
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -8608,7 +8608,7 @@ impl TypedSyntaxNode for PatternEnum {
             kind,
             SyntaxKind::PatternEnum
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -8706,7 +8706,7 @@ impl TypedSyntaxNode for PatternEnumInnerPattern {
             kind,
             SyntaxKind::PatternEnumInnerPattern
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -8885,7 +8885,7 @@ impl TypedSyntaxNode for OptionPatternEnumInnerPatternEmpty {
             kind,
             SyntaxKind::OptionPatternEnumInnerPatternEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -8978,7 +8978,7 @@ impl TypedSyntaxNode for TypeClause {
             kind,
             SyntaxKind::TypeClause
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -9144,7 +9144,7 @@ impl TypedSyntaxNode for OptionTypeClauseEmpty {
             kind,
             SyntaxKind::OptionTypeClauseEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -9237,7 +9237,7 @@ impl TypedSyntaxNode for ReturnTypeClause {
             kind,
             SyntaxKind::ReturnTypeClause
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -9407,7 +9407,7 @@ impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
             kind,
             SyntaxKind::OptionReturnTypeClauseEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -9738,7 +9738,7 @@ impl TypedSyntaxNode for StatementMissing {
             kind,
             SyntaxKind::StatementMissing
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -9874,7 +9874,7 @@ impl TypedSyntaxNode for StatementLet {
             kind,
             SyntaxKind::StatementLet
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10040,7 +10040,7 @@ impl TypedSyntaxNode for OptionTerminalSemicolonEmpty {
             kind,
             SyntaxKind::OptionTerminalSemicolonEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10142,7 +10142,7 @@ impl TypedSyntaxNode for StatementExpr {
             kind,
             SyntaxKind::StatementExpr
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10244,7 +10244,7 @@ impl TypedSyntaxNode for StatementContinue {
             kind,
             SyntaxKind::StatementContinue
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10329,7 +10329,7 @@ impl TypedSyntaxNode for ExprClause {
             kind,
             SyntaxKind::ExprClause
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10495,7 +10495,7 @@ impl TypedSyntaxNode for OptionExprClauseEmpty {
             kind,
             SyntaxKind::OptionExprClauseEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10603,7 +10603,7 @@ impl TypedSyntaxNode for StatementReturn {
             kind,
             SyntaxKind::StatementReturn
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10711,7 +10711,7 @@ impl TypedSyntaxNode for StatementBreak {
             kind,
             SyntaxKind::StatementBreak
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10796,7 +10796,7 @@ impl TypedSyntaxNode for StatementItem {
             kind,
             SyntaxKind::StatementItem
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10907,7 +10907,7 @@ impl TypedSyntaxNode for Param {
             kind,
             SyntaxKind::Param
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -11261,7 +11261,7 @@ impl TypedSyntaxNode for ImplicitsClause {
             kind,
             SyntaxKind::ImplicitsClause
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -11528,7 +11528,7 @@ impl TypedSyntaxNode for OptionImplicitsClauseEmpty {
             kind,
             SyntaxKind::OptionImplicitsClauseEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -11698,7 +11698,7 @@ impl TypedSyntaxNode for OptionTerminalNoPanicEmpty {
             kind,
             SyntaxKind::OptionTerminalNoPanicEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -11868,7 +11868,7 @@ impl TypedSyntaxNode for OptionTerminalConstEmpty {
             kind,
             SyntaxKind::OptionTerminalConstEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -11995,7 +11995,7 @@ impl TypedSyntaxNode for FunctionSignature {
             kind,
             SyntaxKind::FunctionSignature
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -12112,7 +12112,7 @@ impl TypedSyntaxNode for Member {
             kind,
             SyntaxKind::Member
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -12316,7 +12316,7 @@ impl TypedSyntaxNode for Variant {
             kind,
             SyntaxKind::Variant
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -12878,7 +12878,7 @@ impl TypedSyntaxNode for ModuleItemMissing {
             kind,
             SyntaxKind::ModuleItemMissing
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -12992,7 +12992,7 @@ impl TypedSyntaxNode for Attribute {
             kind,
             SyntaxKind::Attribute
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -13136,7 +13136,7 @@ impl TypedSyntaxNode for VisibilityDefault {
             kind,
             SyntaxKind::VisibilityDefault
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -13238,7 +13238,7 @@ impl TypedSyntaxNode for VisibilityPubArgumentClause {
             kind,
             SyntaxKind::VisibilityPubArgumentClause
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -13421,7 +13421,7 @@ impl TypedSyntaxNode for OptionVisibilityPubArgumentClauseEmpty {
             kind,
             SyntaxKind::OptionVisibilityPubArgumentClauseEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -13517,7 +13517,7 @@ impl TypedSyntaxNode for VisibilityPub {
             kind,
             SyntaxKind::VisibilityPub
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -13728,7 +13728,7 @@ impl TypedSyntaxNode for ItemModule {
             kind,
             SyntaxKind::ItemModule
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -13916,7 +13916,7 @@ impl TypedSyntaxNode for ModuleBody {
             kind,
             SyntaxKind::ModuleBody
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -14036,7 +14036,7 @@ impl TypedSyntaxNode for FunctionDeclaration {
             kind,
             SyntaxKind::FunctionDeclaration
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -14186,7 +14186,7 @@ impl TypedSyntaxNode for ItemConstant {
             kind,
             SyntaxKind::ItemConstant
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -14299,7 +14299,7 @@ impl TypedSyntaxNode for FunctionWithBody {
             kind,
             SyntaxKind::FunctionWithBody
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -14423,7 +14423,7 @@ impl TypedSyntaxNode for ItemExternFunction {
             kind,
             SyntaxKind::ItemExternFunction
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -14566,7 +14566,7 @@ impl TypedSyntaxNode for ItemExternType {
             kind,
             SyntaxKind::ItemExternType
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -14696,7 +14696,7 @@ impl TypedSyntaxNode for ItemTrait {
             kind,
             SyntaxKind::ItemTrait
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -14884,7 +14884,7 @@ impl TypedSyntaxNode for TraitBody {
             kind,
             SyntaxKind::TraitBody
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -15175,7 +15175,7 @@ impl TypedSyntaxNode for TraitItemMissing {
             kind,
             SyntaxKind::TraitItemMissing
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -15286,7 +15286,7 @@ impl TypedSyntaxNode for TraitItemFunction {
             kind,
             SyntaxKind::TraitItemFunction
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -15410,7 +15410,7 @@ impl TypedSyntaxNode for TraitItemType {
             kind,
             SyntaxKind::TraitItemType
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -15534,7 +15534,7 @@ impl TypedSyntaxNode for TraitItemConstant {
             kind,
             SyntaxKind::TraitItemConstant
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -15664,7 +15664,7 @@ impl TypedSyntaxNode for TraitItemImpl {
             kind,
             SyntaxKind::TraitItemImpl
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -15907,7 +15907,7 @@ impl TypedSyntaxNode for ItemImpl {
             kind,
             SyntaxKind::ItemImpl
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -16017,7 +16017,7 @@ impl TypedSyntaxNode for ItemInlineMacro {
             kind,
             SyntaxKind::ItemInlineMacro
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -16102,7 +16102,7 @@ impl TypedSyntaxNode for ItemHeaderDoc {
             kind,
             SyntaxKind::ItemHeaderDoc
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -16290,7 +16290,7 @@ impl TypedSyntaxNode for ImplBody {
             kind,
             SyntaxKind::ImplBody
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -16698,7 +16698,7 @@ impl TypedSyntaxNode for ImplItemMissing {
             kind,
             SyntaxKind::ImplItemMissing
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -16848,7 +16848,7 @@ impl TypedSyntaxNode for ItemImplAlias {
             kind,
             SyntaxKind::ItemImplAlias
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -16998,7 +16998,7 @@ impl TypedSyntaxNode for ItemStruct {
             kind,
             SyntaxKind::ItemStruct
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -17144,7 +17144,7 @@ impl TypedSyntaxNode for ItemEnum {
             kind,
             SyntaxKind::ItemEnum
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -17290,7 +17290,7 @@ impl TypedSyntaxNode for ItemTypeAlias {
             kind,
             SyntaxKind::ItemTypeAlias
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -17414,7 +17414,7 @@ impl TypedSyntaxNode for ItemUse {
             kind,
             SyntaxKind::ItemUse
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -17640,7 +17640,7 @@ impl TypedSyntaxNode for UsePathLeaf {
             kind,
             SyntaxKind::UsePathLeaf
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -17738,7 +17738,7 @@ impl TypedSyntaxNode for UsePathSingle {
             kind,
             SyntaxKind::UsePathSingle
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -17840,7 +17840,7 @@ impl TypedSyntaxNode for UsePathMulti {
             kind,
             SyntaxKind::UsePathMulti
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -17921,7 +17921,7 @@ impl TypedSyntaxNode for UsePathStar {
             kind,
             SyntaxKind::UsePathStar
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -18116,7 +18116,7 @@ impl TypedSyntaxNode for AliasClause {
             kind,
             SyntaxKind::AliasClause
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -18282,7 +18282,7 @@ impl TypedSyntaxNode for OptionAliasClauseEmpty {
             kind,
             SyntaxKind::OptionAliasClauseEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -18474,7 +18474,7 @@ impl TypedSyntaxNode for GenericArgNamed {
             kind,
             SyntaxKind::GenericArgNamed
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -18559,7 +18559,7 @@ impl TypedSyntaxNode for GenericArgUnnamed {
             kind,
             SyntaxKind::GenericArgUnnamed
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -18736,7 +18736,7 @@ impl TypedSyntaxNode for GenericArgValueExpr {
             kind,
             SyntaxKind::GenericArgValueExpr
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -18838,7 +18838,7 @@ impl TypedSyntaxNode for GenericArgs {
             kind,
             SyntaxKind::GenericArgs
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -19033,7 +19033,7 @@ impl TypedSyntaxNode for AssociatedItemConstraint {
             kind,
             SyntaxKind::AssociatedItemConstraint
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -19138,7 +19138,7 @@ impl TypedSyntaxNode for AssociatedItemConstraints {
             kind,
             SyntaxKind::AssociatedItemConstraints
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -19418,7 +19418,7 @@ impl TypedSyntaxNode for OptionAssociatedItemConstraintsEmpty {
             kind,
             SyntaxKind::OptionAssociatedItemConstraintsEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -19597,7 +19597,7 @@ impl TypedSyntaxNode for OptionWrappedGenericParamListEmpty {
             kind,
             SyntaxKind::OptionWrappedGenericParamListEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -19699,7 +19699,7 @@ impl TypedSyntaxNode for WrappedGenericParamList {
             kind,
             SyntaxKind::WrappedGenericParamList
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -20041,7 +20041,7 @@ impl TypedSyntaxNode for GenericParamType {
             kind,
             SyntaxKind::GenericParamType
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -20158,7 +20158,7 @@ impl TypedSyntaxNode for GenericParamConst {
             kind,
             SyntaxKind::GenericParamConst
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -20282,7 +20282,7 @@ impl TypedSyntaxNode for GenericParamImplNamed {
             kind,
             SyntaxKind::GenericParamImplNamed
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -20384,7 +20384,7 @@ impl TypedSyntaxNode for GenericParamImplAnonymous {
             kind,
             SyntaxKind::GenericParamImplAnonymous
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -20477,7 +20477,7 @@ impl TypedSyntaxNode for GenericParamNegativeImpl {
             kind,
             SyntaxKind::GenericParamNegativeImpl
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -20562,7 +20562,7 @@ impl TypedSyntaxNode for TriviumSkippedNode {
             kind,
             SyntaxKind::TriviumSkippedNode
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -20835,7 +20835,7 @@ impl TypedSyntaxNode for TerminalIdentifier {
             kind,
             SyntaxKind::TerminalIdentifier
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -21019,7 +21019,7 @@ impl TypedSyntaxNode for TerminalLiteralNumber {
             kind,
             SyntaxKind::TerminalLiteralNumber
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -21202,7 +21202,7 @@ impl TypedSyntaxNode for TerminalShortString {
             kind,
             SyntaxKind::TerminalShortString
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -21385,7 +21385,7 @@ impl TypedSyntaxNode for TerminalString {
             kind,
             SyntaxKind::TerminalString
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -21568,7 +21568,7 @@ impl TypedSyntaxNode for TerminalAs {
             kind,
             SyntaxKind::TerminalAs
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -21747,7 +21747,7 @@ impl TypedSyntaxNode for TerminalConst {
             kind,
             SyntaxKind::TerminalConst
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -21930,7 +21930,7 @@ impl TypedSyntaxNode for TerminalElse {
             kind,
             SyntaxKind::TerminalElse
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -22109,7 +22109,7 @@ impl TypedSyntaxNode for TerminalEnum {
             kind,
             SyntaxKind::TerminalEnum
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -22288,7 +22288,7 @@ impl TypedSyntaxNode for TerminalExtern {
             kind,
             SyntaxKind::TerminalExtern
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -22471,7 +22471,7 @@ impl TypedSyntaxNode for TerminalFalse {
             kind,
             SyntaxKind::TerminalFalse
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -22654,7 +22654,7 @@ impl TypedSyntaxNode for TerminalFunction {
             kind,
             SyntaxKind::TerminalFunction
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -22837,7 +22837,7 @@ impl TypedSyntaxNode for TerminalIf {
             kind,
             SyntaxKind::TerminalIf
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -23016,7 +23016,7 @@ impl TypedSyntaxNode for TerminalWhile {
             kind,
             SyntaxKind::TerminalWhile
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -23199,7 +23199,7 @@ impl TypedSyntaxNode for TerminalFor {
             kind,
             SyntaxKind::TerminalFor
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -23378,7 +23378,7 @@ impl TypedSyntaxNode for TerminalLoop {
             kind,
             SyntaxKind::TerminalLoop
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -23557,7 +23557,7 @@ impl TypedSyntaxNode for TerminalImpl {
             kind,
             SyntaxKind::TerminalImpl
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -23736,7 +23736,7 @@ impl TypedSyntaxNode for TerminalImplicits {
             kind,
             SyntaxKind::TerminalImplicits
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -23919,7 +23919,7 @@ impl TypedSyntaxNode for TerminalLet {
             kind,
             SyntaxKind::TerminalLet
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -24098,7 +24098,7 @@ impl TypedSyntaxNode for TerminalMatch {
             kind,
             SyntaxKind::TerminalMatch
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -24281,7 +24281,7 @@ impl TypedSyntaxNode for TerminalModule {
             kind,
             SyntaxKind::TerminalModule
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -24464,7 +24464,7 @@ impl TypedSyntaxNode for TerminalMut {
             kind,
             SyntaxKind::TerminalMut
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -24643,7 +24643,7 @@ impl TypedSyntaxNode for TerminalNoPanic {
             kind,
             SyntaxKind::TerminalNoPanic
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -24826,7 +24826,7 @@ impl TypedSyntaxNode for TerminalOf {
             kind,
             SyntaxKind::TerminalOf
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -25005,7 +25005,7 @@ impl TypedSyntaxNode for TerminalRef {
             kind,
             SyntaxKind::TerminalRef
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -25184,7 +25184,7 @@ impl TypedSyntaxNode for TerminalContinue {
             kind,
             SyntaxKind::TerminalContinue
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -25367,7 +25367,7 @@ impl TypedSyntaxNode for TerminalReturn {
             kind,
             SyntaxKind::TerminalReturn
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -25550,7 +25550,7 @@ impl TypedSyntaxNode for TerminalBreak {
             kind,
             SyntaxKind::TerminalBreak
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -25733,7 +25733,7 @@ impl TypedSyntaxNode for TerminalStruct {
             kind,
             SyntaxKind::TerminalStruct
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -25916,7 +25916,7 @@ impl TypedSyntaxNode for TerminalTrait {
             kind,
             SyntaxKind::TerminalTrait
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -26099,7 +26099,7 @@ impl TypedSyntaxNode for TerminalTrue {
             kind,
             SyntaxKind::TerminalTrue
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -26278,7 +26278,7 @@ impl TypedSyntaxNode for TerminalType {
             kind,
             SyntaxKind::TerminalType
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -26457,7 +26457,7 @@ impl TypedSyntaxNode for TerminalUse {
             kind,
             SyntaxKind::TerminalUse
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -26636,7 +26636,7 @@ impl TypedSyntaxNode for TerminalPub {
             kind,
             SyntaxKind::TerminalPub
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -26815,7 +26815,7 @@ impl TypedSyntaxNode for TerminalAnd {
             kind,
             SyntaxKind::TerminalAnd
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -26994,7 +26994,7 @@ impl TypedSyntaxNode for TerminalAndAnd {
             kind,
             SyntaxKind::TerminalAndAnd
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -27177,7 +27177,7 @@ impl TypedSyntaxNode for TerminalArrow {
             kind,
             SyntaxKind::TerminalArrow
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -27360,7 +27360,7 @@ impl TypedSyntaxNode for TerminalAt {
             kind,
             SyntaxKind::TerminalAt
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -27540,7 +27540,7 @@ impl TypedSyntaxNode for TerminalBadCharacters {
             kind,
             SyntaxKind::TerminalBadCharacters
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -27723,7 +27723,7 @@ impl TypedSyntaxNode for TerminalColon {
             kind,
             SyntaxKind::TerminalColon
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -27906,7 +27906,7 @@ impl TypedSyntaxNode for TerminalColonColon {
             kind,
             SyntaxKind::TerminalColonColon
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -28089,7 +28089,7 @@ impl TypedSyntaxNode for TerminalComma {
             kind,
             SyntaxKind::TerminalComma
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -28272,7 +28272,7 @@ impl TypedSyntaxNode for TerminalDiv {
             kind,
             SyntaxKind::TerminalDiv
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -28451,7 +28451,7 @@ impl TypedSyntaxNode for TerminalDivEq {
             kind,
             SyntaxKind::TerminalDivEq
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -28634,7 +28634,7 @@ impl TypedSyntaxNode for TerminalDot {
             kind,
             SyntaxKind::TerminalDot
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -28813,7 +28813,7 @@ impl TypedSyntaxNode for TerminalDotDot {
             kind,
             SyntaxKind::TerminalDotDot
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -28996,7 +28996,7 @@ impl TypedSyntaxNode for TerminalDotDotEq {
             kind,
             SyntaxKind::TerminalDotDotEq
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -29179,7 +29179,7 @@ impl TypedSyntaxNode for TerminalEndOfFile {
             kind,
             SyntaxKind::TerminalEndOfFile
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -29362,7 +29362,7 @@ impl TypedSyntaxNode for TerminalEq {
             kind,
             SyntaxKind::TerminalEq
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -29541,7 +29541,7 @@ impl TypedSyntaxNode for TerminalEqEq {
             kind,
             SyntaxKind::TerminalEqEq
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -29720,7 +29720,7 @@ impl TypedSyntaxNode for TerminalGE {
             kind,
             SyntaxKind::TerminalGE
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -29899,7 +29899,7 @@ impl TypedSyntaxNode for TerminalGT {
             kind,
             SyntaxKind::TerminalGT
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -30078,7 +30078,7 @@ impl TypedSyntaxNode for TerminalHash {
             kind,
             SyntaxKind::TerminalHash
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -30257,7 +30257,7 @@ impl TypedSyntaxNode for TerminalLBrace {
             kind,
             SyntaxKind::TerminalLBrace
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -30440,7 +30440,7 @@ impl TypedSyntaxNode for TerminalLBrack {
             kind,
             SyntaxKind::TerminalLBrack
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -30623,7 +30623,7 @@ impl TypedSyntaxNode for TerminalLE {
             kind,
             SyntaxKind::TerminalLE
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -30802,7 +30802,7 @@ impl TypedSyntaxNode for TerminalLParen {
             kind,
             SyntaxKind::TerminalLParen
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -30985,7 +30985,7 @@ impl TypedSyntaxNode for TerminalLT {
             kind,
             SyntaxKind::TerminalLT
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -31164,7 +31164,7 @@ impl TypedSyntaxNode for TerminalMatchArrow {
             kind,
             SyntaxKind::TerminalMatchArrow
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -31347,7 +31347,7 @@ impl TypedSyntaxNode for TerminalMinus {
             kind,
             SyntaxKind::TerminalMinus
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -31530,7 +31530,7 @@ impl TypedSyntaxNode for TerminalMinusEq {
             kind,
             SyntaxKind::TerminalMinusEq
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -31713,7 +31713,7 @@ impl TypedSyntaxNode for TerminalMod {
             kind,
             SyntaxKind::TerminalMod
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -31892,7 +31892,7 @@ impl TypedSyntaxNode for TerminalModEq {
             kind,
             SyntaxKind::TerminalModEq
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -32075,7 +32075,7 @@ impl TypedSyntaxNode for TerminalMul {
             kind,
             SyntaxKind::TerminalMul
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -32254,7 +32254,7 @@ impl TypedSyntaxNode for TerminalMulEq {
             kind,
             SyntaxKind::TerminalMulEq
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -32437,7 +32437,7 @@ impl TypedSyntaxNode for TerminalNeq {
             kind,
             SyntaxKind::TerminalNeq
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -32616,7 +32616,7 @@ impl TypedSyntaxNode for TerminalNot {
             kind,
             SyntaxKind::TerminalNot
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -32795,7 +32795,7 @@ impl TypedSyntaxNode for TerminalBitNot {
             kind,
             SyntaxKind::TerminalBitNot
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -32978,7 +32978,7 @@ impl TypedSyntaxNode for TerminalOr {
             kind,
             SyntaxKind::TerminalOr
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -33157,7 +33157,7 @@ impl TypedSyntaxNode for TerminalOrOr {
             kind,
             SyntaxKind::TerminalOrOr
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -33336,7 +33336,7 @@ impl TypedSyntaxNode for TerminalPlus {
             kind,
             SyntaxKind::TerminalPlus
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -33515,7 +33515,7 @@ impl TypedSyntaxNode for TerminalPlusEq {
             kind,
             SyntaxKind::TerminalPlusEq
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -33698,7 +33698,7 @@ impl TypedSyntaxNode for TerminalQuestionMark {
             kind,
             SyntaxKind::TerminalQuestionMark
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -33881,7 +33881,7 @@ impl TypedSyntaxNode for TerminalRBrace {
             kind,
             SyntaxKind::TerminalRBrace
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -34064,7 +34064,7 @@ impl TypedSyntaxNode for TerminalRBrack {
             kind,
             SyntaxKind::TerminalRBrack
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -34247,7 +34247,7 @@ impl TypedSyntaxNode for TerminalRParen {
             kind,
             SyntaxKind::TerminalRParen
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -34430,7 +34430,7 @@ impl TypedSyntaxNode for TerminalSemicolon {
             kind,
             SyntaxKind::TerminalSemicolon
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -34613,7 +34613,7 @@ impl TypedSyntaxNode for TerminalUnderscore {
             kind,
             SyntaxKind::TerminalUnderscore
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -34796,7 +34796,7 @@ impl TypedSyntaxNode for TerminalXor {
             kind,
             SyntaxKind::TerminalXor
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -34885,7 +34885,7 @@ impl TypedSyntaxNode for SyntaxFile {
             kind,
             SyntaxKind::SyntaxFile
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -35064,7 +35064,7 @@ impl TypedSyntaxNode for TerminalEmpty {
             kind,
             SyntaxKind::TerminalEmpty
         );
-        Self { children: node.get_children(db).into(), node }
+        Self { children: node.get_children(db), node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
