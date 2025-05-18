@@ -208,8 +208,8 @@ fn collect_expansion_placeholders(
         return placeholders;
     }
     if !node.kind(db).is_terminal() {
-        for child in node.get_children(db) {
-            placeholders.extend(collect_expansion_placeholders(db, child));
+        for child in node.get_children(db).iter() {
+            placeholders.extend(collect_expansion_placeholders(db, *child));
         }
     }
     placeholders
