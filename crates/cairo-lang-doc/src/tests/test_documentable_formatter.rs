@@ -12,8 +12,8 @@ use super::test_utils::{
     TestDatabase, set_file_content, setup_test_module_without_syntax_diagnostics,
 };
 use crate::db::DocGroup;
-use crate::documentable_formatter::LocationLink;
 use crate::documentable_item::DocumentableItemId;
+use crate::location_links::LocationLink;
 
 cairo_lang_test_utils::test_file_test!(
   item_documentation,
