@@ -4,6 +4,8 @@ use std::option::Option;
 
 use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
+use crate::location_links::LocationLink;
+use crate::location_links::format_signature;
 use crate::signature_data::{
     DocumentableItemSignatureData, get_constant_signature_data, get_enum_signature_data,
     get_extern_function_full_signature, get_extern_type_full_signature,
@@ -114,17 +116,6 @@ pub trait HirDisplay {
     }
 }
 
-/// A helper struct to map parts of item signature on respective documentable items.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct LocationLink {
-    /// Link's start offset in documentable item's signature.
-    pub start: usize,
-    /// Link's end offset in documentable item's signature.
-    pub end: usize,
-    /// Linked item identifier.
-    pub item_id: DocumentableItemId,
-}
-
 /// Documentable items signature formatter.
 pub struct HirFormatter<'a> {
     /// The database handle.
@@ -211,6 +202,17 @@ impl<'a> HirFormatter<'a> {
             None => self.write_str(&extract_and_format(&name)),
         }
     }
+
+    /// Applies extra formatting to item signature.
+    /// Avoid using for types whose signatures are invalid cairo code
+    /// (such as struct members or enum variants).
+    fn format(&mut self) -> fmt::Result {
+        let (formatted_signature, moved_location_links) =
+            format_signature(self.buf.clone(), self.location_links.clone());
+        self.buf = formatted_signature;
+        self.location_links = moved_location_links;
+        Ok(())
+    }
 }
 
 impl HirDisplay for VariantId {
@@ -268,7 +270,11 @@ impl HirDisplay for EnumId {
         } else {
             f.write_str("}")
         }
-        .map_err(|_| SignatureError::FailedWritingSignature(enum_full_signature.full_path))
+        .map_err(|_| {
+            SignatureError::FailedWritingSignature(enum_full_signature.full_path.clone())
+        })?;
+        f.format()
+            .map_err(|_| SignatureError::FailedWritingSignature(enum_full_signature.full_path))
     }
 }
 
@@ -345,10 +351,11 @@ impl HirDisplay for StructId {
                 })?;
             }
             f.write_str(if is_members_empty { "}" } else { "\n}" }).map_err(|_| {
-                SignatureError::FailedWritingSignature(struct_full_signature.full_path)
+                SignatureError::FailedWritingSignature(struct_full_signature.full_path.clone())
             })?;
         };
-        Ok(())
+        f.format()
+            .map_err(|_| SignatureError::FailedWritingSignature(struct_full_signature.full_path))
     }
 }
 
@@ -356,7 +363,8 @@ impl HirDisplay for FreeFunctionId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let free_function_full_signature = get_free_function_signature_data(f.db, *self)?;
         write_function_signature(f, free_function_full_signature, "".to_string())
-            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
+        f.format().map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
@@ -438,8 +446,10 @@ impl HirDisplay for ImplConstantDefId {
                 SignatureError::FailedWritingSignature(constant_full_signature.full_path.clone())
             })?;
         }
-        write_syntactic_evaluation(f, constant_full_signature.item_id)
-            .map_err(|_| SignatureError::FailedWritingSignature(constant_full_signature.full_path))
+        write_syntactic_evaluation(f, constant_full_signature.item_id).map_err(|_| {
+            SignatureError::FailedWritingSignature(constant_full_signature.full_path)
+        })?;
+        f.format().map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
@@ -447,7 +457,8 @@ impl HirDisplay for TraitFunctionId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let free_function_full_signature = get_trait_function_signature_data(f.db, *self)?;
         write_function_signature(f, free_function_full_signature, "".to_string())
-            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
+        f.format().map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
@@ -455,7 +466,8 @@ impl HirDisplay for ImplFunctionId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let impl_function_full_signature = get_impl_function_signature_data(f.db, *self)?;
         write_function_signature(f, impl_function_full_signature, "".to_string())
-            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
+        f.format().map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
@@ -472,11 +484,11 @@ impl HirDisplay for TraitId {
             SignatureError::FailedWritingSignature(trait_full_signature.full_path.clone())
         })?;
         if let Some(generic_params) = trait_full_signature.generic_params {
-            write_generic_params(generic_params, f)
-                .map_err(|_| SignatureError::FailedWritingSignature(trait_full_signature.full_path))
-        } else {
-            Ok(())
-        }
+            write_generic_params(generic_params, f).map_err(|_| {
+                SignatureError::FailedWritingSignature(trait_full_signature.full_path)
+            })?
+        };
+        f.format().map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
@@ -492,10 +504,11 @@ impl HirDisplay for TraitConstantId {
             )
             .map_err(|_| {
                 SignatureError::FailedWritingSignature(trait_const_full_signature.full_path)
-            })
+            })?;
         } else {
-            Err(SignatureError::FailedRetrievingSemanticData(self.full_path(f.db)))
+            Err(SignatureError::FailedRetrievingSemanticData(self.full_path(f.db)))?;
         }
+        f.format().map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
@@ -526,8 +539,10 @@ impl HirDisplay for ImplDefId {
                 SignatureError::FailedWritingSignature(impl_def_full_signature.full_path.clone())
             })?;
         }
-        f.write_str(";")
-            .map_err(|_| SignatureError::FailedWritingSignature(impl_def_full_signature.full_path))
+        f.write_str(";").map_err(|_| {
+            SignatureError::FailedWritingSignature(impl_def_full_signature.full_path)
+        })?;
+        f.format().map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
@@ -545,7 +560,8 @@ impl HirDisplay for ImplAliasId {
         })?;
         write_syntactic_evaluation(f, impl_alias_full_signature.item_id).map_err(|_| {
             SignatureError::FailedWritingSignature(impl_alias_full_signature.full_path)
-        })
+        })?;
+        f.format().map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
@@ -553,7 +569,8 @@ impl HirDisplay for ModuleTypeAliasId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let module_type_alias_full_signature = get_module_type_alias_full_signature(f.db, *self)?;
         write_type_signature(f, module_type_alias_full_signature, false)
-            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
+        f.format().map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
@@ -561,7 +578,8 @@ impl HirDisplay for TraitTypeId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let trait_type_full_signature = get_trait_type_full_signature(f.db, *self)?;
         write_type_signature(f, trait_type_full_signature, false)
-            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
+        f.format().map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
@@ -569,7 +587,8 @@ impl HirDisplay for ImplTypeDefId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let impl_type_def_full_signature = get_impl_type_def_full_signature(f.db, *self)?;
         write_type_signature(f, impl_type_def_full_signature, false)
-            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
+        f.format().map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
@@ -577,7 +596,8 @@ impl HirDisplay for ExternTypeId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let extern_type_full_signature = get_extern_type_full_signature(f.db, *self)?;
         write_type_signature(f, extern_type_full_signature, true)
-            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
+        f.format().map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
