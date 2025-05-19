@@ -88,7 +88,9 @@ assert_matches = "1.5"
 bimap = "0.6.3"
 bincode = "1.3.3"
 cairo-lang-primitive-token = "1"
-cairo-vm = { version = "1.0.2", features = ["mod_builtin"] }
+cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", rev = "b1a91f929b5fa29a1a2e9e6990a68a1220c0c673", features = [
+    "mod_builtin",
+] }
 clap = { version = "4.5.29", features = ["derive"] }
 colored = "3.0.0"
 const-fnv1a-hash = "1.1.0"
@@ -98,7 +100,9 @@ derivative = "2.2.0"
 diffy = "0.4.2"
 env_logger = "0.11.6"
 genco = "0.17.10"
-good_lp = { version = "1.11.0", features = ["minilp"], default-features = false }
+good_lp = { version = "1.11.0", features = [
+    "minilp",
+], default-features = false }
 hashbrown = "0.15.2"
 id-arena = "2.2.1"
 ignore = "0.4.23"

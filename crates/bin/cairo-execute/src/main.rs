@@ -298,7 +298,7 @@ fn main() -> anyhow::Result<()> {
         runner
             .get_cairo_pie()
             .with_context(|| "Failed getting cairo pie")?
-            .write_zip_file(&file_name)?
+            .write_zip_file(&file_name, false)?
     }
 
     Ok(())
