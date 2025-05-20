@@ -329,17 +329,33 @@ pub(super) fn generate_contract_specific_code(
         handle_contract_item(db, diagnostics, &item, metadata, &mut generation_data);
     }
 
+    let test_class_hash_node = generate_test_class_hash(db, module_ast);
+
+    let deploy_function_node = generate_constructor_deploy_function(db, diagnostics, body);
+
+    generation_data.specific.test_config =
+        RewriteNode::new_modified(vec![test_class_hash_node, deploy_function_node]);
+
+    generation_data.into_rewrite_node(db, diagnostics)
+}
+
+fn generate_test_class_hash(db: &dyn SyntaxGroup, module_ast: &ast::ItemModule) -> RewriteNode {
     let test_class_hash = format!(
         "0x{:x}",
         starknet_keccak(module_ast.as_syntax_node().get_text_without_trivia(db).as_bytes(),)
     );
 
-    let test_class_hash_node = RewriteNode::Text(formatdoc!(
+    RewriteNode::Text(formatdoc!(
         "#[cfg(target: 'test')]
             pub const TEST_CLASS_HASH: starknet::ClassHash = {test_class_hash}.try_into().unwrap();
 "
-    ));
-
+    ))
+}
+fn generate_constructor_deploy_function(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    body: &ast::ModuleBody,
+) -> RewriteNode {
     let mut deploy_function_node = RewriteNode::empty();
 
     for item in body.items_vec(db) {
@@ -358,31 +374,22 @@ pub(super) fn generate_contract_specific_code(
                 }
 
                 if !constructor_params.is_empty() {
-                    deploy_function_node = generate_deploy_function(
-                        db,
-                        module_ast.name(db).text(db),
-                        constructor_params,
-                    );
+                    deploy_function_node = generate_deploy_function(db, constructor_params);
                 }
 
                 break;
             }
         }
     }
-
-    generation_data.specific.test_config =
-        RewriteNode::new_modified(vec![test_class_hash_node, deploy_function_node]);
-
-    generation_data.into_rewrite_node(db, diagnostics)
+    deploy_function_node
 }
 
+/// Generates the deployment function for a contract.
 fn generate_deploy_function(
     db: &dyn SyntaxGroup,
-    contract_name: SmolStr,
     constructor_params: Vec<(SmolStr, ast::Expr)>,
 ) -> RewriteNode {
     let mut param_declarations = Vec::new();
-    let mut variable_names = Vec::new();
     let mut calldata_serialization = Vec::new();
     let mut param_names = Vec::new();
 
@@ -390,7 +397,6 @@ fn generate_deploy_function(
         let type_text = ty.as_syntax_node().get_text_without_trivia(db);
 
         param_declarations.push(format!("{name}: {type_text}"));
-        variable_names.push(format!("{name}"));
         calldata_serialization
             .push(format!("core::serde::Serde::<{type_text}>::serialize(@{name}, ref calldata);",));
 
@@ -398,7 +404,7 @@ fn generate_deploy_function(
     }
 
     let param_declarations_str = param_declarations.join(",\n");
-    let variable_declarations_str = variable_names.join(",\n");
+    let param_names_str = param_names.join(",\n");
     let calldata_serialization_str = calldata_serialization.join("\n");
 
     RewriteNode::Text(formatdoc!(
@@ -431,7 +437,7 @@ fn generate_deploy_function(
             }};
             deploy_custom(
                 deployment_info,
-                {variable_declarations_str}
+                {param_names_str}
             )
         }}
     "

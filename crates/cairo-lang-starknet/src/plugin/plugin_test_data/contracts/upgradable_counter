@@ -159,37 +159,36 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
-#[derive(Drop, Copy, Debug, PartialEq, Serde)]
-pub struct counter_contractDeployer {
-    pub class_hash: starknet::ClassHash,
-    pub deploy_from_zero: bool,
+pub fn deploy_custom(
+    deployment_info: starknet::DeploymentInfo,
+    initial_counter: u128
+) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {    
+    let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
+
+    core::serde::Serde::<u128>::serialize(@initial_counter, ref calldata);
+
+    starknet::syscalls::deploy_syscall(
+        deployment_info.class_hash,
+        deployment_info.contract_address_salt,
+        core::array::ArrayTrait::span(@calldata),
+        deployment_info.deploy_from_zero,
+    )
 }
 
-pub trait counter_contractDeployerTrait<T> {
-    fn deploy(
-        self: T,
-        contract_address_salt: felt252,
-        initial_counter: u128
-    ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)>;
-}
+pub fn deploy(
+    class_hash: starknet::ClassHash,
+    initial_counter: u128
+) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
 
-impl counter_contractDeployerImpl of counter_contractDeployerTrait<counter_contractDeployer> {
-    fn deploy(
-        self: counter_contractDeployer,
-        contract_address_salt: felt252,
-        initial_counter: u128
-    ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
-        let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
-
-        core::serde::Serde::<u128>::serialize(@initial_counter, ref calldata);
-
-        starknet::syscalls::deploy_syscall(
-            self.class_hash,
-            contract_address_salt,
-            core::array::ArrayTrait::span(@calldata),
-            self.deploy_from_zero,
-        )
-    }
+    let deployment_info = starknet::DeploymentInfo {
+        class_hash: class_hash,
+        contract_address_salt: 0,
+        deploy_from_zero: true,
+    };
+    deploy_custom(
+        deployment_info,
+        initial_counter
+    )
 }
 
 #[doc(hidden)]
@@ -471,38 +470,6 @@ impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
-impl counter_contractDeployerDrop<> of core::traits::Drop::<counter_contractDeployer>;
-impl counter_contractDeployerCopy<> of core::traits::Copy::<counter_contractDeployer>;
-impl counter_contractDeployerDebug<> of core::fmt::Debug::<counter_contractDeployer> {
-    fn fmt(self: @counter_contractDeployer, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
-        write!(f, "counter_contractDeployer {{")?;
-        write!(f, " class_hash: ")?;
-        core::fmt::Debug::<starknet::ClassHash>::fmt(self.class_hash, ref f)?;
-        write!(f, ",")?;
-        write!(f, " deploy_from_zero: ")?;
-        core::fmt::Debug::<bool>::fmt(self.deploy_from_zero, ref f)?;
-        write!(f, " }}")
-    }
-}
-impl counter_contractDeployerPartialEq<> of core::traits::PartialEq::<counter_contractDeployer> {
-    fn eq(lhs: @counter_contractDeployer, rhs: @counter_contractDeployer) -> bool {
-        core::traits::PartialEq::<starknet::ClassHash>::eq(lhs.class_hash, rhs.class_hash) && core::traits::PartialEq::<bool>::eq(lhs.deploy_from_zero, rhs.deploy_from_zero)
-    }
-}
-impl counter_contractDeployerSerde<> of core::serde::Serde::<counter_contractDeployer> {
-    fn serialize(self: @counter_contractDeployer, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output);
-        core::serde::Serde::<bool>::serialize(self.deploy_from_zero, ref output)
-    }
-    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<counter_contractDeployer> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
-        let deploy_from_zero = core::internal::InferDestruct::<bool> { value: core::serde::Serde::<bool>::deserialize(ref serialized)? };
-        core::option::Option::Some(counter_contractDeployer {
-            class_hash: class_hash.value,
-            deploy_from_zero: deploy_from_zero.value,
-        })
-    }
-}
 }
 trait ICounterContractDispatcherTrait<T> {
     fn increase_counter(self: T, amount: u128);
@@ -1283,37 +1250,36 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
-#[derive(Drop, Copy, Debug, PartialEq, Serde)]
-pub struct counter_contractDeployer {
-    pub class_hash: starknet::ClassHash,
-    pub deploy_from_zero: bool,
+pub fn deploy_custom(
+    deployment_info: starknet::DeploymentInfo,
+    initial_counter: u128
+) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {    
+    let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
+
+    core::serde::Serde::<u128>::serialize(@initial_counter, ref calldata);
+
+    starknet::syscalls::deploy_syscall(
+        deployment_info.class_hash,
+        deployment_info.contract_address_salt,
+        core::array::ArrayTrait::span(@calldata),
+        deployment_info.deploy_from_zero,
+    )
 }
 
-pub trait counter_contractDeployerTrait<T> {
-    fn deploy(
-        self: T,
-        contract_address_salt: felt252,
-        initial_counter: u128
-    ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)>;
-}
+pub fn deploy(
+    class_hash: starknet::ClassHash,
+    initial_counter: u128
+) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
 
-impl counter_contractDeployerImpl of counter_contractDeployerTrait<counter_contractDeployer> {
-    fn deploy(
-        self: counter_contractDeployer,
-        contract_address_salt: felt252,
-        initial_counter: u128
-    ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
-        let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
-
-        core::serde::Serde::<u128>::serialize(@initial_counter, ref calldata);
-
-        starknet::syscalls::deploy_syscall(
-            self.class_hash,
-            contract_address_salt,
-            core::array::ArrayTrait::span(@calldata),
-            self.deploy_from_zero,
-        )
-    }
+    let deployment_info = starknet::DeploymentInfo {
+        class_hash: class_hash,
+        contract_address_salt: 0,
+        deploy_from_zero: true,
+    };
+    deploy_custom(
+        deployment_info,
+        initial_counter
+    )
 }
 
 #[doc(hidden)]
@@ -1595,37 +1561,5 @@ impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
-impl counter_contractDeployerDrop<> of core::traits::Drop::<counter_contractDeployer>;
-impl counter_contractDeployerCopy<> of core::traits::Copy::<counter_contractDeployer>;
-impl counter_contractDeployerDebug<> of core::fmt::Debug::<counter_contractDeployer> {
-    fn fmt(self: @counter_contractDeployer, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
-        write!(f, "counter_contractDeployer {{")?;
-        write!(f, " class_hash: ")?;
-        core::fmt::Debug::<starknet::ClassHash>::fmt(self.class_hash, ref f)?;
-        write!(f, ",")?;
-        write!(f, " deploy_from_zero: ")?;
-        core::fmt::Debug::<bool>::fmt(self.deploy_from_zero, ref f)?;
-        write!(f, " }}")
-    }
-}
-impl counter_contractDeployerPartialEq<> of core::traits::PartialEq::<counter_contractDeployer> {
-    fn eq(lhs: @counter_contractDeployer, rhs: @counter_contractDeployer) -> bool {
-        core::traits::PartialEq::<starknet::ClassHash>::eq(lhs.class_hash, rhs.class_hash) && core::traits::PartialEq::<bool>::eq(lhs.deploy_from_zero, rhs.deploy_from_zero)
-    }
-}
-impl counter_contractDeployerSerde<> of core::serde::Serde::<counter_contractDeployer> {
-    fn serialize(self: @counter_contractDeployer, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output);
-        core::serde::Serde::<bool>::serialize(self.deploy_from_zero, ref output)
-    }
-    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<counter_contractDeployer> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
-        let deploy_from_zero = core::internal::InferDestruct::<bool> { value: core::serde::Serde::<bool>::deserialize(ref serialized)? };
-        core::option::Option::Some(counter_contractDeployer {
-            class_hash: class_hash.value,
-            deploy_from_zero: deploy_from_zero.value,
-        })
-    }
-}
 
 //! > expected_diagnostics
