@@ -148,3 +148,10 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait<T> {
 pub const VALIDATED: felt252 = 'VALID';
 
 pub mod testing;
+
+#[derive(Drop, Copy, Debug, PartialEq, Serde)]
+pub struct DeploymentInfo {
+    pub class_hash: starknet::ClassHash,
+    pub contract_address_salt: felt252,
+    pub deploy_from_zero: bool,
+}

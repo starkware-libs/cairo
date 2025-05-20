@@ -382,6 +382,7 @@ fn generate_deploy_function(
     constructor_params: Vec<(SmolStr, ast::Expr)>,
 ) -> RewriteNode {
     let mut param_declarations = Vec::new();
+    let mut variable_names = Vec::new();
     let mut calldata_serialization = Vec::new();
     let mut param_names = Vec::new();
 
@@ -389,6 +390,7 @@ fn generate_deploy_function(
         let type_text = ty.as_syntax_node().get_text_without_trivia(db);
 
         param_declarations.push(format!("{name}: {type_text}"));
+        variable_names.push(format!("{name}"));
         calldata_serialization
             .push(format!("core::serde::Serde::<{type_text}>::serialize(@{name}, ref calldata);",));
 
@@ -396,43 +398,41 @@ fn generate_deploy_function(
     }
 
     let param_declarations_str = param_declarations.join(",\n");
+    let variable_declarations_str = variable_names.join(",\n");
     let calldata_serialization_str = calldata_serialization.join("\n");
 
     RewriteNode::Text(formatdoc!(
         "
-        #[derive(Drop, Copy, Debug, PartialEq, Serde)]
-        pub struct {contract_name}Deployer {{
-            pub class_hash: starknet::ClassHash,
-            pub deploy_from_zero: bool,
+        pub fn deploy_custom(
+            deployment_info: starknet::DeploymentInfo,
+            {param_declarations_str}
+        ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {{    
+            let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
+
+            {calldata_serialization_str}
+
+            starknet::syscalls::deploy_syscall(
+                deployment_info.class_hash,
+                deployment_info.contract_address_salt,
+                core::array::ArrayTrait::span(@calldata),
+                deployment_info.deploy_from_zero,
+            )
         }}
-
-        pub trait {contract_name}DeployerTrait<T> {{
-            fn deploy(
-                self: T,
-                contract_address_salt: felt252,
-                {param_declarations_str}
-            ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)>;
-        }}
-
-        impl {contract_name}DeployerImpl of {contract_name}DeployerTrait<{contract_name}Deployer> \
-         {{
-            fn deploy(
-                self: {contract_name}Deployer,
-                contract_address_salt: felt252,
-                {param_declarations_str}
-            ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> \
-         {{
-                let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
-
-                {calldata_serialization_str}
-
-                starknet::syscalls::deploy_syscall(
-                    self.class_hash,
-                    contract_address_salt,
-                    core::array::ArrayTrait::span(@calldata),
-                    self.deploy_from_zero,
-                )
-            }}
+    
+        pub fn deploy(
+            class_hash: starknet::ClassHash,
+            {param_declarations_str}
+        ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {{
+    
+            let deployment_info = starknet::DeploymentInfo {{
+                class_hash: class_hash,
+                contract_address_salt: 0,
+                deploy_from_zero: true,
+            }};
+            deploy_custom(
+                deployment_info,
+                {variable_declarations_str}
+            )
         }}
     "
     ))
