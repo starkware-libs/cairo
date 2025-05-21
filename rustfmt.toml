@@ -23,11 +23,11 @@ wrap_comments = true
 #     "rust-analyzer.rustfmt.overrideCommand": [
 #         "rustup",
 #         "run",
-#         "nightly-2025-04-28",
+#         "nightly-2025-05-20",
 #         "--",
 #         "rustfmt",
 #         "--edition",
 #         "2021",
 #         "--"
 #     ]
-# and run "rustup toolchain install nightly-2025-04-28".
+# and run "rustup toolchain install nightly-2025-05-20".

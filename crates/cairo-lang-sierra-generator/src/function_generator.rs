@@ -210,7 +210,7 @@ fn allocate_local_variables(
                 context.get_variable_sierra_type(*lowering_var_id)?,
             ),
             &[],
-            &[uninitialized_local_var_id.clone()],
+            std::slice::from_ref(&uninitialized_local_var_id),
         ));
 
         sierra_local_variables.insert(sierra_var_id, uninitialized_local_var_id);

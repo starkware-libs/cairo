@@ -426,8 +426,8 @@ fn maybe_add_dup_statement(
         let dup_var = context.allocate_sierra_variable();
         context.push_statement(simple_basic_statement(
             dup_libfunc_id(context.get_db(), ty),
-            &[sierra_var.clone()],
-            &[sierra_var, dup_var.clone()],
+            std::slice::from_ref(&sierra_var),
+            &[sierra_var.clone(), dup_var.clone()],
         ));
         Ok(dup_var)
     }
@@ -587,7 +587,7 @@ fn generate_match_value_code(
     context.push_statement(simple_basic_statement(
         enum_from_bounded_int_libfunc_id(context.get_db().upcast(), concrete_enum_type.clone()),
         &[bounded_int],
-        &[enum_var.clone()],
+        std::slice::from_ref(&enum_var),
     ));
 
     let libfunc_id = match_enum_libfunc_id(context.get_db(), concrete_enum_type)?;
