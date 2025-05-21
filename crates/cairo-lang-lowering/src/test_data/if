@@ -910,3 +910,80 @@ Statements:
   (v7: core::felt252) <- core::felt252_add(v5, v6)
 End:
   Return(v7)
+
+//! > ==========================================================================
+
+//! > Test if let multipattern multilevel enum
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo(a: Option<Result<felt252, felt252>>) -> felt252 {
+    let mut y = 0;
+    if let Some(Err(v)) | Some(Ok(v)) = a {
+        y = y + v;
+    } else {
+        y = y + 8;
+    }
+    y = y + 1;
+    return y;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<core::result::Result::<core::felt252, core::felt252>>
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0
+End:
+  Match(match_enum(v0) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk5,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v2) {
+    Result::Ok(v4) => blk2,
+    Result::Err(v5) => blk3,
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk4, {v4 -> v6})
+
+blk3:
+Statements:
+End:
+  Goto(blk4, {v5 -> v6})
+
+blk4:
+Statements:
+  (v7: core::felt252) <- core::felt252_add(v1, v6)
+End:
+  Goto(blk6, {v7 -> v8})
+
+blk5:
+Statements:
+  (v9: core::felt252) <- 8
+  (v10: core::felt252) <- core::felt252_add(v1, v9)
+End:
+  Goto(blk6, {v10 -> v8})
+
+blk6:
+Statements:
+  (v11: core::felt252) <- 1
+  (v12: core::felt252) <- core::felt252_add(v8, v11)
+End:
+  Return(v12)
