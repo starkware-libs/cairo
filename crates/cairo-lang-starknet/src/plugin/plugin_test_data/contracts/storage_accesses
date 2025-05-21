@@ -230,8 +230,8 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
-pub fn deploy_custom(
-    deployment_info: starknet::DeploymentInfo,
+pub fn deploy_with_params(
+    deployment_params: starknet::DeploymentParams,
     name_: felt252,
 symbol_: felt252,
 decimals_: u8,
@@ -247,10 +247,10 @@ core::serde::Serde::<u256>::serialize(@initial_supply, ref calldata);
 core::serde::Serde::<ContractAddress>::serialize(@recipient, ref calldata);
 
     starknet::syscalls::deploy_syscall(
-        deployment_info.class_hash,
-        deployment_info.contract_address_salt,
+        deployment_params.class_hash,
+        deployment_params.contract_address_salt,
         core::array::ArrayTrait::span(@calldata),
-        deployment_info.deploy_from_zero,
+        deployment_params.deploy_from_zero,
     )
 }
 
@@ -263,13 +263,13 @@ initial_supply: u256,
 recipient: ContractAddress
 ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
 
-    let deployment_info = starknet::DeploymentInfo {
+    let deployment_params = starknet::DeploymentParams {
         class_hash: class_hash,
         contract_address_salt: 0,
         deploy_from_zero: true,
     };
-    deploy_custom(
-        deployment_info,
+    deploy_with_params(
+        deployment_params,
         name_,
 symbol_,
 decimals_,
@@ -2188,8 +2188,8 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
-pub fn deploy_custom(
-    deployment_info: starknet::DeploymentInfo,
+pub fn deploy_with_params(
+    deployment_params: starknet::DeploymentParams,
     name_: felt252,
 symbol_: felt252,
 decimals_: u8,
@@ -2205,10 +2205,10 @@ core::serde::Serde::<u256>::serialize(@initial_supply, ref calldata);
 core::serde::Serde::<ContractAddress>::serialize(@recipient, ref calldata);
 
     starknet::syscalls::deploy_syscall(
-        deployment_info.class_hash,
-        deployment_info.contract_address_salt,
+        deployment_params.class_hash,
+        deployment_params.contract_address_salt,
         core::array::ArrayTrait::span(@calldata),
-        deployment_info.deploy_from_zero,
+        deployment_params.deploy_from_zero,
     )
 }
 
@@ -2221,13 +2221,13 @@ initial_supply: u256,
 recipient: ContractAddress
 ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
 
-    let deployment_info = starknet::DeploymentInfo {
+    let deployment_params = starknet::DeploymentParams {
         class_hash: class_hash,
         contract_address_salt: 0,
         deploy_from_zero: true,
     };
-    deploy_custom(
-        deployment_info,
+    deploy_with_params(
+        deployment_params,
         name_,
 symbol_,
 decimals_,

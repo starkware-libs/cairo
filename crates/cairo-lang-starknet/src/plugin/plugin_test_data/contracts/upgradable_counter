@@ -159,8 +159,8 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
-pub fn deploy_custom(
-    deployment_info: starknet::DeploymentInfo,
+pub fn deploy_with_params(
+    deployment_params: starknet::DeploymentParams,
     initial_counter: u128
 ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {    
     let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
@@ -168,10 +168,10 @@ pub fn deploy_custom(
     core::serde::Serde::<u128>::serialize(@initial_counter, ref calldata);
 
     starknet::syscalls::deploy_syscall(
-        deployment_info.class_hash,
-        deployment_info.contract_address_salt,
+        deployment_params.class_hash,
+        deployment_params.contract_address_salt,
         core::array::ArrayTrait::span(@calldata),
-        deployment_info.deploy_from_zero,
+        deployment_params.deploy_from_zero,
     )
 }
 
@@ -180,13 +180,13 @@ pub fn deploy(
     initial_counter: u128
 ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
 
-    let deployment_info = starknet::DeploymentInfo {
+    let deployment_params = starknet::DeploymentParams {
         class_hash: class_hash,
         contract_address_salt: 0,
         deploy_from_zero: true,
     };
-    deploy_custom(
-        deployment_info,
+    deploy_with_params(
+        deployment_params,
         initial_counter
     )
 }
@@ -1250,8 +1250,8 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
-pub fn deploy_custom(
-    deployment_info: starknet::DeploymentInfo,
+pub fn deploy_with_params(
+    deployment_params: starknet::DeploymentParams,
     initial_counter: u128
 ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {    
     let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
@@ -1259,10 +1259,10 @@ pub fn deploy_custom(
     core::serde::Serde::<u128>::serialize(@initial_counter, ref calldata);
 
     starknet::syscalls::deploy_syscall(
-        deployment_info.class_hash,
-        deployment_info.contract_address_salt,
+        deployment_params.class_hash,
+        deployment_params.contract_address_salt,
         core::array::ArrayTrait::span(@calldata),
-        deployment_info.deploy_from_zero,
+        deployment_params.deploy_from_zero,
     )
 }
 
@@ -1271,13 +1271,13 @@ pub fn deploy(
     initial_counter: u128
 ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
 
-    let deployment_info = starknet::DeploymentInfo {
+    let deployment_params = starknet::DeploymentParams {
         class_hash: class_hash,
         contract_address_salt: 0,
         deploy_from_zero: true,
     };
-    deploy_custom(
-        deployment_info,
+    deploy_with_params(
+        deployment_params,
         initial_counter
     )
 }
