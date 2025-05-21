@@ -43,6 +43,7 @@ mod language_features {
     mod for_test;
     mod glob_use_test;
     mod macro_test;
+    mod match_test;
     mod panics_test;
     mod trait_test;
     mod while_test;
