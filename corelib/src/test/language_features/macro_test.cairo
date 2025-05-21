@@ -384,8 +384,25 @@ macro array_double_insertion {
 }
 
 #[test]
-fn test_array() {
+fn test_double_insertion() {
     let result = array_double_insertion![1, 2, 3];
     let mut expected = array![1, 1, 2, 2, 3, 3];
     assert_eq!(result, expected);
+}
+
+mod mod_defsite_as_type {
+    type local_u32 = u32;
+    pub macro defsite_as_type_macro {
+        ($x:expr) => {
+        {
+            let mut x: $defsite::local_u32 = $x;
+            x
+        }
+    };
+    }
+
+    #[test]
+    fn test_defsite_as_type() {
+        let _y = defsite_as_type_macro!(5_u32);
+    }
 }
