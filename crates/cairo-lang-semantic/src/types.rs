@@ -831,13 +831,10 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInfor
     match ty.lookup_intern(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(id) => {
-                let mut zero_sized = true;
-                for (_, member) in db.struct_members(id.struct_id(db))?.iter() {
-                    if db.type_size_info(member.ty)? != TypeSizeInformation::ZeroSized {
-                        zero_sized = false;
-                    }
-                }
-                if zero_sized {
+                if check_all_type_are_zero_sized(
+                    db,
+                    db.struct_members(id.struct_id(db))?.iter().map(|(_, member)| &member.ty),
+                )? {
                     return Ok(TypeSizeInformation::ZeroSized);
                 }
             }
@@ -850,13 +847,7 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInfor
             ConcreteTypeId::Extern(_) => {}
         },
         TypeLongId::Tuple(types) => {
-            let mut zero_sized = true;
-            for ty in types {
-                if db.type_size_info(ty)? != TypeSizeInformation::ZeroSized {
-                    zero_sized = false;
-                }
-            }
-            if zero_sized {
+            if check_all_type_are_zero_sized(db, types.iter())? {
                 return Ok(TypeSizeInformation::ZeroSized);
             }
         }
@@ -865,12 +856,16 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInfor
                 return Ok(TypeSizeInformation::ZeroSized);
             }
         }
+        TypeLongId::Closure(closure_ty) => {
+            if check_all_type_are_zero_sized(db, closure_ty.captured_types.iter())? {
+                return Ok(TypeSizeInformation::ZeroSized);
+            }
+        }
         TypeLongId::Coupon(_) => return Ok(TypeSizeInformation::ZeroSized),
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_)
-        | TypeLongId::ImplType(_)
-        | TypeLongId::Closure(_) => {}
+        | TypeLongId::ImplType(_) => {}
         TypeLongId::FixedSizeArray { type_id, size } => {
             if matches!(size.lookup_intern(db), ConstValue::Int(value,_) if value.is_zero())
                 || db.type_size_info(type_id)? == TypeSizeInformation::ZeroSized
@@ -880,6 +875,20 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInfor
         }
     }
     Ok(TypeSizeInformation::Other)
+}
+
+/// Checks if all types in the iterator are zero sized.
+fn check_all_type_are_zero_sized<'a>(
+    db: &dyn SemanticGroup,
+    types: impl Iterator<Item = &'a TypeId>,
+) -> Maybe<bool> {
+    let mut zero_sized = true;
+    for ty in types {
+        if db.type_size_info(*ty)? != TypeSizeInformation::ZeroSized {
+            zero_sized = false;
+        }
+    }
+    Ok(zero_sized)
 }
 
 /// Cycle handling of [crate::db::SemanticGroup::type_size_info].
