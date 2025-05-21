@@ -149,4 +149,5 @@ pub const VALIDATED: felt252 = 'VALID';
 
 pub mod testing;
 
-pub use deployment::DeploymentInfo;
+pub mod deployment;
+pub use deployment::DeploymentParams;

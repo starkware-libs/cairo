@@ -409,8 +409,8 @@ fn generate_deploy_function(
 
     RewriteNode::Text(formatdoc!(
         "
-        pub fn deploy_custom(
-            deployment_info: starknet::DeploymentInfo,
+        pub fn deploy_with_params(
+            deployment_params: starknet::DeploymentParams,
             {param_declarations_str}
         ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {{    
             let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
@@ -418,10 +418,10 @@ fn generate_deploy_function(
             {calldata_serialization_str}
 
             starknet::syscalls::deploy_syscall(
-                deployment_info.class_hash,
-                deployment_info.contract_address_salt,
+                deployment_params.class_hash,
+                deployment_params.contract_address_salt,
                 core::array::ArrayTrait::span(@calldata),
-                deployment_info.deploy_from_zero,
+                deployment_params.deploy_from_zero,
             )
         }}
     
@@ -430,13 +430,13 @@ fn generate_deploy_function(
             {param_declarations_str}
         ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {{
     
-            let deployment_info = starknet::DeploymentInfo {{
+            let deployment_params = starknet::DeploymentParams {{
                 class_hash: class_hash,
                 contract_address_salt: 0,
                 deploy_from_zero: true,
             }};
-            deploy_custom(
-                deployment_info,
+            deploy_with_params(
+                deployment_params,
                 {param_names_str}
             )
         }}
