@@ -452,3 +452,92 @@ warning: Pattern missing subpattern for the payload of variant. Consider using `
  --> lib.cairo:4:9
         Option::Some => 2,
         ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test bad type in multi level enum pattern variable binding.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(x: Result<Option<u8>, felt252>) -> felt252 {
+    let _y = match x {
+        Ok(Some(x)) | Err(x) => x,
+        _ => 3,
+    };
+    1
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Expected type "core::integer::u8", found: "core::felt252".
+ --> lib.cairo:3:27
+        Ok(Some(x)) | Err(x) => x,
+                          ^
+
+//! > ==========================================================================
+
+//! > Test bad inner pattern type in multi level enum pattern.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+n foo(x: Result<Option<u8>, felt252>) -> felt252 {
+    let _y = match x {
+        Ok(Ok(x)) | Err(x) => x,
+        _ => 3,
+    };
+    1
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Wrong enum in pattern. Expected: "core::option::Option". Got: "core::result::Result".
+ --> lib.cairo:3:12
+        Ok(Ok(x)) | Err(x) => x,
+           ^^^^^
+
+error: Missing variable in pattern.
+ --> lib.cairo:3:9
+        Ok(Ok(x)) | Err(x) => x,
+        ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test value match after enum match.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar(x: felt252) -> felt252 {
+    foo(Ok(Some(x)))
+}
+
+//! > function_name
+bar
+
+//! > module_code
+fn foo<T>(x: Result<Option<T>, felt252>) -> felt252 {
+    let _y = match x {
+        Ok(Some(x)) | Err(x) => x,
+        _ => 3,
+    };
+    1
+}
+
+//! > expected_diagnostics
+error: Expected type "T", found: "core::felt252".
+ --> lib.cairo:3:27
+        Ok(Some(x)) | Err(x) => x,
+                          ^
