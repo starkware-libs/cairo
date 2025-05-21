@@ -12,6 +12,7 @@ mod dict_test;
 mod ec_test;
 mod felt_test;
 mod fmt_test;
+mod gas_reserve_test;
 mod hash_test;
 mod integer_test;
 mod iter_test;
