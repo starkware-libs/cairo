@@ -29,6 +29,7 @@ pub mod felt252;
 pub mod felt252_dict;
 pub mod function_call;
 pub mod gas;
+pub mod gas_reserve;
 pub mod int;
 pub mod is_zero;
 pub mod mem;
