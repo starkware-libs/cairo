@@ -302,6 +302,37 @@ pub fn contract_state_for_testing() -> ContractState {
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x3bd690d1a73da0d8c43f46ecc3a006978d8343a075e91a1c7a24529e7d244a.try_into().unwrap();
+pub fn deploy_with_params(
+    deployment_params: starknet::DeploymentParams,
+    
+) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {    
+    let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
+
+    
+
+    starknet::syscalls::deploy_syscall(
+        deployment_params.class_hash,
+        deployment_params.salt,
+        core::array::ArrayTrait::span(@calldata),
+        deployment_params.deploy_from_zero,
+    )
+}
+
+pub fn deploy(
+    class_hash: starknet::ClassHash,
+    
+) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
+
+    let deployment_params = starknet::DeploymentParams {
+        class_hash: class_hash,
+        salt: 0,
+        deploy_from_zero: true,
+    };
+    deploy_with_params(
+        deployment_params,
+        
+    )
+}
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
