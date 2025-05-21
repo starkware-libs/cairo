@@ -54,3 +54,14 @@ fn test_borrow_with_inner_change() {
     }
 }
 
+#[test]
+fn test_while_let_multilevel_enum() {
+    let mut x = Some(Some(5));
+    let mut counter = 0;
+    while let Some(Some(y)) = x {
+        assert_eq!(y, 5);
+        x = Some(None); // Break the loop after one iteration
+        counter += 1;
+    }
+    assert_eq!(counter, 1);
+}
