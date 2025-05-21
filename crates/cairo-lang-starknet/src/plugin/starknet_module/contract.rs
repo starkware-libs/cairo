@@ -373,9 +373,7 @@ fn generate_constructor_deploy_function(
                     constructor_params.push((name, type_clause.ty(db)));
                 }
 
-                if !constructor_params.is_empty() {
-                    deploy_function_node = generate_deploy_function(db, constructor_params);
-                }
+                deploy_function_node = generate_deploy_function(db, constructor_params);
 
                 break;
             }
@@ -419,7 +417,7 @@ fn generate_deploy_function(
 
             starknet::syscalls::deploy_syscall(
                 deployment_params.class_hash,
-                deployment_params.contract_address_salt,
+                deployment_params.salt,
                 core::array::ArrayTrait::span(@calldata),
                 deployment_params.deploy_from_zero,
             )
@@ -432,7 +430,7 @@ fn generate_deploy_function(
     
             let deployment_params = starknet::DeploymentParams {{
                 class_hash: class_hash,
-                contract_address_salt: 0,
+                salt: 0,
                 deploy_from_zero: true,
             }};
             deploy_with_params(

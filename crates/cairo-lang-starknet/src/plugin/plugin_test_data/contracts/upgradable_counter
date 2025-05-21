@@ -169,7 +169,7 @@ pub fn deploy_with_params(
 
     starknet::syscalls::deploy_syscall(
         deployment_params.class_hash,
-        deployment_params.contract_address_salt,
+        deployment_params.salt,
         core::array::ArrayTrait::span(@calldata),
         deployment_params.deploy_from_zero,
     )
@@ -182,7 +182,7 @@ pub fn deploy(
 
     let deployment_params = starknet::DeploymentParams {
         class_hash: class_hash,
-        contract_address_salt: 0,
+        salt: 0,
         deploy_from_zero: true,
     };
     deploy_with_params(
@@ -1260,7 +1260,7 @@ pub fn deploy_with_params(
 
     starknet::syscalls::deploy_syscall(
         deployment_params.class_hash,
-        deployment_params.contract_address_salt,
+        deployment_params.salt,
         core::array::ArrayTrait::span(@calldata),
         deployment_params.deploy_from_zero,
     )
@@ -1273,7 +1273,7 @@ pub fn deploy(
 
     let deployment_params = starknet::DeploymentParams {
         class_hash: class_hash,
-        contract_address_salt: 0,
+        salt: 0,
         deploy_from_zero: true,
     };
     deploy_with_params(
