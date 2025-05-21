@@ -1599,7 +1599,10 @@ impl<'a> Parser<'a> {
                 let expr = self.parse_type_expr();
                 Ok(ExprUnary::new_green(self.db, op, expr).into())
             }
-            SyntaxKind::TerminalIdentifier => Ok(self.parse_type_path().into()),
+
+            SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalDollar => {
+                Ok(self.parse_type_path().into())
+            }
             SyntaxKind::TerminalLParen => Ok(self.expect_type_tuple_expr()),
             SyntaxKind::TerminalLBrack => Ok(self.expect_type_fixed_size_array_expr()),
             _ => {
