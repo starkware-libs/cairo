@@ -116,7 +116,6 @@ pub fn check_compiler_path(single_file: bool, path: &Path) -> anyhow::Result<()>
             anyhow::bail!("The given path is a directory, but --single-file was supplied.");
         }
     } else {
-        println!("{}", path.display());
         anyhow::bail!("The given path does not exist.");
     }
     Ok(())
