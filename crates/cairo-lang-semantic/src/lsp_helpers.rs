@@ -132,11 +132,11 @@ fn visible_importables_in_module_ex(
     visited_modules.insert(module_id);
     let mut modules_to_visit = vec![];
     // Add importables and traverse modules imported into the current module.
-    for use_id in db.module_uses_ids(module_id).ok()?.iter().copied() {
-        if !is_visible(use_id.name(db))? {
+    for use_id in db.module_uses_ids(module_id).unwrap_or_default().iter().copied() {
+        if !is_visible(use_id.name(db)).unwrap_or_default() {
             continue;
         }
-        let Some(resolved_item) = db.use_resolved_item(use_id).ok() else {
+        let Ok(resolved_item) = db.use_resolved_item(use_id) else {
             continue;
         };
         let (resolved_item, name) = match resolved_item {
@@ -168,7 +168,13 @@ fn visible_importables_in_module_ex(
                 (ImportableId::Struct(item_id), item_id.name(db))
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(item_id)) => {
-                (ImportableId::Enum(item_id), item_id.name(db))
+                let enum_name = item_id.name(db);
+
+                for (name, id) in db.enum_variants(item_id).unwrap_or_default() {
+                    result.push((ImportableId::Variant(id), format!("{enum_name}::{name}")));
+                }
+
+                (ImportableId::Enum(item_id), enum_name)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Extern(item_id)) => {
                 (ImportableId::ExternType(item_id), item_id.name(db))
@@ -194,18 +200,32 @@ fn visible_importables_in_module_ex(
 
         result.push((resolved_item, name.to_string()));
     }
-    for submodule_id in db.module_submodules_ids(module_id).ok()?.iter().copied() {
-        if !is_visible(submodule_id.name(db))? {
+
+    for submodule_id in db.module_submodules_ids(module_id).unwrap_or_default().iter().copied() {
+        if !is_visible(submodule_id.name(db)).unwrap_or_default() {
             continue;
         }
         result.push((ImportableId::Submodule(submodule_id), submodule_id.name(db).to_string()));
         modules_to_visit.push(ModuleId::Submodule(submodule_id));
     }
 
+    // Handle enums separately because we need to include their variants.
+    for enum_id in db.module_enums_ids(module_id).unwrap_or_default().iter().copied() {
+        let enum_name = enum_id.name(db);
+        if !is_visible(enum_name.clone()).unwrap_or_default() {
+            continue;
+        }
+
+        result.push((ImportableId::Enum(enum_id), enum_name.to_string()));
+        for (name, id) in db.enum_variants(enum_id).unwrap_or_default() {
+            result.push((ImportableId::Variant(id), format!("{enum_name}::{name}")));
+        }
+    }
+
     macro_rules! module_importables {
         ($query:ident, $map:expr) => {
-            for item_id in db.$query(module_id).ok()?.iter().copied() {
-                if !is_visible(item_id.name(db))? {
+            for item_id in db.$query(module_id).ok().unwrap_or_default().iter().copied() {
+                if !is_visible(item_id.name(db)).unwrap_or_default() {
                     continue;
                 }
                 result.push(($map(item_id), item_id.name(db).to_string()));
@@ -216,7 +236,6 @@ fn visible_importables_in_module_ex(
     module_importables!(module_constants_ids, ImportableId::Constant);
     module_importables!(module_free_functions_ids, ImportableId::FreeFunction);
     module_importables!(module_structs_ids, ImportableId::Struct);
-    module_importables!(module_enums_ids, ImportableId::Enum);
     module_importables!(module_type_aliases_ids, ImportableId::TypeAlias);
     module_importables!(module_impl_aliases_ids, ImportableId::ImplAlias);
     module_importables!(module_traits_ids, ImportableId::Trait);
@@ -231,7 +250,8 @@ fn visible_importables_in_module_ex(
             user_module_file_id,
             false,
             visited_modules,
-        )?
+        )
+        .unwrap_or_default()
         .iter()
         {
             result.push((*item_id, format!("{}::{}", submodule.name(db), path)));
@@ -249,7 +269,8 @@ fn visible_importables_in_module_ex(
                     user_module_file_id,
                     include_parent,
                     visited_modules,
-                )?
+                )
+                .unwrap_or_default()
                 .iter()
                 {
                     result.push((*item_id, format!("super::{path}")));
