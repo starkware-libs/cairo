@@ -87,6 +87,7 @@
         "finalize_locals",
         "function_call",
         "gas_reserve_create",
+        "gas_reserve_utilize",
         "get_block_hash_syscall",
         "get_builtin_costs",
         "get_circuit_descriptor",
