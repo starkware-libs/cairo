@@ -160,6 +160,8 @@ pub struct ExperimentalFeaturesConfig {
     /// function before calling it.
     #[serde(default)]
     pub coupons: bool,
+    /// Allows using user defined inline macros.
+    pub user_defined_inline_macros: bool,
 }
 
 /// A trait for defining files external to the `filesystem` crate.
@@ -247,6 +249,7 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
                     negative_impls: true,
                     associated_item_constraints: true,
                     coupons: true,
+                    user_defined_inline_macros: true,
                 },
             },
             cache_file: None,

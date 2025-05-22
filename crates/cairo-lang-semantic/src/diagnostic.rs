@@ -357,7 +357,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
-
             SemanticDiagnosticKind::WrongGenericParamTraitForImplFunction {
                 impl_def_id,
                 impl_function_id,
@@ -797,7 +796,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     ty.format(db)
                 )
             }
-
             SemanticDiagnosticKind::UnsupportedInlineArguments => {
                 "Unsupported `inline` arguments.".into()
             }
@@ -1074,6 +1072,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::UndefinedMacroPlaceholder(name) => {
                 format!("Undefined macro placeholder: '{name}'.")
+            }
+            SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled => {
+                "User defined inline macros are disabled in the current crate.".into()
             }
         }
     }
@@ -1514,6 +1515,7 @@ pub enum SemanticDiagnosticKind {
     TypeConstraintsSyntaxNotEnabled,
     PatternMissingArgs(ast::ExprPath),
     UndefinedMacroPlaceholder(String),
+    UserDefinedInlineMacrosDisabled,
 }
 
 /// The kind of an expression with multiple possible return types.

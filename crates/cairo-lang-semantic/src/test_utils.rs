@@ -151,6 +151,7 @@ pub fn setup_test_crate_ex(
                 negative_impls: true,
                 associated_item_constraints: true,
                 coupons: true,
+                user_defined_inline_macros: true,
             },
             cfg_set: Default::default(),
         }

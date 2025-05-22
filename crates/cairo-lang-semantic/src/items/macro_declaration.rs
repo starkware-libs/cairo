@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, MacroDeclarationId, ModuleItemId};
+use cairo_lang_defs::ids::{
+    LanguageElementId, LookupItemId, MacroDeclarationId, ModuleFileId, ModuleItemId,
+};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe, skip_diagnostic};
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
@@ -112,6 +114,13 @@ pub fn priv_macro_declaration_data(
     let module_file_id = macro_declaration_id.module_file_id(db);
     let macro_declaration_syntax =
         db.module_macro_declaration_by_id(macro_declaration_id)?.to_maybe()?;
+    if !are_user_defined_inline_macros_enabled(db, module_file_id) {
+        diagnostics.report(
+            macro_declaration_syntax.stable_ptr(db).untyped(),
+            SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled,
+        );
+    }
+
     let attributes = macro_declaration_syntax.attributes(syntax_db).structurize(syntax_db);
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
         ModuleItemId::MacroDeclaration(macro_declaration_id),
@@ -638,4 +647,14 @@ pub fn macro_declaration_rules(
     macro_declaration_id: MacroDeclarationId,
 ) -> Maybe<Vec<MacroRuleData>> {
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.rules)
+}
+
+/// Returns true if user defined user macros are enabled for the given module.
+fn are_user_defined_inline_macros_enabled(
+    db: &dyn SemanticGroup,
+    module_file_id: ModuleFileId,
+) -> bool {
+    let owning_crate = module_file_id.0.owning_crate(db);
+    let Some(config) = db.crate_config(owning_crate) else { return false };
+    config.settings.experimental_features.user_defined_inline_macros
 }
