@@ -86,6 +86,7 @@ pub extern type GasReserve;
 
 /// Creates a new gas reserve by withdrawing the specified amount from the gas counter.
 /// Returns `Some(GasReserve)` if there is sufficient gas, otherwise returns `None`.
+#[cfg(not(gas: "disabled"))]
 pub extern fn gas_reserve_create(
     amount: u128,
 ) -> Option<GasReserve> implicits(RangeCheck, GasBuiltin) nopanic;
