@@ -593,6 +593,18 @@ fn compute_expr_inline_macro_semantic(
     .intern(ctx.db);
     let expr_syntax = ctx.db.file_expr_syntax(new_file)?;
     let expr = if is_macro_rule {
+        let expr_parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file);
+        for parser_diagnostic in
+            &expr_parser_diagnostics.get_diagnostics_without_duplicates(ctx.db.elongate())
+        {
+            ctx.diagnostics.report(
+                expr_syntax.stable_ptr(ctx.db),
+                SemanticDiagnosticKind::ParserDiagnostic(parser_diagnostic.clone()),
+            );
+        }
+        if ctx.diagnostics.error_count > 0 {
+            return Err(skip_diagnostic());
+        }
         ctx.run_in_macro_subscope(
             |ctx| compute_expr_semantic(ctx, &expr_syntax),
             MacroExpansionResult { text: content, code_mappings: mappings },
