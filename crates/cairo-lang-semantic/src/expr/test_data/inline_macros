@@ -1375,3 +1375,48 @@ error: Parser error in macro-expanded code: Missing tokens. Expected an expressi
  --> lib.cairo[test_macro]:2:12
         1 +
            ^
+
+//! > ==========================================================================
+
+//! > Test macro declaration with the feature flag disabled.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    test_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($x:expr) => {
+        1
+    };
+}
+
+//! > crate_settings
+edition = "2024_07"
+
+[experimental_features]
+negative_impls = true
+associated_item_constraints = true
+coupons = true
+user_defined_inline_macros = false
+
+//! > expected_diagnostics
+error: User defined inline macros are disabled in the current crate.
+ --> lib.cairo:1:1-5:1
+  macro test_macro {
+ _^
+| ...
+| }
+|_^
+
+error: No matching rule found in inline macro `test_macro`.
+ --> lib.cairo:7:5
+    test_macro!();
+    ^^^^^^^^^^^^^

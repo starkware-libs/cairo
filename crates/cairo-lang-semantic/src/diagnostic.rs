@@ -1077,6 +1077,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UndefinedMacroPlaceholder(name) => {
                 format!("Undefined macro placeholder: '{name}'.")
             }
+            SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled => {
+                "User defined inline macros are disabled in the current crate.".into()
+            }
         }
     }
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
@@ -1525,6 +1528,7 @@ pub enum SemanticDiagnosticKind {
     TypeConstraintsSyntaxNotEnabled,
     PatternMissingArgs(ast::ExprPath),
     UndefinedMacroPlaceholder(String),
+    UserDefinedInlineMacrosDisabled,
 }
 
 /// The kind of an expression with multiple possible return types.
