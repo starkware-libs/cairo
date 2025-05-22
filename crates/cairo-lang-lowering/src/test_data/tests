@@ -46,11 +46,12 @@ foo
 
 //! > lowering_diagnostics
 warning: Unreachable code
- --> lib.cairo:3:5-4:6
+ --> lib.cairo:3:5-5:5
       5;
  _____^
 |     6;
-|______^
+|     7
+|_____^
 
 //! > lowering_flat
 Parameters: v0: core::felt252
@@ -66,7 +67,7 @@ End:
 //! > Test unreachable code by match.
 
 //! > test_runner_name
-test_function_lowering(expect_diagnostics: false)
+test_function_lowering(expect_diagnostics: warnings_only)
 
 //! > function
 fn foo(a: never) -> felt252 {
@@ -82,6 +83,10 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+warning: Unreachable code
+ --> lib.cairo:3:5
+    1 + 2
+    ^^^^^
 
 //! > lowering_flat
 Parameters: v0: core::never
