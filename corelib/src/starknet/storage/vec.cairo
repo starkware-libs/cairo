@@ -325,7 +325,7 @@ pub trait MutableVecTrait<T> {
     /// ```
     #[deprecated(
         feature: "starknet-storage-deprecation",
-        note: "Use `starknet::storage::MutableVecTrait::push` instead.",
+        note: "Use `starknet::storage::MutableVecTrait::push` or `starknet::storage::MutableVecTrait::allocate` instead.",
     )]
     fn append(self: T) -> StoragePath<Mutable<Self::ElementType>> {
         Self::allocate(self)
@@ -335,9 +335,10 @@ pub trait MutableVecTrait<T> {
     /// to write the element.
     ///
     /// This function is a replacement for the deprecated `append` function, which allowed
-    /// appending new elements to a vector. Unlike `append`, `allocate` is specifically useful when
-    /// you need to prepare space for elements of unknown or dynamic size (e.g., appending another
-    /// vector).
+    /// appending new elements to a vector.
+    /// Unlike `push`, which gets an existing object to write to the vector, `allocate` is
+    /// specifically useful when you need to prepare space for elements of unknown or dynamic size
+    /// (e.g., appending another vector).
     ///
     /// # Use Case
     ///
