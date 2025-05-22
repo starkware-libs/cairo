@@ -375,7 +375,7 @@ mod callsite_test {
     }
 }
 
-macro array_double_insertion {
+macro statement_expansion {
     [$($x:expr), *] => {
         let mut arr = $defsite::ArrayTrait::new ();
         $(arr.append ($x); arr.append ($x);
@@ -384,8 +384,25 @@ macro array_double_insertion {
 }
 
 #[test]
-fn test_array() {
-    let result = array_double_insertion![1, 2, 3];
+fn test_statement_expansion() {
+    let result = statement_expansion![1, 2, 3];
     let mut expected = array![1, 1, 2, 2, 3, 3];
     assert_eq!(result, expected);
+}
+
+mod defsite_as_type {
+    type u32_redefinition = u32;
+    pub macro use_redefinition {
+        ($x:expr) => {
+            {
+                let mut x: $defsite::u32_redefinition = $x;
+                x
+            }
+        };
+    }
+}
+
+#[test]
+fn test_defsite_as_type() {
+    let _y = defsite_as_type::use_redefinition!(5_u32);
 }
