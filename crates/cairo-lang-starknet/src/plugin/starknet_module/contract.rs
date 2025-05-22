@@ -339,6 +339,7 @@ pub(super) fn generate_contract_specific_code(
     generation_data.into_rewrite_node(db, diagnostics)
 }
 
+/// Generates contract class hash for deploying contracts using cairo-test
 fn generate_test_class_hash(db: &dyn SyntaxGroup, module_ast: &ast::ItemModule) -> RewriteNode {
     let test_class_hash = format!(
         "0x{:x}",
