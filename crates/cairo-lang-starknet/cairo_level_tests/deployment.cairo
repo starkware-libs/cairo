@@ -53,7 +53,7 @@ fn test_redeploy_in_construct() {
 
 
 #[test]
-fn test_typed_deploy() {
+fn test_typed_deploy_default() {
     let deployment_params = DeploymentParamsTrait::new(self_caller::TEST_CLASS_HASH);
     let (contract_address, _) = self_caller::deploy(deployment_params)
         .expect('deployment failed');
@@ -61,7 +61,7 @@ fn test_typed_deploy() {
 }
 
 #[test]
-fn test_typed_redeploy() {
+fn test_typed_redeploy_default() {
     let deployment_params = DeploymentParamsTrait::new(self_caller::TEST_CLASS_HASH);
 
     assert!(self_caller::deploy(deployment_params).is_ok());

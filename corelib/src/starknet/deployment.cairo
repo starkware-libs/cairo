@@ -12,6 +12,7 @@ pub struct DeploymentParams {
     pub deploy_from_zero: bool,
 }
 
+/// Functions associated with the `DeploymentParams` type.
 #[generate_trait]
 pub impl DeploymentParamsImpl of DeploymentParamsTrait {
     /// Creates a new DeploymentParams with default values for salt and deploy_from_zero

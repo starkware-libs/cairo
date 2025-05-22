@@ -9,7 +9,7 @@ const decimals: u8 = 18;
 const supply: u256 = 256;
 
 #[test]
-fn test_typed_deploy() {
+fn test_typed_deploy_default() {
     let recipient: ContractAddress = 'Kamil'.try_into().unwrap();
     let deployment_params = DeploymentParamsTrait::new(erc_20::TEST_CLASS_HASH);
 
@@ -19,7 +19,7 @@ fn test_typed_deploy() {
 }
 
 #[test]
-fn test_typed_redeploy() {
+fn test_typed_redeploy_default() {
     let recipient: ContractAddress = 'Kamil'.try_into().unwrap();
     let deployment_params = DeploymentParamsTrait::new(erc_20::TEST_CLASS_HASH);
 
