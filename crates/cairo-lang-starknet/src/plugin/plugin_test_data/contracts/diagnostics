@@ -318,6 +318,18 @@ pub fn deploy(
     )
 }
 
+#[cfg(target: 'test')]
+pub fn deploy_for_testing(
+    class_hash: starknet::ClassHash,
+    
+) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
+    deploy(
+        starknet::deployment::DeploymentParamsTrait::new(class_hash),
+        
+    )
+}
+
+
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__invalid_constructor_name(mut data: Span::<felt252>) -> Span::<felt252> {
