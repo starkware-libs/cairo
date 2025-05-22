@@ -111,6 +111,10 @@ impl OptimizationStrategyId {
 /// Query implementation of [crate::db::LoweringGroup::baseline_optimization_strategy].
 pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
     OptimizationStrategy(vec![
+        // Must be right before const folding.
+        OptimizationPhase::ReorganizeBlocks,
+        // Apply `ConstFolding` before inlining to get better inlining decisions.
+        OptimizationPhase::ConstFolding,
         OptimizationPhase::ApplyInlining,
         OptimizationPhase::ReturnOptimization,
         OptimizationPhase::ReorganizeBlocks,
