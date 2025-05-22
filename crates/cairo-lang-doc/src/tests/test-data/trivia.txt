@@ -96,8 +96,8 @@ second field
 Content("second field")
 
 //! > Item signature #6
-#[derive(Clone)] 
-#[derive(Drop)] 
+#[derive(Clone)]
+#[derive(Drop)]
 struct Pair2<T, U> {
     pub first: T,
     second: U,

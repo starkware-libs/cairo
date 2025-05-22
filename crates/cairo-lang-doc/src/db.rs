@@ -6,8 +6,8 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::Upcast;
 use itertools::{Itertools, intersperse};
 
-use crate::documentable_formatter::LocationLink;
 use crate::documentable_item::DocumentableItemId;
+use crate::location_links::LocationLink;
 use crate::parser::{DocumentationCommentParser, DocumentationCommentToken};
 
 #[salsa::query_group(DocDatabase)]
