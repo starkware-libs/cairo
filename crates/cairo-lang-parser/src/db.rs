@@ -25,7 +25,8 @@ pub trait ParserGroup:
     fn file_syntax(&self, file_id: FileId) -> Maybe<SyntaxNode>;
     /// Parses a file and returns its AST as a root SyntaxFile.
     fn file_module_syntax(&self, file_id: FileId) -> Maybe<SyntaxFile>;
-    /// Parses a file and returns its AST as an expression.
+    /// Parses a file and returns its AST as an expression. Only used for inline macros expanded
+    /// code.
     fn file_expr_syntax(&self, file_id: FileId) -> Maybe<Expr>;
     /// Returns the parser diagnostics for this file.
     fn file_syntax_diagnostics(&self, file_id: FileId) -> Diagnostics<ParserDiagnostic>;
