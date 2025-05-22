@@ -2746,8 +2746,8 @@ Statements:
   (v0: core::integer::u32) <- 1
   (v1: core::integer::u32) <- 5
   (v2: core::ops::range::Range::<core::integer::u32>) <- core::ops::range::RangeOpImpl::<core::integer::u32>::range(v0, v1)
-  (v3: core::ops::range::RangeIterator::<core::integer::u32>) <- core::ops::range::RangeIntoIterator::<core::integer::u32, core::integer::U32One, core::integer::U32Add, core::integer::u32Copy, core::integer::u32Drop, core::integer::U32PartialEq, core::integer::U32PartialOrd, _>::into_iter(v2)
-  (v5: core::ops::range::RangeIterator::<core::integer::u32>, v4: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- test::foo[30-76](v3)
+  (v3: core::ops::range::internal::IntRange::<core::integer::u32>) <- core::ops::range::SierraRangeIntoIterator::<core::integer::u32, core::integer::u32Copy, core::integer::u32Drop, core::ops::range::SierraIntRangeSupportU32>::into_iter(v2)
+  (v5: core::ops::range::internal::IntRange::<core::integer::u32>, v4: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- test::foo[30-76](v3)
 End:
   Match(match_enum(v4) {
     LoopResult::Normal(v6) => blk1,
@@ -2778,46 +2778,65 @@ blk0 (root):
 Statements:
   (v2: core::integer::u32) <- 1
   (v3: core::integer::u32) <- 5
-  (v4: core::ops::range::RangeIterator::<core::integer::u32>) <- struct_construct(v2, v3)
-  (v5: core::RangeCheck, v6: core::gas::GasBuiltin, v7: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- test::foo[30-76](v0, v1, v4)
 End:
-  Match(match_enum(v7) {
-    PanicResult::Ok(v8) => blk1,
-    PanicResult::Err(v9) => blk4,
+  Match(match core::ops::range::internal::int_range_try_new::<core::integer::u32>(v0, v2, v3) {
+    Result::Ok(v4, v5) => blk1,
+    Result::Err(v6, v7) => blk2,
   })
 
 blk1:
 Statements:
-  (v10: core::ops::range::RangeIterator::<core::integer::u32>, v11: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- struct_destructure(v8)
+  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v1)
 End:
-  Match(match_enum(v11) {
-    LoopResult::Normal(v12) => blk2,
-    LoopResult::EarlyReturn(v13) => blk3,
-  })
+  Goto(blk3, {v4 -> v9, v8 -> v10, v5 -> v11})
 
 blk2:
 Statements:
-  (v14: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v15: ()) <- struct_construct()
-  (v16: core::result::Result::<(), core::integer::u32>) <- Result::Ok(v15)
-  (v17: (core::result::Result::<(), core::integer::u32>,)) <- struct_construct(v16)
-  (v18: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Ok(v17)
+  (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v1)
 End:
-  Return(v5, v14, v18)
+  Goto(blk3, {v6 -> v9, v12 -> v10, v7 -> v11})
 
 blk3:
 Statements:
-  (v19: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v20: (core::result::Result::<(), core::integer::u32>,)) <- struct_construct(v13)
-  (v21: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Ok(v20)
+  (v13: core::RangeCheck, v14: core::gas::GasBuiltin, v15: core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- test::foo[30-76](v9, v10, v11)
 End:
-  Return(v5, v19, v21)
+  Match(match_enum(v15) {
+    PanicResult::Ok(v16) => blk4,
+    PanicResult::Err(v17) => blk7,
+  })
 
 blk4:
 Statements:
-  (v22: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Err(v9)
+  (v18: core::ops::range::internal::IntRange::<core::integer::u32>, v19: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- struct_destructure(v16)
 End:
-  Return(v5, v6, v22)
+  Match(match_enum(v19) {
+    LoopResult::Normal(v20) => blk5,
+    LoopResult::EarlyReturn(v21) => blk6,
+  })
+
+blk5:
+Statements:
+  (v22: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v14)
+  (v23: ()) <- struct_construct()
+  (v24: core::result::Result::<(), core::integer::u32>) <- Result::Ok(v23)
+  (v25: (core::result::Result::<(), core::integer::u32>,)) <- struct_construct(v24)
+  (v26: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Ok(v25)
+End:
+  Return(v13, v22, v26)
+
+blk6:
+Statements:
+  (v27: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v14)
+  (v28: (core::result::Result::<(), core::integer::u32>,)) <- struct_construct(v21)
+  (v29: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Ok(v28)
+End:
+  Return(v13, v27, v29)
+
+blk7:
+Statements:
+  (v30: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Err(v17)
+End:
+  Return(v13, v14, v30)
 
 
 Generated loop lowering for source location:
@@ -2827,10 +2846,10 @@ Generated loop lowering for source location:
 |     }
 |_____^
 
-Parameters: v0: core::ops::range::RangeIterator::<core::integer::u32>
+Parameters: v0: core::ops::range::internal::IntRange::<core::integer::u32>
 blk0 (root):
 Statements:
-  (v2: core::ops::range::RangeIterator::<core::integer::u32>, v1: core::option::Option::<core::integer::u32>) <- core::ops::range::RangeIteratorImpl::<core::integer::u32, core::integer::U32One, core::integer::U32Add, core::integer::u32Copy, core::integer::u32Drop, core::integer::U32PartialEq>::next(v0)
+  (v2: core::ops::range::internal::IntRange::<core::integer::u32>, v1: core::option::Option::<core::integer::u32>) <- core::ops::range::internal::IntRangeIteratorImpl::<core::integer::u32, core::integer::u32Copy, core::integer::u32Drop>::next(v0)
 End:
   Match(match_enum(v1) {
     Option::Some(v3) => blk1,
@@ -2860,7 +2879,7 @@ End:
 
 blk4:
 Statements:
-  (v10: core::ops::range::RangeIterator::<core::integer::u32>, v9: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- test::foo[30-76](v2)
+  (v10: core::ops::range::internal::IntRange::<core::integer::u32>, v9: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- test::foo[30-76](v2)
 End:
   Return(v10, v9)
 
@@ -2873,32 +2892,32 @@ End:
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::ops::range::RangeIterator::<core::integer::u32>
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::ops::range::internal::IntRange::<core::integer::u32>
 blk0 (root):
 Statements:
 End:
   Match(match core::gas::withdraw_gas(v0, v1) {
     Option::Some(v3, v4) => blk1,
-    Option::None(v5, v6) => blk8,
+    Option::None(v5, v6) => blk6,
   })
 
 blk1:
 Statements:
-  (v7: core::integer::u32, v8: core::integer::u32) <- struct_destructure(v2)
 End:
-  Match(match core::integer::u32_eq(v7, v8) {
-    bool::False => blk2,
-    bool::True => blk7,
+  Match(match core::ops::range::internal::int_range_pop_front::<core::integer::u32>(v2) {
+    OptionRev::None => blk2,
+    OptionRev::Some(v7, v8) => blk3,
   })
 
 blk2:
 Statements:
-  (v9: core::integer::u32) <- 1
+  (v9: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v10: ()) <- struct_construct()
+  (v11: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- LoopResult::Normal(v10)
+  (v12: (core::ops::range::internal::IntRange::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)) <- struct_construct(v2, v11)
+  (v13: core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- PanicResult::Ok(v12)
 End:
-  Match(match core::integer::u32_overflowing_add(v3, v7, v9) {
-    Result::Ok(v10, v11) => blk3,
-    Result::Err(v12, v13) => blk6,
-  })
+  Return(v3, v9, v13)
 
 blk3:
 Statements:
@@ -2911,46 +2930,26 @@ End:
 blk4:
 Statements:
   (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v16: core::ops::range::RangeIterator::<core::integer::u32>) <- struct_construct(v11, v8)
-  (v17: core::RangeCheck, v18: core::gas::GasBuiltin, v19: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- test::foo[30-76](v10, v15, v16)
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- test::foo[30-76](v3, v15, v7)
 End:
-  Return(v17, v18, v19)
+  Return(v16, v17, v18)
 
 blk5:
 Statements:
-  (v20: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v21: core::ops::range::RangeIterator::<core::integer::u32>) <- struct_construct(v11, v8)
-  (v22: core::result::Result::<(), core::integer::u32>) <- Result::Err(v14)
-  (v23: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- LoopResult::EarlyReturn(v22)
-  (v24: (core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)) <- struct_construct(v21, v23)
-  (v25: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- PanicResult::Ok(v24)
+  (v19: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v20: core::result::Result::<(), core::integer::u32>) <- Result::Err(v14)
+  (v21: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- LoopResult::EarlyReturn(v20)
+  (v22: (core::ops::range::internal::IntRange::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)) <- struct_construct(v7, v21)
+  (v23: core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- PanicResult::Ok(v22)
 End:
-  Return(v10, v20, v25)
+  Return(v3, v19, v23)
 
 blk6:
 Statements:
-  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
-  (v27: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- PanicResult::Err(v26)
+  (v24: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v25: core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- PanicResult::Err(v24)
 End:
-  Return(v12, v4, v27)
-
-blk7:
-Statements:
-  (v28: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v29: ()) <- struct_construct()
-  (v30: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- LoopResult::Normal(v29)
-  (v31: core::ops::range::RangeIterator::<core::integer::u32>) <- struct_construct(v7, v8)
-  (v32: (core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)) <- struct_construct(v31, v30)
-  (v33: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- PanicResult::Ok(v32)
-End:
-  Return(v3, v28, v33)
-
-blk8:
-Statements:
-  (v34: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v35: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- PanicResult::Err(v34)
-End:
-  Return(v5, v6, v35)
+  Return(v5, v6, v25)
 
 //! > lowering_diagnostics
 
