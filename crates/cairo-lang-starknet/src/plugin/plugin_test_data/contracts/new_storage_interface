@@ -3713,7 +3713,7 @@ warning: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default
 | }
 |_^
 
-warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#[feature("starknet-storage-deprecation")]` attribute. Note: "Use `starknet::storage::MutableVecTrait::push` instead."
+warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#[feature("starknet-storage-deprecation")]` attribute. Note: "Use `starknet::storage::MutableVecTrait::push` or `starknet::storage::MutableVecTrait::allocate` instead."
  --> lib.cairo:151:22
             self.arr.append().write(value);
                      ^^^^^^
