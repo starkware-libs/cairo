@@ -516,8 +516,8 @@ impl<'a> AddStoreVariableStatements<'a> {
     ) {
         self.result.push(simple_statement(
             store_temp_libfunc_id(self.db, ty.clone()),
-            &[var.clone()],
-            &[var_on_stack.clone()],
+            std::slice::from_ref(var),
+            std::slice::from_ref(var_on_stack),
         ));
         known_stack.push(var_on_stack);
     }
@@ -533,7 +533,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         self.result.push(simple_statement(
             store_local_libfunc_id(self.db, ty.clone()),
             &[uninitialized_local_var_id.clone(), var.clone()],
-            &[var.clone()],
+            std::slice::from_ref(var),
         ));
     }
 
@@ -546,7 +546,7 @@ impl<'a> AddStoreVariableStatements<'a> {
     ) {
         self.result.push(simple_statement(
             dup_libfunc_id(self.db, ty.clone()),
-            &[var.clone()],
+            std::slice::from_ref(var),
             &[var.clone(), dup_var.clone()],
         ));
     }
@@ -562,8 +562,8 @@ impl<'a> AddStoreVariableStatements<'a> {
         if src != dst {
             self.result.push(simple_statement(
                 rename_libfunc_id(self.db, ty.clone()),
-                &[src.clone()],
-                &[dst.clone()],
+                std::slice::from_ref(src),
+                std::slice::from_ref(dst),
             ));
         }
     }
