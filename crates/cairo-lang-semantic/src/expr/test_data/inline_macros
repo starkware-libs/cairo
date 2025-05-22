@@ -1347,3 +1347,31 @@ macro test_macro {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro with parser error in the expanded code.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    test_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($($x:expr), *) => {
+        1 +
+    };
+}
+
+//! > expected_diagnostics
+error: Parser error in macro-expanded code: Missing tokens. Expected an expression.
+ --> lib.cairo[test_macro]:2:12
+        1 +
+           ^
