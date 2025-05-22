@@ -230,7 +230,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
-pub fn deploy_with_params(
+pub fn deploy(
     deployment_params: starknet::DeploymentParams,
     name_: felt252,
 symbol_: felt252,
@@ -251,30 +251,6 @@ core::serde::Serde::<ContractAddress>::serialize(@recipient, ref calldata);
         deployment_params.salt,
         core::array::ArrayTrait::span(@calldata),
         deployment_params.deploy_from_zero,
-    )
-}
-
-pub fn deploy(
-    class_hash: starknet::ClassHash,
-    name_: felt252,
-symbol_: felt252,
-decimals_: u8,
-initial_supply: u256,
-recipient: ContractAddress
-) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
-
-    let deployment_params = starknet::DeploymentParams {
-        class_hash: class_hash,
-        salt: 0,
-        deploy_from_zero: true,
-    };
-    deploy_with_params(
-        deployment_params,
-        name_,
-symbol_,
-decimals_,
-initial_supply,
-recipient
     )
 }
 
@@ -2188,7 +2164,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
-pub fn deploy_with_params(
+pub fn deploy(
     deployment_params: starknet::DeploymentParams,
     name_: felt252,
 symbol_: felt252,
@@ -2209,30 +2185,6 @@ core::serde::Serde::<ContractAddress>::serialize(@recipient, ref calldata);
         deployment_params.salt,
         core::array::ArrayTrait::span(@calldata),
         deployment_params.deploy_from_zero,
-    )
-}
-
-pub fn deploy(
-    class_hash: starknet::ClassHash,
-    name_: felt252,
-symbol_: felt252,
-decimals_: u8,
-initial_supply: u256,
-recipient: ContractAddress
-) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
-
-    let deployment_params = starknet::DeploymentParams {
-        class_hash: class_hash,
-        salt: 0,
-        deploy_from_zero: true,
-    };
-    deploy_with_params(
-        deployment_params,
-        name_,
-symbol_,
-decimals_,
-initial_supply,
-recipient
     )
 }
 

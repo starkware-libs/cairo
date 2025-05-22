@@ -159,7 +159,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
-pub fn deploy_with_params(
+pub fn deploy(
     deployment_params: starknet::DeploymentParams,
     initial_counter: u128
 ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {    
@@ -172,22 +172,6 @@ pub fn deploy_with_params(
         deployment_params.salt,
         core::array::ArrayTrait::span(@calldata),
         deployment_params.deploy_from_zero,
-    )
-}
-
-pub fn deploy(
-    class_hash: starknet::ClassHash,
-    initial_counter: u128
-) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
-
-    let deployment_params = starknet::DeploymentParams {
-        class_hash: class_hash,
-        salt: 0,
-        deploy_from_zero: true,
-    };
-    deploy_with_params(
-        deployment_params,
-        initial_counter
     )
 }
 
@@ -1250,7 +1234,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
-pub fn deploy_with_params(
+pub fn deploy(
     deployment_params: starknet::DeploymentParams,
     initial_counter: u128
 ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {    
@@ -1263,22 +1247,6 @@ pub fn deploy_with_params(
         deployment_params.salt,
         core::array::ArrayTrait::span(@calldata),
         deployment_params.deploy_from_zero,
-    )
-}
-
-pub fn deploy(
-    class_hash: starknet::ClassHash,
-    initial_counter: u128
-) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
-
-    let deployment_params = starknet::DeploymentParams {
-        class_hash: class_hash,
-        salt: 0,
-        deploy_from_zero: true,
-    };
-    deploy_with_params(
-        deployment_params,
-        initial_counter
     )
 }
 

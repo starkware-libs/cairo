@@ -11,3 +11,23 @@ pub struct DeploymentParams {
     /// Deploy the contract from the zero address.
     pub deploy_from_zero: bool,
 }
+
+#[generate_trait]
+pub impl DeploymentParamsImpl of DeploymentParamsTrait {
+    /// Creates a new DeploymentParams with default values for salt and deploy_from_zero
+    ///
+    /// # Arguments
+    ///
+    /// * `class_hash` - The class hash of the contract to be deployed
+    ///
+    /// # Returns
+    ///
+    /// A new DeploymentParams instance with default values
+    fn new(class_hash: starknet::ClassHash) -> DeploymentParams {
+        DeploymentParams {
+            class_hash: class_hash,
+            salt: 0,
+            deploy_from_zero: false,
+        }
+    }
+}

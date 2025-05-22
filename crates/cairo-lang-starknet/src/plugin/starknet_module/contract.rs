@@ -389,7 +389,6 @@ fn generate_deploy_function(
 ) -> RewriteNode {
     let mut param_declarations = Vec::new();
     let mut calldata_serialization = Vec::new();
-    let mut param_names = Vec::new();
 
     for (name, ty) in constructor_params.clone() {
         let type_text = ty.as_syntax_node().get_text_without_trivia(db);
@@ -397,17 +396,14 @@ fn generate_deploy_function(
         param_declarations.push(format!("{name}: {type_text}"));
         calldata_serialization
             .push(format!("core::serde::Serde::<{type_text}>::serialize(@{name}, ref calldata);",));
-
-        param_names.push(name.to_string());
     }
 
     let param_declarations_str = param_declarations.join(",\n");
-    let param_names_str = param_names.join(",\n");
     let calldata_serialization_str = calldata_serialization.join("\n");
 
     RewriteNode::Text(formatdoc!(
         "
-        pub fn deploy_with_params(
+        pub fn deploy(
             deployment_params: starknet::DeploymentParams,
             {param_declarations_str}
         ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {{    
@@ -420,22 +416,6 @@ fn generate_deploy_function(
                 deployment_params.salt,
                 core::array::ArrayTrait::span(@calldata),
                 deployment_params.deploy_from_zero,
-            )
-        }}
-    
-        pub fn deploy(
-            class_hash: starknet::ClassHash,
-            {param_declarations_str}
-        ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {{
-    
-            let deployment_params = starknet::DeploymentParams {{
-                class_hash: class_hash,
-                salt: 0,
-                deploy_from_zero: true,
-            }};
-            deploy_with_params(
-                deployment_params,
-                {param_names_str}
             )
         }}
     "
