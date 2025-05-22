@@ -90,3 +90,9 @@ fn test_typed_redeploy_with_params() {
     assert!(self_caller::deploy(deployment_params).is_ok());
     assert!(self_caller::deploy(deployment_params) == Err(array!['CONTRACT_ALREADY_DEPLOYED']));
 }
+
+#[test]
+fn test_typed_deploy_for_testing() {
+    assert!(self_caller::deploy_for_testing(self_caller::TEST_CLASS_HASH).is_ok());
+    assert!(self_caller::deploy_for_testing(self_caller::TEST_CLASS_HASH) == Err(array!['CONTRACT_ALREADY_DEPLOYED']));
+    }
