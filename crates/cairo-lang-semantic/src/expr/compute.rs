@@ -598,7 +598,14 @@ fn compute_expr_inline_macro_semantic(
             MacroExpansionResult { text: content, code_mappings: mappings },
         )
     } else {
-        compute_expr_semantic(ctx, &expr_syntax)
+        let prev_resolver_modifiers_suppression = ctx.resolver.suppress_modifiers_diagnostics;
+        ctx.resolver.set_suppress_modifiers_diagnostics(true);
+        let result = ctx.run_in_macro_subscope(
+            |ctx| compute_expr_semantic(ctx, &expr_syntax),
+            MacroExpansionResult { text: content, code_mappings: mappings },
+        );
+        ctx.resolver.set_suppress_modifiers_diagnostics(prev_resolver_modifiers_suppression);
+        result
     };
     ctx.resolver.macro_call_data = prev_macro_resolver_data;
     Ok(expr.expr)
@@ -3580,7 +3587,7 @@ pub fn get_binded_expr_by_name(
         if let Some(macro_expansion) = &env.macro_code_mappings {
             if let Some(placeholder_expansion) = macro_expansion.get_placeholder_at(cur_offset) {
                 maybe_env = env.parent.as_deref_mut();
-                cur_offset = placeholder_expansion.origin.as_span().unwrap().start;
+                cur_offset = placeholder_expansion.origin.start();
                 continue;
             }
         }

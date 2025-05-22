@@ -1015,13 +1015,9 @@ foo
 macro assert_eq {
     ($x:ident, $y:ident) => {
         if $x != $y {
-            $defsite::panic();
+            $defsite::panic!("Panic!");
         }
     };
-}
-
-fn panic() {
-    panic!("Panic!");
 }
 
 //! > expected_diagnostics
