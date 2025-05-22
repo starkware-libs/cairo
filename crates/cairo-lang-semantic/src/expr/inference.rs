@@ -626,8 +626,8 @@ impl<'db> Inference<'db> {
 
     /// Same as `solve`, but returns the error stable pointer if an error occurred.
     fn solve_ex(&mut self) -> Result<(), (ErrorSet, Option<SyntaxStablePtrId>)> {
-        let mut ambiguous = std::mem::take(&mut self.ambiguous);
-        self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
+        let ambiguous = std::mem::take(&mut self.ambiguous).into_iter();
+        self.pending.extend(ambiguous.map(|(var, _)| var));
         while let Some(var) = self.pending.pop_front() {
             // First inference error stops inference.
             self.solve_single_pending(var).map_err(|err_set| {
@@ -658,8 +658,8 @@ impl<'db> Inference<'db> {
 
         // Something changed.
         self.solved.push(var);
-        let mut ambiguous = std::mem::take(&mut self.ambiguous);
-        self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
+        let ambiguous = std::mem::take(&mut self.ambiguous).into_iter();
+        self.pending.extend(ambiguous.map(|(var, _)| var));
 
         Ok(())
     }
@@ -1149,7 +1149,7 @@ impl<'db> Inference<'db> {
         }
         self.error_status = Err(InferenceErrorStatus::Consumed);
         self.consumed_error = Some(diag_added);
-        mem::take(&mut self.error)
+        self.error.take()
     }
 
     /// Consumes the pending error, if any, and reports it.

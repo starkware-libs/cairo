@@ -400,7 +400,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         statement_location: StatementLocation,
         stmt: &'a Statement,
     ) {
-        if let Some(mut candidate) = std::mem::take(&mut info.candidate) {
+        if let Some(mut candidate) = info.candidate.take() {
             match stmt {
                 Statement::EnumConstruct(enum_construct_stmt)
                     if enum_construct_stmt.output == candidate.match_variable =>

@@ -1488,7 +1488,7 @@ fn lower_expr_loop(
     .intern(ctx.db);
 
     // Generate the function.
-    let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
+    let encapsulating_ctx = ctx.encapsulating_ctx.take().unwrap();
     let loop_ctx = LoopContext { loop_expr_id, early_return_info: early_return_info.clone() };
     let lowered = lower_loop_function(
         encapsulating_ctx,
@@ -1866,7 +1866,7 @@ fn add_capture_destruct_impl(
 
     let location_id = LocationId::from_stable_location(ctx.db, location);
 
-    let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
+    let encapsulating_ctx = ctx.encapsulating_ctx.take().unwrap();
     let return_type = signature.return_type;
     let lowered_impl_res = get_destruct_lowering(
         LoweringContext::new(encapsulating_ctx, function_id, signature, return_type)?,

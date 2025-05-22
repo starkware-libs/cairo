@@ -207,13 +207,13 @@ fn rebuild_blocks(lowered: &mut Lowered, split: SplitMapping) {
             BlockEnd::Goto(target_block_id, remappings) => {
                 stack.push(*target_block_id);
 
-                let mut old_remappings = std::mem::take(remappings);
+                let old_remappings = std::mem::take(remappings);
 
                 ctx.rebuild_remapping(
                     &split,
                     block_id,
                     &mut block.statements,
-                    std::mem::take(&mut old_remappings.remapping).into_iter(),
+                    old_remappings.remapping.into_iter(),
                     remappings,
                 );
             }

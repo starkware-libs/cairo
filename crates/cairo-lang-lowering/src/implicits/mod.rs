@@ -1,9 +1,10 @@
-use std::collections::{HashMap, HashSet};
-
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{LookupIntern, Upcast};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::TypeId;
@@ -21,10 +22,10 @@ struct Context<'a> {
     db: &'a dyn LoweringGroup,
     variables: &'a mut VariableAllocator<'a>,
     lowered: &'a mut Lowered,
-    implicit_index: HashMap<TypeId, usize>,
+    implicit_index: UnorderedHashMap<TypeId, usize>,
     implicits_tys: Vec<TypeId>,
-    implicit_vars_for_block: HashMap<BlockId, Vec<VarUsage>>,
-    visited: HashSet<BlockId>,
+    implicit_vars_for_block: UnorderedHashMap<BlockId, Vec<VarUsage>>,
+    visited: UnorderedHashSet<BlockId>,
     location: LocationId,
 }
 
@@ -61,8 +62,7 @@ pub fn inner_lower_implicits(
 
     let implicits_tys = db.function_with_body_implicits(function_id)?;
 
-    let implicit_index =
-        HashMap::from_iter(implicits_tys.iter().enumerate().map(|(i, ty)| (*ty, i)));
+    let implicit_index = implicits_tys.iter().enumerate().map(|(i, ty)| (*ty, i)).collect();
     let mut ctx = Context {
         db,
         variables: &mut variables,
@@ -276,7 +276,7 @@ impl<'a, T: Upcast<dyn LoweringGroup + 'a> + ?Sized> FunctionImplicitsTrait<'a> 
 /// Query implementation of [LoweringGroup::scc_implicits].
 pub fn scc_implicits(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> Maybe<Vec<TypeId>> {
     let scc_functions = db.lowered_scc(scc.0, DependencyType::Call, LoweringStage::PostBaseline);
-    let mut all_implicits = HashSet::new();
+    let mut all_implicits = OrderedHashSet::<_>::default();
     for function in scc_functions {
         // Add the function's explicit implicits.
         all_implicits.extend(function.function_id(db)?.signature(db)?.implicits);

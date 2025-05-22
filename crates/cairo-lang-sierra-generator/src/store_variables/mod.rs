@@ -150,7 +150,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 let libfunc_id = invocation.libfunc_id.clone();
                 let libfunc_info = get_lib_func_signature(libfunc_id.clone());
                 let signature = libfunc_info.signature;
-                let state = &mut state_opt.unwrap_or_default();
+                let mut state = state_opt.unwrap_or_default();
 
                 let libfunc_long_id = libfunc_id.lookup_intern(self.db);
                 let arg_states = match libfunc_long_id.generic_id.0.as_str() {
@@ -161,7 +161,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         invocation.args.iter().map(|var| state.pop_var_state(var)).collect()
                     }
                     _ => self.prepare_libfunc_arguments(
-                        state,
+                        &mut state,
                         &invocation.args,
                         &signature.param_signatures,
                     ),
@@ -174,7 +174,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                             SierraApChange::Unknown => {
                                 // If the ap-change is unknown, variables that will be revoked
                                 // otherwise should be stored as locals.
-                                self.store_variables_as_locals(state);
+                                self.store_variables_as_locals(&mut state);
                             }
                             SierraApChange::BranchAlign | SierraApChange::Known { .. } => {}
                         }
@@ -185,12 +185,12 @@ impl<'a> AddStoreVariableStatements<'a> {
                             &invocation.args,
                             &arg_states,
                         );
-                        state_opt = Some(std::mem::take(state));
+                        state_opt = Some(state);
                     }
                     _ => {
                         // This starts a branch. Store all deferred variables.
                         if invocation.branches.len() > 1 {
-                            self.store_all_possibly_lost_variables(state);
+                            self.store_all_possibly_lost_variables(&mut state);
                         }
 
                         // Go over the branches. The state of a branch that points to `Fallthrough`
@@ -232,7 +232,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 // Merge self.known_stack with the future_stack that corresponds to the label, if
                 // any.
                 state_opt = merge_optional_states(
-                    std::mem::take(&mut state_opt),
+                    state_opt.take(),
                     self.future_states.swap_remove(label_id),
                 );
 
@@ -580,8 +580,7 @@ impl<'a> AddStoreVariableStatements<'a> {
     ) {
         match target {
             GenBranchTarget::Fallthrough => {
-                let new_state =
-                    merge_optional_states(std::mem::take(fallthrough_state), Some(state));
+                let new_state = merge_optional_states(fallthrough_state.take(), Some(state));
                 *fallthrough_state = new_state;
             }
             GenBranchTarget::Statement(label_id) => {
