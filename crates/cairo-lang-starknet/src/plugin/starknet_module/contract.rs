@@ -351,6 +351,8 @@ fn generate_test_class_hash(db: &dyn SyntaxGroup, module_ast: &ast::ItemModule) 
 "
     ))
 }
+
+/// Generate contract-specific deploy functions.
 fn generate_constructor_deploy_function(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
