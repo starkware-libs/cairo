@@ -6,7 +6,6 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id, require};
-use key_fields::get_key_fields;
 use smol_str::SmolStr;
 
 use self::ast::TriviaGreen;
@@ -130,22 +129,29 @@ impl SyntaxNode {
         let green_node = self.green_node(db);
         require(green_node.kind.is_terminal())?;
         // At this point we know we should have a second child which is the token.
-        self.get_children(db).into_iter().nth(1)
+        self.get_children(db).get(1).copied()
     }
 
-    pub fn get_children(&self, db: &dyn SyntaxGroup) -> Vec<SyntaxNode> {
+    /// Gets the children syntax nodes of the current node.
+    pub fn get_children(&self, db: &dyn SyntaxGroup) -> Arc<[SyntaxNode]> {
+        db.get_children(*self)
+    }
+
+    /// Implementation of [SyntaxNode::get_children].
+    fn get_children_impl(&self, db: &dyn SyntaxGroup) -> Vec<SyntaxNode> {
         let mut res: Vec<SyntaxNode> = Vec::new();
 
-        let mut offset = self.offset(db);
+        let long_id = self.lookup_intern(db);
+        let mut offset = long_id.offset;
         let mut key_map = UnorderedHashMap::<_, usize>::default();
-        for green_id in self.green_node(db).children() {
+        for green_id in long_id.green.lookup_intern(db).children() {
             let green = green_id.lookup_intern(db);
             let width = green.width();
             let kind = green.kind;
-            let key_fields: Vec<GreenId> = get_key_fields(kind, green.children());
+            let key_fields = key_fields::get_key_fields(kind, green.children());
             let key_count = key_map.entry((kind, key_fields.clone())).or_default();
             let stable_ptr = SyntaxStablePtr::Child {
-                parent: self.stable_ptr(db),
+                parent: long_id.stable_ptr,
                 kind,
                 key_fields,
                 index: *key_count,
@@ -191,7 +197,7 @@ impl SyntaxNode {
                 }
                 if let Some(child) = self
                     .get_children(db)
-                    .into_iter()
+                    .iter()
                     .filter(|child| child.width(db) != TextWidth::default())
                     .next_back()
                 {
@@ -206,7 +212,7 @@ impl SyntaxNode {
 
     /// Lookups a syntax node using an offset.
     pub fn lookup_offset(&self, db: &dyn SyntaxGroup, offset: TextOffset) -> SyntaxNode {
-        for child in self.get_children(db) {
+        for child in self.get_children(db).iter() {
             if child.offset(db).add_width(child.width(db)) > offset {
                 return child.lookup_offset(db, offset);
             }
@@ -238,7 +244,7 @@ impl SyntaxNode {
         match &self.green_node(db).as_ref().details {
             green::GreenNodeDetails::Token(text) => buffer.push_str(text),
             green::GreenNodeDetails::Node { .. } => {
-                for child in self.get_children(db) {
+                for child in self.get_children(db).iter() {
                     let kind = child.kind(db);
 
                     // Checks all the items that the inner comment can be bubbled to (implementation
@@ -250,7 +256,7 @@ impl SyntaxNode {
                             | SyntaxKind::TraitItemFunction
                     ) {
                         buffer.push_str(&SyntaxNode::get_text_without_inner_commentable_children(
-                            &child, db,
+                            child, db,
                         ));
                     }
                 }
@@ -267,8 +273,8 @@ impl SyntaxNode {
         match &self.green_node(db).as_ref().details {
             green::GreenNodeDetails::Token(text) => buffer.push_str(text),
             green::GreenNodeDetails::Node { .. } => {
-                for child in self.get_children(db) {
-                    if let Some(trivia) = ast::Trivia::cast(db, child) {
+                for child in self.get_children(db).iter() {
+                    if let Some(trivia) = ast::Trivia::cast(db, *child) {
                         trivia.elements(db).iter().for_each(|element| {
                             if !matches!(
                                 element,
@@ -285,7 +291,7 @@ impl SyntaxNode {
                         });
                     } else {
                         buffer
-                            .push_str(&SyntaxNode::get_text_without_all_comment_trivia(&child, db));
+                            .push_str(&SyntaxNode::get_text_without_all_comment_trivia(child, db));
                     }
                 }
             }
@@ -493,8 +499,8 @@ impl Display for NodeTextFormatter<'_> {
         match &self.node.green_node(self.db).as_ref().details {
             green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
             green::GreenNodeDetails::Node { .. } => {
-                for child in self.node.get_children(self.db) {
-                    write!(f, "{}", NodeTextFormatter { node: &child, db: self.db })?;
+                for child in self.node.get_children(self.db).iter() {
+                    write!(f, "{}", NodeTextFormatter { node: child, db: self.db })?;
                 }
             }
         }

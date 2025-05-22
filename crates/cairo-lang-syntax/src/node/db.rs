@@ -17,4 +17,11 @@ pub trait SyntaxGroup: FilesGroup + Upcast<dyn FilesGroup> {
     fn intern_stable_ptr(&self, field: SyntaxStablePtr) -> SyntaxStablePtrId;
     #[salsa::interned]
     fn intern_syntax_node(&self, field: SyntaxNodeLongId) -> SyntaxNode;
+
+    /// Query for caching [SyntaxNode::get_children].
+    fn get_children(&self, node: SyntaxNode) -> Arc<[SyntaxNode]>;
+}
+
+fn get_children(db: &dyn SyntaxGroup, node: SyntaxNode) -> Arc<[SyntaxNode]> {
+    node.get_children_impl(db).into()
 }
