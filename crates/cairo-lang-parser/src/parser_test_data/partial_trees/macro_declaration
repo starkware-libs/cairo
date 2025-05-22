@@ -201,7 +201,7 @@ error: Placeholder expression ($expression) is allowed only in the context of a 
 test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
-macro macro_name {
+macro macro_name {d.
     ($x:unknown) => {
         2 + $x
     };
@@ -212,6 +212,11 @@ macro macro_name {
 //! > ignored_kinds
 
 //! > expected_diagnostics
+error: Skipped tokens. Expected: macro rule.
+ --> dummy_file.cairo:1:19
+macro macro_name {d.
+                  ^^
+
 error: Missing tokens. Expected a macro rule parameter kind.
  --> dummy_file.cairo:2:9
     ($x:unknown) => {
