@@ -126,11 +126,6 @@ error: Plugin diagnostic: Macro `array` does not support this bracket type.
     let _x = array!(0);
                    ^
 
-error: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u8".
- --> lib.cairo:3:32
-    let _x = array![0_felt252, 1_u8];
-                               ^^^^
-
 //! > ==========================================================================
 
 //! > Test bad write! macros
@@ -227,15 +222,15 @@ error: Plugin diagnostic: Format string argument must be a string literal.
     write!(f, ba);
               ^^
 
-error[E0006]: Identifier not found.
- --> lib.cairo:21:17
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::option::OptionTrait::unwrap and core::result::ResultTrait::unwrap. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:21:33
     write!(f, "{non_existing}").unwrap();
-                ^^^^^^^^^^^^
+                                ^^^^^^
 
-error[E0006]: Identifier not found.
- --> lib.cairo:24:21
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::option::OptionTrait::unwrap and core::result::ResultTrait::unwrap. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:24:35
     write!(f, "{}", non_existing).unwrap();
-                    ^^^^^^^^^^^^
+                                  ^^^^^^
 
 error: Plugin diagnostic: Unused argument.
  --> lib.cairo:27:25
@@ -316,6 +311,11 @@ error: Plugin diagnostic: Invalid format string: Unterminated placeholder: no ma
  --> lib.cairo:55:15
     write!(f, "{x");
               ^^^^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:2:13
+    let mut f: core::fmt::Formatter = Default::default();
+            ^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:9
@@ -418,15 +418,15 @@ error: Plugin diagnostic: Format string argument must be a string literal.
     writeln!(f, ba);
                 ^^
 
-error[E0006]: Identifier not found.
- --> lib.cairo:21:19
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::option::OptionTrait::unwrap and core::result::ResultTrait::unwrap. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:21:35
     writeln!(f, "{non_existing}").unwrap();
-                  ^^^^^^^^^^^^
+                                  ^^^^^^
 
-error[E0006]: Identifier not found.
- --> lib.cairo:24:23
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::option::OptionTrait::unwrap and core::result::ResultTrait::unwrap. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:24:37
     writeln!(f, "{}", non_existing).unwrap();
-                      ^^^^^^^^^^^^
+                                    ^^^^^^
 
 error: Plugin diagnostic: Unused argument.
  --> lib.cairo:27:27
@@ -509,6 +509,11 @@ error: Plugin diagnostic: Invalid format string: Unterminated placeholder: no ma
                 ^^^^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:2:13
+    let mut f: core::fmt::Formatter = Default::default();
+            ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:9
     let ba: ByteArray = "hello";
         ^^
@@ -570,46 +575,6 @@ error: Plugin diagnostic: Macro `write` does not support this bracket type.
  --> lib.cairo:5:12
     format!["{}", ba];
            ^
-
-error: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:8:12
-    format!();
-           ^
-
-error: Plugin diagnostic: Format string argument must be a string literal.
- --> lib.cairo:11:13
-    format!(ba);
-            ^^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:14:15
-    format!("{non_existing}");
-              ^^^^^^^^^^^^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:17:19
-    format!("{}", non_existing);
-                  ^^^^^^^^^^^^
-
-error: Plugin diagnostic: Unused argument.
- --> lib.cairo:20:23
-    format!("{}", ba, 1);
-                      ^
-
-error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
- --> lib.cairo:23:13
-    format!("{}{}", ba);
-            ^^^^^^
-
-error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
- --> lib.cairo:26:13
-    format!("{2}{1}{0}", ba, 1);
-            ^^^^^^^^^^^
-
-error: Plugin diagnostic: Unused argument.
- --> lib.cairo:29:27
-    format!("{2}{0}", ba, 2, 1);
-                          ^
 
 error: Plugin diagnostic: Macro can not be parsed as legacy macro. Expected an argument list wrapped in either parentheses, brackets, or braces.
  --> lib.cairo:32:5
@@ -679,46 +644,6 @@ error: Plugin diagnostic: Macro `write` does not support this bracket type.
     print!["{}", ba];
           ^
 
-error: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:8:11
-    print!();
-          ^
-
-error: Plugin diagnostic: Format string argument must be a string literal.
- --> lib.cairo:11:12
-    print!(ba);
-           ^^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:14:14
-    print!("{non_existing}");
-             ^^^^^^^^^^^^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:17:18
-    print!("{}", non_existing);
-                 ^^^^^^^^^^^^
-
-error: Plugin diagnostic: Unused argument.
- --> lib.cairo:20:22
-    print!("{}", ba, 1);
-                     ^
-
-error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
- --> lib.cairo:23:12
-    print!("{}{}", ba);
-           ^^^^^^
-
-error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
- --> lib.cairo:26:12
-    print!("{2}{1}{0}", ba, 1);
-           ^^^^^^^^^^^
-
-error: Plugin diagnostic: Unused argument.
- --> lib.cairo:29:26
-    print!("{2}{0}", ba, 2, 1);
-                         ^
-
 error: Plugin diagnostic: Macro can not be parsed as legacy macro. Expected an argument list wrapped in either parentheses, brackets, or braces.
  --> lib.cairo:32:5
     print!;
@@ -787,46 +712,6 @@ error: Plugin diagnostic: Macro `writeln` does not support this bracket type.
     println!["{}", ba];
             ^
 
-error: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:8:13
-    println!();
-            ^
-
-error: Plugin diagnostic: Format string argument must be a string literal.
- --> lib.cairo:11:14
-    println!(ba);
-             ^^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:14:16
-    println!("{non_existing}");
-               ^^^^^^^^^^^^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:17:20
-    println!("{}", non_existing);
-                   ^^^^^^^^^^^^
-
-error: Plugin diagnostic: Unused argument.
- --> lib.cairo:20:24
-    println!("{}", ba, 1);
-                       ^
-
-error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
- --> lib.cairo:23:14
-    println!("{}{}", ba);
-             ^^^^^^
-
-error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
- --> lib.cairo:26:14
-    println!("{2}{1}{0}", ba, 1);
-             ^^^^^^^^^^^
-
-error: Plugin diagnostic: Unused argument.
- --> lib.cairo:29:28
-    println!("{2}{0}", ba, 2, 1);
-                           ^
-
 error: Plugin diagnostic: Macro can not be parsed as legacy macro. Expected an argument list wrapped in either parentheses, brackets, or braces.
  --> lib.cairo:32:5
     println!;
@@ -886,41 +771,6 @@ error: Plugin diagnostic: Macro `panic` does not support this bracket type.
  --> lib.cairo:5:11
     panic!["{}", ba];
           ^
-
-error: Plugin diagnostic: Format string argument must be a string literal.
- --> lib.cairo:11:12
-    panic!(ba);
-           ^^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:14:14
-    panic!("{non_existing}");
-             ^^^^^^^^^^^^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:17:18
-    panic!("{}", non_existing);
-                 ^^^^^^^^^^^^
-
-error: Plugin diagnostic: Unused argument.
- --> lib.cairo:20:22
-    panic!("{}", ba, 1);
-                     ^
-
-error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
- --> lib.cairo:23:12
-    panic!("{}{}", ba);
-           ^^^^^^
-
-error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
- --> lib.cairo:26:12
-    panic!("{2}{1}{0}", ba, 1);
-           ^^^^^^^^^^^
-
-error: Plugin diagnostic: Unused argument.
- --> lib.cairo:29:26
-    panic!("{2}{0}", ba, 2, 1);
-                         ^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
@@ -1351,3 +1201,31 @@ macro test_macro {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro with parser error in the expanded code.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    test_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($($x:expr), *) => {
+        1 +
+    };
+}
+
+//! > expected_diagnostics
+error: Parser error: Missing tokens. Expected an expression.
+ --> lib.cairo[test_macro]:2:12
+        1 +
+           ^

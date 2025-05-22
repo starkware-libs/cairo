@@ -9228,47 +9228,10 @@ Consider adding or removing snapshots.
             get_dep_component!(self, Comp1).foo1();
                                ^^^^
 
-error: Expected variable or constant, found impl.
- --> lib.cairo:56:32
-            get_dep_component!(Comp1, @self).foo1();
-                               ^^^^^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:56:40
-            get_dep_component!(Comp1, @self).foo1();
-                                       ^^^^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:57:40
-            get_dep_component!(@self, @self).foo1();
-                                       ^^^^
-
-error: Expected variable or constant, found impl.
- --> lib.cairo:58:32
-            get_dep_component!(Comp1, Comp1).foo1();
-                               ^^^^^
-
-error[E0002]: Method `foo1` not found on type `@test::component2::ComponentState::<TContractState>`. Did you import the correct trait and impl?
- --> lib.cairo:59:46
-            get_dep_component!(@self, Comp2).foo1();
-                                             ^^^^
-
-error: Invalid path.
- --> lib.cairo:60:13
-            get_dep_component!(@self, super::NotHasComponent).foo1();
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?14>", found: "core::felt252".
-It is possible that the type inference failed because the types differ in the number of snapshots.
-Consider adding or removing snapshots.
- --> lib.cairo:62:32
-            get_dep_component!(not_contract_state, Comp1).foo1();
-                               ^^^^^^^^^^^^^^^^^^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:63:39
-            get_dep_component!(@self, NonExistingImpl).foo1();
-                                      ^^^^^^^^^^^^^^^
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:61:17
+            let not_contract_state: felt252 = 0;
+                ^^^^^^^^^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -10617,27 +10580,6 @@ error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro mu
  --> lib.cairo:51:36
             get_dep_component_mut!(Comp1, self).foo1();
                                    ^^^^^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:52:46
-            get_dep_component_mut!(ref self, self).foo1();
-                                             ^^^^
-
-error: Expected variable or constant, found impl.
- --> lib.cairo:53:40
-            get_dep_component_mut!(ref Comp1, Comp1).foo1();
-                                       ^^^^^
-
-error: ref argument must be a variable.
- --> lib.cairo:53:40
-            get_dep_component_mut!(ref Comp1, Comp1).foo1();
-                                       ^^^^^
-
-error[E0002]: Method `foo1` could not be called on type `test::component2::ComponentState::<TContractState>`.
-Candidate `test::component1::Comp1HelperTrait::foo1` inference failed with: Type mismatch: `test::component2::ComponentState::<TContractState>` and `@test::component1::ComponentState::<?8>`.
- --> lib.cairo:54:53
-            get_dep_component_mut!(ref self, Comp2).foo1();
-                                                    ^^^^
 
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
  --> lib.cairo:55:36
