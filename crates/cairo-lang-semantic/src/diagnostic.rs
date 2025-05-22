@@ -14,6 +14,7 @@ use cairo_lang_diagnostics::{
 };
 use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::span::TextWidth;
+use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
@@ -357,7 +358,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
-
             SemanticDiagnosticKind::WrongGenericParamTraitForImplFunction {
                 impl_def_id,
                 impl_function_id,
@@ -729,6 +729,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::PluginDiagnostic(diagnostic) => {
                 format!("Plugin diagnostic: {}", diagnostic.message)
             }
+            SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(parser_diagnostic) => {
+                format!("Parser error in macro-expanded code: {}", parser_diagnostic.format(db))
+            }
             SemanticDiagnosticKind::NameDefinedMultipleTimes(name) => {
                 format!("The name `{name}` is defined multiple times.")
             }
@@ -797,7 +800,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     ty.format(db)
                 )
             }
-
             SemanticDiagnosticKind::UnsupportedInlineArguments => {
                 "Unsupported `inline` arguments.".into()
             }
@@ -1077,16 +1079,24 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
         }
     }
-
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        if let SemanticDiagnosticKind::PluginDiagnostic(diag) = &self.kind {
-            if let Some(relative_span) = diag.relative_span {
-                return self.stable_location.diagnostic_location_with_offsets(
-                    db,
-                    relative_span.start.as_u32(),
-                    relative_span.end.as_u32(),
-                );
+        match &self.kind {
+            SemanticDiagnosticKind::PluginDiagnostic(diag) => {
+                if let Some(relative_span) = diag.relative_span {
+                    return self.stable_location.diagnostic_location_with_offsets(
+                        db,
+                        relative_span.start.as_u32(),
+                        relative_span.end.as_u32(),
+                    );
+                }
             }
+            SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(parser_diagnostic) => {
+                return DiagnosticLocation {
+                    file_id: parser_diagnostic.file_id,
+                    span: parser_diagnostic.span,
+                };
+            }
+            _ => (),
         }
 
         let mut location = self.stable_location.diagnostic_location(db);
@@ -1404,6 +1414,7 @@ pub enum SemanticDiagnosticKind {
     },
     PanicableFromNonPanicable,
     PanicableExternFunction,
+    MacroGeneratedCodeParserDiagnostic(ParserDiagnostic),
     PluginDiagnostic(PluginDiagnostic),
     NameDefinedMultipleTimes(SmolStr),
     NonPrivateUseStar,
