@@ -189,7 +189,7 @@ fn get_underscore_pattern_path_and_mark_unreachable(
     for arm in arms.iter().skip(otherwise_variant.arm_index + 1) {
         match arm {
             MatchArmWrapper::Arm(patterns, _expr) => {
-                for pattern in patterns.iter() {
+                for pattern in *patterns {
                     let pattern_ptr = ctx.function_body.arenas.patterns[*pattern].stable_ptr();
                     ctx.diagnostics.report(
                         pattern_ptr,
@@ -293,7 +293,7 @@ impl VariantMatchTree {
                 leaves.insert(*pattern_path);
             }
             VariantMatchTree::Mapping(mapping) => {
-                for path in mapping.iter() {
+                for path in mapping {
                     path.collect_leaves(leaves);
                 }
             }
