@@ -32,4 +32,6 @@ mod renamed_storage_test;
 mod replace_class_test;
 #[cfg(test)]
 mod storage_access;
+#[cfg(test)]
+mod deployment_erc20;
 mod utils;
