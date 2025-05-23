@@ -104,7 +104,7 @@ impl UseTree {
             child.organize_self_imports();
             // If the expected imports are only of `self` pushing them to parent.
             if child.leaves.iter().all(|leaf| leaf.name == "self") {
-                for leaf in std::mem::take(&mut child.leaves) {
+                for leaf in child.leaves.drain(..) {
                     self.leaves.push(Leaf { name: segment.clone(), alias: leaf.alias });
                 }
             }
@@ -1139,9 +1139,8 @@ impl<'a> FormatterImpl<'a> {
             return;
         }
         // Split list into `use` path parts and TokenComma.
-        let (mut sorted_elements, commas): (Vec<_>, Vec<_>) = std::mem::take(children)
-            .into_iter()
-            .partition(|node| node.kind(self.db) != SyntaxKind::TerminalComma);
+        let (mut sorted_elements, commas): (Vec<_>, Vec<_>) =
+            children.drain(..).partition(|node| node.kind(self.db) != SyntaxKind::TerminalComma);
 
         // Sort the filtered nodes by comparing their `UsePath`.
         sorted_elements.sort_by(|a_node, b_node| {
