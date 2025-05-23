@@ -409,7 +409,7 @@ impl LoweredExprExternEnum {
 pub type LoweringResult<T> = Result<T, LoweringFlowError>;
 
 /// Cases where the flow of lowering an expression should halt.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
     Failed(DiagnosticAdded),
