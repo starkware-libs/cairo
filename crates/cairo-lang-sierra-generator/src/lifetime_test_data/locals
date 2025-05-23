@@ -53,3 +53,7 @@ v0: ((BlockId(1), 0), 0)
 PostStatement((BlockId(2), 2)): v4
 BeginningOfBlock(BlockId(2)): v1
 BeginningOfBlock(BlockId(1)): UninitializedLocal(v2)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics

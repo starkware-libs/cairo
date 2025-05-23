@@ -40,3 +40,7 @@ v0: ((BlockId(0), 0), 1)
 PostStatement((BlockId(0), 4)): v6
 PostStatement((BlockId(0), 2)): v4
 BeginningOfBlock(BlockId(0)): v1
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics

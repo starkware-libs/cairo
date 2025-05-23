@@ -100,3 +100,7 @@ PostStatement((BlockId(4), 0)): v18
 PostStatement((BlockId(1), 2)): v9
 BeginningOfBlock(BlockId(1)): v4, v2, v1
 BeginningOfBlock(BlockId(3)): v6, v1
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics

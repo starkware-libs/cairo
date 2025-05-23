@@ -154,7 +154,6 @@ fn test_error_propagation() {
         loop {
             bar(a)?;
         }
-        Err(7)
     };
 
     let loop_func2 = |a: u32| -> Result<(), u32> {

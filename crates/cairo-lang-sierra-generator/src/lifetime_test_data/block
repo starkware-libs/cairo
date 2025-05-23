@@ -43,3 +43,7 @@ v0: ((BlockId(0), 0), 1)
 //! > drops
 PostStatement((BlockId(0), 3)): v4
 PostStatement((BlockId(0), 1)): v2
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics

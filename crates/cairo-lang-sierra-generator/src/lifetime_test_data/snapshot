@@ -27,3 +27,7 @@ v0: ((BlockId(0), 0), 0)
 
 //! > drops
 PostStatement((BlockId(0), 0)): v1
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics

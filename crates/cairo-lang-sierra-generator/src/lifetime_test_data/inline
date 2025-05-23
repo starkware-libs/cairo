@@ -50,6 +50,10 @@ v0: ((BlockId(0), 0), 0)
 //! > drops
 BeginningOfBlock(BlockId(2)): v1
 
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
 //! > ==========================================================================
 
 //! > Test variable lifetime in inlining scenario with callsite
@@ -127,6 +131,10 @@ v1: ((BlockId(0), 1), 1)
 BeginningOfBlock(BlockId(3)): v4
 BeginningOfBlock(BlockId(4)): v3
 
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
 //! > ==========================================================================
 
 //! > Test variable lifetime with local variables
@@ -189,6 +197,10 @@ v0: ((BlockId(1), 0), 0)
 //! > drops
 BeginningOfBlock(BlockId(2)): v1
 BeginningOfBlock(BlockId(1)): UninitializedLocal(v2)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > ==========================================================================
 
@@ -254,3 +266,7 @@ v0: ((BlockId(0), 0), 0)
 
 //! > drops
 BeginningOfBlock(BlockId(0)): v2
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics

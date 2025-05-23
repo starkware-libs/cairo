@@ -543,18 +543,18 @@ fn lower_expr_block(
             continue;
         };
         if err.is_unreachable() {
+            let stmt_ptr = |id| ctx.function_body.arenas.statements[id].stable_ptr().untyped();
+            let tail_ptr =
+                expr_block.tail.map(|id| ctx.function_body.arenas.exprs[id].stable_ptr().untyped());
             // If flow is not reachable anymore, no need to continue emitting statements.
-            // TODO(spapini): We might want to report unreachable for expr that abruptly
-            // ends, e.g. `5 + {return; 6}`.
-            if i + 1 < expr_block.statements.len() {
-                let start_stmt = &ctx.function_body.arenas.statements[expr_block.statements[i + 1]];
-                let end_stmt =
-                    &ctx.function_body.arenas.statements[*expr_block.statements.last().unwrap()];
-                // Emit diagnostic for the rest of the statements with unreachable.
-                ctx.diagnostics.report(
-                    start_stmt.stable_ptr().untyped(),
-                    Unreachable { last_statement_ptr: end_stmt.into() },
-                );
+            if let Some(start_ptr) =
+                expr_block.statements.get(i + 1).copied().map(stmt_ptr).or(tail_ptr)
+            {
+                let end_ptr = tail_ptr
+                    .or_else(|| expr_block.statements.last().copied().map(stmt_ptr))
+                    .unwrap();
+                // Emit diagnostic for the rest of the block with unreachable.
+                ctx.diagnostics.report(start_ptr, Unreachable { block_end_ptr: end_ptr });
             }
         }
         return Err(err);

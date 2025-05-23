@@ -46,6 +46,10 @@ v0: ((BlockId(0), 0), 0)
 //! > drops
 BeginningOfBlock(BlockId(2)): v2, v1
 
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
 //! > ==========================================================================
 
 //! > Last use after branch
@@ -95,6 +99,10 @@ v0: ((BlockId(0), 0), 0)
 
 //! > drops
 BeginningOfBlock(BlockId(2)): v2
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > ==========================================================================
 
@@ -148,6 +156,10 @@ v0: ((BlockId(0), 0), 0)
 PostStatement((BlockId(2), 1)): v4
 BeginningOfBlock(BlockId(2)): v2
 BeginningOfBlock(BlockId(1)): v1
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > ==========================================================================
 
@@ -239,3 +251,7 @@ BeginningOfBlock(BlockId(5)): v7
 BeginningOfBlock(BlockId(6)): v5, v1, v0
 BeginningOfBlock(BlockId(2)): v2
 BeginningOfBlock(BlockId(1)): v1, v0
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
