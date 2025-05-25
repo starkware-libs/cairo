@@ -13,15 +13,15 @@ use super::var_renamer::VarRenamer;
 use crate::ids::LocationId;
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, Statement, StatementStructConstruct,
-    StatementStructDestructure, VarRemapping, VarUsage, Variable, VariableId,
+    BlockEnd, BlockId, Lowered, Statement, StatementStructConstruct, StatementStructDestructure,
+    VarRemapping, VarUsage, Variable, VariableId,
 };
 
 /// Splits all the variables that were created by struct_construct and reintroduces the
 /// struct_construct statement when needed.
 ///
 /// Note that if a member is used after the struct then it means that the struct is copyable.
-pub fn split_structs(lowered: &mut FlatLowered) {
+pub fn split_structs(lowered: &mut Lowered) {
     if lowered.blocks.is_empty() {
         return;
     }
@@ -47,7 +47,7 @@ type SplitMapping = UnorderedHashMap<VariableId, SplitInfo>;
 type ReconstructionMapping = OrderedHashMap<VariableId, Option<BlockId>>;
 
 /// Returns a mapping from variables that should be split to the variables resulting from the split.
-fn get_var_split(lowered: &mut FlatLowered) -> SplitMapping {
+fn get_var_split(lowered: &mut Lowered) -> SplitMapping {
     let mut split = UnorderedHashMap::<VariableId, SplitInfo>::default();
 
     let mut stack = vec![BlockId::root()];
@@ -77,7 +77,7 @@ fn get_var_split(lowered: &mut FlatLowered) -> SplitMapping {
         }
 
         match &block.end {
-            FlatBlockEnd::Goto(block_id, remappings) => {
+            BlockEnd::Goto(block_id, remappings) => {
                 stack.push(*block_id);
 
                 for (dst, src) in remappings.iter() {
@@ -90,11 +90,11 @@ fn get_var_split(lowered: &mut FlatLowered) -> SplitMapping {
                     );
                 }
             }
-            FlatBlockEnd::Match { info } => {
+            BlockEnd::Match { info } => {
                 stack.extend(info.arms().iter().map(|arm| arm.block_id));
             }
-            FlatBlockEnd::Return(..) => {}
-            FlatBlockEnd::Panic(_) | FlatBlockEnd::NotSet => unreachable!(),
+            BlockEnd::Return(..) => {}
+            BlockEnd::Panic(_) | BlockEnd::NotSet => unreachable!(),
         }
     }
 
@@ -125,7 +125,7 @@ fn split_remapping(
             let mut dst_vars = vec![];
             for split_src in src_vars {
                 let new_var = variables.alloc(variables[*split_src].clone());
-                // Queue inner remmapping for possible splitting.
+                // Queue inner remapping for possible splitting.
                 stack.push((new_var, *split_src));
                 dst_vars.push(new_var);
             }
@@ -146,7 +146,7 @@ struct SplitStructsContext<'a> {
 }
 
 /// Rebuilds the blocks, with the splitting.
-fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
+fn rebuild_blocks(lowered: &mut Lowered, split: SplitMapping) {
     let mut ctx = SplitStructsContext {
         reconstructed: Default::default(),
         var_remapper: VarRenamer::default(),
@@ -204,20 +204,20 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
         }
 
         match &mut block.end {
-            FlatBlockEnd::Goto(target_block_id, remappings) => {
+            BlockEnd::Goto(target_block_id, remappings) => {
                 stack.push(*target_block_id);
 
-                let mut old_remappings = std::mem::take(remappings);
+                let old_remappings = std::mem::take(remappings);
 
                 ctx.rebuild_remapping(
                     &split,
                     block_id,
                     &mut block.statements,
-                    std::mem::take(&mut old_remappings.remapping).into_iter(),
+                    old_remappings.remapping.into_iter(),
                     remappings,
                 );
             }
-            FlatBlockEnd::Match { info } => {
+            BlockEnd::Match { info } => {
                 stack.extend(info.arms().iter().map(|arm| arm.block_id));
 
                 for input in info.inputs_mut() {
@@ -230,7 +230,7 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
                     );
                 }
             }
-            FlatBlockEnd::Return(vars, _location) => {
+            BlockEnd::Return(vars, _location) => {
                 for var in vars.iter_mut() {
                     var.var_id = ctx.maybe_reconstruct_var(
                         &split,
@@ -241,7 +241,7 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
                     );
                 }
             }
-            FlatBlockEnd::Panic(_) | FlatBlockEnd::NotSet => unreachable!(),
+            BlockEnd::Panic(_) | BlockEnd::NotSet => unreachable!(),
         }
 
         // Remap block variables.

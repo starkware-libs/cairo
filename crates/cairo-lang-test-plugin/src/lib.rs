@@ -263,7 +263,7 @@ fn find_all_tests(
                 else {
                     return None;
                 };
-                Some((*func_id, try_extract_test_config(db.upcast(), attrs).ok()??))
+                Some((*func_id, try_extract_test_config(db, attrs).ok()??))
             }));
         }
     }

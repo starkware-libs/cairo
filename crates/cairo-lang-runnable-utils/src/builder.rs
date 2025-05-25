@@ -5,7 +5,7 @@ use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::hints::ExternalHint;
 use cairo_lang_casm::instructions::Instruction;
-use cairo_lang_casm::{casm, casm_build_extend, deref};
+use cairo_lang_casm::{ap_change, casm, casm_build_extend, deref};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
@@ -24,6 +24,7 @@ use cairo_lang_sierra::program::{
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::ApChangeError;
 use cairo_lang_sierra_gas::CostError;
+use cairo_lang_sierra_to_casm::annotations::AnnotationError;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError, SierraToCasmConfig};
 use cairo_lang_sierra_to_casm::metadata::{
     Metadata, MetadataComputationConfig, MetadataError, calc_metadata, calc_metadata_ap_change_only,
@@ -60,6 +61,20 @@ impl BuildError {
             BuildError::SierraCompilationError(err) => err.stmt_indices(),
             _ => vec![],
         }
+    }
+
+    pub fn is_ap_overflow_error(&self) -> bool {
+        let BuildError::SierraCompilationError(err) = self else {
+            return false;
+        };
+
+        let CompilationError::AnnotationError(AnnotationError::ApChangeError { ref error, .. }) =
+            **err
+        else {
+            return false;
+        };
+
+        *error == ap_change::ApChangeError::OffsetOverflow
     }
 }
 
@@ -330,6 +345,7 @@ struct EntryCodeHelper {
     has_post_calculation_loop: bool,
     local_exprs: Vec<CellExpression>,
     output_builtin_vars: OrderedHashMap<BuiltinName, Var>,
+    emulated_builtins: UnorderedHashSet<GenericTypeId>,
 }
 
 impl EntryCodeHelper {
@@ -345,6 +361,7 @@ impl EntryCodeHelper {
             has_post_calculation_loop: false,
             local_exprs: vec![],
             output_builtin_vars: OrderedHashMap::default(),
+            emulated_builtins: UnorderedHashSet::<_>::from_iter([SystemType::ID]),
         }
     }
 
@@ -382,8 +399,6 @@ impl EntryCodeHelper {
 
     /// Processes the function parameters in preparation for the function call.
     fn process_params(&mut self, param_types: &[(GenericTypeId, i16)]) {
-        let emulated_builtins = UnorderedHashSet::<_>::from_iter([SystemType::ID]);
-
         self.got_segment_arena = param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID);
         self.has_post_calculation_loop = self.got_segment_arena && !self.config.testing;
 
@@ -426,7 +441,7 @@ impl EntryCodeHelper {
             if let Some(name) = self.builtin_ty_to_vm_name.get(generic_ty).cloned() {
                 let var = self.input_builtin_vars[&name];
                 casm_build_extend!(self.ctx, tempvar _builtin = var;);
-            } else if emulated_builtins.contains(generic_ty) {
+            } else if self.emulated_builtins.contains(generic_ty) {
                 assert!(
                     self.config.allow_unsound,
                     "Cannot support emulated builtins if not configured to `allow_unsound`."
@@ -498,6 +513,12 @@ impl EntryCodeHelper {
                 for _ in 0..*size {
                     next_unprocessed_deref();
                 }
+            } else if self.emulated_builtins.contains(ret_ty) {
+                assert!(
+                    self.config.allow_unsound,
+                    "Cannot support emulated builtins if not configured to `allow_unsound`."
+                );
+                let _ = next_unprocessed_deref();
             } else {
                 assert_eq!(ret_ty, &GasBuiltinType::ID);
                 let _ = next_unprocessed_deref();

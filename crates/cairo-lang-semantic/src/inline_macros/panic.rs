@@ -3,66 +3,42 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
     PluginGeneratedFile,
 };
-use cairo_lang_defs::plugin_utils::{try_extract_unnamed_arg, unsupported_bracket_diagnostic};
-use cairo_lang_syntax::node::ast;
+use cairo_lang_defs::plugin_utils::{
+    PluginResultTrait, not_legacy_macro_diagnostic, try_extract_unnamed_arg,
+    unsupported_bracket_diagnostic,
+};
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::ast::{Arg, WrappedArgList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+use cairo_lang_utils::{require, try_extract_matches};
 use indoc::{formatdoc, indoc};
-use num_bigint::BigUint;
-
-use super::write::FELT252_BYTES;
 
 /// Try to generate a simple panic handlic code.
-/// Return true if successful and updates the builder if successful.
+/// Return `Some(())` if successful and updates the builder if successful.
 fn try_handle_simple_panic(
     db: &dyn SyntaxGroup,
     builder: &mut PatchBuilder<'_>,
     arguments: &[Arg],
-) -> bool {
-    let format_string_expr = match arguments {
+) -> Option<()> {
+    let panic_str = match arguments {
         [] => {
             // Trivial panic!() with no arguments case.
-            builder.add_str(
-                "core::panics::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, 0, 0, 0])",
-            );
-            return true;
+            "".to_string()
         }
         [arg] => {
-            let Some(ast::Expr::String(format_string_expr)) = try_extract_unnamed_arg(db, arg)
-            else {
-                return false;
-            };
-            format_string_expr
+            let unnamed_arg = try_extract_unnamed_arg(db, arg)?;
+            let format_string_expr = try_extract_matches!(unnamed_arg, ast::Expr::String)?;
+            let format_string = format_string_expr.string_value(db)?;
+            require(format_string.find(['{', '}']).is_none())?;
+            format_string
         }
         // We have more than one argument, fallback to more generic handling.
-        _ => return false,
+        _ => return None,
     };
 
-    let Some(format_str) = format_string_expr.string_value(db) else {
-        return false;
-    };
-
-    if format_str.find(['{', '}']).is_some() {
-        return false;
-    }
-
-    builder.add_str(&format!(
-        "core::panics::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, {}, ",
-        format_str.len() / FELT252_BYTES,
-    ));
-
-    for chunk in format_str.as_bytes().chunks(FELT252_BYTES) {
-        builder.add_str(&format!("{:#x}, ", BigUint::from_bytes_be(chunk)));
-    }
-
-    let remainder_size = format_str.len() % FELT252_BYTES;
-    if remainder_size == 0 {
-        // Adding the empty remainder word.
-        builder.add_str("0, ");
-    }
-    builder.add_str(&format!("{remainder_size}])"));
-
-    true
+    builder.add_str(&format!("core::panics::panic_with_byte_array(@\"{panic_str}\")"));
+    Some(())
 }
 
 /// Macro for panicking with a format string.
@@ -78,13 +54,20 @@ impl InlineMacroExprPlugin for PanicMacro {
         syntax: &ast::ExprInlineMacro,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
-        let WrappedArgList::ParenthesizedArgList(arguments_syntax) = syntax.arguments(db) else {
-            return unsupported_bracket_diagnostic(db, syntax);
+        let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
+            return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
+                syntax.as_syntax_node().stable_ptr(db),
+            ));
+        };
+        let WrappedArgList::ParenthesizedArgList(arguments_syntax) =
+            legacy_inline_macro.arguments(db)
+        else {
+            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax.stable_ptr(db));
         };
 
         let mut builder = PatchBuilder::new(db, syntax);
         let arguments = arguments_syntax.arguments(db).elements(db);
-        if !try_handle_simple_panic(db, &mut builder, &arguments) {
+        if try_handle_simple_panic(db, &mut builder, &arguments).is_none() {
             builder.add_modified(RewriteNode::interpolate_patched(
                 &formatdoc! {
                     r#"

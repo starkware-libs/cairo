@@ -63,7 +63,7 @@ impl ImplGenericFunctionId {
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db.upcast()), self.function.name(db.upcast())).into()
+        format!("{}::{}", self.impl_id.name(db), self.function.name(db)).into()
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplGenericFunctionId {
@@ -112,12 +112,11 @@ impl GenericFunctionId {
         })
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        let defs_db = db.upcast();
         match self {
-            GenericFunctionId::Free(id) => id.full_path(defs_db),
-            GenericFunctionId::Extern(id) => id.full_path(defs_db),
+            GenericFunctionId::Free(id) => id.full_path(db),
+            GenericFunctionId::Extern(id) => id.full_path(db),
             GenericFunctionId::Impl(id) => {
-                format!("{:?}::{}", id.impl_id.debug(db.elongate()), id.function.name(defs_db))
+                format!("{:?}::{}", id.impl_id.debug(db.elongate()), id.function.name(db))
             }
         }
     }
@@ -150,26 +149,22 @@ impl GenericFunctionId {
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         match self {
-            GenericFunctionId::Free(free_function) => free_function.name(db.upcast()),
-            GenericFunctionId::Extern(extern_function) => extern_function.name(db.upcast()),
-            GenericFunctionId::Impl(impl_function) => impl_function.format(db.upcast()),
+            GenericFunctionId::Free(free_function) => free_function.name(db),
+            GenericFunctionId::Extern(extern_function) => extern_function.name(db),
+            GenericFunctionId::Impl(impl_function) => impl_function.format(db),
         }
     }
     /// Returns the ModuleFileId of the function's definition if possible.
     pub fn module_file_id(&self, db: &dyn SemanticGroup) -> Option<ModuleFileId> {
         match self {
-            GenericFunctionId::Free(free_function) => {
-                Some(free_function.module_file_id(db.upcast()))
-            }
-            GenericFunctionId::Extern(extern_function) => {
-                Some(extern_function.module_file_id(db.upcast()))
-            }
+            GenericFunctionId::Free(free_function) => Some(free_function.module_file_id(db)),
+            GenericFunctionId::Extern(extern_function) => Some(extern_function.module_file_id(db)),
             GenericFunctionId::Impl(impl_generic_function_id) => {
                 // Return the module file of the impl containing the function.
                 if let ImplLongId::Concrete(concrete_impl_id) =
                     impl_generic_function_id.impl_id.lookup_intern(db)
                 {
-                    Some(concrete_impl_id.impl_def_id(db).module_file_id(db.upcast()))
+                    Some(concrete_impl_id.impl_def_id(db).module_file_id(db))
                 } else {
                     None
                 }
@@ -202,6 +197,15 @@ impl GenericFunctionId {
             }
         }
     }
+    /// Returns the concrete function of this generic function with the given generic args.
+    pub fn concretize(
+        &self,
+        db: &dyn SemanticGroup,
+        generic_args: Vec<semantic::GenericArgumentId>,
+    ) -> FunctionId {
+        FunctionLongId { function: ConcreteFunction { generic_function: *self, generic_args } }
+            .intern(db)
+    }
 }
 /// Conversion from ModuleItemId to GenericFunctionId.
 impl OptionFrom<ModuleItemId> for GenericFunctionId {
@@ -218,7 +222,8 @@ impl OptionFrom<ModuleItemId> for GenericFunctionId {
             | ModuleItemId::Enum(_)
             | ModuleItemId::TypeAlias(_)
             | ModuleItemId::ImplAlias(_)
-            | ModuleItemId::ExternType(_) => None,
+            | ModuleItemId::ExternType(_)
+            | ModuleItemId::MacroDeclaration(_) => None,
         }
     }
 }
@@ -332,14 +337,14 @@ pub enum ImplFunctionBodyId {
 impl ImplFunctionBodyId {
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         match self {
-            Self::Impl(body_id) => body_id.name(db.upcast()),
-            Self::Trait(body_id) => body_id.name(db.upcast()),
+            Self::Impl(body_id) => body_id.name(db),
+            Self::Trait(body_id) => body_id.name(db),
         }
     }
     pub fn stable_location(&self, db: &dyn SemanticGroup) -> StableLocation {
         match self {
-            Self::Impl(body_id) => body_id.stable_location(db.upcast()),
-            Self::Trait(body_id) => body_id.stable_location(db.upcast()),
+            Self::Impl(body_id) => body_id.stable_location(db),
+            Self::Trait(body_id) => body_id.stable_location(db),
         }
     }
 
@@ -382,47 +387,42 @@ impl GenericFunctionWithBodyId {
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         match self {
-            GenericFunctionWithBodyId::Free(free) => free.name(db.upcast()),
+            GenericFunctionWithBodyId::Free(free) => free.name(db),
             GenericFunctionWithBodyId::Impl(imp) => {
                 format!("{}::{}", imp.concrete_impl_id.name(db), imp.function_body.name(db)).into()
             }
-            GenericFunctionWithBodyId::Trait(trt) => format!(
-                "{}::{}",
-                trt.concrete_trait(db).name(db),
-                trt.trait_function(db).name(db.upcast())
-            )
-            .into(),
+            GenericFunctionWithBodyId::Trait(trt) => {
+                format!("{}::{}", trt.concrete_trait(db).name(db), trt.trait_function(db).name(db))
+                    .into()
+            }
         }
     }
 
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
-        let defs_db = db.upcast();
         match self {
-            GenericFunctionWithBodyId::Free(free) => free.full_path(defs_db),
+            GenericFunctionWithBodyId::Free(free) => free.full_path(db),
             GenericFunctionWithBodyId::Impl(imp) => {
                 format!(
                     "{}::{}",
-                    imp.concrete_impl_id.impl_def_id(db).full_path(defs_db),
+                    imp.concrete_impl_id.impl_def_id(db).full_path(db),
                     imp.function_body.name(db)
                 )
             }
             GenericFunctionWithBodyId::Trait(trt) => format!(
                 "{}::{}",
                 trt.concrete_trait(db).full_path(db),
-                trt.trait_function(db).name(defs_db)
+                trt.trait_function(db).name(db)
             ),
         }
     }
     pub fn stable_location(&self, db: &dyn SemanticGroup) -> StableLocation {
         match self {
-            GenericFunctionWithBodyId::Free(free_function) => {
-                free_function.stable_location(db.upcast())
-            }
+            GenericFunctionWithBodyId::Free(free_function) => free_function.stable_location(db),
             GenericFunctionWithBodyId::Impl(impl_function) => {
-                impl_function.function_body.stable_location(db.upcast())
+                impl_function.function_body.stable_location(db)
             }
             GenericFunctionWithBodyId::Trait(trait_function) => {
-                trait_function.trait_function(db).stable_location(db.upcast())
+                trait_function.trait_function(db).stable_location(db)
             }
         }
     }
@@ -530,7 +530,7 @@ impl ConcreteFunctionWithBody {
             FunctionWithBodyId::Impl(impl_function_id) => {
                 let params = db.impl_function_generic_params(impl_function_id)?;
                 let generic_args = generic_params_to_args(&params, db);
-                let impl_def_id = impl_function_id.impl_def_id(db.upcast());
+                let impl_def_id = impl_function_id.impl_def_id(db);
                 let impl_def_params = db.impl_def_generic_params(impl_def_id)?;
                 let impl_generic_args = generic_params_to_args(&impl_def_params, db);
                 let impl_generic_function = ImplGenericFunctionWithBodyId {
@@ -549,12 +549,12 @@ impl ConcreteFunctionWithBody {
             FunctionWithBodyId::Trait(trait_function_id) => {
                 let params = db.trait_function_generic_params(trait_function_id)?;
                 let generic_args = generic_params_to_args(&params, db);
-                let trait_id = trait_function_id.trait_id(db.upcast());
+                let trait_id = trait_function_id.trait_id(db);
                 let trait_generic_params = db.trait_generic_params(trait_id)?;
                 let trait_generic_args = generic_params_to_args(&trait_generic_params, db);
                 let concrete_trait_id = ConcreteTraitLongId {
                     generic_args: trait_generic_args,
-                    trait_id: trait_function_id.trait_id(db.upcast()),
+                    trait_id: trait_function_id.trait_id(db),
                 }
                 .intern(db);
                 let trait_generic_function =
@@ -576,7 +576,7 @@ impl ConcreteFunctionWithBody {
         Ok(FunctionLongId { function: self.concrete(db)? }.intern(db))
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
-        self.function_with_body_id(db).name(db.upcast())
+        self.function_with_body_id(db).name(db)
     }
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
         format!("{:?}", self.debug(db.elongate()))
@@ -688,7 +688,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        write!(f, "{}", self.generic_function.format(db.upcast()))?;
+        write!(f, "{}", self.generic_function.format(db))?;
         fmt_generic_args(&self.generic_args, f, db)
     }
 }
@@ -718,13 +718,12 @@ impl Signature {
         function_title_id: FunctionTitleId,
         environment: &mut Environment,
     ) -> Self {
-        let syntax_db = db.upcast();
-        let signature_syntax = declaration_syntax.signature(syntax_db);
+        let signature_syntax = declaration_syntax.signature(db);
         let params = function_signature_params(
             diagnostics,
             db,
             resolver,
-            &signature_syntax.parameters(syntax_db).elements(syntax_db),
+            &signature_syntax.parameters(db).elements(db),
             Some(function_title_id),
             environment,
         );
@@ -732,13 +731,13 @@ impl Signature {
             function_signature_return_type(diagnostics, db, resolver, &signature_syntax);
         let implicits =
             function_signature_implicit_parameters(diagnostics, db, resolver, &signature_syntax);
-        let panicable = match signature_syntax.optional_no_panic(db.upcast()) {
+        let panicable = match signature_syntax.optional_no_panic(db) {
             ast::OptionTerminalNoPanic::Empty(_) => true,
             ast::OptionTerminalNoPanic::TerminalNoPanic(_) => false,
         };
-        let stable_ptr = signature_syntax.stable_ptr(syntax_db);
+        let stable_ptr = signature_syntax.stable_ptr(db);
         let is_const = matches!(
-            declaration_syntax.optional_const(syntax_db),
+            declaration_syntax.optional_const(db),
             ast::OptionTerminalConst::TerminalConst(_)
         );
         semantic::Signature { params, return_type, implicits, panicable, stable_ptr, is_const }
@@ -751,13 +750,11 @@ pub fn function_signature_return_type(
     resolver: &mut Resolver<'_>,
     sig: &ast::FunctionSignature,
 ) -> semantic::TypeId {
-    let ty_syntax = match sig.ret_ty(db.upcast()) {
+    let ty_syntax = match sig.ret_ty(db) {
         ast::OptionReturnTypeClause::Empty(_) => {
             return unit_ty(db);
         }
-        ast::OptionReturnTypeClause::ReturnTypeClause(ret_type_clause) => {
-            ret_type_clause.ty(db.upcast())
-        }
+        ast::OptionReturnTypeClause::ReturnTypeClause(ret_type_clause) => ret_type_clause.ty(db),
     };
     resolve_type(db, diagnostics, resolver, &ty_syntax)
 }
@@ -769,12 +766,10 @@ pub fn function_signature_implicit_parameters(
     resolver: &mut Resolver<'_>,
     sig: &ast::FunctionSignature,
 ) -> Vec<semantic::TypeId> {
-    let syntax_db = db.upcast();
-
-    let ast_implicits = match sig.implicits_clause(syntax_db) {
+    let ast_implicits = match sig.implicits_clause(db) {
         ast::OptionImplicitsClause::Empty(_) => Vec::new(),
         ast::OptionImplicitsClause::ImplicitsClause(implicits_clause) => {
-            implicits_clause.implicits(syntax_db).elements(syntax_db)
+            implicits_clause.implicits(db).elements(db)
         }
     };
 
@@ -880,7 +875,7 @@ fn update_env_with_ast_params(
     env: &mut Environment,
 ) -> Vec<semantic::Parameter> {
     let mut semantic_params = Vec::new();
-    for ast_param in ast_params.iter() {
+    for ast_param in ast_params {
         let semantic_param = ast_param_to_semantic(diagnostics, db, resolver, ast_param);
 
         if env
@@ -900,34 +895,23 @@ fn ast_param_to_semantic(
     resolver: &mut Resolver<'_>,
     ast_param: &ast::Param,
 ) -> semantic::Parameter {
-    let syntax_db = db.upcast();
+    let name = ast_param.name(db).text(db);
 
-    let name = ast_param.name(syntax_db).text(syntax_db);
+    let id = ParamLongId(resolver.module_file_id, ast_param.stable_ptr(db)).intern(db);
 
-    let id = ParamLongId(resolver.module_file_id, ast_param.stable_ptr(syntax_db)).intern(db);
-
-    let ty = match ast_param.type_clause(syntax_db) {
+    let ty = match ast_param.type_clause(db) {
         ast::OptionTypeClause::Empty(missing) => {
-            resolver.inference().new_type_var(Some(missing.stable_ptr(syntax_db).untyped()))
+            resolver.inference().new_type_var(Some(missing.stable_ptr(db).untyped()))
         }
         ast::OptionTypeClause::TypeClause(ty_syntax) => {
-            resolve_type(db, diagnostics, resolver, &ty_syntax.ty(syntax_db))
+            resolve_type(db, diagnostics, resolver, &ty_syntax.ty(db))
         }
     };
 
-    let mutability = modifiers::compute_mutability(
-        diagnostics,
-        syntax_db,
-        &ast_param.modifiers(syntax_db).elements(syntax_db),
-    );
+    let mutability =
+        modifiers::compute_mutability(diagnostics, db, &ast_param.modifiers(db).elements(db));
 
-    semantic::Parameter {
-        id,
-        name,
-        ty,
-        mutability,
-        stable_ptr: ast_param.name(syntax_db).stable_ptr(syntax_db),
-    }
+    semantic::Parameter { id, name, ty, mutability, stable_ptr: ast_param.name(db).stable_ptr(db) }
 }
 
 // === Function Declaration ===

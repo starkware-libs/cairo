@@ -49,9 +49,8 @@ pub fn get_submodule(
     submodule_name: &str,
 ) -> Option<ModuleId> {
     let submodules = db.module_submodules(base_module).ok()?;
-    let syntax_db = db.upcast();
     for (submodule_id, submodule) in submodules.iter() {
-        if submodule.name(syntax_db).text(syntax_db) == submodule_name {
+        if submodule.name(db).text(db) == submodule_name {
             return Some(ModuleId::Submodule(*submodule_id));
         }
     }
@@ -440,7 +439,7 @@ pub fn unwrap_error_propagation_type(
             if let [ok_variant, err_variant] =
                 db.concrete_enum_variants(enm).to_option()?.as_slice()
             {
-                let name = enm.enum_id(db.upcast()).name(db.upcast());
+                let name = enm.enum_id(db).name(db);
                 if name == "Option" {
                     return Some(ErrorPropagationType::Option {
                         some_variant: ok_variant.clone(),
@@ -569,7 +568,7 @@ fn get_core_function_impl_method(
         .ok()
         .and_then(|functions| functions.get(&method_name).cloned())
         .unwrap_or_else(|| {
-            panic!("no {method_name} in {}.", concrete_trait_id.trait_id(db).name(db.upcast()))
+            panic!("no {method_name} in {}.", concrete_trait_id.trait_id(db).name(db))
         });
     FunctionLongId {
         function: ConcreteFunction {
@@ -596,17 +595,6 @@ pub fn core_withdraw_gas_fns(db: &dyn SemanticGroup) -> [FunctionId; 2] {
 pub fn internal_require_implicit(db: &dyn SemanticGroup) -> GenericFunctionId {
     get_generic_function_id(db, core_submodule(db, "internal"), "require_implicit".into())
 }
-/// The function `downcast` from the `integer` submodule.
-pub fn core_downcast(db: &dyn SemanticGroup, input: TypeId, output: TypeId) -> FunctionId {
-    let internal = core_submodule(db, "integer");
-
-    get_function_id(
-        db,
-        internal,
-        "downcast".into(),
-        vec![GenericArgumentId::Type(input), GenericArgumentId::Type(output)],
-    )
-}
 /// Given a core library function name and its generic arguments, returns [FunctionId].
 pub fn get_core_function_id(
     db: &dyn SemanticGroup,
@@ -623,9 +611,7 @@ pub fn get_function_id(
     name: SmolStr,
     generic_args: Vec<GenericArgumentId>,
 ) -> FunctionId {
-    let generic_function = get_generic_function_id(db, module, name);
-
-    FunctionLongId { function: ConcreteFunction { generic_function, generic_args } }.intern(db)
+    get_generic_function_id(db, module, name).concretize(db, generic_args)
 }
 
 /// Given a core library function name, returns [GenericFunctionId].
@@ -707,42 +693,28 @@ fn get_core_trait_function_infer(
 }
 
 pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {
-    get_core_ty_by_name(db.upcast(), "PanicResult".into(), vec![GenericArgumentId::Type(inner_ty)])
+    get_core_ty_by_name(db, "PanicResult".into(), vec![GenericArgumentId::Type(inner_ty)])
 }
 
 pub fn get_usize_ty(db: &dyn SemanticGroup) -> TypeId {
     get_core_ty_by_name(db, "usize".into(), vec![])
 }
 
-/// Returns [FunctionId] of the libfunc that converts type of `ty` to felt252.
-pub fn get_convert_to_felt252_libfunc_name_by_type(
-    db: &dyn SemanticGroup,
-    ty: TypeId,
-) -> Option<FunctionId> {
+/// Returns if `ty` is a numeric type upcastable to felt252.
+pub fn numeric_upcastable_to_felt252(db: &dyn SemanticGroup, ty: TypeId) -> bool {
     let info = db.core_info();
-    if ty == info.u8 {
-        Some(get_function_id(db, core_submodule(db, "integer"), "u8_to_felt252".into(), vec![]))
-    } else if ty == info.u16 {
-        Some(get_function_id(db, core_submodule(db, "integer"), "u16_to_felt252".into(), vec![]))
-    } else if ty == info.u32 {
-        Some(get_function_id(db, core_submodule(db, "integer"), "u32_to_felt252".into(), vec![]))
-    } else if ty == info.u64 {
-        Some(get_function_id(db, core_submodule(db, "integer"), "u64_to_felt252".into(), vec![]))
-    } else if ty == info.u128 {
-        Some(get_function_id(db, core_submodule(db, "integer"), "u128_to_felt252".into(), vec![]))
-    } else if ty == info.i8 {
-        Some(get_function_id(db, core_submodule(db, "integer"), "i8_to_felt252".into(), vec![]))
-    } else if ty == info.i16 {
-        Some(get_function_id(db, core_submodule(db, "integer"), "i16_to_felt252".into(), vec![]))
-    } else if ty == info.i32 {
-        Some(get_function_id(db, core_submodule(db, "integer"), "i32_to_felt252".into(), vec![]))
-    } else if ty == info.i64 {
-        Some(get_function_id(db, core_submodule(db, "integer"), "i64_to_felt252".into(), vec![]))
-    } else if ty == info.i128 {
-        Some(get_function_id(db, core_submodule(db, "integer"), "i128_to_felt252".into(), vec![]))
-    } else {
-        None
-    }
+    ty == info.felt252
+        || ty == info.u8
+        || ty == info.u16
+        || ty == info.u32
+        || ty == info.u64
+        || ty == info.u128
+        || ty == info.i8
+        || ty == info.i16
+        || ty == info.i32
+        || ty == info.i64
+        || ty == info.i128
+        || try_extract_bounded_int_type_ranges(db, ty).is_some()
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -753,12 +725,11 @@ pub enum LiteralError {
 impl LiteralError {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         match self {
-            Self::OutOfRange(ty) => format!(
-                "The value does not fit within the range of type {}.",
-                ty.format(db.upcast())
-            ),
+            Self::OutOfRange(ty) => {
+                format!("The value does not fit within the range of type {}.", ty.format(db))
+            }
             Self::InvalidTypeForLiteral(ty) => {
-                format!("A numeric literal of type {} cannot be created.", ty.format(db.upcast()))
+                format!("A numeric literal of type {} cannot be created.", ty.format(db))
             }
         }
     }
@@ -827,11 +798,11 @@ pub fn try_extract_nz_wrapped_type(db: &dyn SemanticGroup, ty: TypeId) -> Option
     let extern_ty = try_extract_matches!(concrete_ty, ConcreteTypeId::Extern)?;
     let ConcreteExternTypeLongId { extern_type_id, generic_args } = extern_ty.lookup_intern(db);
     let [GenericArgumentId::Type(inner)] = generic_args[..] else { return None };
-    (extern_type_id.name(db.upcast()) == "NonZero").then_some(inner)
+    (extern_type_id.name(db) == "NonZero").then_some(inner)
 }
 
 /// Returns the ranges of a BoundedInt if it is a BoundedInt type.
-fn try_extract_bounded_int_type_ranges(
+pub fn try_extract_bounded_int_type_ranges(
     db: &dyn SemanticGroup,
     ty: TypeId,
 ) -> Option<(BigInt, BigInt)> {
@@ -839,7 +810,7 @@ fn try_extract_bounded_int_type_ranges(
     let extern_ty = try_extract_matches!(concrete_ty, ConcreteTypeId::Extern)?;
     let ConcreteExternTypeLongId { extern_type_id, generic_args } =
         db.lookup_intern_concrete_extern_type(extern_ty);
-    require(extern_type_id.name(db.upcast()) == "BoundedInt")?;
+    require(extern_type_id.name(db) == "BoundedInt")?;
     let [GenericArgumentId::Constant(min), GenericArgumentId::Constant(max)] = generic_args[..]
     else {
         return None;
@@ -939,6 +910,8 @@ pub struct CoreInfo {
     pub next_fn: TraitFunctionId,
     pub call_fn: TraitFunctionId,
     pub call_once_fn: TraitFunctionId,
+    pub upcast_fn: GenericFunctionId,
+    pub downcast_fn: GenericFunctionId,
 }
 impl CoreInfo {
     fn new(db: &dyn SemanticGroup) -> Self {
@@ -982,6 +955,7 @@ impl CoreInfo {
         let fn_once_trt = fn_module.trait_id("FnOnce");
         let index_module = ops.submodule("index");
         let starknet = core.submodule("starknet");
+        let bounded_int = core.submodule("internal").submodule("bounded_int");
         let trait_fn = |trait_id: TraitId, name: &str| {
             db.trait_function_by_name(trait_id, name.into()).unwrap().unwrap()
         };
@@ -1070,6 +1044,8 @@ impl CoreInfo {
             next_fn: trait_fn(iterator_trt, "next"),
             call_fn: trait_fn(fn_trt, "call"),
             call_once_fn: trait_fn(fn_once_trt, "call"),
+            upcast_fn: bounded_int.generic_function_id("upcast"),
+            downcast_fn: bounded_int.generic_function_id("downcast"),
         }
     }
 }

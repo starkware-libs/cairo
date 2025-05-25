@@ -32,8 +32,10 @@ ItemEnum
     │   │   └── type_clause (kind: TypeClause)
     │   │       ├── colon (kind: TokenColon): ':'
     │   │       └── ty (kind: ExprPath)
-    │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │               └── ident (kind: TokenIdentifier): 'felt252'
+    │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │           └── segments (kind: ExprPathInner)
+    │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │                   └── ident (kind: TokenIdentifier): 'felt252'
     │   ├── separator #0 (kind: TokenComma): ','
     │   ├── item #1 (kind: Variant)
     │   │   ├── attributes (kind: AttributeList) []
@@ -41,8 +43,10 @@ ItemEnum
     │   │   └── type_clause (kind: TypeClause)
     │   │       ├── colon (kind: TokenColon): ':'
     │   │       └── ty (kind: ExprPath)
-    │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │               └── ident (kind: TokenIdentifier): 'felt252'
+    │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │           └── segments (kind: ExprPathInner)
+    │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │                   └── ident (kind: TokenIdentifier): 'felt252'
     │   ├── separator #1 (kind: TokenComma): ','
     │   ├── item #2 (kind: Variant)
     │   │   ├── attributes (kind: AttributeList) []

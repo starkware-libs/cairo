@@ -44,10 +44,6 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
             .to_option()
     }
 
-    fn as_type_specialization_context(&self) -> &dyn TypeSpecializationContext {
-        self
-    }
-
     fn try_get_function_ap_change(
         &self,
         function_id: &cairo_lang_sierra::ids::FunctionId,

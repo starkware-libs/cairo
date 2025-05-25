@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_lowering::{self as lowering, LoweringStage};
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -51,7 +51,7 @@ fn check_variable_lifetime(
 
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
-    let lowered_function = &*db.final_concrete_function_with_body_lowered(function_id).unwrap();
+    let lowered_function = &*db.lowered_body(function_id, LoweringStage::Final).unwrap();
 
     let lowered_formatter = lowering::fmt::LoweredFormatter::new(db, &lowered_function.variables);
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
@@ -68,17 +68,15 @@ fn check_variable_lifetime(
             let statements = &block.statements;
             let var_id = if location.statement_location.1 == statements.len() {
                 match &block.end {
-                    lowering::FlatBlockEnd::Goto(_, remapping) => {
+                    lowering::BlockEnd::Goto(_, remapping) => {
                         remapping.values().nth(location.idx).unwrap().var_id
                     }
-                    lowering::FlatBlockEnd::Return(returns, _location) => {
-                        returns[location.idx].var_id
-                    }
-                    lowering::FlatBlockEnd::Panic(_) => {
+                    lowering::BlockEnd::Return(returns, _location) => returns[location.idx].var_id,
+                    lowering::BlockEnd::Panic(_) => {
                         unreachable!("Panics should have been stripped in a previous phase.")
                     }
-                    lowering::FlatBlockEnd::NotSet => unreachable!(),
-                    lowering::FlatBlockEnd::Match { info } => info.inputs()[location.idx].var_id,
+                    lowering::BlockEnd::NotSet => unreachable!(),
+                    lowering::BlockEnd::Match { info } => info.inputs()[location.idx].var_id,
                 }
             } else {
                 statements[location.statement_location.1].inputs()[location.idx].var_id

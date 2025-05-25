@@ -28,9 +28,9 @@ pub struct LabelIdWithDb<'db> {
 impl std::fmt::Display for LabelIdWithDb<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let LabelLongId { parent, id } = self.label_id.lookup_intern(self.db);
-        let parent = parent.function_id(self.db.upcast()).unwrap();
+        let parent = parent.function_id(self.db).unwrap();
         let dbg = format!("{:?}", parent.debug(self.db));
-        write!(f, "label_{}::{}", dbg, id)
+        write!(f, "label_{dbg}::{id}")
     }
 }
 
@@ -51,8 +51,6 @@ pub struct Function {
     pub entry_point: LabelId,
     /// The parameters for the function.
     pub parameters: Vec<program::Param>,
-    /// The return types from the function.
-    pub ret_types: Vec<sierra::ids::ConcreteTypeId>,
 }
 
 /// Represents a pre-sierra statement - a statement before label-resolution.

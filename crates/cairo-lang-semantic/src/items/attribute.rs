@@ -28,7 +28,7 @@ impl AttributeTrait for Attribute {
         self.id.to_string()
     }
     fn args(&self, db: &dyn SemanticGroup) -> String {
-        self.args.iter().map(|arg| arg.text(db.upcast())).collect::<Vec<_>>().join(", ")
+        self.args.iter().map(|arg| arg.text(db)).collect::<Vec<_>>().join(", ")
     }
 }
 
@@ -65,7 +65,7 @@ pub trait SemanticQueryAttrs {
         Ok(self
             .query_attr(db, attr_name)?
             .iter()
-            .any(|attr| attr.is_single_unnamed_arg(db.upcast(), arg_name)))
+            .any(|attr| attr.is_single_unnamed_arg(db, arg_name)))
     }
 }
 

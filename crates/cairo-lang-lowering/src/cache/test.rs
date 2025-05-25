@@ -6,6 +6,7 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::generate_crate_cache;
+use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
@@ -49,7 +50,7 @@ fn test_cache_check(
     let function_id: ConcreteFunctionWithBodyId =
         ConcreteFunctionWithBodyId::from_semantic(&new_db, test_function.concrete_function_id);
 
-    let lowered = new_db.final_concrete_function_with_body_lowered(function_id);
+    let lowered = new_db.lowered_body(function_id, LoweringStage::Final);
     if let Ok(lowered) = &lowered {
         assert!(
             lowered.blocks.iter().all(|(_, b)| b.is_set()),
@@ -59,8 +60,7 @@ fn test_cache_check(
     let diagnostics =
         new_db.module_lowering_diagnostics(test_function.module_id).unwrap_or_default();
     let formatted_lowering_diagnostics = diagnostics.format(&new_db);
-    let combined_diagnostics =
-        format!("{}\n{}", semantic_diagnostics, formatted_lowering_diagnostics);
+    let combined_diagnostics = format!("{semantic_diagnostics}\n{formatted_lowering_diagnostics}");
     let error = verify_diagnostics_expectation(args, &combined_diagnostics);
     TestRunnerResult {
         outputs: OrderedHashMap::from([

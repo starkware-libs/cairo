@@ -57,8 +57,10 @@ ItemUse
     │       ├── hash (kind: TokenHash): '#'
     │       ├── lbrack (kind: TokenLBrack): '['
     │       ├── attr (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentSimple)
-    │       │       └── ident (kind: TokenIdentifier): 'attribute'
+    │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   └── segments (kind: ExprPathInner)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'attribute'
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TokenRBrack): ']'
     ├── visibility (kind: VisibilityDefault) []
@@ -132,8 +134,10 @@ ItemUse
     │       ├── hash (kind: TokenHash): '#'
     │       ├── lbrack (kind: TokenLBrack): '['
     │       ├── attr (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentSimple)
-    │       │       └── ident (kind: TokenIdentifier): 'attribute'
+    │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   └── segments (kind: ExprPathInner)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'attribute'
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TokenRBrack): ']'
     ├── visibility (kind: VisibilityDefault) []

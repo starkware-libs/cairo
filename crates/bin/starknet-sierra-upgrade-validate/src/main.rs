@@ -312,7 +312,7 @@ fn spawn_class_processors(
         tokio::spawn(async move {
             while let Ok(sierra_class) = classes_rx.recv().await {
                 if let Err(err) = results_tx.send(run_single(sierra_class, config.as_ref())).await {
-                    eprintln!("Failed to send result: {:#?}", err);
+                    eprintln!("Failed to send result: {err:#?}");
                 }
                 // Additional yield to prevent starvation of the inputs handling stage.
                 tokio::task::yield_now().await;
@@ -436,7 +436,7 @@ fn analyze_report(
         && compilation_failures.is_empty()
         && compilation_mismatch.is_empty()
     {
-        println!("All {} classes passed validation and compilation.", num_of_classes);
+        println!("All {num_of_classes} classes passed validation and compilation.");
         Ok(())
     } else {
         Err(anyhow::anyhow!("Failed."))

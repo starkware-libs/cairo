@@ -13,7 +13,7 @@ use itertools::{Itertools, zip_eq};
 use lowering::borrow_check::Demand;
 use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use lowering::borrow_check::demand::{AuxCombine, DemandReporter};
-use lowering::{FlatLowered, VarUsage};
+use lowering::{Lowered, VarUsage};
 
 /// Represents the location where a drop statement for a variable should be added.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -101,7 +101,7 @@ impl VariableLifetimeResult {
 /// Given the lowering of a function, returns lifetime information for all the variables.
 /// See [VariableLifetimeResult].
 pub fn find_variable_lifetime(
-    lowered_function: &FlatLowered,
+    lowered_function: &Lowered,
     local_vars: &OrderedHashSet<VariableId>,
 ) -> Maybe<VariableLifetimeResult> {
     lowered_function.blocks.has_root()?;

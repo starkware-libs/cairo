@@ -76,7 +76,7 @@ impl fmt::Display for Program {
 impl fmt::Display for TypeDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let TypeDeclaration { id, long_id, declared_type_info } = self;
-        write!(f, "type {} = {}", id, long_id)?;
+        write!(f, "type {id} = {long_id}")?;
         if let Some(info) = declared_type_info {
             write!(
                 f,

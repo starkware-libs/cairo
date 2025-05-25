@@ -5,12 +5,13 @@ mod test;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_lowering::{self as lowering, LoweringStage};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use itertools::{Itertools, zip_eq};
 
 use crate::block_generator::generate_function_statements;
 use crate::db::SierraGenGroup;
@@ -20,9 +21,9 @@ use crate::local_variables::{AnalyzeApChangesResult, analyze_ap_changes};
 use crate::pre_sierra;
 use crate::store_variables::{LibfuncInfo, LocalVariables, add_store_statements};
 use crate::utils::{
-    alloc_local_libfunc_id, disable_ap_tracking_libfunc_id, finalize_locals_libfunc_id,
-    get_concrete_libfunc_id, get_libfunc_signature, revoke_ap_tracking_libfunc_id,
-    simple_basic_statement,
+    alloc_local_libfunc_id, disable_ap_tracking_libfunc_id, dummy_call_libfunc_id,
+    finalize_locals_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature, return_statement,
+    revoke_ap_tracking_libfunc_id, simple_basic_statement,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -51,8 +52,7 @@ fn get_function_code(
     db: &dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    let signature = function_id.signature(db.upcast())?;
-    let lowered_function = &*db.final_concrete_function_with_body_lowered(function_id)?;
+    let lowered_function = &*db.lowered_body(function_id, LoweringStage::Final)?;
     let root_block = lowered_function.blocks.root_block()?;
 
     // Find the local variables.
@@ -95,8 +95,6 @@ fn get_function_code(
         })
         .collect::<Result<Vec<_>, _>>()?;
 
-    let ret_types = vec![db.get_concrete_type_id(signature.return_type)?];
-
     context.push_statement(label);
 
     let sierra_local_variables = allocate_local_variables(&mut context, &local_variables)?;
@@ -128,11 +126,65 @@ fn get_function_code(
     // TODO(spapini): Don't intern objects for the semantic model outside the crate. These should
     // be regarded as private.
     Ok(pre_sierra::Function {
-        id: function_id.function_id(db.upcast())?.intern(db),
+        id: function_id.function_id(db)?.intern(db),
         body: statements,
         entry_point: label_id,
         parameters,
-        ret_types,
+    }
+    .into())
+}
+
+/// Query implementation of [SierraGenGroup::priv_get_dummy_function].
+pub fn priv_get_dummy_function(
+    db: &dyn SierraGenGroup,
+    function_id: ConcreteFunctionWithBodyId,
+) -> Maybe<Arc<pre_sierra::Function>> {
+    // TODO(ilya): Remove the following query.
+    let lowered_function = &*db.lowered_body(function_id, LoweringStage::PreOptimizations)?;
+    let ap_tracking_configuration = Default::default();
+    let lifetime = Default::default();
+
+    let mut context = ExprGeneratorContext::new(
+        db,
+        lowered_function,
+        function_id,
+        &lifetime,
+        ap_tracking_configuration,
+    );
+
+    // Generate a label for the function's body.
+    let (label, label_id) = context.new_label();
+    context.push_statement(label);
+
+    let sierra_id = function_id.function_id(db)?.intern(db);
+    let sierra_signature = db.get_function_signature(sierra_id.clone()).unwrap();
+
+    let param_vars = (0..sierra_signature.param_types.len() as u64)
+        .map(cairo_lang_sierra::ids::VarId::new)
+        .collect_vec();
+
+    let ret_vars = (0..sierra_signature.ret_types.len() as u64)
+        .map(cairo_lang_sierra::ids::VarId::new)
+        .collect_vec();
+
+    // Generate Sierra variables for the function parameters.
+    let parameters = zip_eq(&param_vars, &sierra_signature.param_types)
+        .map(|(id, ty)| Ok(cairo_lang_sierra::program::Param { id: id.clone(), ty: ty.clone() }))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    context.push_statement(simple_basic_statement(
+        dummy_call_libfunc_id(db, sierra_id, &sierra_signature),
+        &param_vars[..],
+        &ret_vars[..],
+    ));
+
+    context.push_statement(return_statement(ret_vars));
+
+    Ok(pre_sierra::Function {
+        id: function_id.function_id(db)?.intern(db),
+        body: context.statements(),
+        entry_point: label_id,
+        parameters,
     }
     .into())
 }
@@ -148,7 +200,7 @@ fn allocate_local_variables(
 ) -> Maybe<LocalVariables> {
     let mut sierra_local_variables =
         OrderedHashMap::<cairo_lang_sierra::ids::VarId, cairo_lang_sierra::ids::VarId>::default();
-    for lowering_var_id in local_variables.iter() {
+    for lowering_var_id in local_variables {
         let sierra_var_id = context.get_sierra_variable(*lowering_var_id);
         let uninitialized_local_var_id =
             context.get_sierra_variable(SierraGenVar::UninitializedLocal(*lowering_var_id));
@@ -158,7 +210,7 @@ fn allocate_local_variables(
                 context.get_variable_sierra_type(*lowering_var_id)?,
             ),
             &[],
-            &[uninitialized_local_var_id.clone()],
+            std::slice::from_ref(&uninitialized_local_var_id),
         ));
 
         sierra_local_variables.insert(sierra_var_id, uninitialized_local_var_id);

@@ -16,7 +16,6 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_starknet::contract::{find_contracts, get_contracts_info};
-use cairo_lang_utils::Upcast;
 use clap::Parser;
 
 /// Compiles a Cairo project and runs the function `main`.
@@ -79,7 +78,7 @@ fn main() -> anyhow::Result<()> {
         anyhow::bail!("Program requires gas counter, please provide `--available-gas` argument.");
     }
 
-    let contracts = find_contracts((*db).upcast(), &main_crate_ids);
+    let contracts = find_contracts(db, &main_crate_ids);
     let contracts_info = get_contracts_info(db, contracts, &replacer)?;
     let sierra_program = replacer.apply(&sierra_program);
 
@@ -109,7 +108,7 @@ fn main() -> anyhow::Result<()> {
         match result.profiling_info {
             Some(raw_profiling_info) => {
                 let profiling_info = profiling_info_processor.process(&raw_profiling_info);
-                println!("Profiling info:\n{}", profiling_info);
+                println!("Profiling info:\n{profiling_info}");
             }
             None => println!("Warning: Profiling info not found."),
         }

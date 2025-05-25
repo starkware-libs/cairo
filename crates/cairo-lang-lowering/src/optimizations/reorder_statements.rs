@@ -4,6 +4,7 @@ mod test;
 
 use std::cmp::Reverse;
 
+use cairo_lang_defs::ids::ExternFunctionId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -11,9 +12,8 @@ use itertools::{Itertools, zip_eq};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
-use crate::ids::FunctionId;
 use crate::{
-    BlockId, FlatLowered, MatchInfo, Statement, StatementCall, VarRemapping, VarUsage, VariableId,
+    BlockId, Lowered, MatchInfo, Statement, StatementCall, VarRemapping, VarUsage, VariableId,
 };
 
 /// Reorder the statements in the lowering in order to move variable definitions closer to their
@@ -22,11 +22,12 @@ use crate::{
 /// The list of call statements that can be moved is currently hardcoded.
 ///
 /// Removing unnecessary remapping before this optimization will result in better code.
-pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
+pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut Lowered) {
     if lowered.blocks.is_empty() {
         return;
     }
     let ctx = ReorderStatementsContext {
+        db,
         lowered: &*lowered,
         moveable_functions: &db.priv_movable_function_ids(),
         statement_to_move: vec![],
@@ -49,7 +50,6 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
 
     for (block_id, block_changes) in changes_by_block {
         let statements = &mut lowered.blocks[block_id].statements;
-        let block_len = statements.len();
 
         // Apply block changes in reverse order to prevent a change from invalidating the
         // indices of the other changes.
@@ -57,10 +57,7 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
             block_changes.into_iter().sorted_by_key(|(index, _)| Reverse(*index))
         {
             match opt_statement {
-                Some(stmt) => {
-                    // If index > block_len, we insert the statement at the end of the block.
-                    statements.insert(std::cmp::min(index, block_len), stmt)
-                }
+                Some(stmt) => statements.insert(index, stmt),
                 None => {
                     statements.remove(index);
                 }
@@ -74,21 +71,23 @@ pub struct ReorderStatementsInfo {
     // A mapping from var_id to a candidate location that it can be moved to.
     // If the variable is used in multiple match arms we define the next use to be
     // the match.
-
-    // Note that StatementLocation.0 might >= block.len() and it means that
-    // the variable should be inserted at the end of the block.
     next_use: UnorderedHashMap<VariableId, StatementLocation>,
 }
 
 pub struct ReorderStatementsContext<'a> {
-    lowered: &'a FlatLowered,
+    db: &'a dyn LoweringGroup,
+    lowered: &'a Lowered,
     // A list of function that can be moved.
-    moveable_functions: &'a UnorderedHashSet<FunctionId>,
+    moveable_functions: &'a UnorderedHashSet<ExternFunctionId>,
     statement_to_move: Vec<(StatementLocation, Option<StatementLocation>)>,
 }
 impl ReorderStatementsContext<'_> {
     fn call_can_be_moved(&mut self, stmt: &StatementCall) -> bool {
-        self.moveable_functions.contains(&stmt.function)
+        if let Some((extern_id, _)) = stmt.function.get_extern(self.db) {
+            self.moveable_functions.contains(&extern_id)
+        } else {
+            false
+        }
     }
 }
 impl Analyzer<'_> for ReorderStatementsContext<'_> {
@@ -177,9 +176,7 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         }
 
         for var_usage in match_info.inputs() {
-            // Make sure we insert the match inputs after the variables that are used in the arms.
-            info.next_use
-                .insert(var_usage.var_id, (statement_location.0, statement_location.1 + 1));
+            info.next_use.insert(var_usage.var_id, statement_location);
         }
 
         info

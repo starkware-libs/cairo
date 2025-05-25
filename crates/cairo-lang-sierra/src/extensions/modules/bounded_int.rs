@@ -233,7 +233,6 @@ impl NamedLibfunc for BoundedIntDivRemLibfunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let (lhs, rhs) = args_as_two_types(args)?;
-        let context = context.upcast();
         Ok(Self::Concrete {
             lhs: Range::from_type(context, lhs)?,
             rhs: Range::from_type(context, rhs)?,
@@ -371,7 +370,6 @@ impl NamedLibfunc for BoundedIntConstrainLibfunc {
             [_, _] => Err(SpecializationError::UnsupportedGenericArg),
             _ => Err(SpecializationError::WrongNumberOfGenericArgs),
         }?;
-        let context = context.upcast();
         Ok(Self::Concrete { boundary, signature: self.specialize_signature(context, args)? })
     }
 }
@@ -409,7 +407,7 @@ impl<const IS_MAX: bool> NamedLibfunc for BoundedIntTrimLibfunc<IS_MAX> {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Self::Concrete::new::<IS_MAX>(context.upcast(), args)
+        Self::Concrete::new::<IS_MAX>(context, args)
     }
 }
 

@@ -128,7 +128,7 @@ impl GenericLibfunc for Felt252BinaryOperationWithVarLibfunc {
             [] => Ok({
                 Felt252BinaryOpConcreteLibfunc {
                     operator: self.operator,
-                    signature: self.specialize_signature(context.upcast(), args)?,
+                    signature: self.specialize_signature(context, args)?,
                 }
             }),
             _ => Err(SpecializationError::WrongNumberOfGenericArgs),
@@ -211,7 +211,7 @@ impl GenericLibfunc for Felt252BinaryOperationWithConstLibfunc {
                     Ok(Felt252OperationWithConstConcreteLibfunc {
                         operator: self.operator,
                         c: c.clone(),
-                        signature: self.specialize_signature(context.upcast(), args)?,
+                        signature: self.specialize_signature(context, args)?,
                     })
                 }
             }
@@ -273,11 +273,7 @@ impl NamedLibfunc for Felt252ConstLibfunc {
         match args {
             [GenericArg::Value(c)] => Ok(Felt252ConstConcreteLibfunc {
                 c: c.clone(),
-                signature: <Self as NamedLibfunc>::specialize_signature(
-                    self,
-                    context.upcast(),
-                    args,
-                )?,
+                signature: <Self as NamedLibfunc>::specialize_signature(self, context, args)?,
             }),
             _ => Err(SpecializationError::UnsupportedGenericArg),
         }

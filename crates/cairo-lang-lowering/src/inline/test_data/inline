@@ -875,35 +875,32 @@ End:
 
 blk6:
 Statements:
+  (v11: (core::integer::u128,)) <- struct_construct(v0)
+  (v12: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v11)
 End:
-  Goto(blk9, {v0 -> v11})
+  Goto(blk4, {v12 -> v3})
 
 blk7:
 Statements:
 End:
   Match(match core::integer::u128_overflowing_add(v1, v0) {
-    Result::Ok(v12) => blk8,
-    Result::Err(v13) => blk10,
+    Result::Ok(v13) => blk8,
+    Result::Err(v14) => blk9,
   })
 
 blk8:
 Statements:
+  (v15: (core::integer::u128,)) <- struct_construct(v13)
+  (v16: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v15)
 End:
-  Goto(blk9, {v12 -> v11})
+  Goto(blk4, {v16 -> v3})
 
 blk9:
 Statements:
-  (v14: (core::integer::u128,)) <- struct_construct(v11)
-  (v15: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v14)
+  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<39878429859757942499084499860145094553463>()
+  (v18: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v17)
 End:
-  Goto(blk4, {v15 -> v3})
-
-blk10:
-Statements:
-  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<39878429859757942499084499860145094553463>()
-  (v17: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v16)
-End:
-  Goto(blk4, {v17 -> v3})
+  Goto(blk4, {v18 -> v3})
 
 //! > lowering_diagnostics
 
@@ -985,8 +982,8 @@ End:
 //! > test #[inline] with indirect self call.
 
 //! > Motivation:
-//! #[inline] functions should inline a function unless it is recursively called by itself, even
-//! indirectly. In this case, the function bar should be inlined, but not the inner call to foo.
+//! #[inline] functions should inline a function unless they are on a call cycle.
+//! in this test `bar` should not be inlined into `foo`.
 
 //! > test_runner_name
 test_function_inlining
@@ -1069,8 +1066,12 @@ End:
 
 blk1:
 Statements:
+  (v3: core::panics::PanicResult::<(core::felt252,)>) <- test::bar(v0)
 End:
-  Goto(blk7, {})
+  Match(match_enum(v3) {
+    PanicResult::Ok(v4) => blk4,
+    PanicResult::Err(v6) => blk5,
+  })
 
 blk2:
 Statements:
@@ -1097,38 +1098,6 @@ Statements:
   (v11: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v6)
 End:
   Return(v11)
-
-blk6:
-Statements:
-End:
-  Match(match_enum(v3) {
-    PanicResult::Ok(v4) => blk4,
-    PanicResult::Err(v6) => blk5,
-  })
-
-blk7:
-Statements:
-End:
-  Match(match core::felt252_is_zero(v0) {
-    IsZeroResult::Zero => blk8,
-    IsZeroResult::NonZero(v12) => blk9,
-  })
-
-blk8:
-Statements:
-  (v13: core::felt252) <- 1
-  (v14: core::felt252) <- core::felt252_sub(v0, v13)
-  (v15: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v14)
-End:
-  Goto(blk6, {v15 -> v3})
-
-blk9:
-Statements:
-  (v16: core::felt252) <- 1
-  (v17: (core::felt252,)) <- struct_construct(v16)
-  (v18: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v17)
-End:
-  Goto(blk6, {v18 -> v3})
 
 //! > lowering_diagnostics
 
@@ -1624,8 +1593,12 @@ End:
 
 blk1:
 Statements:
+  (v3: core::panics::PanicResult::<(core::felt252,)>) <- test::bar(v0)
 End:
-  Goto(blk7, {})
+  Match(match_enum(v3) {
+    PanicResult::Ok(v4) => blk4,
+    PanicResult::Err(v6) => blk5,
+  })
 
 blk2:
 Statements:
@@ -1652,38 +1625,6 @@ Statements:
   (v11: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v6)
 End:
   Return(v11)
-
-blk6:
-Statements:
-End:
-  Match(match_enum(v3) {
-    PanicResult::Ok(v4) => blk4,
-    PanicResult::Err(v6) => blk5,
-  })
-
-blk7:
-Statements:
-End:
-  Match(match core::felt252_is_zero(v0) {
-    IsZeroResult::Zero => blk8,
-    IsZeroResult::NonZero(v12) => blk9,
-  })
-
-blk8:
-Statements:
-  (v13: core::felt252) <- 1
-  (v14: core::felt252) <- core::felt252_sub(v0, v13)
-  (v15: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v14)
-End:
-  Goto(blk6, {v15 -> v3})
-
-blk9:
-Statements:
-  (v16: core::felt252) <- 1
-  (v17: (core::felt252,)) <- struct_construct(v16)
-  (v18: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v17)
-End:
-  Goto(blk6, {v18 -> v3})
 
 //! > lowering_diagnostics
 

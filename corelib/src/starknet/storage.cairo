@@ -164,7 +164,7 @@ use vec::{
     MutableVecIndexView, MutableVecIntoIterRange, PathableMutableVecIntoIterRange,
     PathableVecIntoIterRange, VecIndexView, VecIntoIterRange,
 };
-pub use vec::{MutableVecTrait, Vec, VecTrait};
+pub use vec::{MutableVecTrait, Vec, VecIter, VecTrait};
 
 /// A pointer to an address in storage, can be used to read and write values, if the generic type
 /// supports it (e.g. basic types like `felt252`).

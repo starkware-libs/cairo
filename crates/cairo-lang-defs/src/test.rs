@@ -3,8 +3,7 @@ use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
-    init_files_group,
+    CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx, init_files_group,
 };
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, VirtualFile};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
@@ -47,11 +46,6 @@ impl Default for DatabaseForTesting {
             res.intern_macro_plugin(MacroPluginLongId(Arc::new(DummyPlugin))),
         ]));
         res
-    }
-}
-impl AsFilesGroupMut for DatabaseForTesting {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
-        self
     }
 }
 impl Upcast<dyn DefsGroup> for DatabaseForTesting {
@@ -117,8 +111,8 @@ fn test_generic_item_id(
             }
             _ => {}
         }
-        for child in node.get_children(db) {
-            find_generics(db, module_file_id, &child, output);
+        for child in node.get_children(db).iter() {
+            find_generics(db, module_file_id, child, output);
         }
     }
     find_generics(db, module_file_id, &node, &mut output);
@@ -126,15 +120,12 @@ fn test_generic_item_id(
     TestRunnerResult::success(OrderedHashMap::from([("output".into(), output)]))
 }
 
-pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
-    db: &mut T,
-    content: &str,
-) -> ModuleId {
+pub fn setup_test_module(db: &mut dyn DefsGroup, content: &str) -> ModuleId {
     let crate_id = CrateId::plain(db, "test");
     let directory = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(directory)));
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
-    db.as_files_group_mut().override_file_content(file, Some(content.into()));
+    db.override_file_content(file, Some(content.into()));
     let syntax_diagnostics = db.file_syntax_diagnostics(file).format(Upcast::upcast(db));
     assert_eq!(syntax_diagnostics, "");
     ModuleId::CrateRoot(crate_id)
@@ -167,7 +158,7 @@ fn test_module_file() {
 
 fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
     let file_id = FileLongId::OnDisk(path.into()).intern(db);
-    db.as_files_group_mut().override_file_content(file_id, Some(content.into()));
+    db.override_file_content(file_id, Some(content.into()));
 }
 
 #[test]
@@ -488,7 +479,7 @@ fn test_unknown_item_macro() {
     assert_eq!(
         format!("{:?}", db.module_plugin_diagnostics(module_id).unwrap()),
         "[(ModuleFileId(CrateRoot(CrateId(0)), FileIndex(0)), PluginDiagnostic { stable_ptr: \
-         SyntaxStablePtrId(3), message: \"Unknown inline item macro: 'unknown_item_macro'.\", \
-         severity: Error })]"
+         SyntaxStablePtrId(3), relative_span: None, message: \"Unknown inline item macro: \
+         'unknown_item_macro'.\", severity: Error, inner_span: None })]"
     )
 }

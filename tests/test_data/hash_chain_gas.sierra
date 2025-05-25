@@ -1,5 +1,4 @@
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
-type core::never = Enum<ut@core::never> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Const<felt252, 375233589013918064796019> = Const<felt252, 375233589013918064796019> [storable: false, drop: false, dup: false, zero_sized: false];

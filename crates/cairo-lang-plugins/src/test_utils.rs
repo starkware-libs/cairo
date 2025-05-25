@@ -19,7 +19,6 @@ pub fn expand_module_text(
     let mut output = String::new();
     // A collection of all the use statements in the module.
     let mut uses_list = UnorderedHashSet::<_>::default();
-    let syntax_db = db.upcast();
     // Collect the module diagnostics.
     let mut builder = DiagnosticsBuilder::default();
     for (_file_id, diag) in db.module_plugin_diagnostics(module_id).unwrap().iter() {
@@ -35,38 +34,38 @@ pub fn expand_module_text(
     );
     for item_id in db.module_items(module_id).unwrap().iter() {
         if let ModuleItemId::Submodule(item) = item_id {
-            let submodule_item = item.stable_ptr(db).lookup(syntax_db);
-            if let ast::MaybeModuleBody::Some(body) = submodule_item.body(syntax_db) {
+            let submodule_item = item.stable_ptr(db).lookup(db);
+            if let ast::MaybeModuleBody::Some(body) = submodule_item.body(db) {
                 // Recursively expand inline submodules.
                 output.extend([
-                    submodule_item.attributes(syntax_db).as_syntax_node().get_text(syntax_db),
-                    submodule_item.visibility(syntax_db).as_syntax_node().get_text(syntax_db),
-                    submodule_item.module_kw(syntax_db).as_syntax_node().get_text(syntax_db),
-                    submodule_item.name(syntax_db).as_syntax_node().get_text(syntax_db),
-                    body.lbrace(syntax_db).as_syntax_node().get_text(syntax_db),
+                    submodule_item.attributes(db).as_syntax_node().get_text(db),
+                    submodule_item.visibility(db).as_syntax_node().get_text(db),
+                    submodule_item.module_kw(db).as_syntax_node().get_text(db),
+                    submodule_item.name(db).as_syntax_node().get_text(db),
+                    body.lbrace(db).as_syntax_node().get_text(db),
                     expand_module_text(db, ModuleId::Submodule(*item), diagnostics),
-                    body.rbrace(syntax_db).as_syntax_node().get_text(syntax_db),
+                    body.rbrace(db).as_syntax_node().get_text(db),
                 ]);
                 continue;
             }
         } else if let ModuleItemId::Use(use_id) = item_id {
-            let mut use_item = use_id.stable_ptr(db).lookup(syntax_db).as_syntax_node();
+            let mut use_item = use_id.stable_ptr(db).lookup(db).as_syntax_node();
             // Climb up the AST until the syntax kind is ItemUse. This is needed since the use item
             // points to the use leaf as one use statement can represent multiple use items.
-            while let Some(parent) = use_item.parent(syntax_db) {
+            while let Some(parent) = use_item.parent(db) {
                 use_item = parent;
-                if use_item.kind(syntax_db) == SyntaxKind::ItemUse {
+                if use_item.kind(db) == SyntaxKind::ItemUse {
                     break;
                 }
             }
             if uses_list.insert(use_item) {
-                output.push_str(&use_item.get_text(syntax_db));
+                output.push_str(&use_item.get_text(db));
             }
             continue;
         }
         let syntax_item = item_id.untyped_stable_ptr(db);
         // Output other items as is.
-        output.push_str(&syntax_item.lookup(syntax_db).get_text(syntax_db));
+        output.push_str(&syntax_item.lookup(db).get_text(db));
     }
     output
 }
@@ -79,7 +78,11 @@ impl DiagnosticEntry for TestDiagnosticEntry {
         self.0.message.to_string()
     }
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        StableLocation::new(self.0.stable_ptr).diagnostic_location(db)
+        match self.0.inner_span {
+            Some(inner_span) => StableLocation::with_inner_span(self.0.stable_ptr, inner_span)
+                .diagnostic_location(db),
+            None => StableLocation::new(self.0.stable_ptr).diagnostic_location(db),
+        }
     }
     fn severity(&self) -> Severity {
         self.0.severity

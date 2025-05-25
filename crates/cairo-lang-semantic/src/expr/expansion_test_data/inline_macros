@@ -107,7 +107,7 @@ test_expand_expr(expect_diagnostics: false)
 panic!()
 
 //! > expanded_code
-core::panics::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, 0, 0, 0])
+core::panics::panic_with_byte_array(@"")
 
 //! > diagnostics
 
@@ -122,7 +122,7 @@ test_expand_expr(expect_diagnostics: false)
 panic!("0123456")
 
 //! > expanded_code
-core::panics::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, 0, 0x30313233343536, 7])
+core::panics::panic_with_byte_array(@"0123456")
 
 //! > diagnostics
 
@@ -137,7 +137,7 @@ test_expand_expr(expect_diagnostics: false)
 panic!("0123456789012345678901234567890")
 
 //! > expanded_code
-core::panics::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, 1, 0x30313233343536373839303132333435363738393031323334353637383930, 0, 0])
+core::panics::panic_with_byte_array(@"0123456789012345678901234567890")
 
 //! > diagnostics
 
@@ -152,7 +152,7 @@ test_expand_expr(expect_diagnostics: false)
 panic!("01234567890123456789012345678901234")
 
 //! > expanded_code
-core::panics::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, 1, 0x30313233343536373839303132333435363738393031323334353637383930, 0x31323334, 4])
+core::panics::panic_with_byte_array(@"01234567890123456789012345678901234")
 
 //! > diagnostics
 
@@ -195,7 +195,7 @@ array![format!]
 array![format!]
 
 //! > diagnostics
-error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
- --> lib.cairo:2:15
+error: Plugin diagnostic: Macro can not be parsed as legacy macro. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:2:1
 array![format!]
-              ^
+^^^^^^^^^^^^^^^

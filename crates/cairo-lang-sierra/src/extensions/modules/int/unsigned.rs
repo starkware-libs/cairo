@@ -125,7 +125,7 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(IntOperationConcreteLibfunc {
             operator: self.operator,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }

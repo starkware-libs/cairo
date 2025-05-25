@@ -24,7 +24,7 @@ use semantic::expr::inference::InferenceError;
 use semantic::items::constant::ConstValue;
 use semantic::items::imp::ImplId;
 
-use self::blocks::FlatBlocks;
+use self::blocks::Blocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostic;
 use crate::ids::{FunctionId, LocationId, Signature};
@@ -71,7 +71,7 @@ impl Location {
     ) -> Self {
         self.with_note(DiagnosticNote::with_location(
             text.into(),
-            location.lookup_intern(db).stable_location.diagnostic_location(db.upcast()),
+            location.lookup_intern(db).stable_location.diagnostic_location(db),
         ))
     }
 }
@@ -79,7 +79,7 @@ impl Location {
 impl DebugWithDb<dyn LoweringGroup> for Location {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn LoweringGroup) -> std::fmt::Result {
         let files_db = db.upcast();
-        self.stable_location.diagnostic_location(db.upcast()).fmt(f, files_db)?;
+        self.stable_location.diagnostic_location(db).fmt(f, files_db)?;
 
         for note in &self.notes {
             f.write_str("\nnote: ")?;
@@ -134,7 +134,7 @@ pub struct VarUsage {
 
 /// A lowered function code using flat blocks.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct FlatLowered {
+pub struct Lowered {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,
     /// Function signature.
@@ -142,7 +142,7 @@ pub struct FlatLowered {
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
-    pub blocks: FlatBlocks,
+    pub blocks: Blocks,
     /// function parameters, including implicits.
     pub parameters: Vec<VariableId>,
 }
@@ -166,32 +166,28 @@ impl DerefMut for VarRemapping {
     }
 }
 
-/// A block of statements. Unlike [`FlatBlock`], this has no reference information,
-/// and no panic ending.
+/// A block of statements.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct FlatBlock {
+pub struct Block {
     /// Statements sequence running one after the other in the block, in a linear flow.
-    /// Note: Inner blocks might end with a `return`, which will exit the function in the middle.
-    /// Note: Match is a possible statement, which means it has control flow logic inside, but
-    /// after its execution is completed, the flow returns to the following statement of the block.
     pub statements: Vec<Statement>,
-    /// Describes how this block ends: returns to the caller or exits the function.
-    pub end: FlatBlockEnd,
+    /// Describes how this block ends.
+    pub end: BlockEnd,
 }
-impl Default for FlatBlock {
+impl Default for Block {
     fn default() -> Self {
-        Self { statements: Default::default(), end: FlatBlockEnd::NotSet }
+        Self { statements: Default::default(), end: BlockEnd::NotSet }
     }
 }
-impl FlatBlock {
+impl Block {
     pub fn is_set(&self) -> bool {
-        !matches!(self.end, FlatBlockEnd::NotSet)
+        !matches!(self.end, BlockEnd::NotSet)
     }
 }
 
-/// Describes what happens to the program flow at the end of a [`FlatBlock`].
+/// Describes what happens to the program flow at the end of a [`Block`].
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum FlatBlockEnd {
+pub enum BlockEnd {
     /// The block was created but still needs to be populated. Block must not be in this state in
     /// the end of the lowering phase.
     NotSet,
@@ -288,7 +284,7 @@ impl Statement {
     }
 
     pub fn outputs(&self) -> &[VariableId] {
-        match &self {
+        match self {
             Statement::Const(stmt) => std::slice::from_ref(&stmt.output),
             Statement::Call(stmt) => stmt.outputs.as_slice(),
             Statement::StructConstruct(stmt) => std::slice::from_ref(&stmt.output),
@@ -296,6 +292,18 @@ impl Statement {
             Statement::EnumConstruct(stmt) => std::slice::from_ref(&stmt.output),
             Statement::Snapshot(stmt) => stmt.outputs.as_slice(),
             Statement::Desnap(stmt) => std::slice::from_ref(&stmt.output),
+        }
+    }
+
+    pub fn outputs_mut(&mut self) -> &mut [VariableId] {
+        match self {
+            Statement::Const(stmt) => std::slice::from_mut(&mut stmt.output),
+            Statement::Call(stmt) => stmt.outputs.as_mut_slice(),
+            Statement::StructConstruct(stmt) => std::slice::from_mut(&mut stmt.output),
+            Statement::StructDestructure(stmt) => stmt.outputs.as_mut_slice(),
+            Statement::EnumConstruct(stmt) => std::slice::from_mut(&mut stmt.output),
+            Statement::Snapshot(stmt) => stmt.outputs.as_mut_slice(),
+            Statement::Desnap(stmt) => std::slice::from_mut(&mut stmt.output),
         }
     }
     pub fn location(&self) -> Option<LocationId> {
@@ -517,4 +525,24 @@ pub enum DependencyType {
     Call,
     /// A function depends on another function if its cost depends on the other function's cost.
     Cost,
+}
+
+/// The requested lowering stage.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum LoweringStage {
+    /// Direct translation from the semantic stage and concretization.
+    Monomorphized,
+    /// After lowering stages that may change the signature of functions, such as `lower_panics`.
+    /// Specifically:
+    /// * Adds `withdraw_gas` calls.
+    /// * Adds panics.
+    /// * Adds destructor calls.
+    /// * scrub units.
+    PreOptimizations,
+    /// Lowering with baseline optimizations - specifically, adds the stages at
+    /// `baseline_optimization_strategy`.
+    PostBaseline,
+    /// Lowering with all of the optimizations - specifically, adds the stages at
+    /// `final_optimization_strategy`
+    Final,
 }

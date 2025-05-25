@@ -4,8 +4,8 @@ use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_v
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, CrateSettings, Edition, ExperimentalFeaturesConfig, ExternalFiles,
-    FilesDatabase, FilesGroup, init_dev_corelib, init_files_group,
+    CrateSettings, Edition, ExperimentalFeaturesConfig, ExternalFiles, FilesDatabase, FilesGroup,
+    init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{BlobId, CrateId, CrateLongId, FileKind, FileLongId, VirtualFile};
@@ -67,11 +67,6 @@ pub static SHARED_DB: LazyLock<Mutex<SemanticDatabaseForTesting>> =
 impl Default for SemanticDatabaseForTesting {
     fn default() -> Self {
         SHARED_DB.lock().unwrap().snapshot()
-    }
-}
-impl AsFilesGroupMut for SemanticDatabaseForTesting {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
-        self
     }
 }
 impl Upcast<dyn FilesGroup> for SemanticDatabaseForTesting {
@@ -156,6 +151,7 @@ pub fn setup_test_crate_ex(
                 negative_impls: true,
                 associated_item_constraints: true,
                 coupons: true,
+                user_defined_inline_macros: true,
             },
             cfg_set: Default::default(),
         }

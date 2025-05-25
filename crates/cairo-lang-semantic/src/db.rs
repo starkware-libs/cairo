@@ -7,12 +7,12 @@ use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, GlobalUseId, ImplAliasId, ImplConstantDefId,
     ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, ImportableId,
-    InlineMacroExprPluginLongId, LanguageElementId, LookupItemId, MacroPluginLongId, ModuleFileId,
-    ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, TraitConstantId, TraitFunctionId, TraitId,
-    TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
+    InlineMacroExprPluginLongId, LanguageElementId, LookupItemId, MacroDeclarationId,
+    MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId,
+    TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId,
+    VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
-use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
@@ -33,6 +33,7 @@ use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{
     ImplId, ImplImplId, ImplItemInfo, ImplLookupContext, ImplicitImplImplData, UninferredImpl,
 };
+use crate::items::macro_declaration::{MacroDeclarationData, MacroRuleData};
 use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemConstantData, TraitItemImplData,
@@ -62,12 +63,7 @@ pub trait Elongate {
 // This prevents cycles where there shouldn't be any.
 #[salsa::query_group(SemanticDatabase)]
 pub trait SemanticGroup:
-    DefsGroup
-    + Upcast<dyn DefsGroup>
-    + Upcast<dyn ParserGroup>
-    + Upcast<dyn FilesGroup>
-    + AsFilesGroupMut
-    + Elongate
+    DefsGroup + Upcast<dyn DefsGroup> + Upcast<dyn ParserGroup> + Elongate
 {
     #[salsa::interned]
     fn intern_function(&self, id: items::functions::FunctionLongId) -> semantic::FunctionId;
@@ -230,11 +226,8 @@ pub trait SemanticGroup:
     ) -> Maybe<Option<ModuleItemInfo>>;
 
     /// Returns all the items used within the module.
-    #[salsa::invoke(items::module::module_all_used_items)]
-    fn module_all_used_items(
-        &self,
-        module_id: ModuleId,
-    ) -> Maybe<Arc<OrderedHashSet<LookupItemId>>>;
+    #[salsa::invoke(items::module::module_all_used_uses)]
+    fn module_all_used_uses(&self, module_id: ModuleId) -> Maybe<Arc<OrderedHashSet<UseId>>>;
 
     /// Returns the attributes of a module.
     #[salsa::invoke(items::module::module_attributes)]
@@ -476,8 +469,8 @@ pub trait SemanticGroup:
         name: SmolStr,
     ) -> Maybe<Option<TraitItemInfo>>;
     /// Returns all the items used within the trait.
-    #[salsa::invoke(items::trt::trait_all_used_items)]
-    fn trait_all_used_items(&self, trait_id: TraitId) -> Maybe<Arc<OrderedHashSet<LookupItemId>>>;
+    #[salsa::invoke(items::trt::trait_all_used_uses)]
+    fn trait_all_used_uses(&self, trait_id: TraitId) -> Maybe<Arc<OrderedHashSet<UseId>>>;
     /// Returns the functions of a trait.
     #[salsa::invoke(items::trt::trait_functions)]
     fn trait_functions(&self, trait_id: TraitId)
@@ -798,11 +791,8 @@ pub trait SemanticGroup:
         name: SmolStr,
     ) -> Maybe<Option<TraitImplId>>;
     /// Returns all the items used within the impl.
-    #[salsa::invoke(items::imp::impl_all_used_items)]
-    fn impl_all_used_items(
-        &self,
-        impl_def_id: ImplDefId,
-    ) -> Maybe<Arc<OrderedHashSet<LookupItemId>>>;
+    #[salsa::invoke(items::imp::impl_all_used_uses)]
+    fn impl_all_used_uses(&self, impl_def_id: ImplDefId) -> Maybe<Arc<OrderedHashSet<UseId>>>;
     /// Returns the type items in the impl.
     #[salsa::invoke(items::imp::impl_types)]
     fn impl_types(
@@ -1467,7 +1457,32 @@ pub trait SemanticGroup:
         &self,
         generic_function_id: GenericFunctionId,
     ) -> Maybe<OrderedHashMap<TypeId, TypeId>>;
-
+    // Macro Declaration.
+    // =================
+    /// Private query to compute data about a macro declaration.
+    #[salsa::invoke(items::macro_declaration::priv_macro_declaration_data)]
+    fn priv_macro_declaration_data(
+        &self,
+        macro_id: MacroDeclarationId,
+    ) -> Maybe<MacroDeclarationData>;
+    /// Returns the semantic diagnostics of a macro declaration.
+    #[salsa::invoke(items::macro_declaration::macro_declaration_diagnostics)]
+    fn macro_declaration_diagnostics(
+        &self,
+        macro_id: MacroDeclarationId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the resolver data of a macro declaration.
+    #[salsa::invoke(items::macro_declaration::macro_declaration_resolver_data)]
+    fn macro_declaration_resolver_data(
+        &self,
+        macro_id: MacroDeclarationId,
+    ) -> Maybe<Arc<ResolverData>>;
+    /// Returns the attributes of a macro declaration.
+    #[salsa::invoke(items::macro_declaration::macro_declaration_attributes)]
+    fn macro_declaration_attributes(&self, macro_id: MacroDeclarationId) -> Maybe<Vec<Attribute>>;
+    /// Returns the rules semantic data of a macro declaration.
+    #[salsa::invoke(items::macro_declaration::macro_declaration_rules)]
+    fn macro_declaration_rules(&self, macro_id: MacroDeclarationId) -> Maybe<Vec<MacroRuleData>>;
     // Generic type.
     // =============
     /// Returns the generic params of a generic type.
@@ -1649,7 +1664,7 @@ pub trait SemanticGroup:
         module_id: ModuleFileId,
     ) -> Option<Arc<OrderedHashMap<ImportableId, String>>>;
     /// Returns all visible importables in a module, alongside a visible use path to the trait.
-    /// `user_module_file_id` is the module from which the importables are should be visible. If
+    /// `user_module_file_id` is the module from which the importables should be visible. If
     /// `include_parent` is true, the parent module of `module_id` is also considered.
     #[salsa::invoke(lsp_helpers::visible_importables_in_module)]
     fn visible_importables_in_module(
@@ -1659,7 +1674,7 @@ pub trait SemanticGroup:
         include_parent: bool,
     ) -> Arc<[(ImportableId, String)]>;
     /// Returns all visible importables in a crate, alongside a visible use path to the trait.
-    /// `user_module_file_id` is the module from which the importables are should be visible.
+    /// `user_module_file_id` is the module from which the importables should be visible.
     #[salsa::invoke(lsp_helpers::visible_importables_in_crate)]
     fn visible_importables_in_crate(
         &self,
@@ -1692,7 +1707,12 @@ fn module_semantic_diagnostics(
     let mut diagnostics = DiagnosticsBuilder::default();
     for (_module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)?.iter().cloned() {
         diagnostics.add(SemanticDiagnostic::new(
-            StableLocation::new(plugin_diag.stable_ptr),
+            match plugin_diag.inner_span {
+                None => StableLocation::new(plugin_diag.stable_ptr),
+                Some(inner_span) => {
+                    StableLocation::with_inner_span(plugin_diag.stable_ptr, inner_span)
+                }
+            },
             SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
         ));
     }
@@ -1744,7 +1764,7 @@ fn module_semantic_diagnostics(
                         };
 
                         let stable_location =
-                            StableLocation::new(submodule_id.stable_ptr(db.upcast()).untyped());
+                            StableLocation::new(submodule_id.stable_ptr(db).untyped());
                         diagnostics.add(SemanticDiagnostic::new(
                             stable_location,
                             SemanticDiagnosticKind::ModuleFileNotFound(path),
@@ -1764,14 +1784,16 @@ fn module_semantic_diagnostics(
             ModuleItemId::ImplAlias(type_alias) => {
                 diagnostics.extend(db.impl_alias_semantic_diagnostics(*type_alias));
             }
+            ModuleItemId::MacroDeclaration(macro_declaration) => {
+                diagnostics.extend(db.macro_declaration_diagnostics(*macro_declaration));
+            }
         }
     }
     for global_use in db.module_global_uses(module_id)?.keys() {
         diagnostics.extend(db.global_use_semantic_diagnostics(*global_use));
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
-    for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db.upcast())).iter()
-    {
+    for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db)).iter() {
         let analyzer_plugin = db.lookup_intern_analyzer_plugin(*analyzer_plugin_id);
 
         for diag in analyzer_plugin.diagnostics(db, module_id) {
@@ -1809,7 +1831,7 @@ fn add_unused_item_diagnostics(
     data: &ModuleSemanticData,
     diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
 ) {
-    let Ok(all_used_items) = db.module_all_used_items(module_id) else {
+    let Ok(all_used_uses) = db.module_all_used_uses(module_id) else {
         return;
     };
     for info in data.items.values() {
@@ -1817,7 +1839,7 @@ fn add_unused_item_diagnostics(
             continue;
         }
         if let ModuleItemId::Use(use_id) = info.item_id {
-            add_unused_import_diagnostics(db, &all_used_items, use_id, diagnostics);
+            add_unused_import_diagnostics(db, &all_used_uses, use_id, diagnostics);
         };
     }
 }
@@ -1825,7 +1847,7 @@ fn add_unused_item_diagnostics(
 /// Adds diagnostics for unused imports.
 fn add_unused_import_diagnostics(
     db: &dyn SemanticGroup,
-    all_used_items: &OrderedHashSet<LookupItemId>,
+    all_used_uses: &OrderedHashSet<UseId>,
     use_id: UseId,
     diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
 ) {
@@ -1837,11 +1859,11 @@ fn add_unused_import_diagnostics(
             item,
             ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_)
         ))?;
-        require(!all_used_items.contains(&LookupItemId::ModuleItem(ModuleItemId::Use(use_id))))?;
+        require(!all_used_uses.contains(&use_id))?;
         let resolver_data = db.use_resolver_data(use_id).ok()?;
         require(!resolver_data.feature_config.allow_unused_imports)?;
         Some(diagnostics.add(SemanticDiagnostic::new(
-            StableLocation::new(use_id.untyped_stable_ptr(db.upcast())),
+            StableLocation::new(use_id.untyped_stable_ptr(db)),
             SemanticDiagnosticKind::UnusedImport(use_id),
         )))
     })();
@@ -1908,6 +1930,7 @@ pub fn get_resolver_data_options(
             ModuleItemId::ExternFunction(id) => {
                 vec![db.extern_function_declaration_resolver_data(id)]
             }
+            ModuleItemId::MacroDeclaration(id) => vec![db.macro_declaration_resolver_data(id)],
         },
         LookupItemId::TraitItem(id) => match id {
             cairo_lang_defs::ids::TraitItemId::Function(id) => {

@@ -12,8 +12,8 @@ use itertools::{Itertools, zip_eq};
 use crate::ids::FunctionId;
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementCall, StatementConst,
-    StatementDesnap, StatementEnumConstruct, StatementSnapshot, StatementStructConstruct,
+    Block, BlockEnd, BlockId, Lowered, Statement, StatementCall, StatementConst, StatementDesnap,
+    StatementEnumConstruct, StatementSnapshot, StatementStructConstruct,
     StatementStructDestructure, VarRemapping, VarUsage, Variable, VariableId,
 };
 
@@ -170,9 +170,9 @@ impl CanonicBlock {
     /// Blocks that do not end in return do not have a canonic representation.
     fn try_from_block(
         variable: &Arena<Variable>,
-        block: &FlatBlock,
+        block: &Block,
     ) -> Option<(CanonicBlock, Vec<VarUsage>)> {
-        let FlatBlockEnd::Return(returned_vars, _) = &block.end else {
+        let BlockEnd::Return(returned_vars, _) = &block.end else {
             return None;
         };
 
@@ -227,9 +227,9 @@ struct DedupContext {
 /// the new block and the new inputs.
 fn rebuild_block_and_inputs(
     variables: &mut Arena<Variable>,
-    block: &FlatBlock,
+    block: &Block,
     inputs: &[VarUsage],
-) -> (FlatBlock, Vec<VarUsage>) {
+) -> (Block, Vec<VarUsage>) {
     let mut var_reassigner = VarReassigner::new(variables);
     (
         var_reassigner.rebuild_block(block),
@@ -239,7 +239,7 @@ fn rebuild_block_and_inputs(
 
 /// Deduplicates blocks by redirecting goto's and match arms to one of the duplicates.
 /// The duplicate blocks will be removed later by `reorganize_blocks`.
-pub fn dedup_blocks(lowered: &mut FlatLowered) {
+pub fn dedup_blocks(lowered: &mut Lowered) {
     if lowered.blocks.has_root().is_err() {
         return;
     }
@@ -285,9 +285,9 @@ pub fn dedup_blocks(lowered: &mut FlatLowered) {
     }
 
     let mut new_goto_block = |block_id, inputs: &Vec<VarUsage>, target_inputs: &Vec<VarUsage>| {
-        new_blocks.push(FlatBlock {
+        new_blocks.push(Block {
             statements: vec![],
-            end: FlatBlockEnd::Goto(
+            end: BlockEnd::Goto(
                 block_id,
                 VarRemapping {
                     remapping: OrderedHashMap::from_iter(zip_eq(
@@ -303,11 +303,11 @@ pub fn dedup_blocks(lowered: &mut FlatLowered) {
         new_block_id
     };
 
-    // Note that the loop below cant be merged with the loop above as a block might be marked as dup
-    // after we already visiting an arm that goes to it.
+    // Note that the loop below can't be merged with the loop above as a block might be marked as
+    // dup after we already visiting an arm that goes to it.
     for block in lowered.blocks.iter_mut() {
         match &mut block.end {
-            FlatBlockEnd::Goto(target_block, remappings) => {
+            BlockEnd::Goto(target_block, remappings) => {
                 let Some((block_id, target_inputs)) = duplicates.get(target_block) else {
                     continue;
                 };
@@ -328,7 +328,7 @@ pub fn dedup_blocks(lowered: &mut FlatLowered) {
                 *target_block = *block_id;
                 *remappings = inputs_remapping;
             }
-            FlatBlockEnd::Match { info } => {
+            BlockEnd::Match { info } => {
                 for arm in info.arms_mut() {
                     let Some((block_id, target_inputs)) = duplicates.get(&arm.block_id) else {
                         continue;

@@ -246,3 +246,4 @@ edition = "2023_01"
 negative_impls = false
 associated_item_constraints = false
 coupons = false
+user_defined_inline_macros = false

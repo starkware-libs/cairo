@@ -33,30 +33,34 @@ FunctionSignature
     │           │   └── trailing_trivia (kind: Trivia)
     │           │       └── child #0 (kind: TokenWhitespace).
     │           └── ty (kind: ExprPath)
-    │               └── item #0 (kind: PathSegmentWithGenericArgs)
-    │                   ├── ident (kind: TerminalIdentifier)
-    │                   │   ├── leading_trivia (kind: Trivia) []
-    │                   │   ├── token (kind: TokenIdentifier): 'Option'
-    │                   │   └── trailing_trivia (kind: Trivia) []
-    │                   ├── separator (kind: OptionTerminalColonColonEmpty) []
-    │                   └── generic_args (kind: GenericArgs)
-    │                       ├── langle (kind: TerminalLT)
+    │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │               └── segments (kind: ExprPathInner)
+    │                   └── item #0 (kind: PathSegmentWithGenericArgs)
+    │                       ├── ident (kind: TerminalIdentifier)
     │                       │   ├── leading_trivia (kind: Trivia) []
-    │                       │   ├── token (kind: TokenLT): '<'
+    │                       │   ├── token (kind: TokenIdentifier): 'Option'
     │                       │   └── trailing_trivia (kind: Trivia) []
-    │                       ├── generic_args (kind: GenericArgList)
-    │                       │   └── item #0 (kind: GenericArgUnnamed)
-    │                       │       └── value (kind: GenericArgValueExpr)
-    │                       │           └── expr (kind: ExprPath)
-    │                       │               └── item #0 (kind: PathSegmentSimple)
-    │                       │                   └── ident (kind: TerminalIdentifier)
-    │                       │                       ├── leading_trivia (kind: Trivia) []
-    │                       │                       ├── token (kind: TokenIdentifier): 'felt252'
-    │                       │                       └── trailing_trivia (kind: Trivia) []
-    │                       └── rangle (kind: TerminalGT)
-    │                           ├── leading_trivia (kind: Trivia) []
-    │                           ├── token (kind: TokenGT): '>'
-    │                           └── trailing_trivia (kind: Trivia) []
+    │                       ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │                       └── generic_args (kind: GenericArgs)
+    │                           ├── langle (kind: TerminalLT)
+    │                           │   ├── leading_trivia (kind: Trivia) []
+    │                           │   ├── token (kind: TokenLT): '<'
+    │                           │   └── trailing_trivia (kind: Trivia) []
+    │                           ├── generic_args (kind: GenericArgList)
+    │                           │   └── item #0 (kind: GenericArgUnnamed)
+    │                           │       └── value (kind: GenericArgValueExpr)
+    │                           │           └── expr (kind: ExprPath)
+    │                           │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │                           │               └── segments (kind: ExprPathInner)
+    │                           │                   └── item #0 (kind: PathSegmentSimple)
+    │                           │                       └── ident (kind: TerminalIdentifier)
+    │                           │                           ├── leading_trivia (kind: Trivia) []
+    │                           │                           ├── token (kind: TokenIdentifier): 'felt252'
+    │                           │                           └── trailing_trivia (kind: Trivia) []
+    │                           └── rangle (kind: TerminalGT)
+    │                               ├── leading_trivia (kind: Trivia) []
+    │                               ├── token (kind: TokenGT): '>'
+    │                               └── trailing_trivia (kind: Trivia) []
     ├── rparen (kind: TerminalRParen)
     │   ├── leading_trivia (kind: Trivia) []
     │   ├── token (kind: TokenRParen): ')'

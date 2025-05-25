@@ -87,7 +87,11 @@ impl DiagnosticEntry for LoweringDiagnostic {
 
     fn severity(&self) -> Severity {
         match self.kind {
-            LoweringDiagnosticKind::Unreachable { .. } => Severity::Warning,
+            LoweringDiagnosticKind::Unreachable { .. }
+            | LoweringDiagnosticKind::MatchError(MatchError {
+                kind: _,
+                error: MatchDiagnostic::UnreachableMatchArm,
+            }) => Severity::Warning,
             _ => Severity::Error,
         }
     }
@@ -101,9 +105,9 @@ impl DiagnosticEntry for LoweringDiagnostic {
             return self
                 .location
                 .stable_location
-                .diagnostic_location_until(db.upcast(), *last_statement_ptr);
+                .diagnostic_location_until(db, *last_statement_ptr);
         }
-        self.location.stable_location.diagnostic_location(db.upcast())
+        self.location.stable_location.diagnostic_location(db)
     }
 
     fn is_same_kind(&self, other: &Self) -> bool {
@@ -115,13 +119,13 @@ impl MatchError {
     fn format(&self) -> String {
         match (&self.error, &self.kind) {
             (MatchDiagnostic::UnsupportedMatchedType(matched_type), MatchKind::Match) => {
-                format!("Unsupported matched type. Type: `{}`.", matched_type)
+                format!("Unsupported matched type. Type: `{matched_type}`.")
             }
             (MatchDiagnostic::UnsupportedMatchedType(matched_type), MatchKind::IfLet) => {
-                format!("Unsupported type in if-let. Type: `{}`.", matched_type)
+                format!("Unsupported type in if-let. Type: `{matched_type}`.")
             }
             (MatchDiagnostic::UnsupportedMatchedType(matched_type), MatchKind::WhileLet(_, _)) => {
-                format!("Unsupported type in while-let. Type: `{}`.", matched_type)
+                format!("Unsupported type in while-let. Type: `{matched_type}`.")
             }
             (MatchDiagnostic::UnsupportedMatchedValueTuple, MatchKind::Match) => {
                 "Unsupported matched value. Currently, match on tuples only supports enums as \
@@ -144,28 +148,23 @@ impl MatchError {
             (MatchDiagnostic::UnsupportedMatchArmNotATuple, _) => {
                 "Unsupported pattern - not a tuple.".into()
             }
-
             (MatchDiagnostic::UnsupportedMatchArmNotALiteral, MatchKind::Match) => {
                 "Unsupported match arm - not a literal.".into()
             }
             (MatchDiagnostic::UnsupportedMatchArmNonSequential, MatchKind::Match) => {
                 "Unsupported match - numbers must be sequential starting from 0.".into()
             }
-            (MatchDiagnostic::NonExhaustiveMatchFelt252, MatchKind::Match) => {
-                "Match is non exhaustive - match over a numerical value must have a wildcard card \
-                 pattern (`_`)."
-                    .into()
+            (MatchDiagnostic::NonExhaustiveMatchValue, MatchKind::Match) => {
+                "Match is non exhaustive - add a wildcard pattern (`_`).".into()
             }
-
             (
                 MatchDiagnostic::UnsupportedMatchArmNotALiteral
                 | MatchDiagnostic::UnsupportedMatchArmNonSequential
-                | MatchDiagnostic::NonExhaustiveMatchFelt252,
+                | MatchDiagnostic::NonExhaustiveMatchValue,
                 MatchKind::IfLet | MatchKind::WhileLet(_, _),
             ) => unreachable!("Numeric values are not supported in if/while-let conditions."),
-
             (MatchDiagnostic::MissingMatchArm(variant), MatchKind::Match) => {
-                format!("Missing match arm: `{}` not covered.", variant)
+                format!("Missing match arm: `{variant}` not covered.")
             }
             (MatchDiagnostic::MissingMatchArm(_), MatchKind::IfLet) => {
                 unreachable!("If-let is not required to be exhaustive.")
@@ -173,7 +172,6 @@ impl MatchError {
             (MatchDiagnostic::MissingMatchArm(_), MatchKind::WhileLet(_, _)) => {
                 unreachable!("While-let is not required to be exhaustive.")
             }
-
             (MatchDiagnostic::UnreachableMatchArm, MatchKind::Match) => {
                 "Unreachable pattern arm.".into()
             }
@@ -243,6 +241,6 @@ pub enum MatchDiagnostic {
 
     UnsupportedMatchArmNotALiteral,
     UnsupportedMatchArmNonSequential,
-    NonExhaustiveMatchFelt252,
+    NonExhaustiveMatchValue,
     UnsupportedNumericInLetCondition,
 }

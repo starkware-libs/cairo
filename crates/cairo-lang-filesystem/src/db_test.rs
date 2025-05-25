@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use cairo_lang_utils::Upcast;
 use test_log::test;
 
 use super::FilesGroup;
@@ -32,12 +31,12 @@ fn test_filesystem() {
 fn test_flags() {
     let mut db = FilesDatabaseForTesting::default();
 
-    let add_withdraw_gas_flag_id = FlagId::new(db.upcast(), "add_withdraw_gas");
+    let add_withdraw_gas_flag_id = FlagId::new(&db, "add_withdraw_gas");
 
     db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
 
     assert_eq!(*db.get_flag(add_withdraw_gas_flag_id).unwrap(), Flag::AddWithdrawGas(false));
-    assert!(db.get_flag(FlagId::new(db.upcast(), "non_existing_flag")).is_none());
+    assert!(db.get_flag(FlagId::new(&db, "non_existing_flag")).is_none());
 }
 
 #[test]

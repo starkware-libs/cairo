@@ -92,6 +92,9 @@ const VALID_POW_2_0: () = assert(2_felt252.pow(0) == 0b1);
 const VALID_POW_2_6: () = assert(2_felt252.pow(6) == 0b1000000);
 const VALID_POW_2_10: () = assert(2_felt252.pow(10) == 0b10000000000);
 
+const VALID_NON_ZERO: NonZero<u8> = 1;
+const VALID_UNWRAPPED_NON_ZERO: u8 = VALID_NON_ZERO.into();
+
 const FUNC_CALC_SUCCESS_OPTION: felt252 = Some(5).unwrap();
 const FUNC_CALC_SUCCESS_RESULT1: felt252 = Result::<_, felt252>::Ok(5).unwrap();
 const FUNC_CALC_SUCCESS_RESULT2: felt252 = Result::<felt252, _>::Err(5).unwrap_err();
@@ -143,7 +146,7 @@ note: In `test::assert`:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Constant calculation depth exceeded.
- --> lib.cairo:56:43
+ --> lib.cairo:59:43
 const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
                                           ^^^^^^^^^^^^^
 
@@ -443,6 +446,37 @@ warning: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:7:11
     const C: u8 = 6;
           ^
+
+//! > ==========================================================================
+
+//! > Usage of non-consts in consts
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(param: u8) -> () {
+    const A: u8 = param;
+    let local: u8 = 1;
+    const B: u8 = local;
+    const _C: u8 = A + B;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: This expression is not supported as constant.
+ --> lib.cairo:2:19
+    const A: u8 = param;
+                  ^^^^^
+
+error: This expression is not supported as constant.
+ --> lib.cairo:4:19
+    const B: u8 = local;
+                  ^^^^^
 
 //! > ==========================================================================
 

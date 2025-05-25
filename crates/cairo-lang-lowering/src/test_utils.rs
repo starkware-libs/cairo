@@ -3,7 +3,7 @@ use std::sync::{LazyLock, Mutex};
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup, init_dev_corelib, init_files_group,
+    ExternalFiles, FilesDatabase, FilesGroup, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::VirtualFile;
@@ -15,10 +15,12 @@ use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
 
-use crate::FlatLowered;
-use crate::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
+use crate::Lowered;
+use crate::db::{LoweringDatabase, LoweringGroup, UseApproxCodeSizeEstimator, init_lowering_group};
 use crate::fmt::LoweredFormatter;
 use crate::utils::InliningStrategy;
+
+impl UseApproxCodeSizeEstimator for LoweringDatabaseForTesting {}
 
 #[salsa::database(
     LoweringDatabase,
@@ -34,7 +36,7 @@ pub struct LoweringDatabaseForTesting {
 impl salsa::Database for LoweringDatabaseForTesting {}
 impl ExternalFiles for LoweringDatabaseForTesting {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
+        try_ext_as_virtual_impl(self, external_id)
     }
 }
 impl salsa::ParallelDatabase for LoweringDatabaseForTesting {
@@ -71,11 +73,6 @@ impl Default for LoweringDatabaseForTesting {
         SHARED_DB.lock().unwrap().snapshot()
     }
 }
-impl AsFilesGroupMut for LoweringDatabaseForTesting {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
-        self
-    }
-}
 impl Upcast<dyn FilesGroup> for LoweringDatabaseForTesting {
     fn upcast(&self) -> &(dyn FilesGroup + 'static) {
         self
@@ -108,7 +105,7 @@ impl Upcast<dyn ParserGroup> for LoweringDatabaseForTesting {
 }
 
 /// Helper for formatting a lowered representation for tests.
-pub fn formatted_lowered(db: &dyn LoweringGroup, lowered: Option<&FlatLowered>) -> String {
+pub fn formatted_lowered(db: &dyn LoweringGroup, lowered: Option<&Lowered>) -> String {
     match lowered {
         Some(lowered) => {
             let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);

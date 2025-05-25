@@ -18,14 +18,345 @@ ExprInlineMacro
 //! > expected_tree
 └── Top level kind: ExprInlineMacro
     ├── path (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentSimple)
-    │       └── ident (kind: TokenIdentifier): 'println'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'println'
     ├── bang (kind: TokenNot): '!'
-    └── arguments (kind: ArgListParenthesized)
-        ├── lparen (kind: TokenLParen): '('
-        ├── arguments (kind: ArgList)
-        │   └── item #0 (kind: Arg)
-        │       ├── modifiers (kind: ModifierList) []
-        │       └── arg_clause (kind: ArgClauseUnnamed)
-        │           └── value (kind: TokenShortString): ''foo''
-        └── rparen (kind: TokenRParen): ')'
+    └── arguments (kind: TokenTreeNode)
+        └── subtree (kind: ParenthesizedTokenTree)
+            ├── lparen (kind: TokenLParen): '('
+            ├── tokens (kind: TokenList)
+            │   └── child #0 (kind: TokenTreeLeaf)
+            │       └── leaf (kind: TokenShortString): ''foo''
+            └── rparen (kind: TokenRParen): ')'
+
+//! > ==========================================================================
+
+//! > Test a syntax tree with subtree
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+macro some_macro {
+    (a + b + $x:ident + ($y:ident + (1 + 2))) => {
+        1
+    };
+}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   └── child #0 (kind: ItemMacroDeclaration)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── macro_kw (kind: TokenMacro): 'macro'
+    │       ├── name (kind: TokenIdentifier): 'some_macro'
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── rules (kind: MacroRulesList)
+    │       │   └── child #0 (kind: MacroRule)
+    │       │       ├── lhs (kind: ParenthesizedMacro)
+    │       │       │   ├── lparen (kind: TokenLParen): '('
+    │       │       │   ├── elements (kind: MacroElements)
+    │       │       │   │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │       │   │   │   └── leaf (kind: TokenIdentifier): 'a'
+    │       │       │   │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │       │   │   │   └── leaf (kind: TokenPlus): '+'
+    │       │       │   │   ├── child #2 (kind: TokenTreeLeaf)
+    │       │       │   │   │   └── leaf (kind: TokenIdentifier): 'b'
+    │       │       │   │   ├── child #3 (kind: TokenTreeLeaf)
+    │       │       │   │   │   └── leaf (kind: TokenPlus): '+'
+    │       │       │   │   ├── child #4 (kind: MacroParam)
+    │       │       │   │   │   ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │   │   ├── name (kind: TokenIdentifier): 'x'
+    │       │       │   │   │   └── kind (kind: ParamKind)
+    │       │       │   │   │       ├── colon (kind: TokenColon): ':'
+    │       │       │   │   │       └── kind (kind: ParamIdent)
+    │       │       │   │   │           └── ident (kind: TokenIdentifier): 'ident'
+    │       │       │   │   ├── child #5 (kind: TokenTreeLeaf)
+    │       │       │   │   │   └── leaf (kind: TokenPlus): '+'
+    │       │       │   │   └── child #6 (kind: MacroWrapper)
+    │       │       │   │       └── subtree (kind: ParenthesizedMacro)
+    │       │       │   │           ├── lparen (kind: TokenLParen): '('
+    │       │       │   │           ├── elements (kind: MacroElements)
+    │       │       │   │           │   ├── child #0 (kind: MacroParam)
+    │       │       │   │           │   │   ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │           │   │   ├── name (kind: TokenIdentifier): 'y'
+    │       │       │   │           │   │   └── kind (kind: ParamKind)
+    │       │       │   │           │   │       ├── colon (kind: TokenColon): ':'
+    │       │       │   │           │   │       └── kind (kind: ParamIdent)
+    │       │       │   │           │   │           └── ident (kind: TokenIdentifier): 'ident'
+    │       │       │   │           │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │       │   │           │   │   └── leaf (kind: TokenPlus): '+'
+    │       │       │   │           │   └── child #2 (kind: MacroWrapper)
+    │       │       │   │           │       └── subtree (kind: ParenthesizedMacro)
+    │       │       │   │           │           ├── lparen (kind: TokenLParen): '('
+    │       │       │   │           │           ├── elements (kind: MacroElements)
+    │       │       │   │           │           │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │       │   │           │           │   │   └── leaf (kind: TokenLiteralNumber): '1'
+    │       │       │   │           │           │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │       │   │           │           │   │   └── leaf (kind: TokenPlus): '+'
+    │       │       │   │           │           │   └── child #2 (kind: TokenTreeLeaf)
+    │       │       │   │           │           │       └── leaf (kind: TokenLiteralNumber): '2'
+    │       │       │   │           │           └── rparen (kind: TokenRParen): ')'
+    │       │       │   │           └── rparen (kind: TokenRParen): ')'
+    │       │       │   └── rparen (kind: TokenRParen): ')'
+    │       │       ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │       │       ├── rhs (kind: BracedMacro)
+    │       │       │   ├── lbrace (kind: TokenLBrace): '{'
+    │       │       │   ├── elements (kind: MacroElements)
+    │       │       │   │   └── child #0 (kind: TokenTreeLeaf)
+    │       │       │   │       └── leaf (kind: TokenLiteralNumber): '1'
+    │       │       │   └── rbrace (kind: TokenRBrace): '}'
+    │       │       └── semicolon (kind: TokenSemicolon): ';'
+    │       └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test a syntax tree with repetition operators
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+macro some_macro {
+    ($($x:ident), +) => {
+        1
+    };
+
+    ($($x:expr), *) => {
+        1
+    };
+
+    ($($x:expr)?) => {
+        1
+    };
+
+    ($($x:ident) +) => {
+        1
+    };
+
+    ($($x:expr), *) => {
+        foo!($($x), *)
+    };
+}
+
+fn use_macro() {
+    some_macro!(100);
+}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   ├── child #0 (kind: ItemMacroDeclaration)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
+    │   │   ├── macro_kw (kind: TokenMacro): 'macro'
+    │   │   ├── name (kind: TokenIdentifier): 'some_macro'
+    │   │   ├── lbrace (kind: TokenLBrace): '{'
+    │   │   ├── rules (kind: MacroRulesList)
+    │   │   │   ├── child #0 (kind: MacroRule)
+    │   │   │   │   ├── lhs (kind: ParenthesizedMacro)
+    │   │   │   │   │   ├── lparen (kind: TokenLParen): '('
+    │   │   │   │   │   ├── elements (kind: MacroElements)
+    │   │   │   │   │   │   └── child #0 (kind: MacroRepetition)
+    │   │   │   │   │   │       ├── dollar (kind: TokenDollar): '$'
+    │   │   │   │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │   │   │   │   │       ├── elements (kind: MacroElements)
+    │   │   │   │   │   │       │   └── child #0 (kind: MacroParam)
+    │   │   │   │   │   │       │       ├── dollar (kind: TokenDollar): '$'
+    │   │   │   │   │   │       │       ├── name (kind: TokenIdentifier): 'x'
+    │   │   │   │   │   │       │       └── kind (kind: ParamKind)
+    │   │   │   │   │   │       │           ├── colon (kind: TokenColon): ':'
+    │   │   │   │   │   │       │           └── kind (kind: ParamIdent)
+    │   │   │   │   │   │       │               └── ident (kind: TokenIdentifier): 'ident'
+    │   │   │   │   │   │       ├── rparen (kind: TokenRParen): ')'
+    │   │   │   │   │   │       ├── separator (kind: TokenComma): ','
+    │   │   │   │   │   │       └── operator (kind: TokenPlus): '+'
+    │   │   │   │   │   └── rparen (kind: TokenRParen): ')'
+    │   │   │   │   ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │   │   │   │   ├── rhs (kind: BracedMacro)
+    │   │   │   │   │   ├── lbrace (kind: TokenLBrace): '{'
+    │   │   │   │   │   ├── elements (kind: MacroElements)
+    │   │   │   │   │   │   └── child #0 (kind: TokenTreeLeaf)
+    │   │   │   │   │   │       └── leaf (kind: TokenLiteralNumber): '1'
+    │   │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
+    │   │   │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   │   │   ├── child #1 (kind: MacroRule)
+    │   │   │   │   ├── lhs (kind: ParenthesizedMacro)
+    │   │   │   │   │   ├── lparen (kind: TokenLParen): '('
+    │   │   │   │   │   ├── elements (kind: MacroElements)
+    │   │   │   │   │   │   └── child #0 (kind: MacroRepetition)
+    │   │   │   │   │   │       ├── dollar (kind: TokenDollar): '$'
+    │   │   │   │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │   │   │   │   │       ├── elements (kind: MacroElements)
+    │   │   │   │   │   │       │   └── child #0 (kind: MacroParam)
+    │   │   │   │   │   │       │       ├── dollar (kind: TokenDollar): '$'
+    │   │   │   │   │   │       │       ├── name (kind: TokenIdentifier): 'x'
+    │   │   │   │   │   │       │       └── kind (kind: ParamKind)
+    │   │   │   │   │   │       │           ├── colon (kind: TokenColon): ':'
+    │   │   │   │   │   │       │           └── kind (kind: ParamExpr)
+    │   │   │   │   │   │       │               └── expr (kind: TokenIdentifier): 'expr'
+    │   │   │   │   │   │       ├── rparen (kind: TokenRParen): ')'
+    │   │   │   │   │   │       ├── separator (kind: TokenComma): ','
+    │   │   │   │   │   │       └── operator (kind: TokenMul): '*'
+    │   │   │   │   │   └── rparen (kind: TokenRParen): ')'
+    │   │   │   │   ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │   │   │   │   ├── rhs (kind: BracedMacro)
+    │   │   │   │   │   ├── lbrace (kind: TokenLBrace): '{'
+    │   │   │   │   │   ├── elements (kind: MacroElements)
+    │   │   │   │   │   │   └── child #0 (kind: TokenTreeLeaf)
+    │   │   │   │   │   │       └── leaf (kind: TokenLiteralNumber): '1'
+    │   │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
+    │   │   │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   │   │   ├── child #2 (kind: MacroRule)
+    │   │   │   │   ├── lhs (kind: ParenthesizedMacro)
+    │   │   │   │   │   ├── lparen (kind: TokenLParen): '('
+    │   │   │   │   │   ├── elements (kind: MacroElements)
+    │   │   │   │   │   │   └── child #0 (kind: MacroRepetition)
+    │   │   │   │   │   │       ├── dollar (kind: TokenDollar): '$'
+    │   │   │   │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │   │   │   │   │       ├── elements (kind: MacroElements)
+    │   │   │   │   │   │       │   └── child #0 (kind: MacroParam)
+    │   │   │   │   │   │       │       ├── dollar (kind: TokenDollar): '$'
+    │   │   │   │   │   │       │       ├── name (kind: TokenIdentifier): 'x'
+    │   │   │   │   │   │       │       └── kind (kind: ParamKind)
+    │   │   │   │   │   │       │           ├── colon (kind: TokenColon): ':'
+    │   │   │   │   │   │       │           └── kind (kind: ParamExpr)
+    │   │   │   │   │   │       │               └── expr (kind: TokenIdentifier): 'expr'
+    │   │   │   │   │   │       ├── rparen (kind: TokenRParen): ')'
+    │   │   │   │   │   │       ├── separator (kind: OptionTerminalCommaEmpty) []
+    │   │   │   │   │   │       └── operator (kind: TokenQuestionMark): '?'
+    │   │   │   │   │   └── rparen (kind: TokenRParen): ')'
+    │   │   │   │   ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │   │   │   │   ├── rhs (kind: BracedMacro)
+    │   │   │   │   │   ├── lbrace (kind: TokenLBrace): '{'
+    │   │   │   │   │   ├── elements (kind: MacroElements)
+    │   │   │   │   │   │   └── child #0 (kind: TokenTreeLeaf)
+    │   │   │   │   │   │       └── leaf (kind: TokenLiteralNumber): '1'
+    │   │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
+    │   │   │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   │   │   ├── child #3 (kind: MacroRule)
+    │   │   │   │   ├── lhs (kind: ParenthesizedMacro)
+    │   │   │   │   │   ├── lparen (kind: TokenLParen): '('
+    │   │   │   │   │   ├── elements (kind: MacroElements)
+    │   │   │   │   │   │   └── child #0 (kind: MacroRepetition)
+    │   │   │   │   │   │       ├── dollar (kind: TokenDollar): '$'
+    │   │   │   │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │   │   │   │   │       ├── elements (kind: MacroElements)
+    │   │   │   │   │   │       │   └── child #0 (kind: MacroParam)
+    │   │   │   │   │   │       │       ├── dollar (kind: TokenDollar): '$'
+    │   │   │   │   │   │       │       ├── name (kind: TokenIdentifier): 'x'
+    │   │   │   │   │   │       │       └── kind (kind: ParamKind)
+    │   │   │   │   │   │       │           ├── colon (kind: TokenColon): ':'
+    │   │   │   │   │   │       │           └── kind (kind: ParamIdent)
+    │   │   │   │   │   │       │               └── ident (kind: TokenIdentifier): 'ident'
+    │   │   │   │   │   │       ├── rparen (kind: TokenRParen): ')'
+    │   │   │   │   │   │       ├── separator (kind: OptionTerminalCommaEmpty) []
+    │   │   │   │   │   │       └── operator (kind: TokenPlus): '+'
+    │   │   │   │   │   └── rparen (kind: TokenRParen): ')'
+    │   │   │   │   ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │   │   │   │   ├── rhs (kind: BracedMacro)
+    │   │   │   │   │   ├── lbrace (kind: TokenLBrace): '{'
+    │   │   │   │   │   ├── elements (kind: MacroElements)
+    │   │   │   │   │   │   └── child #0 (kind: TokenTreeLeaf)
+    │   │   │   │   │   │       └── leaf (kind: TokenLiteralNumber): '1'
+    │   │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
+    │   │   │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   │   │   └── child #4 (kind: MacroRule)
+    │   │   │       ├── lhs (kind: ParenthesizedMacro)
+    │   │   │       │   ├── lparen (kind: TokenLParen): '('
+    │   │   │       │   ├── elements (kind: MacroElements)
+    │   │   │       │   │   └── child #0 (kind: MacroRepetition)
+    │   │   │       │   │       ├── dollar (kind: TokenDollar): '$'
+    │   │   │       │   │       ├── lparen (kind: TokenLParen): '('
+    │   │   │       │   │       ├── elements (kind: MacroElements)
+    │   │   │       │   │       │   └── child #0 (kind: MacroParam)
+    │   │   │       │   │       │       ├── dollar (kind: TokenDollar): '$'
+    │   │   │       │   │       │       ├── name (kind: TokenIdentifier): 'x'
+    │   │   │       │   │       │       └── kind (kind: ParamKind)
+    │   │   │       │   │       │           ├── colon (kind: TokenColon): ':'
+    │   │   │       │   │       │           └── kind (kind: ParamExpr)
+    │   │   │       │   │       │               └── expr (kind: TokenIdentifier): 'expr'
+    │   │   │       │   │       ├── rparen (kind: TokenRParen): ')'
+    │   │   │       │   │       ├── separator (kind: TokenComma): ','
+    │   │   │       │   │       └── operator (kind: TokenMul): '*'
+    │   │   │       │   └── rparen (kind: TokenRParen): ')'
+    │   │   │       ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │   │   │       ├── rhs (kind: BracedMacro)
+    │   │   │       │   ├── lbrace (kind: TokenLBrace): '{'
+    │   │   │       │   ├── elements (kind: MacroElements)
+    │   │   │       │   │   ├── child #0 (kind: TokenTreeLeaf)
+    │   │   │       │   │   │   └── leaf (kind: TokenIdentifier): 'foo'
+    │   │   │       │   │   ├── child #1 (kind: TokenTreeLeaf)
+    │   │   │       │   │   │   └── leaf (kind: TokenNot): '!'
+    │   │   │       │   │   └── child #2 (kind: MacroWrapper)
+    │   │   │       │   │       └── subtree (kind: ParenthesizedMacro)
+    │   │   │       │   │           ├── lparen (kind: TokenLParen): '('
+    │   │   │       │   │           ├── elements (kind: MacroElements)
+    │   │   │       │   │           │   └── child #0 (kind: MacroRepetition)
+    │   │   │       │   │           │       ├── dollar (kind: TokenDollar): '$'
+    │   │   │       │   │           │       ├── lparen (kind: TokenLParen): '('
+    │   │   │       │   │           │       ├── elements (kind: MacroElements)
+    │   │   │       │   │           │       │   └── child #0 (kind: MacroParam)
+    │   │   │       │   │           │       │       ├── dollar (kind: TokenDollar): '$'
+    │   │   │       │   │           │       │       ├── name (kind: TokenIdentifier): 'x'
+    │   │   │       │   │           │       │       └── kind (kind: OptionParamKindEmpty) []
+    │   │   │       │   │           │       ├── rparen (kind: TokenRParen): ')'
+    │   │   │       │   │           │       ├── separator (kind: TokenComma): ','
+    │   │   │       │   │           │       └── operator (kind: TokenMul): '*'
+    │   │   │       │   │           └── rparen (kind: TokenRParen): ')'
+    │   │   │       │   └── rbrace (kind: TokenRBrace): '}'
+    │   │   │       └── semicolon (kind: TokenSemicolon): ';'
+    │   │   └── rbrace (kind: TokenRBrace): '}'
+    │   └── child #1 (kind: FunctionWithBody)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── optional_const (kind: OptionTerminalConstEmpty) []
+    │       │   ├── function_kw (kind: TokenFunction): 'fn'
+    │       │   ├── name (kind: TokenIdentifier): 'use_macro'
+    │       │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │       │   └── signature (kind: FunctionSignature)
+    │       │       ├── lparen (kind: TokenLParen): '('
+    │       │       ├── parameters (kind: ParamList) []
+    │       │       ├── rparen (kind: TokenRParen): ')'
+    │       │       ├── ret_ty (kind: OptionReturnTypeClauseEmpty) []
+    │       │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │       │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    │       └── body (kind: ExprBlock)
+    │           ├── lbrace (kind: TokenLBrace): '{'
+    │           ├── statements (kind: StatementList)
+    │           │   └── child #0 (kind: StatementExpr)
+    │           │       ├── attributes (kind: AttributeList) []
+    │           │       ├── expr (kind: ExprInlineMacro)
+    │           │       │   ├── path (kind: ExprPath)
+    │           │       │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │           │       │   │   └── segments (kind: ExprPathInner)
+    │           │       │   │       └── item #0 (kind: PathSegmentSimple)
+    │           │       │   │           └── ident (kind: TokenIdentifier): 'some_macro'
+    │           │       │   ├── bang (kind: TokenNot): '!'
+    │           │       │   └── arguments (kind: TokenTreeNode)
+    │           │       │       └── subtree (kind: ParenthesizedTokenTree)
+    │           │       │           ├── lparen (kind: TokenLParen): '('
+    │           │       │           ├── tokens (kind: TokenList)
+    │           │       │           │   └── child #0 (kind: TokenTreeLeaf)
+    │           │       │           │       └── leaf (kind: TokenLiteralNumber): '100'
+    │           │       │           └── rparen (kind: TokenRParen): ')'
+    │           │       └── semicolon (kind: TokenSemicolon): ';'
+    │           └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).

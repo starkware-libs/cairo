@@ -1177,7 +1177,7 @@ impl CairoHintProcessor<'_> {
             .registry()
             .get_function(entry_point)
             .expect("Entrypoint exists, but not found.");
-        let mut res = runner
+        let res = runner
             .run_function_with_starknet_context(
                 function,
                 vec![Arg::Array(calldata.into_iter().map(Arg::Value).collect())],
@@ -1191,7 +1191,7 @@ impl CairoHintProcessor<'_> {
         *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
         match res.value {
             RunResultValue::Success(value) => {
-                self.starknet_state = std::mem::take(&mut res.starknet_state);
+                self.starknet_state = res.starknet_state;
                 Ok(segment_with_data(vm, read_array_result_as_vec(&res.memory, &value).into_iter())
                     .expect("failed to allocate segment"))
             }

@@ -3,9 +3,8 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 use cairo_lang_syntax::node::TypedStablePtr;
-use cairo_lang_utils::{extract_matches, try_extract_matches};
-use semantic::types::peel_snapshots;
-use semantic::{Condition, MatchArmSelector, TypeLongId};
+use cairo_lang_utils::extract_matches;
+use semantic::{Condition, MatchArmSelector};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
@@ -14,10 +13,7 @@ use crate::diagnostic::LoweringDiagnosticKind::{self};
 use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
 use crate::ids::LocationId;
 use crate::lower::context::VarRequest;
-use crate::lower::lower_match::{
-    MatchArmWrapper, TupleInfo, lower_concrete_enum_match, lower_expr_match_tuple,
-    lower_optimized_extern_match,
-};
+use crate::lower::lower_match::{self, MatchArmWrapper};
 use crate::lower::{create_subscope, lower_block, lower_expr, lower_expr_to_var_usage};
 use crate::{MatchArm, MatchEnumInfo, MatchInfo};
 
@@ -46,8 +42,8 @@ pub fn lower_expr_if_bool(
 
     // The condition cannot be unit.
     let condition = lower_expr_to_var_usage(ctx, builder, condition)?;
-    let semantic_db = ctx.db.upcast();
-    let unit_ty = corelib::unit_ty(semantic_db);
+    let db = ctx.db;
+    let unit_ty = corelib::unit_ty(db);
     let if_location = ctx.get_location(expr.stable_ptr.untyped());
 
     // Main block.
@@ -72,16 +68,16 @@ pub fn lower_expr_if_bool(
         .map_err(LoweringFlowError::Failed)?;
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
-        concrete_enum_id: corelib::core_bool_enum(semantic_db),
+        concrete_enum_id: corelib::core_bool_enum(db),
         input: condition,
         arms: vec![
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::false_variant(semantic_db)),
+                arm_selector: MatchArmSelector::VariantId(corelib::false_variant(db)),
                 block_id: block_else_id,
                 var_ids: vec![else_block_input_var_id],
             },
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::true_variant(semantic_db)),
+                arm_selector: MatchArmSelector::VariantId(corelib::true_variant(db)),
                 block_id: block_main_id,
                 var_ids: vec![main_block_var_id],
             },
@@ -102,13 +98,9 @@ pub fn lower_expr_if_let(
     log::trace!("Lowering an if let expression: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let lowered_expr = lower_expr(ctx, builder, matched_expr)?;
+    let ty = ctx.function_body.arenas.exprs[matched_expr].ty();
 
-    let matched_expr = ctx.function_body.arenas.exprs[matched_expr].clone();
-    let ty = matched_expr.ty();
-
-    if ty == ctx.db.core_info().felt252
-        || corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty).is_some()
-    {
+    if corelib::numeric_upcastable_to_felt252(ctx.db, ty) {
         return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
             expr.stable_ptr.untyped(),
             LoweringDiagnosticKind::MatchError(MatchError {
@@ -118,36 +110,17 @@ pub fn lower_expr_if_let(
         )));
     }
 
-    let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), ty);
-
     let arms = vec![
-        MatchArmWrapper { patterns: patterns.into(), expr: Some(expr.if_block) },
-        MatchArmWrapper { patterns: vec![], expr: expr.else_block },
+        MatchArmWrapper::Arm(patterns, expr.if_block),
+        expr.else_block.map(MatchArmWrapper::ElseClause).unwrap_or(MatchArmWrapper::DefaultClause),
     ];
 
-    if let Some(types) = try_extract_matches!(long_type_id, TypeLongId::Tuple) {
-        return lower_expr_match_tuple(
-            ctx,
-            builder,
-            lowered_expr,
-            &matched_expr,
-            &TupleInfo { types, n_snapshots },
-            &arms,
-            MatchKind::IfLet,
-        );
-    }
-
-    // TODO(spapini): Use diagnostics.
-    // TODO(spapini): Handle more than just enums.
-    if let LoweredExpr::ExternEnum(extern_enum) = lowered_expr {
-        return lower_optimized_extern_match(ctx, builder, extern_enum, &arms, MatchKind::IfLet);
-    }
-    lower_concrete_enum_match(
+    lower_match::lower_match_arms(
         ctx,
         builder,
-        &matched_expr,
+        matched_expr,
         lowered_expr,
-        &arms,
+        arms,
         location,
         MatchKind::IfLet,
     )

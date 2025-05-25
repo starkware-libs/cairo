@@ -1,6 +1,6 @@
 use cairo_lang_lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use cairo_lang_lowering::{
-    BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId,
+    BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId,
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -19,7 +19,7 @@ pub struct ApTrackingConfiguration {
 
 /// Collects information about where ap tracking should be enabled/disabled.
 pub fn get_ap_tracking_configuration(
-    lowered_function: &FlatLowered,
+    lowered_function: &Lowered,
     known_ap_change: bool,
     vars_of_interest: OrderedHashSet<VariableId>,
 ) -> ApTrackingConfiguration {

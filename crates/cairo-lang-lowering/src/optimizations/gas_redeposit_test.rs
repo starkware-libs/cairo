@@ -6,6 +6,7 @@ use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::gas_redeposit;
+use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
@@ -43,7 +44,7 @@ impl TestFileRunner for GetRedepositTestRunner {
             ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
         let before =
-            db.concrete_function_with_body_postpanic_lowered(function_id).unwrap().deref().clone();
+            db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().deref().clone();
 
         let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 

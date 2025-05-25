@@ -8,7 +8,7 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use lowering::ids::ConcreteFunctionWithBodyId;
-use lowering::{BlockId, FlatLowered};
+use lowering::{BlockId, Lowered};
 
 use crate::ap_tracking::ApTrackingConfiguration;
 use crate::db::SierraGenGroup;
@@ -19,7 +19,7 @@ use crate::pre_sierra;
 /// Context for the methods that generate Sierra instructions for an expression.
 pub struct ExprGeneratorContext<'a> {
     db: &'a dyn SierraGenGroup,
-    lowered: &'a FlatLowered,
+    lowered: &'a Lowered,
     function_id: ConcreteFunctionWithBodyId,
     lifetime: &'a VariableLifetimeResult,
 
@@ -42,7 +42,7 @@ impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
     pub fn new(
         db: &'a dyn SierraGenGroup,
-        lowered: &'a FlatLowered,
+        lowered: &'a Lowered,
         function_id: ConcreteFunctionWithBodyId,
         lifetime: &'a VariableLifetimeResult,
         ap_tracking_configuration: ApTrackingConfiguration,
@@ -141,10 +141,10 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
-    /// Returns the block ([lowering::FlatBlock]) associated with
+    /// Returns the block ([lowering::Block]) associated with
     /// [lowering::BlockId].
     /// Assumes `block_id` exists in `self.lowered.blocks`.
-    pub fn get_lowered_block(&self, block_id: lowering::BlockId) -> &'a lowering::FlatBlock {
+    pub fn get_lowered_block(&self, block_id: lowering::BlockId) -> &'a lowering::Block {
         &self.lowered.blocks[block_id]
     }
 

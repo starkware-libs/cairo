@@ -263,8 +263,8 @@ pub fn generic_impl_param_trait(
     db: &dyn SemanticGroup,
     generic_param_id: GenericParamId,
 ) -> Maybe<TraitId> {
-    let syntax_db = db.upcast();
-    let module_file_id = generic_param_id.module_file_id(db.upcast());
+    let syntax_db = db;
+    let module_file_id = generic_param_id.module_file_id(db);
     let option_generic_params_syntax = generic_param_generic_params_list(db, generic_param_id)?;
     let generic_params_syntax = extract_matches!(
         option_generic_params_syntax,
@@ -310,20 +310,20 @@ pub fn priv_generic_param_data(
         let mut diagnostics = SemanticDiagnostics::default();
         return Ok(GenericParamData {
             generic_param: Err(diagnostics.report(
-                generic_param_id.stable_ptr(db.upcast()).untyped(),
+                generic_param_id.stable_ptr(db).untyped(),
                 SemanticDiagnosticKind::ImplRequirementCycle,
             )),
             diagnostics: diagnostics.build(),
             resolver_data: Arc::new(ResolverData::new(
-                generic_param_id.module_file_id(db.upcast()),
+                generic_param_id.module_file_id(db),
                 InferenceId::GenericParam(generic_param_id),
             )),
         });
     }
-    let syntax_db: &dyn SyntaxGroup = db.upcast();
-    let module_file_id = generic_param_id.module_file_id(db.upcast());
+    let syntax_db: &dyn SyntaxGroup = db;
+    let module_file_id = generic_param_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
-    let parent_item_id = generic_param_id.generic_item(db.upcast());
+    let parent_item_id = generic_param_id.generic_item(db);
     let lookup_item: LookupItemId = parent_item_id.into();
     let context_resolver_data = lookup_item.resolver_context(db)?;
     let inference_id = InferenceId::GenericParam(generic_param_id);
@@ -331,7 +331,7 @@ pub fn priv_generic_param_data(
         Resolver::with_data(db, (*context_resolver_data).clone_with_inference_id(db, inference_id));
     resolver.set_feature_config(
         &lookup_item,
-        &lookup_item.untyped_stable_ptr(db.upcast()).lookup(db.upcast()),
+        &lookup_item.untyped_stable_ptr(db).lookup(db),
         &mut diagnostics,
     );
     let generic_params_syntax = extract_matches!(
@@ -426,7 +426,7 @@ fn generic_param_generic_params_list(
     let generic_param_long_id = generic_param_id.lookup_intern(db);
 
     // The generic params list is 2 level up the tree.
-    let syntax_db = db.upcast();
+    let syntax_db = db;
     let wrapped_generic_param_list = generic_param_long_id.1.0.nth_parent(syntax_db, 2);
 
     Ok(ast::OptionWrappedGenericParamListPtr(wrapped_generic_param_list).lookup(syntax_db))
@@ -452,7 +452,7 @@ pub fn semantic_generic_params_ex(
     generic_params: &ast::OptionWrappedGenericParamList,
     in_cycle: bool,
 ) -> Vec<GenericParam> {
-    let syntax_db = db.upcast();
+    let syntax_db = db;
     match generic_params {
         syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
         syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
@@ -470,8 +470,8 @@ pub fn semantic_generic_params_ex(
                 resolver.add_generic_param(generic_param_id);
                 resolver
                     .data
-                    .used_items
-                    .extend(generic_param_data.resolver_data.used_items.iter().copied());
+                    .used_uses
+                    .extend(generic_param_data.resolver_data.used_uses.iter().copied());
                 generic_param.ok()
             })
             .collect(),
@@ -480,7 +480,7 @@ pub fn semantic_generic_params_ex(
 
 /// Returns true if negative impls are enabled in the module.
 fn are_negative_impls_enabled(db: &dyn SemanticGroup, module_file_id: ModuleFileId) -> bool {
-    let owning_crate = module_file_id.0.owning_crate(db.upcast());
+    let owning_crate = module_file_id.0.owning_crate(db);
     let Some(config) = db.crate_config(owning_crate) else { return false };
     config.settings.experimental_features.negative_impls
 }
@@ -490,7 +490,7 @@ fn is_associated_item_constraints_enabled(
     db: &dyn SemanticGroup,
     module_file_id: ModuleFileId,
 ) -> bool {
-    let owning_crate = module_file_id.0.owning_crate(db.upcast());
+    let owning_crate = module_file_id.0.owning_crate(db);
     db.crate_config(owning_crate)
         .is_some_and(|c| c.settings.experimental_features.associated_item_constraints)
 }
@@ -504,7 +504,7 @@ fn semantic_from_generic_param_ast(
     param_syntax: &ast::GenericParam,
     parent_item_id: GenericItemId,
 ) -> GenericParam {
-    let syntax_db = db.upcast();
+    let syntax_db = db;
     let id = GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db)).intern(db);
     let mut item_constraints_into_option = |constraint| match constraint {
         OptionAssociatedItemConstraints::Empty(_) => None,
@@ -521,12 +521,12 @@ fn semantic_from_generic_param_ast(
     match param_syntax {
         ast::GenericParam::Type(_) => GenericParam::Type(GenericParamType { id }),
         ast::GenericParam::Const(syntax) => {
-            let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db.upcast()));
+            let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db));
             GenericParam::Const(GenericParamConst { id, ty })
         }
         ast::GenericParam::ImplNamed(syntax) => {
-            let path_syntax = syntax.trait_path(db.upcast());
-            let item_constrains = item_constraints_into_option(syntax.type_constrains(db.upcast()));
+            let path_syntax = syntax.trait_path(db);
+            let item_constrains = item_constraints_into_option(syntax.type_constrains(db));
             GenericParam::Impl(impl_generic_param_semantic(
                 db,
                 resolver,
@@ -537,8 +537,8 @@ fn semantic_from_generic_param_ast(
             ))
         }
         ast::GenericParam::ImplAnonymous(syntax) => {
-            let path_syntax = syntax.trait_path(db.upcast());
-            let item_constrains = item_constraints_into_option(syntax.type_constrains(db.upcast()));
+            let path_syntax = syntax.trait_path(db);
+            let item_constrains = item_constraints_into_option(syntax.type_constrains(db));
             GenericParam::Impl(impl_generic_param_semantic(
                 db,
                 resolver,
@@ -563,7 +563,7 @@ fn semantic_from_generic_param_ast(
                 );
             }
 
-            let path_syntax = syntax.trait_path(db.upcast());
+            let path_syntax = syntax.trait_path(db);
             GenericParam::NegImpl(impl_generic_param_semantic(
                 db,
                 resolver,
@@ -585,7 +585,7 @@ fn impl_generic_param_semantic(
     item_constraints: Option<AssociatedItemConstraints>,
     id: GenericParamId,
 ) -> GenericParamImpl {
-    let syntax_db = db.upcast();
+    let syntax_db = db;
     let concrete_trait = resolver
         .resolve_concrete_path(diagnostics, path_syntax, NotFoundItemType::Trait)
         .and_then(|resolved_item| match resolved_item {
@@ -601,9 +601,7 @@ fn impl_generic_param_semantic(
         .map(|(concrete_trait_id, constraints)| {
             let mut map = OrderedHashMap::default();
 
-            for constraint in
-                constraints.associated_item_constraints(syntax_db).elements(db.upcast())
-            {
+            for constraint in constraints.associated_item_constraints(syntax_db).elements(db) {
                 let Ok(trait_type_id_opt) = db.trait_type_by_name(
                     concrete_trait_id.trait_id(db),
                     constraint.item(syntax_db).text(syntax_db),
@@ -614,7 +612,7 @@ fn impl_generic_param_semantic(
                     diagnostics.report(
                         constraint.stable_ptr(syntax_db),
                         SemanticDiagnosticKind::NonTraitTypeConstrained {
-                            identifier: constraint.item(db.upcast()).text(db.upcast()),
+                            identifier: constraint.item(db).text(db),
                             concrete_trait_id,
                         },
                     );

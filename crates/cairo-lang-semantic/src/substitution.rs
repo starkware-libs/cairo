@@ -82,7 +82,7 @@ impl GenericSubstitution {
     where
         SubstitutionRewriter<'a>: SemanticRewriter<Obj, DiagnosticAdded>,
     {
-        SubstitutionRewriter { db: db.upcast(), substitution: self }.rewrite(obj)
+        SubstitutionRewriter { db, substitution: self }.rewrite(obj)
     }
 }
 impl Deref for GenericSubstitution {
@@ -578,7 +578,7 @@ impl SemanticRewriter<GenericFunctionWithBodyId, DiagnosticAdded> for Substituti
         if let GenericFunctionWithBodyId::Trait(id) = value {
             if let Some(self_impl) = &self.substitution.self_impl {
                 if let ImplLongId::Concrete(concrete_impl_id) = self_impl.lookup_intern(self.db) {
-                    if self.rewrite(id.concrete_trait(self.db.upcast()))?
+                    if self.rewrite(id.concrete_trait(self.db))?
                         == self_impl.concrete_trait(self.db)?
                     {
                         *value = GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {

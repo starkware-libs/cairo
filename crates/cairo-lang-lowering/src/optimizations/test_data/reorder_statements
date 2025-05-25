@@ -382,9 +382,9 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v2: core::felt252) <- 5
   (v0: ()) <- struct_construct()
   (v1: core::bool) <- bool::True(v0)
+  (v2: core::felt252) <- 5
 End:
   Match(match_enum(v1) {
     bool::False(v3) => blk1,

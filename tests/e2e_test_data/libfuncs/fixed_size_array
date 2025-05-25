@@ -28,7 +28,6 @@ test::bar: OrderedHashMap({})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<felt252, 30> = Const<felt252, 30> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 20> = Const<felt252, 20> [storable: false, drop: false, dup: false, zero_sized: false];

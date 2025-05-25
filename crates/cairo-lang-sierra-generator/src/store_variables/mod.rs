@@ -7,10 +7,12 @@ mod state;
 mod test;
 
 use cairo_lang_sierra as sierra;
+use cairo_lang_sierra::extensions::duplicate::DupLibfunc;
 use cairo_lang_sierra::extensions::lib_func::{LibfuncSignature, ParamSignature, SierraApChange};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{LookupIntern, extract_matches};
 use itertools::zip_eq;
 use sierra::extensions::NamedLibfunc;
@@ -54,7 +56,28 @@ pub fn add_store_statements<GetLibfuncSignature>(
 where
     GetLibfuncSignature: Fn(ConcreteLibfuncId) -> LibfuncInfo,
 {
-    let mut handler = AddStoreVariableStatements::new(db, local_variables);
+    let mut duplicated_vars: OrderedHashSet<cairo_lang_sierra::ids::VarId> = Default::default();
+    for stmt in &statements {
+        match &stmt.statement {
+            pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
+                if invocation.libfunc_id.lookup_intern(db).generic_id.0 == DupLibfunc::STR_ID {
+                    for arg in &invocation.args {
+                        duplicated_vars.insert(arg.clone());
+                    }
+                }
+            }
+            pre_sierra::Statement::PushValues(push_values) => {
+                for push_value in push_values {
+                    if push_value.dup {
+                        duplicated_vars.insert(push_value.var.clone());
+                    }
+                }
+            }
+            pre_sierra::Statement::Sierra(GenStatement::Return(_)) => {}
+            pre_sierra::Statement::Label(_) => {}
+        }
+    }
+    let mut handler = AddStoreVariableStatements::new(db, local_variables, duplicated_vars);
     let mut state_opt = Some(VariablesState {
         variables: OrderedHashMap::from_iter(params.iter().map(|param| {
             (
@@ -83,6 +106,7 @@ where
 struct AddStoreVariableStatements<'a> {
     db: &'a dyn SierraGenGroup,
     local_variables: LocalVariables,
+    duplicated_vars: OrderedHashSet<sierra::ids::VarId>,
     /// A list of output statements (the original statement, together with the added statements,
     /// such as "store_temp").
     result: Vec<pre_sierra::StatementWithLocation>,
@@ -95,10 +119,15 @@ struct AddStoreVariableStatements<'a> {
 }
 impl<'a> AddStoreVariableStatements<'a> {
     /// Constructs a new [AddStoreVariableStatements] object.
-    fn new(db: &'a dyn SierraGenGroup, local_variables: LocalVariables) -> Self {
+    fn new(
+        db: &'a dyn SierraGenGroup,
+        local_variables: LocalVariables,
+        duplicated_vars: OrderedHashSet<sierra::ids::VarId>,
+    ) -> Self {
         AddStoreVariableStatements {
             db,
             local_variables,
+            duplicated_vars,
             result: Vec::new(),
             future_states: OrderedHashMap::default(),
         }
@@ -121,7 +150,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 let libfunc_id = invocation.libfunc_id.clone();
                 let libfunc_info = get_lib_func_signature(libfunc_id.clone());
                 let signature = libfunc_info.signature;
-                let state = &mut state_opt.unwrap_or_default();
+                let mut state = state_opt.unwrap_or_default();
 
                 let libfunc_long_id = libfunc_id.lookup_intern(self.db);
                 let arg_states = match libfunc_long_id.generic_id.0.as_str() {
@@ -132,7 +161,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         invocation.args.iter().map(|var| state.pop_var_state(var)).collect()
                     }
                     _ => self.prepare_libfunc_arguments(
-                        state,
+                        &mut state,
                         &invocation.args,
                         &signature.param_signatures,
                     ),
@@ -145,7 +174,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                             SierraApChange::Unknown => {
                                 // If the ap-change is unknown, variables that will be revoked
                                 // otherwise should be stored as locals.
-                                self.store_variables_as_locals(state);
+                                self.store_variables_as_locals(&mut state);
                             }
                             SierraApChange::BranchAlign | SierraApChange::Known { .. } => {}
                         }
@@ -156,12 +185,12 @@ impl<'a> AddStoreVariableStatements<'a> {
                             &invocation.args,
                             &arg_states,
                         );
-                        state_opt = Some(std::mem::take(state));
+                        state_opt = Some(state);
                     }
                     _ => {
                         // This starts a branch. Store all deferred variables.
                         if invocation.branches.len() > 1 {
-                            self.store_all_possibly_lost_variables(state);
+                            self.store_all_possibly_lost_variables(&mut state);
                         }
 
                         // Go over the branches. The state of a branch that points to `Fallthrough`
@@ -203,7 +232,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 // Merge self.known_stack with the future_stack that corresponds to the label, if
                 // any.
                 state_opt = merge_optional_states(
-                    std::mem::take(&mut state_opt),
+                    state_opt.take(),
                     self.future_states.swap_remove(label_id),
                 );
 
@@ -420,22 +449,17 @@ impl<'a> AddStoreVariableStatements<'a> {
         }
     }
 
-    /// Stores all the variables that may possibly get misaligned due to branches and removes them
-    /// The variables will be added according to the order of creation.
+    /// Stores all the variables that may possibly get misaligned due to branches and stores them.
+    /// Storing locals, and additionally storing all deferred vars that are duplicated, as
+    /// misalignments can only be caused by usages after merge, and usage always consumes the
+    /// variable unless it is duplicated.
     fn store_all_possibly_lost_variables(&mut self, state: &mut VariablesState) {
+        self.store_variables_as_locals(state);
         for (var, var_state) in state.variables.iter_mut() {
-            match var_state {
-                VarState::TempVar { ty } => {
-                    if self.store_var_as_local(var, ty) {
-                        *var_state = VarState::LocalVar;
-                    }
+            if let VarState::Deferred { info } = var_state {
+                if info.kind != DeferredVariableKind::Const && self.duplicated_vars.contains(var) {
+                    *var_state = self.store_deferred(&mut state.known_stack, var, &info.ty);
                 }
-                VarState::Deferred { info } => {
-                    if info.kind != DeferredVariableKind::Const {
-                        *var_state = self.store_deferred(&mut state.known_stack, var, &info.ty);
-                    }
-                }
-                VarState::ZeroSizedVar | VarState::LocalVar | VarState::Removed => {}
             }
         }
     }
@@ -492,8 +516,8 @@ impl<'a> AddStoreVariableStatements<'a> {
     ) {
         self.result.push(simple_statement(
             store_temp_libfunc_id(self.db, ty.clone()),
-            &[var.clone()],
-            &[var_on_stack.clone()],
+            std::slice::from_ref(var),
+            std::slice::from_ref(var_on_stack),
         ));
         known_stack.push(var_on_stack);
     }
@@ -509,7 +533,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         self.result.push(simple_statement(
             store_local_libfunc_id(self.db, ty.clone()),
             &[uninitialized_local_var_id.clone(), var.clone()],
-            &[var.clone()],
+            std::slice::from_ref(var),
         ));
     }
 
@@ -522,7 +546,7 @@ impl<'a> AddStoreVariableStatements<'a> {
     ) {
         self.result.push(simple_statement(
             dup_libfunc_id(self.db, ty.clone()),
-            &[var.clone()],
+            std::slice::from_ref(var),
             &[var.clone(), dup_var.clone()],
         ));
     }
@@ -538,8 +562,8 @@ impl<'a> AddStoreVariableStatements<'a> {
         if src != dst {
             self.result.push(simple_statement(
                 rename_libfunc_id(self.db, ty.clone()),
-                &[src.clone()],
-                &[dst.clone()],
+                std::slice::from_ref(src),
+                std::slice::from_ref(dst),
             ));
         }
     }
@@ -556,8 +580,7 @@ impl<'a> AddStoreVariableStatements<'a> {
     ) {
         match target {
             GenBranchTarget::Fallthrough => {
-                let new_state =
-                    merge_optional_states(std::mem::take(fallthrough_state), Some(state));
+                let new_state = merge_optional_states(fallthrough_state.take(), Some(state));
                 *fallthrough_state = new_state;
             }
             GenBranchTarget::Statement(label_id) => {

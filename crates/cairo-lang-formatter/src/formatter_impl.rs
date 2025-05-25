@@ -5,16 +5,15 @@ use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_parser::ParserDiagnostic;
+use cairo_lang_parser::macro_helpers::token_tree_as_wrapped_arg_list;
 use cairo_lang_parser::parser::Parser;
 use cairo_lang_syntax as syntax;
-use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
-use cairo_lang_syntax::node::ast::UsePath;
+use cairo_lang_syntax::node::ast::{TokenTreeNode, UsePath};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{Itertools, chain};
-use syntax::node::helpers::QueryAttrs;
 use syntax::node::kind::SyntaxKind;
 
 use crate::FormatterConfig;
@@ -105,7 +104,7 @@ impl UseTree {
             child.organize_self_imports();
             // If the expected imports are only of `self` pushing them to parent.
             if child.leaves.iter().all(|leaf| leaf.name == "self") {
-                for leaf in std::mem::take(&mut child.leaves) {
+                for leaf in child.leaves.drain(..) {
                     self.leaves.push(Leaf { name: segment.clone(), alias: leaf.alias });
                 }
             }
@@ -668,13 +667,13 @@ impl LineBuilder {
         let highest_precedence = self
             .get_highest_protected_zone_precedence()
             .expect("Tried to unprotect a line builder with no protected zones.");
-        for child in self.children.iter() {
+        for child in &self.children {
             match child {
                 LineComponent::ProtectedZone { builder: sub_tree, precedence }
                     if *precedence == highest_precedence && !first_protected_zone_found =>
                 {
                     first_protected_zone_found = true;
-                    for sub_child in sub_tree.children.iter() {
+                    for sub_child in &sub_tree.children {
                         unprotected_builder.push_child(sub_child.clone());
                     }
                 }
@@ -884,6 +883,15 @@ impl BreakLinePointsPositions {
         }
     }
 }
+
+/// Data for the handling of the formatting spacing in nodes where the formatting is ignored.
+/// This is needed since spacing is handled in the formatting of terminals, and in nodes where the
+/// formatting is ignored, the formatter does not reach the terminals.
+pub struct IgnoreFormattingSpacingData {
+    pub(crate) add_space_before: bool,
+    pub(crate) prevent_space_after: bool,
+}
+
 // TODO(spapini): Introduce the correct types here, to reflect the "applicable" nodes types.
 pub trait SyntaxNodeFormat {
     /// Returns true if a token should never have a space before it.
@@ -914,6 +922,11 @@ pub trait SyntaxNodeFormat {
     /// Returns the sorting kind of the syntax node. This method will be used to sections in the
     /// syntax tree.
     fn as_sort_kind(&self, db: &dyn SyntaxGroup) -> SortKind;
+    /// Gets a syntax node and returns Some if the formatting should be kept as it.
+    fn should_ignore_node_format(
+        &self,
+        db: &dyn SyntaxGroup,
+    ) -> Option<IgnoreFormattingSpacingData>;
 }
 
 pub struct FormatterImpl<'a> {
@@ -928,6 +941,7 @@ pub struct FormatterImpl<'a> {
     is_current_line_whitespaces: bool,
     /// Indicates whether the last element handled was a comment.
     is_last_element_comment: bool,
+    is_merging_use_items: bool,
 }
 
 impl<'a> FormatterImpl<'a> {
@@ -938,6 +952,7 @@ impl<'a> FormatterImpl<'a> {
             line_state: PendingLineState::new(),
             empty_lines_allowance: 0,
             is_current_line_whitespaces: true,
+            is_merging_use_items: false,
             is_last_element_comment: false,
         }
     }
@@ -949,6 +964,29 @@ impl<'a> FormatterImpl<'a> {
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
     fn format_node(&mut self, syntax_node: &SyntaxNode) {
+        if self.is_merging_use_items {
+            // When merging, only format this node once and return to avoid recursion.
+            self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
+            return;
+        }
+        // If we encounter a token tree node, i.e. a macro, we try to parse it as a
+        // [ast::WrappedArgList] (the syntax kind of legacy macro calls). If successful, we
+        // format the wrapped arg list according to the rules of wrapped arg lists, otherwise we
+        // treat it as a normal syntax node, and in practice no formatting is done.
+        // TODO(Gil): Consider if we want to keep this behavior when general macro support is added.
+        if syntax_node.kind(self.db) == SyntaxKind::TokenTreeNode {
+            let as_wrapped_arg_list = token_tree_as_wrapped_arg_list(
+                TokenTreeNode::from_syntax_node(self.db, *syntax_node),
+                self.db,
+            );
+            let file_id = syntax_node.stable_ptr(self.db).file_id(self.db);
+
+            if let Some(wrapped_arg_list) = as_wrapped_arg_list {
+                let new_syntax_node = SyntaxNode::new_root(self.db, file_id, wrapped_arg_list.0);
+                self.format_node(&new_syntax_node);
+                return;
+            }
+        }
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }
@@ -961,8 +999,12 @@ impl<'a> FormatterImpl<'a> {
         if syntax_node.force_no_space_before(self.db) {
             self.line_state.prevent_next_space = true;
         }
-        if self.should_ignore_node_format(syntax_node) {
+        if let Some(spacing_data) = syntax_node.should_ignore_node_format(self.db) {
+            if spacing_data.add_space_before && !self.line_state.prevent_next_space {
+                self.line_state.line_buffer.push_space();
+            }
             self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
+            self.line_state.prevent_next_space = spacing_data.prevent_space_after;
         } else if syntax_node.kind(self.db).is_terminal() {
             self.format_terminal(syntax_node);
         } else {
@@ -988,7 +1030,7 @@ impl<'a> FormatterImpl<'a> {
         let internal_break_line_points_positions =
             syntax_node.get_internal_break_line_point_properties(self.db, &self.config);
         // TODO(ilya): consider not copying here.
-        let mut children = syntax_node.get_children(self.db);
+        let mut children = syntax_node.get_children(self.db).to_vec();
         let n_children = children.len();
 
         if self.config.merge_use_items {
@@ -1036,7 +1078,9 @@ impl<'a> FormatterImpl<'a> {
                 OrderedHashMap::default();
 
             for node in section_nodes {
-                if !self.has_only_whitespace_trivia(node) || self.should_ignore_node_format(node) {
+                if !self.has_only_whitespace_trivia(node)
+                    || node.should_ignore_node_format(self.db).is_some()
+                {
                     new_children.push(*node);
                     continue;
                 }
@@ -1066,8 +1110,8 @@ impl<'a> FormatterImpl<'a> {
                 );
 
                 // Add merged children to the new_children list.
-                if let Some(child) = merged_node.get_children(self.db).into_iter().nth(0) {
-                    new_children.extend(child.get_children(self.db));
+                if let Some(child) = merged_node.get_children(self.db).iter().next() {
+                    new_children.extend(child.get_children(self.db).iter().copied());
                 }
             }
         }
@@ -1095,9 +1139,8 @@ impl<'a> FormatterImpl<'a> {
             return;
         }
         // Split list into `use` path parts and TokenComma.
-        let (mut sorted_elements, commas): (Vec<_>, Vec<_>) = std::mem::take(children)
-            .into_iter()
-            .partition(|node| node.kind(self.db) != SyntaxKind::TerminalComma);
+        let (mut sorted_elements, commas): (Vec<_>, Vec<_>) =
+            children.drain(..).partition(|node| node.kind(self.db) != SyntaxKind::TerminalComma);
 
         // Sort the filtered nodes by comparing their `UsePath`.
         sorted_elements.sort_by(|a_node, b_node| {
@@ -1159,17 +1202,16 @@ impl<'a> FormatterImpl<'a> {
     /// Formats a terminal node and appends the formatted string to the result.
     fn format_terminal(&mut self, syntax_node: &SyntaxNode) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
-        let mut children_iter = syntax_node.get_children(self.db).into_iter();
-        let leading_trivia = ast::Trivia::from_syntax_node(self.db, children_iter.next().unwrap());
-        let token = children_iter.next().unwrap();
-        let trailing_trivia = ast::Trivia::from_syntax_node(self.db, children_iter.next().unwrap());
-
+        let children = syntax_node.get_children(self.db);
+        let [leading, token, trailing] = &children[..] else {
+            panic!("Terminal node should have 3 children.");
+        };
         // The first newlines is the leading trivia correspond exactly to empty lines.
-        self.format_trivia(leading_trivia, true);
+        self.format_trivia(ast::Trivia::from_syntax_node(self.db, *leading), true);
         if !syntax_node.should_skip_terminal(self.db) {
-            self.format_token(&token);
+            self.format_token(token);
         }
-        self.format_trivia(trailing_trivia, false);
+        self.format_trivia(ast::Trivia::from_syntax_node(self.db, *trailing), false);
     }
     /// Appends a trivia node (if needed) to the result.
     fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia, is_leading: bool) {
@@ -1228,11 +1270,6 @@ impl<'a> FormatterImpl<'a> {
             self.line_state.line_buffer.push_break_line_point(properties);
             self.line_state.prevent_next_space = true;
         }
-    }
-
-    /// Gets a syntax node and returns if the node has an cairofmt::skip attribute.
-    pub fn should_ignore_node_format(&self, syntax_node: &SyntaxNode) -> bool {
-        syntax_node.has_attr(self.db, FMT_SKIP_ATTR)
     }
 }
 

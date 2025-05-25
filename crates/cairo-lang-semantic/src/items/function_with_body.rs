@@ -104,12 +104,12 @@ pub fn function_with_body_generic_params(
             db.free_function_generic_params(free_function_id)
         }
         FunctionWithBodyId::Impl(impl_function_id) => {
-            let mut res = db.impl_def_generic_params(impl_function_id.impl_def_id(db.upcast()))?;
+            let mut res = db.impl_def_generic_params(impl_function_id.impl_def_id(db))?;
             res.extend(db.impl_function_generic_params(impl_function_id)?);
             Ok(res)
         }
         FunctionWithBodyId::Trait(trait_function_id) => {
-            let mut res = db.trait_generic_params(trait_function_id.trait_id(db.upcast()))?;
+            let mut res = db.trait_generic_params(trait_function_id.trait_id(db))?;
             res.extend(db.trait_function_generic_params(trait_function_id)?);
             Ok(res)
         }
@@ -272,14 +272,14 @@ pub fn get_inline_config(
                 AttributeArg {
                     variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
-            ] if &path.node.get_text(db.upcast()) == "always" => {
+            ] if &path.as_syntax_node().get_text(db) == "always" => {
                 config = InlineConfiguration::Always(attr.clone());
             }
             [
                 AttributeArg {
                     variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
-            ] if &path.node.get_text(db.upcast()) == "never" => {
+            ] if &path.as_syntax_node().get_text(db) == "never" => {
                 config = InlineConfiguration::Never(attr.clone());
             }
             [] => {

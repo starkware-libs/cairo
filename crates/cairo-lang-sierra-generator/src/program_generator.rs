@@ -2,13 +2,14 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Maybe, get_location_marks};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
-use cairo_lang_sierra::program::{self, DeclaredTypeInfo, StatementIdx};
+use cairo_lang_sierra::program::{self, DeclaredTypeInfo, Program, StatementIdx};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{LookupIntern, try_extract_matches};
@@ -163,9 +164,8 @@ fn collect_used_types(
     // This is only relevant for types that are arguments to entry points and are not used in
     // any libfunc. For example, an empty entry point that gets and returns an empty struct, will
     // have no libfuncs, but we still need to declare the struct.
-    let types_in_user_functions = functions.iter().flat_map(|func| {
-        chain!(func.parameters.iter().map(|param| param.ty.clone()), func.ret_types.iter().cloned())
-    });
+    let types_in_user_functions =
+        functions.iter().flat_map(|func| func.parameters.iter().map(|param| param.ty.clone()));
 
     chain!(types_in_libfuncs, types_in_user_functions).collect()
 }
@@ -197,18 +197,15 @@ impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
                 .unwrap_or_else(|| sierra_program.statements.len());
             writeln!(f, "// {}:", func.id)?;
             for param in &func.params {
-                writeln!(f, "//   {}", param)?;
+                writeln!(f, "//   {param}")?;
             }
             for i in start..end {
                 writeln!(f, "{}; // {i}", sierra_program.statements[i])?;
                 if let Some(loc) =
                     &self.debug_info.statements_locations.locations.get(&StatementIdx(i))
                 {
-                    let loc = get_location_marks(
-                        db.upcast(),
-                        &loc.first().unwrap().diagnostic_location(db.upcast()),
-                        true,
-                    );
+                    let loc =
+                        get_location_marks(db, &loc.first().unwrap().diagnostic_location(db), true);
                     println!("{}", loc.split('\n').map(|l| format!("// {l}")).join("\n"));
                 }
             }
@@ -250,6 +247,22 @@ pub fn get_sierra_program_for_functions(
         }
     }
 
+    let (program, statements_locations) = assemble_program(db, functions, statements);
+    Ok(Arc::new(SierraProgramWithDebug {
+        program,
+        debug_info: SierraProgramDebugInfo {
+            statements_locations: StatementsLocations::from_locations_vec(&statements_locations),
+        },
+    }))
+}
+
+/// Given a list of functions and statements, generates a Sierra program.
+/// Returns the program and the locations of the statements in the program.
+pub fn assemble_program(
+    db: &dyn SierraGenGroup,
+    functions: Vec<Arc<pre_sierra::Function>>,
+    statements: Vec<pre_sierra::StatementWithLocation>,
+) -> (program::Program, Vec<Vec<StableLocation>>) {
     let libfunc_declarations =
         generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
     let type_declarations =
@@ -276,12 +289,7 @@ pub fn get_sierra_program_for_functions(
             })
             .collect(),
     };
-    Ok(Arc::new(SierraProgramWithDebug {
-        program,
-        debug_info: SierraProgramDebugInfo {
-            statements_locations: StatementsLocations::from_locations_vec(&statements_locations),
-        },
-    }))
+    (program, statements_locations)
 }
 
 /// Tries extracting a ConcreteFunctionWithBodyId from a pre-Sierra statement.
@@ -317,7 +325,7 @@ pub fn try_get_function_with_body_id(
 
     try_extract_matches!(inner_function, cairo_lang_sierra::program::GenericArg::UserFunc)?
         .lookup_intern(db)
-        .body(db.upcast())
+        .body(db)
         .expect("No diagnostics at this stage.")
 }
 
@@ -331,7 +339,7 @@ pub fn get_sierra_program(
             for (free_func_id, _) in db.module_free_functions(*module_id)?.iter() {
                 // TODO(spapini): Search Impl functions.
                 if let Some(function) =
-                    ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), *free_func_id)
+                    ConcreteFunctionWithBodyId::from_no_generics_free(db, *free_func_id)
                 {
                     requested_function_ids.push(function)
                 }
@@ -339,4 +347,37 @@ pub fn get_sierra_program(
         }
     }
     db.get_sierra_program_for_functions(requested_function_ids)
+}
+
+/// Given `function_id` generates a dummy program with the body of the relevant function
+/// and dummy helper functions that allows the program to be compiled to casm.
+/// The generated program is not valid, but it can be used to estimate the size of the
+/// relevant function.
+pub fn get_dummy_program_for_size_estimation(
+    db: &dyn SierraGenGroup,
+    function_id: ConcreteFunctionWithBodyId,
+) -> Maybe<Program> {
+    let function: Arc<pre_sierra::Function> = db.function_with_body_sierra(function_id)?;
+
+    let mut processed_function_ids =
+        UnorderedHashSet::<ConcreteFunctionWithBodyId>::from_iter([function_id]);
+
+    let mut functions = vec![function.clone()];
+    let mut statements = function.body.clone();
+
+    for statement in &function.body {
+        if let Some(function_id) = try_get_function_with_body_id(db, statement) {
+            if !processed_function_ids.insert(function_id) {
+                continue;
+            }
+
+            let callee: Arc<pre_sierra::Function> = db.priv_get_dummy_function(function_id)?;
+            statements.extend(callee.body.iter().cloned());
+            functions.push(callee.clone());
+        }
+    }
+
+    let (program, _statements_locations) = assemble_program(db, functions, statements);
+
+    Ok(program)
 }

@@ -198,6 +198,7 @@ cairo_lang_test_utils::test_file_test!(
         range: "range",
         use_: "use",
         type_alias: "type_alias",
+        macro_declaration: "macro_declaration",
 },
     test_partial_parser_tree
 );

@@ -3,8 +3,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{LookupIntern, Upcast};
 use salsa::Durability;
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -160,6 +160,8 @@ pub struct ExperimentalFeaturesConfig {
     /// function before calling it.
     #[serde(default)]
     pub coupons: bool,
+    /// Allows using user defined inline macros.
+    pub user_defined_inline_macros: bool,
 }
 
 /// A trait for defining files external to the `filesystem` crate.
@@ -247,6 +249,7 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
                     negative_impls: true,
                     associated_item_constraints: true,
                     coupons: true,
+                    user_defined_inline_macros: true,
                 },
             },
             cache_file: None,
@@ -254,52 +257,42 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
     );
 }
 
-impl AsFilesGroupMut for dyn FilesGroup {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
-        self
-    }
-}
-
-pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
+pub trait FilesGroupEx: FilesGroup {
     /// Overrides file content. None value removes the override.
     fn override_file_content(&mut self, file: FileId, content: Option<Arc<str>>) {
-        let mut overrides = Upcast::upcast(self).file_overrides().as_ref().clone();
+        let mut overrides = self.file_overrides().as_ref().clone();
         match content {
             Some(content) => overrides.insert(file, content),
             None => overrides.swap_remove(&file),
         };
-        self.as_files_group_mut().set_file_overrides(Arc::new(overrides));
+        self.set_file_overrides(Arc::new(overrides));
     }
     /// Sets the root directory of the crate. None value removes the crate.
     fn set_crate_config(&mut self, crt: CrateId, root: Option<CrateConfiguration>) {
-        let mut crate_configs = Upcast::upcast(self).crate_configs().as_ref().clone();
+        let mut crate_configs = self.crate_configs().as_ref().clone();
         match root {
             Some(root) => crate_configs.insert(crt, root),
             None => crate_configs.swap_remove(&crt),
         };
-        self.as_files_group_mut().set_crate_configs(Arc::new(crate_configs));
+        self.set_crate_configs(Arc::new(crate_configs));
     }
     /// Sets the given flag value. None value removes the flag.
     fn set_flag(&mut self, id: FlagId, value: Option<Arc<Flag>>) {
-        let mut flags = Upcast::upcast(self).flags().as_ref().clone();
+        let mut flags = self.flags().as_ref().clone();
         match value {
             Some(value) => flags.insert(id, value),
             None => flags.swap_remove(&id),
         };
-        self.as_files_group_mut().set_flags(Arc::new(flags));
+        self.set_flags(Arc::new(flags));
     }
     /// Merges specified [`CfgSet`] into one already stored in this db.
     fn use_cfg(&mut self, cfg_set: &CfgSet) {
-        let existing = Upcast::upcast(self).cfg_set();
+        let existing = self.cfg_set();
         let merged = existing.union(cfg_set);
-        self.as_files_group_mut().set_cfg_set(Arc::new(merged));
+        self.set_cfg_set(Arc::new(merged));
     }
 }
-impl<T: Upcast<dyn FilesGroup> + AsFilesGroupMut + ?Sized> FilesGroupEx for T {}
-
-pub trait AsFilesGroupMut {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static);
-}
+impl<T: FilesGroup + ?Sized> FilesGroupEx for T {}
 
 fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
     // TODO(spapini): Sort for stability.
@@ -407,7 +400,7 @@ pub fn get_originating_location(
 /// If any of the provided mappings fully contains the span, origin span of the mapping will be
 /// returned. Otherwise, the function will try to find a span that is a result of a concatenation of
 /// multiple consecutive mappings.
-fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Option<TextSpan> {
+pub fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Option<TextSpan> {
     // Find all mappings that have non-empty intersection with the provided span.
     let intersecting_mappings = || {
         code_mapping.iter().filter(|mapping| {
@@ -437,7 +430,7 @@ fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Option<Te
 
     // If no mappings intersect with the span, translation is impossible.
     if matched.is_empty() {
-        return None;
+        return call_site;
     }
 
     // Take the first mapping to the left.
@@ -488,7 +481,7 @@ fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Option<Te
 }
 
 /// Returns the parent file and the code mappings of the file.
-fn get_parent_and_mapping(
+pub fn get_parent_and_mapping(
     db: &dyn FilesGroup,
     file_id: FileId,
 ) -> Option<(FileId, Arc<[CodeMapping]>)> {

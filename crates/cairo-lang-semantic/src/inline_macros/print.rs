@@ -3,9 +3,11 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
     PluginGeneratedFile,
 };
-use cairo_lang_syntax::node::ast;
+use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::{formatdoc, indoc};
 
 use super::write::{WriteMacro, WritelnMacro};
@@ -93,8 +95,13 @@ fn generate_code_inner(
     db: &dyn SyntaxGroup,
     with_newline: bool,
 ) -> InlinePluginResult {
+    let Some(syntax) = syntax.as_legacy_inline_macro(db) else {
+        return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
+            syntax.as_syntax_node().stable_ptr(db),
+        ));
+    };
     let arguments = syntax.arguments(db);
-    let mut builder = PatchBuilder::new(db, syntax);
+    let mut builder = PatchBuilder::new(db, &syntax);
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc! {
             "

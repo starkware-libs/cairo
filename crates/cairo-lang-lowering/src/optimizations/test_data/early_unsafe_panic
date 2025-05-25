@@ -1,0 +1,116 @@
+//! > Test panic in one of the match arms.
+
+//! > test_runner_name
+test_early_unsafe_panic
+
+//! > function
+fn foo(a: Option<u32>) -> u32 {
+    match a {
+        Some(x) => x,
+        None => core::panic_with_felt252('error'),
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::option::Option::<core::integer::u32>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v1 -> v5})
+
+blk2:
+Statements:
+  (v3: core::felt252) <- 435711799154
+  (v4: core::never) <- core::panic_with_felt252(v3)
+End:
+  Match(match_enum(v4) {
+  })
+
+blk3:
+Statements:
+End:
+  Return(v5)
+
+//! > after
+Parameters: v0: core::option::Option::<core::integer::u32>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v1 -> v5})
+
+blk2:
+Statements:
+End:
+  Match(match core::panics::unsafe_panic() {
+  })
+
+blk3:
+Statements:
+End:
+  Return(v5)
+
+//! > ==========================================================================
+
+//! > Test panic in root block.
+
+//! > test_runner_name
+test_early_unsafe_panic
+
+//! > function
+fn foo(a: Option<u32>) -> u32 {
+    a.unwrap();
+    core::panic_with_felt252('error')
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::option::Option::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- core::option::OptionTraitImpl::<core::integer::u32>::unwrap(v0)
+  (v2: core::felt252) <- 435711799154
+  (v3: core::never) <- core::panic_with_felt252(v2)
+End:
+  Match(match_enum(v3) {
+  })
+
+//! > after
+Parameters: v0: core::option::Option::<core::integer::u32>
+blk0 (root):
+Statements:
+End:
+  Match(match core::panics::unsafe_panic() {
+  })

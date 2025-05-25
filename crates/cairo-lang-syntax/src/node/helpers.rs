@@ -4,11 +4,12 @@ use smol_str::SmolStr;
 use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
     ImplItem, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
-    ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias,
-    ItemUse, Member, Modifier, ModuleItem, OptionArgListParenthesized, Statement, StatementBreak,
-    StatementContinue, StatementExpr, StatementLet, StatementReturn, TerminalIdentifier,
-    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction,
-    TraitItemFunctionPtr, TraitItemImpl, TraitItemType, UsePathLeaf, Variant, WrappedArgList,
+    ItemImpl, ItemImplAlias, ItemInlineMacro, ItemMacroDeclaration, ItemModule, ItemStruct,
+    ItemTrait, ItemTypeAlias, ItemUse, Member, Modifier, ModuleItem, OptionArgListParenthesized,
+    Statement, StatementBreak, StatementContinue, StatementExpr, StatementLet, StatementReturn,
+    TerminalIdentifier, TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem,
+    TraitItemConstant, TraitItemFunction, TraitItemFunctionPtr, TraitItemImpl, TraitItemType,
+    UsePathLeaf, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
@@ -79,6 +80,19 @@ impl GetIdentifier for ast::ExprPathGreen {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
         };
+        let segment_green = ast::ExprPathInnerGreen(*children.last().unwrap());
+        segment_green.identifier(db)
+    }
+}
+
+impl GetIdentifier for ast::ExprPathInnerGreen {
+    /// Retrieves the text of the last identifier in the path.
+    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        let green_node = self.0.lookup_intern(db);
+        let children = match &green_node.details {
+            GreenNodeDetails::Node { children, width: _ } => children,
+            _ => panic!("Unexpected token"),
+        };
         assert_eq!(children.len() & 1, 1, "Expected an odd number of elements in the path.");
         let segment_green = ast::PathSegmentGreen(*children.last().unwrap());
         segment_green.identifier(db)
@@ -97,7 +111,7 @@ impl GetIdentifier for ast::TerminalIdentifierGreen {
 impl GetIdentifier for ast::ExprPath {
     /// Retrieves the identifier of the last segment of the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.elements(db).last().cloned().unwrap().identifier(db)
+        self.segments(db).elements(db).last().cloned().unwrap().identifier(db)
     }
 }
 
@@ -323,6 +337,11 @@ impl QueryAttrs for ItemTypeAlias {
         self.attributes(db).elements(db)
     }
 }
+impl QueryAttrs for ItemMacroDeclaration {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
 impl QueryAttrs for TraitItemFunction {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         self.attributes(db).elements(db)
@@ -379,6 +398,9 @@ impl QueryAttrs for ModuleItem {
             ModuleItem::InlineMacro(item) => item.attributes_elements(db),
             ModuleItem::Missing(_) => vec![],
             ModuleItem::HeaderDoc(_) => vec![],
+            ModuleItem::MacroDeclaration(macro_declaration) => {
+                macro_declaration.attributes_elements(db)
+            }
         }
     }
 }
@@ -685,7 +707,7 @@ pub trait IsDependentType {
 
 impl IsDependentType for ast::ExprPath {
     fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool {
-        let segments = self.elements(db);
+        let segments = self.segments(db).elements(db);
         if let [ast::PathSegment::Simple(arg_segment)] = &segments[..] {
             identifiers.contains(&arg_segment.ident(db).text(db).as_str())
         } else {
@@ -755,6 +777,7 @@ impl IsDependentType for ast::Expr {
             | ast::Expr::FieldInitShorthand(_)
             | ast::Expr::Indexed(_)
             | ast::Expr::InlineMacro(_)
+            | ast::Expr::Placeholder(_)
             | ast::Expr::Missing(_) => false,
         }
     }

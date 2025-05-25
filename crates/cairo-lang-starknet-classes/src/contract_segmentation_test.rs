@@ -39,7 +39,7 @@ impl TestFileRunner for BytecodeSegmentLengthTest {
                 let bytecode_len = cairo_program.assemble().bytecode.len();
                 let bytecode_lengths =
                     compute_bytecode_segment_lengths(&sierra_program, &cairo_program, bytecode_len);
-                (format!("{}", cairo_program), format!("{:?}", bytecode_lengths))
+                (format!("{cairo_program}"), format!("{bytecode_lengths:?}"))
             }
             None => {
                 ("Casm compilation failed.".to_string(), "Casm compilation failed.".to_string())

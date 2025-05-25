@@ -71,7 +71,6 @@ pub use crate::traits::SubEq;
 use crate::traits::{
     self, Add, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivRem, Drop,
     Felt252DictValue, Into, Mul, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
-    TupleSize0Copy, TupleSize0Drop,
 };
 #[feature("deprecated-index-traits")]
 use crate::traits::{Index, IndexView};

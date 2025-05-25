@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     GlobalUseId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
-    TraitId,
+    TraitId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -42,65 +41,67 @@ pub fn priv_module_semantic_data(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
 ) -> Maybe<Arc<ModuleSemanticData>> {
-    let def_db: &dyn DefsGroup = db.upcast();
-    let syntax_db = db.upcast();
     // We use the builder here since the items can come from different file_ids.
     let mut diagnostics = DiagnosticsBuilder::default();
     let mut items = OrderedHashMap::default();
     for item_id in db.module_items(module_id)?.iter().copied() {
         let (name, attributes, visibility) = match &item_id {
             ModuleItemId::Constant(item_id) => {
-                let item = &def_db.module_constants(module_id)?[item_id];
-                (item_id.name(def_db), item.attributes(syntax_db), item.visibility(syntax_db))
+                let item = &db.module_constants(module_id)?[item_id];
+                (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Submodule(item_id) => {
-                let item = &def_db.module_submodules(module_id)?[item_id];
-                (item_id.name(def_db), item.attributes(syntax_db), item.visibility(syntax_db))
+                let item = &db.module_submodules(module_id)?[item_id];
+                (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Use(item_id) => {
-                let use_ast = &def_db.module_uses(module_id)?[item_id];
-                let item = ast::UsePath::Leaf(use_ast.clone()).get_item(syntax_db);
-                (item_id.name(def_db), item.attributes(syntax_db), item.visibility(syntax_db))
+                let use_ast = &db.module_uses(module_id)?[item_id];
+                let item = ast::UsePath::Leaf(use_ast.clone()).get_item(db);
+                (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::FreeFunction(item_id) => {
-                let item = &def_db.module_free_functions(module_id)?[item_id];
-                (item_id.name(def_db), item.attributes(syntax_db), item.visibility(syntax_db))
+                let item = &db.module_free_functions(module_id)?[item_id];
+                (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Struct(item_id) => {
-                let item = &def_db.module_structs(module_id)?[item_id];
-                (item_id.name(def_db), item.attributes(syntax_db), item.visibility(syntax_db))
+                let item = &db.module_structs(module_id)?[item_id];
+                (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Enum(item_id) => {
-                let item = &def_db.module_enums(module_id)?[item_id];
-                (item_id.name(def_db), item.attributes(syntax_db), item.visibility(syntax_db))
+                let item = &db.module_enums(module_id)?[item_id];
+                (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::TypeAlias(item_id) => {
-                let item = &def_db.module_type_aliases(module_id)?[item_id];
-                (item_id.name(def_db), item.attributes(syntax_db), item.visibility(syntax_db))
+                let item = &db.module_type_aliases(module_id)?[item_id];
+                (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::ImplAlias(item_id) => {
-                let item = &def_db.module_impl_aliases(module_id)?[item_id];
-                (item_id.name(def_db), item.attributes(syntax_db), item.visibility(syntax_db))
+                let item = &db.module_impl_aliases(module_id)?[item_id];
+                (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Trait(item_id) => {
-                let item = &def_db.module_traits(module_id)?[item_id];
-                (item_id.name(def_db), item.attributes(syntax_db), item.visibility(syntax_db))
+                let item = &db.module_traits(module_id)?[item_id];
+                (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Impl(item_id) => {
-                let item = &def_db.module_impls(module_id)?[item_id];
-                (item_id.name(def_db), item.attributes(syntax_db), item.visibility(syntax_db))
+                let item = &db.module_impls(module_id)?[item_id];
+                (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::ExternType(item_id) => {
-                let item = &def_db.module_extern_types(module_id)?[item_id];
-                (item_id.name(def_db), item.attributes(syntax_db), item.visibility(syntax_db))
+                let item = &db.module_extern_types(module_id)?[item_id];
+                (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::ExternFunction(item_id) => {
-                let item = &def_db.module_extern_functions(module_id)?[item_id];
-                (item_id.name(def_db), item.attributes(syntax_db), item.visibility(syntax_db))
+                let item = &db.module_extern_functions(module_id)?[item_id];
+                (item_id.name(db), item.attributes(db), item.visibility(db))
+            }
+            ModuleItemId::MacroDeclaration(item_id) => {
+                let item = &db.module_macro_declarations(module_id)?[item_id];
+                (item_id.name(db), item.attributes(db), item.visibility(db))
             }
         };
-        let visibility = Visibility::from_ast(db.upcast(), &mut diagnostics, &visibility);
-        let feature_kind = FeatureKind::from_ast(db.upcast(), &mut diagnostics, &attributes);
+        let visibility = Visibility::from_ast(db, &mut diagnostics, &visibility);
+        let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
         if items
             .insert(name.clone(), ModuleItemInfo { item_id, visibility, feature_kind })
             .is_some()
@@ -118,9 +119,9 @@ pub fn priv_module_semantic_data(
         .module_global_uses(module_id)?
         .iter()
         .map(|(global_use_id, use_path_star)| {
-            let item = ast::UsePath::Star(use_path_star.clone()).get_item(syntax_db);
-            let visibility = item.visibility(syntax_db);
-            (*global_use_id, Visibility::from_ast(db.upcast(), &mut diagnostics, &visibility))
+            let item = ast::UsePath::Star(use_path_star.clone()).get_item(db);
+            let visibility = item.visibility(db);
+            (*global_use_id, Visibility::from_ast(db, &mut diagnostics, &visibility))
         })
         .collect();
     Ok(Arc::new(ModuleSemanticData { items, global_uses, diagnostics: diagnostics.build() }))
@@ -153,30 +154,30 @@ pub fn get_module_global_uses(
     Ok(module_data.global_uses.clone())
 }
 
-/// Query implementation of [SemanticGroup::module_all_used_items].
-pub fn module_all_used_items(
+/// Query implementation of [SemanticGroup::module_all_used_uses].
+pub fn module_all_used_uses(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
-) -> Maybe<Arc<OrderedHashSet<LookupItemId>>> {
-    let mut all_used_items = OrderedHashSet::default();
+) -> Maybe<Arc<OrderedHashSet<UseId>>> {
+    let mut all_used_uses = OrderedHashSet::default();
     let module_items = db.module_items(module_id)?;
     for item in module_items.iter() {
         if let Some(items) = match *item {
             ModuleItemId::Submodule(submodule_id) => {
-                Some(db.module_all_used_items(ModuleId::Submodule(submodule_id))?)
+                Some(db.module_all_used_uses(ModuleId::Submodule(submodule_id))?)
             }
-            ModuleItemId::Trait(trait_id) => Some(db.trait_all_used_items(trait_id)?),
-            ModuleItemId::Impl(impl_id) => Some(db.impl_all_used_items(impl_id)?),
+            ModuleItemId::Trait(trait_id) => Some(db.trait_all_used_uses(trait_id)?),
+            ModuleItemId::Impl(impl_id) => Some(db.impl_all_used_uses(impl_id)?),
             _ => None,
         } {
-            all_used_items.extend(items.iter().cloned());
+            all_used_uses.extend(items.iter().cloned());
         } else {
             for resolver_data in get_resolver_data_options(LookupItemId::ModuleItem(*item), db) {
-                all_used_items.extend(resolver_data.used_items.iter().cloned());
+                all_used_uses.extend(resolver_data.used_uses.iter().cloned());
             }
         }
     }
-    Ok(all_used_items.into())
+    Ok(all_used_uses.into())
 }
 
 /// Query implementation of [SemanticGroup::module_attributes].
@@ -184,11 +185,9 @@ pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<V
     Ok(match &module_id {
         ModuleId::CrateRoot(_) => vec![],
         ModuleId::Submodule(submodule_id) => {
-            let module_ast =
-                &db.module_submodules(submodule_id.parent_module(db.upcast()))?[submodule_id];
-            let syntax_db = db.upcast();
+            let module_ast = &db.module_submodules(submodule_id.parent_module(db))?[submodule_id];
 
-            module_ast.attributes(syntax_db).structurize(syntax_db)
+            module_ast.attributes(db).structurize(db)
         }
     })
 }
@@ -229,7 +228,7 @@ fn specific_module_usable_trait_ids(
         ) {
             continue;
         }
-        if !peek_visible_in(db.upcast(), item.visibility, containing_module, user_module) {
+        if !peek_visible_in(db, item.visibility, containing_module, user_module) {
             continue;
         }
         match item.item_id {

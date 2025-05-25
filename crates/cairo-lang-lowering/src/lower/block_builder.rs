@@ -18,11 +18,9 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
 use crate::lower::refs::ClosureInfo;
-use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VarUsage, VariableId,
-};
+use crate::{Block, BlockEnd, BlockId, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
 
-/// FlatBlock builder, describing its current state.
+/// Block builder, describing its current state.
 #[derive(Clone)]
 pub struct BlockBuilder {
     /// A store for semantic variables, owning their OwnedVariable instances.
@@ -152,7 +150,7 @@ impl BlockBuilder {
         let parent_var = self.get_snap_ref(ctx, parent)?;
         let members = ctx.db.concrete_struct_members(*concrete_struct_id).ok()?;
         let (parent_number_of_snapshots, _) =
-            peel_snapshots(ctx.db.upcast(), ctx.variables[parent_var.var_id].ty);
+            peel_snapshots(ctx.db, ctx.variables[parent_var.var_id].ty);
         let member_idx = members.iter().position(|(_, member)| member.id == *member_id)?;
         Some(
             generators::StructMemberAccess {
@@ -160,7 +158,7 @@ impl BlockBuilder {
                 member_tys: members
                     .iter()
                     .map(|(_, member)| {
-                        wrap_in_snapshots(ctx.db.upcast(), member.ty, parent_number_of_snapshots)
+                        wrap_in_snapshots(ctx.db, member.ty, parent_number_of_snapshots)
                     })
                     .collect(),
                 member_idx,
@@ -180,7 +178,7 @@ impl BlockBuilder {
             MemberPath::Var(var) => ctx.semantic_defs[var].ty(),
             MemberPath::Member { member_id, concrete_struct_id, .. } => {
                 ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()
-                    [&member_id.name(ctx.db.upcast())]
+                    [&member_id.name(ctx.db)]
                     .ty
             }
         }
@@ -193,12 +191,12 @@ impl BlockBuilder {
 
     /// Ends a block with an unreachable match.
     pub fn unreachable_match(self, ctx: &mut LoweringContext<'_, '_>, match_info: MatchInfo) {
-        self.finalize(ctx, FlatBlockEnd::Match { info: match_info });
+        self.finalize(ctx, BlockEnd::Match { info: match_info });
     }
 
     /// Ends a block with Panic.
     pub fn panic(self, ctx: &mut LoweringContext<'_, '_>, data: VarUsage) -> Maybe<()> {
-        self.finalize(ctx, FlatBlockEnd::Panic(data));
+        self.finalize(ctx, BlockEnd::Panic(data));
         Ok(())
     }
 
@@ -228,13 +226,13 @@ impl BlockBuilder {
                 )
             })?;
 
-        self.finalize(ctx, FlatBlockEnd::Return(chain!(refs, [expr]).collect(), location));
+        self.finalize(ctx, BlockEnd::Return(chain!(refs, [expr]).collect(), location));
         Ok(())
     }
 
     /// Ends a block with known ending information. Used by [SealedBlockBuilder].
-    pub fn finalize(self, ctx: &mut LoweringContext<'_, '_>, end: FlatBlockEnd) {
-        let block = FlatBlock { statements: self.statements.statements, end };
+    pub fn finalize(self, ctx: &mut LoweringContext<'_, '_>, end: BlockEnd) {
+        let block = Block { statements: self.statements.statements, end };
         ctx.blocks.set_block(self.block_id, block);
     }
 
@@ -253,7 +251,7 @@ impl BlockBuilder {
         };
         let new_scope = self.sibling_block_builder(following_block);
         let prev_scope = std::mem::replace(self, new_scope);
-        prev_scope.finalize(ctx, FlatBlockEnd::Match { info: match_info });
+        prev_scope.finalize(ctx, BlockEnd::Match { info: match_info });
         Ok(merged_expr)
     }
 
@@ -493,7 +491,7 @@ impl SealedBlockBuilder {
                 assert!(remapping.insert(remapped_var, var_usage).is_none());
             }
 
-            builder.finalize(ctx, FlatBlockEnd::Goto(target, remapping));
+            builder.finalize(ctx, BlockEnd::Goto(target, remapping));
         }
     }
 }

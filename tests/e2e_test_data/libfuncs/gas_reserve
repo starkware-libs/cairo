@@ -1,0 +1,110 @@
+//! > gas_reserve_create libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+fn foo() -> Option<gas::GasReserve> nopanic {
+    gas::gas_reserve_create(100)
+}
+
+//! > casm
+[ap + 0] = 100, ap++;
+[fp + -3] = [ap + 1] + [ap + -1], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -4] + 0];
+jmp rel 13;
+[ap + -1] = [[fp + -4] + 0];
+ap += 1;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = [ap + -3] + 90, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -7], ap++;
+ret;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1070})
+
+//! > sierra_code
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type GasReserve = GasReserve [storable: true, drop: true, dup: false, zero_sized: false];
+type core::option::Option::<core::gas::GasReserve> = Enum<ut@core::option::Option::<core::gas::GasReserve>, GasReserve, Unit> [storable: true, drop: true, dup: false, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Const<u128, 100> = Const<u128, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<u128, 100>> = const_as_immediate<Const<u128, 100>>;
+libfunc store_temp<u128> = store_temp<u128>;
+libfunc gas_reserve_create = gas_reserve_create;
+libfunc branch_align = branch_align;
+libfunc redeposit_gas = redeposit_gas;
+libfunc enum_init<core::option::Option::<core::gas::GasReserve>, 0> = enum_init<core::option::Option::<core::gas::GasReserve>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<core::option::Option::<core::gas::GasReserve>> = store_temp<core::option::Option::<core::gas::GasReserve>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<core::gas::GasReserve>, 1> = enum_init<core::option::Option::<core::gas::GasReserve>, 1>;
+
+F0:
+const_as_immediate<Const<u128, 100>>() -> ([2]);
+store_temp<u128>([2]) -> ([2]);
+gas_reserve_create([0], [1], [2]) { fallthrough([3], [4], [5]) F0_B0([6], [7]) };
+branch_align() -> ();
+redeposit_gas([4]) -> ([8]);
+enum_init<core::option::Option::<core::gas::GasReserve>, 0>([5]) -> ([9]);
+store_temp<RangeCheck>([3]) -> ([3]);
+store_temp<GasBuiltin>([8]) -> ([8]);
+store_temp<core::option::Option::<core::gas::GasReserve>>([9]) -> ([9]);
+return([3], [8], [9]);
+F0_B0:
+branch_align() -> ();
+redeposit_gas([7]) -> ([10]);
+struct_construct<Unit>() -> ([11]);
+enum_init<core::option::Option::<core::gas::GasReserve>, 1>([11]) -> ([12]);
+store_temp<RangeCheck>([6]) -> ([6]);
+store_temp<GasBuiltin>([10]) -> ([10]);
+store_temp<core::option::Option::<core::gas::GasReserve>>([12]) -> ([12]);
+return([6], [10], [12]);
+
+test::foo@F0([0]: RangeCheck, [1]: GasBuiltin) -> (RangeCheck, GasBuiltin, core::option::Option::<core::gas::GasReserve>);
+
+//! > ==========================================================================
+
+//! > gas_reserve_utilize libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+fn foo(reserve: gas::GasReserve) {
+    gas::gas_reserve_utilize(reserve)
+}
+
+//! > casm
+[ap + 0] = [fp + -4] + [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type GasReserve = GasReserve [storable: true, drop: true, dup: false, zero_sized: false];
+
+libfunc gas_reserve_utilize = gas_reserve_utilize;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+
+F0:
+gas_reserve_utilize([0], [1]) -> ([2]);
+store_temp<GasBuiltin>([2]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: GasBuiltin, [1]: GasReserve) -> (GasBuiltin);

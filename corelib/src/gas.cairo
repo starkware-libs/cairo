@@ -77,3 +77,20 @@ pub extern fn get_builtin_costs() -> BuiltinCosts nopanic;
 pub fn get_builtin_costs() -> BuiltinCosts nopanic {
     BuiltinCosts {}
 }
+
+/// Represents a gas reserve.
+///
+/// Gas reserves can be created at any point using gas from the gas counter,
+/// and can be utilized at a later point in time.
+pub extern type GasReserve;
+
+/// Creates a new gas reserve by withdrawing the specified amount from the gas counter.
+/// Returns `Some(GasReserve)` if there is sufficient gas, otherwise returns `None`.
+#[cfg(not(gas: "disabled"))]
+pub extern fn gas_reserve_create(
+    amount: u128,
+) -> Option<GasReserve> implicits(RangeCheck, GasBuiltin) nopanic;
+
+/// Adds the gas stored in the reserve back to the gas counter.
+/// The reserve is consumed in the process.
+pub extern fn gas_reserve_utilize(reserve: GasReserve) implicits(GasBuiltin) nopanic;
