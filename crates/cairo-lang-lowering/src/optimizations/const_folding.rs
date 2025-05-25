@@ -216,7 +216,7 @@ pub fn const_folding(
                 }
                 Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) => {
                     if let Some(VarInfo::Const(val)) = ctx.var_info.get(&input.var_id) {
-                        let value = ConstValue::Enum(variant.clone(), val.clone().into());
+                        let value = ConstValue::Enum(*variant, val.clone().into());
                         ctx.var_info.insert(*output, VarInfo::Const(value.clone()));
                     }
                 }
