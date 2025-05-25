@@ -2978,7 +2978,6 @@ fn foo() -> Result<(), u32> {
     loop {
         bar()?;
     }
-    Ok(())
 }
 
 //! > function_name

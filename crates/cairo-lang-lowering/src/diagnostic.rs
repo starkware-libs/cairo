@@ -101,11 +101,8 @@ impl DiagnosticEntry for LoweringDiagnostic {
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        if let LoweringDiagnosticKind::Unreachable { last_statement_ptr } = &self.kind {
-            return self
-                .location
-                .stable_location
-                .diagnostic_location_until(db, *last_statement_ptr);
+        if let LoweringDiagnosticKind::Unreachable { block_end_ptr } = &self.kind {
+            return self.location.stable_location.diagnostic_location_until(db, *block_end_ptr);
         }
         self.location.stable_location.diagnostic_location(db)
     }
@@ -196,7 +193,7 @@ impl MatchError {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum LoweringDiagnosticKind {
-    Unreachable { last_statement_ptr: SyntaxStablePtrId },
+    Unreachable { block_end_ptr: SyntaxStablePtrId },
     VariableMoved { inference_error: InferenceError },
     VariableNotDropped { drop_err: InferenceError, destruct_err: InferenceError },
     MatchError(MatchError),
