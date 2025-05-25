@@ -156,7 +156,7 @@ pub struct Variant {
     pub idx: usize,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ConcreteVariant {
     pub concrete_enum_id: ConcreteEnumId,
     pub id: VariantId,

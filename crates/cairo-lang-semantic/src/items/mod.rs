@@ -9,7 +9,7 @@ use cairo_lang_utils::try_extract_matches;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::NotATrait;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::resolve::{ResolvedGenericItem, Resolver};
+use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver};
 
 pub mod attribute;
 pub mod constant;
@@ -50,6 +50,7 @@ fn resolve_trait_path(
             diagnostics,
             trait_path_syntax,
             NotFoundItemType::Trait,
+            ResolutionContext::Default,
         )?,
         ResolvedGenericItem::Trait
     )

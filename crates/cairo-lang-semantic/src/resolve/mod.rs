@@ -755,14 +755,9 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         path: impl AsSegments,
         item_type: NotFoundItemType,
+        ctx: ResolutionContext<'_>,
     ) -> Maybe<ResolvedGenericItem> {
-        self.resolve_generic_path_inner(
-            diagnostics,
-            path,
-            item_type,
-            true,
-            ResolutionContext::Default,
-        )
+        self.resolve_generic_path_inner(diagnostics, path, item_type, true, ctx)
     }
 
     /// Resolves a generic item, given a path.
@@ -832,7 +827,7 @@ impl<'db> Resolver<'db> {
         if let Some(base_module) = self.try_handle_super_segments(
             diagnostics,
             segments,
-            |resolved_items, db, segment, module_id| {
+            |resolved_items, db: &dyn SemanticGroup, segment, module_id| {
                 resolved_items.mark_generic(db, segment, ResolvedGenericItem::Module(module_id));
             },
             macro_context_modifier,

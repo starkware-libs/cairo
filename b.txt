@@ -1,0 +1,8 @@
+
+running 3 tests
+test items::test::diagnostics::type_mismatch_diagnostics ... ok
+test expr::test::expr_semantics::match_ ... ok
+test expr::test::expr_diagnostics::match_ ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 98 filtered out; finished in 2.89s
+

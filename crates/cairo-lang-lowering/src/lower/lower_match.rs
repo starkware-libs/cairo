@@ -492,7 +492,7 @@ impl PatternTree {
                         .into_iter()
                         .zip(mapping_info.variants.iter())
                         .map(|(subtree, concrete_variant)| {
-                            variants_being_explored.push(concrete_variant.clone());
+                            variants_being_explored.push(*concrete_variant);
                             let variant_match_tree = build_tree_helper(
                                 subtree,
                                 ctx,
@@ -578,7 +578,7 @@ fn insert_tuple_path_patterns(
                 // TODO(TomerStarkware): Remove the match on the variant options in this case if
                 // there's no other conflicting arm.
                 let mut path = path.clone();
-                path.variants.push(variant.clone());
+                path.variants.push(*variant);
                 insert_tuple_path_patterns(
                     ctx,
                     patterns,
@@ -789,7 +789,7 @@ fn lower_full_match_tree(
             });
             arm_var_ids.push(vec![var_id]);
 
-            match_tuple_ctx.current_path.variants.push(concrete_variant.clone());
+            match_tuple_ctx.current_path.variants.push(*concrete_variant);
             match_tuple_ctx.current_var_ids.push(var_id);
             let result = if index + 1 == extracted_enums_details.len() {
                 lower_tuple_match_arm(
@@ -830,7 +830,7 @@ fn lower_full_match_tree(
             arm_var_ids,
         )
         .map(|((variant_id, block_id), var_ids)| MatchArm {
-            arm_selector: MatchArmSelector::VariantId(variant_id.clone()),
+            arm_selector: MatchArmSelector::VariantId(*variant_id),
             block_id,
             var_ids,
         })
@@ -1250,7 +1250,7 @@ trait EnumVariantScopeBuilder {
                         // Expand paths in map to include all variants of this enum_pattern.
                         if let Some(vmap) = pattern_tree.get_mapping_or_insert(
                             ctx,
-                            enum_pattern.variant.clone(),
+                            enum_pattern.variant,
                             n_snapshots,
                             stable_ptr,
                         )? {
