@@ -442,13 +442,13 @@ pub fn unwrap_error_propagation_type(
                 let name = enm.enum_id(db).name(db);
                 if name == "Option" {
                     return Some(ErrorPropagationType::Option {
-                        some_variant: ok_variant.clone(),
-                        none_variant: err_variant.clone(),
+                        some_variant: *ok_variant,
+                        none_variant: *err_variant,
                     });
                 } else if name == "Result" {
                     return Some(ErrorPropagationType::Result {
-                        ok_variant: ok_variant.clone(),
-                        err_variant: err_variant.clone(),
+                        ok_variant: *ok_variant,
+                        err_variant: *err_variant,
                     });
                 }
             }

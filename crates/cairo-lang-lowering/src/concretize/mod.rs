@@ -51,7 +51,7 @@ pub fn concretize_lowered(
                     stmt.function = concretize_function(db, substitution, stmt.function)?;
                 }
                 Statement::EnumConstruct(stmt) => {
-                    stmt.variant = substitution.substitute(db, stmt.variant.clone())?;
+                    stmt.variant = substitution.substitute(db, stmt.variant)?;
                 }
                 Statement::Const(stmt) => {
                     stmt.value = substitution.substitute(db, stmt.value.clone())?;

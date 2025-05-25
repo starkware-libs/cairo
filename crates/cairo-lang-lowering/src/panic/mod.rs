@@ -401,7 +401,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 } else {
                     let output = self.new_var(VarRequest { ty, location });
                     self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
-                        variant: self.ctx.panic_info.err_variant.clone(),
+                        variant: self.ctx.panic_info.err_variant,
                         input: err_data,
                         output,
                     }));
@@ -422,7 +422,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 let ty = self.ctx.panic_info.actual_return_ty;
                 let output = self.new_var(VarRequest { ty, location });
                 self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
-                    variant: self.ctx.panic_info.ok_variant.clone(),
+                    variant: self.ctx.panic_info.ok_variant,
                     input: VarUsage { var_id: tupled_res, location },
                     output,
                 }));

@@ -609,7 +609,7 @@ pub fn lower_return(
     {
         let variant = if is_early_return { early_return_variant } else { normal_return_variant };
 
-        ret_var = generators::EnumConstruct { input: ret_var, variant: variant.clone(), location }
+        ret_var = generators::EnumConstruct { input: ret_var, variant: *variant, location }
             .add(ctx, &mut builder.statements);
     }
 
@@ -1705,7 +1705,7 @@ fn lower_expr_enum_ctor(
     Ok(LoweredExpr::AtVariable(
         generators::EnumConstruct {
             input: lower_expr_to_var_usage(ctx, builder, expr.value_expr)?,
-            variant: expr.variant.clone(),
+            variant: expr.variant,
             location,
         }
         .add(ctx, &mut builder.statements),
@@ -2120,7 +2120,7 @@ fn lower_expr_error_propagate(
     let err_value = ctx.new_var(VarRequest { ty: err_variant.ty, location });
     let err_res = generators::EnumConstruct {
         input: VarUsage { var_id: err_value, location },
-        variant: func_err_variant.clone(),
+        variant: *func_err_variant,
         location,
     }
     .add(ctx, &mut subscope_err.statements);
@@ -2134,12 +2134,12 @@ fn lower_expr_error_propagate(
         input: match_input,
         arms: vec![
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(ok_variant.clone()),
+                arm_selector: MatchArmSelector::VariantId(*ok_variant),
                 block_id: block_ok_id,
                 var_ids: vec![expr_var],
             },
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(err_variant.clone()),
+                arm_selector: MatchArmSelector::VariantId(*err_variant),
                 block_id: block_err_id,
                 var_ids: vec![err_value],
             },
@@ -2189,7 +2189,7 @@ fn lower_optimized_extern_error_propagate(
     match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope_err);
     let expr = extern_facade_expr(ctx, err_variant.ty, input_vars, location);
     let input = expr.as_var_usage(ctx, &mut subscope_err)?;
-    let err_res = generators::EnumConstruct { input, variant: func_err_variant.clone(), location }
+    let err_res = generators::EnumConstruct { input, variant: *func_err_variant, location }
         .add(ctx, &mut subscope_err.statements);
 
     let ret_expr = lower_return(ctx, &mut subscope_err, err_res, location, true);
@@ -2202,12 +2202,12 @@ fn lower_optimized_extern_error_propagate(
         inputs: extern_enum.inputs,
         arms: vec![
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(ok_variant.clone()),
+                arm_selector: MatchArmSelector::VariantId(*ok_variant),
                 block_id: block_ok_id,
                 var_ids: block_ok_input_vars,
             },
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(err_variant.clone()),
+                arm_selector: MatchArmSelector::VariantId(*err_variant),
                 block_id: block_err_id,
                 var_ids: block_err_input_vars,
             },
