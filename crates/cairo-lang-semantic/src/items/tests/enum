@@ -115,3 +115,81 @@ error: Cannot have array of type "()" that is zero sized.
  --> lib.cairo:2:5
     Variant: Array<()>,
     ^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test generic params conflicts with enum.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {}
+fn bar<E>() -> i32 {
+    let E::aa(b) = makeE();
+    b
+}
+fn makeE() -> E {
+    E::aa(3)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum E {
+    aa: i32,
+}
+
+//! > expected_diagnostics
+error: Invalid path.
+ --> lib.cairo:6:12
+    let E::aa(b) = makeE();
+           ^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:7:5
+    b
+    ^
+
+//! > ==========================================================================
+
+//! > Test generic params conflicts with enum variants.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {}
+fn bar<T, E>() -> i32 {
+    let T(a) = A::T(2);
+    let E = A::E(());
+
+    a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+    T: i32,
+    E: (),
+}
+use A::{E, T};
+
+//! > expected_diagnostics
+error: Not a variant. Use the full name Enum::Variant.
+ --> lib.cairo:8:9
+    let T(a) = A::T(2);
+        ^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:11:5
+    a
+    ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:9:9
+    let E = A::E(());
+        ^
