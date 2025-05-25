@@ -2,10 +2,11 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 
 use super::dedup_blocks::dedup_blocks;
+use super::early_unsafe_panic::early_unsafe_panic;
 use super::gas_redeposit::gas_redeposit;
 use super::trim_unreachable::trim_unreachable;
 use super::validate::validate;
-use crate::FlatLowered;
+use crate::Lowered;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::implicits::lower_implicits;
@@ -28,6 +29,7 @@ pub enum OptimizationPhase {
     CancelOps,
     ConstFolding,
     DedupBlocks,
+    EarlyUnsafePanic,
     OptimizeMatches,
     OptimizeRemappings,
     ReorderStatements,
@@ -51,13 +53,14 @@ impl OptimizationPhase {
         self,
         db: &dyn LoweringGroup,
         function: ConcreteFunctionWithBodyId,
-        lowered: &mut FlatLowered,
+        lowered: &mut Lowered,
     ) -> Maybe<()> {
         match self {
             OptimizationPhase::ApplyInlining => apply_inlining(db, function, lowered)?,
             OptimizationPhase::BranchInversion => branch_inversion(db, lowered),
             OptimizationPhase::CancelOps => cancel_ops(lowered),
             OptimizationPhase::ConstFolding => const_folding(db, function, lowered),
+            OptimizationPhase::EarlyUnsafePanic => early_unsafe_panic(db, lowered),
             OptimizationPhase::DedupBlocks => dedup_blocks(lowered),
             OptimizationPhase::OptimizeMatches => optimize_matches(lowered),
             OptimizationPhase::OptimizeRemappings => optimize_remappings(lowered),
@@ -95,7 +98,7 @@ impl OptimizationStrategyId {
         self,
         db: &dyn LoweringGroup,
         function: ConcreteFunctionWithBodyId,
-        lowered: &mut FlatLowered,
+        lowered: &mut Lowered,
     ) -> Maybe<()> {
         for phase in self.lookup_intern(db).0 {
             phase.apply(db, function, lowered)?;
@@ -108,14 +111,15 @@ impl OptimizationStrategyId {
 /// Query implementation of [crate::db::LoweringGroup::baseline_optimization_strategy].
 pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
     OptimizationStrategy(vec![
+        // Must be right before const folding.
+        OptimizationPhase::ReorganizeBlocks,
+        // Apply `ConstFolding` before inlining to get better inlining decisions.
+        OptimizationPhase::ConstFolding,
         OptimizationPhase::ApplyInlining,
         OptimizationPhase::ReturnOptimization,
         OptimizationPhase::ReorganizeBlocks,
-        // The call to `reorder_statements` before and after `branch_inversion` is intentional.
-        // See description of `branch_inversion` for more details.
         OptimizationPhase::ReorderStatements,
         OptimizationPhase::BranchInversion,
-        OptimizationPhase::ReorderStatements,
         OptimizationPhase::CancelOps,
         // Must be right before const folding.
         OptimizationPhase::ReorganizeBlocks,
@@ -127,9 +131,11 @@ pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStr
         OptimizationPhase::OptimizeMatches,
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::CancelOps,
-        OptimizationPhase::ReorderStatements,
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::DedupBlocks,
+        // Re-run ReturnOptimization to eliminate harmful merges introduced by DedupBlocks.
+        OptimizationPhase::ReturnOptimization,
+        OptimizationPhase::ReorderStatements,
         OptimizationPhase::ReorganizeBlocks,
     ])
     .intern(db)
@@ -139,16 +145,11 @@ pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStr
 pub fn final_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
     OptimizationStrategy(vec![
         OptimizationPhase::GasRedeposit,
-        // Apply `TrimUnreachable` after GasRedeposit to remove unreachable `redeposit_gas` calls.
+        OptimizationPhase::EarlyUnsafePanic,
+        // Apply `TrimUnreachable` here to remove unreachable `redeposit_gas` and `unsafe_panic`
+        // calls.
         OptimizationPhase::TrimUnreachable,
         OptimizationPhase::LowerImplicits,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::CancelOps,
-        OptimizationPhase::ReorderStatements,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::DedupBlocks,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ReturnOptimization,
         OptimizationPhase::ReorganizeBlocks,
     ])
     .intern(db)

@@ -30,8 +30,11 @@
 //!
 //! 2. Mutable access using `MutableVecTrait`:
 //!    ```
-//!    // Append new element
-//!    self.my_vec.append().write(value);
+//!    // Append new element using push
+//!    self.my_vec.push(value);
+//!
+//!    // Allocate space for a new element (useful for nested vectors)
+//!    let new_slot = self.my_vec.allocate();
 //!
 //!    // Modify existing element
 //!    self.my_vec.at(0).write(new_value);
@@ -52,7 +55,7 @@
 //!
 //! fn store_number(ref self: ContractState, number: u256) {
 //!     // Append new number
-//!     self.numbers.append().write(number);
+//!     self.numbers.push(number);
 //!
 //!     // Read first number
 //!     let first = self.numbers[0].read();
@@ -322,7 +325,7 @@ pub trait MutableVecTrait<T> {
     /// ```
     #[deprecated(
         feature: "starknet-storage-deprecation",
-        note: "Use `starknet::storage::MutableVecTrait::push` instead.",
+        note: "Use `starknet::storage::MutableVecTrait::push` or `starknet::storage::MutableVecTrait::allocate` instead.",
     )]
     fn append(self: T) -> StoragePath<Mutable<Self::ElementType>> {
         Self::allocate(self)
@@ -332,9 +335,10 @@ pub trait MutableVecTrait<T> {
     /// to write the element.
     ///
     /// This function is a replacement for the deprecated `append` function, which allowed
-    /// appending new elements to a vector. Unlike `append`, `allocate` is specifically useful when
-    /// you need to prepare space for elements of unknown or dynamic size (e.g., appending another
-    /// vector).
+    /// appending new elements to a vector.
+    /// Unlike `push`, which gets an object to write to the vector, `allocate` is specifically
+    /// useful when you need to prepare space for elements of unknown or dynamic size (e.g.,
+    /// appending another vector).
     ///
     /// # Use Case
     ///
@@ -542,7 +546,7 @@ pub impl MutableVecIndexView<
 #[derive(Drop)]
 pub struct VecIter<T, impl VecTraitImpl: VecTrait<T>> {
     vec: T,
-    current_index: crate::ops::RangeIterator<u64>,
+    current_index: IntoIterator::<crate::ops::Range<u64>>::IntoIter,
 }
 
 impl VecIterator<T, impl VecTraitImpl: VecTrait<T>, +Drop<T>, +Copy<T>> of Iterator<VecIter<T>> {
@@ -591,7 +595,7 @@ pub impl PathableVecIntoIterRange<
 #[derive(Drop)]
 struct MutableVecIter<T, impl MutVecTraitImpl: MutableVecTrait<T>> {
     vec: T,
-    current_index: crate::ops::RangeIterator<u64>,
+    current_index: IntoIterator::<crate::ops::Range<u64>>::IntoIter,
 }
 
 impl MutableVecIterator<

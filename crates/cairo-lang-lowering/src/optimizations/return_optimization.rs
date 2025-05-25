@@ -12,7 +12,7 @@ use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
+    Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure, VarRemapping,
     VarUsage, VariableId,
 };
@@ -21,11 +21,11 @@ use crate::{
 ///
 /// This optimization does backward analysis from return statement and keeps track of
 /// each returned value (see `ValueInfo`), whenever all the returned values are available at a block
-/// end and there was no side effects later, the end is replaced with a return statement.
+/// end and there were no side effects later, the end is replaced with a return statement.
 pub fn return_optimization(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut FlatLowered,
+    lowered: &mut Lowered,
 ) {
     if lowered.blocks.is_empty() {
         return;
@@ -37,7 +37,7 @@ pub fn return_optimization(
 
     let mut variables = VariableAllocator::new(
         db,
-        function_id.function_with_body_id(db).base_semantic_function(db),
+        function_id.base_semantic_function(db).function_with_body_id(db),
         lowered.variables.clone(),
     )
     .unwrap();
@@ -52,7 +52,7 @@ pub fn return_optimization(
             location: return_info.location,
         };
         let vars = ctx.prepare_early_return_vars(&return_info.returned_vars);
-        block.end = FlatBlockEnd::Return(vars, return_info.location)
+        block.end = BlockEnd::Return(vars, return_info.location)
     }
 
     lowered.variables = variables.variables;
@@ -128,7 +128,7 @@ impl EarlyReturnContext<'_, '_> {
 
 pub struct ReturnOptimizerContext<'a> {
     db: &'a dyn LoweringGroup,
-    lowered: &'a FlatLowered,
+    lowered: &'a Lowered,
 
     /// The list of fixes that should be applied.
     fixes: Vec<FixInfo>,
@@ -154,7 +154,7 @@ impl ReturnOptimizerContext<'_> {
     fn try_merge_match(
         &mut self,
         match_info: &MatchInfo,
-        infos: &[AnalyzerInfo],
+        infos: impl Iterator<Item = AnalyzerInfo>,
     ) -> Option<ReturnInfo> {
         let MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) = match_info else {
             return None;
@@ -488,7 +488,7 @@ impl AnalyzerInfo {
 impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
     type Info = AnalyzerInfo;
 
-    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, _block: &FlatBlock) {
+    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, _block: &Block) {
         if let Some(return_info) = info.try_get_early_return_info() {
             self.fixes.push(FixInfo { location: (block_id, 0), return_info: return_info.clone() });
         }
@@ -561,9 +561,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         match_info: &'a MatchInfo,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
-        let infos: Vec<_> = infos.collect();
-        let opt_return_info = self.try_merge_match(match_info, &infos);
-        Self::Info { opt_return_info }
+        Self::Info { opt_return_info: self.try_merge_match(match_info, infos) }
     }
 
     fn info_from_return(
@@ -572,7 +570,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         vars: &'a [VarUsage],
     ) -> Self::Info {
         let location = match &self.lowered.blocks[block_id].end {
-            FlatBlockEnd::Return(_vars, location) => *location,
+            BlockEnd::Return(_vars, location) => *location,
             _ => unreachable!(),
         };
 

@@ -254,3 +254,201 @@ error: Unexpected argument type. Expected: "test::MyEnum::<core::integer::u32>",
  --> lib.cairo:11:9
     bar(a);
         ^
+
+//! > ==========================================================================
+
+//! > Test match on variant without args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(a: A, b: A) -> felt252 {
+    match (a, b) {
+        (A::One, _) => 2,
+        (_, _) => 6,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+}
+
+//! > expected_diagnostics
+warning: Pattern missing subpattern for the payload of variant. Consider using `A::One(_)`
+ --> lib.cairo:7:10
+        (A::One, _) => 2,
+         ^^^^^^
+
+//! > ==========================================================================
+
+//! > Test match on unit variant without args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo(a: A, b: A) -> felt252 {
+    match (a, b) {
+        (A::One(_), _) => 2,
+        (A::Two, _) => 6,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+    Two: (),
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test match on unit variant with args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo(a: A, b: A) -> felt252 {
+    match (a, b) {
+        (A::One(_), _) => 2,
+        (A::Two(_), _) => 6,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+    Two: (),
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test match on Some without args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo<T>(a: Option<T>) -> felt252 {
+    match a {
+        Some => 2,
+        None => 6,
+    }
+}
+fn bar() -> felt252 {
+    let a = Some(());
+    foo(a)
+}
+
+//! > function_name
+bar
+
+//! > module_code
+
+//! > expected_diagnostics
+warning: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
+ --> lib.cairo:3:9
+        Some => 2,
+        ^^^^
+
+//! > ==========================================================================
+
+//! > Test match on Path no args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo(a: A, b: A) -> felt252 {
+    match (a, b) {
+        (A::One(_), _) => 2,
+        (Two, _) => 6,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+    Two: (),
+}
+use A::Two;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test match on inferred unit Some without args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn fb() -> Option<()> {
+    let x = None;
+    match x {
+        Some => 2,
+        None => 6,
+    }
+    return x;
+}
+
+//! > function_name
+fb
+
+//! > module_code
+
+//! > expected_diagnostics
+warning: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
+ --> lib.cairo:4:9
+        Some => 2,
+        ^^^^
+
+//! > ==========================================================================
+
+//! > Test match on inferred unit Option::Some without args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn fb() -> Option<()> {
+    let x = None;
+    match x {
+        Option::Some => 2,
+        Option::None => 6,
+    }
+    return x;
+}
+
+//! > function_name
+fb
+
+//! > module_code
+
+//! > expected_diagnostics
+warning: Pattern missing subpattern for the payload of variant. Consider using `Option::Some(_)`
+ --> lib.cairo:4:9
+        Option::Some => 2,
+        ^^^^^^^^^^^^

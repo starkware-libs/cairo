@@ -78,14 +78,18 @@ StatementLet
     │       ├── hash (kind: TokenHash): '#'
     │       ├── lbrack (kind: TokenLBrack): '['
     │       ├── attr (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentSimple)
-    │       │       └── ident (kind: TokenIdentifier): 'an_attribute'
+    │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   └── segments (kind: ExprPathInner)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'an_attribute'
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TokenRBrack): ']'
     ├── let_kw (kind: TokenLet): 'let'
     ├── pattern (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentSimple)
-    │       └── ident (kind: TokenIdentifier): 'x'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'x'
     ├── type_clause (kind: OptionTypeClauseEmpty) []
     ├── eq (kind: TokenEq): '='
     ├── rhs (kind: TokenLiteralNumber): '1'
@@ -115,16 +119,20 @@ StatementLet
     ├── attributes (kind: AttributeList) []
     ├── let_kw (kind: TokenLet): 'let'
     ├── pattern (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentSimple)
-    │       └── ident (kind: TokenIdentifier): 'x'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'x'
     ├── type_clause (kind: TypeClause)
     │   ├── colon (kind: TokenColon): ':'
     │   └── ty (kind: ExprFixedSizeArray)
     │       ├── lbrack (kind: TokenLBrack): '['
     │       ├── exprs (kind: ExprList)
     │       │   └── item #0 (kind: ExprPath)
-    │       │       └── item #0 (kind: PathSegmentSimple)
-    │       │           └── ident (kind: TokenIdentifier): 'u32'
+    │       │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       └── segments (kind: ExprPathInner)
+    │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │               └── ident (kind: TokenIdentifier): 'u32'
     │       ├── size (kind: FixedSizeArraySize)
     │       │   ├── semicolon (kind: TokenSemicolon): ';'
     │       │   └── size (kind: TokenLiteralNumber): '4'
@@ -171,16 +179,22 @@ StatementLet
     │   ├── lbrack (kind: TokenLBrack): '['
     │   ├── patterns (kind: PatternList)
     │   │   ├── item #0 (kind: ExprPath)
-    │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │       └── ident (kind: TokenIdentifier): 'x'
+    │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │   └── segments (kind: ExprPathInner)
+    │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │           └── ident (kind: TokenIdentifier): 'x'
     │   │   ├── separator #0 (kind: TokenComma): ','
     │   │   ├── item #1 (kind: ExprPath)
-    │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │       └── ident (kind: TokenIdentifier): 'y'
+    │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │   └── segments (kind: ExprPathInner)
+    │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │           └── ident (kind: TokenIdentifier): 'y'
     │   │   ├── separator #1 (kind: TokenComma): ','
     │   │   └── item #2 (kind: ExprPath)
-    │   │       └── item #0 (kind: PathSegmentSimple)
-    │   │           └── ident (kind: TokenIdentifier): 'z'
+    │   │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       └── segments (kind: ExprPathInner)
+    │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │               └── ident (kind: TokenIdentifier): 'z'
     │   └── rbrack (kind: TokenRBrack): ']'
     ├── type_clause (kind: OptionTypeClauseEmpty) []
     ├── eq (kind: TokenEq): '='

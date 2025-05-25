@@ -12,6 +12,7 @@ mod dict_test;
 mod ec_test;
 mod felt_test;
 mod fmt_test;
+mod gas_reserve_test;
 mod hash_test;
 mod integer_test;
 mod iter_test;
@@ -41,6 +42,7 @@ mod language_features {
     mod early_return_test;
     mod for_test;
     mod glob_use_test;
+    mod macro_test;
     mod panics_test;
     mod trait_test;
     mod while_test;

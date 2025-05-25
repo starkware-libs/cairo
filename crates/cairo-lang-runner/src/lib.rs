@@ -113,7 +113,7 @@ pub fn token_gas_cost(token_type: CostTokenType) -> usize {
         | CostTokenType::Hole
         | CostTokenType::RangeCheck
         | CostTokenType::RangeCheck96 => {
-            panic!("Token type {:?} has no gas cost.", token_type)
+            panic!("Token type {token_type:?} has no gas cost.")
         }
         CostTokenType::Pedersen => 4050,
         CostTokenType::Poseidon => 491,
@@ -275,7 +275,7 @@ impl SierraCasmRunner {
         // Total weight of Sierra statements grouped by the respective (collapsed) user function
         // call stack.
         let mut scoped_sierra_statement_weights = OrderedHashMap::default();
-        for step in trace.iter() {
+        for step in trace {
             // Skip the header.
             if step.pc < real_pc_0 {
                 continue;

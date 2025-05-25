@@ -104,7 +104,6 @@ test::foo: OrderedHashMap({Const: 5320})
 
 //! > sierra_code
 type Felt252Dict<felt252> = Felt252Dict<felt252> [storable: true, drop: false, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Felt252DictEntry<felt252> = Felt252DictEntry<felt252> [storable: true, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
@@ -250,7 +249,6 @@ test::foo: OrderedHashMap({Const: 21180})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Felt252DictEntry<felt252> = Felt252DictEntry<felt252> [storable: true, drop: false, dup: false, zero_sized: false];
 type Felt252Dict<felt252> = Felt252Dict<felt252> [storable: true, drop: false, dup: false, zero_sized: false];
 

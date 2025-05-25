@@ -1,7 +1,7 @@
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::borrow_check::analysis::StatementLocation;
-use crate::{BlockId, FlatLowered, VariableId};
+use crate::{BlockId, Lowered, VariableId};
 
 /// Possible failing validations.
 #[derive(Debug)]
@@ -37,7 +37,7 @@ impl ValidationError {
 /// Validates that the lowering structure is valid.
 ///
 /// Currently only does basic SSA validations.
-pub fn validate(lowered: &FlatLowered) -> Result<(), ValidationError> {
+pub fn validate(lowered: &Lowered) -> Result<(), ValidationError> {
     if lowered.blocks.is_empty() {
         return Ok(());
     }
@@ -71,20 +71,20 @@ pub fn validate(lowered: &FlatLowered) -> Result<(), ValidationError> {
             }
         }
         match &block.end {
-            crate::FlatBlockEnd::NotSet => unreachable!(),
-            crate::FlatBlockEnd::Return(vars, ..) => {
+            crate::BlockEnd::NotSet => unreachable!(),
+            crate::BlockEnd::Return(vars, ..) => {
                 for var in vars {
                     if !introductions.contains_key(&var.var_id) {
                         return Err(ValidationError::UnknownUsageInEnd(var.var_id, block_id));
                     }
                 }
             }
-            crate::FlatBlockEnd::Panic(var) => {
+            crate::BlockEnd::Panic(var) => {
                 if !introductions.contains_key(&var.var_id) {
                     return Err(ValidationError::UnknownUsageInEnd(var.var_id, block_id));
                 }
             }
-            crate::FlatBlockEnd::Goto(target_block_id, remapping) => {
+            crate::BlockEnd::Goto(target_block_id, remapping) => {
                 for (new_var, old_var) in remapping.iter() {
                     if !introductions.contains_key(&old_var.var_id) {
                         return Err(ValidationError::UnknownUsageInEnd(old_var.var_id, block_id));
@@ -101,7 +101,7 @@ pub fn validate(lowered: &FlatLowered) -> Result<(), ValidationError> {
                 }
                 stack.push(*target_block_id);
             }
-            crate::FlatBlockEnd::Match { info } => {
+            crate::BlockEnd::Match { info } => {
                 for input in info.inputs() {
                     if !introductions.contains_key(&input.var_id) {
                         return Err(ValidationError::UnknownUsageInEnd(input.var_id, block_id));

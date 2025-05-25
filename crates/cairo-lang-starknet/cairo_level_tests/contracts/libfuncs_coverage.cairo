@@ -49,6 +49,7 @@ enum Libfuncs {
     Starknet: StarknetLibfuncs,
     Consts: ConstsLibfuncs,
     Snapshot: SnapshotLibfuncs,
+    RangeIter: (u8, u8),
 }
 
 enum NumericLibfuncs<T> {
@@ -164,6 +165,7 @@ enum StarknetLibfuncs {
     ReplaceClass: starknet::ClassHash,
     SendMessageToL1: (felt252, Span<felt252>),
     GetClassHashAt: starknet::ContractAddress,
+    MetaTxV0: (starknet::ContractAddress, felt252, Span<felt252>, Span<felt252>),
 }
 
 enum ConstsLibfuncs {
@@ -230,6 +232,7 @@ fn all_libfuncs(libfuncs: Libfuncs) {
         Libfuncs::Starknet(libfuncs) => starknet_libfuncs(libfuncs),
         Libfuncs::Consts(libfuncs) => consts_libfuncs(libfuncs),
         Libfuncs::Snapshot(libfuncs) => snapshot_libfuncs(libfuncs),
+        Libfuncs::RangeIter((s, e)) => { for _ in s..e {} },
     }
 }
 use core::num::traits::Sqrt;
@@ -477,6 +480,11 @@ fn starknet_libfuncs(libfuncs: StarknetLibfuncs) {
         )) => use_and_panic(syscalls::send_message_to_l1_syscall(address, data)),
         StarknetLibfuncs::GetClassHashAt(address) => use_and_panic(
             syscalls::get_class_hash_at_syscall(address),
+        ),
+        StarknetLibfuncs::MetaTxV0((
+            address, entry_point_selector, calldata, signature,
+        )) => use_and_panic(
+            syscalls::meta_tx_v0_syscall(address, entry_point_selector, calldata, signature),
         ),
     }
 }

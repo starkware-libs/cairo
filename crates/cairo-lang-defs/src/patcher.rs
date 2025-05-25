@@ -65,7 +65,7 @@ impl RewriteNode {
         match self {
             RewriteNode::Copied(syntax_node) => {
                 *self = RewriteNode::new_modified(
-                    syntax_node.get_children(db).into_iter().map(RewriteNode::Copied).collect(),
+                    syntax_node.get_children(db).iter().copied().map(RewriteNode::Copied).collect(),
                 );
                 extract_matches!(self, RewriteNode::Modified)
             }
@@ -190,7 +190,7 @@ impl RewriteNode {
             // Replace the substring with the relevant rewrite node.
             // TODO(yuval): this currently panics. Fix it.
             children.push(
-                patches.get(&name).cloned().unwrap_or_else(|| panic!("No patch named {}.", name)),
+                patches.get(&name).cloned().unwrap_or_else(|| panic!("No patch named {name}.")),
             );
         }
         // Flush the remaining text as a text child.

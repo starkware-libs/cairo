@@ -152,13 +152,12 @@ struct RawExecutableAnalyzer;
 
 impl AnalyzerPlugin for RawExecutableAnalyzer {
     fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic> {
-        let syntax_db = db.upcast();
         let mut diagnostics = vec![];
         let Ok(free_functions) = db.module_free_functions(module_id) else {
             return diagnostics;
         };
         for (id, item) in free_functions.iter() {
-            if !item.has_attr(syntax_db, EXECUTABLE_RAW_ATTR) {
+            if !item.has_attr(db, EXECUTABLE_RAW_ATTR) {
                 continue;
             }
             let Ok(signature) = db.free_function_signature(*id) else {
@@ -166,18 +165,14 @@ impl AnalyzerPlugin for RawExecutableAnalyzer {
             };
             if signature.return_type != corelib::unit_ty(db) {
                 diagnostics.push(PluginDiagnostic::error(
-                    signature.stable_ptr.lookup(syntax_db).ret_ty(syntax_db).stable_ptr(syntax_db),
+                    signature.stable_ptr.lookup(db).ret_ty(db).stable_ptr(db),
                     "Invalid return type for `#[executable_raw]` function, expected `()`."
                         .to_string(),
                 ));
             }
             let [input, output] = &signature.params[..] else {
                 diagnostics.push(PluginDiagnostic::error(
-                    signature
-                        .stable_ptr
-                        .lookup(syntax_db)
-                        .parameters(syntax_db)
-                        .stable_ptr(syntax_db),
+                    signature.stable_ptr.lookup(db).parameters(db).stable_ptr(db),
                     "Invalid number of params for `#[executable_raw]` function, expected 2."
                         .to_string(),
                 ));

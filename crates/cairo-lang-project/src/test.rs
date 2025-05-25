@@ -46,6 +46,7 @@ fn test_serde() {
                             negative_impls: true,
                             associated_item_constraints: false,
                             coupons: false,
+                            user_defined_inline_macros: false,
                         },
                         cfg_set: Default::default(),
                     },
@@ -73,6 +74,7 @@ fn test_serde() {
             negative_impls = false
             associated_item_constraints = false
             coupons = false
+            user_defined_inline_macros = false
 
             [config.override.crate1]
             edition = "2023_10"
@@ -83,6 +85,7 @@ fn test_serde() {
             negative_impls = false
             associated_item_constraints = false
             coupons = false
+            user_defined_inline_macros = false
 
             [config.override.crate3]
             edition = "2023_01"
@@ -93,6 +96,7 @@ fn test_serde() {
             negative_impls = true
             associated_item_constraints = false
             coupons = false
+            user_defined_inline_macros = false
         "# }
     );
     assert_eq!(config, toml::from_str(&serialized).unwrap());
@@ -109,6 +113,8 @@ fn test_serde_defaults() {
         [config.global.experimental_features]
         negative_impls = false
         associated_item_constraints = false
+        user_defined_inline_macros = false
+
     "# };
     let result = indoc! { r#"
         [crate_roots]
@@ -122,6 +128,7 @@ fn test_serde_defaults() {
         negative_impls = false
         associated_item_constraints = false
         coupons = false
+        user_defined_inline_macros = false
 
         [config.override]
     "# };

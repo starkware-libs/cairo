@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::flag::flag_unsafe_panic;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::panic::PanicSignatureInfo;
@@ -47,9 +48,9 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
         id: SierraGeneratorTypeLongId,
     ) -> cairo_lang_sierra::ids::ConcreteTypeId;
 
-    /// Creates a Sierra function id for a function id of the semantic model.
+    /// Creates a Sierra function id for a lowering function id.
     // TODO(lior): Can we have the short and long ids in the same place? Currently, the short
-    //   id is defined in sierra and the long id is defined in semantic.
+    //   id is defined in sierra and the long id is defined in lowering.
     #[salsa::interned]
     fn intern_sierra_function(
         &self,
@@ -118,6 +119,13 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
         function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<pre_sierra::Function>>;
 
+    /// Private query to generate a dummy function for a given function with body.
+    #[salsa::invoke(function_generator::priv_get_dummy_function)]
+    fn priv_get_dummy_function(
+        &self,
+        function_id: ConcreteFunctionWithBodyId,
+    ) -> Maybe<Arc<pre_sierra::Function>>;
+
     /// Returns the ap change of a given function if it is known at compile time or
     /// [SierraApChange::Unknown] otherwise.
     #[salsa::invoke(ap_change::get_ap_change)]
@@ -148,8 +156,7 @@ fn get_function_signature(
     // it in the end of program_generator::get_sierra_program instead of calling this function from
     // there.
     let lowered_function_id = function_id.lookup_intern(db);
-    let signature = lowered_function_id.signature(db.upcast())?;
-    let may_panic = db.function_may_panic(lowered_function_id)?;
+    let signature = lowered_function_id.signature(db)?;
 
     let implicits = db
         .function_implicits(lowered_function_id)?
@@ -170,13 +177,15 @@ fn get_function_signature(
     }
 
     let mut ret_types = implicits;
+
+    let may_panic = !flag_unsafe_panic(db) && db.function_may_panic(lowered_function_id)?;
     if may_panic {
-        let panic_info = PanicSignatureInfo::new(db.upcast(), &signature);
+        let panic_info = PanicSignatureInfo::new(db, &signature);
         ret_types.push(db.get_concrete_type_id(panic_info.actual_return_ty)?);
     } else {
         ret_types.extend(extra_rets);
         // Functions that return the unit type don't have a return type in the signature.
-        if !signature.return_type.is_unit(db.upcast()) {
+        if !signature.return_type.is_unit(db) {
             ret_types.push(db.get_concrete_type_id(signature.return_type)?);
         }
     }

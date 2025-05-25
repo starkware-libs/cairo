@@ -21,8 +21,8 @@ use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchInfo, Statement, StatementCall,
-    StatementStructConstruct, StatementStructDestructure, VarRemapping, VarUsage, VariableId,
+    BlockEnd, BlockId, Lowered, MatchInfo, Statement, StatementCall, StatementStructConstruct,
+    StatementStructDestructure, VarRemapping, VarUsage, VariableId,
 };
 
 pub type DestructAdderDemand = Demand<VariableId, (), PanicState>;
@@ -41,7 +41,7 @@ enum AddDestructFlowType {
 /// Context for the destructor call addition phase,
 pub struct DestructAdder<'a> {
     db: &'a dyn LoweringGroup,
-    lowered: &'a FlatLowered,
+    lowered: &'a Lowered,
     destructions: Vec<DestructionEntry>,
     panic_ty: TypeId,
     /// The actual return type of a never function after adding panics.
@@ -273,14 +273,14 @@ impl Analyzer<'_> for DestructAdder<'_> {
 }
 
 fn panic_ty(db: &dyn LoweringGroup) -> semantic::TypeId {
-    get_ty_by_name(db.upcast(), core_module(db.upcast()), "Panic".into(), vec![])
+    get_ty_by_name(db, core_module(db), "Panic".into(), vec![])
 }
 
 /// Report borrow checking diagnostics.
 pub fn add_destructs(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut FlatLowered,
+    lowered: &mut Lowered,
 ) {
     if lowered.blocks.is_empty() {
         return;
@@ -290,8 +290,8 @@ pub fn add_destructs(
         return;
     };
 
-    let panic_ty = panic_ty(db.upcast());
-    let felt_arr_ty = core_array_felt252_ty(db.upcast());
+    let panic_ty = panic_ty(db);
+    let felt_arr_ty = core_array_felt252_ty(db);
     let never_fn_actual_return_ty = TypeLongId::Tuple(vec![panic_ty, felt_arr_ty]).intern(db);
     let checker = DestructAdder {
         db,
@@ -312,7 +312,7 @@ pub fn add_destructs(
 
     let mut variables = VariableAllocator::new(
         db,
-        function_id.function_with_body_id(db).base_semantic_function(db),
+        function_id.base_semantic_function(db).function_with_body_id(db),
         lowered.variables.clone(),
     )
     .unwrap();
@@ -322,10 +322,8 @@ pub fn add_destructs(
     let panic_trait_function = info.panic_destruct_fn;
 
     // Add destructions.
-    let stable_ptr = function_id
-        .function_with_body_id(db.upcast())
-        .base_semantic_function(db)
-        .untyped_stable_ptr(db.upcast());
+    let stable_ptr =
+        function_id.base_semantic_function(db).function_with_body_id(db).untyped_stable_ptr(db);
 
     let location = variables.get_location(stable_ptr);
 
@@ -333,7 +331,7 @@ pub fn add_destructs(
 
     // We need to add the destructions in reverse order, so that they won't interfere with each
     // other.
-    // For panic desturction, we need to group them by type and create chains of destruct calls
+    // For panic destruction, we need to group them by type and create chains of destruct calls
     // where each one consumes a panic variable and creates a new one.
     // To facilitate this, we convert each entry to a tuple we the relevant information for
     // ordering and grouping.
@@ -360,7 +358,7 @@ pub fn add_destructs(
         let mut last_panic_var = first_panic_var;
 
         for destruction in destructions {
-            let output_var = variables.new_var(VarRequest { ty: unit_ty(db.upcast()), location });
+            let output_var = variables.new_var(VarRequest { ty: unit_ty(db), location });
 
             match destruction {
                 DestructionEntry::Plain(plain_destruct) => {
@@ -422,7 +420,7 @@ pub fn add_destructs(
             }
             AddDestructFlowType::PanicPostMatch => {
                 let block = &mut lowered.blocks[BlockId(match_block_id)];
-                let FlatBlockEnd::Match { info: MatchInfo::Enum(info) } = &mut block.end else {
+                let BlockEnd::Match { info: MatchInfo::Enum(info) } = &mut block.end else {
                     unreachable!();
                 };
 
@@ -520,7 +518,7 @@ pub fn add_destructs(
                     None => {
                         assert_eq!(statement_idx, block.statements.len());
                         let panic_var = match &mut block.end {
-                            FlatBlockEnd::Return(vars, _) => &mut vars[0].var_id,
+                            BlockEnd::Return(vars, _) => &mut vars[0].var_id,
                             _ => unreachable!("Expected a return statement."),
                         };
 

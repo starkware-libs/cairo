@@ -103,7 +103,7 @@ impl StructConcreteType {
         if long_id.generic_id != StructType::ID {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
-        Self::new(context.as_type_specialization_context(), &long_id.generic_args)
+        Self::new(context, &long_id.generic_args)
     }
 
     /// Returns the StructConcreteType of the given type, or a specialization error if not possible.

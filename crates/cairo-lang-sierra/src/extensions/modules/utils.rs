@@ -55,7 +55,7 @@ impl Range {
     /// Creates a half-closed range i.e. `[lower, upper)`.
     pub fn half_open(lower: impl Into<BigInt>, upper: impl Into<BigInt>) -> Self {
         let result = Self { lower: lower.into(), upper: upper.into() };
-        assert!(result.lower < result.upper, "Invalid range: {:?}", result);
+        assert!(result.lower < result.upper, "Invalid range: {result:?}");
         result
     }
     /// Returns the [Range] bounds from the given type info.

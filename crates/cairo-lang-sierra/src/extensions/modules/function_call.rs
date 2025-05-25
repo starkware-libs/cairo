@@ -1,9 +1,11 @@
-use itertools::chain;
+use cairo_lang_utils::extract_matches;
+use itertools::{Itertools, chain};
+use num_traits::Zero;
 
 use super::coupon::coupon_ty;
 use crate::extensions::lib_func::{
-    LibfuncSignature, OutputVarInfo, SignatureBasedConcreteLibfunc, SignatureSpecializationContext,
-    SpecializationContext,
+    LibfuncSignature, OutputVarInfo, SierraApChange, SignatureBasedConcreteLibfunc,
+    SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
     NamedLibfunc, OutputVarReferenceInfo, SpecializationError, args_as_single_user_func,
@@ -70,7 +72,7 @@ impl NamedLibfunc for FunctionCallLibfunc {
 
         Ok(Self::Concrete {
             function: context.get_function(&function_id)?,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }
@@ -119,7 +121,82 @@ impl NamedLibfunc for CouponCallLibfunc {
 
         Ok(Self::Concrete {
             function: context.get_function(&function_id)?,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
+}
+
+/// Libfunc to replace function calls in size estiamtion.
+/// The libfunc consumes the function arguments and returns the function return values.
+/// The ap_change and signature are encoded in the generic arguments, see
+/// `try_extract_dummy_func_info` for details.
+#[derive(Default)]
+pub struct DummyFunctionCallLibfunc {}
+impl NamedLibfunc for DummyFunctionCallLibfunc {
+    type Concrete = SignatureAndFunctionConcreteLibfunc;
+    const STR_ID: &'static str = "dummy_function_call";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let Some((signature, ap_change)) = try_extract_dummy_func_info(args.iter()) else {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        };
+
+        Ok(LibfuncSignature::new_non_branch(
+            signature.param_types.clone(),
+            get_output_var_infos(context, signature).unwrap(),
+            ap_change,
+        ))
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let function_id = args_as_single_user_func(&args[0..1])?;
+
+        Ok(Self::Concrete {
+            function: context.get_function(&function_id)?,
+            signature: self.specialize_signature(context, args)?,
+        })
+    }
+}
+
+/// Given the generic arguments of a dummy function call, returns the function signature and and
+/// ap_change.
+fn try_extract_dummy_func_info<'a>(
+    mut args: impl Iterator<Item = &'a GenericArg>,
+) -> Option<(FunctionSignature, SierraApChange)> {
+    let _user_func_id = args.next()?;
+
+    let GenericArg::Value(ap_change) = args.next()? else {
+        return None;
+    };
+    let ap_change = if ap_change.is_zero() {
+        SierraApChange::Known { new_vars_only: false }
+    } else {
+        SierraApChange::Unknown
+    };
+    let GenericArg::Value(n_params) = args.next()? else {
+        return None;
+    };
+    let param_types = args
+        .by_ref()
+        .take(n_params.try_into().ok()?)
+        .map(|garg| extract_matches!(garg, GenericArg::Type).clone())
+        .collect_vec();
+
+    let GenericArg::Value(n_ret) = args.next()? else {
+        return None;
+    };
+    let ret_types = args
+        .by_ref()
+        .take(n_ret.try_into().ok()?)
+        .map(|garg| extract_matches!(garg, GenericArg::Type).clone())
+        .collect_vec();
+    Some((FunctionSignature { param_types, ret_types }, ap_change))
 }

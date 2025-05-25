@@ -4,9 +4,11 @@ use cairo_lang_defs::plugin::{
     PluginGeneratedFile,
 };
 use cairo_lang_defs::plugin_utils::{
-    escape_node, try_extract_unnamed_arg, unsupported_bracket_diagnostic,
+    PluginResultTrait, escape_node, not_legacy_macro_diagnostic, try_extract_unnamed_arg,
+    unsupported_bracket_diagnostic,
 };
 use cairo_lang_filesystem::cfg::Cfg;
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
@@ -35,8 +37,15 @@ trait CompareAssertionPlugin: NamedPlugin {
         syntax: &ast::ExprInlineMacro,
         metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
-        let WrappedArgList::ParenthesizedArgList(arguments_syntax) = syntax.arguments(db) else {
-            return unsupported_bracket_diagnostic(db, syntax);
+        let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
+            return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
+                syntax.as_syntax_node().stable_ptr(db),
+            ));
+        };
+        let WrappedArgList::ParenthesizedArgList(arguments_syntax) =
+            legacy_inline_macro.arguments(db)
+        else {
+            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax.stable_ptr(db));
         };
         let arguments = arguments_syntax.arguments(db).elements(db);
         if arguments.len() < 2 {
@@ -53,8 +62,10 @@ trait CompareAssertionPlugin: NamedPlugin {
         let Some(lhs) = try_extract_unnamed_arg(db, lhs) else {
             return InlinePluginResult {
                 code: None,
-                diagnostics: vec![PluginDiagnostic::error(
-                    lhs.stable_ptr(db),
+                diagnostics: vec![PluginDiagnostic::error_with_inner_span(
+                    db,
+                    syntax.stable_ptr(db),
+                    lhs.as_syntax_node(),
                     format!("Macro `{}` requires the first argument to be unnamed.", Self::NAME),
                 )],
             };
@@ -62,8 +73,10 @@ trait CompareAssertionPlugin: NamedPlugin {
         let Some(rhs) = try_extract_unnamed_arg(db, rhs) else {
             return InlinePluginResult {
                 code: None,
-                diagnostics: vec![PluginDiagnostic::error(
-                    rhs.stable_ptr(db),
+                diagnostics: vec![PluginDiagnostic::error_with_inner_span(
+                    db,
+                    syntax.stable_ptr(db),
+                    rhs.as_syntax_node(),
                     format!("Macro `{}` requires the second argument to be unnamed.", Self::NAME),
                 )],
             };

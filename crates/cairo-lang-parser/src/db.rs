@@ -15,7 +15,9 @@ mod db_test;
 
 // Salsa database interface.
 #[salsa::query_group(ParserDatabase)]
-pub trait ParserGroup: SyntaxGroup + Upcast<dyn SyntaxGroup> + FilesGroup {
+pub trait ParserGroup:
+    SyntaxGroup + Upcast<dyn SyntaxGroup> + FilesGroup + Upcast<dyn FilesGroup>
+{
     /// Should only be used internally.
     /// Parses a file and returns the result and the generated [ParserDiagnostic].
     fn priv_file_syntax_data(&self, file_id: FileId) -> SyntaxData;
@@ -23,7 +25,8 @@ pub trait ParserGroup: SyntaxGroup + Upcast<dyn SyntaxGroup> + FilesGroup {
     fn file_syntax(&self, file_id: FileId) -> Maybe<SyntaxNode>;
     /// Parses a file and returns its AST as a root SyntaxFile.
     fn file_module_syntax(&self, file_id: FileId) -> Maybe<SyntaxFile>;
-    /// Parses a file and returns its AST as an expression.
+    /// Parses a file and returns its AST as an expression. Only used for inline macros expanded
+    /// code.
     fn file_expr_syntax(&self, file_id: FileId) -> Maybe<Expr>;
     /// Returns the parser diagnostics for this file.
     fn file_syntax_diagnostics(&self, file_id: FileId) -> Diagnostics<ParserDiagnostic>;
@@ -37,12 +40,10 @@ pub struct SyntaxData {
 
 pub fn priv_file_syntax_data(db: &dyn ParserGroup, file_id: FileId) -> SyntaxData {
     let mut diagnostics = DiagnosticsBuilder::default();
-    let syntax = db.file_content(file_id).to_maybe().map(|s| match file_id.kind(db.upcast()) {
-        FileKind::Module => {
-            Parser::parse_file(db.upcast(), &mut diagnostics, file_id, &s).as_syntax_node()
-        }
+    let syntax = db.file_content(file_id).to_maybe().map(|s| match file_id.kind(db) {
+        FileKind::Module => Parser::parse_file(db, &mut diagnostics, file_id, &s).as_syntax_node(),
         FileKind::Expr => {
-            Parser::parse_file_expr(db.upcast(), &mut diagnostics, file_id, &s).as_syntax_node()
+            Parser::parse_file_expr(db, &mut diagnostics, file_id, &s).as_syntax_node()
         }
     });
     SyntaxData { diagnostics: diagnostics.build(), syntax }
@@ -53,13 +54,13 @@ pub fn file_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<SyntaxNode> {
 }
 
 pub fn file_module_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<SyntaxFile> {
-    assert_eq!(file_id.kind(db.upcast()), FileKind::Module, "file_id must be a module");
-    Ok(SyntaxFile::from_syntax_node(db.upcast(), db.file_syntax(file_id)?))
+    assert_eq!(file_id.kind(db), FileKind::Module, "file_id must be a module");
+    Ok(SyntaxFile::from_syntax_node(db, db.file_syntax(file_id)?))
 }
 
 pub fn file_expr_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<Expr> {
-    assert_eq!(file_id.kind(db.upcast()), FileKind::Expr, "file_id must be a module");
-    Ok(Expr::from_syntax_node(db.upcast(), db.file_syntax(file_id)?))
+    assert_eq!(file_id.kind(db), FileKind::Expr, "file_id must be a module");
+    Ok(Expr::from_syntax_node(db, db.file_syntax(file_id)?))
 }
 
 pub fn file_syntax_diagnostics(

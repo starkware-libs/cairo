@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCARB_REPO="https://github.com/software-mansion/scarb"
 
-CURRENT_VERSION='2.11.2'
+CURRENT_VERSION='2.11.4'
 NEW_VERSION="$@"
 
 # NOTE: These two functions were copied from asdf-scarb.
@@ -49,5 +49,5 @@ check_scarb_version_sync() {
 check_scarb_version_sync
 
 sed -i "s/$CURRENT_VERSION/$NEW_VERSION/g" \
-    $(find . -type f -iname "*.toml") \
+    $(find . -type f -iname "*.toml"  -o -iname "Scarb.lock") \
     ./scripts/bump_version.sh

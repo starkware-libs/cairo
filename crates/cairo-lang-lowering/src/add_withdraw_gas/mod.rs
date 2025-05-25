@@ -12,8 +12,8 @@ use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId, SemanticFunctionIdEx};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo,
-    MatchInfo, Statement, StatementCall, VarUsage,
+    Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
+    Statement, StatementCall, VarUsage,
 };
 
 /// Main function for the add_withdraw_gas lowering phase. Adds a `withdraw_gas` statement to the
@@ -21,7 +21,7 @@ use crate::{
 pub fn add_withdraw_gas(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
-    lowered: &mut FlatLowered,
+    lowered: &mut Lowered,
 ) -> Maybe<()> {
     if db.needs_withdraw_gas(function)? {
         add_withdraw_gas_to_function(db, function, lowered)?;
@@ -36,7 +36,7 @@ pub fn add_withdraw_gas(
 fn add_withdraw_gas_to_function(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
-    lowered: &mut FlatLowered,
+    lowered: &mut Lowered,
 ) -> Maybe<()> {
     let location = LocationId::from_stable_location(db, function.stable_location(db)?)
         .with_auto_generation_note(db, "withdraw_gas");
@@ -45,13 +45,13 @@ fn add_withdraw_gas_to_function(
     let old_root_block = lowered.blocks.root_block()?.clone();
     let old_root_new_id = lowered.blocks.push(old_root_block);
     let panic_block_id = lowered.blocks.push(panic_block);
-    let new_root_block = FlatBlock {
+    let new_root_block = Block {
         statements: vec![],
-        end: FlatBlockEnd::Match {
+        end: BlockEnd::Match {
             info: MatchInfo::Extern(MatchExternInfo {
                 function: get_function_id(
-                    db.upcast(),
-                    core_submodule(db.upcast(), "gas"),
+                    db,
+                    core_submodule(db, "gas"),
                     "withdraw_gas".into(),
                     vec![],
                 )
@@ -60,16 +60,16 @@ fn add_withdraw_gas_to_function(
                 arms: vec![
                     MatchArm {
                         arm_selector: MatchArmSelector::VariantId(option_some_variant(
-                            db.upcast(),
-                            unit_ty(db.upcast()),
+                            db,
+                            unit_ty(db),
                         )),
                         block_id: old_root_new_id,
                         var_ids: vec![],
                     },
                     MatchArm {
                         arm_selector: MatchArmSelector::VariantId(option_none_variant(
-                            db.upcast(),
-                            unit_ty(db.upcast()),
+                            db,
+                            unit_ty(db),
                         )),
                         block_id: panic_block_id,
                         var_ids: vec![],
@@ -89,21 +89,21 @@ fn add_withdraw_gas_to_function(
 fn create_panic_block(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
-    lowered: &mut FlatLowered,
+    lowered: &mut Lowered,
     location: LocationId,
-) -> Maybe<FlatBlock> {
+) -> Maybe<Block> {
     let mut variables = VariableAllocator::new(
         db,
-        function.function_with_body_id(db).base_semantic_function(db),
+        function.base_semantic_function(db).function_with_body_id(db),
         lowered.variables.clone(),
     )?;
-    let never_ty = never_ty(db.upcast());
+    let never_ty = never_ty(db);
     let never_var = variables.new_var(VarRequest { ty: never_ty, location });
     lowered.variables = variables.variables;
 
     let gas_panic_fn = get_function_id(
-        db.upcast(),
-        core_module(db.upcast()),
+        db,
+        core_module(db),
         "panic_with_const_felt252".into(),
         vec![GenericArgumentId::Constant(
             ConstValue::Int(
@@ -122,7 +122,7 @@ fn create_panic_block(
 
     // The block consists of calling  panic_with_const_felt252::<'Out of gas'> and matching on its
     // `never` result.
-    Ok(FlatBlock {
+    Ok(Block {
         statements: vec![Statement::Call(StatementCall {
             function: gas_panic_fn,
             inputs: vec![],
@@ -130,7 +130,7 @@ fn create_panic_block(
             outputs: vec![never_var],
             location,
         })],
-        end: FlatBlockEnd::Match {
+        end: BlockEnd::Match {
             info: MatchInfo::Enum(MatchEnumInfo {
                 concrete_enum_id: never_enum_id,
                 input: VarUsage { var_id: never_var, location },

@@ -22,18 +22,22 @@ ItemConstant
     ├── type_clause (kind: TypeClause)
     │   ├── colon (kind: TokenColon): ':'
     │   └── ty (kind: ExprPath)
-    │       └── item #0 (kind: PathSegmentWithGenericArgs)
-    │           ├── ident (kind: TokenIdentifier): 'NonZero'
-    │           ├── separator (kind: OptionTerminalColonColonEmpty) []
-    │           └── generic_args (kind: GenericArgs)
-    │               ├── langle (kind: TokenLT): '<'
-    │               ├── generic_args (kind: GenericArgList)
-    │               │   └── item #0 (kind: GenericArgUnnamed)
-    │               │       └── value (kind: GenericArgValueExpr)
-    │               │           └── expr (kind: ExprPath)
-    │               │               └── item #0 (kind: PathSegmentSimple)
-    │               │                   └── ident (kind: TokenIdentifier): 'felt252'
-    │               └── rangle (kind: TokenGT): '>'
+    │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       └── segments (kind: ExprPathInner)
+    │           └── item #0 (kind: PathSegmentWithGenericArgs)
+    │               ├── ident (kind: TokenIdentifier): 'NonZero'
+    │               ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │               └── generic_args (kind: GenericArgs)
+    │                   ├── langle (kind: TokenLT): '<'
+    │                   ├── generic_args (kind: GenericArgList)
+    │                   │   └── item #0 (kind: GenericArgUnnamed)
+    │                   │       └── value (kind: GenericArgValueExpr)
+    │                   │           └── expr (kind: ExprPath)
+    │                   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │                   │               └── segments (kind: ExprPathInner)
+    │                   │                   └── item #0 (kind: PathSegmentSimple)
+    │                   │                       └── ident (kind: TokenIdentifier): 'felt252'
+    │                   └── rangle (kind: TokenGT): '>'
     ├── eq (kind: TokenEq): '='
     ├── value (kind: TokenLiteralNumber): '0x1234'
     └── semicolon (kind: TokenSemicolon): ';'
@@ -101,8 +105,10 @@ ItemConstant
     │       ├── lbrack (kind: TokenLBrack): '['
     │       ├── exprs (kind: ExprList)
     │       │   └── item #0 (kind: ExprPath)
-    │       │       └── item #0 (kind: PathSegmentSimple)
-    │       │           └── ident (kind: TokenIdentifier): 'felt252'
+    │       │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       └── segments (kind: ExprPathInner)
+    │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │               └── ident (kind: TokenIdentifier): 'felt252'
     │       ├── size (kind: FixedSizeArraySize)
     │       │   ├── semicolon (kind: TokenSemicolon): ';'
     │       │   └── size (kind: TokenLiteralNumber): '3'
@@ -153,8 +159,10 @@ ItemConstant
     ├── type_clause (kind: TypeClause)
     │   ├── colon (kind: TokenColon): ':'
     │   └── ty (kind: ExprPath)
-    │       └── item #0 (kind: PathSegmentSimple)
-    │           └── ident (kind: TokenIdentifier): 'felt252'
+    │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       └── segments (kind: ExprPathInner)
+    │           └── item #0 (kind: PathSegmentSimple)
+    │               └── ident (kind: TokenIdentifier): 'felt252'
     ├── eq (kind: TokenEq): '='
     ├── value (kind: TokenLiteralNumber): '3'
     └── semicolon (kind: TokenSemicolon): ';'
@@ -166,13 +174,17 @@ ItemConstant
     ├── type_clause (kind: TypeClause)
     │   ├── colon (kind: TokenColon): ':'
     │   └── ty (kind: ExprPath)
-    │       └── item #0 (kind: PathSegmentSimple)
-    │           └── ident (kind: TokenIdentifier): 'A'
+    │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       └── segments (kind: ExprPathInner)
+    │           └── item #0 (kind: PathSegmentSimple)
+    │               └── ident (kind: TokenIdentifier): 'A'
     ├── eq (kind: TokenEq): '='
     ├── value (kind: ExprStructCtorCall)
     │   ├── path (kind: ExprPath)
-    │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │       └── ident (kind: TokenIdentifier): 'A'
+    │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   └── segments (kind: ExprPathInner)
+    │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │           └── ident (kind: TokenIdentifier): 'A'
     │   └── arguments (kind: StructArgListBraced)
     │       ├── lbrace (kind: TokenLBrace): '{'
     │       ├── arguments (kind: StructArgList)
@@ -247,8 +259,10 @@ ItemConstant
     │       ├── hash (kind: TokenHash): '#'
     │       ├── lbrack (kind: TokenLBrack): '['
     │       ├── attr (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentSimple)
-    │       │       └── ident (kind: TokenIdentifier): 'flat'
+    │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   └── segments (kind: ExprPathInner)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'flat'
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TokenRBrack): ']'
     ├── visibility (kind: VisibilityDefault) []
@@ -257,8 +271,10 @@ ItemConstant
     ├── type_clause (kind: TypeClause)
     │   ├── colon (kind: TokenColon): ':'
     │   └── ty (kind: ExprPath)
-    │       └── item #0 (kind: PathSegmentSimple)
-    │           └── ident (kind: TokenIdentifier): 'felt252'
+    │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       └── segments (kind: ExprPathInner)
+    │           └── item #0 (kind: PathSegmentSimple)
+    │               └── ident (kind: TokenIdentifier): 'felt252'
     ├── eq (kind: TokenEq): '='
     ├── value (kind: TokenLiteralNumber): '3'
     └── semicolon (kind: TokenSemicolon): ';'

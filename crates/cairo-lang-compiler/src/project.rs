@@ -59,8 +59,7 @@ pub fn setup_single_file_project(
 
         let module_id = ModuleId::CrateRoot(crate_id);
         let file_id = db.module_main_file(module_id).unwrap();
-        db.as_files_group_mut()
-            .override_file_content(file_id, Some(format!("mod {file_stem};").into()));
+        db.override_file_content(file_id, Some(format!("mod {file_stem};").into()));
         Ok(crate_id)
     }
 }

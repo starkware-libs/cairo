@@ -5,22 +5,23 @@ use cairo_lang_utils::graph_algos::feedback_set::calc_feedback_set;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
 use super::concrete_function_node::ConcreteFunctionWithBodyNode;
-use crate::DependencyType;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::ConcreteFunctionWithBodyId;
+use crate::{DependencyType, LoweringStage};
 
 /// Query implementation of [crate::db::LoweringGroup::function_with_body_feedback_set].
 pub fn function_with_body_feedback_set(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
+    stage: LoweringStage,
 ) -> Maybe<OrderedHashSet<ConcreteFunctionWithBodyId>> {
-    let r = db.concrete_function_with_body_scc_representative(function, DependencyType::Cost);
-    db.priv_function_with_body_feedback_set_of_representative(r)
+    let r = db.lowered_scc_representative(function, DependencyType::Cost, stage);
+    db.priv_function_with_body_feedback_set_of_representative(r, stage)
 }
 
 /// Returns the value of the `add_withdraw_gas` flag, or `true` if the flag is not set.
 pub fn flag_add_withdraw_gas(db: &dyn LoweringGroup) -> bool {
-    db.get_flag(FlagId::new(db.upcast(), "add_withdraw_gas"))
+    db.get_flag(FlagId::new(db, "add_withdraw_gas"))
         .map(|flag| *flag == Flag::AddWithdrawGas(true))
         .unwrap_or(true)
 }
@@ -31,7 +32,9 @@ pub fn needs_withdraw_gas(
     function: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
     Ok(flag_add_withdraw_gas(db)
-        && db.function_with_body_feedback_set(function)?.contains(&function))
+        && db
+            .function_with_body_feedback_set(function, LoweringStage::Monomorphized)?
+            .contains(&function))
 }
 
 /// Query implementation of
@@ -39,12 +42,14 @@ pub fn needs_withdraw_gas(
 pub fn priv_function_with_body_feedback_set_of_representative(
     db: &dyn LoweringGroup,
     function: ConcreteSCCRepresentative,
+    stage: LoweringStage,
 ) -> Maybe<OrderedHashSet<ConcreteFunctionWithBodyId>> {
     Ok(calc_feedback_set(
         ConcreteFunctionWithBodyNode {
             function_id: function.0,
             db,
             dependency_type: DependencyType::Cost,
+            stage,
         }
         .into(),
     ))

@@ -16,8 +16,11 @@ use crate::relocations::{Relocation, RelocationEntry};
 pub fn build(
     libfunc: &SignatureAndFunctionConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
+    check_args_on_stack: bool,
 ) -> Result<CompiledInvocation, InvocationError> {
-    check_references_on_stack(builder.refs)?;
+    if check_args_on_stack {
+        check_references_on_stack(builder.refs)?;
+    }
 
     let output_types = libfunc.output_types();
     let fallthrough_outputs = &output_types[0];

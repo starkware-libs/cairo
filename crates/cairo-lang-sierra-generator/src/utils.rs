@@ -10,8 +10,8 @@ use cairo_lang_sierra::extensions::snapshot::SnapshotType;
 use cairo_lang_sierra::extensions::{
     ExtensionError, GenericLibfuncEx, NamedLibfunc, NamedType, SpecializationError,
 };
-use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
-use cairo_lang_sierra::program::{self, GenericArg};
+use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, GenericLibfuncId};
+use cairo_lang_sierra::program::{self, FunctionSignature, GenericArg};
 use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
 use semantic::items::constant::ConstValue;
 use semantic::items::functions::GenericFunctionId;
@@ -192,7 +192,7 @@ fn const_type_id(
     db: &dyn SierraGenGroup,
     value: &ConstValue,
 ) -> cairo_lang_sierra::ids::ConcreteTypeId {
-    let ty = value.ty(db.upcast()).unwrap();
+    let ty = value.ty(db).unwrap();
     let first_arg = GenericArg::Type(db.get_concrete_type_id(ty).unwrap());
     SierraGeneratorTypeLongId::Regular(
         cairo_lang_sierra::program::ConcreteTypeLongId {
@@ -370,7 +370,7 @@ pub fn generic_libfunc_id(
     generic_args: Vec<GenericArg>,
 ) -> ConcreteLibfuncId {
     cairo_lang_sierra::program::ConcreteLibfuncLongId {
-        generic_id: GenericLibfuncId::from_string(extern_id.name(db.upcast())),
+        generic_id: GenericLibfuncId::from_string(extern_id.name(db)),
         generic_args,
     }
     .intern(db)
@@ -383,7 +383,7 @@ pub fn get_concrete_libfunc_id(
     with_coupon: bool,
 ) -> (Option<lowering::ids::ConcreteFunctionWithBodyId>, ConcreteLibfuncId) {
     // Check if this is a user-defined function or a libfunc.
-    if let Some(body) = function.body(db.upcast()).expect("No diagnostics at this stage.") {
+    if let Some(body) = function.body(db).expect("No diagnostics at this stage.") {
         if with_coupon {
             return (Some(body), coupon_call_libfunc_id(db, function));
         } else {
@@ -397,10 +397,7 @@ pub fn get_concrete_libfunc_id(
         extract_matches!(function.lookup_intern(db), lowering::ids::FunctionLongId::Semantic);
     let concrete_function = semantic.lookup_intern(db).function;
     let GenericFunctionId::Extern(extern_id) = concrete_function.generic_function else {
-        panic!(
-            "Expected an extern function, found: {:?}",
-            concrete_function.full_path(db.upcast())
-        );
+        panic!("Expected an extern function, found: {:?}", concrete_function.full_path(db));
     };
 
     let mut generic_args = vec![];
@@ -429,4 +426,45 @@ pub fn get_concrete_libfunc_id(
     }
 
     (None, generic_libfunc_id(db, extern_id, generic_args))
+}
+
+// Given a function id, generates a dummy function call libfunc id.
+pub fn dummy_call_libfunc_id(
+    db: &dyn SierraGenGroup,
+    function_id: cairo_lang_sierra::ids::FunctionId,
+    sierra_signature: &FunctionSignature,
+) -> ConcreteLibfuncId {
+    let ap_change =
+        db.get_ap_change(function_id.lookup_intern(db).body(db).unwrap().unwrap()).unwrap();
+
+    let mut gargs = vec![];
+
+    gargs.push(GenericArg::UserFunc(function_id.clone()));
+
+    gargs.push(GenericArg::Value(
+        match ap_change {
+            cairo_lang_sierra::extensions::lib_func::SierraApChange::Unknown => 1,
+            cairo_lang_sierra::extensions::lib_func::SierraApChange::Known { new_vars_only: _ } => {
+                0
+            }
+            cairo_lang_sierra::extensions::lib_func::SierraApChange::BranchAlign => {
+                unreachable!("should never happen")
+            }
+        }
+        .into(),
+    ));
+
+    let as_generic_arg = |ty: &ConcreteTypeId| GenericArg::Type(ty.clone());
+
+    gargs.push(GenericArg::Value(sierra_signature.param_types.len().into()));
+    gargs.extend(sierra_signature.param_types.iter().map(as_generic_arg));
+
+    gargs.push(GenericArg::Value(sierra_signature.ret_types.len().into()));
+    gargs.extend(sierra_signature.ret_types.iter().map(as_generic_arg));
+
+    cairo_lang_sierra::program::ConcreteLibfuncLongId {
+        generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string("dummy_function_call"),
+        generic_args: gargs,
+    }
+    .intern(db)
 }

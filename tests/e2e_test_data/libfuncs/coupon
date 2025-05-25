@@ -22,7 +22,6 @@ test::foo: OrderedHashMap({})
 
 //! > sierra_code
 type Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> = Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> [storable: true, drop: true, dup: false, zero_sized: true];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 
 libfunc drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>> = drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>;
 
@@ -77,7 +76,6 @@ test::bar::<core::integer::u8, core::integer::u8Drop>: OrderedHashMap({Const: 10
 //! > sierra_code
 type Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> = Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> [storable: true, drop: true, dup: false, zero_sized: true];
 type Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>> = Struct<ut@Tuple, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>> [storable: true, drop: true, dup: false, zero_sized: true];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Const<felt252, 10> = Const<felt252, 10> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<u8, 0> = Const<u8, 0> [storable: false, drop: false, dup: false, zero_sized: false];
@@ -154,7 +152,6 @@ test::bar::<core::integer::u8, core::integer::u8Drop>: OrderedHashMap({Const: 10
 
 //! > sierra_code
 type Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> = Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> [storable: true, drop: true, dup: false, zero_sized: true];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Const<felt252, 10> = Const<felt252, 10> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<u8, 0> = Const<u8, 0> [storable: false, drop: false, dup: false, zero_sized: false];
@@ -236,7 +233,6 @@ test::destruct: OrderedHashMap({Bitwise: 1, Const: 1200})
 type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
 type test::NonDroppable = Struct<ut@test::NonDroppable, u64> [storable: true, drop: true, dup: true, zero_sized: false];
 type Uninitialized<test::NonDroppable> = Uninitialized<test::NonDroppable> [storable: false, drop: true, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
 type Coupon<user@test::destruct> = Coupon<user@test::destruct> [storable: true, drop: true, dup: false, zero_sized: true];
 type Tuple<test::NonDroppable, Coupon<user@test::destruct>> = Struct<ut@Tuple, test::NonDroppable, Coupon<user@test::destruct>> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -324,15 +320,15 @@ fn foo(c: recursive_refund::<u8>::Coupon) {
 //! > casm
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
-call rel 19;
+call rel 18;
 jmp rel 7 if [ap + -3] != 0;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -5], ap++;
-call rel 45;
+call rel 44;
 ret;
 ap += 14;
 [ap + 0] = [ap + -19], ap++;
-[ap + 0] = [ap + -19] + 1530, ap++;
+[ap + 0] = [ap + -19], ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -19], ap++;
 [ap + 0] = [ap + -19], ap++;
@@ -398,7 +394,6 @@ core::panic_with_felt252: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type core::never = Enum<ut@core::never> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Const<felt252, 375233589013918064796019> = Const<felt252, 375233589013918064796019> [storable: false, drop: false, dup: false, zero_sized: false];
@@ -454,12 +449,11 @@ return([9], [10], [11]);
 F0_B0:
 branch_align() -> ();
 drop<Coupon<user@test::recursive_refund::<core::integer::u8>>>([2]) -> ();
-redeposit_gas([4]) -> ([12]);
-enum_init<core::panics::PanicResult::<((),)>, 1>([7]) -> ([13]);
+enum_init<core::panics::PanicResult::<((),)>, 1>([7]) -> ([12]);
 store_temp<RangeCheck>([3]) -> ([3]);
-store_temp<GasBuiltin>([12]) -> ([12]);
-store_temp<core::panics::PanicResult::<((),)>>([13]) -> ([13]);
-return([3], [12], [13]);
+store_temp<GasBuiltin>([4]) -> ([4]);
+store_temp<core::panics::PanicResult::<((),)>>([12]) -> ([12]);
+return([3], [4], [12]);
 F1:
 withdraw_gas([0], [1]) { fallthrough([2], [3]) F1_B0([4], [5]) };
 branch_align() -> ();
@@ -475,13 +469,12 @@ store_temp<core::panics::PanicResult::<((),)>>([10]) -> ([10]);
 return([2], [6], [10]);
 F1_B0:
 branch_align() -> ();
-redeposit_gas([5]) -> ([11]);
-function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>() -> ([12]);
-enum_init<core::panics::PanicResult::<((),)>, 1>([12]) -> ([13]);
+function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>() -> ([11]);
+enum_init<core::panics::PanicResult::<((),)>, 1>([11]) -> ([12]);
 store_temp<RangeCheck>([4]) -> ([4]);
-store_temp<GasBuiltin>([11]) -> ([11]);
-store_temp<core::panics::PanicResult::<((),)>>([13]) -> ([13]);
-return([4], [11], [13]);
+store_temp<GasBuiltin>([5]) -> ([5]);
+store_temp<core::panics::PanicResult::<((),)>>([12]) -> ([12]);
+return([4], [5], [12]);
 F2:
 withdraw_gas([0], [1]) { fallthrough([3], [4]) F2_B0([5], [6]) };
 branch_align() -> ();
@@ -497,13 +490,12 @@ return([3], [7], [10]);
 F2_B0:
 branch_align() -> ();
 drop<Coupon<user@test::recursive_refund::<core::integer::u8>>>([2]) -> ();
-redeposit_gas([6]) -> ([11]);
-function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>() -> ([12]);
-enum_init<core::panics::PanicResult::<((),)>, 1>([12]) -> ([13]);
+function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>() -> ([11]);
+enum_init<core::panics::PanicResult::<((),)>, 1>([11]) -> ([12]);
 store_temp<RangeCheck>([5]) -> ([5]);
-store_temp<GasBuiltin>([11]) -> ([11]);
-store_temp<core::panics::PanicResult::<((),)>>([13]) -> ([13]);
-return([5], [11], [13]);
+store_temp<GasBuiltin>([6]) -> ([6]);
+store_temp<core::panics::PanicResult::<((),)>>([12]) -> ([12]);
+return([5], [6], [12]);
 F3:
 const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);

@@ -33,7 +33,7 @@ impl DocumentableItemId {
             DocumentableItemId::LookupItem(LookupItemId::ModuleItem(id)) => id.name(db),
             DocumentableItemId::LookupItem(LookupItemId::ImplItem(id)) => id.name(db),
             DocumentableItemId::LookupItem(LookupItemId::TraitItem(id)) => id.name(db),
-            DocumentableItemId::Crate(id) => id.name(db.upcast()),
+            DocumentableItemId::Crate(id) => id.name(db),
             DocumentableItemId::Member(id) => id.name(db),
             DocumentableItemId::Variant(id) => id.name(db),
         }

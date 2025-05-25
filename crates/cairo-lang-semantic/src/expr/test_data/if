@@ -137,3 +137,58 @@ error[E0006]: Identifier not found.
  --> lib.cairo:4:16
         return y == 9;
                ^
+
+//! > ==========================================================================
+
+//! > if_let some no args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> bool {
+    let x = Some(7_u64);
+    if let Some = x {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+warning: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
+ --> lib.cairo:3:12
+    if let Some = x {
+           ^^^^
+
+//! > ==========================================================================
+
+//! > if_let enum unit no args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> bool {
+    let a = A::B(());
+    if let A::B = a {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+    B: (),
+}
+
+//! > expected_diagnostics

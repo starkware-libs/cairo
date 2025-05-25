@@ -12,10 +12,11 @@ use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{LookupIntern, Upcast, extract_matches};
+use cairo_lang_utils::{LookupIntern, extract_matches};
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
+use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
@@ -73,7 +74,7 @@ fn test_function_lowering(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    let lowered = db.final_concrete_function_with_body_lowered(function_id);
+    let lowered = db.lowered_body(function_id, LoweringStage::Final);
     if let Ok(lowered) = &lowered {
         assert!(
             lowered.blocks.iter().all(|(_, b)| b.is_set()),
@@ -82,8 +83,7 @@ fn test_function_lowering(
     }
     let diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap_or_default();
     let formatted_lowering_diagnostics = diagnostics.format(db);
-    let combined_diagnostics =
-        format!("{}\n{}", semantic_diagnostics, formatted_lowering_diagnostics);
+    let combined_diagnostics = format!("{semantic_diagnostics}\n{formatted_lowering_diagnostics}");
     let error = verify_diagnostics_expectation(args, &combined_diagnostics);
     TestRunnerResult {
         outputs: OrderedHashMap::from([
@@ -210,8 +210,8 @@ fn test_sizes() {
     for (alias_id, alias) in type_aliases.iter() {
         let ty = db.module_type_alias_resolved_type(*alias_id).unwrap();
         let size = db.type_size(ty);
-        let alias_name = alias.name(db.upcast()).text(db.upcast());
+        let alias_name = alias.name(db).text(db);
         let expected_size = alias_expected_size[alias_name.as_str()];
-        assert_eq!(size, expected_size, "Wrong size for type alias `{}`", ty.format(db.upcast()));
+        assert_eq!(size, expected_size, "Wrong size for type alias `{}`", ty.format(db));
     }
 }

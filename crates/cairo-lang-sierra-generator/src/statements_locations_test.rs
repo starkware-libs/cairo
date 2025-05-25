@@ -36,7 +36,7 @@ pub fn test_sierra_locations(
     let function = db.function_with_body_sierra(function_id);
     let mut sierra_code: String = "".into();
     if semantic_diagnostics.is_empty() && lowering_diagnostics.is_ok() {
-        for stmt in function.unwrap().body.iter() {
+        for stmt in &function.unwrap().body {
             sierra_code
                 .push_str(&format!("{}\n", replace_sierra_ids(db, stmt).statement.to_string(db),));
             for (i, location) in stmt.location.iter().enumerate() {

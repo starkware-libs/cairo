@@ -26,7 +26,7 @@ impl ErrorCode {
     /// assert_eq!(error_code!(E0001).display_bracketed(), "[E0001]");
     /// ```
     pub fn display_bracketed(self) -> String {
-        format!("[{}]", self)
+        format!("[{self}]")
     }
 
     pub fn as_str(&self) -> &str {

@@ -1,7 +1,8 @@
 use super::GetIdentifier;
 use crate::node::ast::{
-    ExprPath, ExprPathElementOrSeparatorGreen, PathSegmentGreen, PathSegmentSimple,
-    TerminalColonColon, TerminalIdentifier, TokenColonColon, TokenIdentifier, Trivia,
+    ExprPath, ExprPathInner, ExprPathInnerElementOrSeparatorGreen, OptionTerminalDollarEmpty,
+    PathSegmentGreen, PathSegmentSimple, TerminalColonColon, TerminalIdentifier, TokenColonColon,
+    TokenIdentifier, Trivia,
 };
 use crate::node::test_utils::DatabaseForTesting;
 use crate::node::{Terminal, Token};
@@ -23,11 +24,15 @@ fn test_expr_path_identifier() {
 
     PathSegmentSimple::new_green(db, terminal_foo);
 
-    let children: Vec<ExprPathElementOrSeparatorGreen> = vec![
+    let children: Vec<ExprPathInnerElementOrSeparatorGreen> = vec![
         PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into(),
         separator.into(),
         PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_bar)).into(),
     ];
-
-    assert_eq!(ExprPath::new_green(db, children).identifier(db), "bar");
+    let empty_dollar = OptionTerminalDollarEmpty::new_green(db).into();
+    assert_eq!(
+        ExprPath::new_green(db, empty_dollar, ExprPathInner::new_green(db, children))
+            .identifier(db),
+        "bar"
+    );
 }

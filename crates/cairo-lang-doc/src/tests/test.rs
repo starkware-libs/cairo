@@ -281,7 +281,7 @@ impl<'a> ResultDocBuilder<'a> {
                 .unwrap_or_default()
                 .iter()
                 .map(|token| match token {
-                    DocumentationCommentToken::Content(_) => format!("{:?}", token),
+                    DocumentationCommentToken::Content(_) => format!("{token:?}"),
                     DocumentationCommentToken::Link(link_token) => {
                         format!("{:?}", link_token.debug(self.db))
                     }

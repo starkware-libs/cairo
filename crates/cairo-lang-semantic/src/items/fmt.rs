@@ -8,17 +8,17 @@ use crate::{ConcreteVariant, MatchArmSelector};
 
 impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for ConstValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
-        let db = db.upcast();
+        let semantic_db = db.upcast();
         match self {
-            ConstValue::Int(value, _ty) => write!(f, "{}", value),
+            ConstValue::Int(value, _ty) => write!(f, "{value}"),
             ConstValue::Struct(inner, _) => {
                 write!(f, "{{")?;
                 let mut inner = inner.iter().peekable();
                 while let Some(value) = inner.next() {
                     write!(f, " ")?;
-                    value.fmt(f, db)?;
+                    value.fmt(f, semantic_db)?;
                     write!(f, ": ")?;
-                    value.ty(db).unwrap().fmt(f, db.elongate())?;
+                    value.ty(semantic_db).unwrap().fmt(f, semantic_db.elongate())?;
                     if inner.peek().is_some() {
                         write!(f, ",")?;
                     } else {
@@ -28,43 +28,43 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Const
                 write!(f, "}}")
             }
             ConstValue::Enum(variant, inner) => {
-                variant.fmt(f, db)?;
+                variant.fmt(f, semantic_db)?;
                 write!(f, "(")?;
-                inner.fmt(f, db)?;
+                inner.fmt(f, semantic_db)?;
                 write!(f, ")")
             }
             ConstValue::NonZero(value) => {
                 write!(f, "NonZero(")?;
-                value.fmt(f, db)?;
+                value.fmt(f, semantic_db)?;
                 write!(f, ")")
             }
             ConstValue::Boxed(value) => {
-                value.fmt(f, db)?;
+                value.fmt(f, semantic_db)?;
                 write!(f, ".into_box()")
             }
-            ConstValue::Generic(param) => write!(f, "{}", param.debug_name(db.upcast())),
+            ConstValue::Generic(param) => write!(f, "{}", param.debug_name(semantic_db)),
             ConstValue::Var(var, _) => write!(f, "?{}", var.id.0),
             ConstValue::Missing(_) => write!(f, "missing"),
-            ConstValue::ImplConstant(id) => id.fmt(f, db),
+            ConstValue::ImplConstant(id) => id.fmt(f, semantic_db),
         }
     }
 }
 
 impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for ConcreteVariant {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
-        let db = db.upcast();
-        let enum_name = self.concrete_enum_id.enum_id(db.upcast()).name(db.upcast());
-        let variant_name = self.id.name(db.upcast());
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, semantic_db: &Db) -> std::fmt::Result {
+        let semantic_db = semantic_db.upcast();
+        let enum_name = self.concrete_enum_id.enum_id(semantic_db).name(semantic_db);
+        let variant_name = self.id.name(semantic_db);
         write!(f, "{enum_name}::{variant_name}")
     }
 }
 
 impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for MatchArmSelector {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
-        let db = db.upcast();
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, semantic_db: &Db) -> std::fmt::Result {
+        let semantic_db = semantic_db.upcast();
         match self {
             MatchArmSelector::VariantId(variant_id) => {
-                write!(f, "{:?}", variant_id.debug(db))
+                write!(f, "{:?}", variant_id.debug(semantic_db))
             }
             MatchArmSelector::Value(s) => {
                 write!(f, "{:?}", s.value)

@@ -89,7 +89,7 @@ impl ParserDiagnostic {
                 SyntaxKind::TerminalUse => "use",
                 SyntaxKind::TerminalWhile => "while",
                 SyntaxKind::TerminalXor => "^",
-                _ => return format!("{:?}", kind),
+                _ => return format!("{kind:?}"),
             }
         )
     }
@@ -105,6 +105,10 @@ pub enum ParserDiagnosticKind {
     MissingTypeExpression,
     MissingWrappedArgList,
     MissingPattern,
+    MissingMacroRuleParamKind,
+    InvalidPlaceholderPath,
+    InvalidParamKindInMacroExpansion,
+    InvalidParamKindInMacroRule,
     ExpectedInToken,
     ItemInlineMacroWithoutBang { identifier: SmolStr, bracket_type: SyntaxKind },
     ReservedIdentifier { identifier: SmolStr },
@@ -123,12 +127,19 @@ pub enum ParserDiagnosticKind {
     AttributesWithoutStatement,
     DisallowedTrailingSeparatorOr,
     ConsecutiveMathOperators { first_op: SyntaxKind, second_op: SyntaxKind },
+    ExpectedSemicolonOrBody,
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
 
     fn format(&self, _db: &dyn FilesGroup) -> String {
         match &self.kind {
+            ParserDiagnosticKind::InvalidParamKindInMacroExpansion => {
+                "Parameter kinds are not allowed in macro expansion.".to_string()
+            }
+            ParserDiagnosticKind::InvalidParamKindInMacroRule => {
+                "Macro parameter must have a kind.".to_string()
+            }
             ParserDiagnosticKind::SkippedElement { element_name } => {
                 format!("Skipped tokens. Expected: {element_name}.")
             }
@@ -154,6 +165,13 @@ impl DiagnosticEntry for ParserDiagnostic {
             ParserDiagnosticKind::MissingPattern => {
                 "Missing tokens. Expected a pattern.".to_string()
             }
+            ParserDiagnosticKind::MissingMacroRuleParamKind => {
+                "Missing tokens. Expected a macro rule parameter kind.".to_string()
+            }
+            ParserDiagnosticKind::InvalidPlaceholderPath => "Placeholder expression ($expression) \
+                                                             is allowed only in the context of a \
+                                                             macro rule."
+                .to_string(),
             ParserDiagnosticKind::ExpectedInToken => {
                 "Missing identifier token, expected 'in'.".to_string()
             }
@@ -214,6 +232,11 @@ Did you mean to write `{identifier}!{left}...{right}'?",
                     self.kind_to_string(*first_op),
                     self.kind_to_string(*second_op)
                 )
+            }
+            ParserDiagnosticKind::ExpectedSemicolonOrBody => {
+                "Expected either ';' or '{' after module name. Use ';' for an external module \
+                 declaration or '{' for a module with a body."
+                    .to_string()
             }
         }
     }

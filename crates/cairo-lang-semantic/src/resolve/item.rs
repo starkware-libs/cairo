@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{
-    ConstantId, GenericTypeId, ImplAliasId, ImplDefId, ModuleId, ModuleItemId, ModuleTypeAliasId,
-    TopLevelLanguageElementId, TraitId, TraitItemId, VarId,
+    ConstantId, GenericTypeId, ImplAliasId, ImplDefId, MacroDeclarationId, ModuleId, ModuleItemId,
+    ModuleTypeAliasId, TopLevelLanguageElementId, TraitId, TraitItemId, VarId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
@@ -30,6 +30,7 @@ pub enum ResolvedGenericItem {
     Trait(TraitId),
     Impl(ImplDefId),
     Variable(VarId),
+    Macro(MacroDeclarationId),
     TraitItem(TraitItemId),
 }
 impl ResolvedGenericItem {
@@ -61,23 +62,24 @@ impl ResolvedGenericItem {
             }
             ModuleItemId::Trait(id) => ResolvedGenericItem::Trait(id),
             ModuleItemId::Impl(id) => ResolvedGenericItem::Impl(id),
+            ModuleItemId::MacroDeclaration(id) => ResolvedGenericItem::Macro(id),
         })
     }
 
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
-        let defs_db = db.upcast();
         match self {
             ResolvedGenericItem::GenericConstant(_) => "".into(),
-            ResolvedGenericItem::Module(id) => id.full_path(defs_db),
+            ResolvedGenericItem::Module(id) => id.full_path(db),
             ResolvedGenericItem::GenericFunction(id) => id.format(db),
-            ResolvedGenericItem::GenericType(id) => id.full_path(defs_db),
-            ResolvedGenericItem::GenericTypeAlias(id) => id.full_path(defs_db),
-            ResolvedGenericItem::GenericImplAlias(id) => id.full_path(defs_db),
-            ResolvedGenericItem::Variant(id) => id.id.full_path(defs_db),
-            ResolvedGenericItem::Trait(id) => id.full_path(defs_db),
-            ResolvedGenericItem::Impl(id) => id.full_path(defs_db),
+            ResolvedGenericItem::GenericType(id) => id.full_path(db),
+            ResolvedGenericItem::GenericTypeAlias(id) => id.full_path(db),
+            ResolvedGenericItem::GenericImplAlias(id) => id.full_path(db),
+            ResolvedGenericItem::Variant(id) => id.id.full_path(db),
+            ResolvedGenericItem::Trait(id) => id.full_path(db),
+            ResolvedGenericItem::Impl(id) => id.full_path(db),
+            ResolvedGenericItem::Macro(id) => id.full_path(db),
             ResolvedGenericItem::Variable(_) => "".into(),
-            ResolvedGenericItem::TraitItem(id) => id.full_path(defs_db),
+            ResolvedGenericItem::TraitItem(id) => id.full_path(db),
         }
     }
 }
@@ -93,6 +95,7 @@ pub enum ResolvedConcreteItem {
     Trait(ConcreteTraitId),
     SelfTrait(ConcreteTraitId),
     Impl(ImplId),
+    Macro(MacroDeclarationId),
 }
 
 impl ResolvedConcreteItem {
@@ -148,6 +151,9 @@ impl ResolvedConcreteItem {
                 | ImplLongId::ImplVar(_)
                 | ImplLongId::GeneratedImpl(_) => return None,
             },
+            ResolvedConcreteItem::Macro(macro_declaration_id) => {
+                ResolvedGenericItem::Macro(*macro_declaration_id)
+            }
         })
     }
 }

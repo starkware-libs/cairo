@@ -27,32 +27,40 @@ ItemImplAlias
     │   └── rangle (kind: TokenGT): '>'
     ├── eq (kind: TokenEq): '='
     ├── impl_path (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentWithGenericArgs)
-    │       ├── ident (kind: TokenIdentifier): 'OtherImpl'
-    │       ├── separator (kind: OptionTerminalColonColonEmpty) []
-    │       └── generic_args (kind: GenericArgs)
-    │           ├── langle (kind: TokenLT): '<'
-    │           ├── generic_args (kind: GenericArgList)
-    │           │   ├── item #0 (kind: GenericArgUnnamed)
-    │           │   │   └── value (kind: GenericArgValueExpr)
-    │           │   │       └── expr (kind: ExprPath)
-    │           │   │           └── item #0 (kind: PathSegmentSimple)
-    │           │   │               └── ident (kind: TokenIdentifier): 'Stuff'
-    │           │   ├── separator #0 (kind: TokenComma): ','
-    │           │   └── item #1 (kind: GenericArgUnnamed)
-    │           │       └── value (kind: GenericArgValueExpr)
-    │           │           └── expr (kind: ExprPath)
-    │           │               └── item #0 (kind: PathSegmentWithGenericArgs)
-    │           │                   ├── ident (kind: TokenIdentifier): 'A'
-    │           │                   ├── separator (kind: OptionTerminalColonColonEmpty) []
-    │           │                   └── generic_args (kind: GenericArgs)
-    │           │                       ├── langle (kind: TokenLT): '<'
-    │           │                       ├── generic_args (kind: GenericArgList)
-    │           │                       │   └── item #0 (kind: GenericArgUnnamed)
-    │           │                       │       └── value (kind: GenericArgValueExpr)
-    │           │                       │           └── expr (kind: ExprPath)
-    │           │                       │               └── item #0 (kind: PathSegmentSimple)
-    │           │                       │                   └── ident (kind: TokenIdentifier): 'T'
-    │           │                       └── rangle (kind: TokenGT): '>'
-    │           └── rangle (kind: TokenGT): '>'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentWithGenericArgs)
+    │           ├── ident (kind: TokenIdentifier): 'OtherImpl'
+    │           ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │           └── generic_args (kind: GenericArgs)
+    │               ├── langle (kind: TokenLT): '<'
+    │               ├── generic_args (kind: GenericArgList)
+    │               │   ├── item #0 (kind: GenericArgUnnamed)
+    │               │   │   └── value (kind: GenericArgValueExpr)
+    │               │   │       └── expr (kind: ExprPath)
+    │               │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │               │   │           └── segments (kind: ExprPathInner)
+    │               │   │               └── item #0 (kind: PathSegmentSimple)
+    │               │   │                   └── ident (kind: TokenIdentifier): 'Stuff'
+    │               │   ├── separator #0 (kind: TokenComma): ','
+    │               │   └── item #1 (kind: GenericArgUnnamed)
+    │               │       └── value (kind: GenericArgValueExpr)
+    │               │           └── expr (kind: ExprPath)
+    │               │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │               │               └── segments (kind: ExprPathInner)
+    │               │                   └── item #0 (kind: PathSegmentWithGenericArgs)
+    │               │                       ├── ident (kind: TokenIdentifier): 'A'
+    │               │                       ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │               │                       └── generic_args (kind: GenericArgs)
+    │               │                           ├── langle (kind: TokenLT): '<'
+    │               │                           ├── generic_args (kind: GenericArgList)
+    │               │                           │   └── item #0 (kind: GenericArgUnnamed)
+    │               │                           │       └── value (kind: GenericArgValueExpr)
+    │               │                           │           └── expr (kind: ExprPath)
+    │               │                           │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │               │                           │               └── segments (kind: ExprPathInner)
+    │               │                           │                   └── item #0 (kind: PathSegmentSimple)
+    │               │                           │                       └── ident (kind: TokenIdentifier): 'T'
+    │               │                           └── rangle (kind: TokenGT): '>'
+    │               └── rangle (kind: TokenGT): '>'
     └── semicolon (kind: TokenSemicolon): ';'

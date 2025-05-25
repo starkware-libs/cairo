@@ -45,7 +45,7 @@ pub fn find_executable_function_ids(
                     let found_attrs = executable_attributes
                         .clone()
                         .iter()
-                        .filter(|attr| body.has_attr(db.upcast(), attr.as_str()))
+                        .filter(|attr| body.has_attr(db, attr.as_str()))
                         .cloned()
                         .collect::<Vec<_>>();
                     if found_attrs.is_empty() {
@@ -53,10 +53,8 @@ pub fn find_executable_function_ids(
                         continue;
                     }
                     // Find function corresponding to the node by full path.
-                    let function_id = ConcreteFunctionWithBodyId::from_no_generics_free(
-                        db.upcast(),
-                        *free_func_id,
-                    );
+                    let function_id =
+                        ConcreteFunctionWithBodyId::from_no_generics_free(db, *free_func_id);
                     if let Some(function_id) = function_id {
                         executable_function_ids.insert(function_id, found_attrs);
                     }
@@ -85,7 +83,7 @@ pub fn collect_executables(
             .drain()
             .filter_map(|(function_id, attrs)| {
                 let function_id = function_id
-                    .function_id(db.upcast())
+                    .function_id(db)
                     .to_option()
                     .map(|function_id| db.intern_sierra_function(function_id));
                 function_id.map(|function_id| (function_id, attrs))
@@ -96,7 +94,7 @@ pub fn collect_executables(
             let Some(found_attrs) = executable_function_ids.get(&function.id) else {
                 continue;
             };
-            let full_path = function.id.lookup_intern(db).semantic_full_path(db.upcast());
+            let full_path = function.id.lookup_intern(db).semantic_full_path(db);
             for attr in found_attrs {
                 result
                     .entry(attr.clone())

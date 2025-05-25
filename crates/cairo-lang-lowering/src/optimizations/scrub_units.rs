@@ -6,17 +6,17 @@ use cairo_lang_semantic::corelib;
 
 use crate::db::LoweringGroup;
 use crate::{
-    FlatBlockEnd, FlatLowered, Statement, StatementCall, StatementStructConstruct,
+    BlockEnd, Lowered, Statement, StatementCall, StatementStructConstruct,
     StatementStructDestructure,
 };
 
 /// Removes unit values from returns and call statements.
-pub fn scrub_units(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
+pub fn scrub_units(db: &dyn LoweringGroup, lowered: &mut Lowered) {
     if lowered.blocks.is_empty() {
         return;
     }
 
-    let unit_ty = corelib::unit_ty(db.upcast());
+    let unit_ty = corelib::unit_ty(db);
 
     let mut fixes = vec![];
     for block in lowered.blocks.iter_mut() {
@@ -42,7 +42,7 @@ pub fn scrub_units(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
             )
         }
 
-        if let FlatBlockEnd::Return(ref mut inputs, _location) = block.end {
+        if let BlockEnd::Return(ref mut inputs, _location) = block.end {
             if let Some(return_val) = inputs.last() {
                 if lowered.variables[return_val.var_id].ty == unit_ty {
                     block.statements.push(Statement::StructDestructure(

@@ -52,9 +52,11 @@ impl TestFileRunner for ExpandContractTestRunner {
             let content_location =
                 DiagnosticLocation { file_id, span: TextSpan::from_str(&content) };
             let original_location = content_location.user_location(db.upcast());
-            let origin = (content_location != original_location)
-                .then(|| format!("{:?}\n", original_location.debug(db.upcast())))
-                .unwrap_or_default();
+            let origin = if content_location == original_location {
+                "".to_string()
+            } else {
+                format!("{:?}\n", original_location.debug(db.upcast()))
+            };
             let file_name = file_id.file_name(&db);
             file_contents.push(format!("{origin}{file_name}:\n\n{content}"));
         }

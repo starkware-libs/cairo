@@ -70,6 +70,10 @@ struct BuildArgs {
     /// Allow syscalls in the program.
     #[arg(long, conflicts_with = "prebuilt")]
     allow_syscalls: bool,
+    /// Replace the panic flow with an unprovable opcode, this reduces code size but might make it
+    /// more difficult to debug.
+    #[arg(long, conflicts_with = "prebuilt")]
+    unsafe_panic: bool,
     /// The path to the executable function.
     ///
     /// Not required if there is only a single executable function in the project.
@@ -180,7 +184,10 @@ fn main() -> anyhow::Result<()> {
                 &args.input_path,
                 args.build.executable.as_deref(),
                 reporter,
-                ExecutableConfig { allow_syscalls: args.build.allow_syscalls },
+                ExecutableConfig {
+                    allow_syscalls: args.build.allow_syscalls,
+                    unsafe_panic: args.build.unsafe_panic,
+                },
             )?)
         }
     };

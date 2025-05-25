@@ -138,7 +138,7 @@ impl<'a> AbiBuilder<'a> {
         let attrs = submodule_id.query_attr(self.db, CONTRACT_ATTR)?;
         let mut is_account_contract = false;
         for attr in attrs {
-            if attr.is_single_unnamed_arg(self.db.upcast(), CONTRACT_ATTR_ACCOUNT_ARG) {
+            if attr.is_single_unnamed_arg(self.db, CONTRACT_ATTR_ACCOUNT_ARG) {
                 is_account_contract = true;
             } else if !attr.args.is_empty() {
                 self.errors.push(ABIError::IllegalContractAttrArgs);
@@ -198,7 +198,7 @@ impl<'a> AbiBuilder<'a> {
         // Get storage type for later validations.
         let mut storage_type = None;
         for struct_id in structs {
-            let struct_name = struct_id.name(self.db.upcast());
+            let struct_name = struct_id.name(self.db);
             let concrete_struct_id =
                 ConcreteStructLongId { struct_id, generic_args: vec![] }.intern(self.db);
             let source = Source::Struct(concrete_struct_id);
@@ -267,8 +267,8 @@ impl<'a> AbiBuilder<'a> {
 
         // Add events to ABI.
         for enum_id in enums {
-            let enm_name = enum_id.name(self.db.upcast());
-            if enm_name == EVENT_TYPE_NAME && enum_id.has_attr(self.db.upcast(), EVENT_ATTR)? {
+            let enm_name = enum_id.name(self.db);
+            if enm_name == EVENT_TYPE_NAME && enum_id.has_attr(self.db, EVENT_ATTR)? {
                 // Get the ConcreteEnumId from the EnumId.
                 let concrete_enum_id =
                     ConcreteEnumLongId { enum_id, generic_args: vec![] }.intern(self.db);
@@ -295,12 +295,12 @@ impl<'a> AbiBuilder<'a> {
         };
         let storage_type = TypeLongId::GenericParameter(storage_type.id).intern(self.db);
 
-        let interface_path = trait_id.full_path(self.db.upcast());
+        let interface_path = trait_id.full_path(self.db);
         let mut items = Vec::new();
         for function in self.db.trait_functions(trait_id).unwrap_or_default().values() {
             let f = self.trait_function_as_abi(*function, storage_type)?;
             self.add_entry_point(
-                function.name(self.db.upcast()).into(),
+                function.name(self.db).into(),
                 EntryPointInfo { source, inputs: f.inputs.clone() },
             )?;
             items.push(Item::Function(f));
@@ -337,12 +337,12 @@ impl<'a> AbiBuilder<'a> {
         impl_def_id: ImplDefId,
         impl_alias_name: Option<String>,
     ) -> Result<(), ABIError> {
-        let impl_name = impl_def_id.name(self.db.upcast());
+        let impl_name = impl_def_id.name(self.db);
 
         let trt = self.db.impl_def_concrete_trait(impl_def_id)?;
 
         let trait_id = trt.trait_id(self.db);
-        let interface_name = trait_id.full_path(self.db.upcast());
+        let interface_name = trait_id.full_path(self.db);
 
         let abi_name = impl_alias_name.unwrap_or(impl_name.into());
         let impl_item = Item::Impl(Imp { name: abi_name, interface_name });
@@ -383,11 +383,7 @@ impl<'a> AbiBuilder<'a> {
         }
 
         // Add the impl to the ABI.
-        self.add_embedded_impl(
-            source,
-            impl_def,
-            Some(impl_alias_id.name(self.db.upcast()).into()),
-        )?;
+        self.add_embedded_impl(source, impl_def, Some(impl_alias_id.name(self.db).into()))?;
 
         Ok(())
     }
@@ -398,11 +394,11 @@ impl<'a> AbiBuilder<'a> {
         function_with_body_id: FunctionWithBodyId,
         storage_type: TypeId,
     ) -> Result<(), ABIError> {
-        if function_with_body_id.has_attr(self.db.upcast(), EXTERNAL_ATTR)? {
+        if function_with_body_id.has_attr(self.db, EXTERNAL_ATTR)? {
             self.add_function_with_body(function_with_body_id, storage_type)?;
-        } else if function_with_body_id.has_attr(self.db.upcast(), CONSTRUCTOR_ATTR)? {
+        } else if function_with_body_id.has_attr(self.db, CONSTRUCTOR_ATTR)? {
             self.add_constructor(function_with_body_id, storage_type)?;
-        } else if function_with_body_id.has_attr(self.db.upcast(), L1_HANDLER_ATTR)? {
+        } else if function_with_body_id.has_attr(self.db, L1_HANDLER_ATTR)? {
             self.add_l1_handler(function_with_body_id, storage_type)?;
         }
         Ok(())
@@ -414,7 +410,7 @@ impl<'a> AbiBuilder<'a> {
         function_with_body_id: FunctionWithBodyId,
         storage_type: TypeId,
     ) -> Result<(), ABIError> {
-        let name: String = function_with_body_id.name(self.db.upcast()).into();
+        let name: String = function_with_body_id.name(self.db).into();
         let signature = self.db.function_with_body_signature(function_with_body_id)?;
 
         let function = self.function_as_abi(&name, signature, storage_type)?;
@@ -433,7 +429,7 @@ impl<'a> AbiBuilder<'a> {
         if self.ctor.is_some() {
             return Err(ABIError::MultipleConstructors(source));
         }
-        let name = function_with_body_id.name(self.db.upcast()).into();
+        let name = function_with_body_id.name(self.db).into();
         let signature = self.db.function_with_body_signature(function_with_body_id)?;
 
         let (inputs, state_mutability) =
@@ -453,7 +449,7 @@ impl<'a> AbiBuilder<'a> {
         function_with_body_id: FunctionWithBodyId,
         storage_type: TypeId,
     ) -> Result<(), ABIError> {
-        let name = function_with_body_id.name(self.db.upcast()).into();
+        let name = function_with_body_id.name(self.db).into();
         let signature = self.db.function_with_body_signature(function_with_body_id)?;
 
         let (inputs, state_mutability) =
@@ -488,10 +484,8 @@ impl<'a> AbiBuilder<'a> {
         let mut inputs = vec![];
         for param in params {
             self.add_type(param.ty)?;
-            inputs.push(Input {
-                name: param.id.name(self.db.upcast()).into(),
-                ty: param.ty.format(self.db),
-            });
+            inputs
+                .push(Input { name: param.id.name(self.db).into(), ty: param.ty.format(self.db) });
         }
         Ok((inputs, state_mutability))
     }
@@ -516,7 +510,7 @@ impl<'a> AbiBuilder<'a> {
         trait_function_id: TraitFunctionId,
         storage_type: TypeId,
     ) -> Result<Function, ABIError> {
-        let name: String = trait_function_id.name(self.db.upcast()).into();
+        let name: String = trait_function_id.name(self.db).into();
         let signature = self.db.trait_function_signature(trait_function_id)?;
 
         self.function_as_abi(&name, signature, storage_type)
@@ -599,14 +593,14 @@ impl<'a> AbiBuilder<'a> {
                                 let bad_attr = concrete_variant
                                     .concrete_enum_id
                                     .enum_id(self.db)
-                                    .stable_ptr(self.db.upcast())
-                                    .lookup(self.db.upcast())
-                                    .variants(self.db.upcast())
-                                    .elements(self.db.upcast())
+                                    .stable_ptr(self.db)
+                                    .lookup(self.db)
+                                    .variants(self.db)
+                                    .elements(self.db)
                                     .into_iter()
                                     .find_map(|v| {
-                                        if v.name(self.db.upcast()).text(self.db.upcast()) == name {
-                                            v.find_attr(self.db.upcast(), FLAT_ATTR)
+                                        if v.name(self.db).text(self.db) == name {
+                                            v.find_attr(self.db, FLAT_ATTR)
                                         } else {
                                             None
                                         }
@@ -827,14 +821,13 @@ fn fetch_event_data(db: &dyn SemanticGroup, event_type_id: TypeId) -> Option<Eve
     .intern(db);
     // The impl of `starknet::event::Event<ThisEvent>`.
     let event_impl =
-        get_impl_at_context(db.upcast(), ImplLookupContext::default(), concrete_trait_id, None)
-            .ok()?;
+        get_impl_at_context(db, ImplLookupContext::default(), concrete_trait_id, None).ok()?;
     let concrete_event_impl =
         try_extract_matches!(event_impl.lookup_intern(db), ImplLongId::Concrete)?;
     let impl_def_id = concrete_event_impl.impl_def_id(db);
 
     // Attempt to extract the event data from the aux data from the impl generation.
-    let module_file = impl_def_id.module_file_id(db.upcast());
+    let module_file = impl_def_id.module_file_id(db);
     let all_aux_data = db.module_generated_file_aux_data(module_file.0).ok()?;
     let aux_data = all_aux_data.get(module_file.1.0)?.as_ref()?;
     Some(aux_data.0.as_any().downcast_ref::<StarknetEventAuxData>()?.event_data.clone())
@@ -900,9 +893,7 @@ impl ABIError {
         // TODO(orizi): Add more error locations.
         match self {
             ABIError::SemanticError => None,
-            ABIError::EventFlatVariantMustBeEnum(attr) => {
-                Some(attr.stable_ptr(db.upcast()).untyped())
-            }
+            ABIError::EventFlatVariantMustBeEnum(attr) => Some(attr.stable_ptr(db).untyped()),
             ABIError::NoStorage => None,
             ABIError::UnexpectedType => None,
             ABIError::EntrypointMustHaveSelf => None,
@@ -946,14 +937,14 @@ pub enum Source {
 impl Source {
     fn location(&self, db: &dyn SemanticGroup) -> SyntaxStablePtrId {
         match self {
-            Source::Function(id) => id.untyped_stable_ptr(db.upcast()),
-            Source::Impl(id) => id.untyped_stable_ptr(db.upcast()),
-            Source::ImplAlias(id) => id.untyped_stable_ptr(db.upcast()),
-            Source::Struct(id) => id.struct_id(db).untyped_stable_ptr(db.upcast()),
-            Source::Member(id) => id.untyped_stable_ptr(db.upcast()),
-            Source::Enum(id) => id.enum_id(db).untyped_stable_ptr(db.upcast()),
-            Source::Variant(id) => id.untyped_stable_ptr(db.upcast()),
-            Source::Trait(id) => id.untyped_stable_ptr(db.upcast()),
+            Source::Function(id) => id.untyped_stable_ptr(db),
+            Source::Impl(id) => id.untyped_stable_ptr(db),
+            Source::ImplAlias(id) => id.untyped_stable_ptr(db),
+            Source::Struct(id) => id.struct_id(db).untyped_stable_ptr(db),
+            Source::Member(id) => id.untyped_stable_ptr(db),
+            Source::Enum(id) => id.enum_id(db).untyped_stable_ptr(db),
+            Source::Variant(id) => id.untyped_stable_ptr(db),
+            Source::Trait(id) => id.untyped_stable_ptr(db),
         }
     }
 }

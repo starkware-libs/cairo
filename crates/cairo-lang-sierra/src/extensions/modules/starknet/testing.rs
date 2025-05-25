@@ -55,11 +55,7 @@ impl NamedLibfunc for CheatcodeLibfunc {
         match args {
             [GenericArg::Value(selector)] => Ok(CheatcodeConcreteLibfunc {
                 selector: selector.clone(),
-                signature: <Self as NamedLibfunc>::specialize_signature(
-                    self,
-                    context.upcast(),
-                    args,
-                )?,
+                signature: <Self as NamedLibfunc>::specialize_signature(self, context, args)?,
             }),
             [_] => Err(SpecializationError::UnsupportedGenericArg),
             _ => Err(SpecializationError::WrongNumberOfGenericArgs),
