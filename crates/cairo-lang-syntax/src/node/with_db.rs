@@ -39,7 +39,7 @@ impl<Db: SyntaxGroup> Iterator for SyntaxNodeWithDbIterator<'_, Db> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(|node| {
-            let span = node.span(self.db).to_str_range();
+            let span = node.span_without_trivia(self.db).to_str_range();
             PrimitiveToken {
                 content: node.get_text(self.db),
                 span: Some(PrimitiveSpan { start: span.start, end: span.end }),
