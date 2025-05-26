@@ -39,45 +39,28 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
 blk0 (root):
 Statements:
+  (v3: core::felt252) <- 5
+  (v4: core::RangeCheck, v5: core::gas::GasBuiltin, v6: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[51-95](v0, v1, v3)
 End:
-  Match(match core::gas::withdraw_gas(v0, v1) {
-    Option::Some(v3, v4) => blk1,
-    Option::None(v5, v6) => blk4,
+  Match(match_enum(v6) {
+    PanicResult::Ok(v7) => blk1,
+    PanicResult::Err(v8) => blk2,
   })
 
 blk1:
 Statements:
-  (v7: core::felt252) <- 5
-  (v8: core::felt252) <- 1
-  (v9: core::felt252) <- core::felt252_sub(v7, v8)
-  (v10: core::RangeCheck, v11: core::gas::GasBuiltin, v12: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[51-95](v3, v4, v9)
+  (v9: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
+  (v10: core::felt252, v11: ()) <- struct_destructure(v7)
+  (v12: (core::felt252,)) <- struct_construct(v10)
+  (v13: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v12)
 End:
-  Match(match_enum(v12) {
-    PanicResult::Ok(v13) => blk2,
-    PanicResult::Err(v14) => blk3,
-  })
+  Return(v4, v9, v13)
 
 blk2:
 Statements:
-  (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v11)
-  (v16: core::felt252, v17: ()) <- struct_destructure(v13)
-  (v18: (core::felt252,)) <- struct_construct(v16)
-  (v19: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v18)
+  (v14: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v8)
 End:
-  Return(v10, v15, v19)
-
-blk3:
-Statements:
-  (v20: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v14)
-End:
-  Return(v10, v11, v20)
-
-blk4:
-Statements:
-  (v21: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v22: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v21)
-End:
-  Return(v5, v6, v22)
+  Return(v4, v5, v14)
 
 
 Generated loop lowering for source location:
