@@ -17,6 +17,8 @@ extern fn trace<const FLAG: felt252>() nopanic;
 )]
 pub(crate) mod bounded_int;
 
+mod num;
+
 /// Same as `Option`, except that the order of the variants is reversed.
 /// This is used as the return type of some libfuncs for efficiency reasons.
 #[must_use]
