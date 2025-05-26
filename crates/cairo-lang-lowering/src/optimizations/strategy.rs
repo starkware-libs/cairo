@@ -43,6 +43,14 @@ pub enum OptimizationPhase {
     LowerImplicits,
     /// A validation phase that checks the lowering is valid. Used for debugging purposes.
     Validate,
+    /// A phase that iteratively a set of optimizations to the lowering.
+    /// Stops after a certain number of iterations, or when no more changes are made.
+    SubStrategy {
+        /// The id of the optimization strategy to apply.
+        strategy: OptimizationStrategyId,
+        /// The number of times to apply the strategy.
+        iterations: usize,
+    },
 }
 
 impl OptimizationPhase {
@@ -73,6 +81,16 @@ impl OptimizationPhase {
             OptimizationPhase::GasRedeposit => gas_redeposit(db, function, lowered),
             OptimizationPhase::Validate => validate(lowered)
                 .unwrap_or_else(|err| panic!("Failed validation: {:?}", err.to_message())),
+            OptimizationPhase::SubStrategy { strategy, iterations } => {
+                for _ in 1..iterations {
+                    let before = lowered.clone();
+                    strategy.apply_strategy(db, function, lowered)?;
+                    if *lowered == before {
+                        return Ok(());
+                    }
+                }
+                strategy.apply_strategy(db, function, lowered)?
+            }
         }
         Ok(())
     }
@@ -111,27 +129,29 @@ impl OptimizationStrategyId {
 /// Query implementation of [crate::db::LoweringGroup::baseline_optimization_strategy].
 pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
     OptimizationStrategy(vec![
-        // Must be right before const folding.
-        OptimizationPhase::ReorganizeBlocks,
-        // Apply `ConstFolding` before inlining to get better inlining decisions.
-        OptimizationPhase::ConstFolding,
-        OptimizationPhase::ApplyInlining,
-        OptimizationPhase::ReturnOptimization,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ReorderStatements,
-        OptimizationPhase::BranchInversion,
-        OptimizationPhase::CancelOps,
-        // Must be right before const folding.
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ConstFolding,
-        OptimizationPhase::OptimizeMatches,
-        OptimizationPhase::SplitStructs,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ReorderStatements,
-        OptimizationPhase::OptimizeMatches,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::CancelOps,
-        OptimizationPhase::ReorganizeBlocks,
+        OptimizationPhase::SubStrategy {
+            strategy: OptimizationStrategy(vec![
+                // Must be right before const folding.
+                OptimizationPhase::ReorganizeBlocks,
+                // Apply `ConstFolding` before inlining to get better inlining decisions.
+                OptimizationPhase::ConstFolding,
+                OptimizationPhase::ApplyInlining,
+                OptimizationPhase::ReturnOptimization,
+                OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::ReorderStatements,
+                OptimizationPhase::BranchInversion,
+                OptimizationPhase::CancelOps,
+                OptimizationPhase::SplitStructs,
+                OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::ReorderStatements,
+                OptimizationPhase::OptimizeMatches,
+                OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::CancelOps,
+                OptimizationPhase::ReorganizeBlocks,
+            ])
+            .intern(db),
+            iterations: 5,
+        },
         OptimizationPhase::DedupBlocks,
         // Re-run ReturnOptimization to eliminate harmful merges introduced by DedupBlocks.
         OptimizationPhase::ReturnOptimization,
