@@ -303,6 +303,7 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x3bd690d1a73da0d8c43f46ecc3a006978d8343a075e91a1c7a24529e7d244a.try_into().unwrap();
 pub fn deploy(
+    class_hash: starknet::ClassHash,
     deployment_params: starknet::DeploymentParams,
     
 ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {    
@@ -311,24 +312,12 @@ pub fn deploy(
     
 
     starknet::syscalls::deploy_syscall(
-        deployment_params.class_hash,
+        class_hash,
         deployment_params.salt,
         core::array::ArrayTrait::span(@calldata),
         deployment_params.deploy_from_zero,
     )
 }
-
-#[cfg(target: 'test')]
-pub fn deploy_for_testing(
-    class_hash: starknet::ClassHash,
-    
-) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
-    deploy(
-        starknet::deployment::DeploymentParamsTrait::new(class_hash),
-        
-    )
-}
-
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]

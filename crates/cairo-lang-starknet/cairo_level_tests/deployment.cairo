@@ -1,5 +1,5 @@
 use starknet::syscalls::deploy_syscall;
-use starknet::deployment::{DeploymentParams, DeploymentParamsTrait};
+use starknet::deployment::DeploymentParams;
 
 #[starknet::interface]
 trait IValue<TContractState> {
@@ -54,28 +54,24 @@ fn test_redeploy_in_construct() {
 
 #[test]
 fn test_typed_deploy_default() {
-    let deployment_params = DeploymentParamsTrait::new(self_caller::TEST_CLASS_HASH);
-    let (contract_address, _) = self_caller::deploy(deployment_params)
+    let (contract_address, _) = self_caller::deploy(self_caller::TEST_CLASS_HASH, Default::default())
         .expect('deployment failed');
     assert!(IValueDispatcher { contract_address }.get_value() == 1);
 }
 
 #[test]
 fn test_typed_redeploy_default() {
-    let deployment_params = DeploymentParamsTrait::new(self_caller::TEST_CLASS_HASH);
-
-    assert!(self_caller::deploy(deployment_params).is_ok());
-    assert!(self_caller::deploy(deployment_params) == Err(array!['CONTRACT_ALREADY_DEPLOYED']));
+    assert!(self_caller::deploy(self_caller::TEST_CLASS_HASH, Default::default()).is_ok());
+    assert!(self_caller::deploy(self_caller::TEST_CLASS_HASH, Default::default()) == Err(array!['CONTRACT_ALREADY_DEPLOYED']));
 }
 
 #[test]
 fn test_typed_deploy_with_params() {
     let deployment_params = DeploymentParams {
-        class_hash: self_caller::TEST_CLASS_HASH,
-        salt: 0,
+        salt: 42,
         deploy_from_zero: true,
     };
-    let (contract_address, _) = self_caller::deploy(deployment_params)
+    let (contract_address, _) = self_caller::deploy(self_caller::TEST_CLASS_HASH, deployment_params)
         .expect('deployment failed');
     assert!(IValueDispatcher { contract_address }.get_value() == 1);
 }
@@ -83,16 +79,9 @@ fn test_typed_deploy_with_params() {
 #[test]
 fn test_typed_redeploy_with_params() {
     let deployment_params = DeploymentParams {
-        class_hash: self_caller::TEST_CLASS_HASH,
-        salt: 0,
+        salt: 42,
         deploy_from_zero: true,
     };
-    assert!(self_caller::deploy(deployment_params).is_ok());
-    assert!(self_caller::deploy(deployment_params) == Err(array!['CONTRACT_ALREADY_DEPLOYED']));
-}
-
-#[test]
-fn test_typed_deploy_for_testing() {
-    assert!(self_caller::deploy_for_testing(self_caller::TEST_CLASS_HASH).is_ok());
-    assert!(self_caller::deploy_for_testing(self_caller::TEST_CLASS_HASH) == Err(array!['CONTRACT_ALREADY_DEPLOYED']));
+    assert!(self_caller::deploy(self_caller::TEST_CLASS_HASH, deployment_params).is_ok());
+    assert!(self_caller::deploy(self_caller::TEST_CLASS_HASH, deployment_params) == Err(array!['CONTRACT_ALREADY_DEPLOYED']));
 }
