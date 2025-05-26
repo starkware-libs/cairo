@@ -158,6 +158,7 @@ impl FormattableInput for String {
             content: self.clone().into(),
             code_mappings: [].into(),
             kind: FileKind::Module,
+            original_item_removed: false,
         })
         .intern(db))
     }
@@ -177,6 +178,7 @@ impl FormattableInput for StdinFmt {
             content: buffer.into(),
             code_mappings: [].into(),
             kind: FileKind::Module,
+            original_item_removed: false,
         })
         .intern(db))
     }
