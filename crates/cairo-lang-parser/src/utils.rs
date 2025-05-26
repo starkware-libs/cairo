@@ -70,6 +70,7 @@ impl SimpleParserDatabase {
             content: content.to_string().into(),
             code_mappings: [].into(),
             kind: FileKind::Module,
+            original_item_removed: false,
         })
         .intern(self);
         get_syntax_root_and_diagnostics(self, file, content.to_string().as_str())
@@ -89,6 +90,7 @@ impl SimpleParserDatabase {
             content: content.into(),
             code_mappings: Default::default(),
             kind: FileKind::Module,
+            original_item_removed: false,
         })
         .intern(self);
         let mut diagnostics = DiagnosticsBuilder::default();
@@ -112,6 +114,7 @@ impl SimpleParserDatabase {
             content: Default::default(),
             code_mappings: Default::default(),
             kind: FileKind::Module,
+            original_item_removed: false,
         })
         .intern(self);
         let mut diagnostics = DiagnosticsBuilder::default();

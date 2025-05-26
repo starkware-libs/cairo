@@ -820,6 +820,7 @@ fn priv_module_sub_files(
                         content: generated.content.into(),
                         code_mappings: generated.code_mappings.into(),
                         kind: FileKind::Module,
+                        original_item_removed: remove_original_item,
                     },
                 );
                 aux_data.push(generated.aux_data);

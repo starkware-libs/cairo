@@ -131,6 +131,7 @@ impl UseTree {
             content: formatted_use_items.clone().into(),
             code_mappings: [].into(),
             kind: FileKind::Module,
+            original_item_removed: false,
         })
         .intern(db);
 

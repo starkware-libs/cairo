@@ -343,6 +343,7 @@ impl<'a> DocumentationCommentParser<'a> {
             content: Default::default(),
             code_mappings: Default::default(),
             kind: FileKind::Module,
+            original_item_removed: false,
         })
         .intern(self.db);
 
