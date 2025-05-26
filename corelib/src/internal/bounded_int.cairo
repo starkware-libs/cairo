@@ -64,6 +64,43 @@ impl AddBI01BI01Helper of AddHelper<BoundedInt<0, 1>, BoundedInt<0, 1>> {
 impl AddBI02BI01Helper of AddHelper<BoundedInt<0, 2>, BoundedInt<0, 1>> {
     type Result = BoundedInt<0, 3>;
 }
+impl AddOneToU8Helper of AddHelper<BoundedInt<0, 0xfe>, UnitInt<1>> {
+    type Result = BoundedInt<1, 0xff>;
+}
+impl AddOneToU16Helper of AddHelper<BoundedInt<0, 0xfffe>, UnitInt<1>> {
+    type Result = BoundedInt<1, 0xffff>;
+}
+impl AddOneToU32Helper of AddHelper<BoundedInt<0, 0xfffffffe>, UnitInt<1>> {
+    type Result = BoundedInt<1, 0xffffffff>;
+}
+impl AddOneToU64Helper of AddHelper<BoundedInt<0, 0xfffffffffffffffe>, UnitInt<1>> {
+    type Result = BoundedInt<1, 0xffffffffffffffff>;
+}
+impl AddOneToU128Helper of AddHelper<
+    BoundedInt<0, 0xfffffffffffffffffffffffffffffffe>, UnitInt<1>,
+> {
+    type Result = BoundedInt<1, 0xffffffffffffffffffffffffffffffff>;
+}
+impl AddOneToI8Helper of AddHelper<BoundedInt<-0x80, 0x7e>, UnitInt<1>> {
+    type Result = BoundedInt<-0x7f, 0x7f>;
+}
+impl AddOneToI16Helper of AddHelper<BoundedInt<-0x8000, 0x7ffe>, UnitInt<1>> {
+    type Result = BoundedInt<-0x7fff, 0x7fff>;
+}
+impl AddOneToI32Helper of AddHelper<BoundedInt<-0x80000000, 0x7ffffffe>, UnitInt<1>> {
+    type Result = BoundedInt<-0x7fffffff, 0x7fffffff>;
+}
+impl AddOneToI64Helper of AddHelper<
+    BoundedInt<-0x8000000000000000, 0x7ffffffffffffffe>, UnitInt<1>,
+> {
+    type Result = BoundedInt<-0x7fffffffffffffff, 0x7fffffffffffffff>;
+}
+impl AddOneToI128Helper of AddHelper<
+    BoundedInt<-0x80000000000000000000000000000000, 0x7ffffffffffffffffffffffffffffffe>, UnitInt<1>,
+> {
+    type Result =
+        BoundedInt<-0x7fffffffffffffffffffffffffffffff, 0x7fffffffffffffffffffffffffffffff>;
+}
 extern fn bounded_int_add<Lhs, Rhs, impl H: AddHelper<Lhs, Rhs>>(
     lhs: Lhs, rhs: Rhs,
 ) -> H::Result nopanic;
@@ -71,6 +108,43 @@ extern fn bounded_int_add<Lhs, Rhs, impl H: AddHelper<Lhs, Rhs>>(
 /// A helper trait for subtracting two `BoundedInt` instances.
 pub trait SubHelper<Lhs, Rhs> {
     type Result;
+}
+impl SubOneToU8Helper of SubHelper<BoundedInt<1, 0xff>, UnitInt<1>> {
+    type Result = BoundedInt<0, 0xfe>;
+}
+impl SubOneToU16Helper of SubHelper<BoundedInt<1, 0xffff>, UnitInt<1>> {
+    type Result = BoundedInt<0, 0xfffe>;
+}
+impl SubOneToU32Helper of SubHelper<BoundedInt<1, 0xffffffff>, UnitInt<1>> {
+    type Result = BoundedInt<0, 0xfffffffe>;
+}
+impl SubOneToU64Helper of SubHelper<BoundedInt<1, 0xffffffffffffffff>, UnitInt<1>> {
+    type Result = BoundedInt<0, 0xfffffffffffffffe>;
+}
+impl SubOneToU128Helper of SubHelper<
+    BoundedInt<1, 0xffffffffffffffffffffffffffffffff>, UnitInt<1>,
+> {
+    type Result = BoundedInt<0, 0xfffffffffffffffffffffffffffffffe>;
+}
+impl SubOneToI8Helper of SubHelper<BoundedInt<-0x7f, 0x7f>, UnitInt<1>> {
+    type Result = BoundedInt<-0x80, 0x7e>;
+}
+impl SubOneToI16Helper of SubHelper<BoundedInt<-0x7fff, 0x7fff>, UnitInt<1>> {
+    type Result = BoundedInt<-0x8000, 0x7ffe>;
+}
+impl SubOneToI32Helper of SubHelper<BoundedInt<-0x7fffffff, 0x7fffffff>, UnitInt<1>> {
+    type Result = BoundedInt<-0x80000000, 0x7ffffffe>;
+}
+impl SubOneToI64Helper of SubHelper<
+    BoundedInt<-0x7fffffffffffffff, 0x7fffffffffffffff>, UnitInt<1>,
+> {
+    type Result = BoundedInt<-0x8000000000000000, 0x7ffffffffffffffe>;
+}
+impl SubOneToI128Helper of SubHelper<
+    BoundedInt<-0x7fffffffffffffffffffffffffffffff, 0x7fffffffffffffffffffffffffffffff>, UnitInt<1>,
+> {
+    type Result =
+        BoundedInt<-0x80000000000000000000000000000000, 0x7ffffffffffffffffffffffffffffffe>;
 }
 extern fn bounded_int_sub<Lhs, Rhs, impl H: SubHelper<Lhs, Rhs>>(
     lhs: Lhs, rhs: Rhs,
