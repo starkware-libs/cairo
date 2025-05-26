@@ -682,41 +682,52 @@ impl ConstFoldingContext<'_> {
             || self.isub_fns.contains(&id)
         {
             let rhs = self.as_int(info.inputs[1].var_id);
-            if rhs.map(Zero::is_zero).unwrap_or_default() && !self.diff_fns.contains(&id) {
-                let arm = &info.arms[0];
-                self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[0]));
-                return Some((vec![], BlockEnd::Goto(arm.block_id, Default::default())));
-            }
             let lhs = self.as_int(info.inputs[0].var_id);
-            let value = if self.uadd_fns.contains(&id) || self.iadd_fns.contains(&id) {
-                if lhs.map(Zero::is_zero).unwrap_or_default() {
+            if let (Some(lhs), Some(rhs)) = (lhs, rhs) {
+                let ty = self.variables[info.arms[0].var_ids[0]].ty;
+                let range = &self.type_value_ranges.get(&ty)?.range;
+                let value = if self.uadd_fns.contains(&id) || self.iadd_fns.contains(&id) {
+                    lhs + rhs
+                } else {
+                    lhs - rhs
+                };
+                let (arm_index, value) = match range.normalized(value) {
+                    NormalizedResult::InRange(value) => (0, value),
+                    NormalizedResult::Under(value) => (1, value),
+                    NormalizedResult::Over(value) => (
+                        if self.iadd_fns.contains(&id) || self.isub_fns.contains(&id) {
+                            2
+                        } else {
+                            1
+                        },
+                        value,
+                    ),
+                };
+                let arm = &info.arms[arm_index];
+                let actual_output = arm.var_ids[0];
+                let value = ConstValue::Int(value, ty);
+                self.var_info.insert(actual_output, VarInfo::Const(value.clone()));
+                return Some((
+                    vec![Statement::Const(StatementConst { value, output: actual_output })],
+                    BlockEnd::Goto(arm.block_id, Default::default()),
+                ));
+            }
+            if let Some(rhs) = rhs {
+                if rhs.is_zero() && !self.diff_fns.contains(&id) {
+                    let arm = &info.arms[0];
+                    self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[0]));
+                    return Some((vec![], BlockEnd::Goto(arm.block_id, Default::default())));
+                }
+            }
+            if let Some(lhs) = lhs {
+                if lhs.is_zero() && (self.uadd_fns.contains(&id) || self.iadd_fns.contains(&id)) {
                     let arm = &info.arms[0];
                     self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[1]));
                     return Some((vec![], BlockEnd::Goto(arm.block_id, Default::default())));
                 }
-                lhs? + rhs?
-            } else {
-                lhs? - rhs?
-            };
-            let ty = self.variables[info.arms[0].var_ids[0]].ty;
-            let range = &self.type_value_ranges.get(&ty)?.range;
-            let (arm_index, value) = match range.normalized(value) {
-                NormalizedResult::InRange(value) => (0, value),
-                NormalizedResult::Under(value) => (1, value),
-                NormalizedResult::Over(value) => (
-                    if self.iadd_fns.contains(&id) || self.isub_fns.contains(&id) { 2 } else { 1 },
-                    value,
-                ),
-            };
-            let arm = &info.arms[arm_index];
-            let actual_output = arm.var_ids[0];
-            let value = ConstValue::Int(value, ty);
-            self.var_info.insert(actual_output, VarInfo::Const(value.clone()));
-            Some((
-                vec![Statement::Const(StatementConst { value, output: actual_output })],
-                BlockEnd::Goto(arm.block_id, Default::default()),
-            ))
-        } else if self.downcast_fns.contains(&id) {
+            }
+            None
+        } else if let Some(reversed) = self.downcast_fns.get(&id) {
             let range = |ty: TypeId| {
                 Some(if let Some(ti) = self.type_value_ranges.get(&ty) {
                     ti.range.clone()
@@ -725,8 +736,9 @@ impl ConstFoldingContext<'_> {
                     TypeRange { min, max }
                 })
             };
+            let (success_arm, failure_arm) = if *reversed { (1, 0) } else { (0, 1) };
             let input_var = info.inputs[0].var_id;
-            let success_output = info.arms[0].var_ids[0];
+            let success_output = info.arms[success_arm].var_ids[0];
             let out_ty = self.variables[success_output].ty;
             let out_range = range(out_ty)?;
             let Some(value) = self.as_int(input_var) else {
@@ -745,7 +757,7 @@ impl ConstFoldingContext<'_> {
                             outputs: vec![success_output],
                             location: info.location,
                         })],
-                        BlockEnd::Goto(info.arms[0].block_id, Default::default()),
+                        BlockEnd::Goto(info.arms[success_arm].block_id, Default::default()),
                     ));
                 };
             };
@@ -754,10 +766,10 @@ impl ConstFoldingContext<'_> {
                 self.var_info.insert(success_output, VarInfo::Const(value.clone()));
                 (
                     vec![Statement::Const(StatementConst { value, output: success_output })],
-                    BlockEnd::Goto(info.arms[0].block_id, Default::default()),
+                    BlockEnd::Goto(info.arms[success_arm].block_id, Default::default()),
                 )
             } else {
-                (vec![], BlockEnd::Goto(info.arms[1].block_id, Default::default()))
+                (vec![], BlockEnd::Goto(info.arms[failure_arm].block_id, Default::default()))
             })
         } else if id == self.bounded_int_constrain {
             let input_var = info.inputs[0].var_id;
