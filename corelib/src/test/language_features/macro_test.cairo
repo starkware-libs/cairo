@@ -391,3 +391,39 @@ mod defsite_as_type {
 fn test_defsite_as_type() {
     let _y = defsite_as_type::use_redefinition!(5_u32);
 }
+
+
+mod defsite_inference {
+    #[derive(Drop, Copy, Default)]
+    pub struct A {
+        pub x: u32,
+    }
+    pub macro use_local_type {
+        ($y:expr) => {
+            {
+                let mut x: $defsite::A = $defsite::A{
+                    x: 0,
+                };
+                x.x = $y;
+                x
+            }
+        };
+    }
+    pub macro use_local_impl_inference {
+        ($y:expr) => {
+            {
+                let mut x: $defsite::A = $defsite::Default::default();
+                x.x = $y;
+                x
+            }
+        };
+    }
+}
+
+
+#[test]
+fn test_defsite_inference() {
+    let y: defsite_inference::A = defsite_inference::use_local_type!(5);
+    let z: defsite_inference::A = defsite_inference::use_local_impl_inference!(5);
+    assert_eq!(y.x, z.x);
+}

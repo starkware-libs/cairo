@@ -150,6 +150,17 @@ pub struct EnrichedTypeMemberAccess {
     pub deref_functions: Vec<(FunctionId, Mutability)>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub enum MacroContextModifier {
+    /// The path is resolved in the macro definition site.
+    DefSite,
+    /// The path is resolved in the macro call site.
+    CallSite,
+    /// No modifier, the path is resolved in the current resolver context.
+    None,
+}
+
 #[derive(Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ResolverData {
@@ -208,18 +219,19 @@ impl ResolverData {
 /// Resolving data needed for resolving macro expanded code in the correct context.
 #[derive(Debug, Clone)]
 pub struct ResolverMacroData {
-    /// The resolver data of the macro definition site. Is used if the path begins with `$defsite`.
-    pub defsite_data: Arc<ResolverData>,
-    /// The resolver data of the macro call site. Items are resolved in this context in two cases:
+    /// The module file id of the macro definition site. It is used if the path begins with
+    /// `$defsite`.
+    pub defsite_module_file_id: ModuleFileId,
+    /// The module file id of the macro call site. Items are resolved in this context in two cases:
     /// 1. The path begins with `$callsite`.
     /// 2. The path was supplied as a macro argument. In other words, the path is an expansion of a
     ///    placeholder and is not a part of the macro expansion template.
-    pub callsite_data: Arc<ResolverData>,
+    pub callsite_module_file_id: ModuleFileId,
     /// This is the result of the macro expansion. It is used to determine if a part of the code
     /// came from a macro argument or from the macro expansion template.
     pub expansion_result: Arc<MacroExpansionResult>,
     /// The parent macro data. Exists in case of a macro calling another macro, and is used if we
-    /// climp to the callsite environment.
+    /// climb to the callsite environment.
     pub parent_macro_call_data: Option<Box<ResolverMacroData>>,
 }
 
@@ -359,6 +371,42 @@ impl<'db> Resolver<'db> {
         self.suppress_modifiers_diagnostics = suppress_modifiers_diagnostics;
     }
 
+    /// Return the module_file_id, with respect to the macro context modifier, see
+    /// [`MacroContextModifier`].
+    pub fn active_module_file_id(
+        &self,
+        macro_context_modifier: MacroContextModifier,
+    ) -> ModuleFileId {
+        match macro_context_modifier {
+            MacroContextModifier::DefSite => *self
+                .macro_call_data
+                .as_ref()
+                .map(|data| &data.defsite_module_file_id)
+                .expect("Non-default macro context is set only when macro_call_data is Some."),
+            MacroContextModifier::CallSite => *self
+                .macro_call_data
+                .as_ref()
+                .map(|data| &data.callsite_module_file_id)
+                .expect("Non-default macro context is set only when macro_call_data is Some."),
+            MacroContextModifier::None => self.data.module_file_id,
+        }
+    }
+
+    /// Returns the owning crate id of the active module file id, with respect to the macro context
+    /// modifier, see [`MacroContextModifier`].
+    pub fn active_owning_crate_id(&self, macro_context_modifier: MacroContextModifier) -> CrateId {
+        self.active_module_file_id(macro_context_modifier).0.owning_crate(self.db)
+    }
+
+    /// Returns the active settings of the owning crate, with respect to the macro context
+    /// modifier, see [`MacroContextModifier`].
+    pub fn active_settings(&self, macro_context_modifier: MacroContextModifier) -> CrateSettings {
+        self.db
+            .crate_config(self.active_owning_crate_id(macro_context_modifier))
+            .map(|c| c.settings)
+            .unwrap_or_default()
+    }
+
     /// Resolves an item, given a path.
     /// Guaranteed to result in at most one diagnostic.
     fn resolve_path_inner<ResolvedItem: Clone>(
@@ -372,6 +420,7 @@ impl<'db> Resolver<'db> {
                 &mut Resolver<'_>,
                 &mut SemanticDiagnostics,
                 &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+                MacroContextModifier,
             ) -> Maybe<ResolvedItem>,
             impl FnMut(
                 &mut Resolver<'_>,
@@ -379,6 +428,7 @@ impl<'db> Resolver<'db> {
                 &ResolvedItem,
                 &ast::PathSegment,
                 NotFoundItemType,
+                MacroContextModifier,
             ) -> Maybe<ResolvedItem>,
             impl FnMut(&mut SemanticDiagnostics, &ast::PathSegment) -> Maybe<()>,
             impl FnMut(
@@ -398,6 +448,8 @@ impl<'db> Resolver<'db> {
         let segments_stable_ptr =
             segments.peek().expect("Trying to resolve an empty path.").stable_ptr(db);
         let mut cur_macro_call_data = self.macro_call_data.clone();
+        // Climb up the macro call data while the current resolved path is being mapped to an
+        // argument of a macro call.
         while let Some(macro_call_data) = cur_macro_call_data.clone() {
             if let Some(placeholder_expansion) =
                 macro_call_data.expansion_result.get_placeholder_at(cur_offset)
@@ -408,17 +460,22 @@ impl<'db> Resolver<'db> {
             }
             break;
         }
-        let active_resolver = if is_placeholder {
-            &mut self.resolve_placeholder(diagnostics, &mut segments, cur_macro_call_data)?
+
+        let macro_context_modifier = if is_placeholder {
+            self.handle_macro_context_modifier(diagnostics, &mut segments, cur_macro_call_data)?
         } else {
             if cur_macro_call_data.is_some() && !self.suppress_modifiers_diagnostics {
                 diagnostics.report(segments_stable_ptr, PathInMacroWithoutModifier);
             }
-            self
+            MacroContextModifier::None
         };
         // Find where the first segment lies in.
-        let mut item: ResolvedItem =
-            (callbacks.resolve_path_first_segment)(active_resolver, diagnostics, &mut segments)?;
+        let mut item: ResolvedItem = (callbacks.resolve_path_first_segment)(
+            self,
+            diagnostics,
+            &mut segments,
+            macro_context_modifier,
+        )?;
 
         // Follow modules.
         while let Some(segment) = segments.next() {
@@ -431,13 +488,14 @@ impl<'db> Resolver<'db> {
             // `?` is ok here as the rest of the segments have no meaning if the current one can't
             // be resolved.
             item = (callbacks.resolve_path_next_segment)(
-                active_resolver,
+                self,
                 diagnostics,
                 &item,
                 segment,
                 cur_item_type,
+                macro_context_modifier,
             )?;
-            (callbacks.mark)(&mut active_resolver.resolved_items, db, segment, item.clone());
+            (callbacks.mark)(&mut self.resolved_items, db, segment, item.clone());
         }
         Ok(item)
     }
@@ -469,17 +527,25 @@ impl<'db> Resolver<'db> {
             item_type,
             ResolvePathInnerCallbacks {
                 resolved_item_type: PhantomData,
-                resolve_path_first_segment: |resolver, diagnostics, segments| {
-                    resolver.resolve_concrete_path_first_segment(diagnostics, segments, ctx)
-                },
-                resolve_path_next_segment: |resolver, diagnostics, item, segment, item_type| {
-                    resolver.resolve_path_next_segment_concrete(
-                        diagnostics,
-                        item,
-                        segment,
-                        item_type,
-                    )
-                },
+                resolve_path_first_segment:
+                    |resolver, diagnostics, segments, macro_context_modifier| {
+                        resolver.resolve_concrete_path_first_segment(
+                            diagnostics,
+                            segments,
+                            ctx,
+                            macro_context_modifier,
+                        )
+                    },
+                resolve_path_next_segment:
+                    |resolver, diagnostics, item, segment, item_type, macro_context_modifier| {
+                        resolver.resolve_path_next_segment_concrete(
+                            diagnostics,
+                            item,
+                            segment,
+                            item_type,
+                            macro_context_modifier,
+                        )
+                    },
                 validate_segment: |_, _| Ok(()),
                 mark: |resolved_items, db, segment, item| {
                     resolved_items.mark_concrete(db, segment, item);
@@ -496,10 +562,17 @@ impl<'db> Resolver<'db> {
         identifier: &TerminalIdentifier,
         inner_item_info: ModuleItemInfo,
         segment: &ast::PathSegment,
+        macro_context_modifier: MacroContextModifier,
     ) -> Maybe<ResolvedConcreteItem> {
         let generic_args_syntax = segment.generic_args(self.db);
         let segment_stable_ptr = segment.stable_ptr(self.db).untyped();
-        self.validate_module_item_usability(diagnostics, module_id, identifier, &inner_item_info);
+        self.validate_module_item_usability(
+            diagnostics,
+            module_id,
+            identifier,
+            &inner_item_info,
+            macro_context_modifier,
+        );
         self.insert_used_use(inner_item_info.item_id);
         let inner_generic_item =
             ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)?;
@@ -525,6 +598,7 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
         ctx: ResolutionContext<'_>,
+        macro_context_modifier: MacroContextModifier,
     ) -> Maybe<ResolvedConcreteItem> {
         if let Some(base_module) = self.try_handle_super_segments(
             diagnostics,
@@ -532,6 +606,7 @@ impl<'db> Resolver<'db> {
             |resolved_items, db, segment, module_id| {
                 resolved_items.mark_concrete(db, segment, ResolvedConcreteItem::Module(module_id));
             },
+            macro_context_modifier,
         ) {
             return Ok(ResolvedConcreteItem::Module(base_module?));
         }
@@ -541,7 +616,7 @@ impl<'db> Resolver<'db> {
             syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
                 let identifier = generic_segment.ident(db);
                 // Identifier with generic args cannot be a local item.
-                match self.determine_base(&identifier, ctx) {
+                match self.determine_base(&identifier, ctx, macro_context_modifier) {
                     ResolvedBase::Module(module_id) => ResolvedConcreteItem::Module(module_id),
                     ResolvedBase::Crate(_) => {
                         // Crates do not have generics.
@@ -573,6 +648,7 @@ impl<'db> Resolver<'db> {
                             &identifier,
                             inner_module_item,
                             segment,
+                            macro_context_modifier,
                         )?;
                         self.resolved_items.mark_concrete(db, segment, concrete_item)
                     }
@@ -605,7 +681,7 @@ impl<'db> Resolver<'db> {
                 if let Some(local_item) = self.determine_base_item_in_local_scope(&identifier) {
                     self.resolved_items.mark_concrete(db, segments.next().unwrap(), local_item)
                 } else {
-                    match self.determine_base(&identifier, ctx) {
+                    match self.determine_base(&identifier, ctx, macro_context_modifier) {
                         // This item lies inside a module.
                         ResolvedBase::Module(module_id) => ResolvedConcreteItem::Module(module_id),
                         ResolvedBase::Crate(crate_id) => self.resolved_items.mark_concrete(
@@ -636,6 +712,7 @@ impl<'db> Resolver<'db> {
                                 &identifier,
                                 inner_module_item,
                                 segment,
+                                macro_context_modifier,
                             )?;
                             self.resolved_items.mark_concrete(db, segment, concrete_item)
                         }
@@ -713,23 +790,27 @@ impl<'db> Resolver<'db> {
             item_type,
             ResolvePathInnerCallbacks {
                 resolved_item_type: PhantomData,
-                resolve_path_first_segment: |resolver, diagnostics, segments| {
-                    resolver.resolve_generic_path_first_segment(
-                        diagnostics,
-                        segments,
-                        allow_generic_args,
-                        ctx,
-                    )
-                },
-                resolve_path_next_segment: |resolver, diagnostics, item, segment, item_type| {
-                    let identifier = segment.identifier_ast(self.db);
-                    resolver.resolve_path_next_segment_generic(
-                        diagnostics,
-                        item,
-                        &identifier,
-                        item_type,
-                    )
-                },
+                resolve_path_first_segment:
+                    |resolver, diagnostics, segments, macro_context_modifier| {
+                        resolver.resolve_generic_path_first_segment(
+                            diagnostics,
+                            segments,
+                            allow_generic_args,
+                            ctx,
+                            macro_context_modifier,
+                        )
+                    },
+                resolve_path_next_segment:
+                    |resolver, diagnostics, item, segment, item_type, macro_context_modifier| {
+                        let identifier = segment.identifier_ast(self.db);
+                        resolver.resolve_path_next_segment_generic(
+                            diagnostics,
+                            item,
+                            &identifier,
+                            item_type,
+                            macro_context_modifier,
+                        )
+                    },
                 validate_segment,
                 mark: |resolved_items, db, segment, item| {
                     resolved_items.mark_generic(db, segment, item);
@@ -746,6 +827,7 @@ impl<'db> Resolver<'db> {
         segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
         allow_generic_args: bool,
         ctx: ResolutionContext<'_>,
+        macro_context_modifier: MacroContextModifier,
     ) -> Maybe<ResolvedGenericItem> {
         if let Some(base_module) = self.try_handle_super_segments(
             diagnostics,
@@ -753,6 +835,7 @@ impl<'db> Resolver<'db> {
             |resolved_items, db, segment, module_id| {
                 resolved_items.mark_generic(db, segment, ResolvedGenericItem::Module(module_id));
             },
+            macro_context_modifier,
         ) {
             return Ok(ResolvedGenericItem::Module(base_module?));
         }
@@ -767,7 +850,7 @@ impl<'db> Resolver<'db> {
                 }
                 let identifier = generic_segment.ident(db);
                 // Identifier with generic args cannot be a local item.
-                match self.determine_base(&identifier, ctx) {
+                match self.determine_base(&identifier, ctx, macro_context_modifier) {
                     ResolvedBase::Module(module_id) => ResolvedGenericItem::Module(module_id),
                     ResolvedBase::Crate(_) => {
                         // Crates do not have generics.
@@ -801,7 +884,7 @@ impl<'db> Resolver<'db> {
             }
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
                 let identifier = simple_segment.ident(db);
-                match self.determine_base(&identifier, ctx) {
+                match self.determine_base(&identifier, ctx, macro_context_modifier) {
                     // This item lies inside a module.
                     ResolvedBase::Module(module_id) => ResolvedGenericItem::Module(module_id),
                     ResolvedBase::Crate(crate_id) => self.resolved_items.mark_generic(
@@ -855,9 +938,10 @@ impl<'db> Resolver<'db> {
             &syntax::node::ast::PathSegment,
             ModuleId,
         ),
+        macro_context_modifier: MacroContextModifier,
     ) -> Option<Maybe<ModuleId>> {
         let db = self.db;
-        let mut module_id = self.module_file_id.0;
+        let mut module_id = self.active_module_file_id(macro_context_modifier).0;
         for segment in segments.peeking_take_while(|segment| match segment {
             ast::PathSegment::WithGenericArgs(_) | ast::PathSegment::Missing(_) => false,
             ast::PathSegment::Simple(simple) => simple.ident(db).text(db) == SUPER_KW,
@@ -876,7 +960,7 @@ impl<'db> Resolver<'db> {
                 }
             };
         }
-        (module_id != self.module_file_id.0).then_some(Ok(module_id))
+        (module_id != self.active_module_file_id(macro_context_modifier).0).then_some(Ok(module_id))
     }
 
     /// Resolves the inner item of a module, given the current segment of the path.
@@ -916,6 +1000,7 @@ impl<'db> Resolver<'db> {
         containing_item: &ResolvedConcreteItem,
         segment: &ast::PathSegment,
         item_type: NotFoundItemType,
+        macro_context_modifier: MacroContextModifier,
     ) -> Maybe<ResolvedConcreteItem> {
         let db = self.db;
         let identifier = &segment.identifier_ast(db);
@@ -948,6 +1033,7 @@ impl<'db> Resolver<'db> {
                     identifier,
                     inner_item_info,
                     segment,
+                    macro_context_modifier,
                 )
             }
             ResolvedConcreteItem::Type(ty) => {
@@ -1039,7 +1125,8 @@ impl<'db> Resolver<'db> {
                         )
                         .intern(self.db);
                         let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
-                        let impl_lookup_context = self.impl_lookup_context();
+                        let impl_lookup_context =
+                            self.impl_lookup_context_ex(macro_context_modifier);
                         let generic_function =
                             GenericFunctionId::Impl(self.inference().infer_trait_generic_function(
                                 concrete_trait_function,
@@ -1058,7 +1145,8 @@ impl<'db> Resolver<'db> {
                         let concrete_trait_type =
                             ConcreteTraitTypeId::new(self.db, *concrete_trait_id, trait_type_id);
 
-                        let impl_lookup_context = self.impl_lookup_context();
+                        let impl_lookup_context =
+                            self.impl_lookup_context_ex(macro_context_modifier);
                         let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
                         let ty = self.inference().infer_trait_type(
                             concrete_trait_type,
@@ -1075,7 +1163,8 @@ impl<'db> Resolver<'db> {
                         )
                         .intern(self.db);
 
-                        let impl_lookup_context = self.impl_lookup_context();
+                        let impl_lookup_context =
+                            self.impl_lookup_context_ex(macro_context_modifier);
                         let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
                         let imp_constant_id = self.inference().infer_trait_constant(
                             concrete_trait_constant,
@@ -1099,7 +1188,8 @@ impl<'db> Resolver<'db> {
                         )
                         .intern(self.db);
 
-                        let impl_lookup_context = self.impl_lookup_context();
+                        let impl_lookup_context =
+                            self.impl_lookup_context_ex(macro_context_modifier);
                         let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
                         let impl_impl_id = self.inference().infer_trait_impl(
                             concrete_trait_impl,
@@ -1185,7 +1275,8 @@ impl<'db> Resolver<'db> {
                 }
             }
             ResolvedConcreteItem::Function(function_id) if ident == "Coupon" => {
-                if !are_coupons_enabled(self.db, self.module_file_id) {
+                if !are_coupons_enabled(self.db, self.active_module_file_id(macro_context_modifier))
+                {
                     diagnostics.report(identifier.stable_ptr(db), CouponsDisabled);
                 }
                 if matches!(
@@ -1375,6 +1466,7 @@ impl<'db> Resolver<'db> {
         containing_item: &ResolvedGenericItem,
         identifier: &ast::TerminalIdentifier,
         item_type: NotFoundItemType,
+        macro_context_modifier: MacroContextModifier,
     ) -> Maybe<ResolvedGenericItem> {
         let db = self.db;
         let ident = identifier.text(db);
@@ -1393,6 +1485,7 @@ impl<'db> Resolver<'db> {
                     *module_id,
                     identifier,
                     &inner_item_info,
+                    macro_context_modifier,
                 );
                 self.insert_used_use(inner_item_info.item_id);
                 ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)
@@ -1447,10 +1540,11 @@ impl<'db> Resolver<'db> {
         &mut self,
         identifier: &ast::TerminalIdentifier,
         mut ctx: ResolutionContext<'_>,
+        macro_context_modifier: MacroContextModifier,
     ) -> ResolvedBase {
         let db = self.db;
         let ident = identifier.text(db);
-        let module_id = self.module_file_id.0;
+        let module_id = self.active_module_file_id(macro_context_modifier).0;
         if let ResolutionContext::Statement(ref mut env) = ctx {
             if let Some(inner_generic_arg) = get_statement_item_by_name(env, &ident) {
                 return ResolvedBase::StatementEnvironment(inner_generic_arg);
@@ -1466,11 +1560,13 @@ impl<'db> Resolver<'db> {
 
         // If the first element is `crate`, use the crate's root module as the base module.
         if ident == CRATE_KW {
-            return ResolvedBase::Crate(self.owning_crate_id);
+            return ResolvedBase::Crate(self.active_owning_crate_id(macro_context_modifier));
         }
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
-        if let Some(dep) = self.settings.dependencies.get(ident.as_str()) {
+        if let Some(dep) =
+            self.active_settings(macro_context_modifier).dependencies.get(ident.as_str())
+        {
             let dep_crate_id =
                 CrateLongId::Real { name: ident, discriminator: dep.discriminator.clone() }
                     .intern(self.db);
@@ -1493,7 +1589,7 @@ impl<'db> Resolver<'db> {
         // TODO(orizi): Remove when `starknet` becomes a proper crate.
         if ident == STARKNET_CRATE_NAME {
             // Making sure we don't look for it in `*` modules, to prevent cycles.
-            return ResolvedBase::Module(self.prelude_submodule());
+            return ResolvedBase::Module(self.prelude_submodule_ex(macro_context_modifier));
         }
         // If an item with this name is found in one of the 'use *' imports, use the module that
         match self.resolve_path_using_use_star(module_id, identifier) {
@@ -1508,19 +1604,24 @@ impl<'db> Resolver<'db> {
             }
             UseStarResult::PathNotFound => {}
             UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
-                let prelude = self.prelude_submodule();
+                let prelude = self.prelude_submodule_ex(macro_context_modifier);
                 if let Ok(Some(_)) = self.db.module_item_by_name(prelude, ident) {
                     return ResolvedBase::Module(prelude);
                 }
                 return ResolvedBase::ItemNotVisible(module_item_id, containing_modules);
             }
         }
-        ResolvedBase::Module(self.prelude_submodule())
+        ResolvedBase::Module(self.prelude_submodule_ex(macro_context_modifier))
+    }
+
+    pub fn prelude_submodule(&self) -> ModuleId {
+        self.prelude_submodule_ex(MacroContextModifier::None)
     }
 
     /// Returns the crate's `prelude` submodule.
-    pub fn prelude_submodule(&self) -> ModuleId {
-        let prelude_submodule_name = self.settings.edition.prelude_submodule_name();
+    pub fn prelude_submodule_ex(&self, macro_context_modifier: MacroContextModifier) -> ModuleId {
+        let active_settings = self.active_settings(macro_context_modifier);
+        let prelude_submodule_name = active_settings.edition.prelude_submodule_name();
         let core_prelude_submodule = core_submodule(self.db, "prelude");
         get_submodule(self.db, core_prelude_submodule, prelude_submodule_name).unwrap_or_else(
             || {
@@ -1651,9 +1752,21 @@ impl<'db> Resolver<'db> {
             .intern(self.db))
     }
 
+    /// Returns the current impl lookup context.
     pub fn impl_lookup_context(&self) -> ImplLookupContext {
-        let mut lookup_context =
-            ImplLookupContext::new(self.module_file_id.0, self.generic_params.clone());
+        self.impl_lookup_context_ex(MacroContextModifier::None)
+    }
+
+    /// Returns the current impl lookup context, with respect to the macro context modifier,
+    /// see [`MacroContextModifier`].
+    pub fn impl_lookup_context_ex(
+        &self,
+        macro_context_modifier: MacroContextModifier,
+    ) -> ImplLookupContext {
+        let mut lookup_context = ImplLookupContext::new(
+            self.active_module_file_id(macro_context_modifier).0,
+            self.generic_params.clone(),
+        );
 
         if let TraitOrImplContext::Impl(impl_def_id) = &self.trait_or_impl_ctx {
             let Ok(generic_params) = self.db.impl_def_generic_params(*impl_def_id) else {
@@ -1803,8 +1916,10 @@ impl<'db> Resolver<'db> {
 
                 // Using the resolver's data in the constant computation context, so impl vars are
                 // added to the correct inference.
-                let mut resolver_data =
-                    ResolverData::new(self.module_file_id, self.inference_data.inference_id);
+                let mut resolver_data = ResolverData::new(
+                    self.active_module_file_id(MacroContextModifier::None),
+                    self.inference_data.inference_id,
+                );
                 std::mem::swap(&mut self.data, &mut resolver_data);
 
                 let mut ctx = ComputationContext::new(
@@ -1892,14 +2007,26 @@ impl<'db> Resolver<'db> {
             }
         })
     }
+
     /// Should visibility checks not actually happen for lookups in this module.
     // TODO(orizi): Remove this check when performing a major Cairo update.
     pub fn ignore_visibility_checks(&self, module_id: ModuleId) -> bool {
+        self.ignore_visibility_checks_ex(module_id, MacroContextModifier::None)
+    }
+
+    /// Same as [`self.ignore_visibility_checks`], but takes into account the current macro context
+    /// modifier.
+    pub fn ignore_visibility_checks_ex(
+        &self,
+        module_id: ModuleId,
+        macro_context_modifier: MacroContextModifier,
+    ) -> bool {
         let module_crate = module_id.owning_crate(self.db);
         let module_edition =
             self.db.crate_config(module_crate).map(|c| c.settings.edition).unwrap_or_default();
         module_edition.ignore_visibility()
-            || self.settings.edition.ignore_visibility() && module_crate == self.db.core_crate()
+            || self.active_settings(macro_context_modifier).edition.ignore_visibility()
+                && module_crate == self.db.core_crate()
     }
 
     /// Validates whether a given item is allowed based on its feature kind.
@@ -1951,15 +2078,20 @@ impl<'db> Resolver<'db> {
         containing_module_id: ModuleId,
         identifier: &ast::TerminalIdentifier,
         item_info: &ModuleItemInfo,
+        macro_context_modifier: MacroContextModifier,
     ) {
-        if !self.is_item_visible(containing_module_id, item_info, self.module_file_id.0) {
+        if !self.is_item_visible_ex(
+            containing_module_id,
+            item_info,
+            self.active_module_file_id(macro_context_modifier).0,
+            macro_context_modifier,
+        ) {
             diagnostics
                 .report(identifier.stable_ptr(self.db), ItemNotVisible(item_info.item_id, vec![]));
         }
 
         self.validate_feature_constraints(diagnostics, identifier, item_info);
     }
-
     /// Checks if an item is visible from the current module.
     pub fn is_item_visible(
         &self,
@@ -1967,8 +2099,25 @@ impl<'db> Resolver<'db> {
         item_info: &ModuleItemInfo,
         user_module: ModuleId,
     ) -> bool {
+        self.is_item_visible_ex(
+            containing_module_id,
+            item_info,
+            user_module,
+            MacroContextModifier::None,
+        )
+    }
+
+    /// Same as [`self.is_item_visible`], but takes into account the current macro context
+    /// modifier.
+    pub fn is_item_visible_ex(
+        &self,
+        containing_module_id: ModuleId,
+        item_info: &ModuleItemInfo,
+        user_module: ModuleId,
+        macro_context_modifier: MacroContextModifier,
+    ) -> bool {
         let db = self.db;
-        self.ignore_visibility_checks(containing_module_id)
+        self.ignore_visibility_checks_ex(containing_module_id, macro_context_modifier)
             || visibility::peek_visible_in(
                 db,
                 item_info.visibility,
@@ -2200,15 +2349,26 @@ impl<'db> Resolver<'db> {
         specialized_item
     }
 
-    /// Resolves the path prefix first segment assuming it is a valid resolver modifier (currently
-    /// only `$defsite`). If it's a valid modifier and there is a macro defsite resolver data in
-    /// context, returns the resolver for the context.
-    fn resolve_placeholder(
+    /// Handles a macro context modifier in the path. Macro context modifiers are used to determine
+    /// the context in which a path, which was generated by a macro, should be resolved. The
+    /// supported modifiers are: are `$defsite` and `$callsite`.
+    /// This function checks if the first segment is a valid macro context modifier and does two
+    /// things:
+    ///  - Peels the modifier from the path segments.
+    ///  - Returns the corresponding `MacroContextModifier`.
+    ///
+    /// The function returns an error in the following cases:
+    ///  - The modifier is not supported (i.e. starts with `$` but is not one of the supported
+    ///    modifiers).
+    ///  - The path after the modifier is empty.
+    ///  - The modifier is used in a code which was not generated by a macro (i.e. `macro_call_data`
+    ///    is `None`).
+    fn handle_macro_context_modifier(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
         segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
         macro_call_data: Option<ResolverMacroData>,
-    ) -> Maybe<Resolver<'db>> {
+    ) -> Maybe<MacroContextModifier> {
         if segments.len() == 1 {
             return Err(diagnostics.report(
                 segments.next().unwrap().stable_ptr(self.db),
@@ -2222,19 +2382,12 @@ impl<'db> Resolver<'db> {
                 match ident_text.as_str() {
                     MACRO_DEF_SITE | MACRO_CALL_SITE => {
                         segments.next();
-                        if let Some(macro_call_data) = macro_call_data {
-                            let resolver_data = if ident_text.as_str() == MACRO_DEF_SITE {
-                                macro_call_data.defsite_data
+                        if macro_call_data.is_some() {
+                            if ident_text.as_str() == MACRO_DEF_SITE {
+                                Ok(MacroContextModifier::DefSite)
                             } else {
-                                macro_call_data.callsite_data
-                            };
-                            Ok(Resolver::with_data(
-                                self.db,
-                                resolver_data.clone_with_inference_id(
-                                    self.db,
-                                    self.inference_data.inference_id,
-                                ),
-                            ))
+                                Ok(MacroContextModifier::CallSite)
+                            }
                         } else {
                             Err(diagnostics.report(
                                 ident.stable_ptr(self.db),
@@ -2249,7 +2402,7 @@ impl<'db> Resolver<'db> {
                 }
             }
             _ => {
-                // Empty path segment after a `$`, diagnostic was added in the parser.
+                // Empty path segment after a `$`, diagnostic was added above.
                 Err(skip_diagnostic())
             }
         }
@@ -2325,6 +2478,7 @@ where
         &mut Resolver<'_>,
         &mut SemanticDiagnostics,
         &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+        MacroContextModifier,
     ) -> Maybe<ResolvedItem>,
     ResolveNext: FnMut(
         &mut Resolver<'_>,
@@ -2332,6 +2486,7 @@ where
         &ResolvedItem,
         &ast::PathSegment,
         NotFoundItemType,
+        MacroContextModifier,
     ) -> Maybe<ResolvedItem>,
     Validate: FnMut(&mut SemanticDiagnostics, &ast::PathSegment) -> Maybe<()>,
     Mark: FnMut(
