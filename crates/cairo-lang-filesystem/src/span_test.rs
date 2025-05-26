@@ -15,6 +15,7 @@ fn test_db() -> (FilesDatabaseForTesting, FileId) {
         content: TEST_STRING.into(),
         code_mappings: [].into(),
         kind: FileKind::Module,
+        is_replacing_original_item: false,
     })
     .intern(&db);
     (db, file)

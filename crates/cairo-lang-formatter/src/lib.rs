@@ -50,6 +50,7 @@ pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
         content: content.clone().into(),
         code_mappings: [].into(),
         kind: FileKind::Module,
+        is_replacing_original_item: false,
     })
     .intern(db);
     let mut diagnostics = DiagnosticsBuilder::default();

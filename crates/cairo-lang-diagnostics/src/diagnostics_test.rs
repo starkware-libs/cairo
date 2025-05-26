@@ -43,6 +43,7 @@ fn setup() -> (FilesDatabaseForTesting, FileId) {
         content: "abcd\nefg.\n".into(),
         code_mappings: [].into(),
         kind: FileKind::Module,
+        is_replacing_original_item: false,
     })
     .intern(&db_val);
     (db_val, file_id)

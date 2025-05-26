@@ -41,6 +41,7 @@ pub fn create_virtual_file(
         content: content.into(),
         code_mappings: [].into(),
         kind: FileKind::Module,
+        is_replacing_original_item: false,
     })
     .intern(db)
 }

@@ -1754,6 +1754,7 @@ struct VirtualFileCached {
     content: String,
     code_mappings: Vec<CodeMapping>,
     kind: FileKind,
+    is_replacing_original_item: bool,
 }
 
 impl VirtualFileCached {
@@ -1764,6 +1765,7 @@ impl VirtualFileCached {
             content: String::from(&*(virtual_file.content)),
             code_mappings: virtual_file.code_mappings.to_vec(),
             kind: virtual_file.kind.clone(),
+            is_replacing_original_item: virtual_file.is_replacing_original_item,
         }
     }
     fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> VirtualFile {
@@ -1773,6 +1775,7 @@ impl VirtualFileCached {
             content: self.content.into(),
             code_mappings: self.code_mappings.into(),
             kind: self.kind,
+            is_replacing_original_item: self.is_replacing_original_item,
         }
     }
 }

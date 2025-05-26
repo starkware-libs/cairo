@@ -145,6 +145,10 @@ pub struct VirtualFile {
     pub content: Arc<str>,
     pub code_mappings: Arc<[CodeMapping]>,
     pub kind: FileKind,
+    /// Whether an original item was replaced by this virtual file.
+    /// Relevant only for virtual files created during macros expansion.
+    /// This field is used by `cairo-language-server` for optimization purposes.
+    pub is_replacing_original_item: bool,
 }
 impl VirtualFile {
     fn full_path(&self, db: &dyn FilesGroup) -> String {
