@@ -8,7 +8,7 @@ use cairo_lang_diagnostics::FormattedDiagnosticEntry;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CAIRO_FILE_EXTENSION, FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics};
-use cairo_lang_utils::Intern;
+use cairo_lang_utils::{Intern, LookupIntern};
 use diffy::{PatchFormatter, create_patch};
 use ignore::WalkBuilder;
 use ignore::types::TypesBuilder;
@@ -135,14 +135,14 @@ pub struct StdinFmt;
 /// A trait for types that can be used as input for the cairo formatter.
 pub trait FormattableInput {
     /// Converts the input to a [`FileId`] that can be used by the formatter.
-    fn to_file_id(&self, db: &dyn FilesGroup) -> Result<FileId>;
+    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn FilesGroup) -> Result<FileId<'a>>;
     /// Overwrites the content of the input with the given string.
     fn overwrite_content(&self, _content: String) -> Result<()>;
 }
 
 impl FormattableInput for &Path {
-    fn to_file_id(&self, db: &dyn FilesGroup) -> Result<FileId> {
-        Ok(FileId::new(db, PathBuf::from(self)))
+    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn FilesGroup) -> Result<FileId<'a>> {
+        Ok(FileId::new_on_disk(db, PathBuf::from(self)))
     }
     fn overwrite_content(&self, content: String) -> Result<()> {
         fs::write(self, content)?;
@@ -151,7 +151,7 @@ impl FormattableInput for &Path {
 }
 
 impl FormattableInput for String {
-    fn to_file_id(&self, db: &dyn FilesGroup) -> Result<FileId> {
+    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn FilesGroup) -> Result<FileId<'a>> {
         Ok(FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "string_to_format".into(),
@@ -169,7 +169,7 @@ impl FormattableInput for String {
 }
 
 impl FormattableInput for StdinFmt {
-    fn to_file_id(&self, db: &dyn FilesGroup) -> Result<FileId> {
+    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn FilesGroup) -> Result<FileId<'a>> {
         let mut buffer = String::new();
         stdin().read_to_string(&mut buffer)?;
         Ok(FileLongId::Virtual(VirtualFile {
@@ -193,10 +193,14 @@ fn format_input(
     config: &FormatterConfig,
 ) -> Result<FormatOutcome, FormattingError> {
     let db = SimpleParserDatabase::default();
-    let file_id = input.to_file_id(&db).context("Unable to create virtual file.")?;
-    let original_text =
-        db.file_content(file_id).ok_or_else(|| anyhow!("Unable to read from input."))?;
-    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id, &original_text);
+    let db_ref = &db;
+    let file_id = input.to_file_id(db_ref).context("Unable to create virtual file.")?;
+    let original_text = db_ref
+        .file_content(file_id)
+        .ok_or_else(|| anyhow!("Unable to read from input."))?
+        .lookup_intern(db_ref);
+    let (syntax_root, diagnostics) =
+        get_syntax_root_and_diagnostics(&db, file_id, original_text.as_ref());
     if diagnostics.check_error_free().is_err() {
         return Err(FormattingError::ParsingError(
             diagnostics.format_with_severity(&db, &Default::default()).into(),
