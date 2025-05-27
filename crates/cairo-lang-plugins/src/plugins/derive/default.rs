@@ -11,11 +11,11 @@ use crate::plugins::utils::TypeVariant;
 pub const DEFAULT_ATTR: &str = "default";
 
 /// Adds derive result for the `Default` trait.
-pub fn handle_default(
-    db: &dyn SyntaxGroup,
-    info: &PluginTypeInfo,
-    derived: &ast::ExprPath,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+pub fn handle_default<'db>(
+    db: &'db dyn SyntaxGroup,
+    info: &PluginTypeInfo<'db>,
+    derived: &ast::ExprPath<'db>,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) -> Option<String> {
     const DEFAULT_TRAIT: &str = "core::traits::Default";
     const DESTRUCT_TRAIT: &str = "core::traits::Destruct";

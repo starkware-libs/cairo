@@ -13,12 +13,12 @@ impl NamedPlugin for ExposeMacro {
     const NAME: &'static str = "expose";
 }
 impl InlineMacroExprPlugin for ExposeMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
         let tokens = match syntax.arguments(db).subtree(db) {
             ast::WrappedTokenTree::Braced(braced) => braced.tokens(db),
             ast::WrappedTokenTree::Parenthesized(paren) => paren.tokens(db),
