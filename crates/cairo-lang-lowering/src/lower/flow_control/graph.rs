@@ -26,10 +26,10 @@ pub struct NodeId(pub usize);
 
 /// Boolean if condition node.
 #[derive(Debug)]
-pub struct BooleanIf {
+pub struct BooleanIf<'db> {
     /// The condition expression.
     #[expect(dead_code)]
-    pub condition: semantic::ExprId,
+    pub condition: semantic::ExprId<'db>,
     /// The node to jump to if the condition is true.
     #[expect(dead_code)]
     pub true_branch: NodeId,
@@ -40,19 +40,19 @@ pub struct BooleanIf {
 
 /// Terminal expression node.
 #[derive(Debug)]
-pub struct ArmExpr {
+pub struct ArmExpr<'db> {
     /// The expression to evaluate.
     #[expect(dead_code)]
-    pub expr: semantic::ExprId,
+    pub expr: semantic::ExprId<'db>,
 }
 
 /// A node in the flow control graph for a match or if lowering.
-pub enum FlowControlNode {
-    BooleanIf(BooleanIf),
-    ArmExpr(ArmExpr),
+pub enum FlowControlNode<'db> {
+    BooleanIf(BooleanIf<'db>),
+    ArmExpr(ArmExpr<'db>),
 }
 
-impl Debug for FlowControlNode {
+impl Debug for FlowControlNode<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             FlowControlNode::BooleanIf(node) => node.fmt(f),
@@ -62,14 +62,14 @@ impl Debug for FlowControlNode {
 }
 
 /// Graph of flow control nodes.
-pub struct FlowControlGraph {
+pub struct FlowControlGraph<'db> {
     /// All nodes in the graph.
-    pub nodes: Vec<FlowControlNode>,
+    pub nodes: Vec<FlowControlNode<'db>>,
     /// The initial node of the graph.
     pub root: NodeId,
 }
 
-impl Debug for FlowControlGraph {
+impl Debug for FlowControlGraph<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Root: {}", self.root.0)?;
         for (i, node) in self.nodes.iter().enumerate() {
@@ -80,21 +80,21 @@ impl Debug for FlowControlGraph {
 }
 /// Builder for [FlowControlGraph].
 #[derive(Default)]
-pub struct FlowControlGraphBuilder {
+pub struct FlowControlGraphBuilder<'db> {
     /// All nodes in the graph.
-    nodes: Vec<FlowControlNode>,
+    nodes: Vec<FlowControlNode<'db>>,
 }
 
-impl FlowControlGraphBuilder {
+impl<'db> FlowControlGraphBuilder<'db> {
     /// Adds a new node to the graph. Returns the new node's id.
-    pub fn add_node(&mut self, node: FlowControlNode) -> NodeId {
+    pub fn add_node(&mut self, node: FlowControlNode<'db>) -> NodeId {
         let id = NodeId(self.nodes.len());
         self.nodes.push(node);
         id
     }
 
     /// Finalizes the graph and returns the final [FlowControlGraph].
-    pub fn finalize(self, root: NodeId) -> FlowControlGraph {
+    pub fn finalize(self, root: NodeId) -> FlowControlGraph<'db> {
         FlowControlGraph { nodes: self.nodes, root }
     }
 }

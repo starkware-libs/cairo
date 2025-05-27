@@ -21,6 +21,7 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_executable::compile::{find_executable_functions, originating_function_path};
 use cairo_lang_executable::plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
+use cairo_lang_filesystem::ids::CrateInput;
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
 use cairo_lang_runner::profiling::user_function_idx_by_sierra_statement_idx;
@@ -87,9 +88,9 @@ fn main() -> anyhow::Result<()> {
     }
     let db = &mut db_builder.build()?;
 
-    let main_crate_ids = setup_project(db, Path::new(&args.path))?;
+    let main_crate_inputs = setup_project(db, Path::new(&args.path))?;
 
-    let mut reporter = DiagnosticsReporter::stderr().with_crates(&main_crate_ids);
+    let mut reporter = DiagnosticsReporter::stderr().with_crates(&main_crate_inputs);
     if args.allow_warnings {
         reporter = reporter.allow_warnings();
     }
@@ -100,7 +101,7 @@ fn main() -> anyhow::Result<()> {
             Ok(())
         }
     };
-
+    let main_crate_ids = CrateInput::into_crate_ids(db, main_crate_inputs);
     let sierra = if let Some(executable_path) = args.executable {
         let executables = find_executable_functions(db, main_crate_ids, None);
         let Some(executable) =
@@ -212,10 +213,10 @@ fn main() -> anyhow::Result<()> {
 
 /// Tries to extract a relevant name from the provided syntax node.
 /// Used to reconstruct function paths.
-fn try_extract_path_segment_name(
-    db: &mut RootDatabase,
-    node: cairo_lang_syntax::node::SyntaxNode,
-) -> Option<ast::TerminalIdentifier> {
+fn try_extract_path_segment_name<'db>(
+    db: &'db RootDatabase,
+    node: cairo_lang_syntax::node::SyntaxNode<'db>,
+) -> Option<ast::TerminalIdentifier<'db>> {
     match node.kind(db) {
         SyntaxKind::FunctionWithBody => {
             Some(ast::FunctionWithBody::from_syntax_node(db, node).declaration(db).name(db))

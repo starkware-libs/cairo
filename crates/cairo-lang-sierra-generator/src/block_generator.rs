@@ -29,10 +29,10 @@ use crate::utils::{
 
 /// Generates Sierra code for the body of the given [lowering::Block].
 /// Returns a list of Sierra statements.
-pub fn generate_block_body_code(
-    context: &mut ExprGeneratorContext<'_>,
+pub fn generate_block_body_code<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
     block_id: lowering::BlockId,
-    block: &lowering::Block,
+    block: &lowering::Block<'db>,
 ) -> Maybe<()> {
     if context.should_disable_ap_tracking(&block_id) {
         context.set_ap_tracking(false);
@@ -71,9 +71,9 @@ pub fn generate_block_body_code(
 
 /// Adds calls to the `drop` libfunc for the given [DropLocation], according to the `drops`
 /// argument (computed by [find_variable_lifetime](crate::lifetime::find_variable_lifetime)).
-fn add_drop_statements(
-    context: &mut ExprGeneratorContext<'_>,
-    drops: &OrderedHashMap<DropLocation, Vec<SierraGenVar>>,
+fn add_drop_statements<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    drops: &OrderedHashMap<DropLocation, Vec<SierraGenVar<'db>>>,
     drop_location: &DropLocation,
 ) -> Maybe<()> {
     let Some(vars) = drops.get(drop_location) else { return Ok(()) };
@@ -92,21 +92,21 @@ fn add_drop_statements(
 }
 
 /// Elements to be processed for block code generation.
-enum BlockGenStackElement {
+enum BlockGenStackElement<'db> {
     /// Generated code for the given block.
     Block(BlockId),
     /// Output the given sierra statement.
-    Statement(pre_sierra::Statement),
+    Statement(pre_sierra::Statement<'db>),
     /// Configuration for the following blocks.
-    Config { starting_cairo_location: Vec<StableLocation>, ap_tracking_state: bool },
+    Config { starting_cairo_location: Vec<StableLocation<'db>>, ap_tracking_state: bool },
 }
 
 /// Generates Sierra statements for a function from the given [ExprGeneratorContext].
 ///
 /// Returns a vector of Sierra statements.
-pub fn generate_function_statements(
-    mut context: ExprGeneratorContext<'_>,
-) -> Maybe<Vec<StatementWithLocation>> {
+pub fn generate_function_statements<'db>(
+    mut context: ExprGeneratorContext<'db, '_>,
+) -> Maybe<Vec<StatementWithLocation<'db>>> {
     let mut block_gen_stack = vec![BlockGenStackElement::Block(BlockId::root())];
     while let Some(element) = block_gen_stack.pop() {
         match element {
@@ -127,9 +127,9 @@ pub fn generate_function_statements(
 ///
 /// Returns a list of Sierra statements.
 /// Assumes `block_id` exists in `self.lowered.blocks`.
-fn generate_block_code(
-    context: &mut ExprGeneratorContext<'_>,
-    block_gen_stack: &mut Vec<BlockGenStackElement>,
+fn generate_block_code<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    block_gen_stack: &mut Vec<BlockGenStackElement<'db>>,
     block_id: BlockId,
 ) -> Maybe<()> {
     let block = context.get_lowered_block(block_id);
@@ -201,11 +201,11 @@ fn generate_block_code(
 }
 
 /// Generates a push_values statement that corresponds to `remapping`.
-fn generate_push_values_statement_for_remapping(
-    context: &mut ExprGeneratorContext<'_>,
+fn generate_push_values_statement_for_remapping<'db, 'mt>(
+    context: &mut ExprGeneratorContext<'db, 'mt>,
     statement_location: (lowering::BlockId, usize),
-    remapping: &lowering::VarRemapping,
-) -> Maybe<pre_sierra::StatementWithLocation> {
+    remapping: &lowering::VarRemapping<'db>,
+) -> Maybe<pre_sierra::StatementWithLocation<'db>> {
     let mut push_values = Vec::<pre_sierra::PushValue>::new();
     for (idx, (output, inner_output)) in remapping.iter().enumerate() {
         let ty = context.get_variable_sierra_type(*inner_output)?;
@@ -243,9 +243,9 @@ fn generate_push_values_statement_for_remapping(
 /// Pushes the given returned values on the top of the stack, and returns from the function.
 ///
 /// Returns a list of Sierra statements.
-pub fn generate_return_code(
-    context: &mut ExprGeneratorContext<'_>,
-    returned_variables: &[lowering::VarUsage],
+pub fn generate_return_code<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    returned_variables: &[lowering::VarUsage<'db>],
     statement_location: &StatementLocation,
 ) -> Maybe<()> {
     // Copy the result to the top of the stack before returning.
@@ -277,9 +277,9 @@ pub fn generate_return_code(
 }
 
 /// Generates Sierra code for [lowering::Statement].
-pub fn generate_statement_code(
-    context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::Statement,
+pub fn generate_statement_code<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    statement: &lowering::Statement<'db>,
     statement_location: &StatementLocation,
 ) -> Maybe<()> {
     match statement {
@@ -308,9 +308,9 @@ pub fn generate_statement_code(
 }
 
 /// Generates Sierra code for [lowering::StatementConst].
-fn generate_statement_const_code(
-    context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementConst,
+fn generate_statement_const_code<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    statement: &lowering::StatementConst<'db>,
 ) -> Maybe<()> {
     let output_var = context.get_sierra_variable(statement.output);
     context.push_statement(simple_basic_statement(
@@ -322,9 +322,9 @@ fn generate_statement_const_code(
 }
 
 /// Generates Sierra code for [lowering::StatementCall].
-fn generate_statement_call_code(
-    context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementCall,
+fn generate_statement_call_code<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    statement: &lowering::StatementCall<'db>,
     statement_location: &StatementLocation,
 ) -> Maybe<()> {
     // Check if this is a user defined function or a libfunc.
@@ -387,16 +387,19 @@ fn generate_statement_call_code(
 }
 
 /// Returns if the variable at the given location should be duplicated.
-fn should_dup(context: &mut ExprGeneratorContext<'_>, use_location: &UseLocation) -> bool {
+fn should_dup<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    use_location: &UseLocation,
+) -> bool {
     !context.is_last_use(use_location)
 }
 
 /// Adds calls to the `dup` libfunc for the given [StatementLocation] and the given statement's
 /// inputs.
-fn maybe_add_dup_statements(
-    context: &mut ExprGeneratorContext<'_>,
+fn maybe_add_dup_statements<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
     statement_location: &StatementLocation,
-    lowering_vars: &[VarUsage],
+    lowering_vars: &[VarUsage<'db>],
 ) -> Maybe<Vec<sierra::ids::VarId>> {
     lowering_vars
         .iter()
@@ -409,11 +412,11 @@ fn maybe_add_dup_statements(
 
 /// If necessary, adds a call to the `dup` libfunc for the given [StatementLocation] and the given
 /// statement's input, and returns the duplicated copy. Otherwise, returns the original variable.
-fn maybe_add_dup_statement(
-    context: &mut ExprGeneratorContext<'_>,
+fn maybe_add_dup_statement<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
     statement_location: &StatementLocation,
     idx: usize,
-    lowering_var: &VarUsage,
+    lowering_var: &VarUsage<'db>,
 ) -> Maybe<sierra::ids::VarId> {
     let sierra_var = context.get_sierra_variable(*lowering_var);
 
@@ -434,10 +437,10 @@ fn maybe_add_dup_statement(
 }
 
 /// Generates Sierra code for [lowering::MatchExternInfo].
-fn generate_match_extern_code(
-    context: &mut ExprGeneratorContext<'_>,
-    block_gen_stack: &mut Vec<BlockGenStackElement>,
-    match_info: &lowering::MatchExternInfo,
+fn generate_match_extern_code<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    block_gen_stack: &mut Vec<BlockGenStackElement<'db>>,
+    match_info: &lowering::MatchExternInfo<'db>,
     statement_location: &StatementLocation,
 ) -> Maybe<()> {
     // Prepare the Sierra input variables.
@@ -450,21 +453,21 @@ fn generate_match_extern_code(
 }
 /// Generates Sierra code for the match a [lowering::MatchExternInfo] or [lowering::MatchEnumInfo]
 /// statement.
-fn generate_match_code(
-    context: &mut ExprGeneratorContext<'_>,
-    block_gen_stack: &mut Vec<BlockGenStackElement>,
+fn generate_match_code<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    block_gen_stack: &mut Vec<BlockGenStackElement<'db>>,
     libfunc_id: ConcreteLibfuncId,
     args: Vec<sierra::ids::VarId>,
-    arms: &[lowering::MatchArm],
+    arms: &[lowering::MatchArm<'db>],
 ) -> Maybe<()> {
     // Generate labels for all the arms, except for the first (which will be Fallthrough).
-    let arm_labels: Vec<(pre_sierra::Statement, pre_sierra::LabelId)> =
+    let arm_labels: Vec<(pre_sierra::Statement<'_>, pre_sierra::LabelId<'_>)> =
         (1..arms.len()).map(|_i| context.new_label()).collect();
     // Generate a label for the end of the match.
     let (end_label, _) = context.new_label();
 
     // Create the arm branches.
-    let arm_targets: Vec<program::GenBranchTarget<pre_sierra::LabelId>> = if arms.is_empty() {
+    let arm_targets: Vec<program::GenBranchTarget<pre_sierra::LabelId<'_>>> = if arms.is_empty() {
         vec![]
     } else {
         chain!(
@@ -512,9 +515,9 @@ fn generate_match_code(
 }
 
 /// Generates Sierra code for [lowering::StatementEnumConstruct].
-fn generate_statement_enum_construct(
-    context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementEnumConstruct,
+fn generate_statement_enum_construct<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    statement: &lowering::StatementEnumConstruct<'db>,
     statement_location: &StatementLocation,
 ) -> Maybe<()> {
     let input = maybe_add_dup_statement(context, statement_location, 0, &statement.input)?;
@@ -532,9 +535,9 @@ fn generate_statement_enum_construct(
 }
 
 /// Generates Sierra code for [lowering::StatementStructConstruct].
-fn generate_statement_struct_construct_code(
-    context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementStructConstruct,
+fn generate_statement_struct_construct_code<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    statement: &lowering::StatementStructConstruct<'db>,
     statement_location: &StatementLocation,
 ) -> Maybe<()> {
     let inputs = maybe_add_dup_statements(context, statement_location, &statement.inputs)?;
@@ -551,9 +554,9 @@ fn generate_statement_struct_construct_code(
 }
 
 /// Generates Sierra code for [lowering::StatementStructDestructure].
-fn generate_statement_struct_destructure_code(
-    context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementStructDestructure,
+fn generate_statement_struct_destructure_code<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    statement: &lowering::StatementStructDestructure<'db>,
     statement_location: &StatementLocation,
 ) -> Maybe<()> {
     let input = maybe_add_dup_statement(context, statement_location, 0, &statement.input)?;
@@ -572,10 +575,10 @@ fn generate_statement_struct_destructure_code(
 /// Generates Sierra code for [lowering::MatchEnumInfo]. where the matched value is a felt252.
 /// Note that the input is a bounded_int and we convert it to an enum, using the
 /// enum_from_bounded_int libfunc.
-fn generate_match_value_code(
-    context: &mut ExprGeneratorContext<'_>,
-    block_gen_stack: &mut Vec<BlockGenStackElement>,
-    match_info: &lowering::MatchEnumValue,
+fn generate_match_value_code<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    block_gen_stack: &mut Vec<BlockGenStackElement<'db>>,
+    match_info: &lowering::MatchEnumValue<'db>,
     statement_location: &StatementLocation,
 ) -> Maybe<()> {
     // Prepare the Sierra input variables.
@@ -597,10 +600,10 @@ fn generate_match_value_code(
 }
 
 /// Generates Sierra code for [lowering::MatchEnumInfo].
-fn generate_match_enum_code(
-    context: &mut ExprGeneratorContext<'_>,
-    block_gen_stack: &mut Vec<BlockGenStackElement>,
-    match_info: &lowering::MatchEnumInfo,
+fn generate_match_enum_code<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    block_gen_stack: &mut Vec<BlockGenStackElement<'db>>,
+    match_info: &lowering::MatchEnumInfo<'db>,
     statement_location: &StatementLocation,
 ) -> Maybe<()> {
     // Prepare the Sierra input variables.
@@ -614,9 +617,9 @@ fn generate_match_enum_code(
 }
 
 /// Generates Sierra code for [lowering::StatementSnapshot].
-fn generate_statement_snapshot(
-    context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementSnapshot,
+fn generate_statement_snapshot<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    statement: &lowering::StatementSnapshot<'db>,
     statement_location: &StatementLocation,
 ) -> Maybe<()> {
     // Prepare the Sierra input variables.
@@ -637,9 +640,9 @@ fn generate_statement_snapshot(
 }
 
 /// Generates Sierra code for [lowering::StatementDesnap].
-fn generate_statement_desnap(
-    context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementDesnap,
+fn generate_statement_desnap<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    statement: &lowering::StatementDesnap<'db>,
     statement_location: &StatementLocation,
 ) -> Maybe<()> {
     // Dup variables as needed.

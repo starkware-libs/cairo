@@ -8,11 +8,11 @@ use crate::ids::{FunctionId, FunctionLongId, GeneratedFunction, SemanticFunction
 use crate::{BlockEnd, Lowered, MatchArm, Statement};
 
 /// Rewrites a [FunctionId] with a [GenericSubstitution].
-fn concretize_function(
-    db: &dyn LoweringGroup,
-    substitution: &GenericSubstitution,
-    function: FunctionId,
-) -> Maybe<FunctionId> {
+fn concretize_function<'db>(
+    db: &'db dyn LoweringGroup,
+    substitution: &GenericSubstitution<'db>,
+    function: FunctionId<'db>,
+) -> Maybe<FunctionId<'db>> {
     match function.lookup_intern(db) {
         FunctionLongId::Semantic(id) => {
             // We call `lowered` here in case the function will be substituted to a generated one.
@@ -33,10 +33,10 @@ fn concretize_function(
 
 /// Concretizes a lowered generic function by applying a generic parameter substitution on its
 /// variable types, variants and called functions.
-pub fn concretize_lowered(
-    db: &dyn LoweringGroup,
-    lowered: &mut Lowered,
-    substitution: &GenericSubstitution,
+pub fn concretize_lowered<'db>(
+    db: &'db dyn LoweringGroup,
+    lowered: &mut Lowered<'db>,
+    substitution: &GenericSubstitution<'db>,
 ) -> Maybe<()> {
     // Substitute all types.
     for (_, var) in lowered.variables.iter_mut() {
