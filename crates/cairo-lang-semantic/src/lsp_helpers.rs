@@ -24,19 +24,19 @@ use crate::types::TypeHead;
 
 /// A filter for types.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum TypeFilter {
+pub enum TypeFilter<'db> {
     /// No filter is applied.
     NoFilter,
     /// Only methods with the given type head are returned.
-    TypeHead(TypeHead),
+    TypeHead(TypeHead<'db>),
 }
 
 /// Query implementation of [crate::db::SemanticGroup::methods_in_module].
-pub fn methods_in_module(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    type_filter: TypeFilter,
-) -> Arc<[TraitFunctionId]> {
+pub fn methods_in_module<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+    type_filter: TypeFilter<'db>,
+) -> Arc<Vec<TraitFunctionId<'db>>> {
     let mut result = Vec::new();
     let Ok(module_traits_ids) = db.module_traits_ids(module_id) else {
         return result.into();
@@ -49,7 +49,7 @@ pub fn methods_in_module(
             let Some(first_param) = signature.params.first() else {
                 continue;
             };
-            if first_param.name != SELF_PARAM_KW {
+            if first_param.name.as_str(db) != SELF_PARAM_KW {
                 continue;
             }
             if let TypeFilter::TypeHead(type_head) = &type_filter {
@@ -63,7 +63,7 @@ pub fn methods_in_module(
             result.push(trait_function)
         }
     }
-    result.into()
+    Arc::new(result)
 }
 
 /// Checks if a type head can fit for a method.
@@ -78,25 +78,25 @@ fn fit_for_method(head: &TypeHead, type_head: &TypeHead) -> bool {
 }
 
 /// Query implementation of [crate::db::SemanticGroup::methods_in_crate].
-pub fn methods_in_crate(
-    db: &dyn SemanticGroup,
-    crate_id: CrateId,
-    type_filter: TypeFilter,
-) -> Arc<[TraitFunctionId]> {
+pub fn methods_in_crate<'db>(
+    db: &'db dyn SemanticGroup,
+    crate_id: CrateId<'db>,
+    type_filter: TypeFilter<'db>,
+) -> Arc<Vec<TraitFunctionId<'db>>> {
     let mut result = Vec::new();
     for module_id in db.crate_modules(crate_id).iter() {
         result.extend_from_slice(&db.methods_in_module(*module_id, type_filter.clone())[..])
     }
-    result.into()
+    Arc::new(result)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::visible_importables_in_module].
-pub fn visible_importables_in_module(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    user_module_file_id: ModuleFileId,
+pub fn visible_importables_in_module<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+    user_module_file_id: ModuleFileId<'db>,
     include_parent: bool,
-) -> Arc<[(ImportableId, String)]> {
+) -> Arc<Vec<(ImportableId<'db>, String)>> {
     let mut visited_modules = UnorderedHashSet::default();
     visible_importables_in_module_ex(
         db,
@@ -105,18 +105,18 @@ pub fn visible_importables_in_module(
         include_parent,
         &mut visited_modules,
     )
-    .unwrap_or_else(|| Vec::new().into())
+    .unwrap_or_else(|| Arc::new(Vec::new()))
 }
 
 /// Returns the visible importables in a module, including the importables in the parent module if
 /// needed. The visibility is relative to the module `user_module_id`.
-fn visible_importables_in_module_ex(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    user_module_file_id: ModuleFileId,
+fn visible_importables_in_module_ex<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+    user_module_file_id: ModuleFileId<'db>,
     include_parent: bool,
-    visited_modules: &mut UnorderedHashSet<ModuleId>,
-) -> Option<Arc<[(ImportableId, String)]>> {
+    visited_modules: &mut UnorderedHashSet<ModuleId<'db>>,
+) -> Option<Arc<Vec<(ImportableId<'db>, String)>>> {
     let mut result = Vec::new();
     if visited_modules.contains(&module_id) {
         return Some(result.into());
@@ -126,6 +126,7 @@ fn visible_importables_in_module_ex(
 
     // Check if an item in the current module is visible from the user module.
     let is_visible = |item_name: SmolStr| {
+        let item_name = item_name.intern(db);
         let item_info = db.module_item_info_by_name(module_id, item_name).ok()??;
         Some(resolver.is_item_visible(module_id, &item_info, user_module_file_id.0))
     };
@@ -148,7 +149,7 @@ fn visible_importables_in_module_ex(
                     )[..],
                 );
 
-                (ImportableId::Crate(crate_id), crate_id.name(db))
+                (ImportableId::Crate(crate_id), crate_id.long(db).name())
             }
             ResolvedGenericItem::Module(inner_module_id @ ModuleId::Submodule(module)) => {
                 modules_to_visit.push(inner_module_id);
@@ -171,7 +172,10 @@ fn visible_importables_in_module_ex(
                 let enum_name = item_id.name(db);
 
                 for (name, id) in db.enum_variants(item_id).unwrap_or_default() {
-                    result.push((ImportableId::Variant(id), format!("{enum_name}::{name}")));
+                    result.push((
+                        ImportableId::Variant(id),
+                        format!("{enum_name}::{}", name.long(db)),
+                    ));
                 }
 
                 (ImportableId::Enum(item_id), enum_name)
@@ -218,7 +222,7 @@ fn visible_importables_in_module_ex(
 
         result.push((ImportableId::Enum(enum_id), enum_name.to_string()));
         for (name, id) in db.enum_variants(enum_id).unwrap_or_default() {
-            result.push((ImportableId::Variant(id), format!("{enum_name}::{name}")));
+            result.push((ImportableId::Variant(id), format!("{enum_name}::{}", name.long(db))));
         }
     }
 
@@ -278,17 +282,17 @@ fn visible_importables_in_module_ex(
             }
         }
     }
-    Some(result.into())
+    Some(Arc::new(result))
 }
 
 /// Query implementation of [crate::db::SemanticGroup::visible_importables_in_crate].
-pub fn visible_importables_in_crate(
-    db: &dyn SemanticGroup,
-    crate_id: CrateId,
-    user_module_file_id: ModuleFileId,
-) -> Arc<[(ImportableId, String)]> {
+pub fn visible_importables_in_crate<'db>(
+    db: &'db dyn SemanticGroup,
+    crate_id: CrateId<'db>,
+    user_module_file_id: ModuleFileId<'db>,
+) -> Arc<Vec<(ImportableId<'db>, String)>> {
     let is_current_crate = user_module_file_id.0.owning_crate(db) == crate_id;
-    let crate_name = if is_current_crate { "crate" } else { &crate_id.name(db) };
+    let crate_name = if is_current_crate { "crate" } else { &crate_id.long(db).name() };
     let crate_as_module = ModuleId::CrateRoot(crate_id);
     db.visible_importables_in_module(crate_as_module, user_module_file_id, false)
         .iter()
@@ -299,10 +303,10 @@ pub fn visible_importables_in_crate(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::visible_importables_from_module].
-pub fn visible_importables_from_module(
-    db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId,
-) -> Option<Arc<OrderedHashMap<ImportableId, String>>> {
+pub fn visible_importables_from_module<'db>(
+    db: &'db dyn SemanticGroup,
+    module_file_id: ModuleFileId<'db>,
+) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
     let module_id = module_file_id.0;
 
     let current_crate_id = module_id.owning_crate(db);
@@ -333,7 +337,7 @@ pub fn visible_importables_from_module(
         module_visible_importables
             .extend_from_slice(&db.visible_importables_in_crate(crate_id, module_file_id)[..]);
         module_visible_importables
-            .push((ImportableId::Crate(crate_id), crate_id.name(db).to_string()));
+            .push((ImportableId::Crate(crate_id), crate_id.long(db).name().to_string()));
     }
 
     // Collect importables visible in the current module.
@@ -357,14 +361,14 @@ pub fn visible_importables_from_module(
             }
         }
     }
-    Some(result.into())
+    Some(Arc::new(result))
 }
 
 /// Query implementation of [crate::db::SemanticGroup::visible_traits_from_module].
-pub fn visible_traits_from_module(
-    db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId,
-) -> Option<Arc<OrderedHashMap<TraitId, String>>> {
+pub fn visible_traits_from_module<'db>(
+    db: &'db dyn SemanticGroup,
+    module_file_id: ModuleFileId<'db>,
+) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {
     let importables = db.visible_importables_from_module(module_file_id)?;
 
     let traits = importables

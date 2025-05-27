@@ -1,4 +1,5 @@
 use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId, ModuleId, ModuleItemId, TraitId};
+use cairo_lang_utils::Intern;
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
@@ -10,7 +11,7 @@ pub struct ModuleHelper<'a> {
     /// The db.
     pub db: &'a dyn SemanticGroup,
     /// The current module id.
-    pub id: ModuleId,
+    pub id: ModuleId<'a>,
 }
 impl<'a> ModuleHelper<'a> {
     /// Returns a helper for the core module.
@@ -24,29 +25,32 @@ impl<'a> ModuleHelper<'a> {
         Self { db: self.db, id }
     }
     /// Returns the id of an extern function named `name` in the current module.
-    pub fn extern_function_id(&self, name: impl Into<SmolStr>) -> ExternFunctionId {
+    pub fn extern_function_id(&self, name: impl Into<SmolStr>) -> ExternFunctionId<'a> {
         let name = name.into();
+        let name_id = name.clone().intern(self.db);
         let Ok(Some(ModuleItemId::ExternFunction(id))) =
-            self.db.module_item_by_name(self.id, name.clone())
+            self.db.module_item_by_name(self.id, name_id)
         else {
             panic!("`{}` not found in `{}`.", name, self.id.full_path(self.db));
         };
         id
     }
     /// Returns the id of a trait named `name` in the current module.
-    pub fn trait_id(&self, name: impl Into<SmolStr>) -> TraitId {
+    pub fn trait_id(&self, name: impl Into<SmolStr>) -> TraitId<'a> {
         let name = name.into();
-        let Ok(Some(ModuleItemId::Trait(id))) = self.db.module_item_by_name(self.id, name.clone())
+        let name_id = name.clone().intern(self.db);
+        let Ok(Some(ModuleItemId::Trait(id))) = self.db.module_item_by_name(self.id, name_id)
         else {
             panic!("`{}` not found in `{}`.", name, self.id.full_path(self.db));
         };
         id
     }
     /// Returns the id of a free function named `name` in the current module.
-    pub fn free_function_id(&self, name: impl Into<SmolStr>) -> FreeFunctionId {
+    pub fn free_function_id(&self, name: impl Into<SmolStr>) -> FreeFunctionId<'a> {
         let name = name.into();
+        let name_id = name.clone().intern(self.db);
         let Ok(Some(ModuleItemId::FreeFunction(id))) =
-            self.db.module_item_by_name(self.id, name.clone())
+            self.db.module_item_by_name(self.id, name_id)
         else {
             panic!("`{}` not found in `{}`.", name, self.id.full_path(self.db));
         };
@@ -57,17 +61,21 @@ impl<'a> ModuleHelper<'a> {
     pub fn function_id(
         &self,
         name: impl Into<SmolStr>,
-        generic_args: Vec<GenericArgumentId>,
-    ) -> FunctionId {
+        generic_args: Vec<GenericArgumentId<'a>>,
+    ) -> FunctionId<'a> {
         self.generic_function_id(name).concretize(self.db, generic_args)
     }
     /// Returns the id of a generic function named `name` in the current module.
-    pub fn generic_function_id(&self, name: impl Into<SmolStr>) -> GenericFunctionId {
+    pub fn generic_function_id(&self, name: impl Into<SmolStr>) -> GenericFunctionId<'a> {
         corelib::get_generic_function_id(self.db, self.id, name.into())
     }
     /// Returns the id of a type named `name` in the current module, with the given
     /// `generic_args`.
-    pub fn ty(&self, name: impl Into<SmolStr>, generic_args: Vec<GenericArgumentId>) -> TypeId {
+    pub fn ty(
+        &self,
+        name: impl Into<SmolStr>,
+        generic_args: Vec<GenericArgumentId<'a>>,
+    ) -> TypeId<'a> {
         corelib::get_ty_by_name(self.db, self.id, name.into(), generic_args)
     }
 }

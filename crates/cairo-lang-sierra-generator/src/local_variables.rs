@@ -29,21 +29,21 @@ use crate::utils::{
 };
 
 /// Information returned by [analyze_ap_changes].
-pub struct AnalyzeApChangesResult {
+pub struct AnalyzeApChangesResult<'db> {
     /// True if the function has a known_ap_change
     pub known_ap_change: bool,
     /// The variables that should be stored in locals as they are revoked during the function.
-    pub local_variables: OrderedHashSet<VariableId>,
+    pub local_variables: OrderedHashSet<VariableId<'db>>,
     /// Information about where ap tracking should be enabled and disabled.
     pub ap_tracking_configuration: ApTrackingConfiguration,
 }
 
 /// Does ap change related analysis for a given function.
 /// See [AnalyzeApChangesResult].
-pub fn analyze_ap_changes(
-    db: &dyn SierraGenGroup,
-    lowered_function: &Lowered,
-) -> Maybe<AnalyzeApChangesResult> {
+pub fn analyze_ap_changes<'db>(
+    db: &'db dyn SierraGenGroup,
+    lowered_function: &Lowered<'db>,
+) -> Maybe<AnalyzeApChangesResult<'db>> {
     lowered_function.blocks.has_root()?;
     let ctx = FindLocalsContext {
         db,
@@ -108,47 +108,47 @@ pub fn analyze_ap_changes(
     })
 }
 
-struct CalledBlockInfo {
+struct CalledBlockInfo<'db> {
     caller_count: usize,
-    demand: LoweredDemand,
-    introduced_vars: Vec<VariableId>,
+    demand: LoweredDemand<'db>,
+    introduced_vars: Vec<VariableId<'db>>,
 }
 
 /// Context for the find_local_variables logic.
-struct FindLocalsContext<'a> {
-    db: &'a dyn SierraGenGroup,
-    lowered_function: &'a Lowered,
-    used_after_revoke: OrderedHashSet<VariableId>,
-    block_callers: OrderedHashMap<BlockId, CalledBlockInfo>,
+struct FindLocalsContext<'db, 'a> {
+    db: &'db dyn SierraGenGroup,
+    lowered_function: &'a Lowered<'db>,
+    used_after_revoke: OrderedHashSet<VariableId<'db>>,
+    block_callers: OrderedHashMap<BlockId, CalledBlockInfo<'db>>,
     /// Variables that are known not to be ap based, excluding constants.
-    non_ap_based: UnorderedHashSet<VariableId>,
+    non_ap_based: UnorderedHashSet<VariableId<'db>>,
     /// Variables that are constants, i.e. created from Statement::Literal.
-    constants: UnorderedHashSet<VariableId>,
+    constants: UnorderedHashSet<VariableId<'db>>,
     /// A mapping of variables which are the same in the context of finding locals.
     /// I.e. if `aliases[var_id]` is local than var_id is also local.
-    aliases: UnorderedHashMap<VariableId, VariableId>,
+    aliases: UnorderedHashMap<VariableId<'db>, VariableId<'db>>,
     /// A mapping from partial param variables to the containing variable.
-    partial_param_parents: UnorderedHashMap<VariableId, VariableId>,
+    partial_param_parents: UnorderedHashMap<VariableId<'db>, VariableId<'db>>,
 }
 
-pub type LoweredDemand = Demand<VariableId, ()>;
+pub type LoweredDemand<'db> = Demand<VariableId<'db>, ()>;
 #[derive(Clone)]
-struct AnalysisInfo {
-    demand: LoweredDemand,
+struct AnalysisInfo<'db> {
+    demand: LoweredDemand<'db>,
     known_ap_change: bool,
 }
-impl DemandReporter<VariableId> for FindLocalsContext<'_> {
+impl<'db> DemandReporter<VariableId<'db>> for FindLocalsContext<'db, '_> {
     type UsePosition = ();
     type IntroducePosition = ();
 }
-impl Analyzer<'_> for FindLocalsContext<'_> {
-    type Info = Maybe<AnalysisInfo>;
+impl<'db> Analyzer<'db, '_> for FindLocalsContext<'db, '_> {
+    type Info = Maybe<AnalysisInfo<'db>>;
 
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
         _statement_location: StatementLocation,
-        stmt: &Statement,
+        stmt: &Statement<'db>,
     ) {
         let Ok(info) = info else {
             return;
@@ -167,7 +167,7 @@ impl Analyzer<'_> for FindLocalsContext<'_> {
         info: &mut Self::Info,
         _statement_location: StatementLocation,
         target_block_id: BlockId,
-        remapping: &VarRemapping,
+        remapping: &VarRemapping<'db>,
     ) {
         let Ok(info) = info else {
             return;
@@ -191,9 +191,9 @@ impl Analyzer<'_> for FindLocalsContext<'_> {
     fn merge_match(
         &mut self,
         _statement_location: StatementLocation,
-        match_info: &MatchInfo,
+        match_info: &MatchInfo<'db>,
         infos: impl Iterator<Item = Self::Info>,
-    ) -> Maybe<AnalysisInfo> {
+    ) -> Maybe<AnalysisInfo<'db>> {
         let mut arm_demands = vec![];
         let mut known_ap_change = true;
         let inputs = match_info.inputs();
@@ -226,7 +226,7 @@ impl Analyzer<'_> for FindLocalsContext<'_> {
     fn info_from_return(
         &mut self,
         _statement_location: StatementLocation,
-        vars: &[VarUsage],
+        vars: &[VarUsage<'db>],
     ) -> Self::Info {
         let mut demand = LoweredDemand::default();
         demand.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())));
@@ -238,9 +238,9 @@ struct BranchInfo {
     known_ap_change: bool,
 }
 
-impl<'a> FindLocalsContext<'a> {
+impl<'db, 'a> FindLocalsContext<'db, 'a> {
     /// Given a variable that might be an alias follow aliases until we get the original variable.
-    pub fn peel_aliases(&'a self, mut var: &'a VariableId) -> &'a VariableId {
+    pub fn peel_aliases(&'a self, mut var: &'a VariableId<'db>) -> &'a VariableId<'db> {
         while let Some(alias) = self.aliases.get(var) {
             var = alias;
         }
@@ -279,8 +279,8 @@ impl<'a> FindLocalsContext<'a> {
     fn analyze_call(
         &mut self,
         concrete_function_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
-        input_vars: &[VarUsage],
-        output_vars: &[VariableId],
+        input_vars: &[VarUsage<'db>],
+        output_vars: &[VariableId<'db>],
     ) -> BranchInfo {
         let libfunc_signature = get_libfunc_signature(self.db, concrete_function_id.clone());
         assert_eq!(
@@ -301,8 +301,8 @@ impl<'a> FindLocalsContext<'a> {
         &mut self,
         _params_signatures: &[ParamSignature],
         branch_signature: &BranchSignature,
-        input_vars: &[VarUsage],
-        output_vars: &[VariableId],
+        input_vars: &[VarUsage<'db>],
+        output_vars: &[VariableId<'db>],
     ) -> BranchInfo {
         let var_output_infos = &branch_signature.vars;
         for (var, output_info) in zip_eq(output_vars.iter(), var_output_infos.iter()) {
@@ -332,7 +332,7 @@ impl<'a> FindLocalsContext<'a> {
         BranchInfo { known_ap_change }
     }
 
-    fn analyze_statement(&mut self, statement: &Statement) -> Maybe<BranchInfo> {
+    fn analyze_statement(&mut self, statement: &Statement<'db>) -> Maybe<BranchInfo> {
         let inputs = statement.inputs();
         let outputs = statement.outputs();
         let branch_info = match statement {
@@ -392,7 +392,7 @@ impl<'a> FindLocalsContext<'a> {
         Ok(branch_info)
     }
 
-    fn revoke_if_needed(&mut self, info: &mut AnalysisInfo, branch_info: BranchInfo) {
+    fn revoke_if_needed(&mut self, info: &mut AnalysisInfo<'db>, branch_info: BranchInfo) {
         // Revoke if needed.
         if !branch_info.known_ap_change {
             info.known_ap_change = false;
@@ -403,7 +403,7 @@ impl<'a> FindLocalsContext<'a> {
         }
     }
 
-    fn get_match_libfunc_signature(&self, match_info: &MatchInfo) -> Maybe<LibfuncSignature> {
+    fn get_match_libfunc_signature(&self, match_info: &MatchInfo<'db>) -> Maybe<LibfuncSignature> {
         Ok(match match_info {
             MatchInfo::Extern(s) => {
                 let (_, concrete_function_id) = get_concrete_libfunc_id(self.db, s.function, false);

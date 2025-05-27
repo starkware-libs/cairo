@@ -8,8 +8,8 @@ use crate::test_utils::LoweringDatabaseForTesting;
 /// Creates a [EncapsulatingLoweringContext] for tests.
 pub fn create_encapsulating_ctx<'db>(
     db: &'db LoweringDatabaseForTesting,
-    function_id: defs::ids::FunctionWithBodyId,
-    signature: &semantic::Signature,
+    function_id: defs::ids::FunctionWithBodyId<'db>,
+    signature: &semantic::Signature<'db>,
 ) -> EncapsulatingLoweringContext<'db> {
     let mut encapsulating_ctx = EncapsulatingLoweringContext::new(db, function_id).unwrap();
 
@@ -26,8 +26,8 @@ pub fn create_encapsulating_ctx<'db>(
 /// Creates a [LoweringContext] for tests.
 pub fn create_lowering_context<'a, 'db>(
     db: &'db LoweringDatabaseForTesting,
-    function_id: defs::ids::FunctionWithBodyId,
-    signature: &semantic::Signature,
+    function_id: defs::ids::FunctionWithBodyId<'db>,
+    signature: &semantic::Signature<'db>,
     encapsulating_ctx: &'a mut EncapsulatingLoweringContext<'db>,
 ) -> LoweringContext<'a, 'db> {
     let lowering_signature = Signature::from_semantic(db, signature.clone());
