@@ -30,10 +30,10 @@ use crate::{
     VarRemapping, Variable, VariableId,
 };
 
-pub fn get_inline_diagnostics(
-    db: &dyn LoweringGroup,
-    function_id: FunctionWithBodyId,
-) -> Maybe<Diagnostics<LoweringDiagnostic>> {
+pub fn get_inline_diagnostics<'db>(
+    db: &'db dyn LoweringGroup,
+    function_id: FunctionWithBodyId<'db>,
+) -> Maybe<Diagnostics<'db, LoweringDiagnostic<'db>>> {
     let inline_config = match function_id.lookup_intern(db) {
         FunctionWithBodyLongId::Semantic(id) => db.function_declaration_inline_config(id)?,
         FunctionWithBodyLongId::Generated { .. } => InlineConfiguration::None,
@@ -53,9 +53,9 @@ pub fn get_inline_diagnostics(
 }
 
 /// Query implementation of [LoweringGroup::priv_should_inline].
-pub fn priv_should_inline(
-    db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
+pub fn priv_should_inline<'db>(
+    db: &'db dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
     if db.priv_never_inline(function_id)? {
         return Ok(false);
@@ -91,10 +91,10 @@ pub fn priv_never_inline(
 }
 
 /// Query implementation of [LoweringGroup::priv_never_inline].
-pub fn function_inline_config(
-    db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
-) -> Maybe<InlineConfiguration> {
+pub fn function_inline_config<'db>(
+    db: &'db dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
+) -> Maybe<InlineConfiguration<'db>> {
     match function_id.lookup_intern(db) {
         ConcreteFunctionWithBodyLongId::Semantic(id) => {
             db.function_declaration_inline_config(id.function_with_body_id(db))
@@ -109,21 +109,21 @@ pub fn function_inline_config(
 // A heuristic to decide if a function without an inline attribute should be inlined.
 fn should_inline_lowered(
     db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
+    function_id: ConcreteFunctionWithBodyId<'_>,
     inline_small_functions_threshold: usize,
 ) -> Maybe<bool> {
     let weight_of_blocks = db.estimate_size(function_id)?;
     Ok(weight_of_blocks < inline_small_functions_threshold.into_or_panic())
 }
 /// Context for mapping ids from `lowered` to a new `Lowered` object.
-pub struct Mapper<'a> {
-    db: &'a dyn LoweringGroup,
-    variables: &'a mut Arena<Variable>,
-    lowered: &'a Lowered,
-    renamed_vars: UnorderedHashMap<VariableId, VariableId>,
+pub struct Mapper<'db, 'mt, 'l> {
+    db: &'db dyn LoweringGroup,
+    variables: &'mt mut Arena<Variable<'db>>,
+    lowered: &'l Lowered<'db>,
+    renamed_vars: UnorderedHashMap<VariableId<'db>, VariableId<'db>>,
 
-    outputs: Vec<VariableId>,
-    inlining_location: StableLocation,
+    outputs: Vec<VariableId<'db>>,
+    inlining_location: StableLocation<'db>,
 
     /// An offset that is added to all the block IDs in order to translate them into the new
     /// lowering representation.
@@ -133,12 +133,12 @@ pub struct Mapper<'a> {
     return_block_id: BlockId,
 }
 
-impl<'a> Mapper<'a> {
+impl<'db, 'mt, 'l> Mapper<'db, 'mt, 'l> {
     pub fn new(
-        db: &'a dyn LoweringGroup,
-        variables: &'a mut Arena<Variable>,
-        lowered: &'a Lowered,
-        call_stmt: StatementCall,
+        db: &'db dyn LoweringGroup,
+        variables: &'mt mut Arena<Variable<'db>>,
+        lowered: &'l Lowered<'db>,
+        call_stmt: StatementCall<'db>,
         block_id_offset: usize,
     ) -> Self {
         // The input variables need to be renamed to match the inputs to the function call.
@@ -162,11 +162,11 @@ impl<'a> Mapper<'a> {
     }
 }
 
-impl Rebuilder for Mapper<'_> {
+impl<'db, 'mt> Rebuilder<'db> for Mapper<'db, 'mt, '_> {
     /// Maps a var id from the original lowering representation to the equivalent id in the
     /// new lowering representation.
     /// If the variable wasn't assigned an id yet, a new id is assigned.
-    fn map_var_id(&mut self, orig_var_id: VariableId) -> VariableId {
+    fn map_var_id(&mut self, orig_var_id: VariableId<'db>) -> VariableId<'db> {
         *self.renamed_vars.entry(orig_var_id).or_insert_with(|| {
             let orig_var = &self.lowered.variables[orig_var_id];
             self.variables.alloc(Variable {
@@ -183,11 +183,11 @@ impl Rebuilder for Mapper<'_> {
     }
 
     /// Adds the inlining location to a location.
-    fn map_location(&mut self, location: LocationId) -> LocationId {
+    fn map_location(&mut self, location: LocationId<'db>) -> LocationId<'db> {
         location.inlined(self.db, self.inlining_location)
     }
 
-    fn transform_end(&mut self, end: &mut BlockEnd) {
+    fn transform_end(&mut self, end: &mut BlockEnd<'db>) {
         match end {
             BlockEnd::Return(returns, _location) => {
                 let remapping = VarRemapping {
@@ -208,15 +208,15 @@ impl Rebuilder for Mapper<'_> {
 ///
 /// This function should be called through `apply_inlining` to remove all the lowered blocks in the
 /// error case.
-fn inner_apply_inlining(
-    db: &dyn LoweringGroup,
-    lowered: &mut Lowered,
-    calling_function_id: ConcreteFunctionWithBodyId,
+fn inner_apply_inlining<'db>(
+    db: &'db dyn LoweringGroup,
+    lowered: &mut Lowered<'db>,
+    calling_function_id: ConcreteFunctionWithBodyId<'db>,
     mut enable_const_folding: bool,
 ) -> Maybe<()> {
     lowered.blocks.has_root()?;
 
-    let mut blocks = BlocksBuilder::new();
+    let mut blocks: BlocksBuilder<'db> = BlocksBuilder::new();
 
     let mut stack: Vec<std::vec::IntoIter<BlockId>> = vec![
         lowered
@@ -234,9 +234,9 @@ fn inner_apply_inlining(
 
     while let Some(mut func_blocks) = stack.pop() {
         for block_id in func_blocks.by_ref() {
+            let blocks = &mut blocks;
             if enable_const_folding
-                && !const_folding_ctx
-                    .visit_block_start(block_id, |block_id| blocks.get_mut_block(block_id))
+                && !const_folding_ctx.visit_block_start(block_id, |block_id| &blocks.0[block_id.0])
             {
                 continue;
             }
@@ -323,11 +323,14 @@ fn inner_apply_inlining(
 
 /// Rewrites a statement and either appends it to self.statements or adds new statements to
 /// self.statements_rewrite_stack.
-fn should_inline<'a>(
-    db: &dyn LoweringGroup,
-    calling_function_id: ConcreteFunctionWithBodyId,
-    statement: &'a Statement,
-) -> Maybe<Option<(&'a StatementCall, ConcreteFunctionWithBodyId)>> {
+fn should_inline<'db, 'r>(
+    db: &'db dyn LoweringGroup,
+    calling_function_id: ConcreteFunctionWithBodyId<'db>,
+    statement: &'r Statement<'db>,
+) -> Maybe<Option<(&'r StatementCall<'db>, ConcreteFunctionWithBodyId<'db>)>>
+where
+    'db: 'r,
+{
     if let Statement::Call(stmt) = statement {
         if stmt.with_coupon {
             return Ok(None);
@@ -357,10 +360,10 @@ fn should_inline<'a>(
 /// Applies inlining to a lowered function.
 ///
 /// Note that if const folding is enabled, the blocks must be topologically sorted.
-pub fn apply_inlining(
-    db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut Lowered,
+pub fn apply_inlining<'db>(
+    db: &'db dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
+    lowered: &mut Lowered<'db>,
     enable_const_folding: bool,
 ) -> Maybe<()> {
     if let Err(diag_added) = inner_apply_inlining(db, lowered, function_id, enable_const_folding) {

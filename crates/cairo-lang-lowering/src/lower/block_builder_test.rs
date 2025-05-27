@@ -115,11 +115,11 @@ fn test_merge_block_builders(
 /// Creates a block builder for each semantic "statement" in the function body.
 ///
 /// See [create_block_builder] for more details.
-fn create_block_builders(
-    ctx: &mut LoweringContext<'_, '_>,
-    test_function: &TestFunction,
-    lowering_vars: &[VariableId],
-) -> Vec<BlockBuilder> {
+fn create_block_builders<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    test_function: &TestFunction<'db>,
+    lowering_vars: &[VariableId<'db>],
+) -> Vec<BlockBuilder<'db>> {
     let expr = ctx.function_body.arenas.exprs[test_function.body].clone();
     let block_expr = extract_matches!(expr, Expr::Block);
 
@@ -139,11 +139,11 @@ fn create_block_builders(
 ///
 /// Note that the statement is not a real statement - it is not lowered, and it is only used to
 /// define the semantic mapping.
-fn create_block_builder(
-    ctx: &mut LoweringContext<'_, '_>,
-    statement_id: StatementId,
-    lowering_vars: &[VariableId],
-) -> BlockBuilder {
+fn create_block_builder<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    statement_id: StatementId<'db>,
+    lowering_vars: &[VariableId<'db>],
+) -> BlockBuilder<'db> {
     let block_id = ctx.blocks.alloc_empty();
     let mut block_builder = BlockBuilder::root(block_id);
     let mut visited_vars: UnorderedHashSet<semantic::VarId> = Default::default();

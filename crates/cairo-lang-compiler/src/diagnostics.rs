@@ -1,17 +1,15 @@
 use std::fmt::Write;
+use std::sync::{Arc, RwLock};
 
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_diagnostics::{
     DiagnosticEntry, Diagnostics, FormattedDiagnosticEntry, PluginFileDiagnosticNotes, Severity,
 };
-use cairo_lang_filesystem::ids::{CrateId, FileLongId};
+use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use rayon::ThreadPool;
+use cairo_lang_utils::{Intern, LookupIntern};
+use salsa::par_map;
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -24,7 +22,7 @@ mod test;
 #[error("Compilation failed.")]
 pub struct DiagnosticsError;
 
-trait DiagnosticCallback {
+trait DiagnosticCallback: Send + Sync {
     fn on_diagnostic(&mut self, diagnostic: FormattedDiagnosticEntry);
 }
 
@@ -37,29 +35,29 @@ impl DiagnosticCallback for Option<Box<dyn DiagnosticCallback + '_>> {
 }
 
 /// Collects compilation diagnostics and presents them in a preconfigured way.
-pub struct DiagnosticsReporter<'a> {
-    callback: Option<Box<dyn DiagnosticCallback + 'a>>,
+pub struct DiagnosticsReporter {
+    callback: Option<Box<dyn DiagnosticCallback>>,
     // Ignore all warnings, the `ignore_warnings_crate_ids` field is irrelevant in this case.
     ignore_all_warnings: bool,
     /// Ignore warnings in specific crates. This should be a subset of `crate_ids`.
     /// Adding ids that are not in `crate_ids` has no effect.
-    ignore_warnings_crate_ids: Vec<CrateId>,
+    ignore_warnings_crate_ids: Vec<CrateInput>,
     /// Check diagnostics for these crates only.
     /// If `None`, check all crates in the db.
     /// If empty, do not check any crates at all.
-    crate_ids: Option<Vec<CrateId>>,
+    crates: Option<Vec<CrateInput>>,
     /// If true, compilation will not fail due to warnings.
     allow_warnings: bool,
     /// If true, will ignore diagnostics from LoweringGroup during the ensure function.
     skip_lowering_diagnostics: bool,
 }
 
-impl DiagnosticsReporter<'static> {
+impl DiagnosticsReporter {
     /// Create a reporter which does not print or collect diagnostics at all.
     pub fn ignoring() -> Self {
         Self {
             callback: None,
-            crate_ids: Default::default(),
+            crates: Default::default(),
             ignore_all_warnings: false,
             ignore_warnings_crate_ids: vec![],
             allow_warnings: false,
@@ -73,15 +71,17 @@ impl DiagnosticsReporter<'static> {
     }
 }
 
-impl<'a> DiagnosticsReporter<'a> {
+impl DiagnosticsReporter {
     // NOTE(mkaput): If Rust will ever have intersection types, one could write
     //   impl<F> DiagnosticCallback for F where F: FnMut(Severity,String)
     //   and `new` could accept regular functions without need for this separate method.
     /// Create a reporter which calls `callback` for each diagnostic.
-    pub fn callback(callback: impl FnMut(FormattedDiagnosticEntry) + 'a) -> Self {
+    pub fn callback(
+        callback: impl FnMut(FormattedDiagnosticEntry) + Send + Sync + 'static,
+    ) -> Self {
         struct Func<F>(F);
 
-        impl<F> DiagnosticCallback for Func<F>
+        impl<F: Send + Sync> DiagnosticCallback for Func<F>
         where
             F: FnMut(FormattedDiagnosticEntry),
         {
@@ -94,17 +94,17 @@ impl<'a> DiagnosticsReporter<'a> {
     }
 
     /// Create a reporter which appends all diagnostics to provided string.
-    pub fn write_to_string(string: &'a mut String) -> Self {
-        Self::callback(|diagnostic| {
-            write!(string, "{diagnostic}").unwrap();
+    pub fn write_to_string(string: Arc<RwLock<String>>) -> Self {
+        Self::callback(move |diagnostic| {
+            write!(string.write().unwrap(), "{diagnostic}").unwrap();
         })
     }
 
     /// Create a reporter which calls [`DiagnosticCallback::on_diagnostic`].
-    fn new(callback: impl DiagnosticCallback + 'a) -> Self {
+    fn new(callback: impl DiagnosticCallback + 'static) -> Self {
         Self {
             callback: Some(Box::new(callback)),
-            crate_ids: Default::default(),
+            crates: Default::default(),
             ignore_all_warnings: false,
             ignore_warnings_crate_ids: vec![],
             allow_warnings: false,
@@ -113,8 +113,8 @@ impl<'a> DiagnosticsReporter<'a> {
     }
 
     /// Sets crates to be checked, instead of all crates in the db.
-    pub fn with_crates(mut self, crate_ids: &[CrateId]) -> Self {
-        self.crate_ids = Some(crate_ids.to_vec());
+    pub fn with_crates(mut self, crates: &[CrateInput]) -> Self {
+        self.crates = Some(crates.to_vec());
         self
     }
 
@@ -122,8 +122,8 @@ impl<'a> DiagnosticsReporter<'a> {
     /// This does not modify the set of crates to be checked.
     /// Adding crates that are not checked here has no effect.
     /// To change the set of crates to be checked, use `with_crates`.
-    pub fn with_ignore_warnings_crates(mut self, crate_ids: &[CrateId]) -> Self {
-        self.ignore_warnings_crate_ids = crate_ids.to_vec();
+    pub fn with_ignore_warnings_crates(mut self, crates: &[CrateInput]) -> Self {
+        self.ignore_warnings_crate_ids = crates.to_vec();
         self
     }
 
@@ -140,8 +140,12 @@ impl<'a> DiagnosticsReporter<'a> {
     }
 
     /// Returns the crate ids for which the diagnostics will be checked.
-    fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateId> {
-        if let Some(crates) = self.crate_ids.as_ref() { crates.clone() } else { db.crates() }
+    fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateInput> {
+        if let Some(crates) = self.crates.as_ref() {
+            crates.clone()
+        } else {
+            db.crates().into_iter().map(|id| id.lookup_intern(db).into_crate_input(db)).collect()
+        }
     }
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
@@ -150,8 +154,9 @@ impl<'a> DiagnosticsReporter<'a> {
         let mut found_diagnostics = false;
 
         let crates = self.crates_of_interest(db);
-        for crate_id in &crates {
-            let Ok(module_file) = db.module_main_file(ModuleId::CrateRoot(*crate_id)) else {
+        for crate_input in &crates {
+            let crate_id = crate_input.clone().into_crate_long_id(db).intern(db);
+            let Ok(module_file) = db.module_main_file(ModuleId::CrateRoot(crate_id)) else {
                 found_diagnostics = true;
                 self.callback.on_diagnostic(FormattedDiagnosticEntry::new(
                     Severity::Error,
@@ -177,8 +182,8 @@ impl<'a> DiagnosticsReporter<'a> {
             }
 
             let ignore_warnings_in_crate =
-                self.ignore_all_warnings || self.ignore_warnings_crate_ids.contains(crate_id);
-            let modules = db.crate_modules(*crate_id);
+                self.ignore_all_warnings || self.ignore_warnings_crate_ids.contains(crate_input);
+            let modules = db.crate_modules(crate_id);
             let mut processed_file_ids = UnorderedHashSet::<_>::default();
             for module_id in modules.iter() {
                 let diagnostic_notes =
@@ -225,12 +230,12 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Checks if a diagnostics group contains any diagnostics and reports them to the provided
     /// callback as strings. Returns `true` if diagnostics were found.
-    fn check_diag_group<TEntry: DiagnosticEntry>(
+    fn check_diag_group<'db, TEntry: DiagnosticEntry<'db> + salsa::Update>(
         &mut self,
-        db: &TEntry::DbType,
-        group: Diagnostics<TEntry>,
+        db: &'db TEntry::DbType,
+        group: Diagnostics<'db, TEntry>,
         skip_warnings: bool,
-        file_notes: &PluginFileDiagnosticNotes,
+        file_notes: &PluginFileDiagnosticNotes<'db>,
     ) -> bool {
         let mut found: bool = false;
         for entry in group.format_with_severity(db, file_notes) {
@@ -247,37 +252,28 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
     /// Returns `Err` if diagnostics were found.
-    pub fn ensure(&mut self, db: &dyn LoweringGroup) -> Result<(), DiagnosticsError> {
+    pub fn ensure<'db>(&mut self, db: &'db dyn LoweringGroup) -> Result<(), DiagnosticsError> {
         if self.check(db) { Err(DiagnosticsError) } else { Ok(()) }
     }
 
     /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
     /// would be faster as the queries were already computed.
-    pub(crate) fn warm_up_diagnostics(&self, db: &RootDatabase, pool: &ThreadPool) {
-        let crates = self.crates_of_interest(db);
-        for crate_id in crates {
-            let snapshot = salsa::ParallelDatabase::snapshot(db);
-            pool.spawn(move || {
-                let db = &*snapshot;
-
-                let crate_modules = db.crate_modules(crate_id);
-                for module_id in crate_modules.iter().copied() {
-                    let snapshot = salsa::ParallelDatabase::snapshot(db);
-                    rayon::spawn(move || {
-                        let db = &*snapshot;
-                        for file_id in
-                            db.module_files(module_id).unwrap_or_default().iter().copied()
-                        {
-                            db.file_syntax_diagnostics(file_id);
-                        }
-
-                        let _ = db.module_semantic_diagnostics(module_id);
-
-                        let _ = db.module_lowering_diagnostics(module_id);
-                    });
+    // TODO(eytan-starkware): This is now blocking and should be made non-blocking.
+    pub(crate) fn warm_up_diagnostics(&self, db: Box<dyn LoweringGroup>) {
+        let crates = self.crates_of_interest(db.as_ref());
+        let _: () = par_map(db.as_ref(), crates, |db, crate_input| {
+            let crate_id = crate_input.clone().into_crate_long_id(db).intern(db);
+            let crate_modules = db.crate_modules(crate_id);
+            let _: () = par_map(db, (*crate_modules).clone(), |db, module_id| {
+                for file_id in db.module_files(module_id).unwrap_or_default().iter().copied() {
+                    db.file_syntax_diagnostics(file_id);
                 }
+
+                let _ = db.module_semantic_diagnostics(module_id);
+
+                let _ = db.module_lowering_diagnostics(module_id);
             });
-        }
+        });
     }
 
     pub fn skip_lowering_diagnostics(mut self) -> Self {
@@ -286,7 +282,7 @@ impl<'a> DiagnosticsReporter<'a> {
     }
 }
 
-impl Default for DiagnosticsReporter<'static> {
+impl<'db> Default for DiagnosticsReporter {
     fn default() -> Self {
         DiagnosticsReporter::stderr()
     }
@@ -302,12 +298,15 @@ pub fn get_diagnostics_as_string(
     db: &RootDatabase,
     crates_to_check: Option<Vec<CrateId>>,
 ) -> String {
-    let mut diagnostics = String::default();
-    let mut reporter = DiagnosticsReporter::write_to_string(&mut diagnostics);
+    let diagnostics = Arc::new(RwLock::new(String::default()));
+    let mut reporter = DiagnosticsReporter::write_to_string(diagnostics.clone());
     if let Some(crates) = crates_to_check.as_ref() {
-        reporter = reporter.with_crates(crates);
+        let crates =
+            crates.iter().map(|id| id.lookup_intern(db).into_crate_input(db)).collect::<Vec<_>>();
+        reporter = reporter.with_crates(&crates);
     }
     reporter.check(db);
+    let diagnostics = diagnostics.read().unwrap().clone();
     drop(reporter);
     diagnostics
 }

@@ -40,11 +40,11 @@ impl PredicateTree {
 }
 
 /// Represents a part of a configuration predicate.
-pub enum ConfigPredicatePart {
+pub enum ConfigPredicatePart<'db> {
     /// A configuration item, either a key-value pair or a simple name.
     Cfg(Cfg),
     /// A function call in the predicate (`not`, `and`, `or`).
-    Call(ast::ExprFunctionCall),
+    Call(ast::ExprFunctionCall<'db>),
 }
 
 /// Plugin that enables ignoring modules not involved in the current config.
@@ -58,12 +58,12 @@ pub struct ConfigPlugin;
 const CFG_ATTR: &str = "cfg";
 
 impl MacroPlugin for ConfigPlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         let mut diagnostics = vec![];
 
         if should_drop(db, metadata.cfg_set, &item_ast, &mut diagnostics) {
@@ -95,20 +95,22 @@ impl MacroPlugin for ConfigPlugin {
 }
 
 /// Extension trait for `BodyItems` filtering out items that are not included in the cfg.
-pub trait HasItemsInCfgEx<Item: QueryAttrs>: BodyItems<Item = Item> {
-    fn iter_items_in_cfg<'a>(
+pub trait HasItemsInCfgEx<'a, Item: QueryAttrs<'a>>: BodyItems<'a, Item = Item> {
+    fn iter_items_in_cfg(
         &self,
         db: &'a dyn SyntaxGroup,
-        cfg_set: &'a CfgSet,
-    ) -> impl Iterator<Item = Item> + 'a;
+        cfg_set: &CfgSet,
+    ) -> impl Iterator<Item = Item>;
 }
 
-impl<Item: QueryAttrs, Body: BodyItems<Item = Item>> HasItemsInCfgEx<Item> for Body {
-    fn iter_items_in_cfg<'a>(
+impl<'a, Item: QueryAttrs<'a>, Body: BodyItems<'a, Item = Item>> HasItemsInCfgEx<'a, Item>
+    for Body
+{
+    fn iter_items_in_cfg(
         &self,
         db: &'a dyn SyntaxGroup,
-        cfg_set: &'a CfgSet,
-    ) -> impl Iterator<Item = Item> + 'a {
+        cfg_set: &CfgSet,
+    ) -> impl Iterator<Item = Item> {
         self.iter_items(db).filter(move |item| !should_drop(db, cfg_set, item, &mut vec![]))
     }
 }
@@ -119,8 +121,8 @@ impl<Item: QueryAttrs, Body: BodyItems<Item = Item>> HasItemsInCfgEx<Item> for B
 fn handle_undropped_item<'a>(
     db: &'a dyn SyntaxGroup,
     cfg_set: &CfgSet,
-    item_ast: ast::ModuleItem,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+    item_ast: ast::ModuleItem<'a>,
+    diagnostics: &mut Vec<PluginDiagnostic<'a>>,
 ) -> Option<PatchBuilder<'a>> {
     match item_ast {
         ast::ModuleItem::Trait(trait_item) => {
@@ -161,12 +163,12 @@ fn handle_undropped_item<'a>(
 
 /// Gets the list of items that should be kept in the AST.
 /// Returns `None` if all items should be kept.
-fn get_kept_items_nodes<Item: QueryAttrs + TypedSyntaxNode>(
-    db: &dyn SyntaxGroup,
+fn get_kept_items_nodes<'a, Item: QueryAttrs<'a> + TypedSyntaxNode<'a>>(
+    db: &'a dyn SyntaxGroup,
     cfg_set: &CfgSet,
     all_items: impl Iterator<Item = Item>,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-) -> Option<Vec<cairo_lang_syntax::node::SyntaxNode>> {
+    diagnostics: &mut Vec<PluginDiagnostic<'a>>,
+) -> Option<Vec<cairo_lang_syntax::node::SyntaxNode<'a>>> {
     let mut any_dropped = false;
     let mut kept_items_nodes = vec![];
     for item in all_items {
@@ -180,11 +182,11 @@ fn get_kept_items_nodes<Item: QueryAttrs + TypedSyntaxNode>(
 }
 
 /// Check if the given item should be dropped from the AST.
-fn should_drop<Item: QueryAttrs>(
-    db: &dyn SyntaxGroup,
+fn should_drop<'a, Item: QueryAttrs<'a>>(
+    db: &'a dyn SyntaxGroup,
     cfg_set: &CfgSet,
     item: &Item,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+    diagnostics: &mut Vec<PluginDiagnostic<'a>>,
 ) -> bool {
     item.query_attr(db, CFG_ATTR).into_iter().any(|attr| {
         match parse_predicate(db, attr.structurize(db), diagnostics) {
@@ -195,10 +197,10 @@ fn should_drop<Item: QueryAttrs>(
 }
 
 /// Parse `#[cfg(not(ghf)...)]` attribute arguments as a predicate matching [`Cfg`] items.
-fn parse_predicate(
-    db: &dyn SyntaxGroup,
-    attr: Attribute,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+fn parse_predicate<'a>(
+    db: &'a dyn SyntaxGroup,
+    attr: Attribute<'a>,
+    diagnostics: &mut Vec<PluginDiagnostic<'a>>,
 ) -> Option<PredicateTree> {
     Some(PredicateTree::And(
         attr.args
@@ -209,10 +211,10 @@ fn parse_predicate(
 }
 
 /// Parse single `#[cfg(...)]` attribute argument as a [`Cfg`] item.
-fn parse_predicate_item(
-    db: &dyn SyntaxGroup,
-    item: AttributeArg,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+fn parse_predicate_item<'a>(
+    db: &'a dyn SyntaxGroup,
+    item: AttributeArg<'a>,
+    diagnostics: &mut Vec<PluginDiagnostic<'a>>,
 ) -> Option<PredicateTree> {
     match extract_config_predicate_part(db, &item) {
         Some(ConfigPredicatePart::Cfg(cfg)) => Some(PredicateTree::Cfg(cfg)),
@@ -291,10 +293,10 @@ fn parse_predicate_item(
 }
 
 /// Extracts a configuration predicate part from an attribute argument.
-fn extract_config_predicate_part(
+fn extract_config_predicate_part<'a>(
     db: &dyn SyntaxGroup,
-    arg: &AttributeArg,
-) -> Option<ConfigPredicatePart> {
+    arg: &AttributeArg<'a>,
+) -> Option<ConfigPredicatePart<'a>> {
     match &arg.variant {
         AttributeArgVariant::Unnamed(ast::Expr::Path(path)) => {
             if let Some([ast::PathSegment::Simple(segment)]) =
@@ -315,7 +317,7 @@ fn extract_config_predicate_part(
                 _ => return None,
             };
 
-            Some(ConfigPredicatePart::Cfg(Cfg::kv(name.text.to_string(), value_text)))
+            Some(ConfigPredicatePart::Cfg(Cfg::kv(name.text.clone(), value_text)))
         }
         _ => None,
     }
