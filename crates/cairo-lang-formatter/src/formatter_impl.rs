@@ -38,7 +38,7 @@ struct Leaf {
 
 impl UseTree {
     /// Inserts a path into the `UseTree`, creating nested entries as needed.
-    fn insert_path(&mut self, db: &dyn SyntaxGroup, use_path: UsePath) {
+    fn insert_path(&mut self, db: &dyn SyntaxGroup, use_path: UsePath<'_>) {
         match use_path {
             UsePath::Leaf(leaf) => {
                 let name = leaf.extract_ident(db);
@@ -117,7 +117,7 @@ impl UseTree {
         db: &dyn SyntaxGroup,
         allow_duplicate_uses: bool,
         decorations: String,
-    ) -> SyntaxNode {
+    ) -> SyntaxNode<'_> {
         let mut formatted_use_items = String::new();
         self.organize_self_imports();
         for statement in self.create_merged_use_items(allow_duplicate_uses) {
@@ -135,7 +135,7 @@ impl UseTree {
         })
         .intern(db);
 
-        let mut diagnostics = DiagnosticsBuilder::<ParserDiagnostic>::default();
+        let mut diagnostics = DiagnosticsBuilder::<ParserDiagnostic<'_>>::default();
         Parser::parse_file(db, &mut diagnostics, file_id, &formatted_use_items).as_syntax_node()
     }
 }
@@ -944,7 +944,6 @@ pub struct FormatterImpl<'a> {
     is_last_element_comment: bool,
     is_merging_use_items: bool,
 }
-
 impl<'a> FormatterImpl<'a> {
     pub fn new(db: &'a dyn SyntaxGroup, config: FormatterConfig) -> Self {
         Self {
@@ -958,13 +957,13 @@ impl<'a> FormatterImpl<'a> {
         }
     }
     /// Gets a root of a syntax tree and returns the formatted string of the code it represents.
-    pub fn get_formatted_string(&mut self, syntax_node: &SyntaxNode) -> String {
+    pub fn get_formatted_string(&mut self, syntax_node: &SyntaxNode<'a>) -> String {
         self.format_node(syntax_node);
         self.line_state.line_buffer.build(self.config.max_line_length, self.config.tab_size)
     }
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
-    fn format_node(&mut self, syntax_node: &SyntaxNode) {
+    fn format_node(&mut self, syntax_node: &SyntaxNode<'a>) {
         if self.is_merging_use_items {
             // When merging, only format this node once and return to avoid recursion.
             self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
@@ -1031,7 +1030,7 @@ impl<'a> FormatterImpl<'a> {
     }
 
     /// Formats an internal node and appends the formatted string to the result.
-    fn format_internal(&mut self, syntax_node: &SyntaxNode) {
+    fn format_internal(&mut self, syntax_node: &SyntaxNode<'a>) {
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
         let internal_break_line_points_positions =
             syntax_node.get_internal_break_line_point_properties(self.db, &self.config);
@@ -1071,7 +1070,7 @@ impl<'a> FormatterImpl<'a> {
 
     /// Merges `use` statements within a given set of syntax nodes, organizing and deduplicating
     /// them into a clean, structured format.
-    fn merge_use_items(&mut self, children: &mut Vec<SyntaxNode>) {
+    fn merge_use_items(&mut self, children: &mut Vec<SyntaxNode<'a>>) {
         let mut new_children = Vec::new();
 
         for (section_kind, section_nodes) in extract_sections(children, self.db) {
@@ -1125,7 +1124,7 @@ impl<'a> FormatterImpl<'a> {
     }
 
     /// Returns whether the node has only whitespace trivia.
-    fn has_only_whitespace_trivia(&self, node: &SyntaxNode) -> bool {
+    fn has_only_whitespace_trivia(&self, node: &SyntaxNode<'_>) -> bool {
         node.descendants(self.db).all(|descendant| {
             if let Some(trivia) = ast::Trivia::cast(self.db, descendant) {
                 trivia.elements(self.db).all(|element| {
@@ -1138,7 +1137,7 @@ impl<'a> FormatterImpl<'a> {
     }
 
     /// Sorting function for `UsePathMulti` children.
-    fn sort_inner_use_path(&self, children: &mut Vec<SyntaxNode>) {
+    fn sort_inner_use_path(&self, children: &mut Vec<SyntaxNode<'_>>) {
         // If any child has non-trivial trivia, do not sort.
         if children.iter().any(|child| !self.has_only_whitespace_trivia(child)) {
             return;
@@ -1168,9 +1167,9 @@ impl<'a> FormatterImpl<'a> {
     }
 
     /// Sorting function for module-level items.
-    fn sort_items_sections(&self, children: &mut Vec<SyntaxNode>) {
+    fn sort_items_sections(&self, children: &mut Vec<SyntaxNode<'a>>) {
         let sections = extract_sections(children, self.db);
-        let mut sorted_children = Vec::with_capacity(children.len());
+        let mut sorted_children: Vec<SyntaxNode<'a>> = Vec::with_capacity(children.len());
         for (section_kind, section_nodes) in sections {
             match section_kind {
                 SortKind::Module => {
@@ -1205,7 +1204,7 @@ impl<'a> FormatterImpl<'a> {
     }
 
     /// Formats a terminal node and appends the formatted string to the result.
-    fn format_terminal(&mut self, syntax_node: &SyntaxNode) {
+    fn format_terminal(&mut self, syntax_node: &SyntaxNode<'a>) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
         let children = syntax_node.get_children(self.db);
         let [leading, token, trailing] = &children[..] else {
@@ -1219,7 +1218,7 @@ impl<'a> FormatterImpl<'a> {
         self.format_trivia(ast::Trivia::from_syntax_node(self.db, *trailing), false);
     }
     /// Appends a trivia node (if needed) to the result.
-    fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia, is_leading: bool) {
+    fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia<'a>, is_leading: bool) {
         for trivium in trivia.elements(self.db) {
             match trivium {
                 ast::Trivium::SingleLineComment(_)
@@ -1255,7 +1254,7 @@ impl<'a> FormatterImpl<'a> {
     }
     /// Formats a token node and appends it to the result.
     /// Assumes the given SyntaxNode is a token.
-    fn format_token(&mut self, syntax_node: &SyntaxNode) {
+    fn format_token(&mut self, syntax_node: &SyntaxNode<'_>) {
         let text = syntax_node.text(self.db).unwrap();
         if !syntax_node.force_no_space_before(self.db) && !self.line_state.prevent_next_space {
             self.line_state.line_buffer.push_space();
@@ -1279,11 +1278,11 @@ impl<'a> FormatterImpl<'a> {
 }
 
 /// Compares two `UsePath` nodes to determine their ordering.
-fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering {
+fn compare_use_paths<'a>(a: &UsePath<'a>, b: &UsePath<'a>, db: &dyn SyntaxGroup) -> Ordering {
     match (a, b) {
         // Case for multi vs multi.
         (UsePath::Multi(a_multi), UsePath::Multi(b_multi)) => {
-            let get_min_child = |multi: &ast::UsePathMulti| {
+            let get_min_child = |multi: &ast::UsePathMulti<'a>| {
                 multi.use_paths(db).elements(db).min_by_key(|child| match child {
                     UsePath::Leaf(leaf) => leaf.extract_ident(db),
                     UsePath::Single(single) => single.extract_ident(db),
@@ -1356,7 +1355,10 @@ fn compare_names(a: &str, b: &str) -> Ordering {
 }
 
 /// Helper function to extract `UsePath` from a `SyntaxNode`.
-fn extract_use_path(node: &SyntaxNode, db: &dyn SyntaxGroup) -> Option<ast::UsePath> {
+fn extract_use_path<'a>(
+    node: &SyntaxNode<'a>,
+    db: &'a dyn SyntaxGroup,
+) -> Option<ast::UsePath<'a>> {
     match node.kind(db) {
         SyntaxKind::UsePathLeaf => {
             Some(ast::UsePath::Leaf(ast::UsePathLeaf::from_syntax_node(db, *node)))
@@ -1380,7 +1382,7 @@ trait IdentExtractor {
     fn extract_ident(&self, db: &dyn SyntaxGroup) -> String;
     fn extract_alias(&self, db: &dyn SyntaxGroup) -> Option<String>;
 }
-impl IdentExtractor for ast::UsePathLeaf {
+impl<'a> IdentExtractor for ast::UsePathLeaf<'a> {
     fn extract_ident(&self, db: &dyn SyntaxGroup) -> String {
         self.ident(db).as_syntax_node().get_text_without_trivia(db)
     }
@@ -1395,7 +1397,7 @@ impl IdentExtractor for ast::UsePathLeaf {
     }
 }
 
-impl IdentExtractor for ast::UsePathSingle {
+impl<'a> IdentExtractor for ast::UsePathSingle<'a> {
     fn extract_ident(&self, db: &dyn SyntaxGroup) -> String {
         self.ident(db).as_syntax_node().get_text_without_trivia(db)
     }
@@ -1406,10 +1408,10 @@ impl IdentExtractor for ast::UsePathSingle {
 }
 
 /// Extracts sections of syntax nodes based on their `SortKind`.
-fn extract_sections<'a>(
-    children: &'a [SyntaxNode],
-    db: &'a dyn SyntaxGroup,
-) -> Vec<(SortKind, &'a [SyntaxNode])> {
+fn extract_sections<'a, 'b>(
+    children: &'b [SyntaxNode<'a>],
+    db: &dyn SyntaxGroup,
+) -> Vec<(SortKind, &'b [SyntaxNode<'a>])> {
     let mut sections = Vec::new();
     let mut start_idx = 0;
 

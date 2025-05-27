@@ -22,7 +22,7 @@ use crate::{
 ///
 /// This step might replace a match on an empty enum with a call to unsafe_panic and we rely on the
 /// 'trim_unreachable' optimization to clean that up.
-pub fn early_unsafe_panic(db: &dyn LoweringGroup, lowered: &mut Lowered) {
+pub fn early_unsafe_panic<'db>(db: &'db dyn LoweringGroup, lowered: &mut Lowered<'db>) {
     if !flag_unsafe_panic(db) || lowered.blocks.is_empty() {
         return;
     }
@@ -57,19 +57,19 @@ pub fn early_unsafe_panic(db: &dyn LoweringGroup, lowered: &mut Lowered) {
     }
 }
 
-pub struct UnsafePanicContext<'a> {
-    db: &'a dyn LoweringGroup,
+pub struct UnsafePanicContext<'db> {
+    db: &'db dyn LoweringGroup,
 
     /// The list of blocks where we can insert unsafe_panic.
-    fixes: Vec<(StatementLocation, LocationId)>,
+    fixes: Vec<(StatementLocation, LocationId<'db>)>,
 
     /// libfuncs with side effects that we need to ignore.
-    libfuncs_with_sideffect: HashSet<ExternFunctionId>,
+    libfuncs_with_sideffect: HashSet<ExternFunctionId<'db>>,
 }
 
-impl UnsafePanicContext<'_> {
+impl<'db> UnsafePanicContext<'db> {
     /// Returns true if the statement has side effects.
-    pub fn has_side_effects(&self, stmt: &Statement) -> bool {
+    pub fn has_side_effects(&self, stmt: &Statement<'db>) -> bool {
         if let Statement::Call(StatementCall { function, .. }) = stmt {
             let Some((extern_fn, _gargs)) = function.get_extern(self.db) else {
                 return false;
@@ -86,23 +86,23 @@ impl UnsafePanicContext<'_> {
 
 /// Can this state lead to a return or a statement with side effect.
 #[derive(Clone, Default, PartialEq, Debug)]
-pub enum ReachableSideEffects {
+pub enum ReachableSideEffects<'db> {
     /// Some return statement or statement with side effect is reachable.
     #[default]
     Reachable,
     /// No return statement or statement with side effect is reachable.
     /// holds the location of the closest match with no returning arms.
-    Unreachable(LocationId),
+    Unreachable(LocationId<'db>),
 }
 
-impl<'a> Analyzer<'a> for UnsafePanicContext<'_> {
-    type Info = ReachableSideEffects;
+impl<'db> Analyzer<'db, '_> for UnsafePanicContext<'db> {
+    type Info = ReachableSideEffects<'db>;
 
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
         statement_location: StatementLocation,
-        stmt: &Statement,
+        stmt: &Statement<'db>,
     ) {
         if self.has_side_effects(stmt) {
             if let ReachableSideEffects::Unreachable(locations) = *info {
@@ -115,7 +115,7 @@ impl<'a> Analyzer<'a> for UnsafePanicContext<'_> {
     fn merge_match(
         &mut self,
         statement_location: StatementLocation,
-        match_info: &'a MatchInfo,
+        match_info: &MatchInfo<'db>,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         let mut res = ReachableSideEffects::Unreachable(*match_info.location());
@@ -135,7 +135,7 @@ impl<'a> Analyzer<'a> for UnsafePanicContext<'_> {
         res
     }
 
-    fn info_from_return(&mut self, _: StatementLocation, _vars: &'a [VarUsage]) -> Self::Info {
+    fn info_from_return(&mut self, _: StatementLocation, _vars: &[VarUsage<'db>]) -> Self::Info {
         ReachableSideEffects::Reachable
     }
 }

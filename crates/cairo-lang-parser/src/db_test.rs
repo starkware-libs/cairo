@@ -17,7 +17,7 @@ use crate::printer::print_tree;
 use crate::test_utils::{MockToken, MockTokenStream, create_virtual_file};
 use crate::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics_from_file};
 
-fn build_empty_file_green_tree(db: &dyn SyntaxGroup, file_id: FileId) -> SyntaxFile {
+fn build_empty_file_green_tree<'a>(db: &'a dyn SyntaxGroup, file_id: FileId<'a>) -> SyntaxFile<'a> {
     let eof_token = TokenEndOfFile::new_green(db, SmolStr::from(""));
     let eof_terminal = TerminalEndOfFile::new_green(
         db,
@@ -72,9 +72,10 @@ fn test_token_stream_parser() {
     let token_stream = MockTokenStream::from_syntax_node(db, root_node);
     let (node_from_token_stream, _) = db.parse_token_stream(&token_stream);
 
-    let original_leaves: Vec<SyntaxNode> = root_node.tokens(db).collect();
+    let original_leaves: Vec<SyntaxNode<'_>> = root_node.tokens(db).collect();
 
-    let token_stream_origin_leaves: Vec<SyntaxNode> = node_from_token_stream.tokens(db).collect();
+    let token_stream_origin_leaves: Vec<SyntaxNode<'_>> =
+        node_from_token_stream.tokens(db).collect();
 
     assert_eq!(original_leaves.len(), token_stream_origin_leaves.len());
     assert_eq!(

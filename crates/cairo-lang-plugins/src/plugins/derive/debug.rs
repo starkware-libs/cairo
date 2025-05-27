@@ -6,7 +6,7 @@ use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Debug` trait.
-pub fn handle_debug(info: &PluginTypeInfo) -> String {
+pub fn handle_debug(info: &PluginTypeInfo<'_>) -> String {
     const DEBUG_TRAIT: &str = "core::fmt::Debug";
     let header = info.impl_header(DEBUG_TRAIT, &[DEBUG_TRAIT]);
     let full_typename = info.full_typename();

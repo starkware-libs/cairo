@@ -1,6 +1,7 @@
 use cairo_lang_defs::ids::{LanguageElementId, MacroCallId, MacroDeclarationId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::Intern;
 
 use crate::SemanticDiagnostic;
 use crate::db::SemanticGroup;
@@ -11,18 +12,18 @@ use crate::expr::inference::InferenceId;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver};
 
 /// The data associated with a macro call in item context.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MacroCallData {
+#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+pub struct MacroCallData<'db> {
     /// The macro declaration that this macro call refers to, if found.
-    pub macro_declaration_id: Option<MacroDeclarationId>,
-    pub diagnostics: Diagnostics<SemanticDiagnostic>,
+    pub macro_declaration_id: Option<MacroDeclarationId<'db>>,
+    pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_macro_call_data].
-pub fn priv_macro_call_data(
-    db: &dyn SemanticGroup,
-    macro_call_id: MacroCallId,
-) -> Maybe<MacroCallData> {
+pub fn priv_macro_call_data<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_call_id: MacroCallId<'db>,
+) -> Maybe<MacroCallData<'db>> {
     let inference_id = InferenceId::MacroCall(macro_call_id);
     let module_file_id = macro_call_id.module_file_id(db);
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
@@ -43,7 +44,10 @@ pub fn priv_macro_call_data(
             diagnostics.report(
                 macro_call_path.stable_ptr(db).untyped(),
                 SemanticDiagnosticKind::MacroCallToNotAMacro(
-                    macro_call_path.as_syntax_node().get_text_without_trivia(db).into(),
+                    smol_str::SmolStr::from(
+                        macro_call_path.as_syntax_node().get_text_without_trivia(db),
+                    )
+                    .intern(db),
                 ),
             );
             None
@@ -58,17 +62,17 @@ pub fn priv_macro_call_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_call_diagnostics].
-pub fn macro_call_diagnostics(
-    db: &dyn SemanticGroup,
-    macro_call_id: MacroCallId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn macro_call_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_call_id: MacroCallId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     priv_macro_call_data(db, macro_call_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_call_declaration_id].
-pub fn macro_call_declaration_id(
-    db: &dyn SemanticGroup,
-    macro_call_id: MacroCallId,
-) -> Maybe<Option<MacroDeclarationId>> {
+pub fn macro_call_declaration_id<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_call_id: MacroCallId<'db>,
+) -> Maybe<Option<MacroDeclarationId<'db>>> {
     priv_macro_call_data(db, macro_call_id).map(|data| data.macro_declaration_id)
 }

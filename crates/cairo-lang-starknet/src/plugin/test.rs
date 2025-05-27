@@ -50,7 +50,7 @@ impl TestFileRunner for ExpandContractTestRunner {
         for file_id in files {
             let content = db.file_content(file_id).unwrap();
             let content_location =
-                DiagnosticLocation { file_id, span: TextSpan::from_str(&content) };
+                DiagnosticLocation { file_id, span: TextSpan::from_str(content.long(&db)) };
             let original_location = content_location.user_location(db.upcast());
             let origin = if content_location == original_location {
                 "".to_string()
@@ -58,7 +58,7 @@ impl TestFileRunner for ExpandContractTestRunner {
                 format!("{:?}\n", original_location.debug(db.upcast()))
             };
             let file_name = file_id.file_name(&db);
-            file_contents.push(format!("{origin}{file_name}:\n\n{content}"));
+            file_contents.push(format!("{origin}{file_name}:\n\n{}", content.long(&db)));
         }
 
         let diagnostics = get_diagnostics_as_string(&db, Some(vec![test_module.crate_id]));

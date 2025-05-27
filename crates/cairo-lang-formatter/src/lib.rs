@@ -30,7 +30,7 @@ pub const CAIRO_FMT_IGNORE: &str = ".cairofmtignore";
 /// * `String` - The formatted file.
 pub fn get_formatted_file(
     db: &dyn SyntaxGroup,
-    syntax_root: &SyntaxNode,
+    syntax_root: &SyntaxNode<'_>,
     config: FormatterConfig,
 ) -> String {
     let mut formatter = FormatterImpl::new(db, config);

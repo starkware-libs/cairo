@@ -41,16 +41,16 @@ enum MacroParsingContext {
     None,
 }
 
-pub struct Parser<'a> {
+pub struct Parser<'a, 'mt, 'str> {
     db: &'a dyn SyntaxGroup,
-    file_id: FileId,
-    lexer: Lexer<'a>,
+    file_id: FileId<'a>,
+    lexer: Lexer<'a, 'str>,
     /// The next terminal to handle.
-    next_terminal: LexerTerminal,
+    next_terminal: LexerTerminal<'a>,
     /// The terminal following [Self::next_terminal], if known.
-    next_next_terminal: Option<LexerTerminal>,
+    next_next_terminal: Option<LexerTerminal<'a>>,
     /// A vector of pending trivia to be added as leading trivia to the next valid terminal.
-    pending_trivia: Vec<TriviumGreen>,
+    pending_trivia: Vec<TriviumGreen<'a>>,
     /// The current offset, excluding the current terminal.
     offset: TextOffset,
     /// The width of the current terminal being handled (excluding the trivia length of this
@@ -58,7 +58,7 @@ pub struct Parser<'a> {
     current_width: TextWidth,
     /// The length of the trailing trivia following the last read token.
     last_trivia_length: TextWidth,
-    diagnostics: &'a mut DiagnosticsBuilder<ParserDiagnostic>,
+    diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
     /// An accumulating vector of pending skipped tokens diagnostics.
     pending_skipped_token_diagnostics: Vec<PendingParserDiagnostic>,
     /// An indicator if we are inside a macro rule expansion.
@@ -121,13 +121,13 @@ macro_rules! or_an_attribute {
     };
 }
 
-impl<'a> Parser<'a> {
+impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
     /// Creates a new parser.
     pub fn new(
         db: &'a dyn SyntaxGroup,
-        file_id: FileId,
-        text: &'a str,
-        diagnostics: &'a mut DiagnosticsBuilder<ParserDiagnostic>,
+        file_id: FileId<'a>,
+        text: &'str str,
+        diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
     ) -> Self {
         let mut lexer = Lexer::from_text(db, text);
         let next_terminal = lexer.next().unwrap();
@@ -155,10 +155,10 @@ impl<'a> Parser<'a> {
     /// Parses a file.
     pub fn parse_file(
         db: &'a dyn SyntaxGroup,
-        diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
-        file_id: FileId,
-        text: &'a str,
-    ) -> SyntaxFile {
+        diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
+        file_id: FileId<'a>,
+        text: &'str str,
+    ) -> SyntaxFile<'a> {
         let parser = Parser::new(db, file_id, text, diagnostics);
         let green = parser.parse_syntax_file();
         SyntaxFile::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
@@ -167,10 +167,10 @@ impl<'a> Parser<'a> {
     /// Parses a file expr.
     pub fn parse_file_expr(
         db: &'a dyn SyntaxGroup,
-        diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
-        file_id: FileId,
-        text: &'a str,
-    ) -> Expr {
+        diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
+        file_id: FileId<'a>,
+        text: &'str str,
+    ) -> Expr<'a> {
         let mut parser = Parser::new(db, file_id, text, diagnostics);
         parser.macro_parsing_context = MacroParsingContext::ExpandedMacro;
         let green = parser.parse_expr();
@@ -186,10 +186,10 @@ impl<'a> Parser<'a> {
     /// Parses a file as a list of statements.
     pub fn parse_file_statement_list(
         db: &'a dyn SyntaxGroup,
-        diagnostics: &'a mut DiagnosticsBuilder<ParserDiagnostic>,
-        file_id: FileId,
-        text: &'a str,
-    ) -> StatementList {
+        diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
+        file_id: FileId<'a>,
+        text: &'str str,
+    ) -> StatementList<'a> {
         let mut parser = Parser::new(db, file_id, text, diagnostics);
         parser.macro_parsing_context = MacroParsingContext::ExpandedMacro;
         let statements = StatementList::new_green(
@@ -207,10 +207,10 @@ impl<'a> Parser<'a> {
     /// Parses a token stream.
     pub fn parse_token_stream(
         db: &'a dyn SyntaxGroup,
-        diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
-        file_id: FileId,
-        token_stream: &'a dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
-    ) -> SyntaxFile {
+        diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
+        file_id: FileId<'a>,
+        token_stream: &'str dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
+    ) -> SyntaxFile<'a> {
         let (content, offset) = primitive_token_stream_content_and_offset(token_stream);
         let parser = Parser::new(db, file_id, &content, diagnostics);
         let green = parser.parse_syntax_file();
@@ -223,11 +223,11 @@ impl<'a> Parser<'a> {
     /// Parses a token stream expression.
     pub fn parse_token_stream_expr(
         db: &'a dyn SyntaxGroup,
-        diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
-        file_id: FileId,
+        diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
+        file_id: FileId<'a>,
         content: &str,
         offset: Option<TextOffset>,
-    ) -> Expr {
+    ) -> Expr<'a> {
         let mut parser = Parser::new(db, file_id, content, diagnostics);
         let green = parser.parse_expr();
         if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
@@ -241,7 +241,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of an ExprMissing and adds a diagnostic describing it.
-    fn create_and_report_missing<T: TypedSyntaxNode>(
+    fn create_and_report_missing<T: TypedSyntaxNode<'a>>(
         &mut self,
         missing_kind: ParserDiagnosticKind,
     ) -> T::Green {
@@ -252,7 +252,7 @@ impl<'a> Parser<'a> {
 
     /// Returns the missing terminal and adds the corresponding missing token
     /// diagnostic report.
-    fn create_and_report_missing_terminal<Terminal: syntax::node::Terminal>(
+    fn create_and_report_missing_terminal<Terminal: syntax::node::Terminal<'a>>(
         &mut self,
     ) -> Terminal::Green {
         self.create_and_report_missing::<Terminal>(ParserDiagnosticKind::MissingToken(
@@ -260,7 +260,7 @@ impl<'a> Parser<'a> {
         ))
     }
 
-    pub fn parse_syntax_file(mut self) -> SyntaxFileGreen {
+    pub fn parse_syntax_file(mut self) -> SyntaxFileGreen<'a> {
         let mut module_items = vec![];
         if let Some(doc_item) = self.take_doc() {
             module_items.push(doc_item.into());
@@ -280,7 +280,7 @@ impl<'a> Parser<'a> {
         // token, which doesn't exist.
         self.offset = self.offset.add_width(self.current_width);
 
-        let eof = self.add_trivia_to_terminal::<TerminalEndOfFile>(self.next_terminal.clone());
+        let eof = self.add_trivia_to_terminal::<TerminalEndOfFile<'_>>(self.next_terminal.clone());
         SyntaxFile::new_green(self.db, items, eof)
     }
 
@@ -290,7 +290,7 @@ impl<'a> Parser<'a> {
     /// TryParseFailure if a module item can't be parsed.
     /// In case of an identifier not followed by a `!`, it is skipped inside the function and thus a
     /// TryParseFailure::DoNothing is returned.
-    pub fn try_parse_module_item(&mut self) -> TryParseResult<ModuleItemGreen> {
+    pub fn try_parse_module_item(&mut self) -> TryParseResult<ModuleItemGreen<'a>> {
         let maybe_attributes = self.try_parse_attribute_list(MODULE_ITEM_DESCRIPTION);
         let (has_attrs, attributes) = match maybe_attributes {
             Ok(attributes) => (true, attributes),
@@ -307,7 +307,7 @@ impl<'a> Parser<'a> {
 
         match self.peek().kind {
             SyntaxKind::TerminalConst => {
-                let const_kw = self.take::<TerminalConst>();
+                let const_kw = self.take::<TerminalConst<'_>>();
                 Ok(if self.peek().kind == SyntaxKind::TerminalFunction {
                     self.expect_item_function_with_body(attributes, visibility, const_kw.into())
                         .into()
@@ -431,15 +431,15 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `mod <Identifier> \{<ItemList>\}` or `mod <Identifier>;`.
     fn expect_item_module(
         &mut self,
-        attributes: AttributeListGreen,
-        visibility: VisibilityGreen,
-    ) -> ItemModuleGreen {
-        let module_kw = self.take::<TerminalModule>();
+        attributes: AttributeListGreen<'a>,
+        visibility: VisibilityGreen<'a>,
+    ) -> ItemModuleGreen<'a> {
+        let module_kw = self.take::<TerminalModule<'_>>();
         let name = self.parse_identifier();
 
         let body = match self.peek().kind {
             SyntaxKind::TerminalLBrace => {
-                let lbrace = self.take::<TerminalLBrace>();
+                let lbrace = self.take::<TerminalLBrace<'_>>();
                 let mut module_items = vec![];
                 if let Some(doc_item) = self.take_doc() {
                     module_items.push(doc_item.into());
@@ -450,12 +450,12 @@ impl<'a> Parser<'a> {
                     MODULE_ITEM_DESCRIPTION,
                 ));
                 let items = ModuleItemList::new_green(self.db, &module_items);
-                let rbrace = self.parse_token::<TerminalRBrace>();
+                let rbrace = self.parse_token::<TerminalRBrace<'_>>();
                 ModuleBody::new_green(self.db, lbrace, items, rbrace).into()
             }
-            SyntaxKind::TerminalSemicolon => self.take::<TerminalSemicolon>().into(),
+            SyntaxKind::TerminalSemicolon => self.take::<TerminalSemicolon<'_>>().into(),
             _ => self
-                .create_and_report_missing::<TerminalSemicolon>(
+                .create_and_report_missing::<TerminalSemicolon<'_>>(
                     ParserDiagnosticKind::ExpectedSemicolonOrBody,
                 )
                 .into(),
@@ -468,15 +468,15 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `struct<Identifier>{<ParamList>}`
     fn expect_item_struct(
         &mut self,
-        attributes: AttributeListGreen,
-        visibility: VisibilityGreen,
-    ) -> ItemStructGreen {
-        let struct_kw = self.take::<TerminalStruct>();
+        attributes: AttributeListGreen<'a>,
+        visibility: VisibilityGreen<'a>,
+    ) -> ItemStructGreen<'a> {
+        let struct_kw = self.take::<TerminalStruct<'_>>();
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
-        let lbrace = self.parse_token::<TerminalLBrace>();
+        let lbrace = self.parse_token::<TerminalLBrace<'_>>();
         let members = self.parse_member_list();
-        let rbrace = self.parse_token::<TerminalRBrace>();
+        let rbrace = self.parse_token::<TerminalRBrace<'_>>();
         ItemStruct::new_green(
             self.db,
             attributes,
@@ -494,15 +494,15 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `enum<Identifier>{<ParamList>}`
     fn expect_item_enum(
         &mut self,
-        attributes: AttributeListGreen,
-        visibility: VisibilityGreen,
-    ) -> ItemEnumGreen {
-        let enum_kw = self.take::<TerminalEnum>();
+        attributes: AttributeListGreen<'a>,
+        visibility: VisibilityGreen<'a>,
+    ) -> ItemEnumGreen<'a> {
+        let enum_kw = self.take::<TerminalEnum<'_>>();
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
-        let lbrace = self.parse_token::<TerminalLBrace>();
+        let lbrace = self.parse_token::<TerminalLBrace<'_>>();
         let variants = self.parse_variant_list();
-        let rbrace = self.parse_token::<TerminalRBrace>();
+        let rbrace = self.parse_token::<TerminalRBrace<'_>>();
         ItemEnum::new_green(
             self.db,
             attributes,
@@ -520,15 +520,15 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `type <Identifier>{<ParamList>} = <TypeExpression>`
     fn expect_item_type_alias(
         &mut self,
-        attributes: AttributeListGreen,
-        visibility: VisibilityGreen,
-    ) -> ItemTypeAliasGreen {
-        let type_kw = self.take::<TerminalType>();
+        attributes: AttributeListGreen<'a>,
+        visibility: VisibilityGreen<'a>,
+    ) -> ItemTypeAliasGreen<'a> {
+        let type_kw = self.take::<TerminalType<'_>>();
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
-        let eq = self.parse_token::<TerminalEq>();
+        let eq = self.parse_token::<TerminalEq<'_>>();
         let ty = self.parse_type_expr();
-        let semicolon = self.parse_token::<TerminalSemicolon>();
+        let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
         ItemTypeAlias::new_green(
             self.db,
             attributes,
@@ -543,14 +543,14 @@ impl<'a> Parser<'a> {
     }
 
     /// Expected pattern: `<ParenthesizedParamList><ReturnTypeClause>`
-    fn expect_function_signature(&mut self) -> FunctionSignatureGreen {
-        let lparen = self.parse_token::<TerminalLParen>();
+    fn expect_function_signature(&mut self) -> FunctionSignatureGreen<'a> {
+        let lparen = self.parse_token::<TerminalLParen<'_>>();
         let params = self.parse_param_list();
-        let rparen = self.parse_token::<TerminalRParen>();
+        let rparen = self.parse_token::<TerminalRParen<'_>>();
         let return_type_clause = self.parse_option_return_type_clause();
         let implicits_clause = self.parse_option_implicits_clause();
         let optional_no_panic = if self.peek().kind == SyntaxKind::TerminalNoPanic {
-            self.take::<TerminalNoPanic>().into()
+            self.take::<TerminalNoPanic<'_>>().into()
         } else {
             OptionTerminalNoPanicEmpty::new_green(self.db).into()
         };
@@ -570,17 +570,17 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `const <Identifier> = <Expr>;`
     fn expect_item_const(
         &mut self,
-        attributes: AttributeListGreen,
-        visibility: VisibilityGreen,
-        const_kw: TerminalConstGreen,
-    ) -> ItemConstantGreen {
+        attributes: AttributeListGreen<'a>,
+        visibility: VisibilityGreen<'a>,
+        const_kw: TerminalConstGreen<'a>,
+    ) -> ItemConstantGreen<'a> {
         let name = self.parse_identifier();
         let type_clause = self.parse_type_clause(ErrorRecovery {
             should_stop: is_of_kind!(eq, semicolon, module_item_kw),
         });
-        let eq = self.parse_token::<TerminalEq>();
+        let eq = self.parse_token::<TerminalEq<'_>>();
         let expr = self.parse_expr();
-        let semicolon = self.parse_token::<TerminalSemicolon>();
+        let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
 
         ItemConstant::new_green(
             self.db,
@@ -597,10 +597,10 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is Extern.
     /// Expected pattern: `extern(<FunctionDeclaration>|type<Identifier>);`
-    fn expect_item_extern<T: From<ItemExternFunctionGreen> + From<ItemExternTypeGreen>>(
+    fn expect_item_extern<T: From<ItemExternFunctionGreen<'a>> + From<ItemExternTypeGreen<'a>>>(
         &mut self,
-        attributes: AttributeListGreen,
-        visibility: VisibilityGreen,
+        attributes: AttributeListGreen<'a>,
+        visibility: VisibilityGreen<'a>,
     ) -> T {
         match self.expect_item_extern_inner(attributes, visibility) {
             ExternItem::Function(x) => x.into(),
@@ -612,22 +612,25 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `extern(<FunctionDeclaration>|type<Identifier>);`
     fn expect_item_extern_inner(
         &mut self,
-        attributes: AttributeListGreen,
-        visibility: VisibilityGreen,
-    ) -> ExternItem {
-        let extern_kw = self.take::<TerminalExtern>();
+        attributes: AttributeListGreen<'a>,
+        visibility: VisibilityGreen<'a>,
+    ) -> ExternItem<'a> {
+        let extern_kw = self.take::<TerminalExtern<'_>>();
         match self.peek().kind {
             kind @ (SyntaxKind::TerminalFunction | SyntaxKind::TerminalConst) => {
                 let (optional_const, function_kw) = if kind == SyntaxKind::TerminalConst {
-                    (self.take::<TerminalConst>().into(), self.parse_token::<TerminalFunction>())
+                    (
+                        self.take::<TerminalConst<'_>>().into(),
+                        self.parse_token::<TerminalFunction<'_>>(),
+                    )
                 } else {
                     (
                         OptionTerminalConstEmpty::new_green(self.db).into(),
-                        self.take::<TerminalFunction>(),
+                        self.take::<TerminalFunction<'_>>(),
                     )
                 };
                 let declaration = self.expect_function_declaration_ex(optional_const, function_kw);
-                let semicolon = self.parse_token::<TerminalSemicolon>();
+                let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
                 ExternItem::Function(ItemExternFunction::new_green(
                     self.db,
                     attributes,
@@ -639,11 +642,11 @@ impl<'a> Parser<'a> {
             }
             _ => {
                 // TODO(spapini): Don't return ItemExternType if we don't see a type.
-                let type_kw = self.parse_token::<TerminalType>();
+                let type_kw = self.parse_token::<TerminalType<'_>>();
 
                 let name = self.parse_identifier();
                 let generic_params = self.parse_optional_generic_params();
-                let semicolon = self.parse_token::<TerminalSemicolon>();
+                let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
                 // If the next token is not type, assume it is missing.
                 ExternItem::Type(ItemExternType::new_green(
                     self.db,
@@ -663,12 +666,12 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `use<Path>;`
     fn expect_item_use(
         &mut self,
-        attributes: AttributeListGreen,
-        visibility: VisibilityGreen,
-    ) -> ItemUseGreen {
-        let use_kw = self.take::<TerminalUse>();
+        attributes: AttributeListGreen<'a>,
+        visibility: VisibilityGreen<'a>,
+    ) -> ItemUseGreen<'a> {
+        let use_kw = self.take::<TerminalUse<'_>>();
         let use_path = self.parse_use_path();
-        let semicolon = self.parse_token::<TerminalSemicolon>();
+        let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
         ItemUse::new_green(self.db, attributes, visibility, use_kw, use_path, semicolon)
     }
 
@@ -676,17 +679,17 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `macro<Identifier>{<MacroRulesList>}`
     fn expect_item_macro_declaration(
         &mut self,
-        attributes: AttributeListGreen,
-        visibility: VisibilityGreen,
-    ) -> ItemMacroDeclarationGreen {
-        let macro_kw = self.take::<TerminalMacro>();
+        attributes: AttributeListGreen<'a>,
+        visibility: VisibilityGreen<'a>,
+    ) -> ItemMacroDeclarationGreen<'a> {
+        let macro_kw = self.take::<TerminalMacro<'_>>();
         let name = self.parse_identifier();
-        let lbrace = self.parse_token::<TerminalLBrace>();
+        let lbrace = self.parse_token::<TerminalLBrace<'_>>();
         let macro_rules = MacroRulesList::new_green(
             self.db,
             &self.parse_list(Self::try_parse_macro_rule, is_of_kind!(rbrace), "macro rule"),
         );
-        let rbrace = self.parse_token::<TerminalRBrace>();
+        let rbrace = self.parse_token::<TerminalRBrace<'_>>();
         ItemMacroDeclaration::new_green(
             self.db,
             attributes,
@@ -701,51 +704,55 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with a MacroRule kind or TryParseFailure if a macro rule can't
     /// be parsed.
-    fn try_parse_macro_rule(&mut self) -> TryParseResult<MacroRuleGreen> {
+    fn try_parse_macro_rule(&mut self) -> TryParseResult<MacroRuleGreen<'a>> {
         let previous_macro_parsing_context =
             mem::replace(&mut self.macro_parsing_context, MacroParsingContext::MacroRule);
         let wrapped_macro = match self.peek().kind {
             SyntaxKind::TerminalLParen => self
-                .wrap_macro::<TerminalLParen, TerminalRParen, _, _>(ParenthesizedMacro::new_green)
+                .wrap_macro::<TerminalLParen<'_>, TerminalRParen<'_>, _, _>(
+                    ParenthesizedMacro::new_green,
+                )
                 .into(),
             SyntaxKind::TerminalLBrace => self
-                .wrap_macro::<TerminalLBrace, TerminalRBrace, _, _>(BracedMacro::new_green)
+                .wrap_macro::<TerminalLBrace<'_>, TerminalRBrace<'_>, _, _>(BracedMacro::new_green)
                 .into(),
             SyntaxKind::TerminalLBrack => self
-                .wrap_macro::<TerminalLBrack, TerminalRBrack, _, _>(BracketedMacro::new_green)
+                .wrap_macro::<TerminalLBrack<'_>, TerminalRBrack<'_>, _, _>(
+                    BracketedMacro::new_green,
+                )
                 .into(),
             _ => return Err(TryParseFailure::SkipToken),
         };
-        let arrow = self.parse_token::<TerminalMatchArrow>();
+        let arrow = self.parse_token::<TerminalMatchArrow<'_>>();
         self.macro_parsing_context = MacroParsingContext::MacroExpansion;
         let macro_body =
-            self.wrap_macro::<TerminalLBrace, TerminalRBrace, _, _>(BracedMacro::new_green);
-        let semicolon = self.parse_token::<TerminalSemicolon>();
+            self.wrap_macro::<TerminalLBrace<'_>, TerminalRBrace<'_>, _, _>(BracedMacro::new_green);
+        let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
         self.macro_parsing_context = previous_macro_parsing_context;
         Ok(MacroRule::new_green(self.db, wrapped_macro, arrow, macro_body, semicolon))
     }
     /// Returns a GreenId of a node with a MacroRuleElement kind or TryParseFailure if a macro rule
     /// element can't be parsed.
     /// Expected pattern: Either any token or a matcher of the pattern $ident:kind.
-    fn try_parse_macro_element(&mut self) -> TryParseResult<MacroElementGreen> {
+    fn try_parse_macro_element(&mut self) -> TryParseResult<MacroElementGreen<'a>> {
         match self.peek().kind {
             SyntaxKind::TerminalDollar => {
-                let dollar: TerminalDollarGreen = self.take::<TerminalDollar>();
+                let dollar: TerminalDollarGreen<'_> = self.take::<TerminalDollar<'_>>();
                 match self.peek().kind {
                     SyntaxKind::TerminalLParen => {
-                        let lparen = self.take::<TerminalLParen>();
+                        let lparen = self.take::<TerminalLParen<'_>>();
                         let elements = self.expect_wrapped_macro();
-                        let rparen = self.parse_token::<TerminalRParen>();
-                        let separator: OptionTerminalCommaGreen = match self.peek().kind {
-                            SyntaxKind::TerminalComma => self.take::<TerminalComma>().into(),
+                        let rparen = self.parse_token::<TerminalRParen<'_>>();
+                        let separator: OptionTerminalCommaGreen<'_> = match self.peek().kind {
+                            SyntaxKind::TerminalComma => self.take::<TerminalComma<'_>>().into(),
                             _ => OptionTerminalCommaEmpty::new_green(self.db).into(),
                         };
                         let operator = match self.peek().kind {
                             SyntaxKind::TerminalQuestionMark => {
-                                self.take::<TerminalQuestionMark>().into()
+                                self.take::<TerminalQuestionMark<'_>>().into()
                             }
-                            SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
-                            SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
+                            SyntaxKind::TerminalPlus => self.take::<TerminalPlus<'_>>().into(),
+                            SyntaxKind::TerminalMul => self.take::<TerminalMul<'_>>().into(),
                             _ => MacroRepetitionOperator::missing(self.db),
                         };
                         Ok(MacroRepetition::new_green(
@@ -755,10 +762,10 @@ impl<'a> Parser<'a> {
                     }
                     _ => {
                         let ident = self.parse_identifier();
-                        let param_kind: OptionParamKindGreen = if self.peek().kind
+                        let param_kind: OptionParamKindGreen<'_> = if self.peek().kind
                             == SyntaxKind::TerminalColon
                         {
-                            let colon = self.parse_token::<TerminalColon>();
+                            let colon = self.parse_token::<TerminalColon<'_>>();
                             let kind = self.parse_macro_rule_param_kind();
                             let result = ParamKind::new_green(self.db, colon, kind).into();
                             if let MacroParsingContext::MacroExpansion = self.macro_parsing_context
@@ -802,23 +809,27 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_macro_elements(&mut self) -> WrappedMacroGreen {
+    fn parse_macro_elements(&mut self) -> WrappedMacroGreen<'a> {
         match self.peek().kind {
             SyntaxKind::TerminalLParen => self
-                .wrap_macro::<TerminalLParen, TerminalRParen, _, _>(ParenthesizedMacro::new_green)
+                .wrap_macro::<TerminalLParen<'_>, TerminalRParen<'_>, _, _>(
+                    ParenthesizedMacro::new_green,
+                )
                 .into(),
             SyntaxKind::TerminalLBrace => self
-                .wrap_macro::<TerminalLBrace, TerminalRBrace, _, _>(BracedMacro::new_green)
+                .wrap_macro::<TerminalLBrace<'_>, TerminalRBrace<'_>, _, _>(BracedMacro::new_green)
                 .into(),
             SyntaxKind::TerminalLBrack => self
-                .wrap_macro::<TerminalLBrack, TerminalRBrack, _, _>(BracketedMacro::new_green)
+                .wrap_macro::<TerminalLBrack<'_>, TerminalRBrack<'_>, _, _>(
+                    BracketedMacro::new_green,
+                )
                 .into(),
             _ => unreachable!("parse_macro_elements called on non-delimiter token"),
         }
     }
 
-    fn expect_wrapped_macro(&mut self) -> MacroElementsGreen {
-        let mut elements: Vec<MacroElementGreen> = vec![];
+    fn expect_wrapped_macro(&mut self) -> MacroElementsGreen<'a> {
+        let mut elements: Vec<MacroElementGreen<'a>> = vec![];
         while !matches!(
             self.peek().kind,
             SyntaxKind::TerminalRParen
@@ -840,10 +851,15 @@ impl<'a> Parser<'a> {
     }
 
     fn wrap_macro<
-        LTerminal: syntax::node::Terminal,
-        RTerminal: syntax::node::Terminal,
+        LTerminal: syntax::node::Terminal<'a>,
+        RTerminal: syntax::node::Terminal<'a>,
         ListGreen,
-        NewGreen: Fn(&dyn SyntaxGroup, LTerminal::Green, MacroElementsGreen, RTerminal::Green) -> ListGreen,
+        NewGreen: Fn(
+            &'a dyn SyntaxGroup,
+            LTerminal::Green,
+            MacroElementsGreen<'a>,
+            RTerminal::Green,
+        ) -> ListGreen,
     >(
         &mut self,
         new_green: NewGreen,
@@ -855,23 +871,23 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with a MacroRuleParamKind kind.
-    fn parse_macro_rule_param_kind(&mut self) -> MacroParamKindGreen {
+    fn parse_macro_rule_param_kind(&mut self) -> MacroParamKindGreen<'a> {
         let peeked = self.peek();
         match (peeked.kind, peeked.text.as_str()) {
             (SyntaxKind::TerminalIdentifier, "ident") => {
-                ParamIdent::new_green(self.db, self.parse_token::<TerminalIdentifier>()).into()
+                ParamIdent::new_green(self.db, self.parse_token::<TerminalIdentifier<'_>>()).into()
             }
             (SyntaxKind::TerminalIdentifier, "expr") => {
-                ParamExpr::new_green(self.db, self.parse_token::<TerminalIdentifier>()).into()
+                ParamExpr::new_green(self.db, self.parse_token::<TerminalIdentifier<'_>>()).into()
             }
-            _ => self.create_and_report_missing::<MacroParamKind>(
+            _ => self.create_and_report_missing::<MacroParamKind<'_>>(
                 ParserDiagnosticKind::MissingMacroRuleParamKind,
             ),
         }
     }
 
     /// Returns a GreenId of a node with a UsePath kind or TryParseFailure if can't parse a UsePath.
-    fn try_parse_use_path(&mut self) -> TryParseResult<UsePathGreen> {
+    fn try_parse_use_path(&mut self) -> TryParseResult<UsePathGreen<'a>> {
         if !matches!(
             self.peek().kind,
             SyntaxKind::TerminalLBrace | SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalMul
@@ -882,23 +898,23 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with a UsePath kind.
-    fn parse_use_path(&mut self) -> UsePathGreen {
+    fn parse_use_path(&mut self) -> UsePathGreen<'a> {
         match self.peek().kind {
             SyntaxKind::TerminalLBrace => {
-                let lbrace = self.parse_token::<TerminalLBrace>();
+                let lbrace = self.parse_token::<TerminalLBrace<'_>>();
                 let items = UsePathList::new_green(self.db,
                     &self.parse_separated_list::<
-                        UsePath, TerminalComma, UsePathListElementOrSeparatorGreen
+                        UsePath<'_>, TerminalComma<'_>, UsePathListElementOrSeparatorGreen<'_>
                     >(
                         Self::try_parse_use_path,
                         is_of_kind!(rbrace, module_item_kw),
                         "path segment",
                     ));
-                let rbrace = self.parse_token::<TerminalRBrace>();
+                let rbrace = self.parse_token::<TerminalRBrace<'_>>();
                 UsePathMulti::new_green(self.db, lbrace, items, rbrace).into()
             }
             SyntaxKind::TerminalMul => {
-                let star = self.parse_token::<TerminalMul>();
+                let star = self.parse_token::<TerminalMul<'_>>();
                 UsePathStar::new_green(self.db, star).into()
             }
             _ => {
@@ -906,12 +922,12 @@ impl<'a> Parser<'a> {
                     let ident = PathSegmentSimple::new_green(self.db, ident).into();
                     match self.peek().kind {
                         SyntaxKind::TerminalColonColon => {
-                            let colon_colon = self.parse_token::<TerminalColonColon>();
+                            let colon_colon = self.parse_token::<TerminalColonColon<'_>>();
                             let use_path = self.parse_use_path();
                             UsePathSingle::new_green(self.db, ident, colon_colon, use_path).into()
                         }
                         SyntaxKind::TerminalAs => {
-                            let as_kw = self.take::<TerminalAs>();
+                            let as_kw = self.take::<TerminalAs<'_>>();
                             let alias = self.parse_identifier();
                             let alias_clause = AliasClause::new_green(self.db, as_kw, alias).into();
                             UsePathLeaf::new_green(self.db, ident, alias_clause).into()
@@ -922,7 +938,7 @@ impl<'a> Parser<'a> {
                         }
                     }
                 } else {
-                    let missing = self.create_and_report_missing::<TerminalIdentifier>(
+                    let missing = self.create_and_report_missing::<TerminalIdentifier<'_>>(
                         ParserDiagnosticKind::MissingPathSegment,
                     );
                     let ident = PathSegmentSimple::new_green(self.db, missing).into();
@@ -941,19 +957,19 @@ impl<'a> Parser<'a> {
     /// can't be parsed.
     /// Note that if the terminal is a keyword or an underscore, it is skipped, and
     /// Some(missing-identifier) is returned.
-    fn try_parse_identifier(&mut self) -> TryParseResult<TerminalIdentifierGreen> {
+    fn try_parse_identifier(&mut self) -> TryParseResult<TerminalIdentifierGreen<'a>> {
         let peeked = self.peek();
         if peeked.kind.is_keyword_terminal() {
             // TODO(spapini): don't skip every keyword. Instead, pass a recovery set.
-            Ok(self.skip_token_and_return_missing::<TerminalIdentifier>(
+            Ok(self.skip_token_and_return_missing::<TerminalIdentifier<'_>>(
                 ParserDiagnosticKind::ReservedIdentifier { identifier: peeked.text.clone() },
             ))
         } else if peeked.kind == SyntaxKind::TerminalUnderscore {
-            Ok(self.skip_token_and_return_missing::<TerminalIdentifier>(
+            Ok(self.skip_token_and_return_missing::<TerminalIdentifier<'_>>(
                 ParserDiagnosticKind::UnderscoreNotAllowedAsIdentifier,
             ))
         } else {
-            self.try_parse_token::<TerminalIdentifier>()
+            self.try_parse_token::<TerminalIdentifier<'_>>()
         }
     }
     /// Returns whether the current token is an identifier, a keyword or an underscore ('_'),
@@ -973,15 +989,15 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with an identifier kind.
-    fn parse_identifier(&mut self) -> TerminalIdentifierGreen {
+    fn parse_identifier(&mut self) -> TerminalIdentifierGreen<'a> {
         match self.try_parse_identifier() {
             Ok(identifier) => identifier,
-            Err(_) => self.create_and_report_missing_terminal::<TerminalIdentifier>(),
+            Err(_) => self.create_and_report_missing_terminal::<TerminalIdentifier<'_>>(),
         }
     }
 
     /// Returns a GreenId of node visibility.
-    fn parse_visibility(&mut self) -> VisibilityGreen {
+    fn parse_visibility(&mut self) -> VisibilityGreen<'a> {
         match self.try_parse_visibility_pub() {
             Some(visibility) => visibility.into(),
             None => VisibilityDefault::new_green(self.db).into(),
@@ -989,15 +1005,15 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of node with pub visibility or None if not starting with "pub".
-    fn try_parse_visibility_pub(&mut self) -> Option<VisibilityPubGreen> {
+    fn try_parse_visibility_pub(&mut self) -> Option<VisibilityPubGreen<'a>> {
         require(self.peek().kind == SyntaxKind::TerminalPub)?;
-        let pub_kw = self.take::<TerminalPub>();
+        let pub_kw = self.take::<TerminalPub<'_>>();
         let argument_clause = if self.peek().kind != SyntaxKind::TerminalLParen {
             OptionVisibilityPubArgumentClauseEmpty::new_green(self.db).into()
         } else {
-            let lparen = self.parse_token::<TerminalLParen>();
-            let argument = self.parse_token::<TerminalIdentifier>();
-            let rparen = self.parse_token::<TerminalRParen>();
+            let lparen = self.parse_token::<TerminalLParen<'_>>();
+            let argument = self.parse_token::<TerminalIdentifier<'_>>();
+            let rparen = self.parse_token::<TerminalRParen<'_>>();
             VisibilityPubArgumentClause::new_green(self.db, lparen, argument, rparen).into()
         };
         Some(VisibilityPub::new_green(self.db, pub_kw, argument_clause))
@@ -1010,7 +1026,7 @@ impl<'a> Parser<'a> {
     fn try_parse_attribute_list(
         &mut self,
         expected_elements_str: &str,
-    ) -> TryParseResult<AttributeListGreen> {
+    ) -> TryParseResult<AttributeListGreen<'a>> {
         if self.peek().kind == SyntaxKind::TerminalHash {
             Ok(self.parse_attribute_list(expected_elements_str))
         } else {
@@ -1021,7 +1037,7 @@ impl<'a> Parser<'a> {
     /// Parses an attribute list.
     /// `expected_elements_str` are the expected elements that these attributes are parsed for.
     /// Note: it should not include "attribute".
-    fn parse_attribute_list(&mut self, expected_elements_str: &str) -> AttributeListGreen {
+    fn parse_attribute_list(&mut self, expected_elements_str: &str) -> AttributeListGreen<'a> {
         AttributeList::new_green(
             self.db,
             &self.parse_list(
@@ -1034,14 +1050,14 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with an attribute kind or TryParseFailure if an attribute can't
     /// be parsed.
-    fn try_parse_attribute(&mut self) -> TryParseResult<AttributeGreen> {
+    fn try_parse_attribute(&mut self) -> TryParseResult<AttributeGreen<'a>> {
         match self.peek().kind {
             SyntaxKind::TerminalHash => {
-                let hash = self.take::<TerminalHash>();
-                let lbrack = self.parse_token::<TerminalLBrack>();
+                let hash = self.take::<TerminalHash<'_>>();
+                let lbrack = self.parse_token::<TerminalLBrack<'_>>();
                 let attr = self.parse_path();
                 let arguments = self.try_parse_parenthesized_argument_list();
-                let rbrack = self.parse_token::<TerminalRBrack>();
+                let rbrack = self.parse_token::<TerminalRBrack<'_>>();
 
                 Ok(Attribute::new_green(self.db, hash, lbrack, attr, arguments, rbrack))
             }
@@ -1053,9 +1069,9 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `<FunctionDeclaration>`
     fn expect_function_declaration(
         &mut self,
-        optional_const: OptionTerminalConstGreen,
-    ) -> FunctionDeclarationGreen {
-        let function_kw = self.take::<TerminalFunction>();
+        optional_const: OptionTerminalConstGreen<'a>,
+    ) -> FunctionDeclarationGreen<'a> {
+        let function_kw = self.take::<TerminalFunction<'_>>();
         self.expect_function_declaration_ex(optional_const, function_kw)
     }
 
@@ -1063,9 +1079,9 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `<FunctionDeclaration>`
     fn expect_function_declaration_ex(
         &mut self,
-        optional_const: OptionTerminalConstGreen,
-        function_kw: TerminalFunctionGreen,
-    ) -> FunctionDeclarationGreen {
+        optional_const: OptionTerminalConstGreen<'a>,
+        function_kw: TerminalFunctionGreen<'a>,
+    ) -> FunctionDeclarationGreen<'a> {
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
         let signature = self.expect_function_signature();
@@ -1084,10 +1100,10 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `<FunctionDeclaration><Block>`
     fn expect_item_function_with_body(
         &mut self,
-        attributes: AttributeListGreen,
-        visibility: VisibilityGreen,
-        optional_const: OptionTerminalConstGreen,
-    ) -> FunctionWithBodyGreen {
+        attributes: AttributeListGreen<'a>,
+        visibility: VisibilityGreen<'a>,
+        optional_const: OptionTerminalConstGreen<'a>,
+    ) -> FunctionWithBodyGreen<'a> {
         let declaration = self.expect_function_declaration(optional_const);
         let function_body = self.parse_block();
         FunctionWithBody::new_green(self.db, attributes, visibility, declaration, function_body)
@@ -1096,14 +1112,14 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is Trait.
     fn expect_item_trait(
         &mut self,
-        attributes: AttributeListGreen,
-        visibility: VisibilityGreen,
-    ) -> ItemTraitGreen {
-        let trait_kw = self.take::<TerminalTrait>();
+        attributes: AttributeListGreen<'a>,
+        visibility: VisibilityGreen<'a>,
+    ) -> ItemTraitGreen<'a> {
+        let trait_kw = self.take::<TerminalTrait<'_>>();
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
-            let lbrace = self.take::<TerminalLBrace>();
+            let lbrace = self.take::<TerminalLBrace<'_>>();
             let items = TraitItemList::new_green(
                 self.db,
                 &self.parse_attributed_list(
@@ -1112,10 +1128,10 @@ impl<'a> Parser<'a> {
                     TRAIT_ITEM_DESCRIPTION,
                 ),
             );
-            let rbrace = self.parse_token::<TerminalRBrace>();
+            let rbrace = self.parse_token::<TerminalRBrace<'_>>();
             TraitBody::new_green(self.db, lbrace, items, rbrace).into()
         } else {
-            self.parse_token::<TerminalSemicolon>().into()
+            self.parse_token::<TerminalSemicolon<'_>>().into()
         };
 
         ItemTrait::new_green(self.db, attributes, visibility, trait_kw, name, generic_params, body)
@@ -1123,7 +1139,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with a TraitItem.* kind (see
     /// [syntax::node::ast::TraitItem]), or TryParseFailure if a trait item can't be parsed.
-    pub fn try_parse_trait_item(&mut self) -> TryParseResult<TraitItemGreen> {
+    pub fn try_parse_trait_item(&mut self) -> TryParseResult<TraitItemGreen<'a>> {
         let maybe_attributes = self.try_parse_attribute_list(TRAIT_ITEM_DESCRIPTION);
 
         let (has_attrs, attributes) = match maybe_attributes {
@@ -1140,7 +1156,7 @@ impl<'a> Parser<'a> {
                 .into()),
             SyntaxKind::TerminalType => Ok(self.expect_trait_item_type(attributes).into()),
             SyntaxKind::TerminalConst => {
-                let const_kw = self.take::<TerminalConst>();
+                let const_kw = self.take::<TerminalConst<'_>>();
                 Ok(if self.peek().kind == SyntaxKind::TerminalFunction {
                     self.expect_trait_item_function(attributes, const_kw.into()).into()
                 } else {
@@ -1150,7 +1166,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalImpl => Ok(self.expect_trait_item_impl(attributes).into()),
             _ => {
                 if has_attrs {
-                    Ok(self.skip_taken_node_and_return_missing::<TraitItem>(
+                    Ok(self.skip_taken_node_and_return_missing::<TraitItem<'_>>(
                         attributes,
                         ParserDiagnosticKind::AttributesWithoutTraitItem,
                     ))
@@ -1165,25 +1181,28 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `<FunctionDeclaration><SemiColon>`
     fn expect_trait_item_function(
         &mut self,
-        attributes: AttributeListGreen,
-        optional_const: OptionTerminalConstGreen,
-    ) -> TraitItemFunctionGreen {
+        attributes: AttributeListGreen<'a>,
+        optional_const: OptionTerminalConstGreen<'a>,
+    ) -> TraitItemFunctionGreen<'a> {
         let declaration = self.expect_function_declaration(optional_const);
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
             self.parse_block().into()
         } else {
-            self.parse_token::<TerminalSemicolon>().into()
+            self.parse_token::<TerminalSemicolon<'_>>().into()
         };
         TraitItemFunction::new_green(self.db, attributes, declaration, body)
     }
 
     /// Assumes the current token is Type.
     /// Expected pattern: `type <name>;`
-    fn expect_trait_item_type(&mut self, attributes: AttributeListGreen) -> TraitItemTypeGreen {
-        let type_kw = self.take::<TerminalType>();
+    fn expect_trait_item_type(
+        &mut self,
+        attributes: AttributeListGreen<'a>,
+    ) -> TraitItemTypeGreen<'a> {
+        let type_kw = self.take::<TerminalType<'_>>();
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
-        let semicolon = self.parse_token::<TerminalSemicolon>();
+        let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
         TraitItemType::new_green(self.db, attributes, type_kw, name, generic_params, semicolon)
     }
 
@@ -1191,35 +1210,38 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `const <name>: <type>;`
     fn expect_trait_item_const(
         &mut self,
-        attributes: AttributeListGreen,
-        const_kw: TerminalConstGreen,
-    ) -> TraitItemConstantGreen {
+        attributes: AttributeListGreen<'a>,
+        const_kw: TerminalConstGreen<'a>,
+    ) -> TraitItemConstantGreen<'a> {
         let name = self.parse_identifier();
         let type_clause = self.parse_type_clause(ErrorRecovery {
             should_stop: is_of_kind!(eq, semicolon, module_item_kw),
         });
-        let semicolon = self.parse_token::<TerminalSemicolon>();
+        let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
 
         TraitItemConstant::new_green(self.db, attributes, const_kw, name, type_clause, semicolon)
     }
 
     /// Assumes the current token is Impl.
     /// Expected pattern: `impl <name>: <trait_path>;`
-    fn expect_trait_item_impl(&mut self, attributes: AttributeListGreen) -> TraitItemImplGreen {
-        let impl_kw = self.take::<TerminalImpl>();
+    fn expect_trait_item_impl(
+        &mut self,
+        attributes: AttributeListGreen<'a>,
+    ) -> TraitItemImplGreen<'a> {
+        let impl_kw = self.take::<TerminalImpl<'_>>();
         let name = self.parse_identifier();
-        let colon = self.parse_token::<TerminalColon>();
+        let colon = self.parse_token::<TerminalColon<'_>>();
         let trait_path = self.parse_type_path();
-        let semicolon = self.parse_token::<TerminalSemicolon>();
+        let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
         TraitItemImpl::new_green(self.db, attributes, impl_kw, name, colon, trait_path, semicolon)
     }
 
     /// Assumes the current token is Impl.
     fn expect_module_item_impl(
         &mut self,
-        attributes: AttributeListGreen,
-        visibility: VisibilityGreen,
-    ) -> ModuleItemGreen {
+        attributes: AttributeListGreen<'a>,
+        visibility: VisibilityGreen<'a>,
+    ) -> ModuleItemGreen<'a> {
         match self.expect_item_impl_inner(attributes, visibility, false) {
             ImplItemOrAlias::Item(green) => green.into(),
             ImplItemOrAlias::Alias(green) => green.into(),
@@ -1230,9 +1252,9 @@ impl<'a> Parser<'a> {
     /// Expects an impl impl-item (impl alias syntax): `impl <name> = <path>;`.
     fn expect_impl_item_impl(
         &mut self,
-        attributes: AttributeListGreen,
-        visibility: VisibilityGreen,
-    ) -> ItemImplAliasGreen {
+        attributes: AttributeListGreen<'a>,
+        visibility: VisibilityGreen<'a>,
+    ) -> ItemImplAliasGreen<'a> {
         extract_matches!(
             self.expect_item_impl_inner(attributes, visibility, true),
             ImplItemOrAlias::Alias
@@ -1245,18 +1267,18 @@ impl<'a> Parser<'a> {
     /// If `only_allow_alias` is true, always returns a ImplItemOrAlias::Alias.
     fn expect_item_impl_inner(
         &mut self,
-        attributes: AttributeListGreen,
-        visibility: VisibilityGreen,
+        attributes: AttributeListGreen<'a>,
+        visibility: VisibilityGreen<'a>,
         only_allow_alias: bool,
-    ) -> ImplItemOrAlias {
-        let impl_kw = self.take::<TerminalImpl>();
+    ) -> ImplItemOrAlias<'a> {
+        let impl_kw = self.take::<TerminalImpl<'_>>();
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
 
         if self.peek().kind == SyntaxKind::TerminalEq || only_allow_alias {
-            let eq = self.parse_token::<TerminalEq>();
+            let eq = self.parse_token::<TerminalEq<'_>>();
             let impl_path = self.parse_type_path();
-            let semicolon = self.parse_token::<TerminalSemicolon>();
+            let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
 
             return ImplItemOrAlias::Alias(ItemImplAlias::new_green(
                 self.db,
@@ -1271,10 +1293,10 @@ impl<'a> Parser<'a> {
             ));
         }
 
-        let of_kw = self.parse_token::<TerminalOf>();
+        let of_kw = self.parse_token::<TerminalOf<'_>>();
         let trait_path = self.parse_type_path();
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
-            let lbrace = self.take::<TerminalLBrace>();
+            let lbrace = self.take::<TerminalLBrace<'_>>();
             let items = ImplItemList::new_green(
                 self.db,
                 &self.parse_attributed_list(
@@ -1283,10 +1305,10 @@ impl<'a> Parser<'a> {
                     IMPL_ITEM_DESCRIPTION,
                 ),
             );
-            let rbrace = self.parse_token::<TerminalRBrace>();
+            let rbrace = self.parse_token::<TerminalRBrace<'_>>();
             ImplBody::new_green(self.db, lbrace, items, rbrace).into()
         } else {
-            self.parse_token::<TerminalSemicolon>().into()
+            self.parse_token::<TerminalSemicolon<'_>>().into()
         };
 
         ImplItemOrAlias::Item(ItemImpl::new_green(
@@ -1304,7 +1326,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with a ImplItem.* kind (see
     /// [syntax::node::ast::ImplItem]), or TryParseFailure if an impl item can't be parsed.
-    pub fn try_parse_impl_item(&mut self) -> TryParseResult<ImplItemGreen> {
+    pub fn try_parse_impl_item(&mut self) -> TryParseResult<ImplItemGreen<'a>> {
         let maybe_attributes = self.try_parse_attribute_list(IMPL_ITEM_DESCRIPTION);
 
         let (has_attrs, attributes) = match maybe_attributes {
@@ -1328,7 +1350,7 @@ impl<'a> Parser<'a> {
                 Ok(self.expect_item_type_alias(attributes, visibility).into())
             }
             SyntaxKind::TerminalConst => {
-                let const_kw = self.take::<TerminalConst>();
+                let const_kw = self.take::<TerminalConst<'_>>();
                 Ok(if self.peek().kind == SyntaxKind::TerminalFunction {
                     self.expect_item_function_with_body(attributes, visibility, const_kw.into())
                         .into()
@@ -1352,7 +1374,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalTrait => Ok(self.expect_item_trait(attributes, visibility).into()),
             _ => {
                 if has_attrs {
-                    Ok(self.skip_taken_node_and_return_missing::<ImplItem>(
+                    Ok(self.skip_taken_node_and_return_missing::<ImplItem<'_>>(
                         attributes,
                         ParserDiagnosticKind::AttributesWithoutImplItem,
                     ))
@@ -1366,22 +1388,22 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is TerminalNot.
     fn expect_item_inline_macro(
         &mut self,
-        attributes: AttributeListGreen,
-        path: ExprPathGreen,
-    ) -> ItemInlineMacroGreen {
-        let bang = self.parse_token::<TerminalNot>();
+        attributes: AttributeListGreen<'a>,
+        path: ExprPathGreen<'a>,
+    ) -> ItemInlineMacroGreen<'a> {
+        let bang = self.parse_token::<TerminalNot<'_>>();
         self.parse_item_inline_macro_given_bang(attributes, path, bang)
     }
 
     /// Returns a GreenId of a node with an ItemInlineMacro kind, given the bang ('!') token.
     fn parse_item_inline_macro_given_bang(
         &mut self,
-        attributes: AttributeListGreen,
-        path: ExprPathGreen,
-        bang: TerminalNotGreen,
-    ) -> ItemInlineMacroGreen {
+        attributes: AttributeListGreen<'a>,
+        path: ExprPathGreen<'a>,
+        bang: TerminalNotGreen<'a>,
+    ) -> ItemInlineMacroGreen<'a> {
         let token_tree_node = self.parse_token_tree_node();
-        let semicolon = self.parse_token::<TerminalSemicolon>();
+        let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
         ItemInlineMacro::new_green(self.db, attributes, path, bang, token_tree_node, semicolon)
     }
 
@@ -1389,16 +1411,16 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr])
     /// or TryParseFailure if an expression can't be parsed.
-    pub fn try_parse_expr(&mut self) -> TryParseResult<ExprGreen> {
+    pub fn try_parse_expr(&mut self) -> TryParseResult<ExprGreen<'a>> {
         self.try_parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Allow, AndLetBehavior::Simple)
     }
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr])
     /// or a node with kind ExprMissing if an expression can't be parsed.
-    pub fn parse_expr(&mut self) -> ExprGreen {
+    pub fn parse_expr(&mut self) -> ExprGreen<'a> {
         match self.try_parse_expr() {
             Ok(green) => green,
             Err(_) => {
-                self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingExpression)
+                self.create_and_report_missing::<Expr<'_>>(ParserDiagnosticKind::MissingExpression)
             }
         }
     }
@@ -1406,47 +1428,47 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is a binary operator. Otherwise it might panic.
     ///
     /// Returns a GreenId of the operator.
-    fn parse_binary_operator(&mut self) -> BinaryOperatorGreen {
+    fn parse_binary_operator(&mut self) -> BinaryOperatorGreen<'a> {
         // Note that if this code is not reached you might need to add the operator to
         // `get_post_operator_precedence`.
         match self.peek().kind {
-            SyntaxKind::TerminalDot => self.take::<TerminalDot>().into(),
-            SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
-            SyntaxKind::TerminalMulEq => self.take::<TerminalMulEq>().into(),
-            SyntaxKind::TerminalDiv => self.take::<TerminalDiv>().into(),
-            SyntaxKind::TerminalDivEq => self.take::<TerminalDivEq>().into(),
-            SyntaxKind::TerminalMod => self.take::<TerminalMod>().into(),
-            SyntaxKind::TerminalModEq => self.take::<TerminalModEq>().into(),
-            SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
-            SyntaxKind::TerminalPlusEq => self.take::<TerminalPlusEq>().into(),
-            SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
-            SyntaxKind::TerminalMinusEq => self.take::<TerminalMinusEq>().into(),
-            SyntaxKind::TerminalEq => self.take::<TerminalEq>().into(),
-            SyntaxKind::TerminalEqEq => self.take::<TerminalEqEq>().into(),
-            SyntaxKind::TerminalNeq => self.take::<TerminalNeq>().into(),
-            SyntaxKind::TerminalLT => self.take::<TerminalLT>().into(),
-            SyntaxKind::TerminalGT => self.take::<TerminalGT>().into(),
-            SyntaxKind::TerminalLE => self.take::<TerminalLE>().into(),
-            SyntaxKind::TerminalGE => self.take::<TerminalGE>().into(),
-            SyntaxKind::TerminalAnd => self.take::<TerminalAnd>().into(),
-            SyntaxKind::TerminalAndAnd => self.take::<TerminalAndAnd>().into(),
-            SyntaxKind::TerminalOrOr => self.take::<TerminalOrOr>().into(),
-            SyntaxKind::TerminalOr => self.take::<TerminalOr>().into(),
-            SyntaxKind::TerminalXor => self.take::<TerminalXor>().into(),
-            SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot>().into(),
-            SyntaxKind::TerminalDotDotEq => self.take::<TerminalDotDotEq>().into(),
+            SyntaxKind::TerminalDot => self.take::<TerminalDot<'_>>().into(),
+            SyntaxKind::TerminalMul => self.take::<TerminalMul<'_>>().into(),
+            SyntaxKind::TerminalMulEq => self.take::<TerminalMulEq<'_>>().into(),
+            SyntaxKind::TerminalDiv => self.take::<TerminalDiv<'_>>().into(),
+            SyntaxKind::TerminalDivEq => self.take::<TerminalDivEq<'_>>().into(),
+            SyntaxKind::TerminalMod => self.take::<TerminalMod<'_>>().into(),
+            SyntaxKind::TerminalModEq => self.take::<TerminalModEq<'_>>().into(),
+            SyntaxKind::TerminalPlus => self.take::<TerminalPlus<'_>>().into(),
+            SyntaxKind::TerminalPlusEq => self.take::<TerminalPlusEq<'_>>().into(),
+            SyntaxKind::TerminalMinus => self.take::<TerminalMinus<'_>>().into(),
+            SyntaxKind::TerminalMinusEq => self.take::<TerminalMinusEq<'_>>().into(),
+            SyntaxKind::TerminalEq => self.take::<TerminalEq<'_>>().into(),
+            SyntaxKind::TerminalEqEq => self.take::<TerminalEqEq<'_>>().into(),
+            SyntaxKind::TerminalNeq => self.take::<TerminalNeq<'_>>().into(),
+            SyntaxKind::TerminalLT => self.take::<TerminalLT<'_>>().into(),
+            SyntaxKind::TerminalGT => self.take::<TerminalGT<'_>>().into(),
+            SyntaxKind::TerminalLE => self.take::<TerminalLE<'_>>().into(),
+            SyntaxKind::TerminalGE => self.take::<TerminalGE<'_>>().into(),
+            SyntaxKind::TerminalAnd => self.take::<TerminalAnd<'_>>().into(),
+            SyntaxKind::TerminalAndAnd => self.take::<TerminalAndAnd<'_>>().into(),
+            SyntaxKind::TerminalOrOr => self.take::<TerminalOrOr<'_>>().into(),
+            SyntaxKind::TerminalOr => self.take::<TerminalOr<'_>>().into(),
+            SyntaxKind::TerminalXor => self.take::<TerminalXor<'_>>().into(),
+            SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot<'_>>().into(),
+            SyntaxKind::TerminalDotDotEq => self.take::<TerminalDotDotEq<'_>>().into(),
             _ => unreachable!(),
         }
     }
 
     /// Assumes the current token is a unary operator, and returns a GreenId of the operator.
-    fn expect_unary_operator(&mut self) -> UnaryOperatorGreen {
+    fn expect_unary_operator(&mut self) -> UnaryOperatorGreen<'a> {
         match self.peek().kind {
-            SyntaxKind::TerminalAt => self.take::<TerminalAt>().into(),
-            SyntaxKind::TerminalNot => self.take::<TerminalNot>().into(),
-            SyntaxKind::TerminalBitNot => self.take::<TerminalBitNot>().into(),
-            SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
-            SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
+            SyntaxKind::TerminalAt => self.take::<TerminalAt<'_>>().into(),
+            SyntaxKind::TerminalNot => self.take::<TerminalNot<'_>>().into(),
+            SyntaxKind::TerminalBitNot => self.take::<TerminalBitNot<'_>>().into(),
+            SyntaxKind::TerminalMinus => self.take::<TerminalMinus<'_>>().into(),
+            SyntaxKind::TerminalMul => self.take::<TerminalMul<'_>>().into(),
             _ => unreachable!(),
         }
     }
@@ -1485,7 +1507,7 @@ impl<'a> Parser<'a> {
         parent_precedence: usize,
         lbrace_allowed: LbraceAllowed,
         and_let_behavior: AndLetBehavior,
-    ) -> TryParseResult<ExprGreen> {
+    ) -> TryParseResult<ExprGreen<'a>> {
         let mut expr = self.try_parse_atom_or_unary(lbrace_allowed)?;
         let mut child_op: Option<SyntaxKind> = None;
         loop {
@@ -1508,13 +1530,13 @@ impl<'a> Parser<'a> {
                 SyntaxKind::TerminalQuestionMark => ExprErrorPropagate::new_green(
                     self.db,
                     expr,
-                    self.take::<TerminalQuestionMark>(),
+                    self.take::<TerminalQuestionMark<'_>>(),
                 )
                 .into(),
                 SyntaxKind::TerminalLBrack => {
-                    let lbrack = self.take::<TerminalLBrack>();
+                    let lbrack = self.take::<TerminalLBrack<'_>>();
                     let index_expr = self.parse_expr();
-                    let rbrack = self.parse_token::<TerminalRBrack>();
+                    let rbrack = self.parse_token::<TerminalRBrack<'_>>();
                     ExprIndexed::new_green(self.db, expr, lbrack, index_expr, rbrack).into()
                 }
                 current_op => {
@@ -1549,7 +1571,7 @@ impl<'a> Parser<'a> {
     fn try_parse_atom_or_unary(
         &mut self,
         lbrace_allowed: LbraceAllowed,
-    ) -> TryParseResult<ExprGreen> {
+    ) -> TryParseResult<ExprGreen<'a>> {
         let Some(precedence) = get_unary_operator_precedence(self.peek().kind) else {
             return self.try_parse_atom(lbrace_allowed);
         };
@@ -1567,11 +1589,11 @@ impl<'a> Parser<'a> {
         parent_precedence: usize,
         lbrace_allowed: LbraceAllowed,
         and_let_behavior: AndLetBehavior,
-    ) -> ExprGreen {
+    ) -> ExprGreen<'a> {
         match self.try_parse_expr_limited(parent_precedence, lbrace_allowed, and_let_behavior) {
             Ok(green) => green,
             Err(_) => {
-                self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingExpression)
+                self.create_and_report_missing::<Expr<'_>>(ParserDiagnosticKind::MissingExpression)
             }
         }
     }
@@ -1581,7 +1603,7 @@ impl<'a> Parser<'a> {
     /// TryParseFailure if such an expression can't be parsed.
     ///
     /// `lbrace_allowed` - See [LbraceAllowed].
-    fn try_parse_atom(&mut self, lbrace_allowed: LbraceAllowed) -> TryParseResult<ExprGreen> {
+    fn try_parse_atom(&mut self, lbrace_allowed: LbraceAllowed) -> TryParseResult<ExprGreen<'a>> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
             SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalDollar => {
@@ -1596,8 +1618,8 @@ impl<'a> Parser<'a> {
                     _ => Ok(path.into()),
                 }
             }
-            SyntaxKind::TerminalFalse => Ok(self.take::<TerminalFalse>().into()),
-            SyntaxKind::TerminalTrue => Ok(self.take::<TerminalTrue>().into()),
+            SyntaxKind::TerminalFalse => Ok(self.take::<TerminalFalse<'_>>().into()),
+            SyntaxKind::TerminalTrue => Ok(self.take::<TerminalTrue<'_>>().into()),
             SyntaxKind::TerminalLiteralNumber => Ok(self.take_terminal_literal_number().into()),
             SyntaxKind::TerminalShortString => Ok(self.take_terminal_short_string().into()),
             SyntaxKind::TerminalString => Ok(self.take_terminal_string().into()),
@@ -1640,11 +1662,11 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with an ExprPath|ExprParenthesized|ExprTuple kind, or
     /// TryParseFailure if such an expression can't be parsed.
-    fn try_parse_type_expr(&mut self) -> TryParseResult<ExprGreen> {
+    fn try_parse_type_expr(&mut self) -> TryParseResult<ExprGreen<'a>> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
             SyntaxKind::TerminalAt => {
-                let op = self.take::<TerminalAt>().into();
+                let op = self.take::<TerminalAt<'_>>().into();
                 let expr = self.parse_type_expr();
                 Ok(ExprUnary::new_green(self.db, op, expr).into())
             }
@@ -1662,35 +1684,34 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with an ExprPath|ExprParenthesized|ExprTuple kind, or
     /// ExprMissing if such an expression can't be parsed.
-    fn parse_type_expr(&mut self) -> ExprGreen {
+    fn parse_type_expr(&mut self) -> ExprGreen<'a> {
         match self.try_parse_type_expr() {
             Ok(expr) => expr,
-            Err(_) => {
-                self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingTypeExpression)
-            }
+            Err(_) => self
+                .create_and_report_missing::<Expr<'_>>(ParserDiagnosticKind::MissingTypeExpression),
         }
     }
 
     /// Assumes the current token is LBrace.
     /// Expected pattern: `\{<StructArgList>\}`
-    fn expect_struct_ctor_argument_list_braced(&mut self) -> StructArgListBracedGreen {
-        let lbrace = self.take::<TerminalLBrace>();
+    fn expect_struct_ctor_argument_list_braced(&mut self) -> StructArgListBracedGreen<'a> {
+        let lbrace = self.take::<TerminalLBrace<'_>>();
         let arg_list = StructArgList::new_green(
             self.db,
-            &self.parse_separated_list::<StructArg, TerminalComma, StructArgListElementOrSeparatorGreen>(
+            &self.parse_separated_list::<StructArg<'_>, TerminalComma<'_>, StructArgListElementOrSeparatorGreen<'_>>(
                 Self::try_parse_struct_ctor_argument,
                 is_of_kind!(rparen, block, rbrace, module_item_kw),
                 "struct constructor argument",
             ),
         );
-        let rbrace = self.parse_token::<TerminalRBrace>();
+        let rbrace = self.parse_token::<TerminalRBrace<'_>>();
 
         StructArgListBraced::new_green(self.db, lbrace, arg_list, rbrace)
     }
 
     /// Assumes the current token is LParen.
     /// Expected pattern: `<ArgListParenthesized>`
-    fn expect_function_call(&mut self, path: ExprPathGreen) -> ExprFunctionCallGreen {
+    fn expect_function_call(&mut self, path: ExprPathGreen<'a>) -> ExprFunctionCallGreen<'a> {
         let func_name = path;
         let parenthesized_args = self.expect_parenthesized_argument_list();
         ExprFunctionCall::new_green(self.db, func_name, parenthesized_args)
@@ -1698,8 +1719,8 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is TerminalNot.
     /// Expected pattern: `!<WrappedArgList>`
-    fn expect_macro_call(&mut self, path: ExprPathGreen) -> ExprInlineMacroGreen {
-        let bang = self.take::<TerminalNot>();
+    fn expect_macro_call(&mut self, path: ExprPathGreen<'a>) -> ExprInlineMacroGreen<'a> {
+        let bang = self.take::<TerminalNot<'_>>();
         let macro_name = path;
         let token_tree_node = self.parse_token_tree_node();
         ExprInlineMacro::new_green(self.db, macro_name, bang, token_tree_node)
@@ -1707,28 +1728,28 @@ impl<'a> Parser<'a> {
 
     /// Either parses a leaf of the tree (i.e. any non-parenthesis token) or an inner node (i.e. a
     /// parenthesized stream of tokens).
-    fn parse_token_tree(&mut self) -> TokenTreeGreen {
+    fn parse_token_tree(&mut self) -> TokenTreeGreen<'a> {
         match self.peek().kind {
             SyntaxKind::TerminalLBrace
             | SyntaxKind::TerminalLParen
             | SyntaxKind::TerminalLBrack => self.parse_token_tree_node().into(),
             SyntaxKind::TerminalDollar => {
-                let dollar: TerminalDollarGreen = self.take::<TerminalDollar>();
+                let dollar: TerminalDollarGreen<'_> = self.take::<TerminalDollar<'_>>();
                 match self.peek().kind {
                     SyntaxKind::TerminalLParen => {
-                        let lparen = self.take::<TerminalLParen>();
+                        let lparen = self.take::<TerminalLParen<'_>>();
                         let elements = TokenList::new_green(self.db, &self.parse_token_list());
-                        let rparen = self.parse_token::<TerminalRParen>();
-                        let separator: OptionTerminalCommaGreen = match self.peek().kind {
-                            SyntaxKind::TerminalComma => self.take::<TerminalComma>().into(),
+                        let rparen = self.parse_token::<TerminalRParen<'_>>();
+                        let separator: OptionTerminalCommaGreen<'_> = match self.peek().kind {
+                            SyntaxKind::TerminalComma => self.take::<TerminalComma<'_>>().into(),
                             _ => OptionTerminalCommaEmpty::new_green(self.db).into(),
                         };
                         let operator = match self.peek().kind {
                             SyntaxKind::TerminalQuestionMark => {
-                                self.take::<TerminalQuestionMark>().into()
+                                self.take::<TerminalQuestionMark<'_>>().into()
                             }
-                            SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
-                            SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
+                            SyntaxKind::TerminalPlus => self.take::<TerminalPlus<'_>>().into(),
+                            SyntaxKind::TerminalMul => self.take::<TerminalMul<'_>>().into(),
                             _ => unreachable!(),
                         };
                         TokenTreeRepetition::new_green(
@@ -1737,7 +1758,7 @@ impl<'a> Parser<'a> {
                         .into()
                     }
                     SyntaxKind::TerminalIdentifier => {
-                        let identifier = self.take::<TerminalIdentifier>();
+                        let identifier = self.take::<TerminalIdentifier<'_>>();
                         TokenTreeParam::new_green(self.db, dollar, identifier).into()
                     }
                     _ => self.parse_token_tree_leaf().into(),
@@ -1747,30 +1768,30 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_token_tree_leaf(&mut self) -> TokenTreeLeafGreen {
+    fn parse_token_tree_leaf(&mut self) -> TokenTreeLeafGreen<'a> {
         let token_node = self.take_token_node();
         TokenTreeLeaf::new_green(self.db, token_node)
     }
 
-    fn parse_token_tree_node(&mut self) -> TokenTreeNodeGreen {
+    fn parse_token_tree_node(&mut self) -> TokenTreeNodeGreen<'a> {
         let wrapped_token_tree = match self.peek().kind {
             SyntaxKind::TerminalLBrace => self
-                .expect_wrapped_token_tree::<TerminalLBrace, TerminalRBrace, _, _>(
+                .expect_wrapped_token_tree::<TerminalLBrace<'_>, TerminalRBrace<'_>, _, _>(
                     BracedTokenTree::new_green,
                 )
                 .into(),
             SyntaxKind::TerminalLParen => self
-                .expect_wrapped_token_tree::<TerminalLParen, TerminalRParen, _, _>(
+                .expect_wrapped_token_tree::<TerminalLParen<'_>, TerminalRParen<'_>, _, _>(
                     ParenthesizedTokenTree::new_green,
                 )
                 .into(),
             SyntaxKind::TerminalLBrack => self
-                .expect_wrapped_token_tree::<TerminalLBrack, TerminalRBrack, _, _>(
+                .expect_wrapped_token_tree::<TerminalLBrack<'_>, TerminalRBrack<'_>, _, _>(
                     BracketedTokenTree::new_green,
                 )
                 .into(),
             _ => {
-                return self.create_and_report_missing::<TokenTreeNode>(
+                return self.create_and_report_missing::<TokenTreeNode<'_>>(
                     ParserDiagnosticKind::MissingWrappedArgList,
                 );
             }
@@ -1783,22 +1804,27 @@ impl<'a> Parser<'a> {
     /// Gets `new_green` a green id node builder for the list of the requested type, applies it to
     /// the parsed list and returns the result.
     fn expect_wrapped_token_tree<
-        LTerminal: syntax::node::Terminal,
-        RTerminal: syntax::node::Terminal,
+        LTerminal: syntax::node::Terminal<'a>,
+        RTerminal: syntax::node::Terminal<'a>,
         ListGreen,
-        NewGreen: Fn(&dyn SyntaxGroup, LTerminal::Green, TokenListGreen, RTerminal::Green) -> ListGreen,
+        NewGreen: Fn(
+            &'a dyn SyntaxGroup,
+            LTerminal::Green,
+            TokenListGreen<'a>,
+            RTerminal::Green,
+        ) -> ListGreen,
     >(
         &mut self,
         new_green: NewGreen,
     ) -> ListGreen {
         let l_term = self.take::<LTerminal>();
         let tokens = self.parse_token_list();
-        let r_term: <RTerminal as TypedSyntaxNode>::Green = self.parse_token::<RTerminal>();
+        let r_term: <RTerminal as TypedSyntaxNode<'_>>::Green = self.parse_token::<RTerminal>();
         new_green(self.db, l_term, TokenList::new_green(self.db, &tokens), r_term)
     }
 
-    fn parse_token_list(&mut self) -> Vec<TokenTreeGreen> {
-        let mut tokens: Vec<TokenTreeGreen> = vec![];
+    fn parse_token_list(&mut self) -> Vec<TokenTreeGreen<'a>> {
+        let mut tokens: Vec<TokenTreeGreen<'_>> = vec![];
         while !matches!(
             self.peek().kind,
             SyntaxKind::TerminalRParen
@@ -1812,110 +1838,110 @@ impl<'a> Parser<'a> {
     }
 
     /// Takes a TokenNode according to the current SyntaxKind.
-    fn take_token_node(&mut self) -> TokenNodeGreen {
+    fn take_token_node(&mut self) -> TokenNodeGreen<'a> {
         match self.peek().kind {
-            SyntaxKind::TerminalIdentifier => self.take::<TerminalIdentifier>().into(),
-            SyntaxKind::TerminalLiteralNumber => self.take::<TerminalLiteralNumber>().into(),
-            SyntaxKind::TerminalShortString => self.take::<TerminalShortString>().into(),
-            SyntaxKind::TerminalString => self.take::<TerminalString>().into(),
-            SyntaxKind::TerminalAs => self.take::<TerminalAs>().into(),
-            SyntaxKind::TerminalConst => self.take::<TerminalConst>().into(),
-            SyntaxKind::TerminalElse => self.take::<TerminalElse>().into(),
-            SyntaxKind::TerminalEnum => self.take::<TerminalEnum>().into(),
-            SyntaxKind::TerminalExtern => self.take::<TerminalExtern>().into(),
-            SyntaxKind::TerminalFalse => self.take::<TerminalFalse>().into(),
-            SyntaxKind::TerminalFunction => self.take::<TerminalFunction>().into(),
-            SyntaxKind::TerminalIf => self.take::<TerminalIf>().into(),
-            SyntaxKind::TerminalWhile => self.take::<TerminalWhile>().into(),
-            SyntaxKind::TerminalFor => self.take::<TerminalFor>().into(),
-            SyntaxKind::TerminalLoop => self.take::<TerminalLoop>().into(),
-            SyntaxKind::TerminalImpl => self.take::<TerminalImpl>().into(),
-            SyntaxKind::TerminalImplicits => self.take::<TerminalImplicits>().into(),
-            SyntaxKind::TerminalLet => self.take::<TerminalLet>().into(),
-            SyntaxKind::TerminalMatch => self.take::<TerminalMatch>().into(),
-            SyntaxKind::TerminalModule => self.take::<TerminalModule>().into(),
-            SyntaxKind::TerminalMut => self.take::<TerminalMut>().into(),
-            SyntaxKind::TerminalNoPanic => self.take::<TerminalNoPanic>().into(),
-            SyntaxKind::TerminalOf => self.take::<TerminalOf>().into(),
-            SyntaxKind::TerminalRef => self.take::<TerminalRef>().into(),
-            SyntaxKind::TerminalContinue => self.take::<TerminalContinue>().into(),
-            SyntaxKind::TerminalReturn => self.take::<TerminalReturn>().into(),
-            SyntaxKind::TerminalBreak => self.take::<TerminalBreak>().into(),
-            SyntaxKind::TerminalStruct => self.take::<TerminalStruct>().into(),
-            SyntaxKind::TerminalTrait => self.take::<TerminalTrait>().into(),
-            SyntaxKind::TerminalTrue => self.take::<TerminalTrue>().into(),
-            SyntaxKind::TerminalType => self.take::<TerminalType>().into(),
-            SyntaxKind::TerminalUse => self.take::<TerminalUse>().into(),
-            SyntaxKind::TerminalPub => self.take::<TerminalPub>().into(),
-            SyntaxKind::TerminalAnd => self.take::<TerminalAnd>().into(),
-            SyntaxKind::TerminalAndAnd => self.take::<TerminalAndAnd>().into(),
-            SyntaxKind::TerminalArrow => self.take::<TerminalArrow>().into(),
-            SyntaxKind::TerminalAt => self.take::<TerminalAt>().into(),
-            SyntaxKind::TerminalBadCharacters => self.take::<TerminalBadCharacters>().into(),
-            SyntaxKind::TerminalColon => self.take::<TerminalColon>().into(),
-            SyntaxKind::TerminalColonColon => self.take::<TerminalColonColon>().into(),
-            SyntaxKind::TerminalComma => self.take::<TerminalComma>().into(),
-            SyntaxKind::TerminalDiv => self.take::<TerminalDiv>().into(),
-            SyntaxKind::TerminalDivEq => self.take::<TerminalDivEq>().into(),
-            SyntaxKind::TerminalDollar => self.take::<TerminalDollar>().into(),
-            SyntaxKind::TerminalDot => self.take::<TerminalDot>().into(),
-            SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot>().into(),
-            SyntaxKind::TerminalDotDotEq => self.take::<TerminalDotDotEq>().into(),
-            SyntaxKind::TerminalEndOfFile => self.take::<TerminalEndOfFile>().into(),
-            SyntaxKind::TerminalEq => self.take::<TerminalEq>().into(),
-            SyntaxKind::TerminalEqEq => self.take::<TerminalEqEq>().into(),
-            SyntaxKind::TerminalGE => self.take::<TerminalGE>().into(),
-            SyntaxKind::TerminalGT => self.take::<TerminalGT>().into(),
-            SyntaxKind::TerminalHash => self.take::<TerminalHash>().into(),
-            SyntaxKind::TerminalLBrace => self.take::<TerminalLBrace>().into(),
-            SyntaxKind::TerminalLBrack => self.take::<TerminalLBrack>().into(),
-            SyntaxKind::TerminalLE => self.take::<TerminalLE>().into(),
-            SyntaxKind::TerminalLParen => self.take::<TerminalLParen>().into(),
-            SyntaxKind::TerminalLT => self.take::<TerminalLT>().into(),
-            SyntaxKind::TerminalMatchArrow => self.take::<TerminalMatchArrow>().into(),
-            SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
-            SyntaxKind::TerminalMinusEq => self.take::<TerminalMinusEq>().into(),
-            SyntaxKind::TerminalMod => self.take::<TerminalMod>().into(),
-            SyntaxKind::TerminalModEq => self.take::<TerminalModEq>().into(),
-            SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
-            SyntaxKind::TerminalMulEq => self.take::<TerminalMulEq>().into(),
-            SyntaxKind::TerminalNeq => self.take::<TerminalNeq>().into(),
-            SyntaxKind::TerminalNot => self.take::<TerminalNot>().into(),
-            SyntaxKind::TerminalBitNot => self.take::<TerminalBitNot>().into(),
-            SyntaxKind::TerminalOr => self.take::<TerminalOr>().into(),
-            SyntaxKind::TerminalOrOr => self.take::<TerminalOrOr>().into(),
-            SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
-            SyntaxKind::TerminalPlusEq => self.take::<TerminalPlusEq>().into(),
-            SyntaxKind::TerminalQuestionMark => self.take::<TerminalQuestionMark>().into(),
-            SyntaxKind::TerminalRBrace => self.take::<TerminalRBrace>().into(),
-            SyntaxKind::TerminalRBrack => self.take::<TerminalRBrack>().into(),
-            SyntaxKind::TerminalRParen => self.take::<TerminalRParen>().into(),
-            SyntaxKind::TerminalSemicolon => self.take::<TerminalSemicolon>().into(),
-            SyntaxKind::TerminalUnderscore => self.take::<TerminalUnderscore>().into(),
-            SyntaxKind::TerminalXor => self.take::<TerminalXor>().into(),
+            SyntaxKind::TerminalIdentifier => self.take::<TerminalIdentifier<'_>>().into(),
+            SyntaxKind::TerminalLiteralNumber => self.take::<TerminalLiteralNumber<'_>>().into(),
+            SyntaxKind::TerminalShortString => self.take::<TerminalShortString<'_>>().into(),
+            SyntaxKind::TerminalString => self.take::<TerminalString<'_>>().into(),
+            SyntaxKind::TerminalAs => self.take::<TerminalAs<'_>>().into(),
+            SyntaxKind::TerminalConst => self.take::<TerminalConst<'_>>().into(),
+            SyntaxKind::TerminalElse => self.take::<TerminalElse<'_>>().into(),
+            SyntaxKind::TerminalEnum => self.take::<TerminalEnum<'_>>().into(),
+            SyntaxKind::TerminalExtern => self.take::<TerminalExtern<'_>>().into(),
+            SyntaxKind::TerminalFalse => self.take::<TerminalFalse<'_>>().into(),
+            SyntaxKind::TerminalFunction => self.take::<TerminalFunction<'_>>().into(),
+            SyntaxKind::TerminalIf => self.take::<TerminalIf<'_>>().into(),
+            SyntaxKind::TerminalWhile => self.take::<TerminalWhile<'_>>().into(),
+            SyntaxKind::TerminalFor => self.take::<TerminalFor<'_>>().into(),
+            SyntaxKind::TerminalLoop => self.take::<TerminalLoop<'_>>().into(),
+            SyntaxKind::TerminalImpl => self.take::<TerminalImpl<'_>>().into(),
+            SyntaxKind::TerminalImplicits => self.take::<TerminalImplicits<'_>>().into(),
+            SyntaxKind::TerminalLet => self.take::<TerminalLet<'_>>().into(),
+            SyntaxKind::TerminalMatch => self.take::<TerminalMatch<'_>>().into(),
+            SyntaxKind::TerminalModule => self.take::<TerminalModule<'_>>().into(),
+            SyntaxKind::TerminalMut => self.take::<TerminalMut<'_>>().into(),
+            SyntaxKind::TerminalNoPanic => self.take::<TerminalNoPanic<'_>>().into(),
+            SyntaxKind::TerminalOf => self.take::<TerminalOf<'_>>().into(),
+            SyntaxKind::TerminalRef => self.take::<TerminalRef<'_>>().into(),
+            SyntaxKind::TerminalContinue => self.take::<TerminalContinue<'_>>().into(),
+            SyntaxKind::TerminalReturn => self.take::<TerminalReturn<'_>>().into(),
+            SyntaxKind::TerminalBreak => self.take::<TerminalBreak<'_>>().into(),
+            SyntaxKind::TerminalStruct => self.take::<TerminalStruct<'_>>().into(),
+            SyntaxKind::TerminalTrait => self.take::<TerminalTrait<'_>>().into(),
+            SyntaxKind::TerminalTrue => self.take::<TerminalTrue<'_>>().into(),
+            SyntaxKind::TerminalType => self.take::<TerminalType<'_>>().into(),
+            SyntaxKind::TerminalUse => self.take::<TerminalUse<'_>>().into(),
+            SyntaxKind::TerminalPub => self.take::<TerminalPub<'_>>().into(),
+            SyntaxKind::TerminalAnd => self.take::<TerminalAnd<'_>>().into(),
+            SyntaxKind::TerminalAndAnd => self.take::<TerminalAndAnd<'_>>().into(),
+            SyntaxKind::TerminalArrow => self.take::<TerminalArrow<'_>>().into(),
+            SyntaxKind::TerminalAt => self.take::<TerminalAt<'_>>().into(),
+            SyntaxKind::TerminalBadCharacters => self.take::<TerminalBadCharacters<'_>>().into(),
+            SyntaxKind::TerminalColon => self.take::<TerminalColon<'_>>().into(),
+            SyntaxKind::TerminalColonColon => self.take::<TerminalColonColon<'_>>().into(),
+            SyntaxKind::TerminalComma => self.take::<TerminalComma<'_>>().into(),
+            SyntaxKind::TerminalDiv => self.take::<TerminalDiv<'_>>().into(),
+            SyntaxKind::TerminalDivEq => self.take::<TerminalDivEq<'_>>().into(),
+            SyntaxKind::TerminalDollar => self.take::<TerminalDollar<'_>>().into(),
+            SyntaxKind::TerminalDot => self.take::<TerminalDot<'_>>().into(),
+            SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot<'_>>().into(),
+            SyntaxKind::TerminalDotDotEq => self.take::<TerminalDotDotEq<'_>>().into(),
+            SyntaxKind::TerminalEndOfFile => self.take::<TerminalEndOfFile<'_>>().into(),
+            SyntaxKind::TerminalEq => self.take::<TerminalEq<'_>>().into(),
+            SyntaxKind::TerminalEqEq => self.take::<TerminalEqEq<'_>>().into(),
+            SyntaxKind::TerminalGE => self.take::<TerminalGE<'_>>().into(),
+            SyntaxKind::TerminalGT => self.take::<TerminalGT<'_>>().into(),
+            SyntaxKind::TerminalHash => self.take::<TerminalHash<'_>>().into(),
+            SyntaxKind::TerminalLBrace => self.take::<TerminalLBrace<'_>>().into(),
+            SyntaxKind::TerminalLBrack => self.take::<TerminalLBrack<'_>>().into(),
+            SyntaxKind::TerminalLE => self.take::<TerminalLE<'_>>().into(),
+            SyntaxKind::TerminalLParen => self.take::<TerminalLParen<'_>>().into(),
+            SyntaxKind::TerminalLT => self.take::<TerminalLT<'_>>().into(),
+            SyntaxKind::TerminalMatchArrow => self.take::<TerminalMatchArrow<'_>>().into(),
+            SyntaxKind::TerminalMinus => self.take::<TerminalMinus<'_>>().into(),
+            SyntaxKind::TerminalMinusEq => self.take::<TerminalMinusEq<'_>>().into(),
+            SyntaxKind::TerminalMod => self.take::<TerminalMod<'_>>().into(),
+            SyntaxKind::TerminalModEq => self.take::<TerminalModEq<'_>>().into(),
+            SyntaxKind::TerminalMul => self.take::<TerminalMul<'_>>().into(),
+            SyntaxKind::TerminalMulEq => self.take::<TerminalMulEq<'_>>().into(),
+            SyntaxKind::TerminalNeq => self.take::<TerminalNeq<'_>>().into(),
+            SyntaxKind::TerminalNot => self.take::<TerminalNot<'_>>().into(),
+            SyntaxKind::TerminalBitNot => self.take::<TerminalBitNot<'_>>().into(),
+            SyntaxKind::TerminalOr => self.take::<TerminalOr<'_>>().into(),
+            SyntaxKind::TerminalOrOr => self.take::<TerminalOrOr<'_>>().into(),
+            SyntaxKind::TerminalPlus => self.take::<TerminalPlus<'_>>().into(),
+            SyntaxKind::TerminalPlusEq => self.take::<TerminalPlusEq<'_>>().into(),
+            SyntaxKind::TerminalQuestionMark => self.take::<TerminalQuestionMark<'_>>().into(),
+            SyntaxKind::TerminalRBrace => self.take::<TerminalRBrace<'_>>().into(),
+            SyntaxKind::TerminalRBrack => self.take::<TerminalRBrack<'_>>().into(),
+            SyntaxKind::TerminalRParen => self.take::<TerminalRParen<'_>>().into(),
+            SyntaxKind::TerminalSemicolon => self.take::<TerminalSemicolon<'_>>().into(),
+            SyntaxKind::TerminalUnderscore => self.take::<TerminalUnderscore<'_>>().into(),
+            SyntaxKind::TerminalXor => self.take::<TerminalXor<'_>>().into(),
             other => unreachable!("Unexpected token kind: {other:?}"),
         }
     }
     /// Returns a GreenId of a node with an ArgListParenthesized|ArgListBracketed|ArgListBraced kind
     /// or TryParseFailure if such an argument list can't be parsed.
-    pub(crate) fn parse_wrapped_arg_list(&mut self) -> WrappedArgListGreen {
+    pub(crate) fn parse_wrapped_arg_list(&mut self) -> WrappedArgListGreen<'a> {
         match self.peek().kind {
             SyntaxKind::TerminalLParen => self
-                .expect_wrapped_argument_list::<TerminalLParen, TerminalRParen, _, _>(
+                .expect_wrapped_argument_list::<TerminalLParen<'_>, TerminalRParen<'_>, _, _>(
                     ArgListParenthesized::new_green,
                 )
                 .into(),
             SyntaxKind::TerminalLBrack => self
-                .expect_wrapped_argument_list::<TerminalLBrack, TerminalRBrack, _, _>(
+                .expect_wrapped_argument_list::<TerminalLBrack<'_>, TerminalRBrack<'_>, _, _>(
                     ArgListBracketed::new_green,
                 )
                 .into(),
             SyntaxKind::TerminalLBrace => self
-                .expect_wrapped_argument_list::<TerminalLBrace, TerminalRBrace, _, _>(
+                .expect_wrapped_argument_list::<TerminalLBrace<'_>, TerminalRBrace<'_>, _, _>(
                     ArgListBraced::new_green,
                 )
                 .into(),
-            _ => self.create_and_report_missing::<WrappedArgList>(
+            _ => self.create_and_report_missing::<WrappedArgList<'_>>(
                 ParserDiagnosticKind::MissingWrappedArgList,
             ),
         }
@@ -1926,36 +1952,36 @@ impl<'a> Parser<'a> {
     /// Gets `new_green` a green id node builder for the list of the requested type, applies it to
     /// the parsed list and returns the result.
     fn expect_wrapped_argument_list<
-        LTerminal: syntax::node::Terminal,
-        RTerminal: syntax::node::Terminal,
+        LTerminal: syntax::node::Terminal<'a>,
+        RTerminal: syntax::node::Terminal<'a>,
         ListGreen,
-        NewGreen: Fn(&dyn SyntaxGroup, LTerminal::Green, ArgListGreen, RTerminal::Green) -> ListGreen,
+        NewGreen: Fn(&'a dyn SyntaxGroup, LTerminal::Green, ArgListGreen<'a>, RTerminal::Green) -> ListGreen,
     >(
         &mut self,
         new_green: NewGreen,
     ) -> ListGreen {
         let l_term = self.take::<LTerminal>();
-        let exprs: Vec<ArgListElementOrSeparatorGreen> = self
-            .parse_separated_list::<Arg, TerminalComma, ArgListElementOrSeparatorGreen>(
+        let exprs: Vec<ArgListElementOrSeparatorGreen<'_>> = self
+            .parse_separated_list::<Arg<'_>, TerminalComma<'_>, ArgListElementOrSeparatorGreen<'_>>(
                 Self::try_parse_function_argument,
                 is_of_kind!(rparen, rbrace, rbrack, block, module_item_kw),
                 "argument",
             );
-        let r_term: <RTerminal as TypedSyntaxNode>::Green = self.parse_token::<RTerminal>();
+        let r_term: <RTerminal as TypedSyntaxNode<'_>>::Green = self.parse_token::<RTerminal>();
         new_green(self.db, l_term, ArgList::new_green(self.db, &exprs), r_term)
     }
 
     /// Assumes the current token is LParen.
     /// Expected pattern: `\(<ArgList>\)`
-    fn expect_parenthesized_argument_list(&mut self) -> ArgListParenthesizedGreen {
-        self.expect_wrapped_argument_list::<TerminalLParen, TerminalRParen, _, _>(
+    fn expect_parenthesized_argument_list(&mut self) -> ArgListParenthesizedGreen<'a> {
+        self.expect_wrapped_argument_list::<TerminalLParen<'_>, TerminalRParen<'_>, _, _>(
             ArgListParenthesized::new_green,
         )
     }
 
     /// Tries to parse parenthesized argument list.
     /// Expected pattern: `\(<ArgList>\)`
-    fn try_parse_parenthesized_argument_list(&mut self) -> OptionArgListParenthesizedGreen {
+    fn try_parse_parenthesized_argument_list(&mut self) -> OptionArgListParenthesizedGreen<'a> {
         if self.peek().kind == SyntaxKind::TerminalLParen {
             self.expect_parenthesized_argument_list().into()
         } else {
@@ -1964,7 +1990,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses a function call's argument, which contains possibly modifiers, and a argument clause.
-    fn try_parse_function_argument(&mut self) -> TryParseResult<ArgGreen> {
+    fn try_parse_function_argument(&mut self) -> TryParseResult<ArgGreen<'a>> {
         let modifiers_list = self.parse_modifier_list();
         let arg_clause = self.try_parse_argument_clause();
         match arg_clause {
@@ -1988,9 +2014,9 @@ impl<'a> Parser<'a> {
     /// * `<Expr>` (unnamed).
     /// * `<Identifier>: <Expr>` (named).
     /// * `:<Identifier>` (Field init shorthand - syntactic sugar for `a: a`).
-    fn try_parse_argument_clause(&mut self) -> TryParseResult<ArgClauseGreen> {
+    fn try_parse_argument_clause(&mut self) -> TryParseResult<ArgClauseGreen<'a>> {
         if self.peek().kind == SyntaxKind::TerminalColon {
-            let colon = self.take::<TerminalColon>();
+            let colon = self.take::<TerminalColon<'_>>();
             let name = self.parse_identifier();
             return Ok(ArgClauseFieldInitShorthand::new_green(
                 self.db,
@@ -2006,7 +2032,7 @@ impl<'a> Parser<'a> {
         // name.
         if self.peek().kind == SyntaxKind::TerminalColon {
             if let Some(argname) = self.try_extract_identifier(value) {
-                let colon = self.take::<TerminalColon>();
+                let colon = self.take::<TerminalColon<'_>>();
                 let expr = self.parse_expr();
                 return Ok(ArgClauseNamed::new_green(self.db, argname, colon, expr).into());
             }
@@ -2017,7 +2043,7 @@ impl<'a> Parser<'a> {
 
     /// If the given `expr` is a simple identifier, returns the corresponding green node.
     /// Otherwise, returns `TryParseFailure`.
-    fn try_extract_identifier(&self, expr: ExprGreen) -> Option<TerminalIdentifierGreen> {
+    fn try_extract_identifier(&self, expr: ExprGreen<'a>) -> Option<TerminalIdentifierGreen<'a>> {
         // Check that `expr` is `ExprPath`.
         let GreenNode {
             kind: SyntaxKind::ExprPath,
@@ -2071,7 +2097,7 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is LBrace.
     /// Expected pattern: `<StructArgListBraced>`
-    fn expect_constructor_call(&mut self, path: ExprPathGreen) -> ExprStructCtorCallGreen {
+    fn expect_constructor_call(&mut self, path: ExprPathGreen<'a>) -> ExprStructCtorCallGreen<'a> {
         let ctor_name = path;
         let args = self.expect_struct_ctor_argument_list_braced();
         ExprStructCtorCall::new_green(self.db, ctor_name, args)
@@ -2080,15 +2106,15 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is LParen.
     /// Expected pattern: `\((<expr>,)*<expr>?\)`
     /// Returns a GreenId of a node with kind ExprParenthesized|ExprTuple.
-    fn expect_parenthesized_expr(&mut self) -> ExprGreen {
-        let lparen = self.take::<TerminalLParen>();
-        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
-            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
+    fn expect_parenthesized_expr(&mut self) -> ExprGreen<'a> {
+        let lparen = self.take::<TerminalLParen<'_>>();
+        let exprs: Vec<ExprListElementOrSeparatorGreen<'_>> = self
+            .parse_separated_list::<Expr<'_>, TerminalComma<'_>, ExprListElementOrSeparatorGreen<'_>>(
                 Self::try_parse_expr,
                 is_of_kind!(rparen, block, rbrace, module_item_kw),
                 "expression",
             );
-        let rparen = self.parse_token::<TerminalRParen>();
+        let rparen = self.parse_token::<TerminalRParen<'_>>();
 
         if let [ExprListElementOrSeparatorGreen::Element(expr)] = &exprs[..] {
             // We have exactly one item and no separator --> This is not a tuple.
@@ -2107,15 +2133,15 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is LParen.
     /// Expected pattern: `\((<type_expr>,)*<type_expr>?\)`
     /// Returns a GreenId of a node with kind ExprTuple.
-    fn expect_type_tuple_expr(&mut self) -> ExprGreen {
-        let lparen = self.take::<TerminalLParen>();
-        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
-            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
+    fn expect_type_tuple_expr(&mut self) -> ExprGreen<'a> {
+        let lparen = self.take::<TerminalLParen<'_>>();
+        let exprs: Vec<ExprListElementOrSeparatorGreen<'_>> = self
+            .parse_separated_list::<Expr<'_>, TerminalComma<'_>, ExprListElementOrSeparatorGreen<'_>>(
                 Self::try_parse_type_expr,
                 is_of_kind!(rparen, block, rbrace, module_item_kw),
                 "type expression",
             );
-        let rparen = self.parse_token::<TerminalRParen>();
+        let rparen = self.parse_token::<TerminalRParen<'_>>();
         if let [ExprListElementOrSeparatorGreen::Element(_)] = &exprs[..] {
             self.add_diagnostic(
                 ParserDiagnosticKind::MissingToken(SyntaxKind::TokenComma),
@@ -2134,19 +2160,19 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is LBrack.
     /// Expected pattern: `\[<type_expr>; <expr>\]`.
     /// Returns a GreenId of a node with kind ExprFixedSizeArray.
-    fn expect_type_fixed_size_array_expr(&mut self) -> ExprGreen {
-        let lbrack = self.take::<TerminalLBrack>();
-        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
-            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
+    fn expect_type_fixed_size_array_expr(&mut self) -> ExprGreen<'a> {
+        let lbrack = self.take::<TerminalLBrack<'_>>();
+        let exprs: Vec<ExprListElementOrSeparatorGreen<'_>> = self
+            .parse_separated_list::<Expr<'_>, TerminalComma<'_>, ExprListElementOrSeparatorGreen<'_>>(
                 Self::try_parse_type_expr,
                 is_of_kind!(rbrack, semicolon),
                 "type expression",
             );
-        let semicolon = self.parse_token::<TerminalSemicolon>();
+        let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
         let size_expr = self.parse_expr();
         let fixed_size_array_size =
             FixedSizeArraySize::new_green(self.db, semicolon, size_expr).into();
-        let rbrack = self.parse_token::<TerminalRBrack>();
+        let rbrack = self.parse_token::<TerminalRBrack<'_>>();
         ExprFixedSizeArray::new_green(
             self.db,
             lbrack,
@@ -2159,8 +2185,8 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is DotDot.
     /// Expected pattern: `\.\.<Expr>`
-    fn expect_struct_argument_tail(&mut self) -> StructArgTailGreen {
-        let dotdot = self.take::<TerminalDotDot>(); // ..
+    fn expect_struct_argument_tail(&mut self) -> StructArgTailGreen<'a> {
+        let dotdot = self.take::<TerminalDotDot<'_>>(); // ..
         // TODO(yuval): consider changing this to SimpleExpr once it exists.
         let expr = self.parse_expr();
         StructArgTail::new_green(self.db, dotdot, expr)
@@ -2170,7 +2196,7 @@ impl<'a> Parser<'a> {
     // https://doc.rust-lang.org/book/ch05-01-defining-structs.html#creating-instances-from-other-instances-with-struct-update-syntax.
     /// Like parse_argument, but also allows a struct-arg-tail, e.g. 'let s2 = S{"s2", ..s1};'
     /// Returns a GreenId of a node with kind StructArgSingle|StructArgTail.
-    fn try_parse_struct_ctor_argument(&mut self) -> TryParseResult<StructArgGreen> {
+    fn try_parse_struct_ctor_argument(&mut self) -> TryParseResult<StructArgGreen<'a>> {
         match self.peek().kind {
             SyntaxKind::TerminalDotDot => Ok(self.expect_struct_argument_tail().into()),
             _ => self.try_parse_argument_single().map(|arg| arg.into()),
@@ -2179,9 +2205,9 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind StructArgExpr or OptionStructArgExprEmpty if an
     /// argument expression `(":<value>")` can't be parsed.
-    fn parse_option_struct_arg_expression(&mut self) -> OptionStructArgExprGreen {
+    fn parse_option_struct_arg_expression(&mut self) -> OptionStructArgExprGreen<'a> {
         if self.peek().kind == SyntaxKind::TerminalColon {
-            let colon = self.take::<TerminalColon>();
+            let colon = self.take::<TerminalColon<'_>>();
             let value = self.parse_expr();
             StructArgExpr::new_green(self.db, colon, value).into()
         } else {
@@ -2191,7 +2217,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind OptionExprClause or OptionExprClauseEmpty if an
     /// argument expression `("Expr")` can't be parsed.
-    fn parse_option_expression_clause(&mut self) -> OptionExprClauseGreen {
+    fn parse_option_expression_clause(&mut self) -> OptionExprClauseGreen<'a> {
         if self.peek().kind == SyntaxKind::TerminalSemicolon {
             OptionExprClauseEmpty::new_green(self.db).into()
         } else {
@@ -2201,14 +2227,14 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with kind StructArgSingle.
-    fn try_parse_argument_single(&mut self) -> TryParseResult<StructArgSingleGreen> {
+    fn try_parse_argument_single(&mut self) -> TryParseResult<StructArgSingleGreen<'a>> {
         let identifier = self.try_parse_identifier()?;
         let struct_arg_expr = self.parse_option_struct_arg_expression(); // :<expr>
         Ok(StructArgSingle::new_green(self.db, identifier, struct_arg_expr))
     }
 
     /// Returns a GreenId of a node with kind ExprBlock.
-    fn parse_block(&mut self) -> ExprBlockGreen {
+    fn parse_block(&mut self) -> ExprBlockGreen<'a> {
         let skipped_tokens = self.skip_until(is_of_kind!(rbrace, lbrace, module_item_kw, block));
 
         if let Err(SkippedError(span)) = skipped_tokens {
@@ -2222,13 +2248,13 @@ impl<'a> Parser<'a> {
         if is_rbrace_or_top_level(self.peek().kind) {
             return ExprBlock::new_green(
                 self.db,
-                self.create_and_report_missing_terminal::<TerminalLBrace>(),
+                self.create_and_report_missing_terminal::<TerminalLBrace<'_>>(),
                 StatementList::new_green(self.db, &[]),
                 TerminalRBrace::missing(self.db),
             );
         }
         // Don't report diagnostic if one has already been reported.
-        let lbrace = self.parse_token_ex::<TerminalLBrace>(skipped_tokens.is_ok());
+        let lbrace = self.parse_token_ex::<TerminalLBrace<'_>>(skipped_tokens.is_ok());
         let statements = StatementList::new_green(
             self.db,
             &self.parse_list(
@@ -2237,38 +2263,38 @@ impl<'a> Parser<'a> {
                 "statement",
             ),
         );
-        let rbrace = self.parse_token::<TerminalRBrace>();
+        let rbrace = self.parse_token::<TerminalRBrace<'_>>();
         ExprBlock::new_green(self.db, lbrace, statements, rbrace)
     }
 
     /// Assumes the current token is `Match`.
     /// Expected pattern: `match <expr> \{<MatchArm>*\}`
-    fn expect_match_expr(&mut self) -> ExprMatchGreen {
-        let match_kw = self.take::<TerminalMatch>();
+    fn expect_match_expr(&mut self) -> ExprMatchGreen<'a> {
+        let match_kw = self.take::<TerminalMatch<'_>>();
         let expr =
             self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid, AndLetBehavior::Simple);
-        let lbrace = self.parse_token::<TerminalLBrace>();
+        let lbrace = self.parse_token::<TerminalLBrace<'_>>();
         let arms = MatchArms::new_green(
             self.db,
             &self
-                .parse_separated_list::<MatchArm, TerminalComma, MatchArmsElementOrSeparatorGreen>(
+                .parse_separated_list::<MatchArm<'_>, TerminalComma<'_>, MatchArmsElementOrSeparatorGreen<'_>>(
                     Self::try_parse_match_arm,
                     is_of_kind!(block, rbrace, module_item_kw),
                     "match arm",
                 ),
         );
-        let rbrace = self.parse_token::<TerminalRBrace>();
+        let rbrace = self.parse_token::<TerminalRBrace<'_>>();
         ExprMatch::new_green(self.db, match_kw, expr, lbrace, arms, rbrace)
     }
 
     /// Assumes the current token is `If`.
-    fn expect_if_expr(&mut self) -> ExprIfGreen {
-        let if_kw = self.take::<TerminalIf>();
+    fn expect_if_expr(&mut self) -> ExprIfGreen<'a> {
+        let if_kw = self.take::<TerminalIf<'a>>();
 
         let conditions = self.parse_condition_list();
         let if_block = self.parse_block();
         let else_clause = if self.peek().kind == SyntaxKind::TerminalElse {
-            let else_kw = self.take::<TerminalElse>();
+            let else_kw = self.take::<TerminalElse<'a>>();
             let else_block_or_if = if self.peek().kind == SyntaxKind::TerminalIf {
                 self.expect_if_expr().into()
             } else {
@@ -2284,7 +2310,7 @@ impl<'a> Parser<'a> {
     /// If `condition` is a [ConditionExpr] of the form `<expr> <op> <expr>`, returns the operator's
     /// kind.
     /// Otherwise, returns `None`.
-    fn get_binary_operator(&self, condition: ConditionGreen) -> Option<SyntaxKind> {
+    fn get_binary_operator(&self, condition: ConditionGreen<'_>) -> Option<SyntaxKind> {
         let condition_expr_green = self.db.lookup_intern_green(condition.0);
         require(condition_expr_green.kind == SyntaxKind::ConditionExpr)?;
 
@@ -2299,12 +2325,13 @@ impl<'a> Parser<'a> {
     ///
     /// Assumes the next expected token (after the condition list) is `{`. This assumption is used
     /// in case of an error.
-    fn parse_condition_list(&mut self) -> ConditionListAndGreen {
+    fn parse_condition_list(&mut self) -> ConditionListAndGreen<'a> {
         let and_and_precedence = get_post_operator_precedence(SyntaxKind::TerminalAndAnd).unwrap();
 
         let start_offset = self.offset.add_width(self.current_width);
         let condition = self.parse_condition_expr(false);
-        let mut conditions: Vec<ConditionListAndElementOrSeparatorGreen> = vec![condition.into()];
+        let mut conditions: Vec<ConditionListAndElementOrSeparatorGreen<'_>> =
+            vec![condition.into()];
 
         // If there is more than one condition, check that the first condition does not have a
         // precedence lower than `&&`.
@@ -2324,7 +2351,7 @@ impl<'a> Parser<'a> {
         }
 
         while self.peek().kind == SyntaxKind::TerminalAndAnd {
-            let and_and = self.take::<TerminalAndAnd>();
+            let and_and = self.take::<TerminalAndAnd<'a>>();
             conditions.push(and_and.into());
 
             let condition = self.parse_condition_expr(true);
@@ -2352,12 +2379,12 @@ impl<'a> Parser<'a> {
     /// In the case of `let <pattern> = <expr>`, the parser will stop at the first `&&` token
     /// (which is not inside parenthesis).
     /// If `stop_at_and` is true, this will also be the case for `<expr>`.
-    fn parse_condition_expr(&mut self, stop_at_and: bool) -> ConditionGreen {
+    fn parse_condition_expr(&mut self, stop_at_and: bool) -> ConditionGreen<'a> {
         let and_and_precedence = get_post_operator_precedence(SyntaxKind::TerminalAndAnd).unwrap();
         if self.peek().kind == SyntaxKind::TerminalLet {
-            let let_kw = self.take::<TerminalLet>();
+            let let_kw = self.take::<TerminalLet<'a>>();
             let pattern_list = self
-            .parse_separated_list_inner::<Pattern, TerminalOr, PatternListOrElementOrSeparatorGreen>(
+            .parse_separated_list_inner::<Pattern<'_>, TerminalOr<'_>, PatternListOrElementOrSeparatorGreen<'_>>(
                 Self::try_parse_pattern,
                 is_of_kind!(eq),
                 "pattern",
@@ -2365,14 +2392,14 @@ impl<'a> Parser<'a> {
             );
 
             let pattern_list_green = if pattern_list.is_empty() {
-                self.create_and_report_missing::<PatternListOr>(
+                self.create_and_report_missing::<PatternListOr<'_>>(
                     ParserDiagnosticKind::MissingPattern,
                 )
             } else {
                 PatternListOr::new_green(self.db, &pattern_list)
             };
-            let eq = self.parse_token::<TerminalEq>();
-            let expr: ExprGreen = self.parse_expr_limited(
+            let eq = self.parse_token::<TerminalEq<'a>>();
+            let expr: ExprGreen<'_> = self.parse_expr_limited(
                 and_and_precedence,
                 LbraceAllowed::Forbid,
                 AndLetBehavior::Stop,
@@ -2390,8 +2417,8 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is `Loop`.
     /// Expected pattern: `loop <block>`.
-    fn expect_loop_expr(&mut self) -> ExprLoopGreen {
-        let loop_kw = self.take::<TerminalLoop>();
+    fn expect_loop_expr(&mut self) -> ExprLoopGreen<'a> {
+        let loop_kw = self.take::<TerminalLoop<'a>>();
         let body = self.parse_block();
 
         ExprLoop::new_green(self.db, loop_kw, body)
@@ -2399,8 +2426,8 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is `While`.
     /// Expected pattern: `while <condition> <block>`.
-    fn expect_while_expr(&mut self) -> ExprWhileGreen {
-        let while_kw = self.take::<TerminalWhile>();
+    fn expect_while_expr(&mut self) -> ExprWhileGreen<'a> {
+        let while_kw = self.take::<TerminalWhile<'a>>();
         let conditions = self.parse_condition_list();
         let body = self.parse_block();
 
@@ -2410,12 +2437,12 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is `For`.
     /// Expected pattern: `for <pattern> <identifier> <expression> <block>`.
     /// Identifier will be checked to be 'in' in semantics.
-    fn expect_for_expr(&mut self) -> ExprForGreen {
-        let for_kw = self.take::<TerminalFor>();
+    fn expect_for_expr(&mut self) -> ExprForGreen<'a> {
+        let for_kw = self.take::<TerminalFor<'a>>();
         let pattern = self.parse_pattern();
         let ident = self.take_raw();
-        let in_identifier: TerminalIdentifierGreen = match ident.text.as_str() {
-            "in" => self.add_trivia_to_terminal::<TerminalIdentifier>(ident),
+        let in_identifier: TerminalIdentifierGreen<'_> = match ident.text.as_str() {
+            "in" => self.add_trivia_to_terminal::<TerminalIdentifier<'_>>(ident),
             _ => {
                 self.append_skipped_token_to_pending_trivia(
                     ident,
@@ -2432,10 +2459,10 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is `|`.
     /// Expected pattern: `| <params> | <ReturnTypeClause> <expression>`.
-    fn expect_closure_expr_nary(&mut self) -> ExprClosureGreen {
-        let leftor = self.take::<TerminalOr>();
+    fn expect_closure_expr_nary(&mut self) -> ExprClosureGreen<'a> {
+        let leftor = self.take::<TerminalOr<'a>>();
         let params = self.parse_closure_param_list();
-        let rightor = self.parse_token::<TerminalOr>();
+        let rightor = self.parse_token::<TerminalOr<'a>>();
 
         self.parse_closure_expr_body(
             ClosureParamWrapperNAry::new_green(self.db, leftor, params, rightor).into(),
@@ -2443,17 +2470,20 @@ impl<'a> Parser<'a> {
     }
     /// Assumes the current token is `||`.
     /// Expected pattern: `|| <ReturnTypeClause> <expression> `.
-    fn expect_closure_expr_nullary(&mut self) -> ExprClosureGreen {
-        let wrapper = self.take::<TerminalOrOr>().into();
+    fn expect_closure_expr_nullary(&mut self) -> ExprClosureGreen<'a> {
+        let wrapper = self.take::<TerminalOrOr<'a>>().into();
         self.parse_closure_expr_body(wrapper)
     }
-    fn parse_closure_expr_body(&mut self, wrapper: ClosureParamWrapperGreen) -> ExprClosureGreen {
+    fn parse_closure_expr_body(
+        &mut self,
+        wrapper: ClosureParamWrapperGreen<'a>,
+    ) -> ExprClosureGreen<'a> {
         let mut block_required = self.peek().kind == SyntaxKind::TerminalArrow;
 
         let return_type_clause = self.parse_option_return_type_clause();
         let optional_no_panic = if self.peek().kind == SyntaxKind::TerminalNoPanic {
             block_required = true;
-            self.take::<TerminalNoPanic>().into()
+            self.take::<TerminalNoPanic<'a>>().into()
         } else {
             OptionTerminalNoPanicEmpty::new_green(self.db).into()
         };
@@ -2464,22 +2494,22 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is LBrack.
     /// Expected pattern: `\[<expr>; <expr>\]`.
-    fn expect_fixed_size_array_expr(&mut self) -> ExprFixedSizeArrayGreen {
-        let lbrack = self.take::<TerminalLBrack>();
-        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
-            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
+    fn expect_fixed_size_array_expr(&mut self) -> ExprFixedSizeArrayGreen<'a> {
+        let lbrack = self.take::<TerminalLBrack<'_>>();
+        let exprs: Vec<ExprListElementOrSeparatorGreen<'_>> = self
+            .parse_separated_list::<Expr<'_>, TerminalComma<'_>, ExprListElementOrSeparatorGreen<'_>>(
                 Self::try_parse_expr,
                 is_of_kind!(rbrack, semicolon),
                 "expression",
             );
         let size_green = if self.peek().kind == SyntaxKind::TerminalSemicolon {
-            let semicolon = self.take::<TerminalSemicolon>();
+            let semicolon = self.take::<TerminalSemicolon<'_>>();
             let size = self.parse_expr();
             FixedSizeArraySize::new_green(self.db, semicolon, size).into()
         } else {
             OptionFixedSizeArraySizeEmpty::new_green(self.db).into()
         };
-        let rbrack = self.parse_token::<TerminalRBrack>();
+        let rbrack = self.parse_token::<TerminalRBrack<'_>>();
         ExprFixedSizeArray::new_green(
             self.db,
             lbrack,
@@ -2491,9 +2521,9 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with a MatchArm kind or TryParseFailure if a match arm can't be
     /// parsed.
-    pub fn try_parse_match_arm(&mut self) -> TryParseResult<MatchArmGreen> {
+    pub fn try_parse_match_arm(&mut self) -> TryParseResult<MatchArmGreen<'a>> {
         let pattern_list = self
-            .parse_separated_list_inner::<Pattern, TerminalOr, PatternListOrElementOrSeparatorGreen>(
+            .parse_separated_list_inner::<Pattern<'_>, TerminalOr<'_>, PatternListOrElementOrSeparatorGreen<'_>>(
                 Self::try_parse_pattern,
                 is_of_kind!(match_arrow, rparen, block, rbrace, module_item_kw),
                 "pattern",
@@ -2505,14 +2535,14 @@ impl<'a> Parser<'a> {
 
         let pattern_list_green = PatternListOr::new_green(self.db, &pattern_list);
 
-        let arrow = self.parse_token::<TerminalMatchArrow>();
+        let arrow = self.parse_token::<TerminalMatchArrow<'_>>();
         let expr = self.parse_expr();
         Ok(MatchArm::new_green(self.db, pattern_list_green, arrow, expr))
     }
 
     /// Returns a GreenId of a node with some Pattern kind (see
     /// [syntax::node::ast::Pattern]) or TryParseFailure if a pattern can't be parsed.
-    fn try_parse_pattern(&mut self) -> TryParseResult<PatternGreen> {
+    fn try_parse_pattern(&mut self) -> TryParseResult<PatternGreen<'a>> {
         let modifier_list = self.parse_modifier_list();
         if !modifier_list.is_empty() {
             let modifiers = ModifierList::new_green(self.db, &modifier_list);
@@ -2524,36 +2554,36 @@ impl<'a> Parser<'a> {
         Ok(match self.peek().kind {
             SyntaxKind::TerminalLiteralNumber => self.take_terminal_literal_number().into(),
             SyntaxKind::TerminalShortString => self.take_terminal_short_string().into(),
-            SyntaxKind::TerminalTrue => self.take::<TerminalTrue>().into(),
-            SyntaxKind::TerminalFalse => self.take::<TerminalFalse>().into(),
-            SyntaxKind::TerminalUnderscore => self.take::<TerminalUnderscore>().into(),
+            SyntaxKind::TerminalTrue => self.take::<TerminalTrue<'_>>().into(),
+            SyntaxKind::TerminalFalse => self.take::<TerminalFalse<'_>>().into(),
+            SyntaxKind::TerminalUnderscore => self.take::<TerminalUnderscore<'_>>().into(),
             SyntaxKind::TerminalIdentifier => {
                 // TODO(ilya): Consider parsing a single identifier as PatternIdentifier rather
                 // then ExprPath.
                 let path = self.parse_path();
                 match self.peek().kind {
                     SyntaxKind::TerminalLBrace => {
-                        let lbrace = self.take::<TerminalLBrace>();
+                        let lbrace = self.take::<TerminalLBrace<'_>>();
                         let params = PatternStructParamList::new_green(
                             self.db,
                             &self.parse_separated_list::<
-                                PatternStructParam,
-                                TerminalComma,
-                                PatternStructParamListElementOrSeparatorGreen>
+                                PatternStructParam<'_>,
+                                TerminalComma<'_>,
+                                PatternStructParamListElementOrSeparatorGreen<'_>>
                             (
                                 Self::try_parse_pattern_struct_param,
                                 is_of_kind!(rparen, block, rbrace, module_item_kw),
                                 "struct pattern parameter",
                             ),
                         );
-                        let rbrace = self.parse_token::<TerminalRBrace>();
+                        let rbrace = self.parse_token::<TerminalRBrace<'_>>();
                         PatternStruct::new_green(self.db, path, lbrace, params, rbrace).into()
                     }
                     SyntaxKind::TerminalLParen => {
                         // Enum pattern.
-                        let lparen = self.take::<TerminalLParen>();
+                        let lparen = self.take::<TerminalLParen<'_>>();
                         let pattern = self.parse_pattern();
-                        let rparen = self.parse_token::<TerminalRParen>();
+                        let rparen = self.parse_token::<TerminalRParen<'_>>();
                         let inner_pattern =
                             PatternEnumInnerPattern::new_green(self.db, lparen, pattern, rparen);
                         PatternEnum::new_green(self.db, path, inner_pattern.into()).into()
@@ -2599,31 +2629,31 @@ impl<'a> Parser<'a> {
                 }
             }
             SyntaxKind::TerminalLParen => {
-                let lparen = self.take::<TerminalLParen>();
+                let lparen = self.take::<TerminalLParen<'_>>();
                 let patterns = PatternList::new_green(self.db,  &self.parse_separated_list::<
-                    Pattern,
-                    TerminalComma,
-                    PatternListElementOrSeparatorGreen>
+                    Pattern<'_>,
+                    TerminalComma<'_>,
+                    PatternListElementOrSeparatorGreen<'_>>
                 (
                     Self::try_parse_pattern,
                     is_of_kind!(rparen, block, rbrace, module_item_kw),
                     "pattern",
                 ));
-                let rparen = self.parse_token::<TerminalRParen>();
+                let rparen = self.parse_token::<TerminalRParen<'_>>();
                 PatternTuple::new_green(self.db, lparen, patterns, rparen).into()
             }
             SyntaxKind::TerminalLBrack => {
-                let lbrack = self.take::<TerminalLBrack>();
+                let lbrack = self.take::<TerminalLBrack<'_>>();
                 let patterns = PatternList::new_green(self.db,  &self.parse_separated_list::<
-                    Pattern,
-                    TerminalComma,
-                    PatternListElementOrSeparatorGreen>
+                    Pattern<'_>,
+                    TerminalComma<'_>,
+                    PatternListElementOrSeparatorGreen<'_>>
                 (
                     Self::try_parse_pattern,
                     is_of_kind!(rbrack, block, rbrace, module_item_kw),
                     "pattern",
                 ));
-                let rbrack = self.parse_token::<TerminalRBrack>();
+                let rbrack = self.parse_token::<TerminalRBrack<'_>>();
                 PatternFixedSizeArray::new_green(self.db, lbrack, patterns, rbrack).into()
             }
             _ => return Err(TryParseFailure::SkipToken),
@@ -2631,19 +2661,19 @@ impl<'a> Parser<'a> {
     }
     /// Returns a GreenId of a node with some Pattern kind (see
     /// [syntax::node::ast::Pattern]).
-    fn parse_pattern(&mut self) -> PatternGreen {
+    fn parse_pattern(&mut self) -> PatternGreen<'a> {
         // If not found, return a missing underscore pattern.
         match self.try_parse_pattern() {
             Ok(pattern) => pattern,
-            Err(_) => self.create_and_report_missing_terminal::<TerminalUnderscore>().into(),
+            Err(_) => self.create_and_report_missing_terminal::<TerminalUnderscore<'_>>().into(),
         }
     }
 
     /// Returns a GreenId of a syntax inside a struct pattern. Example:
     /// `MyStruct { param0, param1: _, .. }`.
-    fn try_parse_pattern_struct_param(&mut self) -> TryParseResult<PatternStructParamGreen> {
+    fn try_parse_pattern_struct_param(&mut self) -> TryParseResult<PatternStructParamGreen<'a>> {
         Ok(match self.peek().kind {
-            SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot>().into(),
+            SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot<'_>>().into(),
             _ => {
                 let modifier_list = self.parse_modifier_list();
                 let name = if modifier_list.is_empty() {
@@ -2653,7 +2683,7 @@ impl<'a> Parser<'a> {
                 };
                 let modifiers = ModifierList::new_green(self.db, &modifier_list);
                 if self.peek().kind == SyntaxKind::TerminalColon {
-                    let colon = self.take::<TerminalColon>();
+                    let colon = self.take::<TerminalColon<'_>>();
                     let pattern = self.parse_pattern();
                     PatternStructParamWithExpr::new_green(self.db, modifiers, name, colon, pattern)
                         .into()
@@ -2668,7 +2698,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with a Statement.* kind (see
     /// [syntax::node::ast::Statement]) or TryParseFailure if a statement can't be parsed.
-    pub fn try_parse_statement(&mut self) -> TryParseResult<StatementGreen> {
+    pub fn try_parse_statement(&mut self) -> TryParseResult<StatementGreen<'a>> {
         let maybe_attributes = self.try_parse_attribute_list("Statement");
         let (has_attrs, attributes) = match maybe_attributes {
             Ok(attributes) => (true, attributes),
@@ -2676,23 +2706,23 @@ impl<'a> Parser<'a> {
         };
         match self.peek().kind {
             SyntaxKind::TerminalLet => {
-                let let_kw = self.take::<TerminalLet>();
+                let let_kw = self.take::<TerminalLet<'_>>();
                 let pattern = self.parse_pattern();
                 let type_clause = self.parse_option_type_clause();
-                let eq = self.parse_token::<TerminalEq>();
+                let eq = self.parse_token::<TerminalEq<'_>>();
                 let rhs = self.parse_expr();
 
                 // Check if this is a let-else statement.
-                let let_else_clause: OptionLetElseClauseGreen =
+                let let_else_clause: OptionLetElseClauseGreen<'_> =
                     if self.peek().kind == SyntaxKind::TerminalElse {
-                        let else_kw = self.take::<TerminalElse>();
+                        let else_kw = self.take::<TerminalElse<'_>>();
                         let else_block = self.parse_block();
                         LetElseClause::new_green(self.db, else_kw, else_block).into()
                     } else {
                         OptionLetElseClauseEmpty::new_green(self.db).into()
                     };
 
-                let semicolon = self.parse_token::<TerminalSemicolon>();
+                let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
                 Ok(StatementLet::new_green(
                     self.db,
                     attributes,
@@ -2707,25 +2737,25 @@ impl<'a> Parser<'a> {
                 .into())
             }
             SyntaxKind::TerminalContinue => {
-                let continue_kw = self.take::<TerminalContinue>();
-                let semicolon = self.parse_token::<TerminalSemicolon>();
+                let continue_kw = self.take::<TerminalContinue<'_>>();
+                let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
                 Ok(StatementContinue::new_green(self.db, attributes, continue_kw, semicolon).into())
             }
             SyntaxKind::TerminalReturn => {
-                let return_kw = self.take::<TerminalReturn>();
+                let return_kw = self.take::<TerminalReturn<'_>>();
                 let expr = self.parse_option_expression_clause();
-                let semicolon = self.parse_token::<TerminalSemicolon>();
+                let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
                 Ok(StatementReturn::new_green(self.db, attributes, return_kw, expr, semicolon)
                     .into())
             }
             SyntaxKind::TerminalBreak => {
-                let break_kw = self.take::<TerminalBreak>();
+                let break_kw = self.take::<TerminalBreak<'_>>();
                 let expr = self.parse_option_expression_clause();
-                let semicolon = self.parse_token::<TerminalSemicolon>();
+                let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
                 Ok(StatementBreak::new_green(self.db, attributes, break_kw, expr, semicolon).into())
             }
             SyntaxKind::TerminalConst => {
-                let const_kw = self.take::<TerminalConst>();
+                let const_kw = self.take::<TerminalConst<'_>>();
                 Ok(StatementItem::new_green(
                     self.db,
                     self.expect_item_const(
@@ -2755,17 +2785,18 @@ impl<'a> Parser<'a> {
             _ => match self.try_parse_expr() {
                 Ok(expr) => {
                     let optional_semicolon = if self.peek().kind == SyntaxKind::TerminalSemicolon {
-                        self.take::<TerminalSemicolon>().into()
+                        self.take::<TerminalSemicolon<'_>>().into()
                     } else {
                         OptionTerminalSemicolonEmpty::new_green(self.db).into()
                     };
                     Ok(StatementExpr::new_green(self.db, attributes, expr, optional_semicolon)
                         .into())
                 }
-                Err(_) if has_attrs => Ok(self.skip_taken_node_and_return_missing::<Statement>(
-                    attributes,
-                    ParserDiagnosticKind::AttributesWithoutStatement,
-                )),
+                Err(_) if has_attrs => Ok(self
+                    .skip_taken_node_and_return_missing::<Statement<'_>>(
+                        attributes,
+                        ParserDiagnosticKind::AttributesWithoutStatement,
+                    )),
                 Err(err) => Err(err),
             },
         }
@@ -2773,7 +2804,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind TypeClause or OptionTypeClauseEmpty if a type clause
     /// can't be parsed.
-    fn parse_option_type_clause(&mut self) -> OptionTypeClauseGreen {
+    fn parse_option_type_clause(&mut self) -> OptionTypeClauseGreen<'a> {
         match self.try_parse_type_clause() {
             Some(green) => green.into(),
             None => OptionTypeClauseEmpty::new_green(self.db).into(),
@@ -2781,11 +2812,11 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses a type clause of the form: `: <type>`.
-    fn parse_type_clause(&mut self, error_recovery: ErrorRecovery) -> TypeClauseGreen {
+    fn parse_type_clause(&mut self, error_recovery: ErrorRecovery) -> TypeClauseGreen<'a> {
         match self.try_parse_type_clause() {
             Some(green) => green,
             None => {
-                let res = self.create_and_report_missing::<TypeClause>(
+                let res = self.create_and_report_missing::<TypeClause<'_>>(
                     ParserDiagnosticKind::MissingTypeClause,
                 );
                 self.skip_until(error_recovery.should_stop).ok();
@@ -2793,9 +2824,9 @@ impl<'a> Parser<'a> {
             }
         }
     }
-    fn try_parse_type_clause(&mut self) -> Option<TypeClauseGreen> {
+    fn try_parse_type_clause(&mut self) -> Option<TypeClauseGreen<'a>> {
         if self.peek().kind == SyntaxKind::TerminalColon {
-            let colon = self.take::<TerminalColon>();
+            let colon = self.take::<TerminalColon<'_>>();
             let ty = self.parse_type_expr();
             Some(TypeClause::new_green(self.db, colon, ty))
         } else {
@@ -2805,9 +2836,9 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind ReturnTypeClause or OptionReturnTypeClauseEmpty if a
     /// return type clause can't be parsed.
-    fn parse_option_return_type_clause(&mut self) -> OptionReturnTypeClauseGreen {
+    fn parse_option_return_type_clause(&mut self) -> OptionReturnTypeClauseGreen<'a> {
         if self.peek().kind == SyntaxKind::TerminalArrow {
-            let arrow = self.take::<TerminalArrow>();
+            let arrow = self.take::<TerminalArrow<'_>>();
             let return_type = self.parse_type_expr();
             ReturnTypeClause::new_green(self.db, arrow, return_type).into()
         } else {
@@ -2817,20 +2848,20 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind ImplicitsClause or OptionImplicitsClauseEmpty if a
     /// implicits-clause can't be parsed.
-    fn parse_option_implicits_clause(&mut self) -> OptionImplicitsClauseGreen {
+    fn parse_option_implicits_clause(&mut self) -> OptionImplicitsClauseGreen<'a> {
         if self.peek().kind == SyntaxKind::TerminalImplicits {
-            let implicits_kw = self.take::<TerminalImplicits>();
-            let lparen = self.parse_token::<TerminalLParen>();
+            let implicits_kw = self.take::<TerminalImplicits<'_>>();
+            let lparen = self.parse_token::<TerminalLParen<'_>>();
             let implicits = ImplicitsList::new_green(
                 self.db,
-                &self.parse_separated_list::<ExprPath, TerminalComma, ImplicitsListElementOrSeparatorGreen>(
+                &self.parse_separated_list::<ExprPath<'_>, TerminalComma<'_>, ImplicitsListElementOrSeparatorGreen<'_>>(
                     Self::try_parse_path,
                     // Don't stop at keywords as try_parse_path handles keywords inside it. Otherwise the diagnostic is less accurate.
                     is_of_kind!(rparen, lbrace, rbrace),
                     "implicit type",
                 ),
             );
-            let rparen = self.parse_token::<TerminalRParen>();
+            let rparen = self.parse_token::<TerminalRParen<'_>>();
             ImplicitsClause::new_green(self.db, implicits_kw, lparen, implicits, rparen).into()
         } else {
             OptionImplicitsClauseEmpty::new_green(self.db).into()
@@ -2838,10 +2869,10 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with kind ParamList.
-    fn parse_param_list(&mut self) -> ParamListGreen {
+    fn parse_param_list(&mut self) -> ParamListGreen<'a> {
         ParamList::new_green(
             self.db,
-            &self.parse_separated_list::<Param, TerminalComma, ParamListElementOrSeparatorGreen>(
+            &self.parse_separated_list::<Param<'_>, TerminalComma<'_>, ParamListElementOrSeparatorGreen<'_>>(
                 Self::try_parse_param,
                 is_of_kind!(rparen, block, lbrace, rbrace, module_item_kw),
                 "parameter",
@@ -2850,10 +2881,10 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with kind ClosureParamList.
-    fn parse_closure_param_list(&mut self) -> ParamListGreen {
+    fn parse_closure_param_list(&mut self) -> ParamListGreen<'a> {
         ParamList::new_green(
             self.db,
-            &self.parse_separated_list::<Param, TerminalComma, ParamListElementOrSeparatorGreen>(
+            &self.parse_separated_list::<Param<'_>, TerminalComma<'_>, ParamListElementOrSeparatorGreen<'_>>(
                 Self::try_parse_closure_param,
                 is_of_kind!(or, block, lbrace, rbrace, module_item_kw),
                 "parameter",
@@ -2863,16 +2894,16 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind Modifier or TryParseFailure if a modifier can't be
     /// parsed.
-    fn try_parse_modifier(&mut self) -> Option<ModifierGreen> {
+    fn try_parse_modifier(&mut self) -> Option<ModifierGreen<'a>> {
         match self.peek().kind {
-            SyntaxKind::TerminalRef => Some(self.take::<TerminalRef>().into()),
-            SyntaxKind::TerminalMut => Some(self.take::<TerminalMut>().into()),
+            SyntaxKind::TerminalRef => Some(self.take::<TerminalRef<'_>>().into()),
+            SyntaxKind::TerminalMut => Some(self.take::<TerminalMut<'_>>().into()),
             _ => None,
         }
     }
 
     /// Returns a vector of GreenIds with kind Modifier.
-    fn parse_modifier_list(&mut self) -> Vec<ModifierGreen> {
+    fn parse_modifier_list(&mut self) -> Vec<ModifierGreen<'a>> {
         let mut modifier_list = vec![];
 
         while let Some(modifier) = self.try_parse_modifier() {
@@ -2883,7 +2914,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind Param or TryParseFailure if a parameter can't be
     /// parsed.
-    fn try_parse_param(&mut self) -> TryParseResult<ParamGreen> {
+    fn try_parse_param(&mut self) -> TryParseResult<ParamGreen<'a>> {
         let modifier_list = self.parse_modifier_list();
         let name = if modifier_list.is_empty() {
             self.try_parse_identifier()?
@@ -2907,7 +2938,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind Param or TryParseFailure if a parameter can't
     /// be parsed.
-    fn try_parse_closure_param(&mut self) -> TryParseResult<ParamGreen> {
+    fn try_parse_closure_param(&mut self) -> TryParseResult<ParamGreen<'a>> {
         let modifier_list = self.parse_modifier_list();
         let name = if modifier_list.is_empty() {
             self.try_parse_identifier()?
@@ -2926,10 +2957,10 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with kind MemberList.
-    fn parse_member_list(&mut self) -> MemberListGreen {
+    fn parse_member_list(&mut self) -> MemberListGreen<'a> {
         MemberList::new_green(
             self.db,
-            &self.parse_separated_list::<Member, TerminalComma, MemberListElementOrSeparatorGreen>(
+            &self.parse_separated_list::<Member<'_>, TerminalComma<'_>, MemberListElementOrSeparatorGreen<'_>>(
                 Self::try_parse_member,
                 is_of_kind!(rparen, block, lbrace, rbrace, module_item_kw),
                 "member or variant",
@@ -2939,7 +2970,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind Member or TryParseFailure if a struct member can't be
     /// parsed.
-    fn try_parse_member(&mut self) -> TryParseResult<MemberGreen> {
+    fn try_parse_member(&mut self) -> TryParseResult<MemberGreen<'a>> {
         let attributes = self.try_parse_attribute_list("Struct member");
         let visibility = self.parse_visibility();
         let (name, attributes) = match attributes {
@@ -2953,11 +2984,11 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with kind VariantList.
-    fn parse_variant_list(&mut self) -> VariantListGreen {
+    fn parse_variant_list(&mut self) -> VariantListGreen<'a> {
         VariantList::new_green(
             self.db,
             &self
-                .parse_separated_list::<Variant, TerminalComma, VariantListElementOrSeparatorGreen>(
+                .parse_separated_list::<Variant<'_>, TerminalComma<'_>, VariantListElementOrSeparatorGreen<'_>>(
                     Self::try_parse_variant,
                     is_of_kind!(rparen, block, lbrace, rbrace, module_item_kw),
                     "variant",
@@ -2967,7 +2998,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind Variant or TryParseFailure if an enum variant can't be
     /// parsed.
-    fn try_parse_variant(&mut self) -> TryParseResult<VariantGreen> {
+    fn try_parse_variant(&mut self) -> TryParseResult<VariantGreen<'a>> {
         let attributes = self.try_parse_attribute_list("Enum variant");
         let (name, attributes) = match attributes {
             Ok(attributes) => (self.parse_identifier(), attributes),
@@ -2980,13 +3011,13 @@ impl<'a> Parser<'a> {
 
     /// Expected pattern: `<PathSegment>(::<PathSegment>)*`
     /// Returns a GreenId of a node with kind ExprPath.
-    fn parse_path(&mut self) -> ExprPathGreen {
+    fn parse_path(&mut self) -> ExprPathGreen<'a> {
         let dollar = match self.peek().kind {
-            SyntaxKind::TerminalDollar => self.take::<TerminalDollar>().into(),
+            SyntaxKind::TerminalDollar => self.take::<TerminalDollar<'_>>().into(),
             _ => OptionTerminalDollarEmpty::new_green(self.db).into(),
         };
 
-        let mut children: Vec<ExprPathInnerElementOrSeparatorGreen> = vec![];
+        let mut children: Vec<ExprPathInnerElementOrSeparatorGreen<'_>> = vec![];
         loop {
             let (segment, optional_separator) = self.parse_path_segment();
             children.push(segment.into());
@@ -3001,7 +3032,7 @@ impl<'a> Parser<'a> {
         ExprPath::new_green(self.db, dollar, ExprPathInner::new_green(self.db, &children))
     }
     /// Returns a GreenId of a node with kind ExprPath or TryParseFailure if a path can't be parsed.
-    fn try_parse_path(&mut self) -> TryParseResult<ExprPathGreen> {
+    fn try_parse_path(&mut self) -> TryParseResult<ExprPathGreen<'a>> {
         if self.is_peek_identifier_like() {
             Ok(self.parse_path())
         } else {
@@ -3009,16 +3040,16 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Expected pattern: `(<PathSegment>::)*<PathSegment>(::){0,1}<GenericArgs>`.
+    /// Expected pattern: `(<PathSegment<'_>>::)*<PathSegment<'_>>(::){0,1}<GenericArgs>`.
     ///
     /// Returns a GreenId of a node with kind ExprPath.
-    fn parse_type_path(&mut self) -> ExprPathGreen {
+    fn parse_type_path(&mut self) -> ExprPathGreen<'a> {
         let dollar = match self.peek().kind {
-            SyntaxKind::TerminalDollar => self.take::<TerminalDollar>().into(),
+            SyntaxKind::TerminalDollar => self.take::<TerminalDollar<'_>>().into(),
             _ => OptionTerminalDollarEmpty::new_green(self.db).into(),
         };
 
-        let mut children: Vec<ExprPathInnerElementOrSeparatorGreen> = vec![];
+        let mut children: Vec<ExprPathInnerElementOrSeparatorGreen<'_>> = vec![];
         loop {
             let (segment, optional_separator) = self.parse_type_path_segment();
             children.push(segment.into());
@@ -3034,12 +3065,14 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a PathSegment and an optional separator.
-    fn parse_path_segment(&mut self) -> (PathSegmentGreen, Option<TerminalColonColonGreen>) {
+    fn parse_path_segment(
+        &mut self,
+    ) -> (PathSegmentGreen<'a>, Option<TerminalColonColonGreen<'a>>) {
         let identifier = match self.try_parse_identifier() {
             Ok(identifier) => identifier,
             Err(_) => {
                 return (
-                    self.create_and_report_missing::<PathSegment>(
+                    self.create_and_report_missing::<PathSegment<'_>>(
                         ParserDiagnosticKind::MissingPathSegment,
                     ),
                     // TODO(ilya, 10/10/2022): Should we continue parsing the path here?
@@ -3047,7 +3080,7 @@ impl<'a> Parser<'a> {
                 );
             }
         };
-        match self.try_parse_token::<TerminalColonColon>() {
+        match self.try_parse_token::<TerminalColonColon<'_>>() {
             Ok(separator) if self.peek().kind == SyntaxKind::TerminalLT => (
                 PathSegmentWithGenericArgs::new_green(
                     self.db,
@@ -3056,7 +3089,7 @@ impl<'a> Parser<'a> {
                     self.expect_generic_args(),
                 )
                 .into(),
-                self.try_parse_token::<TerminalColonColon>().ok(),
+                self.try_parse_token::<TerminalColonColon<'_>>().ok(),
             ),
             optional_separator => {
                 (PathSegmentSimple::new_green(self.db, identifier).into(), optional_separator.ok())
@@ -3066,12 +3099,14 @@ impl<'a> Parser<'a> {
 
     /// Returns a Typed PathSegment or a normal PathSegment.
     /// Additionally returns an optional separators.
-    fn parse_type_path_segment(&mut self) -> (PathSegmentGreen, Option<TerminalColonColonGreen>) {
+    fn parse_type_path_segment(
+        &mut self,
+    ) -> (PathSegmentGreen<'a>, Option<TerminalColonColonGreen<'a>>) {
         let identifier = match self.try_parse_identifier() {
             Ok(identifier) => identifier,
             Err(_) => {
                 return (
-                    self.create_and_report_missing::<PathSegment>(
+                    self.create_and_report_missing::<PathSegment<'_>>(
                         ParserDiagnosticKind::MissingPathSegment,
                     ),
                     // TODO(ilya, 10/10/2022): Should we continue parsing the path here?
@@ -3079,7 +3114,7 @@ impl<'a> Parser<'a> {
                 );
             }
         };
-        match self.try_parse_token::<TerminalColonColon>() {
+        match self.try_parse_token::<TerminalColonColon<'_>>() {
             Err(_) if self.peek().kind == SyntaxKind::TerminalLT => (
                 PathSegmentWithGenericArgs::new_green(
                     self.db,
@@ -3100,7 +3135,7 @@ impl<'a> Parser<'a> {
                     self.expect_generic_args(),
                 )
                 .into(),
-                self.try_parse_token::<TerminalColonColon>().ok(),
+                self.try_parse_token::<TerminalColonColon<'_>>().ok(),
             ),
             optional_separator => {
                 (PathSegmentSimple::new_green(self.db, identifier).into(), optional_separator.ok())
@@ -3109,25 +3144,25 @@ impl<'a> Parser<'a> {
     }
 
     /// Takes and validates a TerminalLiteralNumber token.
-    fn take_terminal_literal_number(&mut self) -> TerminalLiteralNumberGreen {
+    fn take_terminal_literal_number(&mut self) -> TerminalLiteralNumberGreen<'a> {
         let diag = validate_literal_number(&self.peek().text);
-        let green = self.take::<TerminalLiteralNumber>();
+        let green = self.take::<TerminalLiteralNumber<'_>>();
         self.add_optional_diagnostic(diag);
         green
     }
 
     /// Takes and validates a TerminalShortString token.
-    fn take_terminal_short_string(&mut self) -> TerminalShortStringGreen {
+    fn take_terminal_short_string(&mut self) -> TerminalShortStringGreen<'a> {
         let diag = validate_short_string(&self.peek().text);
-        let green = self.take::<TerminalShortString>();
+        let green = self.take::<TerminalShortString<'_>>();
         self.add_optional_diagnostic(diag);
         green
     }
 
     /// Takes and validates a TerminalString token.
-    fn take_terminal_string(&mut self) -> TerminalStringGreen {
+    fn take_terminal_string(&mut self) -> TerminalStringGreen<'a> {
         let diag = validate_string(&self.peek().text);
-        let green = self.take::<TerminalString>();
+        let green = self.take::<TerminalString<'_>>();
         self.add_optional_diagnostic(diag);
         green
     }
@@ -3147,21 +3182,21 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with an
     /// ExprLiteral|ExprPath|ExprParenthesized|ExprTuple|ExprUnderscore kind, or TryParseFailure if
     /// such an expression can't be parsed.
-    fn try_parse_generic_arg(&mut self) -> TryParseResult<GenericArgGreen> {
+    fn try_parse_generic_arg(&mut self) -> TryParseResult<GenericArgGreen<'a>> {
         let expr = match self.peek().kind {
             SyntaxKind::TerminalUnderscore => {
-                let underscore = self.take::<TerminalUnderscore>().into();
+                let underscore = self.take::<TerminalUnderscore<'_>>().into();
                 return Ok(GenericArgUnnamed::new_green(self.db, underscore).into());
             }
             SyntaxKind::TerminalLiteralNumber => self.take_terminal_literal_number().into(),
             SyntaxKind::TerminalMinus => {
-                let op = self.take::<TerminalMinus>().into();
-                let expr = self.parse_token::<TerminalLiteralNumber>().into();
+                let op = self.take::<TerminalMinus<'_>>().into();
+                let expr = self.parse_token::<TerminalLiteralNumber<'_>>().into();
                 ExprUnary::new_green(self.db, op, expr).into()
             }
             SyntaxKind::TerminalShortString => self.take_terminal_short_string().into(),
-            SyntaxKind::TerminalTrue => self.take::<TerminalTrue>().into(),
-            SyntaxKind::TerminalFalse => self.take::<TerminalFalse>().into(),
+            SyntaxKind::TerminalTrue => self.take::<TerminalTrue<'_>>().into(),
+            SyntaxKind::TerminalFalse => self.take::<TerminalFalse<'_>>().into(),
             SyntaxKind::TerminalLBrace => self.parse_block().into(),
             _ => self.try_parse_type_expr()?,
         };
@@ -3170,9 +3205,9 @@ impl<'a> Parser<'a> {
         // name.
         if self.peek().kind == SyntaxKind::TerminalColon {
             if let Some(argname) = self.try_extract_identifier(expr) {
-                let colon = self.take::<TerminalColon>();
+                let colon = self.take::<TerminalColon<'_>>();
                 let expr = if self.peek().kind == SyntaxKind::TerminalUnderscore {
-                    self.take::<TerminalUnderscore>().into()
+                    self.take::<TerminalUnderscore<'_>>().into()
                 } else {
                     let expr = self.parse_type_expr();
                     GenericArgValueExpr::new_green(self.db, expr).into()
@@ -3189,56 +3224,56 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is LT.
     /// Expected pattern: `\< <GenericArgList> \>`
-    fn expect_generic_args(&mut self) -> GenericArgsGreen {
-        let langle = self.take::<TerminalLT>();
+    fn expect_generic_args(&mut self) -> GenericArgsGreen<'a> {
+        let langle = self.take::<TerminalLT<'_>>();
         let generic_args = GenericArgList::new_green(
             self.db,
-            &self.parse_separated_list::<GenericArg, TerminalComma, GenericArgListElementOrSeparatorGreen>(
+            &self.parse_separated_list::<GenericArg<'_>, TerminalComma<'_>, GenericArgListElementOrSeparatorGreen<'_>>(
                 Self::try_parse_generic_arg,
                 is_of_kind!(rangle, rparen, block, lbrace, rbrace, module_item_kw),
                 "generic arg",
             ),
         );
-        let rangle = self.parse_token::<TerminalGT>();
+        let rangle = self.parse_token::<TerminalGT<'_>>();
         GenericArgs::new_green(self.db, langle, generic_args, rangle)
     }
 
     /// Assumes the current token is LT.
     /// Expected pattern: `\< <GenericParamList> \>`
-    fn expect_generic_params(&mut self) -> WrappedGenericParamListGreen {
-        let langle = self.take::<TerminalLT>();
+    fn expect_generic_params(&mut self) -> WrappedGenericParamListGreen<'a> {
+        let langle = self.take::<TerminalLT<'_>>();
         let generic_params = GenericParamList::new_green(
             self.db,
-            &self.parse_separated_list::<GenericParam, TerminalComma, GenericParamListElementOrSeparatorGreen>(
+            &self.parse_separated_list::<GenericParam<'_>, TerminalComma<'_>, GenericParamListElementOrSeparatorGreen<'_>>(
                 Self::try_parse_generic_param,
                 is_of_kind!(rangle, rparen, block, lbrace, rbrace, module_item_kw),
                 "generic param",
             ),
         );
-        let rangle = self.parse_token::<TerminalGT>();
+        let rangle = self.parse_token::<TerminalGT<'_>>();
         WrappedGenericParamList::new_green(self.db, langle, generic_params, rangle)
     }
 
-    fn parse_optional_generic_params(&mut self) -> OptionWrappedGenericParamListGreen {
+    fn parse_optional_generic_params(&mut self) -> OptionWrappedGenericParamListGreen<'a> {
         if self.peek().kind != SyntaxKind::TerminalLT {
             return OptionWrappedGenericParamListEmpty::new_green(self.db).into();
         }
         self.expect_generic_params().into()
     }
 
-    fn try_parse_generic_param(&mut self) -> TryParseResult<GenericParamGreen> {
+    fn try_parse_generic_param(&mut self) -> TryParseResult<GenericParamGreen<'a>> {
         match self.peek().kind {
             SyntaxKind::TerminalConst => {
-                let const_kw = self.take::<TerminalConst>();
+                let const_kw = self.take::<TerminalConst<'_>>();
                 let name = self.parse_identifier();
-                let colon = self.parse_token::<TerminalColon>();
+                let colon = self.parse_token::<TerminalColon<'_>>();
                 let ty = self.parse_type_expr();
                 Ok(GenericParamConst::new_green(self.db, const_kw, name, colon, ty).into())
             }
             SyntaxKind::TerminalImpl => {
-                let impl_kw = self.take::<TerminalImpl>();
+                let impl_kw = self.take::<TerminalImpl<'_>>();
                 let name = self.parse_identifier();
-                let colon = self.parse_token::<TerminalColon>();
+                let colon = self.parse_token::<TerminalColon<'_>>();
                 let trait_path = self.parse_type_path();
                 let associated_item_constraints = self.parse_optional_associated_item_constraints();
                 Ok(GenericParamImplNamed::new_green(
@@ -3252,7 +3287,7 @@ impl<'a> Parser<'a> {
                 .into())
             }
             SyntaxKind::TerminalPlus => {
-                let plus = self.take::<TerminalPlus>();
+                let plus = self.take::<TerminalPlus<'_>>();
                 let trait_path = self.parse_type_path();
                 let associated_item_constraints = self.parse_optional_associated_item_constraints();
                 Ok(GenericParamImplAnonymous::new_green(
@@ -3264,7 +3299,7 @@ impl<'a> Parser<'a> {
                 .into())
             }
             SyntaxKind::TerminalMinus => {
-                let minus = self.take::<TerminalMinus>();
+                let minus = self.take::<TerminalMinus<'_>>();
                 let trait_path = self.parse_type_path();
                 Ok(GenericParamNegativeImpl::new_green(self.db, minus, trait_path).into())
             }
@@ -3274,17 +3309,17 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is LBrack.
     /// Expected pattern: `[ <associated_item_constraints_list> ]>`
-    fn expect_associated_item_constraints(&mut self) -> AssociatedItemConstraintsGreen {
-        let lbrack = self.take::<TerminalLBrack>();
+    fn expect_associated_item_constraints(&mut self) -> AssociatedItemConstraintsGreen<'a> {
+        let lbrack = self.take::<TerminalLBrack<'_>>();
         let associated_item_constraints_list = AssociatedItemConstraintList::new_green(
             self.db,
-            &self.parse_separated_list::<AssociatedItemConstraint, TerminalComma, AssociatedItemConstraintListElementOrSeparatorGreen>(
+            &self.parse_separated_list::<AssociatedItemConstraint<'_>, TerminalComma<'_>, AssociatedItemConstraintListElementOrSeparatorGreen<'_>>(
                 Self::try_parse_associated_item_constraint,
                 is_of_kind!(rbrack,rangle, rparen, block, lbrace, rbrace, module_item_kw),
                 "associated type argument",
             ),
         );
-        let rangle = self.parse_token::<TerminalRBrack>();
+        let rangle = self.parse_token::<TerminalRBrack<'_>>();
         AssociatedItemConstraints::new_green(
             self.db,
             lbrack,
@@ -3295,7 +3330,7 @@ impl<'a> Parser<'a> {
 
     fn parse_optional_associated_item_constraints(
         &mut self,
-    ) -> OptionAssociatedItemConstraintsGreen {
+    ) -> OptionAssociatedItemConstraintsGreen<'a> {
         if self.peek().kind != SyntaxKind::TerminalLBrack {
             return OptionAssociatedItemConstraintsEmpty::new_green(self.db).into();
         }
@@ -3306,9 +3341,9 @@ impl<'a> Parser<'a> {
     /// type argument can't be parsed.
     fn try_parse_associated_item_constraint(
         &mut self,
-    ) -> TryParseResult<AssociatedItemConstraintGreen> {
+    ) -> TryParseResult<AssociatedItemConstraintGreen<'a>> {
         let ident = self.try_parse_identifier()?;
-        let colon = self.parse_token::<TerminalColon>();
+        let colon = self.parse_token::<TerminalColon<'_>>();
         let ty = self.parse_type_expr();
         Ok(AssociatedItemConstraint::new_green(self.db, ident, colon, ty))
     }
@@ -3366,7 +3401,7 @@ impl<'a> Parser<'a> {
         &mut self,
         try_parse_list_element: fn(&mut Self) -> TryParseResult<ElementGreen>,
         should_stop: fn(SyntaxKind) -> bool,
-        expected_element: &str,
+        expected_element: &'str str,
     ) -> Vec<ElementGreen> {
         self.parse_list::<ElementGreen>(
             try_parse_list_element,
@@ -3392,8 +3427,8 @@ impl<'a> Parser<'a> {
     /// If it returns true, the parsing of the list stops. If it returns false, a missing separator
     /// is added and we continue to try to parse another element (with the same token).
     fn parse_separated_list_inner<
-        Element: TypedSyntaxNode,
-        Separator: syntax::node::Terminal,
+        Element: TypedSyntaxNode<'a>,
+        Separator: syntax::node::Terminal<'a>,
         ElementOrSeparatorGreen,
     >(
         &mut self,
@@ -3445,8 +3480,8 @@ impl<'a> Parser<'a> {
     }
     /// Calls parse_separated_list_inner with trailing separator enabled.
     fn parse_separated_list<
-        Element: TypedSyntaxNode,
-        Separator: syntax::node::Terminal,
+        Element: TypedSyntaxNode<'a>,
+        Separator: syntax::node::Terminal<'a>,
         ElementOrSeparatorGreen,
     >(
         &mut self,
@@ -3466,7 +3501,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Peeks at the next terminal from the Lexer without taking it.
-    pub fn peek(&self) -> &LexerTerminal {
+    pub fn peek(&self) -> &LexerTerminal<'a> {
         &self.next_terminal
     }
 
@@ -3477,7 +3512,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Takes a terminal from the Lexer and places it in self.next_terminal.
-    fn take_raw(&mut self) -> LexerTerminal {
+    fn take_raw(&mut self) -> LexerTerminal<'a> {
         self.offset = self.offset.add_width(self.current_width);
         self.current_width = self.next_terminal.width(self.db);
         self.last_trivia_length = trivia_total_width(self.db, &self.next_terminal.trailing_trivia);
@@ -3503,7 +3538,7 @@ impl<'a> Parser<'a> {
     /// a taken ('take_raw') token.
     fn append_skipped_token_to_pending_trivia(
         &mut self,
-        terminal: LexerTerminal,
+        terminal: LexerTerminal<'a>,
         diagnostic_kind: ParserDiagnosticKind,
     ) {
         let orig_offset = self.offset;
@@ -3528,7 +3563,7 @@ impl<'a> Parser<'a> {
     /// to the current offset. Use this when the skipped node is the last node taken.
     fn skip_taken_node_from_current_offset(
         &mut self,
-        node_to_skip: impl Into<SkippedNodeGreen>,
+        node_to_skip: impl Into<SkippedNodeGreen<'a>>,
         diagnostic_kind: ParserDiagnosticKind,
     ) {
         self.skip_taken_node_with_offset(
@@ -3545,7 +3580,7 @@ impl<'a> Parser<'a> {
     /// `end_of_node_offset` is the offset of the end of the skipped node.
     fn skip_taken_node_with_offset(
         &mut self,
-        node_to_skip: impl Into<SkippedNodeGreen>,
+        node_to_skip: impl Into<SkippedNodeGreen<'a>>,
         diagnostic_kind: ParserDiagnosticKind,
         end_of_node_offset: TextOffset,
     ) {
@@ -3568,7 +3603,7 @@ impl<'a> Parser<'a> {
 
     /// Skips the current token, reports the given diagnostic and returns missing kind of the
     /// expected terminal.
-    fn skip_token_and_return_missing<ExpectedTerminal: syntax::node::Terminal>(
+    fn skip_token_and_return_missing<ExpectedTerminal: syntax::node::Terminal<'a>>(
         &mut self,
         diagnostic: ParserDiagnosticKind,
     ) -> ExpectedTerminal::Green {
@@ -3578,9 +3613,9 @@ impl<'a> Parser<'a> {
 
     /// Skips a given SkippedNode, reports the given diagnostic (pointing to right after the node)
     /// and returns missing kind of the expected node.
-    fn skip_taken_node_and_return_missing<ExpectedNode: TypedSyntaxNode>(
+    fn skip_taken_node_and_return_missing<ExpectedNode: TypedSyntaxNode<'a>>(
         &mut self,
-        node_to_skip: impl Into<SkippedNodeGreen>,
+        node_to_skip: impl Into<SkippedNodeGreen<'a>>,
         diagnostic_kind: ParserDiagnosticKind,
     ) -> ExpectedNode::Green {
         self.skip_taken_node_from_current_offset(node_to_skip, diagnostic_kind);
@@ -3614,9 +3649,9 @@ impl<'a> Parser<'a> {
 
     /// Builds a new terminal to replace the given terminal by gluing the recently skipped terminals
     /// to the given terminal as extra leading trivia.
-    fn add_trivia_to_terminal<Terminal: syntax::node::Terminal>(
+    fn add_trivia_to_terminal<Terminal: syntax::node::Terminal<'a>>(
         &mut self,
-        lexer_terminal: LexerTerminal,
+        lexer_terminal: LexerTerminal<'a>,
     ) -> Terminal::Green {
         let LexerTerminal { text, kind: _, leading_trivia, trailing_trivia } = lexer_terminal;
         let token = Terminal::TokenType::new_green(self.db, text);
@@ -3671,7 +3706,7 @@ impl<'a> Parser<'a> {
 
     /// Takes a token from the Lexer and place it in self.current. If tokens were skipped, glue them
     /// to this token as leading trivia.
-    pub fn take<Terminal: syntax::node::Terminal>(&mut self) -> Terminal::Green {
+    pub fn take<Terminal: syntax::node::Terminal<'a>>(&mut self) -> Terminal::Green {
         let token = self.take_raw();
         assert_eq!(token.kind, Terminal::KIND);
         self.add_trivia_to_terminal::<Terminal>(token)
@@ -3680,7 +3715,7 @@ impl<'a> Parser<'a> {
     /// If the current leading trivia start with non-doc comments, creates a new `ItemHeaderDoc` and
     /// appends the trivia to it. The purpose of this item is to prevent non-doc comments moving
     /// from the top of the file formatter.
-    fn take_doc(&mut self) -> Option<ItemHeaderDocGreen> {
+    fn take_doc(&mut self) -> Option<ItemHeaderDocGreen<'a>> {
         // Take all the trivia from `self.next_terminal`, until a doc-comment is found. If the
         // result does not contain a non-doc comment (i.e. regular comment or inner
         // comment), return None and do not change the next terminal leading trivia.
@@ -3712,7 +3747,7 @@ impl<'a> Parser<'a> {
         };
         self.offset = self.offset.add_width(empty_lexer_terminal.width(self.db));
 
-        let empty_terminal = self.add_trivia_to_terminal::<TerminalEmpty>(empty_lexer_terminal);
+        let empty_terminal = self.add_trivia_to_terminal::<TerminalEmpty<'_>>(empty_lexer_terminal);
         Some(ItemHeaderDoc::new_green(self.db, empty_terminal))
     }
 
@@ -3720,7 +3755,7 @@ impl<'a> Parser<'a> {
     /// TryParseFailure.
     /// Note that this function should not be called for 'TerminalIdentifier' -
     /// try_parse_identifier() should be used instead.
-    fn try_parse_token<Terminal: syntax::node::Terminal>(
+    fn try_parse_token<Terminal: syntax::node::Terminal<'a>>(
         &mut self,
     ) -> TryParseResult<Terminal::Green> {
         if Terminal::KIND == self.peek().kind {
@@ -3735,12 +3770,12 @@ impl<'a> Parser<'a> {
     ///
     /// Note that this function should not be called for 'TerminalIdentifier' - parse_identifier()
     /// should be used instead.
-    fn parse_token<Terminal: syntax::node::Terminal>(&mut self) -> Terminal::Green {
+    fn parse_token<Terminal: syntax::node::Terminal<'a>>(&mut self) -> Terminal::Green {
         self.parse_token_ex::<Terminal>(true)
     }
 
     /// Same as [Self::parse_token], except that the diagnostic may be omitted.
-    fn parse_token_ex<Terminal: syntax::node::Terminal>(
+    fn parse_token_ex<Terminal: syntax::node::Terminal<'a>>(
         &mut self,
         report_diagnostic: bool,
     ) -> Terminal::Green {
@@ -3790,15 +3825,15 @@ struct ErrorRecovery {
     should_stop: fn(SyntaxKind) -> bool,
 }
 
-enum ExternItem {
-    Function(ItemExternFunctionGreen),
-    Type(ItemExternTypeGreen),
+enum ExternItem<'a> {
+    Function(ItemExternFunctionGreen<'a>),
+    Type(ItemExternTypeGreen<'a>),
 }
 
 #[derive(Debug)]
-enum ImplItemOrAlias {
-    Item(ItemImplGreen),
-    Alias(ItemImplAliasGreen),
+enum ImplItemOrAlias<'a> {
+    Item(ItemImplGreen<'a>),
+    Alias(ItemImplAliasGreen<'a>),
 }
 
 /// A parser diagnostic that is not yet reported as it is accumulated with similar consecutive
@@ -3811,12 +3846,12 @@ pub struct PendingParserDiagnostic {
 }
 
 /// Returns the total width of the given trivia list.
-fn trivia_total_width(db: &dyn SyntaxGroup, trivia: &[TriviumGreen]) -> TextWidth {
+fn trivia_total_width(db: &dyn SyntaxGroup, trivia: &[TriviumGreen<'_>]) -> TextWidth {
     trivia.iter().map(|trivium| trivium.0.width(db)).sum::<TextWidth>()
 }
 
 /// The width of the trailing trivia, traversing the tree to the bottom right node.
-fn trailing_trivia_width(db: &dyn SyntaxGroup, green_id: GreenId) -> Option<TextWidth> {
+fn trailing_trivia_width(db: &dyn SyntaxGroup, green_id: GreenId<'_>) -> Option<TextWidth> {
     let node = green_id.lookup_intern(db);
     if node.kind == SyntaxKind::Trivia {
         return Some(node.width());

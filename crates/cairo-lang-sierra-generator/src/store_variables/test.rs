@@ -7,7 +7,6 @@ use cairo_lang_sierra::extensions::lib_func::{
     SierraApChange,
 };
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
-use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
@@ -27,7 +26,7 @@ use crate::test_utils::{
 /// All libfuncs inputs and outputs are felt252s, since [dummy_push_values] is currently with
 /// felt252s.
 fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -> LibfuncSignature {
-    let libfunc_long_id = libfunc.lookup_intern(db);
+    let libfunc_long_id = db.lookup_concrete_lib_func(libfunc);
     let felt252_ty =
         db.get_concrete_type_id(db.core_info().felt252).expect("Can't find core::felt252.");
     let array_ty = db
@@ -223,7 +222,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
 /// strings.
 fn test_add_store_statements(
     db: &SierraGenDatabaseForTesting,
-    statements: Vec<pre_sierra::StatementWithLocation>,
+    statements: Vec<pre_sierra::StatementWithLocation<'_>>,
     local_variables: LocalVariables,
     params: &[&str],
 ) -> Vec<String> {
@@ -247,7 +246,7 @@ fn test_add_store_statements(
 #[test]
 fn store_temp_simple() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_simple_statement(&db, "felt252_add", &["2", "3"], &["4"]),
@@ -286,7 +285,7 @@ fn store_temp_simple() {
 #[test]
 fn store_temp_for_branch_command() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_branch(&db, "branch_with_param", &["2"], 0),
         dummy_label(&db, 0),
@@ -308,7 +307,7 @@ fn store_temp_for_branch_command() {
 #[test]
 fn store_local_simple() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
         // Case I: local added instead of tempvar, when first used.
@@ -370,7 +369,7 @@ fn store_local_simple() {
 #[test]
 fn same_as_param() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_simple_statement(&db, "felt252_add3", &["0"], &["1"]),
         dummy_simple_statement(&db, "dup", &["1"], &["2", "3"]),
         dummy_simple_statement(&db, "felt252_add3", &["2"], &["4"]),
@@ -395,7 +394,7 @@ fn same_as_param() {
 #[test]
 fn same_as_param_push_value_optimization() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_simple_statement(&db, "store_temp<felt252>", &["0"], &["1"]),
         dummy_simple_statement(&db, "dup", &["1"], &["2", "3"]),
         dummy_push_values(&db, &[("2", "102"), ("4", "104")]),
@@ -423,7 +422,7 @@ fn same_as_param_push_value_optimization() {
 #[test]
 fn store_local_result_of_if() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_simple_branch(&db, "branch", &[], 0),
         // If part.
         dummy_simple_statement(&db, "store_temp<felt252>", &["100"], &["100"]),
@@ -464,7 +463,7 @@ fn store_local_result_of_if() {
 #[test]
 fn store_temp_push_values() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_simple_statement(&db, "felt252_add", &["3", "4"], &["5"]),
@@ -504,7 +503,7 @@ fn store_temp_push_values() {
 #[test]
 fn store_temp_push_values_with_dup() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_push_values_ex(
@@ -537,7 +536,7 @@ fn store_temp_push_values_with_dup() {
 #[test]
 fn push_values_optimization() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_simple_statement(&db, "function_call4", &[], &["0", "1", "2", "3"]),
         dummy_push_values(&db, &[("2", "102"), ("3", "103"), ("0", "100")]),
         dummy_push_values(&db, &[("102", "202")]),
@@ -561,7 +560,7 @@ fn push_values_optimization() {
 #[test]
 fn push_values_clear_known_stack() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_push_values(&db, &[("0", "100")]),
         // The explicit call to store_temp() will clear the known stack.
         dummy_simple_statement(&db, "store_temp<felt252>", &["1"], &["101"]),
@@ -589,7 +588,7 @@ fn push_values_clear_known_stack() {
 #[test]
 fn push_values_temp_not_on_top() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_simple_statement(&db, "temp_not_on_top", &[], &["0"]),
         dummy_push_values(&db, &[("0", "100")]),
         dummy_return_statement(&["0"]),
@@ -605,7 +604,7 @@ fn push_values_temp_not_on_top() {
 #[test]
 fn consecutive_push_values() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_push_values(&db, &[("0", "100"), ("1", "101")]),
         dummy_push_values_ex(
             &db,
@@ -654,7 +653,7 @@ fn consecutive_push_values() {
 #[test]
 fn push_values_after_branch_merge() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_simple_branch(&db, "branch", &[], 0),
         dummy_push_values(&db, &[("0", "100"), ("1", "101"), ("2", "102")]),
         dummy_jump_statement(&db, 1),
@@ -699,7 +698,7 @@ fn push_values_after_branch_merge() {
 #[test]
 fn push_values_early_return() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_push_values(&db, &[("0", "100"), ("1", "101")]),
         dummy_simple_branch(&db, "branch", &[], 0),
         dummy_push_values(&db, &[("101", "201"), ("2", "202"), ("3", "203")]),
@@ -741,7 +740,7 @@ fn push_values_early_return() {
 #[test]
 fn consecutive_const_additions() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "felt252_add3", &["2"], &["3"]),
         dummy_simple_statement(&db, "felt252_add3", &["3"], &["4"]),
@@ -785,7 +784,7 @@ fn consecutive_const_additions() {
 #[test]
 fn consecutive_const_additions_with_branch() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "felt252_add3", &["2"], &["3"]),
         dummy_simple_statement(&db, "felt252_add3", &["3"], &["4"]),
@@ -816,7 +815,7 @@ fn consecutive_const_additions_with_branch() {
 #[test]
 fn consecutive_appends_with_branch() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_simple_statement(&db, "array_append", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "array_append", &["2", "3"], &["4"]),
         dummy_simple_statement(&db, "array_append", &["4", "5"], &["6"]),
@@ -849,7 +848,7 @@ fn consecutive_appends_with_branch() {
 #[test]
 fn push_values_with_hole() {
     let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_push_values(&db, &[("0", "100"), ("1", "101"), ("2", "102")]),
         dummy_simple_statement(&db, "make_local", &["102"], &["102"]),
         dummy_push_values(&db, &[("100", "200"), ("101", "201")]),

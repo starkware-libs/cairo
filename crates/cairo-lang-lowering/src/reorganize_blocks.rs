@@ -18,7 +18,7 @@ use crate::{
 /// Removes unreachable blocks.
 /// Blocks that are reachable only through goto are combined with the block that does the goto.
 /// The order of the blocks is changed to be a topologically sorted.
-pub fn reorganize_blocks(lowered: &mut Lowered) {
+pub fn reorganize_blocks<'db>(lowered: &mut Lowered<'db>) {
     if lowered.blocks.is_empty() {
         return;
     }
@@ -102,7 +102,7 @@ pub fn reorganize_blocks(lowered: &mut Lowered) {
     lowered.blocks = new_blocks.build().unwrap();
 }
 
-pub struct TopSortContext {
+pub struct TopSortContext<'db> {
     old_block_rev_order: Vec<BlockId>,
     // The number of incoming gotos, indexed by block_id.
     incoming_gotos: Vec<usize>,
@@ -110,13 +110,18 @@ pub struct TopSortContext {
     // True if the block can be merged with the block that goes to it.
     can_be_merged: Vec<bool>,
 
-    remappings_ctx: remappings::Context,
+    remappings_ctx: remappings::Context<'db>,
 }
 
-impl Analyzer<'_> for TopSortContext {
+impl<'db> Analyzer<'db, '_> for TopSortContext<'db> {
     type Info = ();
 
-    fn visit_block_start(&mut self, _info: &mut Self::Info, block_id: BlockId, _block: &Block) {
+    fn visit_block_start(
+        &mut self,
+        _info: &mut Self::Info,
+        block_id: BlockId,
+        _block: &Block<'db>,
+    ) {
         self.old_block_rev_order.push(block_id);
     }
 
@@ -124,7 +129,7 @@ impl Analyzer<'_> for TopSortContext {
         &mut self,
         _info: &mut Self::Info,
         _statement_location: StatementLocation,
-        stmt: &Statement,
+        stmt: &Statement<'db>,
     ) {
         for var_usage in stmt.inputs() {
             self.remappings_ctx.set_used(var_usage.var_id);
@@ -138,7 +143,7 @@ impl Analyzer<'_> for TopSortContext {
         target_block_id: BlockId,
         // Note that the remappings of a goto are not considered a usage, Later usages (such as a
         // merge) would catch them if used.
-        _remapping: &VarRemapping,
+        _remapping: &VarRemapping<'db>,
     ) {
         self.incoming_gotos[target_block_id.0] += 1;
     }
@@ -146,7 +151,7 @@ impl Analyzer<'_> for TopSortContext {
     fn merge_match(
         &mut self,
         _statement_location: StatementLocation,
-        match_info: &MatchInfo,
+        match_info: &MatchInfo<'db>,
         _infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         for var_usage in match_info.inputs() {
@@ -161,7 +166,7 @@ impl Analyzer<'_> for TopSortContext {
     fn info_from_return(
         &mut self,
         _statement_location: StatementLocation,
-        vars: &[VarUsage],
+        vars: &[VarUsage<'db>],
     ) -> Self::Info {
         for var_usage in vars {
             self.remappings_ctx.set_used(var_usage.var_id);
@@ -171,26 +176,26 @@ impl Analyzer<'_> for TopSortContext {
     fn info_from_panic(
         &mut self,
         _statement_location: StatementLocation,
-        data: &VarUsage,
+        data: &VarUsage<'db>,
     ) -> Self::Info {
         self.remappings_ctx.set_used(data.var_id);
     }
 }
 
-pub struct RebuildContext {
+pub struct RebuildContext<'db> {
     block_remapping: HashMap<BlockId, BlockId>,
-    remappings_ctx: remappings::Context,
+    remappings_ctx: remappings::Context<'db>,
 }
-impl Rebuilder for RebuildContext {
+impl<'db> Rebuilder<'db> for RebuildContext<'db> {
     fn map_block_id(&mut self, block: BlockId) -> BlockId {
         self.block_remapping[&block]
     }
 
-    fn map_var_id(&mut self, var: VariableId) -> VariableId {
+    fn map_var_id(&mut self, var: VariableId<'db>) -> VariableId<'db> {
         self.remappings_ctx.map_var_id(var)
     }
 
-    fn transform_remapping(&mut self, remapping: &mut VarRemapping) {
+    fn transform_remapping(&mut self, remapping: &mut VarRemapping<'db>) {
         self.remappings_ctx.transform_remapping(remapping)
     }
 }
@@ -199,22 +204,22 @@ impl Rebuilder for RebuildContext {
 ///
 /// Note that it can't be integrated into the RebuildContext above because rebuild_remapping might
 /// call `map_var_id` on variables that are going to be removed.
-pub struct VarReassigner<'a> {
-    pub old_vars: &'a Arena<Variable>,
-    pub new_vars: Arena<Variable>,
+pub struct VarReassigner<'db, 'a> {
+    pub old_vars: &'a Arena<Variable<'db>>,
+    pub new_vars: Arena<Variable<'db>>,
 
     // Maps old var_id to new_var_id
-    pub vars: UnorderedHashMap<VariableId, VariableId>,
+    pub vars: UnorderedHashMap<VariableId<'db>, VariableId<'db>>,
 }
 
-impl<'a> VarReassigner<'a> {
-    pub fn new(old_vars: &'a Arena<Variable>) -> Self {
+impl<'db, 'a> VarReassigner<'db, 'a> {
+    pub fn new(old_vars: &'a Arena<Variable<'db>>) -> Self {
         Self { old_vars, new_vars: Default::default(), vars: UnorderedHashMap::default() }
     }
 }
 
-impl Rebuilder for VarReassigner<'_> {
-    fn map_var_id(&mut self, var: VariableId) -> VariableId {
+impl<'db> Rebuilder<'db> for VarReassigner<'db, '_> {
+    fn map_var_id(&mut self, var: VariableId<'db>) -> VariableId<'db> {
         *self.vars.entry(var).or_insert_with(|| self.new_vars.alloc(self.old_vars[var].clone()))
     }
 }

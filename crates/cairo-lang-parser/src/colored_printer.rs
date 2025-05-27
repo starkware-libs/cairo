@@ -12,7 +12,7 @@ struct ColoredPrinter<'a> {
     result: String,
 }
 impl ColoredPrinter<'_> {
-    fn print(&mut self, syntax_node: &SyntaxNode) {
+    fn print(&mut self, syntax_node: &SyntaxNode<'_>) {
         let node = syntax_node.green_node(self.db);
         match &node.details {
             GreenNodeDetails::Token(text) => {
@@ -134,7 +134,7 @@ fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
     }
 }
 
-pub fn print_colored(db: &dyn SyntaxGroup, syntax_root: &SyntaxNode, verbose: bool) -> String {
+pub fn print_colored(db: &dyn SyntaxGroup, syntax_root: &SyntaxNode<'_>, verbose: bool) -> String {
     let mut printer = ColoredPrinter { db, verbose, result: Default::default() };
     printer.print(syntax_root);
     printer.result

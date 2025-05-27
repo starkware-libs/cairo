@@ -76,7 +76,7 @@ fn test_merge_block_builders(
 
     // Create dummy lowering variables.
     let dummy_location = ctx.get_location(test_function.signature.stable_ptr.untyped());
-    let lowering_vars: Vec<VariableId> = (0..N_LOWERING_VARS)
+    let lowering_vars: Vec<VariableId<'_>> = (0..N_LOWERING_VARS)
         .map(|_| ctx.new_var(VarRequest { ty: unit_ty(ctx.db), location: dummy_location }))
         .collect();
 
@@ -115,11 +115,11 @@ fn test_merge_block_builders(
 /// Creates a block builder for each semantic "statement" in the function body.
 ///
 /// See [create_block_builder] for more details.
-fn create_block_builders(
-    ctx: &mut LoweringContext<'_, '_>,
-    test_function: &TestFunction,
-    lowering_vars: &[VariableId],
-) -> Vec<BlockBuilder> {
+fn create_block_builders<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    test_function: &TestFunction<'db>,
+    lowering_vars: &[VariableId<'db>],
+) -> Vec<BlockBuilder<'db>> {
     let expr = ctx.function_body.arenas.exprs[test_function.body].clone();
     let block_expr = extract_matches!(expr, Expr::Block);
 
@@ -139,14 +139,14 @@ fn create_block_builders(
 ///
 /// Note that the statement is not a real statement - it is not lowered, and it is only used to
 /// define the semantic mapping.
-fn create_block_builder(
-    ctx: &mut LoweringContext<'_, '_>,
-    statement_id: StatementId,
-    lowering_vars: &[VariableId],
-) -> BlockBuilder {
+fn create_block_builder<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    statement_id: StatementId<'db>,
+    lowering_vars: &[VariableId<'db>],
+) -> BlockBuilder<'db> {
     let block_id = ctx.blocks.alloc_empty();
     let mut block_builder = BlockBuilder::root(block_id);
-    let mut visited_vars: UnorderedHashSet<semantic::VarId> = Default::default();
+    let mut visited_vars: UnorderedHashSet<semantic::VarId<'_>> = Default::default();
 
     let statement_expr =
         extract_matches!(&ctx.function_body.arenas.statements[statement_id], Statement::Expr);
@@ -166,7 +166,8 @@ fn create_block_builder(
 
         match &ctx.function_body.arenas.exprs[inner_tuple.items[0]] {
             Expr::MemberAccess(member_access) => {
-                let member_path: MemberPath = (member_access.member_path.as_ref().unwrap()).into();
+                let member_path: MemberPath<'_> =
+                    (member_access.member_path.as_ref().unwrap()).into();
                 let mut var = &member_path;
                 while let MemberPath::Member { parent: v, .. } = var {
                     var = v;

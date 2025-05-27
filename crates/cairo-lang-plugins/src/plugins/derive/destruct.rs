@@ -6,7 +6,7 @@ use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Destruct` trait.
-pub fn handle_destruct(info: &PluginTypeInfo) -> String {
+pub fn handle_destruct(info: &PluginTypeInfo<'_>) -> String {
     const DESTRUCT_TRAIT: &str = "core::traits::Destruct";
     let full_typename = info.full_typename();
     let ty = &info.name;

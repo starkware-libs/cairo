@@ -18,5 +18,11 @@ normal = ["cairo-lang-debug"]
 [dependencies]
 # This is used only for docs.
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.11.4" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.11.4" }
 quote.workspace = true
 syn.workspace = true
+salsa.workspace = true
+proc-macro2.workspace = true
+
+[dev-dependencies]
+expect-test = "1.5.0"

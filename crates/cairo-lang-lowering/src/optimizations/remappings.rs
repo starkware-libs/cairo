@@ -17,8 +17,8 @@ use crate::{BlockEnd, BlockId, Lowered, VarRemapping, VariableId};
 
 /// Visits all the reachable remappings in the function, calls `f` on each one and returns a vector
 /// indicating which blocks are reachable.
-pub(crate) fn visit_remappings<F: FnMut(&VarRemapping)>(
-    lowered: &mut Lowered,
+pub(crate) fn visit_remappings<'db, F: FnMut(&VarRemapping<'db>)>(
+    lowered: &mut Lowered<'db>,
     mut f: F,
 ) -> Vec<bool> {
     let mut stack = vec![BlockId::root()];
@@ -46,18 +46,18 @@ pub(crate) fn visit_remappings<F: FnMut(&VarRemapping)>(
 
 /// Context for the optimize remappings optimization.
 #[derive(Default)]
-pub(crate) struct Context {
+pub(crate) struct Context<'db> {
     /// Maps a destination variable to the source variables that are remapped to it.
-    pub dest_to_srcs: HashMap<VariableId, Vec<VariableId>>,
+    pub dest_to_srcs: HashMap<VariableId<'db>, Vec<VariableId<'db>>>,
     /// Cache of a mapping from variable id in the old lowering to variable id in the new lowering.
     /// This mapping is built on demand.
-    var_representatives: HashMap<VariableId, VariableId>,
+    var_representatives: HashMap<VariableId<'db>, VariableId<'db>>,
     /// The set of variables that is used by a reachable blocks.
-    variable_used: HashSet<VariableId>,
+    variable_used: HashSet<VariableId<'db>>,
 }
-impl Context {
+impl<'db> Context<'db> {
     /// Find the `canonical` variable that `var` maps to and mark it as used.
-    pub fn set_used(&mut self, var: VariableId) {
+    pub fn set_used(&mut self, var: VariableId<'db>) {
         let var = self.map_var_id(var);
         if self.variable_used.insert(var) {
             for src in self.dest_to_srcs.get(&var).cloned().unwrap_or_default() {
@@ -67,8 +67,8 @@ impl Context {
     }
 }
 
-impl Rebuilder for Context {
-    fn map_var_id(&mut self, var: VariableId) -> VariableId {
+impl<'db> Rebuilder<'db> for Context<'db> {
+    fn map_var_id(&mut self, var: VariableId<'db>) -> VariableId<'db> {
         if let Some(res) = self.var_representatives.get(&var) {
             *res
         } else {
@@ -83,7 +83,7 @@ impl Rebuilder for Context {
         }
     }
 
-    fn transform_remapping(&mut self, remapping: &mut VarRemapping) {
+    fn transform_remapping(&mut self, remapping: &mut VarRemapping<'db>) {
         let mut new_remapping = VarRemapping::default();
         for (dst, src) in remapping.iter() {
             if dst != &src.var_id && self.variable_used.contains(dst) {
@@ -94,7 +94,7 @@ impl Rebuilder for Context {
     }
 }
 
-pub fn optimize_remappings(lowered: &mut Lowered) {
+pub fn optimize_remappings<'db>(lowered: &mut Lowered<'db>) {
     if lowered.blocks.has_root().is_err() {
         return;
     }

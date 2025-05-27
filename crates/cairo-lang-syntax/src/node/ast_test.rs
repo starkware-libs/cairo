@@ -133,7 +133,7 @@ fn test_stable_ptr() {
     }
 }
 
-fn setup(db: &DatabaseForTesting) -> SyntaxNode {
+fn setup(db: &DatabaseForTesting) -> SyntaxNode<'_> {
     // TODO: Use a builder for easier construction of token.
     // Construct green nodes.
     let token_foo = TokenIdentifier::new_green(db, "foo".into());

@@ -35,52 +35,52 @@ mod test;
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_declaration_diagnostics].
-pub fn free_function_declaration_diagnostics(
-    db: &dyn SemanticGroup,
-    free_function_id: FreeFunctionId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn free_function_declaration_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    free_function_id: FreeFunctionId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_free_function_declaration_data(free_function_id)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_signature].
-pub fn free_function_signature(
-    db: &dyn SemanticGroup,
-    free_function_id: FreeFunctionId,
-) -> Maybe<semantic::Signature> {
+pub fn free_function_signature<'db>(
+    db: &'db dyn SemanticGroup,
+    free_function_id: FreeFunctionId<'db>,
+) -> Maybe<semantic::Signature<'db>> {
     Ok(db.priv_free_function_declaration_data(free_function_id)?.signature)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_declaration_implicits].
-pub fn free_function_declaration_implicits(
-    db: &dyn SemanticGroup,
-    free_function_id: FreeFunctionId,
-) -> Maybe<Vec<TypeId>> {
+pub fn free_function_declaration_implicits<'db>(
+    db: &'db dyn SemanticGroup,
+    free_function_id: FreeFunctionId<'db>,
+) -> Maybe<Vec<TypeId<'db>>> {
     Ok(db.priv_free_function_declaration_data(free_function_id)?.signature.implicits)
 }
 
 /// Query implementation of [SemanticGroup::free_function_declaration_implicit_precedence]
-pub fn free_function_declaration_implicit_precedence(
-    db: &dyn SemanticGroup,
-    free_function_id: FreeFunctionId,
-) -> Maybe<ImplicitPrecedence> {
+pub fn free_function_declaration_implicit_precedence<'db>(
+    db: &'db dyn SemanticGroup,
+    free_function_id: FreeFunctionId<'db>,
+) -> Maybe<ImplicitPrecedence<'db>> {
     Ok(db.priv_free_function_declaration_data(free_function_id)?.implicit_precedence)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_generic_params].
-pub fn free_function_generic_params(
-    db: &dyn SemanticGroup,
-    free_function_id: FreeFunctionId,
-) -> Maybe<Vec<semantic::GenericParam>> {
+pub fn free_function_generic_params<'db>(
+    db: &'db dyn SemanticGroup,
+    free_function_id: FreeFunctionId<'db>,
+) -> Maybe<Vec<semantic::GenericParam<'db>>> {
     Ok(db.free_function_generic_params_data(free_function_id)?.generic_params)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_generic_params_data].
-pub fn free_function_generic_params_data(
-    db: &dyn SemanticGroup,
-    free_function_id: FreeFunctionId,
-) -> Maybe<GenericParamsData> {
+pub fn free_function_generic_params_data<'db>(
+    db: &'db dyn SemanticGroup,
+    free_function_id: FreeFunctionId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = free_function_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
@@ -109,28 +109,28 @@ pub fn free_function_generic_params_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_declaration_resolver_data].
-pub fn free_function_declaration_resolver_data(
-    db: &dyn SemanticGroup,
-    free_function_id: FreeFunctionId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn free_function_declaration_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    free_function_id: FreeFunctionId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_free_function_declaration_data(free_function_id)?.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_declaration_inline_config].
-pub fn free_function_declaration_inline_config(
-    db: &dyn SemanticGroup,
-    free_function_id: FreeFunctionId,
-) -> Maybe<InlineConfiguration> {
+pub fn free_function_declaration_inline_config<'db>(
+    db: &'db dyn SemanticGroup,
+    free_function_id: FreeFunctionId<'db>,
+) -> Maybe<InlineConfiguration<'db>> {
     Ok(db.priv_free_function_declaration_data(free_function_id)?.inline_config)
 }
 
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_free_function_declaration_data].
-pub fn priv_free_function_declaration_data(
-    db: &dyn SemanticGroup,
-    free_function_id: FreeFunctionId,
-) -> Maybe<FunctionDeclarationData> {
+pub fn priv_free_function_declaration_data<'db>(
+    db: &'db dyn SemanticGroup,
+    free_function_id: FreeFunctionId<'db>,
+) -> Maybe<FunctionDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
     let declaration = free_function_syntax.declaration(db);
@@ -190,30 +190,30 @@ pub fn priv_free_function_declaration_data(
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_body_diagnostics].
-pub fn free_function_body_diagnostics(
-    db: &dyn SemanticGroup,
-    free_function_id: FreeFunctionId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn free_function_body_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    free_function_id: FreeFunctionId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_free_function_body_data(free_function_id)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_body_resolver_data].
-pub fn free_function_body_resolver_data(
-    db: &dyn SemanticGroup,
-    free_function_id: FreeFunctionId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn free_function_body_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    free_function_id: FreeFunctionId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_free_function_body_data(free_function_id)?.resolver_data)
 }
 
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_free_function_body_data].
-pub fn priv_free_function_body_data(
-    db: &dyn SemanticGroup,
-    free_function_id: FreeFunctionId,
-) -> Maybe<FunctionBodyData> {
+pub fn priv_free_function_body_data<'db>(
+    db: &'db dyn SemanticGroup,
+    free_function_id: FreeFunctionId<'db>,
+) -> Maybe<FunctionBodyData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
     // Compute declaration semantic.
