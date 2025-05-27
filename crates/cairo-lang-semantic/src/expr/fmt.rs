@@ -1,24 +1,52 @@
+use cairo_lang_debug::debug::GetIdValue;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::FunctionWithBodyId;
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_utils::Upcast;
+use id_arena::Id;
 
 use crate::db::SemanticGroup;
+use crate::{Expr, Pattern, Statement};
 
 /// Holds all the information needed for formatting expressions.
 /// Acts like a "db" for DebugWithDb.
-pub struct ExprFormatter<'a> {
-    pub db: &'a (dyn SemanticGroup + 'static),
-    pub function_id: FunctionWithBodyId,
+pub struct ExprFormatter<'db> {
+    pub db: &'db dyn SemanticGroup,
+    pub function_id: FunctionWithBodyId<'db>,
 }
 
-impl Upcast<dyn SemanticGroup + 'static> for ExprFormatter<'_> {
-    fn upcast(&self) -> &(dyn SemanticGroup + 'static) {
+impl<'db> Upcast<'db, dyn SemanticGroup> for ExprFormatter<'db> {
+    fn upcast(&'db self) -> &'db dyn SemanticGroup {
         self.db
     }
 }
-impl Upcast<dyn DefsGroup + 'static> for ExprFormatter<'_> {
-    fn upcast(&self) -> &(dyn DefsGroup + 'static) {
-        self.db
+impl<'db> Upcast<'db, dyn DefsGroup> for ExprFormatter<'db> {
+    fn upcast(&'db self) -> &'db dyn DefsGroup {
+        self.db.upcast()
+    }
+}
+
+impl<'db> Upcast<'db, dyn ParserGroup> for ExprFormatter<'db> {
+    fn upcast(&'db self) -> &'db dyn ParserGroup {
+        self.db.upcast()
+    }
+}
+
+impl<'db> GetIdValue<'db, ExprFormatter<'db>, Pattern<'db>> for ExprFormatter<'db> {
+    fn get_id_value(&self, id: Id<Pattern<'db>>) -> Pattern<'db> {
+        self.db.pattern_semantic(self.function_id, id)
+    }
+}
+
+impl<'db> GetIdValue<'db, ExprFormatter<'db>, Expr<'db>> for ExprFormatter<'db> {
+    fn get_id_value(&self, id: Id<Expr<'db>>) -> Expr<'db> {
+        self.db.expr_semantic(self.function_id, id)
+    }
+}
+
+impl<'db> GetIdValue<'db, ExprFormatter<'db>, Statement<'db>> for ExprFormatter<'db> {
+    fn get_id_value(&self, id: Id<Statement<'db>>) -> Statement<'db> {
+        self.db.statement_semantic(self.function_id, id)
     }
 }
 

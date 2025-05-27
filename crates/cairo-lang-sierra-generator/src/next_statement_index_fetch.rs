@@ -4,15 +4,15 @@ use crate::pre_sierra::{LabelId, Statement, StatementWithLocation};
 
 /// Helper to fetch the next statement index from a branch target, and get the statement indices
 /// for labels.
-pub struct NextStatementIndexFetch {
-    label_to_statement: UnorderedHashMap<LabelId, usize>,
+pub struct NextStatementIndexFetch<'db> {
+    label_to_statement: UnorderedHashMap<LabelId<'db>, usize>,
 }
-impl NextStatementIndexFetch {
+impl<'db> NextStatementIndexFetch<'db> {
     /// Creates the mapping to fetch statement indices.
     ///
     /// If `include_label_indices` is `true`, indices will include label statements.
     /// Otherwise, those statements will be skipped.
-    pub fn new(statements: &[StatementWithLocation], include_label_indices: bool) -> Self {
+    pub fn new(statements: &[StatementWithLocation<'db>], include_label_indices: bool) -> Self {
         let mut index = 0;
         let mut label_to_statement = UnorderedHashMap::default();
         for statement in statements {
@@ -38,7 +38,7 @@ impl NextStatementIndexFetch {
     }
 
     /// Returns the index of a statement pointed by the given label.
-    pub fn resolve_label(&self, label: &LabelId) -> usize {
+    pub fn resolve_label(&self, label: &LabelId<'db>) -> usize {
         // TODO(lior): handle missing labels.
         *self.label_to_statement.get(label).unwrap()
     }

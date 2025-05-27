@@ -1,7 +1,8 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ModuleItemId;
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{Intern, extract_matches};
 use pretty_assertions::assert_eq;
+use smol_str::SmolStr;
 use test_log::test;
 
 use crate::db::SemanticGroup;
@@ -24,7 +25,9 @@ fn test_trait() {
     .unwrap();
 
     let trait_id = extract_matches!(
-        db.module_item_by_name(test_module.module_id, "MyContract".into()).unwrap().unwrap(),
+        db.module_item_by_name(test_module.module_id, SmolStr::from("MyContract").intern(db))
+            .unwrap()
+            .unwrap(),
         ModuleItemId::Trait
     );
 
@@ -35,7 +38,7 @@ fn test_trait() {
     );
 
     let trait_functions = db.trait_functions(trait_id).unwrap();
-    let trait_function_id = trait_functions.get("foo").unwrap();
+    let trait_function_id = trait_functions.get(&SmolStr::from("foo").intern(db)).unwrap();
     let signature = db.trait_function_signature(*trait_function_id).unwrap();
     assert_eq!(
         format!("{:?}", signature.debug(db)),

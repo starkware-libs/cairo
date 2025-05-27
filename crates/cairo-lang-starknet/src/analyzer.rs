@@ -1,5 +1,6 @@
 use cairo_lang_defs::ids::{EnumId, LanguageElementId, ModuleId, ModuleItemId, StructId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
@@ -36,7 +37,11 @@ const ALLOW_INVALID_STORAGE_MEMBERS_ATTR: &str = "starknet::invalid_storage_memb
 pub struct ABIAnalyzer;
 
 impl AnalyzerPlugin for ABIAnalyzer {
-    fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic> {
+    fn diagnostics<'db>(
+        &self,
+        db: &'db dyn SemanticGroup,
+        module_id: ModuleId<'db>,
+    ) -> Vec<PluginDiagnostic<'db>> {
         let mut diagnostics = vec![];
         add_non_starknet_interface_embeddable_diagnostics(db, module_id, &mut diagnostics);
         add_abi_diagnostics(db, module_id, &mut diagnostics);
@@ -45,10 +50,10 @@ impl AnalyzerPlugin for ABIAnalyzer {
 }
 
 /// Add diagnostics for embeddable impls that do not implement a starknet interface.
-fn add_non_starknet_interface_embeddable_diagnostics(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+fn add_non_starknet_interface_embeddable_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
     let Ok(impls) = db.module_impls(module_id) else {
         return;
@@ -69,10 +74,10 @@ fn add_non_starknet_interface_embeddable_diagnostics(
 }
 
 /// Add diagnostics for ABI generation.
-fn add_abi_diagnostics(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+fn add_abi_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
     let Some(contract) = module_contract(db, module_id) else {
         return;
@@ -107,7 +112,11 @@ fn add_abi_diagnostics(
 pub struct StorageAnalyzer;
 
 impl AnalyzerPlugin for StorageAnalyzer {
-    fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic> {
+    fn diagnostics<'db>(
+        &self,
+        db: &'db dyn SemanticGroup,
+        module_id: ModuleId<'db>,
+    ) -> Vec<PluginDiagnostic<'db>> {
         let mut diagnostics = vec![];
 
         // Analyze all the structs in the module.
@@ -149,10 +158,10 @@ impl AnalyzerPlugin for StorageAnalyzer {
 /// Analyzes a storage struct:
 /// - Ensures all members implement `ValidStorageTypeTrait`.
 /// - Checks for multiple paths to the same location in storage.
-fn analyze_storage_struct(
-    db: &dyn SemanticGroup,
-    struct_id: StructId,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+fn analyze_storage_struct<'db>(
+    db: &'db dyn SemanticGroup,
+    struct_id: StructId<'db>,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
     let Ok(members) = db.struct_members(struct_id) else {
         return;
@@ -209,7 +218,7 @@ fn analyze_storage_struct(
         member_analyze(
             db,
             member,
-            member_name.clone(),
+            member_name.lookup_intern(db),
             paths_data,
             &mut vec![],
             member_ast.name(db).stable_ptr(db).untyped(),
@@ -225,12 +234,12 @@ pub struct StorageStructMembers {
 }
 
 impl StorageStructMembers {
-    fn handle(
+    fn handle<'db>(
         &mut self,
         member_name: SmolStr,
         path_to_member: Vec<SmolStr>,
-        pointer_to_code: SyntaxStablePtrId,
-        diagnostics: &mut Vec<PluginDiagnostic>,
+        pointer_to_code: SyntaxStablePtrId<'db>,
+        diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     ) {
         if let Some(existing_path) = self.name_to_paths.get(&member_name) {
             diagnostics.push(PluginDiagnostic::warning(
@@ -257,14 +266,14 @@ impl StorageStructMembers {
 /// where member1 is flat with a member member2 which is flat and a member member3 which is not
 /// flat, The function will iterate until it reaches member3 and add the path
 /// member1.member2.member3 to the `StorageStructMembers` struct.
-fn member_analyze(
-    db: &dyn SemanticGroup,
-    member: &Member,
+fn member_analyze<'db>(
+    db: &'db dyn SemanticGroup,
+    member: &Member<'db>,
     member_name: SmolStr,
     paths_data: &mut StorageStructMembers,
     user_data_path: &mut Vec<SmolStr>,
-    pointer_to_code: SyntaxStablePtrId,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+    pointer_to_code: SyntaxStablePtrId<'db>,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
     user_data_path.push(member_name.clone());
     let member_ast = member.id.stable_ptr(db).lookup(db);
@@ -288,7 +297,7 @@ fn member_analyze(
         member_analyze(
             db,
             inner_member,
-            inner_member_name.clone(),
+            inner_member_name.lookup_intern(db),
             paths_data,
             user_data_path,
             pointer_to_code,
@@ -301,10 +310,10 @@ fn member_analyze(
 /// Adds diagnostics for an enum deriving `starknet::Store`.
 ///
 /// Specifically finds cases missing a `#[default]` variant.
-fn add_derive_store_enum_diags(
-    db: &dyn SemanticGroup,
-    id: EnumId,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+fn add_derive_store_enum_diags<'db>(
+    db: &'db dyn SemanticGroup,
+    id: EnumId<'db>,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
     let Ok(variants) = db.enum_variants(id) else { return };
     if !variants
@@ -322,10 +331,14 @@ fn add_derive_store_enum_diags(
 }
 
 /// Resolves the concrete `ValidStorageTypeTrait` for a given type.
-fn concrete_valid_storage_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
+fn concrete_valid_storage_trait<'db>(
+    db: &'db dyn SemanticGroup,
+    ty: TypeId<'db>,
+) -> ConcreteTraitId<'db> {
     let module_id = ModuleHelper::core(db).submodule("starknet").submodule("storage").id;
     let name = "ValidStorageTypeTrait";
-    let Ok(Some(ModuleItemId::Trait(trait_id))) = db.module_item_by_name(module_id, name.into())
+    let Ok(Some(ModuleItemId::Trait(trait_id))) =
+        db.module_item_by_name(module_id, SmolStrId::from_str(db, name))
     else {
         panic!("`{}` not found in `{}`.", name, module_id.full_path(db));
     };

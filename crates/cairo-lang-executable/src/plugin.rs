@@ -42,12 +42,12 @@ const IMPLICIT_PRECEDENCE: &[&str] = &[
 struct ExecutablePlugin;
 
 impl MacroPlugin for ExecutablePlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         let ast::ModuleItem::FreeFunction(item) = item_ast else {
             return PluginResult::default();
         };
@@ -152,7 +152,11 @@ impl MacroPlugin for ExecutablePlugin {
 struct RawExecutableAnalyzer;
 
 impl AnalyzerPlugin for RawExecutableAnalyzer {
-    fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic> {
+    fn diagnostics<'db>(
+        &self,
+        db: &'db dyn SemanticGroup,
+        module_id: ModuleId<'db>,
+    ) -> Vec<PluginDiagnostic<'db>> {
         let mut diagnostics = vec![];
         let Ok(free_functions) = db.module_free_functions(module_id) else {
             return diagnostics;
