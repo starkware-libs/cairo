@@ -30,11 +30,11 @@ pub fn get_diagnostics(
 
 // TODO(yuval): stop virtual files for tests anymore. See semantic tests.
 /// Creates a virtual file with the given content and returns its ID.
-pub fn create_virtual_file(
-    db: &SimpleParserDatabase,
+pub fn create_virtual_file<'a>(
+    db: &'a SimpleParserDatabase,
     file_name: impl Into<SmolStr>,
     content: &str,
-) -> FileId {
+) -> FileId<'a> {
     FileLongId::Virtual(VirtualFile {
         parent: None,
         name: file_name.into(),

@@ -5,13 +5,13 @@ use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use smol_str::SmolStr;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ParserDiagnostic {
-    pub file_id: FileId,
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct ParserDiagnostic<'a> {
+    pub file_id: FileId<'a>,
     pub span: TextSpan,
     pub kind: ParserDiagnosticKind,
 }
-impl ParserDiagnostic {
+impl<'a> ParserDiagnostic<'a> {
     /// Converts a `SyntaxKind` to its corresponding operator string.
     fn kind_to_string(&self, kind: SyntaxKind) -> String {
         format!(
@@ -129,7 +129,8 @@ pub enum ParserDiagnosticKind {
     ConsecutiveMathOperators { first_op: SyntaxKind, second_op: SyntaxKind },
     ExpectedSemicolonOrBody,
 }
-impl DiagnosticEntry for ParserDiagnostic {
+
+impl<'a> DiagnosticEntry for ParserDiagnostic<'a> {
     type DbType = dyn FilesGroup;
 
     fn format(&self, _db: &dyn FilesGroup) -> String {
