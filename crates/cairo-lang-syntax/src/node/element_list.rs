@@ -6,16 +6,16 @@ use crate::node::{SyntaxNode, TypedSyntaxNode};
 // A typed view of an element list node.
 // STEP=1 means a sequence of elements (e.g. sequence of trivia elements).
 // STEP=2 means a separated sequence (e.g. argument list separated by `,`).
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ElementList<T: TypedSyntaxNode, const STEP: usize> {
-    pub node: SyntaxNode,
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct ElementList<'a, T: TypedSyntaxNode<'a>, const STEP: usize> {
+    pub node: SyntaxNode<'a>,
     phantom: PhantomData<T>,
 }
-impl<T: TypedSyntaxNode, const STEP: usize> ElementList<T, STEP> {
-    pub fn new(node: SyntaxNode) -> Self {
+impl<'a, T: TypedSyntaxNode<'a>, const STEP: usize> ElementList<'a, T, STEP> {
+    pub fn new(node: SyntaxNode<'a>) -> Self {
         Self { node, phantom: PhantomData {} }
     }
-    pub fn elements(&self, db: &dyn SyntaxGroup) -> Vec<T> {
+    pub fn elements(&self, db: &'a dyn SyntaxGroup) -> Vec<T> {
         self.node
             .get_children(db)
             .iter()
@@ -23,7 +23,7 @@ impl<T: TypedSyntaxNode, const STEP: usize> ElementList<T, STEP> {
             .map(|x| T::from_syntax_node(db, *x))
             .collect()
     }
-    pub fn has_tail(&self, db: &dyn SyntaxGroup) -> bool {
+    pub fn has_tail(&'a self, db: &'a dyn SyntaxGroup) -> bool {
         self.node.get_children(db).len() % STEP != 0
     }
 }
