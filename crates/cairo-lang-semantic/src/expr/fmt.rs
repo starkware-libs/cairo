@@ -7,8 +7,8 @@ use crate::db::SemanticGroup;
 /// Holds all the information needed for formatting expressions.
 /// Acts like a "db" for DebugWithDb.
 pub struct ExprFormatter<'a> {
-    pub db: &'a (dyn SemanticGroup + 'static),
-    pub function_id: FunctionWithBodyId,
+    pub db: &'a dyn SemanticGroup,
+    pub function_id: FunctionWithBodyId<'a>,
 }
 
 impl Upcast<dyn SemanticGroup + 'static> for ExprFormatter<'_> {

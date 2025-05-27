@@ -6,7 +6,7 @@ use super::constant::ConstValue;
 use crate::db::SemanticGroup;
 use crate::{ConcreteVariant, MatchArmSelector};
 
-impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for ConstValue {
+impl<'db, Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for ConstValue<'db> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
         let semantic_db = db.upcast();
         match self {
@@ -18,7 +18,7 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Const
                     write!(f, " ")?;
                     value.fmt(f, semantic_db)?;
                     write!(f, ": ")?;
-                    value.ty(semantic_db).unwrap().fmt(f, semantic_db.elongate())?;
+                    value.ty(semantic_db).unwrap().fmt(f, &semantic_db.elongate())?;
                     if inner.peek().is_some() {
                         write!(f, ",")?;
                     } else {
@@ -50,7 +50,9 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Const
     }
 }
 
-impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for ConcreteVariant {
+impl<'db, Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db>
+    for ConcreteVariant<'db>
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, semantic_db: &Db) -> std::fmt::Result {
         let semantic_db = semantic_db.upcast();
         let enum_name = self.concrete_enum_id.enum_id(semantic_db).name(semantic_db);
@@ -59,7 +61,9 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Concr
     }
 }
 
-impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for MatchArmSelector {
+impl<'db, Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db>
+    for MatchArmSelector<'db>
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, semantic_db: &Db) -> std::fmt::Result {
         let semantic_db = semantic_db.upcast();
         match self {

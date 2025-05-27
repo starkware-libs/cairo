@@ -17,28 +17,28 @@ use crate::{ConcreteTraitId, ConcreteVariant, FunctionId, TypeId, TypeLongId, Va
 // ResolvedConcreteItem - returned by resolve_concrete_path(). Paths with generic arguments.
 // ResolvedGenericItem - returned by resolve_generic_path(). Paths without generic arguments.
 
-#[derive(Clone, PartialEq, Eq, Debug, DebugWithDb)]
+#[derive(Clone, PartialEq, Eq, Debug, DebugWithDb, salsa::Update)]
 #[debug_db(dyn SemanticGroup + 'static)]
-pub enum ResolvedGenericItem {
-    GenericConstant(ConstantId),
-    Module(ModuleId),
-    GenericFunction(GenericFunctionId),
-    GenericType(GenericTypeId),
-    GenericTypeAlias(ModuleTypeAliasId),
-    GenericImplAlias(ImplAliasId),
-    Variant(Variant),
-    Trait(TraitId),
-    Impl(ImplDefId),
-    Variable(VarId),
-    Macro(MacroDeclarationId),
-    TraitItem(TraitItemId),
+pub enum ResolvedGenericItem<'db> {
+    GenericConstant(ConstantId<'db>),
+    Module(ModuleId<'db>),
+    GenericFunction(GenericFunctionId<'db>),
+    GenericType(GenericTypeId<'db>),
+    GenericTypeAlias(ModuleTypeAliasId<'db>),
+    GenericImplAlias(ImplAliasId<'db>),
+    Variant(Variant<'db>),
+    Trait(TraitId<'db>),
+    Impl(ImplDefId<'db>),
+    Variable(VarId<'db>),
+    Macro(MacroDeclarationId<'db>),
+    TraitItem(TraitItemId<'db>),
 }
-impl ResolvedGenericItem {
+impl<'db> ResolvedGenericItem<'db> {
     /// Wraps a ModuleItem with the corresponding ResolveGenericItem.
     pub fn from_module_item(
-        db: &dyn SemanticGroup,
-        module_item: ModuleItemId,
-    ) -> Maybe<ResolvedGenericItem> {
+        db: &'db dyn SemanticGroup,
+        module_item: ModuleItemId<'db>,
+    ) -> Maybe<ResolvedGenericItem<'db>> {
         Ok(match module_item {
             ModuleItemId::Constant(id) => ResolvedGenericItem::GenericConstant(id),
             ModuleItemId::Submodule(id) => ResolvedGenericItem::Module(ModuleId::Submodule(id)),
@@ -84,22 +84,22 @@ impl ResolvedGenericItem {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, DebugWithDb)]
+#[derive(Clone, PartialEq, Eq, Debug, DebugWithDb, salsa::Update)]
 #[debug_db(dyn SemanticGroup + 'static)]
-pub enum ResolvedConcreteItem {
-    Constant(ConstValueId),
-    Module(ModuleId),
-    Function(FunctionId),
-    Type(TypeId),
-    Variant(ConcreteVariant),
-    Trait(ConcreteTraitId),
-    SelfTrait(ConcreteTraitId),
-    Impl(ImplId),
-    Macro(MacroDeclarationId),
+pub enum ResolvedConcreteItem<'db> {
+    Constant(ConstValueId<'db>),
+    Module(ModuleId<'db>),
+    Function(FunctionId<'db>),
+    Type(TypeId<'db>),
+    Variant(ConcreteVariant<'db>),
+    Trait(ConcreteTraitId<'db>),
+    SelfTrait(ConcreteTraitId<'db>),
+    Impl(ImplId<'db>),
+    Macro(MacroDeclarationId<'db>),
 }
 
-impl ResolvedConcreteItem {
-    pub fn generic(&self, db: &dyn SemanticGroup) -> Option<ResolvedGenericItem> {
+impl<'db> ResolvedConcreteItem<'db> {
+    pub fn generic(&self, db: &'db dyn SemanticGroup) -> Option<ResolvedGenericItem<'db>> {
         Some(match self {
             ResolvedConcreteItem::Constant(id) => {
                 if let ConstValue::ImplConstant(impl_constant_id) = id.lookup_intern(db) {

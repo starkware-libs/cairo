@@ -21,19 +21,19 @@ use crate::{ConcreteStructId, ExprLiteral, ExprStringLiteral, LocalVariable, Pat
 // once it is available.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
-pub enum Pattern {
-    Literal(PatternLiteral),
-    StringLiteral(PatternStringLiteral),
-    Variable(PatternVariable),
-    Struct(PatternStruct),
-    Tuple(PatternTuple),
-    FixedSizeArray(PatternFixedSizeArray),
-    EnumVariant(PatternEnumVariant),
-    Otherwise(PatternOtherwise),
-    Missing(PatternMissing),
+pub enum Pattern<'a> {
+    Literal(PatternLiteral<'a>),
+    StringLiteral(PatternStringLiteral<'a>),
+    Variable(PatternVariable<'a>),
+    Struct(PatternStruct<'a>),
+    Tuple(PatternTuple<'a>),
+    FixedSizeArray(PatternFixedSizeArray<'a>),
+    EnumVariant(PatternEnumVariant<'a>),
+    Otherwise(PatternOtherwise<'a>),
+    Missing(PatternMissing<'a>),
 }
-impl Pattern {
-    pub fn ty(&self) -> semantic::TypeId {
+impl<'db> Pattern<'db> {
+    pub fn ty(&self) -> semantic::TypeId<'db> {
         match self {
             Pattern::Literal(literal) => literal.literal.ty,
             Pattern::StringLiteral(string_literal) => string_literal.string_literal.ty,
@@ -47,7 +47,10 @@ impl Pattern {
         }
     }
 
-    pub fn variables(&self, queryable: &dyn PatternVariablesQueryable) -> Vec<PatternVariable> {
+    pub fn variables(
+        &self,
+        queryable: &dyn PatternVariablesQueryable<'db>,
+    ) -> Vec<PatternVariable<'db>> {
         match self {
             Pattern::Variable(variable) => vec![variable.clone()],
             Pattern::Struct(pattern_struct) => pattern_struct
@@ -78,7 +81,7 @@ impl Pattern {
         }
     }
 
-    pub fn stable_ptr(&self) -> ast::PatternPtr {
+    pub fn stable_ptr(&self) -> ast::PatternPtr<'db> {
         match self {
             Pattern::Literal(pattern) => pattern.stable_ptr,
             Pattern::StringLiteral(pattern) => pattern.stable_ptr,
@@ -93,20 +96,20 @@ impl Pattern {
     }
 }
 
-impl From<&Pattern> for SyntaxStablePtrId {
-    fn from(pattern: &Pattern) -> Self {
+impl<'db> From<&Pattern<'db>> for SyntaxStablePtrId<'db> {
+    fn from(pattern: &Pattern<'db>) -> Self {
         pattern.stable_ptr().into()
     }
 }
 
 /// Polymorphic container of [`Pattern`] objects used for querying pattern variables.
-pub trait PatternVariablesQueryable {
+pub trait PatternVariablesQueryable<'a> {
     /// Lookup the pattern in this container and then get [`Pattern::variables`] from it.
-    fn query(&self, id: PatternId) -> Vec<PatternVariable>;
+    fn query(&self, id: PatternId<'a>) -> Vec<PatternVariable<'a>>;
 }
 
-impl PatternVariablesQueryable for Arena<Pattern> {
-    fn query(&self, id: PatternId) -> Vec<PatternVariable> {
+impl<'a> PatternVariablesQueryable<'a> for Arena<Pattern<'a>> {
+    fn query(&self, id: PatternId<'a>) -> Vec<PatternVariable<'a>> {
         self[id].variables(self)
     }
 }
@@ -117,43 +120,44 @@ impl PatternVariablesQueryable for Arena<Pattern> {
 /// and relays queries to [`SemanticGroup::pattern_semantic`].
 pub struct QueryPatternVariablesFromDb<'a>(
     pub &'a (dyn SemanticGroup + 'static),
-    pub FunctionWithBodyId,
+    pub FunctionWithBodyId<'a>,
 );
 
-impl PatternVariablesQueryable for QueryPatternVariablesFromDb<'_> {
-    fn query(&self, id: PatternId) -> Vec<PatternVariable> {
-        self.0.pattern_semantic(self.1, id).variables(self)
+impl<'a> PatternVariablesQueryable<'a> for QueryPatternVariablesFromDb<'a> {
+    fn query(&self, id: PatternId<'a>) -> Vec<PatternVariable<'a>> {
+        let pattern: Pattern<'a> = self.0.pattern_semantic(self.1, id);
+        pattern.variables(self)
     }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
-pub struct PatternLiteral {
-    pub literal: ExprLiteral,
+pub struct PatternLiteral<'db> {
+    pub literal: ExprLiteral<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::PatternPtr,
+    pub stable_ptr: ast::PatternPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
-pub struct PatternStringLiteral {
-    pub string_literal: ExprStringLiteral,
+pub struct PatternStringLiteral<'db> {
+    pub string_literal: ExprStringLiteral<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::PatternPtr,
+    pub stable_ptr: ast::PatternPtr<'db>,
 }
 
 /// A pattern that binds the matched value to a variable.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
-pub struct PatternVariable {
+pub struct PatternVariable<'db> {
     #[dont_rewrite]
     pub name: SmolStr,
-    pub var: LocalVariable,
+    pub var: LocalVariable<'db>,
     #[dont_rewrite]
-    pub stable_ptr: ast::PatternPtr,
+    pub stable_ptr: ast::PatternPtr<'db>,
 }
-impl DebugWithDb<ExprFormatter<'_>> for PatternVariable {
+impl<'db> DebugWithDb<ExprFormatter<'db>> for PatternVariable<'db> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, _db: &ExprFormatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.name)
     }
@@ -162,68 +166,68 @@ impl DebugWithDb<ExprFormatter<'_>> for PatternVariable {
 /// A pattern that destructures a struct to its fields.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
-pub struct PatternStruct {
-    pub concrete_struct_id: ConcreteStructId,
+pub struct PatternStruct<'db> {
+    pub concrete_struct_id: ConcreteStructId<'db>,
     // TODO(spapini): This should be ConcreteMember, when available.
-    pub field_patterns: Vec<(semantic::Member, PatternId)>,
-    pub ty: semantic::TypeId,
+    pub field_patterns: Vec<(semantic::Member<'db>, PatternId<'db>)>,
+    pub ty: semantic::TypeId<'db>,
     #[dont_rewrite]
     pub n_snapshots: usize,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::PatternStructPtr,
+    pub stable_ptr: ast::PatternStructPtr<'db>,
 }
 
 /// A pattern that destructures a tuple to its fields.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
-pub struct PatternTuple {
-    pub field_patterns: Vec<PatternId>,
-    pub ty: semantic::TypeId,
+pub struct PatternTuple<'db> {
+    pub field_patterns: Vec<PatternId<'db>>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::PatternTuplePtr,
+    pub stable_ptr: ast::PatternTuplePtr<'db>,
 }
 
 /// A pattern that destructures a fixed size array into its elements.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
-pub struct PatternFixedSizeArray {
-    pub elements_patterns: Vec<PatternId>,
-    pub ty: semantic::TypeId,
+pub struct PatternFixedSizeArray<'db> {
+    pub elements_patterns: Vec<PatternId<'db>>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::PatternFixedSizeArrayPtr,
+    pub stable_ptr: ast::PatternFixedSizeArrayPtr<'db>,
 }
 
 /// A pattern that destructures a specific variant of an enum to its inner value.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
-pub struct PatternEnumVariant {
-    pub variant: semantic::ConcreteVariant,
-    pub inner_pattern: Option<PatternId>,
-    pub ty: semantic::TypeId,
+pub struct PatternEnumVariant<'db> {
+    pub variant: semantic::ConcreteVariant<'db>,
+    pub inner_pattern: Option<PatternId<'db>>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::PatternPtr,
+    pub stable_ptr: ast::PatternPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
-pub struct PatternOtherwise {
-    pub ty: semantic::TypeId,
+pub struct PatternOtherwise<'db> {
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::TerminalUnderscorePtr,
+    pub stable_ptr: ast::TerminalUnderscorePtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
-pub struct PatternMissing {
-    pub ty: semantic::TypeId,
+pub struct PatternMissing<'db> {
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::PatternPtr,
+    pub stable_ptr: ast::PatternPtr<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub diag_added: DiagnosticAdded,
