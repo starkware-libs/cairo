@@ -6,8 +6,10 @@ use super::constant::ConstValue;
 use crate::db::SemanticGroup;
 use crate::{ConcreteVariant, MatchArmSelector};
 
-impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for ConstValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
+impl<'db, Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<'db, Db>
+    for ConstValue<'db>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Db) -> std::fmt::Result {
         let semantic_db = db.upcast();
         match self {
             ConstValue::Int(value, _ty) => write!(f, "{value}"),
@@ -50,8 +52,10 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Const
     }
 }
 
-impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for ConcreteVariant {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, semantic_db: &Db) -> std::fmt::Result {
+impl<'db, Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<'db, Db>
+    for ConcreteVariant<'db>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, semantic_db: &'db Db) -> std::fmt::Result {
         let semantic_db = semantic_db.upcast();
         let enum_name = self.concrete_enum_id.enum_id(semantic_db).name(semantic_db);
         let variant_name = self.id.name(semantic_db);
@@ -59,8 +63,10 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Concr
     }
 }
 
-impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for MatchArmSelector {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, semantic_db: &Db) -> std::fmt::Result {
+impl<'db, Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<'db, Db>
+    for MatchArmSelector<'db>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, semantic_db: &'db Db) -> std::fmt::Result {
         let semantic_db = semantic_db.upcast();
         match self {
             MatchArmSelector::VariantId(variant_id) => {

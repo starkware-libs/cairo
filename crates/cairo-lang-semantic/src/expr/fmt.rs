@@ -6,18 +6,18 @@ use crate::db::SemanticGroup;
 
 /// Holds all the information needed for formatting expressions.
 /// Acts like a "db" for DebugWithDb.
-pub struct ExprFormatter<'a> {
-    pub db: &'a (dyn SemanticGroup + 'static),
-    pub function_id: FunctionWithBodyId,
+pub struct ExprFormatter<'db> {
+    pub db: &'db dyn SemanticGroup,
+    pub function_id: FunctionWithBodyId<'db>,
 }
 
 impl Upcast<dyn SemanticGroup + 'static> for ExprFormatter<'_> {
-    fn upcast(&self) -> &(dyn SemanticGroup + 'static) {
+    fn upcast(&self) -> &(dyn SemanticGroup) {
         self.db
     }
 }
 impl Upcast<dyn DefsGroup + 'static> for ExprFormatter<'_> {
-    fn upcast(&self) -> &(dyn DefsGroup + 'static) {
+    fn upcast(&self) -> &(dyn DefsGroup) {
         self.db
     }
 }
