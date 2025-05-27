@@ -60,12 +60,12 @@ use super::{
 pub struct StorageInterfacesPlugin;
 
 impl MacroPlugin for StorageInterfacesPlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         let mut diagnostics = vec![];
         let storage_node_attrs = item_ast.query_attr(db, STORAGE_NODE_ATTR).collect_vec();
         if !matches!(item_ast, ast::ModuleItem::Struct(_)) && !storage_node_attrs.is_empty() {
@@ -181,18 +181,18 @@ enum StorageInterfaceType {
 }
 
 /// Helper enum to generate the code snippets for the different types of storage interfaces.
-struct StorageInterfaceInfo<'a> {
-    db: &'a dyn SyntaxGroup,
+struct StorageInterfaceInfo<'db> {
+    db: &'db dyn SyntaxGroup,
     node_type: StorageInterfaceType,
     is_mutable: bool,
 }
 
 /// Code generation for the different types of storage interfaces.
-impl<'a> StorageInterfaceInfo<'a> {
+impl<'db> StorageInterfaceInfo<'db> {
     /// Initializes the storage node info from en enum AST. Only supports sub pointers.
     fn from_enum_ast(
-        db: &'a dyn SyntaxGroup,
-        enum_ast: &ast::ItemEnum,
+        db: &'db dyn SyntaxGroup,
+        enum_ast: &ast::ItemEnum<'db>,
         is_mutable: bool,
     ) -> Option<Self> {
         if let Some(attr) = enum_ast.find_attr(db, STORAGE_SUB_POINTERS_ATTR) {
@@ -321,7 +321,7 @@ impl<'a> StorageInterfaceInfo<'a> {
         }
     }
     /// Returns the type of the members of the storage node generated struct.
-    fn generic_node_members_type(&self, member: &impl QueryAttrs) -> String {
+    fn generic_node_members_type(&self, member: &impl QueryAttrs<'db>) -> String {
         match self.node_type {
             StorageInterfaceType::StorageNode => {
                 if member.has_attr(self.db, FLAT_ATTR) {
@@ -345,7 +345,7 @@ impl<'a> StorageInterfaceInfo<'a> {
         }
     }
     /// Returns the type of the members of the storage node generated struct, with the generic arg.
-    fn concrete_node_members_type(&self, member: &impl QueryAttrs) -> String {
+    fn concrete_node_members_type(&self, member: &impl QueryAttrs<'db>) -> String {
         format!("{}<{}>", self.generic_node_members_type(member), self.mutable_type("$field_type$"))
     }
     /// Returns the code that should be added before the initialization of the storage node struct.
@@ -373,7 +373,11 @@ impl<'a> StorageInterfaceInfo<'a> {
     }
     /// Returns the code that should be added for the initialization of each field of the storage
     /// node struct.
-    fn node_constructor_field_init_code(&self, is_last: bool, member: &impl QueryAttrs) -> String {
+    fn node_constructor_field_init_code(
+        &self,
+        is_last: bool,
+        member: &impl QueryAttrs<'db>,
+    ) -> String {
         let member_type = self.generic_node_members_type(member);
         match self.node_type {
             StorageInterfaceType::StorageNode => {
@@ -435,14 +439,14 @@ impl<'a> StorageInterfaceInfo<'a> {
 }
 
 /// Generate the code for a single interface type.
-fn handle_storage_interface_for_interface_type(
-    db: &dyn SyntaxGroup,
-    struct_ast: &ast::ItemStruct,
+fn handle_storage_interface_for_interface_type<'db>(
+    db: &'db dyn SyntaxGroup,
+    struct_ast: &ast::ItemStruct<'db>,
     generics: &GenericParamsInfo,
     configs: &[StorageMemberConfig],
     metadata: &MacroPluginMetadata<'_>,
     storage_node_type: StorageInterfaceType,
-    builder: &mut PatchBuilder<'_>,
+    builder: &mut PatchBuilder<'db>,
 ) {
     let [args, params] = if generics.full_params.is_empty() {
         [RewriteNode::empty(), RewriteNode::empty()]
@@ -498,12 +502,12 @@ fn handle_storage_interface_for_interface_type(
 ///  - From this plugin for adding storage nodes, and storage base trait.
 ///  - From the derive plugin of the `Store` trait which also generates a sub-pointers interface.
 ///  - From the contract storage plugin, which generates storage base trait.
-pub fn handle_storage_interface_struct<'a>(
-    db: &'a dyn SyntaxGroup,
-    struct_ast: &ast::ItemStruct,
+pub fn handle_storage_interface_struct<'db>(
+    db: &'db dyn SyntaxGroup,
+    struct_ast: &ast::ItemStruct<'db>,
     configs: &[StorageMemberConfig],
     metadata: &MacroPluginMetadata<'_>,
-) -> PatchBuilder<'a> {
+) -> PatchBuilder<'db> {
     // Run for both StorageNode and StorageTrait
     let (origin, storage_interface_types) =
         if let Some(attr) = struct_ast.find_attr(db, STORAGE_NODE_ATTR) {
@@ -535,9 +539,9 @@ pub fn handle_storage_interface_struct<'a>(
 }
 
 /// Adds the storage interface enum and its constructor impl, for enums with sub-pointers.
-pub fn handle_storage_interface_enum(
-    db: &dyn SyntaxGroup,
-    enum_ast: &ast::ItemEnum,
+pub fn handle_storage_interface_enum<'db>(
+    db: &'db dyn SyntaxGroup,
+    enum_ast: &ast::ItemEnum<'db>,
 ) -> (String, Vec<CodeMapping>) {
     let mut builder = PatchBuilder::new(db, enum_ast);
     let generics = GenericParamsInfo::new(db, enum_ast.generic_params(db));
@@ -559,12 +563,12 @@ pub fn handle_storage_interface_enum(
 }
 
 /// Generates the struct definition for the storage interface.
-fn add_interface_struct_definition(
-    db: &dyn SyntaxGroup,
-    builder: &mut PatchBuilder<'_>,
-    struct_ast: &ast::ItemStruct,
-    params: RewriteNode,
-    storage_node_info: &StorageInterfaceInfo<'_>,
+fn add_interface_struct_definition<'db>(
+    db: &'db dyn SyntaxGroup,
+    builder: &mut PatchBuilder<'db>,
+    struct_ast: &ast::ItemStruct<'db>,
+    params: RewriteNode<'db>,
+    storage_node_info: &StorageInterfaceInfo<'db>,
     metadata: &MacroPluginMetadata<'_>,
 ) {
     let node_type_name = storage_node_info.node_type_name();
@@ -625,13 +629,13 @@ fn add_interface_struct_definition(
 }
 
 /// Generates the impl for the storage interface.
-fn add_interface_impl(
-    db: &dyn SyntaxGroup,
-    builder: &mut PatchBuilder<'_>,
-    struct_ast: &ast::ItemStruct,
-    (args, params): (RewriteNode, RewriteNode),
+fn add_interface_impl<'db>(
+    db: &'db dyn SyntaxGroup,
+    builder: &mut PatchBuilder<'db>,
+    struct_ast: &ast::ItemStruct<'db>,
+    (args, params): (RewriteNode<'db>, RewriteNode<'db>),
     configs: &[StorageMemberConfig],
-    storage_node_info: &StorageInterfaceInfo<'_>,
+    storage_node_info: &StorageInterfaceInfo<'db>,
 ) {
     let struct_name = RewriteNode::from_ast_trimmed(&struct_ast.name(db));
     let node_type_name = storage_node_info.node_type_name();
@@ -659,7 +663,8 @@ fn add_interface_impl(
         .into(),
     ));
 
-    let fields = struct_ast.members(db).elements(db);
+    let members = struct_ast.members(db);
+    let fields = members.elements(db);
     let mut fields_iter = zip_eq(fields, configs).peekable();
     while let Some((field, config)) = fields_iter.next() {
         let field_name = RewriteNode::from_ast_trimmed(&field.name(db));
@@ -694,11 +699,11 @@ fn add_interface_impl(
 }
 
 /// Generates the enum definition for an enum with sub pointers.
-fn add_node_enum_definition(
-    db: &dyn SyntaxGroup,
-    builder: &mut PatchBuilder<'_>,
-    enum_ast: &ast::ItemEnum,
-    args: RewriteNode,
+fn add_node_enum_definition<'db>(
+    db: &'db dyn SyntaxGroup,
+    builder: &mut PatchBuilder<'db>,
+    enum_ast: &ast::ItemEnum<'db>,
+    args: RewriteNode<'db>,
     is_mutable: bool,
 ) {
     let storage_node_info = StorageInterfaceInfo::from_enum_ast(db, enum_ast, is_mutable).unwrap();
@@ -737,11 +742,11 @@ fn add_node_enum_definition(
 }
 
 /// Generates the impl for the storage node for an enum with sub pointers.
-fn add_node_enum_impl(
-    db: &dyn SyntaxGroup,
-    builder: &mut PatchBuilder<'_>,
-    enum_ast: &ast::ItemEnum,
-    (args, params): (RewriteNode, RewriteNode),
+fn add_node_enum_impl<'db>(
+    db: &'db dyn SyntaxGroup,
+    builder: &mut PatchBuilder<'db>,
+    enum_ast: &ast::ItemEnum<'db>,
+    (args, params): (RewriteNode<'db>, RewriteNode<'db>),
     is_mutable: bool,
 ) {
     let storage_node_info = StorageInterfaceInfo::from_enum_ast(db, enum_ast, is_mutable).unwrap();
@@ -825,10 +830,10 @@ pub enum StorageMemberKind {
 }
 
 /// Gets the storage configuration for members of a struct.
-pub fn struct_members_storage_configs(
-    db: &dyn SyntaxGroup,
-    struct_ast: &ast::ItemStruct,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+pub fn struct_members_storage_configs<'db>(
+    db: &'db dyn SyntaxGroup,
+    struct_ast: &ast::ItemStruct<'db>,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) -> Vec<StorageMemberConfig> {
     struct_ast
         .members(db)
@@ -838,10 +843,10 @@ pub fn struct_members_storage_configs(
 }
 
 /// Gets the storage configuration of a struct member.
-pub fn get_member_storage_config(
-    db: &dyn SyntaxGroup,
-    member: &ast::Member,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+pub fn get_member_storage_config<'db>(
+    db: &'db dyn SyntaxGroup,
+    member: &ast::Member<'db>,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) -> StorageMemberConfig {
     let mut result = StorageMemberConfig { kind: StorageMemberKind::Basic, rename: None };
     for attr in member.query_attr(db, FLAT_ATTR) {
