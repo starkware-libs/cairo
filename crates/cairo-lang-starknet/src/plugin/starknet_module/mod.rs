@@ -35,10 +35,10 @@ pub enum StarknetModuleKind {
 }
 impl StarknetModuleKind {
     /// Returns the starknet module kind according to the module's attributes, if any.
-    fn from_module(
-        db: &dyn SyntaxGroup,
-        module_ast: &ast::ItemModule,
-    ) -> Option<(Self, ast::Attribute)> {
+    fn from_module<'db>(
+        db: &'db dyn SyntaxGroup,
+        module_ast: &ast::ItemModule<'db>,
+    ) -> Option<(Self, ast::Attribute<'db>)> {
         for (attr_str, kind) in [
             (CONTRACT_ATTR, StarknetModuleKind::Contract),
             (COMPONENT_ATTR, StarknetModuleKind::Component),
@@ -99,7 +99,10 @@ impl StarknetModuleKind {
 }
 
 /// Handles a contract/component module item.
-pub(super) fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult {
+pub(super) fn handle_module<'db>(
+    db: &'db dyn SyntaxGroup,
+    module_ast: ast::ItemModule<'db>,
+) -> PluginResult<'db> {
     if module_ast.has_attr(db, DEPRECATED_CONTRACT_ATTR) {
         return PluginResult {
             code: None,
@@ -121,11 +124,11 @@ pub(super) fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -
 }
 
 /// Validates the contract/component module (has body with storage named 'Storage').
-fn validate_module(
-    db: &dyn SyntaxGroup,
-    module_ast: ast::ItemModule,
+fn validate_module<'db>(
+    db: &'db dyn SyntaxGroup,
+    module_ast: ast::ItemModule<'db>,
     module_kind_str: &str,
-) -> PluginResult {
+) -> PluginResult<'db> {
     let MaybeModuleBody::Some(body) = module_ast.body(db) else {
         return PluginResult {
             code: None,
@@ -165,11 +168,11 @@ fn validate_module(
 
 /// If the module is annotated with CONTRACT_ATTR or COMPONENT_ATTR, generate the relevant
 /// contract/component logic.
-pub(super) fn handle_module_by_storage(
-    db: &dyn SyntaxGroup,
-    struct_ast: ast::ItemStruct,
+pub(super) fn handle_module_by_storage<'db>(
+    db: &'db dyn SyntaxGroup,
+    struct_ast: ast::ItemStruct<'db>,
     metadata: &MacroPluginMetadata<'_>,
-) -> Option<PluginResult> {
+) -> Option<PluginResult<'db>> {
     let (module_ast, module_kind, kind_attr) =
         grand_grand_parent_starknet_module(struct_ast.as_syntax_node(), db)?;
 
@@ -237,10 +240,10 @@ pub(super) fn handle_module_by_storage(
 
 /// If the grand grand parent of the given item is a starknet module, returns its kind
 /// (contract/component) and its ast.
-fn grand_grand_parent_starknet_module(
-    item_node: SyntaxNode,
-    db: &dyn SyntaxGroup,
-) -> Option<(ast::ItemModule, StarknetModuleKind, ast::Attribute)> {
+fn grand_grand_parent_starknet_module<'db>(
+    item_node: SyntaxNode<'db>,
+    db: &'db dyn SyntaxGroup,
+) -> Option<(ast::ItemModule<'db>, StarknetModuleKind, ast::Attribute<'db>)> {
     // Get the containing module node. The parent is the item list, the grand parent is the module
     // body, and the grand grand parent is the module.
     let module_node = item_node.parent(db)?.parent(db)?.parent(db)?;

@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
+use smol_str::SmolStr;
 
 use crate::db::FilesGroup;
-use crate::ids::FlagId;
+use crate::ids::FlagLongId;
 
 /// A compilation flag.
-#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize, Hash, salsa::Update)]
 pub enum Flag {
     /// Whether automatically add `withdraw_gas` calls in code cycles.
     /// Default is true - automatically add.
@@ -24,7 +25,6 @@ pub enum Flag {
 
 /// Returns the value of the `unsafe_panic` flag, or `false` if the flag is not set.
 pub fn flag_unsafe_panic(db: &dyn FilesGroup) -> bool {
-    db.get_flag(FlagId::new(db, "unsafe_panic"))
-        .map(|flag| *flag == Flag::UnsafePanic(true))
-        .unwrap_or(false)
+    let flag = db.intern_flag(FlagLongId(SmolStr::from("unsafe_panic")));
+    if let Some(flag) = db.get_flag(flag) { *flag == Flag::UnsafePanic(true) } else { false }
 }

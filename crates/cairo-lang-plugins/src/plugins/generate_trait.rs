@@ -17,12 +17,12 @@ pub struct GenerateTraitPlugin;
 const GENERATE_TRAIT_ATTR: &str = "generate_trait";
 
 impl MacroPlugin for GenerateTraitPlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         match item_ast {
             ast::ModuleItem::Impl(impl_ast) => generate_trait_for_impl(db, impl_ast),
             module_item => {
@@ -45,7 +45,10 @@ impl MacroPlugin for GenerateTraitPlugin {
     }
 }
 
-fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> PluginResult {
+fn generate_trait_for_impl<'db>(
+    db: &'db dyn SyntaxGroup,
+    impl_ast: ast::ItemImpl<'db>,
+) -> PluginResult<'db> {
     let Some(attr) = impl_ast.attributes(db).find_attr(db, GENERATE_TRAIT_ATTR) else {
         return PluginResult::default();
     };
@@ -100,15 +103,18 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
     let impl_generic_params = impl_ast.generic_params(db);
     let generic_params_match = match trait_ast_segment {
         ast::PathSegment::WithGenericArgs(segment) => {
+            let generic_args = segment.generic_args(db).generic_args(db);
             builder.add_node(segment.ident(db).as_syntax_node());
             if let ast::OptionWrappedGenericParamList::WrappedGenericParamList(
                 impl_generic_params,
             ) = impl_generic_params.clone()
             {
                 // TODO(orizi): Support generic args that do not directly match the generic params.
-                let trait_generic_args = segment.generic_args(db).generic_args(db).elements(db);
-                let impl_generic_params = impl_generic_params.generic_params(db).elements(db);
-                zip(trait_generic_args, impl_generic_params).all(
+                let trait_generic_args = generic_args.elements(db);
+                let longer_lived = impl_generic_params.generic_params(db);
+                let impl_generic_params = longer_lived.elements(db);
+                // Temporary result is used to avoid the borrow checker error.
+                let temporary_result = zip(trait_generic_args, impl_generic_params).all(
                     |(trait_generic_arg, impl_generic_param)| {
                         let ast::GenericArg::Unnamed(trait_generic_arg) = trait_generic_arg else {
                             return false;
@@ -132,7 +138,8 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                         };
                         trait_generic_arg_name.text(db) == impl_generic_param_name.text(db)
                     },
-                )
+                );
+                temporary_result
             } else {
                 false
             }

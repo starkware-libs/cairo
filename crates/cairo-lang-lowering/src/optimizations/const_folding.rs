@@ -42,21 +42,21 @@ use crate::{
 /// Keeps track of equivalent values that a variables might be replaced with.
 /// Note: We don't keep track of types as we assume the usage is always correct.
 #[derive(Debug, Clone)]
-enum VarInfo {
+enum VarInfo<'db> {
     /// The variable is a const value.
-    Const(ConstValue),
+    Const(ConstValue<'db>),
     /// The variable can be replaced by another variable.
-    Var(VarUsage),
+    Var(VarUsage<'db>),
     /// The variable is a snapshot of another variable.
-    Snapshot(Box<VarInfo>),
+    Snapshot(Box<VarInfo<'db>>),
     /// The variable is a struct of other variables.
     /// `None` values represent variables that are not tracked.
-    Struct(Vec<Option<VarInfo>>),
+    Struct(Vec<Option<VarInfo<'db>>>),
     /// The variable is a box of another variable.
-    Box(Box<VarInfo>),
+    Box(Box<VarInfo<'db>>),
     /// The variable is an array of known size of other variables.
     /// `None` values represent variables that are not tracked.
-    Array(Vec<Option<VarInfo>>),
+    Array(Vec<Option<VarInfo<'db>>>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -71,10 +71,10 @@ enum Reachability {
 
 /// Performs constant folding on the lowered program.
 /// The optimization only works when the blocks are topologically sorted.
-pub fn const_folding(
-    db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut Lowered,
+pub fn const_folding<'db>(
+    db: &'db dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
+    lowered: &mut Lowered<'db>,
 ) {
     if lowered.blocks.is_empty() {
         return;
@@ -101,31 +101,31 @@ pub fn const_folding(
     }
 }
 
-pub struct ConstFoldingContext<'a> {
+pub struct ConstFoldingContext<'db, 'mt> {
     /// The used database.
-    db: &'a dyn LoweringGroup,
+    db: &'db dyn LoweringGroup,
     /// The variables arena, mostly used to get the type of variables.
-    pub variables: &'a mut Arena<Variable>,
+    pub variables: &'mt mut Arena<Variable<'db>>,
     /// The accumulated information about the const values of variables.
-    var_info: UnorderedHashMap<VariableId, VarInfo>,
+    var_info: UnorderedHashMap<VariableId<'db>, VarInfo<'db>>,
     /// The libfunc information.
-    libfunc_info: Arc<ConstFoldingLibfuncInfo>,
+    libfunc_info: Arc<ConstFoldingLibfuncInfo<'db>>,
     /// The specialization base of the caller function (or the caller if the function is not
     /// specialized).
-    caller_base: ConcreteFunctionWithBodyId,
+    caller_base: ConcreteFunctionWithBodyId<'db>,
     /// Reachability of blocks from the function start.
     /// If the block is not in this map, it means that it is unreachable (or that it was already
     /// visited and its reachability won't be checked again).
     reachability: UnorderedHashMap<BlockId, Reachability>,
     /// Additional statements to add to the block.
-    additional_stmts: Vec<Statement>,
+    additional_stmts: Vec<Statement<'db>>,
 }
 
-impl<'a> ConstFoldingContext<'a> {
+impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     pub fn new(
-        db: &'a dyn LoweringGroup,
-        function_id: ConcreteFunctionWithBodyId,
-        variables: &'a mut Arena<Variable>,
+        db: &'db dyn LoweringGroup,
+        function_id: ConcreteFunctionWithBodyId<'db>,
+        variables: &'mt mut Arena<Variable<'db>>,
     ) -> Self {
         let caller_base = match function_id.lookup_intern(db) {
             ConcreteFunctionWithBodyLongId::Specialized(specialized_func) => specialized_func.base,
@@ -145,11 +145,14 @@ impl<'a> ConstFoldingContext<'a> {
 
     /// Determines if a block is reachable from the function start and propagates constant values
     /// when the block is reachable via a single goto statement.
-    pub fn visit_block_start<'b>(
-        &mut self,
+    pub fn visit_block_start<'r, 'get>(
+        &'r mut self,
         block_id: BlockId,
-        get_block: impl FnOnce(BlockId) -> &'b Block,
-    ) -> bool {
+        get_block: impl FnOnce(BlockId) -> &'get Block<'db>,
+    ) -> bool
+    where
+        'db: 'get,
+    {
         let Some(reachability) = self.reachability.remove(&block_id) else {
             return false;
         };
@@ -178,7 +181,7 @@ impl<'a> ConstFoldingContext<'a> {
     ///
     /// Note: `self.visit_block_end` must be called after processing all statements
     /// in a block to actually add the additional statements.
-    pub fn visit_statement(&mut self, stmt: &mut Statement) {
+    pub fn visit_statement(&mut self, stmt: &mut Statement<'db>) {
         self.maybe_replace_inputs(stmt.inputs_mut());
         match stmt {
             Statement::Const(StatementConst { value, output }) => match value {
@@ -285,7 +288,7 @@ impl<'a> ConstFoldingContext<'a> {
     /// - Inserts the accumulated additional statements into the block.
     /// - Converts match endings to goto when applicable.
     /// - Updates self.reachability based on the block's ending.
-    pub fn visit_block_end(&mut self, block_id: BlockId, block: &mut crate::Block) {
+    pub fn visit_block_end(&mut self, block_id: BlockId, block: &mut crate::Block<'db>) {
         block.statements.splice(0..0, self.additional_stmts.drain(..));
 
         match &mut block.end {
@@ -377,7 +380,7 @@ impl<'a> ConstFoldingContext<'a> {
     /// statement).
     /// May add additional statements to `self.additional_stmts` if just replacing the current
     /// statement is not enough.
-    fn handle_statement_call(&mut self, stmt: &mut StatementCall) -> Option<Statement> {
+    fn handle_statement_call(&mut self, stmt: &mut StatementCall<'db>) -> Option<Statement<'db>> {
         let db = self.db;
         if stmt.function == self.panic_with_felt252 {
             let val = self.as_const(stmt.inputs[0].var_id)?;
@@ -567,7 +570,10 @@ impl<'a> ConstFoldingContext<'a> {
     /// Specialization occurs only if `priv_should_specialize` returns true.
     /// Additionally specialization of a callee the with the same base as the caller is currently
     /// not supported.
-    fn try_specialize_call(&mut self, call_stmt: &mut StatementCall) -> Option<Statement> {
+    fn try_specialize_call(
+        &mut self,
+        call_stmt: &mut StatementCall<'db>,
+    ) -> Option<Statement<'db>> {
         if call_stmt.with_coupon {
             return None;
         }
@@ -654,9 +660,9 @@ impl<'a> ConstFoldingContext<'a> {
     fn propagate_const_and_get_statement(
         &mut self,
         value: BigInt,
-        output: VariableId,
+        output: VariableId<'db>,
         nz_ty: bool,
-    ) -> Statement {
+    ) -> Statement<'db> {
         let ty = self.variables[output].ty;
         let value = if nz_ty {
             let inner_ty =
@@ -670,16 +676,16 @@ impl<'a> ConstFoldingContext<'a> {
     }
 
     /// Adds 0 const to `var_info` and return a const statement for it.
-    fn propagate_zero_and_get_statement(&mut self, output: VariableId) -> Statement {
+    fn propagate_zero_and_get_statement(&mut self, output: VariableId<'db>) -> Statement<'db> {
         self.propagate_const_and_get_statement(BigInt::zero(), output, false)
     }
 
     /// Returns a statement that introduces the requested value into `output`, or None if fails.
     fn try_generate_const_statement(
         &self,
-        value: &ConstValue,
-        output: VariableId,
-    ) -> Option<Statement> {
+        value: &ConstValue<'db>,
+        output: VariableId<'db>,
+    ) -> Option<Statement<'db>> {
         if self.db.type_size_info(self.variables[output].ty) == Ok(TypeSizeInformation::Other) {
             Some(Statement::Const(StatementConst { value: value.clone(), output }))
         } else if matches!(value, ConstValue::Struct(members, _) if members.is_empty()) {
@@ -696,8 +702,8 @@ impl<'a> ConstFoldingContext<'a> {
     /// as an updated block end.
     fn handle_extern_block_end(
         &mut self,
-        info: &mut MatchExternInfo,
-    ) -> Option<(Vec<Statement>, BlockEnd)> {
+        info: &mut MatchExternInfo<'db>,
+    ) -> Option<(Vec<Statement<'db>>, BlockEnd<'db>)> {
         let db = self.db;
         let (id, generic_args) = info.function.get_extern(db)?;
         if self.nz_fns.contains(&id) {
@@ -860,7 +866,7 @@ impl<'a> ConstFoldingContext<'a> {
             }
             None
         } else if let Some(reversed) = self.downcast_fns.get(&id) {
-            let range = |ty: TypeId| {
+            let range = |ty: TypeId<'_>| {
                 Some(if let Some(ti) = self.type_value_ranges.get(&ty) {
                     ti.range.clone()
                 } else {
@@ -1020,13 +1026,13 @@ impl<'a> ConstFoldingContext<'a> {
     }
 
     /// Returns the const value of a variable if it exists.
-    fn as_const(&self, var_id: VariableId) -> Option<&ConstValue> {
+    fn as_const<'me>(&'me self, var_id: VariableId<'db>) -> Option<&'me ConstValue<'db>> {
         try_extract_matches!(self.var_info.get(&var_id)?, VarInfo::Const)
     }
 
     /// Return the const value as an int if it exists and is an integer, additionally, if it is of a
     /// non-zero type.
-    fn as_int_ex(&self, var_id: VariableId) -> Option<(&BigInt, bool)> {
+    fn as_int_ex(&self, var_id: VariableId<'db>) -> Option<(&BigInt, bool)> {
         match self.as_const(var_id)? {
             ConstValue::Int(value, _) => Some((value, false)),
             ConstValue::NonZero(const_value) => {
@@ -1041,19 +1047,19 @@ impl<'a> ConstFoldingContext<'a> {
     }
 
     /// Return the const value as a int if it exists and is an integer.
-    fn as_int(&self, var_id: VariableId) -> Option<&BigInt> {
+    fn as_int(&self, var_id: VariableId<'db>) -> Option<&BigInt> {
         Some(self.as_int_ex(var_id)?.0)
     }
 
     /// Replaces the inputs in place if they are in the var_info map.
-    fn maybe_replace_inputs(&mut self, inputs: &mut [VarUsage]) {
+    fn maybe_replace_inputs(&mut self, inputs: &mut [VarUsage<'db>]) {
         for input in inputs {
             self.maybe_replace_input(input);
         }
     }
 
     /// Replaces the input in place if it is in the var_info map.
-    fn maybe_replace_input(&mut self, input: &mut VarUsage) {
+    fn maybe_replace_input(&mut self, input: &mut VarUsage<'db>) {
         if let Some(VarInfo::Var(new_var)) = self.var_info.get(&input.var_id) {
             *input = *new_var;
         }
@@ -1063,9 +1069,9 @@ impl<'a> ConstFoldingContext<'a> {
     /// exists.
     fn try_get_specialization_arg(
         &mut self,
-        var_info: VarInfo,
-        ty: TypeId,
-    ) -> Option<SpecializationArg> {
+        var_info: VarInfo<'db>,
+        ty: TypeId<'db>,
+    ) -> Option<SpecializationArg<'db>> {
         if self.db.type_size_info(ty).ok()? == TypeSizeInformation::ZeroSized {
             // Skip zero-sized constants as they are not supported in sierra-gen.
             return None;
@@ -1105,7 +1111,7 @@ impl<'a> ConstFoldingContext<'a> {
     }
 
     /// Returns true if const-folding should be skipped for the current function.
-    pub fn should_skip_const_folding(&self, db: &dyn LoweringGroup) -> bool {
+    pub fn should_skip_const_folding(&self, db: &'db dyn LoweringGroup) -> bool {
         if db.optimization_config().skip_const_folding {
             return true;
         }
@@ -1122,83 +1128,86 @@ impl<'a> ConstFoldingContext<'a> {
 }
 
 /// Returns a `VarInfo` of a variable only if it is copyable.
-fn var_info_if_copy(variables: &Arena<Variable>, input: VarUsage) -> Option<VarInfo> {
+fn var_info_if_copy<'db>(
+    variables: &Arena<Variable<'db>>,
+    input: VarUsage<'db>,
+) -> Option<VarInfo<'db>> {
     variables[input.var_id].info.copyable.is_ok().then_some(VarInfo::Var(input))
 }
 
 /// Query implementation of [LoweringGroup::priv_const_folding_info].
-pub fn priv_const_folding_info(
-    db: &dyn LoweringGroup,
-) -> Arc<crate::optimizations::const_folding::ConstFoldingLibfuncInfo> {
+pub fn priv_const_folding_info<'db>(
+    db: &'db dyn LoweringGroup,
+) -> Arc<crate::optimizations::const_folding::ConstFoldingLibfuncInfo<'db>> {
     Arc::new(ConstFoldingLibfuncInfo::new(db))
 }
 
 /// Holds static information about libfuncs required for the optimization.
-#[derive(Debug, PartialEq, Eq)]
-pub struct ConstFoldingLibfuncInfo {
+#[derive(Debug, PartialEq, Eq, salsa::Update)]
+pub struct ConstFoldingLibfuncInfo<'db> {
     /// The `felt252_sub` libfunc.
-    felt_sub: ExternFunctionId,
+    felt_sub: ExternFunctionId<'db>,
     /// The `into_box` libfunc.
-    into_box: ExternFunctionId,
+    into_box: ExternFunctionId<'db>,
     /// The `unbox` libfunc.
-    unbox: ExternFunctionId,
+    unbox: ExternFunctionId<'db>,
     /// The `box_forward_snapshot` libfunc.
-    box_forward_snapshot: GenericFunctionId,
+    box_forward_snapshot: GenericFunctionId<'db>,
     /// The set of functions that check if a number is zero.
-    nz_fns: OrderedHashSet<ExternFunctionId>,
+    nz_fns: OrderedHashSet<ExternFunctionId<'db>>,
     /// The set of functions that check if numbers are equal.
-    eq_fns: OrderedHashSet<ExternFunctionId>,
+    eq_fns: OrderedHashSet<ExternFunctionId<'db>>,
     /// The set of functions to add unsigned ints.
-    uadd_fns: OrderedHashSet<ExternFunctionId>,
+    uadd_fns: OrderedHashSet<ExternFunctionId<'db>>,
     /// The set of functions to subtract unsigned ints.
-    usub_fns: OrderedHashSet<ExternFunctionId>,
+    usub_fns: OrderedHashSet<ExternFunctionId<'db>>,
     /// The set of functions to get the difference of signed ints.
-    diff_fns: OrderedHashSet<ExternFunctionId>,
+    diff_fns: OrderedHashSet<ExternFunctionId<'db>>,
     /// The set of functions to add signed ints.
-    iadd_fns: OrderedHashSet<ExternFunctionId>,
+    iadd_fns: OrderedHashSet<ExternFunctionId<'db>>,
     /// The set of functions to subtract signed ints.
-    isub_fns: OrderedHashSet<ExternFunctionId>,
+    isub_fns: OrderedHashSet<ExternFunctionId<'db>>,
     /// The set of functions to multiply integers.
-    wide_mul_fns: OrderedHashSet<ExternFunctionId>,
+    wide_mul_fns: OrderedHashSet<ExternFunctionId<'db>>,
     /// The set of functions to divide and get the remainder of integers.
-    div_rem_fns: OrderedHashSet<ExternFunctionId>,
+    div_rem_fns: OrderedHashSet<ExternFunctionId<'db>>,
     /// The `bounded_int_add` libfunc.
-    bounded_int_add: ExternFunctionId,
+    bounded_int_add: ExternFunctionId<'db>,
     /// The `bounded_int_sub` libfunc.
-    bounded_int_sub: ExternFunctionId,
+    bounded_int_sub: ExternFunctionId<'db>,
     /// The `bounded_int_constrain` libfunc.
-    bounded_int_constrain: ExternFunctionId,
+    bounded_int_constrain: ExternFunctionId<'db>,
     /// The `array_get` libfunc.
-    array_get: ExternFunctionId,
+    array_get: ExternFunctionId<'db>,
     /// The `array_snapshot_pop_front` libfunc.
-    array_snapshot_pop_front: ExternFunctionId,
+    array_snapshot_pop_front: ExternFunctionId<'db>,
     /// The `array_snapshot_pop_back` libfunc.
-    array_snapshot_pop_back: ExternFunctionId,
+    array_snapshot_pop_back: ExternFunctionId<'db>,
     /// The `array_len` libfunc.
-    array_len: ExternFunctionId,
+    array_len: ExternFunctionId<'db>,
     /// The `array_new` libfunc.
-    array_new: ExternFunctionId,
+    array_new: ExternFunctionId<'db>,
     /// The `array_append` libfunc.
-    array_append: ExternFunctionId,
+    array_append: ExternFunctionId<'db>,
     /// The `array_pop_front` libfunc.
-    array_pop_front: ExternFunctionId,
+    array_pop_front: ExternFunctionId<'db>,
     /// The `storage_base_address_from_felt252` libfunc.
-    storage_base_address_from_felt252: ExternFunctionId,
+    storage_base_address_from_felt252: ExternFunctionId<'db>,
     /// The `storage_base_address_const` libfunc.
-    storage_base_address_const: GenericFunctionId,
+    storage_base_address_const: GenericFunctionId<'db>,
     /// The `core::panic_with_felt252` function.
-    panic_with_felt252: FunctionId,
+    panic_with_felt252: FunctionId<'db>,
     /// The `core::panic_with_const_felt252` function.
-    pub panic_with_const_felt252: FreeFunctionId,
+    pub panic_with_const_felt252: FreeFunctionId<'db>,
     /// The `core::panics::panic_with_byte_array` function.
-    panic_with_byte_array: FunctionId,
+    panic_with_byte_array: FunctionId<'db>,
     /// Type ranges.
-    type_value_ranges: OrderedHashMap<TypeId, TypeInfo>,
+    type_value_ranges: OrderedHashMap<TypeId<'db>, TypeInfo<'db>>,
     /// The info used for semantic const calculation.
-    const_calculation_info: Arc<ConstCalcInfo>,
+    const_calculation_info: Arc<ConstCalcInfo<'db>>,
 }
-impl ConstFoldingLibfuncInfo {
-    fn new(db: &dyn LoweringGroup) -> Self {
+impl<'db> ConstFoldingLibfuncInfo<'db> {
+    fn new(db: &'db dyn LoweringGroup) -> Self {
         let core = ModuleHelper::core(db);
         let box_module = core.submodule("box");
         let integer_module = core.submodule("integer");
@@ -1338,31 +1347,31 @@ impl ConstFoldingLibfuncInfo {
     }
 }
 
-impl std::ops::Deref for ConstFoldingContext<'_> {
-    type Target = ConstFoldingLibfuncInfo;
-    fn deref(&self) -> &ConstFoldingLibfuncInfo {
+impl<'db> std::ops::Deref for ConstFoldingContext<'db, '_> {
+    type Target = ConstFoldingLibfuncInfo<'db>;
+    fn deref(&self) -> &ConstFoldingLibfuncInfo<'db> {
         &self.libfunc_info
     }
 }
 
-impl std::ops::Deref for ConstFoldingLibfuncInfo {
-    type Target = ConstCalcInfo;
-    fn deref(&self) -> &ConstCalcInfo {
+impl<'a> std::ops::Deref for ConstFoldingLibfuncInfo<'a> {
+    type Target = ConstCalcInfo<'a>;
+    fn deref(&self) -> &ConstCalcInfo<'a> {
         &self.const_calculation_info
     }
 }
 
 /// The information of a type required for const foldings.
-#[derive(Debug, PartialEq, Eq)]
-struct TypeInfo {
+#[derive(Debug, PartialEq, Eq, salsa::Update)]
+struct TypeInfo<'db> {
     /// The value range of the type.
     range: TypeRange,
     /// The function to check if the value is zero for the type.
-    is_zero: FunctionId,
+    is_zero: FunctionId<'db>,
     /// Inc function to increase the value by one.
-    inc: Option<FunctionId>,
+    inc: Option<FunctionId<'db>>,
     /// Dec function to decrease the value by one.
-    dec: Option<FunctionId>,
+    dec: Option<FunctionId<'db>>,
 }
 
 /// The range of values of a numeric type.
