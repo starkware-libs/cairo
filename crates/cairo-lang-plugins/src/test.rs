@@ -1,21 +1,21 @@
 use std::default::Default;
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use cairo_lang_defs::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
 use cairo_lang_defs::ids::{MacroPluginLongId, ModuleId};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx, init_files_group,
+    CrateConfiguration, ExternalFiles, FilesGroup, FilesGroupEx, init_files_group,
 };
 use cairo_lang_filesystem::ids::{
     CodeMapping, CodeOrigin, CrateId, Directory, FileLongId, VirtualFile,
 };
+use cairo_lang_filesystem::override_file_content;
 use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_parser::db::ParserDatabase;
-use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
@@ -50,13 +50,15 @@ cairo_lang_test_utils::test_file_test!(
     test_general_plugin
 );
 
-#[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
+#[salsa::db]
+#[derive(Clone)]
 pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
 }
+#[salsa::db]
 impl salsa::Database for DatabaseForTesting {}
 impl ExternalFiles for DatabaseForTesting {
-    fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
+    fn try_ext_as_virtual(&self, external_id: salsa::Id) -> Option<VirtualFile<'_>> {
         try_ext_as_virtual_impl(self.upcast(), external_id)
     }
 }
@@ -71,18 +73,18 @@ impl Default for DatabaseForTesting {
         res
     }
 }
-impl Upcast<dyn DefsGroup> for DatabaseForTesting {
-    fn upcast(&self) -> &(dyn DefsGroup + 'static) {
+impl<'db> Upcast<'db, dyn DefsGroup> for DatabaseForTesting {
+    fn upcast(&'db self) -> &'db dyn DefsGroup {
         self
     }
 }
-impl Upcast<dyn FilesGroup> for DatabaseForTesting {
-    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
+impl<'db> Upcast<'db, dyn FilesGroup> for DatabaseForTesting {
+    fn upcast(&'db self) -> &'db dyn FilesGroup {
         self
     }
 }
-impl Upcast<dyn SyntaxGroup> for DatabaseForTesting {
-    fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
+impl<'db> Upcast<'db, dyn SyntaxGroup> for DatabaseForTesting {
+    fn upcast(&'db self) -> &'db dyn SyntaxGroup {
         self
     }
 }
@@ -109,7 +111,7 @@ pub fn test_expand_plugin_inner(
     args: &OrderedHashMap<String, String>,
     extra_plugins: &[Arc<dyn MacroPlugin>],
 ) -> TestRunnerResult {
-    let db = &mut DatabaseForTesting::default();
+    let mut db = DatabaseForTesting::default();
 
     let extra_plugins = extra_plugins.iter().cloned().map(MacroPluginLongId);
 
@@ -125,17 +127,22 @@ pub fn test_expand_plugin_inner(
 
     let cairo_code = &inputs["cairo_code"];
 
-    let crate_id = CrateId::plain(db, "test");
+    let crate_id = CrateId::plain(&db, "test");
     let root = Directory::Real("test_src".into());
-    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
+    cairo_lang_filesystem::set_crate_config!(
+        db,
+        crate_id,
+        Some(CrateConfiguration::default_for_root(root))
+    );
 
     // Main module file.
-    let file_id = FileLongId::OnDisk("test_src/lib.cairo".into()).intern(db);
-    db.override_file_content(file_id, Some(format!("{cairo_code}\n").into()));
+    let file_id = FileLongId::OnDisk("test_src/lib.cairo".into()).intern(&db);
+    override_file_content!(db, file_id, Some(format!("{cairo_code}\n").into()));
 
+    let crate_id = CrateId::plain(&db, "test");
     let mut diagnostic_items = vec![];
     let expanded_module =
-        expand_module_text(db, ModuleId::CrateRoot(crate_id), &mut diagnostic_items);
+        expand_module_text(&db, ModuleId::CrateRoot(crate_id), &mut diagnostic_items);
     let joined_diagnostics = diagnostic_items.join("\n");
     let error = verify_diagnostics_expectation(args, &joined_diagnostics);
 
@@ -151,12 +158,12 @@ pub fn test_expand_plugin_inner(
 #[derive(Debug)]
 struct DoubleIndirectionPlugin;
 impl MacroPlugin for DoubleIndirectionPlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         let node = item_ast.as_syntax_node();
         let orig_span = node.span(db);
         let code_mappings = |content: &str| {

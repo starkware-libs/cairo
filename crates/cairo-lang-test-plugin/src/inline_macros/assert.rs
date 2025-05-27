@@ -31,12 +31,12 @@ trait CompareAssertionPlugin: NamedPlugin {
     /// The argument type for the comparison function.
     const ARG_TYPE: ArgType;
 
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
         let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
             return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
                 syntax.as_syntax_node().stable_ptr(db),
@@ -224,12 +224,12 @@ macro_rules! define_compare_assert_macro {
         }
 
         impl InlineMacroExprPlugin for $ident {
-            fn generate_code(
+            fn generate_code<'db>(
                 &self,
-                db: &dyn SyntaxGroup,
-                syntax: &ast::ExprInlineMacro,
+                db: &'db dyn SyntaxGroup,
+                syntax: &ast::ExprInlineMacro<'db>,
                 metadata: &MacroPluginMetadata<'_>,
-            ) -> InlinePluginResult {
+            ) -> InlinePluginResult<'db> {
                 CompareAssertionPlugin::generate_code(self, db, syntax, metadata)
             }
         }

@@ -1,6 +1,5 @@
 use derivative::Derivative;
 use num_bigint::BigUint;
-use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Keccak256};
 use smol_str::SmolStr;
@@ -83,16 +82,6 @@ macro_rules! define_identity {
                 Self::new(id)
             }
         }
-        impl salsa::InternKey for $type_name {
-            fn from_intern_id(salsa_id: salsa::InternId) -> Self {
-                Self::new(salsa_id.as_u32() as u64)
-            }
-
-            fn as_intern_id(&self) -> salsa::InternId {
-                let id_usize: usize = self.id.try_into().unwrap();
-                id_usize.into()
-            }
-        }
     };
 }
 
@@ -136,14 +125,5 @@ impl From<&str> for UserTypeId {
 impl From<String> for UserTypeId {
     fn from(name: String) -> Self {
         Self::from_string(name)
-    }
-}
-impl salsa::InternKey for UserTypeId {
-    fn from_intern_id(salsa_id: salsa::InternId) -> Self {
-        Self { id: salsa_id.as_usize().into(), debug_name: None }
-    }
-
-    fn as_intern_id(&self) -> salsa::InternId {
-        self.id.to_usize().unwrap().into()
     }
 }

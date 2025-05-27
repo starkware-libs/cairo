@@ -5,12 +5,13 @@ use cairo_lang_defs::ids::{
     TraitId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::helpers::UsePathEx;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use smol_str::SmolStr;
 
 use super::feature_kind::FeatureKind;
 use super::us::SemanticUseEx;
@@ -22,25 +23,25 @@ use crate::items::feature_kind::HasFeatureKind;
 use crate::resolve::ResolvedGenericItem;
 
 /// Information per item in a module.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ModuleItemInfo {
-    pub item_id: ModuleItemId,
+#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+pub struct ModuleItemInfo<'db> {
+    pub item_id: ModuleItemId<'db>,
     pub visibility: Visibility,
     pub feature_kind: FeatureKind,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ModuleSemanticData {
+#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+pub struct ModuleSemanticData<'db> {
     /// The items in the module without duplicates.
-    pub items: OrderedHashMap<SmolStr, ModuleItemInfo>,
-    pub global_uses: OrderedHashMap<GlobalUseId, Visibility>,
-    pub diagnostics: Diagnostics<SemanticDiagnostic>,
+    pub items: OrderedHashMap<SmolStrId<'db>, ModuleItemInfo<'db>>,
+    pub global_uses: OrderedHashMap<GlobalUseId<'db>, Visibility>,
+    pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
 }
 
-pub fn priv_module_semantic_data(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-) -> Maybe<Arc<ModuleSemanticData>> {
+pub fn priv_module_semantic_data<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<ModuleSemanticData<'db>>> {
     // We use the builder here since the items can come from different file_ids.
     let mut diagnostics = DiagnosticsBuilder::default();
     let mut items = OrderedHashMap::default();
@@ -102,15 +103,13 @@ pub fn priv_module_semantic_data(
         };
         let visibility = Visibility::from_ast(db, &mut diagnostics, &visibility);
         let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
-        if items
-            .insert(name.clone(), ModuleItemInfo { item_id, visibility, feature_kind })
-            .is_some()
-        {
+        let name_id = name.intern(db);
+        if items.insert(name_id, ModuleItemInfo { item_id, visibility, feature_kind }).is_some() {
             // `item` is extracted from `module_items` and thus `module_item_name_stable_ptr` is
             // guaranteed to succeed.
             diagnostics.report(
                 db.module_item_name_stable_ptr(module_id, item_id).unwrap(),
-                SemanticDiagnosticKind::NameDefinedMultipleTimes(name.clone()),
+                SemanticDiagnosticKind::NameDefinedMultipleTimes(name_id),
             );
         }
     }
@@ -127,38 +126,38 @@ pub fn priv_module_semantic_data(
     Ok(Arc::new(ModuleSemanticData { items, global_uses, diagnostics: diagnostics.build() }))
 }
 
-pub fn module_item_by_name(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    name: SmolStr,
-) -> Maybe<Option<ModuleItemId>> {
+pub fn module_item_by_name<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+    name: SmolStrId<'db>,
+) -> Maybe<Option<ModuleItemId<'db>>> {
     let module_data = db.priv_module_semantic_data(module_id)?;
     Ok(module_data.items.get(&name).map(|info| info.item_id))
 }
 
-pub fn module_item_info_by_name(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    name: SmolStr,
-) -> Maybe<Option<ModuleItemInfo>> {
+pub fn module_item_info_by_name<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+    name: SmolStrId<'db>,
+) -> Maybe<Option<ModuleItemInfo<'db>>> {
     let module_data = db.priv_module_semantic_data(module_id)?;
     Ok(module_data.items.get(&name).cloned())
 }
 
 /// Get the imported global uses of a module, and their visibility.
-pub fn get_module_global_uses(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-) -> Maybe<OrderedHashMap<GlobalUseId, Visibility>> {
+pub fn get_module_global_uses<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Maybe<OrderedHashMap<GlobalUseId<'db>, Visibility>> {
     let module_data = db.priv_module_semantic_data(module_id)?;
     Ok(module_data.global_uses.clone())
 }
 
 /// Query implementation of [SemanticGroup::module_all_used_uses].
-pub fn module_all_used_uses(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-) -> Maybe<Arc<OrderedHashSet<UseId>>> {
+pub fn module_all_used_uses<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
     let mut all_used_uses = OrderedHashSet::default();
     let module_items = db.module_items(module_id)?;
     for item in module_items.iter() {
@@ -181,7 +180,10 @@ pub fn module_all_used_uses(
 }
 
 /// Query implementation of [SemanticGroup::module_attributes].
-pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<Vec<Attribute>> {
+pub fn module_attributes<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
     Ok(match &module_id {
         ModuleId::CrateRoot(_) => vec![],
         ModuleId::Submodule(submodule_id) => {
@@ -193,10 +195,10 @@ pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<V
 }
 
 /// Finds all the trait ids usable in the current context, using `global use` imports.
-pub fn module_usable_trait_ids(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-) -> Maybe<Arc<OrderedHashMap<TraitId, LookupItemId>>> {
+pub fn module_usable_trait_ids<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
     // Get the traits first from the module, do not change this order.
     let mut module_traits = specific_module_usable_trait_ids(db, module_id, module_id)?;
     for (user_module, containing_module) in &db.priv_module_use_star_modules(module_id).accessible {
@@ -212,12 +214,13 @@ pub fn module_usable_trait_ids(
 }
 
 /// Finds all the trait ids usable in the current context, not using `global use` imports.
-fn specific_module_usable_trait_ids(
-    db: &dyn SemanticGroup,
-    user_module: ModuleId,
-    containing_module: ModuleId,
-) -> Maybe<OrderedHashMap<TraitId, LookupItemId>> {
-    let mut module_traits: OrderedHashMap<TraitId, LookupItemId> = OrderedHashMap::default();
+fn specific_module_usable_trait_ids<'db>(
+    db: &'db dyn SemanticGroup,
+    user_module: ModuleId<'db>,
+    containing_module: ModuleId<'db>,
+) -> Maybe<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>> {
+    let mut module_traits: OrderedHashMap<TraitId<'_>, LookupItemId<'_>> =
+        OrderedHashMap::default();
     for item in db.priv_module_semantic_data(containing_module)?.items.values() {
         if !matches!(
             item.item_id,
@@ -285,7 +288,7 @@ fn specific_module_usable_trait_ids(
     Ok(module_traits)
 }
 
-impl HasFeatureKind for ModuleItemInfo {
+impl<'db> HasFeatureKind for ModuleItemInfo<'db> {
     fn feature_kind(&self) -> &FeatureKind {
         &self.feature_kind
     }

@@ -43,10 +43,10 @@ pub struct TestConfig {
 
 /// Extracts the configuration of a tests from attributes, or returns the diagnostics if the
 /// attributes are set illegally.
-pub fn try_extract_test_config(
-    db: &dyn SyntaxGroup,
-    attrs: Vec<Attribute>,
-) -> Result<Option<TestConfig>, Vec<PluginDiagnostic>> {
+pub fn try_extract_test_config<'db>(
+    db: &'db dyn SyntaxGroup,
+    attrs: Vec<Attribute<'db>>,
+) -> Result<Option<TestConfig>, Vec<PluginDiagnostic<'db>>> {
     let test_attr = attrs.iter().find(|attr| attr.id.as_str() == TEST_ATTR);
     let ignore_attr = attrs.iter().find(|attr| attr.id.as_str() == IGNORE_ATTR);
     let available_gas_attr = attrs.iter().find(|attr| attr.id.as_str() == AVAILABLE_GAS_ATTR);
@@ -123,10 +123,10 @@ pub fn try_extract_test_config(
 /// Extract the available gas from the attribute.
 /// Adds a diagnostic if the attribute is malformed.
 /// Returns `None` if the attribute is "static", or the attribute is malformed.
-fn extract_available_gas(
-    available_gas_attr: Option<&Attribute>,
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+fn extract_available_gas<'db>(
+    available_gas_attr: Option<&Attribute<'db>>,
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) -> Option<usize> {
     let Some(attr) = available_gas_attr else {
         // If no gas is specified, we assume the reasonably large possible gas, such that infinite
@@ -160,7 +160,7 @@ fn extract_available_gas(
 
 /// Tries to extract the expected panic bytes out of the given `should_panic` attribute.
 /// Assumes the attribute is `should_panic`.
-fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Felt252>> {
+fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute<'_>) -> Option<Vec<Felt252>> {
     let [AttributeArg { variant: AttributeArgVariant::Named { name, value, .. }, .. }] =
         &attr.args[..]
     else {
@@ -200,7 +200,7 @@ fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fel
 
 /// Extracts panic bytes from a string.
 fn extract_string_panic_bytes(
-    panic_string: &ast::TerminalString,
+    panic_string: &ast::TerminalString<'_>,
     db: &dyn SyntaxGroup,
 ) -> Vec<Felt252> {
     let panic_string = panic_string.string_value(db).unwrap();

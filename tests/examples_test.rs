@@ -8,7 +8,7 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::{CrateId, FlagId};
+use cairo_lang_filesystem::ids::{CrateInput, FlagLongId};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_runner::{Arg, RunResultValue, SierraCasmRunner, token_gas_cost};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
@@ -19,12 +19,12 @@ use cairo_lang_sierra_to_casm::compiler::SierraToCasmConfig;
 use cairo_lang_sierra_to_casm::metadata::{calc_metadata, calc_metadata_ap_change_only};
 use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{Intern, extract_matches};
 use itertools::Itertools;
 use rstest::{fixture, rstest};
 use starknet_types_core::felt::Felt as Felt252;
 
-type ExampleDirData = (Mutex<RootDatabase>, Vec<CrateId>);
+type ExampleDirData = (Mutex<RootDatabase>, Vec<CrateInput>);
 
 /// Setups the cairo lowering to sierra db for the examples crate.
 #[fixture]
@@ -59,19 +59,20 @@ fn compare_contents_or_fix(name: &str, test_type: &str, content: String) {
 /// Compiles the Cairo code for submodule `name` of the examples crates to a Sierra program.
 fn checked_compile_to_sierra(
     name: &str,
-    (db, crate_ids): &ExampleDirData,
+    (db, crate_inputs): &ExampleDirData,
     auto_add_withdraw_gas: bool,
 ) -> cairo_lang_sierra::program::Program {
     let mut locked_db = db.lock().unwrap();
-    let add_withdraw_gas_flag_id = FlagId::new(&locked_db.snapshot(), "add_withdraw_gas");
+    let add_withdraw_gas_flag_id = FlagLongId("add_withdraw_gas".into());
     locked_db.set_flag(
         add_withdraw_gas_flag_id,
         Some(Arc::new(Flag::AddWithdrawGas(auto_add_withdraw_gas))),
     );
     let db = locked_db.snapshot();
     let mut requested_function_ids = vec![];
-    for crate_id in crate_ids {
-        for module_id in db.crate_modules(*crate_id).iter() {
+    for crate_input in crate_inputs {
+        let crate_id = crate_input.clone().into_crate_long_id(&db).intern(&db);
+        for module_id in db.crate_modules(crate_id).iter() {
             if module_id.full_path(&db) != format!("examples::{name}") {
                 continue;
             }
