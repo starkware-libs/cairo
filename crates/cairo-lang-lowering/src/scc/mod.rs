@@ -6,23 +6,23 @@ use crate::db::LoweringGroup;
 use crate::ids::FunctionWithBodyId;
 
 /// Query implementation of [crate::db::LoweringGroup::function_with_body_scc].
-pub fn function_with_body_scc(
-    db: &dyn LoweringGroup,
-    function_id: FunctionWithBodyId,
+pub fn function_with_body_scc<'db>(
+    db: &'db dyn LoweringGroup,
+    function_id: FunctionWithBodyId<'db>,
     dependency_type: DependencyType,
-) -> Vec<FunctionWithBodyId> {
+) -> Vec<FunctionWithBodyId<'db>> {
     compute_scc(&FunctionWithBodyNode { function_with_body_id: function_id, dependency_type, db })
 }
 
 /// A node to use in the SCC computation.
 #[derive(Clone)]
-struct FunctionWithBodyNode<'a> {
-    function_with_body_id: FunctionWithBodyId,
+struct FunctionWithBodyNode<'db> {
+    function_with_body_id: FunctionWithBodyId<'db>,
     dependency_type: DependencyType,
-    db: &'a dyn LoweringGroup,
+    db: &'db dyn LoweringGroup,
 }
-impl GraphNode for FunctionWithBodyNode<'_> {
-    type NodeId = FunctionWithBodyId;
+impl<'db> GraphNode for FunctionWithBodyNode<'db> {
+    type NodeId = FunctionWithBodyId<'db>;
 
     fn get_neighbors(&self) -> Vec<Self> {
         self.db

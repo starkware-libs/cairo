@@ -1,7 +1,8 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId};
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{Intern, Upcast, extract_matches};
 use pretty_assertions::assert_eq;
+use smol_str::SmolStr;
 use test_log::test;
 
 use crate::db::SemanticGroup;
@@ -31,14 +32,14 @@ fn test_expr_lookup() {
     let module_id = test_module.module_id;
 
     let function_id = FunctionWithBodyId::Free(extract_matches!(
-        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
+        db.module_item_by_name(module_id, SmolStr::from("foo").intern(db)).unwrap().unwrap(),
         ModuleItemId::FreeFunction
     ));
     let expr_formatter = ExprFormatter { db, function_id };
     let mut expr_debugs = Vec::new();
     for (expr_id, expr) in &db.function_body(function_id).unwrap().arenas.exprs {
         assert_eq!(db.lookup_expr_by_ptr(function_id, expr.stable_ptr()), Ok(expr_id));
-        expr_debugs.push(format!("{:?}", expr.debug(&expr_formatter)));
+        expr_debugs.push(format!("{:?}", expr.debug(expr_formatter.upcast())));
     }
     expr_debugs.sort();
     assert_eq!(
