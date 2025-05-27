@@ -228,6 +228,8 @@ pub mod helper {
     use std::fmt;
     use std::marker::PhantomData;
 
+    use salsa::Database;
+
     use super::{DebugWith, DebugWithDb};
 
     pub trait Fallback<T: fmt::Debug, Db: ?Sized> {
@@ -238,12 +240,12 @@ pub mod helper {
 
     pub struct HelperDebug<T, Db: ?Sized>(PhantomData<T>, PhantomData<Db>);
 
-    impl<T: DebugWithDb<Db>, Db: ?Sized> HelperDebug<T, Db> {
+    impl<T: DebugWithDb<Db>, Db: Database + ?Sized> HelperDebug<T, Db> {
         #[allow(dead_code)]
         pub fn helper_debug<'a, 'b: 'a>(a: &'a T, db: &'b Db) -> DebugWith<'a, Db> {
             a.debug(db)
         }
     }
 
-    impl<Everything, Db: ?Sized, T: fmt::Debug> Fallback<T, Db> for Everything {}
+    impl<Everything, Db: Database + ?Sized, T: fmt::Debug> Fallback<T, Db> for Everything {}
 }
