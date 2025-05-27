@@ -77,7 +77,7 @@ impl Location {
     }
 }
 
-impl DebugWithDb<dyn LoweringGroup> for Location {
+impl DebugWithDb<'_, dyn LoweringGroup> for Location {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn LoweringGroup) -> std::fmt::Result {
         let files_db = db.upcast();
         self.stable_location.diagnostic_location(db).fmt(f, files_db)?;

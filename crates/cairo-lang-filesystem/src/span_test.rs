@@ -7,9 +7,12 @@ use crate::test_utils::FilesDatabaseForTesting;
 
 const TEST_STRING: &str = "01\n23\u{1230}\r\n456\n\n\r\n789";
 
-fn test_db() -> (FilesDatabaseForTesting, FileId) {
-    let db = FilesDatabaseForTesting::default();
-    let file = FileLongId::Virtual(VirtualFile {
+fn test_db() -> FilesDatabaseForTesting {
+    FilesDatabaseForTesting::default()
+}
+
+fn test_file<'db>(db: &'db FilesDatabaseForTesting) -> FileId<'db> {
+    FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "name".into(),
         content: TEST_STRING.into(),
@@ -17,13 +20,13 @@ fn test_db() -> (FilesDatabaseForTesting, FileId) {
         kind: FileKind::Module,
         original_item_removed: false,
     })
-    .intern(&db);
-    (db, file)
+    .intern(db)
 }
 
 #[test]
 fn test_span() {
-    let (db, file) = test_db();
+    let db = test_db();
+    let file = test_file(&db);
     assert_eq!(
         TextOffset(TextWidth(0)).position_in_file(&db, file),
         Some(TextPosition { line: 0, col: 0 })
@@ -82,13 +85,15 @@ fn test_span() {
 #[test]
 #[should_panic(expected = "TextOffset out of range. TextWidth(21) > TextWidth(20).")]
 fn should_panic_test_span_out_of_range() {
-    let (db, file) = test_db();
+    let db = test_db();
+    let file = test_file(&db);
     TextOffset(TextWidth(TEST_STRING.len() as u32 + 1)).position_in_file(&db, file);
 }
 
 #[test]
 fn test_position_offset_in_file() {
-    let (db, file) = test_db();
+    let db = test_db();
+    let file = test_file(&db);
     // Happy cases.
     assert_eq!(
         TextPosition { line: 0, col: 0 }.offset_in_file(&db, file),
