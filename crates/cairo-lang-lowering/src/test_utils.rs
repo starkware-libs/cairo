@@ -74,32 +74,32 @@ impl Default for LoweringDatabaseForTesting {
     }
 }
 impl Upcast<dyn FilesGroup> for LoweringDatabaseForTesting {
-    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
+    fn upcast(&self) -> &(dyn FilesGroup) {
         self
     }
 }
 impl Upcast<dyn SyntaxGroup> for LoweringDatabaseForTesting {
-    fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
+    fn upcast(&self) -> &(dyn SyntaxGroup) {
         self
     }
 }
 impl Upcast<dyn DefsGroup> for LoweringDatabaseForTesting {
-    fn upcast(&self) -> &(dyn DefsGroup + 'static) {
+    fn upcast(&self) -> &(dyn DefsGroup) {
         self
     }
 }
 impl Upcast<dyn SemanticGroup> for LoweringDatabaseForTesting {
-    fn upcast(&self) -> &(dyn SemanticGroup + 'static) {
+    fn upcast(&self) -> &(dyn SemanticGroup) {
         self
     }
 }
 impl Upcast<dyn LoweringGroup> for LoweringDatabaseForTesting {
-    fn upcast(&self) -> &(dyn LoweringGroup + 'static) {
+    fn upcast(&self) -> &(dyn LoweringGroup) {
         self
     }
 }
 impl Upcast<dyn ParserGroup> for LoweringDatabaseForTesting {
-    fn upcast(&self) -> &(dyn ParserGroup + 'static) {
+    fn upcast(&self) -> &(dyn ParserGroup) {
         self
     }
 }

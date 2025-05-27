@@ -384,11 +384,11 @@ impl SemanticFunctionIdEx for semantic::FunctionId {
         ret
     }
 }
-impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for FunctionLongId {
+impl<'a> DebugWithDb<'a, dyn LoweringGroup + 'a> for FunctionLongId {
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,
-        db: &(dyn LoweringGroup + 'a),
+        db: &'a (dyn LoweringGroup + 'a),
     ) -> std::fmt::Result {
         match self {
             FunctionLongId::Semantic(semantic) => write!(f, "{:?}", semantic.debug(db)),
@@ -421,7 +421,7 @@ impl GeneratedFunction {
         format!("{:?}", self.debug(db))
     }
 }
-impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for GeneratedFunction {
+impl<'a> DebugWithDb<'a, dyn LoweringGroup + 'a> for GeneratedFunction {
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,
@@ -495,7 +495,7 @@ impl SpecializedFunction {
         Ok(base_sign)
     }
 }
-impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for SpecializedFunction {
+impl<'a> DebugWithDb<'a, dyn LoweringGroup + 'a> for SpecializedFunction {
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,

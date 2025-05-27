@@ -515,7 +515,7 @@ impl fmt::Display for DocumentationCommentToken {
     }
 }
 
-impl DebugWithDb<dyn DocGroup> for CommentLinkToken {
+impl DebugWithDb<'_, dyn DocGroup> for CommentLinkToken {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &dyn DocGroup) -> fmt::Result {
         f.debug_struct("CommentLinkToken")
             .field("label", &self.label)
