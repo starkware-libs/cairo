@@ -43,15 +43,16 @@ fn test_create_graph(
         inputs.get("module_code").unwrap_or(&"".into()),
     )
     .split();
+    let semantic_db: &dyn SemanticGroup = db;
 
     // Extract the expression from the function's body.
     let semantic::Expr::Block(semantic::ExprBlock { tail: Some(expr_id), .. }) =
-        db.expr_semantic(test_function.function_id, test_function.body)
+        semantic_db.expr_semantic(test_function.function_id, test_function.body)
     else {
         panic!("Expected a block expression.");
     };
 
-    let expr = db.expr_semantic(test_function.function_id, expr_id);
+    let expr = semantic_db.expr_semantic(test_function.function_id, expr_id);
     let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
 
     let graph = match &expr {
@@ -89,11 +90,11 @@ fn test_create_graph(
 
 /// Calls [lower_graph] on the expression as if it was a function's body. Returns the [Lowered]
 /// object.
-fn lower_graph_as_function(
-    mut ctx: LoweringContext<'_, '_>,
-    expr_id: semantic::ExprId,
-    graph: &FlowControlGraph,
-) -> Lowered {
+fn lower_graph_as_function<'db>(
+    mut ctx: LoweringContext<'db, '_>,
+    expr_id: semantic::ExprId<'db>,
+    graph: &FlowControlGraph<'db>,
+) -> Lowered<'db> {
     let expr = &ctx.function_body.arenas.exprs[expr_id];
     let location = ctx.get_location(expr.stable_ptr().untyped());
 

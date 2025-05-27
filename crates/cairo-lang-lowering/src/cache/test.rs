@@ -47,7 +47,7 @@ fn test_cache_check(
     )
     .split();
 
-    let function_id: ConcreteFunctionWithBodyId =
+    let function_id: ConcreteFunctionWithBodyId<'_> =
         ConcreteFunctionWithBodyId::from_semantic(&new_db, test_function.concrete_function_id);
 
     let lowered = new_db.lowered_body(function_id, LoweringStage::Final);

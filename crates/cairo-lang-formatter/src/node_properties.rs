@@ -11,7 +11,7 @@ use crate::formatter_impl::{
 };
 use crate::{CollectionsBreakingBehavior, FormatterConfig};
 
-impl SyntaxNodeFormat for SyntaxNode {
+impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
     fn force_no_space_before(&self, db: &dyn SyntaxGroup) -> bool {
         match self.kind(db) {
             SyntaxKind::TokenDot
@@ -931,7 +931,8 @@ impl SyntaxNodeFormat for SyntaxNode {
     }
 
     fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool {
-        let is_last = |node: &SyntaxNode, siblings: &[SyntaxNode]| siblings.last() == Some(node);
+        let is_last =
+            |node: &SyntaxNode<'_>, siblings: &[SyntaxNode<'_>]| siblings.last() == Some(node);
         // Check for TerminalComma with specific conditions on list types and position.
         if self.kind(db) == SyntaxKind::TerminalComma
             && matches!(
@@ -1056,7 +1057,7 @@ impl SyntaxNodeFormat for SyntaxNode {
 }
 
 /// For statement lists, returns if we want these as a single line.
-fn is_statement_list_break_point_optional(db: &dyn SyntaxGroup, node: &SyntaxNode) -> bool {
+fn is_statement_list_break_point_optional(db: &dyn SyntaxGroup, node: &SyntaxNode<'_>) -> bool {
     // Currently, we only want single line blocks for match arms or generic args, with a single
     // statement, with no single line comments.
     matches!(
