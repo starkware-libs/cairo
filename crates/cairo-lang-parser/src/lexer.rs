@@ -13,17 +13,17 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::require;
 use smol_str::SmolStr;
 
-pub struct Lexer<'a> {
+pub struct Lexer<'a, 'b> {
     db: &'a dyn SyntaxGroup,
-    text: &'a str,
+    text: &'b str,
     previous_position: TextOffset,
     current_position: TextOffset,
     done: bool,
 }
 
-impl<'a> Lexer<'a> {
+impl<'a, 'b> Lexer<'a, 'b> {
     // Ctors.
-    pub fn from_text(db: &'a dyn SyntaxGroup, text: &'a str) -> Lexer<'a> {
+    pub fn from_text(db: &'a dyn SyntaxGroup, text: &'b str) -> Lexer<'a, 'b> {
         Lexer {
             db,
             text,
@@ -62,7 +62,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn peek_span_text(&self) -> &'a str {
+    fn peek_span_text(&self) -> &'b str {
         let span = TextSpan { start: self.previous_position, end: self.current_position };
         span.take(self.text)
     }
@@ -74,8 +74,8 @@ impl<'a> Lexer<'a> {
     }
 
     // Trivia matchers.
-    fn match_trivia(&mut self, leading: bool) -> Vec<TriviumGreen> {
-        let mut res: Vec<TriviumGreen> = Vec::new();
+    fn match_trivia(&mut self, leading: bool) -> Vec<TriviumGreen<'a>> {
+        let mut res: Vec<TriviumGreen<'a>> = Vec::new();
         while let Some(current) = self.peek() {
             let trivium = match current {
                 ' ' | '\r' | '\t' => self.match_trivium_whitespace(),
@@ -92,19 +92,19 @@ impl<'a> Lexer<'a> {
     }
 
     /// Assumes the next character is one of [' ', '\r', '\t'].
-    fn match_trivium_whitespace(&mut self) -> TriviumGreen {
+    fn match_trivium_whitespace(&mut self) -> TriviumGreen<'a> {
         self.take_while(|s| matches!(s, ' ' | '\r' | '\t'));
         TokenWhitespace::new_green(self.db, SmolStr::from(self.consume_span())).into()
     }
 
     /// Assumes the next character '\n'.
-    fn match_trivium_newline(&mut self) -> TriviumGreen {
+    fn match_trivium_newline(&mut self) -> TriviumGreen<'a> {
         self.take();
         TokenNewline::new_green(self.db, SmolStr::from(self.consume_span())).into()
     }
 
     /// Assumes the next 2 characters are "//".
-    fn match_trivium_single_line_comment(&mut self) -> TriviumGreen {
+    fn match_trivium_single_line_comment(&mut self) -> TriviumGreen<'a> {
         match self.peek_nth(2) {
             Some('/') => {
                 self.take_while(|c| c != '\n');
@@ -254,7 +254,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn match_terminal(&mut self) -> LexerTerminal {
+    fn match_terminal(&mut self) -> LexerTerminal<'a> {
         let leading_trivia = self.match_trivia(true);
 
         let kind = if let Some(current) = self.peek() {
@@ -327,14 +327,14 @@ impl<'a> Lexer<'a> {
 
 /// Output terminal emitted by the lexer.
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct LexerTerminal {
+pub struct LexerTerminal<'a> {
     pub text: SmolStr,
     /// The kind of the inner token of this terminal.
     pub kind: SyntaxKind,
-    pub leading_trivia: Vec<TriviumGreen>,
-    pub trailing_trivia: Vec<TriviumGreen>,
+    pub leading_trivia: Vec<TriviumGreen<'a>>,
+    pub trailing_trivia: Vec<TriviumGreen<'a>>,
 }
-impl LexerTerminal {
+impl<'a> LexerTerminal<'a> {
     pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
         self.leading_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()
             + TextWidth::from_str(&self.text)
@@ -342,8 +342,8 @@ impl LexerTerminal {
     }
 }
 
-impl Iterator for Lexer<'_> {
-    type Item = LexerTerminal;
+impl<'a, 'b> Iterator for Lexer<'a, 'b> {
+    type Item = LexerTerminal<'a>;
 
     /// Returns the next token. Once there are no more tokens left, returns token EOF.
     /// One should not call this after EOF was returned. If one does, None is returned.

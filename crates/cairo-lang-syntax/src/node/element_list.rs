@@ -7,18 +7,18 @@ use crate::node::{SyntaxNode, TypedSyntaxNode};
 // A typed view of an element list node.
 // STEP=1 means a sequence of elements (e.g. sequence of trivia elements).
 // STEP=2 means a separated sequence (e.g. argument list separated by `,`).
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ElementList<T: TypedSyntaxNode, const STEP: usize> {
-    pub node: SyntaxNode,
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct ElementList<'a, T: TypedSyntaxNode<'a>, const STEP: usize> {
+    pub node: SyntaxNode<'a>,
     phantom: PhantomData<T>,
 }
-impl<T: TypedSyntaxNode, const STEP: usize> ElementList<T, STEP> {
-    pub fn new(node: SyntaxNode) -> Self {
+impl<'a, T: TypedSyntaxNode<'a>, const STEP: usize> ElementList<'a, T, STEP> {
+    pub fn new(node: SyntaxNode<'a>) -> Self {
         Self { node, phantom: PhantomData {} }
     }
 }
-impl<T: TypedSyntaxNode> ElementList<T, 1> {
-    pub fn elements_vec(&self, db: &dyn SyntaxGroup) -> Vec<T> {
+impl<'a, T: TypedSyntaxNode<'a>> ElementList<'a, T, 1> {
+    pub fn elements_vec(&self, db: &'a dyn SyntaxGroup) -> Vec<T> {
         self.elements(db).collect()
     }
     pub fn elements<'a>(
@@ -31,8 +31,8 @@ impl<T: TypedSyntaxNode> ElementList<T, 1> {
         false
     }
 }
-impl<T: TypedSyntaxNode> ElementList<T, 2> {
-    pub fn elements_vec(&self, db: &dyn SyntaxGroup) -> Vec<T> {
+impl<'a, T: TypedSyntaxNode<'a>> ElementList<'a, T, 2> {
+    pub fn elements_vec(&self, db: &'a dyn SyntaxGroup) -> Vec<T> {
         self.elements(db).collect()
     }
     pub fn elements<'a>(
@@ -43,21 +43,21 @@ impl<T: TypedSyntaxNode> ElementList<T, 2> {
             .step_by(2)
             .map(move |x| T::from_syntax_node(db, x))
     }
-    pub fn has_tail(&self, db: &dyn SyntaxGroup) -> bool {
+    pub fn has_tail(&self, db: &'a dyn SyntaxGroup) -> bool {
         !self.node.get_children(db).len().is_multiple_of(2)
     }
 }
 
 /// Iterator over the raw elements of an `ElementList`.
-struct ElementListRawIter {
+struct ElementListRawIter<'a> {
     /// The `Arc` storing the actual node.
-    _data: Arc<[SyntaxNode]>,
+    _data: Arc<[SyntaxNode<'a>]>,
     /// Actual iterator over the elements.
-    iter: std::slice::Iter<'static, SyntaxNode>,
+    iter: std::slice::Iter<'a, SyntaxNode<'a>>,
 }
 
-impl ElementListRawIter {
-    fn new(data: Arc<[SyntaxNode]>) -> Self {
+impl<'a> ElementListRawIter<'a> {
+    fn new(data: Arc<[SyntaxNode<'a>]>) -> Self {
         // We leak the Arc to get a 'static reference, and keep the Arc in the struct to avoid
         // leaks.
         let ptr: *const [SyntaxNode] = Arc::as_ptr(&data);
@@ -67,8 +67,8 @@ impl ElementListRawIter {
     }
 }
 
-impl Iterator for ElementListRawIter {
-    type Item = SyntaxNode;
+impl<'a> Iterator for ElementListRawIter<'a> {
+    type Item = SyntaxNode<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next().copied()
@@ -77,12 +77,12 @@ impl Iterator for ElementListRawIter {
         self.iter.size_hint()
     }
 }
-impl ExactSizeIterator for ElementListRawIter {
+impl<'a> ExactSizeIterator for ElementListRawIter<'_> {
     fn len(&self) -> usize {
         self.iter.len()
     }
 }
-impl DoubleEndedIterator for ElementListRawIter {
+impl DoubleEndedIterator for ElementListRawIter<'_> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back().copied()
     }
