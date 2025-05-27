@@ -18,8 +18,10 @@ use cairo_lang_sierra_generator::program_generator::{
     SierraProgramWithDebug, try_get_function_with_body_id,
 };
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use rayon::{ThreadPool, ThreadPoolBuilder};
+use salsa::par_map;
 
 use crate::db::RootDatabase;
 use crate::diagnostics::{DiagnosticsError, DiagnosticsReporter};
@@ -34,8 +36,8 @@ mod test;
 
 /// Configuration for the compiler.
 #[derive(Default)]
-pub struct CompilerConfig<'c> {
-    pub diagnostics_reporter: DiagnosticsReporter<'c>,
+pub struct CompilerConfig {
+    pub diagnostics_reporter: DiagnosticsReporter,
 
     /// Replaces sierra ids with human-readable ones.
     pub replace_ids: bool,
@@ -68,14 +70,18 @@ pub struct CompilerConfig<'c> {
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_cairo_project_at_path(
     path: &Path,
-    compiler_config: CompilerConfig<'_>,
+    compiler_config: CompilerConfig,
 ) -> Result<Program> {
     let mut db = RootDatabase::builder()
         .with_inlining_strategy(compiler_config.inlining_strategy)
         .detect_corelib()
         .build()?;
     let main_crate_ids = setup_project(&mut db, path)?;
-    compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)
+    compile_prepared_db_program(
+        &db,
+        main_crate_ids.into_iter().map(|id| id.into_crate_long_id(&db).intern(&db)).collect(),
+        compiler_config,
+    )
 }
 
 /// Compiles a Cairo project.
@@ -87,17 +93,14 @@ pub fn compile_cairo_project_at_path(
 /// # Returns
 /// * `Ok(Program)` - The compiled program.
 /// * `Err(anyhow::Error)` - Compilation failed.
-pub fn compile(
-    project_config: ProjectConfig,
-    compiler_config: CompilerConfig<'_>,
-) -> Result<Program> {
-    let mut db = RootDatabase::builder()
+pub fn compile(project_config: ProjectConfig, compiler_config: CompilerConfig) -> Result<Program> {
+    let db = RootDatabase::builder()
         .with_inlining_strategy(compiler_config.inlining_strategy)
         .with_project_config(project_config.clone())
         .build()?;
-    let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
+    let main_crate_ids = get_main_crate_ids_from_project(&db, &project_config);
 
-    compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)
+    compile_prepared_db_program(&db, main_crate_ids, compiler_config)
 }
 
 /// Runs Cairo compiler.
@@ -111,10 +114,10 @@ pub fn compile(
 /// # Returns
 /// * `Ok(Program)` - The compiled program.
 /// * `Err(anyhow::Error)` - Compilation failed.
-pub fn compile_prepared_db_program(
-    db: &mut RootDatabase,
-    main_crate_ids: Vec<CrateId>,
-    compiler_config: CompilerConfig<'_>,
+pub fn compile_prepared_db_program<'db>(
+    db: &'db RootDatabase,
+    main_crate_ids: Vec<CrateId<'db>>,
+    compiler_config: CompilerConfig,
 ) -> Result<Program> {
     Ok(compile_prepared_db(db, main_crate_ids, compiler_config)?.program)
 }
@@ -133,11 +136,11 @@ pub fn compile_prepared_db_program(
 /// # Returns
 /// * `Ok(SierraProgramWithDebug)` - The compiled program with debug info.
 /// * `Err(anyhow::Error)` - Compilation failed.
-pub fn compile_prepared_db(
-    db: &RootDatabase,
-    main_crate_ids: Vec<CrateId>,
-    mut compiler_config: CompilerConfig<'_>,
-) -> Result<SierraProgramWithDebug> {
+pub fn compile_prepared_db<'db>(
+    db: &'db RootDatabase,
+    main_crate_ids: Vec<CrateId<'db>>,
+    mut compiler_config: CompilerConfig,
+) -> Result<SierraProgramWithDebug<'db>> {
     compiler_config.diagnostics_reporter.ensure(db)?;
 
     let mut sierra_program_with_debug = Arc::unwrap_or_clone(
@@ -189,13 +192,17 @@ impl DbWarmupContext {
     }
 
     /// Performs parallel database warmup (if possible)
-    fn warmup_diagnostics(
+    fn warmup_diagnostics<'db>(
         &self,
-        db: &RootDatabase,
-        diagnostic_reporter: &mut DiagnosticsReporter<'_>,
+        db: &'db RootDatabase,
+        diagnostic_reporter: &mut DiagnosticsReporter,
     ) {
         match self {
-            Self::Warmup { pool } => diagnostic_reporter.warm_up_diagnostics(db, pool),
+            Self::Warmup { pool } => {
+                let db = db.clone();
+                let db = Box::new(db);
+                pool.install(|| diagnostic_reporter.warm_up_diagnostics(db));
+            }
             Self::NoWarmup => {}
         }
     }
@@ -204,10 +211,10 @@ impl DbWarmupContext {
     /// Returns `Err` if diagnostics were found.
     ///
     /// Performs parallel database warmup (if possible) and calls `DiagnosticsReporter::ensure`.
-    pub fn ensure_diagnostics(
+    pub fn ensure_diagnostics<'db>(
         &self,
-        db: &RootDatabase,
-        diagnostic_reporter: &mut DiagnosticsReporter<'_>,
+        db: &'db RootDatabase,
+        diagnostic_reporter: &mut DiagnosticsReporter,
     ) -> std::result::Result<(), DiagnosticsError> {
         self.warmup_diagnostics(db, diagnostic_reporter);
         diagnostic_reporter.ensure(db)?;
@@ -215,15 +222,17 @@ impl DbWarmupContext {
     }
 
     /// Spawns a task to warm up the db for the requested functions (if possible).
-    fn warmup_db(
+    // TODO(eytan-starkware): This is now blocking and should be made non-blocking.
+    fn warmup_db<'db>(
         &self,
-        db: &RootDatabase,
-        requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
+        db: &'db RootDatabase,
+        requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
     ) {
         match self {
             Self::Warmup { pool } => {
-                let snapshot = salsa::ParallelDatabase::snapshot(db);
-                pool.spawn(move || warmup_db_blocking(snapshot, requested_function_ids));
+                let db = db.clone();
+                let db = Box::new(db);
+                pool.install(|| warmup_db_blocking(db, requested_function_ids));
             }
             Self::NoWarmup => {}
         }
@@ -240,61 +249,44 @@ impl Default for DbWarmupContext {
 /// the requested functions and their dependencies.
 ///
 /// Note that typically spawn_warmup_db should be used as this function is blocking.
-fn warmup_db_blocking(
-    snapshot: salsa::Snapshot<RootDatabase>,
-    requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
+fn warmup_db_blocking<'db>(
+    db: Box<RootDatabase>,
+    requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
 ) {
-    let processed_function_ids =
-        &Mutex::new(UnorderedHashSet::<ConcreteFunctionWithBodyId>::default());
-    rayon::scope(move |s| {
-        for func_id in requested_function_ids {
-            let snapshot = salsa::ParallelDatabase::snapshot(&*snapshot);
+    let processed_function_ids = &Mutex::new(UnorderedHashSet::<salsa::Id>::default());
+    let _: () = par_map(db.as_ref(), requested_function_ids, move |db, func_id| {
+        fn handle_func_inner<'db>(
+            processed_function_ids: &Mutex<UnorderedHashSet<salsa::Id>>,
+            snapshot: &RootDatabase,
+            func_id: ConcreteFunctionWithBodyId<'db>,
+        ) {
+            if processed_function_ids.lock().unwrap().insert(func_id.as_intern_id()) {
+                let Ok(function) = snapshot.function_with_body_sierra(func_id) else {
+                    return;
+                };
+                let _: () = par_map(snapshot, &function.body, move |snapshot, statement| {
+                    let related_function_id: ConcreteFunctionWithBodyId<'_> =
+                        if let Some(r_id) = try_get_function_with_body_id(snapshot, statement) {
+                            r_id
+                        } else {
+                            return;
+                        };
 
-            s.spawn(move |_| {
-                fn handle_func_inner(
-                    processed_function_ids: &Mutex<UnorderedHashSet<ConcreteFunctionWithBodyId>>,
-                    snapshot: salsa::Snapshot<RootDatabase>,
-                    func_id: ConcreteFunctionWithBodyId,
-                ) {
-                    if processed_function_ids.lock().unwrap().insert(func_id) {
-                        rayon::scope(move |s| {
-                            let db = &*snapshot;
-                            let Ok(function) = db.function_with_body_sierra(func_id) else {
-                                return;
-                            };
-                            for statement in &function.body {
-                                let Some(related_function_id) =
-                                    try_get_function_with_body_id(db, statement)
-                                else {
-                                    continue;
-                                };
-
-                                let snapshot = salsa::ParallelDatabase::snapshot(&*snapshot);
-                                s.spawn(move |_| {
-                                    handle_func_inner(
-                                        processed_function_ids,
-                                        snapshot,
-                                        related_function_id,
-                                    )
-                                })
-                            }
-                        });
-                    }
-                }
-
-                handle_func_inner(processed_function_ids, snapshot, func_id)
-            });
+                    handle_func_inner(processed_function_ids, snapshot, related_function_id);
+                });
+            }
         }
+        handle_func_inner(&processed_function_ids, db, func_id)
     });
 }
 
 ///  Checks if there are diagnostics in the database and if there are None, returns
 ///  the [SierraProgramWithDebug] object of the requested functions
-pub fn get_sierra_program_for_functions(
-    db: &RootDatabase,
-    requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
+pub fn get_sierra_program_for_functions<'db>(
+    db: &'db RootDatabase,
+    requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
     context: DbWarmupContext,
-) -> Result<Arc<SierraProgramWithDebug>> {
+) -> Result<Arc<SierraProgramWithDebug<'db>>> {
     context.warmup_db(db, requested_function_ids.clone());
     db.get_sierra_program_for_functions(requested_function_ids)
         .to_option()
@@ -315,10 +307,10 @@ pub fn get_sierra_program_for_functions(
 /// # Returns
 /// * `Ok(ProgramArtifact)` - The compiled program artifact with requested debug info.
 /// * `Err(anyhow::Error)` - Compilation failed.
-pub fn compile_prepared_db_program_artifact(
-    db: &mut RootDatabase,
-    main_crate_ids: Vec<CrateId>,
-    mut compiler_config: CompilerConfig<'_>,
+pub fn compile_prepared_db_program_artifact<'db>(
+    db: &'db RootDatabase,
+    main_crate_ids: Vec<CrateId<'db>>,
+    mut compiler_config: CompilerConfig,
 ) -> Result<ProgramArtifact> {
     let add_statements_functions = compiler_config.add_statements_functions;
     let add_statements_code_locations = compiler_config.add_statements_code_locations;
