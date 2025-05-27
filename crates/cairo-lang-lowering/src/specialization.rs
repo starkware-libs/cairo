@@ -26,11 +26,11 @@ pub enum SpecializationArg {
     Struct(Vec<SpecializationArg>),
 }
 
-impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for SpecializationArg {
+impl<'a> DebugWithDb<'a, dyn LoweringGroup + 'a> for SpecializationArg {
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,
-        db: &(dyn LoweringGroup + 'a),
+        db: &'a (dyn LoweringGroup + 'a),
     ) -> std::fmt::Result {
         match self {
             SpecializationArg::Const(value) => write!(f, "{:?}", value.debug(db)),

@@ -749,7 +749,7 @@ fn lower_single_pattern(
                 .concrete_struct_members(structure.concrete_struct_id)
                 .map_err(LoweringFlowError::Failed)?;
             let mut required_members = UnorderedHashMap::<_, _>::from_iter(
-                structure.field_patterns.iter().map(|(member, pattern)| (member.id, *pattern)),
+                structure.field_patterns.iter().map(|(pattern, member)| (member.id, *pattern)),
             );
             let n_snapshots = structure.n_snapshots;
             let stable_ptr = structure.stable_ptr.untyped();
@@ -1761,7 +1761,7 @@ fn lower_expr_struct_ctor(
         .concrete_struct_members(expr.concrete_struct_id)
         .map_err(LoweringFlowError::Failed)?;
     let mut member_expr_usages =
-        UnorderedHashMap::<_, _>::from_iter(expr.members.iter().map(|(id, expr)| {
+        UnorderedHashMap::<_, _>::from_iter(expr.members.iter().map(|(expr, id)| {
             let usage = lower_expr_to_var_usage(ctx, builder, *expr);
             (*id, usage)
         }));

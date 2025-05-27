@@ -179,7 +179,7 @@ pub trait StructRecomposer {
 
 /// An intermediate value for a member path.
 #[derive(Clone, Debug, DebugWithDb)]
-#[debug_db(ExprFormatter<'a>)]
+#[debug_db(ExprFormatter<'db>)]
 enum Value {
     /// The value of member path is stored in a lowered variable.
     Var(VariableId),
@@ -190,7 +190,7 @@ enum Value {
 
 /// A value for a non-stored member path. Recursively holds the [Value] for the members.
 #[derive(Clone, Debug, DebugWithDb)]
-#[debug_db(ExprFormatter<'a>)]
+#[debug_db(ExprFormatter<'db>)]
 struct Scattered {
     concrete_struct_id: semantic::ConcreteStructId,
     members: OrderedHashMap<MemberId, Value>,

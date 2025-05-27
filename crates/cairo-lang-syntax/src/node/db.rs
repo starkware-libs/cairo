@@ -9,19 +9,19 @@ use super::stable_ptr::SyntaxStablePtr;
 use super::{SyntaxNode, SyntaxNodeLongId};
 
 // Salsa database interface.
-#[salsa::query_group(SyntaxDatabase)]
-pub trait SyntaxGroup: FilesGroup + Upcast<dyn FilesGroup> {
+#[cairo_lang_proc_macros::query_group]
+pub trait SyntaxGroup: FilesGroup + for<'a> Upcast<'a, dyn FilesGroup> {
     #[salsa::interned]
-    fn intern_green(&self, field: Arc<GreenNode>) -> GreenId;
+    fn intern_green<'a>(&'a self, field: Arc<GreenNode<'a>>) -> GreenId<'a>;
     #[salsa::interned]
-    fn intern_stable_ptr(&self, field: SyntaxStablePtr) -> SyntaxStablePtrId;
+    fn intern_stable_ptr<'a>(&'a self, field: SyntaxStablePtr<'a>) -> SyntaxStablePtrId<'a>;
     #[salsa::interned]
-    fn intern_syntax_node(&self, field: SyntaxNodeLongId) -> SyntaxNode;
+    fn intern_syntax_node<'a>(&'a self, field: SyntaxNodeLongId<'a>) -> SyntaxNode<'a>;
 
     /// Query for caching [SyntaxNode::get_children].
-    fn get_children(&self, node: SyntaxNode) -> Arc<[SyntaxNode]>;
+    fn get_children<'a>(&'a self, node: SyntaxNode<'a>) -> Arc<Vec<SyntaxNode<'a>>>;
 }
 
-fn get_children(db: &dyn SyntaxGroup, node: SyntaxNode) -> Arc<[SyntaxNode]> {
+fn get_children<'a>(db: &'a dyn SyntaxGroup, node: SyntaxNode<'a>) -> Arc<Vec<SyntaxNode<'a>>> {
     node.get_children_impl(db).into()
 }

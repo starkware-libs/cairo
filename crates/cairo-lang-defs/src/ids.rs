@@ -43,30 +43,30 @@ use crate::diagnostic_utils::StableLocation;
 use crate::plugin::{InlineMacroExprPlugin, MacroPlugin};
 
 // A trait for an id for a language element.
-pub trait LanguageElementId {
-    fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId;
-    fn untyped_stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId;
+pub trait LanguageElementId<'db> {
+    fn module_file_id(&self, db: &'db dyn DefsGroup) -> ModuleFileId<'db>;
+    fn untyped_stable_ptr(&self, db: &'db dyn DefsGroup) -> SyntaxStablePtrId<'db>;
 
-    fn parent_module(&self, db: &dyn DefsGroup) -> ModuleId {
+    fn parent_module(&self, db: &'db dyn DefsGroup) -> ModuleId<'db> {
         self.module_file_id(db).0
     }
-    fn file_index(&self, db: &dyn DefsGroup) -> FileIndex {
+    fn file_index(&self, db: &'db dyn DefsGroup) -> FileIndex {
         self.module_file_id(db).1
     }
 
-    fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation;
+    fn stable_location(&self, db: &'db dyn DefsGroup) -> StableLocation<'db>;
 }
 
-pub trait NamedLanguageElementLongId {
+pub trait NamedLanguageElementLongId<'db> {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
-    fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier;
+    fn name_identifier(&'db self, db: &'db dyn DefsGroup) -> ast::TerminalIdentifier<'db>;
 }
-pub trait NamedLanguageElementId: LanguageElementId {
+pub trait NamedLanguageElementId<'db>: LanguageElementId<'db> {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
-    fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier;
+    fn name_identifier(&'db self, db: &'db dyn DefsGroup) -> ast::TerminalIdentifier<'db>;
 }
-pub trait TopLevelLanguageElementId: NamedLanguageElementId {
-    fn full_path(&self, db: &dyn DefsGroup) -> String {
+pub trait TopLevelLanguageElementId<'db>: NamedLanguageElementId<'db> {
+    fn full_path(&self, db: &'db dyn DefsGroup) -> String {
         format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
     }
 }
@@ -81,7 +81,7 @@ pub trait TopLevelLanguageElementId: NamedLanguageElementId {
 macro_rules! define_top_level_language_element_id {
     ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident, $intern:ident) => {
         define_named_language_element_id!($short_id, $long_id, $ast_ty, $lookup, $intern);
-        impl TopLevelLanguageElementId for $short_id {}
+        impl<'db> TopLevelLanguageElementId<'db> for $short_id<'db> {}
     };
 }
 
@@ -94,11 +94,14 @@ macro_rules! define_top_level_language_element_id {
 macro_rules! define_named_language_element_id {
     ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident, $intern:ident) => {
         define_language_element_id_basic!($short_id, $long_id, $ast_ty, $lookup, $intern);
-        impl<'a, T: ?Sized + cairo_lang_utils::Upcast<dyn DefsGroup + 'a>>
-            cairo_lang_debug::DebugWithDb<T> for $long_id
-        {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
-                let db: &(dyn DefsGroup + 'a) = db.upcast();
+        impl<'db> cairo_lang_debug::DebugWithDb<'db> for $long_id<'db> {
+            type Db = dyn DefsGroup;
+
+            fn fmt(
+                &self,
+                f: &mut std::fmt::Formatter<'_>,
+                db: &'db dyn DefsGroup,
+            ) -> std::fmt::Result {
                 let $long_id(module_file_id, _stable_ptr) = self;
                 write!(
                     f,
@@ -109,21 +112,23 @@ macro_rules! define_named_language_element_id {
                 )
             }
         }
-        impl NamedLanguageElementLongId for $long_id {
+        impl<'db> NamedLanguageElementLongId<'db> for $long_id<'db> {
             fn name(&self, db: &dyn DefsGroup) -> SmolStr {
                 let terminal_green = self.1.name_green(db);
                 terminal_green.identifier(db)
             }
-            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
-                self.1.lookup(db).name(db)
+            fn name_identifier(&'db self, db: &'db dyn DefsGroup) -> ast::TerminalIdentifier<'db> {
+                let long = self.1.lookup(db);
+                long.name(db)
             }
         }
-        impl NamedLanguageElementId for $short_id {
+        impl<'db> NamedLanguageElementId<'db> for $short_id<'db> {
             fn name(&self, db: &dyn DefsGroup) -> SmolStr {
                 db.$lookup(*self).name(db)
             }
-            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
-                db.$lookup(*self).name_identifier(db)
+            fn name_identifier(&'db self, db: &'db dyn DefsGroup) -> ast::TerminalIdentifier<'db> {
+                let x = self.long(db);
+                x.name_identifier(db)
             }
         }
     };
@@ -136,25 +141,30 @@ macro_rules! define_named_language_element_id {
 /// Use for language elements that are not top level and don't have a name.
 macro_rules! define_language_element_id_basic {
     ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident, $intern:ident) => {
-        #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-        pub struct $long_id(pub ModuleFileId, pub <$ast_ty as TypedSyntaxNode>::StablePtr);
-        define_short_id!($short_id, $long_id, DefsGroup, $lookup, $intern);
-        impl $short_id {
+        #[derive(Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+        pub struct $long_id<'db>(
+            pub ModuleFileId<'db>,
+            pub <$ast_ty as TypedSyntaxNode<'db>>::StablePtr,
+        );
+        define_short_id!($short_id, $long_id<'db>, DefsGroup, $lookup, $intern);
+        impl<'db> $short_id<'db> {
             pub fn stable_ptr(
                 &self,
-                db: &dyn DefsGroup,
-            ) -> <$ast_ty as TypedSyntaxNode>::StablePtr {
+                db: &'db dyn DefsGroup,
+            ) -> <$ast_ty as TypedSyntaxNode<'db>>::StablePtr {
                 db.$lookup(*self).1
             }
         }
-        impl LanguageElementId for $short_id {
-            fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId {
-                db.$lookup(*self).0
+        impl<'db> LanguageElementId<'db> for $short_id<'db> {
+            fn module_file_id(&self, db: &'db dyn DefsGroup) -> ModuleFileId<'db> {
+                let long = db.$lookup(*self);
+                long.0
             }
-            fn untyped_stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
-                self.stable_ptr(db).untyped()
+            fn untyped_stable_ptr(&self, db: &'db dyn DefsGroup) -> SyntaxStablePtrId<'db> {
+                let stable_ptr = self.stable_ptr(db);
+                stable_ptr.untyped()
             }
-            fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation {
+            fn stable_location(&self, db: &'db dyn DefsGroup) -> StableLocation<'db> {
                 let $long_id(_module_file_id, stable_ptr) = db.$lookup(*self);
                 StableLocation::new(stable_ptr.untyped())
             }
@@ -164,6 +174,25 @@ macro_rules! define_language_element_id_basic {
 
 /// Defines and implements LanguageElementId for a subset of other language elements.
 macro_rules! define_language_element_id_as_enum {
+    (
+        #[toplevel]
+        $(#[doc = $doc:expr])*
+        pub enum $enum_name:ident<$lifetime:lifetime> {
+            $($variant:ident ($variant_ty:ty),)*
+        }
+    ) => {
+        toplevel_enum! {
+            pub enum $enum_name<$lifetime> {
+                $($variant($variant_ty),)*
+            }
+        }
+        define_language_element_id_as_enum! {
+            $(#[doc = $doc])*
+            pub enum $enum_name<$lifetime> {
+                $($variant($variant_ty),)*
+            }
+        }
+    };
     (
         #[toplevel]
         $(#[doc = $doc:expr])*
@@ -185,24 +214,23 @@ macro_rules! define_language_element_id_as_enum {
     };
     (
         $(#[doc = $doc:expr])*
-        pub enum $enum_name:ident {
+        pub enum $enum_name:ident<$lifetime:lifetime> {
             $($variant:ident ($variant_ty:ty),)*
         }
     ) => {
         $(#[doc = $doc])*
-        #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-        pub enum $enum_name {
+        #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+        pub enum $enum_name<$lifetime> {
             $($variant($variant_ty),)*
         }
-        impl<T: ?Sized + cairo_lang_utils::Upcast<dyn DefsGroup + 'static>> cairo_lang_debug::DebugWithDb<T>
-            for $enum_name
-        {
+        impl<'db> cairo_lang_debug::DebugWithDb<'db> for $enum_name<'_> {
+            type Db = dyn DefsGroup;
+
             fn fmt(
                 &self,
                 f: &mut std::fmt::Formatter<'_>,
-                db: &T,
+                db: &'db dyn DefsGroup,
             ) -> std::fmt::Result {
-                let db : &(dyn DefsGroup + 'static) = db.upcast();
                 match self {
                     $(
                         $enum_name::$variant(id) => id.fmt(f, db),
@@ -210,8 +238,73 @@ macro_rules! define_language_element_id_as_enum {
                 }
             }
         }
-        impl LanguageElementId for $enum_name {
-            fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId {
+        impl<'db> LanguageElementId<'db> for $enum_name<'db> {
+            fn module_file_id(&self, db: &'db dyn DefsGroup) -> ModuleFileId<'db> {
+                match self {
+                    $(
+                        $enum_name::$variant(id) => id.module_file_id(db),
+                    )*
+                }
+            }
+            fn untyped_stable_ptr(&self, db: &'db dyn DefsGroup) -> SyntaxStablePtrId<'db> {
+                match self {
+                    $(
+                        $enum_name::$variant(id) => id.untyped_stable_ptr(db),
+                    )*
+                }
+            }
+            fn stable_location(&self, db: &'db dyn DefsGroup) -> StableLocation<'db> {
+                 match self {
+                    $(
+                        $enum_name::$variant(id) => id.stable_location(db),
+                    )*
+                }
+            }
+
+        }
+
+        // Conversion from enum to its child.
+        $(
+            impl<$lifetime> OptionFrom<$enum_name<$lifetime>> for $variant_ty {
+                fn option_from(other: $enum_name<$lifetime>) -> Option<Self> {
+                    #[allow(irrefutable_let_patterns)]
+                    if let $enum_name::$variant(id) = other {
+                        Some(id)
+                    } else {
+                        None
+                    }
+                }
+            }
+        )*
+    };
+    (
+        $(#[doc = $doc:expr])*
+        pub enum $enum_name:ident {
+            $($variant:ident ($variant_ty:ty),)*
+        }
+    ) => {
+        $(#[doc = $doc])*
+        #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+        pub enum $enum_name {
+            $($variant($variant_ty),)*
+        }
+        impl<'db> cairo_lang_debug::DebugWithDb<'db, dyn DefsGroup>
+            for $enum_name
+        {
+            fn fmt(
+                &self,
+                f: &mut std::fmt::Formatter<'_>,
+                db: &'db dyn DefsGroup,
+            ) -> std::fmt::Result {
+                match self {
+                    $(
+                        $enum_name::$variant(id) => id.fmt(f, db),
+                    )*
+                }
+            }
+        }
+        impl<'db> LanguageElementId<'db> for $enum_name {
+            fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId<'db> {
                 match self {
                     $(
                         $enum_name::$variant(id) => id.module_file_id(db),
@@ -253,11 +346,11 @@ macro_rules! define_language_element_id_as_enum {
 
 macro_rules! toplevel_enum {
     (
-        pub enum $enum_name:ident {
+        pub enum $enum_name:ident<$lifetime:lifetime> {
             $($variant:ident ($variant_ty:ty),)*
         }
     ) => {
-        impl NamedLanguageElementId for $enum_name {
+        impl<'db> NamedLanguageElementId<'db> for $enum_name<'db> {
             fn name(&self, db: &dyn DefsGroup) -> SmolStr {
                 match self {
                     $(
@@ -265,7 +358,7 @@ macro_rules! toplevel_enum {
                     )*
                 }
             }
-            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
+            fn name_identifier(&'db self, db: &'db dyn DefsGroup) -> ast::TerminalIdentifier<'db> {
                 match self {
                     $(
                         $enum_name::$variant(id) => id.name_identifier(db),
@@ -273,17 +366,40 @@ macro_rules! toplevel_enum {
                 }
             }
         }
-        impl TopLevelLanguageElementId for $enum_name {}
+        impl<'db> TopLevelLanguageElementId<'db> for $enum_name<'db> {}
+    };
+    (
+        pub enum $enum_name:ident {
+            $($variant:ident ($variant_ty:ty),)*
+        }
+    ) => {
+        impl<'db> NamedLanguageElementId<'db> for $enum_name {
+            fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+                match self {
+                    $(
+                        $enum_name::$variant(id) => id.name(db),
+                    )*
+                }
+            }
+            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier<'db> {
+                match self {
+                    $(
+                        $enum_name::$variant(id) => id.name_identifier(db),
+                    )*
+                }
+            }
+        }
+        impl<'db> TopLevelLanguageElementId<'db> for $enum_name {}
     }
 }
 
 /// Id for a module. Either the root module of a crate, or a submodule.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub enum ModuleId {
-    CrateRoot(CrateId),
-    Submodule(SubmoduleId),
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+pub enum ModuleId<'db> {
+    CrateRoot(CrateId<'db>),
+    Submodule(SubmoduleId<'db>),
 }
-impl ModuleId {
+impl<'db> ModuleId<'db> {
     pub fn full_path(&self, db: &dyn DefsGroup) -> String {
         match self {
             ModuleId::CrateRoot(id) => id.lookup_intern(db).name().into(),
@@ -298,42 +414,47 @@ impl ModuleId {
             ModuleId::Submodule(id) => id.name(db),
         }
     }
-    pub fn owning_crate(&self, db: &dyn DefsGroup) -> CrateId {
+    pub fn owning_crate(&self, db: &'db dyn DefsGroup) -> CrateId<'db> {
         match self {
             ModuleId::CrateRoot(crate_id) => *crate_id,
-            ModuleId::Submodule(submodule) => submodule.parent_module(db).owning_crate(db),
+            ModuleId::Submodule(submodule) => {
+                let parent: ModuleId<'db> = submodule.parent_module(db);
+                parent.owning_crate(db)
+            }
         }
     }
 }
-impl DebugWithDb<dyn DefsGroup> for ModuleId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
+impl<'db> DebugWithDb<'db> for ModuleId<'db> {
+    type Db = dyn DefsGroup;
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn DefsGroup) -> std::fmt::Result {
         write!(f, "ModuleId({})", self.full_path(db))
     }
 }
 /// Index of file in module.
-#[derive(Copy, Clone, Debug, Default, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Default, Hash, PartialEq, Eq, salsa::Update)]
 pub struct FileIndex(pub usize);
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct ModuleFileId(pub ModuleId, pub FileIndex);
-impl ModuleFileId {
-    pub fn file_id(&self, db: &dyn DefsGroup) -> Maybe<FileId> {
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+pub struct ModuleFileId<'db>(pub ModuleId<'db>, pub FileIndex);
+impl<'db> ModuleFileId<'db> {
+    pub fn file_id(&self, db: &'db dyn DefsGroup) -> Maybe<FileId<'db>> {
         Ok(db.module_files(self.0)?[self.1.0])
     }
 }
 
 /// An id for a file defined out of the filesystem crate, for files generated by plugins.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct PluginGeneratedFileLongId {
+pub struct PluginGeneratedFileLongId<'db> {
     /// The module that the file was generated from.
-    pub module_id: ModuleId,
+    pub module_id: ModuleId<'db>,
     /// The stable pointer the file was generated from being ran on.
-    pub stable_ptr: SyntaxStablePtrId,
+    pub stable_ptr: SyntaxStablePtrId<'db>,
     /// The name of the generated file to differentiate between different generated files.
     pub name: SmolStr,
 }
 define_short_id!(
     PluginGeneratedFileId,
-    PluginGeneratedFileLongId,
+    PluginGeneratedFileLongId<'db>,
     DefsGroup,
     lookup_intern_plugin_generated_file,
     intern_plugin_generated_file
@@ -344,12 +465,12 @@ define_short_id!(
 pub struct MacroPluginLongId(pub Arc<dyn MacroPlugin>);
 
 impl MacroPlugin for MacroPluginLongId {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         metadata: &crate::plugin::MacroPluginMetadata<'_>,
-    ) -> crate::plugin::PluginResult {
+    ) -> crate::plugin::PluginResult<'db> {
         self.0.generate_code(db, item_ast, metadata)
     }
 
@@ -405,12 +526,12 @@ define_short_id!(
 pub struct InlineMacroExprPluginLongId(pub Arc<dyn InlineMacroExprPlugin>);
 
 impl InlineMacroExprPlugin for InlineMacroExprPluginLongId {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        item_ast: &ast::ExprInlineMacro<'db>,
         metadata: &crate::plugin::MacroPluginMetadata<'_>,
-    ) -> crate::plugin::InlinePluginResult {
+    ) -> crate::plugin::InlinePluginResult<'db> {
         self.0.generate_code(db, item_ast, metadata)
     }
 
@@ -452,81 +573,81 @@ define_short_id!(
 define_language_element_id_as_enum! {
     #[toplevel]
     /// Id for direct children of a module.
-    pub enum ModuleItemId {
-        Constant(ConstantId),
-        Submodule(SubmoduleId),
-        Use(UseId),
-        FreeFunction(FreeFunctionId),
-        Struct(StructId),
-        Enum(EnumId),
-        TypeAlias(ModuleTypeAliasId),
-        ImplAlias(ImplAliasId),
-        Trait(TraitId),
-        Impl(ImplDefId),
-        ExternType(ExternTypeId),
-        ExternFunction(ExternFunctionId),
-        MacroDeclaration(MacroDeclarationId),
+    pub enum ModuleItemId<'db> {
+        Constant(ConstantId<'db>),
+        Submodule(SubmoduleId<'db>),
+        Use(UseId<'db>),
+        FreeFunction(FreeFunctionId<'db>),
+        Struct(StructId<'db>),
+        Enum(EnumId<'db>),
+        TypeAlias(ModuleTypeAliasId<'db>),
+        ImplAlias(ImplAliasId<'db>),
+        Trait(TraitId<'db>),
+        Impl(ImplDefId<'db>),
+        ExternType(ExternTypeId<'db>),
+        ExternFunction(ExternFunctionId<'db>),
+        MacroDeclaration(MacroDeclarationId<'db>),
     }
 }
 
 /// Id for an item that can be brought into scope with a `use` statement.
 /// Basically [`ModuleItemId`] without [`UseId`] and with [`VariantId`] and [`CrateId`].
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub enum ImportableId {
-    Constant(ConstantId),
-    Submodule(SubmoduleId),
-    Crate(CrateId),
-    FreeFunction(FreeFunctionId),
-    Struct(StructId),
-    Enum(EnumId),
-    Variant(VariantId),
-    TypeAlias(ModuleTypeAliasId),
-    ImplAlias(ImplAliasId),
-    Trait(TraitId),
-    Impl(ImplDefId),
-    ExternType(ExternTypeId),
-    ExternFunction(ExternFunctionId),
-    MacroDeclaration(MacroDeclarationId),
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+pub enum ImportableId<'db> {
+    Constant(ConstantId<'db>),
+    Submodule(SubmoduleId<'db>),
+    Crate(CrateId<'db>),
+    FreeFunction(FreeFunctionId<'db>),
+    Struct(StructId<'db>),
+    Enum(EnumId<'db>),
+    Variant(VariantId<'db>),
+    TypeAlias(ModuleTypeAliasId<'db>),
+    ImplAlias(ImplAliasId<'db>),
+    Trait(TraitId<'db>),
+    Impl(ImplDefId<'db>),
+    ExternType(ExternTypeId<'db>),
+    ExternFunction(ExternFunctionId<'db>),
+    MacroDeclaration(MacroDeclarationId<'db>),
 }
 
 define_top_level_language_element_id!(
     SubmoduleId,
     SubmoduleLongId,
-    ast::ItemModule,
+    ast::ItemModule<'db>,
     lookup_intern_submodule,
     intern_submodule
 );
-impl UnstableSalsaId for SubmoduleId {
-    fn get_internal_id(&self) -> &salsa::InternId {
-        &self.0
+impl<'db> UnstableSalsaId for SubmoduleId<'db> {
+    fn get_internal_id(&self) -> salsa::Id {
+        self.0
     }
 }
 
 define_top_level_language_element_id!(
     ConstantId,
     ConstantLongId,
-    ast::ItemConstant,
+    ast::ItemConstant<'db>,
     lookup_intern_constant,
     intern_constant
 );
 define_language_element_id_basic!(
     GlobalUseId,
     GlobalUseLongId,
-    ast::UsePathStar,
+    ast::UsePathStar<'db>,
     lookup_intern_global_use,
     intern_global_use
 );
 define_top_level_language_element_id!(
     UseId,
     UseLongId,
-    ast::UsePathLeaf,
+    ast::UsePathLeaf<'db>,
     lookup_intern_use,
     intern_use
 );
 define_top_level_language_element_id!(
     FreeFunctionId,
     FreeFunctionLongId,
-    ast::FunctionWithBody,
+    ast::FunctionWithBody<'db>,
     lookup_intern_free_function,
     intern_free_function
 );
@@ -534,7 +655,7 @@ define_top_level_language_element_id!(
 define_top_level_language_element_id!(
     MacroDeclarationId,
     MacroDeclarationLongId,
-    ast::ItemMacroDeclaration,
+    ast::ItemMacroDeclaration<'db>,
     lookup_intern_macro_declaration,
     intern_macro_declaration
 );
@@ -542,14 +663,14 @@ define_top_level_language_element_id!(
 define_language_element_id_basic!(
     MacroCallId,
     MacroCallLongId,
-    ast::ItemInlineMacro,
+    ast::ItemInlineMacro<'db>,
     lookup_intern_macro_call,
     intern_macro_call
 );
 
-impl UnstableSalsaId for FreeFunctionId {
-    fn get_internal_id(&self) -> &salsa::InternId {
-        &self.0
+impl<'db> UnstableSalsaId for FreeFunctionId<'db> {
+    fn get_internal_id(&self) -> salsa::Id {
+        self.0
     }
 }
 
@@ -557,7 +678,7 @@ impl UnstableSalsaId for FreeFunctionId {
 define_top_level_language_element_id!(
     ImplDefId,
     ImplDefLongId,
-    ast::ItemImpl,
+    ast::ItemImpl<'db>,
     lookup_intern_impl_def,
     intern_impl_def
 );
@@ -566,12 +687,12 @@ define_top_level_language_element_id!(
 define_named_language_element_id!(
     ImplTypeDefId,
     ImplTypeDefLongId,
-    ast::ItemTypeAlias,
+    ast::ItemTypeAlias<'db>,
     lookup_intern_impl_type_def,
     intern_impl_type_def
 );
-impl ImplTypeDefId {
-    pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
+impl<'db> ImplTypeDefId<'db> {
+    pub fn impl_def_id(&self, db: &'db dyn DefsGroup) -> ImplDefId<'db> {
         let ImplTypeDefLongId(module_file_id, ptr) = self.lookup_intern(db);
 
         // Impl type ast lies 3 levels below the impl ast.
@@ -579,7 +700,7 @@ impl ImplTypeDefId {
         ImplDefLongId(module_file_id, impl_ptr).intern(db)
     }
 }
-impl TopLevelLanguageElementId for ImplTypeDefId {
+impl<'db> TopLevelLanguageElementId<'db> for ImplTypeDefId<'db> {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.impl_def_id(db).full_path(db), self.name(db))
     }
@@ -589,12 +710,12 @@ impl TopLevelLanguageElementId for ImplTypeDefId {
 define_named_language_element_id!(
     ImplConstantDefId,
     ImplConstantDefLongId,
-    ast::ItemConstant,
+    ast::ItemConstant<'db>,
     lookup_intern_impl_constant_def,
     intern_impl_constant_def
 );
-impl ImplConstantDefId {
-    pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
+impl<'db> ImplConstantDefId<'db> {
+    pub fn impl_def_id(&self, db: &'db dyn DefsGroup) -> ImplDefId<'db> {
         let ImplConstantDefLongId(module_file_id, ptr) = self.lookup_intern(db);
 
         // Impl constant ast lies 3 levels below the impl ast.
@@ -602,7 +723,7 @@ impl ImplConstantDefId {
         ImplDefLongId(module_file_id, impl_ptr).intern(db)
     }
 }
-impl TopLevelLanguageElementId for ImplConstantDefId {
+impl<'db> TopLevelLanguageElementId<'db> for ImplConstantDefId<'db> {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.impl_def_id(db).full_path(db), self.name(db))
     }
@@ -612,12 +733,12 @@ impl TopLevelLanguageElementId for ImplConstantDefId {
 define_named_language_element_id!(
     ImplImplDefId,
     ImplImplDefLongId,
-    ast::ItemImplAlias,
+    ast::ItemImplAlias<'db>,
     lookup_intern_impl_impl_def,
     intern_impl_impl_def
 );
-impl ImplImplDefId {
-    pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
+impl<'db> ImplImplDefId<'db> {
+    pub fn impl_def_id(&self, db: &'db dyn DefsGroup) -> ImplDefId<'db> {
         let ImplImplDefLongId(module_file_id, ptr) = self.lookup_intern(db);
 
         // Impl constant ast lies 3 levels below the impl ast.
@@ -625,7 +746,7 @@ impl ImplImplDefId {
         ImplDefLongId(module_file_id, impl_ptr).intern(db)
     }
 }
-impl TopLevelLanguageElementId for ImplImplDefId {
+impl<'db> TopLevelLanguageElementId<'db> for ImplImplDefId<'db> {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.impl_def_id(db).full_path(db), self.name(db))
     }
@@ -635,12 +756,12 @@ impl TopLevelLanguageElementId for ImplImplDefId {
 define_named_language_element_id!(
     ImplFunctionId,
     ImplFunctionLongId,
-    ast::FunctionWithBody,
+    ast::FunctionWithBody<'db>,
     lookup_intern_impl_function,
     intern_impl_function
 );
-impl ImplFunctionId {
-    pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
+impl<'db> ImplFunctionId<'db> {
+    pub fn impl_def_id(&self, db: &'db dyn DefsGroup) -> ImplDefId<'db> {
         let ImplFunctionLongId(module_file_id, ptr) = self.lookup_intern(db);
 
         // Impl function ast lies 3 levels below the impl ast.
@@ -648,12 +769,12 @@ impl ImplFunctionId {
         ImplDefLongId(module_file_id, impl_ptr).intern(db)
     }
 }
-impl UnstableSalsaId for ImplFunctionId {
-    fn get_internal_id(&self) -> &salsa::InternId {
-        &self.0
+impl<'db> UnstableSalsaId for ImplFunctionId<'db> {
+    fn get_internal_id(&self) -> salsa::Id {
+        self.0
     }
 }
-impl TopLevelLanguageElementId for ImplFunctionId {
+impl<'db> TopLevelLanguageElementId<'db> for ImplFunctionId<'db> {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.impl_def_id(db).full_path(db), self.name(db))
     }
@@ -662,52 +783,52 @@ impl TopLevelLanguageElementId for ImplFunctionId {
 define_language_element_id_as_enum! {
     #[toplevel]
     /// Represents a function that has a body.
-    pub enum FunctionWithBodyId {
-        Free(FreeFunctionId),
-        Impl(ImplFunctionId),
-        Trait(TraitFunctionId),
+    pub enum FunctionWithBodyId<'db> {
+        Free(FreeFunctionId<'db>),
+        Impl(ImplFunctionId<'db>),
+        Trait(TraitFunctionId<'db>),
     }
 }
 
 define_top_level_language_element_id!(
     ExternFunctionId,
     ExternFunctionLongId,
-    ast::ItemExternFunction,
+    ast::ItemExternFunction<'db>,
     lookup_intern_extern_function,
     intern_extern_function
 );
 define_top_level_language_element_id!(
     StructId,
     StructLongId,
-    ast::ItemStruct,
+    ast::ItemStruct<'db>,
     lookup_intern_struct,
     intern_struct
 );
 define_top_level_language_element_id!(
     EnumId,
     EnumLongId,
-    ast::ItemEnum,
+    ast::ItemEnum<'db>,
     lookup_intern_enum,
     intern_enum
 );
 define_top_level_language_element_id!(
     ModuleTypeAliasId,
     ModuleTypeAliasLongId,
-    ast::ItemTypeAlias,
+    ast::ItemTypeAlias<'db>,
     lookup_intern_module_type_alias,
     intern_module_type_alias
 );
 define_top_level_language_element_id!(
     ImplAliasId,
     ImplAliasLongId,
-    ast::ItemImplAlias,
+    ast::ItemImplAlias<'db>,
     lookup_intern_impl_alias,
     intern_impl_alias
 );
 define_top_level_language_element_id!(
     ExternTypeId,
     ExternTypeLongId,
-    ast::ItemExternType,
+    ast::ItemExternType<'db>,
     lookup_intern_extern_type,
     intern_extern_type
 );
@@ -716,7 +837,7 @@ define_top_level_language_element_id!(
 define_top_level_language_element_id!(
     TraitId,
     TraitLongId,
-    ast::ItemTrait,
+    ast::ItemTrait<'db>,
     lookup_intern_trait,
     intern_trait
 );
@@ -725,26 +846,26 @@ define_top_level_language_element_id!(
 define_named_language_element_id!(
     TraitTypeId,
     TraitTypeLongId,
-    ast::TraitItemType,
+    ast::TraitItemType<'db>,
     lookup_intern_trait_type,
     intern_trait_type
 );
-impl TraitTypeId {
-    pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
+impl<'db> TraitTypeId<'db> {
+    pub fn trait_id(&self, db: &'db dyn DefsGroup) -> TraitId<'db> {
         let TraitTypeLongId(module_file_id, ptr) = self.lookup_intern(db);
         // Trait type ast lies 3 levels below the trait ast.
         let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
     }
 }
-impl TopLevelLanguageElementId for TraitTypeId {
+impl<'db> TopLevelLanguageElementId<'db> for TraitTypeId<'db> {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.trait_id(db).full_path(db), self.name(db))
     }
 }
-impl UnstableSalsaId for TraitTypeId {
-    fn get_internal_id(&self) -> &salsa::InternId {
-        &self.0
+impl<'db> UnstableSalsaId for TraitTypeId<'db> {
+    fn get_internal_id(&self) -> salsa::Id {
+        self.0
     }
 }
 
@@ -752,19 +873,19 @@ impl UnstableSalsaId for TraitTypeId {
 define_named_language_element_id!(
     TraitConstantId,
     TraitConstantLongId,
-    ast::TraitItemConstant,
+    ast::TraitItemConstant<'db>,
     lookup_intern_trait_constant,
     intern_trait_constant
 );
-impl TraitConstantId {
-    pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
+impl<'db> TraitConstantId<'db> {
+    pub fn trait_id(&self, db: &'db dyn DefsGroup) -> TraitId<'db> {
         let TraitConstantLongId(module_file_id, ptr) = self.lookup_intern(db);
         // Trait constant ast lies 3 levels below the trait ast.
         let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
     }
 }
-impl TopLevelLanguageElementId for TraitConstantId {
+impl<'db> TopLevelLanguageElementId<'db> for TraitConstantId<'db> {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.trait_id(db).full_path(db), self.name(db))
     }
@@ -774,19 +895,19 @@ impl TopLevelLanguageElementId for TraitConstantId {
 define_named_language_element_id!(
     TraitImplId,
     TraitImplLongId,
-    ast::TraitItemImpl,
+    ast::TraitItemImpl<'db>,
     lookup_intern_trait_impl,
     intern_trait_impl
 );
-impl TraitImplId {
-    pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
+impl<'db> TraitImplId<'db> {
+    pub fn trait_id(&self, db: &'db dyn DefsGroup) -> TraitId<'db> {
         let TraitImplLongId(module_file_id, ptr) = self.lookup_intern(db);
         // Trait impl ast lies 3 levels below the trait ast.
         let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
     }
 }
-impl TopLevelLanguageElementId for TraitImplId {
+impl<'db> TopLevelLanguageElementId<'db> for TraitImplId<'db> {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.trait_id(db).full_path(db), self.name(db))
     }
@@ -796,19 +917,19 @@ impl TopLevelLanguageElementId for TraitImplId {
 define_named_language_element_id!(
     TraitFunctionId,
     TraitFunctionLongId,
-    ast::TraitItemFunction,
+    ast::TraitItemFunction<'db>,
     lookup_intern_trait_function,
     intern_trait_function
 );
-impl TraitFunctionId {
-    pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
+impl<'db> TraitFunctionId<'db> {
+    pub fn trait_id(&self, db: &'db dyn DefsGroup) -> TraitId<'db> {
         let TraitFunctionLongId(module_file_id, ptr) = self.lookup_intern(db);
         // Trait function ast lies 3 levels below the trait ast.
         let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
     }
 }
-impl TopLevelLanguageElementId for TraitFunctionId {
+impl<'db> TopLevelLanguageElementId<'db> for TraitFunctionId<'db> {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.trait_id(db).full_path(db), self.name(db))
     }
@@ -818,19 +939,19 @@ impl TopLevelLanguageElementId for TraitFunctionId {
 define_named_language_element_id!(
     MemberId,
     MemberLongId,
-    ast::Member,
+    ast::Member<'db>,
     lookup_intern_member,
     intern_member
 );
-impl MemberId {
-    pub fn struct_id(&self, db: &dyn DefsGroup) -> StructId {
+impl<'db> MemberId<'db> {
+    pub fn struct_id(&self, db: &'db dyn DefsGroup) -> StructId<'db> {
         let MemberLongId(module_file_id, ptr) = self.lookup_intern(db);
         let struct_ptr = ast::ItemStructPtr(ptr.untyped().nth_parent(db, 2));
         StructLongId(module_file_id, struct_ptr).intern(db)
     }
 }
 
-impl TopLevelLanguageElementId for MemberId {
+impl<'db> TopLevelLanguageElementId<'db> for MemberId<'db> {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.struct_id(db).full_path(db), self.name(db))
     }
@@ -840,19 +961,19 @@ impl TopLevelLanguageElementId for MemberId {
 define_named_language_element_id!(
     VariantId,
     VariantLongId,
-    ast::Variant,
+    ast::Variant<'db>,
     lookup_intern_variant,
     intern_variant
 );
-impl VariantId {
-    pub fn enum_id(&self, db: &dyn DefsGroup) -> EnumId {
+impl<'db> VariantId<'db> {
+    pub fn enum_id(&self, db: &'db dyn DefsGroup) -> EnumId<'db> {
         let VariantLongId(module_file_id, ptr) = self.lookup_intern(db);
         let struct_ptr = ast::ItemEnumPtr(ptr.untyped().nth_parent(db, 2));
         EnumLongId(module_file_id, struct_ptr).intern(db)
     }
 }
 
-impl TopLevelLanguageElementId for VariantId {
+impl<'db> TopLevelLanguageElementId<'db> for VariantId<'db> {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.enum_id(db).full_path(db), self.name(db))
     }
@@ -860,10 +981,10 @@ impl TopLevelLanguageElementId for VariantId {
 
 define_language_element_id_as_enum! {
     /// Id for any variable definition.
-    pub enum VarId {
-        Param(ParamId),
-        Local(LocalVarId),
-        Item(StatementItemId),
+    pub enum VarId<'db> {
+        Param(ParamId<'db>),
+        Local(LocalVarId<'db>),
+        Item(StatementItemId<'db>),
         // TODO(spapini): Add var from pattern matching.
     }
 }
@@ -872,18 +993,18 @@ define_language_element_id_as_enum! {
 define_top_level_language_element_id!(
     ParamId,
     ParamLongId,
-    ast::Param,
+    ast::Param<'db>,
     lookup_intern_param,
     intern_param
 );
 define_language_element_id_basic!(
     GenericParamId,
     GenericParamLongId,
-    ast::GenericParam,
+    ast::GenericParam<'db>,
     lookup_intern_generic_param,
     intern_generic_param
 );
-impl GenericParamLongId {
+impl<'db> GenericParamLongId<'db> {
     pub fn name(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
         let SyntaxStablePtr::Child { key_fields, kind, .. } = self.1.0.lookup_intern(db) else {
             unreachable!()
@@ -915,12 +1036,12 @@ impl GenericParamLongId {
         }
     }
     /// Retrieves the ID of the generic item holding this generic parameter.
-    pub fn generic_item(&self, db: &dyn DefsGroup) -> GenericItemId {
+    pub fn generic_item<'s, 'd: 's>(&'s self, db: &'d dyn DefsGroup) -> GenericItemId<'s> {
         let item_ptr = self.1.0.nth_parent(db, 3);
         GenericItemId::from_ptr(db, self.0, item_ptr)
     }
 }
-impl GenericParamId {
+impl<'db> GenericParamId<'db> {
     pub fn name(&self, db: &dyn DefsGroup) -> Option<SmolStr> {
         self.lookup_intern(db).name(db)
     }
@@ -948,12 +1069,14 @@ impl GenericParamId {
     pub fn kind(&self, db: &dyn DefsGroup) -> GenericKind {
         self.lookup_intern(db).kind(db)
     }
-    pub fn generic_item(&self, db: &dyn DefsGroup) -> GenericItemId {
-        self.lookup_intern(db).generic_item(db)
+    pub fn generic_item(&self, db: &'db dyn DefsGroup) -> GenericItemId<'db> {
+        self.long(db).generic_item(db)
     }
 }
-impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
+impl<'db> DebugWithDb<'db> for GenericParamLongId<'db> {
+    type Db = dyn DefsGroup;
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn DefsGroup) -> std::fmt::Result {
         write!(
             f,
             "GenericParam{}({}::{})",
@@ -967,49 +1090,49 @@ impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
 define_language_element_id_as_enum! {
     #[toplevel]
     /// The ID of a module item with generic parameters.
-    pub enum GenericModuleItemId {
-        FreeFunc(FreeFunctionId),
-        ExternFunc(ExternFunctionId),
-        TraitFunc(TraitFunctionId),
-        ImplFunc(ImplFunctionId),
-        Trait(TraitId),
-        Impl(ImplDefId),
-        Struct(StructId),
-        Enum(EnumId),
-        ExternType(ExternTypeId),
-        TypeAlias(ModuleTypeAliasId),
-        ImplAlias(ImplAliasId),
+    pub enum GenericModuleItemId<'db> {
+        FreeFunc(FreeFunctionId<'db>),
+        ExternFunc(ExternFunctionId<'db>),
+        TraitFunc(TraitFunctionId<'db>),
+        ImplFunc(ImplFunctionId<'db>),
+        Trait(TraitId<'db>),
+        Impl(ImplDefId<'db>),
+        Struct(StructId<'db>),
+        Enum(EnumId<'db>),
+        ExternType(ExternTypeId<'db>),
+        TypeAlias(ModuleTypeAliasId<'db>),
+        ImplAlias(ImplAliasId<'db>),
     }
 }
 define_language_element_id_as_enum! {
     #[toplevel]
     /// The ID of a trait item with generic parameters.
-    pub enum GenericTraitItemId {
-        Type(TraitTypeId),
+    pub enum GenericTraitItemId<'db> {
+        Type(TraitTypeId<'db>),
     }
 }
 define_language_element_id_as_enum! {
     #[toplevel]
     /// The ID of a impl item with generic parameters.
-    pub enum GenericImplItemId {
-        Type(ImplTypeDefId),
+    pub enum GenericImplItemId<'db> {
+        Type(ImplTypeDefId<'db>),
     }
 }
 
 define_language_element_id_as_enum! {
     #[toplevel]
     /// The ID of an item with generic parameters.
-    pub enum GenericItemId {
-        ModuleItem(GenericModuleItemId),
-        TraitItem(GenericTraitItemId),
-        ImplItem(GenericImplItemId),
+    pub enum GenericItemId<'db> {
+        ModuleItem(GenericModuleItemId<'db>),
+        TraitItem(GenericTraitItemId<'db>),
+        ImplItem(GenericImplItemId<'db>),
     }
 }
-impl GenericItemId {
+impl<'db> GenericItemId<'db> {
     pub fn from_ptr(
-        db: &dyn DefsGroup,
-        module_file: ModuleFileId,
-        stable_ptr: SyntaxStablePtrId,
+        db: &'db dyn DefsGroup,
+        module_file: ModuleFileId<'db>,
+        stable_ptr: SyntaxStablePtrId<'db>,
     ) -> Self {
         let SyntaxStablePtr::Child { parent: parent0, kind, .. } = stable_ptr.lookup_intern(db)
         else {
@@ -1119,7 +1242,7 @@ impl GenericItemId {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, salsa::Update)]
 pub enum GenericKind {
     Type,
     Const,
@@ -1142,12 +1265,14 @@ impl std::fmt::Display for GenericKind {
 define_language_element_id_basic!(
     LocalVarId,
     LocalVarLongId,
-    ast::TerminalIdentifier,
+    ast::TerminalIdentifier<'db>,
     lookup_intern_local_var,
     intern_local_var
 );
-impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
+impl<'db> DebugWithDb<'db> for LocalVarLongId<'db> {
+    type Db = dyn DefsGroup;
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn DefsGroup) -> std::fmt::Result {
         let LocalVarLongId(module_file_id, ptr) = self;
         let text = ptr.lookup(db).text(db);
         write!(f, "LocalVarId({}::{})", module_file_id.0.full_path(db), text)
@@ -1157,7 +1282,7 @@ impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
 define_top_level_language_element_id!(
     StatementConstId,
     StatementConstLongId,
-    ast::ItemConstant,
+    ast::ItemConstant<'db>,
     lookup_intern_statement_const,
     intern_statement_const
 );
@@ -1165,7 +1290,7 @@ define_top_level_language_element_id!(
 define_top_level_language_element_id!(
     StatementUseId,
     StatementUseLongId,
-    ast::UsePathLeaf,
+    ast::UsePathLeaf<'db>,
     lookup_intern_statement_use,
     intern_statement_use
 );
@@ -1173,14 +1298,14 @@ define_top_level_language_element_id!(
 define_language_element_id_as_enum! {
     #[toplevel]
     /// The ID of a function's signature in the code.
-    pub enum FunctionTitleId {
-        Free(FreeFunctionId),
-        Extern(ExternFunctionId),
-        Trait(TraitFunctionId),
-        Impl(ImplFunctionId),
+    pub enum FunctionTitleId<'db> {
+        Free(FreeFunctionId<'db>),
+        Extern(ExternFunctionId<'db>),
+        Trait(TraitFunctionId<'db>),
+        Impl(ImplFunctionId<'db>),
     }
 }
-impl FunctionTitleId {
+impl<'db> FunctionTitleId<'db> {
     pub fn format(&self, db: &dyn DefsGroup) -> String {
         let function_name = match *self {
             FunctionTitleId::Free(_) | FunctionTitleId::Extern(_) => self.name(db).into(),
@@ -1194,22 +1319,22 @@ impl FunctionTitleId {
 define_language_element_id_as_enum! {
     #[toplevel]
     /// Generic type ids enum.
-    pub enum GenericTypeId {
-        Struct(StructId),
-        Enum(EnumId),
-        Extern(ExternTypeId),
+    pub enum GenericTypeId<'db> {
+        Struct(StructId<'db>),
+        Enum(EnumId<'db>),
+        Extern(ExternTypeId<'db>),
         // TODO(spapini): associated types in impls.
     }
 }
-impl GenericTypeId {
+impl<'db> GenericTypeId<'db> {
     pub fn format(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
     }
 }
 
 /// Conversion from ModuleItemId to GenericTypeId.
-impl OptionFrom<ModuleItemId> for GenericTypeId {
-    fn option_from(item: ModuleItemId) -> Option<Self> {
+impl<'db> OptionFrom<ModuleItemId<'db>> for GenericTypeId<'db> {
+    fn option_from(item: ModuleItemId<'db>) -> Option<Self> {
         match item {
             ModuleItemId::Struct(id) => Some(GenericTypeId::Struct(id)),
             ModuleItemId::Enum(id) => Some(GenericTypeId::Enum(id)),
@@ -1229,8 +1354,8 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
 }
 
 // Conversion from GenericItemId to LookupItemId.
-impl From<GenericItemId> for LookupItemId {
-    fn from(item: GenericItemId) -> Self {
+impl<'db> From<GenericItemId<'db>> for LookupItemId<'db> {
+    fn from(item: GenericItemId<'db>) -> Self {
         match item {
             GenericItemId::ModuleItem(module_item) => match module_item {
                 GenericModuleItemId::FreeFunc(id) => {
@@ -1273,25 +1398,30 @@ impl From<GenericItemId> for LookupItemId {
 
 define_language_element_id_as_enum! {
     #[toplevel]
-    pub enum StatementItemId {
-        Constant(StatementConstId),
-        Use(StatementUseId),
+    pub enum StatementItemId<'db> {
+        Constant(StatementConstId<'db>),
+        Use(StatementUseId<'db>),
     }
 }
 
-impl StatementItemId {
+impl<'db> StatementItemId<'db> {
     pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
         match self {
             StatementItemId::Constant(id) => id.name(db),
             StatementItemId::Use(id) => id.name(db),
         }
     }
-    pub fn name_stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
+    pub fn name_stable_ptr(&self, db: &'db dyn DefsGroup) -> SyntaxStablePtrId<'db> {
         match self {
             StatementItemId::Constant(id) => {
-                id.lookup_intern(db).1.lookup(db).name(db).stable_ptr(db).untyped()
+                let id: &StatementConstId<'db> = id;
+                let item_id = id.long(db).1.lookup(db);
+                item_id.name(db).stable_ptr(db).untyped()
             }
-            StatementItemId::Use(id) => id.lookup_intern(db).1.lookup(db).name_stable_ptr(db),
+            StatementItemId::Use(id) => {
+                let item_id = id.long(db).1.lookup(db);
+                item_id.name_stable_ptr(db)
+            }
         }
     }
 }
@@ -1299,14 +1429,14 @@ impl StatementItemId {
 define_language_element_id_as_enum! {
     #[toplevel]
     /// Id for direct children of a trait.
-    pub enum TraitItemId {
-        Function(TraitFunctionId),
-        Type(TraitTypeId),
-        Constant(TraitConstantId),
-        Impl(TraitImplId),
+    pub enum TraitItemId<'db> {
+        Function(TraitFunctionId<'db>),
+        Type(TraitTypeId<'db>),
+        Constant(TraitConstantId<'db>),
+        Impl(TraitImplId<'db>),
     }
 }
-impl TraitItemId {
+impl<'db> TraitItemId<'db> {
     pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
         match self {
             TraitItemId::Function(id) => id.name(db),
@@ -1315,7 +1445,7 @@ impl TraitItemId {
             TraitItemId::Impl(id) => id.name(db),
         }
     }
-    pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
+    pub fn trait_id(&self, db: &'db dyn DefsGroup) -> TraitId<'db> {
         match self {
             TraitItemId::Function(id) => id.trait_id(db),
             TraitItemId::Type(id) => id.trait_id(db),
@@ -1328,14 +1458,14 @@ impl TraitItemId {
 define_language_element_id_as_enum! {
     #[toplevel]
     /// Id for direct children of an impl.
-    pub enum ImplItemId {
-        Function(ImplFunctionId),
-        Type(ImplTypeDefId),
-        Constant(ImplConstantDefId),
-        Impl(ImplImplDefId),
+    pub enum ImplItemId<'db> {
+        Function(ImplFunctionId<'db>),
+        Type(ImplTypeDefId<'db>),
+        Constant(ImplConstantDefId<'db>),
+        Impl(ImplImplDefId<'db>),
     }
 }
-impl ImplItemId {
+impl<'db> ImplItemId<'db> {
     pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
         match self {
             ImplItemId::Function(id) => id.name(db),
@@ -1344,7 +1474,7 @@ impl ImplItemId {
             ImplItemId::Impl(id) => id.name(db),
         }
     }
-    pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
+    pub fn impl_def_id(&self, db: &'db dyn DefsGroup) -> ImplDefId<'db> {
         match self {
             ImplItemId::Function(id) => id.impl_def_id(db),
             ImplItemId::Type(id) => id.impl_def_id(db),
@@ -1359,9 +1489,9 @@ define_language_element_id_as_enum! {
     /// Items for resolver lookups.
     /// These are top items that hold semantic information.
     /// Semantic info lookups should be performed against these items.
-    pub enum LookupItemId {
-        ModuleItem(ModuleItemId),
-        TraitItem(TraitItemId),
-        ImplItem(ImplItemId),
+    pub enum LookupItemId<'db> {
+        ModuleItem(ModuleItemId<'db>),
+        TraitItem(TraitItemId<'db>),
+        ImplItem(ImplItemId<'db>),
     }
 }
