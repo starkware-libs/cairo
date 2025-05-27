@@ -10,7 +10,7 @@ use cairo_lang_semantic::items::module::ModuleItemInfo;
 use cairo_lang_semantic::items::visibility::Visibility;
 use cairo_lang_semantic::{Expr, GenericArgumentId, GenericParam, Parameter, TypeId};
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::{Intern, LookupIntern};
 use smol_str::SmolStr;
 
 use crate::db::DocGroup;
@@ -19,29 +19,29 @@ use crate::documentable_item::DocumentableItemId::Member;
 use crate::signature_errors::SignatureError;
 
 /// A helper struct gathering documentable item's signature data.
-pub(crate) struct DocumentableItemSignatureData {
-    pub(crate) item_id: DocumentableItemId,
+pub(crate) struct DocumentableItemSignatureData<'db> {
+    pub(crate) item_id: DocumentableItemId<'db>,
     pub(crate) name: SmolStr,
     pub(crate) visibility: Visibility,
-    pub(crate) generic_args: Option<Vec<GenericArgumentId>>,
-    pub(crate) generic_params: Option<Vec<GenericParam>>,
-    pub(crate) variants: Option<Vec<(SmolStr, TypeId)>>,
-    pub(crate) members: Option<Vec<(SmolStr, TypeId, Visibility)>>,
-    pub(crate) return_type: Option<TypeId>,
-    pub(crate) attributes: Option<Vec<Attribute>>,
-    pub(crate) params: Option<Vec<Parameter>>,
-    pub(crate) resolver_generic_params: Option<Vec<GenericParamId>>,
-    pub(crate) return_value_expr: Option<Expr>,
+    pub(crate) generic_args: Option<Vec<GenericArgumentId<'db>>>,
+    pub(crate) generic_params: Option<Vec<GenericParam<'db>>>,
+    pub(crate) variants: Option<Vec<(SmolStr, TypeId<'db>)>>,
+    pub(crate) members: Option<Vec<(SmolStr, TypeId<'db>, Visibility)>>,
+    pub(crate) return_type: Option<TypeId<'db>>,
+    pub(crate) attributes: Option<Vec<Attribute<'db>>>,
+    pub(crate) params: Option<Vec<Parameter<'db>>>,
+    pub(crate) resolver_generic_params: Option<Vec<GenericParamId<'db>>>,
+    pub(crate) return_value_expr: Option<Expr<'db>>,
     pub(crate) full_path: String,
 }
 
 /// A utility function, retrieves [`ModuleItemInfo`] for [`ModuleItemId`].
-fn get_module_item_info(
-    db: &dyn DocGroup,
-    module_item_id: ModuleItemId,
-) -> Result<ModuleItemInfo, SignatureError> {
+fn get_module_item_info<'db>(
+    db: &'db dyn DocGroup,
+    module_item_id: ModuleItemId<'db>,
+) -> Result<ModuleItemInfo<'db>, SignatureError> {
     let parent_module = module_item_id.parent_module(db);
-    let item_name = module_item_id.name(db);
+    let item_name = module_item_id.name(db).intern(db);
     if let Some(module_item_info) = db
         .module_item_info_by_name(parent_module, item_name)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(module_item_id.full_path(db)))?
@@ -54,10 +54,10 @@ fn get_module_item_info(
 
 /// Retrieves data for enum signature formatting. Returns [`SignatureError`] if any relevant data
 /// could not be retrieved from db.
-pub(crate) fn get_enum_signature_data(
-    db: &dyn DocGroup,
-    item_id: EnumId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_enum_signature_data<'db>(
+    db: &'db dyn DocGroup,
+    item_id: EnumId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::Enum(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 
@@ -65,12 +65,12 @@ pub(crate) fn get_enum_signature_data(
         .enum_variants(item_id)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(module_item_id.full_path(db)))?;
 
-    let mut variants: Vec<(SmolStr, TypeId)> = Vec::new();
+    let mut variants: Vec<(SmolStr, TypeId<'_>)> = Vec::new();
     for (name, variant_id) in enum_variants {
         let variant_semantic = db.variant_semantic(item_id, variant_id).map_err(|_| {
             SignatureError::FailedRetrievingSemanticData(module_item_id.full_path(db))
         })?;
-        variants.push((name, variant_semantic.ty));
+        variants.push((name.lookup_intern(db), variant_semantic.ty));
     }
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Enum(item_id))),
@@ -90,10 +90,10 @@ pub(crate) fn get_enum_signature_data(
 }
 
 /// Retrieves data for struct signature formatting.
-pub(crate) fn get_struct_signature_data(
-    db: &dyn DocGroup,
-    item_id: StructId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_struct_signature_data<'db>(
+    db: &'db dyn DocGroup,
+    item_id: StructId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::Struct(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 
@@ -105,7 +105,7 @@ pub(crate) fn get_struct_signature_data(
         .struct_members(item_id)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?
         .iter()
-        .map(|(name, member)| (name.clone(), member.ty, member.visibility))
+        .map(|(name, member)| (name.lookup_intern(db), member.ty, member.visibility))
         .collect();
 
     let generic_params = db
@@ -130,11 +130,11 @@ pub(crate) fn get_struct_signature_data(
 }
 
 /// Retrieves data for member signature formatting.
-pub(crate) fn get_member_signature_data(
-    db: &dyn DocGroup,
-    item_id: MemberId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
-    let name = item_id.name(db);
+pub(crate) fn get_member_signature_data<'db>(
+    db: &'db dyn DocGroup,
+    item_id: MemberId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
+    let name = item_id.name(db).intern(db);
     let struct_id = item_id.struct_id(db);
 
     if let Some(member) = db
@@ -144,7 +144,7 @@ pub(crate) fn get_member_signature_data(
     {
         Ok(DocumentableItemSignatureData {
             item_id: Member(item_id),
-            name,
+            name: name.lookup_intern(db),
             visibility: member.visibility,
             generic_args: None,
             generic_params: None,
@@ -163,10 +163,10 @@ pub(crate) fn get_member_signature_data(
 }
 
 /// Retrieves data for free function signature formatting.
-pub(crate) fn get_free_function_signature_data(
-    db: &dyn DocGroup,
-    item_id: FreeFunctionId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_free_function_signature_data<'db>(
+    db: &'db dyn DocGroup,
+    item_id: FreeFunctionId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::FreeFunction(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 
@@ -202,10 +202,10 @@ pub(crate) fn get_free_function_signature_data(
 }
 
 /// Retrieves data for trait function signature formatting.
-pub(crate) fn get_trait_function_signature_data(
-    db: &dyn DocGroup,
-    item_id: TraitFunctionId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_trait_function_signature_data<'db>(
+    db: &'db dyn DocGroup,
+    item_id: TraitFunctionId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let signature = db
         .trait_function_signature(item_id)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
@@ -236,10 +236,10 @@ pub(crate) fn get_trait_function_signature_data(
 }
 
 /// Retrieves data for impl function signature formatting.
-pub(crate) fn get_impl_function_signature_data(
-    db: &dyn DocGroup,
-    item_id: ImplFunctionId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_impl_function_signature_data<'db>(
+    db: &'db dyn DocGroup,
+    item_id: ImplFunctionId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let signature = db
         .impl_function_signature(item_id)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
@@ -266,10 +266,10 @@ pub(crate) fn get_impl_function_signature_data(
 }
 
 /// Retrieves data for constant signature formatting.
-pub(crate) fn get_constant_signature_data(
-    db: &dyn DocGroup,
-    item_id: ConstantId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_constant_signature_data<'db>(
+    db: &'db dyn DocGroup,
+    item_id: ConstantId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::Constant(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 
@@ -297,10 +297,10 @@ pub(crate) fn get_constant_signature_data(
 }
 
 /// Retrieves data for impl constant signature formatting.
-pub(crate) fn get_impl_constant_signature_data(
-    db: &dyn DocGroup,
-    item_id: ImplConstantDefId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_impl_constant_signature_data<'db>(
+    db: &'db dyn DocGroup,
+    item_id: ImplConstantDefId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let return_type = db
         .impl_constant_def_value(item_id)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?
@@ -325,10 +325,10 @@ pub(crate) fn get_impl_constant_signature_data(
 }
 
 /// Retrieves data for trait signature formatting.
-pub(crate) fn get_trait_signature_data(
-    db: &dyn DocGroup,
-    item_id: TraitId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_trait_signature_data<'db>(
+    db: &'db dyn DocGroup,
+    item_id: TraitId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::Trait(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 
@@ -354,10 +354,10 @@ pub(crate) fn get_trait_signature_data(
 }
 
 /// Retrieves data for trait const signature formatting.
-pub(crate) fn get_trait_const_signature_data(
-    db: &dyn DocGroup,
-    item_id: TraitConstantId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_trait_const_signature_data<'db>(
+    db: &'db dyn DocGroup,
+    item_id: TraitConstantId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let attributes = db
         .trait_constant_attributes(item_id)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
@@ -384,10 +384,10 @@ pub(crate) fn get_trait_const_signature_data(
 }
 
 /// Retrieves data for implementation signature formatting.
-pub(crate) fn get_impl_def_signature_data(
-    db: &dyn DocGroup,
-    item_id: ImplDefId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_impl_def_signature_data<'db>(
+    db: &'db dyn DocGroup,
+    item_id: ImplDefId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::Impl(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 
@@ -418,10 +418,10 @@ pub(crate) fn get_impl_def_signature_data(
 }
 
 /// Retrieves data for alias signature formatting.
-pub(crate) fn get_impl_alias_signature_data(
-    db: &dyn DocGroup,
-    item_id: ImplAliasId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_impl_alias_signature_data<'db>(
+    db: &'db dyn DocGroup,
+    item_id: ImplAliasId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::ImplAlias(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 
@@ -445,10 +445,10 @@ pub(crate) fn get_impl_alias_signature_data(
 }
 
 /// Retrieves data for type alias signature formatting.
-pub(crate) fn get_module_type_alias_full_signature(
-    db: &dyn DocGroup,
-    item_id: ModuleTypeAliasId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_module_type_alias_full_signature<'db>(
+    db: &'db dyn DocGroup,
+    item_id: ModuleTypeAliasId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::TypeAlias(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 
@@ -480,10 +480,10 @@ pub(crate) fn get_module_type_alias_full_signature(
 }
 
 /// Retrieves data for trait type signature formatting.
-pub(crate) fn get_trait_type_full_signature(
-    db: &dyn DocGroup,
-    item_id: TraitTypeId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_trait_type_full_signature<'db>(
+    db: &'db dyn DocGroup,
+    item_id: TraitTypeId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let generic_params = db
         .trait_type_generic_params(item_id)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
@@ -506,10 +506,10 @@ pub(crate) fn get_trait_type_full_signature(
 }
 
 /// Retrieves data for type signature formatting.
-pub(crate) fn get_impl_type_def_full_signature(
-    db: &dyn DocGroup,
-    item_id: ImplTypeDefId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_impl_type_def_full_signature<'db>(
+    db: &'db dyn DocGroup,
+    item_id: ImplTypeDefId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let resolved_type = db
         .impl_type_def_resolved_type(item_id)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
@@ -536,10 +536,10 @@ pub(crate) fn get_impl_type_def_full_signature(
 }
 
 /// Retrieves data for extern type signature formatting.
-pub(crate) fn get_extern_type_full_signature(
-    db: &dyn DocGroup,
-    item_id: ExternTypeId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_extern_type_full_signature<'db>(
+    db: &'db dyn DocGroup,
+    item_id: ExternTypeId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::ExternType(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 
@@ -567,10 +567,10 @@ pub(crate) fn get_extern_type_full_signature(
 }
 
 /// Retrieves data for extern function signature formatting.
-pub(crate) fn get_extern_function_full_signature(
-    db: &dyn DocGroup,
-    item_id: ExternFunctionId,
-) -> Result<DocumentableItemSignatureData, SignatureError> {
+pub(crate) fn get_extern_function_full_signature<'db>(
+    db: &'db dyn DocGroup,
+    item_id: ExternFunctionId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::ExternFunction(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 

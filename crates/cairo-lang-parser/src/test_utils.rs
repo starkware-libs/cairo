@@ -30,11 +30,11 @@ pub fn get_diagnostics(
 
 // TODO(yuval): stop virtual files for tests anymore. See semantic tests.
 /// Creates a virtual file with the given content and returns its ID.
-pub fn create_virtual_file(
-    db: &SimpleParserDatabase,
+pub fn create_virtual_file<'a>(
+    db: &'a SimpleParserDatabase,
     file_name: impl Into<SmolStr>,
     content: &str,
-) -> FileId {
+) -> FileId<'a> {
     FileLongId::Virtual(VirtualFile {
         parent: None,
         name: file_name.into(),
@@ -69,7 +69,7 @@ impl MockToken {
     }
 
     /// Create a token based on [SyntaxNode]
-    pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> MockToken {
+    pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode<'_>) -> MockToken {
         MockToken::new(node.get_text(db), node.span(db))
     }
 }
@@ -81,7 +81,7 @@ impl MockTokenStream {
     }
 
     /// Create whole [MockTokenStream] based upon the [SyntaxNode].
-    pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+    pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode<'_>) -> Self {
         let leaves = node.tokens(db);
         let tokens = leaves.map(|node| MockToken::from_syntax_node(db, node)).collect();
         Self::new(tokens)

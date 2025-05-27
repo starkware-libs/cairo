@@ -10,39 +10,42 @@ use crate::documentable_item::DocumentableItemId;
 use crate::location_links::LocationLink;
 use crate::parser::{DocumentationCommentParser, DocumentationCommentToken};
 
-#[salsa::query_group(DocDatabase)]
-pub trait DocGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
+#[cairo_lang_proc_macros::query_group]
+pub trait DocGroup: SemanticGroup + for<'a> Upcast<'a, dyn SemanticGroup> {
     // TODO(mkaput): Support #[doc] attribute. This will be a bigger chunk of work because it would
     //   be the best to convert all /// comments to #[doc] attrs before processing items by plugins,
     //   so that plugins would get a nice and clean syntax of documentation to manipulate further.
     /// Gets the documentation of an item.
-    fn get_item_documentation(&self, item_id: DocumentableItemId) -> Option<String>;
+    fn get_item_documentation<'db>(&'db self, item_id: DocumentableItemId<'db>) -> Option<String>;
 
     /// Gets the documentation of a certain as a vector of continuous tokens.
-    fn get_item_documentation_as_tokens(
-        &self,
-        item_id: DocumentableItemId,
-    ) -> Option<Vec<DocumentationCommentToken>>;
+    fn get_item_documentation_as_tokens<'db>(
+        &'db self,
+        item_id: DocumentableItemId<'db>,
+    ) -> Option<Vec<DocumentationCommentToken<'db>>>;
 
     /// Gets the signature of an item (i.e., item without its body).
     #[salsa::invoke(crate::documentable_formatter::get_item_signature)]
-    fn get_item_signature(&self, item_id: DocumentableItemId) -> Option<String>;
+    fn get_item_signature<'db>(&'db self, item_id: DocumentableItemId<'db>) -> Option<String>;
 
     /// Gets the signature of an item and a list of [`LocationLink`]s to enable mapping
     /// signature slices on documentable items.
     #[salsa::invoke(crate::documentable_formatter::get_item_signature_with_links)]
-    fn get_item_signature_with_links(
-        &self,
-        item_id: DocumentableItemId,
-    ) -> (Option<String>, Vec<LocationLink>);
+    fn get_item_signature_with_links<'db>(
+        &'db self,
+        item_id: DocumentableItemId<'db>,
+    ) -> (Option<String>, Vec<LocationLink<'db>>);
 }
 
-fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<String> {
+fn get_item_documentation<'db>(
+    db: &'db dyn DocGroup,
+    item_id: DocumentableItemId<'db>,
+) -> Option<String> {
     let tokens = get_item_documentation_as_tokens(db, item_id)?;
     let mut buff = String::new();
     for doc_token in &tokens {
         match doc_token {
-            DocumentationCommentToken::Content(content) => buff.push_str(content),
+            DocumentationCommentToken::Content(content) => buff.push_str(content.as_str()),
             DocumentationCommentToken::Link(link) => {
                 write!(&mut buff, "[{}]", link.label).ok()?;
                 if let Some(path) = &link.path {
@@ -54,10 +57,10 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Opt
     Some(buff)
 }
 
-fn get_item_documentation_as_tokens(
-    db: &dyn DocGroup,
-    item_id: DocumentableItemId,
-) -> Option<Vec<DocumentationCommentToken>> {
+fn get_item_documentation_as_tokens<'db>(
+    db: &'db dyn DocGroup,
+    item_id: DocumentableItemId<'db>,
+) -> Option<Vec<DocumentationCommentToken<'db>>> {
     let (outer_comment, inner_comment, module_level_comment) = match item_id {
         DocumentableItemId::Crate(crate_id) => {
             (None, None, get_crate_root_module_documentation(db, crate_id))
@@ -75,7 +78,7 @@ fn get_item_documentation_as_tokens(
         ),
     };
 
-    let doc_parser = DocumentationCommentParser::new(db);
+    let doc_parser: DocumentationCommentParser<'db> = DocumentationCommentParser::new(db);
 
     let outer_comment_tokens =
         outer_comment.map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
@@ -84,7 +87,7 @@ fn get_item_documentation_as_tokens(
     let module_level_comment_tokens = module_level_comment
         .map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
 
-    let mut result: Vec<Vec<DocumentationCommentToken>> =
+    let mut result: Vec<Vec<DocumentationCommentToken<'db>>> =
         [module_level_comment_tokens, outer_comment_tokens, inner_comment_tokens]
             .into_iter()
             .flatten()
@@ -98,15 +101,18 @@ fn get_item_documentation_as_tokens(
 }
 
 /// Gets the crate level documentation.
-fn get_crate_root_module_documentation(db: &dyn DocGroup, crate_id: CrateId) -> Option<String> {
+fn get_crate_root_module_documentation<'db>(
+    db: &'db dyn DocGroup,
+    crate_id: CrateId<'db>,
+) -> Option<String> {
     let module_file_id = db.module_main_file(ModuleId::CrateRoot(crate_id)).ok()?;
     extract_item_module_level_documentation_from_file(db, module_file_id)
 }
 
 /// Gets the "//!" inner comment of the item (if only item supports inner comments).
-fn extract_item_inner_documentation(
-    db: &dyn DocGroup,
-    item_id: DocumentableItemId,
+fn extract_item_inner_documentation<'db>(
+    db: &'db dyn DocGroup,
+    item_id: DocumentableItemId<'db>,
 ) -> Option<String> {
     if matches!(
         item_id,
@@ -127,9 +133,9 @@ fn extract_item_inner_documentation(
 }
 
 /// Only gets the doc comments above the item.
-fn extract_item_outer_documentation(
-    db: &dyn DocGroup,
-    item_id: DocumentableItemId,
+fn extract_item_outer_documentation<'db>(
+    db: &'db dyn DocGroup,
+    item_id: DocumentableItemId<'db>,
 ) -> Option<String> {
     // Get the text of the item (trivia + definition)
     let raw_text = item_id.stable_location(db)?.syntax_node(db).get_text(db);
@@ -146,9 +152,9 @@ fn extract_item_outer_documentation(
 }
 
 /// Gets the module level comments of the item.
-fn extract_item_module_level_documentation(
-    db: &dyn DocGroup,
-    item_id: DocumentableItemId,
+fn extract_item_module_level_documentation<'db>(
+    db: &'db dyn DocGroup,
+    item_id: DocumentableItemId<'db>,
 ) -> Option<String> {
     match item_id {
         DocumentableItemId::LookupItem(LookupItemId::ModuleItem(ModuleItemId::Submodule(
@@ -175,11 +181,11 @@ fn extract_item_inner_documentation_from_raw_text(raw_text: String) -> String {
 }
 
 /// Gets the module level comments of certain file.
-fn extract_item_module_level_documentation_from_file(
-    db: &dyn DocGroup,
-    file_id: FileId,
+fn extract_item_module_level_documentation_from_file<'db>(
+    db: &'db dyn DocGroup,
+    file_id: FileId<'db>,
 ) -> Option<String> {
-    let file_content = db.file_content(file_id)?.to_string();
+    let file_content = db.file_content(file_id)?.long(db).to_string();
     Some(
         file_content
             .lines()

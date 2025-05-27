@@ -6,7 +6,7 @@ use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `PanicDestruct` trait.
-pub fn handle_panic_destruct(info: &PluginTypeInfo) -> String {
+pub fn handle_panic_destruct(info: &PluginTypeInfo<'_>) -> String {
     const PANIC_DESTRUCT_TRAIT: &str = "core::traits::PanicDestruct";
     let header = info.impl_header(PANIC_DESTRUCT_TRAIT, &[PANIC_DESTRUCT_TRAIT]);
     let full_typename = info.full_typename();
