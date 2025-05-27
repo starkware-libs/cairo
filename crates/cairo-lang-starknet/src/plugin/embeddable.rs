@@ -16,7 +16,10 @@ use super::entry_point::{
 use super::utils::{GenericParamExtract, forbid_attributes_in_impl};
 
 /// Handles an embeddable impl, generating entry point wrappers and modules pointing to them.
-pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> PluginResult {
+pub fn handle_embeddable<'db>(
+    db: &'db dyn SyntaxGroup,
+    item_impl: ast::ItemImpl<'db>,
+) -> PluginResult<'db> {
     let ast::MaybeImplBody::Some(body) = item_impl.body(db) else {
         return PluginResult {
             code: None,

@@ -6,7 +6,7 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
-use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::ids::CrateInput;
 use cairo_lang_runner::casm_run::format_for_panic;
 use cairo_lang_runner::profiling::{
     ProfilerConfig, ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
@@ -34,12 +34,12 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 mod test;
 
 /// Compile and run tests.
-pub struct TestRunner {
-    compiler: TestCompiler,
+pub struct TestRunner<'db> {
+    compiler: TestCompiler<'db>,
     config: TestRunConfig,
 }
 
-impl TestRunner {
+impl<'db> TestRunner<'db> {
     /// Configure a new test runner
     ///
     /// # Arguments
@@ -81,24 +81,24 @@ impl TestRunner {
     }
 }
 
-pub struct CompiledTestRunner {
-    pub compiled: TestCompilation,
+pub struct CompiledTestRunner<'db> {
+    pub compiled: TestCompilation<'db>,
     pub config: TestRunConfig,
 }
 
-impl CompiledTestRunner {
+impl<'db> CompiledTestRunner<'db> {
     /// Configure a new compiled test runner
     ///
     /// # Arguments
     ///
     /// * `compiled` - The compiled tests to run
     /// * `config` - Test run configuration
-    pub fn new(compiled: TestCompilation, config: TestRunConfig) -> Self {
+    pub fn new(compiled: TestCompilation<'db>, config: TestRunConfig) -> Self {
         Self { compiled, config }
     }
 
     /// Execute preconfigured test execution.
-    pub fn run(self, opt_db: Option<&RootDatabase>) -> Result<Option<TestsSummary>> {
+    pub fn run(self, opt_db: Option<&'db RootDatabase>) -> Result<Option<TestsSummary>> {
         let (compiled, filtered_out) = filter_test_cases(
             self.compiled,
             self.config.include_ignored,
@@ -158,15 +158,15 @@ pub struct TestRunConfig {
 }
 
 /// The test cases compiler.
-pub struct TestCompiler {
+pub struct TestCompiler<'db> {
     pub db: RootDatabase,
-    pub main_crate_ids: Vec<CrateId>,
-    pub test_crate_ids: Vec<CrateId>,
+    pub main_crate_ids: Vec<CrateInput>,
+    pub test_crate_ids: Vec<CrateInput>,
     pub allow_warnings: bool,
-    pub config: TestsCompilationConfig,
+    pub config: TestsCompilationConfig<'db>,
 }
 
-impl TestCompiler {
+impl<'db> TestCompiler<'db> {
     /// Configure a new test compiler
     ///
     /// # Arguments
@@ -177,9 +177,9 @@ impl TestCompiler {
         path: &Path,
         allow_warnings: bool,
         gas_enabled: bool,
-        config: TestsCompilationConfig,
+        config: TestsCompilationConfig<'db>,
     ) -> Result<Self> {
-        let db = &mut {
+        let mut db = {
             let mut b = RootDatabase::builder();
             let mut cfg = CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]);
             if !gas_enabled {
@@ -195,12 +195,12 @@ impl TestCompiler {
             b.build()?
         };
 
-        let main_crate_ids = setup_project(db, Path::new(&path))?;
+        let main_crate_inputs = setup_project(&mut db, Path::new(&path))?;
 
         Ok(Self {
             db: db.snapshot(),
-            test_crate_ids: main_crate_ids.clone(),
-            main_crate_ids,
+            test_crate_ids: main_crate_inputs.clone(),
+            main_crate_ids: main_crate_inputs,
             allow_warnings,
             config,
         })
@@ -231,12 +231,12 @@ impl TestCompiler {
 /// * `filter` - Include only tests containing the filter string.
 /// # Returns
 /// * (`TestCompilation`, `usize`) - The filtered test cases and the number of filtered out cases.
-pub fn filter_test_cases(
-    compiled: TestCompilation,
+pub fn filter_test_cases<'db>(
+    compiled: TestCompilation<'db>,
     include_ignored: bool,
     ignored: bool,
     filter: &str,
-) -> (TestCompilation, usize) {
+) -> (TestCompilation<'db>, usize) {
     let total_tests_count = compiled.metadata.named_tests.len();
     let named_tests = compiled
         .metadata

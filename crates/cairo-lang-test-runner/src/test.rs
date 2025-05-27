@@ -239,7 +239,7 @@ fn to_named_test(test: &(&str, bool)) -> (String, TestConfig) {
 }
 
 /// Return a [TestCompilation] from a list of test names and their ignored status.
-fn to_test_compilation(tests: &[(&str, bool)]) -> TestCompilation {
+fn to_test_compilation<'db>(tests: &[(&str, bool)]) -> TestCompilation<'db> {
     TestCompilation {
         sierra_program: ProgramArtifact::stripped(Program {
             type_declarations: vec![],

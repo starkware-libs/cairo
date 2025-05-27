@@ -18,6 +18,7 @@ use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::test_lock;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::Itertools;
 
 /// Salsa databases configured to find the corelib, when reused by different tests should be able to
@@ -228,16 +229,18 @@ fn run_e2e_test(
         &SHARED_DB_NO_GAS_NO_OPTS
     });
     // Parse code and create semantic model.
-    let test_module =
-        setup_test_module(locked_db.deref_mut(), inputs["cairo_code"].as_str()).unwrap();
+    let db_ref = locked_db.deref_mut();
+    let test_module = setup_test_module(db_ref, inputs["cairo_code"].as_str()).unwrap();
+    let crate_input = test_module.crate_id.lookup_intern(db_ref).into_crate_input(db_ref);
     let db = locked_db.snapshot();
-    DiagnosticsReporter::stderr().with_crates(&[test_module.crate_id]).ensure(&db).unwrap();
+    DiagnosticsReporter::stderr().with_crates(&[crate_input.clone()]).ensure(&db).unwrap();
 
     // Compile to Sierra.
-    let SierraProgramWithDebug { program: sierra_program, .. } =
-        Arc::unwrap_or_clone(db.get_sierra_program(vec![test_module.crate_id]).expect(
+    let SierraProgramWithDebug { program: sierra_program, .. } = Arc::unwrap_or_clone(
+        db.get_sierra_program(vec![crate_input.into_crate_long_id(&db).intern(&db)]).expect(
             "`get_sierra_program` failed. run with RUST_LOG=warn (or less) to see diagnostics",
-        ));
+        ),
+    );
     let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
     let sierra_program_str = sierra_program.to_string();
 

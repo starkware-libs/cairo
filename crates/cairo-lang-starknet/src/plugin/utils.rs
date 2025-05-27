@@ -12,15 +12,15 @@ use itertools::Itertools;
 use super::consts::{CONSTRUCTOR_ATTR, EXTERNAL_ATTR, L1_HANDLER_ATTR};
 
 /// Helper trait for syntax queries on `ast::Param`.
-pub trait ParamEx {
+pub trait ParamEx<'db> {
     /// Checks if the parameter is defined as a ref parameter.
-    fn is_ref_param(&self, db: &dyn SyntaxGroup) -> bool;
+    fn is_ref_param(&self, db: &'db dyn SyntaxGroup) -> bool;
     /// Checks if the parameter is defined as a mutable parameter.
-    fn is_mut_param(&self, db: &dyn SyntaxGroup) -> bool;
+    fn is_mut_param(&self, db: &'db dyn SyntaxGroup) -> bool;
     /// Extracts the snapshot type if the parameter's type is a snapshot. Otherwise, returns None.
-    fn try_extract_snapshot(&self, db: &dyn SyntaxGroup) -> Option<ast::Expr>;
+    fn try_extract_snapshot(&self, db: &'db dyn SyntaxGroup) -> Option<ast::Expr<'db>>;
 }
-impl ParamEx for ast::Param {
+impl<'db> ParamEx<'db> for ast::Param<'db> {
     fn is_ref_param(&self, db: &dyn SyntaxGroup) -> bool {
         let param_modifiers = self.modifiers(db).elements(db).collect_array();
         // TODO(yuval): This works only if "ref" is the only modifier. If the expansion was at the
@@ -35,7 +35,7 @@ impl ParamEx for ast::Param {
         matches!(param_modifiers, Some([Modifier::Mut(_)]))
     }
 
-    fn try_extract_snapshot(&self, db: &dyn SyntaxGroup) -> Option<ast::Expr> {
+    fn try_extract_snapshot(&self, db: &'db dyn SyntaxGroup) -> Option<ast::Expr<'db>> {
         let unary = try_extract_matches!(
             extract_matches!(self.type_clause(db), OptionTypeClause::TypeClause).ty(db),
             ast::Expr::Unary
@@ -64,9 +64,10 @@ pub trait AstPathExtract {
         self.is_name_with_arg(db, "Span", "felt252")
     }
 }
-impl AstPathExtract for ast::ExprPath {
+impl<'db> AstPathExtract for ast::ExprPath<'db> {
     fn is_identifier(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool {
-        let type_path_elements = self.segments(db).elements(db);
+        let segments = self.segments(db);
+        let type_path_elements = segments.elements(db);
         let Some([ast::PathSegment::Simple(arg_segment)]) = type_path_elements.collect_array()
         else {
             return false;
@@ -76,7 +77,8 @@ impl AstPathExtract for ast::ExprPath {
     }
 
     fn is_name_with_arg(&self, db: &dyn SyntaxGroup, name: &str, generic_arg: &str) -> bool {
-        let type_path_elements = self.segments(db).elements(db);
+        let segments = self.segments(db);
+        let type_path_elements = segments.elements(db);
         let Some([ast::PathSegment::WithGenericArgs(path_segment_with_generics)]) =
             type_path_elements.collect_array()
         else {
@@ -86,7 +88,8 @@ impl AstPathExtract for ast::ExprPath {
         if path_segment_with_generics.identifier(db) != name {
             return false;
         }
-        let args = path_segment_with_generics.generic_args(db).generic_args(db).elements(db);
+        let generic_args = path_segment_with_generics.generic_args(db).generic_args(db);
+        let args = generic_args.elements(db);
         let Some([ast::GenericArg::Unnamed(arg_expr)]) = args.collect_array() else {
             return false;
         };
@@ -97,7 +100,7 @@ impl AstPathExtract for ast::ExprPath {
         arg_expr.expr(db).is_identifier(db, generic_arg)
     }
 }
-impl AstPathExtract for ast::Expr {
+impl<'db> AstPathExtract for ast::Expr<'db> {
     fn is_identifier(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool {
         if let ast::Expr::Path(type_path) = self {
             type_path.is_identifier(db, identifier)
@@ -116,12 +119,12 @@ impl AstPathExtract for ast::Expr {
 }
 
 /// Helper trait for syntax queries on `ast::GenericParam`.
-pub trait GenericParamExtract {
+pub trait GenericParamExtract<'db> {
     /// Returns the trait_path of the generic param if it is an impl.
-    fn trait_path(&self, db: &dyn SyntaxGroup) -> Option<ast::ExprPath>;
+    fn trait_path(&self, db: &'db dyn SyntaxGroup) -> Option<ast::ExprPath<'db>>;
     /// Returns true if `self` matches an impl of `$trait_name$<$generic_arg$>`.
     /// Does not resolve paths or type aliases.
-    fn is_impl_of(&self, db: &dyn SyntaxGroup, trait_name: &str, generic_arg: &str) -> bool {
+    fn is_impl_of(&self, db: &'db dyn SyntaxGroup, trait_name: &str, generic_arg: &str) -> bool {
         if let Some(path) = self.trait_path(db) {
             path.is_name_with_arg(db, trait_name, generic_arg)
         } else {
@@ -129,8 +132,8 @@ pub trait GenericParamExtract {
         }
     }
 }
-impl GenericParamExtract for ast::GenericParam {
-    fn trait_path(&self, db: &dyn SyntaxGroup) -> Option<ast::ExprPath> {
+impl<'db> GenericParamExtract<'db> for ast::GenericParam<'db> {
+    fn trait_path(&self, db: &'db dyn SyntaxGroup) -> Option<ast::ExprPath<'db>> {
         match self {
             ast::GenericParam::Type(_) | ast::GenericParam::Const(_) => None,
             ast::GenericParam::ImplNamed(i) => Some(i.trait_path(db)),
@@ -152,22 +155,22 @@ pub fn maybe_strip_underscore(s: &str) -> &str {
 
 /// Checks if the given (possibly-attributed-)object is attributed with the given `attr_name`. Also
 /// validates that the attribute is v0.
-pub fn has_v0_attribute(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    object: &impl QueryAttrs,
-    attr_name: &str,
+pub fn has_v0_attribute<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    object: &impl QueryAttrs<'db>,
+    attr_name: &'db str,
 ) -> bool {
     has_v0_attribute_ex(db, diagnostics, object, attr_name, || None)
 }
 
 /// Checks if the given (possibly-attributed-)object is attributed with the given `attr_name`. Also
 /// validates that the attribute is v0, and adds a warning if supplied `deprecated` returns a value.
-pub fn has_v0_attribute_ex(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    object: &impl QueryAttrs,
-    attr_name: &str,
+pub fn has_v0_attribute_ex<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    object: &impl QueryAttrs<'db>,
+    attr_name: &'db str,
     deprecated: impl FnOnce() -> Option<String>,
 ) -> bool {
     let Some(attr) = object.find_attr(db, attr_name) else {
@@ -181,10 +184,10 @@ pub fn has_v0_attribute_ex(
 }
 
 /// Assuming the attribute is `name`, validates it's #[`name`(v0)].
-pub fn validate_v0(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    attr: &Attribute,
+pub fn validate_v0<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    attr: &Attribute<'db>,
     name: &str,
 ) {
     if !is_single_arg_attr(db, attr, "v0") {
@@ -196,10 +199,10 @@ pub fn validate_v0(
 }
 
 /// Forbids `#[external]`, `#[l1_handler]` and `#[constructor]` attributes in the given impl.
-pub fn forbid_attributes_in_impl(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    impl_item: &ast::ImplItem,
+pub fn forbid_attributes_in_impl<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    impl_item: &ast::ImplItem<'db>,
     embedded_impl_attr: &str,
 ) {
     for attr in [EXTERNAL_ATTR, CONSTRUCTOR_ATTR, L1_HANDLER_ATTR] {
@@ -208,11 +211,11 @@ pub fn forbid_attributes_in_impl(
 }
 
 /// Forbids the given attribute in the given impl, assuming it's marked `embedded_impl_attr`.
-pub fn forbid_attribute_in_impl(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    impl_item: &ast::ImplItem,
-    attr_name: &str,
+pub fn forbid_attribute_in_impl<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    impl_item: &ast::ImplItem<'db>,
+    attr_name: &'db str,
     embedded_impl_attr: &str,
 ) {
     if let Some(attr) = impl_item.find_attr(db, attr_name) {
@@ -227,11 +230,11 @@ pub fn forbid_attribute_in_impl(
 }
 
 /// Returns true if the type has a derive attribute with the given type.
-pub fn has_derive<T: QueryAttrs>(
+pub fn has_derive<'db, T: QueryAttrs<'db>>(
     with_attrs: &T,
-    db: &dyn SyntaxGroup,
+    db: &'db dyn SyntaxGroup,
     derived_type: &str,
-) -> Option<ast::Arg> {
+) -> Option<ast::Arg<'db>> {
     with_attrs.query_attr(db, "derive").into_iter().find_map(|attr| {
         let attr = attr.structurize(db);
         for arg in attr.args {

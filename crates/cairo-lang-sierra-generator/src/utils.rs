@@ -12,7 +12,7 @@ use cairo_lang_sierra::extensions::{
 };
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, GenericLibfuncId};
 use cairo_lang_sierra::program::{self, FunctionSignature, GenericArg};
-use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
+use cairo_lang_utils::{LookupIntern, extract_matches};
 use semantic::items::constant::ConstValue;
 use semantic::items::functions::GenericFunctionId;
 use smol_str::SmolStr;
@@ -23,11 +23,11 @@ use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 
-pub fn simple_basic_statement(
+pub fn simple_basic_statement<'db>(
     libfunc_id: ConcreteLibfuncId,
     args: &[cairo_lang_sierra::ids::VarId],
     results: &[cairo_lang_sierra::ids::VarId],
-) -> pre_sierra::Statement {
+) -> pre_sierra::Statement<'db> {
     pre_sierra::Statement::Sierra(program::GenStatement::Invocation(program::GenInvocation {
         libfunc_id,
         args: args.into(),
@@ -38,11 +38,11 @@ pub fn simple_basic_statement(
     }))
 }
 
-pub fn simple_statement(
+pub fn simple_statement<'db>(
     libfunc_id: ConcreteLibfuncId,
     args: &[cairo_lang_sierra::ids::VarId],
     results: &[cairo_lang_sierra::ids::VarId],
-) -> pre_sierra::StatementWithLocation {
+) -> pre_sierra::StatementWithLocation<'db> {
     simple_basic_statement(libfunc_id, args, results).into_statement_without_location()
 }
 
@@ -60,7 +60,9 @@ pub fn jump_statement(
     }))
 }
 
-pub fn return_statement(res: Vec<cairo_lang_sierra::ids::VarId>) -> pre_sierra::Statement {
+pub fn return_statement<'db>(
+    res: Vec<cairo_lang_sierra::ids::VarId>,
+) -> pre_sierra::Statement<'db> {
     pre_sierra::Statement::Sierra(program::GenStatement::Return(res))
 }
 
@@ -69,11 +71,10 @@ pub fn get_libfunc_id_with_generic_arg(
     name: impl Into<SmolStr>,
     ty: cairo_lang_sierra::ids::ConcreteTypeId,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-    cairo_lang_sierra::program::ConcreteLibfuncLongId {
+    db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string(name),
         generic_args: vec![GenericArg::Type(ty)],
-    }
-    .intern(db)
+    })
 }
 
 /// Returns the [cairo_lang_sierra::program::ConcreteLibfuncLongId] associated with `store_temp`.
@@ -119,11 +120,10 @@ pub fn enum_init_libfunc_id(
     ty: cairo_lang_sierra::ids::ConcreteTypeId,
     variant_idx: usize,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-    cairo_lang_sierra::program::ConcreteLibfuncLongId {
+    db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string("enum_init"),
         generic_args: vec![GenericArg::Type(ty), GenericArg::Value(variant_idx.into())],
-    }
-    .intern(db)
+    })
 }
 
 /// Returns the [cairo_lang_sierra::program::ConcreteLibfuncLongId] associated with `snapshot_take`.
@@ -131,11 +131,10 @@ pub fn snapshot_take_libfunc_id(
     db: &dyn SierraGenGroup,
     ty: cairo_lang_sierra::ids::ConcreteTypeId,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-    cairo_lang_sierra::program::ConcreteLibfuncLongId {
+    db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string("snapshot_take"),
         generic_args: vec![GenericArg::Type(ty)],
-    }
-    .intern(db)
+    })
 }
 
 /// Returns the [cairo_lang_sierra::program::ConcreteLibfuncLongId] associated with `rename`.
@@ -143,22 +142,20 @@ pub fn rename_libfunc_id(
     db: &dyn SierraGenGroup,
     ty: cairo_lang_sierra::ids::ConcreteTypeId,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-    cairo_lang_sierra::program::ConcreteLibfuncLongId {
+    db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string("rename"),
         generic_args: vec![GenericArg::Type(ty)],
-    }
-    .intern(db)
+    })
 }
 
 fn get_libfunc_id_without_generics(
     db: &dyn SierraGenGroup,
     name: impl Into<SmolStr>,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-    cairo_lang_sierra::program::ConcreteLibfuncLongId {
+    db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string(name),
         generic_args: vec![],
-    }
-    .intern(db)
+    })
 }
 
 pub fn const_libfunc_id_by_type(
@@ -166,7 +163,7 @@ pub fn const_libfunc_id_by_type(
     value: &ConstValue,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
     if let ConstValue::Boxed(inner_value) = value {
-        cairo_lang_sierra::program::ConcreteLibfuncLongId {
+        db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
             generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string(
                 ConstAsBoxLibfunc::STR_ID,
             ),
@@ -174,16 +171,14 @@ pub fn const_libfunc_id_by_type(
                 GenericArg::Type(const_type_id(db, inner_value)),
                 GenericArg::Value(0.into()),
             ],
-        }
-        .intern(db)
+        })
     } else {
-        cairo_lang_sierra::program::ConcreteLibfuncLongId {
+        db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
             generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string(
                 ConstAsImmediateLibfunc::STR_ID,
             ),
             generic_args: vec![GenericArg::Type(const_type_id(db, value))],
-        }
-        .intern(db)
+        })
     }
 }
 
@@ -194,7 +189,7 @@ fn const_type_id(
 ) -> cairo_lang_sierra::ids::ConcreteTypeId {
     let ty = value.ty(db).unwrap();
     let first_arg = GenericArg::Type(db.get_concrete_type_id(ty).unwrap());
-    SierraGeneratorTypeLongId::Regular(
+    db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
         cairo_lang_sierra::program::ConcreteTypeLongId {
             generic_id: ConstType::ID,
             generic_args: match value {
@@ -228,8 +223,7 @@ fn const_type_id(
             },
         }
         .into(),
-    )
-    .intern(db)
+    ))
 }
 
 pub fn match_enum_libfunc_id(
@@ -314,7 +308,7 @@ pub fn get_libfunc_signature(
     db: &dyn SierraGenGroup,
     concrete_lib_func_id: ConcreteLibfuncId,
 ) -> LibfuncSignature {
-    let libfunc_long_id = concrete_lib_func_id.lookup_intern(db);
+    let libfunc_long_id = db.lookup_concrete_lib_func(concrete_lib_func_id.clone());
     CoreLibfunc::specialize_signature_by_id(
         &SierraSignatureSpecializationContext(db),
         &libfunc_long_id.generic_id,
@@ -326,7 +320,7 @@ pub fn get_libfunc_signature(
             ..
         } = err
         {
-            let function = function.lookup_intern(db);
+            let function = db.lookup_sierra_function(function.clone());
             panic!("Missing function {:?}", function.debug(db));
         }
         // If panic happens here, make sure the specified libfunc name is in one of the STR_IDs of
@@ -343,11 +337,10 @@ pub fn function_call_libfunc_id(
     db: &dyn SierraGenGroup,
     func: lowering::ids::FunctionId,
 ) -> ConcreteLibfuncId {
-    cairo_lang_sierra::program::ConcreteLibfuncLongId {
+    db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: GenericLibfuncId::from_string("function_call"),
-        generic_args: vec![GenericArg::UserFunc(func.intern(db))],
-    }
-    .intern(db)
+        generic_args: vec![GenericArg::UserFunc(db.intern_sierra_function(func))],
+    })
 }
 
 /// Returns the [ConcreteLibfuncId] for calling a user-defined function, given a coupon for that
@@ -356,11 +349,10 @@ pub fn coupon_call_libfunc_id(
     db: &dyn SierraGenGroup,
     func: lowering::ids::FunctionId,
 ) -> ConcreteLibfuncId {
-    cairo_lang_sierra::program::ConcreteLibfuncLongId {
+    db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: GenericLibfuncId::from_string("coupon_call"),
-        generic_args: vec![GenericArg::UserFunc(func.intern(db))],
-    }
-    .intern(db)
+        generic_args: vec![GenericArg::UserFunc(db.intern_sierra_function(func))],
+    })
 }
 
 /// Returns the [ConcreteLibfuncId] used for calling a libfunc.
@@ -369,19 +361,18 @@ pub fn generic_libfunc_id(
     extern_id: defs::ids::ExternFunctionId,
     generic_args: Vec<GenericArg>,
 ) -> ConcreteLibfuncId {
-    cairo_lang_sierra::program::ConcreteLibfuncLongId {
+    db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: GenericLibfuncId::from_string(extern_id.name(db)),
         generic_args,
-    }
-    .intern(db)
+    })
 }
 
 /// Returns the [ConcreteLibfuncId] used for calling a function (either user-defined or libfunc).
-pub fn get_concrete_libfunc_id(
-    db: &dyn SierraGenGroup,
-    function: lowering::ids::FunctionId,
+pub fn get_concrete_libfunc_id<'db>(
+    db: &'db dyn SierraGenGroup,
+    function: lowering::ids::FunctionId<'db>,
     with_coupon: bool,
-) -> (Option<lowering::ids::ConcreteFunctionWithBodyId>, ConcreteLibfuncId) {
+) -> (Option<lowering::ids::ConcreteFunctionWithBodyId<'db>>, ConcreteLibfuncId) {
     // Check if this is a user-defined function or a libfunc.
     if let Some(body) = function.body(db).expect("No diagnostics at this stage.") {
         if with_coupon {
@@ -434,8 +425,9 @@ pub fn dummy_call_libfunc_id(
     function_id: cairo_lang_sierra::ids::FunctionId,
     sierra_signature: &FunctionSignature,
 ) -> ConcreteLibfuncId {
-    let ap_change =
-        db.get_ap_change(function_id.lookup_intern(db).body(db).unwrap().unwrap()).unwrap();
+    let ap_change = db
+        .get_ap_change(db.lookup_sierra_function(function_id.clone()).body(db).unwrap().unwrap())
+        .unwrap();
 
     let mut gargs = vec![];
 
@@ -462,9 +454,8 @@ pub fn dummy_call_libfunc_id(
     gargs.push(GenericArg::Value(sierra_signature.ret_types.len().into()));
     gargs.extend(sierra_signature.ret_types.iter().map(as_generic_arg));
 
-    cairo_lang_sierra::program::ConcreteLibfuncLongId {
+    db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string("dummy_function_call"),
         generic_args: gargs,
-    }
-    .intern(db)
+    })
 }
