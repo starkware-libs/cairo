@@ -6,24 +6,25 @@ use super::FilesGroup;
 use crate::cfg::{Cfg, CfgSet};
 use crate::db::{CrateConfiguration, FilesGroupEx};
 use crate::flag::Flag;
-use crate::ids::{CrateId, Directory, FlagId};
+use crate::ids::{CrateLongId, Directory, FlagId, FlagLongId};
 use crate::test_utils::FilesDatabaseForTesting;
 
 #[test]
 fn test_filesystem() {
     let mut db = FilesDatabaseForTesting::default();
 
-    let crt = CrateId::plain(&db, "my_crate");
-    let crt2 = CrateId::plain(&db, "my_crate2");
+    let crt = CrateLongId::plain("my_crate");
+    let crt2 = CrateLongId::plain("my_crate2");
     let directory = Directory::Real("src".into());
-    let file_id = directory.file(&db, "child.cairo".into());
+    let file_long_id = directory.file(&db, "child.cairo".into()).long(&db).clone();
     let config = CrateConfiguration::default_for_root(directory);
-    db.override_file_content(file_id, Some("content\n".into()));
-    db.set_crate_config(crt, Some(config.clone()));
+    db.override_file_content(file_long_id.clone(), Some("content\n".into()));
+    db.set_crate_config(crt.clone(), Some(config.clone()));
 
-    assert_eq!(db.crate_config(crt), Some(config));
-    assert!(db.crate_config(crt2).is_none());
+    assert_eq!(db.crate_config(db.intern_crate(crt)), Some(config));
+    assert!(db.crate_config(db.intern_crate(crt2)).is_none());
 
+    let file_id = db.intern_file(file_long_id);
     assert_eq!(db.file_content(file_id).unwrap().as_ref(), "content\n");
 }
 
@@ -31,12 +32,13 @@ fn test_filesystem() {
 fn test_flags() {
     let mut db = FilesDatabaseForTesting::default();
 
-    let add_withdraw_gas_flag_id = FlagId::new(&db, "add_withdraw_gas");
+    let add_withdraw_gas_flag_id = FlagLongId("add_withdraw_gas".into());
 
-    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
+    db.set_flag(add_withdraw_gas_flag_id.clone(), Some(Arc::new(Flag::AddWithdrawGas(false))));
+    let id = FlagId::new(&db, add_withdraw_gas_flag_id);
 
-    assert_eq!(*db.get_flag(add_withdraw_gas_flag_id).unwrap(), Flag::AddWithdrawGas(false));
-    assert!(db.get_flag(FlagId::new(&db, "non_existing_flag")).is_none());
+    assert_eq!(*db.get_flag(id).unwrap(), Flag::AddWithdrawGas(false));
+    assert!(db.get_flag(FlagId::new(&db, FlagLongId("non_existing_flag".into()))).is_none());
 }
 
 #[test]

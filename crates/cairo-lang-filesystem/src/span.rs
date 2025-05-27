@@ -13,7 +13,18 @@ mod test;
 /// Byte length of an utf8 string.
 // This wrapper type is used to avoid confusion with non-utf8 sizes.
 #[derive(
-    Copy, Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+    Copy,
+    Clone,
+    Default,
+    Debug,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+    salsa::Update,
 )]
 pub struct TextWidth(u32);
 impl TextWidth {
@@ -70,7 +81,18 @@ impl Sum for TextWidth {
 
 /// Byte offset inside a utf8 string.
 #[derive(
-    Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Default,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+    salsa::Update,
 )]
 pub struct TextOffset(TextWidth);
 impl TextOffset {
@@ -143,7 +165,11 @@ impl TextSpan {
     }
 
     /// Convert this span to a [`TextPositionSpan`] in the file.
-    pub fn position_in_file(self, db: &dyn FilesGroup, file: FileId) -> Option<TextPositionSpan> {
+    pub fn position_in_file<'db>(
+        self,
+        db: &'db (dyn FilesGroup + 'db),
+        file: FileId<'db>,
+    ) -> Option<TextPositionSpan> {
         let start = self.start.position_in_file(db, file)?;
         let end = self.end.position_in_file(db, file)?;
         Some(TextPositionSpan { start, end })
@@ -236,7 +262,11 @@ pub struct TextPositionSpan {
 
 impl TextPositionSpan {
     /// Convert this span to a [`TextSpan`] in the file.
-    pub fn offset_in_file(self, db: &dyn FilesGroup, file: FileId) -> Option<TextSpan> {
+    pub fn offset_in_file<'db>(
+        self,
+        db: &'db (dyn FilesGroup + 'db),
+        file: FileId<'db>,
+    ) -> Option<TextSpan> {
         let start = self.start.offset_in_file(db, file)?;
         let end = self.end.offset_in_file(db, file)?;
         Some(TextSpan { start, end })

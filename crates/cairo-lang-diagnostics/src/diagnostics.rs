@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::{FilesGroup, get_originating_location};
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -55,13 +55,13 @@ pub trait DiagnosticEntry: Clone + fmt::Debug + Eq + Hash {
 }
 
 /// Diagnostic notes for diagnostics originating in the plugin generated files identified by
-/// [`FileId`].
-pub type PluginFileDiagnosticNotes = OrderedHashMap<FileId, DiagnosticNote>;
+/// [`FileLongId`].
+pub type PluginFileDiagnosticNotes = OrderedHashMap<FileLongId, DiagnosticNote>;
 
 // The representation of a source location inside a diagnostic.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DiagnosticLocation {
-    pub file_id: FileId,
+    pub file_id: FileLongId,
     pub span: TextSpan,
 }
 impl DiagnosticLocation {
@@ -312,7 +312,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
     pub fn format_with_severity(
         &self,
         db: &TEntry::DbType,
-        file_notes: &OrderedHashMap<FileId, DiagnosticNote>,
+        file_notes: &OrderedHashMap<FileLongId, DiagnosticNote>,
     ) -> Vec<FormattedDiagnosticEntry> {
         let mut res: Vec<FormattedDiagnosticEntry> = Vec::new();
 
