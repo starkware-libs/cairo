@@ -32,17 +32,17 @@ use crate::plugin::utils::{forbid_attributes_in_impl, has_v0_attribute_ex};
 
 /// Accumulated data specific for contract generation.
 #[derive(Default)]
-pub struct ContractSpecificGenerationData {
-    test_config: RewriteNode,
-    entry_points_code: EntryPointsGenerationData,
-    components_data: ComponentsGenerationData,
+pub struct ContractSpecificGenerationData<'db> {
+    test_config: RewriteNode<'db>,
+    entry_points_code: EntryPointsGenerationData<'db>,
+    components_data: ComponentsGenerationData<'db>,
 }
 
 /// Data collected by the plugin for eventual validation of the contract.
 #[derive(Default)]
-struct ComponentsGenerationData {
+struct ComponentsGenerationData<'db> {
     /// The components defined in the contract using the `component!` inline macro.
-    pub components: Vec<NestedComponent>,
+    pub components: Vec<NestedComponent<'db>>,
     /// The contract's storage members that are marked with the `substorage` attribute.
     pub substorage_members: Vec<String>,
     /// The contract's event variants that are defined in the main event enum of the contract.
@@ -50,20 +50,20 @@ struct ComponentsGenerationData {
 }
 
 /// A component defined in a contract using the `component!` inline macro.
-pub struct NestedComponent {
-    pub component_path: ast::ExprPath,
-    pub storage_name: ast::ExprPath,
-    pub event_name: ast::ExprPath,
+pub struct NestedComponent<'db> {
+    pub component_path: ast::ExprPath<'db>,
+    pub storage_name: ast::ExprPath<'db>,
+    pub event_name: ast::ExprPath<'db>,
     /// The original ast node of the component usage declaration.
-    pub node: ast::ItemInlineMacro,
+    pub node: ast::ItemInlineMacro<'db>,
 }
 
-impl ComponentsGenerationData {
+impl<'db> ComponentsGenerationData<'db> {
     pub fn into_rewrite_node(
         self,
-        db: &dyn SyntaxGroup,
-        diagnostics: &mut Vec<PluginDiagnostic>,
-    ) -> RewriteNode {
+        db: &'db dyn SyntaxGroup,
+        diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    ) -> RewriteNode<'db> {
         let mut has_component_impls = vec![];
         for NestedComponent { component_path, storage_name, event_name, node } in &self.components {
             if !self.validate_component(db, diagnostics, storage_name, node, event_name) {
@@ -133,11 +133,11 @@ impl ComponentsGenerationData {
     /// Validate the component
     fn validate_component(
         &self,
-        db: &dyn SyntaxGroup,
-        diagnostics: &mut Vec<PluginDiagnostic>,
-        storage_name: &ast::ExprPath,
-        component_macro: &ast::ItemInlineMacro,
-        event_name: &ast::ExprPath,
+        db: &'db dyn SyntaxGroup,
+        diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+        storage_name: &ast::ExprPath<'db>,
+        component_macro: &ast::ItemInlineMacro<'db>,
+        event_name: &ast::ExprPath<'db>,
     ) -> bool {
         let mut is_valid = true;
 
@@ -203,12 +203,12 @@ const EVENT_EMITTER_CODE: &str = formatcp! {
 "
 };
 
-impl ContractSpecificGenerationData {
+impl<'db> ContractSpecificGenerationData<'db> {
     pub fn into_rewrite_node(
         self,
-        db: &dyn SyntaxGroup,
-        diagnostics: &mut Vec<PluginDiagnostic>,
-    ) -> RewriteNode {
+        db: &'db dyn SyntaxGroup,
+        diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    ) -> RewriteNode<'db> {
         RewriteNode::interpolate_patched(
             &formatdoc! {"
                 // TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
@@ -236,12 +236,12 @@ impl ContractSpecificGenerationData {
 }
 
 /// Handles a single item inside a contract module.
-fn handle_contract_item(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    item: &ast::ModuleItem,
-    metadata: &MacroPluginMetadata<'_>,
-    data: &mut ContractGenerationData,
+fn handle_contract_item<'db, 'a>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    item: &ast::ModuleItem<'db>,
+    metadata: &'a MacroPluginMetadata<'a>,
+    data: &mut ContractGenerationData<'db>,
 ) {
     match item {
         ast::ModuleItem::FreeFunction(item_function) => {
@@ -316,15 +316,15 @@ fn handle_contract_item(
 }
 
 /// Generates the code that is specific for a contract.
-pub(super) fn generate_contract_specific_code(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    common_data: StarknetModuleCommonGenerationData,
-    body: &ast::ModuleBody,
-    module_ast: &ast::ItemModule,
-    metadata: &MacroPluginMetadata<'_>,
+pub(super) fn generate_contract_specific_code<'db, 'a>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    common_data: StarknetModuleCommonGenerationData<'db>,
+    body: &ast::ModuleBody<'db>,
+    module_ast: &ast::ItemModule<'db>,
+    metadata: &'a MacroPluginMetadata<'a>,
     event_variants: Vec<SmolStr>,
-) -> RewriteNode {
+) -> RewriteNode<'db> {
     let mut generation_data = ContractGenerationData { common: common_data, ..Default::default() };
     generation_data.specific.components_data.nested_event_variants = event_variants;
     for item in body.iter_items_in_cfg(db, metadata.cfg_set) {
@@ -342,7 +342,10 @@ pub(super) fn generate_contract_specific_code(
 }
 
 /// Generates contract class hash for deploying contracts using cairo-test
-fn generate_test_class_hash(db: &dyn SyntaxGroup, module_ast: &ast::ItemModule) -> RewriteNode {
+fn generate_test_class_hash<'db>(
+    db: &'db dyn SyntaxGroup,
+    module_ast: &ast::ItemModule<'db>,
+) -> RewriteNode<'db> {
     let test_class_hash = format!(
         "0x{:x}",
         starknet_keccak(module_ast.as_syntax_node().get_text_without_trivia(db).as_bytes(),)
@@ -356,11 +359,11 @@ fn generate_test_class_hash(db: &dyn SyntaxGroup, module_ast: &ast::ItemModule) 
 }
 
 /// Generate contract-specific deploy functions.
-fn generate_constructor_deploy_function(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    body: &ast::ModuleBody,
-) -> RewriteNode {
+fn generate_constructor_deploy_function<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    body: &ast::ModuleBody<'db>,
+) -> RewriteNode<'db> {
     let mut deploy_function_node = RewriteNode::empty();
 
     for item in body.iter_items(db) {
@@ -368,7 +371,8 @@ fn generate_constructor_deploy_function(
             if let Some(EntryPointKind::Constructor) =
                 EntryPointKind::try_from_function_with_body(db, diagnostics, &func)
             {
-                let params = func.declaration(db).signature(db).parameters(db).elements(db);
+                let signature_params = func.declaration(db).signature(db).parameters(db);
+                let params = signature_params.elements(db);
                 let mut constructor_params = Vec::new();
 
                 for param in params.skip(1) {
@@ -388,10 +392,10 @@ fn generate_constructor_deploy_function(
 }
 
 /// Generates the deployment function for a contract.
-fn generate_deploy_function(
-    db: &dyn SyntaxGroup,
-    constructor_params: Vec<(SmolStr, ast::Expr)>,
-) -> RewriteNode {
+fn generate_deploy_function<'db>(
+    db: &'db dyn SyntaxGroup,
+    constructor_params: Vec<(SmolStr, ast::Expr<'db>)>,
+) -> RewriteNode<'db> {
     let mut param_declarations = Vec::new();
     let mut calldata_serialization = Vec::new();
 
@@ -430,14 +434,14 @@ fn generate_deploy_function(
 }
 
 /// Handles a contract entrypoint function.
-fn handle_contract_entry_point(
+fn handle_contract_entry_point<'db, 'a>(
     entry_point_kind: EntryPointKind,
-    item_function: &ast::FunctionWithBody,
-    wrapped_function_path: RewriteNode,
+    item_function: &ast::FunctionWithBody<'db>,
+    wrapped_function_path: RewriteNode<'db>,
     wrapper_identifier: String,
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    data: &mut EntryPointsGenerationData,
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    data: &mut EntryPointsGenerationData<'db>,
 ) {
     handle_entry_point(
         db,
@@ -455,11 +459,11 @@ fn handle_contract_entry_point(
 }
 
 /// Handles a free function inside a contract module.
-fn handle_contract_free_function(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    item_function: &ast::FunctionWithBody,
-    data: &mut EntryPointsGenerationData,
+fn handle_contract_free_function<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    item_function: &ast::FunctionWithBody<'db>,
+    data: &mut EntryPointsGenerationData<'db>,
 ) {
     let Some(entry_point_kind) =
         EntryPointKind::try_from_function_with_body(db, diagnostics, item_function)
@@ -480,12 +484,12 @@ fn handle_contract_free_function(
 }
 
 /// Handles an impl inside a contract module.
-fn handle_contract_impl(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    imp: &ast::ItemImpl,
-    metadata: &MacroPluginMetadata<'_>,
-    data: &mut EntryPointsGenerationData,
+fn handle_contract_impl<'db, 'a>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    imp: &ast::ItemImpl<'db>,
+    metadata: &'a MacroPluginMetadata<'a>,
+    data: &mut EntryPointsGenerationData<'db>,
 ) {
     let abi_config = impl_abi_config(db, diagnostics, imp);
     if abi_config == ImplAbiConfig::None {
@@ -556,10 +560,10 @@ enum ImplAbiConfig {
 
 /// Returns the configuration of an impl addition to the abi using `#[abi(...)]` or the old
 /// equivalent `#[external(v0)]`.
-fn impl_abi_config(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    imp: &ast::ItemImpl,
+fn impl_abi_config<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    imp: &ast::ItemImpl<'db>,
 ) -> ImplAbiConfig {
     if let Some(abi_attr) = imp.find_attr(db, ABI_ATTR) {
         if is_single_arg_attr(db, &abi_attr, ABI_ATTR_PER_ITEM_ARG) {
@@ -589,11 +593,11 @@ fn impl_abi_config(
 }
 
 /// Handles an embedded impl by an impl alias.
-fn handle_embed_impl_alias(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    alias_ast: &ast::ItemImplAlias,
-    data: &mut EntryPointsGenerationData,
+fn handle_embed_impl_alias<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    alias_ast: &ast::ItemImplAlias<'db>,
+    data: &mut EntryPointsGenerationData<'db>,
 ) {
     let has_generic_params = match alias_ast.generic_params(db) {
         ast::OptionWrappedGenericParamList::Empty(_) => false,
@@ -611,7 +615,8 @@ fn handle_embed_impl_alias(
         ));
         return;
     }
-    let mut elements = alias_ast.impl_path(db).segments(db).elements(db);
+    let segments = alias_ast.impl_path(db).segments(db);
+    let mut elements = segments.elements(db);
     let Some(impl_final_part) = elements.next_back() else {
         unreachable!("impl_path should have at least one segment")
     };
@@ -656,11 +661,11 @@ fn handle_embed_impl_alias(
 /// component!(name: <component_name>, storage: <storage_name>, event: <event_name>);
 /// If the macro pattern is as expected, generates the code for impl of HasComponent in the
 /// contract.
-pub fn handle_component_inline_macro(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    component_macro_ast: &ast::ItemInlineMacro,
-    data: &mut ContractSpecificGenerationData,
+pub fn handle_component_inline_macro<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    component_macro_ast: &ast::ItemInlineMacro<'db>,
+    data: &mut ContractSpecificGenerationData<'db>,
 ) {
     let Some(legacy_component_macro_ast) = component_macro_ast.as_legacy_inline_macro(db) else {
         diagnostics
@@ -718,10 +723,10 @@ pub fn handle_component_inline_macro(
 }
 
 /// Returns an invalid `component` macro diagnostic.
-fn invalid_macro_diagnostic(
-    db: &dyn SyntaxGroup,
-    component_macro_ast: &ast::ItemInlineMacro,
-) -> PluginDiagnostic {
+fn invalid_macro_diagnostic<'db>(
+    db: &'db dyn SyntaxGroup,
+    component_macro_ast: &ast::ItemInlineMacro<'db>,
+) -> PluginDiagnostic<'db> {
     PluginDiagnostic::error(
         component_macro_ast.stable_ptr(db),
         format!(
@@ -733,10 +738,10 @@ fn invalid_macro_diagnostic(
 
 /// Remove a `component!` inline macro from the original code if it's inside a starknet::contract.
 /// Assumes that the macro name is `COMPONENT_INLINE_MACRO`.
-pub fn remove_component_inline_macro(
-    db: &dyn SyntaxGroup,
-    component_macro_ast: &ast::ItemInlineMacro,
-) -> PluginResult {
+pub fn remove_component_inline_macro<'db>(
+    db: &'db dyn SyntaxGroup,
+    component_macro_ast: &ast::ItemInlineMacro<'db>,
+) -> PluginResult<'db> {
     if let Some((_module_ast, module_kind, _)) =
         grand_grand_parent_starknet_module(component_macro_ast.as_syntax_node(), db)
     {
@@ -748,9 +753,9 @@ pub fn remove_component_inline_macro(
 }
 
 /// Checks whether the first generic argument in the path segment is `CONTRACT_STATE_NAME`.
-fn is_first_generic_arg_contract_state(
-    db: &dyn SyntaxGroup,
-    final_path_segment: &ast::PathSegment,
+fn is_first_generic_arg_contract_state<'db>(
+    db: &'db dyn SyntaxGroup,
+    final_path_segment: &ast::PathSegment<'db>,
 ) -> bool {
     let Some(generic_args) = final_path_segment.generic_args(db) else {
         return false;
@@ -770,14 +775,14 @@ fn is_first_generic_arg_contract_state(
 /// Verifies that a given Arg is named with given name and that the value is a path (simple if
 /// `only_simple_identifier` is true). Returns the value path if the verification succeeds,
 /// otherwise returns None.
-fn try_extract_named_macro_argument(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    arg_ast: &ast::Arg,
+fn try_extract_named_macro_argument<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    arg_ast: &ast::Arg<'db>,
     arg_name: &str,
     only_simple_identifier: bool,
-    component_macro_stable_ptr: impl Into<SyntaxStablePtrId>,
-) -> Option<ast::ExprPath> {
+    component_macro_stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
+) -> Option<ast::ExprPath<'db>> {
     match arg_ast.arg_clause(db) {
         ast::ArgClause::Named(clause) if clause.name(db).text(db) == arg_name => {
             match clause.value(db) {
@@ -785,7 +790,8 @@ fn try_extract_named_macro_argument(
                     if !only_simple_identifier {
                         return Some(path);
                     }
-                    let mut elements = path.segments(db).elements(db);
+                    let segments = path.segments(db);
+                    let mut elements = segments.elements(db);
                     if elements.len() != 1
                         || !matches!(elements.next_back().unwrap(), ast::PathSegment::Simple(_))
                     {

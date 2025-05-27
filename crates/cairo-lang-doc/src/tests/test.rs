@@ -13,6 +13,7 @@ use super::test_utils::{TestDatabase, set_file_content, setup_test_module};
 use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
 use crate::parser::DocumentationCommentToken;
+use crate::tests::test_utils::get_crate_id;
 
 cairo_lang_test_utils::test_file_test!(
   item_documentation,
@@ -35,7 +36,7 @@ fn documentation_test_runner(
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let mut db_val = TestDatabase::new().unwrap();
-    let crate_id = setup_test_module(&mut db_val, inputs["cairo_code"].as_str());
+    setup_test_module(&mut db_val, inputs["cairo_code"].as_str());
     let submodule_code = inputs.get("cairo_submodule_code");
 
     if let Some(submodule_code) = submodule_code {
@@ -45,7 +46,7 @@ fn documentation_test_runner(
     let db = &db_val;
 
     let mut result_doc_builder = ResultDocBuilder::new(db);
-
+    let crate_id = get_crate_id(db);
     result_doc_builder.document_module(ModuleId::CrateRoot(crate_id));
 
     TestRunnerResult::success(result_doc_builder.get_output())

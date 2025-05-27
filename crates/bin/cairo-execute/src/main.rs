@@ -10,6 +10,7 @@ use cairo_lang_executable::compile::{
 };
 use cairo_lang_executable::executable::Executable;
 use cairo_lang_execute_utils::{program_and_hints_from_executable, user_args_from_flags};
+use cairo_lang_filesystem::ids::CrateInput;
 use cairo_lang_runner::casm_run::format_for_panic;
 use cairo_lang_runner::clap::RunProfilerConfigArg;
 use cairo_lang_runner::profiling::{
@@ -177,18 +178,18 @@ struct ProofOutputArgs {
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
+    let mut diagnostics_reporter = DiagnosticsReporter::stderr();
 
-    let (opt_debug_data, executable) = {
+    let db_or_executable = {
         if args.prebuilt {
             let executable: Executable =
                 serde_json::from_reader(std::fs::File::open(&args.input_path)?)
                     .with_context(|| "Failed reading prebuilt executable.")?;
-            (None, executable)
+            itertools::Either::Left(executable)
         } else {
             // Check if args.path is a file or a directory.
             check_compiler_path(args.build.single_file, &args.input_path)?;
 
-            let mut diagnostics_reporter = DiagnosticsReporter::stderr();
             if args.build.allow_warnings {
                 diagnostics_reporter = diagnostics_reporter.allow_warnings();
             }
@@ -201,29 +202,37 @@ fn main() -> anyhow::Result<()> {
             };
 
             let mut db = prepare_db(&config)?;
-
-            let main_crate_ids = setup_project(&mut db, Path::new(&args.input_path))?;
-            let diagnostics_reporter = diagnostics_reporter.with_crates(&main_crate_ids);
-
-            let CompileExecutableResult { compiled_function, builder, debug_info } =
-                compile_executable_in_prepared_db(
-                    &db,
-                    args.build.executable.as_deref(),
-                    main_crate_ids,
-                    diagnostics_reporter,
-                    config,
-                )?;
-
-            let header_len = compiled_function
-                .wrapper
-                .header
-                .iter()
-                .map(|insn| insn.body.op_size())
-                .sum::<usize>();
-
-            let executable = Executable::new(compiled_function);
-            (Some((db, builder, debug_info, header_len)), executable)
+            let main_crate_inputs = setup_project(&mut db, Path::new(&args.input_path))?;
+            itertools::Either::Right((db, main_crate_inputs, config))
         }
+    };
+
+    let (db, opt_debug_data, executable) = match db_or_executable {
+        itertools::Either::Left(executable) => (None, None, Some(executable)),
+        itertools::Either::Right((db, main_crate_inputs, config)) => {
+            (Some(db), Some((main_crate_inputs, config)), None)
+        }
+    };
+
+    let (opt_debug_data, executable) = if let Some(db) = db.as_ref() {
+        let (main_crate_inputs, config) =
+            opt_debug_data.expect("Debug data should be available when db was created.");
+        let main_crate_ids = CrateInput::into_crate_ids(db, main_crate_inputs);
+        let CompileExecutableResult { compiled_function, builder, debug_info } =
+            compile_executable_in_prepared_db(
+                &db,
+                args.build.executable.as_deref(),
+                main_crate_ids,
+                diagnostics_reporter,
+                config,
+            )?;
+        let header_len =
+            compiled_function.wrapper.header.iter().map(|insn| insn.body.op_size()).sum::<usize>();
+
+        let executable = Executable::new(compiled_function);
+        (Some((db, builder, debug_info, header_len)), executable)
+    } else {
+        (None, executable.unwrap())
     };
 
     if args.print_bytecode_size {
@@ -344,9 +353,9 @@ fn main() -> anyhow::Result<()> {
         );
 
         let processed_profiling_info = ProfilingInfoProcessor::new(
-            Some(&db),
-            &replace_sierra_ids_in_program(&db, builder.sierra_program()),
-            &debug_info.statements_locations.get_statements_functions_map_for_tests(&db),
+            Some(db),
+            &replace_sierra_ids_in_program(db, builder.sierra_program()),
+            &debug_info.statements_locations.get_statements_functions_map_for_tests(db),
         )
         .process(&info, &ProfilingInfoProcessorParams::from_profiler_config(profiler_config));
         print!("{processed_profiling_info}");

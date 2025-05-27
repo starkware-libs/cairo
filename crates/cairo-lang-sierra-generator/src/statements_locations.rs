@@ -138,9 +138,9 @@ pub fn function_identifier_relative_to_file_module(
 /// Returns a location in the user file corresponding to the given [StableLocation].
 /// It consists of a full path to the file, a text span in the file and a boolean indicating
 /// if the location is a part of a macro expansion.
-pub fn maybe_code_location(
-    db: &dyn DefsGroup,
-    location: StableLocation,
+pub fn maybe_code_location<'db>(
+    db: &'db dyn DefsGroup,
+    location: StableLocation<'db>,
 ) -> Option<(SourceFileFullPath, SourceCodeSpan, bool)> {
     let is_macro = matches!(
         location.file_id(db).lookup_intern(db),
@@ -160,7 +160,10 @@ pub fn maybe_code_location(
 /// This function returns a fully qualified path to the file module.
 /// `None` should be returned only for compiler tests where files of type `VirtualFile` may be non
 /// generated files.
-pub fn file_module_absolute_identifier(db: &dyn DefsGroup, mut file_id: FileId) -> Option<String> {
+pub fn file_module_absolute_identifier<'db>(
+    db: &'db dyn DefsGroup,
+    mut file_id: FileId<'db>,
+) -> Option<String> {
     // `VirtualFile` is a generated file (e.g., by macros like `#[starknet::contract]`)
     // that won't have a matching file module in the db. Instead, we find its non generated parent
     // which is in the same module and have a matching file module in the db.
@@ -178,13 +181,13 @@ pub fn file_module_absolute_identifier(db: &dyn DefsGroup, mut file_id: FileId) 
 
 /// The locations in the Cairo source code which caused a statement to be generated.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct StatementsLocations {
-    pub locations: UnorderedHashMap<StatementIdx, Vec<StableLocation>>,
+pub struct StatementsLocations<'db> {
+    pub locations: UnorderedHashMap<StatementIdx, Vec<StableLocation<'db>>>,
 }
 
-impl StatementsLocations {
+impl<'db> StatementsLocations<'db> {
     /// Creates a new [StatementsLocations] object from a list of [`Option<StableLocation>`].
-    pub fn from_locations_vec(locations_vec: &[Vec<StableLocation>]) -> Self {
+    pub fn from_locations_vec(locations_vec: &[Vec<StableLocation<'db>>]) -> Self {
         let mut locations = UnorderedHashMap::default();
         for (idx, stmt_locations) in locations_vec.iter().enumerate() {
             if !stmt_locations.is_empty() {
