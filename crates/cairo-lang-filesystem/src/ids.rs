@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 use path_clean::PathClean;
-use salsa::Durability;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
@@ -47,20 +46,25 @@ impl CrateInput {
 
 /// A crate is a standalone file tree representing a single compilation unit.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum CrateLongId {
+pub enum CrateLongId<'db> {
     /// A crate that appears in crate_roots(), and on the filesystem.
     Real { name: SmolStr, discriminator: Option<SmolStr> },
     /// A virtual crate, not a part of the crate_roots(). Used mainly for tests.
-    Virtual { name: SmolStr, file_id: FileId, settings: String, cache_file: Option<BlobId> },
+    Virtual {
+        name: SmolStr,
+        file_id: FileId<'db>,
+        settings: String,
+        cache_file: Option<BlobId<'db>>,
+    },
 }
-impl CrateLongId {
+impl<'db> CrateLongId<'db> {
     pub fn name(&self) -> SmolStr {
         match self {
             CrateLongId::Real { name, .. } | CrateLongId::Virtual { name, .. } => name.clone(),
         }
     }
 
-    pub fn into_crate_input(self, db: &dyn FilesGroup) -> CrateInput {
+    pub fn into_crate_input(self, db: &'db dyn FilesGroup) -> CrateInput {
         match self {
             CrateLongId::Real { name, discriminator } => CrateInput::Real { name, discriminator },
             CrateLongId::Virtual { name, file_id, settings, cache_file } => CrateInput::Virtual {
@@ -71,24 +75,25 @@ impl CrateLongId {
             },
         }
     }
+
+    pub fn core() -> Self {
+        CrateLongId::Real { name: CORELIB_CRATE_NAME.into(), discriminator: None }
+    }
+
+    pub fn plain(name: &str) -> Self {
+        CrateLongId::Real { name: name.into(), discriminator: None }
+    }
 }
-define_short_id!(CrateId, CrateLongId, FilesGroup, lookup_intern_crate, intern_crate);
-impl CrateId {
+define_short_id!(CrateId, CrateLongId<'db>, FilesGroup, lookup_intern_crate, intern_crate);
+impl<'db> CrateId<'db> {
     /// Gets the crate id for a real crate by name, without a discriminator.
-    pub fn plain(
-        db: &(impl cairo_lang_utils::Upcast<dyn FilesGroup> + ?Sized),
-        name: &str,
-    ) -> Self {
-        CrateLongId::Real { name: name.into(), discriminator: None }.intern(db)
+    pub fn plain(db: &'db (dyn FilesGroup + 'db), name: &str) -> Self {
+        CrateId::new(db, CrateLongId::plain(name))
     }
 
     /// Gets the crate id for `core`.
-    pub fn core(db: &(impl cairo_lang_utils::Upcast<dyn FilesGroup> + ?Sized)) -> Self {
-        CrateLongId::Real { name: CORELIB_CRATE_NAME.into(), discriminator: None }.intern(db)
-    }
-
-    pub fn name(&self, db: &dyn FilesGroup) -> SmolStr {
-        self.lookup_intern(db).name()
+    pub fn core(db: &'db dyn FilesGroup) -> Self {
+        CrateId::new(db, CrateLongId::core())
     }
 }
 
@@ -97,10 +102,10 @@ impl CrateId {
 /// This id is unstable across runs and should not be used to anything that is externally visible.
 /// This is currently used to pick representative for strongly connected components.
 pub trait UnstableSalsaId {
-    fn get_internal_id(&self) -> &salsa::InternId;
+    fn get_internal_id(&self) -> &salsa::Id;
 }
-impl UnstableSalsaId for CrateId {
-    fn get_internal_id(&self) -> &salsa::InternId {
+impl UnstableSalsaId for CrateId<'_> {
+    fn get_internal_id(&self) -> &salsa::Id {
         &self.0
     }
 }
@@ -109,8 +114,8 @@ impl UnstableSalsaId for CrateId {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FlagLongId(pub SmolStr);
 define_short_id!(FlagId, FlagLongId, FilesGroup, lookup_intern_flag, intern_flag);
-impl FlagId {
-    pub fn new(db: &dyn FilesGroup, name: &str) -> Self {
+impl<'db> FlagId<'db> {
+    pub fn new(db: &'db dyn FilesGroup, name: &str) -> Self {
         FlagLongId(name.into()).intern(db)
     }
 }
@@ -121,7 +126,7 @@ impl FlagId {
 pub enum FileInput {
     OnDisk(PathBuf),
     Virtual(VirtualFileInput),
-    External(salsa::InternId),
+    External(salsa::Id),
 }
 
 impl FileInput {
@@ -137,10 +142,10 @@ impl FileInput {
 /// We use a higher level FileId struct, because not all files are on disk. Some might be online.
 /// Some might be virtual/computed on demand.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum FileLongId {
+pub enum FileLongId<'db> {
     OnDisk(PathBuf),
-    Virtual(VirtualFile),
-    External(salsa::InternId),
+    Virtual(VirtualFile<'db>),
+    External(salsa::Id),
 }
 /// Whether the file holds syntax for a module or for an expression.
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
@@ -228,8 +233,8 @@ impl VirtualFileInput {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct VirtualFile {
-    pub parent: Option<FileId>,
+pub struct VirtualFile<'db> {
+    pub parent: Option<FileId<'db>>,
     pub name: SmolStr,
     pub content: Arc<str>,
     pub code_mappings: Arc<[CodeMapping]>,
@@ -239,8 +244,8 @@ pub struct VirtualFile {
     /// This field is used by `cairo-language-server` for optimization purposes.
     pub original_item_removed: bool,
 }
-impl VirtualFile {
-    fn full_path(&self, db: &dyn FilesGroup) -> String {
+impl<'db> VirtualFile<'db> {
+    fn full_path(&self, db: &'db dyn FilesGroup) -> String {
         if let Some(parent) = self.parent {
             // TODO(yuval): consider a different path format for virtual files.
             format!("{}[{}]", parent.full_path(db), self.name)
@@ -263,8 +268,20 @@ impl VirtualFile {
     }
 }
 
-impl FileLongId {
-    pub fn file_name(&self, db: &dyn FilesGroup) -> String {
+impl<'db> FileId<'db> {
+    pub fn file_name(self, db: &dyn FilesGroup) -> String {
+        self.lookup_intern(db).file_name(db)
+    }
+    pub fn full_path(self, db: &dyn FilesGroup) -> String {
+        self.lookup_intern(db).full_path(db)
+    }
+    pub fn kind(self, db: &dyn FilesGroup) -> FileKind {
+        self.lookup_intern(db).kind()
+    }
+}
+
+impl<'db> FileLongId<'db> {
+    pub fn file_name(&self, db: &'db dyn FilesGroup) -> String {
         match self {
             FileLongId::OnDisk(path) => {
                 path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>").to_string()
@@ -273,7 +290,7 @@ impl FileLongId {
             FileLongId::External(external_id) => db.ext_as_virtual(*external_id).name.to_string(),
         }
     }
-    pub fn full_path(&self, db: &dyn FilesGroup) -> String {
+    pub fn full_path(&self, db: &'db dyn FilesGroup) -> String {
         match self {
             FileLongId::OnDisk(path) => path.to_str().unwrap_or("<unknown>").to_string(),
             FileLongId::Virtual(vf) => vf.full_path(db),
@@ -344,17 +361,17 @@ impl DirectoryInput {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum Directory {
+pub enum Directory<'db> {
     /// A directory on the file system.
     Real(PathBuf),
     /// A virtual directory, not on the file system. Used mainly for virtual crates.
-    Virtual { files: BTreeMap<SmolStr, FileId>, dirs: BTreeMap<SmolStr, Box<Directory>> },
+    Virtual { files: BTreeMap<SmolStr, FileId<'db>>, dirs: BTreeMap<SmolStr, Box<Directory<'db>>> },
 }
 
-impl Directory {
+impl<'db> Directory<'db> {
     /// Returns a file inside this directory. The file and directory don't necessarily exist on
     /// the file system. These are ids/paths to them.
-    pub fn file(&self, db: &dyn FilesGroup, name: SmolStr) -> FileId {
+    pub fn file<'r>(&self, db: &'r (dyn FilesGroup + 'db), name: SmolStr) -> FileId<'r> {
         match self {
             Directory::Real(path) => FileId::new(db, path.join(name.as_str())),
             Directory::Virtual { files, dirs: _ } => files
@@ -366,7 +383,7 @@ impl Directory {
 
     /// Returns a sub directory inside this directory. These directories don't necessarily exist on
     /// the file system. These are ids/paths to them.
-    pub fn subdir(&self, name: SmolStr) -> Directory {
+    pub fn subdir(&self, name: SmolStr) -> Directory<'db> {
         match self {
             Directory::Real(path) => Directory::Real(path.join(name.as_str())),
             Directory::Virtual { files: _, dirs } => {
@@ -405,28 +422,21 @@ pub enum BlobLongId {
 }
 
 impl BlobLongId {
-    pub fn content(self, db: &dyn FilesGroup) -> Option<Arc<[u8]>> {
+    pub fn content(self) -> Option<Arc<[u8]>> {
         match self {
-            BlobLongId::OnDisk(path) => {
-                // This does not result in performance cost due to OS caching and the fact that
-                // salsa will re-execute only this single query if the file content
-                // did not change.
-                db.salsa_runtime().report_synthetic_read(Durability::LOW);
-
-                match std::fs::read(path) {
-                    Ok(content) => Some(Arc::from(content)),
-                    Err(_) => None,
-                }
-            }
-            BlobLongId::Virtual(content) => Some(content),
+            BlobLongId::OnDisk(path) => match std::fs::read(path) {
+                Ok(content) => Some(content.into()),
+                Err(_) => None,
+            },
+            BlobLongId::Virtual(content) => Some(content.clone()),
         }
     }
 }
 
 define_short_id!(BlobId, BlobLongId, FilesGroup, lookup_intern_blob, intern_blob);
 
-impl BlobId {
-    pub fn new(db: &dyn FilesGroup, path: PathBuf) -> BlobId {
-        BlobLongId::OnDisk(path.clean()).intern(db)
+impl<'db> BlobId<'db> {
+    pub fn new_on_disk(db: &'db (dyn FilesGroup + 'db), path: PathBuf) -> Self {
+        BlobId::new(db, BlobLongId::OnDisk(path.clean()))
     }
 }
