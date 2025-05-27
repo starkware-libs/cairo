@@ -5,12 +5,12 @@ use super::SyntaxNode;
 use super::db::SyntaxGroup;
 
 pub struct SyntaxNodeWithDb<'a, Db: SyntaxGroup> {
-    node: &'a SyntaxNode,
+    node: &'a SyntaxNode<'a>,
     db: &'a Db,
 }
 
 impl<'a, Db: SyntaxGroup> SyntaxNodeWithDb<'a, Db> {
-    pub fn new(node: &'a SyntaxNode, db: &'a Db) -> Self {
+    pub fn new(node: &'a SyntaxNode<'a>, db: &'a Db) -> Self {
         Self { node, db }
     }
 }
@@ -56,7 +56,7 @@ impl<Db: SyntaxGroup> Iterator for SyntaxNodeWithDbIterator<'_, Db> {
 /// We split the content of the `SyntaxNode` into three parts: the prefix trivia, the main content
 /// of the node, and the suffix trivia. Each part is represented as a separate `PrimitiveToken`
 /// with its corresponding span.
-fn token_from_syntax_node(node: SyntaxNode, db: &dyn SyntaxGroup) -> Vec<PrimitiveToken> {
+fn token_from_syntax_node(node: SyntaxNode<'_>, db: &dyn SyntaxGroup) -> Vec<PrimitiveToken> {
     let span_without_trivia = node.span_without_trivia(db);
     let span_with_trivia = node.span(db);
     let text = node.get_text(db);

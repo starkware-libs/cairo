@@ -24,19 +24,19 @@ use crate::{Block, BlockEnd, BlockId, MatchInfo, Statement, VarRemapping, VarUsa
 
 /// Block builder, describing its current state.
 #[derive(Clone)]
-pub struct BlockBuilder {
+pub struct BlockBuilder<'db> {
     /// A store for semantic variables, owning their OwnedVariable instances.
-    pub semantics: SemanticLoweringMapping,
+    pub semantics: SemanticLoweringMapping<'db>,
     /// The semantic variables that are captured as snapshots in this block.
-    pub snapped_semantics: OrderedHashMap<MemberPath, VariableId>,
+    pub snapped_semantics: OrderedHashMap<MemberPath<'db>, VariableId<'db>>,
     /// The semantic variables that are added/changed in this block.
-    changed_member_paths: OrderedHashSet<MemberPath>,
+    changed_member_paths: OrderedHashSet<MemberPath<'db>>,
     /// Current sequence of lowered statements emitted.
-    pub statements: StatementsBuilder,
+    pub statements: StatementsBuilder<'db>,
     /// The block id to use for this block when it's finalized.
     pub block_id: BlockId,
 }
-impl BlockBuilder {
+impl<'db> BlockBuilder<'db> {
     /// Creates a new [BlockBuilder] for the root block of a function body.
     pub fn root(block_id: BlockId) -> Self {
         BlockBuilder {
@@ -49,7 +49,7 @@ impl BlockBuilder {
     }
 
     /// Creates a [BlockBuilder] for a subscope.
-    pub fn child_block_builder(&self, block_id: BlockId) -> BlockBuilder {
+    pub fn child_block_builder(&self, block_id: BlockId) -> BlockBuilder<'db> {
         BlockBuilder {
             semantics: self.semantics.clone(),
             snapped_semantics: self.snapped_semantics.clone(),
@@ -61,7 +61,7 @@ impl BlockBuilder {
 
     /// Creates a [BlockBuilder] for a sibling builder. This is used when an original block is split
     /// (e.g. after a match statement) to add the ability to 'goto' to after-the-block.
-    pub fn sibling_block_builder(&self, block_id: BlockId) -> BlockBuilder {
+    pub fn sibling_block_builder(&self, block_id: BlockId) -> BlockBuilder<'db> {
         BlockBuilder {
             semantics: self.semantics.clone(),
             snapped_semantics: self.snapped_semantics.clone(),
@@ -72,16 +72,16 @@ impl BlockBuilder {
     }
 
     /// Binds a semantic variable to a lowered variable.
-    pub fn put_semantic(&mut self, semantic_var_id: semantic::VarId, var: VariableId) {
+    pub fn put_semantic(&mut self, semantic_var_id: semantic::VarId<'db>, var: VariableId<'db>) {
         self.semantics.introduce(MemberPath::Var(semantic_var_id), var);
         self.changed_member_paths.insert(MemberPath::Var(semantic_var_id));
     }
 
     pub fn update_ref(
         &mut self,
-        ctx: &mut LoweringContext<'_, '_>,
-        member_path: &ExprVarMemberPath,
-        var: VariableId,
+        ctx: &mut LoweringContext<'db, '_>,
+        member_path: &ExprVarMemberPath<'db>,
+        var: VariableId<'db>,
     ) {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
         self.update_ref_raw(ctx, member_path.into(), var, location);
@@ -89,10 +89,10 @@ impl BlockBuilder {
 
     pub fn update_ref_raw(
         &mut self,
-        ctx: &mut LoweringContext<'_, '_>,
-        member_path: MemberPath,
-        var: VariableId,
-        location: LocationId,
+        ctx: &mut LoweringContext<'db, '_>,
+        member_path: MemberPath<'db>,
+        var: VariableId<'db>,
+        location: LocationId<'db>,
     ) {
         // Invalidate snapshot to the given memberpath.
         self.snapped_semantics.swap_remove(&member_path);
@@ -106,19 +106,19 @@ impl BlockBuilder {
 
     pub fn get_ref(
         &mut self,
-        ctx: &mut LoweringContext<'_, '_>,
-        member_path: &ExprVarMemberPath,
-    ) -> Option<VarUsage> {
+        ctx: &mut LoweringContext<'db, '_>,
+        member_path: &ExprVarMemberPath<'db>,
+    ) -> Option<VarUsage<'db>> {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
         self.get_ref_raw(ctx, &member_path.into(), location)
     }
 
     pub fn get_ref_raw(
         &mut self,
-        ctx: &mut LoweringContext<'_, '_>,
-        member_path: &MemberPath,
-        location: LocationId,
-    ) -> Option<VarUsage> {
+        ctx: &mut LoweringContext<'db, '_>,
+        member_path: &MemberPath<'db>,
+        location: LocationId<'db>,
+    ) -> Option<VarUsage<'db>> {
         self.semantics
             .get(
                 BlockStructRecomposer { statements: &mut self.statements, ctx, location },
@@ -128,7 +128,7 @@ impl BlockBuilder {
     }
 
     /// Updates the reference of a semantic variable to a snapshot of its lowered variable.
-    pub fn update_snap_ref(&mut self, member_path: &ExprVarMemberPath, var: VariableId) {
+    pub fn update_snap_ref(&mut self, member_path: &ExprVarMemberPath<'db>, var: VariableId<'db>) {
         self.snapped_semantics.insert(member_path.into(), var);
     }
 
@@ -136,11 +136,11 @@ impl BlockBuilder {
     /// parents.
     pub fn get_snap_ref(
         &mut self,
-        ctx: &mut LoweringContext<'_, '_>,
-        member_path: &ExprVarMemberPath,
-    ) -> Option<VarUsage> {
+        ctx: &mut LoweringContext<'db, '_>,
+        member_path: &ExprVarMemberPath<'db>,
+    ) -> Option<VarUsage<'db>> {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
-        if let Some(var_id) = self.snapped_semantics.get::<MemberPath>(&member_path.into()) {
+        if let Some(var_id) = self.snapped_semantics.get::<MemberPath<'_>>(&member_path.into()) {
             return Some(VarUsage { var_id: *var_id, location });
         }
         let ExprVarMemberPath::Member { parent, member_id, concrete_struct_id, .. } = member_path
@@ -171,32 +171,32 @@ impl BlockBuilder {
     }
 
     /// Adds a statement to the block.
-    pub fn push_statement(&mut self, statement: Statement) {
+    pub fn push_statement(&mut self, statement: Statement<'db>) {
         self.statements.push_statement(statement);
     }
 
     /// Ends a block with an unreachable match.
-    pub fn unreachable_match(self, ctx: &mut LoweringContext<'_, '_>, match_info: MatchInfo) {
+    pub fn unreachable_match(self, ctx: &mut LoweringContext<'db, '_>, match_info: MatchInfo<'db>) {
         self.finalize(ctx, BlockEnd::Match { info: match_info });
     }
 
     /// Ends a block with Panic.
-    pub fn panic(self, ctx: &mut LoweringContext<'_, '_>, data: VarUsage) -> Maybe<()> {
+    pub fn panic(self, ctx: &mut LoweringContext<'db, '_>, data: VarUsage<'db>) -> Maybe<()> {
         self.finalize(ctx, BlockEnd::Panic(data));
         Ok(())
     }
 
     /// Ends a block with Callsite.
-    pub fn goto_callsite(self, expr: Option<VarUsage>) -> SealedBlockBuilder {
+    pub fn goto_callsite(self, expr: Option<VarUsage<'db>>) -> SealedBlockBuilder<'db> {
         SealedBlockBuilder::GotoCallsite(SealedGotoCallsite { builder: self, expr })
     }
 
     /// Ends a block with Return.
     pub fn ret(
         mut self,
-        ctx: &mut LoweringContext<'_, '_>,
-        expr: VarUsage,
-        location: LocationId,
+        ctx: &mut LoweringContext<'db, '_>,
+        expr: VarUsage<'db>,
+        location: LocationId<'db>,
     ) -> Maybe<()> {
         let refs = ctx
             .signature
@@ -217,7 +217,7 @@ impl BlockBuilder {
     }
 
     /// Ends a block with known ending information. Used by [SealedBlockBuilder].
-    pub fn finalize(self, ctx: &mut LoweringContext<'_, '_>, end: BlockEnd) {
+    pub fn finalize(self, ctx: &mut LoweringContext<'db, '_>, end: BlockEnd<'db>) {
         let block = Block { statements: self.statements.statements, end };
         ctx.blocks.set_block(self.block_id, block);
     }
@@ -226,11 +226,11 @@ impl BlockBuilder {
     /// Replaces `self` with a sibling builder.
     pub fn merge_and_end_with_match(
         &mut self,
-        ctx: &mut LoweringContext<'_, '_>,
-        match_info: MatchInfo,
-        sealed_blocks: Vec<SealedBlockBuilder>,
-        location: LocationId,
-    ) -> LoweringResult<LoweredExpr> {
+        ctx: &mut LoweringContext<'db, '_>,
+        match_info: MatchInfo<'db>,
+        sealed_blocks: Vec<SealedBlockBuilder<'db>>,
+        location: LocationId<'db>,
+    ) -> LoweringResult<'db, LoweredExpr<'db>> {
         let Some((merged_expr, following_block)) = self.merge_sealed(ctx, sealed_blocks, location)
         else {
             return Err(LoweringFlowError::Match(match_info));
@@ -246,10 +246,10 @@ impl BlockBuilder {
     /// Returns the variable usage of the closure.
     pub fn capture(
         &mut self,
-        ctx: &mut LoweringContext<'_, '_>,
-        usage: Usage,
-        expr: &semantic::ExprClosure,
-    ) -> (VarUsage, ClosureInfo) {
+        ctx: &mut LoweringContext<'db, '_>,
+        usage: Usage<'db>,
+        expr: &semantic::ExprClosure<'db>,
+    ) -> (VarUsage<'db>, ClosureInfo<'db>) {
         let location = ctx.get_location(expr.stable_ptr.untyped());
 
         let inputs = chain!(
@@ -264,7 +264,7 @@ impl BlockBuilder {
         .map(|expr| expr.as_var_usage(ctx, self).unwrap())
         .collect_vec();
 
-        let members: OrderedHashMap<MemberPath, semantic::TypeId> =
+        let members: OrderedHashMap<MemberPath<'_>, semantic::TypeId<'_>> =
             chain!(usage.usage.values(), usage.changes.values())
                 .map(|expr| (expr.into(), expr.ty()))
                 .collect();
@@ -306,10 +306,10 @@ impl BlockBuilder {
     /// Otherwise, returns None.
     fn merge_sealed(
         &mut self,
-        ctx: &mut LoweringContext<'_, '_>,
-        sealed_blocks: Vec<SealedBlockBuilder>,
-        location: LocationId,
-    ) -> Option<(LoweredExpr, BlockId)> {
+        ctx: &mut LoweringContext<'db, '_>,
+        sealed_blocks: Vec<SealedBlockBuilder<'db>>,
+        location: LocationId<'db>,
+    ) -> Option<(LoweredExpr<'db>, BlockId)> {
         // TODO(spapini): When adding Gotos, include the callsite target in the required information
         // to merge.
         // TODO(spapini): Don't remap if we have a single reachable branch.
@@ -397,11 +397,11 @@ impl BlockBuilder {
     /// Invalidates the closure variable and returns the captured variables.
     pub fn destructure_closure(
         &mut self,
-        ctx: &mut LoweringContext<'_, '_>,
-        location: LocationId,
-        closure_var: VariableId,
-        closure_info: &ClosureInfo,
-    ) -> Vec<VariableId> {
+        ctx: &mut LoweringContext<'db, '_>,
+        location: LocationId<'db>,
+        closure_var: VariableId<'db>,
+        closure_info: &ClosureInfo<'db>,
+    ) -> Vec<VariableId<'db>> {
         self.semantics.destructure_closure(
             &mut BlockStructRecomposer { statements: &mut self.statements, ctx, location },
             closure_var,
@@ -410,8 +410,10 @@ impl BlockBuilder {
     }
 }
 
-impl<'a> DebugWithDb<ExprFormatter<'a>> for BlockBuilder {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &ExprFormatter<'a>) -> std::fmt::Result {
+impl<'db> DebugWithDb<'db> for BlockBuilder<'db> {
+    type Db = ExprFormatter<'db>;
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &ExprFormatter<'db>) -> std::fmt::Result {
         writeln!(f, "block_id: {:?}", self.block_id)?;
         if !self.statements.statements.is_empty() {
             writeln!(f, "statements:")?;
@@ -427,11 +429,16 @@ impl<'a> DebugWithDb<ExprFormatter<'a>> for BlockBuilder {
 }
 
 /// Gets the type of a semantic variable.
-fn get_ty(ctx: &LoweringContext<'_, '_>, member_path: &MemberPath) -> semantic::TypeId {
+fn get_ty<'db>(
+    ctx: &LoweringContext<'db, '_>,
+    member_path: &MemberPath<'db>,
+) -> semantic::TypeId<'db> {
     match member_path {
         MemberPath::Var(var) => ctx.semantic_defs[var].ty(),
         MemberPath::Member { member_id, concrete_struct_id, .. } => {
-            ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()[&member_id.name(ctx.db)].ty
+            ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()
+                [&member_id.name(ctx.db).intern(ctx.db)]
+                .ty
         }
     }
 }
@@ -439,37 +446,37 @@ fn get_ty(ctx: &LoweringContext<'_, '_>, member_path: &MemberPath) -> semantic::
 /// Remapping of lowered variables with more semantic information regarding what is the semantic
 /// role of the lowered variables.
 #[derive(Debug, Default)]
-pub struct SemanticRemapping {
-    expr: Option<VariableId>,
-    member_path_value: OrderedHashMap<MemberPath, VariableId>,
+pub struct SemanticRemapping<'db> {
+    expr: Option<VariableId<'db>>,
+    member_path_value: OrderedHashMap<MemberPath<'db>, VariableId<'db>>,
 }
 
 /// Represents a sealed [BlockBuilder] that ends with returning (goto) to the callsite.
-pub struct SealedGotoCallsite {
+pub struct SealedGotoCallsite<'db> {
     /// The sealed builder.
-    pub builder: BlockBuilder,
+    pub builder: BlockBuilder<'db>,
     /// The expression that is returned by the block to the callsite. Can be `None` if the block
     /// returns the unit type.
-    pub expr: Option<VarUsage>,
+    pub expr: Option<VarUsage<'db>>,
 }
 
 /// A sealed [BlockBuilder], ready to be merged with sibling blocks to end the block.
 #[allow(clippy::large_enum_variant)]
-pub enum SealedBlockBuilder {
+pub enum SealedBlockBuilder<'db> {
     /// Block should end by goto callsite.
-    GotoCallsite(SealedGotoCallsite),
+    GotoCallsite(SealedGotoCallsite<'db>),
     /// Block end is already known.
     Ends(BlockId),
 }
-impl SealedBlockBuilder {
+impl<'db> SealedBlockBuilder<'db> {
     /// Finalizes a non-finalized block, given the semantic remapping of variables and the target
     /// block to jump to.
     fn finalize(
         self,
-        ctx: &mut LoweringContext<'_, '_>,
+        ctx: &mut LoweringContext<'db, '_>,
         target: BlockId,
-        semantic_remapping: &SemanticRemapping,
-        location: LocationId,
+        semantic_remapping: &SemanticRemapping<'db>,
+        location: LocationId<'db>,
     ) {
         if let SealedBlockBuilder::GotoCallsite(SealedGotoCallsite { mut builder, expr }) = self {
             let mut remapping = VarRemapping::default();
@@ -501,17 +508,17 @@ impl SealedBlockBuilder {
     }
 }
 
-struct BlockStructRecomposer<'a, 'b, 'c> {
-    statements: &'a mut StatementsBuilder,
-    ctx: &'a mut LoweringContext<'b, 'c>,
-    location: LocationId,
+struct BlockStructRecomposer<'a, 'b, 'db> {
+    statements: &'a mut StatementsBuilder<'db>,
+    ctx: &'a mut LoweringContext<'db, 'b>,
+    location: LocationId<'db>,
 }
-impl StructRecomposer for BlockStructRecomposer<'_, '_, '_> {
+impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
     fn deconstruct(
         &mut self,
-        concrete_struct_id: semantic::ConcreteStructId,
-        value: VariableId,
-    ) -> OrderedHashMap<MemberId, VariableId> {
+        concrete_struct_id: semantic::ConcreteStructId<'db>,
+        value: VariableId<'db>,
+    ) -> OrderedHashMap<MemberId<'db>, VariableId<'db>> {
         let members = self.ctx.db.concrete_struct_members(concrete_struct_id).unwrap();
         let members = members.values().collect_vec();
         let member_ids = members.iter().map(|m| m.id);
@@ -523,9 +530,9 @@ impl StructRecomposer for BlockStructRecomposer<'_, '_, '_> {
 
     fn deconstruct_by_types(
         &mut self,
-        value: VariableId,
-        types: impl Iterator<Item = semantic::TypeId>,
-    ) -> Vec<VariableId> {
+        value: VariableId<'db>,
+        types: impl Iterator<Item = semantic::TypeId<'db>>,
+    ) -> Vec<VariableId<'db>> {
         // We use the location of the variable being deconstructed for the members
         // to get a better location for variable not dropped errors.
         let location = self.ctx.variables[value].location;
@@ -540,9 +547,9 @@ impl StructRecomposer for BlockStructRecomposer<'_, '_, '_> {
 
     fn reconstruct(
         &mut self,
-        concrete_struct_id: semantic::ConcreteStructId,
-        members: Vec<VariableId>,
-    ) -> VariableId {
+        concrete_struct_id: semantic::ConcreteStructId<'db>,
+        members: Vec<VariableId<'db>>,
+    ) -> VariableId<'db> {
         let ty =
             TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)).intern(self.ctx.db);
         // TODO(ilya): Is using the `self.location` correct here?
@@ -558,7 +565,7 @@ impl StructRecomposer for BlockStructRecomposer<'_, '_, '_> {
         .var_id
     }
 
-    fn var_ty(&self, var: VariableId) -> semantic::TypeId {
+    fn var_ty(&self, var: VariableId<'db>) -> semantic::TypeId<'db> {
         self.ctx.variables[var].ty
     }
 
@@ -579,11 +586,11 @@ impl StructRecomposer for BlockStructRecomposer<'_, '_, '_> {
 /// If only one parent builder is given, returns it without creating a new block.
 // TODO(lior): Remove `allow(dead_code)` once the function is used.
 #[allow(dead_code)]
-pub fn merge_block_builders(
-    ctx: &mut LoweringContext<'_, '_>,
-    parent_builders: Vec<BlockBuilder>,
-    location: LocationId,
-) -> BlockBuilder {
+pub fn merge_block_builders<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    parent_builders: Vec<BlockBuilder<'db>>,
+    location: LocationId<'db>,
+) -> BlockBuilder<'db> {
     // If there is only one parent builder, return it.
     if parent_builders.len() == 1 {
         return parent_builders.into_iter().next().unwrap();
@@ -598,7 +605,7 @@ pub fn merge_block_builders(
 
     // A map from [MemberPath] that requires a new lowered variable (due to remapping) to the
     // corresponding lowered variable.
-    let mut member_path_value = OrderedHashMap::<MemberPath, VariableId>::default();
+    let mut member_path_value = OrderedHashMap::<MemberPath<'_>, VariableId<'_>>::default();
 
     let semantics =
         merge_semantics(parent_builders.iter().map(|builder| &builder.semantics), &mut |path| {

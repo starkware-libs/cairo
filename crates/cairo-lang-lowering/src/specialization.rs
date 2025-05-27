@@ -20,18 +20,15 @@ use crate::{
 
 // A const argument for a specialized function.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum SpecializationArg {
-    Const(ConstValue),
-    EmptyArray(TypeId),
-    Struct(Vec<SpecializationArg>),
+pub enum SpecializationArg<'db> {
+    Const(ConstValue<'db>),
+    EmptyArray(TypeId<'db>),
+    Struct(Vec<SpecializationArg<'db>>),
 }
 
-impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for SpecializationArg {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &(dyn LoweringGroup + 'a),
-    ) -> std::fmt::Result {
+impl<'a> DebugWithDb<'a> for SpecializationArg<'a> {
+    type Db = dyn LoweringGroup;
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'a dyn LoweringGroup) -> std::fmt::Result {
         match self {
             SpecializationArg::Const(value) => write!(f, "{:?}", value.debug(db)),
             SpecializationArg::Struct(inner) => {
@@ -56,16 +53,16 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for SpecializationArg {
 
 /// The state of the specialization arg building process.
 /// currently only structs require an additional build step.
-enum SpecializationArgBuildingState<'a> {
-    Initial(&'a SpecializationArg),
-    BuildStruct(Vec<VariableId>),
+enum SpecializationArgBuildingState<'db, 'a> {
+    Initial(&'a SpecializationArg<'db>),
+    BuildStruct(Vec<VariableId<'db>>),
 }
 
 /// Returns the lowering of a specialized function.
-pub fn specialized_function_lowered(
-    db: &dyn LoweringGroup,
-    specialized: SpecializedFunction,
-) -> Maybe<Lowered> {
+pub fn specialized_function_lowered<'db>(
+    db: &'db dyn LoweringGroup,
+    specialized: SpecializedFunction<'db>,
+) -> Maybe<Lowered<'db>> {
     let base = db.lowered_body(specialized.base, LoweringStage::Monomorphized)?;
     let base_semantic = specialized.base.base_semantic_function(db);
 
@@ -153,7 +150,7 @@ pub fn specialized_function_lowered(
         }
     }
 
-    let outputs: Vec<VariableId> =
+    let outputs: Vec<VariableId<'_>> =
         chain!(base.signature.extra_rets.iter().map(|ret| ret.ty()), [base.signature.return_type])
             .map(|ty| variables.new_var(VarRequest { ty, location }))
             .collect_vec();
@@ -178,9 +175,9 @@ pub fn specialized_function_lowered(
 }
 
 /// Query implementation of [LoweringGroup::priv_should_specialize].
-pub fn priv_should_specialize(
-    db: &dyn LoweringGroup,
-    function_id: ids::ConcreteFunctionWithBodyId,
+pub fn priv_should_specialize<'db>(
+    db: &'db dyn LoweringGroup,
+    function_id: ids::ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
     let ids::ConcreteFunctionWithBodyLongId::Specialized(SpecializedFunction { base, .. }) =
         function_id.lookup_intern(db)

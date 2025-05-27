@@ -23,7 +23,7 @@ use crate::reorganize_blocks::reorganize_blocks;
 
 /// Enum of the optimization phases that can be used in a strategy.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum OptimizationPhase {
+pub enum OptimizationPhase<'db> {
     ApplyInlining {
         enable_const_folding: bool,
     },
@@ -49,21 +49,21 @@ pub enum OptimizationPhase {
     /// Stops after a certain number of iterations, or when no more changes are made.
     SubStrategy {
         /// The id of the optimization strategy to apply.
-        strategy: OptimizationStrategyId,
+        strategy: OptimizationStrategyId<'db>,
         /// The number of times to apply the strategy.
         iterations: usize,
     },
 }
 
-impl OptimizationPhase {
+impl<'db> OptimizationPhase<'db> {
     /// Applies the optimization phase to the lowering.
     ///
     /// Assumes `lowered` is a lowering of `function`.
     pub fn apply(
         self,
-        db: &dyn LoweringGroup,
-        function: ConcreteFunctionWithBodyId,
-        lowered: &mut Lowered,
+        db: &'db dyn LoweringGroup,
+        function: ConcreteFunctionWithBodyId<'db>,
+        lowered: &mut Lowered<'db>,
     ) -> Maybe<()> {
         match self {
             OptimizationPhase::ApplyInlining { enable_const_folding } => {
@@ -102,7 +102,7 @@ impl OptimizationPhase {
 
 define_short_id!(
     OptimizationStrategyId,
-    OptimizationStrategy,
+    OptimizationStrategy<'db>,
     LoweringGroup,
     lookup_intern_strategy,
     intern_strategy
@@ -110,17 +110,17 @@ define_short_id!(
 
 /// A strategy is a sequence of optimization phases.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct OptimizationStrategy(pub Vec<OptimizationPhase>);
+pub struct OptimizationStrategy<'db>(pub Vec<OptimizationPhase<'db>>);
 
-impl OptimizationStrategyId {
+impl<'db> OptimizationStrategyId<'db> {
     /// Applies the optimization strategy phase to the lowering.
     ///
     /// Assumes `lowered` is a lowering of `function`.
     pub fn apply_strategy(
         self,
-        db: &dyn LoweringGroup,
-        function: ConcreteFunctionWithBodyId,
-        lowered: &mut Lowered,
+        db: &'db dyn LoweringGroup,
+        function: ConcreteFunctionWithBodyId<'db>,
+        lowered: &mut Lowered<'db>,
     ) -> Maybe<()> {
         for phase in self.lookup_intern(db).0 {
             phase.apply(db, function, lowered)?;
@@ -131,7 +131,9 @@ impl OptimizationStrategyId {
 }
 
 /// Query implementation of [crate::db::LoweringGroup::baseline_optimization_strategy].
-pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
+pub fn baseline_optimization_strategy<'db>(
+    db: &'db dyn LoweringGroup,
+) -> OptimizationStrategyId<'db> {
     OptimizationStrategy(vec![
         // Must be right before inlining.
         OptimizationPhase::ReorganizeBlocks,
@@ -162,7 +164,7 @@ pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStr
 }
 
 /// Query implementation of [crate::db::LoweringGroup::final_optimization_strategy].
-pub fn final_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
+pub fn final_optimization_strategy<'db>(db: &'db dyn LoweringGroup) -> OptimizationStrategyId<'db> {
     OptimizationStrategy(vec![
         OptimizationPhase::GasRedeposit,
         OptimizationPhase::EarlyUnsafePanic,

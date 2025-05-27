@@ -11,7 +11,7 @@ use crate::db::SierraGenGroup;
 /// Query implementation of [SierraGenGroup::get_ap_change].
 pub fn get_ap_change(
     db: &dyn SierraGenGroup,
-    function_id: ConcreteFunctionWithBodyId,
+    function_id: ConcreteFunctionWithBodyId<'_>,
 ) -> Maybe<SierraApChange> {
     // The implementation of get_ap_change() may call this function recursively. To guarantee no
     // salsa query cycles are created, we first verify that there are no cycles.

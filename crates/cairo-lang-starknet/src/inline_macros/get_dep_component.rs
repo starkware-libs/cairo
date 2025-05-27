@@ -18,12 +18,12 @@ impl NamedPlugin for GetDepComponentMacro {
     const NAME: &'static str = "get_dep_component";
 }
 impl InlineMacroExprPlugin for GetDepComponentMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
         get_dep_component_generate_code_helper(db, syntax, false)
     }
 }
@@ -35,23 +35,23 @@ impl NamedPlugin for GetDepComponentMutMacro {
     const NAME: &'static str = "get_dep_component_mut";
 }
 impl InlineMacroExprPlugin for GetDepComponentMutMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
         get_dep_component_generate_code_helper(db, syntax, true)
     }
 }
 
 /// A helper function for the code generation of both `DepComponentMacro` and
 /// `DepComponentMutMacro`. `is_mut` selects between the two.
-fn get_dep_component_generate_code_helper(
-    db: &dyn SyntaxGroup,
-    syntax: &ast::ExprInlineMacro,
+fn get_dep_component_generate_code_helper<'db>(
+    db: &'db dyn SyntaxGroup,
+    syntax: &ast::ExprInlineMacro<'db>,
     is_mut: bool,
-) -> InlinePluginResult {
+) -> InlinePluginResult<'db> {
     let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
         return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
             syntax.as_syntax_node().stable_ptr(db),

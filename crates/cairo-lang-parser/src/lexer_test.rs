@@ -357,7 +357,7 @@ fn test_lex_token_with_trivia() {
 fn test_cases() {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
-    let res: Vec<LexerTerminal> = Lexer::from_text(db, "let x: &T = ` 6; //  5+ 3;").collect();
+    let res: Vec<LexerTerminal<'_>> = Lexer::from_text(db, "let x: &T = ` 6; //  5+ 3;").collect();
     assert_eq!(
         res,
         vec![
