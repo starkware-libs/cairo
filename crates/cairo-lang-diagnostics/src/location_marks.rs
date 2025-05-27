@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_filesystem::span::{FileSummary, TextPosition, TextSpan, TextWidth};
+use cairo_lang_utils::LookupIntern;
 use itertools::repeat_n;
 
 use crate::DiagnosticLocation;
@@ -39,7 +40,8 @@ fn get_single_line_location_marks(
     location: &DiagnosticLocation,
 ) -> String {
     // TODO(ilya, 10/10/2023): Handle locations which spread over a few lines.
-    let content = db.file_content(location.file_id).expect("File missing from DB.");
+    let content =
+        db.file_content(location.file_id).expect("File missing from DB.").lookup_intern(db);
     let summary = db.file_summary(location.file_id).expect("File missing from DB.");
     let span = &location.span;
     let TextPosition { line: first_line_idx, col } = span
@@ -71,7 +73,8 @@ fn get_multiple_lines_location_marks(
     location: &DiagnosticLocation,
     skip_middle_lines: bool,
 ) -> String {
-    let content = db.file_content(location.file_id).expect("File missing from DB.");
+    let content =
+        db.file_content(location.file_id).expect("File missing from DB.").lookup_intern(db);
     let summary = db.file_summary(location.file_id).expect("File missing from DB.");
 
     let span = &location.span;

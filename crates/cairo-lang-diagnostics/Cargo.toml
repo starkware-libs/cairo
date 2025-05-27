@@ -10,6 +10,7 @@ description = "Diagnostic utilities."
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.11.4" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.11.4" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.11.4" }
+salsa.workspace = true
 itertools = { workspace = true, default-features = true }
 
 [dev-dependencies]

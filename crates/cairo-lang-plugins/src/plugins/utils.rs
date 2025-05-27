@@ -5,13 +5,13 @@ use itertools::{Itertools, chain};
 use smol_str::SmolStr;
 
 /// Information on struct members or enum variants.
-pub struct MemberInfo {
+pub struct MemberInfo<'a> {
     pub name: SmolStr,
     pub ty: String,
-    pub attributes: ast::AttributeList,
+    pub attributes: ast::AttributeList<'a>,
     pub is_generics_dependent: bool,
 }
-impl MemberInfo {
+impl<'a> MemberInfo<'a> {
     pub fn impl_name(&self, trt: &str) -> String {
         if self.is_generics_dependent {
             let short_name = trt.split("::").last().unwrap_or(trt);
@@ -71,16 +71,16 @@ impl GenericParamsInfo {
 }
 
 /// Information for the type being processed by a plugin.
-pub struct PluginTypeInfo {
+pub struct PluginTypeInfo<'a> {
     pub name: SmolStr,
-    pub attributes: ast::AttributeList,
+    pub attributes: ast::AttributeList<'a>,
     pub generics: GenericParamsInfo,
-    pub members_info: Vec<MemberInfo>,
+    pub members_info: Vec<MemberInfo<'a>>,
     pub type_variant: TypeVariant,
 }
-impl PluginTypeInfo {
+impl<'a> PluginTypeInfo<'a> {
     /// Extracts the information on the type being derived.
-    pub fn new(db: &dyn SyntaxGroup, item_ast: &ast::ModuleItem) -> Option<Self> {
+    pub fn new(db: &'a dyn SyntaxGroup, item_ast: &ast::ModuleItem<'a>) -> Option<Self> {
         match item_ast {
             ast::ModuleItem::Struct(struct_ast) => {
                 let generics = GenericParamsInfo::new(db, struct_ast.generic_params(db));
@@ -160,11 +160,11 @@ impl PluginTypeInfo {
 }
 
 /// Extracts the information on the members of the struct.
-fn extract_members(
-    db: &dyn SyntaxGroup,
-    members: ast::MemberList,
+fn extract_members<'a>(
+    db: &'a dyn SyntaxGroup,
+    members: ast::MemberList<'a>,
     generics: &[&str],
-) -> Vec<MemberInfo> {
+) -> Vec<MemberInfo<'a>> {
     members
         .elements(db)
         .into_iter()
@@ -178,11 +178,11 @@ fn extract_members(
 }
 
 /// Extracts the information on the variants of the enum.
-fn extract_variants(
-    db: &dyn SyntaxGroup,
-    variants: ast::VariantList,
+fn extract_variants<'a>(
+    db: &'a dyn SyntaxGroup,
+    variants: ast::VariantList<'a>,
     generics: &[&str],
-) -> Vec<MemberInfo> {
+) -> Vec<MemberInfo<'a>> {
     variants
         .elements(db)
         .into_iter()
