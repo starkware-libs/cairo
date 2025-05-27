@@ -3,7 +3,7 @@
 mod test;
 
 use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::FlagId;
+use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
 use cairo_lang_semantic::{ConcreteVariant, corelib};
 use itertools::{Itertools, zip_eq};
 
@@ -28,15 +28,15 @@ use crate::{
 ///
 /// Note that for implementation simplicity this stage must be applied before `LowerImplicits`
 /// stage.
-pub fn gas_redeposit(
-    db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut Lowered,
+pub fn gas_redeposit<'db>(
+    db: &'db dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
+    lowered: &mut Lowered<'db>,
 ) {
     if lowered.blocks.is_empty() {
         return;
     }
-    if matches!(db.get_flag(FlagId::new(db, "add_withdraw_gas")),
+    if matches!(db.get_flag(FlagId::new(db, FlagLongId("add_withdraw_gas".into()))),
         Some(flag) if matches!(*flag, Flag::AddWithdrawGas(false)))
     {
         return;
@@ -86,15 +86,15 @@ pub fn gas_redeposit(
     }
 }
 
-pub struct GasRedepositContext {
+pub struct GasRedepositContext<'db> {
     /// The list of blocks where we need to insert redeposit_gas.
-    fixes: Vec<(BlockId, LocationId)>,
+    fixes: Vec<(BlockId, LocationId<'db>)>,
     /// The panic error variant.
-    pub err_variant: ConcreteVariant,
+    pub err_variant: ConcreteVariant<'db>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub enum RedepositState {
+pub enum RedepositState<'db> {
     /// Gas might be burned if we don't redeposit.
     Required,
     /// Redeposit is not necessary. This may occur if it has already been handled
@@ -102,17 +102,17 @@ pub enum RedepositState {
     Unnecessary,
     /// The flow returns the given variable, redeposit is required unless the return var is of the
     /// error variant.
-    Return(VariableId),
+    Return(VariableId<'db>),
 }
 
-impl Analyzer<'_> for GasRedepositContext {
-    type Info = RedepositState;
+impl<'db> Analyzer<'db, '_> for GasRedepositContext<'db> {
+    type Info = RedepositState<'db>;
 
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
         _statement_location: StatementLocation,
-        stmt: &Statement,
+        stmt: &Statement<'db>,
     ) {
         let RedepositState::Return(var_id) = info else {
             return;
@@ -133,7 +133,7 @@ impl Analyzer<'_> for GasRedepositContext {
         info: &mut Self::Info,
         _statement_location: StatementLocation,
         _target_block_id: BlockId,
-        _remapping: &VarRemapping,
+        _remapping: &VarRemapping<'db>,
     ) {
         // A goto is a convergence point, gas will get burned unless it is redeposited before the
         // convergence.
@@ -143,7 +143,7 @@ impl Analyzer<'_> for GasRedepositContext {
     fn merge_match(
         &mut self,
         _st: StatementLocation,
-        match_info: &MatchInfo,
+        match_info: &MatchInfo<'db>,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         for (info, arm) in zip_eq(infos, match_info.arms()) {
@@ -159,7 +159,7 @@ impl Analyzer<'_> for GasRedepositContext {
         RedepositState::Unnecessary
     }
 
-    fn info_from_return(&mut self, _: StatementLocation, vars: &[VarUsage]) -> Self::Info {
+    fn info_from_return(&mut self, _: StatementLocation, vars: &[VarUsage<'db>]) -> Self::Info {
         // If the function has multiple returns with different gas costs, gas will get burned unless
         // we redeposit it.
         // If however the this return corresponds to a panic, we dont redeposit due to code size

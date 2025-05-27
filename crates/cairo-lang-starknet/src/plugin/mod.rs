@@ -31,12 +31,12 @@ use self::starknet_module::{handle_module, handle_module_by_storage};
 pub struct StarknetPlugin;
 
 impl MacroPlugin for StarknetPlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         match item_ast {
             ast::ModuleItem::Module(module_ast) => handle_module(db, module_ast),
             ast::ModuleItem::Trait(trait_ast) => handle_trait(db, trait_ast),

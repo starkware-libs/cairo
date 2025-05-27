@@ -8,26 +8,26 @@ use crate::{DependencyType, LoweringStage};
 
 /// Query implementation of
 /// [crate::db::LoweringGroup::lowered_scc_representative].
-pub fn lowered_scc_representative(
-    db: &dyn LoweringGroup,
-    function: ConcreteFunctionWithBodyId,
+pub fn lowered_scc_representative<'db>(
+    db: &'db dyn LoweringGroup,
+    function: ConcreteFunctionWithBodyId<'db>,
     dependency_type: DependencyType,
     stage: LoweringStage,
-) -> ConcreteSCCRepresentative {
+) -> ConcreteSCCRepresentative<'db> {
     ConcreteSCCRepresentative(
         db.lowered_scc(function, dependency_type, stage)
             .into_iter()
-            .min_by(|x, y| x.get_internal_id().cmp(y.get_internal_id()))
+            .min_by(|x, y| x.get_internal_id().cmp(&y.get_internal_id()))
             .unwrap_or(function),
     )
 }
 
 /// Query implementation of [crate::db::LoweringGroup::lowered_scc].
-pub fn lowered_scc(
-    db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
+pub fn lowered_scc<'db>(
+    db: &'db dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
     dependency_type: DependencyType,
     stage: LoweringStage,
-) -> Vec<ConcreteFunctionWithBodyId> {
+) -> Vec<ConcreteFunctionWithBodyId<'db>> {
     compute_scc(&ConcreteFunctionWithBodyNode { function_id, db, dependency_type, stage })
 }

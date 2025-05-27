@@ -19,6 +19,7 @@ use cairo_lang_starknet_classes::allowed_libfuncs::ListSelector;
 use cairo_lang_starknet_classes::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints,
 };
+use cairo_lang_utils::Intern;
 use itertools::{Itertools, chain};
 
 use crate::abi::AbiBuilder;
@@ -39,7 +40,7 @@ mod test;
 pub fn compile_path(
     path: &Path,
     contract_path: Option<&str>,
-    mut compiler_config: CompilerConfig<'_>,
+    mut compiler_config: CompilerConfig,
 ) -> Result<ContractClass> {
     let mut db = RootDatabase::builder()
         .with_inlining_strategy(compiler_config.inlining_strategy)
@@ -47,20 +48,22 @@ pub fn compile_path(
         .with_default_plugin_suite(starknet_plugin_suite())
         .build()?;
 
-    let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
+    let main_crate_inputs = setup_project(&mut db, Path::new(&path))?;
     compiler_config.diagnostics_reporter =
-        compiler_config.diagnostics_reporter.with_crates(&main_crate_ids);
+        compiler_config.diagnostics_reporter.with_crates(&main_crate_inputs);
+    let main_crate_ids =
+        main_crate_inputs.into_iter().map(|c| c.into_crate_long_id(&db).intern(&db)).collect();
     compile_contract_in_prepared_db(&db, contract_path, main_crate_ids, compiler_config)
 }
 
 /// Runs Starknet contract compiler on the specified contract.
 /// If no contract was specified, verify that there is only one.
 /// Otherwise, return an error.
-pub fn compile_contract_in_prepared_db(
-    db: &RootDatabase,
+pub fn compile_contract_in_prepared_db<'db>(
+    db: &'db RootDatabase,
     contract_path: Option<&str>,
-    main_crate_ids: Vec<CrateId>,
-    mut compiler_config: CompilerConfig<'_>,
+    main_crate_ids: Vec<CrateId<'db>>,
+    mut compiler_config: CompilerConfig,
 ) -> Result<ContractClass> {
     let mut contracts = find_contracts(db, &main_crate_ids);
 
@@ -102,10 +105,10 @@ pub fn compile_contract_in_prepared_db(
 /// # Returns
 /// * `Ok(Vec<ContractClass>)` - List of all compiled contract classes found in main crates.
 /// * `Err(anyhow::Error)` - Compilation failed.
-pub fn compile_prepared_db(
-    db: &RootDatabase,
-    contracts: &[&ContractDeclaration],
-    mut compiler_config: CompilerConfig<'_>,
+pub fn compile_prepared_db<'db>(
+    db: &'db RootDatabase,
+    contracts: &[&ContractDeclaration<'db>],
+    mut compiler_config: CompilerConfig,
 ) -> Result<Vec<ContractClass>> {
     compiler_config.diagnostics_reporter.ensure(db)?;
 
@@ -122,10 +125,10 @@ pub fn compile_prepared_db(
 /// The `contract` value **must** come from `db`, for example as a result of calling
 /// [`find_contracts`]. Does not check diagnostics, it is expected that they are checked by caller
 /// of this function.
-fn compile_contract_with_prepared_and_checked_db(
-    db: &RootDatabase,
-    contract: &ContractDeclaration,
-    compiler_config: &CompilerConfig<'_>,
+fn compile_contract_with_prepared_and_checked_db<'db>(
+    db: &'db RootDatabase,
+    contract: &ContractDeclaration<'db>,
+    compiler_config: &CompilerConfig,
 ) -> Result<ContractClass> {
     let SemanticEntryPoints { external, l1_handler, constructor } =
         extract_semantic_entrypoints(db, contract)?;
@@ -163,33 +166,31 @@ fn compile_contract_with_prepared_and_checked_db(
         annotations.extend(Annotations::from(statements_functions))
     };
 
-    let contract_class = ContractClass::new(
-        &sierra_program,
-        entry_points_by_type,
-        Some(
-            AbiBuilder::from_submodule(db, contract.submodule_id, Default::default())
-                .ok()
-                .with_context(|| "Unexpected error while generating ABI.")?
-                .finalize()
-                .with_context(|| "Could not create ABI from contract submodule")?,
-        ),
-        annotations,
-    )?;
+    let abi_builder: Option<AbiBuilder<'db>> =
+        AbiBuilder::from_submodule(db, contract.submodule_id, Default::default()).ok();
+    let finalized_abi =
+        abi_builder.with_context(|| "Unexpected error while generating ABI.")?.finalize();
+    let abi = match finalized_abi {
+        Ok(abi) => abi,
+        Err(e) => anyhow::bail!("Could not create ABI from contract submodule: {}", e),
+    };
+    let contract_class =
+        ContractClass::new(&sierra_program, entry_points_by_type, Some(abi), annotations)?;
     contract_class.sanity_check();
     Ok(contract_class)
 }
 
-pub struct SemanticEntryPoints {
-    pub external: Vec<Aliased<ConcreteFunctionWithBodyId>>,
-    pub l1_handler: Vec<Aliased<ConcreteFunctionWithBodyId>>,
-    pub constructor: Vec<Aliased<ConcreteFunctionWithBodyId>>,
+pub struct SemanticEntryPoints<'db> {
+    pub external: Vec<Aliased<ConcreteFunctionWithBodyId<'db>>>,
+    pub l1_handler: Vec<Aliased<ConcreteFunctionWithBodyId<'db>>>,
+    pub constructor: Vec<Aliased<ConcreteFunctionWithBodyId<'db>>>,
 }
 
 /// Extracts functions from the contract.
-pub fn extract_semantic_entrypoints(
-    db: &dyn LoweringGroup,
-    contract: &ContractDeclaration,
-) -> core::result::Result<SemanticEntryPoints, anyhow::Error> {
+pub fn extract_semantic_entrypoints<'db>(
+    db: &'db dyn LoweringGroup,
+    contract: &ContractDeclaration<'db>,
+) -> core::result::Result<SemanticEntryPoints<'db>, anyhow::Error> {
     let external: Vec<_> = get_contract_abi_functions(db, contract, EXTERNAL_MODULE)?
         .into_iter()
         .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
@@ -209,9 +210,9 @@ pub fn extract_semantic_entrypoints(
 }
 
 /// Returns the entry points given their IDs sorted by selectors.
-fn get_entry_points(
-    db: &RootDatabase,
-    entry_point_functions: &[Aliased<ConcreteFunctionWithBodyId>],
+fn get_entry_points<'db>(
+    db: &'db RootDatabase,
+    entry_point_functions: &[Aliased<ConcreteFunctionWithBodyId<'db>>],
     replacer: &CanonicalReplacer,
 ) -> Result<Vec<ContractEntryPoint>> {
     let mut entry_points = vec![];
@@ -232,7 +233,7 @@ fn get_entry_points(
 pub fn starknet_compile(
     crate_path: PathBuf,
     contract_path: Option<String>,
-    config: Option<CompilerConfig<'_>>,
+    config: Option<CompilerConfig>,
     allowed_libfuncs_list: Option<ListSelector>,
 ) -> anyhow::Result<String> {
     let contract = compile_path(&crate_path, contract_path.as_deref(), config.unwrap_or_default())?;

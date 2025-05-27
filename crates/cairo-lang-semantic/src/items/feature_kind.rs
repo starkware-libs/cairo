@@ -34,10 +34,10 @@ pub enum FeatureKind {
     Internal { feature: SmolStr, note: Option<SmolStr> },
 }
 impl FeatureKind {
-    pub fn from_ast(
-        db: &dyn SyntaxGroup,
-        diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
-        attrs: &ast::AttributeList,
+    pub fn from_ast<'db>(
+        db: &'db dyn SyntaxGroup,
+        diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+        attrs: &ast::AttributeList<'db>,
     ) -> Self {
         let unstable_attrs = attrs.query_attr(db, UNSTABLE_ATTR).collect_vec();
         let deprecated_attrs = attrs.query_attr(db, DEPRECATED_ATTR).collect_vec();
@@ -46,7 +46,7 @@ impl FeatureKind {
             return Self::Stable;
         };
         if unstable_attrs.len() + deprecated_attrs.len() + internal_attrs.len() > 1 {
-            add_diag(diagnostics, &attrs.stable_ptr(db), FeatureMarkerDiagnostic::MultipleMarkers);
+            add_diag(diagnostics, attrs.stable_ptr(db), FeatureMarkerDiagnostic::MultipleMarkers);
             return Self::Stable;
         }
 
@@ -67,7 +67,7 @@ impl FeatureKind {
             feature.map(|feature| Self::Internal { feature, note }).ok_or(attr)
         }
         .unwrap_or_else(|attr| {
-            add_diag(diagnostics, &attr.stable_ptr, FeatureMarkerDiagnostic::MissingAllowFeature);
+            add_diag(diagnostics, attr.stable_ptr, FeatureMarkerDiagnostic::MissingAllowFeature);
             Self::Stable
         })
     }
@@ -80,7 +80,7 @@ pub trait HasFeatureKind {
 }
 
 /// Diagnostics for feature markers.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub enum FeatureMarkerDiagnostic {
     /// Multiple markers on the same item.
     MultipleMarkers,
@@ -93,28 +93,24 @@ pub enum FeatureMarkerDiagnostic {
 }
 
 /// Parses the feature attribute.
-fn parse_feature_attr<const EXTRA_ALLOWED: usize>(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
-    attr: &structured::Attribute,
+fn parse_feature_attr<'db, const EXTRA_ALLOWED: usize>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+    attr: &structured::Attribute<'db>,
     allowed_args: [&str; EXTRA_ALLOWED],
 ) -> [Option<SmolStr>; EXTRA_ALLOWED] {
     let mut arg_values = std::array::from_fn(|_| None);
     for AttributeArg { variant, arg, .. } in &attr.args {
         let AttributeArgVariant::Named { value: ast::Expr::String(value), name } = variant else {
-            add_diag(
-                diagnostics,
-                &arg.stable_ptr(db),
-                FeatureMarkerDiagnostic::UnsupportedArgument,
-            );
+            add_diag(diagnostics, arg.stable_ptr(db), FeatureMarkerDiagnostic::UnsupportedArgument);
             continue;
         };
         let Some(i) = allowed_args.iter().position(|x| x == &name.text.as_str()) else {
-            add_diag(diagnostics, &name.stable_ptr, FeatureMarkerDiagnostic::UnsupportedArgument);
+            add_diag(diagnostics, name.stable_ptr, FeatureMarkerDiagnostic::UnsupportedArgument);
             continue;
         };
         if arg_values[i].is_some() {
-            add_diag(diagnostics, &name.stable_ptr, FeatureMarkerDiagnostic::DuplicatedArgument);
+            add_diag(diagnostics, name.stable_ptr, FeatureMarkerDiagnostic::DuplicatedArgument);
         } else {
             arg_values[i] = Some(value.text(db));
         }
@@ -123,9 +119,9 @@ fn parse_feature_attr<const EXTRA_ALLOWED: usize>(
 }
 
 /// Helper for adding a marker diagnostic.
-fn add_diag(
-    diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
-    stable_ptr: &impl TypedStablePtr,
+fn add_diag<'db>(
+    diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+    stable_ptr: impl TypedStablePtr<'db>,
     diagnostic: FeatureMarkerDiagnostic,
 ) {
     diagnostics.add(SemanticDiagnostic::new(
@@ -187,11 +183,11 @@ pub struct FeatureConfigRestore {
 }
 
 /// Returns the allowed features of an object which supports attributes.
-pub fn extract_item_feature_config(
-    db: &dyn SemanticGroup,
-    crate_id: CrateId,
-    syntax: &impl QueryAttrs,
-    diagnostics: &mut SemanticDiagnostics,
+pub fn extract_item_feature_config<'db>(
+    db: &'db dyn SemanticGroup,
+    crate_id: CrateId<'db>,
+    syntax: &impl QueryAttrs<'db>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
 ) -> FeatureConfig {
     let mut config = FeatureConfig::default();
     process_feature_attr_kind(
@@ -231,12 +227,12 @@ pub fn extract_item_feature_config(
 }
 
 /// Processes the feature attribute kind.
-fn process_feature_attr_kind(
-    db: &dyn SyntaxGroup,
-    syntax: &impl QueryAttrs,
-    attr: &str,
-    diagnostic_kind: impl Fn() -> SemanticDiagnosticKind,
-    diagnostics: &mut SemanticDiagnostics,
+fn process_feature_attr_kind<'db>(
+    db: &'db dyn SyntaxGroup,
+    syntax: &impl QueryAttrs<'db>,
+    attr: &'db str,
+    diagnostic_kind: impl Fn() -> SemanticDiagnosticKind<'db>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
     mut process: impl FnMut(&ast::Expr) -> bool,
 ) {
     for attr_syntax in syntax.query_attr(db, attr) {
@@ -257,11 +253,11 @@ fn process_feature_attr_kind(
 
 /// Extracts the allowed features of an element, considering its parent modules as well as its
 /// attributes.
-pub fn extract_feature_config(
-    db: &dyn SemanticGroup,
-    element_id: &impl LanguageElementId,
-    syntax: &impl QueryAttrs,
-    diagnostics: &mut SemanticDiagnostics,
+pub fn extract_feature_config<'db>(
+    db: &'db dyn SemanticGroup,
+    element_id: &impl LanguageElementId<'db>,
+    syntax: &impl QueryAttrs<'db>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
 ) -> FeatureConfig {
     let defs_db = db;
     let mut current_module_id = element_id.parent_module(defs_db);
