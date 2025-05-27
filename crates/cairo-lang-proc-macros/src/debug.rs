@@ -2,77 +2,103 @@
 use proc_macro::TokenStream;
 use quote::__private::{Span, TokenStream as TokenStream2};
 use quote::quote;
-use syn::{DeriveInput, parse_macro_input};
+use syn::{DeriveInput, Generics, parse_macro_input, parse_quote};
 
 /// Derives a [`cairo_lang_debug::DebugWithDb`] implementation for structs and enums.
 pub fn derive_debug_with_db(input: TokenStream) -> TokenStream {
     // Parse the input tokens into a syntax tree.
     let input = parse_macro_input!(input as DeriveInput);
+
+    // ── 1. Extract the db-type from `#[debug_db(..)]` ─────────────────────────────
     let attribute = input
         .attrs
         .iter()
-        .find(|a| a.path().segments.len() == 1 && a.path().segments[0].ident == "debug_db")
-        .expect("debug_db attribute required for deriving DebugWithDB.");
-    let db: syn::Type = attribute.parse_args().expect("Invalid debug_db attribute!");
-    let db = quote! {(#db)};
-    let name = input.ident;
-    // TODO(yuval/shahar): extract the lifetime here and use it instead of `'a` below.
-    let body = match input.data {
-        syn::Data::Struct(structure) => emit_struct_debug(name, db, structure),
-        syn::Data::Enum(enm) => emit_enum_debug(name, db, enm),
+        .find(|a| a.path().is_ident("debug_db"))
+        .expect("debug_db attribute required for deriving DebugWithDb.");
+    let db_ty: syn::Type = attribute.parse_args().expect("Invalid debug_db attribute!");
+    let db = quote!((#db_ty)); // keep parentheses as in the original macro
+
+    let name = &input.ident;
+    let generics = &input.generics; // keep the user’s lifetimes / params / where-clause
+
+    // ── 2. Generate the body per kind ────────────────────────────────────────────
+    let body = match &input.data {
+        syn::Data::Struct(s) => emit_struct_debug(name, generics, db.clone(), s),
+        syn::Data::Enum(e) => emit_enum_debug(name, generics, db.clone(), e),
         syn::Data::Union(_) => panic!("Unions are not supported"),
     };
-    quote! {
-        #[allow(unused_parens)]
-        #body
-    }
-    .into()
+
+    quote! { #[allow(unused_parens)] #body }.into()
 }
 
-/// Emits a DebugWithDb implementation for a struct.
+// ───────────────────────── helpers ──────────────────────────────────────────────
+
+/// impl DebugWithDb for a *struct*
 fn emit_struct_debug(
-    name: syn::Ident,
+    name: &syn::Ident,
+    generics: &Generics,
     db: TokenStream2,
-    structure: syn::DataStruct,
+    structure: &syn::DataStruct,
 ) -> TokenStream2 {
-    let (pattern, field_prints) = emit_fields_debug(db.clone(), name.to_string(), structure.fields);
+    let (pat, prints) = emit_fields_debug(db.clone(), name.to_string(), &structure.fields);
+
+    // a) impl-side generics  = original + 'a + T
+    let mut impl_generics = generics.clone();
+    impl_generics.params.push(parse_quote! { 'a });
+    impl_generics.params.push(parse_quote! { T: ?Sized + cairo_lang_utils::Upcast<#db> });
+    let (impl_g, _, where_g) = impl_generics.split_for_impl();
+
+    // b) type-side generics = *original only*
+    let (_, ty_g, _) = generics.split_for_impl();
+
     let crt = debug_crate();
     quote! {
-        impl<'a, T: ?Sized + cairo_lang_utils::Upcast<#db>> #crt::debug::DebugWithDb<T> for #name {
+        impl #impl_g #crt::debug::DebugWithDb<T> for #name #ty_g #where_g {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, other_db: &T) -> std::fmt::Result {
                 use #crt::debug::DebugWithDb;
                 use #crt::debug::helper::Fallback;
-                let #name #pattern = self;
+
+                let #name #pat = self;
                 let db: &#db = other_db.upcast();
-                #field_prints
+                #prints
             }
         }
     }
 }
 
-/// Emits a DebugWithDb implementation for an enum.
-fn emit_enum_debug(name: syn::Ident, db: TokenStream2, enm: syn::DataEnum) -> TokenStream2 {
-    let mut variant_prints = quote! {};
-    for variant in enm.variants {
-        let variant_name = variant.ident;
-        let (pattern, field_prints) =
-            emit_fields_debug(db.clone(), variant_name.to_string(), variant.fields);
-        variant_prints = quote! {
-            #variant_prints
-            #name :: #variant_name #pattern => {
-                #field_prints
-            }
-        }
+/// impl DebugWithDb for an *enum* – identical generics handling
+fn emit_enum_debug(
+    name: &syn::Ident,
+    generics: &Generics,
+    db: TokenStream2,
+    enm: &syn::DataEnum,
+) -> TokenStream2 {
+    let mut arms = quote! {};
+    for v in &enm.variants {
+        let v_ident = &v.ident;
+        let (pat, prints) = emit_fields_debug(db.clone(), v_ident.to_string(), &v.fields);
+        arms = quote! {
+            #arms
+            #name :: #v_ident #pat => { #prints }
+        };
     }
+
+    let mut impl_generics = generics.clone();
+    impl_generics.params.push(parse_quote! { 'a });
+    impl_generics.params.push(parse_quote! { T: ?Sized + cairo_lang_utils::Upcast #db });
+    let (impl_g, _, where_g) = impl_generics.split_for_impl();
+    let (_, ty_g, _) = generics.split_for_impl();
+
     let crt = debug_crate();
     quote! {
-        impl<'a, T: ?Sized + cairo_lang_utils::Upcast<#db>> #crt::debug::DebugWithDb<T> for #name {
+        impl #impl_g #crt::debug::DebugWithDb<T> for #name #ty_g #where_g {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, other_db: &T) -> std::fmt::Result {
                 use #crt::debug::DebugWithDb;
                 use #crt::debug::helper::Fallback;
+
                 let db: &#db = other_db.upcast();
                 match self {
-                    #variant_prints
+                    #arms
                 }
             }
         }
@@ -85,7 +111,7 @@ fn emit_enum_debug(name: syn::Ident, db: TokenStream2, enm: syn::DataEnum) -> To
 fn emit_fields_debug(
     db: TokenStream2,
     name: String,
-    fields: syn::Fields,
+    fields: &syn::Fields,
 ) -> (TokenStream2, TokenStream2) {
     let crt = debug_crate();
     let mut pattern = quote! {};
