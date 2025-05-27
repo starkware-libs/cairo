@@ -11,9 +11,9 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 
 /// Returns the expanded code for `module_id` after running all plugins and extends `diagnostics`
 /// with all the plugins diagnostics.
-pub fn expand_module_text(
-    db: &(dyn DefsGroup + 'static),
-    module_id: ModuleId,
+pub fn expand_module_text<'db>(
+    db: &'db dyn DefsGroup,
+    module_id: ModuleId<'db>,
     diagnostics: &mut Vec<String>,
 ) -> String {
     let mut output = String::new();
@@ -59,7 +59,7 @@ pub fn expand_module_text(
                 }
             }
             if uses_list.insert(use_item) {
-                output.push_str(&use_item.get_text(db));
+                output.push_str(&use_item.get_text(db).to_owned());
             }
             continue;
         }
@@ -70,14 +70,14 @@ pub fn expand_module_text(
     output
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-struct TestDiagnosticEntry(pub PluginDiagnostic);
-impl DiagnosticEntry for TestDiagnosticEntry {
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+struct TestDiagnosticEntry<'a>(pub PluginDiagnostic<'a>);
+impl<'a> DiagnosticEntry<'a> for TestDiagnosticEntry<'a> {
     type DbType = dyn DefsGroup;
     fn format(&self, _db: &Self::DbType) -> String {
         self.0.message.to_string()
     }
-    fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
+    fn location(&self, db: &'a Self::DbType) -> DiagnosticLocation<'a> {
         match self.0.inner_span {
             Some(inner_span) => StableLocation::with_inner_span(self.0.stable_ptr, inner_span)
                 .diagnostic_location(db),

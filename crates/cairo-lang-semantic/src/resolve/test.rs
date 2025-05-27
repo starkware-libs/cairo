@@ -1,11 +1,14 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroupEx};
+use cairo_lang_filesystem::db::CrateConfiguration;
+use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
+use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_utils::{Intern, extract_matches};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
+use smol_str::SmolStr;
 use test_log::test;
 
 use crate::db::SemanticGroup;
@@ -15,7 +18,7 @@ use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 #[test]
 fn test_resolve_path() {
     let db_val = SemanticDatabaseForTesting::default();
-    let db = &db_val;
+    let db: &dyn SemanticGroup = &db_val;
     let test_module = setup_test_module(
         db,
         indoc! {"
@@ -33,7 +36,7 @@ fn test_resolve_path() {
     let module_id = test_module.module_id;
 
     let function_id = FunctionWithBodyId::Free(extract_matches!(
-        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
+        db.module_item_by_name(module_id, SmolStr::from("foo").intern(db)).unwrap().unwrap(),
         ModuleItemId::FreeFunction
     ));
     let expr_formatter = ExprFormatter { db, function_id };
@@ -48,19 +51,19 @@ fn test_resolve_path() {
     );
 }
 
-fn set_file_content(db: &mut SemanticDatabaseForTesting, path: &str, content: &str) {
+fn set_file_content(db: &mut dyn SemanticGroup, path: &str, content: &str) {
     let file_id = FileLongId::OnDisk(path.into()).intern(db);
-    db.override_file_content(file_id, Some(content.into()));
+    override_file_content!(db, file_id, Some(content.into()));
 }
 
 #[test]
 fn test_resolve_path_super() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
-    let db = &mut db_val;
+    let db: &mut dyn SemanticGroup = &mut db_val;
 
     let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("src".into());
-    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
+    set_crate_config!(db, crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
     set_file_content(
@@ -83,23 +86,26 @@ fn test_resolve_path_super() {
             }
         "},
     );
+    let crate_id = CrateId::plain(db, "test");
     let test_module = ModuleId::CrateRoot(crate_id);
     let inner2_module_id = ModuleId::Submodule(extract_matches!(
-        db.module_item_by_name(test_module, "inner2".into()).unwrap().unwrap(),
+        db.module_item_by_name(test_module, SmolStr::from("inner2").intern(db)).unwrap().unwrap(),
         ModuleItemId::Submodule
     ));
     let struct_id = extract_matches!(
-        db.module_item_by_name(inner2_module_id, "InnerStruct2".into()).unwrap().unwrap(),
+        db.module_item_by_name(inner2_module_id, SmolStr::from("InnerStruct2").intern(db))
+            .unwrap()
+            .unwrap(),
         ModuleItemId::Struct
     );
     let members = db.struct_members(struct_id).unwrap();
     assert_eq!(
-        format!("{:?}", members["a"].debug(db)),
+        format!("{:?}", members[&SmolStr::from("a").intern(db)].debug(db)),
         "Member { id: MemberId(test::inner2::a), ty: test::inner1::InnerStruct1, visibility: \
          Private }"
     );
     assert_eq!(
-        format!("{:?}", members["b"].debug(db)),
+        format!("{:?}", members[&SmolStr::from("b").intern(db)].debug(db)),
         "Member { id: MemberId(test::inner2::b), ty: test::OuterStruct, visibility: Private }"
     );
 }
@@ -107,7 +113,7 @@ fn test_resolve_path_super() {
 #[test]
 fn test_resolve_path_trait_impl() {
     let db_val = SemanticDatabaseForTesting::default();
-    let db = &db_val;
+    let db: &dyn SemanticGroup = &db_val;
     let test_module = setup_test_module(
         db,
         indoc! {"
@@ -130,7 +136,7 @@ fn test_resolve_path_trait_impl() {
     let module_id = test_module.module_id;
 
     let function_id = FunctionWithBodyId::Free(extract_matches!(
-        db.module_item_by_name(module_id, "main".into()).unwrap().unwrap(),
+        db.module_item_by_name(module_id, SmolStr::from("main").intern(db)).unwrap().unwrap(),
         ModuleItemId::FreeFunction
     ));
     let expr_formatter = ExprFormatter { db, function_id };
