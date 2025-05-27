@@ -1,6 +1,7 @@
 use cairo_lang_syntax::node::ast::Modifier;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
+use cairo_lang_utils::Intern;
 use smol_str::SmolStr;
 
 use crate::Mutability;
@@ -8,10 +9,10 @@ use crate::diagnostic::SemanticDiagnosticKind::RedundantModifier;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 
 /// Returns the mutability of a variable, given the list of modifiers in the AST.
-pub fn compute_mutability(
-    diagnostics: &mut SemanticDiagnostics,
-    syntax_db: &dyn SyntaxGroup,
-    modifier_list: &[Modifier],
+pub fn compute_mutability<'db>(
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    syntax_db: &'db dyn SyntaxGroup,
+    modifier_list: &[Modifier<'db>],
 ) -> Mutability {
     let mut mutability = Mutability::Immutable;
 
@@ -28,8 +29,8 @@ pub fn compute_mutability(
                     diagnostics.report(
                         terminal.stable_ptr(syntax_db),
                         RedundantModifier {
-                            current_modifier: terminal.text(syntax_db),
-                            previous_modifier: get_relevant_modifier(&mutability),
+                            current_modifier: terminal.text(syntax_db).intern(syntax_db),
+                            previous_modifier: get_relevant_modifier(&mutability).intern(syntax_db),
                         },
                     );
                 }
@@ -37,8 +38,8 @@ pub fn compute_mutability(
                     diagnostics.report(
                         terminal.stable_ptr(syntax_db),
                         RedundantModifier {
-                            current_modifier: terminal.text(syntax_db),
-                            previous_modifier: get_relevant_modifier(&mutability),
+                            current_modifier: terminal.text(syntax_db).intern(syntax_db),
+                            previous_modifier: get_relevant_modifier(&mutability).intern(syntax_db),
                         },
                     );
                 }

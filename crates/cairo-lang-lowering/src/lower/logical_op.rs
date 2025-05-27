@@ -11,12 +11,12 @@ use crate::ids::LocationId;
 use crate::{MatchArm, MatchEnumInfo, MatchInfo, VarUsage};
 
 /// Creates a bool variable with the given variant.
-pub fn create_bool(
-    ctx: &mut LoweringContext<'_, '_>,
-    builder: &mut BlockBuilder,
-    variant: semantic::ConcreteVariant,
-    location: LocationId,
-) -> VarUsage {
+pub fn create_bool<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    builder: &mut BlockBuilder<'db>,
+    variant: semantic::ConcreteVariant<'db>,
+    location: LocationId<'db>,
+) -> VarUsage<'db> {
     let unit = StructConstruct { inputs: vec![], ty: corelib::unit_ty(ctx.db), location }
         .add(ctx, &mut builder.statements);
 
@@ -24,11 +24,11 @@ pub fn create_bool(
 }
 
 /// Lowers an expression of type [semantic::ExprLogicalOperator].
-pub fn lower_logical_op(
-    ctx: &mut LoweringContext<'_, '_>,
-    builder: &mut BlockBuilder,
-    expr: &semantic::ExprLogicalOperator,
-) -> LoweringResult<LoweredExpr> {
+pub fn lower_logical_op<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    builder: &mut BlockBuilder<'db>,
+    expr: &semantic::ExprLogicalOperator<'db>,
+) -> LoweringResult<'db, LoweredExpr<'db>> {
     let location = ctx.get_location(expr.stable_ptr.untyped());
 
     let db = ctx.db;

@@ -9,17 +9,17 @@ use crate::SemanticDiagnostic;
 use crate::diagnostic::SemanticDiagnosticKind;
 
 /// Visibility of an item.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, salsa::Update)]
 pub enum Visibility {
     Public,
     PublicInCrate,
     Private,
 }
 impl Visibility {
-    pub fn from_ast(
-        db: &dyn SyntaxGroup,
-        diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
-        visibility: &ast::Visibility,
+    pub fn from_ast<'db>(
+        db: &'db dyn SyntaxGroup,
+        diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+        visibility: &ast::Visibility<'db>,
     ) -> Self {
         match visibility {
             ast::Visibility::Pub(visibility_pub) => match visibility_pub.argument_clause(db) {
@@ -43,11 +43,11 @@ impl Visibility {
 
 /// Determine whether a module member is visible to user module given the visibility within it,
 /// ignoring or forgetting the visibility of the ancestors of the containing module for a moment.
-pub fn peek_visible_in(
+pub fn peek_visible_in<'db>(
     db: &dyn DefsGroup,
     visibility_in_module: Visibility,
-    containing_module_id: ModuleId,
-    user_module_id: ModuleId,
+    containing_module_id: ModuleId<'db>,
+    user_module_id: ModuleId<'db>,
 ) -> bool {
     if containing_module_id == user_module_id {
         return true;

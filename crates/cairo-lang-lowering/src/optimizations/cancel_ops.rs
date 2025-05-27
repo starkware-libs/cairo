@@ -21,7 +21,7 @@ use crate::{BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, Vari
 ///
 /// See CancelOpsContext::handle_stmt for more detail on when it is safe
 /// to remove a statement.
-pub fn cancel_ops(lowered: &mut Lowered) {
+pub fn cancel_ops<'db>(lowered: &mut Lowered<'db>) {
     if lowered.blocks.is_empty() {
         return;
     }
@@ -54,27 +54,27 @@ pub fn cancel_ops(lowered: &mut Lowered) {
     }
 }
 
-pub struct CancelOpsContext<'a> {
-    lowered: &'a Lowered,
+pub struct CancelOpsContext<'db, 'a> {
+    lowered: &'a Lowered<'db>,
 
     /// Maps a variable to the use sites of that variable.
     /// Note that a remapping is considered as usage here.
-    use_sites: UnorderedHashMap<VariableId, Vec<StatementLocation>>,
+    use_sites: UnorderedHashMap<VariableId<'db>, Vec<StatementLocation>>,
 
     /// Maps a variable to the variable that it was renamed to.
-    var_remapper: VarRenamer,
+    var_remapper: VarRenamer<'db>,
 
     /// Keeps track of all the aliases created by the renaming.
-    aliases: UnorderedHashMap<VariableId, Vec<VariableId>>,
+    aliases: UnorderedHashMap<VariableId<'db>, Vec<VariableId<'db>>>,
 
     /// Statements that can be removed.
     stmts_to_remove: Vec<StatementLocation>,
 }
 
 /// Similar to `mapping.get(var).or_default()` but works for types that don't implement Default.
-fn get_entry_as_slice<'a, T>(
-    mapping: &'a UnorderedHashMap<VariableId, Vec<T>>,
-    var: &VariableId,
+fn get_entry_as_slice<'a, 'db, T>(
+    mapping: &'a UnorderedHashMap<VariableId<'db>, Vec<T>>,
+    var: &VariableId<'db>,
 ) -> &'a [T] {
     match mapping.get(var) {
         Some(entry) => &entry[..],
@@ -85,10 +85,10 @@ fn get_entry_as_slice<'a, T>(
 /// Returns the use sites of a variable.
 ///
 /// Takes 'use_sites' map rather than `CancelOpsContext` to avoid borrowing the entire context.
-fn filter_use_sites<'a, F, T>(
-    use_sites: &'a UnorderedHashMap<VariableId, Vec<StatementLocation>>,
-    var_aliases: &'a UnorderedHashMap<VariableId, Vec<VariableId>>,
-    orig_var_id: &VariableId,
+fn filter_use_sites<'a, 'db, F, T>(
+    use_sites: &'a UnorderedHashMap<VariableId<'db>, Vec<StatementLocation>>,
+    var_aliases: &'a UnorderedHashMap<VariableId<'db>, Vec<VariableId<'db>>>,
+    orig_var_id: &VariableId<'db>,
     mut f: F,
 ) -> Vec<T>
 where
@@ -109,8 +109,8 @@ where
     res
 }
 
-impl<'a> CancelOpsContext<'a> {
-    fn rename_var(&mut self, from: VariableId, to: VariableId) {
+impl<'db, 'a> CancelOpsContext<'db, 'a> {
+    fn rename_var(&mut self, from: VariableId<'db>, to: VariableId<'db>) {
         self.var_remapper.renamed_vars.insert(from, to);
 
         let mut aliases = Vec::from_iter(chain(
@@ -129,12 +129,16 @@ impl<'a> CancelOpsContext<'a> {
         }
     }
 
-    fn add_use_site(&mut self, var: VariableId, use_site: StatementLocation) {
+    fn add_use_site(&mut self, var: VariableId<'db>, use_site: StatementLocation) {
         self.use_sites.entry(var).or_default().push(use_site);
     }
 
     /// Handles a statement and returns true if it can be removed.
-    fn handle_stmt(&mut self, stmt: &'a Statement, statement_location: StatementLocation) -> bool {
+    fn handle_stmt(
+        &mut self,
+        stmt: &'a Statement<'db>,
+        statement_location: StatementLocation,
+    ) -> bool {
         match stmt {
             Statement::StructDestructure(stmt) => {
                 let mut visited_use_sites = OrderedHashSet::<StatementLocation>::default();
@@ -276,14 +280,14 @@ impl<'a> CancelOpsContext<'a> {
     }
 }
 
-impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
+impl<'db, 'a> Analyzer<'db, 'a> for CancelOpsContext<'db, 'a> {
     type Info = ();
 
     fn visit_stmt(
         &mut self,
         _info: &mut Self::Info,
         statement_location: StatementLocation,
-        stmt: &'a Statement,
+        stmt: &'a Statement<'db>,
     ) {
         if !self.handle_stmt(stmt, statement_location) {
             for input in stmt.inputs() {
@@ -297,7 +301,7 @@ impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
         _info: &mut Self::Info,
         statement_location: StatementLocation,
         _target_block_id: BlockId,
-        remapping: &VarRemapping,
+        remapping: &VarRemapping<'db>,
     ) {
         for src in remapping.values() {
             self.add_use_site(src.var_id, statement_location);
@@ -307,7 +311,7 @@ impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
     fn merge_match(
         &mut self,
         statement_location: StatementLocation,
-        match_info: &'a MatchInfo,
+        match_info: &'a MatchInfo<'db>,
         _infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         for var in match_info.inputs() {
@@ -318,7 +322,7 @@ impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
-        vars: &[VarUsage],
+        vars: &[VarUsage<'db>],
     ) -> Self::Info {
         for var in vars {
             self.add_use_site(var.var_id, statement_location);

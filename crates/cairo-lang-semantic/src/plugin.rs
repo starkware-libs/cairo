@@ -12,7 +12,11 @@ use crate::ids::AnalyzerPluginId;
 /// modules.
 pub trait AnalyzerPlugin: std::fmt::Debug + Sync + Send + Any {
     /// Runs the plugin on a module.
-    fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic>;
+    fn diagnostics<'db>(
+        &self,
+        db: &'db dyn SemanticGroup,
+        module_id: ModuleId<'db>,
+    ) -> Vec<PluginDiagnostic<'db>>;
     /// Allows this plugin supplies.
     /// Any allow the plugin supplies without declaring here are likely to cause a
     /// compilation error for unknown allow.
@@ -84,8 +88,8 @@ impl PluginSuite {
 /// A helper representation for the plugin IDs obtained from
 /// [`crate::db::PluginSuiteInput::intern_plugin_suite`].
 #[derive(Clone, Debug)]
-pub struct InternedPluginSuite {
-    pub macro_plugins: Arc<[MacroPluginId]>,
-    pub inline_macro_plugins: Arc<OrderedHashMap<String, InlineMacroExprPluginId>>,
-    pub analyzer_plugins: Arc<[AnalyzerPluginId]>,
+pub struct InternedPluginSuite<'db> {
+    pub macro_plugins: Arc<[MacroPluginId<'db>]>,
+    pub inline_macro_plugins: Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>,
+    pub analyzer_plugins: Arc<[AnalyzerPluginId<'db>]>,
 }
