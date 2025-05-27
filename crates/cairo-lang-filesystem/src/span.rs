@@ -4,7 +4,7 @@ use std::ops::{Add, Range, Sub};
 use serde::{Deserialize, Serialize};
 
 use crate::db::FilesGroup;
-use crate::ids::FileId;
+use crate::ids::FileLongId;
 
 #[cfg(test)]
 #[path = "span_test.rs"]
@@ -143,7 +143,11 @@ impl TextSpan {
     }
 
     /// Convert this span to a [`TextPositionSpan`] in the file.
-    pub fn position_in_file(self, db: &dyn FilesGroup, file: FileId) -> Option<TextPositionSpan> {
+    pub fn position_in_file(
+        self,
+        db: &dyn FilesGroup,
+        file: FileLongId,
+    ) -> Option<TextPositionSpan> {
         let start = self.start.position_in_file(db, file)?;
         let end = self.end.position_in_file(db, file)?;
         Some(TextPositionSpan { start, end })
@@ -160,7 +164,7 @@ pub struct TextPosition {
 }
 
 impl TextOffset {
-    fn get_line_number(self, db: &dyn FilesGroup, file: FileId) -> Option<usize> {
+    fn get_line_number(self, db: &dyn FilesGroup, file: FileLongId) -> Option<usize> {
         let summary = db.file_summary(file)?;
         assert!(
             self <= summary.last_offset,
@@ -172,7 +176,7 @@ impl TextOffset {
     }
 
     /// Convert this offset to an equivalent [`TextPosition`] in the file.
-    pub fn position_in_file(self, db: &dyn FilesGroup, file: FileId) -> Option<TextPosition> {
+    pub fn position_in_file(self, db: &dyn FilesGroup, file: FileLongId) -> Option<TextPosition> {
         let summary = db.file_summary(file)?;
         let line_number = self.get_line_number(db, file)?;
         let line_offset = summary.line_offsets[line_number];
@@ -189,7 +193,7 @@ impl TextPosition {
     /// of line respectively.
     ///
     /// Returns `None` if file is not found in `db`.
-    pub fn offset_in_file(self, db: &dyn FilesGroup, file: FileId) -> Option<TextOffset> {
+    pub fn offset_in_file(self, db: &dyn FilesGroup, file: FileLongId) -> Option<TextOffset> {
         let file_summary = db.file_summary(file)?;
         let content = db.file_content(file)?;
 
@@ -236,7 +240,7 @@ pub struct TextPositionSpan {
 
 impl TextPositionSpan {
     /// Convert this span to a [`TextSpan`] in the file.
-    pub fn offset_in_file(self, db: &dyn FilesGroup, file: FileId) -> Option<TextSpan> {
+    pub fn offset_in_file(self, db: &dyn FilesGroup, file: FileLongId) -> Option<TextSpan> {
         let start = self.start.offset_in_file(db, file)?;
         let end = self.end.offset_in_file(db, file)?;
         Some(TextSpan { start, end })

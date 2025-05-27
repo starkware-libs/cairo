@@ -8,7 +8,10 @@ description = "Virtual filesystem for the compiler."
 
 [dependencies]
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.11.4" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.11.4", features = ["serde"] }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.11.4", features = [
+    "serde",
+] }
+query-group.workspace = true
 path-clean.workspace = true
 salsa.workspace = true
 semver.workspace = true

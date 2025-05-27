@@ -6,15 +6,15 @@ use super::FilesGroup;
 use crate::cfg::{Cfg, CfgSet};
 use crate::db::{CrateConfiguration, FilesGroupEx};
 use crate::flag::Flag;
-use crate::ids::{CrateId, Directory, FlagId};
+use crate::ids::{CrateLongId, Directory, FlagLongId};
 use crate::test_utils::FilesDatabaseForTesting;
 
 #[test]
 fn test_filesystem() {
     let mut db = FilesDatabaseForTesting::default();
 
-    let crt = CrateId::plain(&db, "my_crate");
-    let crt2 = CrateId::plain(&db, "my_crate2");
+    let crt = CrateLongId::plain(&db, "my_crate");
+    let crt2 = CrateLongId::plain(&db, "my_crate2");
     let directory = Directory::Real("src".into());
     let file_id = directory.file(&db, "child.cairo".into());
     let config = CrateConfiguration::default_for_root(directory);
@@ -31,12 +31,12 @@ fn test_filesystem() {
 fn test_flags() {
     let mut db = FilesDatabaseForTesting::default();
 
-    let add_withdraw_gas_flag_id = FlagId::new(&db, "add_withdraw_gas");
+    let add_withdraw_gas_flag_id = FlagLongId::new(&db, "add_withdraw_gas".into());
 
     db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
 
     assert_eq!(*db.get_flag(add_withdraw_gas_flag_id).unwrap(), Flag::AddWithdrawGas(false));
-    assert!(db.get_flag(FlagId::new(&db, "non_existing_flag")).is_none());
+    assert!(db.get_flag(FlagLongId::new(&db, "non_existing_flag".into())).is_none());
 }
 
 #[test]
