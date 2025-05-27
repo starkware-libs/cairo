@@ -67,22 +67,22 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut Lowered) {
 }
 
 #[derive(Clone, Default)]
-pub struct ReorderStatementsInfo {
+pub struct ReorderStatementsInfo<'db> {
     // A mapping from var_id to a candidate location that it can be moved to.
     // If the variable is used in multiple match arms we define the next use to be
     // the match.
-    next_use: UnorderedHashMap<VariableId, StatementLocation>,
+    next_use: UnorderedHashMap<VariableId<'db>, StatementLocation>,
 }
 
-pub struct ReorderStatementsContext<'a> {
-    db: &'a dyn LoweringGroup,
-    lowered: &'a Lowered,
+pub struct ReorderStatementsContext<'db> {
+    db: &'db dyn LoweringGroup,
+    lowered: &'db Lowered<'db>,
     // A list of function that can be moved.
-    moveable_functions: &'a UnorderedHashSet<ExternFunctionId>,
+    moveable_functions: &'db UnorderedHashSet<ExternFunctionId<'db>>,
     statement_to_move: Vec<(StatementLocation, Option<StatementLocation>)>,
 }
-impl ReorderStatementsContext<'_> {
-    fn call_can_be_moved(&mut self, stmt: &StatementCall) -> bool {
+impl<'db> ReorderStatementsContext<'db> {
+    fn call_can_be_moved(&mut self, stmt: &StatementCall<'db>) -> bool {
         if let Some((extern_id, _)) = stmt.function.get_extern(self.db) {
             self.moveable_functions.contains(&extern_id)
         } else {
@@ -90,14 +90,14 @@ impl ReorderStatementsContext<'_> {
         }
     }
 }
-impl Analyzer<'_> for ReorderStatementsContext<'_> {
-    type Info = ReorderStatementsInfo;
+impl<'db> Analyzer<'db, '_> for ReorderStatementsContext<'db> {
+    type Info = ReorderStatementsInfo<'db>;
 
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
         statement_location: StatementLocation,
-        stmt: &Statement,
+        stmt: &Statement<'db>,
     ) {
         let mut immovable = matches!(stmt, Statement::Call(stmt) if !self.call_can_be_moved(stmt));
         let mut optional_target_location = None;
@@ -153,7 +153,7 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         info: &mut Self::Info,
         statement_location: StatementLocation,
         _target_block_id: BlockId,
-        remapping: &VarRemapping,
+        remapping: &VarRemapping<'db>,
     ) {
         for VarUsage { var_id, .. } in remapping.values() {
             info.next_use.insert(*var_id, statement_location);
@@ -163,7 +163,7 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
     fn merge_match(
         &mut self,
         statement_location: StatementLocation,
-        match_info: &MatchInfo,
+        match_info: &MatchInfo<'db>,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         let mut infos = zip_eq(infos, match_info.arms()).map(|(mut info, arm)| {
@@ -189,7 +189,7 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
-        vars: &[VarUsage],
+        vars: &[VarUsage<'db>],
     ) -> Self::Info {
         let mut info = Self::Info::default();
         for var_usage in vars {

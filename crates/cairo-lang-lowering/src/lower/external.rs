@@ -9,10 +9,10 @@ use crate::{VarUsage, VariableId};
 /// Given a return type of an external function, gets the real output variable types for that call.
 /// For example, an external function that returns a tuple, has an output variable for each tuple
 /// entry.
-pub fn extern_facade_return_tys(
-    ctx: &mut LoweringContext<'_, '_>,
-    ret_ty: semantic::TypeId,
-) -> Vec<semantic::TypeId> {
+pub fn extern_facade_return_tys<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    ret_ty: semantic::TypeId<'db>,
+) -> Vec<semantic::TypeId<'db>> {
     if let semantic::TypeLongId::Tuple(tys) = ret_ty.lookup_intern(ctx.db) {
         tys
     } else {
@@ -24,12 +24,12 @@ pub fn extern_facade_return_tys(
 /// representing the return expression of the type that was declared in the signature.
 /// For example, for an external function that returns a tuple, even though it will have an output
 /// variable for each entry, the return expression is a single value of type tuple.
-pub fn extern_facade_expr(
-    ctx: &mut LoweringContext<'_, '_>,
-    ty: semantic::TypeId,
-    returns: Vec<VariableId>,
-    location: LocationId,
-) -> LoweredExpr {
+pub fn extern_facade_expr<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    ty: semantic::TypeId<'db>,
+    returns: Vec<VariableId<'db>>,
+    location: LocationId<'db>,
+) -> LoweredExpr<'db> {
     if let semantic::TypeLongId::Tuple(subtypes) = ty.lookup_intern(ctx.db) {
         assert_eq!(returns.len(), subtypes.len());
         // TODO(ilya): Use tuple item location for each item.

@@ -11,8 +11,8 @@ use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
 use cairo_lang_sierra::program::{self, DeclaredTypeInfo, Program, StatementIdx};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{LookupIntern, try_extract_matches};
 use itertools::{Itertools, chain};
 
 use crate::db::{SierraGenGroup, sierra_concrete_long_id};
@@ -37,7 +37,7 @@ fn generate_libfunc_declarations<'a>(
         .into_iter()
         .map(|libfunc_id| program::LibfuncDeclaration {
             id: libfunc_id.clone(),
-            long_id: libfunc_id.lookup_intern(db),
+            long_id: db.lookup_concrete_lib_func(libfunc_id.clone()),
         })
         .collect()
 }
@@ -175,13 +175,26 @@ fn collect_used_types(
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct SierraProgramWithDebug {
+pub struct SierraProgramWithDebug<'db> {
     pub program: cairo_lang_sierra::program::Program,
-    pub debug_info: SierraProgramDebugInfo,
+    pub debug_info: SierraProgramDebugInfo<'db>,
+}
+
+unsafe impl<'db> salsa::Update for SierraProgramWithDebug<'db> {
+    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
+        let old_value = &mut *old_pointer;
+        if old_value.program == new_value.program && old_value.debug_info == new_value.debug_info {
+            return false;
+        }
+        *old_value = new_value;
+        true
+    }
 }
 /// Implementation for a debug print of a Sierra program with all locations.
 /// The print is a valid textual Sierra program.
-impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
+impl<'db> DebugWithDb<'db> for SierraProgramWithDebug<'db> {
+    type Db = dyn SierraGenGroup;
+
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn SierraGenGroup) -> std::fmt::Result {
         let sierra_program = DebugReplacer { db }.apply(&self.program);
         for declaration in &sierra_program.type_declarations {
@@ -223,14 +236,14 @@ impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct SierraProgramDebugInfo {
-    pub statements_locations: StatementsLocations,
+pub struct SierraProgramDebugInfo<'db> {
+    pub statements_locations: StatementsLocations<'db>,
 }
 
-pub fn get_sierra_program_for_functions(
-    db: &dyn SierraGenGroup,
-    requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
-) -> Maybe<Arc<SierraProgramWithDebug>> {
+pub fn get_sierra_program_for_functions<'db>(
+    db: &'db dyn SierraGenGroup,
+    requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
+) -> Maybe<Arc<SierraProgramWithDebug<'db>>> {
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
     let mut processed_function_ids = UnorderedHashSet::<ConcreteFunctionWithBodyId>::default();
@@ -262,11 +275,11 @@ pub fn get_sierra_program_for_functions(
 
 /// Given a list of functions and statements, generates a Sierra program.
 /// Returns the program and the locations of the statements in the program.
-pub fn assemble_program(
-    db: &dyn SierraGenGroup,
-    functions: Vec<Arc<pre_sierra::Function>>,
-    statements: Vec<pre_sierra::StatementWithLocation>,
-) -> (program::Program, Vec<Vec<StableLocation>>) {
+pub fn assemble_program<'db>(
+    db: &'db dyn SierraGenGroup,
+    functions: Vec<Arc<pre_sierra::Function<'db>>>,
+    statements: Vec<pre_sierra::StatementWithLocation<'db>>,
+) -> (program::Program, Vec<Vec<StableLocation<'db>>>) {
     let label_replacer = LabelReplacer::from_statements(&statements);
     let funcs = functions
         .into_iter()
@@ -298,15 +311,15 @@ pub fn assemble_program(
 }
 
 /// Tries extracting a ConcreteFunctionWithBodyId from a pre-Sierra statement.
-pub fn try_get_function_with_body_id(
-    db: &dyn SierraGenGroup,
-    statement: &pre_sierra::StatementWithLocation,
-) -> Option<ConcreteFunctionWithBodyId> {
+pub fn try_get_function_with_body_id<'db>(
+    db: &'db dyn SierraGenGroup,
+    statement: &pre_sierra::StatementWithLocation<'db>,
+) -> Option<ConcreteFunctionWithBodyId<'db>> {
     let invc = try_extract_matches!(
         try_extract_matches!(&statement.statement, pre_sierra::Statement::Sierra)?,
         program::GenStatement::Invocation
     )?;
-    let libfunc = invc.libfunc_id.lookup_intern(db);
+    let libfunc = db.lookup_concrete_lib_func(invc.libfunc_id.clone());
     let inner_function = if libfunc.generic_id == "function_call".into()
         || libfunc.generic_id == "coupon_call".into()
     {
@@ -328,16 +341,18 @@ pub fn try_get_function_with_body_id(
         return None;
     };
 
-    try_extract_matches!(inner_function, cairo_lang_sierra::program::GenericArg::UserFunc)?
-        .lookup_intern(db)
-        .body(db)
-        .expect("No diagnostics at this stage.")
+    db.lookup_sierra_function(try_extract_matches!(
+        inner_function,
+        cairo_lang_sierra::program::GenericArg::UserFunc
+    )?)
+    .body(db)
+    .expect("No diagnostics at this stage.")
 }
 
-pub fn get_sierra_program(
-    db: &dyn SierraGenGroup,
-    requested_crate_ids: Vec<CrateId>,
-) -> Maybe<Arc<SierraProgramWithDebug>> {
+pub fn get_sierra_program<'db>(
+    db: &'db dyn SierraGenGroup,
+    requested_crate_ids: Vec<CrateId<'db>>,
+) -> Maybe<Arc<SierraProgramWithDebug<'db>>> {
     let mut requested_function_ids = vec![];
     for crate_id in requested_crate_ids {
         for module_id in db.crate_modules(crate_id).iter() {

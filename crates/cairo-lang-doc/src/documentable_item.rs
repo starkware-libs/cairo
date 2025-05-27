@@ -7,16 +7,16 @@ use cairo_lang_filesystem::ids::CrateId;
 use smol_str::SmolStr;
 
 /// Item whose documentation can be fetched from source code.
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
-pub enum DocumentableItemId {
-    Crate(CrateId),
-    LookupItem(LookupItemId),
-    Member(MemberId),
-    Variant(VariantId),
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, salsa::Update)]
+pub enum DocumentableItemId<'db> {
+    Crate(CrateId<'db>),
+    LookupItem(LookupItemId<'db>),
+    Member(MemberId<'db>),
+    Variant(VariantId<'db>),
 }
 
-impl DocumentableItemId {
-    pub fn stable_location(&self, db: &dyn DefsGroup) -> Option<StableLocation> {
+impl<'db> DocumentableItemId<'db> {
+    pub fn stable_location(&self, db: &'db dyn DefsGroup) -> Option<StableLocation<'db>> {
         match self {
             DocumentableItemId::Crate(_) => None,
             DocumentableItemId::LookupItem(lookup_item_id) => {
@@ -33,32 +33,32 @@ impl DocumentableItemId {
             DocumentableItemId::LookupItem(LookupItemId::ModuleItem(id)) => id.name(db),
             DocumentableItemId::LookupItem(LookupItemId::ImplItem(id)) => id.name(db),
             DocumentableItemId::LookupItem(LookupItemId::TraitItem(id)) => id.name(db),
-            DocumentableItemId::Crate(id) => id.name(db),
+            DocumentableItemId::Crate(id) => id.long(db).name(),
             DocumentableItemId::Member(id) => id.name(db),
             DocumentableItemId::Variant(id) => id.name(db),
         }
     }
 }
 
-impl From<CrateId> for DocumentableItemId {
-    fn from(value: CrateId) -> Self {
+impl<'db> From<CrateId<'db>> for DocumentableItemId<'db> {
+    fn from(value: CrateId<'db>) -> Self {
         DocumentableItemId::Crate(value)
     }
 }
 
-impl From<LookupItemId> for DocumentableItemId {
-    fn from(value: LookupItemId) -> Self {
+impl<'db> From<LookupItemId<'db>> for DocumentableItemId<'db> {
+    fn from(value: LookupItemId<'db>) -> Self {
         DocumentableItemId::LookupItem(value)
     }
 }
 
-impl From<MemberId> for DocumentableItemId {
-    fn from(value: MemberId) -> Self {
+impl<'db> From<MemberId<'db>> for DocumentableItemId<'db> {
+    fn from(value: MemberId<'db>) -> Self {
         DocumentableItemId::Member(value)
     }
 }
-impl From<VariantId> for DocumentableItemId {
-    fn from(value: VariantId) -> Self {
+impl<'db> From<VariantId<'db>> for DocumentableItemId<'db> {
+    fn from(value: VariantId<'db>) -> Self {
         DocumentableItemId::Variant(value)
     }
 }
