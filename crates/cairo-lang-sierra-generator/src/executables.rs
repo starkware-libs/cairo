@@ -7,7 +7,6 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_utils::LookupIntern;
 use smol_str::SmolStr;
 
 use crate::db::SierraGenGroup;
@@ -21,10 +20,10 @@ use crate::db::SierraGenGroup;
 /// and returns the attribute names, along the function id.
 /// Note, that a single function can be marked with more than one executable attribute.
 /// Only crates declared as _main_crate_ids_ are considered.
-pub fn find_executable_function_ids(
-    db: &dyn SierraGenGroup,
-    main_crate_ids: Vec<CrateId>,
-) -> HashMap<ConcreteFunctionWithBodyId, Vec<SmolStr>> {
+pub fn find_executable_function_ids<'db>(
+    db: &'db dyn SierraGenGroup,
+    main_crate_ids: Vec<CrateId<'db>>,
+) -> HashMap<ConcreteFunctionWithBodyId<'db>, Vec<SmolStr>> {
     let mut executable_function_ids = HashMap::new();
 
     for crate_id in main_crate_ids {
@@ -94,7 +93,7 @@ pub fn collect_executables(
             let Some(found_attrs) = executable_function_ids.get(&function.id) else {
                 continue;
             };
-            let full_path = function.id.lookup_intern(db).semantic_full_path(db);
+            let full_path = db.lookup_sierra_function(function.id.clone()).semantic_full_path(db);
             for attr in found_attrs {
                 result
                     .entry(attr.clone())
