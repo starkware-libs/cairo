@@ -30,15 +30,15 @@ use crate::diagnostic::MatchKind;
 ///     _ => { else_expr },            // Else arm.
 /// };
 /// ```
-pub fn lower_let_else(
-    ctx: &mut LoweringContext<'_, '_>,
-    builder: &mut BlockBuilder,
-    pattern_id: &Id<Pattern>,
-    expr: &Id<Expr>,
-    lowered_expr: LoweredExpr,
-    else_clause: &Id<Expr>,
-    stable_ptr: &StatementPtr,
-) -> Result<(), LoweringFlowError> {
+pub fn lower_let_else<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    builder: &mut BlockBuilder<'db>,
+    pattern_id: &Id<Pattern<'db>>,
+    expr: &Id<Expr<'db>>,
+    lowered_expr: LoweredExpr<'db>,
+    else_clause: &Id<Expr<'db>>,
+    stable_ptr: &StatementPtr<'db>,
+) -> Result<(), LoweringFlowError<'db>> {
     let pattern = ctx.function_body.arenas.patterns[*pattern_id].clone();
     let variables = pattern.variables(&ctx.function_body.arenas.patterns);
 
@@ -95,12 +95,12 @@ pub fn lower_let_else(
 /// Similar to [super::lower_tail_expr] expect that the result is a tuple of the given variables.
 ///
 /// Used in the lowering of the success arm's body in let-else.
-pub fn lower_success_arm_body(
-    ctx: &mut LoweringContext<'_, '_>,
-    mut builder: BlockBuilder,
-    vars: &[(VarId, SyntaxStablePtrId)],
-    stable_ptr: &SyntaxStablePtrId,
-) -> SealedBlockBuilder {
+pub fn lower_success_arm_body<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    mut builder: BlockBuilder<'db>,
+    vars: &[(VarId<'db>, SyntaxStablePtrId<'db>)],
+    stable_ptr: &SyntaxStablePtrId<'db>,
+) -> SealedBlockBuilder<'db> {
     log::trace!("Lowering success arm body");
 
     let inputs: Vec<_> = vars

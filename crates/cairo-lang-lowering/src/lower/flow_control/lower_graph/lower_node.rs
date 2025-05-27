@@ -13,7 +13,7 @@ use crate::{MatchArm, MatchEnumInfo, MatchInfo};
 
 /// Lowers the node with the given [NodeId].
 pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<()> {
-    match &ctx.graph.nodes[id.0] {
+    match ctx.graph.nodes[id.0].clone() {
         FlowControlNode::EvaluateExpr(node) => lower_evaluate_expr(ctx, id, node),
         FlowControlNode::BooleanIf(node) => lower_boolean_if(ctx, id, node),
         FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, id, node),
@@ -21,10 +21,10 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
 }
 
 /// Lowers an [EvaluateExpr] node.
-fn lower_evaluate_expr(
-    ctx: &mut LowerGraphContext<'_, '_, '_>,
+fn lower_evaluate_expr<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
     id: NodeId,
-    node: &EvaluateExpr,
+    node: EvaluateExpr<'db>,
 ) -> Maybe<()> {
     let mut builder = ctx.start_builder(id);
 
@@ -39,7 +39,7 @@ fn lower_evaluate_expr(
 fn lower_boolean_if(
     ctx: &mut LowerGraphContext<'_, '_, '_>,
     id: NodeId,
-    node: &BooleanIf,
+    node: BooleanIf,
 ) -> Maybe<()> {
     let db = ctx.ctx.db;
 
@@ -78,10 +78,10 @@ fn lower_boolean_if(
 }
 
 /// Lowers an [ArmExpr] node.
-fn lower_arm_expr(
-    ctx: &mut LowerGraphContext<'_, '_, '_>,
+fn lower_arm_expr<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
     id: NodeId,
-    node: &ArmExpr,
+    node: ArmExpr<'db>,
 ) -> Maybe<()> {
     let builder = ctx.start_builder(id);
     let sealed_block = lower_tail_expr(ctx.ctx, builder, node.expr)?;

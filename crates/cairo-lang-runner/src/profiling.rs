@@ -561,7 +561,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
             libfunc_weights
                 .aggregate_by(
                     |k| -> SmolStr {
-                        db.lookup_intern_concrete_lib_func(k.clone()).generic_id.to_string().into()
+                        db.lookup_concrete_lib_func(k.clone()).generic_id.to_string().into()
                     },
                     |v1: &usize, v2| v1 + v2,
                     &0,
@@ -616,7 +616,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
                 .aggregate_by(
                     |idx| {
                         let lowering_function_id =
-                            self.sierra_program.funcs[*idx].id.clone().lookup_intern(db);
+                            db.lookup_sierra_function(self.sierra_program.funcs[*idx].id.clone());
                         lowering_function_id.semantic_full_path(db.upcast())
                     },
                     |x, y| x + y,
@@ -729,7 +729,7 @@ fn is_cairo_trace(
 ) -> bool {
     sierra_trace.iter().all(|sierra_function_idx| {
         let sierra_function = &sierra_program.funcs[*sierra_function_idx];
-        let lowering_function_id = sierra_function.id.lookup_intern(db);
+        let lowering_function_id = db.lookup_sierra_function(sierra_function.id.clone());
         matches!(lowering_function_id.lookup_intern(db), FunctionLongId::Semantic(_))
     })
 }
