@@ -1,13 +1,17 @@
 use cairo_lang_utils::Upcast;
 
-use crate::db::{ExternalFiles, FilesDatabase, FilesGroup, init_files_group};
+use crate::db::{ExternalFiles, FilesGroup, init_files_group};
 
 // Test salsa database.
-#[salsa::database(FilesDatabase)]
+#[salsa::db]
+#[derive(Clone)]
 pub struct FilesDatabaseForTesting {
     storage: salsa::Storage<FilesDatabaseForTesting>,
 }
+
+#[salsa::db]
 impl salsa::Database for FilesDatabaseForTesting {}
+
 impl ExternalFiles for FilesDatabaseForTesting {}
 impl Default for FilesDatabaseForTesting {
     fn default() -> Self {

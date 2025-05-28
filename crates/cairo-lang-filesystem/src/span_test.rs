@@ -1,23 +1,23 @@
-use cairo_lang_utils::Intern;
-
 use super::TextOffset;
-use crate::ids::{FileId, FileKind, FileLongId, VirtualFile};
+use crate::ids::{FileInfo, FileKind, FileLongId, VirtualFile};
 use crate::span::{TextPosition, TextWidth};
 use crate::test_utils::FilesDatabaseForTesting;
 
 const TEST_STRING: &str = "01\n23\u{1230}\r\n456\n\n\r\n789";
 
-fn test_db() -> (FilesDatabaseForTesting, FileId) {
+fn test_db() -> (FilesDatabaseForTesting, FileLongId) {
     let db = FilesDatabaseForTesting::default();
-    let file = FileLongId::Virtual(VirtualFile {
-        parent: None,
-        name: "name".into(),
-        content: TEST_STRING.into(),
-        code_mappings: [].into(),
-        kind: FileKind::Module,
-        original_item_removed: false,
-    })
-    .intern(&db);
+    let file = FileLongId::new(
+        &db,
+        FileInfo::Virtual(VirtualFile {
+            parent: None,
+            name: "name".into(),
+            content: TEST_STRING.into(),
+            code_mappings: [].into(),
+            kind: FileKind::Module,
+            original_item_removed: false,
+        }),
+    );
     (db, file)
 }
 

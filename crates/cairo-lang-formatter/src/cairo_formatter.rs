@@ -142,7 +142,7 @@ pub trait FormattableInput {
 
 impl FormattableInput for &Path {
     fn to_file_id(&self, db: &dyn FilesGroup) -> Result<FileId> {
-        Ok(FileId::new(db, PathBuf::from(self)))
+        Ok(FileId::new_on_disk(db, PathBuf::from(self)))
     }
     fn overwrite_content(&self, content: String) -> Result<()> {
         fs::write(self, content)?;
