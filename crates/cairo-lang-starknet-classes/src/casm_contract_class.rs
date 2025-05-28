@@ -3,7 +3,6 @@ use std::sync::LazyLock;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::{Hint, PythonicHint};
-use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::extensions::array::ArrayType;
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
@@ -18,21 +17,22 @@ use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::snapshot::SnapshotType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::structure::StructType;
+use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg, TypeDeclaration};
 use cairo_lang_sierra_to_casm::compiler::{
     CairoProgramDebugInfo, CompilationError, SierraToCasmConfig,
 };
 use cairo_lang_sierra_to_casm::metadata::{
-    MetadataComputationConfig, MetadataError, calc_metadata,
+    calc_metadata, MetadataComputationConfig, MetadataError,
 };
-use cairo_lang_utils::bigint::{BigUintAsHex, deserialize_big_uint, serialize_big_uint};
+use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
-use itertools::{Itertools, chain};
+use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::Signed;
@@ -43,14 +43,14 @@ use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
 use crate::compiler_version::{
-    CONTRACT_SEGMENTATION_MINOR_VERSION, VersionId, current_compiler_version_id,
-    current_sierra_version_id,
+    current_compiler_version_id, current_sierra_version_id, VersionId,
+    CONTRACT_SEGMENTATION_MINOR_VERSION,
 };
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::contract_segmentation::{
-    NestedIntList, SegmentationError, compute_bytecode_segment_lengths,
+    compute_bytecode_segment_lengths, NestedIntList, SegmentationError,
 };
-use crate::felt252_serde::{Felt252SerdeError, sierra_from_felt252s};
+use crate::felt252_serde::{sierra_from_felt252s, Felt252SerdeError};
 use crate::keccak::starknet_keccak;
 
 #[cfg(test)]
@@ -125,20 +125,7 @@ pub struct CasmContractClass {
 impl CasmContractClass {
     /// Returns the hash value for the compiled contract class.
     pub fn compiled_class_hash(&self) -> Felt252 {
-        // Compute hashes on each component separately.
-        let external_funcs_hash = self.entry_points_hash(&self.entry_points_by_type.external);
-        let l1_handlers_hash = self.entry_points_hash(&self.entry_points_by_type.l1_handler);
-        let constructors_hash = self.entry_points_hash(&self.entry_points_by_type.constructor);
-        let bytecode_hash = self.compute_bytecode_hash();
-
-        // Compute total hash by hashing each component on top of the previous one.
-        Poseidon::hash_array(&[
-            Felt252::from_bytes_be_slice(b"COMPILED_CLASS_V1"),
-            external_funcs_hash,
-            l1_handlers_hash,
-            constructors_hash,
-            bytecode_hash,
-        ])
+        self.compiled_class_hash_inner::<Poseidon>()
     }
 
     /// Returns the lengths of the bytecode segments.
@@ -149,12 +136,12 @@ impl CasmContractClass {
     }
 
     /// Returns the hash for a set of entry points.
-    fn entry_points_hash(&self, entry_points: &[CasmContractEntryPoint]) -> Felt252 {
+    fn entry_points_hash<H: StarkHash>(&self, entry_points: &[CasmContractEntryPoint]) -> Felt252 {
         let mut entry_point_hash_elements = vec![];
         for entry_point in entry_points {
             entry_point_hash_elements.push(Felt252::from(&entry_point.selector));
             entry_point_hash_elements.push(Felt252::from(entry_point.offset));
-            entry_point_hash_elements.push(Poseidon::hash_array(
+            entry_point_hash_elements.push(H::hash_array(
                 &entry_point
                     .builtins
                     .iter()
@@ -162,18 +149,35 @@ impl CasmContractClass {
                     .collect_vec(),
             ));
         }
-        Poseidon::hash_array(&entry_point_hash_elements)
+        H::hash_array(&entry_point_hash_elements)
     }
 
     /// Returns the bytecode hash.
-    fn compute_bytecode_hash(&self) -> Felt252 {
+    fn compute_bytecode_hash<H: StarkHash>(&self) -> Felt252 {
         let mut bytecode_iter = self.bytecode.iter().map(|big_uint| Felt252::from(&big_uint.value));
 
         let (len, bytecode_hash) =
-            bytecode_hash_node(&mut bytecode_iter, &self.get_bytecode_segment_lengths());
+            bytecode_hash_node::<H>(&mut bytecode_iter, &self.get_bytecode_segment_lengths());
         assert_eq!(len, self.bytecode.len());
 
         bytecode_hash
+    }
+
+    fn compiled_class_hash_inner<H: StarkHash>(&self) -> Felt252 {
+        // Compute hashes on each component separately.
+        let external_funcs_hash = self.entry_points_hash::<H>(&self.entry_points_by_type.external);
+        let l1_handlers_hash = self.entry_points_hash::<H>(&self.entry_points_by_type.l1_handler);
+        let constructors_hash = self.entry_points_hash::<H>(&self.entry_points_by_type.constructor);
+        let bytecode_hash = self.compute_bytecode_hash::<H>();
+
+        // Compute total hash by hashing each component on top of the previous one.
+        H::hash_array(&[
+            Felt252::from_bytes_be_slice(b"COMPILED_CLASS_V1"),
+            external_funcs_hash,
+            l1_handlers_hash,
+            constructors_hash,
+            bytecode_hash,
+        ])
     }
 }
 
@@ -181,7 +185,7 @@ impl CasmContractClass {
 /// the Starknet OS.
 ///
 /// Returns the length of the processed segment and its hash.
-fn bytecode_hash_node(
+fn bytecode_hash_node<H: StarkHash>(
     iter: &mut impl Iterator<Item = Felt252>,
     node: &NestedIntList,
 ) -> (usize, Felt252) {
@@ -189,12 +193,13 @@ fn bytecode_hash_node(
         NestedIntList::Leaf(len) => {
             let data = &iter.take(*len).collect_vec();
             assert_eq!(data.len(), *len);
-            (*len, Poseidon::hash_array(data))
+            (*len, H::hash_array(data))
         }
         NestedIntList::Node(nodes) => {
             // Compute `1 + poseidon(len0, hash0, len1, hash1, ...)`.
-            let inner_nodes = nodes.iter().map(|node| bytecode_hash_node(iter, node)).collect_vec();
-            let hash = Poseidon::hash_array(
+            let inner_nodes =
+                nodes.iter().map(|node| bytecode_hash_node::<H>(iter, node)).collect_vec();
+            let hash = H::hash_array(
                 &inner_nodes.iter().flat_map(|(len, hash)| [(*len).into(), *hash]).collect_vec(),
             ) + 1;
             (inner_nodes.iter().map(|(len, _)| len).sum(), hash)
