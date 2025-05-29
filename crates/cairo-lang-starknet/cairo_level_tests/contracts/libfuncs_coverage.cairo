@@ -1,4 +1,5 @@
 use core::dict::{Felt252Dict, Felt252DictEntryTrait};
+use core::num::traits::One;
 use starknet::storage::{StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess};
 
 #[starknet::contract]
@@ -63,6 +64,8 @@ enum IntLibfuncs<T> {
     Div: (T, T),
     Mod: (T, T),
     Lt: (T, T),
+    Inc: T,
+    Dec: T,
     Numeric: NumericLibfuncs<T>,
 }
 
@@ -254,6 +257,7 @@ fn unsigned_int_libfuncs<
     +PartialEq<T>,
     +Copy<T>,
     +Drop<T>,
+    impl One: One<T>,
 >(
     libfuncs: UnsignedIntLibfuncs<T>,
 ) {
@@ -265,7 +269,16 @@ fn unsigned_int_libfuncs<
 }
 
 fn int_libfuncs<
-    T, +Div<T>, +Rem<T>, +PartialOrd<T>, +Add<T>, +Sub<T>, +Mul<T>, +PartialEq<T>, +Drop<T>,
+    T,
+    +Div<T>,
+    +Rem<T>,
+    +PartialOrd<T>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +PartialEq<T>,
+    +Drop<T>,
+    impl One: One<T>,
 >(
     libfuncs: IntLibfuncs<T>,
 ) {
@@ -273,6 +286,8 @@ fn int_libfuncs<
         IntLibfuncs::Div((a, b)) => use_and_panic(a / b),
         IntLibfuncs::Mod((a, b)) => use_and_panic(a % b),
         IntLibfuncs::Lt((a, b)) => use_and_panic(a < b),
+        IntLibfuncs::Inc(a) => use_and_panic(a + One::one()),
+        IntLibfuncs::Dec(a) => use_and_panic(a - One::one()),
         IntLibfuncs::Numeric(libfuncs) => numeric_libfuncs(libfuncs),
     }
 }
