@@ -73,7 +73,7 @@ pub trait RebuilderEx: Rebuilder {
                 })
             }
             Statement::EnumConstruct(stmt) => Statement::EnumConstruct(StatementEnumConstruct {
-                variant: stmt.variant.clone(),
+                variant: stmt.variant,
                 input: self.map_var_usage(stmt.input),
                 output: self.map_var_id(stmt.output),
             }),

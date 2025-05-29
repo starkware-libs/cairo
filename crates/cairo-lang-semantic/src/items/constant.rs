@@ -680,7 +680,7 @@ impl ConstantEvaluateContext<'_> {
                 )
             }
             Expr::EnumVariantCtor(expr) => {
-                ConstValue::Enum(expr.variant.clone(), Box::new(self.evaluate(expr.value_expr)))
+                ConstValue::Enum(expr.variant, Box::new(self.evaluate(expr.value_expr)))
             }
             Expr::MemberAccess(expr) => {
                 self.evaluate_member_access(expr).unwrap_or_else(ConstValue::Missing)

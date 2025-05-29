@@ -110,7 +110,7 @@ impl EarlyReturnContext<'_, '_> {
                             let output =
                                 self.variables.new_var(VarRequest { ty, location: self.location });
                             self.statements.push(Statement::EnumConstruct(
-                                StatementEnumConstruct { variant: variant.clone(), input, output },
+                                StatementEnumConstruct { variant: *variant, input, output },
                             ));
                             output
                         });
@@ -522,7 +522,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                     *output,
                     ValueInfo::EnumConstruct {
                         var_info: Box::new(self.get_var_info(input)),
-                        variant: variant.clone(),
+                        variant: *variant,
                     },
                 );
             }
