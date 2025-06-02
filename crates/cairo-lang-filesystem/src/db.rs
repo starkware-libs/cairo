@@ -405,7 +405,7 @@ pub fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Optio
     let intersecting_mappings = || {
         code_mapping.iter().filter(|mapping| {
             // Omit mappings to the left or to the right of current span.
-            !(mapping.span.end < span.start || mapping.span.start > span.end)
+            mapping.span.end > span.start && mapping.span.start < span.end
         })
     };
 
