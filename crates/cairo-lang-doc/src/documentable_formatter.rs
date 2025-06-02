@@ -621,89 +621,32 @@ impl HirDisplay for ImplAliasId {
 impl HirDisplay for ModuleTypeAliasId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let module_type_alias_full_signature = get_module_type_alias_full_signature(f.db, *self)?;
-        write!(
-            f,
-            "{}type {} = ",
-            get_syntactic_visibility(&module_type_alias_full_signature.visibility),
-            self.name(f.db),
-        )
-        .map_err(|_| {
-            SignatureError::FailedWritingSignature(
-                module_type_alias_full_signature.full_path.clone(),
-            )
-        })?;
-        write_syntactic_evaluation(f, module_type_alias_full_signature.item_id).map_err(|_| {
-            SignatureError::FailedWritingSignature(module_type_alias_full_signature.full_path)
-        })
+        write_type_signature(f, module_type_alias_full_signature, false)
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
 impl HirDisplay for TraitTypeId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let trait_type_full_signature = get_trait_type_full_signature(f.db, *self)?;
-        write!(f, "type {};", trait_type_full_signature.name,).map_err(|_| {
-            SignatureError::FailedWritingSignature(trait_type_full_signature.full_path)
-        })
+        write_type_signature(f, trait_type_full_signature, false)
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
 impl HirDisplay for ImplTypeDefId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let impl_type_def_full_signature = get_impl_type_def_full_signature(f.db, *self)?;
-        if let Some(return_type) = impl_type_def_full_signature.return_type {
-            write!(
-                f,
-                "type {} = {};",
-                impl_type_def_full_signature.name,
-                extract_and_format(&return_type.format(f.db)),
-            )
-            .map_err(|_| {
-                SignatureError::FailedWritingSignature(impl_type_def_full_signature.full_path)
-            })
-        } else {
-            Err(SignatureError::FailedRetrievingSemanticData(self.full_path(f.db)))
-        }
+        write_type_signature(f, impl_type_def_full_signature, false)
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
 impl HirDisplay for ExternTypeId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let extern_type_full_signature = get_extern_type_full_signature(f.db, *self)?;
-        write!(
-            f,
-            "{}extern type {}",
-            get_syntactic_visibility(&extern_type_full_signature.visibility),
-            self.name(f.db),
-        )
-        .map_err(|_| {
-            SignatureError::FailedWritingSignature(extern_type_full_signature.full_path.clone())
-        })?;
-        if let Some(generic_params) = extern_type_full_signature.generic_params {
-            if !generic_params.is_empty() {
-                f.write_str("<").map_err(|_| {
-                    SignatureError::FailedWritingSignature(
-                        extern_type_full_signature.full_path.clone(),
-                    )
-                })?;
-                for param in generic_params {
-                    f.write_str(param.id().name(f.db).unwrap_or(SmolStr::from(MISSING)).as_str())
-                        .map_err(|_| {
-                        SignatureError::FailedWritingSignature(
-                            extern_type_full_signature.full_path.clone(),
-                        )
-                    })?;
-                }
-                f.write_str(">").map_err(|_| {
-                    SignatureError::FailedWritingSignature(
-                        extern_type_full_signature.full_path.clone(),
-                    )
-                })?;
-            }
-        };
-
-        f.write_str(";").map_err(|_| {
-            SignatureError::FailedWritingSignature(extern_type_full_signature.full_path)
-        })
+        write_type_signature(f, extern_type_full_signature, true)
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 
@@ -1053,6 +996,32 @@ fn write_syntactic_evaluation(
     } else {
         Err(fmt::Error)
     }
+}
+
+/// A utility function used for formatting documentable types data. Use with
+/// [`DocumentableItemSignatureData`] argument created for [`ModuleTypeAliasId`], [`TraitTypeId`],
+/// [`ImplTypeDefId`] or [`ExternTypeId`]. Because of the same signature structure.
+fn write_type_signature(
+    f: &mut HirFormatter<'_>,
+    documentable_signature: DocumentableItemSignatureData,
+    is_extern_type: bool,
+) -> Result<(), fmt::Error> {
+    write!(
+        f,
+        "{}{}type {}",
+        get_syntactic_visibility(&documentable_signature.visibility),
+        if is_extern_type { "extern " } else { "" },
+        documentable_signature.name
+    )?;
+    if let Some(generic_params) = documentable_signature.generic_params {
+        write_generic_params(generic_params, f)?;
+    }
+    if let Some(return_type) = documentable_signature.return_type {
+        write!(f, " = ")?;
+        f.write_type(None, return_type, None, &documentable_signature.full_path)?;
+    };
+    write!(f, ";")?;
+    Ok(())
 }
 
 /// Returns relevant [`DocumentableItemId`] for [`GenericItemId`] if one can be retrieved.
@@ -1719,6 +1688,15 @@ fn get_module_type_alias_full_signature(
 ) -> Result<DocumentableItemSignatureData, SignatureError> {
     let module_item_id = ModuleItemId::TypeAlias(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
+
+    let generic_params = db
+        .module_type_alias_generic_params(item_id)
+        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+
+    let resolved_type = db
+        .module_type_alias_resolved_type(item_id)
+        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
             item_id,
@@ -1726,10 +1704,10 @@ fn get_module_type_alias_full_signature(
         name: item_id.name(db),
         visibility: module_item_info.visibility,
         generic_args: None,
-        generic_params: None,
+        generic_params: Some(generic_params),
         variants: None,
         members: None,
-        return_type: None,
+        return_type: Some(resolved_type),
         attributes: None,
         params: None,
         resolver_generic_params: None,
@@ -1743,12 +1721,16 @@ fn get_trait_type_full_signature(
     db: &dyn DocGroup,
     item_id: TraitTypeId,
 ) -> Result<DocumentableItemSignatureData, SignatureError> {
+    let generic_params = db
+        .trait_type_generic_params(item_id)
+        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::TraitItem(TraitItemId::Type(item_id))),
         name: item_id.name(db),
-        visibility: Visibility::Public,
+        visibility: Visibility::Private,
         generic_args: None,
-        generic_params: None,
+        generic_params: Some(generic_params),
         variants: None,
         members: None,
         return_type: None,
@@ -1773,12 +1755,16 @@ fn get_impl_type_def_full_signature(
             return Err(SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)));
         }
     };
+    let generic_params = db
+        .impl_type_def_generic_params(item_id)
+        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ImplItem(ImplItemId::Type(item_id))),
         name: item_id.name(db),
-        visibility: Visibility::Public,
+        visibility: Visibility::Private,
         generic_args: None,
-        generic_params: None,
+        generic_params: Some(generic_params),
         variants: None,
         members: None,
         return_type: Some(resolved_type),
@@ -1797,6 +1783,7 @@ fn get_extern_type_full_signature(
 ) -> Result<DocumentableItemSignatureData, SignatureError> {
     let module_item_id = ModuleItemId::ExternType(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
+
     let generic_params = match <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
         .extern_type_declaration_generic_params(item_id)
     {
