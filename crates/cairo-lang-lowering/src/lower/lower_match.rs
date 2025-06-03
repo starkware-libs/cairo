@@ -1102,7 +1102,7 @@ pub(crate) fn lower_optimized_extern_match(
 /// An internal pattern, if exists, is passed to
 /// `lower_concrete_enum_variant`.
 ///
-/// Implementors are responsible for implementing `lower_concrete_enum_variant`.
+/// Implementers are responsible for implementing `lower_concrete_enum_variant`.
 ///
 /// Call-site entry point: `build_enum_block_variants`.
 trait EnumVariantScopeBuilder {

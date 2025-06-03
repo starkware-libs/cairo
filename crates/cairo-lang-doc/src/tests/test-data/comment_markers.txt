@@ -46,7 +46,9 @@ trait T
 //! > Item documentation tokens #2
 
 //! > Item signature #3
-fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(self: Option<T>, f: F) -> Option<U>
+fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+    self: Option<T>, f: F,
+) -> Option<U>
 
 //! > Item documentation #3
 Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`)
