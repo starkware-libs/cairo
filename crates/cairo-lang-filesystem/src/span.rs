@@ -151,7 +151,7 @@ impl TextSpan {
 }
 
 /// Human-readable position inside a file, in lines and characters.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct TextPosition {
     /// Line index, 0 based.
     pub line: usize,
