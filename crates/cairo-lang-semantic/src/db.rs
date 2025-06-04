@@ -2040,9 +2040,21 @@ pub trait PluginSuiteInput: SemanticGroup {
     /// [`SemanticGroup::default_analyzer_plugins`].
     fn set_default_plugins_from_suite(&mut self, suite: InternedPluginSuite) {
         let InternedPluginSuite { macro_plugins, inline_macro_plugins, analyzer_plugins } = suite;
-
-        self.set_default_macro_plugins(macro_plugins);
-        self.set_default_inline_macro_plugins(inline_macro_plugins);
+        let macro_plugins = macro_plugins
+            .iter()
+            .map(|plugin| self.lookup_intern_macro_plugin(*plugin))
+            .collect::<Vec<_>>();
+        let macro_plugins = Arc::from(macro_plugins);
+        let inline_macro_plugins = Arc::new(
+            inline_macro_plugins
+                .iter()
+                .map(|(name, plugin)| {
+                    (name.clone(), self.lookup_intern_inline_macro_plugin(*plugin))
+                })
+                .collect(),
+        );
+        self.set_default_macro_plugins_input(macro_plugins);
+        self.set_default_inline_macro_plugins_input(inline_macro_plugins);
         self.set_default_analyzer_plugins(analyzer_plugins);
     }
 
