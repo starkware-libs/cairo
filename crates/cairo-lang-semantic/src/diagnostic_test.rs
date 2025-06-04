@@ -144,9 +144,9 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
 fn test_inline_module_diagnostics() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
-    db.set_default_macro_plugins(Arc::new([
-        db.intern_macro_plugin(MacroPluginLongId(Arc::new(AddInlineModuleDummyPlugin)))
-    ]));
+    db.set_default_macro_plugins_input(Arc::new([MacroPluginLongId(Arc::new(
+        AddInlineModuleDummyPlugin,
+    ))]));
     let crate_id = setup_test_crate(
         db,
         indoc! {"
