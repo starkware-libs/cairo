@@ -1579,39 +1579,55 @@ Statements:
 End:
   Match(match core::gas::withdraw_gas(v0, v1) {
     Option::Some(v2, v3) => blk1,
-    Option::None(v4, v5) => blk4,
+    Option::None(v4, v5) => blk6,
   })
 
 blk1:
 Statements:
-  (v6: core::RangeCheck, v7: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::MyImpl::impl_in_trait[54-175]{1, }(v2, v3)
+  (v6: core::result::Result::<core::integer::u8, core::integer::u8>) <- core::internal::num::u8_inc{0, }()
 End:
-  Match(match_enum(v8) {
-    PanicResult::Ok(v9) => blk2,
-    PanicResult::Err(v10) => blk3,
+  Match(match_enum(v6) {
+    Result::Ok(v7) => blk2,
+    Result::Err(v8) => blk5,
   })
 
 blk2:
 Statements:
-  (v11: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
-  (v12: ()) <- struct_construct()
-  (v13: ((),)) <- struct_construct(v12)
-  (v14: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v13)
+  (v9: core::RangeCheck, v10: core::gas::GasBuiltin, v11: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::MyImpl::impl_in_trait[54-175](v2, v3, v7)
 End:
-  Return(v6, v11, v14)
+  Match(match_enum(v11) {
+    PanicResult::Ok(v12) => blk3,
+    PanicResult::Err(v13) => blk4,
+  })
 
 blk3:
 Statements:
-  (v15: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
+  (v14: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v10)
+  (v15: ()) <- struct_construct()
+  (v16: ((),)) <- struct_construct(v15)
+  (v17: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v16)
 End:
-  Return(v6, v7, v15)
+  Return(v9, v14, v17)
 
 blk4:
 Statements:
-  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v17: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v16)
+  (v18: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v13)
 End:
-  Return(v4, v5, v17)
+  Return(v9, v10, v18)
+
+blk5:
+Statements:
+  (v19: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642104203229548495787928534675319>()
+  (v20: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v19)
+End:
+  Return(v2, v3, v20)
+
+blk6:
+Statements:
+  (v21: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v21)
+End:
+  Return(v4, v5, v22)
 
 //! > lowering_diagnostics
 
