@@ -40,10 +40,10 @@ impl Default for DatabaseForTesting {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         init_defs_group(&mut res);
-        res.set_default_macro_plugins(Arc::new([
-            res.intern_macro_plugin(MacroPluginLongId(Arc::new(FooToBarPlugin))),
-            res.intern_macro_plugin(MacroPluginLongId(Arc::new(RemoveOrigPlugin))),
-            res.intern_macro_plugin(MacroPluginLongId(Arc::new(DummyPlugin))),
+        res.set_default_macro_plugins_input(Arc::new([
+            MacroPluginLongId(Arc::new(FooToBarPlugin)),
+            MacroPluginLongId(Arc::new(RemoveOrigPlugin)),
+            MacroPluginLongId(Arc::new(DummyPlugin)),
         ]));
         res
     }
