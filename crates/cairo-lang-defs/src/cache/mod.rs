@@ -56,7 +56,7 @@ impl CachedCrateMetadata {
         let global_flags = db
             .flags()
             .iter()
-            .map(|(flag_id, flag)| (flag_id.lookup_intern(db).0, (**flag).clone()))
+            .map(|(flag_id, flag)| (flag_id.0.clone(), (**flag).clone()))
             .collect();
         Self { settings, compiler_version, global_flags }
     }

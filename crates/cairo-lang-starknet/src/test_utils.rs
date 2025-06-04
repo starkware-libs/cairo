@@ -72,7 +72,7 @@ pub fn get_test_contract(example_file_name: &str) -> ContractClass {
              {contracts_crate:?}"
         );
     };
-    let main_crate_ids = vec![**contracts_crate_id];
+    let main_crate_ids = vec![db.intern_crate((*contracts_crate_id).clone())];
     let diagnostics_reporter =
         DiagnosticsReporter::default().with_crates(&main_crate_ids).allow_warnings();
     compile_contract_in_prepared_db(

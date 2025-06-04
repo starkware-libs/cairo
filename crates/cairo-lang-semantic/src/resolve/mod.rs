@@ -1563,18 +1563,16 @@ impl<'db> Resolver<'db> {
             self.active_settings(macro_context_modifier).dependencies.get(ident.as_str())
         {
             let dep_crate_id =
-                CrateLongId::Real { name: ident, discriminator: dep.discriminator.clone() }
-                    .intern(self.db);
+                CrateLongId::Real { name: ident, discriminator: dep.discriminator.clone() };
             let configs = self.db.crate_configs();
             if !configs.contains_key(&dep_crate_id) {
-                let get_long_id = |crate_id: CrateId| crate_id.lookup_intern(self.db);
                 panic!(
                     "Invalid crate dependency: {:?}\nconfigured crates: {:#?}",
-                    get_long_id(dep_crate_id),
-                    configs.keys().cloned().map(get_long_id).collect_vec()
+                    dep_crate_id,
+                    configs.keys().collect_vec()
                 );
             }
-
+            let dep_crate_id = dep_crate_id.intern(self.db);
             return ResolvedBase::Crate(dep_crate_id);
         }
         // If the first segment is `core` - and it was not overridden by a dependency - using it.
