@@ -747,7 +747,9 @@ lib.cairo:6:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -756,7 +758,9 @@ lib.cairo:6:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
@@ -765,7 +769,9 @@ lib.cairo:13:26
                          ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl WrappedFelt252SubPointersDrop<> of core::traits::Drop::<WrappedFelt252SubPointers>;
+#[doc(hidden)]
 impl WrappedFelt252SubPointersCopy<> of core::traits::Copy::<WrappedFelt252SubPointers>;
 
 
@@ -774,7 +780,9 @@ lib.cairo:13:26
                          ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl WrappedFelt252SubPointersMutDrop<> of core::traits::Drop::<WrappedFelt252SubPointersMut>;
+#[doc(hidden)]
 impl WrappedFelt252SubPointersMutCopy<> of core::traits::Copy::<WrappedFelt252SubPointersMut>;
 
 //! > expected_diagnostics

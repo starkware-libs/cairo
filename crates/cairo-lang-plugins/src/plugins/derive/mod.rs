@@ -10,6 +10,7 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 
 use super::utils::PluginTypeInfo;
+use crate::plugins::DOC_ATTR;
 
 mod clone;
 mod debug;
@@ -104,7 +105,7 @@ fn generate_derive_code_for_type(
             };
 
             let derived = derived_path.as_syntax_node().get_text_without_trivia(db);
-            if let Some(code) = match derived.as_str() {
+            if let Some(mut code) = match derived.as_str() {
                 "Copy" | "Drop" => Some(get_empty_impl(&derived, &info)),
                 "Clone" => Some(clone::handle_clone(&info)),
                 "Debug" => Some(debug::handle_debug(&info)),
@@ -124,6 +125,10 @@ fn generate_derive_code_for_type(
                     None
                 }
             } {
+                if let Some(doc_attr) = info.attributes.find_attr(db, DOC_ATTR) {
+                    code =
+                        format!("{}\n{code}", doc_attr.as_syntax_node().get_text_without_trivia(db))
+                }
                 builder.add_modified(RewriteNode::mapped_text(code, db, &derived_path));
             }
         }

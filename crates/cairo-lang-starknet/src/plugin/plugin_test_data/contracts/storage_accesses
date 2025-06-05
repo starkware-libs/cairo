@@ -556,9 +556,13 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
 #[doc(group: "dispatchers")]
@@ -1522,8 +1526,11 @@ impl TransactionInfoStorageNodeMutImpl of starknet::storage::StorageNodeMut<Tran
         }
     }
 }
+#[doc(group: "dispatchers")]
 impl IERC20DispatcherCopy<> of core::traits::Copy::<IERC20Dispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20DispatcherDrop<> of core::traits::Drop::<IERC20Dispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20DispatcherSerde<> of core::serde::Serde::<IERC20Dispatcher> {
     fn serialize(self: @IERC20Dispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -1625,8 +1632,11 @@ impl IERC20DispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IER
         }
     }
 }
+#[doc(group: "dispatchers")]
 impl IERC20LibraryDispatcherCopy<> of core::traits::Copy::<IERC20LibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20LibraryDispatcherDrop<> of core::traits::Drop::<IERC20LibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20LibraryDispatcherSerde<> of core::serde::Serde::<IERC20LibraryDispatcher> {
     fn serialize(self: @IERC20LibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -1728,8 +1738,11 @@ impl IERC20LibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointers
         }
     }
 }
+#[doc(group: "dispatchers")]
 impl IERC20SafeLibraryDispatcherCopy<> of core::traits::Copy::<IERC20SafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20SafeLibraryDispatcherDrop<> of core::traits::Drop::<IERC20SafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20SafeLibraryDispatcherSerde<> of core::serde::Serde::<IERC20SafeLibraryDispatcher> {
     fn serialize(self: @IERC20SafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -1831,8 +1844,11 @@ impl IERC20SafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoin
         }
     }
 }
+#[doc(group: "dispatchers")]
 impl IERC20SafeDispatcherCopy<> of core::traits::Copy::<IERC20SafeDispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20SafeDispatcherDrop<> of core::traits::Drop::<IERC20SafeDispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20SafeDispatcherSerde<> of core::serde::Serde::<IERC20SafeDispatcher> {
     fn serialize(self: @IERC20SafeDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -1934,33 +1950,61 @@ impl IERC20SafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut
         }
     }
 }
+#[doc(hidden)]
 impl UserInfoSubPointersDrop<> of core::traits::Drop::<UserInfoSubPointers>;
+#[doc(hidden)]
 impl UserInfoSubPointersCopy<> of core::traits::Copy::<UserInfoSubPointers>;
+#[doc(hidden)]
 impl UserInfoSubPointersMutDrop<> of core::traits::Drop::<UserInfoSubPointersMut>;
+#[doc(hidden)]
 impl UserInfoSubPointersMutCopy<> of core::traits::Copy::<UserInfoSubPointersMut>;
+#[doc(hidden)]
 impl TransactionInfoStorageBaseDrop<> of core::traits::Drop::<TransactionInfoStorageBase>;
+#[doc(hidden)]
 impl TransactionInfoStorageBaseCopy<> of core::traits::Copy::<TransactionInfoStorageBase>;
+#[doc(hidden)]
 impl TransactionInfoStorageBaseMutDrop<> of core::traits::Drop::<TransactionInfoStorageBaseMut>;
+#[doc(hidden)]
 impl TransactionInfoStorageBaseMutCopy<> of core::traits::Copy::<TransactionInfoStorageBaseMut>;
+#[doc(hidden)]
 impl TransactionInfoStorageNodeDrop<> of core::traits::Drop::<TransactionInfoStorageNode>;
+#[doc(hidden)]
 impl TransactionInfoStorageNodeCopy<> of core::traits::Copy::<TransactionInfoStorageNode>;
+#[doc(hidden)]
 impl TransactionInfoStorageNodeMutDrop<> of core::traits::Drop::<TransactionInfoStorageNodeMut>;
+#[doc(hidden)]
 impl TransactionInfoStorageNodeMutCopy<> of core::traits::Copy::<TransactionInfoStorageNodeMut>;
+#[doc(hidden)]
 impl IERC20DispatcherSubPointersDrop<> of core::traits::Drop::<IERC20DispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20DispatcherSubPointersCopy<> of core::traits::Copy::<IERC20DispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20DispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20DispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IERC20DispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20DispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IERC20LibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IERC20LibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20LibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IERC20LibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20LibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20LibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IERC20LibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20LibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IERC20SafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20SafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20SafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IERC20SafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IERC20SafeDispatcherSubPointersDrop<> of core::traits::Drop::<IERC20SafeDispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20SafeDispatcherSubPointersCopy<> of core::traits::Copy::<IERC20SafeDispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20SafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20SafeDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IERC20SafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20SafeDispatcherSubPointersMut>;
 
     use core::num::traits::Zero;
@@ -2477,9 +2521,13 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
