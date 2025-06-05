@@ -94,6 +94,7 @@ pub trait Intern<'a, DynDbGroup: ?Sized, ShortId> {
     fn intern(self, db: &(impl Upcast<DynDbGroup> + ?Sized)) -> ShortId;
 }
 
+/// TODO(eytan-starkware): Remove this macro entirely and rely on `salsa::interned`.
 // Defines a short id struct for use with salsa interning.
 // Interning is the process of representing a value as an id in a table.
 // We usually denote the value type as "long id", and the id type as "short id" or just "id".
@@ -105,47 +106,26 @@ pub trait Intern<'a, DynDbGroup: ?Sized, ShortId> {
 #[macro_export]
 macro_rules! define_short_id {
     ($short_id:ident, $long_id:path, $db:ident, $lookup:ident, $intern:ident) => {
-        #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-        pub struct $short_id(salsa::InternId);
-        impl<'a> cairo_lang_utils::LookupIntern<'a, dyn $db + 'a, $long_id> for $short_id {
+        pub type $short_id<'a> = $long_id;
+        impl<'a> cairo_lang_utils::LookupIntern<'a, dyn $db + 'a, $long_id> for $short_id<'a> {
             fn lookup_intern(
                 &self,
                 db: &(impl cairo_lang_utils::Upcast<dyn $db + 'a> + ?Sized),
             ) -> $long_id {
-                $db::$lookup(db.upcast(), *self)
-            }
-        }
-        impl<'a> cairo_lang_utils::Intern<'a, dyn $db + 'a, $short_id> for $long_id {
-            fn intern(
-                self,
-                db: &(impl cairo_lang_utils::Upcast<dyn $db + 'a> + ?Sized),
-            ) -> $short_id {
-                $db::$intern(db.upcast(), self)
-            }
-        }
-        impl salsa::InternKey for $short_id {
-            fn from_intern_id(salsa_id: salsa::InternId) -> Self {
-                Self(salsa_id)
-            }
-
-            fn as_intern_id(&self) -> salsa::InternId {
-                self.0
+                self.data(db)
             }
         }
         // Impl transparent DebugWithDb.
-        impl<T: ?Sized + cairo_lang_utils::Upcast<dyn $db + 'static>>
-            cairo_lang_debug::DebugWithDb<T> for $short_id
+        impl<'a, T: ?Sized + cairo_lang_utils::Upcast<dyn $db + 'static>>
+            cairo_lang_debug::DebugWithDb<T> for $short_id<'a>
         {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
                 use core::fmt::Debug;
 
                 use cairo_lang_debug::helper::Fallback;
                 let db = db.upcast();
-                cairo_lang_debug::helper::HelperDebug::<$long_id, dyn $db>::helper_debug(
-                    &db.$lookup(*self),
-                    db,
-                )
-                .fmt(f)
+                cairo_lang_debug::helper::HelperDebug::<$long_id, dyn $db>::helper_debug(self, db)
+                    .fmt(f)
             }
         }
     };

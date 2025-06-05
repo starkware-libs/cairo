@@ -18,7 +18,7 @@ opt-level = 3
 [profile.ci-dev.package."bimap"]
 
 opt-level = 3
-[profile.ci-dev.package."rust-analyzer-salsa"]
+[profile.ci-dev.package."salsa"]
 opt-level = 3
 
 [workspace]
@@ -82,6 +82,7 @@ license = "Apache-2.0"
 license-file = "LICENSE"
 
 [workspace.dependencies]
+query-group = { git = "https://github.com/davidbarsky/db-ext-macro.git", rev = "9222b77b8a37e44b1a6d5fb624fe625e8155870d" }
 anyhow = "1.0.95"
 ark-ff = "0.5.0"
 ark-secp256k1 = "0.5.0"
@@ -101,7 +102,9 @@ derivative = "2.2.0"
 diffy = "0.4.2"
 env_logger = "0.11.6"
 genco = "0.17.10"
-good_lp = { version = "1.11.0", features = ["minilp"], default-features = false }
+good_lp = { version = "1.11.0", features = [
+    "minilp",
+], default-features = false }
 hashbrown = "0.15.2"
 id-arena = "2.2.1"
 ignore = "0.4.23"
@@ -125,10 +128,13 @@ quote = "1.0.38"
 rand = "0.9.0"
 rayon = "1.10.0"
 rstest = "0.25.0"
-salsa = { package = "rust-analyzer-salsa", version = "0.17.0-pre.6" }
+salsa = "0.22.0"
 schemars = { version = "0.8.21", features = ["preserve_order"] }
 semver = { version = "1.0.25", features = ["serde"] }
-serde = { version = "1.0.217", default-features = false, features = ["derive","rc"] }
+serde = { version = "1.0.217", default-features = false, features = [
+    "derive",
+    "rc",
+] }
 serde_json = "1.0.138"
 typetag = "0.2"
 sha2 = "0.10.8"
