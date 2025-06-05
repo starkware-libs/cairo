@@ -13,8 +13,8 @@ use smol_str::{SmolStr, ToSmolStr};
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
 use crate::ids::{
-    BlobId, BlobLongId, CodeMapping, CodeOrigin, CrateId, CrateLongId, Directory, FileId,
-    FileInput, FileLongId, FlagId, FlagLongId, VirtualFile,
+    BlobId, BlobLongId, CodeMapping, CodeOrigin, CrateId, CrateInput, CrateLongId, Directory,
+    DirectoryInput, FileId, FileInput, FileLongId, FlagId, FlagLongId, VirtualFile,
 };
 use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
@@ -44,8 +44,28 @@ impl From<CrateIdentifier> for SmolStr {
     }
 }
 
-/// A configuration per crate.
+/// Same as `CrateConfiguration` but without interning the root directory.
+/// This is used to avoid the need to intern the file id inside salsa database inputs.
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CrateConfigurationInput {
+    pub root: DirectoryInput,
+    pub settings: CrateSettings,
+    pub cache_file: Option<BlobLongId>,
+}
+
+impl CrateConfigurationInput {
+    /// Converts the input into an [`CrateConfiguration`].
+    pub fn into_crate_configuration(self, db: &dyn FilesGroup) -> CrateConfiguration {
+        CrateConfiguration {
+            root: self.root.into_directory(db),
+            settings: self.settings,
+            cache_file: self.cache_file.map(|blob_long_id| blob_long_id.intern(db)),
+        }
+    }
+}
+
+/// A configuration per crate.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct CrateConfiguration {
     /// The root directory of the crate.
     pub root: Directory,
@@ -57,10 +77,19 @@ impl CrateConfiguration {
     pub fn default_for_root(root: Directory) -> Self {
         Self { root, settings: CrateSettings::default(), cache_file: None }
     }
+
+    /// Converts the configuration into an [`CrateConfigurationInput`].
+    pub fn into_crate_configuration_input(self, db: &dyn FilesGroup) -> CrateConfigurationInput {
+        CrateConfigurationInput {
+            root: self.root.into_directory_input(db),
+            settings: self.settings,
+            cache_file: self.cache_file.map(|blob_id| blob_id.lookup_intern(db)),
+        }
+    }
 }
 
 /// Same as `CrateConfiguration` but without the root directory.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct CrateSettings {
     /// The name reflecting how the crate is referred to in the Cairo code e.g. `use crate_name::`.
     /// If set to [`None`] then [`CrateIdentifier`] key will be used as a name.
@@ -137,7 +166,7 @@ impl Edition {
 }
 
 /// The settings for a dependency.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct DependencySettings {
     /// A unique string allowing identifying different copies of the same dependency
     /// in the compilation unit.
@@ -191,7 +220,7 @@ pub trait FilesGroup: ExternalFiles {
 
     /// Main input of the project. Lists all the crates configurations.
     #[salsa::input]
-    fn crate_configs_input(&self) -> Arc<OrderedHashMap<CrateLongId, CrateConfiguration>>;
+    fn crate_configs_input(&self) -> Arc<OrderedHashMap<CrateInput, CrateConfigurationInput>>;
 
     /// Interned version of `crate_configs_input`.
     fn crate_configs(&self) -> Arc<OrderedHashMap<CrateId, CrateConfiguration>>;
@@ -237,6 +266,12 @@ pub trait FilesGroup: ExternalFiles {
 
     /// Create an input file from an interned file id.
     fn file_input(&self, file_id: FileId) -> FileInput;
+
+    /// Create an input crate from an interned crate id.
+    fn crate_input(&self, crt: CrateId) -> CrateInput;
+
+    /// Create an input crate configuration from a [`CrateConfiguration`].
+    fn crate_configuration_input(&self, config: CrateConfiguration) -> CrateConfigurationInput;
 }
 
 pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
@@ -262,7 +297,12 @@ pub fn crate_configs(db: &dyn FilesGroup) -> Arc<OrderedHashMap<CrateId, CrateCo
     let inp = db.crate_configs_input();
     Arc::new(
         inp.iter()
-            .map(|(crate_id, config)| (crate_id.clone().intern(db), config.clone()))
+            .map(|(crate_input, config)| {
+                (
+                    crate_input.clone().into_crate_long_id(db).intern(db),
+                    config.clone().into_crate_configuration(db),
+                )
+            })
             .collect(),
     )
 }
@@ -274,6 +314,17 @@ pub fn flags(db: &dyn FilesGroup) -> Arc<OrderedHashMap<FlagId, Arc<Flag>>> {
 
 fn file_input(db: &dyn FilesGroup, file_id: FileId) -> FileInput {
     file_id.lookup_intern(db).into_file_input(db)
+}
+
+fn crate_input(db: &dyn FilesGroup, crt: CrateId) -> CrateInput {
+    crt.lookup_intern(db).into_crate_input(db)
+}
+
+fn crate_configuration_input(
+    db: &dyn FilesGroup,
+    config: CrateConfiguration,
+) -> CrateConfigurationInput {
+    config.clone().into_crate_configuration_input(db)
 }
 
 pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathBuf) {
@@ -312,10 +363,10 @@ pub trait FilesGroupEx: FilesGroup {
     }
     /// Sets the root directory of the crate. None value removes the crate.
     fn set_crate_config(&mut self, crt: CrateId, root: Option<CrateConfiguration>) {
-        let crt = self.lookup_intern_crate(crt);
+        let crt = self.crate_input(crt);
         let mut crate_configs = self.crate_configs_input().as_ref().clone();
         match root {
-            Some(root) => crate_configs.insert(crt, root),
+            Some(root) => crate_configs.insert(crt, self.crate_configuration_input(root)),
             None => crate_configs.swap_remove(&crt),
         };
         self.set_crate_configs_input(Arc::new(crate_configs));
@@ -397,19 +448,7 @@ fn get_flag(db: &dyn FilesGroup, id: FlagId) -> Option<Arc<Flag>> {
 }
 
 fn blob_content(db: &dyn FilesGroup, blob: BlobId) -> Option<Arc<[u8]>> {
-    match blob.lookup_intern(db) {
-        BlobLongId::OnDisk(path) => {
-            // This does not result in performance cost due to OS caching and the fact that salsa
-            // will re-execute only this single query if the file content did not change.
-            db.salsa_runtime().report_synthetic_read(Durability::LOW);
-
-            match fs::read(path) {
-                Ok(content) => Some(content.into()),
-                Err(_) => None,
-            }
-        }
-        BlobLongId::Virtual(content) => Some(content),
-    }
+    blob.lookup_intern(db).content(db)
 }
 
 /// Returns the location of the originating user code.
