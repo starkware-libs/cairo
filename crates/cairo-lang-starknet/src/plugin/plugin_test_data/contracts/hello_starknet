@@ -183,9 +183,13 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
 #[doc(group: 'dispatchers')]
@@ -366,8 +370,11 @@ impl HelloStarknetTraitSafeDispatcherImpl of HelloStarknetTraitSafeDispatcherTra
     }
 
 }
+#[doc(group: 'dispatchers')]
 impl HelloStarknetTraitDispatcherCopy<> of core::traits::Copy::<HelloStarknetTraitDispatcher>;
+#[doc(group: 'dispatchers')]
 impl HelloStarknetTraitDispatcherDrop<> of core::traits::Drop::<HelloStarknetTraitDispatcher>;
+#[doc(group: 'dispatchers')]
 impl HelloStarknetTraitDispatcherSerde<> of core::serde::Serde::<HelloStarknetTraitDispatcher> {
     fn serialize(self: @HelloStarknetTraitDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -469,8 +476,11 @@ impl HelloStarknetTraitDispatcherSubPointersMutImpl of starknet::storage::SubPoi
         }
     }
 }
+#[doc(group: 'dispatchers')]
 impl HelloStarknetTraitLibraryDispatcherCopy<> of core::traits::Copy::<HelloStarknetTraitLibraryDispatcher>;
+#[doc(group: 'dispatchers')]
 impl HelloStarknetTraitLibraryDispatcherDrop<> of core::traits::Drop::<HelloStarknetTraitLibraryDispatcher>;
+#[doc(group: 'dispatchers')]
 impl HelloStarknetTraitLibraryDispatcherSerde<> of core::serde::Serde::<HelloStarknetTraitLibraryDispatcher> {
     fn serialize(self: @HelloStarknetTraitLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -572,8 +582,11 @@ impl HelloStarknetTraitLibraryDispatcherSubPointersMutImpl of starknet::storage:
         }
     }
 }
+#[doc(group: 'dispatchers')]
 impl HelloStarknetTraitSafeLibraryDispatcherCopy<> of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcher>;
+#[doc(group: 'dispatchers')]
 impl HelloStarknetTraitSafeLibraryDispatcherDrop<> of core::traits::Drop::<HelloStarknetTraitSafeLibraryDispatcher>;
+#[doc(group: 'dispatchers')]
 impl HelloStarknetTraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<HelloStarknetTraitSafeLibraryDispatcher> {
     fn serialize(self: @HelloStarknetTraitSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -675,8 +688,11 @@ impl HelloStarknetTraitSafeLibraryDispatcherSubPointersMutImpl of starknet::stor
         }
     }
 }
+#[doc(group: 'dispatchers')]
 impl HelloStarknetTraitSafeDispatcherCopy<> of core::traits::Copy::<HelloStarknetTraitSafeDispatcher>;
+#[doc(group: 'dispatchers')]
 impl HelloStarknetTraitSafeDispatcherDrop<> of core::traits::Drop::<HelloStarknetTraitSafeDispatcher>;
+#[doc(group: 'dispatchers')]
 impl HelloStarknetTraitSafeDispatcherSerde<> of core::serde::Serde::<HelloStarknetTraitSafeDispatcher> {
     fn serialize(self: @HelloStarknetTraitSafeDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -778,21 +794,37 @@ impl HelloStarknetTraitSafeDispatcherSubPointersMutImpl of starknet::storage::Su
         }
     }
 }
+#[doc(hidden)]
 impl HelloStarknetTraitDispatcherSubPointersDrop<> of core::traits::Drop::<HelloStarknetTraitDispatcherSubPointers>;
+#[doc(hidden)]
 impl HelloStarknetTraitDispatcherSubPointersCopy<> of core::traits::Copy::<HelloStarknetTraitDispatcherSubPointers>;
+#[doc(hidden)]
 impl HelloStarknetTraitDispatcherSubPointersMutDrop<> of core::traits::Drop::<HelloStarknetTraitDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl HelloStarknetTraitDispatcherSubPointersMutCopy<> of core::traits::Copy::<HelloStarknetTraitDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl HelloStarknetTraitLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<HelloStarknetTraitLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl HelloStarknetTraitLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<HelloStarknetTraitLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl HelloStarknetTraitLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<HelloStarknetTraitLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl HelloStarknetTraitLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<HelloStarknetTraitLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl HelloStarknetTraitSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<HelloStarknetTraitSafeLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl HelloStarknetTraitSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl HelloStarknetTraitSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<HelloStarknetTraitSafeLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl HelloStarknetTraitSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl HelloStarknetTraitSafeDispatcherSubPointersDrop<> of core::traits::Drop::<HelloStarknetTraitSafeDispatcherSubPointers>;
+#[doc(hidden)]
 impl HelloStarknetTraitSafeDispatcherSubPointersCopy<> of core::traits::Copy::<HelloStarknetTraitSafeDispatcherSubPointers>;
+#[doc(hidden)]
 impl HelloStarknetTraitSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<HelloStarknetTraitSafeDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl HelloStarknetTraitSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<HelloStarknetTraitSafeDispatcherSubPointersMut>;
 
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
@@ -961,9 +993,13 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics

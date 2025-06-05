@@ -181,7 +181,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -190,7 +192,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
@@ -347,7 +351,9 @@ lib.cairo:11:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -356,7 +362,9 @@ lib.cairo:11:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
@@ -571,7 +579,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -580,7 +590,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
@@ -737,7 +749,9 @@ lib.cairo:11:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -746,7 +760,9 @@ lib.cairo:11:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
@@ -949,7 +965,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -958,7 +976,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
@@ -1115,7 +1135,9 @@ lib.cairo:11:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -1124,7 +1146,9 @@ lib.cairo:11:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
@@ -1340,7 +1364,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -1349,7 +1375,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
@@ -1506,7 +1534,9 @@ lib.cairo:11:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -1515,7 +1545,9 @@ lib.cairo:11:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
@@ -1737,7 +1769,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -1746,7 +1780,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
@@ -1959,7 +1995,9 @@ lib.cairo:12:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -1968,7 +2006,9 @@ lib.cairo:12:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
@@ -2181,7 +2221,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -2190,7 +2232,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
@@ -2347,7 +2391,9 @@ lib.cairo:12:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -2356,7 +2402,9 @@ lib.cairo:12:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > ==========================================================================
@@ -2553,7 +2601,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -2562,7 +2612,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
@@ -2726,7 +2778,9 @@ lib.cairo:12:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -2735,7 +2789,9 @@ lib.cairo:12:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > ==========================================================================
@@ -2932,7 +2988,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -2941,7 +2999,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
@@ -3118,7 +3178,9 @@ lib.cairo:12:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -3127,7 +3189,9 @@ lib.cairo:12:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > ==========================================================================
@@ -3385,7 +3449,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -3394,7 +3460,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
@@ -3538,7 +3606,9 @@ lib.cairo:17:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -3547,7 +3617,9 @@ lib.cairo:17:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > ==========================================================================
@@ -3787,7 +3859,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -3796,7 +3870,9 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
@@ -3926,7 +4002,9 @@ lib.cairo:10:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -3935,7 +4013,9 @@ lib.cairo:10:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
@@ -4158,7 +4238,9 @@ lib.cairo:22:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -4167,5 +4249,7 @@ lib.cairo:22:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
