@@ -2016,7 +2016,7 @@ pub trait PluginSuiteInput: SemanticGroup {
     fn set_default_plugins_from_suite(&mut self, suite: InternedPluginSuite) {
         let InternedPluginSuite { macro_plugins, inline_macro_plugins, analyzer_plugins } = suite;
         let macro_plugins = macro_plugins
-            .into_iter()
+            .iter()
             .map(|plugin| self.lookup_intern_macro_plugin(*plugin))
             .collect::<Vec<_>>();
         let macro_plugins = Arc::from(macro_plugins.into_boxed_slice());

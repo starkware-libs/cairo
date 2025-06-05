@@ -582,7 +582,9 @@ fn compute_expr_inline_macro_semantic(
 
     // Create a file
     let new_file = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
+        parent: Some(Arc::new(
+            syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db).lookup_intern(ctx.db),
+        )),
         name,
         content: content.clone().into(),
         code_mappings: mappings.clone().into(),

@@ -496,5 +496,7 @@ pub fn get_parent_and_mapping(
         FileLongId::Virtual(vf) => vf,
         FileLongId::External(id) => db.ext_as_virtual(id),
     };
-    Some((vf.parent?, vf.code_mappings))
+    let parent = vf.parent?.as_ref().clone();
+    let id = db.intern_file(parent);
+    Some((id, vf.code_mappings))
 }

@@ -66,7 +66,7 @@ impl Default for DatabaseForTesting {
         init_files_group(&mut res);
         init_defs_group(&mut res);
         res.set_default_macro_plugins(
-            get_base_plugins().into_iter().map(|plugin| MacroPluginLongId(plugin)).collect(),
+            get_base_plugins().into_iter().map(MacroPluginLongId).collect(),
         );
         res
     }
@@ -111,7 +111,7 @@ pub fn test_expand_plugin_inner(
 ) -> TestRunnerResult {
     let db = &mut DatabaseForTesting::default();
 
-    let extra_plugins = extra_plugins.iter().cloned().map(|plugin| MacroPluginLongId(plugin));
+    let extra_plugins = extra_plugins.iter().cloned().map(MacroPluginLongId);
 
     let default_plugins = db.default_macro_plugins();
     let plugins = chain!(default_plugins.iter().cloned(), extra_plugins).collect::<Arc<[_]>>();

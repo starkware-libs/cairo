@@ -829,7 +829,7 @@ fn priv_module_sub_files(
                 files.insert(
                     generated_file_id,
                     VirtualFile {
-                        parent: Some(file_id),
+                        parent: Some(Arc::new(file_id.lookup_intern(db))),
                         name: generated.name,
                         content: generated.content.into(),
                         code_mappings: generated.code_mappings.into(),
@@ -1374,7 +1374,7 @@ pub trait DefsGroupEx: DefsGroup {
         let crate_long_id = crate_id.lookup_intern(self);
         let mut overrides = self.macro_plugin_overrides().as_ref().clone();
         let plugins =
-            plugins.iter().map(|plugin| self.lookup_intern_macro_plugin(plugin.clone())).collect();
+            plugins.iter().map(|plugin| self.lookup_intern_macro_plugin(*plugin)).collect();
         overrides.insert(crate_long_id, plugins);
         self.set_macro_plugin_overrides(Arc::new(overrides));
     }
@@ -1393,7 +1393,7 @@ pub trait DefsGroupEx: DefsGroup {
             plugins
                 .iter()
                 .map(|(name, plugin)| {
-                    (name.clone(), self.lookup_intern_inline_macro_plugin(plugin.clone()))
+                    (name.clone(), self.lookup_intern_inline_macro_plugin(*plugin))
                 })
                 .collect(),
         );

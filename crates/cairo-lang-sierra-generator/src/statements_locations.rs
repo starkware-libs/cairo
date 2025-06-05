@@ -164,11 +164,11 @@ pub fn file_module_absolute_identifier(db: &dyn DefsGroup, mut file_id: FileId) 
     // `VirtualFile` is a generated file (e.g., by macros like `#[starknet::contract]`)
     // that won't have a matching file module in the db. Instead, we find its non generated parent
     // which is in the same module and have a matching file module in the db.
-    while let FileLongId::Virtual(VirtualFile { parent: Some(parent), .. }) =
-        file_id.lookup_intern(db)
-    {
-        file_id = parent;
+    let mut long_file_id = &file_id.lookup_intern(db);
+    while let FileLongId::Virtual(VirtualFile { parent: Some(parent), .. }) = long_file_id {
+        long_file_id = parent;
     }
+    file_id = db.intern_file(long_file_id.clone());
 
     let file_modules = db.file_modules(file_id).to_option()?;
     let full_path = file_modules.first().unwrap().full_path(db);

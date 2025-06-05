@@ -1759,18 +1759,20 @@ struct VirtualFileCached {
 
 impl VirtualFileCached {
     fn new(virtual_file: &VirtualFile, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+        let parent =
+            virtual_file.parent.clone().map(|parent| ctx.db.intern_file(parent.as_ref().clone()));
         Self {
-            parent: virtual_file.parent.map(|parent| FileIdCached::new(parent, ctx)),
+            parent: parent.map(|parent| FileIdCached::new(parent, ctx)),
             name: virtual_file.name.clone(),
             content: String::from(&*(virtual_file.content)),
             code_mappings: virtual_file.code_mappings.to_vec(),
-            kind: virtual_file.kind.clone(),
+            kind: virtual_file.kind,
             original_item_removed: virtual_file.original_item_removed,
         }
     }
     fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> VirtualFile {
         VirtualFile {
-            parent: self.parent.map(|parent| parent.embed(ctx)),
+            parent: self.parent.map(|parent| Arc::new(parent.embed(ctx).lookup_intern(ctx.db))),
             name: self.name,
             content: self.content.into(),
             code_mappings: self.code_mappings.into(),

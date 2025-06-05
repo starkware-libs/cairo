@@ -79,7 +79,7 @@ pub enum FileLongId {
     External(salsa::InternId),
 }
 /// Whether the file holds syntax for a module or for an expression.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FileKind {
     Module,
     Expr,
@@ -140,7 +140,7 @@ impl CodeOrigin {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct VirtualFile {
-    pub parent: Option<FileId>,
+    pub parent: Option<Arc<FileLongId>>,
     pub name: SmolStr,
     pub content: Arc<str>,
     pub code_mappings: Arc<[CodeMapping]>,
@@ -152,11 +152,37 @@ pub struct VirtualFile {
 }
 impl VirtualFile {
     fn full_path(&self, db: &dyn FilesGroup) -> String {
-        if let Some(parent) = self.parent {
+        if let Some(parent) = self.parent.as_ref() {
             // TODO(yuval): consider a different path format for virtual files.
             format!("{}[{}]", parent.full_path(db), self.name)
         } else {
             self.name.clone().into()
+        }
+    }
+}
+
+impl FileLongId {
+    pub fn file_name(&self, db: &dyn FilesGroup) -> String {
+        match self {
+            FileLongId::OnDisk(path) => {
+                path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>").to_string()
+            }
+            FileLongId::Virtual(vf) => vf.name.to_string(),
+            FileLongId::External(external_id) => db.ext_as_virtual(*external_id).name.to_string(),
+        }
+    }
+    pub fn full_path(&self, db: &dyn FilesGroup) -> String {
+        match self {
+            FileLongId::OnDisk(path) => path.to_str().unwrap_or("<unknown>").to_string(),
+            FileLongId::Virtual(vf) => vf.full_path(db),
+            FileLongId::External(external_id) => db.ext_as_virtual(*external_id).full_path(db),
+        }
+    }
+    pub fn kind(&self) -> FileKind {
+        match self {
+            FileLongId::OnDisk(_) => FileKind::Module,
+            FileLongId::Virtual(vf) => vf.kind,
+            FileLongId::External(_) => FileKind::Module,
         }
     }
 }
@@ -166,28 +192,17 @@ impl FileId {
     pub fn new(db: &dyn FilesGroup, path: PathBuf) -> FileId {
         FileLongId::OnDisk(path.clean()).intern(db)
     }
+
     pub fn file_name(self, db: &dyn FilesGroup) -> String {
-        match self.lookup_intern(db) {
-            FileLongId::OnDisk(path) => {
-                path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>").to_string()
-            }
-            FileLongId::Virtual(vf) => vf.name.to_string(),
-            FileLongId::External(external_id) => db.ext_as_virtual(external_id).name.to_string(),
-        }
+        self.lookup_intern(db).file_name(db)
     }
+
     pub fn full_path(self, db: &dyn FilesGroup) -> String {
-        match self.lookup_intern(db) {
-            FileLongId::OnDisk(path) => path.to_str().unwrap_or("<unknown>").to_string(),
-            FileLongId::Virtual(vf) => vf.full_path(db),
-            FileLongId::External(external_id) => db.ext_as_virtual(external_id).full_path(db),
-        }
+        self.lookup_intern(db).full_path(db)
     }
+
     pub fn kind(self, db: &dyn FilesGroup) -> FileKind {
-        match self.lookup_intern(db) {
-            FileLongId::OnDisk(_) => FileKind::Module,
-            FileLongId::Virtual(vf) => vf.kind,
-            FileLongId::External(_) => FileKind::Module,
-        }
+        self.lookup_intern(db).kind()
     }
 }
 
