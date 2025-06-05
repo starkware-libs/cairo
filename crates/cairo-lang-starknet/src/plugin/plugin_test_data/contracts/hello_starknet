@@ -188,6 +188,7 @@ impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
+#[doc(group: "dispatchers")]
 trait HelloStarknetTraitDispatcherTrait<T> {
     // Increases the balance by the given amount.
     fn increase_balance(self: T, amount: usize);
@@ -195,11 +196,13 @@ trait HelloStarknetTraitDispatcherTrait<T> {
     fn get_balance(self: T) -> usize;
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<HelloStarknetTraitDispatcher> {
     // Increases the balance by the given amount.
     fn increase_balance(self: HelloStarknetTraitDispatcher, amount: usize) {
@@ -232,11 +235,13 @@ impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<Hello
 
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitLibraryDispatcherImpl of HelloStarknetTraitDispatcherTrait<HelloStarknetTraitLibraryDispatcher> {
     // Increases the balance by the given amount.
     fn increase_balance(self: HelloStarknetTraitLibraryDispatcher, amount: usize) {
@@ -269,6 +274,7 @@ impl HelloStarknetTraitLibraryDispatcherImpl of HelloStarknetTraitDispatcherTrai
 
 }
 
+#[doc(group: "dispatchers")]
 trait HelloStarknetTraitSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     // Increases the balance by the given amount.
@@ -278,11 +284,13 @@ trait HelloStarknetTraitSafeDispatcherTrait<T> {
     fn get_balance(self: T) -> starknet::SyscallResult<usize>;
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitSafeLibraryDispatcherImpl of HelloStarknetTraitSafeDispatcherTrait<HelloStarknetTraitSafeLibraryDispatcher> {
     // Increases the balance by the given amount.
     fn increase_balance(self: HelloStarknetTraitSafeLibraryDispatcher, amount: usize) -> starknet::SyscallResult<()> {
@@ -318,11 +326,13 @@ impl HelloStarknetTraitSafeLibraryDispatcherImpl of HelloStarknetTraitSafeDispat
 }
 
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitSafeDispatcherImpl of HelloStarknetTraitSafeDispatcherTrait<HelloStarknetTraitSafeDispatcher> {
     // Increases the balance by the given amount.
     fn increase_balance(self: HelloStarknetTraitSafeDispatcher, amount: usize) -> starknet::SyscallResult<()> {

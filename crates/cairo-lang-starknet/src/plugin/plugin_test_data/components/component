@@ -211,16 +211,19 @@ lib.cairo:42:1
 ^^^^^^^^^^^^^^^^^^^^^^
 MyTraitDispatcherTrait:
 
+#[doc(group: "dispatchers")]
 trait MyTraitDispatcherTrait<T> {
     fn get(self: T, addr: ContractAddress) -> u32;
     fn set(self: T, addr: ContractAddress, value: u32);
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct MyTraitDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl MyTraitDispatcherImpl of MyTraitDispatcherTrait<MyTraitDispatcher> {
     fn get(self: MyTraitDispatcher, addr: ContractAddress) -> u32 {
         let mut __calldata__ = core::traits::Default::default();
@@ -253,11 +256,13 @@ impl MyTraitDispatcherImpl of MyTraitDispatcherTrait<MyTraitDispatcher> {
 
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct MyTraitLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl MyTraitLibraryDispatcherImpl of MyTraitDispatcherTrait<MyTraitLibraryDispatcher> {
     fn get(self: MyTraitLibraryDispatcher, addr: ContractAddress) -> u32 {
         let mut __calldata__ = core::traits::Default::default();
@@ -290,6 +295,7 @@ impl MyTraitLibraryDispatcherImpl of MyTraitDispatcherTrait<MyTraitLibraryDispat
 
 }
 
+#[doc(group: "dispatchers")]
 trait MyTraitSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn get(self: T, addr: ContractAddress) -> starknet::SyscallResult<u32>;
@@ -297,11 +303,13 @@ trait MyTraitSafeDispatcherTrait<T> {
     fn set(self: T, addr: ContractAddress, value: u32) -> starknet::SyscallResult<()>;
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct MyTraitSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl MyTraitSafeLibraryDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeLibraryDispatcher> {
     fn get(self: MyTraitSafeLibraryDispatcher, addr: ContractAddress) -> starknet::SyscallResult<u32> {
         let mut __calldata__ = core::traits::Default::default();
@@ -337,11 +345,13 @@ impl MyTraitSafeLibraryDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeL
 }
 
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct MyTraitSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl MyTraitSafeDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeDispatcher> {
     fn get(self: MyTraitSafeDispatcher, addr: ContractAddress) -> starknet::SyscallResult<u32> {
         let mut __calldata__ = core::traits::Default::default();
