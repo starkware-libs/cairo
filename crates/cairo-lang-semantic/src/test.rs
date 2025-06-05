@@ -165,7 +165,7 @@ fn test_mapping_translate_consecutive_spans() {
         error: Cannot assign to an immutable variable.
          --> lib.cairo:3:5
             x = 2;
-            ^^^^^^
+            ^^^^^
 
     "#}
     );
