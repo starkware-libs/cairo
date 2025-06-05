@@ -561,6 +561,7 @@ impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
+#[doc(group: 'dispatchers')]
 trait IERC20DispatcherTrait<T> {
     fn get_name(self: T) -> felt252;
     fn get_symbol(self: T) -> felt252;
@@ -576,11 +577,13 @@ self: T, spender: ContractAddress, subtracted_value: u256,
     fn get_info(self: T) -> UserInfo;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IERC20Dispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl IERC20DispatcherImpl of IERC20DispatcherTrait<IERC20Dispatcher> {
     fn get_name(self: IERC20Dispatcher) -> felt252 {
         let mut __calldata__ = core::traits::Default::default();
@@ -726,11 +729,13 @@ self: IERC20Dispatcher, spender: ContractAddress, subtracted_value: u256,
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IERC20LibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl IERC20LibraryDispatcherImpl of IERC20DispatcherTrait<IERC20LibraryDispatcher> {
     fn get_name(self: IERC20LibraryDispatcher) -> felt252 {
         let mut __calldata__ = core::traits::Default::default();
@@ -876,6 +881,7 @@ self: IERC20LibraryDispatcher, spender: ContractAddress, subtracted_value: u256,
 
 }
 
+#[doc(group: 'dispatchers')]
 trait IERC20SafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn get_name(self: T) -> starknet::SyscallResult<felt252>;
@@ -901,11 +907,13 @@ self: T, spender: ContractAddress, subtracted_value: u256,
     fn get_info(self: T) -> starknet::SyscallResult<UserInfo>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IERC20SafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl IERC20SafeLibraryDispatcherImpl of IERC20SafeDispatcherTrait<IERC20SafeLibraryDispatcher> {
     fn get_name(self: IERC20SafeLibraryDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = core::traits::Default::default();
@@ -1066,11 +1074,13 @@ self: IERC20SafeLibraryDispatcher, spender: ContractAddress, subtracted_value: u
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IERC20SafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl IERC20SafeDispatcherImpl of IERC20SafeDispatcherTrait<IERC20SafeDispatcher> {
     fn get_name(self: IERC20SafeDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = core::traits::Default::default();

@@ -66,16 +66,19 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 OutsideTraitDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait OutsideTraitDispatcherTrait<T> {
     fn ret_3(self: T) -> felt252;
     fn ret_identity(self: T, from_address: felt252, value: felt252) -> felt252;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitDispatcherImpl of OutsideTraitDispatcherTrait<OutsideTraitDispatcher> {
     fn ret_3(self: OutsideTraitDispatcher) -> felt252 {
         let mut __calldata__ = core::traits::Default::default();
@@ -110,11 +113,13 @@ impl OutsideTraitDispatcherImpl of OutsideTraitDispatcherTrait<OutsideTraitDispa
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitLibraryDispatcherImpl of OutsideTraitDispatcherTrait<OutsideTraitLibraryDispatcher> {
     fn ret_3(self: OutsideTraitLibraryDispatcher) -> felt252 {
         let mut __calldata__ = core::traits::Default::default();
@@ -149,6 +154,7 @@ impl OutsideTraitLibraryDispatcherImpl of OutsideTraitDispatcherTrait<OutsideTra
 
 }
 
+#[doc(group: 'dispatchers')]
 trait OutsideTraitSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn ret_3(self: T) -> starknet::SyscallResult<felt252>;
@@ -156,11 +162,13 @@ trait OutsideTraitSafeDispatcherTrait<T> {
     fn ret_identity(self: T, from_address: felt252, value: felt252) -> starknet::SyscallResult<felt252>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitSafeLibraryDispatcherImpl of OutsideTraitSafeDispatcherTrait<OutsideTraitSafeLibraryDispatcher> {
     fn ret_3(self: OutsideTraitSafeLibraryDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = core::traits::Default::default();
@@ -200,11 +208,13 @@ impl OutsideTraitSafeLibraryDispatcherImpl of OutsideTraitSafeDispatcherTrait<Ou
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitSafeDispatcherImpl of OutsideTraitSafeDispatcherTrait<OutsideTraitSafeDispatcher> {
     fn ret_3(self: OutsideTraitSafeDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = core::traits::Default::default();
@@ -1121,15 +1131,18 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 OutsideTraitWithDestructDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait OutsideTraitWithDestructDispatcherTrait<T> {
     fn ret_3(self: T) -> felt252;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitWithDestructDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitWithDestructDispatcherImpl of OutsideTraitWithDestructDispatcherTrait<OutsideTraitWithDestructDispatcher> {
     fn ret_3(self: OutsideTraitWithDestructDispatcher) -> felt252 {
         let mut __calldata__ = core::traits::Default::default();
@@ -1148,11 +1161,13 @@ impl OutsideTraitWithDestructDispatcherImpl of OutsideTraitWithDestructDispatche
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitWithDestructLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitWithDestructLibraryDispatcherImpl of OutsideTraitWithDestructDispatcherTrait<OutsideTraitWithDestructLibraryDispatcher> {
     fn ret_3(self: OutsideTraitWithDestructLibraryDispatcher) -> felt252 {
         let mut __calldata__ = core::traits::Default::default();
@@ -1171,16 +1186,19 @@ impl OutsideTraitWithDestructLibraryDispatcherImpl of OutsideTraitWithDestructDi
 
 }
 
+#[doc(group: 'dispatchers')]
 trait OutsideTraitWithDestructSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn ret_3(self: T) -> starknet::SyscallResult<felt252>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitWithDestructSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitWithDestructSafeLibraryDispatcherImpl of OutsideTraitWithDestructSafeDispatcherTrait<OutsideTraitWithDestructSafeLibraryDispatcher> {
     fn ret_3(self: OutsideTraitWithDestructSafeLibraryDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = core::traits::Default::default();
@@ -1202,11 +1220,13 @@ impl OutsideTraitWithDestructSafeLibraryDispatcherImpl of OutsideTraitWithDestru
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitWithDestructSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitWithDestructSafeDispatcherImpl of OutsideTraitWithDestructSafeDispatcherTrait<OutsideTraitWithDestructSafeDispatcher> {
     fn ret_3(self: OutsideTraitWithDestructSafeDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = core::traits::Default::default();
@@ -1280,15 +1300,18 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 OutsideTraitWithPanicDestructDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait OutsideTraitWithPanicDestructDispatcherTrait<T> {
     fn ret_5(self: T) -> felt252;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitWithPanicDestructDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitWithPanicDestructDispatcherImpl of OutsideTraitWithPanicDestructDispatcherTrait<OutsideTraitWithPanicDestructDispatcher> {
     fn ret_5(self: OutsideTraitWithPanicDestructDispatcher) -> felt252 {
         let mut __calldata__ = core::traits::Default::default();
@@ -1307,11 +1330,13 @@ impl OutsideTraitWithPanicDestructDispatcherImpl of OutsideTraitWithPanicDestruc
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitWithPanicDestructLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitWithPanicDestructLibraryDispatcherImpl of OutsideTraitWithPanicDestructDispatcherTrait<OutsideTraitWithPanicDestructLibraryDispatcher> {
     fn ret_5(self: OutsideTraitWithPanicDestructLibraryDispatcher) -> felt252 {
         let mut __calldata__ = core::traits::Default::default();
@@ -1330,16 +1355,19 @@ impl OutsideTraitWithPanicDestructLibraryDispatcherImpl of OutsideTraitWithPanic
 
 }
 
+#[doc(group: 'dispatchers')]
 trait OutsideTraitWithPanicDestructSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn ret_5(self: T) -> starknet::SyscallResult<felt252>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitWithPanicDestructSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitWithPanicDestructSafeLibraryDispatcherImpl of OutsideTraitWithPanicDestructSafeDispatcherTrait<OutsideTraitWithPanicDestructSafeLibraryDispatcher> {
     fn ret_5(self: OutsideTraitWithPanicDestructSafeLibraryDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = core::traits::Default::default();
@@ -1361,11 +1389,13 @@ impl OutsideTraitWithPanicDestructSafeLibraryDispatcherImpl of OutsideTraitWithP
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitWithPanicDestructSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitWithPanicDestructSafeDispatcherImpl of OutsideTraitWithPanicDestructSafeDispatcherTrait<OutsideTraitWithPanicDestructSafeDispatcher> {
     fn ret_5(self: OutsideTraitWithPanicDestructSafeDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = core::traits::Default::default();
@@ -2750,15 +2780,18 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 OutsideTraitWithDropDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait OutsideTraitWithDropDispatcherTrait<T> {
     fn ret_8(self: T) -> felt252;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitWithDropDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitWithDropDispatcherImpl of OutsideTraitWithDropDispatcherTrait<OutsideTraitWithDropDispatcher> {
     fn ret_8(self: OutsideTraitWithDropDispatcher) -> felt252 {
         let mut __calldata__ = core::traits::Default::default();
@@ -2777,11 +2810,13 @@ impl OutsideTraitWithDropDispatcherImpl of OutsideTraitWithDropDispatcherTrait<O
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitWithDropLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitWithDropLibraryDispatcherImpl of OutsideTraitWithDropDispatcherTrait<OutsideTraitWithDropLibraryDispatcher> {
     fn ret_8(self: OutsideTraitWithDropLibraryDispatcher) -> felt252 {
         let mut __calldata__ = core::traits::Default::default();
@@ -2800,16 +2835,19 @@ impl OutsideTraitWithDropLibraryDispatcherImpl of OutsideTraitWithDropDispatcher
 
 }
 
+#[doc(group: 'dispatchers')]
 trait OutsideTraitWithDropSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn ret_8(self: T) -> starknet::SyscallResult<felt252>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitWithDropSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitWithDropSafeLibraryDispatcherImpl of OutsideTraitWithDropSafeDispatcherTrait<OutsideTraitWithDropSafeLibraryDispatcher> {
     fn ret_8(self: OutsideTraitWithDropSafeLibraryDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = core::traits::Default::default();
@@ -2831,11 +2869,13 @@ impl OutsideTraitWithDropSafeLibraryDispatcherImpl of OutsideTraitWithDropSafeDi
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct OutsideTraitWithDropSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl OutsideTraitWithDropSafeDispatcherImpl of OutsideTraitWithDropSafeDispatcherTrait<OutsideTraitWithDropSafeDispatcher> {
     fn ret_8(self: OutsideTraitWithDropSafeDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = core::traits::Default::default();

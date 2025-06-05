@@ -440,17 +440,20 @@ impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
+#[doc(group: 'dispatchers')]
 trait ICounterContractDispatcherTrait<T> {
     fn increase_counter(self: T, amount: u128);
     fn decrease_counter(self: T, amount: u128);
     fn get_counter(self: T) -> u128;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ICounterContractDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl ICounterContractDispatcherImpl of ICounterContractDispatcherTrait<ICounterContractDispatcher> {
     fn increase_counter(self: ICounterContractDispatcher, amount: u128) {
         let mut __calldata__ = core::traits::Default::default();
@@ -493,11 +496,13 @@ impl ICounterContractDispatcherImpl of ICounterContractDispatcherTrait<ICounterC
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ICounterContractLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl ICounterContractLibraryDispatcherImpl of ICounterContractDispatcherTrait<ICounterContractLibraryDispatcher> {
     fn increase_counter(self: ICounterContractLibraryDispatcher, amount: u128) {
         let mut __calldata__ = core::traits::Default::default();
@@ -540,6 +545,7 @@ impl ICounterContractLibraryDispatcherImpl of ICounterContractDispatcherTrait<IC
 
 }
 
+#[doc(group: 'dispatchers')]
 trait ICounterContractSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn increase_counter(self: T, amount: u128) -> starknet::SyscallResult<()>;
@@ -549,11 +555,13 @@ trait ICounterContractSafeDispatcherTrait<T> {
     fn get_counter(self: T) -> starknet::SyscallResult<u128>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ICounterContractSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl ICounterContractSafeLibraryDispatcherImpl of ICounterContractSafeDispatcherTrait<ICounterContractSafeLibraryDispatcher> {
     fn increase_counter(self: ICounterContractSafeLibraryDispatcher, amount: u128) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -599,11 +607,13 @@ impl ICounterContractSafeLibraryDispatcherImpl of ICounterContractSafeDispatcher
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ICounterContractSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<ICounterContractSafeDispatcher> {
     fn increase_counter(self: ICounterContractSafeDispatcher, amount: u128) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();

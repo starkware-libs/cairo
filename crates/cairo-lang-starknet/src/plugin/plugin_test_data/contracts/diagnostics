@@ -2759,17 +2759,20 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 InterfaceTraitDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait InterfaceTraitDispatcherTrait<T> {
     fn foo_external1(self: T);
     fn foo_l1_handler1(self: T);
     fn foo_constructor1(self: T);
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceTraitDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceTraitDispatcherImpl of InterfaceTraitDispatcherTrait<InterfaceTraitDispatcher> {
     fn foo_external1(self: InterfaceTraitDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -2807,11 +2810,13 @@ impl InterfaceTraitDispatcherImpl of InterfaceTraitDispatcherTrait<InterfaceTrai
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceTraitLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceTraitLibraryDispatcherImpl of InterfaceTraitDispatcherTrait<InterfaceTraitLibraryDispatcher> {
     fn foo_external1(self: InterfaceTraitLibraryDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -2849,6 +2854,7 @@ impl InterfaceTraitLibraryDispatcherImpl of InterfaceTraitDispatcherTrait<Interf
 
 }
 
+#[doc(group: 'dispatchers')]
 trait InterfaceTraitSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn foo_external1(self: T) -> starknet::SyscallResult<()>;
@@ -2858,11 +2864,13 @@ trait InterfaceTraitSafeDispatcherTrait<T> {
     fn foo_constructor1(self: T) -> starknet::SyscallResult<()>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceTraitSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceTraitSafeLibraryDispatcherImpl of InterfaceTraitSafeDispatcherTrait<InterfaceTraitSafeLibraryDispatcher> {
     fn foo_external1(self: InterfaceTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -2901,11 +2909,13 @@ impl InterfaceTraitSafeLibraryDispatcherImpl of InterfaceTraitSafeDispatcherTrai
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceTraitSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceTraitSafeDispatcherImpl of InterfaceTraitSafeDispatcherTrait<InterfaceTraitSafeDispatcher> {
     fn foo_external1(self: InterfaceTraitSafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -4288,45 +4298,55 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 IContractDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait IContractDispatcherTrait<T> {
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibraryDispatcher> {
 
 }
 
+#[doc(group: 'dispatchers')]
 trait IContractSafeDispatcherTrait<T> {
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeLibraryDispatcher> {
 
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDispatcher> {
 
 }
@@ -4937,45 +4957,55 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 IContractDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait IContractDispatcherTrait<T> {
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibraryDispatcher> {
 
 }
 
+#[doc(group: 'dispatchers')]
 trait IContractSafeDispatcherTrait<T> {
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeLibraryDispatcher> {
 
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDispatcher> {
 
 }
@@ -5552,45 +5582,55 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 IContractDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait IContractDispatcherTrait<T> {
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibraryDispatcher> {
 
 }
 
+#[doc(group: 'dispatchers')]
 trait IContractSafeDispatcherTrait<T> {
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeLibraryDispatcher> {
 
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDispatcher> {
 
 }
@@ -6174,45 +6214,55 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 IContractDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait IContractDispatcherTrait<T> {
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibraryDispatcher> {
 
 }
 
+#[doc(group: 'dispatchers')]
 trait IContractSafeDispatcherTrait<T> {
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeLibraryDispatcher> {
 
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDispatcher> {
 
 }
@@ -6821,17 +6871,20 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 InterfaceDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait InterfaceDispatcherTrait<T> {
     fn foo1(self: T);
     fn foo2(self: T);
     fn foo3(self: T);
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceDispatcherImpl of InterfaceDispatcherTrait<InterfaceDispatcher> {
     fn foo1(self: InterfaceDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -6869,11 +6922,13 @@ impl InterfaceDispatcherImpl of InterfaceDispatcherTrait<InterfaceDispatcher> {
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceLibraryDispatcherImpl of InterfaceDispatcherTrait<InterfaceLibraryDispatcher> {
     fn foo1(self: InterfaceLibraryDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -6911,6 +6966,7 @@ impl InterfaceLibraryDispatcherImpl of InterfaceDispatcherTrait<InterfaceLibrary
 
 }
 
+#[doc(group: 'dispatchers')]
 trait InterfaceSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn foo1(self: T) -> starknet::SyscallResult<()>;
@@ -6920,11 +6976,13 @@ trait InterfaceSafeDispatcherTrait<T> {
     fn foo3(self: T) -> starknet::SyscallResult<()>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceSafeLibraryDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeLibraryDispatcher> {
     fn foo1(self: InterfaceSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -6963,11 +7021,13 @@ impl InterfaceSafeLibraryDispatcherImpl of InterfaceSafeDispatcherTrait<Interfac
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDispatcher> {
     fn foo1(self: InterfaceSafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -7751,17 +7811,20 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 InterfaceDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait InterfaceDispatcherTrait<T> {
     fn foo1(self: T);
     fn foo2(self: T);
     fn foo3(self: T);
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceDispatcherImpl of InterfaceDispatcherTrait<InterfaceDispatcher> {
     fn foo1(self: InterfaceDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -7799,11 +7862,13 @@ impl InterfaceDispatcherImpl of InterfaceDispatcherTrait<InterfaceDispatcher> {
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceLibraryDispatcherImpl of InterfaceDispatcherTrait<InterfaceLibraryDispatcher> {
     fn foo1(self: InterfaceLibraryDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -7841,6 +7906,7 @@ impl InterfaceLibraryDispatcherImpl of InterfaceDispatcherTrait<InterfaceLibrary
 
 }
 
+#[doc(group: 'dispatchers')]
 trait InterfaceSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn foo1(self: T) -> starknet::SyscallResult<()>;
@@ -7850,11 +7916,13 @@ trait InterfaceSafeDispatcherTrait<T> {
     fn foo3(self: T) -> starknet::SyscallResult<()>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceSafeLibraryDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeLibraryDispatcher> {
     fn foo1(self: InterfaceSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -7893,11 +7961,13 @@ impl InterfaceSafeLibraryDispatcherImpl of InterfaceSafeDispatcherTrait<Interfac
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDispatcher> {
     fn foo1(self: InterfaceSafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -9349,16 +9419,19 @@ lib.cairo:30:1
 ^^^^^^^^^^^^^^^^^^^^^^
 Comp3TraitDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait Comp3TraitDispatcherTrait<T> {
     fn foo3(self: T);
     fn foo4(self: T);
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Comp3TraitDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl Comp3TraitDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitDispatcher> {
     fn foo3(self: Comp3TraitDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -9385,11 +9458,13 @@ impl Comp3TraitDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitDispatcher>
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Comp3TraitLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl Comp3TraitLibraryDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitLibraryDispatcher> {
     fn foo3(self: Comp3TraitLibraryDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -9416,6 +9491,7 @@ impl Comp3TraitLibraryDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitLibr
 
 }
 
+#[doc(group: 'dispatchers')]
 trait Comp3TraitSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn foo3(self: T) -> starknet::SyscallResult<()>;
@@ -9423,11 +9499,13 @@ trait Comp3TraitSafeDispatcherTrait<T> {
     fn foo4(self: T) -> starknet::SyscallResult<()>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Comp3TraitSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl Comp3TraitSafeLibraryDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSafeLibraryDispatcher> {
     fn foo3(self: Comp3TraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -9455,11 +9533,13 @@ impl Comp3TraitSafeLibraryDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3T
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Comp3TraitSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl Comp3TraitSafeDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSafeDispatcher> {
     fn foo3(self: Comp3TraitSafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -10729,15 +10809,18 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^
 Comp3TraitDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait Comp3TraitDispatcherTrait<T> {
     fn foo3(self: T);
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Comp3TraitDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl Comp3TraitDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitDispatcher> {
     fn foo3(self: Comp3TraitDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -10753,11 +10836,13 @@ impl Comp3TraitDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitDispatcher>
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Comp3TraitLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl Comp3TraitLibraryDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitLibraryDispatcher> {
     fn foo3(self: Comp3TraitLibraryDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -10773,16 +10858,19 @@ impl Comp3TraitLibraryDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitLibr
 
 }
 
+#[doc(group: 'dispatchers')]
 trait Comp3TraitSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn foo3(self: T) -> starknet::SyscallResult<()>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Comp3TraitSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl Comp3TraitSafeLibraryDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSafeLibraryDispatcher> {
     fn foo3(self: Comp3TraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -10799,11 +10887,13 @@ impl Comp3TraitSafeLibraryDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3T
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Comp3TraitSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl Comp3TraitSafeDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSafeDispatcher> {
     fn foo3(self: Comp3TraitSafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -11920,15 +12010,18 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 ContractTraitDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait ContractTraitDispatcherTrait<T> {
     fn foo(self: T);
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ContractTraitDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl ContractTraitDispatcherImpl of ContractTraitDispatcherTrait<ContractTraitDispatcher> {
     fn foo(self: ContractTraitDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -11944,11 +12037,13 @@ impl ContractTraitDispatcherImpl of ContractTraitDispatcherTrait<ContractTraitDi
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ContractTraitLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl ContractTraitLibraryDispatcherImpl of ContractTraitDispatcherTrait<ContractTraitLibraryDispatcher> {
     fn foo(self: ContractTraitLibraryDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -11964,16 +12059,19 @@ impl ContractTraitLibraryDispatcherImpl of ContractTraitDispatcherTrait<Contract
 
 }
 
+#[doc(group: 'dispatchers')]
 trait ContractTraitSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn foo(self: T) -> starknet::SyscallResult<()>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ContractTraitSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl ContractTraitSafeLibraryDispatcherImpl of ContractTraitSafeDispatcherTrait<ContractTraitSafeLibraryDispatcher> {
     fn foo(self: ContractTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -11990,11 +12088,13 @@ impl ContractTraitSafeLibraryDispatcherImpl of ContractTraitSafeDispatcherTrait<
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ContractTraitSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<ContractTraitSafeDispatcher> {
     fn foo(self: ContractTraitSafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -12835,15 +12935,18 @@ lib.cairo:9:1
 ^^^^^^^^^^^^^^^^^^^^^^
 ContractTraitDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait ContractTraitDispatcherTrait<T> {
     fn foo(self: T);
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ContractTraitDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl ContractTraitDispatcherImpl of ContractTraitDispatcherTrait<ContractTraitDispatcher> {
     fn foo(self: ContractTraitDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -12859,11 +12962,13 @@ impl ContractTraitDispatcherImpl of ContractTraitDispatcherTrait<ContractTraitDi
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ContractTraitLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl ContractTraitLibraryDispatcherImpl of ContractTraitDispatcherTrait<ContractTraitLibraryDispatcher> {
     fn foo(self: ContractTraitLibraryDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -12879,16 +12984,19 @@ impl ContractTraitLibraryDispatcherImpl of ContractTraitDispatcherTrait<Contract
 
 }
 
+#[doc(group: 'dispatchers')]
 trait ContractTraitSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn foo(self: T) -> starknet::SyscallResult<()>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ContractTraitSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl ContractTraitSafeLibraryDispatcherImpl of ContractTraitSafeDispatcherTrait<ContractTraitSafeLibraryDispatcher> {
     fn foo(self: ContractTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -12905,11 +13013,13 @@ impl ContractTraitSafeLibraryDispatcherImpl of ContractTraitSafeDispatcherTrait<
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ContractTraitSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<ContractTraitSafeDispatcher> {
     fn foo(self: ContractTraitSafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -13975,15 +14085,18 @@ lib.cairo:43:1
 ^^^^^^^^^^^^^^^^^^^^^^
 ContractTraitDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait ContractTraitDispatcherTrait<T> {
     fn foo(self: T) -> u256;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ContractTraitDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl ContractTraitDispatcherImpl of ContractTraitDispatcherTrait<ContractTraitDispatcher> {
     fn foo(self: ContractTraitDispatcher) -> u256 {
         let mut __calldata__ = core::traits::Default::default();
@@ -14002,11 +14115,13 @@ impl ContractTraitDispatcherImpl of ContractTraitDispatcherTrait<ContractTraitDi
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ContractTraitLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl ContractTraitLibraryDispatcherImpl of ContractTraitDispatcherTrait<ContractTraitLibraryDispatcher> {
     fn foo(self: ContractTraitLibraryDispatcher) -> u256 {
         let mut __calldata__ = core::traits::Default::default();
@@ -14025,16 +14140,19 @@ impl ContractTraitLibraryDispatcherImpl of ContractTraitDispatcherTrait<Contract
 
 }
 
+#[doc(group: 'dispatchers')]
 trait ContractTraitSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn foo(self: T) -> starknet::SyscallResult<u256>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ContractTraitSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl ContractTraitSafeLibraryDispatcherImpl of ContractTraitSafeDispatcherTrait<ContractTraitSafeLibraryDispatcher> {
     fn foo(self: ContractTraitSafeLibraryDispatcher) -> starknet::SyscallResult<u256> {
         let mut __calldata__ = core::traits::Default::default();
@@ -14056,11 +14174,13 @@ impl ContractTraitSafeLibraryDispatcherImpl of ContractTraitSafeDispatcherTrait<
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ContractTraitSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<ContractTraitSafeDispatcher> {
     fn foo(self: ContractTraitSafeDispatcher) -> starknet::SyscallResult<u256> {
         let mut __calldata__ = core::traits::Default::default();
@@ -14901,15 +15021,18 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 InterfaceDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait InterfaceDispatcherTrait<T> {
     fn func(self: T);
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceDispatcherImpl of InterfaceDispatcherTrait<InterfaceDispatcher> {
     fn func(self: InterfaceDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -14925,11 +15048,13 @@ impl InterfaceDispatcherImpl of InterfaceDispatcherTrait<InterfaceDispatcher> {
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceLibraryDispatcherImpl of InterfaceDispatcherTrait<InterfaceLibraryDispatcher> {
     fn func(self: InterfaceLibraryDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -14945,16 +15070,19 @@ impl InterfaceLibraryDispatcherImpl of InterfaceDispatcherTrait<InterfaceLibrary
 
 }
 
+#[doc(group: 'dispatchers')]
 trait InterfaceSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn func(self: T) -> starknet::SyscallResult<()>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceSafeLibraryDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeLibraryDispatcher> {
     fn func(self: InterfaceSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -14971,11 +15099,13 @@ impl InterfaceSafeLibraryDispatcherImpl of InterfaceSafeDispatcherTrait<Interfac
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct InterfaceSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDispatcher> {
     fn func(self: InterfaceSafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();

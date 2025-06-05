@@ -52,15 +52,18 @@ lib.cairo:16:1
 ^^^^^^^^^^^^^^^^^^^^^^
 MyTraitDispatcherTrait:
 
+#[doc(group: 'dispatchers')]
 trait MyTraitDispatcherTrait<T> {
     fn do_nothing(self: T);
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct MyTraitDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl MyTraitDispatcherImpl of MyTraitDispatcherTrait<MyTraitDispatcher> {
     fn do_nothing(self: MyTraitDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -76,11 +79,13 @@ impl MyTraitDispatcherImpl of MyTraitDispatcherTrait<MyTraitDispatcher> {
 
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct MyTraitLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl MyTraitLibraryDispatcherImpl of MyTraitDispatcherTrait<MyTraitLibraryDispatcher> {
     fn do_nothing(self: MyTraitLibraryDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
@@ -96,16 +101,19 @@ impl MyTraitLibraryDispatcherImpl of MyTraitDispatcherTrait<MyTraitLibraryDispat
 
 }
 
+#[doc(group: 'dispatchers')]
 trait MyTraitSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn do_nothing(self: T) -> starknet::SyscallResult<()>;
 }
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct MyTraitSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: 'dispatchers')]
 impl MyTraitSafeLibraryDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeLibraryDispatcher> {
     fn do_nothing(self: MyTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -122,11 +130,13 @@ impl MyTraitSafeLibraryDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeL
 }
 
 
+#[doc(group: 'dispatchers')]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct MyTraitSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: 'dispatchers')]
 impl MyTraitSafeDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeDispatcher> {
     fn do_nothing(self: MyTraitSafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
