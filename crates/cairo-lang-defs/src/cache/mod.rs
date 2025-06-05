@@ -1772,7 +1772,7 @@ impl VirtualFileCached {
             name: virtual_file.name.clone(),
             content: String::from(&*(virtual_file.content)),
             code_mappings: virtual_file.code_mappings.to_vec(),
-            kind: virtual_file.kind.clone(),
+            kind: virtual_file.kind,
             original_item_removed: virtual_file.original_item_removed,
         }
     }

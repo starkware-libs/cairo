@@ -70,6 +70,25 @@ impl FlagId {
     }
 }
 
+/// Same as `FileLongId`, but without the interning inside virtual files.
+/// This is used to avoid the need to intern the file id inside salsa database inputs.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum FileInput {
+    OnDisk(PathBuf),
+    Virtual(VirtualFileInput),
+    External(salsa::InternId),
+}
+
+impl FileInput {
+    pub fn into_file_long_id(self, db: &dyn FilesGroup) -> FileLongId {
+        match self {
+            FileInput::OnDisk(path) => FileLongId::OnDisk(path),
+            FileInput::Virtual(vf) => FileLongId::Virtual(vf.into_virtual_file(db)),
+            FileInput::External(id) => FileLongId::External(id),
+        }
+    }
+}
+
 /// We use a higher level FileId struct, because not all files are on disk. Some might be online.
 /// Some might be virtual/computed on demand.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -79,7 +98,7 @@ pub enum FileLongId {
     External(salsa::InternId),
 }
 /// Whether the file holds syntax for a module or for an expression.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FileKind {
     Module,
     Expr,
@@ -138,6 +157,31 @@ impl CodeOrigin {
     }
 }
 
+/// Same as `VirtualFile`, but without the interning inside virtual files.
+/// This is used to avoid the need to intern the file id inside salsa database inputs.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct VirtualFileInput {
+    pub parent: Option<Arc<FileInput>>,
+    pub name: SmolStr,
+    pub content: Arc<str>,
+    pub code_mappings: Arc<[CodeMapping]>,
+    pub kind: FileKind,
+    pub original_item_removed: bool,
+}
+
+impl VirtualFileInput {
+    fn into_virtual_file(self, db: &dyn FilesGroup) -> VirtualFile {
+        VirtualFile {
+            parent: self.parent.map(|id| id.as_ref().clone().into_file_long_id(db).intern(db)),
+            name: self.name,
+            content: self.content,
+            code_mappings: self.code_mappings,
+            kind: self.kind,
+            original_item_removed: self.original_item_removed,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct VirtualFile {
     pub parent: Option<FileId>,
@@ -159,6 +203,53 @@ impl VirtualFile {
             self.name.clone().into()
         }
     }
+
+    fn into_virtual_file_input(self, db: &dyn FilesGroup) -> VirtualFileInput {
+        VirtualFileInput {
+            parent: self
+                .parent
+                .map(|id| Arc::new(id.clone().lookup_intern(db).into_file_input(db))),
+            name: self.name,
+            content: self.content,
+            code_mappings: self.code_mappings,
+            kind: self.kind,
+            original_item_removed: self.original_item_removed,
+        }
+    }
+}
+
+impl FileLongId {
+    pub fn file_name(&self, db: &dyn FilesGroup) -> String {
+        match self {
+            FileLongId::OnDisk(path) => {
+                path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>").to_string()
+            }
+            FileLongId::Virtual(vf) => vf.name.to_string(),
+            FileLongId::External(external_id) => db.ext_as_virtual(*external_id).name.to_string(),
+        }
+    }
+    pub fn full_path(&self, db: &dyn FilesGroup) -> String {
+        match self {
+            FileLongId::OnDisk(path) => path.to_str().unwrap_or("<unknown>").to_string(),
+            FileLongId::Virtual(vf) => vf.full_path(db),
+            FileLongId::External(external_id) => db.ext_as_virtual(*external_id).full_path(db),
+        }
+    }
+    pub fn kind(&self) -> FileKind {
+        match self {
+            FileLongId::OnDisk(_) => FileKind::Module,
+            FileLongId::Virtual(vf) => vf.kind,
+            FileLongId::External(_) => FileKind::Module,
+        }
+    }
+
+    pub fn into_file_input(&self, db: &dyn FilesGroup) -> FileInput {
+        match self {
+            FileLongId::OnDisk(path) => FileInput::OnDisk(path.clone()),
+            FileLongId::Virtual(vf) => FileInput::Virtual(vf.clone().into_virtual_file_input(db)),
+            FileLongId::External(id) => FileInput::External(*id),
+        }
+    }
 }
 
 define_short_id!(FileId, FileLongId, FilesGroup, lookup_intern_file, intern_file);
@@ -166,28 +257,17 @@ impl FileId {
     pub fn new(db: &dyn FilesGroup, path: PathBuf) -> FileId {
         FileLongId::OnDisk(path.clean()).intern(db)
     }
+
     pub fn file_name(self, db: &dyn FilesGroup) -> String {
-        match self.lookup_intern(db) {
-            FileLongId::OnDisk(path) => {
-                path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>").to_string()
-            }
-            FileLongId::Virtual(vf) => vf.name.to_string(),
-            FileLongId::External(external_id) => db.ext_as_virtual(external_id).name.to_string(),
-        }
+        self.lookup_intern(db).file_name(db)
     }
+
     pub fn full_path(self, db: &dyn FilesGroup) -> String {
-        match self.lookup_intern(db) {
-            FileLongId::OnDisk(path) => path.to_str().unwrap_or("<unknown>").to_string(),
-            FileLongId::Virtual(vf) => vf.full_path(db),
-            FileLongId::External(external_id) => db.ext_as_virtual(external_id).full_path(db),
-        }
+        self.lookup_intern(db).full_path(db)
     }
+
     pub fn kind(self, db: &dyn FilesGroup) -> FileKind {
-        match self.lookup_intern(db) {
-            FileLongId::OnDisk(_) => FileKind::Module,
-            FileLongId::Virtual(vf) => vf.kind,
-            FileLongId::External(_) => FileKind::Module,
-        }
+        self.lookup_intern(db).kind()
     }
 }
 
