@@ -14,7 +14,7 @@ use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, OptionFrom, Upcast, extract_matches};
+use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, Upcast, extract_matches};
 
 use crate::db::{PluginSuiteInput, SemanticDatabase, SemanticGroup, init_semantic_group};
 use crate::inline_macros::get_default_plugin_suite;
@@ -130,15 +130,14 @@ pub fn setup_test_crate_ex(
     crate_settings: Option<&str>,
     cache_file: Option<BlobId>,
 ) -> CrateId {
-    let file_id = FileLongId::Virtual(VirtualFile {
+    let file_long_id = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "lib.cairo".into(),
         content: content.into(),
         code_mappings: [].into(),
         kind: FileKind::Module,
         original_item_removed: false,
-    })
-    .intern(db);
+    });
 
     let settings: CrateSettings = if let Some(crate_settings) = crate_settings {
         toml::from_str(crate_settings).expect("Invalid config.")
@@ -160,9 +159,9 @@ pub fn setup_test_crate_ex(
 
     CrateLongId::Virtual {
         name: "test".into(),
-        file_id,
+        file_long_id,
         settings: toml::to_string_pretty(&settings).unwrap(),
-        cache_file,
+        cache_file: cache_file.map(|id| id.lookup_intern(db)),
     }
     .intern(db)
 }

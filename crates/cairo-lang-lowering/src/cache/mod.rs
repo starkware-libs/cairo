@@ -76,7 +76,7 @@ pub fn load_cached_crate_functions(
     crate_id: CrateId,
 ) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering>>> {
     let blob_id = db.crate_config(crate_id)?.cache_file?;
-    let Some(content) = db.blob_content(blob_id) else {
+    let Some(content) = blob_id.content(db) else {
         return Default::default();
     };
 

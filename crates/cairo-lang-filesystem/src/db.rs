@@ -50,7 +50,7 @@ pub struct CrateConfiguration {
     /// The root directory of the crate.
     pub root: Directory,
     pub settings: CrateSettings,
-    pub cache_file: Option<BlobId>,
+    pub cache_file: Option<BlobLongId>,
 }
 impl CrateConfiguration {
     /// Returns a new configuration.
@@ -305,10 +305,10 @@ fn crate_config(db: &dyn FilesGroup, crt: CrateId) -> Option<CrateConfiguration>
     let long = crt.lookup_intern(db);
     match long {
         CrateLongId::Real { .. } => db.crate_configs().get(&long).cloned(),
-        CrateLongId::Virtual { name: _, file_id, settings, cache_file } => {
+        CrateLongId::Virtual { name: _, file_long_id, settings, cache_file } => {
             Some(CrateConfiguration {
                 root: Directory::Virtual {
-                    files: BTreeMap::from([("lib.cairo".into(), file_id)]),
+                    files: BTreeMap::from([("lib.cairo".into(), file_long_id)]),
                     dirs: Default::default(),
                 },
                 settings: toml::from_str(&settings)
@@ -358,19 +358,7 @@ fn get_flag(db: &dyn FilesGroup, id: FlagId) -> Option<Arc<Flag>> {
 }
 
 fn blob_content(db: &dyn FilesGroup, blob: BlobId) -> Option<Arc<[u8]>> {
-    match blob.lookup_intern(db) {
-        BlobLongId::OnDisk(path) => {
-            // This does not result in performance cost due to OS caching and the fact that salsa
-            // will re-execute only this single query if the file content did not change.
-            db.salsa_runtime().report_synthetic_read(Durability::LOW);
-
-            match fs::read(path) {
-                Ok(content) => Some(content.into()),
-                Err(_) => None,
-            }
-        }
-        BlobLongId::Virtual(content) => Some(content),
-    }
+    blob.lookup_intern(db).content(db)
 }
 
 /// Returns the location of the originating user code.

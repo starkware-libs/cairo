@@ -85,8 +85,8 @@ pub fn load_cached_crate_modules(
     db: &dyn DefsGroup,
     crate_id: CrateId,
 ) -> Option<ModuleDataCacheAndLoadingData> {
-    let blob_id = db.crate_config(crate_id)?.cache_file?;
-    let Some(content) = db.blob_content(blob_id) else {
+    let blob_long_id = db.crate_config(crate_id)?.cache_file?;
+    let Some(content) = blob_long_id.content(db) else {
         return Default::default();
     };
 
@@ -729,11 +729,15 @@ enum CrateCached {
     Virtual { name: SmolStr, file_id: FileIdCached, settings: String },
 }
 impl CrateCached {
-    fn new(crate_id: CrateLongId, _ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new(crate_id: CrateLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
         match crate_id {
             CrateLongId::Real { name, discriminator } => CrateCached::Real { name, discriminator },
-            CrateLongId::Virtual { name, file_id, settings, cache_file: _ } => {
-                CrateCached::Virtual { name, file_id: FileIdCached::new(file_id, _ctx), settings }
+            CrateLongId::Virtual { name, file_long_id, settings, cache_file: _ } => {
+                CrateCached::Virtual {
+                    name,
+                    file_id: FileIdCached::new(ctx.db.intern_file(file_long_id), ctx),
+                    settings,
+                }
             }
         }
     }
@@ -743,7 +747,7 @@ impl CrateCached {
             CrateCached::Virtual { name, file_id, settings } => {
                 CrateLongId::Virtual {
                     name,
-                    file_id: file_id.embed(ctx),
+                    file_long_id: file_id.embed(ctx).lookup_intern(ctx.db),
                     settings,
                     cache_file: None, // todo  if two virtual crates are supported
                 }

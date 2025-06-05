@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 use path_clean::PathClean;
+use salsa::Durability;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
@@ -18,7 +19,12 @@ pub enum CrateLongId {
     /// A crate that appears in crate_roots(), and on the filesystem.
     Real { name: SmolStr, discriminator: Option<SmolStr> },
     /// A virtual crate, not a part of the crate_roots(). Used mainly for tests.
-    Virtual { name: SmolStr, file_id: FileId, settings: String, cache_file: Option<BlobId> },
+    Virtual {
+        name: SmolStr,
+        file_long_id: FileLongId,
+        settings: String,
+        cache_file: Option<BlobLongId>,
+    },
 }
 impl CrateLongId {
     pub fn name(&self) -> SmolStr {
@@ -211,7 +217,7 @@ pub enum Directory {
     /// A directory on the file system.
     Real(PathBuf),
     /// A virtual directory, not on the file system. Used mainly for virtual crates.
-    Virtual { files: BTreeMap<SmolStr, FileId>, dirs: BTreeMap<SmolStr, Box<Directory>> },
+    Virtual { files: BTreeMap<SmolStr, FileLongId>, dirs: BTreeMap<SmolStr, Box<Directory>> },
 }
 
 impl Directory {
@@ -222,7 +228,8 @@ impl Directory {
             Directory::Real(path) => FileId::new(db, path.join(name.as_str())),
             Directory::Virtual { files, dirs: _ } => files
                 .get(&name)
-                .copied()
+                .cloned()
+                .map(|file_long_id| db.intern_file(file_long_id))
                 .unwrap_or_else(|| FileId::new(db, PathBuf::from(name.as_str()))),
         }
     }
@@ -248,6 +255,25 @@ impl Directory {
 pub enum BlobLongId {
     OnDisk(PathBuf),
     Virtual(Arc<[u8]>),
+}
+
+impl BlobLongId {
+    pub fn content(&self, db: &dyn FilesGroup) -> Option<Arc<[u8]>> {
+        match self {
+            BlobLongId::OnDisk(path) => {
+                // This does not result in performance cost due to OS caching and the fact that
+                // salsa will re-execute only this single query if the file content
+                // did not change.
+                db.salsa_runtime().report_synthetic_read(Durability::LOW);
+
+                match std::fs::read(path) {
+                    Ok(content) => Some(content.into()),
+                    Err(_) => None,
+                }
+            }
+            BlobLongId::Virtual(content) => Some(content.clone()),
+        }
+    }
 }
 
 define_short_id!(BlobId, BlobLongId, FilesGroup, lookup_intern_blob, intern_blob);
