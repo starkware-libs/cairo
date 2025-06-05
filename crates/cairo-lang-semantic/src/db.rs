@@ -13,13 +13,14 @@ use cairo_lang_defs::ids::{
     VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
-use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
+use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{LookupIntern, Upcast, require};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast, require};
+use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::corelib::CoreInfo;
@@ -1644,9 +1645,17 @@ pub trait SemanticGroup:
     // ========
 
     #[salsa::input]
+    fn default_analyzer_plugins_input(&self) -> Arc<[AnalyzerPluginLongId]>;
+
+    /// Interned version of `default_analyzer_plugins`.
     fn default_analyzer_plugins(&self) -> Arc<[AnalyzerPluginId]>;
 
     #[salsa::input]
+    fn analyzer_plugin_overrides_input(
+        &self,
+    ) -> Arc<OrderedHashMap<CrateInput, Arc<[AnalyzerPluginLongId]>>>;
+
+    /// Interned version of `analyzer_plugin_overrides_input`.
     fn analyzer_plugin_overrides(&self) -> Arc<OrderedHashMap<CrateId, Arc<[AnalyzerPluginId]>>>;
 
     #[salsa::interned]
@@ -1713,13 +1722,34 @@ pub trait SemanticGroup:
 
 /// Initializes the [`SemanticGroup`] database to a proper state.
 pub fn init_semantic_group(db: &mut dyn SemanticGroup) {
-    db.set_analyzer_plugin_overrides(Arc::new(OrderedHashMap::default()));
+    db.set_analyzer_plugin_overrides_input(Arc::new(OrderedHashMap::default()));
 }
 
 impl<T: Upcast<dyn SemanticGroup + 'static>> Elongate for T {
     fn elongate(&self) -> &(dyn SemanticGroup + 'static) {
         self.upcast()
     }
+}
+
+fn default_analyzer_plugins(db: &dyn SemanticGroup) -> Arc<[AnalyzerPluginId]> {
+    let inp = db.default_analyzer_plugins_input();
+    Arc::from(inp.iter().map(|plugin| plugin.clone().intern(db)).collect_vec())
+}
+
+fn analyzer_plugin_overrides(
+    db: &dyn SemanticGroup,
+) -> Arc<OrderedHashMap<CrateId, Arc<[AnalyzerPluginId]>>> {
+    let inp = db.analyzer_plugin_overrides_input();
+    Arc::new(
+        inp.iter()
+            .map(|(crate_input, plugins)| {
+                (
+                    crate_input.clone().into_crate_long_id(db).intern(db),
+                    Arc::from(plugins.iter().map(|plugin| plugin.clone().intern(db)).collect_vec()),
+                )
+            })
+            .collect(),
+    )
 }
 
 fn module_semantic_diagnostics(
@@ -1996,9 +2026,11 @@ pub trait SemanticGroupEx: SemanticGroup {
         crate_id: CrateId,
         plugins: Arc<[AnalyzerPluginId]>,
     ) {
-        let mut overrides = self.analyzer_plugin_overrides().as_ref().clone();
-        overrides.insert(crate_id, plugins);
-        self.set_analyzer_plugin_overrides(Arc::new(overrides));
+        let mut overrides = self.analyzer_plugin_overrides_input().as_ref().clone();
+        let plugins =
+            plugins.iter().map(|plugin| self.lookup_intern_analyzer_plugin(*plugin)).collect_vec();
+        overrides.insert(self.crate_input(crate_id), Arc::from(plugins));
+        self.set_analyzer_plugin_overrides_input(Arc::new(overrides));
     }
 }
 
@@ -2055,7 +2087,12 @@ pub trait PluginSuiteInput: SemanticGroup {
         );
         self.set_default_macro_plugins_input(macro_plugins);
         self.set_default_inline_macro_plugins_input(inline_macro_plugins);
-        self.set_default_analyzer_plugins(analyzer_plugins);
+        self.set_default_analyzer_plugins_input(Arc::from(
+            analyzer_plugins
+                .iter()
+                .map(|plugin| self.lookup_intern_analyzer_plugin(*plugin))
+                .collect_vec(),
+        ));
     }
 
     /// Sets macro, inline macro and analyzer plugins present in the [`PluginSuite`] for a crate
