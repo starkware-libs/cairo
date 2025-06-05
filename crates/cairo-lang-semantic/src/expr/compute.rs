@@ -2737,7 +2737,7 @@ fn extract_concrete_enum_from_pattern_and_validate(
 }
 
 /// Validates that the semantic type of an enum pattern is an enum.
-/// After that finds the concrete variant in the patter, and verifies it has args if needed.
+/// After that finds the concrete variant in the pattern, and verifies it has args if needed.
 /// Returns the concrete variant and the number of snapshots.
 fn extract_concrete_variant_from_pattern_and_validate(
     ctx: &mut ComputationContext<'_>,
