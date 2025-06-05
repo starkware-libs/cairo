@@ -29,6 +29,26 @@ fn f4() -> felt252 {
     0
 }
 
+#[doc(group: "group name")]
+fn f4() -> felt252 {
+    0
+}
+
+#[doc(group: group name)]
+fn f4() -> felt252 {
+    0
+}
+
+#[doc(group: 'xxx')]
+fn f4() -> felt252 {
+    0
+}
+
+#[doc(a: 'b')]
+fn f4() -> felt252 {
+    0
+}
+
 //! > expanded_cairo_code
 #[doc]
 fn f0() -> felt252 {
@@ -55,26 +75,70 @@ fn f4() -> felt252 {
     0
 }
 
+#[doc(group: "group name")]
+fn f4() -> felt252 {
+    0
+}
+
+#[doc(group: group name)]
+fn f4() -> felt252 {
+    0
+}
+
+#[doc(group: 'xxx')]
+fn f4() -> felt252 {
+    0
+}
+
+#[doc(a: 'b')]
+fn f4() -> felt252 {
+    0
+}
+
 //! > expected_diagnostics
-error: Expected arguments. Supported args: hidden
+error: Expected arguments. Supported args: hidden, group.
  --> test_src/lib.cairo:1:1
 #[doc]
 ^^^^^^
 
 
-error: This argument is not supported. Supported args: hidden
- --> test_src/lib.cairo:6:7
+error: Wrong type of argument. Currently only #[doc(group: "group name")] is supported.
+ --> test_src/lib.cairo:6:15
 #[doc(hidden: true)]
-      ^^^^^^^^^^^^
+              ^^^^
 
 
-error: This argument is not supported. Supported args: hidden
+error: This argument is not supported. Supported args: hidden, group.
  --> test_src/lib.cairo:11:7
 #[doc(:hidden)]
       ^^^^^^^
 
 
-error: Wrong type of argument. Currently only #[doc(hidden)] is supported.
+error: Wrong type of argument. Currently only: #[doc(hidden)], #[doc(group: "group name")]  are supported.
  --> test_src/lib.cairo:16:7
 #[doc(hidden_true)]
       ^^^^^^^^^^^
+
+
+error: Wrong type of argument. Currently only #[doc(group: "group name")] is supported.
+ --> test_src/lib.cairo:31:14
+#[doc(group: group name)]
+             ^^^^^
+
+
+error: Wrong type of argument. Currently only: #[doc(hidden)], #[doc(group: "group name")]  are supported.
+ --> test_src/lib.cairo:31:20
+#[doc(group: group name)]
+                   ^^^^
+
+
+error: Wrong type of argument. Currently only #[doc(group: "group name")] is supported.
+ --> test_src/lib.cairo:36:14
+#[doc(group: 'xxx')]
+             ^^^^^
+
+
+error: Wrong type of argument. Currently only #[doc(group: "group name")] is supported.
+ --> test_src/lib.cairo:41:10
+#[doc(a: 'b')]
+         ^^^

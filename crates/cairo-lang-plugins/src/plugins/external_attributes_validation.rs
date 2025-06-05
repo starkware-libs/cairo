@@ -10,6 +10,9 @@ pub struct ExternalAttributesValidationPlugin;
 
 const DOC_ATTR: &str = "doc";
 const HIDDEN_ATTR: &str = "hidden";
+const HIDDEN_ATTR_SYNTAX: &str = "#[doc(hidden)]";
+const GROUP_ATTR: &str = "group";
+const GROUP_ATTR_SYNTAX: &str = "#[doc(group: \"group name\")]";
 
 impl MacroPlugin for ExternalAttributesValidationPlugin {
     fn generate_code(
@@ -41,7 +44,7 @@ fn get_diagnostics<Item: QueryAttrs>(
         if args.is_empty() {
             diagnostics.push(PluginDiagnostic::error(
                 attr.stable_ptr(db),
-                format!("Expected arguments. Supported args: {HIDDEN_ATTR}"),
+                format!("Expected arguments. Supported args: {HIDDEN_ATTR}, {GROUP_ATTR}."),
             ));
             return;
         }
@@ -50,7 +53,7 @@ fn get_diagnostics<Item: QueryAttrs>(
                 let ast::Expr::Path(path) = value else {
                     diagnostics.push(PluginDiagnostic::error(
                         value.stable_ptr(db),
-                        format!("Expected identifier. Supported identifiers: {HIDDEN_ATTR}"),
+                        format!("Expected identifier. Supported identifiers: {HIDDEN_ATTR}."),
                     ));
                     return;
                 };
@@ -58,22 +61,50 @@ fn get_diagnostics<Item: QueryAttrs>(
                 else {
                     diagnostics.push(PluginDiagnostic::error(
                         path.stable_ptr(db),
-                        "Wrong type of argument. Currently only #[doc(hidden)] is supported."
-                            .to_owned(),
+                        format!(
+                            "Wrong type of argument. Currently only {HIDDEN_ATTR_SYNTAX} is \
+                             supported."
+                        ),
                     ));
                     return;
                 };
                 if segment.ident(db).text(db) != HIDDEN_ATTR {
                     diagnostics.push(PluginDiagnostic::error(
                         path.stable_ptr(db),
-                        "Wrong type of argument. Currently only #[doc(hidden)] is supported."
-                            .to_owned(),
+                        format!(
+                            "Wrong type of argument. Currently only: {HIDDEN_ATTR_SYNTAX}, \
+                             {GROUP_ATTR_SYNTAX}  are supported."
+                        ),
                     ));
                 }
             }
+            AttributeArgVariant::Named { name, value } => match value {
+                ast::Expr::String(_) => {
+                    if name.text != GROUP_ATTR {
+                        diagnostics.push(PluginDiagnostic::error(
+                            arg.arg.stable_ptr(db),
+                            format!(
+                                "This argument is not supported. Supported args: {HIDDEN_ATTR}, \
+                                 {GROUP_ATTR}."
+                            ),
+                        ));
+                    }
+                }
+                _ => {
+                    diagnostics.push(PluginDiagnostic::error(
+                        value.stable_ptr(db),
+                        format!(
+                            "Wrong type of argument. Currently only {GROUP_ATTR_SYNTAX} is \
+                             supported."
+                        ),
+                    ));
+                }
+            },
             _ => diagnostics.push(PluginDiagnostic::error(
                 arg.arg.stable_ptr(db),
-                format!("This argument is not supported. Supported args: {HIDDEN_ATTR}"),
+                format!(
+                    "This argument is not supported. Supported args: {HIDDEN_ATTR}, {GROUP_ATTR}."
+                ),
             )),
         });
     });
