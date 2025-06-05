@@ -455,6 +455,33 @@ warning: Pattern missing subpattern for the payload of variant. Consider using `
 
 //! > ==========================================================================
 
+//! > Conform enum generic args in match patterns.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> u32 {
+    let x = Some(3);
+    match x {
+        Some::<u32>(y) => y,
+        None::<u8> => 6,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Type mismatch: `core::option::Option::<core::integer::u32>` and `core::option::Option::<core::integer::u8>`.
+ --> lib.cairo:5:9
+        None::<u8> => 6,
+        ^^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Test bad type in multi level enum pattern variable binding.
 
 //! > test_runner_name
