@@ -148,3 +148,6 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait<T> {
 pub const VALIDATED: felt252 = 'VALID';
 
 pub mod testing;
+
+pub mod deployment;
+pub use deployment::DeploymentParams;
