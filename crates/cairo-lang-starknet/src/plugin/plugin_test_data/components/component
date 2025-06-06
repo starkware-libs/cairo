@@ -392,7 +392,9 @@ lib.cairo:1:16
                ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl MyTypeSubPointersDrop<> of core::traits::Drop::<MyTypeSubPointers>;
+#[doc(hidden)]
 impl MyTypeSubPointersCopy<> of core::traits::Copy::<MyTypeSubPointers>;
 
 
@@ -401,7 +403,9 @@ lib.cairo:1:16
                ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl MyTypeSubPointersMutDrop<> of core::traits::Drop::<MyTypeSubPointersMut>;
+#[doc(hidden)]
 impl MyTypeSubPointersMutCopy<> of core::traits::Copy::<MyTypeSubPointersMut>;
 
 
@@ -410,8 +414,11 @@ lib.cairo:42:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: 'dispatchers')]
 impl MyTraitDispatcherCopy<> of core::traits::Copy::<MyTraitDispatcher>;
+#[doc(group: 'dispatchers')]
 impl MyTraitDispatcherDrop<> of core::traits::Drop::<MyTraitDispatcher>;
+#[doc(group: 'dispatchers')]
 impl MyTraitDispatcherSerde<> of core::serde::Serde::<MyTraitDispatcher> {
     fn serialize(self: @MyTraitDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -527,8 +534,11 @@ lib.cairo:42:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: 'dispatchers')]
 impl MyTraitLibraryDispatcherCopy<> of core::traits::Copy::<MyTraitLibraryDispatcher>;
+#[doc(group: 'dispatchers')]
 impl MyTraitLibraryDispatcherDrop<> of core::traits::Drop::<MyTraitLibraryDispatcher>;
+#[doc(group: 'dispatchers')]
 impl MyTraitLibraryDispatcherSerde<> of core::serde::Serde::<MyTraitLibraryDispatcher> {
     fn serialize(self: @MyTraitLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -644,8 +654,11 @@ lib.cairo:42:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: 'dispatchers')]
 impl MyTraitSafeLibraryDispatcherCopy<> of core::traits::Copy::<MyTraitSafeLibraryDispatcher>;
+#[doc(group: 'dispatchers')]
 impl MyTraitSafeLibraryDispatcherDrop<> of core::traits::Drop::<MyTraitSafeLibraryDispatcher>;
+#[doc(group: 'dispatchers')]
 impl MyTraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<MyTraitSafeLibraryDispatcher> {
     fn serialize(self: @MyTraitSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -761,8 +774,11 @@ lib.cairo:42:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: 'dispatchers')]
 impl MyTraitSafeDispatcherCopy<> of core::traits::Copy::<MyTraitSafeDispatcher>;
+#[doc(group: 'dispatchers')]
 impl MyTraitSafeDispatcherDrop<> of core::traits::Drop::<MyTraitSafeDispatcher>;
+#[doc(group: 'dispatchers')]
 impl MyTraitSafeDispatcherSerde<> of core::serde::Serde::<MyTraitSafeDispatcher> {
     fn serialize(self: @MyTraitSafeDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -878,7 +894,9 @@ lib.cairo:42:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl MyTraitDispatcherSubPointersDrop<> of core::traits::Drop::<MyTraitDispatcherSubPointers>;
+#[doc(hidden)]
 impl MyTraitDispatcherSubPointersCopy<> of core::traits::Copy::<MyTraitDispatcherSubPointers>;
 
 
@@ -887,7 +905,9 @@ lib.cairo:42:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl MyTraitDispatcherSubPointersMutDrop<> of core::traits::Drop::<MyTraitDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl MyTraitDispatcherSubPointersMutCopy<> of core::traits::Copy::<MyTraitDispatcherSubPointersMut>;
 
 
@@ -896,7 +916,9 @@ lib.cairo:42:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl MyTraitLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<MyTraitLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl MyTraitLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<MyTraitLibraryDispatcherSubPointers>;
 
 
@@ -905,7 +927,9 @@ lib.cairo:42:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl MyTraitLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<MyTraitLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl MyTraitLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<MyTraitLibraryDispatcherSubPointersMut>;
 
 
@@ -914,7 +938,9 @@ lib.cairo:42:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl MyTraitSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<MyTraitSafeLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl MyTraitSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<MyTraitSafeLibraryDispatcherSubPointers>;
 
 
@@ -923,7 +949,9 @@ lib.cairo:42:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl MyTraitSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<MyTraitSafeLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl MyTraitSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<MyTraitSafeLibraryDispatcherSubPointersMut>;
 
 
@@ -932,7 +960,9 @@ lib.cairo:42:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl MyTraitSafeDispatcherSubPointersDrop<> of core::traits::Drop::<MyTraitSafeDispatcherSubPointers>;
+#[doc(hidden)]
 impl MyTraitSafeDispatcherSubPointersCopy<> of core::traits::Copy::<MyTraitSafeDispatcherSubPointers>;
 
 
@@ -941,7 +971,9 @@ lib.cairo:42:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl MyTraitSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<MyTraitSafeDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl MyTraitSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<MyTraitSafeDispatcherSubPointersMut>;
 
 
@@ -1143,7 +1175,9 @@ lib.cairo:11:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -1152,7 +1186,9 @@ lib.cairo:11:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 

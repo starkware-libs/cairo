@@ -1,8 +1,11 @@
+use cairo_lang_syntax::node::ast::Attribute;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{GenericParamEx, IsDependentType};
+use cairo_lang_syntax::node::helpers::{GenericParamEx, IsDependentType, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use itertools::{Itertools, chain};
 use smol_str::SmolStr;
+
+use crate::plugins::DOC_ATTR;
 
 /// Information on struct members or enum variants.
 pub struct MemberInfo {
@@ -77,6 +80,7 @@ pub struct PluginTypeInfo {
     pub generics: GenericParamsInfo,
     pub members_info: Vec<MemberInfo>,
     pub type_variant: TypeVariant,
+    pub doc_attr: Option<Attribute>,
 }
 impl PluginTypeInfo {
     /// Extracts the information on the type being derived.
@@ -95,6 +99,7 @@ impl PluginTypeInfo {
                     generics,
                     members_info,
                     type_variant: TypeVariant::Struct,
+                    doc_attr: item_ast.find_attr(db, DOC_ATTR),
                 })
             }
             ast::ModuleItem::Enum(enum_ast) => {
@@ -110,6 +115,7 @@ impl PluginTypeInfo {
                     generics,
                     members_info,
                     type_variant: TypeVariant::Enum,
+                    doc_attr: item_ast.find_attr(db, DOC_ATTR),
                 })
             }
             _ => None,

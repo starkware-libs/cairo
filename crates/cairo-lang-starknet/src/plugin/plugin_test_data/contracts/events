@@ -483,7 +483,9 @@ lib.cairo:1:27
                           ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl ASubPointersDrop<> of core::traits::Drop::<ASubPointers>;
+#[doc(hidden)]
 impl ASubPointersCopy<> of core::traits::Copy::<ASubPointers>;
 
 
@@ -492,7 +494,9 @@ lib.cairo:1:27
                           ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl ASubPointersMutDrop<> of core::traits::Drop::<ASubPointersMut>;
+#[doc(hidden)]
 impl ASubPointersMutCopy<> of core::traits::Copy::<ASubPointersMut>;
 
 //! > expected_diagnostics
