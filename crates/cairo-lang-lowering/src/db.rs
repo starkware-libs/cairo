@@ -838,6 +838,14 @@ fn priv_should_specialize(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
+    // Breaks cycles.
+    // We cannot estimate the size of functions in a cycle, since the implicits computation requires
+    // the finalized lowering of all the functions in the cycle which requires us to know the
+    // answer of the current function.
+    if db.concrete_in_cycle(function_id, DependencyType::Call, LoweringStage::Monomorphized)? {
+        return Ok(false);
+    }
+
     let ids::ConcreteFunctionWithBodyLongId::Specialized(specialized_func) =
         function_id.lookup_intern(db)
     else {
