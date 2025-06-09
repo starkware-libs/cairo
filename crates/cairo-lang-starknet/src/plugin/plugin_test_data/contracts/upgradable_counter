@@ -159,22 +159,6 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
-pub fn deploy(
-    class_hash: starknet::ClassHash,
-    deployment_params: starknet::DeploymentParams,
-    initial_counter: u128
-) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {    
-    let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
-
-    core::serde::Serde::<u128>::serialize(@initial_counter, ref calldata);
-
-    starknet::syscalls::deploy_syscall(
-        class_hash,
-        deployment_params.salt,
-        core::array::ArrayTrait::span(@calldata),
-        deployment_params.deploy_from_zero,
-    )
-}
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -1235,22 +1219,6 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
-pub fn deploy(
-    class_hash: starknet::ClassHash,
-    deployment_params: starknet::DeploymentParams,
-    initial_counter: u128
-) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {    
-    let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
-
-    core::serde::Serde::<u128>::serialize(@initial_counter, ref calldata);
-
-    starknet::syscalls::deploy_syscall(
-        class_hash,
-        deployment_params.salt,
-        core::array::ArrayTrait::span(@calldata),
-        deployment_params.deploy_from_zero,
-    )
-}
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]

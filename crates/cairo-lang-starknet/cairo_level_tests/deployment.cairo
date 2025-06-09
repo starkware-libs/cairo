@@ -54,15 +54,15 @@ fn test_redeploy_in_construct() {
 
 #[test]
 fn test_typed_deploy_default() {
-    let (contract_address, _) = self_caller::deploy(self_caller::TEST_CLASS_HASH, Default::default())
+    let (contract_address, _) = self_caller::deploy_for_test(self_caller::TEST_CLASS_HASH, Default::default())
         .expect('deployment failed');
     assert!(IValueDispatcher { contract_address }.get_value() == 1);
 }
 
 #[test]
 fn test_typed_redeploy_default() {
-    assert!(self_caller::deploy(self_caller::TEST_CLASS_HASH, Default::default()).is_ok());
-    assert!(self_caller::deploy(self_caller::TEST_CLASS_HASH, Default::default()) == Err(array!['CONTRACT_ALREADY_DEPLOYED']));
+    assert!(self_caller::deploy_for_test(self_caller::TEST_CLASS_HASH, Default::default()).is_ok());
+    assert!(self_caller::deploy_for_test(self_caller::TEST_CLASS_HASH, Default::default()) == Err(array!['CONTRACT_ALREADY_DEPLOYED']));
 }
 
 #[test]
@@ -71,7 +71,7 @@ fn test_typed_deploy_with_params() {
         salt: 42,
         deploy_from_zero: true,
     };
-    let (contract_address, _) = self_caller::deploy(self_caller::TEST_CLASS_HASH, deployment_params)
+    let (contract_address, _) = self_caller::deploy_for_test(self_caller::TEST_CLASS_HASH, deployment_params)
         .expect('deployment failed');
     assert!(IValueDispatcher { contract_address }.get_value() == 1);
 }
@@ -82,6 +82,6 @@ fn test_typed_redeploy_with_params() {
         salt: 42,
         deploy_from_zero: true,
     };
-    assert!(self_caller::deploy(self_caller::TEST_CLASS_HASH, deployment_params).is_ok());
-    assert!(self_caller::deploy(self_caller::TEST_CLASS_HASH, deployment_params) == Err(array!['CONTRACT_ALREADY_DEPLOYED']));
+    assert!(self_caller::deploy_for_test(self_caller::TEST_CLASS_HASH, deployment_params).is_ok());
+    assert!(self_caller::deploy_for_test(self_caller::TEST_CLASS_HASH, deployment_params) == Err(array!['CONTRACT_ALREADY_DEPLOYED']));
 }

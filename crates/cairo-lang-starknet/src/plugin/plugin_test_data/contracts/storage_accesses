@@ -230,30 +230,6 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
-pub fn deploy(
-    class_hash: starknet::ClassHash,
-    deployment_params: starknet::DeploymentParams,
-    name_: felt252,
-symbol_: felt252,
-decimals_: u8,
-initial_supply: u256,
-recipient: ContractAddress
-) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {    
-    let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
-
-    core::serde::Serde::<felt252>::serialize(@name_, ref calldata);
-core::serde::Serde::<felt252>::serialize(@symbol_, ref calldata);
-core::serde::Serde::<u8>::serialize(@decimals_, ref calldata);
-core::serde::Serde::<u256>::serialize(@initial_supply, ref calldata);
-core::serde::Serde::<ContractAddress>::serialize(@recipient, ref calldata);
-
-    starknet::syscalls::deploy_syscall(
-        class_hash,
-        deployment_params.salt,
-        core::array::ArrayTrait::span(@calldata),
-        deployment_params.deploy_from_zero,
-    )
-}
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -2165,30 +2141,6 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
-pub fn deploy(
-    class_hash: starknet::ClassHash,
-    deployment_params: starknet::DeploymentParams,
-    name_: felt252,
-symbol_: felt252,
-decimals_: u8,
-initial_supply: u256,
-recipient: ContractAddress
-) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {    
-    let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
-
-    core::serde::Serde::<felt252>::serialize(@name_, ref calldata);
-core::serde::Serde::<felt252>::serialize(@symbol_, ref calldata);
-core::serde::Serde::<u8>::serialize(@decimals_, ref calldata);
-core::serde::Serde::<u256>::serialize(@initial_supply, ref calldata);
-core::serde::Serde::<ContractAddress>::serialize(@recipient, ref calldata);
-
-    starknet::syscalls::deploy_syscall(
-        class_hash,
-        deployment_params.salt,
-        core::array::ArrayTrait::span(@calldata),
-        deployment_params.deploy_from_zero,
-    )
-}
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]

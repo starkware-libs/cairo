@@ -302,7 +302,8 @@ pub fn contract_state_for_testing() -> ContractState {
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x3bd690d1a73da0d8c43f46ecc3a006978d8343a075e91a1c7a24529e7d244a.try_into().unwrap();
-pub fn deploy(
+#[cfg(target: 'test')]
+pub fn deploy_for_test(
     class_hash: starknet::ClassHash,
     deployment_params: starknet::DeploymentParams,
     

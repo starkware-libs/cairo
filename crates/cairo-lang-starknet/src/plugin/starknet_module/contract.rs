@@ -406,7 +406,8 @@ fn generate_deploy_function(
 
     RewriteNode::Text(formatdoc!(
         "
-        pub fn deploy(
+        #[cfg(target: 'test')]
+        pub fn deploy_for_test(
             class_hash: starknet::ClassHash,
             deployment_params: starknet::DeploymentParams,
             {param_declarations_str}
