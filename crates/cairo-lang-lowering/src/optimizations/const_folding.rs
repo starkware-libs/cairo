@@ -5,6 +5,7 @@ mod test;
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId};
+use cairo_lang_semantic::corelib::try_extract_nz_wrapped_type;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::{ConstCalcInfo, ConstValue};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, GenericFunctionWithBodyId};
@@ -583,10 +584,14 @@ impl ConstFoldingContext<'_> {
         output: VariableId,
         nz_ty: bool,
     ) -> Statement {
-        let mut value = ConstValue::Int(value, self.variables[output].ty);
-        if nz_ty {
-            value = ConstValue::NonZero(Box::new(value));
-        }
+        let ty = self.variables[output].ty;
+        let value = if nz_ty {
+            let inner_ty =
+                try_extract_nz_wrapped_type(self.db, ty).expect("Expected a non-zero type");
+            ConstValue::NonZero(Box::new(ConstValue::Int(value, inner_ty)))
+        } else {
+            ConstValue::Int(value, ty)
+        };
         self.var_info.insert(output, VarInfo::Const(value.clone()));
         Statement::Const(StatementConst { value, output })
     }
