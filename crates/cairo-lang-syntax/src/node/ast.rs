@@ -22434,12 +22434,14 @@ pub struct ItemInlineMacro {
 impl ItemInlineMacro {
     pub const INDEX_ATTRIBUTES: usize = 0;
     pub const INDEX_PATH: usize = 1;
+    pub const INDEX_PATH: usize = 1;
     pub const INDEX_BANG: usize = 2;
     pub const INDEX_ARGUMENTS: usize = 3;
     pub const INDEX_SEMICOLON: usize = 4;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
+        path: ExprPathGreen,
         path: ExprPathGreen,
         bang: TerminalNotGreen,
         arguments: TokenTreeNodeGreen,
