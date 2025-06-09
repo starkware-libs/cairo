@@ -29,15 +29,15 @@ impl InlineMacroCall for ast::LegacyExprInlineMacro {
 }
 
 impl InlineMacroCall for ast::LegacyItemInlineMacro {
-    type PathNode = ast::TerminalIdentifier;
+    type PathNode = ast::ExprPath;
     type Result = PluginResult;
 
     fn arguments(&self, db: &dyn SyntaxGroup) -> ast::WrappedArgList {
         self.arguments(db)
     }
 
-    fn path(&self, db: &dyn SyntaxGroup) -> ast::TerminalIdentifier {
-        self.name(db)
+    fn path(&self, db: &dyn SyntaxGroup) -> ast::ExprPath {
+        self.path(db)
     }
 }
 
