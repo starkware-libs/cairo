@@ -22572,19 +22572,19 @@ pub struct ItemInlineMacro {
 }
 impl ItemInlineMacro {
     pub const INDEX_ATTRIBUTES: usize = 0;
-    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_PATH: usize = 1;
     pub const INDEX_BANG: usize = 2;
     pub const INDEX_ARGUMENTS: usize = 3;
     pub const INDEX_SEMICOLON: usize = 4;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
-        name: TerminalIdentifierGreen,
+        path: ExprPathGreen,
         bang: TerminalNotGreen,
         arguments: TokenTreeNodeGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> ItemInlineMacroGreen {
-        let children = [attributes.0, name.0, bang.0, arguments.0, semicolon.0];
+        let children = [attributes.0, path.0, bang.0, arguments.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId| id.lookup_intern(db).width()).sum();
         ItemInlineMacroGreen(
             Arc::new(GreenNode {
@@ -22599,8 +22599,8 @@ impl ItemInlineMacro {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
         AttributeList::from_syntax_node(db, self.children[0])
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1])
+    pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[1])
     }
     pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
         TerminalNot::from_syntax_node(db, self.children[2])
@@ -22642,7 +22642,7 @@ impl TypedSyntaxNode for ItemInlineMacro {
                 details: GreenNodeDetails::Node {
                     children: [
                         AttributeList::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
+                        ExprPath::missing(db).0,
                         TerminalNot::missing(db).0,
                         TokenTreeNode::missing(db).0,
                         TerminalSemicolon::missing(db).0,
@@ -25029,19 +25029,19 @@ pub struct LegacyItemInlineMacro {
 }
 impl LegacyItemInlineMacro {
     pub const INDEX_ATTRIBUTES: usize = 0;
-    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_PATH: usize = 1;
     pub const INDEX_BANG: usize = 2;
     pub const INDEX_ARGUMENTS: usize = 3;
     pub const INDEX_SEMICOLON: usize = 4;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
-        name: TerminalIdentifierGreen,
+        path: ExprPathGreen,
         bang: TerminalNotGreen,
         arguments: WrappedArgListGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> LegacyItemInlineMacroGreen {
-        let children = [attributes.0, name.0, bang.0, arguments.0, semicolon.0];
+        let children = [attributes.0, path.0, bang.0, arguments.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId| id.lookup_intern(db).width()).sum();
         LegacyItemInlineMacroGreen(
             Arc::new(GreenNode {
@@ -25056,8 +25056,8 @@ impl LegacyItemInlineMacro {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
         AttributeList::from_syntax_node(db, self.children[0])
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1])
+    pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[1])
     }
     pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
         TerminalNot::from_syntax_node(db, self.children[2])
@@ -25099,7 +25099,7 @@ impl TypedSyntaxNode for LegacyItemInlineMacro {
                 details: GreenNodeDetails::Node {
                     children: [
                         AttributeList::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
+                        ExprPath::missing(db).0,
                         TerminalNot::missing(db).0,
                         WrappedArgList::missing(db).0,
                         TerminalSemicolon::missing(db).0,
@@ -25226,6 +25226,7 @@ impl TypedSyntaxNode for TriviumSkippedNode {
 pub enum SkippedNode {
     AttributeList(AttributeList),
     VisibilityPub(VisibilityPub),
+    ExprPath(ExprPath),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct SkippedNodePtr(pub SyntaxStablePtrId);
@@ -25253,6 +25254,11 @@ impl From<VisibilityPubPtr> for SkippedNodePtr {
         Self(value.0)
     }
 }
+impl From<ExprPathPtr> for SkippedNodePtr {
+    fn from(value: ExprPathPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<AttributeListGreen> for SkippedNodeGreen {
     fn from(value: AttributeListGreen) -> Self {
         Self(value.0)
@@ -25260,6 +25266,11 @@ impl From<AttributeListGreen> for SkippedNodeGreen {
 }
 impl From<VisibilityPubGreen> for SkippedNodeGreen {
     fn from(value: VisibilityPubGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprPathGreen> for SkippedNodeGreen {
+    fn from(value: ExprPathGreen) -> Self {
         Self(value.0)
     }
 }
@@ -25281,6 +25292,7 @@ impl TypedSyntaxNode for SkippedNode {
             SyntaxKind::VisibilityPub => {
                 SkippedNode::VisibilityPub(VisibilityPub::from_syntax_node(db, node))
             }
+            SyntaxKind::ExprPath => SkippedNode::ExprPath(ExprPath::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "SkippedNode"),
         }
     }
@@ -25293,6 +25305,9 @@ impl TypedSyntaxNode for SkippedNode {
             SyntaxKind::VisibilityPub => {
                 Some(SkippedNode::VisibilityPub(VisibilityPub::from_syntax_node(db, node)))
             }
+            SyntaxKind::ExprPath => {
+                Some(SkippedNode::ExprPath(ExprPath::from_syntax_node(db, node)))
+            }
             _ => None,
         }
     }
@@ -25300,6 +25315,7 @@ impl TypedSyntaxNode for SkippedNode {
         match self {
             SkippedNode::AttributeList(x) => x.as_syntax_node(),
             SkippedNode::VisibilityPub(x) => x.as_syntax_node(),
+            SkippedNode::ExprPath(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
@@ -25309,7 +25325,7 @@ impl TypedSyntaxNode for SkippedNode {
 impl SkippedNode {
     /// Checks if a kind of a variant of [SkippedNode].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::AttributeList | SyntaxKind::VisibilityPub)
+        matches!(kind, SyntaxKind::AttributeList | SyntaxKind::VisibilityPub | SyntaxKind::ExprPath)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

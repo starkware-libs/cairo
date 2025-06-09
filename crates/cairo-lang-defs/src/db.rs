@@ -679,7 +679,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         inline_macro_ast.stable_ptr(db),
                         format!(
                             "Unknown inline item macro: '{}'.",
-                            inline_macro_ast.name(db).text(db)
+                            inline_macro_ast.path(db).as_syntax_node().get_text(db)
                         ),
                     ),
                 )),
