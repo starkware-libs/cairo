@@ -12,6 +12,7 @@ use cairo_lang_semantic::items::functions::InlineConfiguration;
 use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use id_arena::Arena;
 use itertools::{izip, zip_eq};
 
 use crate::blocks::{Blocks, BlocksBuilder};
@@ -22,11 +23,10 @@ use crate::diagnostic::{
 use crate::ids::{
     ConcreteFunctionWithBodyId, FunctionWithBodyId, FunctionWithBodyLongId, LocationId,
 };
-use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::utils::{InliningStrategy, Rebuilder, RebuilderEx};
 use crate::{
     Block, BlockEnd, BlockId, DependencyType, Lowered, LoweringStage, Statement, StatementCall,
-    VarRemapping, VariableId,
+    VarRemapping, Variable, VariableId,
 };
 
 pub fn get_inline_diagnostics(
@@ -94,13 +94,13 @@ fn should_inline_lowered(
 
 /// A rewriter that inlines functions annotated with #[inline(always)].
 pub struct FunctionInlinerRewriter<'db> {
-    /// The LoweringContext where we are building the new blocks.
-    variables: VariableAllocator<'db>,
+    db: &'db dyn LoweringGroup,
+    /// variables arena.
+    variables: Arena<Variable>,
     /// A Queue of blocks on which we want to apply the FunctionInlinerRewriter.
     block_queue: BlockRewriteQueue,
     /// rewritten statements.
     statements: Vec<Statement>,
-
     /// The end of the current block.
     block_end: BlockEnd,
     /// The processed statements of the current block.
@@ -142,8 +142,9 @@ impl BlockRewriteQueue {
 }
 
 /// Context for mapping ids from `lowered` to a new `Lowered` object.
-pub struct Mapper<'a, 'b> {
-    variables: &'a mut VariableAllocator<'b>,
+pub struct Mapper<'a> {
+    db: &'a dyn LoweringGroup,
+    variables: &'a mut Arena<Variable>,
     lowered: &'a Lowered,
     renamed_vars: HashMap<VariableId, VariableId>,
     return_block_id: BlockId,
@@ -155,17 +156,16 @@ pub struct Mapper<'a, 'b> {
     block_id_offset: BlockId,
 }
 
-impl Rebuilder for Mapper<'_, '_> {
+impl Rebuilder for Mapper<'_> {
     /// Maps a var id from the original lowering representation to the equivalent id in the
     /// new lowering representation.
     /// If the variable wasn't assigned an id yet, a new id is assigned.
     fn map_var_id(&mut self, orig_var_id: VariableId) -> VariableId {
         *self.renamed_vars.entry(orig_var_id).or_insert_with(|| {
-            self.variables.new_var(VarRequest {
-                ty: self.lowered.variables[orig_var_id].ty,
-                location: self.lowered.variables[orig_var_id]
-                    .location
-                    .inlined(self.variables.db, self.inlining_location),
+            let orig_var = self.lowered.variables[orig_var_id].clone();
+            self.variables.alloc(Variable {
+                location: orig_var.location.inlined(self.db, self.inlining_location),
+                ..orig_var
             })
         })
     }
@@ -178,7 +178,7 @@ impl Rebuilder for Mapper<'_, '_> {
 
     /// Adds the inlining location to a location.
     fn map_location(&mut self, location: LocationId) -> LocationId {
-        location.inlined(self.variables.db, self.inlining_location)
+        location.inlined(self.db, self.inlining_location)
     }
 
     fn transform_end(&mut self, end: &mut BlockEnd) {
@@ -198,14 +198,15 @@ impl Rebuilder for Mapper<'_, '_> {
     }
 }
 
-impl<'db> FunctionInlinerRewriter<'db> {
+impl<'a> FunctionInlinerRewriter<'a> {
     fn apply(
-        variables: VariableAllocator<'db>,
+        db: &'a dyn LoweringGroup,
         lowered: &Lowered,
         calling_function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Lowered> {
         let mut rewriter = Self {
-            variables,
+            db,
+            variables: lowered.variables.clone(),
             block_queue: BlockRewriteQueue {
                 block_queue: lowered.blocks.iter().map(|(_, b)| (b.clone(), true)).collect(),
                 blocks: BlocksBuilder::new(),
@@ -217,7 +218,6 @@ impl<'db> FunctionInlinerRewriter<'db> {
             calling_function_id,
         };
 
-        rewriter.variables.variables = lowered.variables.clone();
         while let Some(block) = rewriter.block_queue.dequeue() {
             rewriter.block_end = block.end;
             rewriter.unprocessed_statements = block.statements.into_iter();
@@ -239,7 +239,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
 
         Ok(Lowered {
             diagnostics: lowered.diagnostics.clone(),
-            variables: rewriter.variables.variables,
+            variables: rewriter.variables,
             blocks,
             parameters: lowered.parameters.clone(),
             signature: lowered.signature.clone(),
@@ -250,9 +250,9 @@ impl<'db> FunctionInlinerRewriter<'db> {
     /// self.statements_rewrite_stack.
     fn rewrite(&mut self, statement: Statement) -> Maybe<()> {
         if let Statement::Call(ref stmt) = statement {
-            if let Some(called_func) = stmt.function.body(self.variables.db)? {
+            if let Some(called_func) = stmt.function.body(self.db)? {
                 if let crate::ids::ConcreteFunctionWithBodyLongId::Specialized(specialized) =
-                    self.calling_function_id.lookup_intern(self.variables.db)
+                    self.calling_function_id.lookup_intern(self.db)
                 {
                     if specialized.base == called_func {
                         // A specialized function should always inline its base.
@@ -263,7 +263,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 // TODO: Implement better logic to avoid inlining of destructors that call
                 // themselves.
                 if called_func != self.calling_function_id
-                    && self.variables.db.priv_should_inline(called_func)?
+                    && self.db.priv_should_inline(called_func)?
                 {
                     return self.inline_function(called_func, stmt);
                 }
@@ -280,7 +280,8 @@ impl<'db> FunctionInlinerRewriter<'db> {
         function_id: ConcreteFunctionWithBodyId,
         call_stmt: &StatementCall,
     ) -> Maybe<()> {
-        let lowered = self.variables.db.lowered_body(function_id, LoweringStage::PostBaseline)?;
+        let db = self.db;
+        let lowered = db.lowered_body(function_id, LoweringStage::PostBaseline)?;
         lowered.blocks.has_root()?;
 
         // Create a new block with all the statements that follow the call statement.
@@ -302,10 +303,10 @@ impl<'db> FunctionInlinerRewriter<'db> {
             call_stmt.inputs.iter().map(|var_usage| var_usage.var_id)
         ));
 
-        let db = self.variables.db;
         let inlining_location = call_stmt.location.lookup_intern(db).stable_location;
 
         let mut mapper = Mapper {
+            db,
             variables: &mut self.variables,
             lowered: &lowered,
             renamed_vars,
@@ -340,12 +341,7 @@ pub fn apply_inlining(
     function_id: ConcreteFunctionWithBodyId,
     lowered: &mut Lowered,
 ) -> Maybe<()> {
-    let variables = VariableAllocator::new(
-        db,
-        function_id.base_semantic_function(db).function_with_body_id(db),
-        lowered.variables.clone(),
-    )?;
-    if let Ok(new_lowered) = FunctionInlinerRewriter::apply(variables, lowered, function_id) {
+    if let Ok(new_lowered) = FunctionInlinerRewriter::apply(db, lowered, function_id) {
         *lowered = new_lowered;
     }
     Ok(())
