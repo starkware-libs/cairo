@@ -16,11 +16,11 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use defs::ids::NamedLanguageElementId;
-use itertools::{Itertools, chain, zip_eq};
+use itertools::{Itertools, chain};
 use num_traits::ToPrimitive;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
-use crate::blocks::{Blocks, BlocksBuilder};
+use crate::blocks::Blocks;
 use crate::borrow_check::{
     PotentialDestructCalls, borrow_check, borrow_check_possible_withdraw_gas,
 };
@@ -29,22 +29,18 @@ use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
-use crate::ids::{
-    ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, GenericOrSpecialized, LocationId,
-    SpecializedFunction,
-};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, GenericOrSpecialized};
 use crate::inline::get_inline_diagnostics;
 use crate::inline::statements_weights::{ApproxCasmInlineWeight, InlineWeight};
-use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::lower::{MultiLowering, lower_semantic_function};
 use crate::optimizations::config::OptimizationConfig;
 use crate::optimizations::scrub_units::scrub_units;
 use crate::optimizations::strategy::{OptimizationStrategy, OptimizationStrategyId};
 use crate::panic::lower_panics;
+use crate::specialization::specialized_function_lowered;
 use crate::utils::InliningStrategy;
 use crate::{
-    Block, BlockEnd, BlockId, DependencyType, Location, Lowered, LoweringStage, MatchInfo,
-    Statement, StatementCall, StatementConst, VarUsage, VariableId, ids,
+    BlockEnd, BlockId, DependencyType, Location, Lowered, LoweringStage, MatchInfo, Statement, ids,
 };
 
 /// A trait for estimation of the code size of a function.
@@ -314,6 +310,7 @@ pub trait LoweringGroup:
     fn priv_should_inline(&self, function_id: ids::ConcreteFunctionWithBodyId) -> Maybe<bool>;
 
     /// Returns whether a function should be specalized.
+    #[salsa::invoke(crate::specialization::priv_should_specialize)]
     fn priv_should_specialize(&self, function_id: ids::ConcreteFunctionWithBodyId) -> Maybe<bool>;
 
     /// Returns the configuration struct that controls the behavior of the optimization passes.
@@ -474,56 +471,6 @@ fn lowered_body(
         }
     };
     Ok(Arc::new(lowered))
-}
-
-/// Returns the lowering of a specialized function.
-fn specialized_function_lowered(
-    db: &dyn LoweringGroup,
-    specialized: SpecializedFunction,
-) -> Maybe<Lowered> {
-    let base = db.lowered_body(specialized.base, LoweringStage::Monomorphized)?;
-    let base_semantic = specialized.base.base_semantic_function(db);
-    let mut variables =
-        VariableAllocator::new(db, base_semantic.function_with_body_id(db), Default::default())?;
-    let mut statement = vec![];
-    let mut parameters = vec![];
-    for (param, arg) in zip_eq(&base.parameters, specialized.args.iter()) {
-        let var_id = variables.variables.alloc(base.variables[*param].clone());
-        if let Some(arg) = arg {
-            statement.push(Statement::Const(StatementConst { value: arg.clone(), output: var_id }));
-            continue;
-        }
-        parameters.push(var_id);
-    }
-    let location = LocationId::from_stable_location(
-        db,
-        specialized.base.base_semantic_function(db).stable_location(db),
-    );
-    let inputs =
-        variables.variables.iter().map(|(var_id, _)| VarUsage { var_id, location }).collect();
-    let outputs: Vec<VariableId> =
-        chain!(base.signature.extra_rets.iter().map(|ret| ret.ty()), [base.signature.return_type])
-            .map(|ty| variables.new_var(VarRequest { ty, location }))
-            .collect_vec();
-    let mut block_builder = BlocksBuilder::new();
-    let ret_usage =
-        outputs.iter().map(|var_id| VarUsage { var_id: *var_id, location }).collect_vec();
-    statement.push(Statement::Call(StatementCall {
-        function: specialized.base.function_id(db)?,
-        with_coupon: false,
-        inputs,
-        outputs,
-        location,
-    }));
-    block_builder
-        .alloc(Block { statements: statement, end: BlockEnd::Return(ret_usage, location) });
-    Ok(Lowered {
-        signature: specialized.signature(db)?,
-        variables: variables.variables,
-        blocks: block_builder.build().unwrap(),
-        parameters,
-        diagnostics: Default::default(),
-    })
 }
 
 /// Given the lowering of a function, returns the set of direct dependencies of that function,
@@ -832,17 +779,4 @@ fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
             panic!("Function should only be called with fully concrete types")
         }
     }
-}
-
-fn priv_should_specialize(
-    db: &dyn LoweringGroup,
-    function_id: ids::ConcreteFunctionWithBodyId,
-) -> Maybe<bool> {
-    let ids::ConcreteFunctionWithBodyLongId::Specialized(specialized_func) =
-        function_id.lookup_intern(db)
-    else {
-        panic!("Expected a specialized function");
-    };
-    // The heuristic is that the size is 8/10*orig_size > specialized_size of the original size.
-    Ok(8 * db.estimate_size(specialized_func.base)? > 10 * db.estimate_size(function_id)?)
 }
