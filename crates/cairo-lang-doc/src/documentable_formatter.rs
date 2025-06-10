@@ -1119,6 +1119,7 @@ fn resolve_type(db: &dyn DocGroup, type_id: TypeId) -> Option<DocumentableItemId
                     Err(_) => None,
                 }
             }
+            InferenceId::MacroCall(_) => None,
             InferenceId::Canonical => None,
             InferenceId::NoContext => None,
         },
