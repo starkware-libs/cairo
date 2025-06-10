@@ -31,6 +31,7 @@ use crate::ids::{
     ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, FunctionId, SemanticFunctionIdEx,
     SpecializedFunction,
 };
+use crate::specialization::SpecializationArg;
 use crate::{
     BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, Statement,
     StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct, StatementSnapshot,
@@ -512,13 +513,14 @@ impl ConstFoldingContext<'_> {
         let mut const_arg = vec![];
         let mut new_args = vec![];
         for arg in &call_stmt.inputs {
-            if let Some(VarInfo::Const(c)) = self.var_info.get(&arg.var_id) {
+            if let Some(var_info) = self.var_info.get(&arg.var_id) {
+                let ty = self.variables[arg.var_id].ty;
                 // Skip zero-sized constants as they are not supported in sierra-gen.
-                if self.db.type_size_info(self.variables[arg.var_id].ty).ok()?
-                    != TypeSizeInformation::ZeroSized
-                {
-                    const_arg.push(Some(c.clone()));
-                    continue;
+                if self.db.type_size_info(ty).ok()? != TypeSizeInformation::ZeroSized {
+                    if let Some(arg) = self.try_get_specialization_arg(var_info.clone(), ty) {
+                        const_arg.push(Some(arg));
+                        continue;
+                    }
                 }
             }
             const_arg.push(None);
@@ -974,6 +976,29 @@ impl ConstFoldingContext<'_> {
     fn maybe_replace_input(&mut self, input: &mut VarUsage) {
         if let Some(VarInfo::Var(new_var)) = self.var_info.get(&input.var_id) {
             *input = *new_var;
+        }
+    }
+
+    /// Given a var_info and its type, return the corresponding specialization argument, if it
+    /// exists.
+    fn try_get_specialization_arg(
+        &mut self,
+        var_info: VarInfo,
+        ty: TypeId,
+    ) -> Option<SpecializationArg> {
+        match var_info {
+            VarInfo::Const(c) => Some(SpecializationArg::Const(c.clone())),
+            VarInfo::Array(infos) if infos.is_empty() => {
+                let TypeLongId::Concrete(concrete_ty) = ty.lookup_intern(self.db) else {
+                    unreachable!("Expected a concrete type");
+                };
+                let [GenericArgumentId::Type(inner_ty)] = &concrete_ty.generic_args(self.db)[..]
+                else {
+                    unreachable!("Expected a single type generic argument");
+                };
+                Some(SpecializationArg::EmptyArray(*inner_ty))
+            }
+            _ => None,
         }
     }
 }
