@@ -9,7 +9,7 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteFunction;
 use cairo_lang_semantic::corelib::{core_array_felt252_ty, core_module, get_ty_by_name, unit_ty};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use cairo_lang_semantic::items::imp::ImplId;
+use cairo_lang_semantic::items::imp::{ImplId, ImplLookupContext};
 use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{TypeId, TypeLongId};
@@ -22,7 +22,7 @@ use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockEnd, BlockId, Lowered, MatchInfo, Statement, StatementCall, StatementStructConstruct,
-    StatementStructDestructure, VarRemapping, VarUsage, VariableId,
+    StatementStructDestructure, VarRemapping, VarUsage, Variable, VariableId,
 };
 
 pub type DestructAdderDemand = Demand<VariableId, (), PanicState>;
@@ -533,4 +533,9 @@ pub fn add_destructs(
     }
 
     lowered.variables = variables.variables;
+
+    for (_, var) in lowered.variables.iter_mut() {
+        // After adding destructors, we can infer the concrete `Copyable` and `Droppable` impls.
+        *var = Variable::new(db, ImplLookupContext::default(), var.ty, var.location);
+    }
 }
