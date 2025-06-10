@@ -617,6 +617,11 @@ fn module_dir<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) -> Maybe<Di
             // call, as it is considered the location of the macro itself.
             db.module_dir(macro_call_id.module_file_id(db).0)
         }
+        ModuleId::MacroCall { id: macro_call_id, .. } => {
+            // This is a macro call, we return the directory for the file that contained the macro
+            // call, as it is considered the location of the macro itself.
+            db.module_dir(macro_call_id.module_file_id(db).0)
+        }
     }
 }
 
