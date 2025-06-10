@@ -129,27 +129,29 @@ impl OptimizationStrategyId {
 /// Query implementation of [crate::db::LoweringGroup::baseline_optimization_strategy].
 pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
     OptimizationStrategy(vec![
-        // Must be right before const folding.
-        OptimizationPhase::ReorganizeBlocks,
-        // Apply `ConstFolding` before inlining to get better inlining decisions.
-        OptimizationPhase::ConstFolding,
-        OptimizationPhase::ApplyInlining,
-        OptimizationPhase::ReturnOptimization,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ReorderStatements,
-        OptimizationPhase::BranchInversion,
-        OptimizationPhase::CancelOps,
-        // Must be right before const folding.
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ConstFolding,
-        OptimizationPhase::OptimizeMatches,
-        OptimizationPhase::SplitStructs,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ReorderStatements,
-        OptimizationPhase::OptimizeMatches,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::CancelOps,
-        OptimizationPhase::ReorganizeBlocks,
+        OptimizationPhase::SubStrategy {
+            strategy: OptimizationStrategy(vec![
+                // Must be right before const folding.
+                OptimizationPhase::ReorganizeBlocks,
+                // Apply `ConstFolding` before inlining to get better inlining decisions.
+                OptimizationPhase::ConstFolding,
+                OptimizationPhase::ApplyInlining,
+                OptimizationPhase::ReturnOptimization,
+                OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::ReorderStatements,
+                OptimizationPhase::BranchInversion,
+                OptimizationPhase::CancelOps,
+                OptimizationPhase::SplitStructs,
+                OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::ReorderStatements,
+                OptimizationPhase::OptimizeMatches,
+                OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::CancelOps,
+                OptimizationPhase::ReorganizeBlocks,
+            ])
+            .intern(db),
+            iterations: 5,
+        },
         OptimizationPhase::DedupBlocks,
         // Re-run ReturnOptimization to eliminate harmful merges introduced by DedupBlocks.
         OptimizationPhase::ReturnOptimization,
