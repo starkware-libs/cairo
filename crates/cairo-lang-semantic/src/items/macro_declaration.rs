@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    LanguageElementId, LookupItemId, MacroDeclarationId, ModuleFileId, ModuleItemId,
+    LanguageElementId, LookupItemId, MacroCallId, MacroDeclarationId, ModuleFileId, ModuleItemId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe, skip_diagnostic};
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
@@ -18,10 +18,12 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
 use crate::SemanticDiagnostic;
 use crate::db::SemanticGroup;
-use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
+use crate::diagnostic::{
+    NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
+};
 use crate::expr::inference::InferenceId;
 use crate::keyword::{MACRO_CALL_SITE, MACRO_DEF_SITE};
-use crate::resolve::{Resolver, ResolverData};
+use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverData};
 
 /// A unique identifier for a repetition block inside a macro rule.
 /// Each `$( ... )` group in the macro pattern gets a new `RepetitionId`.
@@ -653,4 +655,66 @@ fn are_user_defined_inline_macros_enabled(
     let owning_crate = module_file_id.0.owning_crate(db);
     let Some(config) = db.crate_config(owning_crate) else { return false };
     config.settings.experimental_features.user_defined_inline_macros
+}
+
+/// The data associated with a macro call in item context.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MacroCallData {
+    /// The macro declaration that this macro call refers to, if found.
+    pub macro_declaration_id: Option<MacroDeclarationId>,
+    pub diagnostics: Diagnostics<SemanticDiagnostic>,
+}
+
+/// Query implementation of [crate::db::SemanticGroup::macro_call_data].
+pub fn priv_macro_call_data(
+    db: &dyn SemanticGroup,
+    macro_call_id: MacroCallId,
+) -> Maybe<MacroCallData> {
+    let inference_id = InferenceId::MacroCall(macro_call_id);
+    let module_file_id = macro_call_id.module_file_id(db);
+    let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    let mut diagnostics = SemanticDiagnostics::default();
+    let macro_call_syntax = db.module_macro_call_by_id(macro_call_id)?.to_maybe()?;
+    // Resolve the macro call path, and report diagnostics if it finds no match or
+    // the resolved item is not a macro declaration.
+    let macro_call_path = macro_call_syntax.path(db);
+    let macro_declaration_id = resolver.resolve_generic_path(
+        &mut diagnostics,
+        &macro_call_path,
+        NotFoundItemType::Macro,
+        ResolutionContext::Default,
+    );
+    let macro_declaration_id = match macro_declaration_id {
+        Ok(ResolvedGenericItem::Macro(macro_declaration_id)) => Some(macro_declaration_id),
+        Ok(_) => {
+            diagnostics.report(
+                macro_call_path.stable_ptr(db).untyped(),
+                SemanticDiagnosticKind::MacroCallToNotAMacro(
+                    macro_call_path.as_syntax_node().get_text_without_trivia(db).into(),
+                ),
+            );
+            None
+        }
+        Err(_) => {
+            // Resolver error, the diagnostics should already have been reported in the resolver.
+            None
+        }
+    };
+
+    Ok(MacroCallData { macro_declaration_id, diagnostics: diagnostics.build() })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::macro_call_diagnostics].
+pub fn macro_call_diagnostics(
+    db: &dyn SemanticGroup,
+    macro_call_id: MacroCallId,
+) -> Diagnostics<SemanticDiagnostic> {
+    priv_macro_call_data(db, macro_call_id).map(|data| data.diagnostics).unwrap_or_default()
+}
+/// Query implementation of [crate::db::SemanticGroup::macro_call_declaration_id].
+pub fn macro_call_declaration_id(
+    db: &dyn SemanticGroup,
+    macro_call_id: MacroCallId,
+) -> Maybe<Option<MacroDeclarationId>> {
+    priv_macro_call_data(db, macro_call_id).map(|data| data.macro_declaration_id)
 }
