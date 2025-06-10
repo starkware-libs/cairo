@@ -1408,6 +1408,60 @@ error: No matching rule found in inline macro `test_macro`.
 
 //! > ==========================================================================
 
+//! > Test item macro call to non existing macro.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+unknown_item_macro!();
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Unknown inline item macro: 'unknown_item_macro'.
+ --> lib.cairo:1:1
+unknown_item_macro!();
+^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0006]: Macro not found.
+ --> lib.cairo:1:1
+unknown_item_macro!();
+^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test item macro call to a function that is not a macro.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+foo!();
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Unknown inline item macro: 'foo'.
+ --> lib.cairo:1:1
+foo!();
+^^^^^^^
+
+error: Call to `foo` which is not a macro.
+ --> lib.cairo:1:1
+foo!();
+^^^
+
+//! > ==========================================================================
+
 //! > Test: Using a statement-list macro in statement position should work.
 
 //! > test_runner_name
