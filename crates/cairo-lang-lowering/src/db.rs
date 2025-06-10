@@ -843,6 +843,19 @@ fn priv_should_specialize(
     else {
         panic!("Expected a specialized function");
     };
+
+    // Breaks cycles.
+    // We cannot estimate the size of functions in a cycle, since the implicits computation requires
+    // the finalized lowering of all the functions in the cycle which requires us to know the
+    // answer of the current function.
+    if db.concrete_in_cycle(
+        specialized_func.base,
+        DependencyType::Call,
+        LoweringStage::Monomorphized,
+    )? {
+        return Ok(false);
+    }
+
     // The heuristic is that the size is 8/10*orig_size > specialized_size of the original size.
     Ok(8 * db.estimate_size(specialized_func.base)? > 10 * db.estimate_size(function_id)?)
 }
