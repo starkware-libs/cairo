@@ -1,3 +1,5 @@
+#[feature("bounded-int-utils")]
+use core::internal::bounded_int::{BoundedInt, constrain};
 use crate::integer::i8_diff;
 use crate::num::traits::{WrappingAdd, WrappingMul, WrappingSub};
 
@@ -48,4 +50,10 @@ fn test_mul() {
     assert!(
         WrappingMul::wrapping_mul(100_u8, 200) == WrappingMul::wrapping_mul(noop(100), noop(200)),
     );
+}
+
+#[test]
+fn test_implied_non_zero() -> Result<NonZero<BoundedInt<-0x80, -1>>, NonZero<BoundedInt<0, 0x7f>>> {
+    let x: NonZero<i8> = 5;
+    constrain::<_, 0>(x)
 }
