@@ -19,6 +19,7 @@ pub mod optimizations;
 pub mod panic;
 pub mod reorganize_blocks;
 pub mod scc;
+pub mod specialization;
 pub mod utils;
 
 #[cfg(test)]
