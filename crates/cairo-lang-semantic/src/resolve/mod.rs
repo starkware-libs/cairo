@@ -959,6 +959,10 @@ impl<'db> Resolver<'db> {
                     mark(&mut self.resolved_items, db, segment, parent);
                     parent
                 }
+                ModuleId::MacroCall { id: _, generated_file_id: _ } => {
+                    return Some(Err(diagnostics
+                        .report(segment.stable_ptr(db), SuperNotSupportedInMacroCallModule)));
+                }
             };
         }
         (module_id != self.active_module_file_id(macro_context_modifier).0).then_some(Ok(module_id))
