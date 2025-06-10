@@ -1696,10 +1696,15 @@ impl Ord for ImplOrModuleById {
                     (ModuleId::CrateRoot(crate_id), ModuleId::CrateRoot(other_crate_id)) => {
                         crate_id.get_internal_id().cmp(other_crate_id.get_internal_id())
                     }
-                    (ModuleId::CrateRoot(_), ModuleId::Submodule(_)) => std::cmp::Ordering::Less,
-                    (ModuleId::Submodule(_), ModuleId::CrateRoot(_)) => std::cmp::Ordering::Greater,
+                    (ModuleId::CrateRoot(_), _) => std::cmp::Ordering::Less,
+                    (_, ModuleId::CrateRoot(_)) => std::cmp::Ordering::Greater,
                     (ModuleId::Submodule(module_id), ModuleId::Submodule(other_module_id)) => {
                         module_id.get_internal_id().cmp(other_module_id.get_internal_id())
+                    }
+                    (ModuleId::Submodule(_), _) => std::cmp::Ordering::Less,
+                    (_, ModuleId::Submodule(_)) => std::cmp::Ordering::Greater,
+                    (ModuleId::MacroCall { id, .. }, ModuleId::MacroCall { id: other_id, .. }) => {
+                        id.get_internal_id().cmp(other_id.get_internal_id())
                     }
                 }
             }
