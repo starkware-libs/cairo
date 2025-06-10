@@ -25,18 +25,18 @@ pub mod generics;
 pub mod imp;
 pub mod impl_alias;
 pub mod implization;
+pub mod macro_call;
 pub mod macro_declaration;
 pub mod modifiers;
 pub mod module;
 pub mod module_type_alias;
 pub mod structure;
+#[cfg(test)]
+mod test;
 pub mod trt;
 pub mod type_aliases;
 pub mod us;
 pub mod visibility;
-
-#[cfg(test)]
-mod test;
 
 /// Tries to resolve a trait path. Reports a diagnostic if the path doesn't point to a trait.
 fn resolve_trait_path(
