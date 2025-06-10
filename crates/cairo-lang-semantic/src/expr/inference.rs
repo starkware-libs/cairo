@@ -10,8 +10,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
     GlobalUseId, ImplAliasId, ImplDefId, ImplFunctionId, ImplImplDefId, LanguageElementId,
-    LocalVarId, LookupItemId, MemberId, NamedLanguageElementId, ParamId, StructId, TraitConstantId,
-    TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
+    LocalVarId, LookupItemId, MacroCallId, MemberId, NamedLanguageElementId, ParamId, StructId,
+    TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -90,6 +90,7 @@ pub enum InferenceId {
     GenericParam(GenericParamId),
     GenericImplParamTrait(GenericParamId),
     GlobalUseStar(GlobalUseId),
+    MacroCall(MacroCallId),
     Canonical,
     /// For resolving that will not be used anywhere in the semantic model.
     NoContext,
