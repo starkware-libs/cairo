@@ -731,6 +731,11 @@ impl ModuleIdCached {
             ModuleId::Submodule(submodule_id) => {
                 ModuleIdCached::Submodule(SubmoduleIdCached::new(submodule_id, ctx))
             }
+            ModuleId::MacroCall { .. } => todo!(
+                "Caching for macro-generated modules is not supported yet. If you encounter this \
+                 error, it means the crate contains macro-generated modules that cannot currently \
+                 be cached."
+            ),
         }
     }
     fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> ModuleId<'db> {

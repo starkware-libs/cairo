@@ -584,6 +584,10 @@ fn module_main_file<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) -> Ma
                 db.module_dir(parent)?.file(db, name.intern(db))
             }
         }
+        ModuleId::MacroCall { generated_file_id, .. } => {
+            // This is a macro-generated module, so the main file is the generated file.
+            generated_file_id
+        }
     })
 }
 
@@ -610,6 +614,11 @@ fn module_dir<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) -> Maybe<Di
             let parent = submodule_id.parent_module(db);
             let name = submodule_id.name(db).intern(db);
             Ok(db.module_dir(parent)?.subdir(db, name))
+        }
+        ModuleId::MacroCall { id: macro_call_id, .. } => {
+            // This is a macro call, we return the directory for the file that contained the macro
+            // call, as it is considered the location of the macro itself.
+            db.module_dir(macro_call_id.module_file_id(db).0)
         }
     }
 }
