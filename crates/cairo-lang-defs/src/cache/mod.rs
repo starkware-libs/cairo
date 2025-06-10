@@ -715,6 +715,7 @@ impl ModuleIdCached {
             ModuleId::Submodule(submodule_id) => {
                 ModuleIdCached::Submodule(SubmoduleIdCached::new(submodule_id, ctx))
             }
+            ModuleId::MacroCall(_) => todo!(),
         }
     }
     fn embed(&self, ctx: &mut DefCacheLoadingContext<'_>) -> ModuleId {
