@@ -953,6 +953,9 @@ impl<'db> Resolver<'db> {
                     mark(&mut self.resolved_items, db, segment, parent);
                     parent
                 }
+                ModuleId::MacroCall(macro_call_id) => {
+                    todo!("Is it possible to have `super` in a macro call module?");
+                }
             };
         }
         (module_id != self.active_module_file_id(macro_context_modifier).0).then_some(Ok(module_id))
@@ -1586,6 +1589,7 @@ impl<'db> Resolver<'db> {
             // Making sure we don't look for it in `*` modules, to prevent cycles.
             return ResolvedBase::Module(self.prelude_submodule_ex(macro_context_modifier));
         }
+
         // If an item with this name is found in one of the 'use *' imports, use the module that
         match self.resolve_path_using_use_star(module_id, identifier) {
             UseStarResult::UniquePathFound(inner_module_item) => {
