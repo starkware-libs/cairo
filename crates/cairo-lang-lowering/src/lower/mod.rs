@@ -1831,6 +1831,9 @@ fn add_capture_destruct_impl(
     location: StableLocation,
 ) -> Maybe<()> {
     let capture_var = &ctx.variables.variables[capture_var_usage.var_id];
+
+
+
     // Skipping generation for the case of `Drop`.
     let Some(Ok(impl_id)) = [&capture_var.destruct_impl, &capture_var.panic_destruct_impl]
         .iter()
