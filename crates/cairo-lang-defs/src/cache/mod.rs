@@ -618,6 +618,8 @@ impl ModuleDataCached {
                 .collect(),
 
             generated_file_aux_data: self.generated_file_aux_data.into(),
+            // TODO(Gil): Handle macro calls.
+            macro_calls: Default::default(),
         }
     }
 }
