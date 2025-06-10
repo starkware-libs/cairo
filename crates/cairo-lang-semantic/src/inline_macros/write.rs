@@ -389,7 +389,7 @@ impl FormattingInfo {
 
         self.flush_pending_chars(builder, &mut pending_chars, ident_count);
         self.add_indentation(builder, ident_count);
-        builder.add_str("core::result::Result::<(), core::fmt::Error>::Ok(())\n");
+        builder.add_str("core::result::Result::<(), core::fmt::Error>::Ok\n");
         while ident_count > 1 {
             ident_count -= 1;
             self.add_indentation(builder, ident_count);
