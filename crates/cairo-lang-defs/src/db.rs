@@ -79,6 +79,8 @@ pub trait DefsGroup: ParserGroup {
     #[salsa::interned]
     fn intern_macro_declaration(&self, id: MacroDeclarationLongId) -> MacroDeclarationId;
     #[salsa::interned]
+    fn intern_macro_call(&self, id: MacroCallLongId) -> MacroCallId;
+    #[salsa::interned]
     fn intern_param(&self, id: ParamLongId) -> ParamId;
     #[salsa::interned]
     fn intern_generic_param(&self, id: GenericParamLongId) -> GenericParamId;
@@ -294,6 +296,18 @@ pub trait DefsGroup: ParserGroup {
         &self,
         macro_declaration_id: MacroDeclarationId,
     ) -> Maybe<Option<ast::ItemMacroDeclaration>>;
+    /// Returns the macro calls in the module.
+    fn module_macro_calls(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<Arc<OrderedHashMap<MacroCallId, ast::ItemInlineMacro>>>;
+    /// Returns the IDs of the macro calls in the module.
+    fn module_macro_calls_ids(&self, module_id: ModuleId) -> Maybe<Arc<[MacroCallId]>>;
+    /// Returns the macro call by its ID.
+    fn module_macro_call_by_id(
+        &self,
+        macro_call_id: MacroCallId,
+    ) -> Maybe<Option<ast::ItemInlineMacro>>;
     fn module_ancestors(&self, module_id: ModuleId) -> OrderedHashSet<ModuleId>;
     fn module_generated_file_aux_data(
         &self,
@@ -499,6 +513,8 @@ pub struct ModuleData {
     pub(crate) macro_declarations:
         Arc<OrderedHashMap<MacroDeclarationId, ast::ItemMacroDeclaration>>,
     pub(crate) global_uses: Arc<OrderedHashMap<GlobalUseId, ast::UsePathStar>>,
+    /// Calls to inline macros in the module (only those that were not handled by plugins).
+    pub(crate) macro_calls: Arc<OrderedHashMap<MacroCallId, ast::ItemInlineMacro>>,
 
     pub(crate) files: Arc<[FileId]>,
     /// Generation info for each file. Virtual files have Some. Other files have None.
@@ -571,6 +587,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
     let mut extern_types = OrderedHashMap::default();
     let mut extern_functions = OrderedHashMap::default();
     let mut macro_declarations = OrderedHashMap::default();
+    let mut macro_calls = OrderedHashMap::default();
     let mut global_uses = OrderedHashMap::default();
     let mut aux_data = Vec::new();
     let mut files = Vec::new();
@@ -673,16 +690,21 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     macro_declarations.insert(item_id, macro_declaration);
                     items.push(ModuleItemId::MacroDeclaration(item_id));
                 }
-                ast::ModuleItem::InlineMacro(inline_macro_ast) => plugin_diagnostics.push((
-                    module_file_id,
-                    PluginDiagnostic::error(
-                        inline_macro_ast.stable_ptr(db),
-                        format!(
-                            "Unknown inline item macro: '{}'.",
-                            inline_macro_ast.path(db).as_syntax_node().get_text(db)
+                ast::ModuleItem::InlineMacro(inline_macro_ast) => {
+                    let item_id =
+                        MacroCallLongId(module_file_id, inline_macro_ast.stable_ptr(db)).intern(db);
+                    macro_calls.insert(item_id, inline_macro_ast.clone());
+                    plugin_diagnostics.push((
+                        module_file_id,
+                        PluginDiagnostic::error(
+                            inline_macro_ast.stable_ptr(db),
+                            format!(
+                                "Unknown inline item macro: '{}'.",
+                                inline_macro_ast.path(db).as_syntax_node().get_text(db)
+                            ),
                         ),
-                    ),
-                )),
+                    ));
+                }
                 ast::ModuleItem::HeaderDoc(_) => {}
                 ast::ModuleItem::Missing(_) => {}
             }
@@ -703,6 +725,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         extern_types: extern_types.into(),
         extern_functions: extern_functions.into(),
         macro_declarations: macro_declarations.into(),
+        macro_calls: macro_calls.into(),
         global_uses: global_uses.into(),
         files: files.into(),
         generated_file_aux_data: aux_data.into(),
@@ -1246,6 +1269,29 @@ pub fn module_macro_declaration_by_id(
     let module_macro_declarations =
         db.module_macro_declarations(macro_declaration_id.module_file_id(db).0)?;
     Ok(module_macro_declarations.get(&macro_declaration_id).cloned())
+}
+
+/// Query implementation of [DefsGroup::module_macro_calls].
+pub fn module_macro_calls(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<Arc<OrderedHashMap<MacroCallId, ast::ItemInlineMacro>>> {
+    Ok(db.priv_module_data(module_id)?.macro_calls)
+}
+/// Query implementation of [DefsGroup::module_macro_calls_ids].
+pub fn module_macro_calls_ids(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<Arc<[MacroCallId]>> {
+    Ok(db.module_macro_calls(module_id)?.keys().copied().collect_vec().into())
+}
+/// Query implementation of [DefsGroup::module_macro_call_by_id].
+fn module_macro_call_by_id(
+    db: &dyn DefsGroup,
+    macro_call_id: MacroCallId,
+) -> Maybe<Option<ast::ItemInlineMacro>> {
+    let module_macro_calls = db.module_macro_calls(macro_call_id.module_file_id(db).0)?;
+    Ok(module_macro_calls.get(&macro_call_id).cloned())
 }
 
 /// Returns all the extern_functions of the given module.
