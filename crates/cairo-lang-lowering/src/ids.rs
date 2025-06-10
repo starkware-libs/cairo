@@ -6,7 +6,6 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
-use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::items::functions::ImplGenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
@@ -25,6 +24,7 @@ use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 use crate::Location;
 use crate::db::LoweringGroup;
 use crate::ids::semantic::substitution::SemanticRewriter;
+use crate::specialization::SpecializationConst;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FunctionWithBodyLongId {
@@ -473,7 +473,7 @@ pub struct SpecializedFunction {
     /// The base function.
     pub base: crate::ids::ConcreteFunctionWithBodyId,
     /// Optional const assignments for the arguments.
-    pub args: Arc<[Option<ConstValue>]>,
+    pub args: Arc<[Option<SpecializationConst>]>,
 }
 
 impl SpecializedFunction {

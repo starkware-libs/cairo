@@ -1,15 +1,41 @@
+use std::vec;
+
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_semantic::helper::ModuleHelper;
+use cairo_lang_semantic::items::constant::ConstValue;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::{GenericArgumentId, TypeId};
 use cairo_lang_utils::LookupIntern;
 use itertools::{Itertools, chain, zip_eq};
 
 use crate::blocks::BlocksBuilder;
 use crate::db::LoweringGroup;
-use crate::ids::{self, LocationId, SpecializedFunction};
+use crate::ids::{self, LocationId, SemanticFunctionIdEx, SpecializedFunction};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    Block, BlockEnd, DependencyType, Lowered, LoweringStage, Statement, StatementCall,
-    StatementConst, VarUsage, VariableId,
+    Block, BlockEnd, DependencyType, Lowered, LoweringStage, Statement, StatementCall, StatementConst, VarUsage, VariableId
 };
+
+// A const that can be used in function speicailization.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum SpecializationConst {
+    Const(ConstValue),
+    EmptyArray(TypeId),
+}
+
+impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for SpecializationConst {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn LoweringGroup + 'a),
+    ) -> std::fmt::Result {
+        match self {
+            SpecializationConst::Const(value) => write!(f, "{:?}", value.debug(db)),
+            SpecializationConst::EmptyArray(_) => write!(f, "array![]"),
+        }
+    }
+}
 
 /// Returns the lowering of a specialized function.
 pub fn specialized_function_lowered(
@@ -18,14 +44,39 @@ pub fn specialized_function_lowered(
 ) -> Maybe<Lowered> {
     let base = db.lowered_body(specialized.base, LoweringStage::Monomorphized)?;
     let base_semantic = specialized.base.base_semantic_function(db);
+
+    let array_new_fn = GenericFunctionId::Extern(
+        ModuleHelper::core(db).submodule("array").extern_function_id("array_new"),
+    );
+
     let mut variables =
         VariableAllocator::new(db, base_semantic.function_with_body_id(db), Default::default())?;
     let mut statement = vec![];
     let mut parameters = vec![];
+
     for (param, arg) in zip_eq(&base.parameters, specialized.args.iter()) {
         let var_id = variables.variables.alloc(base.variables[*param].clone());
         if let Some(arg) = arg {
-            statement.push(Statement::Const(StatementConst { value: arg.clone(), output: var_id }));
+            match arg {
+                SpecializationConst::Const(value) => {
+                    statement.push(Statement::Const(StatementConst {
+                        value: value.clone(),
+                        output: var_id,
+                    }));
+                }
+                SpecializationConst::EmptyArray(ty) => {
+                    statement.push(Statement::Call(StatementCall {
+                        function: array_new_fn
+                            .concretize(db, vec![GenericArgumentId::Type(*ty)])
+                            .lowered(db),
+                        inputs: vec![],
+                        with_coupon: false,
+                        outputs: vec![var_id],
+                        location: variables[var_id].location,
+                    }));
+                }
+            }
+
             continue;
         }
         parameters.push(var_id);
