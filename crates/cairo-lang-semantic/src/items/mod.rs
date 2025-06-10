@@ -25,6 +25,7 @@ pub mod generics;
 pub mod imp;
 pub mod impl_alias;
 pub mod implization;
+pub mod macro_call;
 pub mod macro_declaration;
 pub mod modifiers;
 pub mod module;
