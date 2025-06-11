@@ -409,7 +409,7 @@ fn generate_deploy_function(
         #[cfg(target: 'test')]
         pub fn deploy_for_test(
             class_hash: starknet::ClassHash,
-            deployment_params: starknet::DeploymentParams,
+            deployment_params: starknet::deployment::DeploymentParams,
             {param_declarations_str}
         ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {{    
             let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();

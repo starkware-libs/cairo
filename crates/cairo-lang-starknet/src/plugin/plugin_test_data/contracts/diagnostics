@@ -305,7 +305,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x3bd690d1a73da0d8c43f46ecc3a00
 #[cfg(target: 'test')]
 pub fn deploy_for_test(
     class_hash: starknet::ClassHash,
-    deployment_params: starknet::DeploymentParams,
+    deployment_params: starknet::deployment::DeploymentParams,
     
 ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {    
     let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
