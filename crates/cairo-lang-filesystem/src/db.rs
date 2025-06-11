@@ -450,7 +450,7 @@ pub fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Optio
         let last_origin =
             last.origin.as_span().expect("mappings with start origin should be filtered out");
         // Make sure, the origins are consecutive.
-        if mapping_origin.start < last_origin.end {
+        if mapping_origin.start > last_origin.end {
             break;
         }
 
