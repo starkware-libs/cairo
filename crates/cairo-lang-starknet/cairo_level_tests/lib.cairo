@@ -13,8 +13,6 @@ mod contracts;
 #[cfg(test)]
 mod deployment;
 #[cfg(test)]
-mod deployment_erc20;
-#[cfg(test)]
 mod erc20_test;
 #[cfg(test)]
 mod events;
