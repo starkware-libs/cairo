@@ -245,6 +245,26 @@ pub fn const_folding(
                                 .insert(arm.var_ids[0], VarInfo::Const(value.as_ref().clone()));
                         }
                     }
+                    MatchInfo::Value(info) => {
+                        if let Some(value) =
+                            ctx.as_int(info.input.var_id).and_then(|x| x.to_usize())
+                        {
+                            if let Some(arm) = info.arms.iter().find(|arm| {
+                                matches!(
+                                    &arm.arm_selector,
+                                    MatchArmSelector::Value(v) if v.value == value
+                                )
+                            }) {
+                                block.statements.push(Statement::StructConstruct(
+                                    StatementStructConstruct {
+                                        inputs: vec![],
+                                        output: arm.var_ids[0],
+                                    },
+                                ));
+                                block.end = BlockEnd::Goto(arm.block_id, Default::default());
+                            }
+                        }
+                    }
                     MatchInfo::Extern(info) => {
                         if let Some((extra_stmts, updated_end)) = ctx.handle_extern_block_end(info)
                         {
@@ -252,7 +272,6 @@ pub fn const_folding(
                             block.end = updated_end;
                         }
                     }
-                    MatchInfo::Value(..) => {}
                 }
             }
             BlockEnd::Return(ref mut inputs, _) => ctx.maybe_replace_inputs(inputs),
