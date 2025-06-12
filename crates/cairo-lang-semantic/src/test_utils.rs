@@ -182,10 +182,8 @@ pub fn setup_test_module_ex(
     let crate_id = setup_test_crate_ex(db, content, crate_settings, cached_crate);
     let module_id = ModuleId::CrateRoot(crate_id);
     let file_id = db.module_main_file(module_id).unwrap();
-
     let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(Upcast::upcast(db));
     let semantic_diagnostics = get_recursive_module_semantic_diagnostics(db, module_id).format(db);
-
     WithStringDiagnostics {
         value: TestModule { crate_id, module_id },
         diagnostics: format!("{syntax_diagnostics}{semantic_diagnostics}"),
@@ -227,6 +225,7 @@ pub fn setup_test_function_ex(
     };
     let (test_module, diagnostics) =
         setup_test_module_ex(db, &content, crate_settings, cache_crate).split();
+
     let generic_function_id = db
         .module_item_by_name(test_module.module_id, function_name.into())
         .expect("Failed to load module")
@@ -350,7 +349,6 @@ pub fn test_function_diagnostics(
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
-
     let diagnostics = setup_test_function_ex(
         db,
         inputs["function"].as_str(),
@@ -361,7 +359,6 @@ pub fn test_function_diagnostics(
     )
     .get_diagnostics();
     let error = verify_diagnostics_expectation(args, &diagnostics);
-
     TestRunnerResult {
         outputs: OrderedHashMap::from([("expected_diagnostics".into(), diagnostics)]),
         error,

@@ -473,7 +473,9 @@ impl ToDocumentableItemId<DocumentableItemId> for ResolvedGenericItem {
             ResolvedGenericItem::Module(ModuleId::CrateRoot(id)) => {
                 Some(DocumentableItemId::Crate(id))
             }
-            ResolvedGenericItem::Module(ModuleId::MacroCall(_)) => None,
+            ResolvedGenericItem::Module(ModuleId::MacroCall { id: _, generated_file_od: _ }) => {
+                None
+            }
 
             ResolvedGenericItem::Variant(variant) => Some(DocumentableItemId::Variant(variant.id)),
             ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(generic_impl_func)) => {

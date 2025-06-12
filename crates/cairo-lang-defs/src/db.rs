@@ -426,11 +426,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
                 db.module_dir(parent)?.file(db, format!("{name}.cairo").into())
             }
         }
-        ModuleId::MacroCall(macro_call_id) => {
-            // This is a macro call, we return the file where the macro call was defined.
-            // It can be either the file of the parent module or a plugin-generated virtual file.
-            db.module_file(macro_call_id.module_file_id(db))?
-        }
+        ModuleId::MacroCall { generated_file_od, .. } => generated_file_od,
     })
 }
 
@@ -452,10 +448,9 @@ fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
             let name = submodule_id.name(db);
             Ok(db.module_dir(parent)?.subdir(name))
         }
-        ModuleId::MacroCall(macro_call_id) => {
-            // This is a macro call, we return the directory where the macro call was defined.
-            // It can be either the directory of the parent module or a plugin-generated virtual
-            // file.
+        ModuleId::MacroCall { id: macro_call_id, .. } => {
+            // This is a macro call, we return the directory for the file that contained the macro
+            // call, as it is considered the location of the macro itself.
             db.module_dir(macro_call_id.module_file_id(db).0)
         }
     }

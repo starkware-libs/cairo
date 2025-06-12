@@ -155,7 +155,7 @@ fn visible_importables_in_module_ex(
 
                 (ImportableId::Submodule(module), module.name(db))
             }
-            ResolvedGenericItem::Module(ModuleId::MacroCall(_)) => {
+            ResolvedGenericItem::Module(ModuleId::MacroCall { id: _, generated_file_od: _ }) => {
                 todo!("Handle macro calls in visible_importables_in_module_ex");
             }
             ResolvedGenericItem::GenericConstant(item_id) => {
@@ -279,7 +279,7 @@ fn visible_importables_in_module_ex(
                     result.push((*item_id, format!("super::{path}")));
                 }
             }
-            ModuleId::MacroCall(_) => todo!(),
+            ModuleId::MacroCall { id: _, generated_file_od: _ } => todo!(),
         }
     }
     Some(result.into())
