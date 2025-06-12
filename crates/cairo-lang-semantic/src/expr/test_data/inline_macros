@@ -1438,10 +1438,10 @@ foo
 unknown_item_macro!();
 
 //! > expected_diagnostics
-error[E0006]: Macro not found.
+error: Inline macro `unknown_item_macro` not found.
  --> lib.cairo:1:1
 unknown_item_macro!();
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1464,3 +1464,59 @@ error: Call to `foo` which is not a macro.
  --> lib.cairo:1:1
 foo!();
 ^^^
+
+//! > ==========================================================================
+
+//! > Test code using an item defined in an item macro call.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar();
+    baz();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro create_empty_fn {
+    ($name:ident) => {
+        fn $name() {}
+    };
+}
+create_empty_fn!(bar);
+create_empty_fn!(baz);
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test code using an item defined in an item macro call inside another module.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    inner::bar();
+    inner::baz();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod inner {
+    macro create_empty_fn {
+        ($name:ident) => {
+        fn $name() {}
+    };
+    }
+    create_empty_fn!(bar);
+    create_empty_fn!(baz);
+}
+
+//! > expected_diagnostics

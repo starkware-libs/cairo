@@ -1,11 +1,13 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    LanguageElementId, LookupItemId, MacroCallId, MacroDeclarationId, ModuleFileId, ModuleItemId,
+    LanguageElementId, LookupItemId, MacroCallId, MacroDeclarationId, ModuleFileId, ModuleId,
+    ModuleItemId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe, skip_diagnostic};
-use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
+use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin, FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_parser::diagnostic;
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast::{MacroElement, MacroParam};
@@ -13,6 +15,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
@@ -666,8 +669,8 @@ fn are_user_defined_inline_macros_enabled(
 pub struct MacroCallData {
     /// The macro declaration that this macro call refers to, if found.
     pub macro_declaration_id: Option<MacroDeclarationId>,
-    /// The result of the macro expansion, if it was successful.
-    pub expansion_result: Option<MacroExpansionResult>,
+    /// The module to which the macro call was expanded to.
+    pub macro_call_module: Option<ModuleId>,
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
 }
 
@@ -705,27 +708,57 @@ pub fn priv_macro_call_data(
             None
         }
     };
-    let expansion_result = if let Some(macro_declaration_id) = macro_declaration_id {
+    let macro_call_module = if let Some(macro_declaration_id) = macro_declaration_id {
         let macro_rules = db.macro_declaration_rules(macro_declaration_id)?;
         let Some((rule, (captures, placeholder_to_rep_id))) = macro_rules.iter().find_map(|rule| {
             is_macro_rule_match(db, rule, &macro_call_syntax.arguments(db)).map(|res| (rule, res))
         }) else {
             return Err(diagnostics.report(
                 macro_call_syntax.stable_ptr(db),
-                SemanticDiagnosticKind::InlineMacroNoMatchingRule(macro_name.into()),
+                SemanticDiagnosticKind::InlineMacroNoMatchingRule(macro_name.clone().into()),
             ));
         };
         let mut matcher_ctx =
             MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
         let expanded_code = expand_macro_rule(db, rule, &mut matcher_ctx)?;
-        Some(MacroExpansionResult {
-            text: expanded_code.text,
-            code_mappings: expanded_code.code_mappings,
+        let new_file = FileLongId::Virtual(VirtualFile {
+            parent: Some(macro_call_syntax.stable_ptr(db).untyped().file_id(db)),
+            name: macro_name.into(),
+            content: expanded_code.text.clone().into(),
+            code_mappings: expanded_code.code_mappings.clone().into(),
+            kind: FileKind::Module,
         })
+        .intern(db);
+        Some(ModuleId::MacroCall(macro_call_id, new_file))
     } else {
         None
     };
-    Ok(MacroCallData { macro_declaration_id, expansion_result, diagnostics: diagnostics.build() })
+
+    Ok(MacroCallData { macro_declaration_id, macro_call_module, diagnostics: diagnostics.build() })
+}
+
+/// Cycle handling for the `priv_macro_call_data` query.
+pub fn priv_macro_call_data_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &salsa::Cycle,
+    macro_call_id: &MacroCallId,
+) -> Maybe<MacroCallData> {
+    // If we are in a cycle, we return an empty MacroCallData with no diagnostics.
+    // This is to prevent infinite recursion in case of cyclic macro calls.
+    let mut diagnostics = SemanticDiagnostics::default();
+    let macro_call_syntax = db.module_macro_call_by_id(*macro_call_id)?.to_maybe()?;
+    let macro_call_path = macro_call_syntax.path(db);
+    let macro_name = macro_call_path.as_syntax_node().get_text_without_trivia(db).to_string();
+
+    diagnostics.report(
+        macro_call_id.stable_ptr(db).untyped(),
+        SemanticDiagnosticKind::InlineMacroNotFound(macro_name.into()),
+    );
+    Ok(MacroCallData {
+        macro_declaration_id: None,
+        macro_call_module: None,
+        diagnostics: diagnostics.build(),
+    })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_call_diagnostics].
@@ -733,19 +766,44 @@ pub fn macro_call_diagnostics(
     db: &dyn SemanticGroup,
     macro_call_id: MacroCallId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    priv_macro_call_data(db, macro_call_id).map(|data| data.diagnostics).unwrap_or_default()
+    db.priv_macro_call_data(macro_call_id).map(|data| data.diagnostics).unwrap_or_default()
+}
+/// Cycle handling for the `macro_call_diagnostics` query.
+pub fn macro_call_diagnostics_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &salsa::Cycle,
+    macro_call_id: &MacroCallId,
+) -> Diagnostics<SemanticDiagnostic> {
+    priv_macro_call_data(db, *macro_call_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 /// Query implementation of [crate::db::SemanticGroup::macro_call_declaration_id].
 pub fn macro_call_declaration_id(
     db: &dyn SemanticGroup,
     macro_call_id: MacroCallId,
 ) -> Maybe<Option<MacroDeclarationId>> {
-    priv_macro_call_data(db, macro_call_id).map(|data| data.macro_declaration_id)
+    db.priv_macro_call_data(macro_call_id).map(|data| data.macro_declaration_id)
 }
-/// Query implementation of [crate::db::SemanticGroup::macro_call_expansion_result].
-pub fn macro_call_expansion_result(
+/// Cycle handling for the `macro_call_declaration_id` query.
+pub fn macro_call_declaration_id_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &salsa::Cycle,
+    macro_call_id: &MacroCallId,
+) -> Maybe<Option<MacroDeclarationId>> {
+    priv_macro_call_data(db, *macro_call_id).map(|data| data.macro_declaration_id)
+}
+/// Query implementation of [crate::db::SemanticGroup::macro_call_module_id].
+pub fn macro_call_module_id(
     db: &dyn SemanticGroup,
     macro_call_id: MacroCallId,
-) -> Maybe<Option<MacroExpansionResult>> {
-    priv_macro_call_data(db, macro_call_id).map(|data| data.expansion_result)
+) -> Maybe<Option<ModuleId>> {
+    db.priv_macro_call_data(macro_call_id).map(|data| data.macro_call_module)
+}
+/// Cycle handling for the `macro_call_module_id` query.
+pub fn macro_call_module_id_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &salsa::Cycle,
+    macro_call_id: &MacroCallId,
+) -> Maybe<Option<ModuleId>> {
+    // TODO(Dean): Not sure why forwarding fails, Handle cycles properly.
+    Ok(None)
 }
