@@ -1418,11 +1418,6 @@ foo
 unknown_item_macro!();
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Unknown inline item macro: 'unknown_item_macro'.
- --> lib.cairo:1:1
-unknown_item_macro!();
-^^^^^^^^^^^^^^^^^^^^^^
-
 error[E0006]: Macro not found.
  --> lib.cairo:1:1
 unknown_item_macro!();
@@ -1445,15 +1440,10 @@ foo
 foo!();
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Unknown inline item macro: 'foo'.
+error: Inline macro `foo` not found.
  --> lib.cairo:1:1
 foo!();
 ^^^^^^^
-
-error: Call to `foo` which is not a macro.
- --> lib.cairo:1:1
-foo!();
-^^^
 
 //! > ==========================================================================
 
@@ -1755,3 +1745,329 @@ macro use_self_path {
 const C: u8 = 1;
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test item macro expansion (should succeed in macro-generated module).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    macro_fn();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro macro_func {
+    () => {
+        fn macro_fn() {}
+    };
+}
+macro_func!();
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test item macro expansion fails when macro is not found.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro_func!();
+
+//! > expected_diagnostics
+error[E0006]: Macro not found.
+ --> lib.cairo:1:1
+macro_func!();
+^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test item macro expansion for struct (should succeed).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let s = MacroStruct { a: 42 };
+    let _ = s.a;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro macro_struct {
+    () => {
+        struct MacroStruct {
+            a: felt252,
+        }
+    };
+}
+macro_struct!();
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test item macro expansion for enum (should succeed).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let e = MacroEnum::A;
+    match e {
+        MacroEnum::A => {},
+        MacroEnum::B => {},
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro macro_enum {
+    () => {
+        enum MacroEnum {
+            A,
+            B,
+        }
+    };
+}
+macro_enum!();
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test semantic diagnostics propagation from item macro.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _num: ByteArray = item_level();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro macro_item_level {
+    () => {
+        fn item_level() -> felt252 { "100" }
+    };
+}
+macro_item_level!();
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::byte_array::ByteArray", found: "core::felt252".
+ --> lib.cairo:8:27
+    let _num: ByteArray = item_level();
+                          ^^^^^^^^^^^^
+
+error: Mismatched types. The type `core::felt252` cannot be created from a string literal.
+ --> lib.cairo[macro_item_level]:1:38
+        fn item_level() -> felt252 { "100" }
+                                     ^^^^^
+
+//! > ==========================================================================
+
+//! > Test macro with use-star resolution.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > function
+fn foo() {
+    let _x: MyType = MyType { value: 5 };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod macro_types {
+    pub struct MyType {
+        pub value: felt252,
+    }
+}
+
+macro macro_with_star_import {
+    () => {
+        use $callsite::macro_types::*;
+        fn use_type(x: MyType) -> felt252 {
+            x.value
+        }
+    };
+}
+
+macro_with_star_import!();
+
+//! > expected_diagnostics
+error[E0006]: Type not found.
+ --> lib.cairo:18:13
+    let _x: MyType = MyType { value: 5 };
+            ^^^^^^
+
+error[E0006]: Type not found.
+ --> lib.cairo:18:22
+    let _x: MyType = MyType { value: 5 };
+                     ^^^^^^
+
+//! > ==========================================================================
+
+//! > Test macro with use-star resolution (empty segments vector).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > function
+fn foo() {
+    let _x: MyType = MyType { value: 5 };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+pub struct MyType {
+    value: felt252,
+}
+
+
+macro macro_with_star_import {
+    () => {
+        use $callsite::*;
+        fn use_type(x: MyType) -> felt252 {
+            x.value
+        }
+    };
+}
+
+macro_with_star_import!();
+
+//! > expected_diagnostics
+error[E0006]: Type not found.
+ --> lib.cairo[macro_with_star_import]:2:24
+        fn use_type(x: MyType) -> felt252 {
+                       ^^^^^^
+
+error: Expected path after modifier.
+ --> lib.cairo[macro_with_star_import]:1:22
+        use $callsite::*;
+                     ^
+
+//! > ==========================================================================
+
+//! > Test macro context resolution through use-star.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > function
+fn foo() {
+    let _x: MacroType = MacroType { value: 5 };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod macro_types {
+    pub macro macro_with_inner_type {
+        () => {
+            pub struct MacroType {
+                pub value: felt252,
+            }
+        };
+    }
+
+    macro_with_inner_type!();
+}
+use macro_types::*;
+
+//! > expected_diagnostics
+error[E0006]: Type not found.
+ --> lib.cairo:14:13
+    let _x: MacroType = MacroType { value: 5 };
+            ^^^^^^^^^
+
+error[E0006]: Type not found.
+ --> lib.cairo:14:25
+    let _x: MacroType = MacroType { value: 5 };
+                        ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test macro context resolution through use-star.3223
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    static_module::generated_function();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod static_module {
+    macro inject_function {
+        () => {
+            pub fn generated_function() -> felt252 { 
+                999
+            }
+        };
+    }
+
+    inject_function!();
+}
+
+//! > expected_diagnostics
+error[E0006]: Function not found.
+ --> lib.cairo:13:20
+    static_module::generated_function();
+                   ^^^^^^^^^^^^^^^^^^
