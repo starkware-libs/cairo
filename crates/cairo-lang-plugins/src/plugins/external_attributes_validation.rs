@@ -10,7 +10,7 @@ pub struct ExternalAttributesValidationPlugin;
 
 pub const DOC_ATTR: &str = "doc";
 const HIDDEN_ATTR: &str = "hidden";
-const HIDDEN_ATTR_SYNTAX: &str = "#[doc(hidden)]";
+pub const HIDDEN_ATTR_SYNTAX: &str = "#[doc(hidden)]";
 const GROUP_ATTR: &str = "group";
 const GROUP_ATTR_SYNTAX: &str = "#[doc(group: \"group name\")]";
 

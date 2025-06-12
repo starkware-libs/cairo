@@ -1844,11 +1844,14 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__foo as foo;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<

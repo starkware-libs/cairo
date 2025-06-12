@@ -160,12 +160,15 @@ fn __wrapper__good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt2
 }
 
 
+#[doc(hidden)]
 pub mod __external {
 }
+#[doc(hidden)]
 pub mod __l1_handler {
     pub use super::__wrapper__good_l1_handler as good_l1_handler;
     pub use super::__wrapper__good_l1_handler_ignored as good_l1_handler_ignored;
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<

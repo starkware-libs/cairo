@@ -189,10 +189,13 @@ fn __wrapper__OwnableERC20Impl__constructor(mut data: Span::<felt252>) -> Span::
 }
 
 
+#[doc(hidden)]
 pub mod __external {
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
     pub use super::__wrapper__OwnableERC20Impl__constructor as constructor;
 }
@@ -504,10 +507,13 @@ fn __wrapper__OwnableERC20Impl__constructor(mut data: Span::<felt252>) -> Span::
 }
 
 
+#[doc(hidden)]
 pub mod __external {
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
     pub use super::__wrapper__OwnableERC20Impl__constructor as constructor;
 }

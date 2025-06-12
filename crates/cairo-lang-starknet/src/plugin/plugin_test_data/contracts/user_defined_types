@@ -198,10 +198,13 @@ use starknet::storage::Map as LegacyMap;
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x31eca83a5f161f61a5b51407b0d5138ae6f487b968308516a9cddc5b9d4d8da.try_into().unwrap();
 
 
+#[doc(hidden)]
 pub mod __external {
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<

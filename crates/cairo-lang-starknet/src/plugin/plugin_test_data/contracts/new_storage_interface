@@ -3675,6 +3675,7 @@ fn __wrapper__HelloStarknetImpl__get_queryable_enum(mut data: Span::<felt252>) -
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
     pub use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
@@ -3693,8 +3694,10 @@ pub mod __external {
     pub use super::__wrapper__HelloStarknetImpl__append_to_arr as append_to_arr;
     pub use super::__wrapper__HelloStarknetImpl__get_queryable_enum as get_queryable_enum;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
