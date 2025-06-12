@@ -183,7 +183,7 @@ pub fn module_all_used_uses(
 /// Query implementation of [SemanticGroup::module_attributes].
 pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<Vec<Attribute>> {
     Ok(match &module_id {
-        ModuleId::CrateRoot(_) | ModuleId::MacroCall(_) => vec![],
+        ModuleId::CrateRoot(_) | ModuleId::MacroCall(_, _) => vec![],
         ModuleId::Submodule(submodule_id) => {
             let module_ast = &db.module_submodules(submodule_id.parent_module(db))?[submodule_id];
 
