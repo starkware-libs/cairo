@@ -342,6 +342,8 @@ impl<'db> Resolver<'db> {
 
     pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
         let owning_crate_id = data.module_file_id.0.owning_crate(db);
+        // Check the data.module_file_id.module_id. If it's a macro call module, retrieve the macro
+        // call data associated with this macro call and set it in the resolver below.
         let settings = db.crate_config(owning_crate_id).map(|c| c.settings).unwrap_or_default();
         Self {
             owning_crate_id,
@@ -978,23 +980,25 @@ impl<'db> Resolver<'db> {
         item_type: NotFoundItemType,
     ) -> Maybe<ModuleItemInfo> {
         let db = self.db;
-        match self.db.module_item_info_by_name(*module_id, ident)? {
-            Some(info) => Ok(info),
-            None => match self.resolve_path_using_use_star(*module_id, identifier) {
-                UseStarResult::UniquePathFound(item_info) => Ok(item_info),
-                UseStarResult::AmbiguousPath(module_items) => {
-                    Err(diagnostics.report(identifier.stable_ptr(db), AmbiguousPath(module_items)))
-                }
-                UseStarResult::PathNotFound => {
-                    Err(diagnostics.report(identifier.stable_ptr(db), PathNotFound(item_type)))
-                }
-                UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
-                    Err(diagnostics.report(
-                        identifier.stable_ptr(db),
-                        ItemNotVisible(module_item_id, containing_modules),
-                    ))
-                }
-            },
+        if let Some(info) = self.db.module_item_info_by_name(*module_id, ident)? {
+            return Ok(info);
+        }
+        if let Some((info, _)) = self.resolve_item_in_macro_calls(*module_id, identifier) {
+            return Ok(info);
+        }
+        match self.resolve_path_using_use_star(*module_id, identifier) {
+            UseStarResult::UniquePathFound(item_info) => Ok(item_info),
+            UseStarResult::AmbiguousPath(module_items) => {
+                Err(diagnostics.report(identifier.stable_ptr(db), AmbiguousPath(module_items)))
+            }
+            UseStarResult::PathNotFound => {
+                Err(diagnostics.report(identifier.stable_ptr(db), PathNotFound(item_type)))
+            }
+            UseStarResult::ItemNotVisible(module_item_id, containing_modules) => Err(diagnostics
+                .report(
+                    identifier.stable_ptr(db),
+                    ItemNotVisible(module_item_id, containing_modules),
+                )),
         }
     }
 
@@ -1596,6 +1600,9 @@ impl<'db> Resolver<'db> {
             // Making sure we don't look for it in `*` modules, to prevent cycles.
             return ResolvedBase::Module(self.prelude_submodule_ex(macro_context_modifier));
         }
+        if let Some((_, module_id)) = self.resolve_item_in_macro_calls(module_id, identifier) {
+            return ResolvedBase::Module(module_id);
+        }
         // If an item with this name is found in one of the 'use *' imports, use the module that
         match self.resolve_path_using_use_star(module_id, identifier) {
             UseStarResult::UniquePathFound(inner_module_item) => {
@@ -1621,6 +1628,27 @@ impl<'db> Resolver<'db> {
 
     pub fn prelude_submodule(&self) -> ModuleId {
         self.prelude_submodule_ex(MacroContextModifier::None)
+    }
+
+    /// Trying to find an item in a module's item level macro calls expansions.
+    fn resolve_item_in_macro_calls(
+        &mut self,
+        module_id: ModuleId,
+        identifier: &ast::TerminalIdentifier,
+    ) -> Option<(ModuleItemInfo, ModuleId)> {
+        let db = self.db;
+        let ident = identifier.text(db);
+        for macro_call_id in self.db.module_macro_calls_ids(module_id).ok()?.iter() {
+            let Ok(macro_call_module_id) = self.db.macro_call_module_id(*macro_call_id) else {
+                continue;
+            };
+            let inner_item_info =
+                self.db.module_item_info_by_name(macro_call_module_id, ident.clone());
+            if let Ok(Some(inner_item_info)) = inner_item_info {
+                return Some((inner_item_info, macro_call_module_id));
+            }
+        }
+        None
     }
 
     /// Returns the crate's `prelude` submodule.
@@ -2458,7 +2486,7 @@ enum ResolvedBase {
     Crate(CrateId),
     /// The base module to address is the statement
     StatementEnvironment(ResolvedGenericItem),
-    /// The item is imported using global use.
+    /// The item is imactive_module_file_idported using global use.
     FoundThroughGlobalUse { item_info: ModuleItemInfo, containing_module: ModuleId },
     /// The base module is ambiguous.
     Ambiguous(Vec<ModuleItemId>),
