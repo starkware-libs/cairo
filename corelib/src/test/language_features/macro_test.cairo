@@ -555,3 +555,105 @@ mod unhygienic_expose_plugin_macro {
         assert_eq!(y, 2);
     }
 }
+
+mod item_level_macro {
+    macro define_fn {
+        ($name:ident) => {
+           fn $name() -> felt252 { 100 }
+
+        };
+    }
+
+    define_fn!(func_macro_fn);
+
+    #[test]
+    fn test_func_macro_fn() {
+        assert_eq!(func_macro_fn(), 100);
+    }
+
+    macro define_ty_and_getter {
+        ($ty:ident) => {
+            struct $ty { pub x: felt252 }
+            fn get_x(s: $ty) -> felt252 {
+                s.x
+            }
+        };
+    }
+
+    define_ty_and_getter!(MyStruct);
+
+    #[test]
+    fn test_define_ty_and_getter() {
+        let s = MyStruct { x: 42 };
+        assert_eq!(get_x(s), 42);
+    }
+
+    macro define_enum {
+        ($name: ident) => {
+            #[derive(PartialEq, Debug, Drop)]
+            enum $name {
+                A,
+                B,
+            }
+        };
+    }
+
+    define_enum!(MyEnum);
+
+    #[test]
+    fn test_enum_macro() {
+        let e = MyEnum::B;
+        assert_eq!(e, MyEnum::B);
+    }
+
+    macro generic_fn_macro {
+        () => {
+            fn id<T>(x: T) -> T { x }
+        };
+    }
+
+    generic_fn_macro!();
+
+    #[test]
+    fn test_generic_fn_macro() {
+        assert_eq!(id(5), 5);
+        assert_eq!(id(123), 123);
+    }
+
+    macro define_in_mod {
+        ($module:ident, $name:ident) => {
+        mod $module {
+            pub fn $name() -> felt252 { 77 }
+        
+        }
+    };
+    }
+
+    define_in_mod!(a, b);
+
+    #[test]
+    fn test_defined_in_mod_through_macro() {
+        assert_eq!(a::b(), 77);
+    }
+
+    macro define_outer_and_call_inner {
+        () => {
+            fn outer() -> felt252 { 10 }
+            $defsite::define_inner!();
+           };
+    }
+
+    macro define_inner {
+        () => {
+            fn inner() -> felt252 { 20 }
+        };
+    }
+
+    define_outer_and_call_inner!();
+
+    #[test]
+    fn test_nested_macro_expansion() {
+        assert_eq!(outer(), 10);
+        assert_eq!(inner(), 20);
+    }
+}
