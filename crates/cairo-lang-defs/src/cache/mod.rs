@@ -1839,7 +1839,6 @@ impl PluginDiagnosticCached {
     fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> PluginDiagnostic {
         PluginDiagnostic {
             stable_ptr: self.stable_ptr.embed(ctx),
-            relative_span: None,
             message: self.message,
             severity: match self.severity {
                 SeverityCached::Error => Severity::Error,
