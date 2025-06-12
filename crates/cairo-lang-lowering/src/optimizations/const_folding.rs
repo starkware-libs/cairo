@@ -241,8 +241,32 @@ pub fn const_folding(
                             ctx.var_info.get(&input.var_id)
                         {
                             let arm = &arms[variant.idx];
-                            ctx.var_info
-                                .insert(arm.var_ids[0], VarInfo::Const(value.as_ref().clone()));
+                            let value = value.as_ref().clone();
+                            let output = arm.var_ids[0];
+                            if ctx.variables[input.var_id].droppable.is_ok()
+                                && ctx.variables[output].copyable.is_ok()
+                            {
+                                if let Some(stmt) = if db.type_size_info(ctx.variables[output].ty)
+                                    == Ok(TypeSizeInformation::Other)
+                                {
+                                    Some(Statement::Const(StatementConst {
+                                        value: value.clone(),
+                                        output,
+                                    }))
+                                } else if matches!(&value, ConstValue::Struct(members, _) if members.is_empty())
+                                {
+                                    Some(Statement::StructConstruct(StatementStructConstruct {
+                                        inputs: vec![],
+                                        output,
+                                    }))
+                                } else {
+                                    None
+                                } {
+                                    block.statements.push(stmt);
+                                    block.end = BlockEnd::Goto(arm.block_id, Default::default());
+                                }
+                            }
+                            ctx.var_info.insert(output, VarInfo::Const(value));
                         }
                     }
                     MatchInfo::Value(info) => {

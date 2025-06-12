@@ -10361,7 +10361,7 @@ store_temp<RangeCheck>([0]) -> ([0]);
 store_temp<core::panics::PanicResult::<((),)>>([42]) -> ([42]);
 return([0], [42]);
 F87:
-enum_match<cairo_level_tests::contracts::libfuncs_coverage::IntLibfuncs::<core::integer::u256>>([1]) { fallthrough([2]) F87_B1([3]) F87_B4([4]) F87_B11([5]) F87_B17([6]) F87_B24([7]) };
+enum_match<cairo_level_tests::contracts::libfuncs_coverage::IntLibfuncs::<core::integer::u256>>([1]) { fallthrough([2]) F87_B1([3]) F87_B4([4]) F87_B11([5]) F87_B14([6]) F87_B18([7]) };
 branch_align() -> ();
 struct_deconstruct<Tuple<core::integer::u256, core::integer::u256>>([2]) -> ([8], [9]);
 u256_is_zero([9]) { fallthrough() F87_B0([10]) };
@@ -10456,103 +10456,69 @@ branch_align() -> ();
 struct_deconstruct<core::integer::u256>([5]) -> ([53], [54]);
 store_temp<u128>([53]) -> ([53]);
 function_call<user@core::internal::num::u128_inc>([53]) -> ([55]);
-struct_construct<Unit>() -> ([56]);
-enum_init<core::bool, 0>([56]) -> ([57]);
-enum_match<core::result::Result::<core::integer::u128, core::integer::u128>>([55]) { fallthrough([58]) F87_B12([59]) };
+enum_match<core::result::Result::<core::integer::u128, core::integer::u128>>([55]) { fallthrough([56]) F87_B12([57]) };
 branch_align() -> ();
-store_temp<u128>([58]) -> ([60]);
-store_temp<u128>([54]) -> ([61]);
-jump() { F87_B14() };
+store_temp<u128>([56]) -> ([58]);
+store_temp<u128>([54]) -> ([59]);
+jump() { F87_B17() };
 F87_B12:
 branch_align() -> ();
-bounded_int_trim_max<u128>([54]) { fallthrough() F87_B13([62]) };
+bounded_int_trim_max<u128>([54]) { fallthrough() F87_B13([60]) };
 branch_align() -> ();
-drop<core::bool>([57]) -> ();
-drop<u128>([59]) -> ();
-jump() { F87_B16() };
+drop<u128>([57]) -> ();
+function_call<user@core::panic_with_const_felt252::<39879774624079483812136948410799859986295>>() -> ([61]);
+enum_init<core::panics::PanicResult::<((),)>, 1>([61]) -> ([62]);
+store_temp<RangeCheck>([0]) -> ([0]);
+store_temp<core::panics::PanicResult::<((),)>>([62]) -> ([62]);
+return([0], [62]);
 F87_B13:
 branch_align() -> ();
 const_as_immediate<Const<BoundedInt<1, 1>, 1>>() -> ([63]);
-bounded_int_add<BoundedInt<0, 340282366920938463463374607431768211454>, BoundedInt<1, 1>>([62], [63]) -> ([64]);
+bounded_int_add<BoundedInt<0, 340282366920938463463374607431768211454>, BoundedInt<1, 1>>([60], [63]) -> ([64]);
 upcast<BoundedInt<1, 340282366920938463463374607431768211455>, u128>([64]) -> ([65]);
-store_temp<u128>([59]) -> ([60]);
-store_temp<u128>([65]) -> ([61]);
+store_temp<u128>([57]) -> ([58]);
+store_temp<u128>([65]) -> ([59]);
+jump() { F87_B17() };
 F87_B14:
-store_temp<core::bool>([57]) -> ([57]);
-enum_match<core::bool>([57]) { fallthrough([66]) F87_B15([67]) };
 branch_align() -> ();
-drop<Unit>([66]) -> ();
-store_temp<u128>([60]) -> ([68]);
-store_temp<u128>([61]) -> ([69]);
-jump() { F87_B21() };
+struct_deconstruct<core::integer::u256>([6]) -> ([66], [67]);
+store_temp<u128>([66]) -> ([66]);
+function_call<user@core::internal::num::u128_dec>([66]) -> ([68]);
+enum_match<core::result::Result::<core::integer::u128, core::integer::u128>>([68]) { fallthrough([69]) F87_B15([70]) };
+branch_align() -> ();
+store_temp<u128>([69]) -> ([58]);
+store_temp<u128>([67]) -> ([59]);
+jump() { F87_B17() };
 F87_B15:
 branch_align() -> ();
-drop<Unit>([67]) -> ();
-drop<u128>([61]) -> ();
-drop<u128>([60]) -> ();
+bounded_int_trim_min<u128>([67]) { fallthrough() F87_B16([71]) };
+branch_align() -> ();
+drop<u128>([70]) -> ();
+function_call<user@core::panic_with_const_felt252::<39879774624085075084607933104993585622903>>() -> ([72]);
+enum_init<core::panics::PanicResult::<((),)>, 1>([72]) -> ([73]);
+store_temp<RangeCheck>([0]) -> ([0]);
+store_temp<core::panics::PanicResult::<((),)>>([73]) -> ([73]);
+return([0], [73]);
 F87_B16:
-function_call<user@core::panic_with_const_felt252::<39879774624079483812136948410799859986295>>() -> ([70]);
-enum_init<core::panics::PanicResult::<((),)>, 1>([70]) -> ([71]);
-store_temp<RangeCheck>([0]) -> ([0]);
-store_temp<core::panics::PanicResult::<((),)>>([71]) -> ([71]);
-return([0], [71]);
+branch_align() -> ();
+const_as_immediate<Const<BoundedInt<1, 1>, 1>>() -> ([74]);
+bounded_int_sub<BoundedInt<1, 340282366920938463463374607431768211455>, BoundedInt<1, 1>>([71], [74]) -> ([75]);
+upcast<BoundedInt<0, 340282366920938463463374607431768211454>, u128>([75]) -> ([76]);
+store_temp<u128>([70]) -> ([58]);
+store_temp<u128>([76]) -> ([59]);
 F87_B17:
-branch_align() -> ();
-struct_deconstruct<core::integer::u256>([6]) -> ([72], [73]);
-store_temp<u128>([72]) -> ([72]);
-function_call<user@core::internal::num::u128_dec>([72]) -> ([74]);
-struct_construct<Unit>() -> ([75]);
-enum_init<core::bool, 0>([75]) -> ([76]);
-enum_match<core::result::Result::<core::integer::u128, core::integer::u128>>([74]) { fallthrough([77]) F87_B18([78]) };
-branch_align() -> ();
-store_temp<u128>([77]) -> ([79]);
-store_temp<u128>([73]) -> ([80]);
-jump() { F87_B20() };
+struct_construct<core::integer::u256>([58], [59]) -> ([77]);
+store_temp<core::integer::u256>([77]) -> ([77]);
+function_call<user@cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<core::integer::u256, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>>([77]) -> ([78]);
+store_temp<RangeCheck>([0]) -> ([0]);
+store_temp<core::panics::PanicResult::<((),)>>([78]) -> ([78]);
+return([0], [78]);
 F87_B18:
-branch_align() -> ();
-bounded_int_trim_min<u128>([73]) { fallthrough() F87_B19([81]) };
-branch_align() -> ();
-drop<core::bool>([76]) -> ();
-drop<u128>([78]) -> ();
-jump() { F87_B23() };
-F87_B19:
-branch_align() -> ();
-const_as_immediate<Const<BoundedInt<1, 1>, 1>>() -> ([82]);
-bounded_int_sub<BoundedInt<1, 340282366920938463463374607431768211455>, BoundedInt<1, 1>>([81], [82]) -> ([83]);
-upcast<BoundedInt<0, 340282366920938463463374607431768211454>, u128>([83]) -> ([84]);
-store_temp<u128>([78]) -> ([79]);
-store_temp<u128>([84]) -> ([80]);
-F87_B20:
-store_temp<core::bool>([76]) -> ([76]);
-enum_match<core::bool>([76]) { fallthrough([85]) F87_B22([86]) };
-branch_align() -> ();
-drop<Unit>([85]) -> ();
-store_temp<u128>([79]) -> ([68]);
-store_temp<u128>([80]) -> ([69]);
-F87_B21:
-struct_construct<core::integer::u256>([68], [69]) -> ([87]);
-store_temp<core::integer::u256>([87]) -> ([87]);
-function_call<user@cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<core::integer::u256, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>>([87]) -> ([88]);
-store_temp<RangeCheck>([0]) -> ([0]);
-store_temp<core::panics::PanicResult::<((),)>>([88]) -> ([88]);
-return([0], [88]);
-F87_B22:
-branch_align() -> ();
-drop<Unit>([86]) -> ();
-drop<u128>([80]) -> ();
-drop<u128>([79]) -> ();
-F87_B23:
-function_call<user@core::panic_with_const_felt252::<39879774624085075084607933104993585622903>>() -> ([89]);
-enum_init<core::panics::PanicResult::<((),)>, 1>([89]) -> ([90]);
-store_temp<RangeCheck>([0]) -> ([0]);
-store_temp<core::panics::PanicResult::<((),)>>([90]) -> ([90]);
-return([0], [90]);
-F87_B24:
 branch_align() -> ();
 store_temp<RangeCheck>([0]) -> ([0]);
 store_temp<cairo_level_tests::contracts::libfuncs_coverage::NumericLibfuncs::<core::integer::u256>>([7]) -> ([7]);
-function_call<user@cairo_level_tests::contracts::libfuncs_coverage::numeric_libfuncs::<core::integer::u256, core::integer::U256Add, core::integer::U256Sub, core::integer::U256Mul, core::integer::u256PartialEq, core::integer::u256Drop>>([0], [7]) -> ([91], [92]);
-return([91], [92]);
+function_call<user@cairo_level_tests::contracts::libfuncs_coverage::numeric_libfuncs::<core::integer::u256, core::integer::U256Add, core::integer::U256Sub, core::integer::U256Mul, core::integer::u256PartialEq, core::integer::u256Drop>>([0], [7]) -> ([79], [80]);
+return([79], [80]);
 F88:
 bounded_int_constrain<i8, 0>([0], [1]) { fallthrough([3], [4]) F88_B2([5], [6]) };
 branch_align() -> ();
