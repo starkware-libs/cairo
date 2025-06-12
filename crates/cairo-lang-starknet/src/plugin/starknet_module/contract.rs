@@ -4,12 +4,14 @@ use cairo_lang_defs::plugin_utils::not_legacy_macro_diagnostic;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
+use cairo_lang_syntax::node::ast::OptionTypeClause;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{
-    GetIdentifier, PathSegmentEx, QueryAttrs, is_single_arg_attr,
+    BodyItems, GetIdentifier, PathSegmentEx, QueryAttrs, is_single_arg_attr,
 };
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::extract_matches;
 use const_format::formatcp;
 use indoc::formatdoc;
 use smol_str::SmolStr;
@@ -327,18 +329,102 @@ pub(super) fn generate_contract_specific_code(
         handle_contract_item(db, diagnostics, &item, metadata, &mut generation_data);
     }
 
+    let test_class_hash_node = generate_test_class_hash(db, module_ast);
+
+    let deploy_function_node = generate_constructor_deploy_function(db, diagnostics, body);
+
+    generation_data.specific.test_config =
+        RewriteNode::new_modified(vec![test_class_hash_node, deploy_function_node]);
+
+    generation_data.into_rewrite_node(db, diagnostics)
+}
+
+/// Generates contract class hash for deploying contracts using cairo-test
+fn generate_test_class_hash(db: &dyn SyntaxGroup, module_ast: &ast::ItemModule) -> RewriteNode {
     let test_class_hash = format!(
         "0x{:x}",
         starknet_keccak(module_ast.as_syntax_node().get_text_without_trivia(db).as_bytes(),)
     );
 
-    generation_data.specific.test_config = RewriteNode::Text(formatdoc!(
+    RewriteNode::Text(formatdoc!(
         "#[cfg(target: 'test')]
             pub const TEST_CLASS_HASH: starknet::ClassHash = {test_class_hash}.try_into().unwrap();
 "
-    ));
+    ))
+}
 
-    generation_data.into_rewrite_node(db, diagnostics)
+/// Generate contract-specific deploy functions.
+fn generate_constructor_deploy_function(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    body: &ast::ModuleBody,
+) -> RewriteNode {
+    let mut deploy_function_node = RewriteNode::empty();
+
+    for item in body.items_vec(db) {
+        if let ast::ModuleItem::FreeFunction(func) = item {
+            if let Some(EntryPointKind::Constructor) =
+                EntryPointKind::try_from_function_with_body(db, diagnostics, &func)
+            {
+                let params = func.declaration(db).signature(db).parameters(db).elements(db);
+                let mut constructor_params = Vec::new();
+
+                for param in params.iter().skip(1) {
+                    let name = param.name(db).text(db);
+                    let type_clause =
+                        extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause);
+                    constructor_params.push((name, type_clause.ty(db)));
+                }
+
+                deploy_function_node = generate_deploy_function(db, constructor_params);
+
+                break;
+            }
+        }
+    }
+    deploy_function_node
+}
+
+/// Generates the deployment function for a contract.
+fn generate_deploy_function(
+    db: &dyn SyntaxGroup,
+    constructor_params: Vec<(SmolStr, ast::Expr)>,
+) -> RewriteNode {
+    let mut param_declarations = Vec::new();
+    let mut calldata_serialization = Vec::new();
+
+    for (name, ty) in constructor_params.clone() {
+        let type_text = ty.as_syntax_node().get_text_without_trivia(db);
+
+        param_declarations.push(format!("{name}: {type_text}"));
+        calldata_serialization
+            .push(format!("core::serde::Serde::<{type_text}>::serialize(@{name}, ref calldata);",));
+    }
+
+    let param_declarations_str = param_declarations.join(",\n");
+    let calldata_serialization_str = calldata_serialization.join("\n");
+
+    RewriteNode::Text(formatdoc!(
+        "
+        #[cfg(target: 'test')]
+        pub fn deploy_for_test(
+            class_hash: starknet::ClassHash,
+            deployment_params: starknet::deployment::DeploymentParams,
+            {param_declarations_str}
+        ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {{    
+            let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
+
+            {calldata_serialization_str}
+
+            starknet::syscalls::deploy_syscall(
+                class_hash,
+                deployment_params.salt,
+                core::array::ArrayTrait::span(@calldata),
+                deployment_params.deploy_from_zero,
+            )
+        }}
+    "
+    ))
 }
 
 /// Handles a contract entrypoint function.
