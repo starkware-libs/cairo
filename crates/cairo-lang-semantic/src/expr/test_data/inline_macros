@@ -1423,11 +1423,6 @@ foo
 unknown_item_macro!();
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Unknown inline item macro: 'unknown_item_macro'.
- --> lib.cairo:1:1
-unknown_item_macro!();
-^^^^^^^^^^^^^^^^^^^^^^
-
 error[E0006]: Macro not found.
  --> lib.cairo:1:1
 unknown_item_macro!();
@@ -1450,15 +1445,10 @@ foo
 foo!();
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Unknown inline item macro: 'foo'.
+error: Inline macro `foo` not found.
  --> lib.cairo:1:1
 foo!();
 ^^^^^^^
-
-error: Call to `foo` which is not a macro.
- --> lib.cairo:1:1
-foo!();
-^^^
 
 //! > ==========================================================================
 
@@ -1673,3 +1663,110 @@ error: 'super' cannot be used for the crate's root module.
  --> lib.cairo[super_path]:1:9
         super::some::path();
         ^^^^^
+
+//! > ==========================================================================
+
+//! > Test item macro expansion (should succeed in macro-generated module).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    macro_fn();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro macro_func {
+    () => {
+        fn macro_fn() {}
+    };
+}
+macro_func!();
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test item macro expansion fails when macro is not found.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro_func!();
+
+//! > expected_diagnostics
+error[E0006]: Macro not found.
+ --> lib.cairo:1:1
+macro_func!();
+^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test item macro expansion for struct (should succeed).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let s = MacroStruct { a: 42 };
+    let _ = s.a;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro macro_struct {
+    () => {
+        struct MacroStruct {
+            a: felt252,
+        }
+    };
+}
+macro_struct!();
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test item macro expansion for enum (should succeed).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let e = MacroEnum::A;
+    match e {
+        MacroEnum::A => {},
+        MacroEnum::B => {},
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro macro_enum {
+    () => {
+        enum MacroEnum {
+            A,
+            B,
+        }
+    };
+}
+macro_enum!();
+
+//! > expected_diagnostics
