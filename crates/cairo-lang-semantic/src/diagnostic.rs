@@ -903,6 +903,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InlineMacroNoMatchingRule(macro_name) => {
                 format!("No matching rule found in inline macro `{macro_name}`.")
             }
+            SemanticDiagnosticKind::MacroCallToNotAMacro(name) => {
+                format!("Call to `{name}` which is not a macro.")
+            }
             SemanticDiagnosticKind::UnknownGenericParam(name) => {
                 format!("Unknown generic parameter `{name}`.")
             }
@@ -1476,6 +1479,7 @@ pub enum SemanticDiagnosticKind {
     InlineMacroNotFound(SmolStr),
     InlineMacroFailed(SmolStr),
     InlineMacroNoMatchingRule(SmolStr),
+    MacroCallToNotAMacro(SmolStr),
     UnknownGenericParam(SmolStr),
     PositionalGenericAfterNamed,
     GenericArgDuplicate(SmolStr),

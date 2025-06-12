@@ -7,7 +7,7 @@ use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, GlobalUseId, ImplAliasId, ImplConstantDefId,
     ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, ImportableId,
-    InlineMacroExprPluginLongId, LanguageElementId, LookupItemId, MacroDeclarationId,
+    InlineMacroExprPluginLongId, LanguageElementId, LookupItemId, MacroCallId, MacroDeclarationId,
     MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId,
     TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId,
     VariantId,
@@ -1483,6 +1483,31 @@ pub trait SemanticGroup:
     /// Returns the rules semantic data of a macro declaration.
     #[salsa::invoke(items::macro_declaration::macro_declaration_rules)]
     fn macro_declaration_rules(&self, macro_id: MacroDeclarationId) -> Maybe<Vec<MacroRuleData>>;
+    // Macro call.
+    // ================
+    /// Returns the semantic data of a macro call.
+    #[salsa::invoke(items::macro_declaration::priv_macro_call_data)]
+    fn priv_macro_call_data(
+        &self,
+        macro_call_id: MacroCallId,
+    ) -> Maybe<items::macro_declaration::MacroCallData>;
+    /// Returns the macro declaration id of a macro call.
+    #[salsa::invoke(items::macro_declaration::macro_call_declaration_id)]
+    fn macro_call_declaration_id(
+        &self,
+        macro_call_id: MacroCallId,
+    ) -> Maybe<Option<MacroDeclarationId>>;
+    /// Returns the expansion result of a macro call.
+    #[salsa::invoke(items::macro_declaration::macro_call_expansion_result)]
+    fn macro_call_expansion_result(
+        &self,
+        macro_call_id: MacroCallId,
+    ) -> Maybe<Option<items::macro_declaration::MacroExpansionResult>>;
+    /// Returns the semantic diagnostics of a macro call.
+    #[salsa::invoke(items::macro_declaration::macro_call_diagnostics)]
+    fn macro_call_diagnostics(&self, macro_call_id: MacroCallId)
+    -> Diagnostics<SemanticDiagnostic>;
+
     // Generic type.
     // =============
     /// Returns the generic params of a generic type.
@@ -1791,6 +1816,9 @@ fn module_semantic_diagnostics(
     }
     for global_use in db.module_global_uses(module_id)?.keys() {
         diagnostics.extend(db.global_use_semantic_diagnostics(*global_use));
+    }
+    for macro_call in db.module_macro_calls_ids(module_id)?.iter() {
+        diagnostics.extend(db.macro_call_diagnostics(*macro_call));
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
     for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db)).iter() {
