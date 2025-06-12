@@ -254,9 +254,9 @@ impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
 fn test_analyzer_diagnostics() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
-    db.set_default_analyzer_plugins(Arc::new([
-        db.intern_analyzer_plugin(AnalyzerPluginLongId(Arc::new(NoU128RenameAnalyzerPlugin)))
-    ]));
+    db.set_default_analyzer_plugins_input(Arc::new([AnalyzerPluginLongId(Arc::new(
+        NoU128RenameAnalyzerPlugin,
+    ))]));
     let crate_id = setup_test_crate(
         db,
         indoc! {"
