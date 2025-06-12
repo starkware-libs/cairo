@@ -1742,11 +1742,6 @@ impl<'db> Ord for ImplOrModuleById<'db> {
                     (ModuleId::MacroCall { id, .. }, ModuleId::MacroCall { id: other_id, .. }) => {
                         id.get_internal_id().cmp(&other_id.get_internal_id())
                     }
-                    (ModuleId::Submodule(_), _) => std::cmp::Ordering::Less,
-                    (_, ModuleId::Submodule(_)) => std::cmp::Ordering::Greater,
-                    (ModuleId::MacroCall { id, .. }, ModuleId::MacroCall { id: other_id, .. }) => {
-                        id.get_internal_id().cmp(other_id.get_internal_id())
-                    }
                 }
             }
             (ImplOrModuleById::Impl(_), ImplOrModuleById::Module(_)) => std::cmp::Ordering::Less,
