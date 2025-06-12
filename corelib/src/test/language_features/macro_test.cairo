@@ -555,3 +555,105 @@ mod unhygienic_expose_plugin_macro {
         assert_eq!(y, 2);
     }
 }
+
+mod item_level_macro {
+    macro func_macro {
+        () => {
+           fn func_macro_fn() -> felt252 { 100 }
+        };
+    }
+
+    func_macro!();
+
+    #[test]
+    fn test_func_macro_fn() {
+        assert_eq!(func_macro_fn(), 100);
+    }
+
+    macro struct_and_fn_macro {
+        () => {
+            struct MyStruct { pub x: felt252 }
+            fn get_x(s: MyStruct) -> felt252 {
+                s.x
+            }
+        };
+    }
+
+    struct_and_fn_macro!();
+
+    #[test]
+    fn test_struct_and_fn_macro() {
+        let s = MyStruct { x: 42 };
+        assert_eq!(get_x(s), 42);
+    }
+
+    macro enum_macro {
+        () => {
+            enum MyEnum {
+                A,
+                B,
+            }
+        };
+    }
+
+    enum_macro!();
+
+    #[test]
+    fn test_enum_macro() {
+        let e = MyEnum::B;
+        match e {
+            MyEnum::A => assert_eq!(0, 1),
+            MyEnum::B => assert_eq!(1, 1),
+        }
+    }
+
+    macro generic_fn_macro {
+        () => {
+            fn id<T>(x: T) -> T { x }
+        };
+    }
+
+    generic_fn_macro!();
+
+    #[test]
+    fn test_generic_fn_macro() {
+        assert_eq!(id(5), 5);
+        assert_eq!(id(123), 123);
+    }
+
+    macro mod_macro {
+        () => {
+        mod generated_mod {
+            pub fn mod_fn() -> felt252 { 77 }            
+        }
+    };
+    }
+
+    mod_macro!();
+
+    #[test]
+    fn test_mod_macro_function() {
+        assert_eq!(generated_mod::mod_fn(), 77);
+    }
+
+    macro outer_macro {
+        () => {
+            fn outer_fn() -> felt252 { 10 }
+            $defsite::inner_macro!();
+           };
+    }
+
+    macro inner_macro {
+        () => {
+            fn inner_fn() -> felt252 { 20 }
+        };
+    }
+
+    outer_macro!();
+
+    #[test]
+    fn test_nested_macro_expansion() {
+        assert_eq!(outer_fn(), 10);
+        assert_eq!(inner_fn(), 20);
+    }
+}
