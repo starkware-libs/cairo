@@ -142,12 +142,15 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
     pub use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -920,12 +923,15 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
     pub use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<

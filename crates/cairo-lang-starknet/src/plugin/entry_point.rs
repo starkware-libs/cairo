@@ -1,5 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_plugins::plugins::HIDDEN_ATTR_SYNTAX;
 use cairo_lang_semantic::keyword::SELF_PARAM_KW;
 use cairo_lang_syntax::attribute::consts::IMPLICIT_PRECEDENCE_ATTR;
 use cairo_lang_syntax::node::ast::{
@@ -111,6 +112,7 @@ impl EntryPointsGenerationData {
 fn generate_submodule(module_name: &str, generated_functions_node: RewriteNode) -> RewriteNode {
     RewriteNode::interpolate_patched(
         &formatdoc! {"
+            {HIDDEN_ATTR_SYNTAX}
             pub mod {module_name} {{$generated_functions_node$
             }}"
         },

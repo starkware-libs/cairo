@@ -329,11 +329,14 @@ fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__get_data as get_data;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -933,11 +936,14 @@ fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__get_sum as get_sum;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -1583,11 +1589,14 @@ fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__get_sum as get_sum;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<

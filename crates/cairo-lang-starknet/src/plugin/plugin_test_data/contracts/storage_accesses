@@ -494,6 +494,7 @@ fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252>
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__IERC20Impl__get_name as get_name;
     pub use super::__wrapper__IERC20Impl__get_symbol as get_symbol;
@@ -506,8 +507,10 @@ pub mod __external {
     pub use super::__wrapper__IERC20Impl__write_info as write_info;
     pub use super::__wrapper__IERC20Impl__get_info as get_info;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
     pub use super::__wrapper__constructor as constructor;
 }
@@ -2415,6 +2418,7 @@ fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252>
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__IERC20Impl__get_name as get_name;
     pub use super::__wrapper__IERC20Impl__get_symbol as get_symbol;
@@ -2427,8 +2431,10 @@ pub mod __external {
     pub use super::__wrapper__IERC20Impl__write_info as write_info;
     pub use super::__wrapper__IERC20Impl__get_info as get_info;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
     pub use super::__wrapper__constructor as constructor;
 }

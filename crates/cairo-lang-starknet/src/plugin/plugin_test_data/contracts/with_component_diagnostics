@@ -268,10 +268,13 @@ use starknet::storage::Map as LegacyMap;
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x2943e6b272892c78655f823e0abb3da425a1ac0c3f9bdd70869a3f37bc54797.try_into().unwrap();
 
 
+#[doc(hidden)]
 pub mod __external {
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -658,10 +661,13 @@ use starknet::storage::Map as LegacyMap;
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0xe61d99740f46b06b2ccd91d014bc9f9acc438fec59d79dd30fd0d852e5210.try_into().unwrap();
 
 
+#[doc(hidden)]
 pub mod __external {
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -1036,10 +1042,13 @@ use starknet::storage::Map as LegacyMap;
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x14aaf6de6aff44d64b4c3609768860615e979fdd851d125bbdfc10597a50a1d.try_into().unwrap();
 
 
+#[doc(hidden)]
 pub mod __external {
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -1427,10 +1436,13 @@ use starknet::storage::Map as LegacyMap;
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x121a1470e2769fd2e9f4441ff7ab7e2ae96e0f4e0446116a0f29d76df75b33.try_into().unwrap();
 
 
+#[doc(hidden)]
 pub mod __external {
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -1861,10 +1873,13 @@ use starknet::storage::Map as LegacyMap;
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x13a81b6876baa1445c90fd69add3e928a4f6c6807e5227544ac6f6698c463b2.try_into().unwrap();
 
 
+#[doc(hidden)]
 pub mod __external {
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -2268,10 +2283,13 @@ use starknet::storage::Map as LegacyMap;
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x1092f63083af07b77ee426fd76d9695c3747a2e42571a914cee1dd17960254f.try_into().unwrap();
 
 
+#[doc(hidden)]
 pub mod __external {
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -2647,10 +2665,13 @@ use starknet::storage::Map as LegacyMap;
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x8618264598f52601eed9355f5b7c0fc7c8912d966e620eb0a2914ed8cb5c10.try_into().unwrap();
 
 
+#[doc(hidden)]
 pub mod __external {
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -3055,11 +3076,14 @@ fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__get_data as get_data;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -3505,11 +3529,14 @@ fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__get_data as get_data;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -4059,11 +4086,14 @@ fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__get_sum as get_sum;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<

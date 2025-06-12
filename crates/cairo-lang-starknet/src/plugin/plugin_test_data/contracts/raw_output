@@ -150,12 +150,15 @@ fn __wrapper__test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<f
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__test_raw_output as test_raw_output;
     pub use super::__wrapper__test_raw_output_with_spaces as test_raw_output_with_spaces;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
