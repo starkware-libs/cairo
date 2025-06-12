@@ -866,16 +866,6 @@ fn priv_module_data<'db>(
                     let item_id =
                         MacroCallLongId(module_file_id, inline_macro_ast.stable_ptr(db)).intern(db);
                     macro_calls.insert(item_id, inline_macro_ast.clone());
-                    plugin_diagnostics.push((
-                        module_file_id,
-                        PluginDiagnostic::error(
-                            inline_macro_ast.stable_ptr(db),
-                            format!(
-                                "Unknown inline item macro: '{}'.",
-                                inline_macro_ast.path(db).as_syntax_node().get_text(db)
-                            ),
-                        ),
-                    ));
                 }
                 ast::ModuleItem::HeaderDoc(_) => {}
                 ast::ModuleItem::Missing(_) => {}
