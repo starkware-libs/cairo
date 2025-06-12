@@ -1,8 +1,7 @@
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileInfo, FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
-use cairo_lang_utils::Intern;
 use indoc::indoc;
 use test_log::test;
 
@@ -11,7 +10,7 @@ use super::{DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder};
 // Test diagnostic.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 struct SimpleDiag {
-    file_id: FileId,
+    file_id: FileLongId,
 }
 impl DiagnosticEntry for SimpleDiag {
     type DbType = dyn FilesGroup;
@@ -35,17 +34,19 @@ impl DiagnosticEntry for SimpleDiag {
     }
 }
 
-fn setup() -> (FilesDatabaseForTesting, FileId) {
+fn setup() -> (FilesDatabaseForTesting, FileLongId) {
     let db_val = FilesDatabaseForTesting::default();
-    let file_id = FileLongId::Virtual(VirtualFile {
-        parent: None,
-        name: "dummy_file.sierra".into(),
-        content: "abcd\nefg.\n".into(),
-        code_mappings: [].into(),
-        kind: FileKind::Module,
-        original_item_removed: false,
-    })
-    .intern(&db_val);
+    let file_id = FileLongId::new(
+        &db_val,
+        FileInfo::Virtual(VirtualFile {
+            parent: None,
+            name: "dummy_file.sierra".into(),
+            content: "abcd\nefg.\n".into(),
+            code_mappings: [].into(),
+            kind: FileKind::Module,
+            original_item_removed: false,
+        }),
+    );
     (db_val, file_id)
 }
 
