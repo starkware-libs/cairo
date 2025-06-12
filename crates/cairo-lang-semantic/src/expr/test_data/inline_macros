@@ -1455,10 +1455,10 @@ error: Plugin diagnostic: Unknown inline item macro: 'foo'.
 foo!();
 ^^^^^^^
 
-error: Call to `foo` which is not a macro.
+error: Inline macro `foo` not found.
  --> lib.cairo:1:1
 foo!();
-^^^
+^^^^^^^
 
 //! > ==========================================================================
 
