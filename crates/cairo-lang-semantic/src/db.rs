@@ -1491,14 +1491,13 @@ pub trait SemanticGroup:
         &self,
         macro_call_id: MacroCallId,
     ) -> Maybe<items::macro_call::MacroCallData>;
-    /// Returns the macro declaration id of a macro call.
-    #[salsa::invoke(items::macro_call::macro_call_declaration_id)]
-    fn macro_call_declaration_id(
-        &self,
-        macro_call_id: MacroCallId,
-    ) -> Maybe<Option<MacroDeclarationId>>;
+    /// Returns the expansion result of a macro call.
+    #[salsa::invoke(items::macro_call::macro_call_module_id)]
+    #[salsa::cycle(items::macro_call::macro_call_module_id_cycle)]
+    fn macro_call_module_id(&self, macro_call_id: MacroCallId) -> Maybe<ModuleId>;
     /// Returns the semantic diagnostics of a macro call.
     #[salsa::invoke(items::macro_call::macro_call_diagnostics)]
+    #[salsa::cycle(items::macro_call::macro_call_diagnostics_cycle)]
     fn macro_call_diagnostics(&self, macro_call_id: MacroCallId)
     -> Diagnostics<SemanticDiagnostic>;
 
@@ -1816,6 +1815,11 @@ fn module_semantic_diagnostics(
     }
     for macro_call in db.module_macro_calls_ids(module_id)?.iter() {
         diagnostics.extend(db.macro_call_diagnostics(*macro_call));
+        if let Ok(macro_call_module) = db.macro_call_module_id(*macro_call) {
+            if let Ok(semantic_diags) = db.module_semantic_diagnostics(macro_call_module) {
+                diagnostics.extend(semantic_diags);
+            }
+        }
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
     for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db)).iter() {
