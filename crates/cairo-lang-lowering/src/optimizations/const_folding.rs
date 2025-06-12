@@ -544,13 +544,11 @@ impl ConstFoldingContext<'_> {
         let mut new_args = vec![];
         for arg in &call_stmt.inputs {
             if let Some(var_info) = self.var_info.get(&arg.var_id) {
-                let ty = self.variables[arg.var_id].ty;
-                // Skip zero-sized constants as they are not supported in sierra-gen.
-                if self.db.type_size_info(ty).ok()? != TypeSizeInformation::ZeroSized {
-                    if let Some(arg) = self.try_get_specialization_arg(var_info.clone(), ty) {
-                        const_arg.push(Some(arg));
-                        continue;
-                    }
+                if let Some(c) =
+                    self.try_get_specialization_arg(var_info.clone(), self.variables[arg.var_id].ty)
+                {
+                    const_arg.push(Some(c.clone()));
+                    continue;
                 }
             }
             const_arg.push(None);
@@ -1032,6 +1030,11 @@ impl ConstFoldingContext<'_> {
         var_info: VarInfo,
         ty: TypeId,
     ) -> Option<SpecializationArg> {
+        if self.db.type_size_info(ty).ok()? == TypeSizeInformation::ZeroSized {
+            // Skip zero-sized constants as they are not supported in sierra-gen.
+            return None;
+        }
+
         match var_info {
             VarInfo::Const(c) => Some(SpecializationArg::Const(c.clone())),
             VarInfo::Array(infos) if infos.is_empty() => {
@@ -1043,6 +1046,22 @@ impl ConstFoldingContext<'_> {
                     unreachable!("Expected a single type generic argument");
                 };
                 Some(SpecializationArg::EmptyArray(*inner_ty))
+            }
+            VarInfo::Struct(infos) => {
+                let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) =
+                    ty.lookup_intern(self.db)
+                else {
+                    unreachable!("Expected a concrete struct type");
+                };
+
+                let members = self.db.concrete_struct_members(concrete_struct).unwrap();
+                let struct_args = zip_eq(members.values(), infos)
+                    .map(|(member, opt_var_info)| {
+                        self.try_get_specialization_arg(opt_var_info?.clone(), member.ty)
+                    })
+                    .collect::<Option<Vec<_>>>()?;
+
+                Some(SpecializationArg::Struct(struct_args))
             }
             _ => None,
         }
