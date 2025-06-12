@@ -1493,12 +1493,18 @@ pub trait SemanticGroup:
     ) -> Maybe<items::macro_call::MacroCallData>;
     /// Returns the macro declaration id of a macro call.
     #[salsa::invoke(items::macro_call::macro_call_declaration_id)]
+    #[salsa::cycle(items::macro_call::macro_call_declaration_id_cycle)]
     fn macro_call_declaration_id(
         &self,
         macro_call_id: MacroCallId,
     ) -> Maybe<Option<MacroDeclarationId>>;
+    /// Returns the expansion result of a macro call.
+    #[salsa::invoke(items::macro_call::macro_call_module_id)]
+    #[salsa::cycle(items::macro_call::macro_call_module_id_cycle)]
+    fn macro_call_module_id(&self, macro_call_id: MacroCallId) -> Maybe<Option<ModuleId>>;
     /// Returns the semantic diagnostics of a macro call.
     #[salsa::invoke(items::macro_call::macro_call_diagnostics)]
+    #[salsa::cycle(items::macro_call::macro_call_diagnostics_cycle)]
     fn macro_call_diagnostics(&self, macro_call_id: MacroCallId)
     -> Diagnostics<SemanticDiagnostic>;
 

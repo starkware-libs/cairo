@@ -1701,11 +1701,13 @@ impl Ord for ImplOrModuleById {
                     (ModuleId::Submodule(module_id), ModuleId::Submodule(other_module_id)) => {
                         module_id.get_internal_id().cmp(other_module_id.get_internal_id())
                     }
-                    (ModuleId::Submodule(_), ModuleId::MacroCall(_)) => std::cmp::Ordering::Less,
-                    (ModuleId::MacroCall(_), ModuleId::Submodule(_)) => std::cmp::Ordering::Greater,
+                    (ModuleId::Submodule(_), ModuleId::MacroCall(_, _)) => std::cmp::Ordering::Less,
+                    (ModuleId::MacroCall(_, _), ModuleId::Submodule(_)) => {
+                        std::cmp::Ordering::Greater
+                    }
                     (
-                        ModuleId::MacroCall(macro_call_id),
-                        ModuleId::MacroCall(other_macro_call_id),
+                        ModuleId::MacroCall(macro_call_id, _),
+                        ModuleId::MacroCall(other_macro_call_id, _),
                     ) => macro_call_id.get_internal_id().cmp(other_macro_call_id.get_internal_id()),
                 }
             }
