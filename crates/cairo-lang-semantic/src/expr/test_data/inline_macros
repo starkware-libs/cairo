@@ -1418,11 +1418,6 @@ foo
 unknown_item_macro!();
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Unknown inline item macro: 'unknown_item_macro'.
- --> lib.cairo:1:1
-unknown_item_macro!();
-^^^^^^^^^^^^^^^^^^^^^^
-
 error[E0006]: Macro not found.
  --> lib.cairo:1:1
 unknown_item_macro!();
@@ -1445,15 +1440,10 @@ foo
 foo!();
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Unknown inline item macro: 'foo'.
+error: Inline macro `foo` not found.
  --> lib.cairo:1:1
 foo!();
 ^^^^^^^
-
-error: Call to `foo` which is not a macro.
- --> lib.cairo:1:1
-foo!();
-^^^
 
 //! > ==========================================================================
 

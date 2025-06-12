@@ -333,7 +333,6 @@ impl<'db> ModuleId<'db> {
         }
     }
 }
-
 impl<'db> DebugWithDb<'db> for ModuleId<'db> {
     type Db = dyn DefsGroup;
 

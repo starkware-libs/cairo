@@ -748,6 +748,13 @@ fn module_lowering_diagnostics<'db>(
             ModuleItemId::MacroDeclaration(_) => {}
         }
     }
+    for macro_call in db.module_macro_calls_ids(module_id)?.iter() {
+        if let Ok(macro_module_id) = db.macro_call_module_id(*macro_call) {
+            if let Ok(lowering_diags) = db.module_lowering_diagnostics(macro_module_id) {
+                diagnostics.extend(lowering_diags);
+            }
+        }
+    }
     Ok(diagnostics.build())
 }
 
