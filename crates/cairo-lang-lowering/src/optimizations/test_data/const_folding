@@ -5063,6 +5063,236 @@ End:
 
 //! > ==========================================================================
 
+//! > Propagate over match value.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> u8 {
+    match 5 {
+        0 => 1,
+        1 => 2,
+        2 => 3,
+        3 => 4,
+        4 => 5,
+        5 => 6,
+        6 => 7,
+        7 => 8,
+        8 => 9,
+        9 => 10,
+        10 => 11,
+        _ => 12,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 5
+End:
+  Match(match core::internal::bounded_int::downcast::<core::felt252, core::internal::bounded_int::BoundedInt::<0, 10>>(v0) {
+    Option::Some(v1) => blk1,
+    Option::None => blk13,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum.(v1) {
+    0(v2) => blk2,
+    1(v3) => blk3,
+    2(v4) => blk4,
+    3(v5) => blk5,
+    4(v6) => blk6,
+    5(v7) => blk7,
+    6(v8) => blk8,
+    7(v9) => blk9,
+    8(v10) => blk10,
+    9(v11) => blk11,
+    10(v12) => blk12,
+  })
+
+blk2:
+Statements:
+  (v13: core::integer::u8) <- 1
+End:
+  Goto(blk14, {v13 -> v14})
+
+blk3:
+Statements:
+  (v15: core::integer::u8) <- 2
+End:
+  Goto(blk14, {v15 -> v14})
+
+blk4:
+Statements:
+  (v16: core::integer::u8) <- 3
+End:
+  Goto(blk14, {v16 -> v14})
+
+blk5:
+Statements:
+  (v17: core::integer::u8) <- 4
+End:
+  Goto(blk14, {v17 -> v14})
+
+blk6:
+Statements:
+  (v18: core::integer::u8) <- 5
+End:
+  Goto(blk14, {v18 -> v14})
+
+blk7:
+Statements:
+  (v19: core::integer::u8) <- 6
+End:
+  Goto(blk14, {v19 -> v14})
+
+blk8:
+Statements:
+  (v20: core::integer::u8) <- 7
+End:
+  Goto(blk14, {v20 -> v14})
+
+blk9:
+Statements:
+  (v21: core::integer::u8) <- 8
+End:
+  Goto(blk14, {v21 -> v14})
+
+blk10:
+Statements:
+  (v22: core::integer::u8) <- 9
+End:
+  Goto(blk14, {v22 -> v14})
+
+blk11:
+Statements:
+  (v23: core::integer::u8) <- 10
+End:
+  Goto(blk14, {v23 -> v14})
+
+blk12:
+Statements:
+  (v24: core::integer::u8) <- 11
+End:
+  Goto(blk14, {v24 -> v14})
+
+blk13:
+Statements:
+  (v25: core::integer::u8) <- 12
+End:
+  Goto(blk14, {v25 -> v14})
+
+blk14:
+Statements:
+End:
+  Return(v14)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 5
+  (v1: core::internal::bounded_int::BoundedInt::<0, 10>) <- 5
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk2:
+Statements:
+  (v13: core::integer::u8) <- 1
+End:
+  Goto(blk14, {v13 -> v14})
+
+blk3:
+Statements:
+  (v15: core::integer::u8) <- 2
+End:
+  Goto(blk14, {v15 -> v14})
+
+blk4:
+Statements:
+  (v16: core::integer::u8) <- 3
+End:
+  Goto(blk14, {v16 -> v14})
+
+blk5:
+Statements:
+  (v17: core::integer::u8) <- 4
+End:
+  Goto(blk14, {v17 -> v14})
+
+blk6:
+Statements:
+  (v18: core::integer::u8) <- 5
+End:
+  Goto(blk14, {v18 -> v14})
+
+blk7:
+Statements:
+  (v19: core::integer::u8) <- 6
+End:
+  Goto(blk14, {v19 -> v14})
+
+blk8:
+Statements:
+  (v20: core::integer::u8) <- 7
+End:
+  Goto(blk14, {v20 -> v14})
+
+blk9:
+Statements:
+  (v21: core::integer::u8) <- 8
+End:
+  Goto(blk14, {v21 -> v14})
+
+blk10:
+Statements:
+  (v22: core::integer::u8) <- 9
+End:
+  Goto(blk14, {v22 -> v14})
+
+blk11:
+Statements:
+  (v23: core::integer::u8) <- 10
+End:
+  Goto(blk14, {v23 -> v14})
+
+blk12:
+Statements:
+  (v24: core::integer::u8) <- 11
+End:
+  Goto(blk14, {v24 -> v14})
+
+blk13:
+Statements:
+  (v25: core::integer::u8) <- 12
+End:
+  Goto(blk14, {v25 -> v14})
+
+blk14:
+Statements:
+End:
+  Return(v14)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
 //! > Array get at known index of known array - in range.
 
 //! > test_runner_name
