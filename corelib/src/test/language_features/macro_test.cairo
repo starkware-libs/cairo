@@ -542,3 +542,51 @@ mod unhygienic_expose_plugin_macro {
         assert_eq!(expose_var, 1);
     }
 }
+
+macro macro_func {
+    () => {
+        fn macro_fn() -> felt252 {
+            1234
+        }
+    };
+}
+macro_func!();
+
+#[test]
+fn test_macro_func() {
+    assert_eq!(macro_fn(), 1234);
+}
+
+macro macro_struct {
+    () => {
+        struct MacroStruct {
+            a: felt252,
+        }
+    };
+}
+macro_struct!();
+
+#[test]
+fn test_macro_struct() {
+    let s = MacroStruct { a: 42 };
+    assert_eq!(s.a, 42);
+}
+
+macro macro_enum {
+    () => {
+        enum MacroEnum {
+            A,
+            B,
+        }
+    };
+}
+macro_enum!();
+
+#[test]
+fn test_macro_enum() {
+    let e = MacroEnum::A;
+    match e {
+        MacroEnum::A => assert_eq!(1, 1),
+        MacroEnum::B => assert_eq!(2, 2),
+    }
+}

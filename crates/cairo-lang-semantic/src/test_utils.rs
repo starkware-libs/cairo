@@ -227,6 +227,7 @@ pub fn setup_test_function_ex(
     };
     let (test_module, diagnostics) =
         setup_test_module_ex(db, &content, crate_settings, cache_crate).split();
+
     let generic_function_id = db
         .module_item_by_name(test_module.module_id, function_name.into())
         .expect("Failed to load module")
@@ -350,7 +351,6 @@ pub fn test_function_diagnostics(
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
-
     let diagnostics = setup_test_function_ex(
         db,
         inputs["function"].as_str(),
@@ -361,7 +361,6 @@ pub fn test_function_diagnostics(
     )
     .get_diagnostics();
     let error = verify_diagnostics_expectation(args, &diagnostics);
-
     TestRunnerResult {
         outputs: OrderedHashMap::from([("expected_diagnostics".into(), diagnostics)]),
         error,
