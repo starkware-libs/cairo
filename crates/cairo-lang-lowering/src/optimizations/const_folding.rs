@@ -242,8 +242,18 @@ pub fn const_folding(
                             ctx.var_info.get(&input.var_id)
                         {
                             let arm = &arms[variant.idx];
-                            ctx.var_info
-                                .insert(arm.var_ids[0], VarInfo::Const(value.as_ref().clone()));
+                            let value = value.as_ref().clone();
+                            let output = arm.var_ids[0];
+                            if ctx.variables[input.var_id].droppable.is_ok()
+                                && ctx.variables[output].copyable.is_ok()
+                            {
+                                if let Some(stmt) = ctx.try_generate_const_statement(&value, output)
+                                {
+                                    block.statements.push(stmt);
+                                    block.end = BlockEnd::Goto(arm.block_id, Default::default());
+                                }
+                            }
+                            ctx.var_info.insert(output, VarInfo::Const(value));
                         }
                     }
                     MatchInfo::Value(info) => {
@@ -621,6 +631,22 @@ impl ConstFoldingContext<'_> {
     /// Adds 0 const to `var_info` and return a const statement for it.
     fn propagate_zero_and_get_statement(&mut self, output: VariableId) -> Statement {
         self.propagate_const_and_get_statement(BigInt::zero(), output, false)
+    }
+
+    /// Returns a statement that introduces the requested value into `output`, or None if fails.
+    fn try_generate_const_statement(
+        &self,
+        value: &ConstValue,
+        output: VariableId,
+    ) -> Option<Statement> {
+        if self.db.type_size_info(self.variables[output].ty) == Ok(TypeSizeInformation::Other) {
+            Some(Statement::Const(StatementConst { value: value.clone(), output }))
+        } else if matches!(value, ConstValue::Struct(members, _) if members.is_empty()) {
+            // Handling const empty structs - which are not supported in sierra-gen.
+            Some(Statement::StructConstruct(StatementStructConstruct { inputs: vec![], output }))
+        } else {
+            None
+        }
     }
 
     /// Handles the end of an extern block.
