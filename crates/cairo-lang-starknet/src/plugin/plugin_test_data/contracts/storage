@@ -198,7 +198,9 @@ lib.cairo:1:16
                ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl OuterTypeSubPointersDrop<> of core::traits::Drop::<OuterTypeSubPointers>;
+#[doc(hidden)]
 impl OuterTypeSubPointersCopy<> of core::traits::Copy::<OuterTypeSubPointers>;
 
 
@@ -207,7 +209,9 @@ lib.cairo:1:16
                ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl OuterTypeSubPointersMutDrop<> of core::traits::Drop::<OuterTypeSubPointersMut>;
+#[doc(hidden)]
 impl OuterTypeSubPointersMutCopy<> of core::traits::Copy::<OuterTypeSubPointersMut>;
 
 
@@ -448,7 +452,9 @@ lib.cairo:9:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -457,7 +463,9 @@ lib.cairo:9:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
