@@ -472,15 +472,18 @@ impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
+#[doc(group: "dispatchers")]
 pub trait GetSupplyDispatcherTrait<T> {
     fn get_total_supply_plus_1(self: T) -> u256;
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 pub struct GetSupplyDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl GetSupplyDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyDispatcher> {
     fn get_total_supply_plus_1(self: GetSupplyDispatcher) -> u256 {
         let mut __calldata__ = core::traits::Default::default();
@@ -499,11 +502,13 @@ impl GetSupplyDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyDispatcher> {
 
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 pub struct GetSupplyLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl GetSupplyLibraryDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyLibraryDispatcher> {
     fn get_total_supply_plus_1(self: GetSupplyLibraryDispatcher) -> u256 {
         let mut __calldata__ = core::traits::Default::default();
@@ -522,16 +527,19 @@ impl GetSupplyLibraryDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyLibrary
 
 }
 
+#[doc(group: "dispatchers")]
 pub trait GetSupplySafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn get_total_supply_plus_1(self: T) -> starknet::SyscallResult<u256>;
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 pub struct GetSupplySafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl GetSupplySafeLibraryDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeLibraryDispatcher> {
     fn get_total_supply_plus_1(self: GetSupplySafeLibraryDispatcher) -> starknet::SyscallResult<u256> {
         let mut __calldata__ = core::traits::Default::default();
@@ -553,11 +561,13 @@ impl GetSupplySafeLibraryDispatcherImpl of GetSupplySafeDispatcherTrait<GetSuppl
 }
 
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 pub struct GetSupplySafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl GetSupplySafeDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeDispatcher> {
     fn get_total_supply_plus_1(self: GetSupplySafeDispatcher) -> starknet::SyscallResult<u256> {
         let mut __calldata__ = core::traits::Default::default();
