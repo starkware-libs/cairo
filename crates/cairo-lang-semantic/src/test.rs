@@ -93,21 +93,20 @@ impl MacroPlugin for MappingsPlugin {
         let node = item_ast.as_syntax_node();
         let leaves = node.tokens(db);
         let code_mappings: Vec<CodeMapping> = leaves
-            .map(|node| {
-                let span = node.span(db);
-                let text = node.get_text(db);
-                let whitespace_prefix_len = text.chars().take_while(|c| c.is_whitespace()).count();
-                let whitespace_suffix_len =
-                    text.chars().rev().take_while(|c| c.is_whitespace()).count();
-                let origin_span = TextSpan {
-                    start: span
-                        .start
-                        .add_width(TextWidth::new_for_testing(whitespace_prefix_len as u32)),
-                    end: span
-                        .end
-                        .sub_width(TextWidth::new_for_testing(whitespace_suffix_len as u32)),
-                };
-                CodeMapping { span, origin: CodeOrigin::Span(origin_span) }
+            .flat_map(|node| {
+                let span_with_trivia = node.span(db);
+                let span_without_trivia = node.span_without_trivia(db);
+                let prefix =
+                    TextSpan { start: span_with_trivia.start, end: span_without_trivia.start };
+                let suffix = TextSpan { start: span_without_trivia.end, end: span_with_trivia.end };
+                vec![
+                    CodeMapping { span: prefix, origin: CodeOrigin::Span(prefix) },
+                    CodeMapping {
+                        span: span_without_trivia,
+                        origin: CodeOrigin::Span(span_without_trivia),
+                    },
+                    CodeMapping { span: suffix, origin: CodeOrigin::Span(suffix) },
+                ]
             })
             .collect_vec();
 
