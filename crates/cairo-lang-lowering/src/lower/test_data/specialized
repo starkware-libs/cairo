@@ -4,8 +4,8 @@
 test_specialized_function
 
 //! > function
-fn foo(x: felt252, y: felt252) -> felt252 {
-    x + y
+fn foo(ref arr: Array<felt252>, x: felt252, y: felt252) {
+    arr.append(x + y)
 }
 
 //! > function_name
@@ -21,13 +21,14 @@ foo
 Parameters:
 
 //! > full_path
-test::foo{None, 1, }
+test::foo{array![], None, 1, }
 
 //! > lowering
-Parameters: v0: core::felt252
+Parameters: v1: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 1
-  (v2: core::felt252) <- test::foo(v0, v1)
+  (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v2: core::felt252) <- 1
+  (v3: core::array::Array::<core::felt252>, v4: ()) <- test::foo(v0, v1, v2)
 End:
-  Return(v2)
+  Return(v3, v4)
