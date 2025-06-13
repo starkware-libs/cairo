@@ -7,6 +7,7 @@ use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
 use cairo_lang_utils::{LookupIntern, extract_matches, require};
@@ -316,22 +317,16 @@ impl<'a> Parser<'a> {
                 // that a macro is following and handle it similarly to any other module item. If
                 // not we skip the identifier. 'take_raw' is used here since it is not yet known if
                 // the identifier would be taken as a part of a macro, or skipped.
-                //
-                // TODO(Gil): Consider adding a lookahead capability to the lexer to avoid this.
-                let ident = self.take_raw();
+                let path = self.parse_path();
+                let post_path_offset = self.offset.add_width(self.current_width);
                 match self.peek().kind {
-                    SyntaxKind::TerminalNot => {
-                        // Complete the `take`ing of the identifier.
-                        let macro_name = self.add_trivia_to_terminal::<TerminalIdentifier>(ident);
-                        Ok(self.expect_item_inline_macro(attributes, macro_name).into())
-                    }
                     SyntaxKind::TerminalLParen
                     | SyntaxKind::TerminalLBrace
                     | SyntaxKind::TerminalLBrack => {
                         // This case is treated as an item inline macro with a missing bang ('!').
                         self.add_diagnostic(
                             ParserDiagnosticKind::ItemInlineMacroWithoutBang {
-                                identifier: ident.clone().text,
+                                identifier: path.identifier(self.db).to_string().into(),
                                 bracket_type: self.peek().kind,
                             },
                             TextSpan {
@@ -339,14 +334,16 @@ impl<'a> Parser<'a> {
                                 end: self.offset.add_width(self.current_width),
                             },
                         );
-                        let macro_name = self.add_trivia_to_terminal::<TerminalIdentifier>(ident);
                         Ok(self
                             .parse_item_inline_macro_given_bang(
                                 attributes,
-                                macro_name,
+                                path,
                                 TerminalNot::missing(self.db),
                             )
                             .into())
+                    }
+                    SyntaxKind::TerminalNot => {
+                        Ok(self.expect_item_inline_macro(attributes, path).into())
                     }
                     _ => {
                         if has_attrs {
@@ -367,12 +364,13 @@ impl<'a> Parser<'a> {
                                 post_visibility_offset,
                             );
                         }
-                        // Complete the `skip`ping of the identifier.
-                        self.append_skipped_token_to_pending_trivia(
-                            ident,
+                        // TODO(Dean): This produce a slightly worse diagnostic than before.
+                        self.skip_taken_node_with_offset(
+                            path,
                             ParserDiagnosticKind::SkippedElement {
                                 element_name: or_an_attribute!(MODULE_ITEM_DESCRIPTION).into(),
                             },
+                            post_path_offset,
                         );
                         // The token is already skipped, so it should not be skipped in the caller.
                         Err(TryParseFailure::DoNothing)
@@ -1340,22 +1338,22 @@ impl<'a> Parser<'a> {
     fn expect_item_inline_macro(
         &mut self,
         attributes: AttributeListGreen,
-        name: TerminalIdentifierGreen,
+        path: ExprPathGreen,
     ) -> ItemInlineMacroGreen {
         let bang = self.parse_token::<TerminalNot>();
-        self.parse_item_inline_macro_given_bang(attributes, name, bang)
+        self.parse_item_inline_macro_given_bang(attributes, path, bang)
     }
 
     /// Returns a GreenId of a node with an ItemInlineMacro kind, given the bang ('!') token.
     fn parse_item_inline_macro_given_bang(
         &mut self,
         attributes: AttributeListGreen,
-        name: TerminalIdentifierGreen,
+        path: ExprPathGreen,
         bang: TerminalNotGreen,
     ) -> ItemInlineMacroGreen {
         let token_tree_node = self.parse_token_tree_node();
         let semicolon = self.parse_token::<TerminalSemicolon>();
-        ItemInlineMacro::new_green(self.db, attributes, name, bang, token_tree_node, semicolon)
+        ItemInlineMacro::new_green(self.db, attributes, path, bang, token_tree_node, semicolon)
     }
 
     // ------------------------------- Expressions -------------------------------

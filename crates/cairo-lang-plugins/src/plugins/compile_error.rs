@@ -25,7 +25,9 @@ impl MacroPlugin for CompileErrorPlugin {
                     inline_macro_ast.as_syntax_node().stable_ptr(db),
                 ));
             };
-            if legacy_inline_macro_ast.name(db).text(db) == "compile_error" {
+            if legacy_inline_macro_ast.path(db).as_syntax_node().get_text_without_trivia(db)
+                == "compile_error"
+            {
                 let compilation_error_arg = extract_macro_single_unnamed_arg!(
                     db,
                     &legacy_inline_macro_ast,
