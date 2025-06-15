@@ -3,8 +3,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{Intern, LookupIntern};
 use salsa::Durability;
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -191,6 +191,9 @@ pub trait FilesGroup: ExternalFiles {
 
     /// Main input of the project. Lists all the crates configurations.
     #[salsa::input]
+    fn crate_configs_input(&self) -> Arc<OrderedHashMap<CrateLongId, CrateConfiguration>>;
+
+    /// Interned version of `crate_configs_input`.
     fn crate_configs(&self) -> Arc<OrderedHashMap<CrateId, CrateConfiguration>>;
 
     /// Overrides for file content. Mostly used by language server and tests.
@@ -199,12 +202,19 @@ pub trait FilesGroup: ExternalFiles {
     /// Change this mechanism to hold file_overrides on the db struct outside salsa mechanism,
     /// and invalidate manually.
     #[salsa::input]
+    fn file_overrides_input(&self) -> Arc<OrderedHashMap<FileLongId, Arc<str>>>;
+
+    /// Interned version of `file_overrides_input`.
     fn file_overrides(&self) -> Arc<OrderedHashMap<FileId, Arc<str>>>;
 
     // TODO(yuval): consider moving this to a separate crate, or rename this crate.
     /// The compilation flags.
     #[salsa::input]
+    fn flags_input(&self) -> Arc<OrderedHashMap<FlagLongId, Arc<Flag>>>;
+
+    /// Interned version of `flags_input`.
     fn flags(&self) -> Arc<OrderedHashMap<FlagId, Arc<Flag>>>;
+
     /// The `#[cfg(...)]` options.
     #[salsa::input]
     fn cfg_set(&self) -> Arc<CfgSet>;
@@ -228,10 +238,33 @@ pub trait FilesGroup: ExternalFiles {
 
 pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
     // Initialize inputs.
-    db.set_file_overrides(Arc::new(OrderedHashMap::default()));
-    db.set_crate_configs(Arc::new(OrderedHashMap::default()));
-    db.set_flags(Arc::new(OrderedHashMap::default()));
+    db.set_file_overrides_input(Arc::new(OrderedHashMap::default()));
+    db.set_crate_configs_input(Arc::new(OrderedHashMap::default()));
+    db.set_flags_input(Arc::new(OrderedHashMap::default()));
     db.set_cfg_set(Arc::new(CfgSet::new()));
+}
+
+pub fn file_overrides(db: &dyn FilesGroup) -> Arc<OrderedHashMap<FileId, Arc<str>>> {
+    let inp = db.file_overrides_input();
+    Arc::new(
+        inp.iter()
+            .map(|(file_id, content)| (file_id.clone().intern(db), content.clone()))
+            .collect(),
+    )
+}
+
+pub fn crate_configs(db: &dyn FilesGroup) -> Arc<OrderedHashMap<CrateId, CrateConfiguration>> {
+    let inp = db.crate_configs_input();
+    Arc::new(
+        inp.iter()
+            .map(|(crate_id, config)| (crate_id.clone().intern(db), config.clone()))
+            .collect(),
+    )
+}
+
+pub fn flags(db: &dyn FilesGroup) -> Arc<OrderedHashMap<FlagId, Arc<Flag>>> {
+    let inp = db.flags_input();
+    Arc::new(inp.iter().map(|(flag_id, flag)| (flag_id.clone().intern(db), flag.clone())).collect())
 }
 
 pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathBuf) {
@@ -260,30 +293,33 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
 pub trait FilesGroupEx: FilesGroup {
     /// Overrides file content. None value removes the override.
     fn override_file_content(&mut self, file: FileId, content: Option<Arc<str>>) {
-        let mut overrides = self.file_overrides().as_ref().clone();
+        let file = self.lookup_intern_file(file);
+        let mut overrides = self.file_overrides_input().as_ref().clone();
         match content {
             Some(content) => overrides.insert(file, content),
             None => overrides.swap_remove(&file),
         };
-        self.set_file_overrides(Arc::new(overrides));
+        self.set_file_overrides_input(Arc::new(overrides));
     }
     /// Sets the root directory of the crate. None value removes the crate.
     fn set_crate_config(&mut self, crt: CrateId, root: Option<CrateConfiguration>) {
-        let mut crate_configs = self.crate_configs().as_ref().clone();
+        let crt = self.lookup_intern_crate(crt);
+        let mut crate_configs = self.crate_configs_input().as_ref().clone();
         match root {
             Some(root) => crate_configs.insert(crt, root),
             None => crate_configs.swap_remove(&crt),
         };
-        self.set_crate_configs(Arc::new(crate_configs));
+        self.set_crate_configs_input(Arc::new(crate_configs));
     }
     /// Sets the given flag value. None value removes the flag.
     fn set_flag(&mut self, id: FlagId, value: Option<Arc<Flag>>) {
-        let mut flags = self.flags().as_ref().clone();
+        let flag = self.lookup_intern_flag(id);
+        let mut flags = self.flags_input().as_ref().clone();
         match value {
-            Some(value) => flags.insert(id, value),
-            None => flags.swap_remove(&id),
+            Some(value) => flags.insert(flag, value),
+            None => flags.swap_remove(&flag),
         };
-        self.set_flags(Arc::new(flags));
+        self.set_flags_input(Arc::new(flags));
     }
     /// Merges specified [`CfgSet`] into one already stored in this db.
     fn use_cfg(&mut self, cfg_set: &CfgSet) {
