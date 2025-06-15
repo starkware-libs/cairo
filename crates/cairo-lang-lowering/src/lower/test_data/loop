@@ -892,40 +892,25 @@ Statements:
 End:
   Match(match core::gas::withdraw_gas(v0, v1) {
     Option::Some(v3, v4) => blk1,
-    Option::None(v5, v6) => blk4,
+    Option::None(v5, v6) => blk2,
   })
 
 blk1:
 Statements:
-  (v7: core::integer::u8) <- 0
+  (v7: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v8: core::integer::u8) <- 0
+  (v9: ()) <- struct_construct()
+  (v10: (core::integer::u8, ())) <- struct_construct(v8, v9)
+  (v11: core::panics::PanicResult::<(core::integer::u8, ())>) <- PanicResult::Ok(v10)
 End:
-  Match(match core::integer::u8_is_zero(v7) {
-    IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v8) => blk3,
-  })
+  Return(v3, v7, v11)
 
 blk2:
 Statements:
-  (v9: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v10: ()) <- struct_construct()
-  (v11: (core::integer::u8, ())) <- struct_construct(v7, v10)
-  (v12: core::panics::PanicResult::<(core::integer::u8, ())>) <- PanicResult::Ok(v11)
+  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v13: core::panics::PanicResult::<(core::integer::u8, ())>) <- PanicResult::Err(v12)
 End:
-  Return(v3, v9, v12)
-
-blk3:
-Statements:
-  (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v14: core::RangeCheck, v15: core::gas::GasBuiltin, v16: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[45-203](v3, v13, v7)
-End:
-  Return(v14, v15, v16)
-
-blk4:
-Statements:
-  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v18: core::panics::PanicResult::<(core::integer::u8, ())>) <- PanicResult::Err(v17)
-End:
-  Return(v5, v6, v18)
+  Return(v5, v6, v13)
 
 //! > ==========================================================================
 

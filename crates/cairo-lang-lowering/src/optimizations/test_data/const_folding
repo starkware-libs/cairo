@@ -915,11 +915,9 @@ End:
 
 blk3:
 Statements:
+  (v7: core::integer::u64) <- 1
 End:
-  Match(match_enum(v4) {
-    Option::Some(v7) => blk4,
-    Option::None(v8) => blk5,
-  })
+  Goto(blk4, {})
 
 blk4:
 Statements:
@@ -946,11 +944,9 @@ End:
 blk7:
 Statements:
   (v16: core::integer::u64) <- struct_destructure(v14)
+  (v17: core::zeroable::NonZero::<core::integer::u64>) <- NonZero(1)
 End:
-  Match(match core::integer::u64_is_zero(v16) {
-    IsZeroResult::Zero => blk8,
-    IsZeroResult::NonZero(v17) => blk9,
-  })
+  Goto(blk9, {})
 
 blk8:
 Statements:
@@ -1141,11 +1137,9 @@ End:
 
 blk3:
 Statements:
+  (v8: ()) <- struct_construct()
 End:
-  Match(match_enum(v4) {
-    Option::Some(v7) => blk4,
-    Option::None(v8) => blk5,
-  })
+  Goto(blk5, {})
 
 blk4:
 Statements:

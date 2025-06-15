@@ -45,51 +45,24 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 10: 4 (store_temp<test::MyEnum>([5]) -> ([5]))
-  statement 31: 4 (u8_overflowing_add([0], [19], [20]) { fallthrough([24], [25]) 71([26], [27]) })
-  statement 36: 4 (store_temp<test::MyEnum>([10]) -> ([10]))
-  statement 57: 4 (u8_overflowing_add([15], [37], [38]) { fallthrough([42], [43]) 67([44], [45]) })
-  statement 65: 3 (store_temp<core::panics::PanicResult::<((),)>>([49]) -> ([49]))
-  statement 11: 2 (enum_match<test::MyEnum>([5]) { fallthrough([11]) 16([12]) 20([13]) 26([14]) })
-  statement 37: 2 (enum_match<test::MyEnum>([10]) { fallthrough([29]) 42([30]) 46([31]) 52([32]) })
-  statement 23: 1 (store_temp<u8>([16]) -> ([19]))
-  statement 24: 1 (store_temp<u8>([18]) -> ([20]))
-  statement 25: 1 (jump() { 31() })
-  statement 35: 1 (store_temp<RangeCheck>([24]) -> ([15]))
-  statement 55: 1 (store_temp<u8>([39]) -> ([37]))
-  statement 56: 1 (store_temp<u8>([41]) -> ([38]))
-  statement 58: 1 (branch_align() -> ())
-  statement 61: 1 (store_temp<RangeCheck>([42]) -> ([33]))
-  statement 66: 1 (return([33], [49]))
+  statement 3: 3 (store_temp<core::panics::PanicResult::<((),)>>([2]) -> ([2]))
+  statement 4: 1 (return([2]))
 Weight by concrete libfunc:
-  libfunc store_temp<test::MyEnum>: 8
-  libfunc u8_overflowing_add: 8
-  libfunc enum_match<test::MyEnum>: 4
-  libfunc store_temp<u8>: 4
   libfunc store_temp<core::panics::PanicResult::<((),)>>: 3
-  libfunc store_temp<RangeCheck>: 2
-  libfunc branch_align: 1
-  libfunc jump: 1
   return: 1
 Weight by generic libfunc:
-  libfunc store_temp: 17
-  libfunc u8_overflowing_add: 8
-  libfunc enum_match: 4
-  libfunc branch_align: 1
-  libfunc jump: 1
+  libfunc store_temp: 3
   return: 1
 Weight by user function (inc. generated):
-  function test::main: 32
+  function test::main: 4
 Weight by original user function (exc. generated):
-  function test::main: 32
+  function test::main: 4
 Weight by Cairo function:
-  function lib.cairo::foo: 17
-  function core::integer::U8Add::add: 11
   function lib.cairo::main: 4
 Weight by Sierra stack trace:
-  test::main: 32
+  test::main: 4
 Weight by Cairo stack trace:
-  test::main: 32
+  test::main: 4
 
 //! > ==========================================================================
 
