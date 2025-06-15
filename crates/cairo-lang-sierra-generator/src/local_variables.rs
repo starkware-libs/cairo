@@ -61,7 +61,6 @@ pub fn analyze_ap_changes(
         )),
         constants: Default::default(),
         aliases: Default::default(),
-        const_aliases: Default::default(),
         partial_param_parents: Default::default(),
     };
     let mut analysis = BackAnalysis::new(lowered_function, ctx);
@@ -70,14 +69,13 @@ pub fn analyze_ap_changes(
 
     let mut ctx = analysis.analyzer;
     let peeled_used_after_revoke: OrderedHashSet<_> =
-        ctx.used_after_revoke.iter().map(|var| ctx.peel_aliases(var)).copied().collect();
+        ctx.used_after_revoke.iter().map(|var| ctx.peel_aliases(*var, false)).collect();
     // Any used after revoke variable that might be revoked should be a local.
     let locals: OrderedHashSet<VariableId> = ctx
         .used_after_revoke
         .iter()
-        .filter(|var| ctx.might_be_revoked(&peeled_used_after_revoke, var))
-        .map(|var| ctx.peel_aliases(var))
-        .cloned()
+        .filter(|var| ctx.might_be_revoked(&peeled_used_after_revoke, **var))
+        .map(|var| ctx.peel_aliases(*var, false))
         .collect();
     let mut need_ap_alignment = OrderedHashSet::default();
     if !root_info.known_ap_change {
@@ -91,7 +89,7 @@ pub fn analyze_ap_changes(
             }
             info.demand.variables_introduced(&mut ctx, &info.introduced_vars, ());
             for var in info.demand.vars.keys() {
-                if ctx.might_be_revoked(&peeled_used_after_revoke, var) {
+                if ctx.might_be_revoked(&peeled_used_after_revoke, *var) {
                     need_ap_alignment.insert(*var);
                 }
             }
@@ -126,12 +124,29 @@ struct FindLocalsContext<'a> {
     /// Variables that are constants, i.e. created from Statement::Literal.
     constants: UnorderedHashSet<VariableId>,
     /// A mapping of variables which are the same in the context of finding locals.
-    aliases: UnorderedHashMap<VariableId, VariableId>,
-    /// Same as `aliases`, but for constants. This is excluding aliases which are created by
-    /// libfuncs with SameAsParam output, but do not accept constants as input.
-    const_aliases: UnorderedHashMap<VariableId, VariableId>,
+    aliases: UnorderedHashMap<VariableId, AliasTarget>,
     /// A mapping from partial param variables to the containing variable.
-    partial_param_parents: UnorderedHashMap<VariableId, VariableId>,
+    partial_param_parents: UnorderedHashMap<VariableId, AliasTarget>,
+}
+
+/// The value for alias mappings.
+#[derive(Copy, Clone, PartialEq)]
+struct AliasTarget {
+    /// The variable which is aliased.
+    var: VariableId,
+    /// Is the alias supported for consts.
+    allow_const: bool,
+}
+
+/// Try to follow an alias target through an alias mapping.
+/// If `for_const` is true will only go through mappings allowing consts.
+fn get_target(
+    mapping: &UnorderedHashMap<VariableId, AliasTarget>,
+    var: VariableId,
+    for_const: bool,
+) -> Option<VariableId> {
+    let target = mapping.get(&var)?;
+    (!for_const || target.allow_const).then_some(target.var)
 }
 
 pub type LoweredDemand = Demand<VariableId, ()>;
@@ -243,16 +258,8 @@ struct BranchInfo {
 
 impl<'a> FindLocalsContext<'a> {
     /// Given a variable that might be an alias follow aliases until we get the original variable.
-    pub fn peel_aliases(&'a self, mut var: &'a VariableId) -> &'a VariableId {
-        while let Some(alias) = self.aliases.get(var) {
-            var = alias;
-        }
-        var
-    }
-    /// Given a variable, that might be an alias of a const, follow  the const aliases until we get
-    /// the root variable.
-    pub fn peel_const_aliases(&'a self, mut var: &'a VariableId) -> &'a VariableId {
-        while let Some(alias) = self.const_aliases.get(var) {
+    pub fn peel_aliases(&'a self, mut var: VariableId, for_const: bool) -> VariableId {
+        while let Some(alias) = get_target(&self.aliases, var, for_const) {
             var = alias;
         }
         var
@@ -267,30 +274,31 @@ impl<'a> FindLocalsContext<'a> {
     pub fn might_be_revoked(
         &self,
         peeled_used_after_revoke: &OrderedHashSet<VariableId>,
-        var: &VariableId,
+        var: VariableId,
     ) -> bool {
-        if self.non_ap_based.contains(self.peel_aliases(var)) {
+        if self.non_ap_based.contains(&self.peel_aliases(var, false)) {
             return false;
         }
-        if self.constants.contains(self.peel_const_aliases(var)) {
+        if self.constants.contains(&self.peel_aliases(var, true)) {
             return false;
         }
         // In the case of partial params, we check if one of its ancestors is a local variable, or
         // will be used after the revoke, and thus will be used as a local variable. If that
         // is the case, then 'var' can not be revoked.
-        let mut parent_var = self.peel_aliases(var);
-        while let Some(grandparent) = self.partial_param_parents.get(parent_var) {
-            parent_var = self.peel_aliases(grandparent);
-            if self.non_ap_based.contains(parent_var)
-                || peeled_used_after_revoke.contains(parent_var)
+        let mut parent_var = self.peel_aliases(var, false);
+        while let Some(grandparent) = get_target(&self.partial_param_parents, parent_var, false) {
+            parent_var = self.peel_aliases(grandparent, false);
+            if self.non_ap_based.contains(&parent_var)
+                || peeled_used_after_revoke.contains(&parent_var)
             {
                 return false;
             }
         }
-        let mut parent_var = self.peel_const_aliases(var);
-        while let Some(grandparent) = self.partial_param_parents.get(parent_var) {
-            parent_var = self.peel_const_aliases(grandparent);
-            if self.constants.contains(parent_var) || peeled_used_after_revoke.contains(parent_var)
+        let mut parent_var = self.peel_aliases(var, true);
+        while let Some(grandparent) = get_target(&self.partial_param_parents, parent_var, true) {
+            parent_var = self.peel_aliases(grandparent, true);
+            if self.constants.contains(&parent_var)
+                || peeled_used_after_revoke.contains(&parent_var)
             {
                 return false;
             }
@@ -336,16 +344,22 @@ impl<'a> FindLocalsContext<'a> {
                     // TODO(Gil): Maintain the input variable state (const, add const, deferred or
                     // stored, similar to the `store_variables` algorithm) and don't alias only if
                     // the libfunc does not accept the specific state of the input variable.
-                    if params_signatures[param_idx].allow_const {
-                        self.const_aliases.insert(*var, input_vars[param_idx].var_id);
-                    }
-                    self.aliases.insert(*var, input_vars[param_idx].var_id);
+                    self.aliases.insert(
+                        *var,
+                        AliasTarget {
+                            var: input_vars[param_idx].var_id,
+                            allow_const: params_signatures[param_idx].allow_const,
+                        },
+                    );
                 }
                 OutputVarReferenceInfo::PartialParam { param_idx } => {
-                    if params_signatures[param_idx].allow_const {
-                        self.const_aliases.insert(*var, input_vars[param_idx].var_id);
-                    }
-                    self.partial_param_parents.insert(*var, input_vars[param_idx].var_id);
+                    self.partial_param_parents.insert(
+                        *var,
+                        AliasTarget {
+                            var: input_vars[param_idx].var_id,
+                            allow_const: params_signatures[param_idx].allow_const,
+                        },
+                    );
                 }
                 OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const)
                 | OutputVarReferenceInfo::NewLocalVar
@@ -414,17 +428,17 @@ impl<'a> FindLocalsContext<'a> {
                 )
             }
             lowering::Statement::Snapshot(statement_snapshot) => {
-                self.aliases.insert(statement_snapshot.original(), statement_snapshot.input.var_id);
-                self.aliases.insert(statement_snapshot.snapshot(), statement_snapshot.input.var_id);
-                self.const_aliases
-                    .insert(statement_snapshot.original(), statement_snapshot.input.var_id);
-                self.const_aliases
-                    .insert(statement_snapshot.snapshot(), statement_snapshot.input.var_id);
+                let target =
+                    AliasTarget { var: statement_snapshot.input.var_id, allow_const: true };
+                self.aliases.insert(statement_snapshot.original(), target);
+                self.aliases.insert(statement_snapshot.snapshot(), target);
                 BranchInfo { known_ap_change: true }
             }
             lowering::Statement::Desnap(statement_desnap) => {
-                self.aliases.insert(statement_desnap.output, statement_desnap.input.var_id);
-                self.const_aliases.insert(statement_desnap.output, statement_desnap.input.var_id);
+                self.aliases.insert(
+                    statement_desnap.output,
+                    AliasTarget { var: statement_desnap.input.var_id, allow_const: true },
+                );
                 BranchInfo { known_ap_change: true }
             }
         };
