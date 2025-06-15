@@ -287,14 +287,8 @@ impl<'a> FindLocalsContext<'a> {
                 return false;
             }
         }
-        let mut parent_var = self.peel_const_aliases(var);
-        while let Some(grandparent) = self.partial_param_parents.get(parent_var) {
-            parent_var = self.peel_const_aliases(grandparent);
-            if self.constants.contains(parent_var) || peeled_used_after_revoke.contains(parent_var)
-            {
-                return false;
-            }
-        }
+        // Not recursively peeling partial constants, as has low effect, and can cause bad merges
+        // in some instances.
         true
     }
 
