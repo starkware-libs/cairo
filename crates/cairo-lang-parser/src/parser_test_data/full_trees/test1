@@ -919,7 +919,11 @@ error: Missing tokens. Expected an item after attributes.
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #11 (kind: ItemInlineMacro)
     │   │   ├── attributes (kind: AttributeList) []
-    │   │   ├── name (kind: TokenIdentifier): 'inline_item_macro'
+    │   │   ├── path (kind: ExprPath)
+    │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │   └── segments (kind: ExprPathInner)
+    │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │           └── ident (kind: TokenIdentifier): 'inline_item_macro'
     │   │   ├── bang (kind: TokenNot): '!'
     │   │   ├── arguments (kind: TokenTreeNode)
     │   │   │   └── subtree (kind: ParenthesizedTokenTree)
@@ -3111,11 +3115,15 @@ error: Missing tokens. Expected an item after attributes.
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #11 (kind: ItemInlineMacro)
     │   │   ├── attributes (kind: AttributeList) []
-    │   │   ├── name (kind: TerminalIdentifier)
-    │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │   │   │   └── child #0 (kind: TokenNewline).
-    │   │   │   ├── token (kind: TokenIdentifier): 'inline_item_macro'
-    │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │   ├── path (kind: ExprPath)
+    │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │   └── segments (kind: ExprPathInner)
+    │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │           └── ident (kind: TerminalIdentifier)
+    │   │   │               ├── leading_trivia (kind: Trivia)
+    │   │   │               │   └── child #0 (kind: TokenNewline).
+    │   │   │               ├── token (kind: TokenIdentifier): 'inline_item_macro'
+    │   │   │               └── trailing_trivia (kind: Trivia) []
     │   │   ├── bang (kind: TerminalNot)
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenNot): '!'
