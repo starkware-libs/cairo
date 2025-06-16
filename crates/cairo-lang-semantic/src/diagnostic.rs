@@ -109,6 +109,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
     fn format(&self, db: &Self::DbType) -> String {
         match &self.kind {
+            SemanticDiagnosticKind::MacroExpansionDidNotReturnStatements => {
+                "Inline macro expansion did not produce valid statements; expression macros cannot \
+                 be used in statement position."
+                    .to_string()
+            }
             SemanticDiagnosticKind::ModuleFileNotFound(path) => {
                 format!("Module file not found. Expected path: {path}")
             }
@@ -156,6 +161,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     trait_impl_id.name(defs_db),
                     concrete_trait_id.debug(db)
                 )
+            }
+            SemanticDiagnosticKind::InlineMacroNotSingleExpr => {
+                "Inline macro expansion did not produce a single expression; statement macros \
+                 cannot be used in expression position."
+                    .to_string()
             }
             SemanticDiagnosticKind::GenericsNotSupportedInItem { scope, item_kind } => {
                 format!("Generic parameters are not supported in {scope} item {item_kind}.")
@@ -270,6 +280,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     trait_id.name(defs_db),
                     function_name,
                 )
+            }
+            SemanticDiagnosticKind::ParserErrorInMacroExpandedCode => {
+                "Parser error in macro-expanded code: Missing tokens. Expected an expression"
+                    .to_string()
             }
             SemanticDiagnosticKind::WrongParameterName {
                 impl_def_id,
@@ -1142,6 +1156,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum SemanticDiagnosticKind {
+    MacroExpansionDidNotReturnStatements,
     ModuleFileNotFound(String),
     Unsupported,
     UnknownLiteral,
@@ -1170,6 +1185,7 @@ pub enum SemanticDiagnosticKind {
         trait_impl_id: TraitImplId,
         concrete_trait_id: ConcreteTraitId,
     },
+    InlineMacroNotSingleExpr,
     GenericsNotSupportedInItem {
         scope: String,
         item_kind: String,
@@ -1220,6 +1236,7 @@ pub enum SemanticDiagnosticKind {
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
     },
+    ParserErrorInMacroExpandedCode,
     WrongParameterName {
         impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
