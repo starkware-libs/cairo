@@ -16,7 +16,7 @@ fn all_list_includes_all_supported() {
         lookup_allowed_libfuncs_list(ListSelector::ListName(BUILTIN_ALL_LIBFUNCS_LIST.to_string()))
             .unwrap()
             .allowed_libfuncs
-            .into_iter()
+            .into_keys()
             .map(|id| id.0)
             .collect::<BTreeSet<_>>(),
         CoreLibfunc::supported_ids()
@@ -37,7 +37,7 @@ fn libfunc_lists_include_only_supported_libfuncs() {
     ] {
         let allowed_libfuncs =
             lookup_allowed_libfuncs_list(ListSelector::ListName(list_name.to_string())).unwrap();
-        for libfunc_id in allowed_libfuncs.allowed_libfuncs {
+        for (libfunc_id, _) in allowed_libfuncs.allowed_libfuncs {
             assert!(
                 supported_ids.contains(&libfunc_id),
                 "libfunc {libfunc_id} from list {list_name} is not supported."
