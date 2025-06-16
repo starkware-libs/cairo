@@ -2154,7 +2154,7 @@ fn compute_method_function_call_data(
     // found. If >0 candidates are found these are ignored as they may describe, e.g., "errors"
     // indicating certain traits/impls/functions don't match, which is OK as we only look for one.
     let mut inference_errors = vec![];
-    let (candidates, mut fixed_expr, fixed_ty) = get_method_function_candidates(
+    let (candidates, mut fixed_expr, fixed_ty, deref_used) = get_method_function_candidates(
         ctx,
         candidate_traits,
         &func_name,
@@ -2191,6 +2191,17 @@ fn compute_method_function_call_data(
 
     let signature = ctx.db.trait_function_signature(trait_function_id).unwrap();
     let first_param = signature.params.into_iter().next().unwrap();
+
+    if deref_used && first_param.mutability == Mutability::Reference {
+        return Err(no_implementation_diagnostic(
+            self_ty,
+            func_name,
+            TraitInferenceErrors { traits_and_errors: inference_errors },
+        )
+        .map(|diag| ctx.diagnostics.report(method_syntax, diag))
+        .unwrap_or_else(skip_diagnostic));
+    }
+
     for _ in 0..n_snapshots {
         let ty = TypeLongId::Snapshot(fixed_expr.ty()).intern(ctx.db);
         let expr = Expr::Snapshot(ExprSnapshot { inner: fixed_expr.id, ty, stable_ptr: expr_ptr });
@@ -2201,7 +2212,8 @@ fn compute_method_function_call_data(
 }
 
 /// Return candidates for method functions that match the given arguments.
-/// Also returns the expression to be used as self for the method call and its type.
+/// Also returns the expression to be used as self for the method call, its type and whether deref
+/// was used.
 #[expect(clippy::too_many_arguments)]
 fn get_method_function_candidates(
     ctx: &mut ComputationContext<'_>,
@@ -2212,7 +2224,8 @@ fn get_method_function_candidates(
     expr_ptr: ExprPtr,
     self_ty: TypeId,
     inference_errors: &mut Vec<(TraitFunctionId, InferenceError)>,
-) -> Result<(Vec<TraitFunctionId>, ExprAndId, TypeId), cairo_lang_diagnostics::DiagnosticAdded> {
+) -> Result<(Vec<TraitFunctionId>, ExprAndId, TypeId, bool), cairo_lang_diagnostics::DiagnosticAdded>
+{
     let mut candidates = filter_candidate_traits(
         ctx,
         inference_errors,
@@ -2222,7 +2235,7 @@ fn get_method_function_candidates(
         method_syntax,
     );
     if !candidates.is_empty() {
-        return Ok((candidates, self_expr, self_ty));
+        return Ok((candidates, self_expr, self_ty, false));
     }
 
     let mut fixed_expr = self_expr;
@@ -2267,7 +2280,7 @@ fn get_method_function_candidates(
         }
     }
 
-    Ok((candidates, fixed_expr, fixed_ty))
+    Ok((candidates, fixed_expr, fixed_ty, true))
 }
 
 /// Computes the semantic model of a pattern.
