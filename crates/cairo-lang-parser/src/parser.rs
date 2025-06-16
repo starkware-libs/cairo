@@ -176,6 +176,26 @@ impl<'a> Parser<'a> {
         Expr::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
     }
 
+    /// Parses a file as a list of statements.
+    pub fn parse_file_statement_list(
+        db: &'a dyn SyntaxGroup,
+        diagnostics: &'a mut DiagnosticsBuilder<ParserDiagnostic>,
+        file_id: FileId,
+        text: &'a str,
+    ) -> StatementList {
+        let mut parser = Parser::new(db, file_id, text, diagnostics);
+        let statements = StatementList::new_green(
+            db,
+            parser.parse_list(Self::try_parse_statement, Self::is_eof, "statement"),
+        );
+        StatementList::from_syntax_node(db, SyntaxNode::new_root(db, file_id, statements.0))
+    }
+
+    /// Checks if the given kind is an end of file token.
+    pub fn is_eof(kind: SyntaxKind) -> bool {
+        kind == SyntaxKind::TerminalEndOfFile
+    }
+
     /// Parses a token stream.
     pub fn parse_token_stream(
         db: &'a dyn SyntaxGroup,

@@ -1371,10 +1371,10 @@ macro test_macro {
 }
 
 //! > expected_diagnostics
-error: Parser error in macro-expanded code: Missing tokens. Expected an expression.
- --> lib.cairo[test_macro]:1:12
-        1 +
-           ^
+error: Parser error in macro-expanded code: Missing tokens. Expected an expression
+ --> lib.cairo[test_macro]:2:1
+
+^
 
 //! > ==========================================================================
 
@@ -1420,3 +1420,56 @@ error: No matching rule found in inline macro `test_macro`.
  --> lib.cairo:7:5
     test_macro!();
     ^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test: Using a statement-list macro in statement position should work.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    statment_list_returning_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro statment_list_returning_macro {
+    () => {
+        let _a = 1;
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test: Using a statement-list macro in expression position should fail.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _x = statement_list_returning_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro statement_list_returning_macro {
+    () => {
+        let a = 1;
+        let b = 2;
+    };
+}
+
+//! > expected_diagnostics
+error: Parser error in macro-expanded code: Missing tokens. Expected an expression
+ --> lib.cairo:8:14
+    let _x = statement_list_returning_macro!();
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
