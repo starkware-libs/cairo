@@ -1,7 +1,7 @@
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind};
-use cairo_lang_syntax::node::ast::{Expr, SyntaxFile};
+use cairo_lang_syntax::node::ast::{Expr, StatementList, SyntaxFile};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
@@ -68,4 +68,16 @@ pub fn file_syntax_diagnostics(
     file_id: FileId,
 ) -> Diagnostics<ParserDiagnostic> {
     db.priv_file_syntax_data(file_id).diagnostics
+}
+
+pub fn file_statement_list_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<StatementList> {
+    let content = db.file_content(file_id).to_maybe()?;
+    let mut diagnostics = DiagnosticsBuilder::default();
+    let statement_list = crate::parser::Parser::parse_file_statement_list(
+        db.upcast(),
+        &mut diagnostics,
+        file_id,
+        &content,
+    );
+    Ok(statement_list)
 }

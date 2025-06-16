@@ -427,3 +427,31 @@ fn test_defsite_inference() {
     let z: defsite_inference::A = defsite_inference::use_local_impl_inference!(5);
     assert_eq!(y.x, z.x);
 }
+
+mod test_statement_macro {
+    macro my_statement_macro {
+        () => {
+            let mut val = 10;
+            val += 5;
+            assert_eq!(val, 15);
+        };
+    }
+
+    #[test]
+    fn test_expansion() {
+        my_statement_macro!();
+    }
+
+    #[test]
+    fn test_expansion_in_block() {
+        {
+            my_statement_macro!();
+        }
+        let a = 1;
+        {
+            my_statement_macro!();
+            let b = a + 1;
+            assert_eq!(b, 2);
+        }
+    }
+}
