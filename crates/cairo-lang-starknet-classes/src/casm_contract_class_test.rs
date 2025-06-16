@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::fs;
 use std::io::BufReader;
 
+use cairo_lang_sierra::ids::GenericLibfuncId;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use itertools::Itertools;
 use starknet_types_core::felt::Felt as Felt252;
@@ -65,11 +66,14 @@ fn test_casm_contract_from_contract_class_from_contracts_crate(name: &str) {
 /// Tests that the contract covers part of the libfuncs.
 #[test_case("libfuncs_coverage__libfuncs_coverage")]
 fn test_contract_libfuncs_coverage(name: &str) {
-    let libfunc_to_cover = lookup_allowed_libfuncs_list(ListSelector::ListName(
-        BUILTIN_AUDITED_LIBFUNCS_LIST.to_string(),
-    ))
+    let libfunc_to_cover: HashSet<GenericLibfuncId> = lookup_allowed_libfuncs_list(
+        ListSelector::ListName(BUILTIN_AUDITED_LIBFUNCS_LIST.to_string()),
+    )
     .unwrap()
-    .allowed_libfuncs;
+    .allowed_libfuncs
+    .keys()
+    .cloned()
+    .collect();
 
     let contract_path = get_example_file_path(&format!("{name}.contract_class.json"));
     let contract: ContractClass =

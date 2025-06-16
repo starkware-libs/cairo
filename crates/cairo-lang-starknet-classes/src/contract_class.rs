@@ -88,14 +88,28 @@ impl ContractClass {
     ) -> Result<(), AllowedLibfuncsError> {
         let list_name = list_selector.to_string();
         let allowed_libfuncs = lookup_allowed_libfuncs_list(list_selector)?;
-        let (_, _, sierra_program) = sierra_from_felt252s(&self.sierra_program)
+        let (class_version, _, sierra_program) = sierra_from_felt252s(&self.sierra_program)
             .map_err(|_| AllowedLibfuncsError::SierraProgramError)?;
         for libfunc in &sierra_program.libfunc_declarations {
-            if !allowed_libfuncs.allowed_libfuncs.contains(&libfunc.long_id.generic_id) {
-                return Err(AllowedLibfuncsError::UnsupportedLibfunc {
-                    invalid_libfunc: libfunc.long_id.generic_id.to_string(),
-                    allowed_libfuncs_list_name: list_name,
-                });
+            match allowed_libfuncs.allowed_libfuncs.get(&libfunc.long_id.generic_id) {
+                Some(None) => {}
+                Some(Some(required_version)) if class_version.major > required_version.major => {}
+                Some(Some(required_version))
+                    if class_version.major == required_version.major
+                        && class_version.minor >= required_version.minor => {}
+                Some(Some(required_version)) => {
+                    return Err(AllowedLibfuncsError::UnsupportedLibfuncAtVersion {
+                        invalid_libfunc: libfunc.long_id.generic_id.to_string(),
+                        required_version: *required_version,
+                        class_version,
+                    });
+                }
+                None => {
+                    return Err(AllowedLibfuncsError::UnsupportedLibfunc {
+                        invalid_libfunc: libfunc.long_id.generic_id.to_string(),
+                        allowed_libfuncs_list_name: list_name,
+                    });
+                }
             }
         }
         Ok(())
