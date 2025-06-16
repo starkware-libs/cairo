@@ -1371,10 +1371,10 @@ macro test_macro {
 }
 
 //! > expected_diagnostics
-error: Parser error in macro-expanded code: Missing tokens. Expected an expression.
- --> lib.cairo[test_macro]:2:12
-        1 +
-           ^
+error: Unsupported feature.
+ --> lib.cairo[test_macro]:3:1
+    }
+^
 
 //! > ==========================================================================
 
