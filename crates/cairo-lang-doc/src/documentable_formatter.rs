@@ -668,7 +668,7 @@ fn is_the_same_root(path1: &str, path2: &str) -> bool {
 /// Formats complex types full paths. For example "Result<Error::NotFound, System::Error>" input
 /// results in "Result<NotFound, Error>" output.
 fn extract_and_format(input: &str) -> String {
-    let delimiters = [',', '<', '>', '(', ')'];
+    let delimiters = [',', '<', '>', '(', ')', '[', ']'];
     let mut output = String::new();
     let mut slice_start = 0;
     let mut in_slice = false;
