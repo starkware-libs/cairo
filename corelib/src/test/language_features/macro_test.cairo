@@ -1,27 +1,15 @@
 macro count_idents {
-    ($x:ident) => {
-        1
-    };
+    ($x:ident) => { 1 };
 
-    ($x:ident, $y:ident) => {
-        2
-    };
+    ($x:ident, $y:ident) => { 2 };
 
-    ($x:ident, $y:ident, $z:ident) => {
-        3
-    };
+    ($x:ident, $y:ident, $z:ident) => { 3 };
 
-    ($x:ident $y:ident $z:ident) => {
-        3
-    };
+    ($x:ident $y:ident $z:ident) => { 3 };
 
-    ($x:ident | $y:ident | $z:ident) => {
-        3
-    };
+    ($x:ident | $y:ident | $z:ident) => { 3 };
 
-    (abc {$x:ident, (abc $y:ident) }) => {
-        2
-    };
+    (abc {$x:ident, (abc $y:ident) }) => { 2 };
 }
 
 #[test]
@@ -35,9 +23,7 @@ fn test_macro_count_idents() {
 }
 
 macro add_one {
-    ($x:ident) => {
-        $x + 1
-    };
+    ($x:ident) => { $x + 1 };
 }
 
 #[test]
@@ -62,33 +48,26 @@ mod test_assert_eq {
     #[test]
     #[should_panic(expected: ("PANIC!",))]
     fn test_user_defined_assert_eq() {
-        let x = 1;
-        let y = 2;
-        assert_eq!(x, y);
+        {
+            let x = 1;
+            let y = 2;
+            assert_eq!(x, y);
+        }
     }
 }
 
 macro add_exprs {
-    ($x:expr) => {
-        $x + 1
-    };
+    ($x:expr) => { $x + 1 };
 
-    ($x:expr 2) => {
-        $x + 2
-    };
+    ($x:expr 2) => { $x + 2 };
 
-    ($x:ident 1) => {
-        $x + 1
-    };
+    ($x:ident 1) => { $x + 1 };
 
-    ($x:expr $y:expr) => {
-        $x + $y
-    };
+    ($x:expr $y:expr) => { $x + $y };
 
-    (abc $x:expr $y:expr) => {
-        $x + $y
-    };
+    (abc $x:expr $y:expr) => { $x + $y  };
 }
+
 #[test]
 fn test_add_exprs() {
     assert_eq!(add_exprs!(3), 4);
@@ -108,21 +87,19 @@ mod inner {
     }
 
     pub macro add_one {
-        ($x:ident) => {
-            $defsite::foo($x)
-        };
+        ($x:ident) => { $defsite::foo($x) };
     }
 
     pub macro add_ten {
-        ($x:ident) => {
-            $defsite::foo($x) + 9
-        };
+        ($x:ident) => { $defsite::foo($x) + 9 };
     }
 
     pub macro add_recursive {
         ($x:ident) => {
-            let x = $x;
-            $defsite::foo(x) + $defsite::inner::add_one!(x)
+            {
+                let x = $x;
+                $defsite::foo(x) + $defsite::inner::add_one!(x)
+            }
         };
     }
     mod inner {
@@ -131,9 +108,7 @@ mod inner {
         }
 
         pub macro add_one {
-            ($x:expr) => {
-                $defsite::foo($x)
-            };
+            ($x:expr) => { $defsite::foo($x) };
         }
     }
 }
@@ -171,9 +146,7 @@ fn test_macro_add_ten() {
 }
 
 macro accessing_expanded_placehoders {
-    ($x:expr, $y:expr) => {
-        ($x, $y)
-    };
+    ($x:expr, $y:expr) => { ($x, $y) };
 
     ($x:expr) => {
         {
@@ -193,8 +166,10 @@ fn test_accessing_expanded_placehoders() {
 
 macro use_z_from_callsite {
     () => {
-        let z = 4;
-        ($callsite::z, z)
+        {
+            let z = 4;
+            ($callsite::z, z)
+        }
     };
 }
 
@@ -206,8 +181,10 @@ fn test_use_z_from_callsite() {
 
 macro macro_wrapped_use_z_from_callsite {
     () => {
-        let z = 2;
-        $defsite::use_z_from_callsite!()
+        {
+            let z = 2;
+            $defsite::use_z_from_callsite!()
+        }
     };
 }
 
@@ -218,27 +195,19 @@ fn test_wrap_use_z_from_callsite() {
 
 mod repetition_macro_matcher {
     macro matcher_plus {
-        ($($x:expr), +) => {
-            111
-        };
+        ($($x:expr), +) => { 111 };
     }
 
     macro matcher_star {
-        ($($x:expr), *) => {
-            222
-        };
+        ($($x:expr), *) => { 222 };
     }
 
     macro matcher_optional {
-        ($($x:expr)?) => {
-            333
-        };
+        ($($x:expr)?) => { 333 };
     }
 
     macro matcher_ident_star {
-        ($($x:ident) *) => {
-            444
-        };
+        ($($x:ident) *) => { 444 };
     }
 
     #[test]
@@ -269,13 +238,9 @@ mod repetition_macro_matcher {
 
 mod repetition_macro_expansion {
     macro repetition_macro_expansion {
-        ($($x:ident), +) => {
-            array![$($x + 2), +]
-        };
+        ($($x:ident), +) => { array![$($x + 2), +] };
 
-        ($($x:expr), *) => {
-            array![$($x + 1), *]
-        };
+        ($($x:expr), *) => { array![$($x + 1), *] };
     }
 
 
@@ -292,17 +257,11 @@ mod repetition_macro_expansion {
 }
 
 macro count_exprs_rec {
-    [] => {
-        0
-    };
+    [] => { 0 };
 
-    [$x:expr] => {
-        1
-    };
+    [$x:expr] => { 1 };
 
-    [$x:expr, $($xs:expr), +] => {
-        1 + count_exprs_rec![$($xs), +]
-    };
+    [$x:expr, $($xs:expr), +] => { 1 + count_exprs_rec![$($xs), +] };
 }
 
 #[test]
@@ -316,17 +275,20 @@ fn test_count_exprs_rec() {
 
 macro my_array {
     [$x:expr] => {
-        let mut arr = $defsite::array![];
-        arr.append($x);
-        arr
+        {
+            let mut arr = $defsite::array![];
+            arr.append($x);
+            arr
+        }
     };
 
-    [$first:expr, $($rest:expr),
-        *] => {
+    [$first:expr, $($rest:expr),*] => {
+        {
             let mut arr = my_array![$($rest), *];
             arr.append($first);
             arr
-        };
+        }
+    };
 }
 
 #[test]
@@ -347,9 +309,7 @@ mod callsite_test {
         }
 
         pub macro call_foo {
-            ($x:expr) => {
-                $callsite::foo($x)
-            };
+            ($x:expr) => { $callsite::foo($x) };
         }
     }
 
@@ -362,9 +322,11 @@ mod callsite_test {
 
 macro statement_expansion {
     [$($x:expr), *] => {
-        let mut arr = $defsite::ArrayTrait::new ();
-        $(arr.append ($x); arr.append ($x);
-    ) * arr
+        {
+            let mut arr = $defsite::ArrayTrait::new ();
+            $(arr.append ($x); arr.append ($x);)*
+            arr
+        }
     };
 }
 
