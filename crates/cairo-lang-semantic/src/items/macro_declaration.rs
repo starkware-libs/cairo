@@ -74,7 +74,7 @@ pub struct MacroDeclarationData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MacroRuleData {
     pub pattern: ast::WrappedMacro,
-    pub expansion: ast::WrappedMacro,
+    pub expansion: ast::MacroElements,
 }
 
 /// The possible kinds of placeholders in a macro rule.
@@ -132,7 +132,7 @@ pub fn priv_macro_declaration_data(
     let mut rules = vec![];
     for rule_syntax in macro_declaration_syntax.rules(syntax_db).elements(syntax_db) {
         let pattern = rule_syntax.lhs(db);
-        let expansion = rule_syntax.rhs(db);
+        let expansion = rule_syntax.rhs(db).elements(db);
         let pattern_elements = get_macro_elements(db, pattern.clone());
         // Collect defined placeholders from pattern
         let defined_placeholders = OrderedHashSet::<_>::from_iter(

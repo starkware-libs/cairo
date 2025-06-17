@@ -902,7 +902,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_struct(StructBuilder::new("MacroRule")
         .node("lhs", "WrappedMacro")
         .node("fat_arrow", "TerminalMatchArrow")
-        .node("rhs", "WrappedMacro")
+        .node("rhs", "BracedMacro")
         .node("semicolon", "TerminalSemicolon")
     )
     .add_struct(StructBuilder::new("ParamKind")

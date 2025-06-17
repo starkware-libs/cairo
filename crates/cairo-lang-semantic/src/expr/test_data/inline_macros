@@ -1074,7 +1074,7 @@ macro a_macro {
 
 //! > expected_diagnostics
 error: Empty path after `$defsite` is not allowed.
- --> lib.cairo[a_macro]:2:10
+ --> lib.cairo[a_macro]:1:10
         $defsite
          ^^^^^^^
 
@@ -1162,12 +1162,12 @@ fn consume_z(_z: felt252) {}
 
 //! > expected_diagnostics
 warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
- --> lib.cairo[bas_use_z_from_callsite]:2:9
+ --> lib.cairo[bas_use_z_from_callsite]:1:9
         z
         ^
 
 error[E0006]: Identifier not found.
- --> lib.cairo[bas_use_z_from_callsite]:2:9
+ --> lib.cairo[bas_use_z_from_callsite]:1:9
         z
         ^
 
@@ -1206,7 +1206,7 @@ macro wrap_bas_use_z_from_callsite {
 
 //! > expected_diagnostics
 error[E0006]: Identifier not found.
- --> lib.cairo[wrap_bas_use_z_from_callsite][bas_use_z_from_callsite]:2:20
+ --> lib.cairo[wrap_bas_use_z_from_callsite][bas_use_z_from_callsite]:1:20
         $callsite::z
                    ^
 
@@ -1236,7 +1236,7 @@ fn bar() {}
 
 //! > expected_diagnostics
 warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
- --> lib.cairo[call_bar]:2:9
+ --> lib.cairo[call_bar]:1:9
         bar()
         ^^^
 
@@ -1372,7 +1372,7 @@ macro test_macro {
 
 //! > expected_diagnostics
 error: Parser error in macro-expanded code: Missing tokens. Expected an expression.
- --> lib.cairo[test_macro]:2:12
+ --> lib.cairo[test_macro]:1:12
         1 +
            ^
 
