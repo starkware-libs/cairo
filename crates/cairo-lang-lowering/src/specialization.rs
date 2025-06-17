@@ -5,7 +5,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::{GenericArgumentId, TypeId};
+use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId};
 use cairo_lang_utils::LookupIntern;
 use itertools::{Itertools, chain, zip_eq};
 
@@ -15,7 +15,7 @@ use crate::ids::{self, LocationId, SemanticFunctionIdEx, SpecializedFunction};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     Block, BlockEnd, DependencyType, Lowered, LoweringStage, Statement, StatementCall,
-    StatementConst, VarUsage, VariableId,
+    StatementConst, StatementStructConstruct, VarUsage, VariableId,
 };
 
 // A const argument for a specialized function.
@@ -23,6 +23,7 @@ use crate::{
 pub enum SpecializationArg {
     Const(ConstValue),
     EmptyArray(TypeId),
+    Struct(Vec<SpecializationArg>),
 }
 
 impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for SpecializationArg {
@@ -33,9 +34,31 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for SpecializationArg {
     ) -> std::fmt::Result {
         match self {
             SpecializationArg::Const(value) => write!(f, "{:?}", value.debug(db)),
+            SpecializationArg::Struct(inner) => {
+                write!(f, "{{")?;
+                let mut inner = inner.iter().peekable();
+                while let Some(value) = inner.next() {
+                    write!(f, " ")?;
+                    value.fmt(f, db)?;
+
+                    if inner.peek().is_some() {
+                        write!(f, ",")?;
+                    } else {
+                        write!(f, " ")?;
+                    }
+                }
+                write!(f, "}}")
+            }
             SpecializationArg::EmptyArray(_) => write!(f, "array![]"),
         }
     }
+}
+
+/// The state of the specialization arg building process.
+/// currently only structs require an additional build step.
+enum SpecializationArgBuildingState<'a> {
+    Initial(&'a SpecializationArg),
+    BuildStruct(Vec<VariableId>),
 }
 
 /// Returns the lowering of a specialized function.
@@ -55,10 +78,21 @@ pub fn specialized_function_lowered(
     let mut statements = vec![];
     let mut parameters = vec![];
 
+    let mut stack = vec![];
+
     for (param, arg) in zip_eq(&base.parameters, specialized.args.iter()) {
         let var_id = variables.variables.alloc(base.variables[*param].clone());
-        if let Some(arg) = arg {
-            match arg {
+        if let Some(c) = arg {
+            stack.push((var_id, SpecializationArgBuildingState::Initial(c)));
+
+            continue;
+        }
+        parameters.push(var_id);
+    }
+
+    while let Some((var_id, state)) = stack.pop() {
+        match state {
+            SpecializationArgBuildingState::Initial(c) => match c {
                 SpecializationArg::Const(value) => {
                     statements.push(Statement::Const(StatementConst {
                         value: value.clone(),
@@ -76,12 +110,44 @@ pub fn specialized_function_lowered(
                         location: variables[var_id].location,
                     }));
                 }
-            }
+                SpecializationArg::Struct(consts) => {
+                    let var = &variables[var_id];
+                    let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) =
+                        var.ty.lookup_intern(db)
+                    else {
+                        unreachable!("Expected a concrete struct type");
+                    };
 
-            continue;
+                    let members = db.concrete_struct_members(concrete_struct)?;
+
+                    let location = var.location;
+                    let var_ids = members
+                        .values()
+                        .map(|member| variables.new_var(VarRequest { ty: member.ty, location }))
+                        .collect_vec();
+
+                    stack.push((
+                        var_id,
+                        SpecializationArgBuildingState::BuildStruct(var_ids.clone()),
+                    ));
+
+                    for (var_id, c) in zip_eq(var_ids, consts) {
+                        stack.push((var_id, SpecializationArgBuildingState::Initial(c)));
+                    }
+                }
+            },
+            SpecializationArgBuildingState::BuildStruct(ids) => {
+                statements.push(Statement::StructConstruct(StatementStructConstruct {
+                    inputs: ids
+                        .iter()
+                        .map(|id| VarUsage { var_id: *id, location: variables[*id].location })
+                        .collect(),
+                    output: var_id,
+                }));
+            }
         }
-        parameters.push(var_id);
     }
+
     let location = LocationId::from_stable_location(
         db,
         specialized.base.base_semantic_function(db).stable_location(db),

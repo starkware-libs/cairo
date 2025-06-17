@@ -27,8 +27,8 @@ test::foo{array![], None, 1, }
 Parameters: v1: core::felt252
 blk0 (root):
 Statements:
-  (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v2: core::felt252) <- 1
+  (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v3: core::array::Array::<core::felt252>, v4: ()) <- test::foo(v0, v1, v2)
 End:
   Return(v3, v4)
