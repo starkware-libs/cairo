@@ -694,7 +694,8 @@ impl<'a> Parser<'a> {
         };
         let arrow = self.parse_token::<TerminalMatchArrow>();
         self.macro_parsing_context = MacroParsingContext::MacroExpansion;
-        let macro_body = self.parse_macro_elements();
+        let macro_body =
+            self.wrap_macro::<TerminalLBrace, TerminalRBrace, _, _>(BracedMacro::new_green);
         let semicolon = self.parse_token::<TerminalSemicolon>();
         self.macro_parsing_context = previous_macro_parsing_context;
         Ok(MacroRule::new_green(self.db, wrapped_macro, arrow, macro_body, semicolon))

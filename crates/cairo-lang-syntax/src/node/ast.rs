@@ -22312,7 +22312,7 @@ impl MacroRule {
         db: &dyn SyntaxGroup,
         lhs: WrappedMacroGreen,
         fat_arrow: TerminalMatchArrowGreen,
-        rhs: WrappedMacroGreen,
+        rhs: BracedMacroGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> MacroRuleGreen {
         let children: Vec<GreenId> = vec![lhs.0, fat_arrow.0, rhs.0, semicolon.0];
@@ -22333,8 +22333,8 @@ impl MacroRule {
     pub fn fat_arrow(&self, db: &dyn SyntaxGroup) -> TerminalMatchArrow {
         TerminalMatchArrow::from_syntax_node(db, self.children[1])
     }
-    pub fn rhs(&self, db: &dyn SyntaxGroup) -> WrappedMacro {
-        WrappedMacro::from_syntax_node(db, self.children[2])
+    pub fn rhs(&self, db: &dyn SyntaxGroup) -> BracedMacro {
+        BracedMacro::from_syntax_node(db, self.children[2])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
         TerminalSemicolon::from_syntax_node(db, self.children[3])
@@ -22371,7 +22371,7 @@ impl TypedSyntaxNode for MacroRule {
                     children: vec![
                         WrappedMacro::missing(db).0,
                         TerminalMatchArrow::missing(db).0,
-                        WrappedMacro::missing(db).0,
+                        BracedMacro::missing(db).0,
                         TerminalSemicolon::missing(db).0,
                     ],
                     width: TextWidth::default(),
