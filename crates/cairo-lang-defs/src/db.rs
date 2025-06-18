@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe, PluginFileDiagnosticNotes, ToMaybe};
@@ -10,7 +10,7 @@ use cairo_lang_syntax::attribute::consts::{
     STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
 };
 use cairo_lang_syntax::attribute::structured::AttributeStructurize;
-use cairo_lang_syntax::node::ast::MaybeModuleBody;
+use cairo_lang_syntax::node::ast::{MaybeImplBody, MaybeModuleBody, MaybeTraitBody};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::element_list::ElementList;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -790,6 +790,46 @@ fn priv_module_sub_files(
         // plugins might have act on the item, they can do it on the generated code.
         for plugin_id in db.crate_macro_plugins(crate_id).iter() {
             let plugin = db.lookup_intern_macro_plugin(*plugin_id);
+
+            // Check on inner attributes too.
+            let inner_attrs: HashSet<_> = match &item_ast {
+                ast::ModuleItem::Impl(imp) => {
+                    if let MaybeImplBody::Some(body) = imp.body(db) {
+                        body.items(db)
+                            .elements(db)
+                            .into_iter()
+                            .flat_map(|item| item.attributes_elements(db))
+                            .map(|attr| attr.attr(db).as_syntax_node().get_text_without_trivia(db))
+                            .collect()
+                    } else {
+                        Default::default()
+                    }
+                }
+                ast::ModuleItem::Trait(trt) => {
+                    if let MaybeTraitBody::Some(body) = trt.body(db) {
+                        body.items(db)
+                            .elements(db)
+                            .into_iter()
+                            .flat_map(|item| item.attributes_elements(db))
+                            .map(|attr| attr.attr(db).as_syntax_node().get_text_without_trivia(db))
+                            .collect()
+                    } else {
+                        Default::default()
+                    }
+                }
+                _ => Default::default(),
+            };
+
+            if !plugin.declared_attributes().into_iter().any(|declared_attr|
+                item_ast.has_attr(db, &declared_attr) || inner_attrs.contains(&declared_attr)
+            )
+                // Plugins can implement own derives.
+                && !item_ast.has_attr(db, "derive")
+                // Plugins does not declare module inline macros they support.
+                && !matches!(item_ast, ast::ModuleItem::InlineMacro(_))
+            {
+                continue;
+            };
 
             let result = plugin.generate_code(db, item_ast.clone(), &metadata);
             plugin_diagnostics.extend(result.diagnostics);
