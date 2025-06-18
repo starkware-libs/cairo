@@ -3883,6 +3883,10 @@ pub fn compute_statement_semantic(
             };
             let rhs_expr_id = rhs_expr.id;
 
+            if !matches!(let_syntax.let_else_clause(db), ast::OptionLetElseClause::Empty(_)) {
+                return Err(ctx.diagnostics.report(let_syntax.stable_ptr(db), LetElseNotSupported));
+            };
+
             let pattern = compute_pattern_semantic(
                 ctx,
                 &let_syntax.pattern(db),

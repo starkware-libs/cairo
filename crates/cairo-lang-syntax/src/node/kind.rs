@@ -75,6 +75,8 @@ pub enum SyntaxKind {
     StatementList,
     StatementMissing,
     StatementLet,
+    LetElseClause,
+    OptionLetElseClauseEmpty,
     OptionTerminalSemicolonEmpty,
     StatementExpr,
     StatementContinue,

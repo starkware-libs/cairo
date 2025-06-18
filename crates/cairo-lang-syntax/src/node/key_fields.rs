@@ -200,6 +200,12 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::StatementLet => {
             vec![/* pattern */ children[2]]
         }
+        SyntaxKind::LetElseClause => {
+            vec![]
+        }
+        SyntaxKind::OptionLetElseClauseEmpty => {
+            vec![]
+        }
         SyntaxKind::OptionTerminalSemicolonEmpty => {
             vec![]
         }

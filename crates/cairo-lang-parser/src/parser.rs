@@ -2555,6 +2555,17 @@ impl<'a> Parser<'a> {
                 let type_clause = self.parse_option_type_clause();
                 let eq = self.parse_token::<TerminalEq>();
                 let rhs = self.parse_expr();
+
+                // Check if this is a let-else statement.
+                let let_else_clause: OptionLetElseClauseGreen =
+                    if self.peek().kind == SyntaxKind::TerminalElse {
+                        let else_kw = self.take::<TerminalElse>();
+                        let else_block = self.parse_block();
+                        LetElseClause::new_green(self.db, else_kw, else_block).into()
+                    } else {
+                        OptionLetElseClauseEmpty::new_green(self.db).into()
+                    };
+
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 Ok(StatementLet::new_green(
                     self.db,
@@ -2564,6 +2575,7 @@ impl<'a> Parser<'a> {
                     type_clause,
                     eq,
                     rhs,
+                    let_else_clause,
                     semicolon,
                 )
                 .into())

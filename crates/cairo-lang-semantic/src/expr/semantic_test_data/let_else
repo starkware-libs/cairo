@@ -1,0 +1,59 @@
+//! > Test let-else statement
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > function_body
+let a = MyEnum::A(9);
+
+//! > expr_code
+{
+    let x = ();
+    let MyEnum::A(x) = a else {
+        // The `x` below is the outer `x` (unit type).
+        return x;
+    };
+    x
+}
+
+//! > module_code
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        x,
+                    ),
+                    expr: Tuple(
+                        ExprTuple {
+                            items: [],
+                            ty: (),
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: Some(
+            Var(
+                LocalVarId(test::x),
+            ),
+        ),
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+error: Let else is not supported yet.
+ --> lib.cairo:8:5-11:6
+      let MyEnum::A(x) = a else {
+ _____^
+| ...
+|     };
+|______^
