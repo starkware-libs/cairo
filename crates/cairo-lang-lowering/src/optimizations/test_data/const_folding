@@ -5903,3 +5903,172 @@ End:
   Return(v7)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Match enum const.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> u8 {
+    match E::V1(2) {
+        E::V0(x) => x,
+        E::V1(x) => x,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+enum E {
+    V0: u8,
+    V1: u8,
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 2
+  (v1: test::E) <- E::V1(v0)
+End:
+  Match(match_enum(v1) {
+    E::V0(v2) => blk1,
+    E::V1(v3) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v2 -> v4})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {v3 -> v4})
+
+blk3:
+Statements:
+End:
+  Return(v4)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 2
+  (v1: test::E) <- E::V1(v0)
+  (v3: core::integer::u8) <- 2
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v2 -> v4})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {v3 -> v4})
+
+blk3:
+Statements:
+End:
+  Return(v4)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Match enum snapshot const.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> u8 {
+    match @E::V1(2) {
+        E::V0(x) => *x,
+        E::V1(x) => *x,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+enum E {
+    V0: u8,
+    V1: u8,
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 2
+  (v1: test::E) <- E::V1(v0)
+  (v2: test::E, v3: @test::E) <- snapshot(v1)
+End:
+  Match(match_enum(v3) {
+    E::V0(v4) => blk1,
+    E::V1(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v6: core::integer::u8) <- desnap(v4)
+End:
+  Goto(blk3, {v6 -> v7})
+
+blk2:
+Statements:
+  (v8: core::integer::u8) <- desnap(v5)
+End:
+  Goto(blk3, {v8 -> v7})
+
+blk3:
+Statements:
+End:
+  Return(v7)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 2
+  (v1: test::E) <- E::V1(v0)
+  (v2: test::E, v3: @test::E) <- snapshot(v1)
+  (v9: core::integer::u8) <- 2
+  (v10: core::integer::u8, v5: @core::integer::u8) <- snapshot(v9)
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+  (v6: core::integer::u8) <- desnap(v4)
+End:
+  Goto(blk3, {v6 -> v7})
+
+blk2:
+Statements:
+  (v8: core::integer::u8) <- desnap(v5)
+End:
+  Goto(blk3, {v8 -> v7})
+
+blk3:
+Statements:
+End:
+  Return(v7)
+
+//! > lowering_diagnostics
