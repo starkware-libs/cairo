@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::fs;
 
@@ -6,6 +6,8 @@ use cairo_lang_sierra::ids::GenericLibfuncId;
 use serde::Deserialize;
 use smol_str::SmolStr;
 use thiserror::Error;
+
+use crate::compiler_version::VersionId;
 
 #[cfg(test)]
 #[path = "allowed_libfuncs_test.rs"]
@@ -27,6 +29,15 @@ pub enum AllowedLibfuncsError {
          {BUILTIN_ALL_LIBFUNCS_LIST}' to allow all libfuncs."
     )]
     UnsupportedLibfunc { invalid_libfunc: String, allowed_libfuncs_list_name: String },
+    #[error(
+        "Libfunc {invalid_libfunc} requires version {required_version} while class version is {class_version}.\n
+         Run with '--allowed-libfuncs-list-name {BUILTIN_ALL_LIBFUNCS_LIST}' to allow all libfuncs."
+    )]
+    UnsupportedLibfuncAtVersion {
+        invalid_libfunc: String,
+        required_version: VersionId,
+        class_version: VersionId,
+    },
 }
 
 /// A selector for the allowed libfunc list.
@@ -67,15 +78,17 @@ impl Display for ListSelector {
 /// Represents a list of allowed sierra libfuncs.
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 pub struct AllowedLibfuncs {
-    #[serde(deserialize_with = "deserialize_libfuncs_set::<_>")]
-    pub allowed_libfuncs: HashSet<GenericLibfuncId>,
+    #[serde(deserialize_with = "deserialize_libfuncs_map::<_>")]
+    pub allowed_libfuncs: HashMap<GenericLibfuncId, Option<VersionId>>,
 }
 
-fn deserialize_libfuncs_set<'de, D: serde::Deserializer<'de>>(
+fn deserialize_libfuncs_map<'de, D: serde::Deserializer<'de>>(
     deserializer: D,
-) -> Result<HashSet<GenericLibfuncId>, D::Error> {
-    Ok(HashSet::from_iter(
-        Vec::<SmolStr>::deserialize(deserializer)?.into_iter().map(GenericLibfuncId::from_string),
+) -> Result<HashMap<GenericLibfuncId, Option<VersionId>>, D::Error> {
+    Ok(HashMap::from_iter(
+        HashMap::<SmolStr, Option<VersionId>>::deserialize(deserializer)?
+            .into_iter()
+            .map(|(id, v)| (GenericLibfuncId::from_string(id), v)),
     ))
 }
 
