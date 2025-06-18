@@ -4,7 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
-use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::items::functions::{GenericFunctionId, InlineConfiguration};
 use cairo_lang_semantic::{GenericArgumentId, TypeId};
 use cairo_lang_utils::LookupIntern;
 use itertools::{Itertools, chain, zip_eq};
@@ -122,6 +122,14 @@ pub fn priv_should_specialize(
     else {
         panic!("Expected a specialized function");
     };
+
+    // If the function is marked as #[inline(never)], it should not be specialized.
+    let inline_config = db.function_declaration_inline_config(
+        specialized_func.base.base_semantic_function(db).function_with_body_id(db),
+    )?;
+    if let InlineConfiguration::Never(_) = inline_config {
+        return Ok(false);
+    }
 
     // Breaks cycles.
     // We cannot estimate the size of functions in a cycle, since the implicits computation requires
