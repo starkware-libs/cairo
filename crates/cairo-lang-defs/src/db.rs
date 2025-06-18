@@ -791,6 +791,15 @@ fn priv_module_sub_files(
         for plugin_id in db.crate_macro_plugins(crate_id).iter() {
             let plugin = db.lookup_intern_macro_plugin(*plugin_id);
 
+            if !plugin.declared_attributes().into_iter().any(|attr| item_ast.has_attr(db, &attr))
+                // Plugins can implement own derives.
+                && !item_ast.has_attr(db, "derive")
+                // Plugins does not declare module inline macros they support.
+                && !matches!(item_ast, ast::ModuleItem::InlineMacro(_))
+            {
+                continue;
+            };
+
             let result = plugin.generate_code(db, item_ast.clone(), &metadata);
             plugin_diagnostics.extend(result.diagnostics);
             if result.remove_original_item {
