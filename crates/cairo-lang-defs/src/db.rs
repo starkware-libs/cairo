@@ -22,7 +22,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::{Itertools, chain};
-use salsa::InternKey;
 
 use crate::cache::{DefCacheLoadingData, load_cached_crate_modules};
 use crate::ids::*;
@@ -31,7 +30,7 @@ use crate::plugin_utils::try_extract_unnamed_arg;
 
 /// Salsa database interface.
 /// See [`super::ids`] for further details.
-#[salsa::query_group(DefsDatabase)]
+#[cairo_lang_proc_macros::query_group]
 pub trait DefsGroup: ParserGroup {
     #[salsa::interned]
     fn intern_constant(&self, id: ConstantLongId) -> ConstantId;
@@ -101,7 +100,7 @@ pub trait DefsGroup: ParserGroup {
     fn default_macro_plugins_input(&self) -> Arc<[MacroPluginLongId]>;
 
     /// Interned version of `default_macro_plugins_input`.
-    fn default_macro_plugins(&self) -> Arc<[MacroPluginId]>;
+    fn default_macro_plugins<'db>(&self) -> Arc<[MacroPluginId<'db>]>;
 
     #[salsa::input]
     fn macro_plugin_overrides_input(
@@ -109,7 +108,9 @@ pub trait DefsGroup: ParserGroup {
     ) -> Arc<OrderedHashMap<CrateInput, Arc<[MacroPluginLongId]>>>;
 
     /// Interned version of `macro_plugin_overrides_input`.
-    fn macro_plugin_overrides(&self) -> Arc<OrderedHashMap<CrateId, Arc<[MacroPluginId]>>>;
+    fn macro_plugin_overrides<'db>(
+        &self,
+    ) -> Arc<OrderedHashMap<CrateId<'db>, Arc<[MacroPluginId<'db>]>>>;
 
     #[salsa::interned]
     fn intern_macro_plugin(&self, plugin: MacroPluginLongId) -> MacroPluginId;
@@ -118,7 +119,7 @@ pub trait DefsGroup: ParserGroup {
     /// Provides an override if it has been set with
     /// [`DefsGroupEx::set_override_crate_macro_plugins`] or the default
     /// ([`DefsGroup::default_macro_plugins`]) otherwise.
-    fn crate_macro_plugins(&self, crate_id: CrateId) -> Arc<[MacroPluginId]>;
+    fn crate_macro_plugins<'db>(&self, crate_id: CrateId<'db>) -> Arc<[MacroPluginId<'db>]>;
 
     #[salsa::input]
     fn default_inline_macro_plugins_input(
@@ -126,7 +127,9 @@ pub trait DefsGroup: ParserGroup {
     ) -> Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>;
 
     /// Interned version of `default_inline_macro_plugins_input`.
-    fn default_inline_macro_plugins(&self) -> Arc<OrderedHashMap<String, InlineMacroExprPluginId>>;
+    fn default_inline_macro_plugins<'db>(
+        &self,
+    ) -> Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>;
 
     #[salsa::input]
     fn inline_macro_plugin_overrides_input(
@@ -134,9 +137,9 @@ pub trait DefsGroup: ParserGroup {
     ) -> Arc<OrderedHashMap<CrateInput, Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>>>;
 
     /// Interned version of `inline_macro_plugin_overrides_input`.
-    fn inline_macro_plugin_overrides(
+    fn inline_macro_plugin_overrides<'db>(
         &self,
-    ) -> Arc<OrderedHashMap<CrateId, Arc<OrderedHashMap<String, InlineMacroExprPluginId>>>>;
+    ) -> Arc<OrderedHashMap<CrateId<'db>, Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>>>;
 
     #[salsa::interned]
     fn intern_inline_macro_plugin(
@@ -148,14 +151,14 @@ pub trait DefsGroup: ParserGroup {
     /// Provides an override if it has been set with
     /// [`DefsGroupEx::set_override_crate_inline_macro_plugins`] or the default
     /// ([`DefsGroup::default_inline_macro_plugins`]) otherwise.
-    fn crate_inline_macro_plugins(
+    fn crate_inline_macro_plugins<'db>(
         &self,
-        crate_id: CrateId,
-    ) -> Arc<OrderedHashMap<String, InlineMacroExprPluginId>>;
+        crate_id: CrateId<'db>,
+    ) -> Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>;
 
     /// Returns the set of attributes allowed anywhere.
     /// An attribute on any item that is not in this set will be handled as an unknown attribute.
-    fn allowed_attributes(&self, crate_id: CrateId) -> Arc<OrderedHashSet<String>>;
+    fn allowed_attributes<'db>(&self, crate_id: CrateId<'db>) -> Arc<OrderedHashSet<String>>;
 
     /// Returns the set of attributes allowed on statements.
     /// An attribute on a statement that is not in this set will be handled as an unknown attribute.
@@ -163,93 +166,113 @@ pub trait DefsGroup: ParserGroup {
 
     /// Returns the set of `derive` that were declared as by a plugin.
     /// A derive that is not in this set will be handled as an unknown derive.
-    fn declared_derives(&self, crate_id: CrateId) -> Arc<OrderedHashSet<String>>;
+    fn declared_derives<'db>(&self, crate_id: CrateId<'db>) -> Arc<OrderedHashSet<String>>;
 
     /// Returns the set of attributes that were declared as phantom type attributes by a plugin,
     /// i.e. a type marked with this attribute is considered a phantom type.
-    fn declared_phantom_type_attributes(&self, crate_id: CrateId) -> Arc<OrderedHashSet<String>>;
+    fn declared_phantom_type_attributes<'db>(
+        &self,
+        crate_id: CrateId<'db>,
+    ) -> Arc<OrderedHashSet<String>>;
 
     /// Checks whether the submodule is defined as inline.
-    fn is_submodule_inline(&self, submodule_id: SubmoduleId) -> bool;
+    fn is_submodule_inline<'db>(&self, submodule_id: SubmoduleId<'db>) -> bool;
 
     // Module to syntax.
     /// Gets the main file of the module.
     /// A module might have more virtual files generated by plugins.
-    fn module_main_file(&self, module_id: ModuleId) -> Maybe<FileId>;
+    fn module_main_file<'db>(&self, module_id: ModuleId<'db>) -> Maybe<FileId<'db>>;
     /// Gets all the files of a module - main files and generated virtual files.
-    fn module_files(&self, module_id: ModuleId) -> Maybe<Arc<[FileId]>>;
+    fn module_files<'db>(&self, module_id: ModuleId<'db>) -> Maybe<Arc<[FileId<'db>]>>;
     /// Gets a file from a module and a FileIndex (i.e. ModuleFileId).
-    fn module_file(&self, module_id: ModuleFileId) -> Maybe<FileId>;
+    fn module_file<'db>(&self, module_id: ModuleFileId<'db>) -> Maybe<FileId<'db>>;
     /// Gets the directory of a module.
-    fn module_dir(&self, module_id: ModuleId) -> Maybe<Directory>;
+    fn module_dir<'db>(&self, module_id: ModuleId<'db>) -> Maybe<Directory<'db>>;
 
     // File to module.
-    fn crate_modules(&self, crate_id: CrateId) -> Arc<[ModuleId]>;
-    fn priv_file_to_module_mapping(&self) -> Arc<OrderedHashMap<FileId, Vec<ModuleId>>>;
-    fn file_modules(&self, file_id: FileId) -> Maybe<Arc<[ModuleId]>>;
+    fn crate_modules<'db>(&self, crate_id: CrateId<'db>) -> Arc<[ModuleId<'db>]>;
+    fn priv_file_to_module_mapping<'db>(
+        &self,
+    ) -> Arc<OrderedHashMap<FileId<'db>, Vec<ModuleId<'db>>>>;
+    fn file_modules<'db>(&self, file_id: FileId<'db>) -> Maybe<Arc<[ModuleId<'db>]>>;
 
     /// Returns the [ModuleData] of all modules in the crate's cache, and the loading data of the
     /// [DefsGroup] in the crate.
-    fn cached_crate_modules(&self, crate_id: CrateId) -> Option<ModuleDataCacheAndLoadingData>;
+    fn cached_crate_modules<'db>(
+        &self,
+        crate_id: CrateId<'db>,
+    ) -> Option<ModuleDataCacheAndLoadingData>;
     // Module level resolving.
-    fn priv_module_data(&self, module_id: ModuleId) -> Maybe<ModuleData>;
+    fn priv_module_data<'db>(&self, module_id: ModuleId<'db>) -> Maybe<ModuleData>;
     // Returns the information about sub-files generated by the file in the module.
-    fn priv_module_sub_files(
+    fn priv_module_sub_files<'db>(
         &self,
-        module_id: ModuleId,
-        file_id: FileId,
+        module_id: ModuleId<'db>,
+        file_id: FileId<'db>,
     ) -> Maybe<Arc<PrivModuleSubFiles>>;
-    fn module_submodules(
+    fn module_submodules<'db>(
         &self,
-        module_id: ModuleId,
-    ) -> Maybe<Arc<OrderedHashMap<SubmoduleId, ast::ItemModule>>>;
-    fn module_submodules_ids(&self, module_id: ModuleId) -> Maybe<Arc<[SubmoduleId]>>;
-    fn module_constants(
+        module_id: ModuleId<'db>,
+    ) -> Maybe<Arc<OrderedHashMap<SubmoduleId<'db>, ast::ItemModule<'db>>>>;
+    fn module_submodules_ids<'db>(
         &self,
-        module_id: ModuleId,
-    ) -> Maybe<Arc<OrderedHashMap<ConstantId, ast::ItemConstant>>>;
-    fn module_constants_ids(&self, module_id: ModuleId) -> Maybe<Arc<[ConstantId]>>;
-    fn module_constant_by_id(&self, constant_id: ConstantId) -> Maybe<Option<ast::ItemConstant>>;
-    fn module_free_functions(
+        module_id: ModuleId<'db>,
+    ) -> Maybe<Arc<[SubmoduleId<'db>]>>;
+    fn module_constants<'db>(
         &self,
-        module_id: ModuleId,
-    ) -> Maybe<Arc<OrderedHashMap<FreeFunctionId, ast::FunctionWithBody>>>;
-    fn module_free_functions_ids(&self, module_id: ModuleId) -> Maybe<Arc<[FreeFunctionId]>>;
-    fn module_free_function_by_id(
+        module_id: ModuleId<'db>,
+    ) -> Maybe<Arc<OrderedHashMap<ConstantId<'db>, ast::ItemConstant<'db>>>>;
+    fn module_constants_ids<'db>(&self, module_id: ModuleId<'db>) -> Maybe<Arc<[ConstantId<'db>]>>;
+    fn module_constant_by_id<'db>(
         &self,
-        free_function_id: FreeFunctionId,
-    ) -> Maybe<Option<ast::FunctionWithBody>>;
-    fn module_items(&self, module_id: ModuleId) -> Maybe<Arc<[ModuleItemId]>>;
-    fn module_global_uses(
+        constant_id: ConstantId<'db>,
+    ) -> Maybe<Option<ast::ItemConstant<'db>>>;
+    fn module_free_functions<'db>(
         &self,
-        module_id: ModuleId,
-    ) -> Maybe<Arc<OrderedHashMap<GlobalUseId, ast::UsePathStar>>>;
+        module_id: ModuleId<'db>,
+    ) -> Maybe<Arc<OrderedHashMap<FreeFunctionId<'db>, ast::FunctionWithBody<'db>>>>;
+    fn module_free_functions_ids<'db>(
+        &self,
+        module_id: ModuleId<'db>,
+    ) -> Maybe<Arc<[FreeFunctionId<'db>]>>;
+    fn module_free_function_by_id<'db>(
+        &self,
+        free_function_id: FreeFunctionId<'db>,
+    ) -> Maybe<Option<ast::FunctionWithBody<'db>>>;
+    fn module_items<'db>(&self, module_id: ModuleId<'db>) -> Maybe<Arc<[ModuleItemId<'db>]>>;
+    fn module_global_uses<'db>(
+        &self,
+        module_id: ModuleId<'db>,
+    ) -> Maybe<Arc<OrderedHashMap<GlobalUseId<'db>, ast::UsePathStar<'db>>>>;
     /// Returns the stable ptr of the name of a module item.
-    fn module_item_name_stable_ptr(
+    fn module_item_name_stable_ptr<'db>(
         &self,
-        module_id: ModuleId,
-        item_id: ModuleItemId,
-    ) -> Maybe<SyntaxStablePtrId>;
-    fn module_uses(
+        module_id: ModuleId<'db>,
+        item_id: ModuleItemId<'db>,
+    ) -> Maybe<SyntaxStablePtrId<'db>>;
+    fn module_uses<'db>(
         &self,
-        module_id: ModuleId,
-    ) -> Maybe<Arc<OrderedHashMap<UseId, ast::UsePathLeaf>>>;
-    fn module_uses_ids(&self, module_id: ModuleId) -> Maybe<Arc<[UseId]>>;
-    fn module_use_by_id(&self, use_id: UseId) -> Maybe<Option<ast::UsePathLeaf>>;
-    fn module_global_use_by_id(
+        module_id: ModuleId<'db>,
+    ) -> Maybe<Arc<OrderedHashMap<UseId<'db>, ast::UsePathLeaf<'db>>>>;
+    fn module_uses_ids<'db>(&self, module_id: ModuleId<'db>) -> Maybe<Arc<[UseId<'db>]>>;
+    fn module_use_by_id<'db>(&self, use_id: UseId<'db>) -> Maybe<Option<ast::UsePathLeaf<'db>>>;
+    fn module_global_use_by_id<'db>(
         &self,
-        global_use_id: GlobalUseId,
-    ) -> Maybe<Option<ast::UsePathStar>>;
-    fn module_structs(
+        global_use_id: GlobalUseId<'db>,
+    ) -> Maybe<Option<ast::UsePathStar<'db>>>;
+    fn module_structs<'db>(
         &self,
-        module_id: ModuleId,
-    ) -> Maybe<Arc<OrderedHashMap<StructId, ast::ItemStruct>>>;
-    fn module_structs_ids(&self, module_id: ModuleId) -> Maybe<Arc<[StructId]>>;
-    fn module_struct_by_id(&self, struct_id: StructId) -> Maybe<Option<ast::ItemStruct>>;
-    fn module_enums(
+        module_id: ModuleId<'db>,
+    ) -> Maybe<Arc<OrderedHashMap<StructId<'db>, ast::ItemStruct<'db>>>>;
+    fn module_structs_ids<'db>(&self, module_id: ModuleId<'db>) -> Maybe<Arc<[StructId<'db>]>>;
+    fn module_struct_by_id<'db>(
         &self,
-        module_id: ModuleId,
-    ) -> Maybe<Arc<OrderedHashMap<EnumId, ast::ItemEnum>>>;
+        struct_id: StructId<'db>,
+    ) -> Maybe<Option<ast::ItemStruct<'db>>>;
+    fn module_enums<'db>(
+        &self,
+        module_id: ModuleId<'db>,
+    ) -> Maybe<Arc<OrderedHashMap<EnumId<'db>, ast::ItemEnum<'db>>>>;
     fn module_enums_ids(&self, module_id: ModuleId) -> Maybe<Arc<[EnumId]>>;
     fn module_enum_by_id(&self, enum_id: EnumId) -> Maybe<Option<ast::ItemEnum>>;
     fn module_type_aliases(

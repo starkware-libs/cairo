@@ -17,6 +17,7 @@ smol_str.workspace = true
 # Optional
 serde = { workspace = true, features = ["alloc"], optional = true }
 schemars = { workspace = true, features = ["preserve_order"], optional = true }
+salsa.workspace = true
 env_logger = { workspace = true, optional = true }
 time = { workspace = true, optional = true }
 log = { workspace = true, optional = true }

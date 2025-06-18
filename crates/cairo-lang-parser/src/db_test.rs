@@ -17,7 +17,7 @@ use crate::printer::print_tree;
 use crate::test_utils::{MockToken, MockTokenStream, create_virtual_file};
 use crate::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics_from_file};
 
-fn build_empty_file_green_tree(db: &dyn SyntaxGroup, file_id: FileId) -> SyntaxFile {
+fn build_empty_file_green_tree<'a>(db: &'a dyn SyntaxGroup, file_id: FileId<'a>) -> SyntaxFile<'a> {
     let eof_token = TokenEndOfFile::new_green(db, SmolStr::from(""));
     let eof_terminal = TerminalEndOfFile::new_green(
         db,

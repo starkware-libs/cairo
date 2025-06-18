@@ -5,7 +5,7 @@ use super::kind::SyntaxKind;
 ///
 /// Each SyntaxKind has some children that are defined in the spec to be its indexing key
 /// for its stable pointer. See [super::stable_ptr].
-pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
+pub fn get_key_fields<'db>(kind: SyntaxKind, children: &[GreenId<'db>]) -> Vec<GreenId<'db>> {
     match kind {
         SyntaxKind::Trivia => vec![],
         SyntaxKind::ExprList => vec![],
