@@ -64,7 +64,9 @@ impl OptimizationPhase {
         lowered: &mut Lowered,
     ) -> Maybe<()> {
         match self {
-            OptimizationPhase::ApplyInlining => apply_inlining(db, function, lowered)?,
+            OptimizationPhase::ApplyInlining => {
+                apply_inlining(db, function, lowered, db.optimization_config().skip_const_folding)?
+            }
             OptimizationPhase::BranchInversion => branch_inversion(db, lowered),
             OptimizationPhase::CancelOps => cancel_ops(lowered),
             OptimizationPhase::ConstFolding => const_folding(db, function, lowered),
