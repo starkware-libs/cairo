@@ -72,35 +72,35 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
-  Goto(blk2, {})
+  Goto(blk1, {})
 
 blk1:
 Statements:
 End:
-  Return(v1)
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero(v2) => blk3,
+  })
 
 blk2:
 Statements:
 End:
-  Match(match core::felt252_is_zero(v0) {
-    IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero(v2) => blk4,
-  })
+  Goto(blk4, {})
 
 blk3:
 Statements:
 End:
-  Goto(blk5, {})
+  Goto(blk4, {})
 
 blk4:
 Statements:
+  (v3: core::felt252) <- 1
 End:
-  Goto(blk5, {})
+  Goto(blk5, {v3 -> v1})
 
 blk5:
 Statements:
-  (v3: core::felt252) <- 1
 End:
-  Goto(blk1, {v3 -> v1})
+  Return(v1)
 
 //! > lowering_diagnostics
