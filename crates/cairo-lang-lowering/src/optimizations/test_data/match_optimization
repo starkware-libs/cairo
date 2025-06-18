@@ -608,8 +608,7 @@ End:
 
 blk5:
 Statements:
-  (v5: core::felt252) <- 375233589013918064796019
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_felt252(v5)
+  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
   (v12: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v11)
 End:
   Goto(blk6, {v12 -> v10})
@@ -674,8 +673,7 @@ End:
 
 blk5:
 Statements:
-  (v5: core::felt252) <- 375233589013918064796019
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_felt252(v5)
+  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
 End:
   Goto(blk8, {v11 -> v14})
 
@@ -1827,19 +1825,6 @@ Statements:
   (v1: core::option::Option::<core::integer::u32>) <- Option::Some(v0)
   (v2: test::MyStruct) <- struct_construct(v1)
 End:
-  Match(match_enum(v1) {
-    Option::Some(v3) => blk1,
-    Option::None(v4) => blk2,
-  })
-
-blk1:
-Statements:
-End:
-  Return(v2)
-
-blk2:
-Statements:
-End:
   Return(v2)
 
 //! > after
@@ -1849,16 +1834,6 @@ Statements:
   (v0: core::integer::u32) <- 1
   (v1: core::option::Option::<core::integer::u32>) <- Option::Some(v0)
   (v2: test::MyStruct) <- struct_construct(v1)
-End:
-  Goto(blk1, {v0 -> v3})
-
-blk1:
-Statements:
-End:
-  Return(v2)
-
-blk2:
-Statements:
 End:
   Return(v2)
 
