@@ -30,10 +30,14 @@ End:
 
 blk1:
 Statements:
+  (v4: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v2)
+  (v5: (core::integer::u32,)) <- struct_construct(v4)
+  (v6: core::array::Array::<core::integer::u32>, v7: core::option::Option::<core::integer::u32>) <- core::array::ArrayImpl::<core::integer::u32>::pop_front(v1)
+  (v8: core::panics::PanicResult::<(core::integer::u32,)>) <- core::option::OptionTraitImpl::<core::integer::u32>::unwrap(v7)
 End:
-  Match(match core::array::array_pop_front::<core::integer::u32>(v1) {
-    Option::Some(v6, v7) => blk2,
-    Option::None(v8) => blk3,
+  Match(match_enum(v8) {
+    PanicResult::Ok(v9) => blk2,
+    PanicResult::Err(v10) => blk3,
   })
 
 blk2:
@@ -46,17 +50,16 @@ End:
 
 blk3:
 Statements:
-  (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
-  (v16: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v14: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
 End:
-  Return(v16)
+  Return(v14)
 
 blk4:
 Statements:
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
-  (v19: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v18)
+  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
+  (v17: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v16)
 End:
-  Return(v19)
+  Return(v17)
 
 //! > after
 Parameters: v0: core::array::Array::<core::integer::u32>
@@ -65,15 +68,19 @@ Statements:
 End:
   Match(match core::array::array_pop_front::<core::integer::u32>(v0) {
     Option::Some(v1, v2) => blk1,
-    Option::None(v3) => blk6,
+    Option::None(v3) => blk4,
   })
 
 blk1:
 Statements:
+  (v4: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v2)
+  (v5: (core::integer::u32,)) <- struct_construct(v4)
+  (v6: core::array::Array::<core::integer::u32>, v7: core::option::Option::<core::integer::u32>) <- core::array::ArrayImpl::<core::integer::u32>::pop_front(v1)
+  (v8: core::panics::PanicResult::<(core::integer::u32,)>) <- core::option::OptionTraitImpl::<core::integer::u32>::unwrap(v7)
 End:
-  Match(match core::array::array_pop_front::<core::integer::u32>(v1) {
-    Option::Some(v6, v7) => blk2,
-    Option::None(v8) => blk7,
+  Match(match_enum(v8) {
+    PanicResult::Ok(v9) => blk2,
+    PanicResult::Err(v10) => blk3,
   })
 
 blk2:
@@ -86,34 +93,16 @@ End:
 
 blk3:
 Statements:
-  (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
-  (v16: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v14: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
 End:
-  Return(v16)
+  Return(v14)
 
 blk4:
 Statements:
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
-  (v19: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v18)
+  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
+  (v17: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v16)
 End:
-  Return(v19)
-
-blk5:
-Statements:
-  (v20: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
-  (v21: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
-End:
-  Return(v21)
-
-blk6:
-Statements:
-End:
-  Goto(blk5, {})
-
-blk7:
-Statements:
-End:
-  Goto(blk5, {})
+  Return(v17)
 
 //! > ==========================================================================
 

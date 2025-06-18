@@ -138,55 +138,29 @@ fn foo(a: u64) -> Option<u64> {
 }
 
 //! > casm
-%{ memory[ap + 0] = memory[fp + -3] < 18446744073709551616 %}
-jmp rel 7 if [ap + 0] != 0, ap++;
-[fp + -3] = [ap + 0] + 18446744073709551616, ap++;
-[ap + -1] = [[fp + -4] + 0];
-jmp rel 11;
-[ap + 0] = [fp + -3] + 340282366920938463444927863358058659840, ap++;
-[ap + -1] = [[fp + -4] + 0];
-[ap + 0] = [fp + -4] + 1, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [fp + -3], ap++;
 ret;
-[ap + 0] = [fp + -4] + 1, ap++;
-[ap + 0] = 1, ap++;
-[ap + 0] = 0, ap++;
-ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 770})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::option::Option::<core::integer::u64> = Enum<ut@core::option::Option::<core::integer::u64>, u64, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc downcast<u64, u64> = downcast<u64, u64>;
-libfunc branch_align = branch_align;
+libfunc upcast<u64, u64> = upcast<u64, u64>;
 libfunc enum_init<core::option::Option::<core::integer::u64>, 0> = enum_init<core::option::Option::<core::integer::u64>, 0>;
-libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::option::Option::<core::integer::u64>> = store_temp<core::option::Option::<core::integer::u64>>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::option::Option::<core::integer::u64>, 1> = enum_init<core::option::Option::<core::integer::u64>, 1>;
 
 F0:
-downcast<u64, u64>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
-branch_align() -> ();
-enum_init<core::option::Option::<core::integer::u64>, 0>([3]) -> ([5]);
-store_temp<RangeCheck>([2]) -> ([2]);
-store_temp<core::option::Option::<core::integer::u64>>([5]) -> ([5]);
-return([2], [5]);
-F0_B0:
-branch_align() -> ();
-struct_construct<Unit>() -> ([6]);
-enum_init<core::option::Option::<core::integer::u64>, 1>([6]) -> ([7]);
-store_temp<RangeCheck>([4]) -> ([4]);
-store_temp<core::option::Option::<core::integer::u64>>([7]) -> ([7]);
-return([4], [7]);
+upcast<u64, u64>([0]) -> ([1]);
+enum_init<core::option::Option::<core::integer::u64>, 0>([1]) -> ([2]);
+store_temp<core::option::Option::<core::integer::u64>>([2]) -> ([2]);
+return([2]);
 
-test::foo@F0([0]: RangeCheck, [1]: u64) -> (RangeCheck, core::option::Option::<core::integer::u64>);
+test::foo@F0([0]: u64) -> (core::option::Option::<core::integer::u64>);
 
 //! > ==========================================================================
 
@@ -201,48 +175,29 @@ fn foo(a: i64) -> Option<i64> {
 }
 
 //! > casm
-[ap + 0] = [fp + -4], ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [fp + -3], ap++;
 ret;
-[ap + 0] = [fp + -4], ap++;
-[ap + 0] = 1, ap++;
-[ap + 0] = 0, ap++;
-ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::option::Option::<core::integer::i64> = Enum<ut@core::option::Option::<core::integer::i64>, i64, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc downcast<i64, i64> = downcast<i64, i64>;
-libfunc branch_align = branch_align;
+libfunc upcast<i64, i64> = upcast<i64, i64>;
 libfunc enum_init<core::option::Option::<core::integer::i64>, 0> = enum_init<core::option::Option::<core::integer::i64>, 0>;
-libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::option::Option::<core::integer::i64>> = store_temp<core::option::Option::<core::integer::i64>>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::option::Option::<core::integer::i64>, 1> = enum_init<core::option::Option::<core::integer::i64>, 1>;
 
 F0:
-downcast<i64, i64>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
-branch_align() -> ();
-enum_init<core::option::Option::<core::integer::i64>, 0>([3]) -> ([5]);
-store_temp<RangeCheck>([2]) -> ([2]);
-store_temp<core::option::Option::<core::integer::i64>>([5]) -> ([5]);
-return([2], [5]);
-F0_B0:
-branch_align() -> ();
-struct_construct<Unit>() -> ([6]);
-enum_init<core::option::Option::<core::integer::i64>, 1>([6]) -> ([7]);
-store_temp<RangeCheck>([4]) -> ([4]);
-store_temp<core::option::Option::<core::integer::i64>>([7]) -> ([7]);
-return([4], [7]);
+upcast<i64, i64>([0]) -> ([1]);
+enum_init<core::option::Option::<core::integer::i64>, 0>([1]) -> ([2]);
+store_temp<core::option::Option::<core::integer::i64>>([2]) -> ([2]);
+return([2]);
 
-test::foo@F0([0]: RangeCheck, [1]: i64) -> (RangeCheck, core::option::Option::<core::integer::i64>);
+test::foo@F0([0]: i64) -> (core::option::Option::<core::integer::i64>);
 
 //! > ==========================================================================
 
@@ -257,49 +212,30 @@ fn foo(a: u32) -> Option<u64> {
 }
 
 //! > casm
-[ap + 0] = [fp + -4], ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [fp + -3], ap++;
 ret;
-[ap + 0] = [fp + -4], ap++;
-[ap + 0] = 1, ap++;
-[ap + 0] = 0, ap++;
-ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
-type core::option::Option::<core::integer::u64> = Enum<ut@core::option::Option::<core::integer::u64>, u64, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::option::Option::<core::integer::u64> = Enum<ut@core::option::Option::<core::integer::u64>, u64, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc downcast<u32, u64> = downcast<u32, u64>;
-libfunc branch_align = branch_align;
+libfunc upcast<u32, u64> = upcast<u32, u64>;
 libfunc enum_init<core::option::Option::<core::integer::u64>, 0> = enum_init<core::option::Option::<core::integer::u64>, 0>;
-libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::option::Option::<core::integer::u64>> = store_temp<core::option::Option::<core::integer::u64>>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::option::Option::<core::integer::u64>, 1> = enum_init<core::option::Option::<core::integer::u64>, 1>;
 
 F0:
-downcast<u32, u64>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
-branch_align() -> ();
-enum_init<core::option::Option::<core::integer::u64>, 0>([3]) -> ([5]);
-store_temp<RangeCheck>([2]) -> ([2]);
-store_temp<core::option::Option::<core::integer::u64>>([5]) -> ([5]);
-return([2], [5]);
-F0_B0:
-branch_align() -> ();
-struct_construct<Unit>() -> ([6]);
-enum_init<core::option::Option::<core::integer::u64>, 1>([6]) -> ([7]);
-store_temp<RangeCheck>([4]) -> ([4]);
-store_temp<core::option::Option::<core::integer::u64>>([7]) -> ([7]);
-return([4], [7]);
+upcast<u32, u64>([0]) -> ([1]);
+enum_init<core::option::Option::<core::integer::u64>, 0>([1]) -> ([2]);
+store_temp<core::option::Option::<core::integer::u64>>([2]) -> ([2]);
+return([2]);
 
-test::foo@F0([0]: RangeCheck, [1]: u32) -> (RangeCheck, core::option::Option::<core::integer::u64>);
+test::foo@F0([0]: u32) -> (core::option::Option::<core::integer::u64>);
 
 //! > ==========================================================================
 

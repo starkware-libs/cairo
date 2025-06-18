@@ -161,6 +161,7 @@ pub struct ExperimentalFeaturesConfig {
     #[serde(default)]
     pub coupons: bool,
     /// Allows using user defined inline macros.
+    #[serde(default)]
     pub user_defined_inline_macros: bool,
 }
 

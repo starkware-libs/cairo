@@ -175,51 +175,25 @@ fn foo() -> bool {
 }
 
 //! > casm
-[ap + 0] = 11, ap++;
-[ap + -1] = [ap + 0] + 12, ap++;
-jmp rel 4 if [ap + -1] != 0;
-jmp rel 5;
 [ap + 0] = 0, ap++;
-ret;
-[ap + 0] = 1, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 500})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type Const<i8, 12> = Const<i8, 12> [storable: false, drop: false, dup: false, zero_sized: false];
-type Const<i8, 11> = Const<i8, 11> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc const_as_immediate<Const<i8, 11>> = const_as_immediate<Const<i8, 11>>;
-libfunc const_as_immediate<Const<i8, 12>> = const_as_immediate<Const<i8, 12>>;
-libfunc store_temp<i8> = store_temp<i8>;
-libfunc i8_eq = i8_eq;
-libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
 
 F0:
-const_as_immediate<Const<i8, 11>>() -> ([0]);
-const_as_immediate<Const<i8, 12>>() -> ([1]);
-store_temp<i8>([0]) -> ([0]);
-i8_eq([0], [1]) { fallthrough() F0_B0() };
-branch_align() -> ();
-struct_construct<Unit>() -> ([2]);
-enum_init<core::bool, 0>([2]) -> ([3]);
-store_temp<core::bool>([3]) -> ([3]);
-return([3]);
-F0_B0:
-branch_align() -> ();
-struct_construct<Unit>() -> ([4]);
-enum_init<core::bool, 1>([4]) -> ([5]);
-store_temp<core::bool>([5]) -> ([5]);
-return([5]);
+struct_construct<Unit>() -> ([0]);
+enum_init<core::bool, 0>([0]) -> ([1]);
+store_temp<core::bool>([1]) -> ([1]);
+return([1]);
 
 test::foo@F0() -> (core::bool);
 
