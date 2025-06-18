@@ -729,11 +729,11 @@ enum CrateCached {
     Virtual { name: SmolStr, file_id: FileIdCached, settings: String },
 }
 impl CrateCached {
-    fn new(crate_id: CrateLongId, _ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new(crate_id: CrateLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
         match crate_id {
             CrateLongId::Real { name, discriminator } => CrateCached::Real { name, discriminator },
             CrateLongId::Virtual { name, file_id, settings, cache_file: _ } => {
-                CrateCached::Virtual { name, file_id: FileIdCached::new(file_id, _ctx), settings }
+                CrateCached::Virtual { name, file_id: FileIdCached::new(file_id, ctx), settings }
             }
         }
     }
