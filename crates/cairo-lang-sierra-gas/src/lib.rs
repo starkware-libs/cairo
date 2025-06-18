@@ -28,7 +28,7 @@ use thiserror::Error;
 
 pub mod compute_costs;
 pub mod core_libfunc_cost;
-mod core_libfunc_cost_base;
+pub mod core_libfunc_cost_base;
 mod core_libfunc_cost_expr;
 mod cost_expr;
 pub mod gas_info;
@@ -136,13 +136,13 @@ pub fn calc_gas_precost_info(
 }
 
 /// Info provider used for the computation of libfunc costs.
-struct ComputeCostInfoProvider {
+pub struct ComputeCostInfoProvider {
     pub registry: ProgramRegistry<CoreType, CoreLibfunc>,
     pub type_sizes: TypeSizeMap,
 }
 
 impl ComputeCostInfoProvider {
-    fn new(program: &Program) -> Result<Self, Box<ProgramRegistryError>> {
+    pub fn new(program: &Program) -> Result<Self, Box<ProgramRegistryError>> {
         let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
         let type_sizes = get_type_size_map(program, &registry).unwrap();
         Ok(Self { registry, type_sizes })
