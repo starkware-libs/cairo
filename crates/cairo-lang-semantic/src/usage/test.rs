@@ -17,7 +17,7 @@ cairo_lang_test_utils::test_file_test!(
     usage,
     "src/usage/test_data",
     {
-        usage :"usage",
+        usage: "usage",
     },
     test_function_usage
 );

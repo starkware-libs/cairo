@@ -17,7 +17,7 @@ cairo_lang_test_utils::test_file_test!(
     "src/optimizations/test_data",
     {
         arm_pattern_destructure: "arm_pattern_destructure",
-        match_optimization :"match_optimization",
+        match_optimization: "match_optimization",
     },
     test_match_optimizer
 );
