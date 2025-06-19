@@ -13,8 +13,8 @@ cairo_lang_test_utils::test_file_test!(
     borrow_check,
     "src/borrow_check/test_data",
     {
-        borrow_check :"borrow_check",
-        closure :"closure",
+        borrow_check: "borrow_check",
+        closure: "closure",
     },
     test_borrow_check
 );

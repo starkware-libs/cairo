@@ -21,7 +21,7 @@ cairo_lang_test_utils::test_file_test!(
     specialized,
     "src/lower/test_data",
     {
-        specialized :"specialized",
+        specialized: "specialized",
     },
     test_specialized_function
 );

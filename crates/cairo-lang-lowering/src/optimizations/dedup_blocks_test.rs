@@ -17,7 +17,7 @@ cairo_lang_test_utils::test_file_test!(
     dedup_blocks,
     "src/optimizations/test_data",
     {
-        dedup_blocks :"dedup_blocks",
+        dedup_blocks: "dedup_blocks",
     },
     test_dedup_blocks
 );
