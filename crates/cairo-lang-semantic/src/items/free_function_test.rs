@@ -48,7 +48,7 @@ fn test_expr_lookup() {
              FunctionCall(ExprFunctionCall { function: core::Felt252Add::add, args: \
              [Value(Literal(ExprLiteral { value: 5, ty: core::felt252 })), \
              Value(Literal(ExprLiteral { value: 5, ty: core::felt252 }))], coupon_arg: None, ty: \
-             core::felt252 }) })], tail: Some(Match(ExprMatch { matched_expr: \
+             core::felt252 }), else_clause: None })], tail: Some(Match(ExprMatch { matched_expr: \
              FunctionCall(ExprFunctionCall { function: core::Felt252Mul::mul, args: \
              [Value(Literal(ExprLiteral { value: 1, ty: core::felt252 })), \
              Value(Literal(ExprLiteral { value: 1, ty: core::felt252 }))], coupon_arg: None, ty: \

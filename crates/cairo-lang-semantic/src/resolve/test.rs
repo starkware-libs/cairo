@@ -43,8 +43,8 @@ fn test_resolve_path() {
         "Some(Block(ExprBlock { statements: [Expr(StatementExpr { expr: \
          FunctionCall(ExprFunctionCall { function: test::bar::<(core::felt252, Q)>, args: \
          [Value(Var(ParamId(test::value)))], coupon_arg: None, ty: test::S::<()> }) }), \
-         Let(StatementLet { pattern: Variable(_c), expr: Var(ParamId(test::b)) })], tail: None, \
-         ty: () }))"
+         Let(StatementLet { pattern: Variable(_c), expr: Var(ParamId(test::b)), else_clause: None \
+         })], tail: None, ty: () }))"
     );
 }
 
