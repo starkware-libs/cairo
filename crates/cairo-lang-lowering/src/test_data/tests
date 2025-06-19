@@ -242,10 +242,10 @@ blk5:
 Statements:
   (v20: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v16)
   (v21: core::felt252) <- struct_destructure(v18)
-  (v22: core::felt252) <- 5
-  (v23: core::felt252) <- 0
-  (v24: core::felt252) <- core::felt252_add(v2, v23)
-  (v25: core::felt252) <- core::felt252_mul(v22, v24)
+  (v22: core::felt252) <- 0
+  (v23: core::felt252) <- core::felt252_add(v2, v22)
+  (v24: core::felt252) <- 5
+  (v25: core::felt252) <- core::felt252_mul(v24, v23)
   (v26: core::felt252) <- core::felt252_add(v21, v25)
   (v27: (core::felt252,)) <- struct_construct(v26)
   (v28: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v27)

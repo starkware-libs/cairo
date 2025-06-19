@@ -11,24 +11,46 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 1: 1 (store_temp<felt252>([0]) -> ([0]))
-  statement 2: 1 (return([0]))
+  statement 1: 2 (store_temp<test::MyEnumShort>([0]) -> ([0]))
+  statement 9: 2 (store_temp<test::MyEnumShort>([3]) -> ([3]))
+  statement 17: 2 (store_temp<test::MyEnumLong>([6]) -> ([6]))
+  statement 28: 2 (store_temp<test::MyEnumLong>([10]) -> ([10]))
+  statement 29: 2 (enum_match<test::MyEnumLong>([10]) { fallthrough([11]) 33([12]) 36([13]) })
+  statement 39: 2 (store_temp<test::MyEnumLong>([14]) -> ([14]))
+  statement 40: 2 (enum_match<test::MyEnumLong>([14]) { fallthrough([15]) 44([16]) 47([17]) })
+  statement 2: 1 (enum_match<test::MyEnumShort>([0]) { fallthrough([1]) 6([2]) })
+  statement 5: 1 (jump() { 8() })
+  statement 10: 1 (enum_match<test::MyEnumShort>([3]) { fallthrough([4]) 14([5]) })
+  statement 18: 1 (enum_match<test::MyEnumLong>([6]) { fallthrough([7]) 22([8]) 25([9]) })
+  statement 21: 1 (jump() { 27() })
+  statement 35: 1 (jump() { 38() })
+  statement 50: 1 (store_temp<felt252>([18]) -> ([18]))
+  statement 51: 1 (return([18]))
 Weight by concrete libfunc:
+  libfunc store_temp<test::MyEnumLong>: 6
+  libfunc enum_match<test::MyEnumLong>: 5
+  libfunc store_temp<test::MyEnumShort>: 4
+  libfunc jump: 3
+  libfunc enum_match<test::MyEnumShort>: 2
   libfunc store_temp<felt252>: 1
   return: 1
 Weight by generic libfunc:
-  libfunc store_temp: 1
+  libfunc store_temp: 11
+  libfunc enum_match: 7
+  libfunc jump: 3
   return: 1
 Weight by user function (inc. generated):
-  function test::main: 2
+  function test::main: 22
 Weight by original user function (exc. generated):
-  function test::main: 2
+  function test::main: 22
 Weight by Cairo function:
+  function lib.cairo::match_long: 13
+  function lib.cairo::match_short: 7
   function lib.cairo::main: 2
 Weight by Sierra stack trace:
-  test::main: 2
+  test::main: 22
 Weight by Cairo stack trace:
-  test::main: 2
+  test::main: 22
 
 //! > ==========================================================================
 

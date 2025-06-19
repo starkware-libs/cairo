@@ -1158,7 +1158,8 @@ Statements:
   (v1: test::B) <- struct_construct(v0)
   (v2: test::B, v3: @test::B) <- snapshot(v1)
   () <- test::ex1(v3)
-  () <- test::ex(v0)
+  (v4: core::integer::u32) <- 3
+  () <- test::ex(v4)
 End:
   Return()
 
@@ -1277,10 +1278,10 @@ Final lowering:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::integer::u32) <- 3
-  (v1: test::B) <- struct_construct(v0)
-  () <- test::ex1(v1)
-  (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v0)
+  (v0: test::B) <- { 3: core::integer::u32 }
+  () <- test::ex1(v0)
+  (v1: core::integer::u32) <- struct_destructure(v0)
+  (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
   () <- test::ex(v3)
 End:
   Return()
@@ -2761,10 +2762,10 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::integer::u32) <- 1
-  (v3: core::integer::u32) <- 5
+  (v2: core::integer::u32) <- 5
+  (v3: core::integer::u32) <- 1
 End:
-  Match(match core::ops::range::internal::int_range_try_new::<core::integer::u32>(v0, v2, v3) {
+  Match(match core::ops::range::internal::int_range_try_new::<core::integer::u32>(v0, v3, v2) {
     Result::Ok(v4, v5) => blk1,
     Result::Err(v6, v7) => blk2,
   })
