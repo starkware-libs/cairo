@@ -82,6 +82,9 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::EmptyRepeatedElementFixedSizeArray => {
                 "Fixed size array repeated element size must be greater than 0.".into()
             }
+            LoweringDiagnosticKind::LetElseNotSupported => {
+                "Let else is not supported yet.".into()
+            }
         }
     }
 
@@ -207,6 +210,7 @@ pub enum LoweringDiagnosticKind {
     EmptyRepeatedElementFixedSizeArray,
     UnsupportedPattern,
     Unsupported,
+    LetElseNotSupported,
 }
 
 /// Error in a match-like construct.

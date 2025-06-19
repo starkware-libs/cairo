@@ -3883,8 +3883,19 @@ pub fn compute_statement_semantic(
             };
             let rhs_expr_id = rhs_expr.id;
 
-            if !matches!(let_syntax.let_else_clause(db), ast::OptionLetElseClause::Empty(_)) {
-                return Err(ctx.diagnostics.report(let_syntax.stable_ptr(db), LetElseNotSupported));
+            let let_else = match let_syntax.let_else_clause(db) {
+                ast::OptionLetElseClause::Empty(_) => None,
+                ast::OptionLetElseClause::LetElseClause(else_clause) => {
+                    let else_block =
+                        compute_expr_semantic(ctx, &ast::Expr::Block(else_clause.else_block(db)));
+
+                    if else_block.ty() != never_ty(db) {
+                        // Report the error, but continue processing.
+                        ctx.diagnostics.report(else_clause.stable_ptr(db), NonNeverLetElseType);
+                    }
+
+                    Some(else_block)
+                }
             };
 
             let pattern = compute_pattern_semantic(
@@ -3911,6 +3922,7 @@ pub fn compute_statement_semantic(
             semantic::Statement::Let(semantic::StatementLet {
                 pattern: pattern.id,
                 expr: rhs_expr_id,
+                let_else: let_else.map(|expr_and_id| expr_and_id.id),
                 stable_ptr: syntax.stable_ptr(db),
             })
         }

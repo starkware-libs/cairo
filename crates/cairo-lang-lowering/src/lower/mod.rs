@@ -648,9 +648,19 @@ pub fn lower_statement(
                 x.as_var_usage(ctx, builder)?;
             }
         }
-        semantic::Statement::Let(semantic::StatementLet { pattern, expr, stable_ptr: _ }) => {
+        semantic::Statement::Let(semantic::StatementLet {
+            pattern,
+            expr,
+            let_else,
+            stable_ptr,
+        }) => {
             log::trace!("Lowering a let statement.");
             let lowered_expr = lower_expr(ctx, builder, *expr)?;
+            if let_else.is_some() {
+                return Err(LoweringFlowError::Failed(
+                    ctx.diagnostics.report(stable_ptr.untyped(), LetElseNotSupported),
+                ));
+            }
             lower_single_pattern(ctx, builder, *pattern, lowered_expr)?
         }
         semantic::Statement::Continue(semantic::StatementContinue { stable_ptr }) => {

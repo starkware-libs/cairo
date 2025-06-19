@@ -91,6 +91,7 @@ pub struct StatementExpr {
 pub struct StatementLet {
     pub pattern: PatternId,
     pub expr: ExprId,
+    pub let_else: Option<ExprId>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::StatementPtr,
