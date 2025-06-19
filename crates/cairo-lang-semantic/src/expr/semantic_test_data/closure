@@ -100,6 +100,7 @@ Block(
                                                 expr: Var(
                                                     ParamId(test::a),
                                                 ),
+                                                let_else: None,
                                             },
                                         ),
                                     ],
@@ -133,6 +134,7 @@ Block(
                             ty: {closure@lib.cairo:6:13: 6:16},
                         },
                     ),
+                    let_else: None,
                 },
             ),
             Let(
@@ -154,6 +156,7 @@ Block(
                             ty: core::integer::u128,
                         },
                     ),
+                    let_else: None,
                 },
             ),
         ],
