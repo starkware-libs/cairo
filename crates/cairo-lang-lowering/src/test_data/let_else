@@ -1,0 +1,38 @@
+//! > let else
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function
+fn foo(a: MyEnum) {
+    let MyEnum::A(x) = a else {
+        bar(0);
+        return;
+    };
+    bar(x);
+}
+
+extern fn bar(x: felt252) nopanic;
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:6:5-9:6
+      let MyEnum::A(x) = a else {
+ _____^
+| ...
+|     };
+|______^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
