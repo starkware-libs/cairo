@@ -1080,6 +1080,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled => {
                 "User defined inline macros are disabled in the current crate.".into()
             }
+            SemanticDiagnosticKind::LetElseNotSupported => "Let else is not supported yet.".into(),
         }
     }
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
@@ -1519,6 +1520,7 @@ pub enum SemanticDiagnosticKind {
     PatternMissingArgs(ast::ExprPath),
     UndefinedMacroPlaceholder(String),
     UserDefinedInlineMacrosDisabled,
+    LetElseNotSupported,
 }
 
 /// The kind of an expression with multiple possible return types.

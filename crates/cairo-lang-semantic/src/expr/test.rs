@@ -77,6 +77,7 @@ cairo_lang_test_utils::test_file_test!(
         literals: "literals",
         match_: "match",
         if_: "if",
+        let_else: "let_else",
         loop_: "loop",
         operator: "operator",
         structure: "structure",

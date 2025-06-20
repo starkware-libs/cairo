@@ -844,6 +844,7 @@ error: Missing tokens. Expected a statement after attributes.
     │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │   ├── eq (kind: TerminalEq) <ignored>
     │   │   ├── rhs (kind: TerminalLiteralNumber) <ignored>
+    │   │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     │   │   └── semicolon (kind: TerminalSemicolon) <ignored>
     │   └── child #1: Missing []
     └── rbrace (kind: TerminalRBrace)
