@@ -44,6 +44,7 @@ cairo_lang_test_utils::test_file_test!(
         if_: "if",
         inference: "inference",
         inline_macros: "inline_macros",
+        let_else: "let_else",
         let_statement: "let_statement",
         literal: "literal",
         logical_operator: "logical_operator",
