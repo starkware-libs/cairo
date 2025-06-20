@@ -86,3 +86,179 @@ Block(
 )
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test block with just item.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+{
+    const _X: u8 = 6;
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Item(
+                StatementItem,
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test block with just return.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+{
+    return;
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Return(
+                StatementReturn {
+                    expr_option: None,
+                },
+            ),
+        ],
+        tail: None,
+        ty: core::never,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test block with just return and item, ignoring item.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+{
+    return;
+    const _X: u8 = 6;
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Return(
+                StatementReturn {
+                    expr_option: None,
+                },
+            ),
+            Item(
+                StatementItem,
+            ),
+        ],
+        tail: None,
+        ty: core::never,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test block with just panic.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+{
+    panic_with_felt252('a');
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Expr(
+                StatementExpr {
+                    expr: FunctionCall(
+                        ExprFunctionCall {
+                            function: core::panic_with_felt252,
+                            args: [
+                                Value(
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 97,
+                                            ty: core::felt252,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            coupon_arg: None,
+                            ty: core::never,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: core::never,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test block with just continue.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+loop {
+    {
+        continue;
+    }
+}
+
+//! > expected_semantics
+Loop(
+    ExprLoop {
+        body: Block(
+            ExprBlock {
+                statements: [],
+                tail: Some(
+                    Block(
+                        ExprBlock {
+                            statements: [
+                                Continue(
+                                    StatementContinue,
+                                ),
+                            ],
+                            tail: None,
+                            ty: core::never,
+                        },
+                    ),
+                ),
+                ty: (),
+            },
+        ),
+        ty: core::never,
+    },
+)
+
+//! > expected_diagnostics
