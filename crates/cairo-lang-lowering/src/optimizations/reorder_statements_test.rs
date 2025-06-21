@@ -16,7 +16,7 @@ cairo_lang_test_utils::test_file_test!(
     reorder_statements,
     "src/optimizations/test_data",
     {
-        reorder_statements :"reorder_statements",
+        reorder_statements: "reorder_statements",
     },
     test_reorder_statements
 );

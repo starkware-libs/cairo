@@ -16,7 +16,7 @@ cairo_lang_test_utils::test_file_test!(
     branch_inversion,
     "src/optimizations/test_data",
     {
-        branch_inversion :"branch_inversion",
+        branch_inversion: "branch_inversion",
     },
     test_branch_inversion
 );
