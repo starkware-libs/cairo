@@ -17,6 +17,7 @@ mod hash_test;
 mod integer_test;
 mod iter_test;
 mod keccak_test;
+mod let_else_test;
 mod math_test;
 mod nullable_test;
 mod num_test;
