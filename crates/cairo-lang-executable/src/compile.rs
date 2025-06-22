@@ -4,6 +4,7 @@ use std::sync::Arc;
 use anyhow::{Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
+use cairo_lang_compiler::get_sierra_program_for_functions;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
@@ -12,7 +13,6 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_runnable_utils::builder::{
     CasmProgramWrapperInfo, EntryCodeConfig, RunnableBuilder,
 };
-use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::find_executable_function_ids;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
@@ -179,12 +179,11 @@ pub fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWit
 pub fn compile_executable_function_in_prepared_db(
     db: &RootDatabase,
     executable: ConcreteFunctionWithBodyId,
-    mut diagnostics_reporter: DiagnosticsReporter<'_>,
+    diagnostics_reporter: DiagnosticsReporter<'_>,
     config: ExecutableConfig,
 ) -> Result<CompiledFunction> {
-    diagnostics_reporter.ensure(db)?;
     let SierraProgramWithDebug { program: sierra_program, debug_info } = Arc::unwrap_or_clone(
-        db.get_sierra_program_for_functions(vec![executable])
+        get_sierra_program_for_functions(db, vec![executable], diagnostics_reporter)
             .ok()
             .with_context(|| "Compilation failed without any diagnostics.")?,
     );
