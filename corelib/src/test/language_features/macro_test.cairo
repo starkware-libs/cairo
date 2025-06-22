@@ -389,3 +389,15 @@ fn test_defsite_inference() {
     let z: defsite_inference::A = defsite_inference::use_local_impl_inference!(5);
     assert_eq!(y.x, z.x);
 }
+
+macro define_and_use unhygenic {
+    () => {
+        let foo = 123;
+    };
+}
+
+#[test]
+fn test_define_and_use_unhygenic() {
+    define_and_use!();
+    let _y = foo;
+}

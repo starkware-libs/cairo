@@ -24,6 +24,7 @@ macro macro_name {
     │       ├── visibility (kind: VisibilityDefault) []
     │       ├── macro_kw (kind: TokenMacro): 'macro'
     │       ├── name (kind: TokenIdentifier): 'macro_name'
+    │       ├── unhygenic_kw (kind: OptionTerminalUnhygenicEmpty) []
     │       ├── lbrace (kind: TokenLBrace): '{'
     │       ├── rules (kind: MacroRulesList)
     │       │   └── child #0 (kind: MacroRule)
@@ -80,6 +81,7 @@ macro macro_name {
     │       ├── visibility (kind: VisibilityDefault) []
     │       ├── macro_kw (kind: TokenMacro): 'macro'
     │       ├── name (kind: TokenIdentifier): 'macro_name'
+    │       ├── unhygenic_kw (kind: OptionTerminalUnhygenicEmpty) []
     │       ├── lbrace (kind: TokenLBrace): '{'
     │       ├── rules (kind: MacroRulesList)
     │       │   ├── child #0 (kind: MacroRule)
@@ -225,6 +227,7 @@ error: Missing tokens. Expected a macro rule parameter kind.
     │       ├── visibility (kind: VisibilityDefault) []
     │       ├── macro_kw (kind: TokenMacro): 'macro'
     │       ├── name (kind: TokenIdentifier): 'macro_name'
+    │       ├── unhygenic_kw (kind: OptionTerminalUnhygenicEmpty) []
     │       ├── lbrace (kind: TokenLBrace): '{'
     │       ├── rules (kind: MacroRulesList)
     │       │   └── child #0 (kind: MacroRule)

@@ -68,6 +68,7 @@ pub struct MacroDeclarationData {
     attributes: Vec<Attribute>,
     diagnostics: Diagnostics<SemanticDiagnostic>,
     resolver_data: Arc<ResolverData>,
+    pub is_unhygenic: bool,
 }
 
 /// The semantic data for a single macro rule in a macro declaration.
@@ -121,6 +122,10 @@ pub fn priv_macro_declaration_data(
         );
     }
 
+    let is_unhygenic = matches!(
+        macro_declaration_syntax.unhygenic_kw(syntax_db),
+        ast::OptionTerminalUnhygenic::TerminalUnhygenic(_)
+    );
     let attributes = macro_declaration_syntax.attributes(syntax_db).structurize(syntax_db);
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
         ModuleItemId::MacroDeclaration(macro_declaration_id),
@@ -174,7 +179,13 @@ pub fn priv_macro_declaration_data(
         rules.push(MacroRuleData { pattern, expansion });
     }
     let resolver_data = Arc::new(resolver.data);
-    Ok(MacroDeclarationData { diagnostics: diagnostics.build(), attributes, resolver_data, rules })
+    Ok(MacroDeclarationData {
+        diagnostics: diagnostics.build(),
+        attributes,
+        resolver_data,
+        rules,
+        is_unhygenic,
+    })
 }
 
 /// Helper function to extract pattern elements from a WrappedMacro.

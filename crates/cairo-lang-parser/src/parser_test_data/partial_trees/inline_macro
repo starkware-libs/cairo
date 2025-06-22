@@ -59,6 +59,7 @@ macro some_macro {
     │       ├── visibility (kind: VisibilityDefault) []
     │       ├── macro_kw (kind: TokenMacro): 'macro'
     │       ├── name (kind: TokenIdentifier): 'some_macro'
+    │       ├── unhygenic_kw (kind: OptionTerminalUnhygenicEmpty) []
     │       ├── lbrace (kind: TokenLBrace): '{'
     │       ├── rules (kind: MacroRulesList)
     │       │   └── child #0 (kind: MacroRule)
@@ -167,6 +168,7 @@ fn use_macro() {
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── macro_kw (kind: TokenMacro): 'macro'
     │   │   ├── name (kind: TokenIdentifier): 'some_macro'
+    │   │   ├── unhygenic_kw (kind: OptionTerminalUnhygenicEmpty) []
     │   │   ├── lbrace (kind: TokenLBrace): '{'
     │   │   ├── rules (kind: MacroRulesList)
     │   │   │   ├── child #0 (kind: MacroRule)
