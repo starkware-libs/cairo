@@ -2240,7 +2240,7 @@ impl<'a> Parser<'a> {
     fn expect_if_expr(&mut self) -> ExprIfGreen {
         let if_kw = self.take::<TerminalIf>();
 
-        let condition = self.parse_condition_expr();
+        let conditions = self.parse_condition_list();
         let if_block = self.parse_block();
         let else_clause = if self.peek().kind == SyntaxKind::TerminalElse {
             let else_kw = self.take::<TerminalElse>();
@@ -2253,7 +2253,41 @@ impl<'a> Parser<'a> {
         } else {
             OptionElseClauseEmpty::new_green(self.db).into()
         };
-        ExprIf::new_green(self.db, if_kw, condition, if_block, else_clause)
+        ExprIf::new_green(self.db, if_kw, conditions, if_block, else_clause)
+    }
+
+    /// Parses a conjunction of conditions of the form `<condition> && <condition> && ...`,
+    /// where each condition is either `<expr>` or `let <pattern> = <expr>`.
+    ///
+    /// Assumes the next expected token (after the condition list) is `{`. This assumption is used
+    /// in case of an error.
+    fn parse_condition_list(&mut self) -> ConditionListGreen {
+        let condition = self.parse_condition_expr();
+        let mut conditions: Vec<ConditionListElementOrSeparatorGreen> = vec![condition.into()];
+
+        while self.peek().kind == SyntaxKind::TerminalAndAnd {
+            let and_and = self.take::<TerminalAndAnd>();
+            conditions.push(and_and.into());
+
+            let condition = self.parse_condition_expr();
+            conditions.push(condition.into());
+        }
+
+        let and_and_precedence = get_post_operator_precedence(SyntaxKind::TerminalAndAnd).unwrap();
+        let peek_item = self.peek();
+        if let Some(op_precedence) = get_post_operator_precedence(peek_item.kind) {
+            if op_precedence > and_and_precedence {
+                let offset = self.offset.add_width(self.current_width);
+                self.add_diagnostic(
+                    ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op: peek_item.kind },
+                    TextSpan { start: offset, end: offset },
+                );
+                // Skip the rest of the tokens until `{`. Don't report additional diagnostics.
+                let _ = self.skip_until(is_of_kind!(rbrace, lbrace, module_item_kw, block));
+            }
+        }
+
+        ConditionList::new_green(self.db, conditions)
     }
 
     /// Parses condition exprs of the form `<expr>` or `let <pattern> = <expr>`.
@@ -2276,7 +2310,10 @@ impl<'a> Parser<'a> {
                 PatternListOr::new_green(self.db, pattern_list)
             };
             let eq = self.parse_token::<TerminalEq>();
-            let expr: ExprGreen = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+            let expr: ExprGreen = self.parse_expr_limited(
+                get_post_operator_precedence(SyntaxKind::TerminalAndAnd).unwrap(),
+                LbraceAllowed::Forbid,
+            );
             ConditionLet::new_green(self.db, let_kw, pattern_list_green, eq, expr).into()
         } else {
             let condition = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
@@ -2297,10 +2334,10 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `while <condition> <block>`.
     fn expect_while_expr(&mut self) -> ExprWhileGreen {
         let while_kw = self.take::<TerminalWhile>();
-        let condition = self.parse_condition_expr();
+        let conditions = self.parse_condition_list();
         let body = self.parse_block();
 
-        ExprWhile::new_green(self.db, while_kw, condition, body)
+        ExprWhile::new_green(self.db, while_kw, conditions, body)
     }
 
     /// Assumes the current token is `For`.

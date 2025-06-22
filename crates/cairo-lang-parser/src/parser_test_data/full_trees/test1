@@ -212,22 +212,23 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   ├── eq (kind: TokenEq): '='
     │   │       │   │   ├── rhs (kind: ExprIf)
     │   │       │   │   │   ├── if_kw (kind: TokenIf): 'if'
-    │   │       │   │   │   ├── condition (kind: ConditionExpr)
-    │   │       │   │   │   │   └── expr (kind: ExprBinary)
-    │   │       │   │   │   │       ├── lhs (kind: ExprBinary)
-    │   │       │   │   │   │       │   ├── lhs (kind: TokenLiteralNumber): '0'
-    │   │       │   │   │   │       │   ├── op (kind: TokenPlus): '+'
-    │   │       │   │   │   │       │   └── rhs (kind: ExprPath)
-    │   │       │   │   │   │       │       ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │   │       │   │   │   │       │       └── segments (kind: ExprPathInner)
-    │   │       │   │   │   │       │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │               └── ident (kind: TokenIdentifier): 'x'
-    │   │       │   │   │   │       ├── op (kind: TokenEqEq): '=='
-    │   │       │   │   │   │       └── rhs (kind: ExprPath)
-    │   │       │   │   │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │   │       │   │   │   │           └── segments (kind: ExprPathInner)
-    │   │       │   │   │   │               └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │                   └── ident (kind: TokenIdentifier): 'y'
+    │   │       │   │   │   ├── conditions (kind: ConditionList)
+    │   │       │   │   │   │   └── item #0 (kind: ConditionExpr)
+    │   │       │   │   │   │       └── expr (kind: ExprBinary)
+    │   │       │   │   │   │           ├── lhs (kind: ExprBinary)
+    │   │       │   │   │   │           │   ├── lhs (kind: TokenLiteralNumber): '0'
+    │   │       │   │   │   │           │   ├── op (kind: TokenPlus): '+'
+    │   │       │   │   │   │           │   └── rhs (kind: ExprPath)
+    │   │       │   │   │   │           │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │   │           │       └── segments (kind: ExprPathInner)
+    │   │       │   │   │   │           │           └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │           │               └── ident (kind: TokenIdentifier): 'x'
+    │   │       │   │   │   │           ├── op (kind: TokenEqEq): '=='
+    │   │       │   │   │   │           └── rhs (kind: ExprPath)
+    │   │       │   │   │   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │   │               └── segments (kind: ExprPathInner)
+    │   │       │   │   │   │                   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │                       └── ident (kind: TokenIdentifier): 'y'
     │   │       │   │   │   ├── if_block (kind: ExprBlock)
     │   │       │   │   │   │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │   │   ├── statements (kind: StatementList)
@@ -317,12 +318,13 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   ├── op (kind: TokenMinus): '-'
     │   │       │   │   │   └── rhs (kind: ExprIf)
     │   │       │   │   │       ├── if_kw (kind: TokenIf): 'if'
-    │   │       │   │   │       ├── condition (kind: ConditionExpr)
-    │   │       │   │   │       │   └── expr (kind: ExprPath)
-    │   │       │   │   │       │       ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │   │       │   │   │       │       └── segments (kind: ExprPathInner)
-    │   │       │   │   │       │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │       │               └── ident (kind: TokenIdentifier): 'cond'
+    │   │       │   │   │       ├── conditions (kind: ConditionList)
+    │   │       │   │   │       │   └── item #0 (kind: ConditionExpr)
+    │   │       │   │   │       │       └── expr (kind: ExprPath)
+    │   │       │   │   │       │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │       │           └── segments (kind: ExprPathInner)
+    │   │       │   │   │       │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │       │                   └── ident (kind: TokenIdentifier): 'cond'
     │   │       │   │   │       ├── if_block (kind: ExprBlock)
     │   │       │   │   │       │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │       │   ├── statements (kind: StatementList)
@@ -1436,42 +1438,43 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   ├── token (kind: TokenIf): 'if'
     │   │       │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   ├── condition (kind: ConditionExpr)
-    │   │       │   │   │   │   └── expr (kind: ExprBinary)
-    │   │       │   │   │   │       ├── lhs (kind: ExprBinary)
-    │   │       │   │   │   │       │   ├── lhs (kind: TerminalLiteralNumber)
-    │   │       │   │   │   │       │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   ├── token (kind: TokenLiteralNumber): '0'
-    │   │       │   │   │   │       │   │   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │       │   │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   │       │   ├── op (kind: TerminalPlus)
-    │   │       │   │   │   │       │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   ├── token (kind: TokenPlus): '+'
-    │   │       │   │   │   │       │   │   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │       │   │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   │       │   └── rhs (kind: ExprPath)
-    │   │       │   │   │   │       │       ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │   │       │   │   │   │       │       └── segments (kind: ExprPathInner)
-    │   │       │   │   │   │       │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │               └── ident (kind: TerminalIdentifier)
-    │   │       │   │   │   │       │                   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │                   ├── token (kind: TokenIdentifier): 'x'
-    │   │       │   │   │   │       │                   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │       │                       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   │       ├── op (kind: TerminalEqEq)
-    │   │       │   │   │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   ├── token (kind: TokenEqEq): '=='
-    │   │       │   │   │   │       │   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │       │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   │       └── rhs (kind: ExprPath)
-    │   │       │   │   │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │   │       │   │   │   │           └── segments (kind: ExprPathInner)
-    │   │       │   │   │   │               └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │                   └── ident (kind: TerminalIdentifier)
-    │   │       │   │   │   │                       ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │                       ├── token (kind: TokenIdentifier): 'y'
-    │   │       │   │   │   │                       └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │                           └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   ├── conditions (kind: ConditionList)
+    │   │       │   │   │   │   └── item #0 (kind: ConditionExpr)
+    │   │       │   │   │   │       └── expr (kind: ExprBinary)
+    │   │       │   │   │   │           ├── lhs (kind: ExprBinary)
+    │   │       │   │   │   │           │   ├── lhs (kind: TerminalLiteralNumber)
+    │   │       │   │   │   │           │   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │           │   │   ├── token (kind: TokenLiteralNumber): '0'
+    │   │       │   │   │   │           │   │   └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │           │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │           │   ├── op (kind: TerminalPlus)
+    │   │       │   │   │   │           │   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │           │   │   ├── token (kind: TokenPlus): '+'
+    │   │       │   │   │   │           │   │   └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │           │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │           │   └── rhs (kind: ExprPath)
+    │   │       │   │   │   │           │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │   │           │       └── segments (kind: ExprPathInner)
+    │   │       │   │   │   │           │           └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │           │               └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │   │           │                   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │           │                   ├── token (kind: TokenIdentifier): 'x'
+    │   │       │   │   │   │           │                   └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │           │                       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │           ├── op (kind: TerminalEqEq)
+    │   │       │   │   │   │           │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │           │   ├── token (kind: TokenEqEq): '=='
+    │   │       │   │   │   │           │   └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │           │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │           └── rhs (kind: ExprPath)
+    │   │       │   │   │   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │   │               └── segments (kind: ExprPathInner)
+    │   │       │   │   │   │                   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │                       └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │   │                           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │                           ├── token (kind: TokenIdentifier): 'y'
+    │   │       │   │   │   │                           └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │                               └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   ├── if_block (kind: ExprBlock)
     │   │       │   │   │   │   ├── lbrace (kind: TerminalLBrace)
     │   │       │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
@@ -1705,16 +1708,17 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │       │   ├── token (kind: TokenIf): 'if'
     │   │       │   │   │       │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │       │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │       ├── condition (kind: ConditionExpr)
-    │   │       │   │   │       │   └── expr (kind: ExprPath)
-    │   │       │   │   │       │       ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │   │       │   │   │       │       └── segments (kind: ExprPathInner)
-    │   │       │   │   │       │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │       │               └── ident (kind: TerminalIdentifier)
-    │   │       │   │   │       │                   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │       │                   ├── token (kind: TokenIdentifier): 'cond'
-    │   │       │   │   │       │                   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │       │                       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │       ├── conditions (kind: ConditionList)
+    │   │       │   │   │       │   └── item #0 (kind: ConditionExpr)
+    │   │       │   │   │       │       └── expr (kind: ExprPath)
+    │   │       │   │   │       │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │       │           └── segments (kind: ExprPathInner)
+    │   │       │   │   │       │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │       │                   └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │       │                       ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │       │                       ├── token (kind: TokenIdentifier): 'cond'
+    │   │       │   │   │       │                       └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │       │                           └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │       ├── if_block (kind: ExprBlock)
     │   │       │   │   │       │   ├── lbrace (kind: TerminalLBrace)
     │   │       │   │   │       │   │   ├── leading_trivia (kind: Trivia) []

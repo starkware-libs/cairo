@@ -1667,13 +1667,13 @@ fn compute_expr_match_semantic(
 /// Computes the semantic model of an expression of type [ast::ExprIf].
 fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::ExprIf) -> Maybe<Expr> {
     let db = ctx.db;
-    let (condition, if_block) = match &syntax.condition(db) {
+    let [condition_syntax] = &syntax.conditions(db).elements(db)[..] else {
+        return Err(ctx.diagnostics.report(syntax.conditions(db).stable_ptr(db), Unsupported));
+    };
+
+    let (condition, if_block) = match condition_syntax {
         ast::Condition::Let(condition) => {
             let expr = compute_expr_semantic(ctx, &condition.expr(db));
-            if let Expr::LogicalOperator(_) = expr.expr {
-                ctx.diagnostics
-                    .report(condition.expr(db).stable_ptr(db), LogicalOperatorNotAllowedInIfLet);
-            }
 
             let (patterns, if_block) = compute_arm_semantic(
                 ctx,
@@ -1764,7 +1764,11 @@ fn compute_expr_while_semantic(
 ) -> Maybe<Expr> {
     let db = ctx.db;
 
-    let (condition, body) = match &syntax.condition(db) {
+    let [condition_syntax] = &syntax.conditions(db).elements(db)[..] else {
+        return Err(ctx.diagnostics.report(syntax.conditions(db).stable_ptr(db), Unsupported));
+    };
+
+    let (condition, body) = match condition_syntax {
         ast::Condition::Let(condition) => {
             let expr = compute_expr_semantic(ctx, &condition.expr(db));
             if let Expr::LogicalOperator(_) = expr.expr {

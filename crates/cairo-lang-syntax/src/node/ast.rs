@@ -4591,17 +4591,17 @@ pub struct ExprIf {
 }
 impl ExprIf {
     pub const INDEX_IF_KW: usize = 0;
-    pub const INDEX_CONDITION: usize = 1;
+    pub const INDEX_CONDITIONS: usize = 1;
     pub const INDEX_IF_BLOCK: usize = 2;
     pub const INDEX_ELSE_CLAUSE: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         if_kw: TerminalIfGreen,
-        condition: ConditionGreen,
+        conditions: ConditionListGreen,
         if_block: ExprBlockGreen,
         else_clause: OptionElseClauseGreen,
     ) -> ExprIfGreen {
-        let children = [if_kw.0, condition.0, if_block.0, else_clause.0];
+        let children = [if_kw.0, conditions.0, if_block.0, else_clause.0];
         let width = children.into_iter().map(|id: GreenId| id.lookup_intern(db).width()).sum();
         ExprIfGreen(
             Arc::new(GreenNode {
@@ -4616,8 +4616,8 @@ impl ExprIf {
     pub fn if_kw(&self, db: &dyn SyntaxGroup) -> TerminalIf {
         TerminalIf::from_syntax_node(db, self.children[0])
     }
-    pub fn condition(&self, db: &dyn SyntaxGroup) -> Condition {
-        Condition::from_syntax_node(db, self.children[1])
+    pub fn conditions(&self, db: &dyn SyntaxGroup) -> ConditionList {
+        ConditionList::from_syntax_node(db, self.children[1])
     }
     pub fn if_block(&self, db: &dyn SyntaxGroup) -> ExprBlock {
         ExprBlock::from_syntax_node(db, self.children[2])
@@ -4656,7 +4656,7 @@ impl TypedSyntaxNode for ExprIf {
                 details: GreenNodeDetails::Node {
                     children: [
                         TerminalIf::missing(db).0,
-                        Condition::missing(db).0,
+                        ConditionList::missing(db).0,
                         ExprBlock::missing(db).0,
                         OptionElseClause::missing(db).0,
                     ]
@@ -4687,6 +4687,106 @@ impl TypedSyntaxNode for ExprIf {
     }
     fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
         ExprIfPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ConditionList(ElementList<Condition, 2>);
+impl Deref for ConditionList {
+    type Target = ElementList<Condition, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl ConditionList {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        children: Vec<ConditionListElementOrSeparatorGreen>,
+    ) -> ConditionListGreen {
+        let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
+        ConditionListGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ConditionList,
+                details: GreenNodeDetails::Node {
+                    children: children.iter().map(|x| x.id()).collect(),
+                    width,
+                },
+            })
+            .intern(db),
+        )
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ConditionListPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for ConditionListPtr {
+    type SyntaxNode = ConditionList;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> ConditionList {
+        ConditionList::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ConditionListPtr> for SyntaxStablePtrId {
+    fn from(ptr: ConditionListPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum ConditionListElementOrSeparatorGreen {
+    Separator(TerminalAndAndGreen),
+    Element(ConditionGreen),
+}
+impl From<TerminalAndAndGreen> for ConditionListElementOrSeparatorGreen {
+    fn from(value: TerminalAndAndGreen) -> Self {
+        ConditionListElementOrSeparatorGreen::Separator(value)
+    }
+}
+impl From<ConditionGreen> for ConditionListElementOrSeparatorGreen {
+    fn from(value: ConditionGreen) -> Self {
+        ConditionListElementOrSeparatorGreen::Element(value)
+    }
+}
+impl ConditionListElementOrSeparatorGreen {
+    fn id(&self) -> GreenId {
+        match self {
+            ConditionListElementOrSeparatorGreen::Separator(green) => green.0,
+            ConditionListElementOrSeparatorGreen::Element(green) => green.0,
+        }
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ConditionListGreen(pub GreenId);
+impl TypedSyntaxNode for ConditionList {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ConditionList);
+    type StablePtr = ConditionListPtr;
+    type Green = ConditionListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ConditionListGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ConditionList,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::ConditionList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node
+    }
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ConditionListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -5143,15 +5243,15 @@ pub struct ExprWhile {
 }
 impl ExprWhile {
     pub const INDEX_WHILE_KW: usize = 0;
-    pub const INDEX_CONDITION: usize = 1;
+    pub const INDEX_CONDITIONS: usize = 1;
     pub const INDEX_BODY: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         while_kw: TerminalWhileGreen,
-        condition: ConditionGreen,
+        conditions: ConditionListGreen,
         body: ExprBlockGreen,
     ) -> ExprWhileGreen {
-        let children = [while_kw.0, condition.0, body.0];
+        let children = [while_kw.0, conditions.0, body.0];
         let width = children.into_iter().map(|id: GreenId| id.lookup_intern(db).width()).sum();
         ExprWhileGreen(
             Arc::new(GreenNode {
@@ -5166,8 +5266,8 @@ impl ExprWhile {
     pub fn while_kw(&self, db: &dyn SyntaxGroup) -> TerminalWhile {
         TerminalWhile::from_syntax_node(db, self.children[0])
     }
-    pub fn condition(&self, db: &dyn SyntaxGroup) -> Condition {
-        Condition::from_syntax_node(db, self.children[1])
+    pub fn conditions(&self, db: &dyn SyntaxGroup) -> ConditionList {
+        ConditionList::from_syntax_node(db, self.children[1])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> ExprBlock {
         ExprBlock::from_syntax_node(db, self.children[2])
@@ -5203,7 +5303,7 @@ impl TypedSyntaxNode for ExprWhile {
                 details: GreenNodeDetails::Node {
                     children: [
                         TerminalWhile::missing(db).0,
-                        Condition::missing(db).0,
+                        ConditionList::missing(db).0,
                         ExprBlock::missing(db).0,
                     ]
                     .into(),
