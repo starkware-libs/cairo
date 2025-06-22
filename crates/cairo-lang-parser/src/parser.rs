@@ -677,6 +677,10 @@ impl<'a> Parser<'a> {
     ) -> ItemMacroDeclarationGreen {
         let macro_kw = self.take::<TerminalMacro>();
         let name = self.parse_identifier();
+        let unhygienic: OptionTerminalUnhygienicGreen = match self.peek().kind {
+            SyntaxKind::TerminalUnhygienic => self.take::<TerminalUnhygienic>().into(),
+            _ => OptionTerminalUnhygienicEmpty::new_green(self.db).into(),
+        };
         let lbrace = self.parse_token::<TerminalLBrace>();
         let macro_rules = MacroRulesList::new_green(
             self.db,
@@ -689,6 +693,7 @@ impl<'a> Parser<'a> {
             visibility,
             macro_kw,
             name,
+            unhygienic,
             lbrace,
             macro_rules,
             rbrace,

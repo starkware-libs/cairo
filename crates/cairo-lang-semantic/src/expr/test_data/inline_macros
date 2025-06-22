@@ -1480,3 +1480,57 @@ error: Parser error in macro-expanded code: Skipped tokens. Expected: end of exp
  _^
 |         let b = 2;
 |__________________^
+
+//! > ==========================================================================
+
+//! > Test: Variable defined in unhygienic macro is visible outside.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    define_var_unhygienic!();
+    let _x = a;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro define_var_unhygienic unhygienic {
+    () => {
+        let a = 42;
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test: Variable defined in hygienic macro is not visible outside.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    define_var_hygienic!();
+    let _x = _a;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro define_var_hygienic {
+    () => {
+        let _a = 42;
+    };
+}
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:8:14
+    let _x = _a;
+             ^^
