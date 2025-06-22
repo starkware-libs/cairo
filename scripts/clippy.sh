@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export RUSTUP_TOOLCHAIN="${RUSTUP_TOOLCHAIN:-nightly-2025-05-20}"
+export RUSTUP_TOOLCHAIN="${RUSTUP_TOOLCHAIN:-nightly-2025-06-20}"
 
 cargo clippy "$@" --all-targets --all-features -- -D warnings -D future-incompatible \
     -D nonstandard-style -D rust-2018-idioms -D unused

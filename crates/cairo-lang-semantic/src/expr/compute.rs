@@ -575,12 +575,12 @@ fn expand_inline_macro(
             is_plugin_macro: true,
         })
     } else {
-        return Err(ctx.diagnostics.report(
+        Err(ctx.diagnostics.report(
             syntax.stable_ptr(db),
             InlineMacroNotFound(
                 syntax.path(db).as_syntax_node().get_text_without_trivia(db).into(),
             ),
-        ));
+        ))
     }
 }
 
