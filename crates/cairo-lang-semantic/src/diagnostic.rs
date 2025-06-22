@@ -457,9 +457,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 };
                 format!(r#"{prefix}: "{}" and "{}""#, first_ty.format(db), different_ty.format(db))
             }
-            SemanticDiagnosticKind::LogicalOperatorNotAllowedInIfLet => {
-                "Logical operator not allowed in if-let.".into()
-            }
             SemanticDiagnosticKind::LogicalOperatorNotAllowedInWhileLet => {
                 "Logical operator not allowed in while-let.".into()
             }
@@ -1299,7 +1296,6 @@ pub enum SemanticDiagnosticKind {
         pending_ty: semantic::TypeId,
         different_ty: semantic::TypeId,
     },
-    LogicalOperatorNotAllowedInIfLet,
     LogicalOperatorNotAllowedInWhileLet,
     TypeHasNoMembers {
         ty: semantic::TypeId,
