@@ -34,6 +34,7 @@ pub enum SyntaxKind {
     MatchArms,
     MatchArm,
     ExprIf,
+    ConditionListAnd,
     ConditionLet,
     ConditionExpr,
     ExprLoop,
