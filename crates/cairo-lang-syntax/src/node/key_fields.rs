@@ -37,6 +37,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::MatchArms => vec![],
         SyntaxKind::MatchArm => vec![],
         SyntaxKind::ExprIf => vec![],
+        SyntaxKind::ConditionListAnd => vec![],
         SyntaxKind::ConditionLet => vec![],
         SyntaxKind::ConditionExpr => vec![],
         SyntaxKind::ExprLoop => vec![],

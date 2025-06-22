@@ -118,25 +118,10 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Expected type "core::bool", found: "core::option::Option::<core::integer::u64>".
- --> lib.cairo:3:22
+error: Operator '||' is not allowed in this location. Consider wrapping the expression in parentheses.
+ --> lib.cairo:3:24
     if let Some(y) = x || true {
-                     ^
-
-error: Logical operator not allowed in if-let.
- --> lib.cairo:3:22
-    if let Some(y) = x || true {
-                     ^^^^^^^^^
-
-error: Wrong enum in pattern. Expected: "core::bool". Got: "core::option::Option".
- --> lib.cairo:3:12
-    if let Some(y) = x || true {
-           ^^^^^^^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:4:16
-        return y == 9;
-               ^
+                       ^
 
 //! > ==========================================================================
 
