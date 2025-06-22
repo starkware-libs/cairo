@@ -45,30 +45,10 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Expected type "core::bool", found: "core::option::Option::<?0>".
- --> lib.cairo:2:25
+error: Unsupported feature.
+ --> lib.cairo:2:11
     while let Some(x) = Some(5) && 4 == 7 {
-                        ^^^^^^^
-
-error: Logical operator not allowed in while-let.
- --> lib.cairo:2:25
-    while let Some(x) = Some(5) && 4 == 7 {
-                        ^^^^^^^^^^^^^^^^^
-
-error: Wrong enum in pattern. Expected: "core::bool". Got: "core::option::Option".
- --> lib.cairo:2:15
-    while let Some(x) = Some(5) && 4 == 7 {
-              ^^^^^^^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:4:15
-        break x;
-              ^
-
-error: Can only break with a value inside a `loop`.
- --> lib.cairo:4:9
-        break x;
-        ^^^^^^^^
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
