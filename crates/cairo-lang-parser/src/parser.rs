@@ -1499,12 +1499,13 @@ impl<'a> Parser<'a> {
                     if self.is_comparison_operator(child_op_kind)
                         && self.is_comparison_operator(current_op)
                     {
+                        let offset = self.offset.add_width(self.current_width);
                         self.add_diagnostic(
                             ParserDiagnosticKind::ConsecutiveMathOperators {
                                 first_op: child_op_kind,
                                 second_op: current_op,
                             },
-                            TextSpan { start: self.offset, end: self.offset },
+                            TextSpan { start: offset, end: offset },
                         );
                     }
                 }
