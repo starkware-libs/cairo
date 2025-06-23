@@ -9,6 +9,7 @@ use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
+use crate::inline::apply_inlining;
 use crate::optimizations::strategy::OptimizationPhase;
 use crate::test_utils::LoweringDatabaseForTesting;
 
@@ -38,6 +39,8 @@ fn test_match_optimizer(
 
     let mut before =
         db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().deref().clone();
+    let disable_const_folding_during_inlining = true;
+    apply_inlining(db, function_id, &mut before, disable_const_folding_during_inlining).unwrap();
     OptimizationPhase::ApplyInlining.apply(db, function_id, &mut before).unwrap();
     OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();
     OptimizationPhase::CancelOps.apply(db, function_id, &mut before).unwrap();
