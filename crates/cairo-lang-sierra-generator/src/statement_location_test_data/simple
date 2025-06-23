@@ -2923,27 +2923,18 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 enum_match<core::bool>([25]) { fallthrough([28]) label_test::some_array_checks::3([29]) }
 Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
+if !(array![1, 2] != array![2, 1]) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
 branch_align() -> ()
 Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
+if !(array![1, 2] != array![2, 1]) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
 drop<Unit>([28]) -> ()
 Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
+if !(array![1, 2] != array![2, 1]) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
 array_new<bytes31>() -> ([30])
 Originating location:
@@ -3079,43 +3070,28 @@ Originating location:
 In function: assert_macro::assert_macro
 label_test::some_array_checks::3:
 Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
+if !(array![1, 2] != array![2, 1]) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
 branch_align() -> ()
 Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
+if !(array![1, 2] != array![2, 1]) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
 drop<Unit>([29]) -> ()
 Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
+if !(array![1, 2] != array![2, 1]) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
 struct_construct<Unit>() -> ([43])
 Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
+if !(array![1, 2] != array![2, 1]) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
 struct_construct<Tuple<Unit>>([43]) -> ([44])
 Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
+if !(array![1, 2] != array![2, 1]) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
 enum_init<core::panics::PanicResult::<((),)>, 0>([44]) -> ([45])
 Originating location:
