@@ -7,7 +7,7 @@ use super::kind::SyntaxKind;
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum GreenNodeDetails {
     Token(SmolStr),
-    Node { children: Vec<GreenId>, width: TextWidth },
+    Node { children: Box<[GreenId]>, width: TextWidth },
 }
 /// Green node. Underlying untyped representation of the syntax tree.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
