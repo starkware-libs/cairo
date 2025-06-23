@@ -94,8 +94,8 @@ pub fn load_cached_crate_modules(
 
     let content = &content[8..size + 8];
 
-    let Ok((metadata, module_data, defs_lookups)): Result<DefCache, _> =
-        bincode::deserialize(content)
+    let Ok(((metadata, module_data, defs_lookups), _)): Result<(DefCache, _), _> =
+        bincode::serde::borrow_decode_from_slice(content, bincode::config::standard())
     else {
         return Default::default();
     };
