@@ -1,27 +1,11 @@
 use std::fs;
 use std::path::PathBuf;
 
-use cairo_lang_filesystem::db::{ExternalFiles, FilesDatabase, FilesGroup};
 use cairo_lang_parser::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics_from_file};
-use cairo_lang_syntax::node::db::SyntaxDatabase;
-use cairo_lang_utils::Upcast;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
 use crate::{FormatterConfig, get_formatted_file};
-
-#[salsa::database(SyntaxDatabase, FilesDatabase)]
-#[derive(Default)]
-pub struct DatabaseImpl {
-    storage: salsa::Storage<DatabaseImpl>,
-}
-impl salsa::Database for DatabaseImpl {}
-impl ExternalFiles for DatabaseImpl {}
-impl Upcast<dyn FilesGroup> for DatabaseImpl {
-    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
-        self
-    }
-}
 
 // TODO(Gil): Add tests
 #[test_case(
