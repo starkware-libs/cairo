@@ -135,12 +135,12 @@ fn generate_key_fields_code() -> rust::Tokens {
                     }
                 }
                 arms.extend(quote! {
-                    SyntaxKind::$name => vec![$fields],
+                    SyntaxKind::$name => [$fields].into(),
                 });
             }
             NodeKind::List { .. } | NodeKind::SeparatedList { .. } | NodeKind::Token { .. } => {
                 arms.extend(quote! {
-                    SyntaxKind::$name => vec![],
+                    SyntaxKind::$name => [].into(),
                 });
             }
             NodeKind::Enum { .. } => {}
@@ -155,7 +155,7 @@ fn generate_key_fields_code() -> rust::Tokens {
         $("///\n")
         $("/// Each SyntaxKind has some children that are defined in the spec to be its indexing key\n")
         $("/// for its stable pointer. See [super::stable_ptr].\n")
-        pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
+        pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Box<[GreenId]> {
             match kind {
                 $arms
             }
