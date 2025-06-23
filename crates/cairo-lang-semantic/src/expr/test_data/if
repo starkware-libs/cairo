@@ -177,3 +177,40 @@ enum A {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > if_let with multiple conditions.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(a: Option<Option<Option<felt252>>>) {
+    if let Some(b) = a && let Some(_c) = b {}
+    // The opposite order doesn't work.
+    if let Some(_c) = b && let Some(b) = a {}
+    // Test with the same variable name. The later conditions can use the previous pattern
+    // variables.
+    if let Some(a) = a && let Some(a) = a && let Some(a) = a {
+        a
+    } else {
+        1
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:4:23
+    if let Some(_c) = b && let Some(b) = a {}
+                      ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:4:37
+    if let Some(_c) = b && let Some(b) = a {}
+                                    ^
