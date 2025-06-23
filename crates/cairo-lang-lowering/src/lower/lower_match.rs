@@ -1145,7 +1145,7 @@ trait EnumVariantScopeBuilder {
         //     │   └── None
         //     └── Felt252Dict
         // ```
-        // This can be generalized to a tree where each enum type intoduces one branch per variant.
+        // This can be generalized to a tree where each enum type introduces one branch per variant.
         // We use [PatternTree] to check patterns are legal (reachable and all branches end with a
         // pattern).
         let mut pattern_tree = PatternTree::Empty;
@@ -1374,8 +1374,16 @@ trait EnumVariantScopeBuilder {
                             }),
                         );
                     },
+                    MatchArmWrapper::LetElseSuccess(_,_, stable_ptr) => {
+                        ctx.diagnostics.report(
+                            *stable_ptr,
+                            MatchError(MatchError {
+                                kind: builder_context.kind,
+                                error: MatchDiagnostic::UnreachableMatchArm,
+                            }),
+                        );
+                    }
                     MatchArmWrapper::DefaultClause => (),
-                    MatchArmWrapper::LetElseSuccess(_,_, _) => todo!(),
                 }
             }
             return builder_context.builder.merge_and_end_with_match(
