@@ -6,7 +6,7 @@ pub mod consts;
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginResult};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{Terminal, ast};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use consts::*;
 
 pub mod aux_data;
@@ -52,7 +52,8 @@ impl MacroPlugin for StarknetPlugin {
                 handle_derive(db, item_ast, metadata)
             }
             ast::ModuleItem::InlineMacro(inline_macro_ast)
-                if inline_macro_ast.name(db).text(db) == COMPONENT_INLINE_MACRO =>
+                if inline_macro_ast.path(db).as_syntax_node().get_text_without_trivia(db)
+                    == COMPONENT_INLINE_MACRO =>
             {
                 // The macro is expanded in handle_module_by_storage, but we also need to remove the
                 // original code.
