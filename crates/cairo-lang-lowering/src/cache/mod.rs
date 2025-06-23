@@ -90,7 +90,14 @@ pub fn load_cached_crate_functions(
     let content = &content[16 + def_size..]; // 16 bytes for both sizes.
 
     let ((lookups, semantic_lookups, lowerings), _): (LookupCache, _) =
-        bincode::serde::decode_from_slice(content, bincode::config::standard()).unwrap_or_default();
+        bincode::serde::decode_from_slice(content, bincode::config::standard()).unwrap_or_else(
+            |e| {
+                panic!(
+                    "failed to deserialize lookup cache for crate `{}`: {e}",
+                    crate_id.name(db),
+                )
+            },
+        );
 
     // TODO(tomer): Fail on version, cfg, and dependencies mismatch.
 
