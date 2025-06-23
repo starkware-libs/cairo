@@ -1568,8 +1568,8 @@ impl SyntaxStablePtrCached {
                     parent: SyntaxStablePtrIdCached::new(parent, ctx),
                     kind,
                     key_fields: key_fields
-                        .into_iter()
-                        .map(|field| GreenIdCached::new(field, ctx))
+                        .iter()
+                        .map(|field| GreenIdCached::new(*field, ctx))
                         .collect(),
                     index,
                 }
