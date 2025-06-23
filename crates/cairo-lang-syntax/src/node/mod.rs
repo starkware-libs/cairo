@@ -139,19 +139,20 @@ impl SyntaxNode {
 
     /// Implementation of [SyntaxNode::get_children].
     fn get_children_impl(&self, db: &dyn SyntaxGroup) -> Vec<SyntaxNode> {
-        let mut res: Vec<SyntaxNode> = Vec::new();
-
-        let long_id = self.lookup_intern(db);
-        let mut offset = long_id.offset;
+        let self_long_id = self.lookup_intern(db);
+        let mut offset = self_long_id.offset;
+        let self_green = self_long_id.green.lookup_intern(db);
+        let children = self_green.children();
+        let mut res: Vec<SyntaxNode> = Vec::with_capacity(children.len());
         let mut key_map = UnorderedHashMap::<_, usize>::default();
-        for green_id in long_id.green.lookup_intern(db).children() {
+        for green_id in children {
             let green = green_id.lookup_intern(db);
             let width = green.width();
             let kind = green.kind;
             let key_fields = key_fields::get_key_fields(kind, green.children());
             let key_count = key_map.entry((kind, key_fields.clone())).or_default();
             let stable_ptr = SyntaxStablePtr::Child {
-                parent: long_id.stable_ptr,
+                parent: self_long_id.stable_ptr,
                 kind,
                 key_fields,
                 index: *key_count,

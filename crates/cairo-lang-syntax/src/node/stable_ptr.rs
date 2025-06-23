@@ -25,7 +25,7 @@ pub enum SyntaxStablePtr {
         /// A list of field values for this node, to index by.
         /// Which fields are used is determined by each SyntaxKind.
         /// For example, a function item might use the name of the function.
-        key_fields: Vec<GreenId>,
+        key_fields: Box<[GreenId]>,
         /// Chronological index among all nodes with the same (parent, kind, key_fields).
         index: usize,
     },
