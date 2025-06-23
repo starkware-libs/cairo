@@ -108,12 +108,9 @@ error: Variable not dropped.
 fn foo(x: ACopy, y: ADrop) -> ADrop {
        ^
 note: the variable needs to be dropped due to the divergence here:
-  --> lib.cairo:9:5-12:13
-      if true {
- _____^
-| ...
-|     } else {}
-|_____________^
+  --> lib.cairo:9:8
+    if true {
+       ^^^^
 note: Trait has no implementation in context: core::traits::Drop::<test::ACopy>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::ACopy>.
 
@@ -836,7 +833,7 @@ Statements:
   (v4: core::integer::u32) <- struct_destructure(v0{`a.x`})
   (v5: core::integer::u32, v6: @core::integer::u32) <- snapshot(v4{`a.x`})
   (v7: ()) <- test::bar(v6{`@a.x`})
-  (v10: test::A) <- struct_construct(v5{`if true { bar(@a.x); }`})
+  (v10: test::A) <- struct_construct(v5{`true`})
 End:
   Goto(blk3, {v10 -> v9})
 

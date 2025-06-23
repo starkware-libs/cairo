@@ -3,7 +3,6 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 use cairo_lang_syntax::node::TypedStablePtr;
-use cairo_lang_utils::extract_matches;
 use semantic::{Condition, MatchArmSelector};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
@@ -38,72 +37,64 @@ pub fn lower_expr_if(
     builder: &mut BlockBuilder,
     expr: &semantic::ExprIf,
 ) -> LoweringResult<LoweredExpr> {
-    match &expr.conditions[..] {
-        [Condition::BoolExpr(condition)] => lower_expr_if_bool(ctx, builder, expr, *condition),
-        _ => {
-            // Else block is not supported yet for multiple conditions.
-            if expr.conditions.len() > 1 {
-                if let Some(else_block) = expr.else_block {
-                    let stable_ptr =
-                        ctx.function_body.arenas.exprs[else_block].stable_ptr().untyped();
-                    return Err(LoweringFlowError::Failed(
-                        ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::Unsupported),
-                    ));
-                }
-            }
-            lower_conditioned_expr(
-                ctx,
-                builder,
-                &ConditionedExpr {
-                    expr: expr.if_block,
-                    conditions: &expr.conditions,
-                    condition_idx: 0,
-                    else_block: expr.else_block,
-                },
-            )
+    // Else block is not supported yet for multiple conditions.
+    if expr.conditions.len() > 1 {
+        if let Some(else_block) = expr.else_block {
+            let stable_ptr = ctx.function_body.arenas.exprs[else_block].stable_ptr().untyped();
+            return Err(LoweringFlowError::Failed(
+                ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::Unsupported),
+            ));
         }
     }
+    lower_conditioned_expr(
+        ctx,
+        builder,
+        &ConditionedExpr {
+            expr: expr.if_block,
+            conditions: &expr.conditions,
+            condition_idx: 0,
+            else_block: expr.else_block,
+        },
+    )
 }
 
 /// Lowers an expression of type [semantic::ExprIf].
-pub fn lower_expr_if_bool(
+pub fn lower_if_bool_condition(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
-    expr: &semantic::ExprIf,
     condition: semantic::ExprId,
+    inner_expr: ConditionedExpr<'_>,
 ) -> LoweringResult<LoweredExpr> {
-    log::trace!("Lowering a boolean if expression: {:?}", expr.debug(&ctx.expr_formatter));
-
     // The condition cannot be unit.
-    let condition = lower_expr_to_var_usage(ctx, builder, condition)?;
+    let condition_var = lower_expr_to_var_usage(ctx, builder, condition)?;
     let db = ctx.db;
     let unit_ty = corelib::unit_ty(db);
-    let if_location = ctx.get_location(expr.stable_ptr.untyped());
+
+    let condition_expr = &ctx.function_body.arenas.exprs[condition];
+    let stable_ptr = condition_expr.stable_ptr().untyped();
+    let condition_location = ctx.get_location(stable_ptr);
 
     // Main block.
     let subscope_main = create_subscope(ctx, builder);
     let block_main_id = subscope_main.block_id;
-    let main_block =
-        extract_matches!(&ctx.function_body.arenas.exprs[expr.if_block], semantic::Expr::Block)
-            .clone();
-    let main_block_var_id = ctx.new_var(VarRequest {
-        ty: unit_ty,
-        location: ctx.get_location(main_block.stable_ptr.untyped()),
-    });
-    let block_main =
-        lower_block(ctx, subscope_main, &main_block).map_err(LoweringFlowError::Failed)?;
+    let main_block_var_id = ctx.new_var(VarRequest { ty: unit_ty, location: condition_location });
+
+    let block_main = lower_conditioned_expr_and_seal(ctx, subscope_main, &inner_expr)
+        .map_err(LoweringFlowError::Failed)?;
 
     // Else block.
     let subscope_else = create_subscope(ctx, builder);
     let block_else_id = subscope_else.block_id;
 
-    let else_block_input_var_id = ctx.new_var(VarRequest { ty: unit_ty, location: if_location });
-    let block_else = lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location)
-        .map_err(LoweringFlowError::Failed)?;
+    let else_block_input_var_id =
+        ctx.new_var(VarRequest { ty: unit_ty, location: condition_location });
+    let block_else =
+        lower_optional_else_block(ctx, subscope_else, inner_expr.else_block, condition_location)
+            .map_err(LoweringFlowError::Failed)?;
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: corelib::core_bool_enum(db),
-        input: condition,
+        input: condition_var,
         arms: vec![
             MatchArm {
                 arm_selector: MatchArmSelector::VariantId(corelib::false_variant(db)),
@@ -116,9 +107,14 @@ pub fn lower_expr_if_bool(
                 var_ids: vec![main_block_var_id],
             },
         ],
-        location: if_location,
+        location: condition_location,
     });
-    builder.merge_and_end_with_match(ctx, match_info, vec![block_main, block_else], if_location)
+    builder.merge_and_end_with_match(
+        ctx,
+        match_info,
+        vec![block_main, block_else],
+        condition_location,
+    )
 }
 
 /// Lowers an expression of type if where the condition is of type [semantic::Condition::Let].
@@ -164,7 +160,7 @@ pub fn lower_if_let_condition(
 }
 
 /// Lowers a [ConditionedExpr] recursively by iterating over the conditions and calling
-/// [lower_if_let_condition].
+/// [lower_if_let_condition] or [lower_if_bool_condition].
 fn lower_conditioned_expr(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
@@ -193,10 +189,7 @@ fn lower_conditioned_expr(
             lower_if_let_condition(ctx, builder, *matched_expr_id, patterns, inner_expr)
         }
         Condition::BoolExpr(condition) => {
-            let stable_ptr = ctx.function_body.arenas.exprs[*condition].stable_ptr().untyped();
-            Err(LoweringFlowError::Failed(
-                ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::Unsupported),
-            ))
+            lower_if_bool_condition(ctx, builder, *condition, inner_expr)
         }
     }
 }

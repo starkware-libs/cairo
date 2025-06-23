@@ -993,8 +993,8 @@ End:
 test_function_lowering(expect_diagnostics: false)
 
 //! > function
-fn foo(a: Option<Option<Option<felt252>>>) -> felt252 {
-    if let Some(b) = a && let Some(c) = b && let Some(d) = c {
+fn foo(a: Option<Option<Option<felt252>>>, x: felt252) -> felt252 {
+    if let Some(b) = a && let Some(c) = b && x == 3 && let Some(d) = c {
         return d;
     }
     return 0;
@@ -1010,92 +1010,81 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::option::Option::<core::option::Option::<core::option::Option::<core::felt252>>>
+Parameters: v0: core::option::Option::<core::option::Option::<core::option::Option::<core::felt252>>>, v1: core::felt252
 blk0 (root):
 Statements:
 End:
   Match(match_enum(v0) {
-    Option::Some(v1) => blk1,
-    Option::None(v2) => blk7,
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk10,
   })
 
 blk1:
 Statements:
 End:
-  Match(match_enum(v1) {
-    Option::Some(v3) => blk2,
-    Option::None(v4) => blk5,
+  Match(match_enum(v2) {
+    Option::Some(v4) => blk2,
+    Option::None(v5) => blk8,
   })
 
 blk2:
 Statements:
+  (v6: core::felt252) <- 3
+  (v7: core::felt252) <- core::felt252_sub(v1, v6)
 End:
-  Match(match_enum(v3) {
-    Option::Some(v5) => blk3,
-    Option::None(v6) => blk4,
+  Match(match core::felt252_is_zero(v7) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero(v8) => blk6,
   })
 
 blk3:
 Statements:
 End:
-  Return(v5)
+  Match(match_enum(v4) {
+    Option::Some(v9) => blk4,
+    Option::None(v10) => blk5,
+  })
 
 blk4:
 Statements:
 End:
-  Goto(blk6, {})
+  Return(v9)
 
 blk5:
 Statements:
 End:
-  Goto(blk6, {})
+  Goto(blk7, {})
 
 blk6:
 Statements:
 End:
-  Goto(blk8, {})
+  Goto(blk7, {})
 
 blk7:
 Statements:
 End:
-  Goto(blk8, {})
+  Goto(blk9, {})
 
 blk8:
 Statements:
-  (v7: core::felt252) <- 0
 End:
-  Return(v7)
+  Goto(blk9, {})
 
-//! > ==========================================================================
+blk9:
+Statements:
+End:
+  Goto(blk11, {})
 
-//! > Test if let with multiple conditions - with expressions
+blk10:
+Statements:
+End:
+  Goto(blk11, {})
 
-//! > test_runner_name
-test_function_lowering(expect_diagnostics: true)
-
-//! > function
-fn foo(a: Option<felt252>, x: felt252) -> felt252 {
-    if let Some(b) = a && x == 3 {
-        return b;
-    }
-    return 0;
-}
-
-//! > function_name
-foo
-
-//! > module_code
-
-//! > semantic_diagnostics
-
-//! > lowering_diagnostics
-error: Unsupported feature.
- --> lib.cairo:2:27
-    if let Some(b) = a && x == 3 {
-                          ^^^^^^
-
-//! > lowering_flat
-<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+blk11:
+Statements:
+  (v11: core::felt252) <- 0
+End:
+  Return(v11)
 
 //! > ==========================================================================
 
