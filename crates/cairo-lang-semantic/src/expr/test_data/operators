@@ -44,9 +44,9 @@ foo
 
 //! > expected_diagnostics
 error: Consecutive comparison operators are not allowed: '>' followed by '>'
- --> lib.cairo:6:9
+ --> lib.cairo:6:11
     a > a > a;
-        ^
+          ^
 
 error: Unexpected argument type. Expected: "core::bool", found: "core::integer::u128".
  --> lib.cairo:6:13

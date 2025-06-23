@@ -856,9 +856,9 @@ fn bar<T>(_a: T) {}
 
 //! > expected_diagnostics
 error: Consecutive comparison operators are not allowed: '<' followed by '>'
- --> lib.cairo:4:19
+ --> lib.cairo:4:26
   let _fail = bar<felt252>(1);
-                  ^
+                         ^
 
 error: Expected variable or constant, found function.
  --> lib.cairo:4:15
