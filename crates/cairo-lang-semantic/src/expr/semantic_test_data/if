@@ -22,35 +22,37 @@ enum MyEnum {
 //! > expected_semantics
 If(
     ExprIf {
-        condition: Let(
-            Var(
-                LocalVarId(test::a),
+        conditions: [
+            Let(
+                Var(
+                    LocalVarId(test::a),
+                ),
+                [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: MyEnum::A,
+                            inner_pattern: Some(
+                                Variable(
+                                    x,
+                                ),
+                            ),
+                            ty: test::MyEnum,
+                        },
+                    ),
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: MyEnum::B,
+                            inner_pattern: Some(
+                                Variable(
+                                    x,
+                                ),
+                            ),
+                            ty: test::MyEnum,
+                        },
+                    ),
+                ],
             ),
-            [
-                EnumVariant(
-                    PatternEnumVariant {
-                        variant: MyEnum::A,
-                        inner_pattern: Some(
-                            Variable(
-                                x,
-                            ),
-                        ),
-                        ty: test::MyEnum,
-                    },
-                ),
-                EnumVariant(
-                    PatternEnumVariant {
-                        variant: MyEnum::B,
-                        inner_pattern: Some(
-                            Variable(
-                                x,
-                            ),
-                        ),
-                        ty: test::MyEnum,
-                    },
-                ),
-            ],
-        ),
+        ],
         if_block: Block(
             ExprBlock {
                 statements: [],
@@ -106,11 +108,13 @@ if a {
 //! > expected_semantics
 If(
     ExprIf {
-        condition: BoolExpr(
-            Var(
-                LocalVarId(test::a),
+        conditions: [
+            BoolExpr(
+                Var(
+                    LocalVarId(test::a),
+                ),
             ),
-        ),
+        ],
         if_block: Block(
             ExprBlock {
                 statements: [],
@@ -176,11 +180,13 @@ if a {
 //! > expected_semantics
 If(
     ExprIf {
-        condition: BoolExpr(
-            Var(
-                LocalVarId(test::a),
+        conditions: [
+            BoolExpr(
+                Var(
+                    LocalVarId(test::a),
+                ),
             ),
-        ),
+        ],
         if_block: Block(
             ExprBlock {
                 statements: [],
@@ -261,3 +267,96 @@ error: If blocks have incompatible types: "core::integer::u32" and "core::intege
 | ...
 | }
 |_^
+
+//! > ==========================================================================
+
+//! > `if let` with multiple conditions.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+
+//! > function_body
+let a: Option<Option<felt252>> = Some(Some(1));
+
+//! > expr_code
+if let Some(b) = a && let Some(c) = b {
+    c
+} else {
+    3_felt252
+}
+
+//! > expected_semantics
+If(
+    ExprIf {
+        conditions: [
+            Let(
+                Var(
+                    LocalVarId(test::a),
+                ),
+                [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: Option::Some,
+                            inner_pattern: Some(
+                                Variable(
+                                    b,
+                                ),
+                            ),
+                            ty: core::option::Option::<core::option::Option::<core::felt252>>,
+                        },
+                    ),
+                ],
+            ),
+            Let(
+                Var(
+                    LocalVarId(test::b),
+                ),
+                [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: Option::Some,
+                            inner_pattern: Some(
+                                Variable(
+                                    c,
+                                ),
+                            ),
+                            ty: core::option::Option::<core::felt252>,
+                        },
+                    ),
+                ],
+            ),
+        ],
+        if_block: Block(
+            ExprBlock {
+                statements: [],
+                tail: Some(
+                    Var(
+                        LocalVarId(test::c),
+                    ),
+                ),
+                ty: core::felt252,
+            },
+        ),
+        else_block: Some(
+            Block(
+                ExprBlock {
+                    statements: [],
+                    tail: Some(
+                        Literal(
+                            ExprLiteral {
+                                value: 3,
+                                ty: core::felt252,
+                            },
+                        ),
+                    ),
+                    ty: core::felt252,
+                },
+            ),
+        ),
+        ty: core::felt252,
+    },
+)
+
+//! > expected_diagnostics

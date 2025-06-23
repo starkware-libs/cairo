@@ -23,11 +23,14 @@ pub fn lower_expr_if(
     builder: &mut BlockBuilder,
     expr: &semantic::ExprIf,
 ) -> LoweringResult<LoweredExpr> {
-    match &expr.condition {
-        Condition::BoolExpr(condition) => lower_expr_if_bool(ctx, builder, expr, *condition),
-        Condition::Let(matched_expr, patterns) => {
+    match &expr.conditions[..] {
+        [Condition::BoolExpr(condition)] => lower_expr_if_bool(ctx, builder, expr, *condition),
+        [Condition::Let(matched_expr, patterns)] => {
             lower_expr_if_let(ctx, builder, expr, *matched_expr, patterns)
         }
+        _ => Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), LoweringDiagnosticKind::Unsupported),
+        )),
     }
 }
 
