@@ -60,7 +60,7 @@ impl CrateConfiguration {
 }
 
 /// Same as `CrateConfiguration` but without the root directory.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CrateSettings {
     /// The name reflecting how the crate is referred to in the Cairo code e.g. `use crate_name::`.
     /// If set to [`None`] then [`CrateIdentifier`] key will be used as a name.
@@ -137,7 +137,7 @@ impl Edition {
 }
 
 /// The settings for a dependency.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DependencySettings {
     /// A unique string allowing identifying different copies of the same dependency
     /// in the compilation unit.

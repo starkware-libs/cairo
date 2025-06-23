@@ -1,9 +1,9 @@
+use std::hash::{Hash, Hasher};
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::{DiagnosticLocation, DiagnosticNote, Maybe, Severity};
-use cairo_lang_filesystem::db::CrateSettings;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{
     CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, VirtualFile,
@@ -40,8 +40,8 @@ use crate::plugin::{DynGeneratedFileAuxData, PluginDiagnostic};
 /// Metadata for a cached crate.
 #[derive(Serialize, Deserialize)]
 pub struct CachedCrateMetadata {
-    /// The settings the crate was compiles with.
-    pub settings: Option<CrateSettings>,
+    /// Hash of the settings the crate was compiles with.
+    pub settings: Option<u64>,
     /// The version of the compiler that compiled the crate.
     pub compiler_version: String,
     /// The global flags the crate was compiled with.
@@ -51,7 +51,11 @@ pub struct CachedCrateMetadata {
 impl CachedCrateMetadata {
     /// Creates a new [CachedCrateMetadata] from the input crate with the current settings.
     pub fn new(crate_id: CrateId, db: &dyn DefsGroup) -> Self {
-        let settings = db.crate_config(crate_id).map(|config| config.settings);
+        let settings = db.crate_config(crate_id).map(|config| config.settings).map(|v| {
+            let mut hasher = xxhash_rust::xxh3::Xxh3::default();
+            v.hash(&mut hasher);
+            hasher.finish()
+        });
         let compiler_version = env!("CARGO_PKG_VERSION").to_string();
         let global_flags = db
             .flags()
