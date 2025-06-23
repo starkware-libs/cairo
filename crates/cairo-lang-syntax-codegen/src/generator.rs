@@ -360,7 +360,7 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
                 $green_name(Arc::new(
                     GreenNode {
                         kind: SyntaxKind::$name,
-                        details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+                        details: GreenNodeDetails::Node { children: [].into(), width: TextWidth::default() },
                     }).intern(db)
                 )
             }
@@ -638,12 +638,12 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                     token: <<$(&name) as Terminal>::TokenType as TypedSyntaxNode>::Green,
                     trailing_trivia: TriviaGreen
                 ) -> Self::Green {
-                    let children: Vec<GreenId> = vec![$args];
-                    let width = children.iter().copied().map(|id|
-                        id.lookup_intern(db).width()).sum();
+                    let children = [$args];
+                    let width =
+                        children.into_iter().map(|id: GreenId| id.lookup_intern(db).width()).sum();
                     $(&green_name)(Arc::new(GreenNode {
                         kind: SyntaxKind::$(&name),
-                        details: GreenNodeDetails::Node { children, width },
+                        details: GreenNodeDetails::Node { children: children.into(), width },
                     }).intern(db))
                 }
                 fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
@@ -656,12 +656,12 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
             impl $(&name) {
                 $field_indices
                 pub fn new_green(db: &dyn SyntaxGroup, $params) -> $(&green_name) {
-                    let children: Vec<GreenId> = vec![$args];
-                    let width = children.iter().copied().map(|id|
-                        id.lookup_intern(db).width()).sum();
+                    let children = [$args];
+                    let width =
+                        children.into_iter().map(|id: GreenId| id.lookup_intern(db).width()).sum();
                     $(&green_name)(Arc::new(GreenNode {
                         kind: SyntaxKind::$(&name),
-                        details: GreenNodeDetails::Node { children, width },
+                        details: GreenNodeDetails::Node { children: children.into(), width },
                     }).intern(db))
                 }
             }
@@ -708,7 +708,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 $(&green_name)(Arc::new(GreenNode {
                     kind: SyntaxKind::$(&name),
                     details: GreenNodeDetails::Node {
-                        children: vec![$args_for_missing],
+                        children: [$args_for_missing].into(),
                         width: TextWidth::default(),
                     },
                 }).intern(db))
