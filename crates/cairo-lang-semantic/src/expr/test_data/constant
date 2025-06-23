@@ -521,3 +521,27 @@ note: In `test::my_unwrap::<core::starknet::class_hash::ClassHash>`:
   --> lib.cairo:8:17
         None => core::panic_with_felt252('bad value'),
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Multiple `if let` conditions.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    const A: Option<Option<Option<felt252>>> = Some(Some(Some(1_felt252)));
+    const _B: felt252 = if let Some(a) = A && let Some(b) = a && let Some(c) = b {
+        c
+    } else {
+        0
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics

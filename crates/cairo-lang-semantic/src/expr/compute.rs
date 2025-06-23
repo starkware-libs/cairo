@@ -21,8 +21,8 @@ use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::ids::{CodeMapping, FileKind, FileLongId, VirtualFile};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast::{
-    BinaryOperator, BlockOrIf, ClosureParamWrapper, ExprPtr, OptionReturnTypeClause, PatternListOr,
-    PatternStructParam, TerminalIdentifier, UnaryOperator,
+    BinaryOperator, BlockOrIf, ClosureParamWrapper, ConditionList, ExprPtr, OptionReturnTypeClause,
+    PatternListOr, PatternStructParam, TerminalIdentifier, UnaryOperator,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
@@ -1667,30 +1667,12 @@ fn compute_expr_match_semantic(
 /// Computes the semantic model of an expression of type [ast::ExprIf].
 fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::ExprIf) -> Maybe<Expr> {
     let db = ctx.db;
-    let [condition_syntax] = &syntax.conditions(db).elements(db)[..] else {
-        return Err(ctx.diagnostics.report(syntax.conditions(db).stable_ptr(db), Unsupported));
-    };
 
-    let (condition, if_block) = match condition_syntax {
-        ast::Condition::Let(condition) => {
-            let expr = compute_expr_semantic(ctx, &condition.expr(db));
-
-            let (patterns, if_block) = compute_arm_semantic(
-                ctx,
-                &expr,
-                ast::Expr::Block(syntax.if_block(db)),
-                &condition.patterns(db),
-            );
-            (Condition::Let(expr.id, patterns.iter().map(|pattern| pattern.id).collect()), if_block)
-        }
-        ast::Condition::Expr(expr) => {
-            let if_block = compute_expr_block_semantic(ctx, &syntax.if_block(db))?;
-            (
-                Condition::BoolExpr(compute_bool_condition_semantic(ctx, &expr.expr(db)).id),
-                ExprAndId { expr: if_block.clone(), id: ctx.arenas.exprs.alloc(if_block) },
-            )
-        }
-    };
+    let (conditions, if_block) = compute_condition_list_semantic(
+        ctx,
+        &syntax.conditions(db),
+        &ast::Expr::Block(syntax.if_block(db)),
+    );
 
     let (else_block_opt, else_block_ty) = match syntax.else_clause(db) {
         ast::OptionElseClause::Empty(_) => (None, unit_ty(ctx.db)),
@@ -1724,12 +1706,84 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
         syntax.stable_ptr(db).untyped(),
     );
     Ok(Expr::If(ExprIf {
-        condition,
+        conditions,
         if_block: if_block.id,
         else_block: else_block_opt.map(|else_block| ctx.arenas.exprs.alloc(else_block)),
         ty: helper.get_final_type(),
         stable_ptr: syntax.stable_ptr(db).into(),
     }))
+}
+
+/// Computes the semantic of the given condition list and the given body.
+///
+/// Note that pattern variables in the conditions can be used in the body.
+fn compute_condition_list_semantic(
+    ctx: &mut ComputationContext<'_>,
+    condition_list_syntax: &ConditionList,
+    body_syntax: &ast::Expr,
+) -> (Vec<Condition>, ExprAndId) {
+    let mut conditions = Vec::new();
+    let conditions_syntax = condition_list_syntax.elements(ctx.db);
+    conditions.reserve(conditions_syntax.len());
+
+    let body = _compute_condition_list_semantic_helper(
+        ctx,
+        &conditions_syntax,
+        0,
+        &mut conditions,
+        body_syntax,
+    );
+
+    (conditions, body)
+}
+
+/// Helper function for `compute_condition_list_semantic`.
+fn _compute_condition_list_semantic_helper(
+    ctx: &mut ComputationContext<'_>,
+    conditions_syntax: &Vec<ast::Condition>,
+    idx: usize,
+    conditions: &mut Vec<Condition>,
+    body_syntax: &ast::Expr,
+) -> ExprAndId {
+    if idx == conditions_syntax.len() {
+        return compute_expr_semantic(ctx, body_syntax);
+    }
+
+    let db = ctx.db;
+
+    match &conditions_syntax[idx] {
+        ast::Condition::Let(condition) => {
+            let expr = compute_expr_semantic(ctx, &condition.expr(db));
+
+            ctx.run_in_subscope(|new_ctx| {
+                let patterns =
+                    compute_pattern_list_or_semantic(new_ctx, &expr, &condition.patterns(db));
+                conditions.push(Condition::Let(
+                    expr.id,
+                    patterns.iter().map(|pattern| pattern.id).collect(),
+                ));
+                _compute_condition_list_semantic_helper(
+                    new_ctx,
+                    conditions_syntax,
+                    idx + 1,
+                    conditions,
+                    body_syntax,
+                )
+            })
+        }
+        ast::Condition::Expr(expr) => {
+            conditions
+                .push(Condition::BoolExpr(compute_bool_condition_semantic(ctx, &expr.expr(db)).id));
+
+            _compute_condition_list_semantic_helper(
+                ctx,
+                conditions_syntax,
+                idx + 1,
+                conditions,
+                body_syntax,
+            )
+        }
+    }
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprLoop].
