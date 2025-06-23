@@ -17,6 +17,21 @@ use crate::lower::lower_match::{self, MatchArmWrapper};
 use crate::lower::{create_subscope, lower_block, lower_expr, lower_expr_to_var_usage};
 use crate::{MatchArm, MatchEnumInfo, MatchInfo};
 
+/// Represents an expression of the form:
+///
+///   `if conditions[idx] && conditions[idx+1] && ... && conditions[n] { expr } else { else_block }`
+///
+/// where `idx` is [Self::condition_idx] and `n` is `conditions.len() - 1`.
+///
+/// In particular, note that if `conditions` is empty or `condition_idx == conditions.len()`,
+/// there are no conditions and the expression is simply [Self::expr].
+pub struct ConditionedExpr<'a> {
+    pub expr: semantic::ExprId,
+    pub conditions: &'a [Condition],
+    pub condition_idx: usize,
+    pub else_block: Option<semantic::ExprId>,
+}
+
 /// Lowers an expression of type [semantic::ExprIf].
 pub fn lower_expr_if(
     ctx: &mut LoweringContext<'_, '_>,
@@ -25,12 +40,28 @@ pub fn lower_expr_if(
 ) -> LoweringResult<LoweredExpr> {
     match &expr.conditions[..] {
         [Condition::BoolExpr(condition)] => lower_expr_if_bool(ctx, builder, expr, *condition),
-        [Condition::Let(matched_expr, patterns)] => {
-            lower_expr_if_let(ctx, builder, expr, *matched_expr, patterns)
+        _ => {
+            // Else block is not supported yet for multiple conditions.
+            if expr.conditions.len() > 1 {
+                if let Some(else_block) = expr.else_block {
+                    let stable_ptr =
+                        ctx.function_body.arenas.exprs[else_block].stable_ptr().untyped();
+                    return Err(LoweringFlowError::Failed(
+                        ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::Unsupported),
+                    ));
+                }
+            }
+            lower_conditioned_expr(
+                ctx,
+                builder,
+                &ConditionedExpr {
+                    expr: expr.if_block,
+                    conditions: &expr.conditions,
+                    condition_idx: 0,
+                    else_block: expr.else_block,
+                },
+            )
         }
-        _ => Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(expr.stable_ptr.untyped(), LoweringDiagnosticKind::Unsupported),
-        )),
     }
 }
 
@@ -91,21 +122,23 @@ pub fn lower_expr_if_bool(
 }
 
 /// Lowers an expression of type if where the condition is of type [semantic::Condition::Let].
-pub fn lower_expr_if_let(
+pub fn lower_if_let_condition(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
-    expr: &semantic::ExprIf,
-    matched_expr: semantic::ExprId,
+    matched_expr_id: semantic::ExprId,
     patterns: &[semantic::PatternId],
+    inner_expr: ConditionedExpr<'_>,
 ) -> LoweringResult<LoweredExpr> {
-    log::trace!("Lowering an if let expression: {:?}", expr.debug(&ctx.expr_formatter));
-    let location = ctx.get_location(expr.stable_ptr.untyped());
-    let lowered_expr = lower_expr(ctx, builder, matched_expr)?;
-    let ty = ctx.function_body.arenas.exprs[matched_expr].ty();
+    let matched_expr = &ctx.function_body.arenas.exprs[matched_expr_id];
+    let stable_ptr = matched_expr.stable_ptr().untyped();
+    let ty = matched_expr.ty();
+    let location = ctx.get_location(stable_ptr);
+
+    let lowered_expr = lower_expr(ctx, builder, matched_expr_id)?;
 
     if corelib::numeric_upcastable_to_felt252(ctx.db, ty) {
         return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-            expr.stable_ptr.untyped(),
+            stable_ptr,
             LoweringDiagnosticKind::MatchError(MatchError {
                 kind: MatchKind::IfLet,
                 error: MatchDiagnostic::UnsupportedNumericInLetCondition,
@@ -113,21 +146,68 @@ pub fn lower_expr_if_let(
         )));
     }
 
-    let arms = vec![
-        MatchArmWrapper::Arm(patterns, expr.if_block),
-        expr.else_block.map(MatchArmWrapper::ElseClause).unwrap_or(MatchArmWrapper::DefaultClause),
-    ];
+    let else_arm = inner_expr
+        .else_block
+        .map(MatchArmWrapper::ElseClause)
+        .unwrap_or(MatchArmWrapper::DefaultClause);
+    let arms = vec![MatchArmWrapper::ConditionedArm(patterns, inner_expr), else_arm];
 
     lower_match::lower_match_arms(
         ctx,
         builder,
-        matched_expr,
+        matched_expr_id,
         lowered_expr,
         arms,
         location,
         MatchKind::IfLet,
     )
 }
+
+fn lower_conditioned_expr(
+    ctx: &mut LoweringContext<'_, '_>,
+    builder: &mut BlockBuilder,
+    expr: &ConditionedExpr<'_>,
+) -> LoweringResult<LoweredExpr> {
+    log::trace!(
+        "Lowering a conditioned expression: {:?} (condition_idx: {})",
+        expr.expr.debug(&ctx.expr_formatter),
+        expr.condition_idx
+    );
+
+    // If there are no more conditions, we can simply lower the expression.
+    if expr.condition_idx == expr.conditions.len() {
+        return lower_expr(ctx, builder, expr.expr);
+    }
+
+    let inner_expr = ConditionedExpr {
+        expr: expr.expr,
+        conditions: expr.conditions,
+        condition_idx: expr.condition_idx + 1,
+        else_block: expr.else_block,
+    };
+
+    match &expr.conditions[expr.condition_idx] {
+        Condition::Let(matched_expr_id, patterns) => {
+            lower_if_let_condition(ctx, builder, *matched_expr_id, patterns, inner_expr)
+        }
+        Condition::BoolExpr(condition) => {
+            let stable_ptr = ctx.function_body.arenas.exprs[*condition].stable_ptr().untyped();
+            Err(LoweringFlowError::Failed(
+                ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::Unsupported),
+            ))
+        }
+    }
+}
+
+pub fn lower_conditioned_expr_and_seal(
+    ctx: &mut LoweringContext<'_, '_>,
+    mut builder: BlockBuilder,
+    expr: &ConditionedExpr<'_>,
+) -> Maybe<SealedBlockBuilder> {
+    let lowered_expr = lower_conditioned_expr(ctx, &mut builder, expr);
+    lowered_expr_to_block_scope_end(ctx, builder, lowered_expr)
+}
+
 /// Lowers an optional else block. If the else block is missing it is replaced with a block
 /// returning a unit.
 /// Returns the sealed block builder of the else block.
