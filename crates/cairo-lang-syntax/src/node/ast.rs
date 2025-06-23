@@ -22378,21 +22378,31 @@ impl ItemMacroDeclaration {
     pub const INDEX_VISIBILITY: usize = 1;
     pub const INDEX_MACRO_KW: usize = 2;
     pub const INDEX_NAME: usize = 3;
-    pub const INDEX_LBRACE: usize = 4;
-    pub const INDEX_RULES: usize = 5;
-    pub const INDEX_RBRACE: usize = 6;
+    pub const INDEX_UNHYGIENIC_KW: usize = 4;
+    pub const INDEX_LBRACE: usize = 5;
+    pub const INDEX_RULES: usize = 6;
+    pub const INDEX_RBRACE: usize = 7;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
         visibility: VisibilityGreen,
         macro_kw: TerminalMacroGreen,
         name: TerminalIdentifierGreen,
+        unhygienic_kw: OptionTerminalUnhygienicGreen,
         lbrace: TerminalLBraceGreen,
         rules: MacroRulesListGreen,
         rbrace: TerminalRBraceGreen,
     ) -> ItemMacroDeclarationGreen {
-        let children: Vec<GreenId> =
-            vec![attributes.0, visibility.0, macro_kw.0, name.0, lbrace.0, rules.0, rbrace.0];
+        let children: Vec<GreenId> = vec![
+            attributes.0,
+            visibility.0,
+            macro_kw.0,
+            name.0,
+            unhygienic_kw.0,
+            lbrace.0,
+            rules.0,
+            rbrace.0,
+        ];
         let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
         ItemMacroDeclarationGreen(
             Arc::new(GreenNode {
@@ -22416,14 +22426,17 @@ impl ItemMacroDeclaration {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[3])
     }
+    pub fn unhygienic_kw(&self, db: &dyn SyntaxGroup) -> OptionTerminalUnhygienic {
+        OptionTerminalUnhygienic::from_syntax_node(db, self.children[4])
+    }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[4])
+        TerminalLBrace::from_syntax_node(db, self.children[5])
     }
     pub fn rules(&self, db: &dyn SyntaxGroup) -> MacroRulesList {
-        MacroRulesList::from_syntax_node(db, self.children[5])
+        MacroRulesList::from_syntax_node(db, self.children[6])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[6])
+        TerminalRBrace::from_syntax_node(db, self.children[7])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22468,6 +22481,7 @@ impl TypedSyntaxNode for ItemMacroDeclaration {
                         Visibility::missing(db).0,
                         TerminalMacro::missing(db).0,
                         TerminalIdentifier::missing(db).0,
+                        OptionTerminalUnhygienic::missing(db).0,
                         TerminalLBrace::missing(db).0,
                         MacroRulesList::missing(db).0,
                         TerminalRBrace::missing(db).0,
@@ -22502,6 +22516,176 @@ impl TypedSyntaxNode for ItemMacroDeclaration {
     }
     fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
         ItemMacroDeclarationPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum OptionTerminalUnhygienic {
+    Empty(OptionTerminalUnhygienicEmpty),
+    TerminalUnhygienic(TerminalUnhygienic),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalUnhygienicPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for OptionTerminalUnhygienicPtr {
+    type SyntaxNode = OptionTerminalUnhygienic;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> OptionTerminalUnhygienic {
+        OptionTerminalUnhygienic::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<OptionTerminalUnhygienicPtr> for SyntaxStablePtrId {
+    fn from(ptr: OptionTerminalUnhygienicPtr) -> Self {
+        ptr.untyped()
+    }
+}
+impl From<OptionTerminalUnhygienicEmptyPtr> for OptionTerminalUnhygienicPtr {
+    fn from(value: OptionTerminalUnhygienicEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalUnhygienicPtr> for OptionTerminalUnhygienicPtr {
+    fn from(value: TerminalUnhygienicPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<OptionTerminalUnhygienicEmptyGreen> for OptionTerminalUnhygienicGreen {
+    fn from(value: OptionTerminalUnhygienicEmptyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalUnhygienicGreen> for OptionTerminalUnhygienicGreen {
+    fn from(value: TerminalUnhygienicGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalUnhygienicGreen(pub GreenId);
+impl TypedSyntaxNode for OptionTerminalUnhygienic {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = OptionTerminalUnhygienicPtr;
+    type Green = OptionTerminalUnhygienicGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionTerminalUnhygienicEmpty => OptionTerminalUnhygienic::Empty(
+                OptionTerminalUnhygienicEmpty::from_syntax_node(db, node),
+            ),
+            SyntaxKind::TerminalUnhygienic => OptionTerminalUnhygienic::TerminalUnhygienic(
+                TerminalUnhygienic::from_syntax_node(db, node),
+            ),
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "OptionTerminalUnhygienic"
+            ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionTerminalUnhygienicEmpty => Some(OptionTerminalUnhygienic::Empty(
+                OptionTerminalUnhygienicEmpty::from_syntax_node(db, node),
+            )),
+            SyntaxKind::TerminalUnhygienic => Some(OptionTerminalUnhygienic::TerminalUnhygienic(
+                TerminalUnhygienic::from_syntax_node(db, node),
+            )),
+            _ => None,
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            OptionTerminalUnhygienic::Empty(x) => x.as_syntax_node(),
+            OptionTerminalUnhygienic::TerminalUnhygienic(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionTerminalUnhygienicPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
+    }
+}
+impl OptionTerminalUnhygienic {
+    /// Checks if a kind of a variant of [OptionTerminalUnhygienic].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(kind, SyntaxKind::OptionTerminalUnhygienicEmpty | SyntaxKind::TerminalUnhygienic)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct OptionTerminalUnhygienicEmpty {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl OptionTerminalUnhygienicEmpty {
+    pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalUnhygienicEmptyGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        OptionTerminalUnhygienicEmptyGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::OptionTerminalUnhygienicEmpty,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl OptionTerminalUnhygienicEmpty {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalUnhygienicEmptyPtr(pub SyntaxStablePtrId);
+impl OptionTerminalUnhygienicEmptyPtr {}
+impl TypedStablePtr for OptionTerminalUnhygienicEmptyPtr {
+    type SyntaxNode = OptionTerminalUnhygienicEmpty;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> OptionTerminalUnhygienicEmpty {
+        OptionTerminalUnhygienicEmpty::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<OptionTerminalUnhygienicEmptyPtr> for SyntaxStablePtrId {
+    fn from(ptr: OptionTerminalUnhygienicEmptyPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalUnhygienicEmptyGreen(pub GreenId);
+impl TypedSyntaxNode for OptionTerminalUnhygienicEmpty {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionTerminalUnhygienicEmpty);
+    type StablePtr = OptionTerminalUnhygienicEmptyPtr;
+    type Green = OptionTerminalUnhygienicEmptyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        OptionTerminalUnhygienicEmptyGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::OptionTerminalUnhygienicEmpty,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::OptionTerminalUnhygienicEmpty,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::OptionTerminalUnhygienicEmpty
+        );
+        Self { children: node.get_children(db), node }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionTerminalUnhygienicEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node
+    }
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionTerminalUnhygienicEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -28418,6 +28602,189 @@ impl TypedSyntaxNode for TerminalMacro {
     }
     fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
         TerminalMacroPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenUnhygienic {
+    node: SyntaxNode,
+}
+impl Token for TokenUnhygienic {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+        TokenUnhygienicGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenUnhygienic,
+                details: GreenNodeDetails::Token(text),
+            })
+            .intern(db),
+        )
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenUnhygienicPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for TokenUnhygienicPtr {
+    type SyntaxNode = TokenUnhygienic;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenUnhygienic {
+        TokenUnhygienic::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenUnhygienicPtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenUnhygienicPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenUnhygienicGreen(pub GreenId);
+impl TokenUnhygienicGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(&self.0.lookup_intern(db).details, GreenNodeDetails::Token).clone()
+    }
+}
+impl TypedSyntaxNode for TokenUnhygienic {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenUnhygienic);
+    type StablePtr = TokenUnhygienicPtr;
+    type Green = TokenUnhygienicGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenUnhygienicGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Self { node },
+            GreenNodeDetails::Node { .. } => {
+                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenUnhygienic)
+            }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node
+    }
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenUnhygienicPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TerminalUnhygienic {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl Terminal for TerminalUnhygienic {
+    const KIND: SyntaxKind = SyntaxKind::TerminalUnhygienic;
+    type TokenType = TokenUnhygienic;
+    fn new_green(
+        db: &dyn SyntaxGroup,
+        leading_trivia: TriviaGreen,
+        token: <<TerminalUnhygienic as Terminal>::TokenType as TypedSyntaxNode>::Green,
+        trailing_trivia: TriviaGreen,
+    ) -> Self::Green {
+        let children: Vec<GreenId> = vec![leading_trivia.0, token.0, trailing_trivia.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        TerminalUnhygienicGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TerminalUnhygienic,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        self.token(db).text(db)
+    }
+}
+impl TerminalUnhygienic {
+    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[0])
+    }
+    pub fn token(&self, db: &dyn SyntaxGroup) -> TokenUnhygienic {
+        TokenUnhygienic::from_syntax_node(db, self.children[1])
+    }
+    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[2])
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalUnhygienicPtr(pub SyntaxStablePtrId);
+impl TerminalUnhygienicPtr {}
+impl TypedStablePtr for TerminalUnhygienicPtr {
+    type SyntaxNode = TerminalUnhygienic;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TerminalUnhygienic {
+        TerminalUnhygienic::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TerminalUnhygienicPtr> for SyntaxStablePtrId {
+    fn from(ptr: TerminalUnhygienicPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalUnhygienicGreen(pub GreenId);
+impl TypedSyntaxNode for TerminalUnhygienic {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalUnhygienic);
+    type StablePtr = TerminalUnhygienicPtr;
+    type Green = TerminalUnhygienicGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TerminalUnhygienicGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TerminalUnhygienic,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        Trivia::missing(db).0,
+                        TokenUnhygienic::missing(db).0,
+                        Trivia::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TerminalUnhygienic,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TerminalUnhygienic
+        );
+        Self { children: node.get_children(db), node }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalUnhygienic {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node
+    }
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalUnhygienicPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -40329,6 +40696,7 @@ pub enum TokenNode {
     TerminalImplicits(TerminalImplicits),
     TerminalLet(TerminalLet),
     TerminalMacro(TerminalMacro),
+    TerminalUnhygienic(TerminalUnhygienic),
     TerminalMatch(TerminalMatch),
     TerminalModule(TerminalModule),
     TerminalMut(TerminalMut),
@@ -40500,6 +40868,11 @@ impl From<TerminalLetPtr> for TokenNodePtr {
 }
 impl From<TerminalMacroPtr> for TokenNodePtr {
     fn from(value: TerminalMacroPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalUnhygienicPtr> for TokenNodePtr {
+    fn from(value: TerminalUnhygienicPtr) -> Self {
         Self(value.0)
     }
 }
@@ -40908,6 +41281,11 @@ impl From<TerminalMacroGreen> for TokenNodeGreen {
         Self(value.0)
     }
 }
+impl From<TerminalUnhygienicGreen> for TokenNodeGreen {
+    fn from(value: TerminalUnhygienicGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TerminalMatchGreen> for TokenNodeGreen {
     fn from(value: TerminalMatchGreen) -> Self {
         Self(value.0)
@@ -41283,6 +41661,9 @@ impl TypedSyntaxNode for TokenNode {
             SyntaxKind::TerminalMacro => {
                 TokenNode::TerminalMacro(TerminalMacro::from_syntax_node(db, node))
             }
+            SyntaxKind::TerminalUnhygienic => {
+                TokenNode::TerminalUnhygienic(TerminalUnhygienic::from_syntax_node(db, node))
+            }
             SyntaxKind::TerminalMatch => {
                 TokenNode::TerminalMatch(TerminalMatch::from_syntax_node(db, node))
             }
@@ -41516,6 +41897,9 @@ impl TypedSyntaxNode for TokenNode {
             SyntaxKind::TerminalMacro => {
                 Some(TokenNode::TerminalMacro(TerminalMacro::from_syntax_node(db, node)))
             }
+            SyntaxKind::TerminalUnhygienic => {
+                Some(TokenNode::TerminalUnhygienic(TerminalUnhygienic::from_syntax_node(db, node)))
+            }
             SyntaxKind::TerminalMatch => {
                 Some(TokenNode::TerminalMatch(TerminalMatch::from_syntax_node(db, node)))
             }
@@ -41726,6 +42110,7 @@ impl TypedSyntaxNode for TokenNode {
             TokenNode::TerminalImplicits(x) => x.as_syntax_node(),
             TokenNode::TerminalLet(x) => x.as_syntax_node(),
             TokenNode::TerminalMacro(x) => x.as_syntax_node(),
+            TokenNode::TerminalUnhygienic(x) => x.as_syntax_node(),
             TokenNode::TerminalMatch(x) => x.as_syntax_node(),
             TokenNode::TerminalModule(x) => x.as_syntax_node(),
             TokenNode::TerminalMut(x) => x.as_syntax_node(),
@@ -41818,6 +42203,7 @@ impl TokenNode {
                 | SyntaxKind::TerminalImplicits
                 | SyntaxKind::TerminalLet
                 | SyntaxKind::TerminalMacro
+                | SyntaxKind::TerminalUnhygienic
                 | SyntaxKind::TerminalMatch
                 | SyntaxKind::TerminalModule
                 | SyntaxKind::TerminalMut

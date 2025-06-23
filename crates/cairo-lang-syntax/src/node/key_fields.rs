@@ -451,6 +451,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::ItemMacroDeclaration => {
             vec![/* name */ children[3]]
         }
+        SyntaxKind::OptionTerminalUnhygienicEmpty => {
+            vec![]
+        }
         SyntaxKind::MacroRulesList => vec![],
         SyntaxKind::MacroRule => {
             vec![]
@@ -578,6 +581,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         }
         SyntaxKind::TokenMacro => vec![],
         SyntaxKind::TerminalMacro => {
+            vec![]
+        }
+        SyntaxKind::TokenUnhygienic => vec![],
+        SyntaxKind::TerminalUnhygienic => {
             vec![]
         }
         SyntaxKind::TokenMatch => vec![],

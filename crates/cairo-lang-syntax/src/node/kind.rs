@@ -168,6 +168,7 @@ pub enum SyntaxKind {
     ExprInlineMacro,
     ItemInlineMacro,
     ItemMacroDeclaration,
+    OptionTerminalUnhygienicEmpty,
     MacroRulesList,
     MacroRule,
     ParamKind,
@@ -225,6 +226,8 @@ pub enum SyntaxKind {
     TerminalLet,
     TokenMacro,
     TerminalMacro,
+    TokenUnhygienic,
+    TerminalUnhygienic,
     TokenMatch,
     TerminalMatch,
     TokenModule,
@@ -381,6 +384,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenImplicits
                 | SyntaxKind::TokenLet
                 | SyntaxKind::TokenMacro
+                | SyntaxKind::TokenUnhygienic
                 | SyntaxKind::TokenMatch
                 | SyntaxKind::TokenModule
                 | SyntaxKind::TokenMut
@@ -474,6 +478,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalImplicits
                 | SyntaxKind::TerminalLet
                 | SyntaxKind::TerminalMacro
+                | SyntaxKind::TerminalUnhygienic
                 | SyntaxKind::TerminalMatch
                 | SyntaxKind::TerminalModule
                 | SyntaxKind::TerminalMut
@@ -556,6 +561,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenImplicits
                 | SyntaxKind::TokenLet
                 | SyntaxKind::TokenMacro
+                | SyntaxKind::TokenUnhygienic
                 | SyntaxKind::TokenMatch
                 | SyntaxKind::TokenModule
                 | SyntaxKind::TokenMut
@@ -591,6 +597,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalImplicits
                 | SyntaxKind::TerminalLet
                 | SyntaxKind::TerminalMacro
+                | SyntaxKind::TerminalUnhygienic
                 | SyntaxKind::TerminalMatch
                 | SyntaxKind::TerminalModule
                 | SyntaxKind::TerminalMut
