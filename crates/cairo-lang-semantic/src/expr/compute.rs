@@ -1520,103 +1520,100 @@ impl FlowMergeTypeHelper {
     }
 }
 
-/// computes the semantic of a match arm pattern and the block expression.
+/// Computes the semantic of a match arm pattern and the block expression.
 fn compute_arm_semantic(
     ctx: &mut ComputationContext<'_>,
     expr: &Expr,
     arm_expr_syntax: ast::Expr,
     patterns_syntax: &PatternListOr,
-    // Whether the arm is a while let arm. This case is handled a little differently.
-    is_while_let_arm: bool,
 ) -> (Vec<PatternAndId>, ExprAndId) {
-    let db = ctx.db;
     ctx.run_in_subscope(|new_ctx| {
-        // Typecheck the arms's patterns, and introduce the new variables to the subscope.
-        // Note that if the arm expr is a block, there will be *another* subscope
-        // for it.
-        let mut arm_patterns_variables: UnorderedHashMap<SmolStr, LocalVariable> =
-            UnorderedHashMap::default();
-        let patterns: Vec<_> = patterns_syntax
-            .elements(db)
-            .iter()
-            .map(|pattern_syntax| {
-                let pattern: PatternAndId = compute_pattern_semantic(
-                    new_ctx,
-                    pattern_syntax,
-                    expr.ty(),
-                    &mut arm_patterns_variables,
-                );
-                let variables = pattern.variables(&new_ctx.arenas.patterns);
-                for variable in variables {
-                    match arm_patterns_variables.entry(variable.name.clone()) {
-                        std::collections::hash_map::Entry::Occupied(entry) => {
-                            let get_location = || variable.stable_ptr.lookup(db).stable_ptr(db);
-                            let var = entry.get();
-
-                            let expected_ty = new_ctx.reduce_ty(var.ty);
-                            let actual_ty = new_ctx.reduce_ty(variable.var.ty);
-
-                            let mut has_inference_error = false;
-                            if !variable.var.ty.is_missing(new_ctx.db) {
-                                let inference = &mut new_ctx.resolver.inference();
-                                if inference
-                                    .conform_ty_for_diag(
-                                        actual_ty,
-                                        expected_ty,
-                                        new_ctx.diagnostics,
-                                        || get_location().untyped(),
-                                        |actual_ty, expected_ty| WrongType {
-                                            expected_ty,
-                                            actual_ty,
-                                        },
-                                    )
-                                    .is_err()
-                                {
-                                    has_inference_error = true;
-                                }
-                            };
-                            if !has_inference_error && var.is_mut != variable.var.is_mut {
-                                new_ctx.diagnostics.report(get_location(), InconsistentBinding);
-                            }
-                        }
-                        std::collections::hash_map::Entry::Vacant(entry) => {
-                            entry.insert(variable.var.clone());
-                        }
-                    }
-                }
-                pattern
-            })
-            .collect();
-
-        for (pattern_syntax, pattern) in patterns_syntax.elements(db).iter().zip(patterns.iter()) {
-            let variables = pattern.variables(&new_ctx.arenas.patterns);
-
-            if variables.len() != arm_patterns_variables.len() {
-                new_ctx.diagnostics.report(pattern_syntax.stable_ptr(db), MissingVariableInPattern);
-            }
-
-            for v in variables {
-                let var_def = Binding::LocalVar(v.var.clone());
-                // TODO(spapini): Wrap this in a function to couple with semantic_defs
-                // insertion.
-                new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
-                new_ctx.semantic_defs.insert(var_def.id(), var_def);
-            }
-        }
-        let arm_expr = if is_while_let_arm {
-            let ast::Expr::Block(arm_expr_syntax) = arm_expr_syntax else {
-                unreachable!("Expected a block expression for a loop arm.");
-            };
-
-            let (id, _) =
-                compute_loop_body_semantic(new_ctx, arm_expr_syntax, InnerContextKind::While);
-            let expr = new_ctx.arenas.exprs[id].clone();
-            ExprAndId { expr, id }
-        } else {
-            compute_expr_semantic(new_ctx, &arm_expr_syntax)
-        };
+        let patterns = compute_pattern_list_or_semantic(new_ctx, expr, patterns_syntax);
+        let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
         (patterns, arm_expr)
     })
+}
+
+/// Computes the semantic of `PatternListOr` and introducing the pattern variables into the scope.
+fn compute_pattern_list_or_semantic(
+    ctx: &mut ComputationContext<'_>,
+    expr: &Expr,
+    patterns_syntax: &PatternListOr,
+) -> Vec<PatternAndId> {
+    let db = ctx.db;
+
+    // Typecheck the arms's patterns, and introduce the new variables to the subscope.
+    // Note that if the arm expr is a block, there will be *another* subscope
+    // for it.
+    let mut arm_patterns_variables: UnorderedHashMap<SmolStr, LocalVariable> =
+        UnorderedHashMap::default();
+
+    let patterns: Vec<_> = patterns_syntax
+        .elements(db)
+        .iter()
+        .map(|pattern_syntax| {
+            let pattern: PatternAndId = compute_pattern_semantic(
+                ctx,
+                pattern_syntax,
+                expr.ty(),
+                &mut arm_patterns_variables,
+            );
+            let variables = pattern.variables(&ctx.arenas.patterns);
+            for variable in variables {
+                match arm_patterns_variables.entry(variable.name.clone()) {
+                    std::collections::hash_map::Entry::Occupied(entry) => {
+                        let get_location = || variable.stable_ptr.lookup(db).stable_ptr(db);
+                        let var = entry.get();
+
+                        let expected_ty = ctx.reduce_ty(var.ty);
+                        let actual_ty = ctx.reduce_ty(variable.var.ty);
+
+                        let mut has_inference_error = false;
+                        if !variable.var.ty.is_missing(ctx.db) {
+                            let inference = &mut ctx.resolver.inference();
+                            if inference
+                                .conform_ty_for_diag(
+                                    actual_ty,
+                                    expected_ty,
+                                    ctx.diagnostics,
+                                    || get_location().untyped(),
+                                    |actual_ty, expected_ty| WrongType { expected_ty, actual_ty },
+                                )
+                                .is_err()
+                            {
+                                has_inference_error = true;
+                            }
+                        };
+                        if !has_inference_error && var.is_mut != variable.var.is_mut {
+                            ctx.diagnostics.report(get_location(), InconsistentBinding);
+                        }
+                    }
+                    std::collections::hash_map::Entry::Vacant(entry) => {
+                        entry.insert(variable.var.clone());
+                    }
+                }
+            }
+            pattern
+        })
+        .collect();
+
+    for (pattern_syntax, pattern) in patterns_syntax.elements(db).iter().zip(patterns.iter()) {
+        let variables = pattern.variables(&ctx.arenas.patterns);
+
+        if variables.len() != arm_patterns_variables.len() {
+            ctx.diagnostics.report(pattern_syntax.stable_ptr(db), MissingVariableInPattern);
+        }
+
+        for v in variables {
+            let var_def = Binding::LocalVar(v.var.clone());
+            // TODO(spapini): Wrap this in a function to couple with semantic_defs
+            // insertion.
+            ctx.environment.variables.insert(v.name.clone(), var_def.clone());
+            ctx.semantic_defs.insert(var_def.id(), var_def);
+        }
+    }
+
+    patterns
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprMatch].
@@ -1634,13 +1631,7 @@ fn compute_expr_match_semantic(
     let patterns_and_exprs: Vec<_> = syntax_arms
         .iter()
         .map(|syntax_arm| {
-            compute_arm_semantic(
-                ctx,
-                &expr,
-                syntax_arm.expression(db),
-                &syntax_arm.patterns(db),
-                false,
-            )
+            compute_arm_semantic(ctx, &expr, syntax_arm.expression(db), &syntax_arm.patterns(db))
         })
         .collect();
     // Unify arm types.
@@ -1689,7 +1680,6 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
                 &expr,
                 ast::Expr::Block(syntax.if_block(db)),
                 &condition.patterns(db),
-                false,
             );
             (Condition::Let(expr.id, patterns.iter().map(|pattern| pattern.id).collect()), if_block)
         }
@@ -1782,13 +1772,16 @@ fn compute_expr_while_semantic(
                     .report(condition.expr(db).stable_ptr(db), LogicalOperatorNotAllowedInWhileLet);
             }
 
-            let (patterns, body) = compute_arm_semantic(
-                ctx,
-                &expr,
-                ast::Expr::Block(syntax.body(db)),
-                &condition.patterns(db),
-                true,
-            );
+            let (patterns, body) = ctx.run_in_subscope(|new_ctx| {
+                let patterns =
+                    compute_pattern_list_or_semantic(new_ctx, &expr, &condition.patterns(db));
+
+                let (id, _) =
+                    compute_loop_body_semantic(new_ctx, syntax.body(db), InnerContextKind::While);
+                let expr = new_ctx.arenas.exprs[id].clone();
+                (patterns, ExprAndId { expr, id })
+            });
+
             (Condition::Let(expr.id, patterns.iter().map(|pattern| pattern.id).collect()), body.id)
         }
         ast::Condition::Expr(expr) => {
