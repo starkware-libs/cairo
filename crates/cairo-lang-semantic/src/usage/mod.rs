@@ -333,14 +333,16 @@ impl Usages {
                 }
             }
             Expr::If(expr) => {
-                match &expr.condition {
-                    Condition::BoolExpr(expr) => {
-                        self.handle_expr(arenas, *expr, current);
-                    }
-                    Condition::Let(expr, patterns) => {
-                        self.handle_expr(arenas, *expr, current);
-                        for pattern in patterns {
-                            Self::handle_pattern(&arenas.patterns, *pattern, current);
+                for condition in &expr.conditions {
+                    match condition {
+                        Condition::BoolExpr(expr) => {
+                            self.handle_expr(arenas, *expr, current);
+                        }
+                        Condition::Let(expr, patterns) => {
+                            self.handle_expr(arenas, *expr, current);
+                            for pattern in patterns {
+                                Self::handle_pattern(&arenas.patterns, *pattern, current);
+                            }
                         }
                     }
                 }
