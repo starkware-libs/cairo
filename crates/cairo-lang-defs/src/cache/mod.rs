@@ -98,11 +98,15 @@ pub fn load_cached_crate_modules(
 
     let content = &content[8..size + 8];
 
-    let Ok(((metadata, module_data, defs_lookups), _)): Result<(DefCache, _), _> =
+    let ((metadata, module_data, defs_lookups), _): (DefCache, _) =
         bincode::serde::borrow_decode_from_slice(content, bincode::config::standard())
-    else {
-        return Default::default();
-    };
+            .unwrap_or_else(|e| {
+                panic!(
+                    "failed to deserialize modules cache for crate `{}`: {e}",
+                    crate_id.name(db),
+                )
+            });
+
     validate_metadata(crate_id, &metadata, db);
 
     let mut ctx = DefCacheLoadingContext::new(db, defs_lookups, crate_id);
