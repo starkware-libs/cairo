@@ -659,7 +659,6 @@ dependencies = [
  "ignore",
  "itertools 0.14.0",
  "pretty_assertions",
- "rust-analyzer-salsa",
  "serde",
  "test-case",
  "thiserror 2.0.12",
