@@ -135,7 +135,7 @@ fn generate_key_fields_code() -> rust::Tokens {
                     }
                 }
                 arms.extend(quote! {
-                    SyntaxKind::$name => {vec![$fields]},
+                    SyntaxKind::$name => vec![$fields],
                 });
             }
             NodeKind::List { .. } | NodeKind::SeparatedList { .. } | NodeKind::Token { .. } => {
