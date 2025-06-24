@@ -130,15 +130,14 @@ pub fn setup_test_crate_ex(
     crate_settings: Option<&str>,
     cache_file: Option<BlobId>,
 ) -> CrateId {
-    let file_id = FileLongId::Virtual(VirtualFile {
+    let file_long_id = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "lib.cairo".into(),
         content: content.into(),
         code_mappings: [].into(),
         kind: FileKind::Module,
         original_item_removed: false,
-    })
-    .intern(db);
+    });
 
     let settings: CrateSettings = if let Some(crate_settings) = crate_settings {
         toml::from_str(crate_settings).expect("Invalid config.")
@@ -160,7 +159,7 @@ pub fn setup_test_crate_ex(
 
     CrateLongId::Virtual {
         name: "test".into(),
-        file_id,
+        file_id: file_long_id.intern(db),
         settings: toml::to_string_pretty(&settings).unwrap(),
         cache_file,
     }
