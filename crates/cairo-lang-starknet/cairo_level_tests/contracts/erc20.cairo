@@ -69,7 +69,7 @@ pub mod erc_20 {
         self.name.write(name_);
         self.symbol.write(symbol_);
         self.decimals.write(decimals_);
-        assert(!recipient.is_zero(), 'ERC20: mint to the 0 address');
+        assert(!Zero::is_zero(@recipient), 'ERC20: mint to the 0 address');
         self.total_supply.write(initial_supply);
         self.balances.write(recipient, initial_supply);
         self
@@ -158,8 +158,8 @@ pub mod erc_20 {
             recipient: ContractAddress,
             amount: u256,
         ) {
-            assert(!sender.is_zero(), 'ERC20: transfer from 0');
-            assert(!recipient.is_zero(), 'ERC20: transfer to 0');
+            assert(!Zero::is_zero(@sender), 'ERC20: transfer from 0');
+            assert(!Zero::is_zero(@recipient), 'ERC20: transfer to 0');
             self.balances.write(sender, self.balances.read(sender) - amount);
             self.balances.write(recipient, self.balances.read(recipient) + amount);
             self.emit(Transfer { from: sender, to: recipient, value: amount });
@@ -180,7 +180,7 @@ pub mod erc_20 {
         fn approve_helper(
             ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256,
         ) {
-            assert(!spender.is_zero(), 'ERC20: approve from 0');
+            assert(!Zero::is_zero(@spender), 'ERC20: approve from 0');
             self.allowances.write((owner, spender), amount);
             self.emit(Approval { owner, spender, value: amount });
         }
