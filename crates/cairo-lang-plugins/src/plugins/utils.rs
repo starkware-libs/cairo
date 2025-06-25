@@ -56,17 +56,16 @@ impl GenericParamsInfo {
         else {
             return Self { param_names: Default::default(), full_params: Default::default() };
         };
-        let params = gens.generic_params(db).elements(db);
-        Self {
-            param_names: params
-                .iter()
-                .map(|param| param.name(db).map(|n| n.text(db)).unwrap_or_else(|| "_".into()))
-                .collect(),
-            full_params: params
-                .iter()
-                .map(|param| param.as_syntax_node().get_text_without_trivia(db))
-                .collect(),
-        }
+        let (param_names, full_params) = gens
+            .generic_params(db)
+            .elements(db)
+            .map(|param| {
+                let name = param.name(db).map(|n| n.text(db)).unwrap_or_else(|| "_".into());
+                let full_param = param.as_syntax_node().get_text_without_trivia(db);
+                (name, full_param)
+            })
+            .unzip();
+        Self { param_names, full_params }
     }
 }
 
@@ -167,7 +166,6 @@ fn extract_members(
 ) -> Vec<MemberInfo> {
     members
         .elements(db)
-        .into_iter()
         .map(|member| MemberInfo {
             name: member.name(db).text(db),
             ty: member.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db),
@@ -185,7 +183,6 @@ fn extract_variants(
 ) -> Vec<MemberInfo> {
     variants
         .elements(db)
-        .into_iter()
         .map(|variant| MemberInfo {
             name: variant.name(db).text(db),
             ty: match variant.type_clause(db) {

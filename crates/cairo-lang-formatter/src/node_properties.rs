@@ -1066,7 +1066,6 @@ fn is_statement_list_break_point_optional(db: &dyn SyntaxGroup, node: &SyntaxNod
             d.kind(db) != SyntaxKind::Trivia
                 || ast::Trivia::from_syntax_node(db, d)
                     .elements(db)
-                    .iter()
                     .all(|t| !matches!(t, ast::Trivium::SingleLineComment(_)))
         })
 }

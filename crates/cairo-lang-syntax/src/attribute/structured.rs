@@ -103,7 +103,6 @@ impl AttributeStructurize for ast::Attribute {
                     attribute_args
                         .arguments(db)
                         .elements(db)
-                        .into_iter()
                         .map(|arg| AttributeArg::from_ast(arg, db))
                         .collect()
                 }
@@ -122,7 +121,7 @@ pub trait AttributeListStructurize {
 impl AttributeListStructurize for ast::AttributeList {
     fn structurize(self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         // TODO(ilya): Consider checking for attribute repetitions.
-        self.elements(db).into_iter().map(|attr| attr.structurize(db)).collect()
+        self.elements(db).map(|attr| attr.structurize(db)).collect()
     }
 }
 
@@ -140,12 +139,8 @@ impl AttributeArg {
             ),
         };
 
-        let modifiers = arg
-            .modifiers(db)
-            .elements(db)
-            .into_iter()
-            .map(|modifier| Modifier::from(modifier, db))
-            .collect();
+        let modifiers =
+            arg.modifiers(db).elements(db).map(|modifier| Modifier::from(modifier, db)).collect();
 
         AttributeArg { variant, arg, modifiers }
     }

@@ -3,6 +3,7 @@ use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStr
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
+use itertools::Itertools;
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -57,7 +58,8 @@ fn get_diagnostics<Item: QueryAttrs>(
                     ));
                     return;
                 };
-                let [ast::PathSegment::Simple(segment)] = &path.segments(db).elements(db)[..]
+                let Some([ast::PathSegment::Simple(segment)]) =
+                    path.segments(db).elements(db).collect_array()
                 else {
                     diagnostics.push(PluginDiagnostic::error(
                         path.stable_ptr(db),

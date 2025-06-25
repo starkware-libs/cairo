@@ -658,7 +658,7 @@ fn add_interface_impl(
     ));
 
     let fields = struct_ast.members(db).elements(db);
-    let mut fields_iter = zip_eq(&fields, configs).peekable();
+    let mut fields_iter = zip_eq(fields, configs).peekable();
     while let Some((field, config)) = fields_iter.next() {
         let field_name = RewriteNode::from_ast_trimmed(&field.name(db));
         let field_type = RewriteNode::from_ast_trimmed(&field.type_clause(db).ty(db));
@@ -666,7 +666,7 @@ fn add_interface_impl(
             config.rename.as_deref().map_or_else(|| field_name.clone(), RewriteNode::text);
         let is_last = fields_iter.peek().is_none();
         builder.add_modified(RewriteNode::interpolate_patched(
-            &storage_node_info.node_constructor_field_init_code(is_last, field),
+            &storage_node_info.node_constructor_field_init_code(is_last, &field),
             &[
                 ("field_selector_name".to_string(), field_selector_name),
                 ("field_name".to_string(), field_name),
@@ -768,7 +768,7 @@ fn add_node_enum_impl(
     ));
 
     let mut default_index = None;
-    for (index, variant) in enum_ast.variants(db).elements(db).iter().enumerate() {
+    for (index, variant) in enum_ast.variants(db).elements(db).enumerate() {
         let variant_selector = if variant.attributes(db).has_attr(db, "default") {
             // If there is more than one default variant, a diagnostic is already emitted from
             // derive(Store).
@@ -786,7 +786,7 @@ fn add_node_enum_impl(
         };
 
         builder.add_modified(RewriteNode::interpolate_patched(
-            &storage_node_info.node_constructor_field_init_code(false, variant),
+            &storage_node_info.node_constructor_field_init_code(false, &variant),
             &[
                 ("object_name".to_string(), enum_name.clone()),
                 ("field_name".to_string(), RewriteNode::from_ast_trimmed(&variant.name(db))),
@@ -831,7 +831,6 @@ pub fn struct_members_storage_configs(
     struct_ast
         .members(db)
         .elements(db)
-        .into_iter()
         .map(|member| get_member_storage_config(db, &member, diagnostics))
         .collect()
 }

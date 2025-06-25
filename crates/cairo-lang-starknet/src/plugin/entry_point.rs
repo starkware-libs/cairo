@@ -167,7 +167,7 @@ pub fn handle_entry_point(
         .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
         .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS);
     let params = declaration.signature(db).parameters(db);
-    for (param_idx, param) in params.elements(db).iter().enumerate() {
+    for (param_idx, param) in params.elements(db).enumerate() {
         // This assumes `mut` can only appear alone.
         if param.is_mut_param(db) {
             original_parameters
@@ -226,7 +226,7 @@ fn generate_entry_point_wrapper(
 ) -> Result<RewriteNode, Vec<PluginDiagnostic>> {
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);
-    let mut params = sig.parameters(db).elements(db).into_iter().enumerate();
+    let mut params = sig.parameters(db).elements(db).enumerate();
     let mut diagnostics = vec![];
     let mut arg_names = Vec::new();
     let mut arg_definitions = Vec::new();
@@ -376,7 +376,7 @@ fn validate_l1_handler_first_parameter(
     params: &ast::ParamList,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
-    if let Some(first_param) = params.elements(db).get(1) {
+    if let Some(first_param) = params.elements(db).nth(1) {
         // Validate type
 
         if !extract_matches!(first_param.type_clause(db), OptionTypeClause::TypeClause)

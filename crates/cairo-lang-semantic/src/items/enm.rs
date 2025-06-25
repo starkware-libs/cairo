@@ -9,7 +9,6 @@ use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructuri
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
-use itertools::enumerate;
 use smol_str::SmolStr;
 
 use super::attribute::SemanticQueryAttrs;
@@ -208,7 +207,7 @@ pub fn priv_enum_definition_data(
     // Variants.
     let mut variants = OrderedHashMap::default();
     let mut variant_semantic = OrderedHashMap::default();
-    for (variant_idx, variant) in enumerate(enum_ast.variants(db).elements(db)) {
+    for (variant_idx, variant) in enum_ast.variants(db).elements(db).enumerate() {
         let feature_restore = resolver
             .data
             .feature_config

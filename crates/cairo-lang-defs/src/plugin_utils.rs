@@ -89,11 +89,8 @@ pub fn extract_single_unnamed_arg(
     db: &dyn SyntaxGroup,
     macro_arguments: ast::ArgList,
 ) -> Option<ast::Expr> {
-    if let Ok([arg]) = <[_; 1]>::try_from(macro_arguments.elements(db)) {
-        try_extract_unnamed_arg(db, &arg)
-    } else {
-        None
-    }
+    let mut elements = macro_arguments.elements(db);
+    if elements.len() == 1 { try_extract_unnamed_arg(db, &elements.next()?) } else { None }
 }
 
 /// Extracts `n` unnamed arguments.
@@ -104,7 +101,7 @@ pub fn extract_unnamed_args(
 ) -> Option<Vec<ast::Expr>> {
     let elements = macro_arguments.elements(db);
     require(elements.len() == n)?;
-    elements.iter().map(|x| try_extract_unnamed_arg(db, x)).collect()
+    elements.map(|x| try_extract_unnamed_arg(db, &x)).collect()
 }
 
 /// Gets the syntax of an argument, and extracts the value if it is unnamed.

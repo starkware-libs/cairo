@@ -40,7 +40,7 @@ pub fn get_starknet_event_variants(
         ast::ModuleItem::Enum(enm) => {
             let has_event_name = enm.name(db).text(db) == EVENT_TYPE_NAME;
             let variants = if has_event_name {
-                enm.variants(db).elements(db).into_iter().map(|v| v.name(db).text(db)).collect()
+                enm.variants(db).elements(db).map(|v| v.name(db).text(db)).collect()
             } else {
                 vec![]
             };

@@ -36,8 +36,8 @@ impl InlineMacroExprPlugin for AssertMacro {
         else {
             return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax.stable_ptr(db));
         };
-        let arguments = arguments_syntax.arguments(db).elements(db);
-        let Some((value, format_args)) = arguments.split_first() else {
+        let mut arguments = arguments_syntax.arguments(db).elements(db);
+        let Some(value) = arguments.next() else {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
@@ -46,7 +46,7 @@ impl InlineMacroExprPlugin for AssertMacro {
                 )],
             };
         };
-        let Some(value) = try_extract_unnamed_arg(db, value) else {
+        let Some(value) = try_extract_unnamed_arg(db, &value) else {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
@@ -67,7 +67,7 @@ impl InlineMacroExprPlugin for AssertMacro {
             },
             &[("value".to_string(), RewriteNode::from_ast_trimmed(&value))].into(),
         ));
-        if format_args.is_empty() {
+        if arguments.len() == 0 {
             builder.add_str(&formatdoc!(
                 "core::result::ResultTrait::<(), core::fmt::Error>::unwrap(write!({f}, \
                  \"assertion failed: `{value_escaped}`.\"));\n",
@@ -93,7 +93,7 @@ impl InlineMacroExprPlugin for AssertMacro {
                     (
                         "args".to_string(),
                         RewriteNode::interspersed(
-                            format_args.iter().map(RewriteNode::from_ast_trimmed),
+                            arguments.map(|e| RewriteNode::from_ast_trimmed(&e)),
                             RewriteNode::text(", "),
                         ),
                     ),
