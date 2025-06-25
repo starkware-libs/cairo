@@ -48,6 +48,11 @@ impl BlocksBuilder {
         self.0[id.0] = block;
     }
 
+    /// Returns a mutable reference to an already-allocated block.
+    pub fn get_mut_block(&mut self, id: BlockId) -> &mut Block {
+        &mut self.0[id.0]
+    }
+
     pub fn len(&self) -> usize {
         self.0.len()
     }
