@@ -273,7 +273,6 @@ pub fn generic_impl_param_trait(
     let generic_param_syntax = generic_params_syntax
         .generic_params(syntax_db)
         .elements(syntax_db)
-        .into_iter()
         .find(|param_syntax| {
             GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db)).intern(db)
                 == generic_param_id
@@ -458,7 +457,6 @@ pub fn semantic_generic_params_ex(
         syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
             .generic_params(syntax_db)
             .elements(syntax_db)
-            .iter()
             .filter_map(|param_syntax| {
                 let generic_param_id =
                     GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db))

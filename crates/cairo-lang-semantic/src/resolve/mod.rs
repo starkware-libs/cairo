@@ -304,7 +304,7 @@ pub trait AsSegments {
 }
 impl AsSegments for &ast::ExprPath {
     fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
-        self.segments(db).elements(db)
+        self.segments(db).elements_vec(db)
     }
     fn is_placeholder(&self, db: &dyn SyntaxGroup) -> bool {
         match self.dollar(db) {

@@ -1274,7 +1274,6 @@ pub fn priv_trait_function_declaration_data(
         trait_id,
         trait_function_id,
         &signature,
-        &declaration_syntax.signature(db),
     );
 
     let attributes = function_syntax.attributes(db).structurize(db);
@@ -1302,12 +1301,11 @@ fn validate_trait_function_signature(
     trait_id: TraitId,
     function_id: TraitFunctionId,
     sig: &semantic::Signature,
-    sig_syntax: &ast::FunctionSignature,
 ) {
-    for (idx, param) in sig.params.iter().enumerate() {
+    for param in &sig.params {
         if param.mutability == Mutability::Mutable {
             diagnostics.report(
-                sig_syntax.parameters(db).elements(db)[idx].modifiers(db).stable_ptr(db),
+                param.stable_ptr(db).lookup(db).modifiers(db).stable_ptr(db),
                 crate::diagnostic::SemanticDiagnosticKind::TraitParamMutable {
                     trait_id,
                     function_id,
