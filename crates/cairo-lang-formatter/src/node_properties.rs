@@ -11,7 +11,7 @@ use crate::formatter_impl::{
 };
 use crate::{CollectionsBreakingBehavior, FormatterConfig};
 
-impl SyntaxNodeFormat for SyntaxNode {
+impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
     fn force_no_space_before(&self, db: &dyn SyntaxGroup) -> bool {
         match self.kind(db) {
             SyntaxKind::TokenDot

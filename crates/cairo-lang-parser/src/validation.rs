@@ -20,11 +20,11 @@ use crate::diagnostic::ParserDiagnosticKind;
 /// This function validates that the literal:
 /// 1. Is parsable according to its radix.
 /// 2. Has properly formatted suffix.
-pub fn validate_literal_number(
-    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+pub fn validate_literal_number<'a>(
+    diagnostics: &mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
     text: SmolStr,
     span: TextSpan,
-    file_id: FileId,
+    file_id: FileId<'a>,
 ) {
     let (text, ty) = match text.split_once('_') {
         Some((text, ty)) => (text, Some(ty)),
@@ -72,11 +72,11 @@ pub fn validate_literal_number(
 /// 1. Ends with a quote (parser accepts unterminated literals).
 /// 2. Has all escape sequences valid.
 /// 3. Is entirely ASCII.
-pub fn validate_short_string(
-    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+pub fn validate_short_string<'a>(
+    diagnostics: &mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
     text: SmolStr,
     span: TextSpan,
-    file_id: FileId,
+    file_id: FileId<'a>,
 ) {
     validate_any_string(
         diagnostics,
@@ -97,11 +97,11 @@ pub fn validate_short_string(
 /// 1. Ends with double quotes (parser accepts unterminated literals).
 /// 2. Has all escape sequences valid.
 /// 3. Is entirely ASCII.
-pub fn validate_string(
-    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+pub fn validate_string<'a>(
+    diagnostics: &mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
     text: SmolStr,
     span: TextSpan,
-    file_id: FileId,
+    file_id: FileId<'a>,
 ) {
     validate_any_string(
         diagnostics,
@@ -115,11 +115,11 @@ pub fn validate_string(
 }
 
 /// Validates a short-string/string.
-fn validate_any_string(
-    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+fn validate_any_string<'a>(
+    diagnostics: &mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
     text: SmolStr,
     span: TextSpan,
-    file_id: FileId,
+    file_id: FileId<'a>,
     delimiter: char,
     unterminated_string_diagnostic_kind: ParserDiagnosticKind,
     ascii_only_diagnostic_kind: ParserDiagnosticKind,
@@ -138,11 +138,11 @@ fn validate_any_string(
     validate_string_body(diagnostics, body, span, file_id, ascii_only_diagnostic_kind)
 }
 
-fn validate_string_body(
-    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+fn validate_string_body<'a>(
+    diagnostics: &mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
     body: &str,
     span: TextSpan,
-    file_id: FileId,
+    file_id: FileId<'a>,
     ascii_only_diagnostic_kind: ParserDiagnosticKind,
 ) {
     let Ok(body) = unescape(body) else {

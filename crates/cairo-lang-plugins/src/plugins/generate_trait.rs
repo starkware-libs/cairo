@@ -16,12 +16,12 @@ pub struct GenerateTraitPlugin;
 const GENERATE_TRAIT_ATTR: &str = "generate_trait";
 
 impl MacroPlugin for GenerateTraitPlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         match item_ast {
             ast::ModuleItem::Impl(impl_ast) => generate_trait_for_impl(db, impl_ast),
             module_item => {
@@ -44,7 +44,10 @@ impl MacroPlugin for GenerateTraitPlugin {
     }
 }
 
-fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> PluginResult {
+fn generate_trait_for_impl<'db>(
+    db: &'db dyn SyntaxGroup,
+    impl_ast: ast::ItemImpl<'db>,
+) -> PluginResult<'db> {
     let Some(attr) = impl_ast.attributes(db).find_attr(db, GENERATE_TRAIT_ATTR) else {
         return PluginResult::default();
     };
