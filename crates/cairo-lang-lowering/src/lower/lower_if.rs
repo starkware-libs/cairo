@@ -1,8 +1,11 @@
+use std::cell::RefCell;
+
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 use cairo_lang_syntax::node::TypedStablePtr;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use semantic::{Condition, MatchArmSelector};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
@@ -14,7 +17,7 @@ use crate::ids::LocationId;
 use crate::lower::context::VarRequest;
 use crate::lower::lower_match::{self, MatchArmWrapper};
 use crate::lower::{create_subscope, lower_block, lower_expr, lower_expr_to_var_usage};
-use crate::{MatchArm, MatchEnumInfo, MatchInfo};
+use crate::{BlockEnd, MatchArm, MatchEnumInfo, MatchInfo, VarRemapping};
 
 /// Represents an expression of the form:
 ///
@@ -27,13 +30,39 @@ use crate::{MatchArm, MatchEnumInfo, MatchInfo};
 pub struct ConditionedExpr<'a> {
     pub expr: semantic::ExprId,
     pub conditions: &'a [Condition],
-    pub else_block: Option<semantic::ExprId>,
+    pub else_block_tracker: Option<ElseBlockTracker<'a>>,
 }
 
-impl ConditionedExpr<'_> {
+impl<'a> ConditionedExpr<'a> {
     /// Returns a copy of self, without the first condition.
-    pub fn remove_first(&self) -> Self {
+    fn remove_first(&self) -> Self {
         Self { conditions: &self.conditions[1..], ..*self }
+    }
+
+    fn get_else_arm(&self) -> MatchArmWrapper<'a> {
+        if let Some(else_block_tracker) = &self.else_block_tracker {
+            MatchArmWrapper::SharedElseArm(*else_block_tracker)
+        } else {
+            MatchArmWrapper::DefaultClause
+        }
+    }
+}
+
+/// Tracks information about the blocks leading to the else arm of a let-chain ([ConditionedExpr]).
+#[derive(Clone, Copy)]
+pub struct ElseBlockTracker<'a> {
+    /// A list of [SealedBlockBuilder] that should be merged into the `else` block.
+    pub block_builders: &'a RefCell<Vec<SealedBlockBuilder>>,
+    /// A stable pointer to the else block.
+    pub stable_ptr: SyntaxStablePtrId,
+}
+
+impl<'a> ElseBlockTracker<'a> {
+    pub fn extend_block_builders(
+        &self,
+        block_builders: impl IntoIterator<Item = SealedBlockBuilder>,
+    ) {
+        self.block_builders.borrow_mut().extend(block_builders);
     }
 }
 
@@ -43,28 +72,96 @@ pub fn lower_expr_if(
     builder: &mut BlockBuilder,
     expr: &semantic::ExprIf,
 ) -> LoweringResult<LoweredExpr> {
-    // Else block is not supported yet for multiple conditions.
-    if expr.conditions.len() > 1 {
-        if let Some(else_block) = expr.else_block {
-            let stable_ptr = ctx.function_body.arenas.exprs[else_block].stable_ptr().untyped();
-            return Err(LoweringFlowError::Failed(
-                ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::Unsupported),
-            ));
-        }
+    if let Some(else_block) = expr.else_block {
+        handle_if_with_else_block(
+            ctx,
+            builder,
+            expr.if_block,
+            &expr.conditions,
+            else_block,
+            ctx.get_location(expr.stable_ptr.untyped()),
+        )
+    } else {
+        lower_conditioned_expr(
+            ctx,
+            builder,
+            &ConditionedExpr {
+                expr: expr.if_block,
+                conditions: &expr.conditions,
+                else_block_tracker: None,
+            },
+        )
     }
-    lower_conditioned_expr(
+}
+
+fn handle_if_with_else_block(
+    ctx: &mut LoweringContext<'_, '_>,
+    builder: &mut BlockBuilder,
+    if_block: semantic::ExprId,
+    conditions: &[Condition],
+    else_block: semantic::ExprId,
+    location: LocationId,
+) -> LoweringResult<LoweredExpr> {
+    // Extract the location of the else block.
+    let else_expr = &ctx.function_body.arenas.exprs[else_block];
+    let else_stable_ptr = else_expr.stable_ptr().untyped();
+    let else_location = ctx.get_location(else_stable_ptr);
+
+    // Create two subscopes of builder:
+    // 1. `subscope_main` - contains the match logic and the success branch.
+    // 2. `subscope_else` - contains the else block.
+    let subscope_main = create_subscope(ctx, builder);
+
+    // Construct the main block.
+    let block_main_id = subscope_main.block_id;
+    let else_sealed_blocks = RefCell::new(vec![]);
+    let else_block_tracker =
+        ElseBlockTracker { block_builders: &else_sealed_blocks, stable_ptr: else_stable_ptr };
+    let conditioned_expr = ConditionedExpr {
+        expr: if_block,
+        conditions,
+        else_block_tracker: Some(else_block_tracker),
+    };
+
+    let block_main = lower_conditioned_expr_and_seal(ctx, subscope_main, &conditioned_expr)
+        .map_err(LoweringFlowError::Failed)?;
+
+    let mut final_sealed_blocks = vec![block_main];
+
+    // Seal all the blocks collected from the else branches by pointing them to `subscope_else`.
+    // For each condition in the let-chain, we may have one or more blocks leading to the else
+    // branch.
+    let else_sealed_blocks = else_sealed_blocks.into_inner();
+    if !else_sealed_blocks.is_empty() {
+        let mut subscope_else = create_subscope(ctx, builder);
+        subscope_else.merge_and_end(
+            ctx,
+            else_sealed_blocks,
+            else_location,
+            BlockEnd::Goto(subscope_else.block_id, VarRemapping::default()), // TODO: check.
+            LoweringFlowError::Goto(subscope_else.block_id),
+        )?;
+
+        // Lower the content of the else block and seal it.
+        // TODO: remove lower_optional_else_block.
+        let block_else = lower_optional_else_block(ctx, subscope_else, Some(else_block), else_location)
+            .map_err(LoweringFlowError::Failed)?;
+
+        final_sealed_blocks.push(block_else);
+    }
+
+    // Merge the main and else blocks.
+    builder.merge_and_end(
         ctx,
-        builder,
-        &ConditionedExpr {
-            expr: expr.if_block,
-            conditions: &expr.conditions,
-            else_block: expr.else_block,
-        },
+        final_sealed_blocks,
+        location,
+        BlockEnd::Goto(block_main_id, VarRemapping::default()),
+        LoweringFlowError::Goto(block_main_id),
     )
 }
 
 /// Lowers an expression of type [semantic::ExprIf].
-pub fn lower_if_bool_condition(
+fn lower_if_bool_condition(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
     condition: semantic::ExprId,
@@ -93,9 +190,20 @@ pub fn lower_if_bool_condition(
 
     let else_block_input_var_id =
         ctx.new_var(VarRequest { ty: unit_ty, location: condition_location });
-    let block_else =
-        lower_optional_else_block(ctx, subscope_else, inner_expr.else_block, condition_location)
-            .map_err(LoweringFlowError::Failed)?;
+
+    let mut blocks_to_seal = vec![block_main];
+
+    if let Some(tracker) = inner_expr.else_block_tracker {
+        tracker.extend_block_builders([subscope_else.goto_callsite(None)]);
+    } else {
+        let else_block = lowered_expr_to_block_scope_end(
+            ctx,
+            subscope_else,
+            Ok(LoweredExpr::Tuple { exprs: vec![], location: condition_location }),
+        )
+        .map_err(LoweringFlowError::Failed)?;
+        blocks_to_seal.push(else_block);
+    }
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: corelib::core_bool_enum(db),
@@ -114,16 +222,11 @@ pub fn lower_if_bool_condition(
         ],
         location: condition_location,
     });
-    builder.merge_and_end_with_match(
-        ctx,
-        match_info,
-        vec![block_main, block_else],
-        condition_location,
-    )
+    builder.merge_and_end_with_match(ctx, match_info, blocks_to_seal, condition_location)
 }
 
 /// Lowers an expression of type if where the condition is of type [semantic::Condition::Let].
-pub fn lower_if_let_condition(
+fn lower_if_let_condition(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
     matched_expr_id: semantic::ExprId,
@@ -147,10 +250,7 @@ pub fn lower_if_let_condition(
         )));
     }
 
-    let else_arm = inner_expr
-        .else_block
-        .map(MatchArmWrapper::ElseClause)
-        .unwrap_or(MatchArmWrapper::DefaultClause);
+    let else_arm = inner_expr.get_else_arm();
     let arms = vec![MatchArmWrapper::ConditionedArm(patterns, inner_expr), else_arm];
 
     lower_match::lower_match_arms(

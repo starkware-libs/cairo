@@ -34,28 +34,48 @@ extern fn use_a_drop(x: ADrop) nopanic;
 Parameters: v0: test::ACopy, v1: test::ADrop
 blk0 (root):
 Statements:
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2{`true`})
 End:
   Match(match_enum(v3{`true`}) {
-    bool::False(v5) => blk2,
-    bool::True(v4) => blk1,
+    bool::False(v5) => blk3,
+    bool::True(v4) => blk2,
   })
 
-blk1:
+blk2:
 Statements:
   () <- test::use_a_copy(v0{`x`})
   () <- test::use_a_drop(v1{`y`})
 End:
-  Goto(blk3, {})
+  Goto(blk4, {})
 
-blk2:
+blk3:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk5:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk6:
 Statements:
   () <- test::use_a_drop(v1{`y`})
 End:
-  Goto(blk3, {})
+  Goto(blk7, {})
 
-blk3:
+blk7:
 Statements:
   () <- test::use_a_copy(v0{`x`})
   (v6: ()) <- struct_construct()
@@ -118,27 +138,47 @@ note: Trait has no implementation in context: core::traits::Destruct::<test::ACo
 Parameters: v0: test::ACopy, v1: test::ADrop
 blk0 (root):
 Statements:
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2{`true`})
 End:
   Match(match_enum(v3{`true`}) {
-    bool::False(v5) => blk2,
-    bool::True(v4) => blk1,
+    bool::False(v5) => blk3,
+    bool::True(v4) => blk2,
   })
 
-blk1:
+blk2:
 Statements:
   () <- test::use_a_copy(v0{`x`})
   () <- test::use_a_drop(v1{`y`})
 End:
-  Goto(blk3, {})
-
-blk2:
-Statements:
-End:
-  Goto(blk3, {})
+  Goto(blk4, {})
 
 blk3:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk5:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk6:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk7:
 Statements:
 End:
   Return(v1)
@@ -345,26 +385,46 @@ note: Trait has no implementation in context: core::traits::Copy::<test::ADrop>.
 Parameters: v0: test::ADrop, v1: test::ADrop
 blk0 (root):
 Statements:
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2{`true`})
 End:
   Match(match_enum(v3{`true`}) {
-    bool::False(v5) => blk2,
-    bool::True(v4) => blk1,
+    bool::False(v5) => blk3,
+    bool::True(v4) => blk2,
   })
-
-blk1:
-Statements:
-  () <- test::use_a_drop(v1{`y`})
-End:
-  Goto(blk3, {v1 -> v6})
 
 blk2:
 Statements:
+  () <- test::use_a_drop(v1{`y`})
 End:
-  Goto(blk3, {v0 -> v6})
+  Goto(blk4, {})
 
 blk3:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk7, {v1 -> v6})
+
+blk5:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk6:
+Statements:
+End:
+  Goto(blk7, {v0 -> v6})
+
+blk7:
 Statements:
 End:
   Return(v6)
