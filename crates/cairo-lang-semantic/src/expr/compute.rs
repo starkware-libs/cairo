@@ -664,7 +664,6 @@ fn expand_macro_for_statement(
         original_item_removed: true,
     })
     .intern(ctx.db);
-    let statement_list = ctx.db.file_statement_list_syntax(new_file_id)?;
     let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
     if let Err(diag_added) = parser_diagnostics.check_error_free() {
         for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db.elongate()) {
@@ -675,11 +674,8 @@ fn expand_macro_for_statement(
         }
         return Err(diag_added);
     }
-    let mut parsed_statements = statement_list.elements_vec(ctx.db);
-    let tail = get_tail_expression(ctx.db, parsed_statements.as_slice());
-    if tail.is_some() {
-        parsed_statements.pop();
-    }
+    let statement_list = ctx.db.file_statement_list_syntax(new_file_id)?;
+    let (parsed_statements, tail) = statements_and_tail(ctx.db, statement_list);
     let restore_data = is_plugin_macro.then(|| {
         let prev_resolver_modifiers_suppression = ctx.resolver.suppress_modifiers_diagnostics;
         ctx.resolver.set_suppress_modifiers_diagnostics(true);
@@ -687,7 +683,7 @@ fn expand_macro_for_statement(
     });
     let result = ctx.run_in_macro_subscope(
         |ctx| {
-            statements_ids.extend(compute_statement_list_semantic(ctx, parsed_statements));
+            compute_statements_semantic_and_extend(ctx, parsed_statements, statements_ids);
             if let Some(tail_expr) = tail {
                 let expr = compute_expr_semantic(ctx, &tail_expr);
                 statements_ids.push(ctx.arenas.statements.alloc(semantic::Statement::Expr(
@@ -1362,16 +1358,15 @@ pub fn compute_root_expr(
 }
 
 /// Computes the semantic model for a list of statements, flattening the result.
-pub fn compute_statement_list_semantic(
+pub fn compute_statements_semantic_and_extend(
     ctx: &mut ComputationContext<'_>,
-    statements: Vec<ast::Statement>,
-) -> Vec<StatementId> {
-    let mut statement_ids = Vec::new();
-    for statement_syntax in statements {
-        compute_and_append_statement_semantic(ctx, statement_syntax, &mut statement_ids)
+    statements_syntax: impl Iterator<Item = ast::Statement>,
+    statement_ids: &mut Vec<StatementId>,
+) {
+    for statement_syntax in statements_syntax {
+        compute_and_append_statement_semantic(ctx, statement_syntax, statement_ids)
             .unwrap_or_default();
     }
-    statement_ids
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprBlock].
@@ -1381,16 +1376,11 @@ pub fn compute_expr_block_semantic(
 ) -> Maybe<Expr> {
     let db = ctx.db;
     ctx.run_in_subscope(|new_ctx| {
-        let mut statements = syntax.statements(db).elements_vec(db);
-        // Remove the tail expression, if exists.
-        // TODO(spapini): Consider splitting tail expression in the parser.
-        let tail = get_tail_expression(db, statements.as_slice());
-        if tail.is_some() {
-            statements.pop();
-        }
+        let (statements, tail) = statements_and_tail(ctx.db, syntax.statements(db));
 
         // Convert statements to semantic model.
-        let statements_semantic = compute_statement_list_semantic(new_ctx, statements);
+        let mut statements_semantic = vec![];
+        compute_statements_semantic_and_extend(new_ctx, statements, &mut statements_semantic);
 
         // Convert tail expression (if exists) to semantic model.
         let tail_semantic_expr = tail.map(|tail_expr| compute_expr_semantic(new_ctx, &tail_expr));
@@ -1942,15 +1932,11 @@ fn compute_loop_body_semantic(
         let return_type = new_ctx.get_return_type().unwrap();
         let old_inner_ctx = new_ctx.inner_ctx.replace(InnerContext { return_type, kind });
 
-        let mut statements = syntax.statements(db).elements_vec(db);
-        // Remove the typed tail expression, if exists.
-        let tail = get_tail_expression(db, statements.as_slice());
-        if tail.is_some() {
-            statements.pop();
-        }
+        let (statements, tail) = statements_and_tail(ctx.db, syntax.statements(db));
 
         // Convert statements to semantic model.
-        let statements_semantic = compute_statement_list_semantic(new_ctx, statements);
+        let mut statements_semantic = vec![];
+        compute_statements_semantic_and_extend(new_ctx, statements, &mut statements_semantic);
         let tail = tail.map(|tail| compute_expr_semantic(new_ctx, &tail));
         if let Some(tail) = &tail {
             if !tail.ty().is_missing(db) && !tail.ty().is_unit(db) && tail.ty() != never_ty(db) {
@@ -2107,28 +2093,14 @@ fn compute_closure_body_semantic(
 ) -> ExprId {
     let db = ctx.db;
 
-    let mut statements = syntax.statements(db).elements_vec(db);
-    // Remove the typed tail expression, if exists.
-    let tail = get_tail_expression(db, statements.as_slice());
-    if tail.is_some() {
-        statements.pop();
-    }
+    let (statements, tail) = statements_and_tail(db, syntax.statements(db));
 
     // Convert statements to semantic model.
-    let statements_semantic = compute_statement_list_semantic(ctx, statements);
+    let mut statements_semantic = vec![];
+    compute_statements_semantic_and_extend(ctx, statements, &mut statements_semantic);
     // Convert tail expression (if exists) to semantic model.
     let tail_semantic_expr = tail.map(|tail_expr| compute_expr_semantic(ctx, &tail_expr));
-    let ty = if let Some(t) = &tail_semantic_expr {
-        t.ty()
-    } else if let Some(statement) = statements_semantic.last() {
-        if let Statement::Return(_) | Statement::Break(_) = &ctx.arenas.statements[*statement] {
-            never_ty(ctx.db)
-        } else {
-            unit_ty(ctx.db)
-        }
-    } else {
-        unit_ty(ctx.db)
-    };
+    let ty = block_ty(ctx, &statements_semantic, &tail_semantic_expr);
     ctx.arenas.exprs.alloc(Expr::Block(ExprBlock {
         statements: statements_semantic,
         tail: tail_semantic_expr.map(|expr| expr.id),
@@ -3119,14 +3091,22 @@ fn struct_ctor_expr(
     }))
 }
 
-/// Returns the tail expression of the given list of statements, if exists.
+/// Splits the statements into a tail expression (if exists) and the rest of the statements.
 /// A tail expression is the last statement in the list, if it is an expression and
 /// it does not end with a semicolon.
-fn get_tail_expression(db: &dyn SyntaxGroup, statements: &[ast::Statement]) -> Option<ast::Expr> {
-    let last = statements.last()?;
-    let statement_expr = try_extract_matches!(last, ast::Statement::Expr)?;
-    try_extract_matches!(statement_expr.semicolon(db), ast::OptionTerminalSemicolon::Empty)?;
-    Some(statement_expr.expr(db))
+fn statements_and_tail<'a>(
+    db: &'a dyn SemanticGroup,
+    syntax: ast::StatementList,
+) -> (impl Iterator<Item = ast::Statement> + 'a, Option<ast::Expr>) {
+    let mut statements = syntax.elements(db);
+    let last = statements.next_back();
+    if let Some(ast::Statement::Expr(expr)) = &last {
+        // If the last statement is an expression, check if it is a tail expression.
+        if matches!(expr.semicolon(db), ast::OptionTerminalSemicolon::Empty(_)) {
+            return (chain!(statements, None), Some(expr.expr(db)));
+        }
+    }
+    (chain!(statements, last), None)
 }
 
 /// Creates a new numeric literal expression.
