@@ -152,9 +152,9 @@ enum InnerContextKind {
 /// The result of expanding an inline macro.
 #[derive(Debug, Clone)]
 struct InlineMacroExpansion {
-    pub content: String,
+    pub content: Arc<str>,
     pub name: String,
-    pub code_mappings: Vec<CodeMapping>,
+    pub code_mappings: Arc<[CodeMapping]>,
     pub is_plugin_macro: bool,
 }
 
@@ -529,6 +529,18 @@ fn expand_inline_macro(
         let mut matcher_ctx =
             MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
         let expanded_code = expand_macro_rule(ctx.db, rule, &mut matcher_ctx)?;
+
+        let macro_defsite_resolver_data =
+            ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
+        let inference_id = ctx.resolver.inference().inference_id;
+        let callsite_resolver = ctx.resolver.data.clone_with_inference_id(ctx.db, inference_id);
+        let parent_macro_call_data = ctx.resolver.macro_call_data.clone();
+        ctx.resolver.macro_call_data = Some(ResolverMacroData {
+            defsite_module_file_id: macro_defsite_resolver_data.module_file_id,
+            callsite_module_file_id: callsite_resolver.module_file_id,
+            expansion_result: expanded_code.clone(),
+            parent_macro_call_data: parent_macro_call_data.map(|data| data.into()),
+        });
         Ok(InlineMacroExpansion {
             content: expanded_code.text,
             name: macro_name.clone(),
@@ -569,9 +581,9 @@ fn expand_inline_macro(
             }));
         };
         Ok(InlineMacroExpansion {
-            content: code.content,
+            content: code.content.into(),
             name: code.name.to_string(),
-            code_mappings: code.code_mappings,
+            code_mappings: code.code_mappings.into(),
             is_plugin_macro: true,
         })
     } else {
@@ -589,57 +601,28 @@ fn compute_expr_inline_macro_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprInlineMacro,
 ) -> Maybe<Expr> {
-    let db = ctx.db;
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
     let InlineMacroExpansion { content, name, code_mappings: mappings, is_plugin_macro } =
         expand_inline_macro(ctx, syntax)?;
-    if !is_plugin_macro {
-        let user_defined_macro = ctx.resolver.resolve_generic_path(
-            &mut Default::default(),
-            &syntax.path(db),
-            NotFoundItemType::Macro,
-            ResolutionContext::Statement(&mut ctx.environment),
-        );
-        if let Ok(ResolvedGenericItem::Macro(macro_declaration_id)) = user_defined_macro {
-            let macro_defsite_resolver_data =
-                ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
-            let inference_id = ctx.resolver.inference().inference_id;
-            let callsite_resolver = ctx.resolver.data.clone_with_inference_id(ctx.db, inference_id);
-            let parent_macro_call_data = ctx.resolver.macro_call_data.clone();
-            ctx.resolver.macro_call_data = Some(ResolverMacroData {
-                defsite_module_file_id: macro_defsite_resolver_data.module_file_id,
-                callsite_module_file_id: callsite_resolver.module_file_id,
-                expansion_result: Arc::new(MacroExpansionResult {
-                    text: content.clone(),
-                    code_mappings: mappings.clone(),
-                }),
-                parent_macro_call_data: parent_macro_call_data.map(|data| data.into()),
-            });
-        }
-    }
-    let new_file = FileLongId::Virtual(VirtualFile {
+    let new_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
         name: name.clone().into(),
-        content: content.clone().into(),
-        code_mappings: mappings.clone().into(),
+        content: content.clone(),
+        code_mappings: mappings.clone(),
         kind: FileKind::Expr,
         original_item_removed: true,
     })
     .intern(ctx.db);
-    let expr_syntax = ctx.db.file_expr_syntax(new_file)?;
-    let expr_parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file);
-    let parser_diags: Vec<_> =
-        expr_parser_diagnostics.get_diagnostics_without_duplicates(ctx.db.elongate());
-    if !parser_diags.is_empty() {
-        for parser_diagnostic in parser_diags {
+    let expr_syntax = ctx.db.file_expr_syntax(new_file_id)?;
+    let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
+    if let Err(diag_added) = parser_diagnostics.check_error_free() {
+        for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db.elongate()) {
             ctx.diagnostics.report(
                 syntax.stable_ptr(ctx.db),
-                SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(
-                    parser_diagnostic.clone(),
-                ),
+                SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
             );
         }
-        return Err(skip_diagnostic());
+        return Err(diag_added);
     }
     let expr = if is_plugin_macro {
         let prev_resolver_modifiers_suppression = ctx.resolver.suppress_modifiers_diagnostics;
@@ -666,67 +649,59 @@ fn expand_macro_for_statement(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprInlineMacro,
     statement_stable_ptr: ast::StatementPtr,
-    statements: &mut Vec<StatementId>,
+    statements_ids: &mut Vec<StatementId>,
 ) -> Maybe<()> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
     let InlineMacroExpansion { content, name, code_mappings: mappings, is_plugin_macro } =
         expand_inline_macro(ctx, syntax)?;
-    let new_file_long_id = FileLongId::Virtual(VirtualFile {
+    let new_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
         name: name.clone().into(),
-        content: content.clone().into(),
-        code_mappings: mappings.clone().into(),
-        kind: FileKind::Expr,
+        content: content.clone(),
+        code_mappings: mappings.clone(),
+        kind: FileKind::StatementList,
         original_item_removed: true,
-    });
-    let new_file_id = new_file_long_id.clone().intern(ctx.db);
-    let statement_list =
-        cairo_lang_parser::db::file_statement_list_syntax(ctx.db.upcast(), new_file_id)?;
-    let parsed_statements = statement_list.elements(ctx.db);
-    let tail = get_tail_expression(ctx.db, parsed_statements.as_slice());
-    if (parsed_statements.is_empty() && tail.is_some())
-        || (parsed_statements.len() == 1 && matches!(parsed_statements[0], ast::Statement::Expr(_)))
-    {
-        // Fallback to expression macro expansion.
-        let expr = compute_expr_inline_macro_semantic(ctx, syntax)?;
-        let expr_id = ctx.arenas.exprs.alloc(expr);
-        statements.push(ctx.arenas.statements.alloc(semantic::Statement::Expr(
-            semantic::StatementExpr { expr: expr_id, stable_ptr: statement_stable_ptr },
-        )));
-        return Ok(());
+    })
+    .intern(ctx.db);
+    let statement_list = ctx.db.file_statement_list_syntax(new_file_id)?;
+    let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
+    if let Err(diag_added) = parser_diagnostics.check_error_free() {
+        for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db.elongate()) {
+            ctx.diagnostics.report(
+                syntax.stable_ptr(ctx.db),
+                SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
+            );
+        }
+        return Err(diag_added);
     }
-    if is_plugin_macro {
+    let mut parsed_statements = statement_list.elements(ctx.db);
+    let tail = get_tail_expression(ctx.db, parsed_statements.as_slice());
+    if tail.is_some() {
+        parsed_statements.pop();
+    }
+    let restore_data = is_plugin_macro.then(|| {
         let prev_resolver_modifiers_suppression = ctx.resolver.suppress_modifiers_diagnostics;
         ctx.resolver.set_suppress_modifiers_diagnostics(true);
-        let result = ctx.run_in_macro_subscope(
-            |ctx| {
-                let ids = compute_statement_list_semantic(ctx, parsed_statements.clone());
-                statements.extend(ids);
-                Ok(())
-            },
-            MacroExpansionResult { text: content, code_mappings: mappings },
-        );
+        prev_resolver_modifiers_suppression
+    });
+    let result = ctx.run_in_macro_subscope(
+        |ctx| {
+            statements_ids.extend(compute_statement_list_semantic(ctx, parsed_statements));
+            if let Some(tail_expr) = tail {
+                let expr = compute_expr_semantic(ctx, &tail_expr);
+                statements_ids.push(ctx.arenas.statements.alloc(semantic::Statement::Expr(
+                    semantic::StatementExpr { expr: expr.id, stable_ptr: statement_stable_ptr },
+                )));
+            }
+            Ok(())
+        },
+        MacroExpansionResult { text: content, code_mappings: mappings },
+    );
+    if let Some(prev_resolver_modifiers_suppression) = restore_data {
         ctx.resolver.set_suppress_modifiers_diagnostics(prev_resolver_modifiers_suppression);
-        ctx.resolver.macro_call_data = prev_macro_call_data;
-        result
-    } else {
-        let result = ctx.run_in_macro_subscope(
-            |ctx| {
-                let mut ids = compute_statement_list_semantic(ctx, parsed_statements.clone());
-                if let Some(tail_expr) = tail {
-                    let expr = compute_expr_semantic(ctx, &tail_expr);
-                    ids.push(ctx.arenas.statements.alloc(semantic::Statement::Expr(
-                        semantic::StatementExpr { expr: expr.id, stable_ptr: statement_stable_ptr },
-                    )));
-                }
-                statements.extend(ids);
-                Ok(())
-            },
-            MacroExpansionResult { text: content, code_mappings: mappings },
-        );
-        ctx.resolver.macro_call_data = prev_macro_call_data;
-        result
     }
+    ctx.resolver.macro_call_data = prev_macro_call_data;
+    result
 }
 
 fn compute_expr_unary_semantic(
@@ -4107,38 +4082,40 @@ pub fn compute_and_append_statement_semantic(
                     syntax.stable_ptr(db),
                     statements,
                 )?;
-                return Ok(());
-            }
-            let expr = compute_expr_semantic(ctx, &expr_syntax);
-            if matches!(stmt_expr_syntax.semicolon(db), ast::OptionTerminalSemicolon::Empty(_))
-                && !matches!(
-                    expr_syntax,
-                    ast::Expr::Block(_)
-                        | ast::Expr::If(_)
-                        | ast::Expr::Match(_)
-                        | ast::Expr::Loop(_)
-                        | ast::Expr::While(_)
-                        | ast::Expr::For(_)
-                )
-            {
-                ctx.diagnostics.report_after(expr_syntax.stable_ptr(db), MissingSemicolon);
-            }
-            let ty: TypeId = expr.ty();
-            if let TypeLongId::Concrete(concrete) = ty.lookup_intern(db) {
-                if concrete.is_must_use(db)? {
-                    ctx.diagnostics.report(expr_syntax.stable_ptr(db), UnhandledMustUseType(ty));
+            } else {
+                let expr = compute_expr_semantic(ctx, &expr_syntax);
+                if matches!(stmt_expr_syntax.semicolon(db), ast::OptionTerminalSemicolon::Empty(_))
+                    && !matches!(
+                        expr_syntax,
+                        ast::Expr::Block(_)
+                            | ast::Expr::If(_)
+                            | ast::Expr::Match(_)
+                            | ast::Expr::Loop(_)
+                            | ast::Expr::While(_)
+                            | ast::Expr::For(_)
+                    )
+                {
+                    ctx.diagnostics.report_after(expr_syntax.stable_ptr(db), MissingSemicolon);
                 }
-            }
-            if let Expr::FunctionCall(expr_function_call) = &expr.expr {
-                let generic_function_id =
-                    expr_function_call.function.lookup_intern(db).function.generic_function;
-                if generic_function_id.is_must_use(db)? {
-                    ctx.diagnostics.report(expr_syntax.stable_ptr(db), UnhandledMustUseFunction);
+                let ty: TypeId = expr.ty();
+                if let TypeLongId::Concrete(concrete) = ty.lookup_intern(db) {
+                    if concrete.is_must_use(db)? {
+                        ctx.diagnostics
+                            .report(expr_syntax.stable_ptr(db), UnhandledMustUseType(ty));
+                    }
                 }
+                if let Expr::FunctionCall(expr_function_call) = &expr.expr {
+                    let generic_function_id =
+                        expr_function_call.function.lookup_intern(db).function.generic_function;
+                    if generic_function_id.is_must_use(db)? {
+                        ctx.diagnostics
+                            .report(expr_syntax.stable_ptr(db), UnhandledMustUseFunction);
+                    }
+                }
+                statements.push(ctx.arenas.statements.alloc(semantic::Statement::Expr(
+                    semantic::StatementExpr { expr: expr.id, stable_ptr: syntax.stable_ptr(db) },
+                )));
             }
-            statements.push(ctx.arenas.statements.alloc(semantic::Statement::Expr(
-                semantic::StatementExpr { expr: expr.id, stable_ptr: syntax.stable_ptr(db) },
-            )));
             Ok(())
         }
         ast::Statement::Continue(continue_syntax) => {

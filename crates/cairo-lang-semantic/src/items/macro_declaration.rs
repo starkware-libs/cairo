@@ -467,9 +467,9 @@ fn validate_repetition_operator_constraints(ctx: &MatcherContext) -> bool {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MacroExpansionResult {
     /// The expanded text.
-    pub text: String,
+    pub text: Arc<str>,
     /// Information about placeholder expansions in this macro expansion.
-    pub code_mappings: Vec<CodeMapping>,
+    pub code_mappings: Arc<[CodeMapping]>,
 }
 
 impl MacroExpansionResult {
@@ -495,7 +495,7 @@ pub fn expand_macro_rule(
     let mut res_buffer = String::new();
     let mut code_mappings = Vec::new();
     expand_macro_rule_ex(db, node, matcher_ctx, &mut res_buffer, &mut code_mappings)?;
-    Ok(MacroExpansionResult { text: res_buffer, code_mappings })
+    Ok(MacroExpansionResult { text: res_buffer.into(), code_mappings: code_mappings.into() })
 }
 
 /// Helper function for [expand_macro_rule]. Traverses the macro expansion and replaces the

@@ -229,7 +229,7 @@ pub struct ResolverMacroData {
     pub callsite_module_file_id: ModuleFileId,
     /// This is the result of the macro expansion. It is used to determine if a part of the code
     /// came from a macro argument or from the macro expansion template.
-    pub expansion_result: Arc<MacroExpansionResult>,
+    pub expansion_result: MacroExpansionResult,
     /// The parent macro data. Exists in case of a macro calling another macro, and is used if we
     /// climb to the callsite environment.
     pub parent_macro_call_data: Option<Box<ResolverMacroData>>,

@@ -184,6 +184,7 @@ impl<'a> Parser<'a> {
         text: &'a str,
     ) -> StatementList {
         let mut parser = Parser::new(db, file_id, text, diagnostics);
+        parser.macro_parsing_context = MacroParsingContext::ExpandedMacro;
         let statements = StatementList::new_green(
             db,
             parser.parse_list(Self::try_parse_statement, Self::is_eof, "statement"),
