@@ -421,7 +421,7 @@ pub struct ExprMatch {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprIf {
-    pub condition: Condition,
+    pub conditions: Vec<Condition>,
     pub if_block: ExprId,
     pub else_block: Option<ExprId>,
     pub ty: semantic::TypeId,
