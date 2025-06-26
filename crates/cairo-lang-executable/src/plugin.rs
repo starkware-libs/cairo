@@ -80,7 +80,7 @@ impl MacroPlugin for ExecutablePlugin {
                 ("function_name".into(), RewriteNode::from_ast(&name))
             ].into()
         ));
-        let params = declaration.signature(db).parameters(db).elements(db);
+        let params = declaration.signature(db).parameters(db).elements_vec(db);
         for (param_idx, param) in params.iter().enumerate() {
             for modifier in param.modifiers(db).elements(db) {
                 if let ast::Modifier::Ref(terminal_ref) = modifier {

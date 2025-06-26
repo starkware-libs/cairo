@@ -1061,11 +1061,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::PatternMissingArgs(path) => {
                 format!(
                     "Pattern missing subpattern for the payload of variant. Consider using `{}(_)`",
-                    path.segments(db)
-                        .elements(db)
-                        .into_iter()
-                        .map(|seg| seg.identifier(db))
-                        .join("::")
+                    path.segments(db).elements(db).map(|seg| seg.identifier(db)).join("::")
                 )
             }
             SemanticDiagnosticKind::UndefinedMacroPlaceholder(name) => {

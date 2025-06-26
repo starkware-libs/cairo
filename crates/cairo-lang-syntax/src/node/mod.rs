@@ -276,7 +276,7 @@ impl SyntaxNode {
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.get_children(db).iter() {
                     if let Some(trivia) = ast::Trivia::cast(db, *child) {
-                        trivia.elements(db).iter().for_each(|element| {
+                        trivia.elements(db).for_each(|element| {
                             if !matches!(
                                 element,
                                 ast::Trivium::SingleLineComment(_)

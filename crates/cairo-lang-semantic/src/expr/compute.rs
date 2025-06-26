@@ -34,7 +34,8 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{
-    self as utils, Intern, LookupIntern, OptionHelper, extract_matches, try_extract_matches,
+    self as utils, Intern, LookupIntern, OptionHelper, extract_matches, require,
+    try_extract_matches,
 };
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
@@ -674,7 +675,7 @@ fn expand_macro_for_statement(
         }
         return Err(diag_added);
     }
-    let mut parsed_statements = statement_list.elements(ctx.db);
+    let mut parsed_statements = statement_list.elements_vec(ctx.db);
     let tail = get_tail_expression(ctx.db, parsed_statements.as_slice());
     if tail.is_some() {
         parsed_statements.pop();
@@ -986,9 +987,8 @@ fn compute_expr_tuple_semantic(
 
     let mut items: Vec<ExprId> = vec![];
     let mut types: Vec<TypeId> = vec![];
-    let expressions_syntax = &syntax.expressions(db).elements(db);
-    for expr_syntax in expressions_syntax {
-        let expr_semantic = compute_expr_semantic(ctx, expr_syntax);
+    for expr_syntax in syntax.expressions(db).elements(db) {
+        let expr_semantic = compute_expr_semantic(ctx, &expr_syntax);
         types.push(ctx.reduce_ty(expr_semantic.ty()));
         items.push(expr_semantic.id);
     }
@@ -1004,7 +1004,7 @@ fn compute_expr_fixed_size_array_semantic(
     syntax: &ast::ExprFixedSizeArray,
 ) -> Maybe<Expr> {
     let db = ctx.db;
-    let exprs = syntax.exprs(db).elements(db);
+    let exprs = syntax.exprs(db).elements_vec(db);
     let size_ty = get_usize_ty(db);
     let (items, type_id, size) = if let Some(size_const_id) =
         extract_fixed_size_array_size(db, ctx.diagnostics, syntax, &ctx.resolver)?
@@ -1118,7 +1118,7 @@ fn compute_expr_function_call_semantic(
                 let (call_function_id, _, fixed_closure, closure_mutability) =
                     closure_call_data(fn_trait).or_else(|_| closure_call_data(fn_once_trait))?;
 
-                let args_iter = args_syntax.elements(db).into_iter();
+                let args_iter = args_syntax.elements(db);
                 // Normal parameters
                 let mut args = vec![];
                 let mut arg_types = vec![];
@@ -1172,7 +1172,6 @@ fn compute_expr_function_call_semantic(
             // errors in argument semantics, in order to avoid unnecessary diagnostics.
             let named_args: Vec<_> = args_syntax
                 .elements(db)
-                .into_iter()
                 .map(|arg_syntax| compute_named_argument_clause(ctx, arg_syntax, None))
                 .collect();
             if named_args.len() != 1 {
@@ -1213,7 +1212,7 @@ fn compute_expr_function_call_semantic(
                         shadowed_function_name: path
                             .segments(db)
                             .elements(db)
-                            .first()
+                            .next()
                             .unwrap()
                             .identifier(db),
                     },
@@ -1223,7 +1222,7 @@ fn compute_expr_function_call_semantic(
             // errors in argument semantics, in order to avoid unnecessary diagnostics.
 
             // Note there may be n+1 arguments for n parameters, if the last one is a coupon.
-            let mut args_iter = args_syntax.elements(db).into_iter();
+            let mut args_iter = args_syntax.elements(db);
             // Normal parameters
             let mut named_args = vec![];
             let closure_params = concrete_function_closure_params(db, function)?;
@@ -1263,7 +1262,7 @@ pub fn compute_named_argument_clause(
     let db = ctx.db;
 
     let mutability =
-        compute_mutability(ctx.diagnostics, db, &arg_syntax.modifiers(db).elements(db));
+        compute_mutability(ctx.diagnostics, db, &arg_syntax.modifiers(db).elements_vec(db));
 
     let arg_clause = arg_syntax.arg_clause(db);
     let (expr, arg_name_identifier) = match arg_clause {
@@ -1382,7 +1381,7 @@ pub fn compute_expr_block_semantic(
 ) -> Maybe<Expr> {
     let db = ctx.db;
     ctx.run_in_subscope(|new_ctx| {
-        let mut statements = syntax.statements(db).elements(db);
+        let mut statements = syntax.statements(db).elements_vec(db);
         // Remove the tail expression, if exists.
         // TODO(spapini): Consider splitting tail expression in the parser.
         let tail = get_tail_expression(db, statements.as_slice());
@@ -1525,11 +1524,10 @@ fn compute_pattern_list_or_semantic(
 
     let patterns: Vec<_> = patterns_syntax
         .elements(db)
-        .iter()
         .map(|pattern_syntax| {
             let pattern: PatternAndId = compute_pattern_semantic(
                 ctx,
-                pattern_syntax,
+                &pattern_syntax,
                 expr.ty(),
                 &mut arm_patterns_variables,
             );
@@ -1572,7 +1570,7 @@ fn compute_pattern_list_or_semantic(
         })
         .collect();
 
-    for (pattern_syntax, pattern) in patterns_syntax.elements(db).iter().zip(patterns.iter()) {
+    for (pattern_syntax, pattern) in patterns_syntax.elements(db).zip(patterns.iter()) {
         let variables = pattern.variables(&ctx.arenas.patterns);
 
         if variables.len() != arm_patterns_variables.len() {
@@ -1604,7 +1602,6 @@ fn compute_expr_match_semantic(
     // Run compute_pattern_semantic on every arm, even if other arms failed, to get as many
     // diagnostics as possible.
     let patterns_and_exprs: Vec<_> = syntax_arms
-        .iter()
         .map(|syntax_arm| {
             compute_arm_semantic(ctx, &expr, syntax_arm.expression(db), &syntax_arm.patterns(db))
         })
@@ -1703,8 +1700,7 @@ fn compute_condition_list_semantic(
 
     let body = compute_condition_list_semantic_helper(
         ctx,
-        &conditions_syntax,
-        0,
+        conditions_syntax,
         &mut conditions,
         body_syntax,
     );
@@ -1715,24 +1711,18 @@ fn compute_condition_list_semantic(
 /// Helper function for `compute_condition_list_semantic`.
 fn compute_condition_list_semantic_helper(
     ctx: &mut ComputationContext<'_>,
-    conditions_syntax: &Vec<ast::Condition>,
-    idx: usize,
+    mut conditions_syntax: impl Iterator<Item = ast::Condition>,
     conditions: &mut Vec<Condition>,
     body_syntax: &ast::Expr,
 ) -> ExprAndId {
-    if idx == conditions_syntax.len() {
-        return compute_expr_semantic(ctx, body_syntax);
-    }
-
-    let db = ctx.db;
-
-    match &conditions_syntax[idx] {
-        ast::Condition::Let(condition) => {
-            let expr = compute_expr_semantic(ctx, &condition.expr(db));
+    match conditions_syntax.next() {
+        None => compute_expr_semantic(ctx, body_syntax),
+        Some(ast::Condition::Let(condition)) => {
+            let expr = compute_expr_semantic(ctx, &condition.expr(ctx.db));
 
             ctx.run_in_subscope(|new_ctx| {
                 let patterns =
-                    compute_pattern_list_or_semantic(new_ctx, &expr, &condition.patterns(db));
+                    compute_pattern_list_or_semantic(new_ctx, &expr, &condition.patterns(ctx.db));
                 conditions.push(Condition::Let(
                     expr.id,
                     patterns.iter().map(|pattern| pattern.id).collect(),
@@ -1740,23 +1730,17 @@ fn compute_condition_list_semantic_helper(
                 compute_condition_list_semantic_helper(
                     new_ctx,
                     conditions_syntax,
-                    idx + 1,
                     conditions,
                     body_syntax,
                 )
             })
         }
-        ast::Condition::Expr(expr) => {
-            conditions
-                .push(Condition::BoolExpr(compute_bool_condition_semantic(ctx, &expr.expr(db)).id));
+        Some(ast::Condition::Expr(expr)) => {
+            conditions.push(Condition::BoolExpr(
+                compute_bool_condition_semantic(ctx, &expr.expr(ctx.db)).id,
+            ));
 
-            compute_condition_list_semantic_helper(
-                ctx,
-                conditions_syntax,
-                idx + 1,
-                conditions,
-                body_syntax,
-            )
+            compute_condition_list_semantic_helper(ctx, conditions_syntax, conditions, body_syntax)
         }
     }
 }
@@ -1793,7 +1777,7 @@ fn compute_expr_while_semantic(
 ) -> Maybe<Expr> {
     let db = ctx.db;
 
-    let [condition_syntax] = &syntax.conditions(db).elements(db)[..] else {
+    let Some([condition_syntax]) = &syntax.conditions(db).elements(db).collect_array() else {
         return Err(ctx.diagnostics.report(syntax.conditions(db).stable_ptr(db), Unsupported));
     };
 
@@ -1958,7 +1942,7 @@ fn compute_loop_body_semantic(
         let return_type = new_ctx.get_return_type().unwrap();
         let old_inner_ctx = new_ctx.inner_ctx.replace(InnerContext { return_type, kind });
 
-        let mut statements = syntax.statements(db).elements(db);
+        let mut statements = syntax.statements(db).elements_vec(db);
         // Remove the typed tail expression, if exists.
         let tail = get_tail_expression(db, statements.as_slice());
         if tail.is_some() {
@@ -2000,7 +1984,7 @@ fn compute_expr_closure_semantic(
                 new_ctx.diagnostics,
                 new_ctx.db,
                 &mut new_ctx.resolver,
-                &params.params(db).elements(db),
+                &params.params(db).elements_vec(db),
                 None,
                 &mut new_ctx.environment,
             )
@@ -2123,7 +2107,7 @@ fn compute_closure_body_semantic(
 ) -> ExprId {
     let db = ctx.db;
 
-    let mut statements = syntax.statements(db).elements(db);
+    let mut statements = syntax.statements(db).elements_vec(db);
     // Remove the typed tail expression, if exists.
     let tail = get_tail_expression(db, statements.as_slice());
     if tail.is_some() {
@@ -2551,11 +2535,12 @@ fn maybe_compute_pattern_semantic(
             // Paths with a single element are treated as identifiers, which will result in a
             // variable pattern if no matching enum variant is found. If a matching enum
             // variant exists, it is resolved to the corresponding concrete variant.
-            if path.segments(db).elements(db).len() > 1 {
+            let mut segments = path.segments(db).elements(db);
+            if segments.len() > 1 {
                 return Err(ctx.diagnostics.report(path.stable_ptr(ctx.db), Unsupported));
             }
             // TODO(spapini): Make sure this is a simple identifier. In particular, no generics.
-            let identifier = path.segments(db).elements(db)[0].identifier_ast(db);
+            let identifier = segments.next().unwrap().identifier_ast(db);
             create_variable_pattern(
                 ctx,
                 identifier,
@@ -2568,7 +2553,7 @@ fn maybe_compute_pattern_semantic(
         ast::Pattern::Identifier(identifier) => create_variable_pattern(
             ctx,
             identifier.name(db),
-            &identifier.modifiers(db).elements(db),
+            &identifier.modifiers(db).elements_vec(db),
             ty,
             identifier.stable_ptr(db).into(),
             or_pattern_variables_map,
@@ -2642,7 +2627,7 @@ fn maybe_compute_pattern_semantic(
                         let pattern = create_variable_pattern(
                             ctx,
                             name,
-                            &single.modifiers(db).elements(db),
+                            &single.modifiers(db).elements_vec(db),
                             ty,
                             single.stable_ptr(db).into(),
                             or_pattern_variables_map,
@@ -2774,9 +2759,9 @@ fn maybe_compute_tuple_like_pattern_semantic(
         }
     };
     let patterns_syntax = match pattern_syntax {
-        ast::Pattern::Tuple(pattern_tuple) => pattern_tuple.patterns(ctx.db).elements(ctx.db),
+        ast::Pattern::Tuple(pattern_tuple) => pattern_tuple.patterns(ctx.db).elements_vec(ctx.db),
         ast::Pattern::FixedSizeArray(pattern_fixed_size_array) => {
-            pattern_fixed_size_array.patterns(db).elements(db)
+            pattern_fixed_size_array.patterns(db).elements_vec(db)
         }
         _ => unreachable!(),
     };
@@ -3008,8 +2993,7 @@ fn struct_ctor_expr(
     let mut member_exprs: OrderedHashMap<MemberId, Option<ExprId>> = OrderedHashMap::default();
     let mut base_struct = None;
 
-    for (index, arg) in ctor_syntax.arguments(db).arguments(db).elements(db).into_iter().enumerate()
-    {
+    for (index, arg) in ctor_syntax.arguments(db).arguments(db).elements(db).enumerate() {
         // TODO: Extract to a function for results.
         match arg {
             ast::StructArg::StructArgSingle(arg) => {
@@ -3246,15 +3230,19 @@ fn try_extract_identifier_from_path(
     db: &dyn SyntaxGroup,
     path: &ast::ExprPath,
 ) -> Option<(TerminalIdentifier, bool)> {
-    let segments = path.segments(db).elements(db);
-    match segments.as_slice() {
-        [PathSegment::Simple(ident_segment)] => Some((ident_segment.ident(db), false)),
-        [PathSegment::Simple(prefix), PathSegment::Simple(ident_segment)]
-            if prefix.ident(db).text(db) == "callsite" && path.is_placeholder(db) =>
-        {
-            Some((ident_segment.ident(db), true))
-        }
-        _ => None,
+    let mut segments = path.segments(db).elements(db);
+    require(segments.len() <= 2)?;
+    let Some(PathSegment::Simple(first)) = segments.next() else {
+        return None;
+    };
+    let Some(second) = segments.next() else {
+        return Some((first.ident(db), false));
+    };
+    let second = try_extract_matches!(second, PathSegment::Simple)?;
+    if first.ident(db).text(db) == "callsite" && path.is_placeholder(db) {
+        Some((second.ident(db), true))
+    } else {
+        None
     }
 }
 
@@ -3265,11 +3253,12 @@ fn expr_as_identifier(
     path: &ast::ExprPath,
     db: &dyn SyntaxGroup,
 ) -> Maybe<SmolStr> {
-    let segments = path.segments(db).elements(db);
+    let mut segments = path.segments(db).elements(db);
     if segments.len() == 1 {
-        return Ok(segments[0].identifier(db));
+        Ok(segments.next().unwrap().identifier(db))
+    } else {
+        Err(ctx.diagnostics.report(path.stable_ptr(db), InvalidMemberExpression))
     }
-    Err(ctx.diagnostics.report(path.stable_ptr(db), InvalidMemberExpression))
 }
 
 // TODO(spapini): Consider moving some checks here to the responsibility of the parser.
@@ -3316,7 +3305,7 @@ fn method_call_expr(
     // TODO(spapini): Look also in uses.
     let db = ctx.db;
     let path = expr.path(db);
-    let Ok([segment]): Result<[_; 1], _> = path.segments(db).elements(db).try_into() else {
+    let Some([segment]) = path.segments(db).elements(db).collect_array() else {
         return Err(ctx.diagnostics.report(expr.stable_ptr(ctx.db), InvalidMemberExpression));
     };
     let func_name = segment.identifier(db);
@@ -3394,7 +3383,7 @@ fn method_call_expr(
     );
 
     // Note there may be n+1 arguments for n parameters, if the last one is a coupon.
-    let mut args_iter = expr.arguments(db).arguments(db).elements(db).into_iter();
+    let mut args_iter = expr.arguments(db).arguments(db).elements(db);
     // Self argument.
     let mut named_args = vec![NamedArg(fixed_lexpr, None, mutability)];
     // Other arguments.
@@ -3662,8 +3651,7 @@ fn finalized_snapshot_peeled_ty(
 /// Resolves a variable or a constant given a context and a path expression.
 fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> Maybe<Expr> {
     let db = ctx.db;
-    let segments = path.segments(db).elements(db);
-    if segments.is_empty() {
+    if path.segments(db).elements(db).len() == 0 {
         return Err(ctx.diagnostics.report(path.stable_ptr(db), Unsupported));
     }
 

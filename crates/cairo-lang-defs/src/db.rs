@@ -859,7 +859,8 @@ fn collect_extra_allowed_attributes(
             }
             for arg in args {
                 if let Some(ast::Expr::Path(path)) = try_extract_unnamed_arg(db, &arg.arg) {
-                    if let [ast::PathSegment::Simple(segment)] = &path.segments(db).elements(db)[..]
+                    if let Some([ast::PathSegment::Simple(segment)]) =
+                        path.segments(db).elements(db).collect_array()
                     {
                         extra_allowed_attributes.insert(segment.ident(db).text(db).into());
                         continue;
@@ -990,7 +991,7 @@ pub fn get_all_path_leaves(db: &dyn SyntaxGroup, use_item: &ast::ItemUse) -> Vec
             ast::UsePath::Leaf(use_path) => res.push(use_path),
             ast::UsePath::Single(use_path) => stack.push(use_path.use_path(db)),
             ast::UsePath::Multi(use_path) => {
-                stack.extend(use_path.use_paths(db).elements(db).into_iter().rev())
+                stack.extend(use_path.use_paths(db).elements(db).rev())
             }
             ast::UsePath::Star(_) => {}
         }
@@ -1007,7 +1008,7 @@ pub fn get_all_path_stars(db: &dyn SyntaxGroup, use_item: &ast::ItemUse) -> Vec<
             ast::UsePath::Leaf(_) => {}
             ast::UsePath::Single(use_path) => stack.push(use_path.use_path(db)),
             ast::UsePath::Multi(use_path) => {
-                stack.extend(use_path.use_paths(db).elements(db).into_iter().rev())
+                stack.extend(use_path.use_paths(db).elements(db).rev())
             }
             ast::UsePath::Star(use_path) => res.push(use_path),
         }

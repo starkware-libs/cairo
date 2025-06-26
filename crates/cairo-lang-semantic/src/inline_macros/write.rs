@@ -172,8 +172,7 @@ impl FormattingInfo {
             )
             .diagnostics);
         };
-        let argument_list_elements = arguments.arguments(db).elements(db);
-        let mut args_iter = argument_list_elements.iter();
+        let mut args_iter = arguments.arguments(db).elements(db);
         let error_with_inner_span = |inner_span: SyntaxNode, message: &str| {
             PluginDiagnostic::error_with_inner_span(
                 db,
@@ -188,7 +187,7 @@ impl FormattingInfo {
                 "Macro expected formatter argument.",
             )]);
         };
-        let Some(formatter_expr) = try_extract_unnamed_arg(db, formatter_arg) else {
+        let Some(formatter_expr) = try_extract_unnamed_arg(db, &formatter_arg) else {
             return Err(vec![error_with_inner_span(
                 formatter_arg.as_syntax_node(),
                 "Formatter argument must be unnamed.",
@@ -206,7 +205,7 @@ impl FormattingInfo {
                 "Macro expected format string argument.",
             )]);
         };
-        let Some(format_string_expr) = try_extract_unnamed_arg(db, format_string_arg) else {
+        let Some(format_string_expr) = try_extract_unnamed_arg(db, &format_string_arg) else {
             return Err(vec![error_with_inner_span(
                 format_string_arg.as_syntax_node(),
                 "Format string argument must be unnamed.",
@@ -223,7 +222,7 @@ impl FormattingInfo {
         let mut diagnostics = vec![];
         let args: Vec<_> = args_iter
             .filter_map(|arg| {
-                try_extract_unnamed_arg(db, arg).on_none(|| {
+                try_extract_unnamed_arg(db, &arg).on_none(|| {
                     diagnostics.push(error_with_inner_span(
                         arg.as_syntax_node(),
                         "Argument must be unnamed.",
@@ -235,7 +234,7 @@ impl FormattingInfo {
             return Err(diagnostics);
         }
         Ok(FormattingInfo {
-            formatter_arg_node: RewriteNode::from_ast_trimmed(formatter_arg),
+            formatter_arg_node: RewriteNode::from_ast_trimmed(&formatter_arg),
             format_string_arg: format_string_arg.clone(),
             // `unwrap` is ok because the above `on_none` ensures it's not None.
             format_string,

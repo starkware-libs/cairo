@@ -111,7 +111,7 @@ impl GetIdentifier for ast::TerminalIdentifierGreen {
 impl GetIdentifier for ast::ExprPath {
     /// Retrieves the identifier of the last segment of the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.segments(db).elements(db).last().cloned().unwrap().identifier(db)
+        self.segments(db).elements(db).next_back().unwrap().identifier(db)
     }
 }
 
@@ -133,7 +133,7 @@ impl PathSegmentEx for ast::PathSegment {
         match self {
             ast::PathSegment::Simple(_) | ast::PathSegment::Missing(_) => None,
             ast::PathSegment::WithGenericArgs(segment) => {
-                Some(segment.generic_args(db).generic_args(db).elements(db))
+                Some(segment.generic_args(db).generic_args(db).elements_vec(db))
             }
         }
     }
@@ -238,7 +238,7 @@ impl GenericParamEx for ast::GenericParam {
 pub fn is_single_arg_attr(db: &dyn SyntaxGroup, attr: &Attribute, arg_name: &str) -> bool {
     match attr.arguments(db) {
         OptionArgListParenthesized::ArgListParenthesized(args) => {
-            matches!(&args.arguments(db).elements(db)[..],
+            matches!(&args.arguments(db).elements_vec(db)[..],
                     [arg] if arg.as_syntax_node().get_text_without_trivia(db) == arg_name)
         }
         OptionArgListParenthesized::Empty(_) => false,
@@ -279,87 +279,87 @@ pub trait QueryAttrs {
 
 impl QueryAttrs for ItemConstant {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for ItemModule {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for FunctionWithBody {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for ItemUse {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for ItemExternFunction {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for ItemExternType {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for ItemTrait {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for ItemImpl {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for ItemImplAlias {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for ItemStruct {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for ItemEnum {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for ItemTypeAlias {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for ItemMacroDeclaration {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for TraitItemFunction {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for TraitItemType {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for TraitItemConstant {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for TraitItemImpl {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 impl QueryAttrs for TraitItem {
@@ -376,7 +376,7 @@ impl QueryAttrs for TraitItem {
 
 impl QueryAttrs for ItemInlineMacro {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 
@@ -426,48 +426,48 @@ impl QueryAttrs for ImplItem {
 
 impl QueryAttrs for AttributeList {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.elements(db)
+        self.elements_vec(db)
     }
 }
 impl QueryAttrs for Member {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 
 impl QueryAttrs for Variant {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 
 impl QueryAttrs for StatementBreak {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 
 impl QueryAttrs for StatementContinue {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 
 impl QueryAttrs for StatementReturn {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 
 impl QueryAttrs for StatementLet {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 
 impl QueryAttrs for StatementExpr {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+        self.attributes(db).elements_vec(db)
     }
 }
 
@@ -612,7 +612,7 @@ pub trait WrappedGenericParamListHelper {
 }
 impl WrappedGenericParamListHelper for ast::WrappedGenericParamList {
     fn is_empty(&self, db: &dyn SyntaxGroup) -> bool {
-        self.generic_params(db).elements(db).is_empty()
+        self.generic_params(db).elements(db).len() == 0
     }
 }
 
@@ -632,37 +632,37 @@ impl OptionWrappedGenericParamListHelper for ast::OptionWrappedGenericParamList 
     }
 }
 
-/// Trait for getting the items of a body-item (an item that contains items), as a vector.
+/// Trait for getting the items of a body-item (an item that contains items), as an iterator.
 pub trait BodyItems {
     /// The type of an Item.
     type Item;
-    /// Returns the items of the body-item as a vector.
+    /// Returns the items of the body-item as an iterator.
     /// Use with caution, as this includes items that may be filtered out by plugins.
     /// Do note that plugins that directly run on this body-item without going/checking up on the
     /// syntax tree may assume that e.g. out-of-config items were already filtered out.
     /// Don't use on an item that is not the original plugin's context, unless you are sure that
     /// while traversing the AST to get to it from the original plugin's context, you did not go
     /// through another submodule.
-    fn items_vec(&self, db: &dyn SyntaxGroup) -> Vec<Self::Item>;
+    fn iter_items<'a>(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self::Item> + 'a;
 }
 
 impl BodyItems for ast::ModuleBody {
     type Item = ModuleItem;
-    fn items_vec(&self, db: &dyn SyntaxGroup) -> Vec<ModuleItem> {
+    fn iter_items<'a>(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self::Item> + 'a {
         self.items(db).elements(db)
     }
 }
 
 impl BodyItems for ast::TraitBody {
     type Item = TraitItem;
-    fn items_vec(&self, db: &dyn SyntaxGroup) -> Vec<TraitItem> {
+    fn iter_items<'a>(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self::Item> + 'a {
         self.items(db).elements(db)
     }
 }
 
 impl BodyItems for ast::ImplBody {
     type Item = ImplItem;
-    fn items_vec(&self, db: &dyn SyntaxGroup) -> Vec<ImplItem> {
+    fn iter_items<'a>(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self::Item> + 'a {
         self.items(db).elements(db)
     }
 }
@@ -707,7 +707,7 @@ pub trait IsDependentType {
 
 impl IsDependentType for ast::ExprPath {
     fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool {
-        let segments = self.segments(db).elements(db);
+        let segments = self.segments(db).elements_vec(db);
         if let [ast::PathSegment::Simple(arg_segment)] = &segments[..] {
             identifiers.contains(&arg_segment.ident(db).text(db).as_str())
         } else {
@@ -715,7 +715,7 @@ impl IsDependentType for ast::ExprPath {
                 let ast::PathSegment::WithGenericArgs(with_generics) = segment else {
                     return false;
                 };
-                with_generics.generic_args(db).generic_args(db).elements(db).iter().any(|arg| {
+                with_generics.generic_args(db).generic_args(db).elements(db).any(|arg| {
                     let generic_arg_value = match arg {
                         ast::GenericArg::Named(named) => named.value(db),
                         ast::GenericArg::Unnamed(unnamed) => unnamed.value(db),
@@ -744,13 +744,9 @@ impl IsDependentType for ast::Expr {
             ast::Expr::Tuple(tuple) => tuple
                 .expressions(db)
                 .elements(db)
-                .iter()
                 .any(|expr| expr.is_dependent_type(db, identifiers)),
             ast::Expr::FixedSizeArray(arr) => {
-                arr.exprs(db)
-                    .elements(db)
-                    .iter()
-                    .any(|expr| expr.is_dependent_type(db, identifiers))
+                arr.exprs(db).elements(db).any(|expr| expr.is_dependent_type(db, identifiers))
                     || match arr.size(db) {
                         ast::OptionFixedSizeArraySize::Empty(_) => false,
                         ast::OptionFixedSizeArraySize::FixedSizeArraySize(size) => {

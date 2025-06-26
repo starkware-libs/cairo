@@ -53,8 +53,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let Some(single_generic_param) = (match &generic_params {
         ast::OptionWrappedGenericParamList::Empty(_) => None,
         ast::OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) => {
-            if let [ast::GenericParam::Type(param)] =
-                generic_params.generic_params(db).elements(db).as_slice()
+            if let Some([ast::GenericParam::Type(param)]) =
+                generic_params.generic_params(db).elements(db).collect_array()
             {
                 Some(param.name(db).text(db))
             } else {
@@ -87,7 +87,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let safe_contract_caller_name = format!("{base_name}SafeDispatcher");
     let library_caller_name = format!("{base_name}LibraryDispatcher");
     let safe_library_caller_name = format!("{base_name}SafeLibraryDispatcher");
-    for item_ast in body.items_vec(db) {
+    for item_ast in body.iter_items(db) {
         match item_ast {
             ast::TraitItem::Function(func) => {
                 let declaration = func.declaration(db);
@@ -95,7 +95,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 let mut skip_generation = false;
                 let mut serialization_code = vec![];
                 let signature = declaration.signature(db);
-                let mut params = signature.parameters(db).elements(db).into_iter();
+                let mut params = signature.parameters(db).elements(db);
                 // The first parameter is the `self` parameter.
                 let Some(self_param) = params.next() else {
                     diagnostics.push(PluginDiagnostic::error(
