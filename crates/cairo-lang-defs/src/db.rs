@@ -846,30 +846,28 @@ fn collect_extra_allowed_attributes(
     plugin_diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> OrderedHashSet<String> {
     let mut extra_allowed_attributes = OrderedHashSet::default();
-    for attr in item.attributes_elements(db) {
-        if attr.attr(db).as_syntax_node().get_text_without_trivia(db) == ALLOW_ATTR_ATTR {
-            let args = attr.clone().structurize(db).args;
-            if args.is_empty() {
-                plugin_diagnostics.push(PluginDiagnostic::error(
-                    attr.stable_ptr(db),
-                    "Expected arguments.".to_string(),
-                ));
-                continue;
-            }
-            for arg in args {
-                if let Some(ast::Expr::Path(path)) = try_extract_unnamed_arg(db, &arg.arg) {
-                    if let Some([ast::PathSegment::Simple(segment)]) =
-                        path.segments(db).elements(db).collect_array()
-                    {
-                        extra_allowed_attributes.insert(segment.ident(db).text(db).into());
-                        continue;
-                    }
+    for attr in item.query_attr(db, ALLOW_ATTR_ATTR) {
+        let args = attr.clone().structurize(db).args;
+        if args.is_empty() {
+            plugin_diagnostics.push(PluginDiagnostic::error(
+                attr.stable_ptr(db),
+                "Expected arguments.".to_string(),
+            ));
+            continue;
+        }
+        for arg in args {
+            if let Some(ast::Expr::Path(path)) = try_extract_unnamed_arg(db, &arg.arg) {
+                if let Some([ast::PathSegment::Simple(segment)]) =
+                    path.segments(db).elements(db).collect_array()
+                {
+                    extra_allowed_attributes.insert(segment.ident(db).text(db).into());
+                    continue;
                 }
-                plugin_diagnostics.push(PluginDiagnostic::error(
-                    arg.arg.stable_ptr(db),
-                    "Expected simple identifier.".to_string(),
-                ));
             }
+            plugin_diagnostics.push(PluginDiagnostic::error(
+                arg.arg.stable_ptr(db),
+                "Expected simple identifier.".to_string(),
+            ));
         }
     }
     extra_allowed_attributes

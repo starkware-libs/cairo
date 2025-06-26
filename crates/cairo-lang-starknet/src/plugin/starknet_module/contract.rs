@@ -284,7 +284,7 @@ fn handle_contract_item(
             }
         }
         ast::ModuleItem::ImplAlias(alias_ast) => {
-            let abi_attrs = alias_ast.query_attr(db, ABI_ATTR);
+            let abi_attrs = alias_ast.query_attr(db, ABI_ATTR).collect_vec();
             if abi_attrs.is_empty() {
                 return;
             }

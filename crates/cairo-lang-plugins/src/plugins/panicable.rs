@@ -55,12 +55,12 @@ fn generate_panicable_code(
     visibility: ast::Visibility,
 ) -> PluginResult {
     let mut attrs = attributes.query_attr(db, PANIC_WITH_ATTR);
-    if attrs.is_empty() {
+    let Some(attr) = attrs.next() else {
+        // No `#[panic_with]` attribute found.
         return PluginResult::default();
-    }
+    };
     let mut diagnostics = vec![];
-    if attrs.len() > 1 {
-        let extra_attr = attrs.swap_remove(1);
+    if let Some(extra_attr) = attrs.next() {
         diagnostics.push(PluginDiagnostic::error(
             extra_attr.stable_ptr(db),
             "`#[panic_with]` cannot be applied multiple times to the same item.".into(),
@@ -79,7 +79,6 @@ fn generate_panicable_code(
         return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
 
-    let attr = attrs.swap_remove(0);
     let mut builder = PatchBuilder::new(db, &attr);
     let attr = attr.structurize(db);
 

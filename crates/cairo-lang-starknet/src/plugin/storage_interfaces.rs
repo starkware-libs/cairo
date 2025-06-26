@@ -13,7 +13,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
-use itertools::zip_eq;
+use itertools::{Itertools, zip_eq};
 
 use super::starknet_module::backwards_compatible_storage;
 use super::utils::{has_derive, validate_v0};
@@ -67,7 +67,7 @@ impl MacroPlugin for StorageInterfacesPlugin {
         metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         let mut diagnostics = vec![];
-        let storage_node_attrs = item_ast.query_attr(db, STORAGE_NODE_ATTR);
+        let storage_node_attrs = item_ast.query_attr(db, STORAGE_NODE_ATTR).collect_vec();
         if !matches!(item_ast, ast::ModuleItem::Struct(_)) && !storage_node_attrs.is_empty() {
             for attr in &storage_node_attrs {
                 diagnostics.push(PluginDiagnostic::error(
@@ -76,7 +76,7 @@ impl MacroPlugin for StorageInterfacesPlugin {
                 ));
             }
         }
-        let sub_pointers_attrs = item_ast.query_attr(db, STORAGE_SUB_POINTERS_ATTR);
+        let sub_pointers_attrs = item_ast.query_attr(db, STORAGE_SUB_POINTERS_ATTR).collect_vec();
         if !matches!(item_ast, ast::ModuleItem::Enum(_)) && !sub_pointers_attrs.is_empty() {
             for attr in &sub_pointers_attrs {
                 diagnostics.push(PluginDiagnostic::error(
