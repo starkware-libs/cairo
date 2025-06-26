@@ -40,7 +40,7 @@ fn get_diagnostics<Item: QueryAttrs>(
     item: &Item,
 ) -> Option<Vec<PluginDiagnostic>> {
     let mut diagnostics: Vec<PluginDiagnostic> = Vec::new();
-    item.query_attr(db, DOC_ATTR).into_iter().for_each(|attr| {
+    item.query_attr(db, DOC_ATTR).for_each(|attr| {
         let args = attr.clone().structurize(db).args;
         if args.is_empty() {
             diagnostics.push(PluginDiagnostic::error(

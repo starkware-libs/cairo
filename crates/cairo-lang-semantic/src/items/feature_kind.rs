@@ -13,6 +13,7 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::try_extract_matches;
+use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::SemanticDiagnostic;
@@ -38,9 +39,9 @@ impl FeatureKind {
         diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
         attrs: &ast::AttributeList,
     ) -> Self {
-        let unstable_attrs = attrs.query_attr(db, UNSTABLE_ATTR);
-        let deprecated_attrs = attrs.query_attr(db, DEPRECATED_ATTR);
-        let internal_attrs = attrs.query_attr(db, INTERNAL_ATTR);
+        let unstable_attrs = attrs.query_attr(db, UNSTABLE_ATTR).collect_vec();
+        let deprecated_attrs = attrs.query_attr(db, DEPRECATED_ATTR).collect_vec();
+        let internal_attrs = attrs.query_attr(db, INTERNAL_ATTR).collect_vec();
         if unstable_attrs.is_empty() && deprecated_attrs.is_empty() && internal_attrs.is_empty() {
             return Self::Stable;
         };
