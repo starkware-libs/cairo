@@ -145,8 +145,8 @@ cairo_lang_test_utils::test_file_test!(
     diagnostics,
     "src/parser_test_data/diagnostics",
     {
-        expr_diagnostics: "expr_diagnostics",
         enum_diagnostics: "enum_diagnostics",
+        expr_diagnostics: "expr_diagnostics",
         fn_: "fn",
         generic_params: "generic_params",
         if_: "if",
@@ -159,9 +159,10 @@ cairo_lang_test_utils::test_file_test!(
         question_mark: "question_mark",
         reserved_identifier: "reserved_identifier",
         semicolon: "semicolon",
+        skipped_tokens: "skipped_tokens",
         underscore_not_supported: "underscore_not_supported",
         unterminated_string: "unterminated_string",
-        skipped_tokens: "skipped_tokens",
+        while_: "while",
     },
     get_diagnostics
 );

@@ -37,6 +37,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Box<[GreenId]> 
         SyntaxKind::MatchArms => [].into(),
         SyntaxKind::MatchArm => [].into(),
         SyntaxKind::ExprIf => [].into(),
+        SyntaxKind::ConditionListAnd => [].into(),
         SyntaxKind::ConditionLet => [].into(),
         SyntaxKind::ConditionExpr => [].into(),
         SyntaxKind::ExprLoop => [].into(),
