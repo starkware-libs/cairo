@@ -28,6 +28,7 @@ use super::context::{
     LoweredExpr, LoweredExprExternEnum, LoweringContext, LoweringFlowError, LoweringResult,
     lowering_flow_error_to_sealed_block,
 };
+use super::lower_if::{ConditionedExpr, lower_conditioned_expr_and_seal};
 use super::lower_let_else::lower_success_arm_body;
 use super::{
     alloc_empty_block, generators, lower_expr_block, lower_expr_literal, lower_tail_expr,
@@ -67,6 +68,9 @@ pub enum MatchArmWrapper<'a> {
     /// The success arm of a let-else statement. See [super::lower_let_else::lower_let_else] for
     /// more details.
     LetElseSuccess(&'a [PatternId], Vec<(VarId, SyntaxStablePtrId)>, SyntaxStablePtrId),
+    /// Similar to [Self::Arm], except that the expression is a conditioned expression
+    /// (see [ConditionedExpr]).
+    ConditionedArm(&'a [PatternId], ConditionedExpr<'a>),
 }
 
 impl<'a> From<&'a semantic::MatchArm> for MatchArmWrapper<'a> {
@@ -79,10 +83,10 @@ impl MatchArmWrapper<'_> {
     /// Returns the patterns of the match arm.
     pub fn patterns(&self) -> Option<&[PatternId]> {
         match self {
-            MatchArmWrapper::Arm(patterns, _) => Some(patterns),
-            MatchArmWrapper::ElseClause(_) => None,
-            MatchArmWrapper::DefaultClause => None,
-            MatchArmWrapper::LetElseSuccess(patterns, _, _) => Some(patterns),
+            MatchArmWrapper::Arm(patterns, _)
+            | MatchArmWrapper::ConditionedArm(patterns, _)
+            | MatchArmWrapper::LetElseSuccess(patterns, _, _) => Some(patterns),
+            MatchArmWrapper::ElseClause(_) | MatchArmWrapper::DefaultClause => None,
         }
     }
 
@@ -194,7 +198,9 @@ fn get_underscore_pattern_path_and_mark_unreachable(
 
     for arm in arms.iter().skip(otherwise_variant.arm_index + 1) {
         match arm {
-            MatchArmWrapper::Arm(patterns, _) | MatchArmWrapper::LetElseSuccess(patterns, _, _) => {
+            MatchArmWrapper::Arm(patterns, _)
+            | MatchArmWrapper::ConditionedArm(patterns, _)
+            | MatchArmWrapper::LetElseSuccess(patterns, _, _) => {
                 for pattern in *patterns {
                     let pattern_ptr = ctx.function_body.arenas.patterns[*pattern].stable_ptr();
                     ctx.diagnostics.report(
@@ -1171,8 +1177,9 @@ trait EnumVariantScopeBuilder {
                     );
                     continue;
                 }
-                MatchArmWrapper::Arm(patterns, _) => patterns,
-                MatchArmWrapper::LetElseSuccess(patterns, _, _) => patterns,
+                MatchArmWrapper::Arm(patterns, _)
+                | MatchArmWrapper::ConditionedArm(patterns, _)
+                | MatchArmWrapper::LetElseSuccess(patterns, _, _) => patterns,
             };
             for (pattern_index, pattern) in patterns.iter().copied().enumerate() {
                 let pattern_path = PatternPath { arm_index, pattern_index: Some(pattern_index) };
@@ -1364,6 +1371,7 @@ trait EnumVariantScopeBuilder {
             for arm in builder_context.arms {
                 match arm {
                     MatchArmWrapper::Arm(_, expr) |
+                    MatchArmWrapper::ConditionedArm(_, ConditionedExpr{expr, ..}) |
                     // Should actually never happen, as we can't if-let, but careful anyway.
                     MatchArmWrapper::ElseClause(expr) => {
                         ctx.diagnostics.report(
@@ -1810,6 +1818,9 @@ fn lower_arm_expr_and_seal(
         }
         (MatchArmWrapper::LetElseSuccess(_, _, _), _) => {
             unreachable!("Invalid MatchKind for LetElseSuccess.")
+        }
+        (MatchArmWrapper::ConditionedArm(_, expr), _) => {
+            lower_conditioned_expr_and_seal(ctx, subscope, expr)
         }
     }
 }

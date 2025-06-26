@@ -588,12 +588,9 @@ foo
 
 //! > lowering_diagnostics
 error: Numeric values are not supported in if-let conditions.
- --> lib.cairo:3:5-5:5
-      if let x = y {
- _____^
-|         y = y + x
-|     }
-|_____^
+ --> lib.cairo:3:16
+    if let x = y {
+               ^
 
 //! > lowering_flat
 <Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
@@ -987,3 +984,150 @@ Statements:
   (v12: core::felt252) <- core::felt252_add(v8, v11)
 End:
   Return(v12)
+
+//! > ==========================================================================
+
+//! > Test if let with multiple conditions
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo(a: Option<Option<Option<felt252>>>) -> felt252 {
+    if let Some(b) = a && let Some(c) = b && let Some(d) = c {
+        return d;
+    }
+    return 0;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<core::option::Option::<core::option::Option::<core::felt252>>>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk7,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk2,
+    Option::None(v4) => blk5,
+  })
+
+blk2:
+Statements:
+End:
+  Match(match_enum(v3) {
+    Option::Some(v5) => blk3,
+    Option::None(v6) => blk4,
+  })
+
+blk3:
+Statements:
+End:
+  Return(v5)
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk6:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk8:
+Statements:
+  (v7: core::felt252) <- 0
+End:
+  Return(v7)
+
+//! > ==========================================================================
+
+//! > Test if let with multiple conditions - with expressions
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function
+fn foo(a: Option<felt252>, x: felt252) -> felt252 {
+    if let Some(b) = a && x == 3 {
+        return b;
+    }
+    return 0;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:2:27
+    if let Some(b) = a && x == 3 {
+                          ^^^^^^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+
+//! > ==========================================================================
+
+//! > Test if let with multiple conditions - with else block
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function
+fn foo(a: Option<Option<felt252>>) -> felt252 {
+    if let Some(b) = a && let Some(c) = b {
+        c
+    } else {
+        0
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:4:12-6:5
+      } else {
+ ____________^
+|         0
+|     }
+|_____^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
