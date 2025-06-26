@@ -120,26 +120,20 @@ pub struct FunctionInlinerRewriter<'db> {
 
 pub struct BlockRewriteQueue {
     /// A Queue of blocks that require processing, and their id.
-    block_queue: VecDeque<(Block, bool)>,
+    block_queue: VecDeque<Block>,
     /// The new blocks that were created during the inlining.
     blocks: BlocksBuilder,
 }
 impl BlockRewriteQueue {
     /// Enqueues the block for processing and returns the block_id that this
     /// block is going to get in self.blocks.
-    fn enqueue_block(&mut self, block: Block, requires_rewrite: bool) {
-        self.block_queue.push_back((block, requires_rewrite));
+    fn enqueue_block(&mut self, block: Block) {
+        self.block_queue.push_back(block);
     }
     /// Pops a block requiring rewrites from the queue.
     /// If the block doesn't require rewrites, it is finalized and added to the blocks.
     fn dequeue(&mut self) -> Option<Block> {
-        while let Some((block, requires_rewrite)) = self.block_queue.pop_front() {
-            if requires_rewrite {
-                return Some(block);
-            }
-            self.finalize(block);
-        }
-        None
+        self.block_queue.pop_front()
     }
     /// Finalizes a block.
     fn finalize(&mut self, block: Block) {
@@ -213,7 +207,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         let mut rewriter = Self {
             variables,
             block_queue: BlockRewriteQueue {
-                block_queue: lowered.blocks.iter().map(|(_, b)| (b.clone(), true)).collect(),
+                block_queue: lowered.blocks.iter().map(|(_, b)| b.clone()).collect(),
                 blocks: BlocksBuilder::new(),
             },
             statements: vec![],
@@ -239,7 +233,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
             };
 
             if !rewriter.finalize {
-                rewriter.block_queue.enqueue_block(new_block, false);
+                rewriter.block_queue.enqueue_block(new_block);
                 rewriter.finalize = true;
             } else {
                 rewriter.block_queue.finalize(new_block);
@@ -324,7 +318,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
             self.block_queue.finalize(new_block);
             self.finalize = false;
         } else {
-            self.block_queue.enqueue_block(new_block, false);
+            self.block_queue.enqueue_block(new_block);
         }
 
         let mut mapper = Mapper {
@@ -339,7 +333,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
 
         for (_, block) in lowered.blocks.iter() {
             let block = mapper.rebuild_block(block);
-            self.block_queue.enqueue_block(block, false);
+            self.block_queue.enqueue_block(block);
         }
 
         Ok(())
