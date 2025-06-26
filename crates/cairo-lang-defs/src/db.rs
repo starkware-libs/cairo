@@ -12,7 +12,6 @@ use cairo_lang_syntax::attribute::consts::{
 use cairo_lang_syntax::attribute::structured::AttributeStructurize;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::element_list::ElementList;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -901,14 +900,14 @@ pub fn validate_attributes_flat(
 
 /// Validates that all attributes on all items in the given element list are in the allowed set or
 /// adds diagnostics.
-fn validate_attributes_element_list<Item: QueryAttrs + TypedSyntaxNode, const STEP: usize>(
+fn validate_attributes_element_list<Item: QueryAttrs + TypedSyntaxNode>(
     db: &dyn SyntaxGroup,
     allowed_attributes: &OrderedHashSet<String>,
     extra_allowed_attributes: &OrderedHashSet<String>,
-    items: &ElementList<Item, STEP>,
+    items: impl Iterator<Item = Item>,
     plugin_diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
-    for item in items.elements(db) {
+    for item in items {
         validate_attributes_flat(
             db,
             allowed_attributes,
@@ -944,7 +943,7 @@ fn validate_attributes(
                     db,
                     allowed_attributes,
                     &extra_allowed_attributes,
-                    &body.items(db),
+                    body.items(db).elements(db),
                     plugin_diagnostics,
                 );
             }
@@ -955,7 +954,7 @@ fn validate_attributes(
                     db,
                     allowed_attributes,
                     &extra_allowed_attributes,
-                    &body.items(db),
+                    body.items(db).elements(db),
                     plugin_diagnostics,
                 );
             }
@@ -965,7 +964,7 @@ fn validate_attributes(
                 db,
                 allowed_attributes,
                 &extra_allowed_attributes,
-                &item.members(db),
+                item.members(db).elements(db),
                 plugin_diagnostics,
             );
         }
@@ -974,7 +973,7 @@ fn validate_attributes(
                 db,
                 allowed_attributes,
                 &extra_allowed_attributes,
-                &item.variants(db),
+                item.variants(db).elements(db),
                 plugin_diagnostics,
             );
         }

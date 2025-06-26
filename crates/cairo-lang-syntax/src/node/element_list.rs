@@ -16,6 +16,22 @@ impl<T: TypedSyntaxNode, const STEP: usize> ElementList<T, STEP> {
     pub fn new(node: SyntaxNode) -> Self {
         Self { node, phantom: PhantomData {} }
     }
+}
+impl<T: TypedSyntaxNode> ElementList<T, 1> {
+    pub fn elements_vec(&self, db: &dyn SyntaxGroup) -> Vec<T> {
+        self.elements(db).collect()
+    }
+    pub fn elements<'a>(
+        &self,
+        db: &'a dyn SyntaxGroup,
+    ) -> impl ExactSizeIterator<Item = T> + DoubleEndedIterator + 'a {
+        ElementListRawIter::new(self.node.get_children(db)).map(move |x| T::from_syntax_node(db, x))
+    }
+    pub fn has_tail(&self, _db: &dyn SyntaxGroup) -> bool {
+        false
+    }
+}
+impl<T: TypedSyntaxNode> ElementList<T, 2> {
     pub fn elements_vec(&self, db: &dyn SyntaxGroup) -> Vec<T> {
         self.elements(db).collect()
     }
@@ -24,11 +40,11 @@ impl<T: TypedSyntaxNode, const STEP: usize> ElementList<T, STEP> {
         db: &'a dyn SyntaxGroup,
     ) -> impl ExactSizeIterator<Item = T> + DoubleEndedIterator + 'a {
         ElementListRawIter::new(self.node.get_children(db))
-            .step_by(STEP)
+            .step_by(2)
             .map(move |x| T::from_syntax_node(db, x))
     }
     pub fn has_tail(&self, db: &dyn SyntaxGroup) -> bool {
-        self.node.get_children(db).len() % STEP != 0
+        self.node.get_children(db).len() % 2 != 0
     }
 }
 
