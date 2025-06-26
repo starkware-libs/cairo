@@ -12,7 +12,7 @@ use cairo_lang_semantic::items::functions::InlineConfiguration;
 use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::{izip, zip_eq};
+use itertools::zip_eq;
 
 use crate::blocks::{Blocks, BlocksBuilder};
 use crate::db::LoweringGroup;
@@ -264,22 +264,24 @@ impl<'db> FunctionInlinerRewriter<'db> {
     /// self.statements_rewrite_stack.
     fn rewrite(&mut self, statement: Statement) -> Maybe<()> {
         if let Statement::Call(ref stmt) = statement {
-            if let Some(called_func) = stmt.function.body(self.variables.db)? {
-                if let crate::ids::ConcreteFunctionWithBodyLongId::Specialized(specialized) =
-                    self.calling_function_id.lookup_intern(self.variables.db)
-                {
-                    if specialized.base == called_func {
-                        // A specialized function should always inline its base.
+            if !stmt.with_coupon {
+                if let Some(called_func) = stmt.function.body(self.variables.db)? {
+                    if let crate::ids::ConcreteFunctionWithBodyLongId::Specialized(specialized) =
+                        self.calling_function_id.lookup_intern(self.variables.db)
+                    {
+                        if specialized.base == called_func {
+                            // A specialized function should always inline its base.
+                            return self.inline_function(called_func, stmt);
+                        }
+                    }
+
+                    // TODO: Implement better logic to avoid inlining of destructors that call
+                    // themselves.
+                    if called_func != self.calling_function_id
+                        && self.variables.db.priv_should_inline(called_func)?
+                    {
                         return self.inline_function(called_func, stmt);
                     }
-                }
-
-                // TODO: Implement better logic to avoid inlining of destructors that call
-                // themselves.
-                if called_func != self.calling_function_id
-                    && self.variables.db.priv_should_inline(called_func)?
-                {
-                    return self.inline_function(called_func, stmt);
                 }
             }
         }
@@ -302,9 +304,9 @@ impl<'db> FunctionInlinerRewriter<'db> {
         // we are inlining.
 
         // The input variables need to be renamed to match the inputs to the function call.
-        let renamed_vars = HashMap::<VariableId, VariableId>::from_iter(izip!(
+        let renamed_vars = HashMap::<VariableId, VariableId>::from_iter(zip_eq(
             lowered.parameters.iter().cloned(),
-            call_stmt.inputs.iter().map(|var_usage| var_usage.var_id)
+            call_stmt.inputs.iter().map(|var_usage| var_usage.var_id),
         ));
 
         let db = self.variables.db;
