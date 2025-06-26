@@ -52,6 +52,7 @@ fn test_specialized_function(
         base: function_id,
         args: Arc::new([
             Some(SpecializationArg::EmptyArray(core.felt252)),
+            Some(SpecializationArg::Struct(vec![SpecializationArg::EmptyArray(core.felt252)])),
             None,
             Some(SpecializationArg::Const(ConstValue::Int(BigInt::one(), core.felt252))),
         ]),

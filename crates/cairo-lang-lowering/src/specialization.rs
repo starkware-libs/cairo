@@ -77,14 +77,19 @@ pub fn specialized_function_lowered(
         VariableAllocator::new(db, base_semantic.function_with_body_id(db), Default::default())?;
     let mut statements = vec![];
     let mut parameters = vec![];
-
+    let mut inputs = vec![];
     let mut stack = vec![];
+
+    let location = LocationId::from_stable_location(
+        db,
+        specialized.base.base_semantic_function(db).stable_location(db),
+    );
 
     for (param, arg) in zip_eq(&base.parameters, specialized.args.iter()) {
         let var_id = variables.variables.alloc(base.variables[*param].clone());
+        inputs.push(VarUsage { var_id, location });
         if let Some(c) = arg {
             stack.push((var_id, SpecializationArgBuildingState::Initial(c)));
-
             continue;
         }
         parameters.push(var_id);
@@ -148,12 +153,6 @@ pub fn specialized_function_lowered(
         }
     }
 
-    let location = LocationId::from_stable_location(
-        db,
-        specialized.base.base_semantic_function(db).stable_location(db),
-    );
-    let inputs =
-        variables.variables.iter().map(|(var_id, _)| VarUsage { var_id, location }).collect();
     let outputs: Vec<VariableId> =
         chain!(base.signature.extra_rets.iter().map(|ret| ret.ty()), [base.signature.return_type])
             .map(|ty| variables.new_var(VarRequest { ty, location }))
