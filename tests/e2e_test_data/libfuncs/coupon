@@ -15,21 +15,45 @@ fn bar<T, +Drop<T>>(x: T) -> felt252 {
 }
 
 //! > casm
+[ap + 0] = 0, ap++;
+call rel 3;
+ret;
+[ap + 0] = 10, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({})
+test::foo: OrderedHashMap({Const: 300})
+test::bar::<core::integer::u8, core::integer::u8Drop>: OrderedHashMap({Const: 100})
 
 //! > sierra_code
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 10> = Const<felt252, 10> [storable: false, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> = Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> [storable: true, drop: true, dup: false, zero_sized: true];
+type Const<u8, 0> = Const<u8, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>> = drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>;
+libfunc const_as_immediate<Const<u8, 0>> = const_as_immediate<Const<u8, 0>>;
+libfunc store_temp<u8> = store_temp<u8>;
+libfunc coupon_call<user@test::bar::<core::integer::u8, core::integer::u8Drop>> = coupon_call<user@test::bar::<core::integer::u8, core::integer::u8Drop>>;
+libfunc drop<felt252> = drop<felt252>;
+libfunc drop<u8> = drop<u8>;
+libfunc const_as_immediate<Const<felt252, 10>> = const_as_immediate<Const<felt252, 10>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
 
 F0:
-drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>([0]) -> ();
+const_as_immediate<Const<u8, 0>>() -> ([1]);
+store_temp<u8>([1]) -> ([1]);
+coupon_call<user@test::bar::<core::integer::u8, core::integer::u8Drop>>([1], [0]) -> ([2]);
+drop<felt252>([2]) -> ();
 return();
+F1:
+drop<u8>([0]) -> ();
+const_as_immediate<Const<felt252, 10>>() -> ([1]);
+store_temp<felt252>([1]) -> ([1]);
+return([1]);
 
 test::foo@F0([0]: Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>) -> ();
+test::bar::<core::integer::u8, core::integer::u8Drop>@F1([0]: u8) -> (felt252);
 
 //! > ==========================================================================
 
