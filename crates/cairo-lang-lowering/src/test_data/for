@@ -51,7 +51,7 @@ Statements:
   (v20: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v16)
   (v21: core::felt252) <- 1
   (v22: core::felt252) <- 1
-  (v23: core::felt252) <- core::felt252_add(v21, v22)
+  (v23: core::felt252) <- core::felt252_add(v22, v21)
   (v24: (core::felt252,)) <- struct_construct(v23)
   (v25: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v24)
 End:

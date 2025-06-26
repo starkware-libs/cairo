@@ -208,6 +208,12 @@ pub fn priv_should_specialize(
         return Ok(false);
     }
 
+    // If the function is going to be inlined, it should be specialized.
+    // This is after the cycle check to avoid inlining the first-iteration of loop functions.
+    if db.priv_should_inline(function_id)? {
+        return Ok(true);
+    }
+
     // The heuristic is that the size is 8/10*orig_size > specialized_size of the original size.
     Ok(8 * db.estimate_size(specialized_func.base)? > 10 * db.estimate_size(function_id)?)
 }

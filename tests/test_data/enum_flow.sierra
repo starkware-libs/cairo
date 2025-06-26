@@ -1,18 +1,99 @@
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
-type examples::enum_flow::MyEnumLong = Enum<ut@examples::enum_flow::MyEnumLong, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type examples::enum_flow::MyEnumShort = Enum<ut@examples::enum_flow::MyEnumShort, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<felt252, 300> = Const<felt252, 300> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<examples::enum_flow::MyEnumLong, 2, Const<felt252, 22>> = Const<examples::enum_flow::MyEnumLong, 2, Const<felt252, 22>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<examples::enum_flow::MyEnumLong, 1, Const<felt252, 21>> = Const<examples::enum_flow::MyEnumLong, 1, Const<felt252, 21>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 22> = Const<felt252, 22> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 21> = Const<felt252, 21> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<examples::enum_flow::MyEnumLong, 0, Const<felt252, 20>> = Const<examples::enum_flow::MyEnumLong, 0, Const<felt252, 20>> [storable: false, drop: false, dup: false, zero_sized: false];
+type examples::enum_flow::MyEnumLong = Enum<ut@examples::enum_flow::MyEnumLong, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 20> = Const<felt252, 20> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<examples::enum_flow::MyEnumShort, 1, Const<felt252, 11>> = Const<examples::enum_flow::MyEnumShort, 1, Const<felt252, 11>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 11> = Const<felt252, 11> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<examples::enum_flow::MyEnumShort, 0, Const<felt252, 10>> = Const<examples::enum_flow::MyEnumShort, 0, Const<felt252, 10>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 10> = Const<felt252, 10> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc const_as_immediate<Const<felt252, 300>> = const_as_immediate<Const<felt252, 300>>;
-libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc const_as_immediate<Const<examples::enum_flow::MyEnumShort, 0, Const<felt252, 10>>> = const_as_immediate<Const<examples::enum_flow::MyEnumShort, 0, Const<felt252, 10>>>;
+libfunc store_temp<examples::enum_flow::MyEnumShort> = store_temp<examples::enum_flow::MyEnumShort>;
 libfunc enum_match<examples::enum_flow::MyEnumShort> = enum_match<examples::enum_flow::MyEnumShort>;
 libfunc branch_align = branch_align;
+libfunc drop<felt252> = drop<felt252>;
+libfunc jump = jump;
+libfunc const_as_immediate<Const<examples::enum_flow::MyEnumShort, 1, Const<felt252, 11>>> = const_as_immediate<Const<examples::enum_flow::MyEnumShort, 1, Const<felt252, 11>>>;
+libfunc const_as_immediate<Const<examples::enum_flow::MyEnumLong, 0, Const<felt252, 20>>> = const_as_immediate<Const<examples::enum_flow::MyEnumLong, 0, Const<felt252, 20>>>;
+libfunc store_temp<examples::enum_flow::MyEnumLong> = store_temp<examples::enum_flow::MyEnumLong>;
 libfunc enum_match<examples::enum_flow::MyEnumLong> = enum_match<examples::enum_flow::MyEnumLong>;
+libfunc const_as_immediate<Const<examples::enum_flow::MyEnumLong, 1, Const<felt252, 21>>> = const_as_immediate<Const<examples::enum_flow::MyEnumLong, 1, Const<felt252, 21>>>;
+libfunc const_as_immediate<Const<examples::enum_flow::MyEnumLong, 2, Const<felt252, 22>>> = const_as_immediate<Const<examples::enum_flow::MyEnumLong, 2, Const<felt252, 22>>>;
+libfunc const_as_immediate<Const<felt252, 300>> = const_as_immediate<Const<felt252, 300>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
 
 F0:
-const_as_immediate<Const<felt252, 300>>() -> ([0]);
-store_temp<felt252>([0]) -> ([0]);
-return([0]);
+const_as_immediate<Const<examples::enum_flow::MyEnumShort, 0, Const<felt252, 10>>>() -> ([0]);
+store_temp<examples::enum_flow::MyEnumShort>([0]) -> ([0]);
+enum_match<examples::enum_flow::MyEnumShort>([0]) { fallthrough([1]) F0_B0([2]) };
+branch_align() -> ();
+drop<felt252>([1]) -> ();
+jump() { F0_B1() };
+F0_B0:
+branch_align() -> ();
+drop<felt252>([2]) -> ();
+F0_B1:
+const_as_immediate<Const<examples::enum_flow::MyEnumShort, 1, Const<felt252, 11>>>() -> ([3]);
+store_temp<examples::enum_flow::MyEnumShort>([3]) -> ([3]);
+enum_match<examples::enum_flow::MyEnumShort>([3]) { fallthrough([4]) F0_B2([5]) };
+branch_align() -> ();
+drop<felt252>([4]) -> ();
+jump() { F0_B3() };
+F0_B2:
+branch_align() -> ();
+drop<felt252>([5]) -> ();
+F0_B3:
+const_as_immediate<Const<examples::enum_flow::MyEnumLong, 0, Const<felt252, 20>>>() -> ([6]);
+store_temp<examples::enum_flow::MyEnumLong>([6]) -> ([6]);
+enum_match<examples::enum_flow::MyEnumLong>([6]) { fallthrough([7]) F0_B4([8]) F0_B5([9]) };
+branch_align() -> ();
+drop<felt252>([7]) -> ();
+jump() { F0_B6() };
+F0_B4:
+branch_align() -> ();
+drop<felt252>([8]) -> ();
+jump() { F0_B6() };
+F0_B5:
+branch_align() -> ();
+drop<felt252>([9]) -> ();
+F0_B6:
+const_as_immediate<Const<examples::enum_flow::MyEnumLong, 1, Const<felt252, 21>>>() -> ([10]);
+store_temp<examples::enum_flow::MyEnumLong>([10]) -> ([10]);
+enum_match<examples::enum_flow::MyEnumLong>([10]) { fallthrough([11]) F0_B7([12]) F0_B8([13]) };
+branch_align() -> ();
+drop<felt252>([11]) -> ();
+jump() { F0_B9() };
+F0_B7:
+branch_align() -> ();
+drop<felt252>([12]) -> ();
+jump() { F0_B9() };
+F0_B8:
+branch_align() -> ();
+drop<felt252>([13]) -> ();
+F0_B9:
+const_as_immediate<Const<examples::enum_flow::MyEnumLong, 2, Const<felt252, 22>>>() -> ([14]);
+store_temp<examples::enum_flow::MyEnumLong>([14]) -> ([14]);
+enum_match<examples::enum_flow::MyEnumLong>([14]) { fallthrough([15]) F0_B10([16]) F0_B11([17]) };
+branch_align() -> ();
+drop<felt252>([15]) -> ();
+jump() { F0_B12() };
+F0_B10:
+branch_align() -> ();
+drop<felt252>([16]) -> ();
+jump() { F0_B12() };
+F0_B11:
+branch_align() -> ();
+drop<felt252>([17]) -> ();
+F0_B12:
+const_as_immediate<Const<felt252, 300>>() -> ([18]);
+store_temp<felt252>([18]) -> ([18]);
+return([18]);
 F1:
 enum_match<examples::enum_flow::MyEnumShort>([0]) { fallthrough([1]) F1_B0([2]) };
 branch_align() -> ();

@@ -425,6 +425,13 @@ Originating location:
                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
+      #[inline(always)]
+ _____^
+| ...
+|     }
+|_____^
+In function: core::option::OptionTraitImpl::expect
+Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::integer::U8Mul::mul
@@ -436,6 +443,13 @@ enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([23]) -> ([24])
 Originating location:
             None => crate::panic_with_felt252(err),
                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::option::OptionTraitImpl::expect
+Inlined at:
+      #[inline(always)]
+ _____^
+| ...
+|     }
+|_____^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -593,6 +607,13 @@ Originating location:
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
+      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::result::ResultTraitImpl::expect
+Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::integer::U8Add::add
@@ -602,6 +623,13 @@ Inlined at:
 In function: lib.cairo::foo
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([31]) -> ([32])
 Originating location:
+      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::result::ResultTraitImpl::expect
+Inlined at:
       const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
  _____^
 | ...
@@ -670,13 +698,1216 @@ main
 
 //! > sierra_code
 label_test::main::0:
-const_as_immediate<Const<felt252, 300>>() -> ([0])
-store_temp<felt252>([0]) -> ([0])
+const_as_immediate<Const<test::MyEnumShort, 0, Const<felt252, 10>>>() -> ([0])
+store_temp<test::MyEnumShort>([0]) -> ([0])
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es0);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+enum_match<test::MyEnumShort>([0]) { fallthrough([1]) label_test::main::1([2]) }
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es0);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es0);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+drop<felt252>([1]) -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es0);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+jump() { label_test::main::3() }
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es0);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+label_test::main::1:
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es0);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es0);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+drop<felt252>([2]) -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es0);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+label_test::main::3:
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es0);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+const_as_immediate<Const<test::MyEnumShort, 1, Const<felt252, 11>>>() -> ([3])
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es0);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+store_temp<test::MyEnumShort>([3]) -> ([3])
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es1);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+enum_match<test::MyEnumShort>([3]) { fallthrough([4]) label_test::main::4([5]) }
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es1);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es1);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+drop<felt252>([4]) -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es1);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+jump() { label_test::main::6() }
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es1);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+label_test::main::4:
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es1);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es1);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+drop<felt252>([5]) -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es1);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+label_test::main::6:
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es1);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+const_as_immediate<Const<test::MyEnumLong, 0, Const<felt252, 20>>>() -> ([6])
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_short
+Inlined at:
+  fn match_short(e: MyEnumShort) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_short
+Inlined at:
+    match_short(es1);
+    ^^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+store_temp<test::MyEnumLong>([6]) -> ([6])
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el0);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+enum_match<test::MyEnumLong>([6]) { fallthrough([7]) label_test::main::7([8]) label_test::main::8([9]) }
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el0);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el0);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+drop<felt252>([7]) -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el0);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+jump() { label_test::main::10() }
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el0);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+label_test::main::7:
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el0);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el0);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+drop<felt252>([8]) -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el0);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+jump() { label_test::main::10() }
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el0);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+label_test::main::8:
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el0);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el0);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+drop<felt252>([9]) -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el0);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+label_test::main::10:
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el0);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+const_as_immediate<Const<test::MyEnumLong, 1, Const<felt252, 21>>>() -> ([10])
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el0);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+store_temp<test::MyEnumLong>([10]) -> ([10])
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el1);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+enum_match<test::MyEnumLong>([10]) { fallthrough([11]) label_test::main::11([12]) label_test::main::12([13]) }
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el1);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el1);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+drop<felt252>([11]) -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el1);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+jump() { label_test::main::14() }
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el1);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+label_test::main::11:
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el1);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el1);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+drop<felt252>([12]) -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el1);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+jump() { label_test::main::14() }
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el1);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+label_test::main::12:
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el1);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el1);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+drop<felt252>([13]) -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el1);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+label_test::main::14:
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el1);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+const_as_immediate<Const<test::MyEnumLong, 2, Const<felt252, 22>>>() -> ([14])
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el1);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+store_temp<test::MyEnumLong>([14]) -> ([14])
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el2);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+enum_match<test::MyEnumLong>([14]) { fallthrough([15]) label_test::main::15([16]) label_test::main::16([17]) }
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el2);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el2);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+drop<felt252>([15]) -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el2);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+jump() { label_test::main::18() }
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el2);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+label_test::main::15:
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el2);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el2);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+drop<felt252>([16]) -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el2);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+jump() { label_test::main::18() }
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el2);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+label_test::main::16:
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el2);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el2);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+drop<felt252>([17]) -> ()
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el2);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+label_test::main::18:
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el2);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+const_as_immediate<Const<felt252, 300>>() -> ([18])
+Originating location:
+      match e {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::match_long
+Inlined at:
+  fn match_long(e: MyEnumLong) -> felt252 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::match_long
+Inlined at:
+    match_long(el2);
+    ^^^^^^^^^^^^^^^
+In function: lib.cairo::main
+store_temp<felt252>([18]) -> ([18])
 Originating location:
     300
     ^^^
 In function: lib.cairo::main
-return([0])
+return([18])
+Originating location:
+    300
+    ^^^
+In function: lib.cairo::main
+label_test::main::17:
+Originating location:
+    300
+    ^^^
+In function: lib.cairo::main
+label_test::main::13:
+Originating location:
+    300
+    ^^^
+In function: lib.cairo::main
+label_test::main::9:
+Originating location:
+    300
+    ^^^
+In function: lib.cairo::main
+label_test::main::5:
+Originating location:
+    300
+    ^^^
+In function: lib.cairo::main
+label_test::main::2:
 Originating location:
     300
     ^^^
@@ -1100,6 +2331,13 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayImpl::append
 Inlined at:
+      #[inline]
+ _____^
+| ...
+|     }
+|_____^
+In function: core::array::ArrayImpl::append
+Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,crate::byte_array::BYTE_ARRAY_MAGIC);
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::debug::array_inline_macro
@@ -1111,6 +2349,13 @@ array_append<felt252>([20], [21]) -> ([22])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+      #[inline]
+ _____^
+| ...
+|     }
+|_____^
 In function: core::array::ArrayImpl::append
 Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,crate::byte_array::BYTE_ARRAY_MAGIC);
@@ -1852,6 +3097,13 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayImpl::append
 Inlined at:
+      #[inline]
+ _____^
+| ...
+|     }
+|_____^
+In function: core::array::ArrayImpl::append
+Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,crate::byte_array::BYTE_ARRAY_MAGIC);
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::debug::array_inline_macro
@@ -1863,6 +3115,13 @@ array_append<felt252>([57], [58]) -> ([59])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+      #[inline]
+ _____^
+| ...
+|     }
+|_____^
 In function: core::array::ArrayImpl::append
 Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,crate::byte_array::BYTE_ARRAY_MAGIC);
@@ -2488,6 +3747,13 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayImpl::append
 Inlined at:
+      #[inline]
+ _____^
+| ...
+|     }
+|_____^
+In function: core::array::ArrayImpl::append
+Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: array_inline_macro::array_inline_macro
@@ -2495,6 +3761,13 @@ array_append<felt252>([0], [1]) -> ([2])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+      #[inline]
+ _____^
+| ...
+|     }
+|_____^
 In function: core::array::ArrayImpl::append
 Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
@@ -2506,6 +3779,13 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayImpl::append
 Inlined at:
+      #[inline]
+ _____^
+| ...
+|     }
+|_____^
+In function: core::array::ArrayImpl::append
+Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: array_inline_macro::array_inline_macro
@@ -2515,6 +3795,13 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayImpl::append
 Inlined at:
+      #[inline]
+ _____^
+| ...
+|     }
+|_____^
+In function: core::array::ArrayImpl::append
+Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: array_inline_macro::array_inline_macro
@@ -2522,6 +3809,13 @@ array_append<felt252>([2], [3]) -> ([4])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+      #[inline]
+ _____^
+| ...
+|     }
+|_____^
 In function: core::array::ArrayImpl::append
 Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
@@ -2551,6 +3845,13 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayImpl::append
 Inlined at:
+      #[inline]
+ _____^
+| ...
+|     }
+|_____^
+In function: core::array::ArrayImpl::append
+Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: array_inline_macro::array_inline_macro
@@ -2558,6 +3859,13 @@ array_append<felt252>([5], [6]) -> ([7])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+      #[inline]
+ _____^
+| ...
+|     }
+|_____^
 In function: core::array::ArrayImpl::append
 Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
@@ -2569,6 +3877,13 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayImpl::append
 Inlined at:
+      #[inline]
+ _____^
+| ...
+|     }
+|_____^
+In function: core::array::ArrayImpl::append
+Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: array_inline_macro::array_inline_macro
@@ -2576,6 +3891,13 @@ store_temp<felt252>([8]) -> ([8])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+      #[inline]
+ _____^
+| ...
+|     }
+|_____^
 In function: core::array::ArrayImpl::append
 Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
@@ -2587,6 +3909,13 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayImpl::append
 Inlined at:
+      #[inline]
+ _____^
+| ...
+|     }
+|_____^
+In function: core::array::ArrayImpl::append
+Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: array_inline_macro::array_inline_macro
@@ -2594,6 +3923,13 @@ struct_construct<Unit>() -> ([10])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+      #[inline]
+ _____^
+| ...
+|     }
+|_____^
 In function: core::array::ArrayImpl::append
 Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
