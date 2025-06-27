@@ -43,6 +43,8 @@ pub struct Parser<'a> {
     lexer: Lexer<'a>,
     /// The next terminal to handle.
     next_terminal: LexerTerminal,
+    /// The terminal following [Self::next_terminal], if known.
+    next_next_terminal: Option<LexerTerminal>,
     /// A vector of pending trivia to be added as leading trivia to the next valid terminal.
     pending_trivia: Vec<TriviumGreen>,
     /// The current offset, excluding the current terminal.
@@ -130,6 +132,7 @@ impl<'a> Parser<'a> {
             file_id,
             lexer,
             next_terminal,
+            next_next_terminal: None,
             pending_trivia: Vec::new(),
             offset: Default::default(),
             current_width: Default::default(),
@@ -1385,7 +1388,7 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr])
     /// or TryParseFailure if an expression can't be parsed.
     pub fn try_parse_expr(&mut self) -> TryParseResult<ExprGreen> {
-        self.try_parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Allow)
+        self.try_parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Allow, AndLetBehavior::Simple)
     }
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr])
     /// or a node with kind ExprMissing if an expression can't be parsed.
@@ -1479,6 +1482,7 @@ impl<'a> Parser<'a> {
         &mut self,
         parent_precedence: usize,
         lbrace_allowed: LbraceAllowed,
+        and_let_behavior: AndLetBehavior,
     ) -> TryParseResult<ExprGreen> {
         let mut expr = self.try_parse_atom_or_unary(lbrace_allowed)?;
         let mut child_op: Option<SyntaxKind> = None;
@@ -1486,6 +1490,16 @@ impl<'a> Parser<'a> {
             if precedence >= parent_precedence {
                 return Ok(expr);
             }
+
+            // If the next two tokens are `&& let` (part of a let-chain), then they should be parsed
+            // by the caller. Return immediately.
+            if and_let_behavior == AndLetBehavior::Stop
+                && self.peek().kind == SyntaxKind::TerminalAndAnd
+                && self.peek_next_next_kind() == SyntaxKind::TerminalLet
+            {
+                return Ok(expr);
+            }
+
             expr = if self.peek().kind == SyntaxKind::TerminalQuestionMark {
                 ExprErrorPropagate::new_green(self.db, expr, self.take::<TerminalQuestionMark>())
                     .into()
@@ -1512,7 +1526,7 @@ impl<'a> Parser<'a> {
                 }
                 child_op = Some(current_op);
                 let op = self.parse_binary_operator();
-                let rhs = self.parse_expr_limited(precedence, lbrace_allowed);
+                let rhs = self.parse_expr_limited(precedence, lbrace_allowed, and_let_behavior);
                 ExprBinary::new_green(self.db, expr, op, rhs).into()
             };
         }
@@ -1532,7 +1546,7 @@ impl<'a> Parser<'a> {
             return self.try_parse_atom(lbrace_allowed);
         };
         let op = self.expect_unary_operator();
-        let expr = self.parse_expr_limited(precedence, lbrace_allowed);
+        let expr = self.parse_expr_limited(precedence, lbrace_allowed, AndLetBehavior::Simple);
         Ok(ExprUnary::new_green(self.db, op, expr).into())
     }
 
@@ -1544,8 +1558,9 @@ impl<'a> Parser<'a> {
         &mut self,
         parent_precedence: usize,
         lbrace_allowed: LbraceAllowed,
+        and_let_behavior: AndLetBehavior,
     ) -> ExprGreen {
-        match self.try_parse_expr_limited(parent_precedence, lbrace_allowed) {
+        match self.try_parse_expr_limited(parent_precedence, lbrace_allowed, and_let_behavior) {
             Ok(green) => green,
             Err(_) => {
                 self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingExpression)
@@ -2223,7 +2238,8 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `match <expr> \{<MatchArm>*\}`
     fn expect_match_expr(&mut self) -> ExprMatchGreen {
         let match_kw = self.take::<TerminalMatch>();
-        let expr = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+        let expr =
+            self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid, AndLetBehavior::Simple);
         let lbrace = self.parse_token::<TerminalLBrace>();
         let arms = MatchArms::new_green(
             self.db,
@@ -2257,14 +2273,47 @@ impl<'a> Parser<'a> {
         ExprIf::new_green(self.db, if_kw, conditions, if_block, else_clause)
     }
 
+    /// If `condition` is a [ConditionExpr] of the form `<expr> <op> <expr>`, returns the operator's
+    /// kind.
+    /// Otherwise, returns `None`.
+    fn get_binary_operator(&self, condition: ConditionGreen) -> Option<SyntaxKind> {
+        let condition_expr_green = self.db.lookup_intern_green(condition.0);
+        require(condition_expr_green.kind == SyntaxKind::ConditionExpr)?;
+
+        let expr_binary_green = self.db.lookup_intern_green(condition_expr_green.children()[0]);
+        require(expr_binary_green.kind == SyntaxKind::ExprBinary)?;
+
+        Some(self.db.lookup_intern_green(expr_binary_green.children()[1]).kind)
+    }
+
     /// Parses a conjunction of conditions of the form `<condition> && <condition> && ...`,
     /// where each condition is either `<expr>` or `let <pattern> = <expr>`.
     ///
     /// Assumes the next expected token (after the condition list) is `{`. This assumption is used
     /// in case of an error.
     fn parse_condition_list(&mut self) -> ConditionListAndGreen {
+        let and_and_precedence = get_post_operator_precedence(SyntaxKind::TerminalAndAnd).unwrap();
+
+        let start_offset = self.offset.add_width(self.current_width);
         let condition = self.parse_condition_expr(false);
         let mut conditions: Vec<ConditionListAndElementOrSeparatorGreen> = vec![condition.into()];
+
+        // If there is more than one condition, check that the first condition does not have a
+        // precedence lower than `&&`.
+        if self.peek().kind == SyntaxKind::TerminalAndAnd {
+            if let Some(op) = self.get_binary_operator(condition) {
+                if let Some(precedence) = get_post_operator_precedence(op) {
+                    if precedence > and_and_precedence {
+                        let offset =
+                            self.offset.add_width(self.current_width - self.last_trivia_length);
+                        self.add_diagnostic(
+                            ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op },
+                            TextSpan { start: start_offset, end: offset },
+                        );
+                    }
+                }
+            }
+        }
 
         while self.peek().kind == SyntaxKind::TerminalAndAnd {
             let and_and = self.take::<TerminalAndAnd>();
@@ -2274,7 +2323,6 @@ impl<'a> Parser<'a> {
             conditions.push(condition.into());
         }
 
-        let and_and_precedence = get_post_operator_precedence(SyntaxKind::TerminalAndAnd).unwrap();
         let peek_item = self.peek();
         if let Some(op_precedence) = get_post_operator_precedence(peek_item.kind) {
             if op_precedence > and_and_precedence {
@@ -2316,13 +2364,17 @@ impl<'a> Parser<'a> {
                 PatternListOr::new_green(self.db, pattern_list)
             };
             let eq = self.parse_token::<TerminalEq>();
-            let expr: ExprGreen =
-                self.parse_expr_limited(and_and_precedence, LbraceAllowed::Forbid);
+            let expr: ExprGreen = self.parse_expr_limited(
+                and_and_precedence,
+                LbraceAllowed::Forbid,
+                AndLetBehavior::Stop,
+            );
             ConditionLet::new_green(self.db, let_kw, pattern_list_green, eq, expr).into()
         } else {
             let condition = self.parse_expr_limited(
                 if stop_at_and { and_and_precedence } else { MAX_PRECEDENCE },
                 LbraceAllowed::Forbid,
+                AndLetBehavior::Stop,
             );
             ConditionExpr::new_green(self.db, condition).into()
         }
@@ -2364,7 +2416,8 @@ impl<'a> Parser<'a> {
                 TerminalIdentifier::missing(self.db)
             }
         };
-        let expression = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+        let expression =
+            self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid, AndLetBehavior::Simple);
         let body = self.parse_block();
         ExprFor::new_green(self.db, for_kw, pattern, in_identifier, expression, body)
     }
@@ -3415,13 +3468,20 @@ impl<'a> Parser<'a> {
         &self.next_terminal
     }
 
+    /// Peeks at the token following the next one.
+    /// Assumption: the next token is not EOF.
+    pub fn peek_next_next_kind(&mut self) -> SyntaxKind {
+        self.next_next_terminal.get_or_insert_with(|| self.lexer.next().unwrap()).kind
+    }
+
     /// Takes a terminal from the Lexer and places it in self.next_terminal.
     fn take_raw(&mut self) -> LexerTerminal {
         self.offset = self.offset.add_width(self.current_width);
         self.current_width = self.next_terminal.width(self.db);
         self.last_trivia_length = trivia_total_width(self.db, &self.next_terminal.trailing_trivia);
 
-        let next_terminal = self.lexer.next().unwrap();
+        let next_terminal =
+            self.next_next_terminal.take().unwrap_or_else(|| self.lexer.next().unwrap());
         std::mem::replace(&mut self.next_terminal, next_terminal)
     }
 
@@ -3708,6 +3768,15 @@ impl<'a> Parser<'a> {
 enum LbraceAllowed {
     Forbid,
     Allow,
+}
+
+/// Controls the behavior of the parser when encountering `&& let` tokens.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum AndLetBehavior {
+    /// Parse without special handling of `&& let`.
+    Simple,
+    /// Stop parsing an expression at `&& let` and return the expression so far.
+    Stop,
 }
 
 /// Indicates that [Parser::skip_until] skipped some terminals.

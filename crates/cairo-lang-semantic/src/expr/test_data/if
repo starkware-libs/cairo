@@ -118,7 +118,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Operator '||' is not allowed in this location. Consider wrapping the expression in parentheses.
+error: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
  --> lib.cairo:3:24
     if let Some(y) = x || true {
                        ^
