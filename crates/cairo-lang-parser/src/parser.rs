@@ -43,6 +43,8 @@ pub struct Parser<'a> {
     lexer: Lexer<'a>,
     /// The next terminal to handle.
     next_terminal: LexerTerminal,
+    /// The terminal following [Self::next_terminal], if known.
+    next_next_terminal: Option<LexerTerminal>,
     /// A vector of pending trivia to be added as leading trivia to the next valid terminal.
     pending_trivia: Vec<TriviumGreen>,
     /// The current offset, excluding the current terminal.
@@ -130,6 +132,7 @@ impl<'a> Parser<'a> {
             file_id,
             lexer,
             next_terminal,
+            next_next_terminal: None,
             pending_trivia: Vec::new(),
             offset: Default::default(),
             current_width: Default::default(),
@@ -1486,6 +1489,15 @@ impl<'a> Parser<'a> {
             if precedence >= parent_precedence {
                 return Ok(expr);
             }
+
+            // If the next two tokens are `&& let` (part of a let-chain), then they should be parsed
+            // by the caller. Return immediately.
+            if self.peek().kind == SyntaxKind::TerminalAndAnd
+                && self.peek_next_next().kind == SyntaxKind::TerminalLet
+            {
+                return Ok(expr);
+            }
+
             expr = if self.peek().kind == SyntaxKind::TerminalQuestionMark {
                 ExprErrorPropagate::new_green(self.db, expr, self.take::<TerminalQuestionMark>())
                     .into()
@@ -2257,14 +2269,47 @@ impl<'a> Parser<'a> {
         ExprIf::new_green(self.db, if_kw, conditions, if_block, else_clause)
     }
 
+    /// If `condition` is a [ConditionExpr] of the form `<expr> <op> <expr>`, returns the operator's
+    /// kind.
+    /// Otherwise, returns `None`.
+    fn get_binary_operator(&self, condition: ConditionGreen) -> Option<SyntaxKind> {
+        let condition_expr_green = self.db.lookup_intern_green(condition.0);
+        require(condition_expr_green.kind == SyntaxKind::ConditionExpr)?;
+
+        let expr_binary_green = self.db.lookup_intern_green(condition_expr_green.children()[0]);
+        require(expr_binary_green.kind == SyntaxKind::ExprBinary)?;
+
+        Some(self.db.lookup_intern_green(expr_binary_green.children()[1]).kind)
+    }
+
     /// Parses a conjunction of conditions of the form `<condition> && <condition> && ...`,
     /// where each condition is either `<expr>` or `let <pattern> = <expr>`.
     ///
     /// Assumes the next expected token (after the condition list) is `{`. This assumption is used
     /// in case of an error.
     fn parse_condition_list(&mut self) -> ConditionListAndGreen {
+        let and_and_precedence = get_post_operator_precedence(SyntaxKind::TerminalAndAnd).unwrap();
+
+        let start_offset = self.offset.add_width(self.current_width);
         let condition = self.parse_condition_expr(false);
         let mut conditions: Vec<ConditionListAndElementOrSeparatorGreen> = vec![condition.into()];
+
+        // If there is more than one condition, check that the first condition does not have a
+        // precedence lower than `&&`.
+        if self.peek().kind == SyntaxKind::TerminalAndAnd {
+            if let Some(op) = self.get_binary_operator(condition) {
+                if let Some(precedence) = get_post_operator_precedence(op) {
+                    if precedence > and_and_precedence {
+                        let offset =
+                            self.offset.add_width(self.current_width - self.last_trivia_length);
+                        self.add_diagnostic(
+                            ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op },
+                            TextSpan { start: start_offset, end: offset },
+                        );
+                    }
+                }
+            }
+        }
 
         while self.peek().kind == SyntaxKind::TerminalAndAnd {
             let and_and = self.take::<TerminalAndAnd>();
@@ -2274,7 +2319,6 @@ impl<'a> Parser<'a> {
             conditions.push(condition.into());
         }
 
-        let and_and_precedence = get_post_operator_precedence(SyntaxKind::TerminalAndAnd).unwrap();
         let peek_item = self.peek();
         if let Some(op_precedence) = get_post_operator_precedence(peek_item.kind) {
             if op_precedence > and_and_precedence {
@@ -3415,13 +3459,23 @@ impl<'a> Parser<'a> {
         &self.next_terminal
     }
 
+    /// Peeks at the token following the next one.
+    /// Assumption: the next token is not EOF.
+    pub fn peek_next_next(&mut self) -> &LexerTerminal {
+        if self.next_next_terminal.is_none() {
+            self.next_next_terminal = Some(self.lexer.next().unwrap());
+        }
+        self.next_next_terminal.as_ref().unwrap()
+    }
+
     /// Takes a terminal from the Lexer and places it in self.next_terminal.
     fn take_raw(&mut self) -> LexerTerminal {
         self.offset = self.offset.add_width(self.current_width);
         self.current_width = self.next_terminal.width(self.db);
         self.last_trivia_length = trivia_total_width(self.db, &self.next_terminal.trailing_trivia);
 
-        let next_terminal = self.lexer.next().unwrap();
+        let next_terminal =
+            self.next_next_terminal.take().unwrap_or_else(|| self.lexer.next().unwrap());
         std::mem::replace(&mut self.next_terminal, next_terminal)
     }
 
