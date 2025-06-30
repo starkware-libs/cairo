@@ -24,7 +24,9 @@ use crate::reorganize_blocks::reorganize_blocks;
 /// Enum of the optimization phases that can be used in a strategy.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum OptimizationPhase {
-    ApplyInlining,
+    ApplyInlining {
+        enable_const_folding: bool,
+    },
     BranchInversion,
     CancelOps,
     ConstFolding,
@@ -64,7 +66,9 @@ impl OptimizationPhase {
         lowered: &mut Lowered,
     ) -> Maybe<()> {
         match self {
-            OptimizationPhase::ApplyInlining => apply_inlining(db, function, lowered)?,
+            OptimizationPhase::ApplyInlining { enable_const_folding } => {
+                apply_inlining(db, function, lowered, enable_const_folding)?
+            }
             OptimizationPhase::BranchInversion => branch_inversion(db, lowered),
             OptimizationPhase::CancelOps => cancel_ops(lowered),
             OptimizationPhase::ConstFolding => const_folding(db, function, lowered),
@@ -129,11 +133,9 @@ impl OptimizationStrategyId {
 /// Query implementation of [crate::db::LoweringGroup::baseline_optimization_strategy].
 pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
     OptimizationStrategy(vec![
-        // Must be right before const folding.
+        // Must be right before inlining.
         OptimizationPhase::ReorganizeBlocks,
-        // Apply `ConstFolding` before inlining to get better inlining decisions.
-        OptimizationPhase::ConstFolding,
-        OptimizationPhase::ApplyInlining,
+        OptimizationPhase::ApplyInlining { enable_const_folding: true },
         OptimizationPhase::ReturnOptimization,
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::ReorderStatements,

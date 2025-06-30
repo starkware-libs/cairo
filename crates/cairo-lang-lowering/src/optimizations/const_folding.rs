@@ -101,11 +101,11 @@ pub fn const_folding(
     }
 }
 
-struct ConstFoldingContext<'a> {
+pub struct ConstFoldingContext<'a> {
     /// The used database.
     db: &'a dyn LoweringGroup,
     /// The variables arena, mostly used to get the type of variables.
-    variables: &'a mut Arena<Variable>,
+    pub variables: &'a mut Arena<Variable>,
     /// The accumulated information about the const values of variables.
     var_info: UnorderedHashMap<VariableId, VarInfo>,
     /// The libfunc information.
@@ -145,7 +145,7 @@ impl<'a> ConstFoldingContext<'a> {
 
     /// Determines if a block is reachable from the function start and propagates constant values
     /// when the block is reachable via a single goto statement.
-    fn visit_block_start<'b>(
+    pub fn visit_block_start<'b>(
         &mut self,
         block_id: BlockId,
         get_block: impl FnOnce(BlockId) -> &'b Block,
@@ -178,7 +178,7 @@ impl<'a> ConstFoldingContext<'a> {
     ///
     /// Note: `self.visit_block_end` must be called after processing all statements
     /// in a block to actually add the additional statements.
-    fn visit_statement(&mut self, stmt: &mut Statement) {
+    pub fn visit_statement(&mut self, stmt: &mut Statement) {
         self.maybe_replace_inputs(stmt.inputs_mut());
         match stmt {
             Statement::Const(StatementConst { value, output }) => match value {
@@ -285,7 +285,7 @@ impl<'a> ConstFoldingContext<'a> {
     /// - Inserts the accumulated additional statements into the block.
     /// - Converts match endings to goto when applicable.
     /// - Updates self.reachability based on the block's ending.
-    fn visit_block_end(&mut self, block_id: BlockId, block: &mut crate::Block) {
+    pub fn visit_block_end(&mut self, block_id: BlockId, block: &mut crate::Block) {
         block.statements.splice(0..0, self.additional_stmts.drain(..));
 
         match &mut block.end {
@@ -1198,7 +1198,7 @@ pub struct ConstFoldingLibfuncInfo {
     /// The `core::panic_with_felt252` function.
     panic_with_felt252: FunctionId,
     /// The `core::panic_with_const_felt252` function.
-    panic_with_const_felt252: FreeFunctionId,
+    pub panic_with_const_felt252: FreeFunctionId,
     /// The `core::panics::panic_with_byte_array` function.
     panic_with_byte_array: FunctionId,
     /// Type ranges.

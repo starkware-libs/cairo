@@ -39,7 +39,9 @@ fn test_function_inlining(
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     let after = if let Some(before) = &before {
         let mut after = before.deref().clone();
-        OptimizationPhase::ApplyInlining.apply(db, function_id, &mut after).unwrap();
+        OptimizationPhase::ApplyInlining { enable_const_folding: false }
+            .apply(db, function_id, &mut after)
+            .unwrap();
         Some(after)
     } else {
         None

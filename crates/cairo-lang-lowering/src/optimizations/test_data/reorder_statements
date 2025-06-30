@@ -353,59 +353,18 @@ Statements:
   (v0: ()) <- struct_construct()
   (v1: core::bool) <- bool::True(v0)
   (v2: core::felt252) <- 5
+  (v3: ()) <- struct_construct()
+  (v4: core::felt252) <- 3
+  (v5: core::felt252) <- core::felt252_add(v2, v4)
 End:
-  Match(match_enum(v1) {
-    bool::False(v3) => blk1,
-    bool::True(v4) => blk2,
-  })
-
-blk1:
-Statements:
-  (v5: core::felt252) <- 3
-  (v6: core::felt252) <- core::felt252_add(v2, v5)
-End:
-  Goto(blk3, {v6 -> v7})
-
-blk2:
-Statements:
-  (v8: core::felt252) <- 3
-  (v9: core::felt252) <- core::felt252_add(v2, v8)
-End:
-  Goto(blk3, {v9 -> v7})
-
-blk3:
-Statements:
-End:
-  Return(v7)
+  Return(v5)
 
 //! > after
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- struct_construct()
-  (v1: core::bool) <- bool::True(v0)
   (v2: core::felt252) <- 5
+  (v4: core::felt252) <- 3
+  (v5: core::felt252) <- core::felt252_add(v2, v4)
 End:
-  Match(match_enum(v1) {
-    bool::False(v3) => blk1,
-    bool::True(v4) => blk2,
-  })
-
-blk1:
-Statements:
-  (v5: core::felt252) <- 3
-  (v6: core::felt252) <- core::felt252_add(v2, v5)
-End:
-  Goto(blk3, {v6 -> v7})
-
-blk2:
-Statements:
-  (v8: core::felt252) <- 3
-  (v9: core::felt252) <- core::felt252_add(v2, v8)
-End:
-  Goto(blk3, {v9 -> v7})
-
-blk3:
-Statements:
-End:
-  Return(v7)
+  Return(v5)

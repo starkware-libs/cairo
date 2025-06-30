@@ -40,7 +40,9 @@ fn test_match_optimizer(
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     let mut before =
         db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().deref().clone();
-    OptimizationPhase::ApplyInlining.apply(db, function_id, &mut before).unwrap();
+    OptimizationPhase::ApplyInlining { enable_const_folding: true }
+        .apply(db, function_id, &mut before)
+        .unwrap();
     OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();
     OptimizationPhase::ReorderStatements.apply(db, function_id, &mut before).unwrap();
 
