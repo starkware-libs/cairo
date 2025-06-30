@@ -35,14 +35,15 @@ pub fn return_optimization(
     analysis.get_root_info();
     let ctx = analysis.analyzer;
 
+    let ReturnOptimizerContext { fixes, .. } = ctx;
     let mut variables = VariableAllocator::new(
         db,
         function_id.base_semantic_function(db).function_with_body_id(db),
-        lowered.variables.clone(),
+        std::mem::take(&mut lowered.variables),
     )
     .unwrap();
 
-    for FixInfo { location: (block_id, statement_idx), return_info } in ctx.fixes {
+    for FixInfo { location: (block_id, statement_idx), return_info } in fixes {
         let block = &mut lowered.blocks[block_id];
         block.statements.truncate(statement_idx);
         let mut ctx = EarlyReturnContext {

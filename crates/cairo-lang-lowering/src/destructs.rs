@@ -309,11 +309,12 @@ pub fn add_destructs(
         (BlockId::root(), 0),
     );
     assert!(root_demand.finalize(), "Undefined variable should not happen at this stage");
+    let DestructAdder { destructions, .. } = analysis.analyzer;
 
     let mut variables = VariableAllocator::new(
         db,
         function_id.base_semantic_function(db).function_with_body_id(db),
-        lowered.variables.clone(),
+        std::mem::take(&mut lowered.variables),
     )
     .unwrap();
 
@@ -326,8 +327,6 @@ pub fn add_destructs(
         function_id.base_semantic_function(db).function_with_body_id(db).untyped_stable_ptr(db);
 
     let location = variables.get_location(stable_ptr);
-
-    let destructions = analysis.analyzer.destructions;
 
     // We need to add the destructions in reverse order, so that they won't interfere with each
     // other.
@@ -378,7 +377,7 @@ pub fn add_destructs(
                         inputs: vec![VarUsage { var_id: plain_destruct.var_id, location }],
                         with_coupon: false,
                         outputs: vec![output_var],
-                        location: lowered.variables[plain_destruct.var_id].location,
+                        location: variables.variables[plain_destruct.var_id].location,
                     })
                 }
 
@@ -426,7 +425,7 @@ pub fn add_destructs(
 
                 let arm = &mut info.arms[1];
                 let tuple_var = &mut arm.var_ids[0];
-                let tuple_ty = lowered.variables[*tuple_var].ty;
+                let tuple_ty = variables.variables[*tuple_var].ty;
                 let new_tuple_var = variables.new_var(VarRequest { ty: tuple_ty, location });
                 let orig_tuple_var = *tuple_var;
                 *tuple_var = new_tuple_var;

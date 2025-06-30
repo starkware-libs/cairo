@@ -200,10 +200,16 @@ impl Rebuilder for Mapper<'_, '_> {
 
 impl<'db> FunctionInlinerRewriter<'db> {
     fn apply(
-        variables: VariableAllocator<'db>,
-        lowered: &Lowered,
+        db: &'db dyn LoweringGroup,
+        lowered: &mut Lowered,
         calling_function_id: ConcreteFunctionWithBodyId,
-    ) -> Maybe<Lowered> {
+    ) -> Maybe<()> {
+        let variables = VariableAllocator::new(
+            db,
+            calling_function_id.base_semantic_function(db).function_with_body_id(db),
+            std::mem::take(&mut lowered.variables),
+        )?;
+
         let mut rewriter = Self {
             variables,
             block_queue: BlockRewriteQueue {
@@ -218,7 +224,6 @@ impl<'db> FunctionInlinerRewriter<'db> {
             finalize: true,
         };
 
-        rewriter.variables.variables = lowered.variables.clone();
         while let Some(block) = rewriter.block_queue.dequeue() {
             rewriter.block_end = block.end;
             rewriter.unprocessed_statements = block.statements.into_iter();
@@ -245,13 +250,9 @@ impl<'db> FunctionInlinerRewriter<'db> {
             .map(|()| rewriter.block_queue.blocks.build().unwrap())
             .unwrap_or_else(Blocks::new_errored);
 
-        Ok(Lowered {
-            diagnostics: lowered.diagnostics.clone(),
-            variables: rewriter.variables.variables,
-            blocks,
-            parameters: lowered.parameters.clone(),
-            signature: lowered.signature.clone(),
-        })
+        lowered.variables = rewriter.variables.variables;
+        lowered.blocks = blocks;
+        Ok(())
     }
 
     /// Rewrites a statement and either appends it to self.statements or adds new statements to
@@ -345,13 +346,8 @@ pub fn apply_inlining(
     function_id: ConcreteFunctionWithBodyId,
     lowered: &mut Lowered,
 ) -> Maybe<()> {
-    let variables = VariableAllocator::new(
-        db,
-        function_id.base_semantic_function(db).function_with_body_id(db),
-        lowered.variables.clone(),
-    )?;
-    if let Ok(new_lowered) = FunctionInlinerRewriter::apply(variables, lowered, function_id) {
-        *lowered = new_lowered;
+    if let Err(diag_added) = FunctionInlinerRewriter::apply(db, lowered, function_id) {
+        lowered.blocks = Blocks::new_errored(diag_added);
     }
     Ok(())
 }
