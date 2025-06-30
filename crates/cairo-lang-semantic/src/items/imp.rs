@@ -5,12 +5,12 @@ use std::{mem, panic, vec};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, GenericKind, GenericParamId, ImplAliasId, ImplConstantDefId,
-    ImplConstantDefLongId, ImplDefId, ImplFunctionId, ImplFunctionLongId, ImplImplDefId,
-    ImplImplDefLongId, ImplItemId, ImplTypeDefId, ImplTypeDefLongId, LanguageElementId,
-    LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId, NamedLanguageElementLongId,
-    TopLevelLanguageElementId, TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitTypeId,
-    UseId,
+    FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId,
+    ImplConstantDefId, ImplConstantDefLongId, ImplDefId, ImplFunctionId, ImplFunctionLongId,
+    ImplImplDefId, ImplImplDefLongId, ImplItemId, ImplTypeDefId, ImplTypeDefLongId,
+    LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
+    NamedLanguageElementLongId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId,
+    TraitId, TraitImplId, TraitTypeId, UseId,
 };
 use cairo_lang_diagnostics::{
     DiagnosticAdded, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption, skip_diagnostic,
@@ -1728,9 +1728,17 @@ pub struct ImplLookupContext {
     pub generic_params: Vec<GenericParamId>,
 }
 impl ImplLookupContext {
-    pub fn new(module_id: ModuleId, generic_params: Vec<GenericParamId>) -> ImplLookupContext {
+    pub fn new(module_id: ModuleId, generic_params: Vec<GenericParamId>) -> Self {
         Self { modules_and_impls: [ImplOrModuleById::Module(module_id)].into(), generic_params }
     }
+
+    /// Creates the lookup context inside a given function.
+    pub fn for_function(db: &dyn SemanticGroup, function_id: FunctionWithBodyId) -> Maybe<Self> {
+        let generic_params = db.function_with_body_generic_params(function_id)?;
+        let generic_param_ids = generic_params.iter().map(|p| p.id()).collect_vec();
+        Ok(Self::new(function_id.parent_module(db), generic_param_ids))
+    }
+
     pub fn insert_lookup_scope(&mut self, db: &dyn SemanticGroup, imp: &UninferredImpl) {
         let item = match imp {
             UninferredImpl::Def(impl_def_id) => impl_def_id.module_file_id(db).0.into(),
