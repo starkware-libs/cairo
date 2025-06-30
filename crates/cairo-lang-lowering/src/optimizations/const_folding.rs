@@ -60,8 +60,6 @@ enum VarInfo {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Reachability {
-    /// The block is not reachable from the function start after const-folding.
-    Unreachable,
     /// The block is reachable from the function start only through the goto at the end of the given
     /// block.
     FromSingleGoto(BlockId),
@@ -102,14 +100,15 @@ pub fn const_folding(
         variables: &mut lowered.variables,
         libfunc_info: &libfunc_info,
         caller_base,
-        reachability: vec![Reachability::Unreachable; lowered.blocks.len()],
+        reachability: UnorderedHashMap::from_iter([(BlockId::root(), Reachability::Any)]),
         additional_stmts: vec![],
     };
 
-    ctx.reachability[0] = Reachability::Any;
     for block_id in 0..lowered.blocks.len() {
-        match ctx.reachability[block_id] {
-            Reachability::Unreachable => continue,
+        let Some(reachability) = ctx.reachability.remove(&BlockId(block_id)) else {
+            continue;
+        };
+        match reachability {
             Reachability::Any => {}
             Reachability::FromSingleGoto(from_block) => match &lowered.blocks[from_block].end {
                 BlockEnd::Goto(_, remapping) => {
@@ -126,7 +125,6 @@ pub fn const_folding(
         for stmt in block.statements.iter_mut() {
             ctx.visit_statement(stmt);
         }
-
         ctx.visit_block_end(block_id, block);
     }
 }
@@ -144,7 +142,8 @@ struct ConstFoldingContext<'a> {
     /// specialized).
     caller_base: ConcreteFunctionWithBodyId,
     /// Reachability of blocks from the function start.
-    reachability: Vec<Reachability>,
+    /// If the block is not in this map, it means that it is unreachable (or that it was already visited and its reachability won't be checked again).
+    reachability: UnorderedHashMap<BlockId, Reachability>,
     /// Additional statements to add to the block.
     additional_stmts: Vec<Statement>,
 }
@@ -333,15 +332,18 @@ impl ConstFoldingContext<'_> {
         }
         match &block.end {
             BlockEnd::Goto(dst_block_id, _) => {
-                self.reachability[dst_block_id.0] = match self.reachability[dst_block_id.0] {
-                    Reachability::Unreachable => Reachability::FromSingleGoto(BlockId(block_id)),
-                    Reachability::FromSingleGoto(_) | Reachability::Any => Reachability::Any,
-                }
+                match self.reachability.entry(*dst_block_id) {
+                    std::collections::hash_map::Entry::Occupied(mut e) => {
+                        e.insert(Reachability::Any)
+                    }
+                    std::collections::hash_map::Entry::Vacant(e) => {
+                        *e.insert(Reachability::FromSingleGoto(BlockId(block_id)))
+                    }
+                };
             }
             BlockEnd::Match { info } => {
                 for arm in info.arms() {
-                    assert_eq!(self.reachability[arm.block_id.0], Reachability::Unreachable);
-                    self.reachability[arm.block_id.0] = Reachability::Any;
+                    assert!(self.reachability.insert(arm.block_id, Reachability::Any).is_none());
                 }
             }
             BlockEnd::NotSet | BlockEnd::Return(..) | BlockEnd::Panic(..) => {}
