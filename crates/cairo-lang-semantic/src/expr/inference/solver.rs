@@ -4,8 +4,9 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_proc_macros::SemanticObject;
+use cairo_lang_utils::ordered_hash_map::Entry;
 use cairo_lang_utils::{Intern, LookupIntern};
-use itertools::{Itertools, zip_eq};
+use itertools::{Itertools, chain, zip_eq};
 
 use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, MapperError, ResultNoErrEx};
 use super::conform::InferenceConform;
@@ -20,9 +21,11 @@ use crate::items::imp::{
     ImplId, ImplImplId, ImplLongId, ImplLookupContext, UninferredImpl, find_candidates_at_context,
     find_closure_generated_candidate,
 };
-use crate::substitution::SemanticRewriter;
+use crate::substitution::{self, GenericSubstitution, SemanticRewriter};
 use crate::types::{ImplTypeById, ImplTypeId};
-use crate::{ConcreteTraitId, GenericArgumentId, TypeId, TypeLongId};
+use crate::{
+    ConcreteImplLongId, ConcreteTraitId, GenericArgumentId, GenericParam, TypeId, TypeLongId,
+};
 
 /// A generic solution set for an inference constraint system.
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -249,15 +252,37 @@ impl CandidateSolver {
             && candidate_concrete_trait.is_var_free(db)
             || candidate_concrete_trait.is_fully_concrete(db);
         let target_final = canonical_trait.id.is_var_free(db);
-        if candidate_final && target_final {
-            if candidate_concrete_trait != canonical_trait.id {
-                return Err(super::ErrorSet);
-            }
-        } else if !can_conform_generic_args(
+        let mut substitution = GenericSubstitution::default();
+        if candidate_final && target_final && candidate_concrete_trait != canonical_trait.id {
+            return Err(super::ErrorSet);
+        }
+
+        let mut res = can_conform_generic_args(
             db,
+            &mut substitution,
             (&candidate_concrete_trait.generic_args(db), candidate_final),
             (&canonical_trait.id.generic_args(db), target_final),
-        ) {
+        );
+
+        // If the candidate is a generic param, its trait is final and not substituted.
+        if matches!(candidate, UninferredImpl::GenericParam(_)) && !substitution.is_empty() {
+            return Err(super::ErrorSet);
+        }
+
+        // If the trait has trait types, we default to using inference.
+        if res == Some(true) {
+            let Ok(trait_types) = db.trait_types(canonical_trait.id.trait_id(db)) else {
+                return Err(super::ErrorSet);
+            };
+            if !trait_types.is_empty() && !canonical_trait.mappings.types.is_empty() {
+                res = None;
+            }
+        }
+
+        // Add the defining module of the candidate to the lookup.
+        let mut lookup_context = lookup_context.clone();
+        lookup_context.insert_lookup_scope(db, &candidate);
+        if let Some(false) = res {
             return Err(super::ErrorSet);
         }
 
@@ -272,9 +297,6 @@ impl CandidateSolver {
             inference.conform_traits(imp.lookup_intern(db).concrete_trait, canonical_trait.id)?;
         }
 
-        // Add the defining module of the candidate to the lookup.
-        let mut lookup_context = lookup_context.clone();
-        lookup_context.insert_lookup_scope(db, &candidate);
         // Instantiate the candidate in the inference table.
         let candidate_impl =
             inference.infer_impl(candidate, canonical_trait.id, &lookup_context, None)?;
@@ -336,46 +358,77 @@ impl CandidateSolver {
         })
     }
 }
+fn check_options<I>(iter: I) -> Option<bool>
+where
+    I: IntoIterator<Item = Option<bool>>,
+{
+    let result = iter.into_iter().try_fold(true, |acc, item| {
+        match item {
+            Some(false) => Err(false), // Early exit with false
+            Some(true) => Ok(acc),     // Continue, keep acc as true
+            None => Ok(false),         // Continue, but result will be None
+        }
+    });
+
+    match result {
+        Err(false) => Some(false), // Found Some(false)
+        Ok(true) => Some(true),    // All were Some(true)
+        Ok(false) => None,         // Had at least one None, no Some(false)
+        _ => Some(true),           // If the iterator was empty, we return Some(true)
+    }
+}
 
 /// Checks if the generic arguments of the candidate could be conformed to the generic args of the
-/// trait.
+/// trait and if the trait or the candidate contain vars (which would require solving using inference).
 fn can_conform_generic_args(
     db: &dyn SemanticGroup,
+    substitution: &mut GenericSubstitution,
     (candidate_args, candidate_final): (&[GenericArgumentId], bool),
     (target_args, target_final): (&[GenericArgumentId], bool),
-) -> bool {
-    zip_eq(candidate_args, target_args).all(|(candidate_arg, target_arg)| {
-        can_conform_generic_arg(db, (*candidate_arg, candidate_final), (*target_arg, target_final))
-    })
+) -> Option<bool> {
+    check_options(zip_eq(candidate_args, target_args).map(|(candidate_arg, target_arg)| {
+        can_conform_generic_arg(
+            db,
+            substitution,
+            (*candidate_arg, candidate_final),
+            (*target_arg, target_final),
+        )
+    }))
 }
 
 /// Checks if a [GenericArgumentId] of the candidate could be conformed to a [GenericArgumentId] of
 /// the trait.
 fn can_conform_generic_arg(
     db: &dyn SemanticGroup,
+    substitution: &mut GenericSubstitution,
     (candidate_arg, mut candidate_final): (GenericArgumentId, bool),
     (target_arg, mut target_final): (GenericArgumentId, bool),
-) -> bool {
+) -> Option<bool> {
     if candidate_arg == target_arg {
-        return true;
+        return Some(true);
     }
     candidate_final = candidate_final || candidate_arg.is_fully_concrete(db);
     target_final = target_final || target_arg.is_var_free(db);
     if candidate_final && target_final {
-        return false;
+        return Some(false);
     }
     match (candidate_arg, target_arg) {
         (GenericArgumentId::Type(candidate), GenericArgumentId::Type(target)) => {
-            can_conform_ty(db, (candidate, candidate_final), (target, target_final))
+            can_conform_ty(db, substitution, (candidate, candidate_final), (target, target_final))
         }
         (GenericArgumentId::Constant(candidate), GenericArgumentId::Constant(target)) => {
-            can_conform_const(db, (candidate, candidate_final), (target, target_final))
+            can_conform_const(
+                db,
+                substitution,
+                (candidate, candidate_final),
+                (target, target_final),
+            )
         }
         (GenericArgumentId::Impl(candidate), GenericArgumentId::Impl(target)) => {
-            can_conform_impl(db, (candidate, candidate_final), (target, target_final))
+            can_conform_impl(db, substitution, (candidate, candidate_final), (target, target_final))
         }
-        (GenericArgumentId::NegImpl, GenericArgumentId::NegImpl) => true,
-        _ => false,
+        (GenericArgumentId::NegImpl, GenericArgumentId::NegImpl) => None,
+        _ => Some(false),
     }
 }
 
@@ -383,103 +436,163 @@ fn can_conform_generic_arg(
 /// of the trait.
 fn can_conform_ty(
     db: &dyn SemanticGroup,
+    substitution: &mut GenericSubstitution,
     (candidate_ty, mut candidate_final): (TypeId, bool),
     (target_ty, mut target_final): (TypeId, bool),
-) -> bool {
+) -> Option<bool> {
     if candidate_ty == target_ty {
-        return true;
+        return Some(true);
     }
     candidate_final = candidate_final || candidate_ty.is_fully_concrete(db);
     target_final = target_final || target_ty.is_var_free(db);
     if candidate_final && target_final {
-        return false;
+        return Some(false);
     }
     let target_long_ty = target_ty.lookup_intern(db);
 
     if let TypeLongId::Var(_) = target_long_ty {
-        return true;
+        return None;
     }
 
     let long_ty_candidate = candidate_ty.lookup_intern(db);
 
     match (long_ty_candidate, target_long_ty) {
-        (TypeLongId::Concrete(candidate), TypeLongId::Concrete(target)) => {
+        (TypeLongId::Concrete(candidate), TypeLongId::Concrete(target)) => Some(
             candidate.generic_type(db) == target.generic_type(db)
                 && can_conform_generic_args(
                     db,
+                    substitution,
                     (&candidate.generic_args(db), candidate_final),
                     (&target.generic_args(db), target_final),
-                )
-        }
-        (TypeLongId::Concrete(_), _) => false,
-        (TypeLongId::Tuple(candidate_tys), TypeLongId::Tuple(target_tys)) => {
+                )?,
+        ),
+        (TypeLongId::Concrete(_), _) => Some(false),
+        (TypeLongId::Tuple(candidate_tys), TypeLongId::Tuple(target_tys)) => Some(
             candidate_tys.len() == target_tys.len()
-                && zip_eq(candidate_tys, target_tys).all(|(candidate_subty, target_subty)| {
-                    can_conform_ty(
-                        db,
-                        (candidate_subty, candidate_final),
-                        (target_subty, target_final),
-                    )
-                })
-        }
-        (TypeLongId::Tuple(_), _) => false,
+                && check_options(zip_eq(candidate_tys, target_tys).map(
+                    |(candidate_subty, target_subty)| {
+                        can_conform_ty(
+                            db,
+                            substitution,
+                            (candidate_subty, candidate_final),
+                            (target_subty, target_final),
+                        )
+                    },
+                ))?,
+        ),
+        (TypeLongId::Tuple(_), _) => Some(false),
         (TypeLongId::Closure(candidate), TypeLongId::Closure(target)) => {
             if candidate.wrapper_location != target.wrapper_location {
-                return false;
+                return Some(false);
             }
-            if !zip_eq(candidate.param_tys, target.param_tys).all(
+
+            let params_check = check_options(zip_eq(candidate.param_tys, target.param_tys).map(
                 |(candidate_subty, target_subty)| {
                     can_conform_ty(
                         db,
+                        substitution,
                         (candidate_subty, candidate_final),
                         (target_subty, target_final),
                     )
                 },
-            ) {
-                return false;
+            ));
+            if params_check == Some(false) {
+                return Some(false);
             }
-            if !zip_eq(candidate.captured_types, target.captured_types).all(
-                |(candidate_subty, target_subty)| {
-                    can_conform_ty(
-                        db,
-                        (candidate_subty, candidate_final),
-                        (target_subty, target_final),
-                    )
-                },
-            ) {
-                return false;
+            let captured_types_check =
+                check_options(zip_eq(candidate.captured_types, target.captured_types).map(
+                    |(candidate_subty, target_subty)| {
+                        can_conform_ty(
+                            db,
+                            substitution,
+                            (candidate_subty, candidate_final),
+                            (target_subty, target_final),
+                        )
+                    },
+                ));
+            if captured_types_check == Some(false) {
+                return Some(false);
             }
-            can_conform_ty(db, (candidate.ret_ty, candidate_final), (target.ret_ty, target_final))
+            let return_type_check = can_conform_ty(
+                db,
+                substitution,
+                (candidate.ret_ty, candidate_final),
+                (target.ret_ty, target_final),
+            );
+            if return_type_check == Some(false) {
+                return Some(false);
+            }
+            if params_check.is_none()
+                || captured_types_check.is_none()
+                || return_type_check.is_none()
+            {
+                return None; 
+            }
+            Some(true) 
         }
-        (TypeLongId::Closure(_), _) => false,
+        (TypeLongId::Closure(_), _) => Some(false),
         (
             TypeLongId::FixedSizeArray { type_id: candidate_type_id, size: candidate_size },
             TypeLongId::FixedSizeArray { type_id: target_type_id, size: target_size },
         ) => {
-            can_conform_const(db, (candidate_size, candidate_final), (target_size, target_final))
-                && can_conform_ty(
+            check_options([
+                can_conform_const(
                     db,
+                    substitution,
+                    (candidate_size, candidate_final),
+                    (target_size, target_final),
+                ),
+                can_conform_ty(
+                    db,
+                    substitution,
                     (candidate_type_id, candidate_final),
                     (target_type_id, target_final),
-                )
+                ),
+            ])
         }
-        (TypeLongId::FixedSizeArray { type_id: _, size: _ }, _) => false,
+        (TypeLongId::FixedSizeArray { type_id: _, size: _ }, _) => Some(false),
         (TypeLongId::Snapshot(candidate_inner_ty), TypeLongId::Snapshot(target_inner_ty)) => {
             can_conform_ty(
                 db,
+                substitution,
                 (candidate_inner_ty, candidate_final),
                 (target_inner_ty, target_final),
             )
         }
-        (TypeLongId::Snapshot(_), _) => false,
+        (TypeLongId::Snapshot(_), _) => Some(false),
+        (TypeLongId::GenericParameter(param), _) => {
+            if candidate_final {
+                return Some(false);
+            }
+            let mut res = true;
+            // if param not in substitution add it otherwise make sure it equal target_ty
+            match substitution.entry(param) {
+                Entry::Occupied(entry) => {
+                    if let GenericArgumentId::Type(existing_ty) = entry.get() {
+                        if *existing_ty != target_ty {
+                            res = false;
+                        }
+                        if !existing_ty.is_var_free(db) {
+                            return None;
+                        }
+                    } else {
+                        res = false;
+                    }
+                }
+                Entry::Vacant(e) => {
+                    e.insert(GenericArgumentId::Type(target_ty));
+                }
+            }
+
+            if target_ty.is_var_free(db) { Some(res) } else { None }
+        }
         (
-            TypeLongId::GenericParameter(_)
-            | TypeLongId::Var(_)
+            TypeLongId::Var(_)
             | TypeLongId::ImplType(_)
             | TypeLongId::Missing(_)
             | TypeLongId::Coupon(_),
             _,
-        ) => true,
+        ) => None,
     }
 }
 
@@ -487,45 +600,72 @@ fn can_conform_ty(
 /// of the trait.
 fn can_conform_impl(
     db: &dyn SemanticGroup,
+    substitution: &mut GenericSubstitution,
     (candidate_impl, mut candidate_final): (ImplId, bool),
     (target_impl, mut target_final): (ImplId, bool),
-) -> bool {
+) -> Option<bool> {
     let long_impl_trait = target_impl.lookup_intern(db);
     if candidate_impl == target_impl {
-        return true;
+        return Some(true);
     }
     candidate_final = candidate_final || candidate_impl.is_fully_concrete(db);
     target_final = target_final || target_impl.is_var_free(db);
     if candidate_final && target_final {
-        return false;
+        return Some(false);
     }
     if let ImplLongId::ImplVar(_) = long_impl_trait {
-        return true;
+        return None;
     }
     match (candidate_impl.lookup_intern(db), long_impl_trait) {
         (ImplLongId::Concrete(candidate), ImplLongId::Concrete(target)) => {
             let candidate = candidate.lookup_intern(db);
             let target = target.lookup_intern(db);
             if candidate.impl_def_id != target.impl_def_id {
-                return false;
+                return Some(false);
             }
             let candidate_args = candidate.generic_args;
             let target_args = target.generic_args;
             can_conform_generic_args(
                 db,
+                substitution,
                 (&candidate_args, candidate_final),
                 (&target_args, target_final),
             )
         }
-        (ImplLongId::Concrete(_), _) => false,
+        (ImplLongId::Concrete(_), _) => Some(false),
+        (ImplLongId::GenericParameter(param), _) => {
+            if candidate_final {
+                return Some(false);
+            }
+            let mut res = true;
+            // if param not in substitution add it otherwise make sure it equal target_ty
+            match substitution.entry(param) {
+                Entry::Occupied(entry) => {
+                    if let GenericArgumentId::Impl(existing_impl) = entry.get() {
+                        if *existing_impl != target_impl {
+                            res = false;
+                        }
+                        if !existing_impl.is_var_free(db) {
+                            return None;
+                        }
+                    } else {
+                        res = false;
+                    }
+                }
+                Entry::Vacant(e) => {
+                    e.insert(GenericArgumentId::Impl(target_impl));
+                }
+            }
+
+            if target_impl.is_var_free(db) { Some(res) } else { None }
+        }
         (
-            ImplLongId::GenericParameter(_)
-            | ImplLongId::ImplVar(_)
+            ImplLongId::ImplVar(_)
             | ImplLongId::ImplImpl(_)
             | ImplLongId::SelfImpl(_)
             | ImplLongId::GeneratedImpl(_),
             _,
-        ) => true,
+        ) => None,
     }
 }
 
@@ -533,89 +673,121 @@ fn can_conform_impl(
 /// [ConstValueId] of the trait.
 fn can_conform_const(
     db: &dyn SemanticGroup,
+    substitution: &mut GenericSubstitution,
     (candidate_id, mut candidate_final): (ConstValueId, bool),
     (target_id, mut target_final): (ConstValueId, bool),
-) -> bool {
+) -> Option<bool> {
     if candidate_id == target_id {
-        return true;
+        return Some(true);
     }
     candidate_final = candidate_final || candidate_id.is_fully_concrete(db);
     target_final = target_final || target_id.is_var_free(db);
     if candidate_final && target_final {
-        return false;
+        return Some(false);
     }
     let target_long_const = target_id.lookup_intern(db);
     if let ConstValue::Var(_, _) = target_long_const {
-        return true;
+        return None;
     }
     match (candidate_id.lookup_intern(db), target_long_const) {
         (ConstValue::Int(big_int, type_id), ConstValue::Int(target_big_int, target_type_id)) => {
             if big_int != target_big_int {
-                return false;
+                return Some(false);
             }
-            can_conform_ty(db, (type_id, candidate_final), (target_type_id, target_final))
+            can_conform_ty(
+                db,
+                substitution,
+                (type_id, candidate_final),
+                (target_type_id, target_final),
+            )
         }
-        (ConstValue::Int(_, _), _) => false,
+        (ConstValue::Int(_, _), _) => Some(false),
         (
             ConstValue::Struct(const_values, type_id),
             ConstValue::Struct(target_const_values, target_type_id),
         ) => {
             if const_values.len() != target_const_values.len() {
-                return false;
-            }
-            if !can_conform_ty(db, (type_id, candidate_final), (target_type_id, target_final)) {
-                return false;
-            }
-            zip_eq(const_values, target_const_values).all(|(const_value, target_const_value)| {
-                can_conform_const(
+                return Some(false);
+            };
+            check_options(chain!(
+                [can_conform_ty(
                     db,
-                    (const_value.intern(db), candidate_final),
-                    (target_const_value.intern(db), target_final),
+                    substitution,
+                    (type_id, candidate_final),
+                    (target_type_id, target_final)
+                )],
+                zip_eq(const_values, target_const_values).map(
+                    |(const_value, target_const_value)| {
+                        can_conform_const(
+                            db,
+                            substitution,
+                            (const_value.intern(db), candidate_final),
+                            (target_const_value.intern(db), target_final),
+                        )
+                    }
                 )
-            })
+            ))
         }
-        (ConstValue::Struct(_, _), _) => false,
+        (ConstValue::Struct(_, _), _) => Some(false),
 
         (
             ConstValue::Enum(concrete_variant, const_value),
             ConstValue::Enum(target_concrete_variant, target_const_value),
-        ) => {
-            if !can_conform_ty(
+        ) => check_options([
+            can_conform_ty(
                 db,
+                substitution,
                 (concrete_variant.ty, candidate_final),
                 (target_concrete_variant.ty, target_final),
-            ) {
-                return false;
-            }
+            ),
             can_conform_const(
                 db,
+                substitution,
                 (const_value.intern(db), candidate_final),
                 (target_const_value.intern(db), target_final),
-            )
-        }
-        (ConstValue::Enum(_, _), _) => false,
+            ),
+        ]),
+        (ConstValue::Enum(_, _), _) => Some(false),
         (ConstValue::NonZero(const_value), ConstValue::NonZero(target_const_value)) => {
             can_conform_const(
                 db,
+                substitution,
                 (const_value.intern(db), candidate_final),
                 (target_const_value.intern(db), target_final),
             )
         }
-        (ConstValue::NonZero(_), _) => false,
+        (ConstValue::NonZero(_), _) => Some(false),
         (ConstValue::Boxed(const_value), ConstValue::Boxed(target_const_value)) => {
             can_conform_const(
                 db,
+                substitution,
                 (const_value.intern(db), candidate_final),
                 (target_const_value.intern(db), target_final),
             )
         }
-        (ConstValue::Boxed(_), _) => false,
-        (
-            ConstValue::Generic(_)
-            | ConstValue::ImplConstant(_)
-            | ConstValue::Var(_, _)
-            | ConstValue::Missing(_),
-            _,
-        ) => true,
+        (ConstValue::Boxed(_), _) => Some(false),
+        (ConstValue::Generic(param), _) => {
+            let mut res = true;
+            match substitution.entry(param) {
+                Entry::Occupied(entry) => {
+                    if let GenericArgumentId::Constant(existing_const) = entry.get() {
+                        if *existing_const != target_id {
+                            res = false;
+                        }
+
+                        if !existing_const.is_var_free(db) {
+                            return None;
+                        }
+                    } else {
+                        res = false;
+                    }
+                }
+                Entry::Vacant(e) => {
+                    e.insert(GenericArgumentId::Constant(target_id));
+                }
+            }
+            if target_id.is_var_free(db) { Some(res) } else { None }
+        }
+        (ConstValue::ImplConstant(_) | ConstValue::Var(_, _) | ConstValue::Missing(_), _) => None,
     }
 }
