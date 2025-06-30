@@ -44,7 +44,7 @@ impl<T: TypedSyntaxNode> ElementList<T, 2> {
             .map(move |x| T::from_syntax_node(db, x))
     }
     pub fn has_tail(&self, db: &dyn SyntaxGroup) -> bool {
-        self.node.get_children(db).len() % 2 != 0
+        !self.node.get_children(db).len().is_multiple_of(2)
     }
 }
 
