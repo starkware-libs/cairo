@@ -11,6 +11,7 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use rayon::ThreadPool;
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -251,11 +252,11 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
     /// would be faster as the queries were already computed.
-    pub(crate) fn warm_up_diagnostics(&self, db: &RootDatabase) {
+    pub(crate) fn warm_up_diagnostics(&self, db: &RootDatabase, pool: &ThreadPool) {
         let crates = self.crates_of_interest(db);
         for crate_id in crates {
             let snapshot = salsa::ParallelDatabase::snapshot(db);
-            rayon::spawn(move || {
+            pool.spawn(move || {
                 let db = &*snapshot;
 
                 let crate_modules = db.crate_modules(crate_id);

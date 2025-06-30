@@ -19,6 +19,7 @@ use cairo_lang_sierra_generator::program_generator::{
 };
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use rayon::{ThreadPool, ThreadPoolBuilder};
 
 use crate::db::RootDatabase;
 use crate::diagnostics::DiagnosticsReporter;
@@ -206,9 +207,13 @@ fn warmup_db_blocking(
 }
 
 /// Spawns a task to warm up the db.
-fn spawn_warmup_db(db: &RootDatabase, requested_function_ids: Vec<ConcreteFunctionWithBodyId>) {
+fn spawn_warmup_db(
+    db: &RootDatabase,
+    pool: &ThreadPool,
+    requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
+) {
     let snapshot = salsa::ParallelDatabase::snapshot(db);
-    rayon::spawn(move || warmup_db_blocking(snapshot, requested_function_ids));
+    pool.spawn(move || warmup_db_blocking(snapshot, requested_function_ids));
 }
 
 ///  Checks if there are diagnostics in the database and if there are None, returns
@@ -219,9 +224,14 @@ pub fn get_sierra_program_for_functions(
     mut diagnostic_reporter: DiagnosticsReporter<'_>,
 ) -> Result<Arc<SierraProgramWithDebug>> {
     if rayon::current_num_threads() > 1 {
+        const MAX_WARMUP_PARALLELISM: usize = 4;
+        let pool = ThreadPoolBuilder::new()
+            .num_threads(rayon::current_num_threads().min(MAX_WARMUP_PARALLELISM))
+            .build()
+            .expect("failed to build rayon thread pool");
         // If we have more than one thread, we can use the other threads to warm up the db.
-        diagnostic_reporter.warm_up_diagnostics(db);
-        spawn_warmup_db(db, requested_function_ids.clone());
+        diagnostic_reporter.warm_up_diagnostics(db, &pool);
+        spawn_warmup_db(db, &pool, requested_function_ids.clone());
     }
 
     diagnostic_reporter.ensure(db)?;
