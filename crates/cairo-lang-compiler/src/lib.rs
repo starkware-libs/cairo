@@ -22,7 +22,7 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 
 use crate::db::RootDatabase;
-use crate::diagnostics::DiagnosticsReporter;
+use crate::diagnostics::{DiagnosticsError, DiagnosticsReporter};
 use crate::project::{ProjectConfig, get_main_crate_ids_from_project, setup_project};
 
 pub mod db;
@@ -154,6 +154,71 @@ pub fn compile_prepared_db(
     Ok(sierra_program_with_debug)
 }
 
+pub enum DbWarmupContext {
+    Warmup { pool: ThreadPool },
+    NoWarmup,
+}
+
+impl DbWarmupContext {
+    pub fn new() -> Self {
+        if !Self::should_warmup() {
+            return Self::NoWarmup;
+        }
+        const MAX_WARMUP_PARALLELISM: usize = 4;
+        let pool = ThreadPoolBuilder::new()
+            .num_threads(rayon::current_num_threads().min(MAX_WARMUP_PARALLELISM))
+            .build()
+            .expect("failed to build rayon thread pool");
+        Self::Warmup { pool }
+    }
+
+    fn should_warmup() -> bool {
+        rayon::current_num_threads() > 1
+    }
+
+    fn warmup_diagnostics(
+        &self,
+        db: &RootDatabase,
+        diagnostic_reporter: &mut DiagnosticsReporter<'_>,
+    ) {
+        match self {
+            Self::Warmup { pool } => diagnostic_reporter.warm_up_diagnostics(db, pool),
+            Self::NoWarmup => {}
+        }
+    }
+
+    pub fn ensure_diagnostics(
+        &self,
+        db: &RootDatabase,
+        diagnostic_reporter: &mut DiagnosticsReporter<'_>,
+    ) -> std::result::Result<(), DiagnosticsError> {
+        self.warmup_diagnostics(db, diagnostic_reporter);
+        diagnostic_reporter.ensure(db)?;
+        Ok(())
+    }
+
+    /// Spawns a task to warm up the db.
+    fn warmup_db(
+        &self,
+        db: &RootDatabase,
+        requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
+    ) {
+        match self {
+            Self::Warmup { pool } => {
+                let snapshot = salsa::ParallelDatabase::snapshot(db);
+                pool.spawn(move || warmup_db_blocking(snapshot, requested_function_ids));
+            }
+            Self::NoWarmup => {}
+        }
+    }
+}
+
+impl Default for DbWarmupContext {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Spawns threads to compute the `function_with_body_sierra` query and all dependent queries for
 /// the requested functions and their dependencies.
 ///
@@ -206,35 +271,14 @@ fn warmup_db_blocking(
     });
 }
 
-/// Spawns a task to warm up the db.
-fn spawn_warmup_db(
-    db: &RootDatabase,
-    pool: &ThreadPool,
-    requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
-) {
-    let snapshot = salsa::ParallelDatabase::snapshot(db);
-    pool.spawn(move || warmup_db_blocking(snapshot, requested_function_ids));
-}
-
 ///  Checks if there are diagnostics in the database and if there are None, returns
 ///  the [SierraProgramWithDebug] object of the requested functions
 pub fn get_sierra_program_for_functions(
     db: &RootDatabase,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
-    mut diagnostic_reporter: DiagnosticsReporter<'_>,
+    context: DbWarmupContext,
 ) -> Result<Arc<SierraProgramWithDebug>> {
-    if rayon::current_num_threads() > 1 {
-        const MAX_WARMUP_PARALLELISM: usize = 4;
-        let pool = ThreadPoolBuilder::new()
-            .num_threads(rayon::current_num_threads().min(MAX_WARMUP_PARALLELISM))
-            .build()
-            .expect("failed to build rayon thread pool");
-        // If we have more than one thread, we can use the other threads to warm up the db.
-        diagnostic_reporter.warm_up_diagnostics(db, &pool);
-        spawn_warmup_db(db, &pool, requested_function_ids.clone());
-    }
-
-    diagnostic_reporter.ensure(db)?;
+    context.warmup_db(db, requested_function_ids.clone());
     db.get_sierra_program_for_functions(requested_function_ids)
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")

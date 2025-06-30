@@ -4,7 +4,7 @@ use std::sync::Arc;
 use anyhow::{Result, ensure};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
-use cairo_lang_compiler::get_sierra_program_for_functions;
+use cairo_lang_compiler::{DbWarmupContext, get_sierra_program_for_functions};
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_filesystem::db::FilesGroup;
@@ -91,7 +91,7 @@ pub fn compile_test_prepared_db(
     db: &RootDatabase,
     tests_compilation_config: TestsCompilationConfig,
     test_crate_ids: Vec<CrateId>,
-    diagnostics_reporter: DiagnosticsReporter<'_>,
+    mut diagnostics_reporter: DiagnosticsReporter<'_>,
 ) -> Result<TestCompilation> {
     ensure!(
         tests_compilation_config.starknet
@@ -102,6 +102,9 @@ pub fn compile_test_prepared_db(
         tests_compilation_config.starknet || tests_compilation_config.contract_crate_ids.is_none(),
         "Contract crate ids can be provided only when starknet is enabled."
     );
+
+    let context = DbWarmupContext::new();
+    context.ensure_diagnostics(db, &mut diagnostics_reporter)?;
 
     let contracts = tests_compilation_config.contract_declarations.unwrap_or_else(|| {
         find_contracts(
@@ -143,7 +146,7 @@ pub fn compile_test_prepared_db(
     .collect();
 
     let SierraProgramWithDebug { program: mut sierra_program, debug_info } =
-        Arc::unwrap_or_clone(get_sierra_program_for_functions(db, func_ids, diagnostics_reporter)?);
+        Arc::unwrap_or_clone(get_sierra_program_for_functions(db, func_ids, context)?);
 
     let function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>> =
         all_entry_points
