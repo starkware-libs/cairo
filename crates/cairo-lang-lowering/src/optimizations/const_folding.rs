@@ -78,31 +78,18 @@ pub fn const_folding(
     if db.optimization_config().skip_const_folding || lowered.blocks.is_empty() {
         return;
     }
-    let libfunc_info = priv_const_folding_info(db);
-    // Skipping const-folding for `panic_with_const_felt252` - to avoid replacing a call to
-    // `panic_with_felt252` with `panic_with_const_felt252` and causing accidental recursion.
-    if function_id.base_semantic_function(db).generic_function(db)
-        == GenericFunctionWithBodyId::Free(libfunc_info.panic_with_const_felt252)
-    {
-        return;
-    }
-
-    let caller_base = match function_id.lookup_intern(db) {
-        ConcreteFunctionWithBodyLongId::Specialized(specialized_func) => specialized_func.base,
-        _ => function_id,
-    };
 
     // Note that we can keep the var_info across blocks because the lowering
     // is in static single assignment form.
-    let mut ctx = ConstFoldingContext {
-        db,
-        var_info: UnorderedHashMap::default(),
-        variables: &mut lowered.variables,
-        libfunc_info: &libfunc_info,
-        caller_base,
-        reachability: UnorderedHashMap::from_iter([(BlockId::root(), Reachability::Any)]),
-        additional_stmts: vec![],
-    };
+    let mut ctx = ConstFoldingContext::new(db, function_id, &mut lowered.variables);
+
+    // Skipping const-folding for `panic_with_const_felt252` - to avoid replacing a call to
+    // `panic_with_felt252` with `panic_with_const_felt252` and causing accidental recursion.
+    if function_id.base_semantic_function(db).generic_function(db)
+        == GenericFunctionWithBodyId::Free(ctx.libfunc_info.panic_with_const_felt252)
+    {
+        return;
+    }
 
     for block_id in 0..lowered.blocks.len() {
         let Some(reachability) = ctx.reachability.remove(&BlockId(block_id)) else {
@@ -137,7 +124,7 @@ struct ConstFoldingContext<'a> {
     /// The accumulated information about the const values of variables.
     var_info: UnorderedHashMap<VariableId, VarInfo>,
     /// The libfunc information.
-    libfunc_info: &'a ConstFoldingLibfuncInfo,
+    libfunc_info: Arc<ConstFoldingLibfuncInfo>,
     /// The specialization base of the caller function (or the caller if the function is not
     /// specialized).
     caller_base: ConcreteFunctionWithBodyId,
@@ -149,7 +136,28 @@ struct ConstFoldingContext<'a> {
     additional_stmts: Vec<Statement>,
 }
 
-impl ConstFoldingContext<'_> {
+impl<'a> ConstFoldingContext<'a> {
+    pub fn new(
+        db: &'a dyn LoweringGroup,
+        function_id: ConcreteFunctionWithBodyId,
+        variables: &'a mut Arena<Variable>,
+    ) -> Self {
+        let caller_base = match function_id.lookup_intern(db) {
+            ConcreteFunctionWithBodyLongId::Specialized(specialized_func) => specialized_func.base,
+            _ => function_id,
+        };
+
+        Self {
+            db,
+            var_info: UnorderedHashMap::default(),
+            variables,
+            libfunc_info: priv_const_folding_info(db),
+            caller_base,
+            reachability: UnorderedHashMap::from_iter([(BlockId::root(), Reachability::Any)]),
+            additional_stmts: vec![],
+        }
+    }
+
     /// Processes a statement and applies the constant folding optimizations.
     ///
     /// This method performs the following operations:
@@ -1315,7 +1323,7 @@ impl ConstFoldingLibfuncInfo {
 impl std::ops::Deref for ConstFoldingContext<'_> {
     type Target = ConstFoldingLibfuncInfo;
     fn deref(&self) -> &ConstFoldingLibfuncInfo {
-        self.libfunc_info
+        &self.libfunc_info
     }
 }
 
