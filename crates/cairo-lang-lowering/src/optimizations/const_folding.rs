@@ -33,9 +33,10 @@ use crate::ids::{
 };
 use crate::specialization::SpecializationArg;
 use crate::{
-    BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, Statement,
-    StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct, StatementSnapshot,
-    StatementStructConstruct, StatementStructDestructure, VarUsage, Variable, VariableId,
+    Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
+    Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
+    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarUsage, Variable,
+    VariableId,
 };
 
 /// Keeps track of equivalent values that a variables might be replaced with.
@@ -91,24 +92,12 @@ pub fn const_folding(
         return;
     }
 
-    for block_id in 0..lowered.blocks.len() {
-        let Some(reachability) = ctx.reachability.remove(&BlockId(block_id)) else {
+    for block_id in (0..lowered.blocks.len()).map(BlockId) {
+        if !ctx.visit_block_start(block_id, |block_id| &lowered.blocks[block_id]) {
             continue;
-        };
-        match reachability {
-            Reachability::Any => {}
-            Reachability::FromSingleGoto(from_block) => match &lowered.blocks[from_block].end {
-                BlockEnd::Goto(_, remapping) => {
-                    for (dst, src) in remapping.iter() {
-                        if let Some(v) = ctx.as_const(src.var_id) {
-                            ctx.var_info.insert(*dst, VarInfo::Const(v.clone()));
-                        }
-                    }
-                }
-                _ => unreachable!("Expected a goto end"),
-            },
         }
-        let block = &mut lowered.blocks[BlockId(block_id)];
+
+        let block = &mut lowered.blocks[block_id];
         for stmt in block.statements.iter_mut() {
             ctx.visit_statement(stmt);
         }
@@ -154,6 +143,32 @@ impl<'a> ConstFoldingContext<'a> {
             reachability: UnorderedHashMap::from_iter([(BlockId::root(), Reachability::Any)]),
             additional_stmts: vec![],
         }
+    }
+
+    /// Determines if a block is reachable from the function start and propagates constant values
+    /// when the block is reachable via a single goto statement.
+    fn visit_block_start<'b>(
+        &mut self,
+        block_id: BlockId,
+        get_block: impl FnOnce(BlockId) -> &'b Block,
+    ) -> bool {
+        let Some(reachability) = self.reachability.remove(&block_id) else {
+            return false;
+        };
+        match reachability {
+            Reachability::Any => {}
+            Reachability::FromSingleGoto(from_block) => match &get_block(from_block).end {
+                BlockEnd::Goto(_, remapping) => {
+                    for (dst, src) in remapping.iter() {
+                        if let Some(v) = self.as_const(src.var_id) {
+                            self.var_info.insert(*dst, VarInfo::Const(v.clone()));
+                        }
+                    }
+                }
+                _ => unreachable!("Expected a goto end"),
+            },
+        }
+        true
     }
 
     /// Processes a statement and applies the constant folding optimizations.
@@ -272,7 +287,7 @@ impl<'a> ConstFoldingContext<'a> {
     /// - Inserts the accumulated additional statements into the block.
     /// - Converts match endings to goto when applicable.
     /// - Updates self.reachability based on the block's ending.
-    fn visit_block_end(&mut self, block_id: usize, block: &mut crate::Block) {
+    fn visit_block_end(&mut self, block_id: BlockId, block: &mut crate::Block) {
         block.statements.splice(0..0, self.additional_stmts.drain(..));
 
         match &mut block.end {
@@ -344,7 +359,7 @@ impl<'a> ConstFoldingContext<'a> {
                         e.insert(Reachability::Any)
                     }
                     std::collections::hash_map::Entry::Vacant(e) => {
-                        *e.insert(Reachability::FromSingleGoto(BlockId(block_id)))
+                        *e.insert(Reachability::FromSingleGoto(block_id))
                     }
                 };
             }
