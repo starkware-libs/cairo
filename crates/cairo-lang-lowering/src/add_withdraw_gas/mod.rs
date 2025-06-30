@@ -95,8 +95,9 @@ fn create_panic_block(
     let mut variables = VariableAllocator::new(
         db,
         function.base_semantic_function(db).function_with_body_id(db),
-        lowered.variables.clone(),
-    )?;
+        std::mem::take(&mut lowered.variables),
+    )
+    .unwrap();
     let never_ty = never_ty(db);
     let never_var = variables.new_var(VarRequest { ty: never_ty, location });
     lowered.variables = variables.variables;

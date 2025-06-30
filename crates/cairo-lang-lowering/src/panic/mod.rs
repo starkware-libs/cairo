@@ -43,8 +43,9 @@ pub fn lower_panics(
     let variables = VariableAllocator::new(
         db,
         function_id.base_semantic_function(db).function_with_body_id(db),
-        lowered.variables.clone(),
-    )?;
+        std::mem::take(&mut lowered.variables),
+    )
+    .unwrap();
 
     let opt_trace_fn = if matches!(
         db.get_flag(FlagId::new(db, "panic_backtrace")),

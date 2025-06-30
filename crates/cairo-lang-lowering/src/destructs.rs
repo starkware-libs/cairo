@@ -309,11 +309,12 @@ pub fn add_destructs(
         (BlockId::root(), 0),
     );
     assert!(root_demand.finalize(), "Undefined variable should not happen at this stage");
+    let DestructAdder { destructions, .. } = analysis.analyzer;
 
     let mut variables = VariableAllocator::new(
         db,
         function_id.base_semantic_function(db).function_with_body_id(db),
-        lowered.variables.clone(),
+        std::mem::take(&mut lowered.variables),
     )
     .unwrap();
 
@@ -326,8 +327,6 @@ pub fn add_destructs(
         function_id.base_semantic_function(db).function_with_body_id(db).untyped_stable_ptr(db);
 
     let location = variables.get_location(stable_ptr);
-
-    let destructions = analysis.analyzer.destructions;
 
     // We need to add the destructions in reverse order, so that they won't interfere with each
     // other.
