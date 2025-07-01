@@ -645,6 +645,75 @@ fn compute_expr_inline_macro_semantic(
     Ok(expr.expr)
 }
 
+/// Computes the semantic model of a tail expression, handling inline macros recursively.
+/// Returns Ok(Some(expr_id)) for a valid tail, Ok(None) for no tail, or Err for diagnostics.
+fn compute_tail_semantic(
+    ctx: &mut ComputationContext<'_>,
+    tail: Option<&ast::Expr>,
+) -> Maybe<Option<ExprId>> {
+    match tail {
+        None => Ok(None),
+        Some(ast::Expr::InlineMacro(inline_macro_syntax)) => {
+            let InlineMacroExpansion { content, name, code_mappings, is_plugin_macro: _ } =
+                expand_inline_macro(ctx, inline_macro_syntax)?;
+            let new_file_id = FileLongId::Virtual(VirtualFile {
+                parent: Some(inline_macro_syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
+                name: name.clone().into(),
+                content: content.clone(),
+                code_mappings: code_mappings.clone(),
+                kind: FileKind::StatementList,
+                original_item_removed: true,
+            })
+            .intern(ctx.db);
+            let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
+            if let Err(diag_added) = parser_diagnostics.check_error_free() {
+                for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db.elongate())
+                {
+                    ctx.diagnostics.report(
+                        inline_macro_syntax.stable_ptr(ctx.db),
+                        SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
+                    );
+                }
+                return Err(diag_added);
+            }
+            let statement_list = ctx.db.file_statement_list_syntax(new_file_id)?;
+            let (parsed_statements, new_tail) = statements_and_tail(ctx.db, statement_list);
+            let mut statements_semantic = vec![];
+            compute_statements_semantic_and_extend(
+                ctx,
+                parsed_statements,
+                &mut statements_semantic,
+            );
+            compute_tail_semantic(ctx, new_tail.as_ref())
+        }
+        Some(expr) => {
+            let expr_and_id = compute_expr_semantic(ctx, expr);
+            Ok(Some(expr_and_id.id))
+        }
+    }
+}
+
+/// Computes the semantic model for a tail expression and returns its ExprAndId if present.
+fn compute_tail_semantic_expr_and_id(
+    ctx: &mut ComputationContext<'_>,
+    tail: Option<&ast::Expr>,
+) -> Option<ExprAndId> {
+    match tail {
+        Some(tail_expr) => match compute_tail_semantic(ctx, Some(tail_expr)) {
+            Ok(Some(expr_id)) => {
+                let expr = ctx.arenas.exprs[expr_id].clone();
+                Some(ExprAndId { id: expr_id, expr })
+            }
+            Ok(None) => None,
+            Err(diag) => {
+                let expr = wrap_maybe_with_missing(ctx, Err(diag), tail_expr.stable_ptr(ctx.db));
+                Some(ExprAndId { id: ctx.arenas.exprs.alloc(expr.clone()), expr })
+            }
+        },
+        None => None,
+    }
+}
+
 /// Expands an inline macro used in statement position, computes its semantic model, and extends
 /// `statements` with it.
 fn expand_macro_for_statement(
@@ -1384,11 +1453,11 @@ pub fn compute_expr_block_semantic(
         compute_statements_semantic_and_extend(new_ctx, statements, &mut statements_semantic);
 
         // Convert tail expression (if exists) to semantic model.
-        let tail_semantic_expr = tail.map(|tail_expr| compute_expr_semantic(new_ctx, &tail_expr));
+        let tail_semantic_expr = compute_tail_semantic_expr_and_id(new_ctx, tail.as_ref());
         let ty = block_ty(new_ctx, &statements_semantic, &tail_semantic_expr);
         Ok(Expr::Block(ExprBlock {
             statements: statements_semantic,
-            tail: tail_semantic_expr.map(|expr| expr.id),
+            tail: tail_semantic_expr.as_ref().map(|expr| expr.id),
             ty,
             stable_ptr: syntax.stable_ptr(db).into(),
         }))
@@ -1938,8 +2007,10 @@ fn compute_loop_body_semantic(
         // Convert statements to semantic model.
         let mut statements_semantic = vec![];
         compute_statements_semantic_and_extend(new_ctx, statements, &mut statements_semantic);
-        let tail = tail.map(|tail| compute_expr_semantic(new_ctx, &tail));
-        if let Some(tail) = &tail {
+
+        // Convert tail expression (if exists) to semantic model.
+        let tail_semantic_expr = compute_tail_semantic_expr_and_id(new_ctx, tail.as_ref());
+        if let Some(tail) = &tail_semantic_expr {
             if !tail.ty().is_missing(db) && !tail.ty().is_unit(db) && tail.ty() != never_ty(db) {
                 new_ctx.diagnostics.report(tail.deref(), TailExpressionNotAllowedInLoop);
             }
@@ -1948,7 +2019,7 @@ fn compute_loop_body_semantic(
         let inner_ctx = std::mem::replace(&mut new_ctx.inner_ctx, old_inner_ctx).unwrap();
         let body = new_ctx.arenas.exprs.alloc(Expr::Block(ExprBlock {
             statements: statements_semantic,
-            tail: tail.map(|tail| tail.id),
+            tail: tail_semantic_expr.as_ref().map(|expr| expr.id),
             ty: unit_ty(db),
             stable_ptr: syntax.stable_ptr(db).into(),
         }));
@@ -2100,11 +2171,11 @@ fn compute_closure_body_semantic(
     let mut statements_semantic = vec![];
     compute_statements_semantic_and_extend(ctx, statements, &mut statements_semantic);
     // Convert tail expression (if exists) to semantic model.
-    let tail_semantic_expr = tail.map(|tail_expr| compute_expr_semantic(ctx, &tail_expr));
+    let tail_semantic_expr = compute_tail_semantic_expr_and_id(ctx, tail.as_ref());
     let ty = block_ty(ctx, &statements_semantic, &tail_semantic_expr);
     ctx.arenas.exprs.alloc(Expr::Block(ExprBlock {
         statements: statements_semantic,
-        tail: tail_semantic_expr.map(|expr| expr.id),
+        tail: tail_semantic_expr.as_ref().map(|expr| expr.id),
         ty,
         stable_ptr: syntax.stable_ptr(db).into(),
     }))
