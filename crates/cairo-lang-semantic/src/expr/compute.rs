@@ -1457,25 +1457,31 @@ impl FlowMergeTypeHelper {
             return false;
         }
 
-        if ty != self.never_type && !ty.is_missing(db) {
-            if let Some(pending) = &self.final_type {
-                if let Err(err_set) = inference.conform_ty(ty, *pending) {
-                    let diag_added = diagnostics.report(
-                        stable_ptr,
-                        IncompatibleArms {
-                            multi_arm_expr_kind: self.multi_arm_expr_kind,
-                            pending_ty: *pending,
-                            different_ty: ty,
-                        },
-                    );
-                    inference.consume_reported_error(err_set, diag_added);
-                    self.had_merge_error = true;
-                    return false;
-                }
-            } else {
-                self.final_type = Some(ty);
-            }
+        // Merging of never type if forbidden in loops but not in other multi-arm expressions.
+        if (ty == never_ty(db) && self.multi_arm_expr_kind != MultiArmExprKind::Loop)
+            || ty.is_missing(db)
+        {
+            return true;
         }
+
+        if let Some(pending) = &self.final_type {
+            if let Err(err_set) = inference.conform_ty(ty, *pending) {
+                let diag_added = diagnostics.report(
+                    stable_ptr,
+                    IncompatibleArms {
+                        multi_arm_expr_kind: self.multi_arm_expr_kind,
+                        pending_ty: *pending,
+                        different_ty: ty,
+                    },
+                );
+                inference.consume_reported_error(err_set, diag_added);
+                self.had_merge_error = true;
+                return false;
+            }
+        } else {
+            self.final_type = Some(ty);
+        }
+
         true
     }
 
