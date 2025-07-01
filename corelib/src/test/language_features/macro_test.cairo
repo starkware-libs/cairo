@@ -389,3 +389,40 @@ fn test_defsite_inference() {
     let z: defsite_inference::A = defsite_inference::use_local_impl_inference!(5);
     assert_eq!(y.x, z.x);
 }
+
+macro inner_macro {
+    () => {
+        123
+    };
+}
+
+macro outer_macro {
+    () => {
+        inner_macro!()
+    };
+}
+
+macro block_statement_and_tail {
+    () => {
+        let _y = 5;
+        42
+    };
+}
+
+#[test]
+fn test_macro_in_statement_position() {
+    let _x = 1;
+    outer_macro!();
+}
+
+#[test]
+fn test_macro_in_tail_position() -> felt252 {
+    let _x = 1;
+    outer_macro!()
+}
+
+
+#[test]
+fn test_macro_in_statement_position_expands_with_tail() {
+    block_statement_and_tail!();
+}
