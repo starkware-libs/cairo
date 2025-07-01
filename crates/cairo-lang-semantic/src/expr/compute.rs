@@ -505,6 +505,7 @@ fn expand_inline_macro(
                 | SyntaxKind::ImplItemMissing
                 | SyntaxKind::TokenMissing
                 | SyntaxKind::TokenSkipped
+                | SyntaxKind::WrappedTokenTreeMissing
         )
     }) {
         return Err(skip_diagnostic());
