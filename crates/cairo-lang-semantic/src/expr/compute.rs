@@ -1408,6 +1408,13 @@ pub fn compute_root_expr(
     syntax: &ast::ExprBlock,
     return_type: TypeId,
 ) -> Maybe<ExprId> {
+    let x = if let ContextFunction::Function(Ok(x)) = ctx.function_id {
+        format!("{:?}", x.debug(ctx.db.elongate()))
+    } else {
+        "Global".into()
+    };
+    println!("compute root expr for function: {x}");
+    let start = std::time::Instant::now();
     // Conform TypeEqual constraints for Associated type bounds.
     let inference = &mut ctx.resolver.data.inference_data.inference(ctx.db);
     for param in &ctx.resolver.data.generic_params {
@@ -1455,6 +1462,8 @@ pub fn compute_root_expr(
     if ctx.signature.map(|s| s.is_const) == Some(true) {
         validate_const_expr(ctx, res);
     }
+    let end = std::time::Instant::now();
+    println!("compute root expr for function: {x} took {} ms", (end - start).as_millis());
     Ok(res)
 }
 
