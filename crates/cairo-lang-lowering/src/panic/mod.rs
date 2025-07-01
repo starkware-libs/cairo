@@ -40,11 +40,6 @@ pub fn lower_panics(
     if !db.function_with_body_may_panic(function_id)? {
         return Ok(());
     }
-    let variables = VariableAllocator::new(
-        db,
-        function_id.base_semantic_function(db).function_with_body_id(db),
-        lowered.variables.clone(),
-    )?;
 
     let opt_trace_fn = if matches!(
         db.get_flag(FlagId::new(db, "panic_backtrace")),
@@ -78,6 +73,12 @@ pub fn lower_panics(
     // All types should be fully concrete at this point.
     assert!(signature.is_fully_concrete(db));
     let panic_info = PanicSignatureInfo::new(db, &signature);
+    let variables = VariableAllocator::new(
+        db,
+        function_id.base_semantic_function(db).function_with_body_id(db),
+        std::mem::take(&mut lowered.variables),
+    )
+    .unwrap();
     let mut ctx = PanicLoweringContext {
         variables,
         block_queue: VecDeque::from(lowered.blocks.get().clone()),
