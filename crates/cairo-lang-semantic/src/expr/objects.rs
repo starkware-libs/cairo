@@ -318,10 +318,13 @@ pub struct ExprWhile {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprFor {
+    /// The expression that represents the `self` argument passed to the `into_iter` function call,
+    /// might include calls to deref().
+    pub into_iter_self_expr_id: ExprId,
     pub into_iter: FunctionId,
-    pub into_iter_member_path: ExprVarMemberPath,
+    /// The variable that holds the iterator.
+    pub iterator_var_expr: ExprVar,
     pub next_function_id: FunctionId,
-    pub expr_id: ExprId,
     pub pattern: PatternId,
     pub body: ExprId,
     pub ty: semantic::TypeId,

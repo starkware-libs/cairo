@@ -3,7 +3,6 @@
 
 use cairo_lang_defs::ids::MemberId;
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use id_arena::Arena;
@@ -285,19 +284,16 @@ impl Usages {
                 self.usages.insert(expr_id, usage);
             }
             Expr::For(expr) => {
-                self.handle_expr(arenas, expr.expr_id, current);
-                current.introductions.insert(
-                    extract_matches!(&expr.into_iter_member_path, ExprVarMemberPath::Var).var,
-                );
+                self.handle_expr(arenas, expr.into_iter_self_expr_id, current);
+
+                current.introductions.insert(expr.iterator_var_expr.var);
                 let mut usage: Usage = Default::default();
-                usage.usage.insert(
-                    (&expr.into_iter_member_path).into(),
-                    expr.into_iter_member_path.clone(),
-                );
-                usage.changes.insert(
-                    (&expr.into_iter_member_path).into(),
-                    expr.into_iter_member_path.clone(),
-                );
+
+                let iterator_member_path = MemberPath::Var(expr.iterator_var_expr.var);
+                let iterator_member_path_expr =
+                    ExprVarMemberPath::Var(expr.iterator_var_expr.clone());
+                usage.usage.insert(iterator_member_path.clone(), iterator_member_path_expr.clone());
+                usage.changes.insert(iterator_member_path, iterator_member_path_expr);
                 Self::handle_pattern(&arenas.patterns, expr.pattern, &mut usage);
                 self.handle_expr(arenas, expr.body, &mut usage);
                 usage.finalize_as_scope();
