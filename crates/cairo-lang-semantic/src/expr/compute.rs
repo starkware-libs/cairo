@@ -2732,7 +2732,7 @@ fn maybe_compute_tuple_like_pattern_semantic(
         }
     };
     let patterns_syntax = match pattern_syntax {
-        ast::Pattern::Tuple(pattern_tuple) => pattern_tuple.patterns(ctx.db).elements_vec(ctx.db),
+        ast::Pattern::Tuple(pattern_tuple) => pattern_tuple.patterns(db).elements_vec(db),
         ast::Pattern::FixedSizeArray(pattern_fixed_size_array) => {
             pattern_fixed_size_array.patterns(db).elements_vec(db)
         }
@@ -2741,13 +2741,12 @@ fn maybe_compute_tuple_like_pattern_semantic(
     let inner_tys = match long_ty {
         TypeLongId::Tuple(inner_tys) => inner_tys,
         TypeLongId::FixedSizeArray { type_id: inner_ty, size } => {
-            let size = if let ConstValue::Int(value, _) = size.lookup_intern(ctx.db) {
+            let size = if let ConstValue::Int(value, _) = size.lookup_intern(db) {
                 value.to_usize().expect("Fixed sized array size must always be usize.")
             } else {
                 let inference = &mut ctx.resolver.inference();
                 let expected_size =
-                    ConstValue::Int(patterns_syntax.len().into(), get_usize_ty(ctx.db))
-                        .intern(ctx.db);
+                    ConstValue::Int(patterns_syntax.len().into(), get_usize_ty(db)).intern(db);
                 if let Err(err) = inference.conform_const(size, expected_size) {
                     let _ = inference.report_on_pending_error(
                         err,
@@ -2774,12 +2773,12 @@ fn maybe_compute_tuple_like_pattern_semantic(
                     vec![var; patterns_syntax.len()],
                     TypeLongId::FixedSizeArray {
                         type_id: var,
-                        size: ConstValue::Int(patterns_syntax.len().into(), get_usize_ty(ctx.db))
-                            .intern(ctx.db),
+                        size: ConstValue::Int(patterns_syntax.len().into(), get_usize_ty(db))
+                            .intern(db),
                     },
                 )
             };
-            match inference.conform_ty(ty, tuple_like_ty.intern(ctx.db)) {
+            match inference.conform_ty(long_ty.intern(db), tuple_like_ty.intern(db)) {
                 Ok(_) => {}
                 Err(_) => unreachable!("As the type is a var, conforming should always succeed."),
             }
@@ -2795,7 +2794,7 @@ fn maybe_compute_tuple_like_pattern_semantic(
         ));
     }
     let pattern_options = zip_eq(patterns_syntax, inner_tys).map(|(pattern_ast, ty)| {
-        let ty = wrap_in_snapshots(ctx.db, ty, n_snapshots);
+        let ty = wrap_in_snapshots(db, ty, n_snapshots);
         let pattern = compute_pattern_semantic(ctx, &pattern_ast, ty, or_pattern_variables_map);
         Ok(pattern.id)
     });
