@@ -1810,10 +1810,7 @@ fn compute_expr_for_semantic(
 ) -> Maybe<Expr> {
     let db = ctx.db;
     let expr_ptr = syntax.expr(db).stable_ptr(db);
-
     let expr = compute_expr_semantic(ctx, &syntax.expr(db));
-    let expr_id = expr.id;
-
     let into_iterator_trait = ctx.db.core_info().into_iterator_trt;
 
     let (into_iterator_function_id, _, fixed_into_iter_var, into_iter_mutability) =
@@ -1839,6 +1836,7 @@ fn compute_expr_for_semantic(
                 )
             },
         )?;
+    let expr_id = fixed_into_iter_var.id;
     let into_iter_call = expr_function_call(
         ctx,
         into_iterator_function_id,
