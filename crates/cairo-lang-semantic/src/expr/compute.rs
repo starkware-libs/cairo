@@ -1836,7 +1836,7 @@ fn compute_expr_for_semantic(
                 )
             },
         )?;
-    let expr_id = fixed_into_iter_var.id;
+    let into_iter_self_expr_id = fixed_into_iter_var.id;
     let into_iter_call = expr_function_call(
         ctx,
         into_iterator_function_id,
@@ -1848,18 +1848,13 @@ fn compute_expr_for_semantic(
     let into_iter_variable =
         LocalVarLongId(ctx.resolver.module_file_id, syntax.identifier(db).stable_ptr(db))
             .intern(ctx.db);
+    let iterator_expr = Expr::Var(ExprVar {
+        var: VarId::Local(into_iter_variable),
+        ty: into_iter_call.ty(),
+        stable_ptr: into_iter_call.stable_ptr(),
+    });
 
-    let into_iter_expr = Expr::Var(ExprVar {
-        var: VarId::Local(into_iter_variable),
-        ty: into_iter_call.ty(),
-        stable_ptr: into_iter_call.stable_ptr(),
-    });
-    let into_iter_member_path = ExprVarMemberPath::Var(ExprVar {
-        var: VarId::Local(into_iter_variable),
-        ty: into_iter_call.ty(),
-        stable_ptr: into_iter_call.stable_ptr(),
-    });
-    let into_iter_expr_id = ctx.arenas.exprs.alloc(into_iter_expr.clone());
+    let iterator_expr_id = ctx.arenas.exprs.alloc(iterator_expr.clone());
 
     let iterator_trait = ctx.db.core_info().iterator_trt;
 
@@ -1867,7 +1862,7 @@ fn compute_expr_for_semantic(
         ctx,
         &[iterator_trait],
         "next".into(),
-        ExprAndId { expr: into_iter_expr, id: into_iter_expr_id },
+        ExprAndId { expr: iterator_expr, id: iterator_expr_id },
         expr_ptr.into(),
         None,
         |ty, _, inference_errors| {
@@ -1909,9 +1904,13 @@ fn compute_expr_for_semantic(
     });
     Ok(Expr::For(ExprFor {
         into_iter: into_iterator_function_id,
-        into_iter_member_path,
+        iterator_var_expr: ExprVar {
+            var: VarId::Local(into_iter_variable),
+            ty: into_iter_call.ty(),
+            stable_ptr: into_iter_call.stable_ptr(),
+        },
         next_function_id,
-        expr_id,
+        into_iter_self_expr_id,
         pattern,
         body: body_id,
         ty: unit_ty(ctx.db),
