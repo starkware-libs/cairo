@@ -16,7 +16,9 @@ use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError,
 use crate::ids::LocationId;
 use crate::lower::context::VarRequest;
 use crate::lower::lower_match::{self, MatchArmWrapper};
-use crate::lower::{create_subscope, lower_block, lower_expr, lower_expr_to_var_usage};
+use crate::lower::{
+    alloc_empty_block, create_subscope, lower_block, lower_expr, lower_expr_to_var_usage,
+};
 use crate::{BlockEnd, MatchArm, MatchEnumInfo, MatchInfo, VarRemapping};
 
 /// Represents an expression of the form:
@@ -144,8 +146,9 @@ fn handle_if_with_else_block(
 
         // Lower the content of the else block and seal it.
         // TODO: remove lower_optional_else_block.
-        let block_else = lower_optional_else_block(ctx, subscope_else, Some(else_block), else_location)
-            .map_err(LoweringFlowError::Failed)?;
+        let block_else =
+            lower_optional_else_block(ctx, subscope_else, Some(else_block), else_location)
+                .map_err(LoweringFlowError::Failed)?;
 
         final_sealed_blocks.push(block_else);
     }
@@ -185,17 +188,20 @@ fn lower_if_bool_condition(
         .map_err(LoweringFlowError::Failed)?;
 
     // Else block.
-    let subscope_else = create_subscope(ctx, builder);
-    let block_else_id = subscope_else.block_id;
-
     let else_block_input_var_id =
         ctx.new_var(VarRequest { ty: unit_ty, location: condition_location });
 
     let mut blocks_to_seal = vec![block_main];
 
-    if let Some(tracker) = inner_expr.else_block_tracker {
+    let block_else_id = if let Some(tracker) = inner_expr.else_block_tracker {
+        let subscope_else = builder.sibling_block_builder(alloc_empty_block(ctx));
+        let block_else_id = subscope_else.block_id;
+
         tracker.extend_block_builders([subscope_else.goto_callsite(None)]);
+        block_else_id
     } else {
+        let subscope_else = builder.child_block_builder(alloc_empty_block(ctx));
+        let block_else_id = subscope_else.block_id;
         let else_block = lowered_expr_to_block_scope_end(
             ctx,
             subscope_else,
@@ -203,7 +209,8 @@ fn lower_if_bool_condition(
         )
         .map_err(LoweringFlowError::Failed)?;
         blocks_to_seal.push(else_block);
-    }
+        block_else_id
+    };
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: corelib::core_bool_enum(db),

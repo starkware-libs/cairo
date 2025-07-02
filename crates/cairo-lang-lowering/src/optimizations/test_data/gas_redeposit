@@ -58,12 +58,12 @@ End:
 blk3:
 Statements:
 End:
-  Goto(blk6, {})
+  Goto(blk6, {v1 -> v11})
 
 blk4:
 Statements:
 End:
-  Goto(blk7, {v1 -> v13, v10 -> v12})
+  Goto(blk7, {v1 -> v14, v10 -> v13})
 
 blk5:
 Statements:
@@ -72,14 +72,14 @@ End:
 
 blk6:
 Statements:
-  (v11: core::felt252) <- test::heavy_op2()
+  (v12: core::felt252) <- test::heavy_op2()
 End:
-  Goto(blk7, {v0 -> v13, v11 -> v12})
+  Goto(blk7, {v11 -> v14, v12 -> v13})
 
 blk7:
 Statements:
 End:
-  Return(v12)
+  Return(v13)
 
 //! > after
 Parameters: v0: core::felt252
@@ -109,12 +109,12 @@ End:
 blk3:
 Statements:
 End:
-  Goto(blk6, {})
+  Goto(blk6, {v1 -> v11})
 
 blk4:
 Statements:
 End:
-  Goto(blk7, {v1 -> v13, v10 -> v12})
+  Goto(blk7, {v1 -> v14, v10 -> v13})
 
 blk5:
 Statements:
@@ -123,14 +123,14 @@ End:
 
 blk6:
 Statements:
-  (v11: core::felt252) <- test::heavy_op2()
+  (v12: core::felt252) <- test::heavy_op2()
 End:
-  Goto(blk7, {v0 -> v13, v11 -> v12})
+  Goto(blk7, {v11 -> v14, v12 -> v13})
 
 blk7:
 Statements:
 End:
-  Return(v12)
+  Return(v13)
 
 //! > ==========================================================================
 
@@ -192,12 +192,12 @@ End:
 blk3:
 Statements:
 End:
-  Goto(blk6, {})
+  Goto(blk6, {v1 -> v11})
 
 blk4:
 Statements:
 End:
-  Goto(blk7, {v1 -> v13, v10 -> v12})
+  Goto(blk7, {v1 -> v14, v10 -> v13})
 
 blk5:
 Statements:
@@ -206,14 +206,14 @@ End:
 
 blk6:
 Statements:
-  (v11: core::felt252) <- test::heavy_op2()
+  (v12: core::felt252) <- test::heavy_op2()
 End:
-  Goto(blk7, {v0 -> v13, v11 -> v12})
+  Goto(blk7, {v11 -> v14, v12 -> v13})
 
 blk7:
 Statements:
 End:
-  Return(v12)
+  Return(v13)
 
 //! > after
 Parameters: v0: core::felt252
@@ -245,12 +245,12 @@ blk3:
 Statements:
   () <- core::gas::redeposit_gas()
 End:
-  Goto(blk6, {})
+  Goto(blk6, {v1 -> v11})
 
 blk4:
 Statements:
 End:
-  Goto(blk7, {v1 -> v13, v10 -> v12})
+  Goto(blk7, {v1 -> v14, v10 -> v13})
 
 blk5:
 Statements:
@@ -259,13 +259,13 @@ End:
 
 blk6:
 Statements:
-  (v11: core::felt252) <- test::heavy_op2()
+  (v12: core::felt252) <- test::heavy_op2()
 End:
-  Goto(blk7, {v0 -> v13, v11 -> v12})
+  Goto(blk7, {v11 -> v14, v12 -> v13})
 
 blk7:
 Statements:
 End:
-  Return(v12)
+  Return(v13)
 
 //! > lowering_diagnostics

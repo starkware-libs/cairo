@@ -623,48 +623,48 @@ Statements:
   (v18: core::felt252, v19: (core::felt252, core::felt252)) <- test::get_tuple::<(core::felt252, core::felt252)>()
   (v20: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v18, v19)
 End:
-  Goto(blk6, {v0 -> v21, v20 -> v22})
+  Goto(blk6, {v20 -> v21})
 
 blk5:
 Statements:
-  (v23: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v2, v1)
+  (v22: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v2, v1)
 End:
-  Goto(blk6, {v2 -> v21, v23 -> v22})
+  Goto(blk6, {v22 -> v21})
 
 blk6:
 Statements:
-  (v24: core::felt252, v25: @core::felt252) <- snapshot(v21)
-  (v26: core::felt252) <- 0
-  (v27: core::felt252, v28: @core::felt252) <- snapshot(v26)
-  (v29: core::felt252) <- desnap(v25)
-  (v30: core::felt252) <- desnap(v28)
-  (v31: core::felt252) <- core::felt252_sub(v29, v30)
+  (v23: core::felt252, v24: @core::felt252) <- snapshot(v2)
+  (v25: core::felt252) <- 0
+  (v26: core::felt252, v27: @core::felt252) <- snapshot(v25)
+  (v28: core::felt252) <- desnap(v24)
+  (v29: core::felt252) <- desnap(v27)
+  (v30: core::felt252) <- core::felt252_sub(v28, v29)
 End:
-  Match(match core::felt252_is_zero(v31) {
+  Match(match core::felt252_is_zero(v30) {
     IsZeroResult::Zero => blk7,
-    IsZeroResult::NonZero(v32) => blk8,
+    IsZeroResult::NonZero(v31) => blk8,
   })
 
 blk7:
 Statements:
-  (v33: ()) <- struct_construct()
-  (v34: core::bool) <- bool::True(v33)
+  (v32: ()) <- struct_construct()
+  (v33: core::bool) <- bool::True(v32)
 End:
-  Goto(blk9, {v34 -> v35})
+  Goto(blk9, {v33 -> v34})
 
 blk8:
 Statements:
-  (v36: ()) <- struct_construct()
-  (v37: core::bool) <- bool::False(v36)
+  (v35: ()) <- struct_construct()
+  (v36: core::bool) <- bool::False(v35)
 End:
-  Goto(blk9, {v37 -> v35})
+  Goto(blk9, {v36 -> v34})
 
 blk9:
 Statements:
 End:
-  Match(match_enum(v35) {
-    bool::False(v38) => blk10,
-    bool::True(v39) => blk11,
+  Match(match_enum(v34) {
+    bool::False(v37) => blk10,
+    bool::True(v38) => blk11,
   })
 
 blk10:
@@ -674,39 +674,39 @@ End:
 
 blk11:
 Statements:
-  (v40: core::felt252, v41: (core::felt252, core::felt252)) <- struct_destructure(v22)
-  (v42: core::felt252, v43: @core::felt252) <- snapshot(v40)
-  (v44: core::felt252) <- 0
-  (v45: core::felt252, v46: @core::felt252) <- snapshot(v44)
-  (v47: core::felt252) <- desnap(v43)
-  (v48: core::felt252) <- desnap(v46)
-  (v49: core::felt252) <- core::felt252_sub(v47, v48)
+  (v39: core::felt252, v40: (core::felt252, core::felt252)) <- struct_destructure(v21)
+  (v41: core::felt252, v42: @core::felt252) <- snapshot(v39)
+  (v43: core::felt252) <- 0
+  (v44: core::felt252, v45: @core::felt252) <- snapshot(v43)
+  (v46: core::felt252) <- desnap(v42)
+  (v47: core::felt252) <- desnap(v45)
+  (v48: core::felt252) <- core::felt252_sub(v46, v47)
 End:
-  Match(match core::felt252_is_zero(v49) {
+  Match(match core::felt252_is_zero(v48) {
     IsZeroResult::Zero => blk12,
-    IsZeroResult::NonZero(v50) => blk13,
+    IsZeroResult::NonZero(v49) => blk13,
   })
 
 blk12:
 Statements:
-  (v51: ()) <- struct_construct()
-  (v52: core::bool) <- bool::True(v51)
+  (v50: ()) <- struct_construct()
+  (v51: core::bool) <- bool::True(v50)
 End:
-  Goto(blk14, {v52 -> v53})
+  Goto(blk14, {v51 -> v52})
 
 blk13:
 Statements:
-  (v54: ()) <- struct_construct()
-  (v55: core::bool) <- bool::False(v54)
+  (v53: ()) <- struct_construct()
+  (v54: core::bool) <- bool::False(v53)
 End:
-  Goto(blk14, {v55 -> v53})
+  Goto(blk14, {v54 -> v52})
 
 blk14:
 Statements:
 End:
-  Match(match_enum(v53) {
-    bool::False(v56) => blk15,
-    bool::True(v57) => blk17,
+  Match(match_enum(v52) {
+    bool::False(v55) => blk15,
+    bool::True(v56) => blk17,
   })
 
 blk15:
@@ -717,14 +717,14 @@ End:
 blk16:
 Statements:
 End:
-  Return(v24)
+  Return(v23)
 
 blk17:
 Statements:
-  (v58: core::felt252, v59: core::felt252) <- struct_destructure(v41)
-  (v60: core::felt252) <- core::felt252_add(v58, v59)
+  (v57: core::felt252, v58: core::felt252) <- struct_destructure(v40)
+  (v59: core::felt252) <- core::felt252_add(v57, v58)
 End:
-  Return(v60)
+  Return(v59)
 
 //! > after
 Parameters: v0: core::felt252
@@ -767,49 +767,49 @@ End:
 blk4:
 Statements:
   (v18: core::felt252, v19: (core::felt252, core::felt252)) <- test::get_tuple::<(core::felt252, core::felt252)>()
-  (v65: core::felt252, v66: core::felt252) <- struct_destructure(v19)
+  (v64: core::felt252, v65: core::felt252) <- struct_destructure(v19)
 End:
-  Goto(blk6, {v0 -> v21, v18 -> v61, v65 -> v63, v66 -> v64})
+  Goto(blk6, {v18 -> v60, v64 -> v62, v65 -> v63})
 
 blk5:
 Statements:
 End:
-  Goto(blk6, {v2 -> v21, v2 -> v61, v0 -> v63, v0 -> v64})
+  Goto(blk6, {v2 -> v60, v0 -> v62, v0 -> v63})
 
 blk6:
 Statements:
-  (v24: core::felt252, v25: @core::felt252) <- snapshot(v21)
-  (v26: core::felt252) <- 0
-  (v27: core::felt252, v28: @core::felt252) <- snapshot(v26)
-  (v29: core::felt252) <- desnap(v25)
-  (v30: core::felt252) <- desnap(v28)
-  (v31: core::felt252) <- core::felt252_sub(v29, v30)
+  (v23: core::felt252, v24: @core::felt252) <- snapshot(v2)
+  (v25: core::felt252) <- 0
+  (v26: core::felt252, v27: @core::felt252) <- snapshot(v25)
+  (v28: core::felt252) <- desnap(v24)
+  (v29: core::felt252) <- desnap(v27)
+  (v30: core::felt252) <- core::felt252_sub(v28, v29)
 End:
-  Match(match core::felt252_is_zero(v31) {
+  Match(match core::felt252_is_zero(v30) {
     IsZeroResult::Zero => blk7,
-    IsZeroResult::NonZero(v32) => blk8,
+    IsZeroResult::NonZero(v31) => blk8,
   })
 
 blk7:
 Statements:
-  (v33: ()) <- struct_construct()
-  (v34: core::bool) <- bool::True(v33)
+  (v32: ()) <- struct_construct()
+  (v33: core::bool) <- bool::True(v32)
 End:
-  Goto(blk9, {v34 -> v35})
+  Goto(blk9, {v33 -> v34})
 
 blk8:
 Statements:
-  (v36: ()) <- struct_construct()
-  (v37: core::bool) <- bool::False(v36)
+  (v35: ()) <- struct_construct()
+  (v36: core::bool) <- bool::False(v35)
 End:
-  Goto(blk9, {v37 -> v35})
+  Goto(blk9, {v36 -> v34})
 
 blk9:
 Statements:
 End:
-  Match(match_enum(v35) {
-    bool::False(v38) => blk10,
-    bool::True(v39) => blk11,
+  Match(match_enum(v34) {
+    bool::False(v37) => blk10,
+    bool::True(v38) => blk11,
   })
 
 blk10:
@@ -819,38 +819,38 @@ End:
 
 blk11:
 Statements:
-  (v42: core::felt252, v43: @core::felt252) <- snapshot(v61)
-  (v44: core::felt252) <- 0
-  (v45: core::felt252, v46: @core::felt252) <- snapshot(v44)
-  (v47: core::felt252) <- desnap(v43)
-  (v48: core::felt252) <- desnap(v46)
-  (v49: core::felt252) <- core::felt252_sub(v47, v48)
+  (v41: core::felt252, v42: @core::felt252) <- snapshot(v60)
+  (v43: core::felt252) <- 0
+  (v44: core::felt252, v45: @core::felt252) <- snapshot(v43)
+  (v46: core::felt252) <- desnap(v42)
+  (v47: core::felt252) <- desnap(v45)
+  (v48: core::felt252) <- core::felt252_sub(v46, v47)
 End:
-  Match(match core::felt252_is_zero(v49) {
+  Match(match core::felt252_is_zero(v48) {
     IsZeroResult::Zero => blk12,
-    IsZeroResult::NonZero(v50) => blk13,
+    IsZeroResult::NonZero(v49) => blk13,
   })
 
 blk12:
 Statements:
-  (v51: ()) <- struct_construct()
-  (v52: core::bool) <- bool::True(v51)
+  (v50: ()) <- struct_construct()
+  (v51: core::bool) <- bool::True(v50)
 End:
-  Goto(blk14, {v52 -> v53})
+  Goto(blk14, {v51 -> v52})
 
 blk13:
 Statements:
-  (v54: ()) <- struct_construct()
-  (v55: core::bool) <- bool::False(v54)
+  (v53: ()) <- struct_construct()
+  (v54: core::bool) <- bool::False(v53)
 End:
-  Goto(blk14, {v55 -> v53})
+  Goto(blk14, {v54 -> v52})
 
 blk14:
 Statements:
 End:
-  Match(match_enum(v53) {
-    bool::False(v56) => blk15,
-    bool::True(v57) => blk17,
+  Match(match_enum(v52) {
+    bool::False(v55) => blk15,
+    bool::True(v56) => blk17,
   })
 
 blk15:
@@ -861,13 +861,13 @@ End:
 blk16:
 Statements:
 End:
-  Return(v24)
+  Return(v23)
 
 blk17:
 Statements:
-  (v60: core::felt252) <- core::felt252_add(v63, v64)
+  (v59: core::felt252) <- core::felt252_add(v62, v63)
 End:
-  Return(v60)
+  Return(v59)
 
 //! > ==========================================================================
 

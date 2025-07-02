@@ -417,12 +417,12 @@ End:
 blk3:
 Statements:
 End:
-  Goto(blk6, {})
+  Goto(blk6, {v1 -> v11})
 
 blk4:
 Statements:
 End:
-  Goto(blk7, {v1 -> v12, v10 -> v11})
+  Goto(blk7, {v1 -> v13, v10 -> v12})
 
 blk5:
 Statements:
@@ -432,12 +432,12 @@ End:
 blk6:
 Statements:
 End:
-  Goto(blk7, {v0 -> v12, v0 -> v11})
+  Goto(blk7, {v11 -> v13, v11 -> v12})
 
 blk7:
 Statements:
 End:
-  Return(v11)
+  Return(v12)
 
 //! > after
 Parameters: v0: core::felt252
@@ -462,12 +462,12 @@ End:
 blk3:
 Statements:
 End:
-  Goto(blk6, {})
+  Goto(blk6, {v1 -> v11})
 
 blk4:
 Statements:
 End:
-  Goto(blk7, {v1 -> v12, v10 -> v11})
+  Goto(blk7, {v1 -> v13, v10 -> v12})
 
 blk5:
 Statements:
@@ -477,37 +477,37 @@ End:
 blk6:
 Statements:
 End:
-  Goto(blk7, {v0 -> v12, v0 -> v11})
+  Goto(blk7, {v11 -> v13, v11 -> v12})
 
 blk7:
 Statements:
 End:
-  Return(v11)
+  Return(v12)
 
 blk8:
 Statements:
-  (v13: core::felt252) <- desnap(v2)
-  (v14: core::felt252) <- desnap(v5)
-  (v15: core::felt252) <- core::felt252_sub(v13, v14)
+  (v14: core::felt252) <- desnap(v2)
+  (v15: core::felt252) <- desnap(v5)
+  (v16: core::felt252) <- core::felt252_sub(v14, v15)
 End:
-  Match(match core::felt252_is_zero(v15) {
+  Match(match core::felt252_is_zero(v16) {
     IsZeroResult::Zero => blk9,
-    IsZeroResult::NonZero(v16) => blk10,
+    IsZeroResult::NonZero(v17) => blk10,
   })
 
 blk9:
 Statements:
-  (v17: ()) <- struct_construct()
-  (v18: core::bool) <- bool::True(v17)
+  (v18: ()) <- struct_construct()
+  (v19: core::bool) <- bool::True(v18)
 End:
-  Goto(blk11, {v18 -> v6})
+  Goto(blk11, {v19 -> v6})
 
 blk10:
 Statements:
-  (v19: ()) <- struct_construct()
-  (v20: core::bool) <- bool::False(v19)
+  (v20: ()) <- struct_construct()
+  (v21: core::bool) <- bool::False(v20)
 End:
-  Goto(blk11, {v20 -> v6})
+  Goto(blk11, {v21 -> v6})
 
 blk11:
 Statements:
@@ -522,20 +522,20 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v1) {
     IsZeroResult::Zero => blk13,
-    IsZeroResult::NonZero(v21) => blk14,
+    IsZeroResult::NonZero(v22) => blk14,
   })
 
 blk13:
 Statements:
-  (v22: core::felt252) <- 1
+  (v23: core::felt252) <- 1
 End:
-  Goto(blk15, {v22 -> v8})
+  Goto(blk15, {v23 -> v8})
 
 blk14:
 Statements:
-  (v23: core::felt252) <- 0
+  (v24: core::felt252) <- 0
 End:
-  Goto(blk15, {v23 -> v8})
+  Goto(blk15, {v24 -> v8})
 
 blk15:
 Statements:
