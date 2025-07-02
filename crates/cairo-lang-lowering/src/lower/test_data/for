@@ -273,3 +273,155 @@ Statements:
   (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v18)
 End:
   Return(v14, v15, v24)
+
+//! > ==========================================================================
+
+//! > Test for with deref before into_iter.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo(a: Box<Span<felt252>>) -> Array<felt252> {
+    let mut arr = array![];
+    for b in a {
+        arr.append(*b);
+    }
+    return arr;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+
+//! > lowering
+Main:
+Parameters: v0: core::box::Box::<core::array::Span::<core::felt252>>
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
+  (v2: core::array::Span::<core::felt252>) <- core::box::BoxDeref::<core::array::Span::<core::felt252>>::deref(v0)
+  (v3: core::array::SpanIter::<core::felt252>) <- core::array::SpanIntoIterator::<core::felt252>::into_iter(v2)
+  (v5: core::array::SpanIter::<core::felt252>, v6: core::array::Array::<core::felt252>, v4: ()) <- test::foo[78-125](v3, v1)
+End:
+  Return(v6)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::box::Box::<core::array::Span::<core::felt252>>
+blk0 (root):
+Statements:
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v4: core::array::Span::<core::felt252>) <- core::box::unbox::<core::array::Span::<core::felt252>>(v2)
+  (v5: core::array::SpanIter::<core::felt252>) <- struct_construct(v4)
+  (v6: core::RangeCheck, v7: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- test::foo[78-125](v0, v1, v5, v3)
+End:
+  Match(match_enum(v8) {
+    PanicResult::Ok(v9) => blk1,
+    PanicResult::Err(v10) => blk2,
+  })
+
+blk1:
+Statements:
+  (v11: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
+  (v12: core::array::SpanIter::<core::felt252>, v13: core::array::Array::<core::felt252>, v14: ()) <- struct_destructure(v9)
+  (v15: (core::array::Array::<core::felt252>,)) <- struct_construct(v13)
+  (v16: core::panics::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Ok(v15)
+End:
+  Return(v6, v11, v16)
+
+blk2:
+Statements:
+  (v17: core::panics::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Err(v10)
+End:
+  Return(v6, v7, v17)
+
+
+Generated loop lowering for source location:
+      for b in a {
+ _____^
+|         arr.append(*b);
+|     }
+|_____^
+
+Parameters: v0: core::array::SpanIter::<core::felt252>, v1: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v3: core::array::SpanIter::<core::felt252>, v2: core::option::Option::<@core::felt252>) <- core::array::SpanIterator::<core::felt252>::next(v0)
+End:
+  Match(match_enum(v2) {
+    Option::Some(v4) => blk1,
+    Option::None(v11) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::felt252) <- desnap(v4)
+  (v7: core::array::Array::<core::felt252>, v6: ()) <- core::array::ArrayImpl::<core::felt252>::append(v1, v5)
+  (v9: core::array::SpanIter::<core::felt252>, v10: core::array::Array::<core::felt252>, v8: ()) <- test::foo[78-125](v3, v7)
+End:
+  Return(v9, v10, v8)
+
+blk2:
+Statements:
+  (v12: ()) <- struct_construct()
+End:
+  Return(v3, v1, v12)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::SpanIter::<core::felt252>, v3: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v4, v5) => blk1,
+    Option::None(v6, v7) => blk4,
+  })
+
+blk1:
+Statements:
+  (v8: core::array::Span::<core::felt252>) <- struct_destructure(v2)
+  (v9: @core::array::Array::<core::felt252>) <- struct_destructure(v8)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v9) {
+    Option::Some(v10, v11) => blk2,
+    Option::None(v12) => blk3,
+  })
+
+blk2:
+Statements:
+  (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
+  (v14: @core::felt252) <- core::box::unbox::<@core::felt252>(v11)
+  (v15: core::felt252) <- desnap(v14)
+  (v16: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v15)
+  (v17: core::array::Span::<core::felt252>) <- struct_construct(v10)
+  (v18: core::array::SpanIter::<core::felt252>) <- struct_construct(v17)
+  (v19: core::RangeCheck, v20: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- test::foo[78-125](v4, v13, v18, v16)
+End:
+  Return(v19, v20, v21)
+
+blk3:
+Statements:
+  (v22: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
+  (v23: core::array::Span::<core::felt252>) <- struct_construct(v12)
+  (v24: core::array::SpanIter::<core::felt252>) <- struct_construct(v23)
+  (v25: ()) <- struct_construct()
+  (v26: (core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())) <- struct_construct(v24, v3, v25)
+  (v27: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- PanicResult::Ok(v26)
+End:
+  Return(v4, v22, v27)
+
+blk4:
+Statements:
+  (v28: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v29: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- PanicResult::Err(v28)
+End:
+  Return(v6, v7, v29)
