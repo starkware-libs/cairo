@@ -1839,6 +1839,8 @@ fn compute_expr_for_semantic(
                 )
             },
         )?;
+
+    let expr_id = fixed_into_iter_var.id;
     let into_iter_call = expr_function_call(
         ctx,
         into_iterator_function_id,
