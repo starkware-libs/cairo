@@ -1465,3 +1465,31 @@ error: Parser error in macro-expanded code: Skipped tokens. Expected: end of exp
  _^
 |         let b = 2;
 |__________________^
+
+//! > ==========================================================================
+
+//! > Test: Macro in tail position with no tail expression should report MissingSemicolon.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    only_statements!()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro only_statements {
+    () => {
+        let _a = 1;
+    };
+}
+
+//! > expected_diagnostics
+error: Missing semicolon
+ --> lib.cairo:7:23
+    only_statements!()
+                      ^
