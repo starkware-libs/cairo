@@ -15,10 +15,7 @@ for _a in array![1, 2].span() {
 //! > expected_semantics
 For(
     ExprFor {
-        into_iter: core::array::SpanIntoIterator::<core::felt252>::into_iter,
-        into_iter_member_path: LocalVarId(test::in),
-        next_function_id: core::array::SpanIterator::<core::felt252>::next,
-        expr_id: FunctionCall(
+        into_iter_self_expr_id: FunctionCall(
             ExprFunctionCall {
                 function: core::array::ArrayToSpan::<core::felt252>::span,
                 args: [
@@ -110,6 +107,9 @@ For(
                 ty: core::array::Span::<core::felt252>,
             },
         ),
+        into_iter: core::array::SpanIntoIterator::<core::felt252>::into_iter,
+        iterator_var_expr: LocalVarId(test::in),
+        next_function_id: core::array::SpanIterator::<core::felt252>::next,
         pattern: Variable(
             _a,
         ),

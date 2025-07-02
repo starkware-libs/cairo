@@ -184,7 +184,8 @@ pub fn lower_for_loop(
     let for_location = ctx.get_location(loop_expr.stable_ptr.untyped());
     let next_semantic_signature =
         db.concrete_function_signature(loop_expr.next_function_id).unwrap();
-    let into_iter = builder.get_ref(ctx, &loop_expr.into_iter_member_path).unwrap();
+    let into_iter =
+        builder.get_ref(ctx, &ExprVarMemberPath::Var(loop_expr.iterator_var_expr.clone())).unwrap();
     let next_call = generators::Call {
         function: loop_expr.next_function_id.lowered(db),
         inputs: vec![into_iter],
@@ -203,7 +204,11 @@ pub fn lower_for_loop(
         unreachable!("Return type for next function must be Option.")
     };
     let next_value_type = some_variant.ty;
-    builder.update_ref(ctx, &loop_expr.into_iter_member_path, next_iterator.var_id);
+    builder.update_ref(
+        ctx,
+        &ExprVarMemberPath::Var(loop_expr.iterator_var_expr.clone()),
+        next_iterator.var_id,
+    );
     let unit_ty = corelib::unit_ty(db);
     let some_block: cairo_lang_semantic::ExprBlock =
         extract_matches!(&ctx.function_body.arenas.exprs[loop_expr.body], semantic::Expr::Block)
@@ -1389,12 +1394,13 @@ fn lower_expr_loop(
             stable_ptr,
             ty,
             into_iter,
-            expr_id,
-            into_iter_member_path,
+            into_iter_self_expr_id,
+            iterator_var_expr,
             ..
         }) => {
             let semantic_db: &dyn SemanticGroup = ctx.db;
-            let var_id = lower_expr(ctx, builder, expr_id)?.as_var_usage(ctx, builder)?;
+            let var_id =
+                lower_expr(ctx, builder, into_iter_self_expr_id)?.as_var_usage(ctx, builder)?;
             let into_iter_call = generators::Call {
                 function: into_iter.lowered(ctx.db),
                 inputs: vec![var_id],
@@ -1410,12 +1416,11 @@ fn lower_expr_loop(
             let sem_var = LocalVariable {
                 ty: semantic_db.concrete_function_signature(into_iter).unwrap().return_type,
                 is_mut: true,
-                id: extract_matches!(into_iter_member_path.base_var(), VarId::Local),
+                id: extract_matches!(iterator_var_expr.var, VarId::Local),
             };
-            builder.put_semantic(into_iter_member_path.base_var(), into_iter_var.var_id);
+            builder.put_semantic(iterator_var_expr.var, into_iter_var.var_id);
 
-            ctx.semantic_defs
-                .insert(into_iter_member_path.base_var(), semantic::Binding::LocalVar(sem_var));
+            ctx.semantic_defs.insert(iterator_var_expr.var, semantic::Binding::LocalVar(sem_var));
 
             (stable_ptr, ty)
         }
