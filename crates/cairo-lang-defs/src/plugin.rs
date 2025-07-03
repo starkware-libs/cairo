@@ -57,6 +57,9 @@ pub struct PluginGeneratedFile {
     /// This will be used as [`cairo_lang_diagnostics::DiagnosticNote`] on diagnostics originating
     /// from this file.
     pub diagnostics_note: Option<String>,
+    /// This needs to be set to true if the plugin is unhygienic, i.e. it does not preserve
+    /// variable hygiene.
+    pub is_unhygienic: bool,
 }
 
 /// Result of plugin code generation.

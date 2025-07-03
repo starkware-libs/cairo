@@ -124,6 +124,7 @@ fn get_dep_component_generate_code_helper(
             code_mappings,
             aux_data: None,
             diagnostics_note: Default::default(),
+            is_unhygienic: false,
         }),
         diagnostics: vec![],
     }
