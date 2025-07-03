@@ -465,6 +465,8 @@ pub struct MacroExpansionResult {
     pub text: Arc<str>,
     /// Information about placeholder expansions in this macro expansion.
     pub code_mappings: Arc<[CodeMapping]>,
+    /// Whether the macro expansion is unhygienic (i.e., it does not respect hygiene rules).
+    pub is_unhygienic: bool,
 }
 
 impl MacroExpansionResult {
@@ -490,7 +492,11 @@ pub fn expand_macro_rule(
     let mut res_buffer = String::new();
     let mut code_mappings = Vec::new();
     expand_macro_rule_ex(db, node, matcher_ctx, &mut res_buffer, &mut code_mappings)?;
-    Ok(MacroExpansionResult { text: res_buffer.into(), code_mappings: code_mappings.into() })
+    Ok(MacroExpansionResult {
+        text: res_buffer.into(),
+        code_mappings: code_mappings.into(),
+        is_unhygienic: false,
+    })
 }
 
 /// Helper function for [expand_macro_rule]. Traverses the macro expansion and replaces the

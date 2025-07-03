@@ -64,7 +64,8 @@ impl InlineMacroExprPlugin for PanicMacro {
         else {
             return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax.stable_ptr(db));
         };
-
+        // Gil: Items + Export
+        // Dean: replace macros: array, format, print, assert +
         let mut builder = PatchBuilder::new(db, syntax);
         let arguments = arguments_syntax.arguments(db).elements_vec(db);
         if try_handle_simple_panic(db, &mut builder, &arguments).is_none() {
@@ -109,6 +110,7 @@ impl InlineMacroExprPlugin for PanicMacro {
                 code_mappings,
                 aux_data: None,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             }),
             diagnostics: vec![],
         }

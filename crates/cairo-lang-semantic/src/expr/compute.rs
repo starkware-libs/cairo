@@ -157,6 +157,7 @@ struct InlineMacroExpansion {
     pub name: String,
     pub code_mappings: Arc<[CodeMapping]>,
     pub is_plugin_macro: bool,
+    pub is_unhygienic: bool,
 }
 
 /// Context for computing the semantic model of expression trees.
@@ -224,9 +225,12 @@ impl<'ctx> ComputationContext<'ctx> {
     where
         F: FnOnce(&mut Self) -> T,
     {
-        self.run_in_subscope_ex(f, Some(macro_expansion_data))
+        if macro_expansion_data.is_unhygienic {
+            f(self)
+        } else {
+            self.run_in_subscope_ex(f, Some(macro_expansion_data))
+        }
     }
-
     /// Runs a function with a modified context, with a new environment for a subscope.
     /// Shouldn't be called directly, use [Self::run_in_subscope] or [Self::run_in_macro_subscope]
     /// instead.
@@ -359,6 +363,7 @@ pub struct Environment {
     /// The macro code mappings for the current environment, only exists if the environment is
     /// created from expanding a macro.
     macro_code_mappings: Option<MacroExpansionResult>,
+    pub is_unhygienic_macro_env: bool,
 }
 impl Environment {
     /// Adds a parameter to the environment.
@@ -391,6 +396,7 @@ impl Environment {
             use_items: Default::default(),
             used_use_items: Default::default(),
             macro_code_mappings: None,
+            is_unhygienic_macro_env: false,
         }
     }
 }
@@ -548,6 +554,7 @@ fn expand_inline_macro(
             name: macro_name.clone(),
             code_mappings: expanded_code.code_mappings,
             is_plugin_macro: false,
+            is_unhygienic: expanded_code.is_unhygienic,
         })
     } else if let Some(macro_plugin_id) =
         ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name).cloned()
@@ -587,6 +594,7 @@ fn expand_inline_macro(
             name: code.name.to_string(),
             code_mappings: code.code_mappings.into(),
             is_plugin_macro: true,
+            is_unhygienic: code.is_unhygienic,
         })
     } else {
         Err(ctx.diagnostics.report(
@@ -604,8 +612,13 @@ fn compute_expr_inline_macro_semantic(
     syntax: &ast::ExprInlineMacro,
 ) -> Maybe<Expr> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
-    let InlineMacroExpansion { content, name, code_mappings: mappings, is_plugin_macro } =
-        expand_inline_macro(ctx, syntax)?;
+    let InlineMacroExpansion {
+        content,
+        name,
+        code_mappings: mappings,
+        is_plugin_macro,
+        is_unhygienic,
+    } = expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
         name: name.clone().into(),
@@ -631,14 +644,14 @@ fn compute_expr_inline_macro_semantic(
         ctx.resolver.set_suppress_modifiers_diagnostics(true);
         let result = ctx.run_in_macro_subscope(
             |ctx| compute_expr_semantic(ctx, &expr_syntax),
-            MacroExpansionResult { text: content, code_mappings: mappings },
+            MacroExpansionResult { text: content, code_mappings: mappings, is_unhygienic },
         );
         ctx.resolver.set_suppress_modifiers_diagnostics(prev_resolver_modifiers_suppression);
         result
     } else {
         ctx.run_in_macro_subscope(
             |ctx| compute_expr_semantic(ctx, &expr_syntax),
-            MacroExpansionResult { text: content, code_mappings: mappings },
+            MacroExpansionResult { text: content, code_mappings: mappings, is_unhygienic },
         )
     };
     ctx.resolver.macro_call_data = prev_macro_call_data;
@@ -679,8 +692,13 @@ fn expand_macro_for_statement(
     statements_ids: &mut Vec<StatementId>,
 ) -> Maybe<Option<ExprAndId>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
-    let InlineMacroExpansion { content, name, code_mappings: mappings, is_plugin_macro } =
-        expand_inline_macro(ctx, syntax)?;
+    let InlineMacroExpansion {
+        content,
+        name,
+        code_mappings: mappings,
+        is_plugin_macro,
+        is_unhygienic,
+    } = expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
         name: name.clone().into(),
@@ -729,7 +747,7 @@ fn expand_macro_for_statement(
                 Ok(None)
             }
         },
-        MacroExpansionResult { text: content, code_mappings: mappings },
+        MacroExpansionResult { text: content, code_mappings: mappings, is_unhygienic },
     );
     if let Some(prev_resolver_modifiers_suppression) = restore_data {
         ctx.resolver.set_suppress_modifiers_diagnostics(prev_resolver_modifiers_suppression);

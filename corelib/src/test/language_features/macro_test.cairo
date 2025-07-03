@@ -431,3 +431,52 @@ fn test_statements_and_tail_macro_in_statement_position() {
 fn test_statements_and_tail_macro_in_tail_position() -> felt252 {
     statements_and_tail!()
 }
+
+mod unhygienic_expose_plugin_macro {
+    #[test]
+    fn test_expose_variable() -> felt252 {
+        expose!(let a = 1;);
+        a
+    }
+    #[test]
+    fn test_expose_multiple_variables() -> felt252 {
+        expose!(let a = 10; let b = 20;);
+        assert_eq!(a, 10);
+        assert_eq!(b, 20);
+        a + b
+    }
+    #[test]
+    fn test_expose_shadowing() -> felt252 {
+        let _a = 5;
+        expose!{let _a = 42; };
+        assert_eq!(_a, 42);
+        _a
+    }
+    #[test]
+    fn test_expose_inside_if() -> felt252 {
+        let mut result = 0;
+        if true {
+            expose![let a = 100;];
+            assert_eq!(a, 100);
+            result = a;
+        }
+        assert_eq!(result, 100);
+        result
+    }
+    #[test]
+    fn test_expose_variable_and_use_in_macro() -> felt252 {
+        let x = 7;
+        expose!(let y = x + 1;);
+        assert_eq!(y, 8);
+        y
+    }
+
+    #[test]
+    fn test_expose_variable_used_in_next_expose() -> felt252 {
+        expose!(let a = 2;);
+        expose!(let b = a + 3;);
+        assert_eq!(a, 2);
+        assert_eq!(b, 5);
+        b
+    }
+}
