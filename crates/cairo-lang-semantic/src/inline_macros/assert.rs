@@ -115,6 +115,7 @@ impl InlineMacroExprPlugin for AssertMacro {
                 code_mappings,
                 aux_data: None,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             }),
             diagnostics: vec![],
         }

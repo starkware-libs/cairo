@@ -141,6 +141,7 @@ fn generate_derive_code_for_type(
             content,
             aux_data: None,
             diagnostics_note: Default::default(),
+            is_unhygienic: false,
         }),
         diagnostics,
         remove_original_item: false,

@@ -431,3 +431,72 @@ fn test_statements_and_tail_macro_in_statement_position() {
 fn test_statements_and_tail_macro_in_tail_position() -> felt252 {
     statements_and_tail!()
 }
+
+mod unhygienic_expose_plugin_macro {
+    #[test]
+    fn test_expose_variable() {
+        expose!(let a = 1;);
+        assert_eq!(a, 1);
+    }
+    #[test]
+    fn test_expose_multiple_variables() {
+        expose!(let a = 10; let b = 20;);
+        assert_eq!(a, 10);
+        assert_eq!(b, 20);
+    }
+    #[test]
+    fn test_expose_shadowing() {
+        let _a = 5;
+        expose!{let _a = 42; };
+        assert_eq!(_a, 42);
+    }
+    #[test]
+    fn test_expose_variable_and_use_in_macro() {
+        let x = 7;
+        expose!(let y = x + 1;);
+        assert_eq!(y, 8);
+    }
+    #[test]
+    fn test_expose_variable_used_in_next_expose() {
+        expose!(let a = 2;);
+        expose!(let b = a + 3;);
+        assert_eq!(a, 2);
+        assert_eq!(b, 5);
+    }
+    macro my_expose {
+        () => {
+            expose!(let a = 10;);
+        };
+    }
+    #[test]
+    fn test_expose_inside_a_macro() {
+        my_expose!();
+        assert_eq!(a, 10);
+    }
+    macro inner_most {
+        () => {
+            expose!(let _deeply_nested = 3;);
+            expose!(let _middle_var = 2;);
+        };
+    }
+    macro middle {
+        () => {
+            expose!(let _middle_var = 22;);
+            expose!(let _outer_var = 1;);
+            inner_most!();
+        };
+    }
+    macro outer {
+        () => {
+            expose!(let _outer_var = 11;);
+            middle!();
+        };
+    }
+    #[test]
+    fn test_expose_deep_nested_macros() {
+        outer!();
+        assert_eq!(_outer_var, 1);
+        assert_eq!(_middle_var, 2);
+        assert_eq!(_deeply_nested, 3);
+    }
+}
