@@ -431,3 +431,99 @@ fn test_statements_and_tail_macro_in_statement_position() {
 fn test_statements_and_tail_macro_in_tail_position() -> felt252 {
     statements_and_tail!()
 }
+
+mod unhygienic_expose_plugin_macro {
+    #[test]
+    fn test_expose_variable() {
+        expose!(let a = 1;);
+        assert_eq!(a, 1);
+    }
+    #[test]
+    fn test_expose_multiple_variables() {
+        expose!(let a = 10; let b = 20;);
+        assert_eq!(a, 10);
+        assert_eq!(b, 20);
+    }
+    #[test]
+    fn test_expose_shadowing() {
+        let _a = 5;
+        expose!{let _a = 42; };
+        assert_eq!(_a, 42);
+    }
+    #[test]
+    fn test_expose_variable_and_use_in_macro() {
+        let x = 7;
+        expose!(let y = x + 1;);
+        assert_eq!(y, 8);
+    }
+    #[test]
+    fn test_expose_variable_used_in_next_expose() {
+        expose!(let a = 2;);
+        expose!(let b = a + 3;);
+        assert_eq!(a, 2);
+        assert_eq!(b, 5);
+    }
+    macro my_expose {
+        () => {
+            expose!(let a = 10;);
+        };
+    }
+    #[test]
+    fn test_expose_inside_a_macro() {
+        my_expose!();
+        assert_eq!(a, 10);
+    }
+    // TODO: Investigate why renaming `_from_inner` to `from_inner`
+    // triggers an "unused variable" diagnostic, even though the variable is used.
+    macro inner_most {
+        () => {
+            expose!(let _deeply_nested = 3;);
+            expose!(let _middle_var = 2;);
+        };
+    }
+    macro middle {
+        () => {
+            expose!(let _middle_var = 22;);
+            expose!(let _outer_var = 1;);
+            inner_most!();
+        };
+    }
+    macro outer {
+        () => {
+            expose!(let _outer_var = 11;);
+            middle!();
+        };
+    }
+    #[test]
+    fn test_expose_deep_nested_macros() {
+        outer!();
+        assert_eq!(_outer_var, 1);
+        assert_eq!(_middle_var, 2);
+        assert_eq!(_deeply_nested, 3);
+    }
+    macro set_var_macro {
+        ($val:expr) => {
+            let _from_inner = $val;
+        };
+    }
+    macro wrap_expose_macro {
+        () => {
+            expose!(set_var_macro!(123););
+        };
+    }
+    #[test]
+    fn test_expose_expansion_inside_wrap_expose_macro_with_param() {
+        wrap_expose_macro!();
+        assert_eq!(_from_inner, 123);
+    }
+    macro expose_let_var {
+        ($expr:expr) => {
+            expose!(let expose_var = $expr;);
+        };
+    }
+    #[test]
+    fn test_expose_let_var_macro() {
+        expose_let_var!(1);
+        assert_eq!(expose_var, 1);
+    }
+}
