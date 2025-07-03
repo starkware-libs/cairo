@@ -92,6 +92,17 @@ use crate::{
     Mutability, Parameter, PatternStringLiteral, PatternStruct, Signature, StatementItemKind,
 };
 
+/// Describes the origin and hygiene behavior of a macro expansion.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MacroKind {
+    /// A user-defined macro, expanded with standard hygiene.
+    UserDefined,
+    /// A plugin macro.
+    Plugin,
+    /// An unhygienic macro, whose variables are injected into the parent scope.
+    Unhygienic,
+}
+
 /// Expression with its id.
 #[derive(Debug, Clone)]
 pub struct ExprAndId {
@@ -156,7 +167,7 @@ struct InlineMacroExpansion {
     pub content: Arc<str>,
     pub name: String,
     pub code_mappings: Arc<[CodeMapping]>,
-    pub is_plugin_macro: bool,
+    pub kind: MacroKind,
 }
 
 /// Context for computing the semantic model of expression trees.
@@ -176,6 +187,7 @@ pub struct ComputationContext<'ctx> {
     /// whether to look for closures when calling variables.
     /// TODO(TomerStarkware): Remove this once we disallow calling shadowed functions.
     are_closures_in_context: bool,
+    pub macro_defined_var_unhygienic: bool,
 }
 impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
@@ -202,6 +214,7 @@ impl<'ctx> ComputationContext<'ctx> {
             inner_ctx: None,
             cfg_set,
             are_closures_in_context: false,
+            macro_defined_var_unhygienic: false,
         }
     }
 
@@ -220,13 +233,31 @@ impl<'ctx> ComputationContext<'ctx> {
     /// that points to the current environment as a parent, and also contains the macro expansion
     /// data. When looking up variables, we will get out of the macro expansion environment if
     /// and only if the text was originated from expanding a placeholder.
-    fn run_in_macro_subscope<T, F>(&mut self, f: F, macro_expansion_data: MacroExpansionResult) -> T
+    fn run_in_macro_subscope<T, F>(
+        &mut self,
+        operation: F,
+        macro_expansion: MacroExpansionResult,
+        macro_kind: MacroKind,
+    ) -> T
     where
         F: FnOnce(&mut Self) -> T,
     {
-        self.run_in_subscope_ex(f, Some(macro_expansion_data))
+        let prev_macro_hygiene_kind = self.macro_defined_var_unhygienic;
+        let prev_suppress_modifiers_diagnostics = self.resolver.suppress_modifiers_diagnostics;
+        match macro_kind {
+            MacroKind::Unhygienic => {
+                self.macro_defined_var_unhygienic = true;
+            }
+            MacroKind::Plugin => {
+                self.resolver.set_suppress_modifiers_diagnostics(true);
+            }
+            MacroKind::UserDefined => {}
+        }
+        let result = self.run_in_subscope_ex(operation, Some(macro_expansion));
+        self.macro_defined_var_unhygienic = prev_macro_hygiene_kind;
+        self.resolver.set_suppress_modifiers_diagnostics(prev_suppress_modifiers_diagnostics);
+        result
     }
-
     /// Runs a function with a modified context, with a new environment for a subscope.
     /// Shouldn't be called directly, use [Self::run_in_subscope] or [Self::run_in_macro_subscope]
     /// instead.
@@ -547,7 +578,7 @@ fn expand_inline_macro(
             content: expanded_code.text,
             name: macro_name.clone(),
             code_mappings: expanded_code.code_mappings,
-            is_plugin_macro: false,
+            kind: MacroKind::UserDefined,
         })
     } else if let Some(macro_plugin_id) =
         ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name).cloned()
@@ -586,7 +617,7 @@ fn expand_inline_macro(
             content: code.content.into(),
             name: code.name.to_string(),
             code_mappings: code.code_mappings.into(),
-            is_plugin_macro: true,
+            kind: if code.is_unhygienic { MacroKind::Unhygienic } else { MacroKind::Plugin },
         })
     } else {
         Err(ctx.diagnostics.report(
@@ -604,7 +635,7 @@ fn compute_expr_inline_macro_semantic(
     syntax: &ast::ExprInlineMacro,
 ) -> Maybe<Expr> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
-    let InlineMacroExpansion { content, name, code_mappings: mappings, is_plugin_macro } =
+    let InlineMacroExpansion { content, name, code_mappings: mappings, kind } =
         expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
@@ -626,21 +657,11 @@ fn compute_expr_inline_macro_semantic(
         }
         return Err(diag_added);
     }
-    let expr = if is_plugin_macro {
-        let prev_resolver_modifiers_suppression = ctx.resolver.suppress_modifiers_diagnostics;
-        ctx.resolver.set_suppress_modifiers_diagnostics(true);
-        let result = ctx.run_in_macro_subscope(
-            |ctx| compute_expr_semantic(ctx, &expr_syntax),
-            MacroExpansionResult { text: content, code_mappings: mappings },
-        );
-        ctx.resolver.set_suppress_modifiers_diagnostics(prev_resolver_modifiers_suppression);
-        result
-    } else {
-        ctx.run_in_macro_subscope(
-            |ctx| compute_expr_semantic(ctx, &expr_syntax),
-            MacroExpansionResult { text: content, code_mappings: mappings },
-        )
-    };
+    let expr = ctx.run_in_macro_subscope(
+        |ctx| compute_expr_semantic(ctx, &expr_syntax),
+        MacroExpansionResult { text: content, code_mappings: mappings },
+        kind,
+    );
     ctx.resolver.macro_call_data = prev_macro_call_data;
     Ok(expr.expr)
 }
@@ -679,7 +700,7 @@ fn expand_macro_for_statement(
     statements_ids: &mut Vec<StatementId>,
 ) -> Maybe<Option<ExprAndId>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
-    let InlineMacroExpansion { content, name, code_mappings: mappings, is_plugin_macro } =
+    let InlineMacroExpansion { content, name, code_mappings: mappings, kind } =
         expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
@@ -702,11 +723,6 @@ fn expand_macro_for_statement(
     }
     let statement_list = ctx.db.file_statement_list_syntax(new_file_id)?;
     let (parsed_statements, tail) = statements_and_tail(ctx.db, statement_list);
-    let restore_data = is_plugin_macro.then(|| {
-        let prev_resolver_modifiers_suppression = ctx.resolver.suppress_modifiers_diagnostics;
-        ctx.resolver.set_suppress_modifiers_diagnostics(true);
-        prev_resolver_modifiers_suppression
-    });
     let result = ctx.run_in_macro_subscope(
         |ctx| {
             compute_statements_semantic_and_extend(ctx, parsed_statements, statements_ids);
@@ -730,10 +746,8 @@ fn expand_macro_for_statement(
             }
         },
         MacroExpansionResult { text: content, code_mappings: mappings },
+        kind,
     );
-    if let Some(prev_resolver_modifiers_suppression) = restore_data {
-        ctx.resolver.set_suppress_modifiers_diagnostics(prev_resolver_modifiers_suppression);
-    }
     ctx.resolver.macro_call_data = prev_macro_call_data;
     result
 }
@@ -4048,8 +4062,17 @@ pub fn compute_and_append_statement_semantic(
             let variables = pattern.variables(&ctx.arenas.patterns);
             for v in variables {
                 let var_def = Binding::LocalVar(v.var.clone());
-                if let Some(old_var) =
-                    ctx.environment.variables.insert(v.name.clone(), var_def.clone())
+                let mut environment = ctx.environment.as_mut();
+                if ctx.macro_defined_var_unhygienic {
+                    while let Some(parent_env) = environment.parent.as_deref_mut() {
+                        if environment.macro_code_mappings.is_some() {
+                            environment = parent_env;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                if let Some(old_var) = environment.variables.insert(v.name.clone(), var_def.clone())
                 {
                     if matches!(old_var, Binding::LocalItem(_)) {
                         return Err(ctx
