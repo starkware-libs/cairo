@@ -4,14 +4,12 @@ use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::{FilesGroup, get_originating_location};
-use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_filesystem::ids::{FileId, SpanInFile};
 use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
 use crate::error_code::{ErrorCode, OptionErrorCodeExt};
-use crate::location_marks::get_location_marks;
 
 #[cfg(test)]
 #[path = "diagnostics_test.rs"]
@@ -37,7 +35,7 @@ impl fmt::Display for Severity {
 pub trait DiagnosticEntry: Clone + fmt::Debug + Eq + Hash {
     type DbType: Upcast<dyn FilesGroup> + ?Sized;
     fn format(&self, db: &Self::DbType) -> String;
-    fn location(&self, db: &Self::DbType) -> DiagnosticLocation;
+    fn location(&self, db: &Self::DbType) -> SpanInFile;
     fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote] {
         &[]
     }
@@ -58,96 +56,39 @@ pub trait DiagnosticEntry: Clone + fmt::Debug + Eq + Hash {
 /// [`FileId`].
 pub type PluginFileDiagnosticNotes = OrderedHashMap<FileId, DiagnosticNote>;
 
-// The representation of a source location inside a diagnostic.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct DiagnosticLocation {
-    pub file_id: FileId,
-    pub span: TextSpan,
-}
-impl DiagnosticLocation {
-    /// Get the location of right after this diagnostic's location (with width 0).
-    pub fn after(&self) -> Self {
-        Self { file_id: self.file_id, span: self.span.after() }
-    }
-
-    /// Get the location of the originating user code.
-    pub fn user_location(&self, db: &dyn FilesGroup) -> Self {
-        let (file_id, span) = get_originating_location(db, self.file_id, self.span, None);
-        Self { file_id, span }
-    }
-
-    /// Get the location of the originating user code,
-    /// along with [`DiagnosticNote`]s for this translation.
-    /// The notes are collected from the parent files of the originating location.
-    pub fn user_location_with_plugin_notes(
-        &self,
-        db: &dyn FilesGroup,
-        file_notes: &PluginFileDiagnosticNotes,
-    ) -> (Self, Vec<DiagnosticNote>) {
-        let mut parent_files = Vec::new();
-        let (file_id, span) =
-            get_originating_location(db, self.file_id, self.span, Some(&mut parent_files));
-        let diagnostic_notes = parent_files
-            .into_iter()
-            .rev()
-            .filter_map(|file_id| file_notes.get(&file_id).cloned())
-            .collect_vec();
-        (Self { file_id, span }, diagnostic_notes)
-    }
-
-    /// Helper function to format the location of a diagnostic.
-    pub fn fmt_location(&self, f: &mut fmt::Formatter<'_>, db: &dyn FilesGroup) -> fmt::Result {
-        let file_path = self.file_id.full_path(db);
-        let start = match self.span.start.position_in_file(db, self.file_id) {
-            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
-            None => "?".into(),
-        };
-
-        let end = match self.span.end.position_in_file(db, self.file_id) {
-            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
-            None => "?".into(),
-        };
-        write!(f, "{file_path}:{start}: {end}")
-    }
-}
-
-impl DebugWithDb<dyn FilesGroup> for DiagnosticLocation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &dyn FilesGroup) -> fmt::Result {
-        let file_path = self.file_id.full_path(db);
-        let mut marks = String::new();
-        let mut ending_pos = String::new();
-        let starting_pos = match self.span.start.position_in_file(db, self.file_id) {
-            Some(starting_text_pos) => {
-                if let Some(ending_text_pos) = self.span.end.position_in_file(db, self.file_id) {
-                    if starting_text_pos.line != ending_text_pos.line {
-                        ending_pos =
-                            format!("-{}:{}", ending_text_pos.line + 1, ending_text_pos.col);
-                    }
-                }
-                marks = get_location_marks(db, self, true);
-                format!("{}:{}", starting_text_pos.line + 1, starting_text_pos.col + 1)
-            }
-            None => "?".into(),
-        };
-        write!(f, "{file_path}:{starting_pos}{ending_pos}\n{marks}")
-    }
-}
-
 /// A note about a diagnostic.
 /// May include a relevant diagnostic location.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DiagnosticNote {
     pub text: String,
-    pub location: Option<DiagnosticLocation>,
+    pub location: Option<SpanInFile>,
 }
 impl DiagnosticNote {
     pub fn text_only(text: String) -> Self {
         Self { text, location: None }
     }
 
-    pub fn with_location(text: String, location: DiagnosticLocation) -> Self {
+    pub fn with_location(text: String, location: SpanInFile) -> Self {
         Self { text, location: Some(location) }
     }
+}
+
+/// Get the location of the originating user code,
+/// along with [`DiagnosticNote`]s for this translation.
+/// The notes are collected from the parent files of the originating location.
+pub fn user_location_with_plugin_notes(
+    db: &dyn FilesGroup,
+    location: SpanInFile,
+    file_notes: &PluginFileDiagnosticNotes,
+) -> (SpanInFile, Vec<DiagnosticNote>) {
+    let mut parent_files = Vec::new();
+    let origin = get_originating_location(db, location, Some(&mut parent_files));
+    let diagnostic_notes = parent_files
+        .into_iter()
+        .rev()
+        .filter_map(|file_id| file_notes.get(&file_id).cloned())
+        .collect();
+    (origin, diagnostic_notes)
 }
 
 impl DebugWithDb<dyn FilesGroup> for DiagnosticNote {
@@ -244,7 +185,7 @@ impl<TEntry: DiagnosticEntry> Default for DiagnosticsBuilder<TEntry> {
 pub fn format_diagnostics(
     db: &(dyn FilesGroup + 'static),
     message: &str,
-    location: DiagnosticLocation,
+    location: SpanInFile,
 ) -> String {
     format!("{message}\n --> {:?}\n", location.debug(db))
 }
@@ -321,7 +262,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
             let mut msg = String::new();
             let diag_location = entry.location(db);
             let (user_location, parent_file_notes) =
-                diag_location.user_location_with_plugin_notes(files_db, file_notes);
+                user_location_with_plugin_notes(files_db, diag_location, file_notes);
 
             let include_generated_location = diag_location != user_location
                 && std::env::var("CAIRO_DEBUG_GENERATED_CODE").is_ok();

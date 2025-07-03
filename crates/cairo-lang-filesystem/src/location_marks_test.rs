@@ -1,14 +1,13 @@
-use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
-use cairo_lang_filesystem::span::{TextSpan, TextWidth};
-use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
 use cairo_lang_utils::Intern;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;
 
-use super::get_location_marks;
-use crate::DiagnosticLocation;
+use crate::db::FilesGroup;
+use crate::ids::{FileKind, FileLongId, SpanInFile, VirtualFile};
+use crate::location_marks::get_location_marks;
+use crate::span::{TextSpan, TextWidth};
+use crate::test_utils::FilesDatabaseForTesting;
 
 #[test]
 fn test_location_marks() {
@@ -33,7 +32,7 @@ fn test_location_marks() {
     let third_line = summary.line_offsets[2];
 
     // Empty span.
-    let location = DiagnosticLocation {
+    let location = SpanInFile {
         file_id: file,
         span: TextSpan {
             start: second_line.add_width(TextWidth::new_for_testing(13)),
@@ -42,7 +41,7 @@ fn test_location_marks() {
     };
 
     assert_eq!(
-        get_location_marks(&db, &location, true) + "\n",
+        get_location_marks(&db, location, true) + "\n",
         indoc! {"
             Second liné.
                         ^
@@ -50,7 +49,7 @@ fn test_location_marks() {
     );
 
     // Span of length 1.
-    let location = DiagnosticLocation {
+    let location = SpanInFile {
         file_id: file,
         span: TextSpan {
             start: third_line.add_width(TextWidth::new_for_testing(3)),
@@ -59,7 +58,7 @@ fn test_location_marks() {
     };
 
     assert_eq!(
-        get_location_marks(&db, &location, true) + "\n",
+        get_location_marks(&db, location, true) + "\n",
         indoc! {"
             Third liné.
                ^
@@ -67,7 +66,7 @@ fn test_location_marks() {
     );
 
     // Span of length 2.
-    let location = DiagnosticLocation {
+    let location = SpanInFile {
         file_id: file,
         span: TextSpan {
             start: third_line.add_width(TextWidth::new_for_testing(3)),
@@ -76,7 +75,7 @@ fn test_location_marks() {
     };
 
     assert_eq!(
-        get_location_marks(&db, &location, true) + "\n",
+        get_location_marks(&db, location, true) + "\n",
         indoc! {"
             Third liné.
                ^^
@@ -84,7 +83,7 @@ fn test_location_marks() {
     );
 
     // Span of length > 1.
-    let location = DiagnosticLocation {
+    let location = SpanInFile {
         file_id: file,
         span: TextSpan {
             start: second_line.add_width(TextWidth::new_for_testing(7)),
@@ -93,7 +92,7 @@ fn test_location_marks() {
     };
 
     assert_eq!(
-        get_location_marks(&db, &location, true) + "\n",
+        get_location_marks(&db, location, true) + "\n",
         indoc! {"
             Second liné.
                    ^^^^
@@ -101,7 +100,7 @@ fn test_location_marks() {
     );
 
     // Multiline span.
-    let location = DiagnosticLocation {
+    let location = SpanInFile {
         file_id: file,
         span: TextSpan {
             start: second_line.add_width(TextWidth::new_for_testing(7)),
@@ -110,7 +109,7 @@ fn test_location_marks() {
     };
 
     assert_eq!(
-        get_location_marks(&db, &location, true) + "\n",
+        get_location_marks(&db, location, true) + "\n",
         indoc! {"
               Second liné.
              ________^
@@ -120,7 +119,7 @@ fn test_location_marks() {
     );
 
     // Span that ends past the end of the file.
-    let location = DiagnosticLocation {
+    let location = SpanInFile {
         file_id: file,
         span: TextSpan {
             start: third_line.add_width(TextWidth::new_for_testing(7)),
@@ -129,7 +128,7 @@ fn test_location_marks() {
     };
 
     assert_eq!(
-        get_location_marks(&db, &location, true) + "\n",
+        get_location_marks(&db, location, true) + "\n",
         indoc! {"
             Third liné.
                    ^^^^
@@ -137,13 +136,13 @@ fn test_location_marks() {
     );
 
     // Empty span past the end of the file.
-    let location = DiagnosticLocation {
+    let location = SpanInFile {
         file_id: file,
         span: TextSpan { start: summary.last_offset, end: summary.last_offset },
     };
 
     assert_eq!(
-        get_location_marks(&db, &location, true) + "\n",
+        get_location_marks(&db, location, true) + "\n",
         indoc! {"
             Third liné.
                        ^

@@ -3,8 +3,9 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_diagnostics::{Maybe, get_location_marks};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::location_marks::get_location_marks;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
@@ -205,7 +206,7 @@ impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
                     &self.debug_info.statements_locations.locations.get(&StatementIdx(i))
                 {
                     let loc =
-                        get_location_marks(db, &loc.first().unwrap().diagnostic_location(db), true);
+                        get_location_marks(db, loc.first().unwrap().diagnostic_location(db), true);
                     println!("{}", loc.split('\n').map(|l| format!("// {l}")).join("\n"));
                 }
             }

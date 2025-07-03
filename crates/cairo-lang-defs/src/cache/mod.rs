@@ -3,10 +3,10 @@ use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cairo_lang_diagnostics::{DiagnosticLocation, DiagnosticNote, Maybe, Severity};
+use cairo_lang_diagnostics::{DiagnosticNote, Maybe, Severity};
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{
-    CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, VirtualFile,
+    CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, SpanInFile, VirtualFile,
 };
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
@@ -1757,7 +1757,7 @@ impl FileIdCached {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 struct VirtualFileCached {
-    parent: Option<FileIdCached>,
+    parent: Option<SpanInFileCached>,
     name: SmolStr,
     content: String,
     code_mappings: Vec<CodeMapping>,
@@ -1768,7 +1768,7 @@ struct VirtualFileCached {
 impl VirtualFileCached {
     fn new(virtual_file: &VirtualFile, ctx: &mut DefCacheSavingContext<'_>) -> Self {
         Self {
-            parent: virtual_file.parent.map(|parent| FileIdCached::new(parent, ctx)),
+            parent: virtual_file.parent.map(|parent| SpanInFileCached::new(&parent, ctx)),
             name: virtual_file.name.clone(),
             content: String::from(&*(virtual_file.content)),
             code_mappings: virtual_file.code_mappings.to_vec(),
@@ -1862,14 +1862,14 @@ type PluginFileDiagnosticNotesCached = OrderedHashMap<FileIdCached, DiagnosticNo
 #[derive(Serialize, Deserialize, Clone)]
 struct DiagnosticNoteCached {
     text: String,
-    location: Option<DiagnosticLocationCached>,
+    location: Option<SpanInFileCached>,
 }
 
 impl DiagnosticNoteCached {
     fn new(note: DiagnosticNote, ctx: &mut DefCacheSavingContext<'_>) -> DiagnosticNoteCached {
         DiagnosticNoteCached {
             text: note.text.clone(),
-            location: note.location.map(|location| DiagnosticLocationCached::new(&location, ctx)),
+            location: note.location.map(|location| SpanInFileCached::new(&location, ctx)),
         }
     }
     fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> DiagnosticNote {
@@ -1880,23 +1880,17 @@ impl DiagnosticNoteCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-struct DiagnosticLocationCached {
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
+struct SpanInFileCached {
     file_id: FileIdCached,
     span: TextSpan,
 }
 
-impl DiagnosticLocationCached {
-    fn new(
-        location: &DiagnosticLocation,
-        ctx: &mut DefCacheSavingContext<'_>,
-    ) -> DiagnosticLocationCached {
-        DiagnosticLocationCached {
-            file_id: FileIdCached::new(location.file_id, ctx),
-            span: location.span,
-        }
+impl SpanInFileCached {
+    fn new(location: &SpanInFile, ctx: &mut DefCacheSavingContext<'_>) -> SpanInFileCached {
+        SpanInFileCached { file_id: FileIdCached::new(location.file_id, ctx), span: location.span }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> DiagnosticLocation {
-        DiagnosticLocation { file_id: self.file_id.embed(ctx), span: self.span }
+    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> SpanInFile {
+        SpanInFile { file_id: self.file_id.embed(ctx), span: self.span }
     }
 }

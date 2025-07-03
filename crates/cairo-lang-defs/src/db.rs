@@ -797,10 +797,11 @@ fn priv_module_sub_files(
             }
 
             if let Some(generated) = result.code {
+                let stable_ptr = item_ast.stable_ptr(db).untyped();
                 let generated_file_id = FileLongId::External(
                     PluginGeneratedFileLongId {
                         module_id,
-                        stable_ptr: item_ast.stable_ptr(db).untyped(),
+                        stable_ptr,
                         name: generated.name.clone(),
                     }
                     .intern(db)
@@ -814,7 +815,7 @@ fn priv_module_sub_files(
                 files.insert(
                     generated_file_id,
                     VirtualFile {
-                        parent: Some(file_id),
+                        parent: Some(stable_ptr.span_in_file(db)),
                         name: generated.name,
                         content: generated.content.into(),
                         code_mappings: generated.code_mappings.into(),

@@ -1,6 +1,6 @@
 use cairo_lang_diagnostics::DiagnosticEntry;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, SpanInFile};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use smol_str::SmolStr;
@@ -244,8 +244,8 @@ Did you mean to write `{identifier}!{left}...{right}'?",
         }
     }
 
-    fn location(&self, _db: &dyn FilesGroup) -> cairo_lang_diagnostics::DiagnosticLocation {
-        cairo_lang_diagnostics::DiagnosticLocation { file_id: self.file_id, span: self.span }
+    fn location(&self, _db: &dyn FilesGroup) -> SpanInFile {
+        SpanInFile { file_id: self.file_id, span: self.span }
     }
 
     fn is_same_kind(&self, other: &Self) -> bool {
