@@ -125,6 +125,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                         code_mappings,
                         aux_data: None,
                         diagnostics_note: Default::default(),
+                        is_unhygienic: false,
                     }),
                     diagnostics: vec![],
                     remove_original_item: false,
