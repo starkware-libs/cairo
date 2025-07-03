@@ -1,8 +1,7 @@
 use std::fmt;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_diagnostics::DiagnosticLocation;
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, SpanInFile};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -50,33 +49,27 @@ impl StableLocation {
         self.stable_ptr
     }
 
-    /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
-    pub fn diagnostic_location(&self, db: &dyn DefsGroup) -> DiagnosticLocation {
+    /// Returns the [SpanInFile] that corresponds to the [StableLocation].
+    pub fn diagnostic_location(&self, db: &dyn DefsGroup) -> SpanInFile {
         match self.inner_span {
+            None => self.stable_ptr.span_in_file(db),
             Some((start, width)) => {
                 let start = self.syntax_node(db).offset(db).add_width(start);
                 let end = start.add_width(width);
-                DiagnosticLocation { file_id: self.file_id(db), span: TextSpan { start, end } }
-            }
-            None => {
-                let syntax_node = self.syntax_node(db);
-                DiagnosticLocation {
-                    file_id: self.file_id(db),
-                    span: syntax_node.span_without_trivia(db),
-                }
+                SpanInFile { file_id: self.file_id(db), span: TextSpan { start, end } }
             }
         }
     }
 
-    /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
+    /// Returns the [SpanInFile] that corresponds to the [StableLocation].
     pub fn diagnostic_location_until(
         &self,
         db: &dyn DefsGroup,
         until_stable_ptr: SyntaxStablePtrId,
-    ) -> DiagnosticLocation {
+    ) -> SpanInFile {
         let start = self.stable_ptr.lookup(db).span_start_without_trivia(db);
         let end = until_stable_ptr.lookup(db).span_end_without_trivia(db);
-        DiagnosticLocation { file_id: self.stable_ptr.file_id(db), span: TextSpan { start, end } }
+        SpanInFile { file_id: self.stable_ptr.file_id(db), span: TextSpan { start, end } }
     }
 }
 

@@ -4,9 +4,8 @@ use cairo_lang_compiler::diagnostics::get_diagnostics_as_string;
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_diagnostics::DiagnosticLocation;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::FileLongId;
+use cairo_lang_filesystem::ids::{FileLongId, SpanInFile};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_plugins::test_utils::expand_module_text;
 use cairo_lang_semantic::test_utils::setup_test_module;
@@ -49,8 +48,7 @@ impl TestFileRunner for ExpandContractTestRunner {
 
         for file_id in files {
             let content = db.file_content(file_id).unwrap();
-            let content_location =
-                DiagnosticLocation { file_id, span: TextSpan::from_str(&content) };
+            let content_location = SpanInFile { file_id, span: TextSpan::from_str(&content) };
             let original_location = content_location.user_location(db.upcast());
             let origin = if content_location == original_location {
                 "".to_string()

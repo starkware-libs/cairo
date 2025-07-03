@@ -167,7 +167,7 @@ pub fn file_module_absolute_identifier(db: &dyn DefsGroup, mut file_id: FileId) 
     while let FileLongId::Virtual(VirtualFile { parent: Some(parent), .. }) =
         file_id.lookup_intern(db)
     {
-        file_id = parent;
+        file_id = parent.file_id;
     }
 
     let file_modules = db.file_modules(file_id).to_option()?;

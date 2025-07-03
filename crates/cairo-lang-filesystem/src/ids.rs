@@ -1,13 +1,16 @@
+use core::fmt;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 use path_clean::PathClean;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
-use crate::db::{CORELIB_CRATE_NAME, FilesGroup};
+use crate::db::{CORELIB_CRATE_NAME, FilesGroup, get_originating_location};
+use crate::location_marks::get_location_marks;
 use crate::span::{TextOffset, TextSpan};
 
 pub const CAIRO_FILE_EXTENSION: &str = "cairo";
@@ -141,7 +144,7 @@ impl CodeOrigin {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct VirtualFile {
-    pub parent: Option<FileId>,
+    pub parent: Option<SpanInFile>,
     pub name: SmolStr,
     pub content: Arc<str>,
     pub code_mappings: Arc<[CodeMapping]>,
@@ -154,8 +157,12 @@ pub struct VirtualFile {
 impl VirtualFile {
     fn full_path(&self, db: &dyn FilesGroup) -> String {
         if let Some(parent) = self.parent {
-            // TODO(yuval): consider a different path format for virtual files.
-            format!("{}[{}]", parent.full_path(db), self.name)
+            use std::fmt::Write;
+
+            let mut f = String::new();
+            parent.fmt_location(&mut f, db).unwrap();
+            write!(&mut f, "[{}]", self.name).unwrap();
+            f
         } else {
             self.name.clone().into()
         }
@@ -241,5 +248,60 @@ define_short_id!(BlobId, BlobLongId, FilesGroup, lookup_intern_blob, intern_blob
 impl BlobId {
     pub fn new(db: &dyn FilesGroup, path: PathBuf) -> BlobId {
         BlobLongId::OnDisk(path.clean()).intern(db)
+    }
+}
+
+/// A location within a file.
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+pub struct SpanInFile {
+    pub file_id: FileId,
+    pub span: TextSpan,
+}
+impl SpanInFile {
+    /// Get the location of right after this diagnostic's location (with width 0).
+    pub fn after(&self) -> Self {
+        Self { file_id: self.file_id, span: self.span.after() }
+    }
+
+    /// Get the location of the originating user code.
+    pub fn user_location(&self, db: &dyn FilesGroup) -> Self {
+        get_originating_location(db, *self, None)
+    }
+
+    /// Helper function to format the location of a diagnostic.
+    pub fn fmt_location(&self, f: &mut impl fmt::Write, db: &dyn FilesGroup) -> fmt::Result {
+        let file_path = self.file_id.full_path(db);
+        let start = match self.span.start.position_in_file(db, self.file_id) {
+            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
+            None => "?".into(),
+        };
+
+        let end = match self.span.end.position_in_file(db, self.file_id) {
+            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
+            None => "?".into(),
+        };
+        write!(f, "{file_path}:{start}: {end}")
+    }
+}
+
+impl DebugWithDb<dyn FilesGroup> for SpanInFile {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &dyn FilesGroup) -> fmt::Result {
+        let file_path = self.file_id.full_path(db);
+        let mut marks = String::new();
+        let mut ending_pos = String::new();
+        let starting_pos = match self.span.start.position_in_file(db, self.file_id) {
+            Some(starting_text_pos) => {
+                if let Some(ending_text_pos) = self.span.end.position_in_file(db, self.file_id) {
+                    if starting_text_pos.line != ending_text_pos.line {
+                        ending_pos =
+                            format!("-{}:{}", ending_text_pos.line + 1, ending_text_pos.col);
+                    }
+                }
+                marks = get_location_marks(db, *self, true);
+                format!("{}:{}", starting_text_pos.line + 1, starting_text_pos.col + 1)
+            }
+            None => "?".into(),
+        };
+        write!(f, "{file_path}:{starting_pos}{ending_pos}\n{marks}")
     }
 }
