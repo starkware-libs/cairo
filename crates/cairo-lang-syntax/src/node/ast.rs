@@ -28,7 +28,7 @@ impl Deref for Trivia {
     }
 }
 impl Trivia {
-    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<TriviumGreen>) -> TriviaGreen {
+    pub fn new_green(db: &dyn SyntaxGroup, children: &[TriviumGreen]) -> TriviaGreen {
         let width = children.iter().map(|id| id.0.lookup_intern(db).width()).sum();
         TriviaGreen(
             Arc::new(GreenNode {
@@ -779,7 +779,7 @@ impl Deref for ExprList {
 impl ExprList {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<ExprListElementOrSeparatorGreen>,
+        children: &[ExprListElementOrSeparatorGreen],
     ) -> ExprListGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         ExprListGreen(
@@ -1451,7 +1451,7 @@ impl Deref for ArgList {
 impl ArgList {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<ArgListElementOrSeparatorGreen>,
+        children: &[ArgListElementOrSeparatorGreen],
     ) -> ArgListGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         ArgListGreen(
@@ -2451,7 +2451,7 @@ impl Deref for ExprPathInner {
 impl ExprPathInner {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<ExprPathInnerElementOrSeparatorGreen>,
+        children: &[ExprPathInnerElementOrSeparatorGreen],
     ) -> ExprPathInnerGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         ExprPathInnerGreen(
@@ -4396,7 +4396,7 @@ impl Deref for MatchArms {
 impl MatchArms {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<MatchArmsElementOrSeparatorGreen>,
+        children: &[MatchArmsElementOrSeparatorGreen],
     ) -> MatchArmsGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         MatchArmsGreen(
@@ -4700,7 +4700,7 @@ impl Deref for ConditionListAnd {
 impl ConditionListAnd {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<ConditionListAndElementOrSeparatorGreen>,
+        children: &[ConditionListAndElementOrSeparatorGreen],
     ) -> ConditionListAndGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         ConditionListAndGreen(
@@ -7258,7 +7258,7 @@ impl Deref for StructArgList {
 impl StructArgList {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<StructArgListElementOrSeparatorGreen>,
+        children: &[StructArgListElementOrSeparatorGreen],
     ) -> StructArgListGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         StructArgListGreen(
@@ -8258,7 +8258,7 @@ impl Deref for PatternStructParamList {
 impl PatternStructParamList {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<PatternStructParamListElementOrSeparatorGreen>,
+        children: &[PatternStructParamListElementOrSeparatorGreen],
     ) -> PatternStructParamListGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         PatternStructParamListGreen(
@@ -8560,7 +8560,7 @@ impl Deref for PatternList {
 impl PatternList {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<PatternListElementOrSeparatorGreen>,
+        children: &[PatternListElementOrSeparatorGreen],
     ) -> PatternListGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         PatternListGreen(
@@ -8660,7 +8660,7 @@ impl Deref for PatternListOr {
 impl PatternListOr {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<PatternListOrElementOrSeparatorGreen>,
+        children: &[PatternListOrElementOrSeparatorGreen],
     ) -> PatternListOrGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         PatternListOrGreen(
@@ -10072,7 +10072,7 @@ impl Deref for StatementList {
     }
 }
 impl StatementList {
-    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<StatementGreen>) -> StatementListGreen {
+    pub fn new_green(db: &dyn SyntaxGroup, children: &[StatementGreen]) -> StatementListGreen {
         let width = children.iter().map(|id| id.0.lookup_intern(db).width()).sum();
         StatementListGreen(
             Arc::new(GreenNode {
@@ -11683,7 +11683,7 @@ impl Deref for ModifierList {
     }
 }
 impl ModifierList {
-    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<ModifierGreen>) -> ModifierListGreen {
+    pub fn new_green(db: &dyn SyntaxGroup, children: &[ModifierGreen]) -> ModifierListGreen {
         let width = children.iter().map(|id| id.0.lookup_intern(db).width()).sum();
         ModifierListGreen(
             Arc::new(GreenNode {
@@ -11841,7 +11841,7 @@ impl Deref for ParamList {
 impl ParamList {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<ParamListElementOrSeparatorGreen>,
+        children: &[ParamListElementOrSeparatorGreen],
     ) -> ParamListGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         ParamListGreen(
@@ -12050,7 +12050,7 @@ impl Deref for ImplicitsList {
 impl ImplicitsList {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<ImplicitsListElementOrSeparatorGreen>,
+        children: &[ImplicitsListElementOrSeparatorGreen],
     ) -> ImplicitsListGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         ImplicitsListGreen(
@@ -12905,7 +12905,7 @@ impl Deref for MemberList {
 impl MemberList {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<MemberListElementOrSeparatorGreen>,
+        children: &[MemberListElementOrSeparatorGreen],
     ) -> MemberListGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         MemberListGreen(
@@ -13113,7 +13113,7 @@ impl Deref for VariantList {
 impl VariantList {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<VariantListElementOrSeparatorGreen>,
+        children: &[VariantListElementOrSeparatorGreen],
     ) -> VariantListGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         VariantListGreen(
@@ -13551,7 +13551,7 @@ impl Deref for ModuleItemList {
     }
 }
 impl ModuleItemList {
-    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<ModuleItemGreen>) -> ModuleItemListGreen {
+    pub fn new_green(db: &dyn SyntaxGroup, children: &[ModuleItemGreen]) -> ModuleItemListGreen {
         let width = children.iter().map(|id| id.0.lookup_intern(db).width()).sum();
         ModuleItemListGreen(
             Arc::new(GreenNode {
@@ -13816,7 +13816,7 @@ impl Deref for AttributeList {
     }
 }
 impl AttributeList {
-    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<AttributeGreen>) -> AttributeListGreen {
+    pub fn new_green(db: &dyn SyntaxGroup, children: &[AttributeGreen]) -> AttributeListGreen {
         let width = children.iter().map(|id| id.0.lookup_intern(db).width()).sum();
         AttributeListGreen(
             Arc::new(GreenNode {
@@ -15725,7 +15725,7 @@ impl Deref for TraitItemList {
     }
 }
 impl TraitItemList {
-    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<TraitItemGreen>) -> TraitItemListGreen {
+    pub fn new_green(db: &dyn SyntaxGroup, children: &[TraitItemGreen]) -> TraitItemListGreen {
         let width = children.iter().map(|id| id.0.lookup_intern(db).width()).sum();
         TraitItemListGreen(
             Arc::new(GreenNode {
@@ -17026,7 +17026,7 @@ impl Deref for ImplItemList {
     }
 }
 impl ImplItemList {
-    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<ImplItemGreen>) -> ImplItemListGreen {
+    pub fn new_green(db: &dyn SyntaxGroup, children: &[ImplItemGreen]) -> ImplItemListGreen {
         let width = children.iter().map(|id| id.0.lookup_intern(db).width()).sum();
         ImplItemListGreen(
             Arc::new(GreenNode {
@@ -18671,7 +18671,7 @@ impl Deref for UsePathList {
 impl UsePathList {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<UsePathListElementOrSeparatorGreen>,
+        children: &[UsePathListElementOrSeparatorGreen],
     ) -> UsePathListGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         UsePathListGreen(
@@ -19596,7 +19596,7 @@ impl Deref for GenericArgList {
 impl GenericArgList {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<GenericArgListElementOrSeparatorGreen>,
+        children: &[GenericArgListElementOrSeparatorGreen],
     ) -> GenericArgListGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         GenericArgListGreen(
@@ -19905,7 +19905,7 @@ impl Deref for AssociatedItemConstraintList {
 impl AssociatedItemConstraintList {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<AssociatedItemConstraintListElementOrSeparatorGreen>,
+        children: &[AssociatedItemConstraintListElementOrSeparatorGreen],
     ) -> AssociatedItemConstraintListGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         AssociatedItemConstraintListGreen(
@@ -20476,7 +20476,7 @@ impl Deref for GenericParamList {
 impl GenericParamList {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<GenericParamListElementOrSeparatorGreen>,
+        children: &[GenericParamListElementOrSeparatorGreen],
     ) -> GenericParamListGreen {
         let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
         GenericParamListGreen(
@@ -21257,7 +21257,7 @@ impl Deref for TokenList {
     }
 }
 impl TokenList {
-    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<TokenTreeGreen>) -> TokenListGreen {
+    pub fn new_green(db: &dyn SyntaxGroup, children: &[TokenTreeGreen]) -> TokenListGreen {
         let width = children.iter().map(|id| id.0.lookup_intern(db).width()).sum();
         TokenListGreen(
             Arc::new(GreenNode {
@@ -22826,7 +22826,7 @@ impl Deref for MacroRulesList {
     }
 }
 impl MacroRulesList {
-    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<MacroRuleGreen>) -> MacroRulesListGreen {
+    pub fn new_green(db: &dyn SyntaxGroup, children: &[MacroRuleGreen]) -> MacroRulesListGreen {
         let width = children.iter().map(|id| id.0.lookup_intern(db).width()).sum();
         MacroRulesListGreen(
             Arc::new(GreenNode {
@@ -24357,7 +24357,7 @@ impl Deref for MacroElements {
     }
 }
 impl MacroElements {
-    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<MacroElementGreen>) -> MacroElementsGreen {
+    pub fn new_green(db: &dyn SyntaxGroup, children: &[MacroElementGreen]) -> MacroElementsGreen {
         let width = children.iter().map(|id| id.0.lookup_intern(db).width()).sum();
         MacroElementsGreen(
             Arc::new(GreenNode {

@@ -21,16 +21,16 @@ fn build_empty_file_green_tree(db: &dyn SyntaxGroup, file_id: FileId) -> SyntaxF
     let eof_token = TokenEndOfFile::new_green(db, SmolStr::from(""));
     let eof_terminal = TerminalEndOfFile::new_green(
         db,
-        Trivia::new_green(db, vec![]),
+        Trivia::new_green(db, &[]),
         eof_token,
-        Trivia::new_green(db, vec![]),
+        Trivia::new_green(db, &[]),
     );
     SyntaxFile::from_syntax_node(
         db,
         SyntaxNode::new_root(
             db,
             file_id,
-            SyntaxFile::new_green(db, ModuleItemList::new_green(db, vec![]), eof_terminal).0,
+            SyntaxFile::new_green(db, ModuleItemList::new_green(db, &[]), eof_terminal).0,
         ),
     )
 }

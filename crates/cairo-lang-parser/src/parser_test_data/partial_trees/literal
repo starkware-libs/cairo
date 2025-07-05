@@ -131,6 +131,7 @@ fn foo() {
     let legal_hex = 0xf;
     let illegal_hex = 0xg;
     let illegal_hex = 0xfg;
+    let missing_suffix = 10000000_;
 }
 
 //! > top_level_kind
@@ -184,6 +185,11 @@ error: Missing token ';'.
  --> dummy_file.cairo:10:26
     let illegal_hex = 0xfg;
                          ^
+
+error: Missing literal suffix.
+ --> dummy_file.cairo:11:35
+    let missing_suffix = 10000000_;
+                                  ^
 
 //! > expected_tree
 └── Top level kind: StatementList
@@ -288,9 +294,18 @@ error: Missing token ';'.
     │   ├── rhs (kind: TokenLiteralNumber): '0xf'
     │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     │   └── semicolon: Missing
-    └── child #14 (kind: StatementExpr)
+    ├── child #14 (kind: StatementExpr)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── expr (kind: ExprPath) <ignored>
+    │   └── semicolon (kind: TokenSemicolon): ';'
+    └── child #15 (kind: StatementLet)
         ├── attributes (kind: AttributeList) []
-        ├── expr (kind: ExprPath) <ignored>
+        ├── let_kw (kind: TokenLet): 'let'
+        ├── pattern (kind: ExprPath) <ignored>
+        ├── type_clause (kind: OptionTypeClauseEmpty) []
+        ├── eq (kind: TokenEq): '='
+        ├── rhs (kind: TokenLiteralNumber): '10000000_'
+        ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
         └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================

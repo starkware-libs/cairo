@@ -2,16 +2,33 @@
 //!
 //! A failed validation emits a diagnostic.
 
-use cairo_lang_diagnostics::DiagnosticsBuilder;
-use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::TextSpan;
 use num_bigint::BigInt;
 use num_traits::Num;
-use smol_str::SmolStr;
 use unescaper::unescape;
 
-use crate::ParserDiagnostic;
 use crate::diagnostic::ParserDiagnosticKind;
+
+/// The validation error that is returned by the validation functions.
+pub struct ValidationError {
+    /// The kind of the diagnostic returned.
+    pub kind: ParserDiagnosticKind,
+    /// The location of the diagnostic within the span.
+    pub location: ValidationLocation,
+}
+impl ValidationError {
+    /// Creates a validation error that includes the entire span.
+    fn full(kind: ParserDiagnosticKind) -> Self {
+        ValidationError { kind, location: ValidationLocation::Full }
+    }
+}
+
+/// The location of the validation error within the span.
+pub enum ValidationLocation {
+    /// The error is at the entire span.
+    Full,
+    /// The error is at the end of the span, after the consumed token.
+    After,
+}
 
 /// Validate that the numeric literal is valid, after it is consumed by the parser.
 ///
@@ -20,15 +37,10 @@ use crate::diagnostic::ParserDiagnosticKind;
 /// This function validates that the literal:
 /// 1. Is parsable according to its radix.
 /// 2. Has properly formatted suffix.
-pub fn validate_literal_number(
-    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
-    text: SmolStr,
-    span: TextSpan,
-    file_id: FileId,
-) {
+pub fn validate_literal_number(text: &str) -> Option<ValidationError> {
     let (text, ty) = match text.split_once('_') {
         Some((text, ty)) => (text, Some(ty)),
-        None => (text.as_str(), None),
+        None => (text, None),
     };
 
     // Verify number value is parsable.
@@ -44,24 +56,20 @@ pub fn validate_literal_number(
         };
 
         if BigInt::from_str_radix(text, radix).is_err() {
-            diagnostics.add(ParserDiagnostic {
-                file_id,
-                span,
-                kind: ParserDiagnosticKind::InvalidNumericLiteralValue,
-            });
+            return Some(ValidationError::full(ParserDiagnosticKind::InvalidNumericLiteralValue));
         }
     }
 
     // Verify suffix.
     if let Some(ty) = ty {
         if ty.is_empty() {
-            diagnostics.add(ParserDiagnostic {
-                file_id,
-                span: span.after(),
+            return Some(ValidationError {
                 kind: ParserDiagnosticKind::MissingLiteralSuffix,
+                location: ValidationLocation::After,
             });
         }
     }
+    None
 }
 
 /// Validates that the short string literal is valid, after it is consumed by the parser.
@@ -72,17 +80,9 @@ pub fn validate_literal_number(
 /// 1. Ends with a quote (parser accepts unterminated literals).
 /// 2. Has all escape sequences valid.
 /// 3. Is entirely ASCII.
-pub fn validate_short_string(
-    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
-    text: SmolStr,
-    span: TextSpan,
-    file_id: FileId,
-) {
+pub fn validate_short_string(text: &str) -> Option<ValidationError> {
     validate_any_string(
-        diagnostics,
         text,
-        span,
-        file_id,
         '\'',
         ParserDiagnosticKind::UnterminatedShortString,
         ParserDiagnosticKind::ShortStringMustBeAscii,
@@ -97,17 +97,9 @@ pub fn validate_short_string(
 /// 1. Ends with double quotes (parser accepts unterminated literals).
 /// 2. Has all escape sequences valid.
 /// 3. Is entirely ASCII.
-pub fn validate_string(
-    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
-    text: SmolStr,
-    span: TextSpan,
-    file_id: FileId,
-) {
+pub fn validate_string(text: &str) -> Option<ValidationError> {
     validate_any_string(
-        diagnostics,
         text,
-        span,
-        file_id,
         '"',
         ParserDiagnosticKind::UnterminatedString,
         ParserDiagnosticKind::StringMustBeAscii,
@@ -116,47 +108,32 @@ pub fn validate_string(
 
 /// Validates a short-string/string.
 fn validate_any_string(
-    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
-    text: SmolStr,
-    span: TextSpan,
-    file_id: FileId,
+    text: &str,
     delimiter: char,
     unterminated_string_diagnostic_kind: ParserDiagnosticKind,
     ascii_only_diagnostic_kind: ParserDiagnosticKind,
-) {
+) -> Option<ValidationError> {
     let (_, text) = text.split_once(delimiter).unwrap();
 
     let Some((body, _suffix)) = text.rsplit_once(delimiter) else {
-        diagnostics.add(ParserDiagnostic {
-            file_id,
-            span,
-            kind: unterminated_string_diagnostic_kind,
-        });
-        return;
+        return Some(ValidationError::full(unterminated_string_diagnostic_kind));
     };
 
-    validate_string_body(diagnostics, body, span, file_id, ascii_only_diagnostic_kind)
+    validate_string_body(body, ascii_only_diagnostic_kind)
 }
 
 fn validate_string_body(
-    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
     body: &str,
-    span: TextSpan,
-    file_id: FileId,
     ascii_only_diagnostic_kind: ParserDiagnosticKind,
-) {
+) -> Option<ValidationError> {
     let Ok(body) = unescape(body) else {
         // TODO(mkaput): Try to always provide full position for entire escape sequence.
-        diagnostics.add(ParserDiagnostic {
-            file_id,
-            span,
-            kind: ParserDiagnosticKind::IllegalStringEscaping,
-        });
-        return;
+        return Some(ValidationError::full(ParserDiagnosticKind::IllegalStringEscaping));
     };
 
     if !body.is_ascii() {
         // TODO(mkaput): Try to always provide position of culprit character/escape sequence.
-        diagnostics.add(ParserDiagnostic { file_id, span, kind: ascii_only_diagnostic_kind });
+        return Some(ValidationError::full(ascii_only_diagnostic_kind));
     }
+    None
 }

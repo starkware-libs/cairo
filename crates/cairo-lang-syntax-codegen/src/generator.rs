@@ -235,7 +235,7 @@ fn gen_list_code(name: String, element_type: String) -> rust::Tokens {
         }
         impl $(&name){
             pub fn new_green(
-                db: &dyn SyntaxGroup, children: Vec<$(&element_green_name)>
+                db: &dyn SyntaxGroup, children: &[$(&element_green_name)]
             ) -> $(&green_name) {
                 let width = children.iter().map(|id|
                     id.0.lookup_intern(db).width()).sum();
@@ -292,7 +292,7 @@ fn gen_separated_list_code(
         }
         impl $(&name){
             pub fn new_green(
-                db: &dyn SyntaxGroup, children: Vec<$(&element_or_separator_green_name)>
+                db: &dyn SyntaxGroup, children: &[$(&element_or_separator_green_name)]
             ) -> $(&green_name) {
                 let width = children.iter().map(|id|
                     id.id().lookup_intern(db).width()).sum();
