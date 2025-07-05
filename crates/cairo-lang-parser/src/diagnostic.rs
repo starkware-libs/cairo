@@ -241,8 +241,8 @@ Did you mean to write `{identifier}!{left}...{right}'?",
             }
             ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op } => {
                 format!(
-                    "Operator {} is not allowed in this location. Consider wrapping the \
-                     expression in parentheses.",
+                    "Operator {} is not allowed in let chains. Consider wrapping the expression \
+                     in parentheses.",
                     self.kind_to_string(*op)
                 )
             }
