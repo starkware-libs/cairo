@@ -52,6 +52,7 @@ pub fn handle_derive(
                 code_mappings,
                 aux_data,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             })
         },
         diagnostics,

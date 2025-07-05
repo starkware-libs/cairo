@@ -375,6 +375,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             code_mappings,
             aux_data: None,
             diagnostics_note: Default::default(),
+            is_unhygienic: false,
         }),
         diagnostics,
         remove_original_item: false,

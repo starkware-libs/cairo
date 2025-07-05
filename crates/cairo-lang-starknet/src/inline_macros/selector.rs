@@ -51,6 +51,7 @@ impl InlineMacroExprPlugin for SelectorMacro {
                 code_mappings: vec![],
                 aux_data: None,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             }),
             diagnostics: vec![],
         }

@@ -125,6 +125,7 @@ impl MacroPlugin for MappingsPlugin {
                 aux_data: Default::default(),
                 diagnostics_note: Default::default(),
                 code_mappings,
+                is_unhygienic: false,
             }),
             remove_original_item: true,
             ..PluginResult::default()

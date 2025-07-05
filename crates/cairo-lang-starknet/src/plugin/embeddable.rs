@@ -203,6 +203,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
             code_mappings,
             aux_data: None,
             diagnostics_note: Default::default(),
+            is_unhygienic: false,
         }),
         diagnostics,
         remove_original_item: false,

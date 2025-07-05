@@ -221,6 +221,7 @@ impl MacroPlugin for DummyPlugin {
                         code_mappings: Default::default(),
                         aux_data: None,
                         diagnostics_note: Default::default(),
+                        is_unhygienic: false,
                     }),
                     diagnostics: vec![],
                     remove_original_item,
@@ -233,6 +234,7 @@ impl MacroPlugin for DummyPlugin {
                     code_mappings: Default::default(),
                     aux_data: None,
                     diagnostics_note: Default::default(),
+                    is_unhygienic: false,
                 }),
                 diagnostics: vec![PluginDiagnostic::error(
                     free_function_ast.stable_ptr(db),
@@ -352,6 +354,7 @@ impl MacroPlugin for FooToBarPlugin {
                 code_mappings: vec![],
                 aux_data: None,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             }),
             diagnostics: vec![],
             remove_original_item: false,

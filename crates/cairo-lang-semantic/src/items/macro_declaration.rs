@@ -101,6 +101,7 @@ impl From<ast::MacroParamKind> for PlaceholderKind {
 pub struct CapturedValue {
     pub text: String,
     pub stable_ptr: SyntaxStablePtrId,
+    pub is_unhygienic: bool,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_macro_declaration_data].
@@ -298,10 +299,18 @@ fn is_macro_rule_match_ex(
                             }
                             _ => return None,
                         };
+                        let is_unhygienic = match input_token {
+                            ast::TokenTree::Subtree(subtree) => subtree
+                                .as_syntax_node()
+                                .get_text(db)
+                                .contains("expose_inline_macro"),
+                            _ => false,
+                        };
                         ctx.captures.entry(placeholder_name.clone()).or_default().push(
                             CapturedValue {
                                 text: captured_text,
                                 stable_ptr: input_token.stable_ptr(db).untyped(),
+                                is_unhygienic,
                             },
                         );
                         if let Some(rep_id) = ctx.current_repetition_stack.last() {
@@ -322,11 +331,19 @@ fn is_macro_rule_match_ex(
                         if expr_length == 0 {
                             return None;
                         }
+                        let is_unhygienic = match peek_token {
+                            ast::TokenTree::Subtree(subtree) => subtree
+                                .as_syntax_node()
+                                .get_text(db)
+                                .contains("expose_inline_macro"),
+                            _ => false,
+                        };
 
                         ctx.captures.entry(placeholder_name.clone()).or_default().push(
                             CapturedValue {
                                 text: expr_text.to_string(),
                                 stable_ptr: peek_token.stable_ptr(db).untyped(),
+                                is_unhygienic,
                             },
                         );
                         if let Some(rep_id) = ctx.current_repetition_stack.last() {
@@ -465,6 +482,8 @@ pub struct MacroExpansionResult {
     pub text: Arc<str>,
     /// Information about placeholder expansions in this macro expansion.
     pub code_mappings: Arc<[CodeMapping]>,
+    /// Whether the macro expansion is unhygienic (i.e., it does not respect hygiene rules).
+    pub is_unhygienic: bool,
 }
 
 impl MacroExpansionResult {
@@ -489,8 +508,20 @@ pub fn expand_macro_rule(
     let node = rule.expansion.as_syntax_node();
     let mut res_buffer = String::new();
     let mut code_mappings = Vec::new();
-    expand_macro_rule_ex(db, node, matcher_ctx, &mut res_buffer, &mut code_mappings)?;
-    Ok(MacroExpansionResult { text: res_buffer.into(), code_mappings: code_mappings.into() })
+    let mut used_unhygienic = false;
+    expand_macro_rule_ex(
+        db,
+        node,
+        matcher_ctx,
+        &mut res_buffer,
+        &mut code_mappings,
+        &mut used_unhygienic,
+    )?;
+    Ok(MacroExpansionResult {
+        text: res_buffer.into(),
+        code_mappings: code_mappings.into(),
+        is_unhygienic: used_unhygienic,
+    })
 }
 
 /// Helper function for [expand_macro_rule]. Traverses the macro expansion and replaces the
@@ -504,6 +535,7 @@ fn expand_macro_rule_ex(
     matcher_ctx: &mut MatcherContext,
     res_buffer: &mut String,
     code_mappings: &mut Vec<CodeMapping>,
+    used_unhygienic: &mut bool,
 ) -> Maybe<()> {
     match node.kind(db) {
         SyntaxKind::MacroParam => {
@@ -519,6 +551,9 @@ fn expand_macro_rule_ex(
                     .get(&name)
                     .and_then(|v| rep_index.map_or_else(|| v.first(), |i| v.get(i)))
                     .ok_or_else(skip_diagnostic)?;
+                if value.is_unhygienic {
+                    *used_unhygienic = true;
+                }
                 let start_offset = TextWidth::from_str(res_buffer).as_offset();
                 res_buffer.push_str(&value.text);
                 let end_offset = TextWidth::from_str(res_buffer).as_offset();
@@ -554,6 +589,7 @@ fn expand_macro_rule_ex(
                         matcher_ctx,
                         res_buffer,
                         code_mappings,
+                        used_unhygienic,
                     )?;
                 }
 
@@ -574,7 +610,14 @@ fn expand_macro_rule_ex(
             }
 
             for child in node.get_children(db).iter() {
-                expand_macro_rule_ex(db, *child, matcher_ctx, res_buffer, code_mappings)?;
+                expand_macro_rule_ex(
+                    db,
+                    *child,
+                    matcher_ctx,
+                    res_buffer,
+                    code_mappings,
+                    used_unhygienic,
+                )?;
             }
             return Ok(());
         }
@@ -584,7 +627,7 @@ fn expand_macro_rule_ex(
         return Ok(());
     }
     for child in node.get_children(db).iter() {
-        expand_macro_rule_ex(db, *child, matcher_ctx, res_buffer, code_mappings)?;
+        expand_macro_rule_ex(db, *child, matcher_ctx, res_buffer, code_mappings, used_unhygienic)?;
     }
     Ok(())
 }

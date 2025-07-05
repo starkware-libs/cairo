@@ -55,6 +55,7 @@ impl InlineMacroExprPlugin for ArrayMacro {
                 code_mappings,
                 aux_data: None,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             }),
             diagnostics: vec![],
         }

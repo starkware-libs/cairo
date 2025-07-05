@@ -182,6 +182,7 @@ impl MacroPlugin for DoubleIndirectionPlugin {
                             content,
                             aux_data: None,
                             diagnostics_note: Some("first note".to_string()),
+                            is_unhygienic: false,
                         }),
                         ..PluginResult::default()
                     }
@@ -194,6 +195,7 @@ impl MacroPlugin for DoubleIndirectionPlugin {
                             content,
                             aux_data: None,
                             diagnostics_note: Some("second note".to_string()),
+                            is_unhygienic: false,
                         }),
                         ..PluginResult::default()
                     }
