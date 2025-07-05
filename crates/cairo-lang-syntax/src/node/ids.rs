@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, SpanInFile};
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_utils::{LookupIntern, define_short_id};
 
@@ -58,6 +58,10 @@ impl SyntaxStablePtrId {
     pub fn parent(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
         let SyntaxStablePtr::Child { parent, .. } = self.lookup_intern(db) else { panic!() };
         parent
+    }
+    /// Returns the span in file of this stable pointer without trivia.
+    pub fn span_in_file(&self, db: &dyn SyntaxGroup) -> SpanInFile {
+        SpanInFile { file_id: self.file_id(db), span: self.lookup(db).span_without_trivia(db) }
     }
     /// Returns the stable pointer of the `n`th parent of this stable pointer.
     /// n = 0: returns itself.

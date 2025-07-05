@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
-use cairo_lang_diagnostics::get_location_marks;
+use cairo_lang_filesystem::location_marks::get_location_marks;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::Intern;
@@ -83,7 +83,7 @@ fn test_generated_function(
                 func_description,
                 get_location_marks(
                     db,
-                    &generated_id.stable_location(db).unwrap().diagnostic_location(db),
+                    generated_id.stable_location(db).unwrap().diagnostic_location(db),
                     true
                 )
             )

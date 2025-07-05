@@ -9,10 +9,11 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, DiagnosticsBuilder,
-    ErrorCode, Severity, error_code,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticNote, DiagnosticsBuilder, ErrorCode, Severity,
+    error_code,
 };
 use cairo_lang_filesystem::db::Edition;
+use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_syntax as syntax;
@@ -1077,14 +1078,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
             .into(),
         }
     }
-    fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
+    fn location(&self, db: &Self::DbType) -> SpanInFile {
         if let SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(parser_diagnostic) =
             &self.kind
         {
-            return DiagnosticLocation {
-                file_id: parser_diagnostic.file_id,
-                span: parser_diagnostic.span,
-            };
+            return SpanInFile { file_id: parser_diagnostic.file_id, span: parser_diagnostic.span };
         };
 
         let mut location = self.stable_location.diagnostic_location(db);

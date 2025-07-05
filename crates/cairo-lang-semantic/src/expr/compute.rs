@@ -607,7 +607,7 @@ fn compute_expr_inline_macro_semantic(
     let InlineMacroExpansion { content, name, code_mappings: mappings, is_plugin_macro } =
         expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
+        parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
         name: name.clone().into(),
         content: content.clone(),
         code_mappings: mappings.clone(),
@@ -682,7 +682,7 @@ fn expand_macro_for_statement(
     let InlineMacroExpansion { content, name, code_mappings: mappings, is_plugin_macro } =
         expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
+        parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
         name: name.clone().into(),
         content: content.clone(),
         code_mappings: mappings.clone(),

@@ -1059,9 +1059,9 @@ macro a_macro {
 
 //! > expected_diagnostics
 error: Empty path after `$defsite` is not allowed.
- --> lib.cairo[a_macro]:1:10
-        $defsite
-         ^^^^^^^
+ --> lib.cairo:7:5
+    a_macro!(x);
+    ^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1147,14 +1147,14 @@ fn consume_z(_z: felt252) {}
 
 //! > expected_diagnostics
 warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
- --> lib.cairo[bas_use_z_from_callsite]:1:9
-        z
-        ^
+ --> lib.cairo:10:5
+    bas_use_z_from_callsite!();
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E0006]: Identifier not found.
- --> lib.cairo[bas_use_z_from_callsite]:1:9
-        z
-        ^
+ --> lib.cairo:10:5
+    bas_use_z_from_callsite!();
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1191,9 +1191,9 @@ macro wrap_bas_use_z_from_callsite {
 
 //! > expected_diagnostics
 error[E0006]: Identifier not found.
- --> lib.cairo[wrap_bas_use_z_from_callsite][bas_use_z_from_callsite]:1:20
-        $callsite::z
-                   ^
+ --> lib.cairo:17:5
+    wrap_bas_use_z_from_callsite!();
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1221,9 +1221,9 @@ fn bar() {}
 
 //! > expected_diagnostics
 warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
- --> lib.cairo[call_bar]:1:9
-        bar()
-        ^^^
+ --> lib.cairo:9:5
+    call_bar!();
+    ^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1357,9 +1357,9 @@ macro test_macro {
 
 //! > expected_diagnostics
 error: Parser error in macro-expanded code: Missing tokens. Expected an expression.
- --> lib.cairo[test_macro]:1:12
-        1 +
-           ^
+ --> lib.cairo:7:5
+    test_macro!();
+    ^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1455,16 +1455,14 @@ macro statement_list_returning_macro {
 
 //! > expected_diagnostics
 error: Parser error in macro-expanded code: Missing tokens. Expected an expression.
- --> lib.cairo[statement_list_returning_macro]:1:1
-        let a = 1;
-^
+ --> lib.cairo:8:14
+    let _x = statement_list_returning_macro!();
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Parser error in macro-expanded code: Skipped tokens. Expected: end of expr.
- --> lib.cairo[statement_list_returning_macro]:1:1-2:18
-          let a = 1;
- _^
-|         let b = 2;
-|__________________^
+ --> lib.cairo:8:14
+    let _x = statement_list_returning_macro!();
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
