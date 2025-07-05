@@ -26,6 +26,12 @@ pub struct BlockBuilder {
     /// A store for semantic variables, owning their OwnedVariable instances.
     pub semantics: SemanticLoweringMapping,
     /// The semantic variables that are captured as snapshots in this block.
+    ///
+    /// For example, the following code will add `a.x` to `snapped_semantics`:
+    /// ```plain
+    /// let a = MyStruct { x: ... };
+    /// let b = @a.x;
+    /// ```
     pub snapped_semantics: OrderedHashMap<MemberPath, VariableId>,
     /// The semantic variables that are added/changed in this block.
     changed_member_paths: OrderedHashSet<MemberPath>,

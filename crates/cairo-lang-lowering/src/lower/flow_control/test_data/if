@@ -1,0 +1,50 @@
+//! > Test boolean if with else
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(x: bool) -> felt252 {
+    if x {
+        3
+    } else {
+        4
+    }
+}
+
+//! > module_code
+
+//! > graph
+Root: 2
+0 ArmExpr { expr: Id { idx: 2 } }
+1 ArmExpr { expr: Id { idx: 4 } }
+2 BooleanIf { condition: Id { idx: 0 }, true_branch: NodeId(0), false_branch: NodeId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+Parameters: v0: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v2) => blk2,
+    bool::True(v1) => blk1,
+  })
+
+blk1:
+Statements:
+  (v4: core::felt252) <- 3
+End:
+  Goto(blk3, {v4 -> v5})
+
+blk2:
+Statements:
+  (v3: core::felt252) <- 4
+End:
+  Goto(blk3, {v3 -> v5})
+
+blk3:
+Statements:
+End:
+  Return(v5)
