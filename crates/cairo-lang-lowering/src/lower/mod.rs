@@ -133,7 +133,7 @@ pub fn lower_function(
 
     // Initialize builder.
     let root_block_id = alloc_empty_block(&mut ctx);
-    let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
+    let mut builder = BlockBuilder::root(root_block_id);
 
     let parameters = ctx
         .signature
@@ -399,7 +399,7 @@ pub fn lower_loop_function(
 
     // Initialize builder.
     let root_block_id = alloc_empty_block(&mut ctx);
-    let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
+    let mut builder = BlockBuilder::root(root_block_id);
 
     let snapped_params = ctx.usages.usages[&loop_expr_id].snap_usage.clone();
     let parameters = ctx
@@ -1904,7 +1904,7 @@ fn get_destruct_lowering(
     closure_info: &ClosureInfo,
 ) -> Maybe<Lowered> {
     let root_block_id = alloc_empty_block(&mut ctx);
-    let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
+    let mut builder = BlockBuilder::root(root_block_id);
 
     let parameters = ctx
         .signature
@@ -1991,7 +1991,7 @@ fn add_closure_call_function(
         LoweringContext::new(encapsulated_ctx, function_with_body_id, signature, return_type)?;
 
     let root_block_id = alloc_empty_block(&mut ctx);
-    let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
+    let mut builder = BlockBuilder::root(root_block_id);
 
     let info = ctx.db.core_info();
     let (closure_param_var_id, closure_var) = if trait_id == info.fn_once_trt {

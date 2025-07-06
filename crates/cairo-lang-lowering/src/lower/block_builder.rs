@@ -36,7 +36,7 @@ pub struct BlockBuilder {
 }
 impl BlockBuilder {
     /// Creates a new [BlockBuilder] for the root block of a function body.
-    pub fn root(_ctx: &mut LoweringContext<'_, '_>, block_id: BlockId) -> Self {
+    pub fn root(block_id: BlockId) -> Self {
         BlockBuilder {
             semantics: Default::default(),
             snapped_semantics: Default::default(),
