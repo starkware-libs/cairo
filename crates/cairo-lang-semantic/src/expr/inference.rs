@@ -290,7 +290,7 @@ pub enum InferenceErrorStatus {
 }
 
 /// A mapping of an impl var's trait items to concrete items
-#[derive(Debug, Default, PartialEq, Eq, Clone, SemanticObject)]
+#[derive(Debug, Default, PartialEq, Eq, Hash, Clone, SemanticObject)]
 pub struct ImplVarTraitItemMappings {
     /// The trait types of the impl var.
     types: OrderedHashMap<TraitTypeId, TypeId>,
@@ -298,22 +298,6 @@ pub struct ImplVarTraitItemMappings {
     constants: OrderedHashMap<TraitConstantId, ConstValueId>,
     /// The trait impls of the impl var.
     impls: OrderedHashMap<TraitImplId, ImplId>,
-}
-impl Hash for ImplVarTraitItemMappings {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.types.iter().for_each(|(trait_type_id, type_id)| {
-            trait_type_id.hash(state);
-            type_id.hash(state);
-        });
-        self.constants.iter().for_each(|(trait_const_id, const_id)| {
-            trait_const_id.hash(state);
-            const_id.hash(state);
-        });
-        self.impls.iter().for_each(|(trait_impl_id, impl_id)| {
-            trait_impl_id.hash(state);
-            impl_id.hash(state);
-        });
-    }
 }
 
 /// State of inference.
