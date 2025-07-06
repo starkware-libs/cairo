@@ -348,16 +348,9 @@ pub struct GeneratedImplLongId {
     pub generic_params: Vec<GenericParam>,
     pub impl_items: GeneratedImplItems,
 }
-#[derive(Clone, Debug, Default, PartialEq, Eq, SemanticObject)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, SemanticObject)]
 pub struct GeneratedImplItems(pub OrderedHashMap<TraitTypeId, TypeId>);
-impl Hash for GeneratedImplItems {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.iter().for_each(|(trait_type_id, type_id)| {
-            trait_type_id.hash(state);
-            type_id.hash(state);
-        });
-    }
-}
+
 pub enum GeneratedImplAssociatedTypes {
     /// The associated types are not yet resolved.
     Unresolved,
