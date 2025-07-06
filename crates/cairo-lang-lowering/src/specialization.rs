@@ -209,5 +209,6 @@ pub fn priv_should_specialize(
     }
 
     // The heuristic is that the size is 8/10*orig_size > specialized_size of the original size.
-    Ok(8 * db.estimate_size(specialized_func.base)? > 10 * db.estimate_size(function_id)?)
+    Ok(db.estimate_size(specialized_func.base)?.saturating_mul(8)
+        > db.estimate_size(function_id)?.saturating_mul(10))
 }
