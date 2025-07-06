@@ -76,7 +76,7 @@ pub fn const_folding(
     function_id: ConcreteFunctionWithBodyId,
     lowered: &mut Lowered,
 ) {
-    if db.optimization_config().skip_const_folding || lowered.blocks.is_empty() {
+    if lowered.blocks.is_empty() {
         return;
     }
 
@@ -84,11 +84,7 @@ pub fn const_folding(
     // is in static single assignment form.
     let mut ctx = ConstFoldingContext::new(db, function_id, &mut lowered.variables);
 
-    // Skipping const-folding for `panic_with_const_felt252` - to avoid replacing a call to
-    // `panic_with_felt252` with `panic_with_const_felt252` and causing accidental recursion.
-    if function_id.base_semantic_function(db).generic_function(db)
-        == GenericFunctionWithBodyId::Free(ctx.libfunc_info.panic_with_const_felt252)
-    {
+    if ctx.should_skip_const_folding(db) {
         return;
     }
 
@@ -1115,6 +1111,22 @@ impl<'a> ConstFoldingContext<'a> {
             }
             _ => None,
         }
+    }
+
+    /// Returns true if const-folding should be skipped for the current function.
+    pub fn should_skip_const_folding(&self, db: &dyn LoweringGroup) -> bool {
+        if db.optimization_config().skip_const_folding {
+            return true;
+        }
+
+        // Skipping const-folding for `panic_with_const_felt252` - to avoid replacing a call to
+        // `panic_with_felt252` with `panic_with_const_felt252` and causing accidental recursion.
+        if self.caller_base.base_semantic_function(db).generic_function(db)
+            == GenericFunctionWithBodyId::Free(self.libfunc_info.panic_with_const_felt252)
+        {
+            return true;
+        }
+        false
     }
 }
 
