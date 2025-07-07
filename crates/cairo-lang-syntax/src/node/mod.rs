@@ -309,8 +309,8 @@ impl SyntaxNode {
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
     pub fn get_text_without_trivia(self, db: &dyn SyntaxGroup) -> String {
-        let SyntaxNodeLongId { green, .. } = self.lookup_intern(db);
-        format!("{}", TrimmedGreenFormatter { green, trim_kind: TrimKind::Both, db })
+        let node = self.lookup_intern(db).green.lookup_intern(db);
+        format!("{}", TrimmedGreenFormatter { node, trim_kind: TrimKind::Both, db })
     }
 
     /// Returns the text under the syntax node, according to the given span.
@@ -510,10 +510,10 @@ impl Display for NodeTextFormatter<'_> {
     }
 }
 
-/// Wrapper for formatting the text of a green id while trimming trivia.
+/// Wrapper for formatting the text of a green node while trimming trivia.
 struct TrimmedGreenFormatter<'a> {
     /// The node to format.
-    pub green: GreenId,
+    pub node: Arc<GreenNode>,
     /// The kind of trimming to apply.
     pub trim_kind: TrimKind,
     /// The syntax db.
@@ -532,11 +532,10 @@ enum TrimKind {
 impl Display for TrimmedGreenFormatter<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let db = self.db;
-        let green_node = self.green.lookup_intern(db);
-        match &green_node.details {
+        match &self.node.details {
             green::GreenNodeDetails::Token(text) => write!(f, "{text}"),
             green::GreenNodeDetails::Node { children, .. } => {
-                if green_node.kind.is_terminal() {
+                if self.node.kind.is_terminal() {
                     let children = match self.trim_kind {
                         TrimKind::Leading => &children[1..],
                         TrimKind::Trailing => &children[..=1],
@@ -544,52 +543,62 @@ impl Display for TrimmedGreenFormatter<'_> {
                     };
                     return write!(f, "{}", GreenNodesFormatter { nodes: children, db });
                 }
-                let cond = |c: &GreenId| c.lookup_intern(db).width() != TextWidth::default();
                 match self.trim_kind {
                     TrimKind::Leading => {
-                        let Some(start) = children.iter().position(cond) else {
+                        let Some((first, rest)) = split_non_empty(db, children, <[_]>::split_first)
+                        else {
                             return Ok(());
                         };
-                        let green = children[start];
                         let trim_kind = TrimKind::Leading;
-                        write!(f, "{}", TrimmedGreenFormatter { green, trim_kind, db })?;
-                        write!(f, "{}", GreenNodesFormatter { nodes: &children[(start + 1)..], db })
+                        write!(f, "{}", TrimmedGreenFormatter { node: first, trim_kind, db })?;
+                        write!(f, "{}", GreenNodesFormatter { nodes: rest, db })
                     }
                     TrimKind::Trailing => {
-                        let Some(end) = children.iter().rposition(cond) else {
+                        let Some((last, rest)) = split_non_empty(db, children, <[_]>::split_last)
+                        else {
                             return Ok(());
                         };
-                        write!(f, "{}", GreenNodesFormatter { nodes: &children[..end], db })?;
-                        let green = children[end];
+                        write!(f, "{}", GreenNodesFormatter { nodes: rest, db })?;
                         let trim_kind = TrimKind::Trailing;
-                        write!(f, "{}", TrimmedGreenFormatter { green, trim_kind, db })
+                        write!(f, "{}", TrimmedGreenFormatter { node: last, trim_kind, db })
                     }
                     TrimKind::Both => {
-                        let Some(start) = children.iter().position(cond) else {
+                        let Some((first, rest)) = split_non_empty(db, children, <[_]>::split_first)
+                        else {
                             return Ok(());
                         };
-                        let Some(end) = children.iter().rposition(cond) else {
-                            return Ok(());
-                        };
-                        if start == end {
-                            let green = children[start];
-                            let trim_kind = TrimKind::Both;
-                            write!(f, "{}", TrimmedGreenFormatter { green, trim_kind, db })
-                        } else {
-                            let green = children[start];
+                        if let Some((last, rest)) = split_non_empty(db, rest, <[_]>::split_last) {
                             let trim_kind = TrimKind::Leading;
-                            write!(f, "{}", TrimmedGreenFormatter { green, trim_kind, db })?;
-                            let nodes = &children[(start + 1)..end];
-                            write!(f, "{}", GreenNodesFormatter { nodes, db })?;
-                            let green = children[end];
+                            write!(f, "{}", TrimmedGreenFormatter { node: first, trim_kind, db })?;
+                            write!(f, "{}", GreenNodesFormatter { nodes: rest, db })?;
                             let trim_kind = TrimKind::Trailing;
-                            write!(f, "{}", TrimmedGreenFormatter { green, trim_kind, db })
+                            write!(f, "{}", TrimmedGreenFormatter { node: last, trim_kind, db })
+                        } else {
+                            let trim_kind = TrimKind::Both;
+                            write!(f, "{}", TrimmedGreenFormatter { node: first, trim_kind, db })
                         }
                     }
                 }
             }
         }
     }
+}
+
+/// Splits the given children slice into a non-empty part and the rest, using the provided split
+/// function.
+fn split_non_empty<'a>(
+    db: &dyn SyntaxGroup,
+    mut children: &'a [GreenId],
+    split: impl Fn(&[GreenId]) -> Option<(&GreenId, &[GreenId])>,
+) -> Option<(Arc<GreenNode>, &'a [GreenId])> {
+    while let Some((taken, rest)) = split(children) {
+        let taken = taken.lookup_intern(db);
+        if taken.width() != TextWidth::default() {
+            return Some((taken, rest));
+        }
+        children = rest;
+    }
+    None
 }
 
 /// Formatter for green nodes, used for formatting the text of syntax nodes.
