@@ -110,17 +110,18 @@ error: Capture of mutable variables in a closure is not supported
 
 //! > ==========================================================================
 
-//! > invalidated capture immutable variable
+//! > Use of caputed var.
 
 //! > test_runner_name
 test_borrow_check
 
 //! > function
 fn foo(a: S) {
-    |b: u32| {
-        let _ = a.a + b;
+    let f = || {
+        use_s(a)
     };
     let _ = a.a;
+    use_f(f)
 }
 
 //! > function_name
@@ -131,51 +132,33 @@ struct S {
     a: u32,
 }
 
+extern fn use_f<T>(f: T) nopanic;
+
+extern fn use_s(s: S) nopanic;
+
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+error: Variable was previously moved.
+ --> lib.cairo:12:13
+    let _ = a.a;
+            ^^^
+note: variable was previously used here:
+  --> lib.cairo:10:15
+        use_s(a)
+              ^
+note: Trait has no implementation in context: core::traits::Copy::<test::S>.
 
 //! > lowering
 Parameters: v0: test::S
 blk0 (root):
 Statements:
-  (v1: core::integer::u32) <- struct_destructure(v0{`a.a`})
-  (v2: {closure@lib.cairo:5:5: 5:13}) <- struct_construct(v1{`a.a`})
+  (v1: {closure@lib.cairo:9:13: 9:15}) <- struct_construct(v0{`a`})
+  (v2: core::integer::u32) <- struct_destructure(v0{`a.a`})
+  () <- test::use_f::<{closure@lib.cairo:9:13: 9:15}>(v1{`f`})
   (v3: ()) <- struct_construct()
 End:
   Return(v3)
-
-//! > ==========================================================================
-
-//! > capture use after invalidatian.
-
-//! > test_runner_name
-test_borrow_check
-
-//! > function
-fn foo(mut a: Array<u32>) {
-    let f = |b: u32| {
-        let _ = a.append(b);
-    };
-    a.append(0);
-    use_f(f)
-}
-
-//! > function_name
-foo
-
-//! > module_code
-extern fn use_f<T>(f: T) nopanic;
-
-//! > semantic_diagnostics
-error: Capture of mutable variables in a closure is not supported
- --> lib.cairo:4:17
-        let _ = a.append(b);
-                ^
-
-//! > lowering_diagnostics
-
-//! > lowering
 
 //! > ==========================================================================
 
@@ -185,11 +168,12 @@ error: Capture of mutable variables in a closure is not supported
 test_borrow_check
 
 //! > function
-fn foo(mut a: Array<u32>) {
+fn foo(a: Array<u32>) {
     let f = |_b: u32| {
         let _ = a.len();
     };
-    a.append(0);
+    let mut b = a;
+    b.append(1);
     use_f(f)
 }
 
@@ -200,14 +184,21 @@ foo
 extern fn use_f<T>(f: T) nopanic;
 
 //! > semantic_diagnostics
-error: Capture of mutable variables in a closure is not supported
- --> lib.cairo:4:17
-        let _ = a.len();
-                ^
 
 //! > lowering_diagnostics
 
 //! > lowering
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::integer::u32>, v2: @core::array::Array::<core::integer::u32>) <- snapshot(v0{`a`})
+  (v3: {closure@lib.cairo:3:13: 3:22}) <- struct_construct(v2{`|_b: u32| { let _ = a.len(); }`})
+  (v4: core::integer::u32) <- 1
+  (v6: core::array::Array::<core::integer::u32>, v5: ()) <- core::array::ArrayImpl::<core::integer::u32>::append(v1{`b`}, v4{`1`})
+  () <- test::use_f::<{closure@lib.cairo:3:13: 3:22}>(v3{`f`})
+  (v7: ()) <- struct_construct()
+End:
+  Return(v7)
 
 //! > ==========================================================================
 
