@@ -22,6 +22,7 @@ use crate::diagnostic::{
 use crate::ids::{
     ConcreteFunctionWithBodyId, FunctionWithBodyId, FunctionWithBodyLongId, LocationId,
 };
+use crate::optimizations::const_folding::ConstFoldingContext;
 use crate::utils::{InliningStrategy, Rebuilder, RebuilderEx};
 use crate::{
     Block, BlockEnd, BlockId, DependencyType, Lowered, LoweringStage, Statement, StatementCall,
@@ -111,7 +112,7 @@ impl<'a> Mapper<'a> {
         db: &'a dyn LoweringGroup,
         variables: &'a mut Arena<Variable>,
         lowered: &'a Lowered,
-        call_stmt: &StatementCall,
+        call_stmt: StatementCall,
         block_id_offset: usize,
     ) -> Self {
         // The input variables need to be renamed to match the inputs to the function call.
@@ -129,7 +130,7 @@ impl<'a> Mapper<'a> {
             renamed_vars,
             block_id_offset: BlockId(block_id_offset),
             return_block_id: BlockId(block_id_offset + lowered.blocks.len()),
-            outputs: call_stmt.outputs.clone(),
+            outputs: call_stmt.outputs,
             inlining_location,
         }
     }
@@ -185,8 +186,10 @@ fn inner_apply_inlining(
     db: &dyn LoweringGroup,
     lowered: &mut Lowered,
     calling_function_id: ConcreteFunctionWithBodyId,
+    mut enable_const_folding: bool,
 ) -> Maybe<()> {
     lowered.blocks.has_root()?;
+
     let mut blocks = BlocksBuilder::new();
 
     let mut stack: Vec<std::vec::IntoIter<BlockId>> = vec![
@@ -198,32 +201,47 @@ fn inner_apply_inlining(
             .into_iter(),
     ];
 
+    let mut const_folding_ctx =
+        ConstFoldingContext::new(db, calling_function_id, &mut lowered.variables);
+
+    enable_const_folding = enable_const_folding && !const_folding_ctx.should_skip_const_folding(db);
+
     while let Some(mut func_blocks) = stack.pop() {
         for block_id in func_blocks.by_ref() {
+            if enable_const_folding
+                && !const_folding_ctx
+                    .visit_block_start(block_id, |block_id| blocks.get_mut_block(block_id))
+            {
+                continue;
+            }
+
             // Read the next block id before `blocks` is borrowed.
             let next_block_id = blocks.len();
             let block = blocks.get_mut_block(block_id);
 
             let mut opt_inline_info = None;
-            for (idx, statement) in block.statements.iter().enumerate() {
+            for (idx, statement) in block.statements.iter_mut().enumerate() {
+                if enable_const_folding {
+                    const_folding_ctx.visit_statement(statement);
+                }
                 if let Some((call_stmt, called_func)) =
                     should_inline(db, calling_function_id, statement)?
                 {
-                    opt_inline_info = Some((idx, call_stmt, called_func));
+                    opt_inline_info = Some((idx, call_stmt.clone(), called_func));
                     break;
                 }
             }
 
             let Some((call_stmt_idx, call_stmt, called_func)) = opt_inline_info else {
+                if enable_const_folding {
+                    const_folding_ctx.visit_block_end(block_id, block);
+                }
                 // Nothing to inline in this block, go to the next block.
                 continue;
             };
 
             let inlined_lowered = db.lowered_body(called_func, LoweringStage::PostBaseline)?;
             inlined_lowered.blocks.has_root()?;
-
-            let mut inline_mapper =
-                Mapper::new(db, &mut lowered.variables, &inlined_lowered, call_stmt, next_block_id);
 
             // Drain the statements starting at the call to the inlined function.
             let remaining_statements =
@@ -232,7 +250,19 @@ fn inner_apply_inlining(
             // Replace the end of the block with a goto to the root block of the inlined function.
             let orig_block_end = std::mem::replace(
                 &mut block.end,
-                BlockEnd::Goto(inline_mapper.block_id_offset, VarRemapping::default()),
+                BlockEnd::Goto(BlockId(next_block_id), VarRemapping::default()),
+            );
+
+            if enable_const_folding {
+                const_folding_ctx.visit_block_end(block_id, block);
+            }
+
+            let mut inline_mapper = Mapper::new(
+                db,
+                const_folding_ctx.variables,
+                &inlined_lowered,
+                call_stmt,
+                next_block_id,
             );
 
             // Apply the mapper to the inlined blocks and add them as a contiguous chunk to the
@@ -299,12 +329,15 @@ fn should_inline<'a>(
 }
 
 /// Applies inlining to a lowered function.
+///
+/// Note that if const folding is enabled, the blocks must be topologically sorted.
 pub fn apply_inlining(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
     lowered: &mut Lowered,
+    enable_const_folding: bool,
 ) -> Maybe<()> {
-    if let Err(diag_added) = inner_apply_inlining(db, lowered, function_id) {
+    if let Err(diag_added) = inner_apply_inlining(db, lowered, function_id, enable_const_folding) {
         lowered.blocks = Blocks::new_errored(diag_added);
     }
     Ok(())
