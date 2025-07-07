@@ -519,16 +519,13 @@ fn expand_macro_rule_ex(
                     .get(&name)
                     .and_then(|v| rep_index.map_or_else(|| v.first(), |i| v.get(i)))
                     .ok_or_else(skip_diagnostic)?;
-                let start_offset = TextWidth::from_str(res_buffer).as_offset();
+                let start = TextWidth::from_str(res_buffer).as_offset();
+                let span =
+                    TextSpan { start, end: start.add_width(TextWidth::from_str(&value.text)) };
                 res_buffer.push_str(&value.text);
-                let end_offset = TextWidth::from_str(res_buffer).as_offset();
-                let value_stable_ptr = value.stable_ptr.lookup(db);
                 code_mappings.push(CodeMapping {
-                    span: TextSpan { start: start_offset, end: end_offset },
-                    origin: CodeOrigin::Span(TextSpan {
-                        start: value_stable_ptr.span_start_without_trivia(db),
-                        end: value_stable_ptr.span_end_without_trivia(db),
-                    }),
+                    span,
+                    origin: CodeOrigin::Span(value.stable_ptr.lookup(db).span_without_trivia(db)),
                 });
                 return Ok(());
             }
