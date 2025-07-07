@@ -116,11 +116,11 @@ error: Capture of mutable variables in a closure is not supported
 test_borrow_check
 
 //! > function
-fn foo(a: S) {
-    |b: u32| {
-        let _ = a.a + b;
+fn foo(a: S) -> S {
+    || {
+        use_s(a)
     };
-    let _ = a.a;
+    a
 }
 
 //! > function_name
@@ -131,6 +131,8 @@ struct S {
     a: u32,
 }
 
+extern fn use_s(s: S) nopanic;
+
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -139,11 +141,10 @@ struct S {
 Parameters: v0: test::S
 blk0 (root):
 Statements:
-  (v1: core::integer::u32) <- struct_destructure(v0{`a.a`})
-  (v2: {closure@lib.cairo:5:5: 5:13}) <- struct_construct(v1{`a.a`})
-  (v3: ()) <- struct_construct()
+  (v1: {closure@lib.cairo:7:5: 7:7}) <- struct_construct(v0{`a`})
+  (v2: test::S) <- struct_destructure(v1{`a`})
 End:
-  Return(v3)
+  Return(v2)
 
 //! > ==========================================================================
 

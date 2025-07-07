@@ -307,7 +307,7 @@ impl BlockBuilder {
                 .eq(inputs.iter().map(|var_usage| &ctx.variables[var_usage.var_id].ty))
         );
 
-        let var_usage =
+        let closure_var_usage =
             generators::StructConstruct { inputs: inputs.clone(), ty: expr.ty, location }
                 .add(ctx, &mut self.statements);
 
@@ -317,19 +317,19 @@ impl BlockBuilder {
             if ctx.variables[var_usage.var_id].copyable.is_ok()
                 && !usage.changes.contains_key(member)
             {
-                self.semantics.copiable_captured.insert(member.clone(), var_usage.var_id);
+                self.semantics.copiable_captured.insert(member.clone(), closure_var_usage.var_id);
             } else {
-                self.semantics.captured.insert(member.clone(), var_usage.var_id);
+                self.semantics.captured.insert(member.clone(), closure_var_usage.var_id);
             }
         }
 
         for member in usage.snap_usage.keys() {
-            self.semantics.copiable_captured.insert(member.clone(), var_usage.var_id);
+            self.semantics.copiable_captured.insert(member.clone(), closure_var_usage.var_id);
         }
 
-        self.semantics.closures.insert(var_usage.var_id, closure_info);
+        self.semantics.closures.insert(closure_var_usage.var_id, closure_info);
 
-        var_usage
+        closure_var_usage
     }
 
     /// Merges sibling sealed blocks.
