@@ -54,6 +54,9 @@ pub struct TestsCompilationConfig {
     /// Adds the starknet contracts to the compiled tests.
     pub starknet: bool,
 
+    /// Allow the compiled crate to contain executable attributes.
+    pub executable: bool,
+    
     /// Contracts to compile.
     /// If defined, only this contacts will be available in tests.
     /// If not, all contracts from `contract_crate_ids` will be compiled.

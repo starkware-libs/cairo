@@ -34,6 +34,7 @@ use itertools::Itertools;
 use num_traits::ToPrimitive;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use starknet_types_core::felt::Felt as Felt252;
+use cairo_lang_executable::plugin::executable_plugin_suite;
 
 #[cfg(test)]
 mod test;
@@ -57,6 +58,7 @@ impl TestRunner {
     pub fn new(
         path: &Path,
         starknet: bool,
+        executable: bool,
         allow_warnings: bool,
         config: TestRunConfig,
     ) -> Result<Self> {
@@ -66,6 +68,7 @@ impl TestRunner {
             config.gas_enabled,
             TestsCompilationConfig {
                 starknet,
+                executable,
                 add_statements_functions: config.run_profiler == RunProfilerConfig::Cairo,
                 add_statements_code_locations: false,
                 contract_declarations: None,
@@ -225,6 +228,9 @@ impl TestCompiler {
             b.with_default_plugin_suite(test_plugin_suite());
             if config.starknet {
                 b.with_default_plugin_suite(starknet_plugin_suite());
+            }
+            if config.executable {
+                b.with_default_plugin_suite(executable_plugin_suite());
             }
             b.build()?
         };

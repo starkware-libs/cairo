@@ -1104,6 +1104,7 @@ version = "2.11.4"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
+ "cairo-lang-executable",
  "cairo-lang-filesystem",
  "cairo-lang-runner",
  "cairo-lang-sierra",
