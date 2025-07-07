@@ -309,9 +309,8 @@ impl SyntaxNode {
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
     pub fn get_text_without_trivia(self, db: &dyn SyntaxGroup) -> String {
-        let trimmed_span = self.span_without_trivia(db);
-
-        self.get_text_of_span(db, trimmed_span)
+        let SyntaxNodeLongId { green, .. } = self.lookup_intern(db);
+        format!("{}", TrimmedGreenFormatter { green, trim_kind: TrimKind::Both, db })
     }
 
     /// Returns the text under the syntax node, according to the given span.
@@ -503,9 +502,110 @@ impl Display for NodeTextFormatter<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.node.green_node(self.db).as_ref().details {
             green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
-            green::GreenNodeDetails::Node { .. } => {
-                for child in self.node.get_children(self.db).iter() {
-                    write!(f, "{}", NodeTextFormatter { node: child, db: self.db })?;
+            green::GreenNodeDetails::Node { children, .. } => {
+                write!(f, "{}", GreenNodesFormatter { nodes: children, db: self.db })?;
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Wrapper for formatting the text of a green id while trimming trivia.
+struct TrimmedGreenFormatter<'a> {
+    /// The node to format.
+    pub green: GreenId,
+    /// The kind of trimming to apply.
+    pub trim_kind: TrimKind,
+    /// The syntax db.
+    pub db: &'a dyn SyntaxGroup,
+}
+
+enum TrimKind {
+    /// Trim the leading trivia.
+    Leading,
+    /// Trim the trailing trivia.
+    Trailing,
+    /// Trim both leading and trailing trivia.
+    Both,
+}
+
+impl Display for TrimmedGreenFormatter<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let db = self.db;
+        let green_node = self.green.lookup_intern(db);
+        match &green_node.details {
+            green::GreenNodeDetails::Token(text) => write!(f, "{text}"),
+            green::GreenNodeDetails::Node { children, .. } => {
+                if green_node.kind.is_terminal() {
+                    let children = match self.trim_kind {
+                        TrimKind::Leading => &children[1..],
+                        TrimKind::Trailing => &children[..=1],
+                        TrimKind::Both => &children[1..=1],
+                    };
+                    return write!(f, "{}", GreenNodesFormatter { nodes: children, db });
+                }
+                let cond = |c: &GreenId| c.lookup_intern(db).width() != TextWidth::default();
+                match self.trim_kind {
+                    TrimKind::Leading => {
+                        let Some(start) = children.iter().position(cond) else {
+                            return Ok(());
+                        };
+                        let green = children[start];
+                        let trim_kind = TrimKind::Leading;
+                        write!(f, "{}", TrimmedGreenFormatter { green, trim_kind, db })?;
+                        write!(f, "{}", GreenNodesFormatter { nodes: &children[(start + 1)..], db })
+                    }
+                    TrimKind::Trailing => {
+                        let Some(end) = children.iter().rposition(cond) else {
+                            return Ok(());
+                        };
+                        write!(f, "{}", GreenNodesFormatter { nodes: &children[..end], db })?;
+                        let green = children[end];
+                        let trim_kind = TrimKind::Trailing;
+                        write!(f, "{}", TrimmedGreenFormatter { green, trim_kind, db })
+                    }
+                    TrimKind::Both => {
+                        let Some(start) = children.iter().position(cond) else {
+                            return Ok(());
+                        };
+                        let Some(end) = children.iter().rposition(cond) else {
+                            return Ok(());
+                        };
+                        if start == end {
+                            let green = children[start];
+                            let trim_kind = TrimKind::Both;
+                            write!(f, "{}", TrimmedGreenFormatter { green, trim_kind, db })
+                        } else {
+                            let green = children[start];
+                            let trim_kind = TrimKind::Leading;
+                            write!(f, "{}", TrimmedGreenFormatter { green, trim_kind, db })?;
+                            let nodes = &children[(start + 1)..end];
+                            write!(f, "{}", GreenNodesFormatter { nodes, db })?;
+                            let green = children[end];
+                            let trim_kind = TrimKind::Trailing;
+                            write!(f, "{}", TrimmedGreenFormatter { green, trim_kind, db })
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Formatter for green nodes, used for formatting the text of syntax nodes.
+struct GreenNodesFormatter<'a> {
+    /// The green nodes to format.
+    nodes: &'a [GreenId],
+    /// The syntax db.
+    db: &'a dyn SyntaxGroup,
+}
+impl Display for GreenNodesFormatter<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for id in self.nodes.iter() {
+            match &id.lookup_intern(self.db).details {
+                green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
+                green::GreenNodeDetails::Node { children, .. } => {
+                    write!(f, "{}", GreenNodesFormatter { nodes: children, db: self.db })?;
                 }
             }
         }
