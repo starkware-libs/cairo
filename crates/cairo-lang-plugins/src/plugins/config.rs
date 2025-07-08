@@ -9,8 +9,8 @@ use cairo_lang_syntax::attribute::structured::{
     Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
-use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::helpers::{BodyItems, GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::try_extract_matches;
 use itertools::Itertools;
 
@@ -300,7 +300,7 @@ fn extract_config_predicate_part(
             if let Some([ast::PathSegment::Simple(segment)]) =
                 path.segments(db).elements(db).collect_array()
             {
-                Some(ConfigPredicatePart::Cfg(Cfg::name(segment.ident(db).text(db).to_string())))
+                Some(ConfigPredicatePart::Cfg(Cfg::name(segment.identifier(db).to_string())))
             } else {
                 None
             }

@@ -14,7 +14,7 @@ use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
-use cairo_lang_syntax::node::helpers::PathSegmentEx;
+use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -938,7 +938,7 @@ impl<'db> Resolver<'db> {
         let mut module_id = self.active_module_file_id(macro_context_modifier).0;
         for segment in segments.peeking_take_while(|segment| match segment {
             ast::PathSegment::WithGenericArgs(_) | ast::PathSegment::Missing(_) => false,
-            ast::PathSegment::Simple(simple) => simple.ident(db).text(db) == SUPER_KW,
+            ast::PathSegment::Simple(simple) => simple.identifier(db) == SUPER_KW,
         }) {
             module_id = match module_id {
                 ModuleId::CrateRoot(_) => {

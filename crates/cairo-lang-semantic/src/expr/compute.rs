@@ -3271,7 +3271,7 @@ fn try_extract_identifier_from_path(
         return Some((first.ident(db), false));
     };
     let second = try_extract_matches!(second, PathSegment::Simple)?;
-    if first.ident(db).text(db) == "callsite" && path.is_placeholder(db) {
+    if first.identifier(db) == "callsite" && path.is_placeholder(db) {
         Some((second.ident(db), true))
     } else {
         None

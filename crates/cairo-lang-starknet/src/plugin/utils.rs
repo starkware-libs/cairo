@@ -2,10 +2,10 @@ use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
+use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{self, Attribute, Modifier, OptionTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{QueryAttrs, is_single_arg_attr};
-use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs, is_single_arg_attr};
 use cairo_lang_utils::{extract_matches, require, try_extract_matches};
 use itertools::Itertools;
 
@@ -72,7 +72,7 @@ impl AstPathExtract for ast::ExprPath {
             return false;
         };
 
-        arg_segment.ident(db).text(db) == identifier
+        arg_segment.identifier(db) == identifier
     }
 
     fn is_name_with_arg(&self, db: &dyn SyntaxGroup, name: &str, generic_arg: &str) -> bool {
@@ -83,7 +83,7 @@ impl AstPathExtract for ast::ExprPath {
             return false;
         };
 
-        if path_segment_with_generics.ident(db).text(db) != name {
+        if path_segment_with_generics.identifier(db) != name {
             return false;
         }
         let args = path_segment_with_generics.generic_args(db).generic_args(db).elements(db);

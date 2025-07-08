@@ -1,8 +1,8 @@
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginResult};
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use itertools::Itertools;
 
 #[derive(Debug, Default)]
@@ -70,7 +70,7 @@ fn get_diagnostics<Item: QueryAttrs>(
                     ));
                     return;
                 };
-                if segment.ident(db).text(db) != HIDDEN_ATTR {
+                if segment.identifier(db) != HIDDEN_ATTR {
                     diagnostics.push(PluginDiagnostic::error(
                         path.stable_ptr(db),
                         format!(
