@@ -168,22 +168,6 @@ impl BlockBuilder {
         )
     }
 
-    /// Gets the type of a semantic variable.
-    pub fn get_ty(
-        &mut self,
-        ctx: &mut LoweringContext<'_, '_>,
-        member_path: &MemberPath,
-    ) -> semantic::TypeId {
-        match member_path {
-            MemberPath::Var(var) => ctx.semantic_defs[var].ty(),
-            MemberPath::Member { member_id, concrete_struct_id, .. } => {
-                ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()
-                    [&member_id.name(ctx.db)]
-                    .ty
-            }
-        }
-    }
-
     /// Adds a statement to the block.
     pub fn push_statement(&mut self, statement: Statement) {
         self.statements.push_statement(statement);
@@ -366,7 +350,7 @@ impl BlockBuilder {
                     }
                     // Actually adding to the remapping.
                     semantic_remapping.member_path_value.entry(v.clone()).or_insert_with(|| {
-                        let ty = self.get_ty(ctx, &v);
+                        let ty = get_ty(ctx, &v);
                         ctx.new_var(VarRequest { ty, location })
                     });
                 }
@@ -419,6 +403,16 @@ impl BlockBuilder {
             closure_var,
             closure_info,
         )
+    }
+}
+
+/// Gets the type of a semantic variable.
+fn get_ty(ctx: &mut LoweringContext<'_, '_>, member_path: &MemberPath) -> semantic::TypeId {
+    match member_path {
+        MemberPath::Var(var) => ctx.semantic_defs[var].ty(),
+        MemberPath::Member { member_id, concrete_struct_id, .. } => {
+            ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()[&member_id.name(ctx.db)].ty
+        }
     }
 }
 
