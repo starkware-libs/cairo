@@ -426,7 +426,7 @@ impl BlockBuilder {
 
 /// Gets the type of a semantic variable.
 fn get_ty(
-    ctx: &mut LoweringContext<'_, '_>,
+    ctx: &LoweringContext<'_, '_>,
     member_path: &MemberPath,
 ) -> semantic::TypeId {
     match member_path {
