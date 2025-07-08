@@ -297,7 +297,8 @@ impl SierraCasmRunner {
 
             // TODO(yuval): Maintain a map of pc to sierra statement index (only for PCs we saw), to
             // save lookups.
-            let sierra_statement_idx = self.sierra_statement_index_by_pc(real_pc);
+            let sierra_statement_idx =
+                self.builder.casm_program().sierra_statement_index_by_pc(real_pc);
             let user_function_idx = user_function_idx_by_sierra_statement_idx(
                 self.builder.sierra_program(),
                 sierra_statement_idx,
@@ -367,20 +368,6 @@ impl SierraCasmRunner {
             stack_trace_weights,
             scoped_sierra_statement_weights,
         }
-    }
-
-    fn sierra_statement_index_by_pc(&self, pc: usize) -> StatementIdx {
-        // the `-1` here can't cause an underflow as the first statement is always at
-        // offset 0, so it is always on the left side of the
-        // partition, and thus the partition index is >0.
-        StatementIdx(
-            self.builder
-                .casm_program()
-                .debug_info
-                .sierra_statement_info
-                .partition_point(|x| x.start_offset <= pc)
-                - 1,
-        )
     }
 
     /// Extract inner type if `ty` is a panic wrapper
