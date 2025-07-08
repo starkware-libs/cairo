@@ -34,7 +34,7 @@ pub struct ImplAliasData {
 
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_alias_semantic_data].
 pub fn priv_impl_alias_semantic_data(
-    db: &(dyn SemanticGroup),
+    db: &dyn SemanticGroup,
     impl_alias_id: ImplAliasId,
     in_cycle: bool,
 ) -> Maybe<ImplAliasData> {
@@ -57,7 +57,7 @@ pub fn priv_impl_alias_semantic_data(
 
 /// A helper function to compute the semantic data of an impl-alias item.
 pub fn impl_alias_semantic_data_helper(
-    db: &(dyn SemanticGroup),
+    db: &dyn SemanticGroup,
     impl_alias_ast: &ast::ItemImplAlias,
     lookup_item_id: LookupItemId,
     generic_params_data: GenericParamsData,
@@ -115,7 +115,7 @@ pub fn priv_impl_alias_semantic_data_cycle(
 
 /// A helper function to compute the semantic data of an impl-alias item when a cycle is detected.
 pub fn impl_alias_semantic_data_cycle_helper(
-    db: &(dyn SemanticGroup),
+    db: &dyn SemanticGroup,
     impl_alias_ast: &ast::ItemImplAlias,
     lookup_item_id: LookupItemId,
     generic_params_data: GenericParamsData,

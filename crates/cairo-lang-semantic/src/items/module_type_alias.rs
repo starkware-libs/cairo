@@ -94,7 +94,7 @@ pub fn module_type_alias_resolver_data_cycle(
 
 /// Query implementation of [crate::db::SemanticGroup::priv_module_type_alias_semantic_data].
 pub fn priv_module_type_alias_semantic_data(
-    db: &(dyn SemanticGroup),
+    db: &dyn SemanticGroup,
     module_type_alias_id: ModuleTypeAliasId,
     in_cycle: bool,
 ) -> Maybe<ModuleTypeAliasData> {
