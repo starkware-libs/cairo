@@ -438,24 +438,29 @@ mod unhygienic_expose_plugin_macro {
         expose!(let a = 1;);
         assert_eq!(a, 1);
     }
+
     #[test]
     fn test_expose_multiple_variables() {
         expose!(let a = 10; let b = 20;);
         assert_eq!(a, 10);
         assert_eq!(b, 20);
     }
+
     #[test]
     fn test_expose_shadowing() {
-        let _a = 5;
-        expose!{let _a = 42; };
-        assert_eq!(_a, 42);
+        let a = 5;
+        assert_eq!(a, 5);
+        expose!{let a = 42; };
+        assert_eq!(a, 42);
     }
+
     #[test]
     fn test_expose_variable_and_use_in_macro() {
         let x = 7;
         expose!(let y = x + 1;);
         assert_eq!(y, 8);
     }
+
     #[test]
     fn test_expose_variable_used_in_next_expose() {
         expose!(let a = 2;);
@@ -463,6 +468,7 @@ mod unhygienic_expose_plugin_macro {
         assert_eq!(a, 2);
         assert_eq!(b, 5);
     }
+
     macro my_expose {
         () => {
             expose!(let a = 10;);
@@ -473,14 +479,17 @@ mod unhygienic_expose_plugin_macro {
         my_expose!();
         assert_eq!(a, 10);
     }
-    // TODO(Dean): Fix issue with macro defined variables considered "unused" and remove `_`
-    // prefixes all around.
-    macro inner_most {
+
+    // TODO(Dean): Fix issue with macro exposed defined variables only findable at external
+    // definition block. Then it would be possible to test the value of the variables within the
+    // macro and remove `_` prefixes all around.
+    macro outer {
         () => {
             expose!(let _deeply_nested = 3;);
             expose!(let _middle_var = 2;);
         };
     }
+
     macro middle {
         () => {
             expose!(let _middle_var = 22;);
@@ -488,39 +497,47 @@ mod unhygienic_expose_plugin_macro {
             inner_most!();
         };
     }
-    macro outer {
+
+    macro inner_most {
         () => {
-            expose!(let _outer_var = 11;);
-            middle!();
+            expose!(let deeply_nested = 3;);
+            assert_eq!($callsite::middle_var, 22);
+            expose!(let middle_var = 2;);
         };
     }
+
     #[test]
     fn test_expose_deep_nested_macros() {
         outer!();
-        assert_eq!(_outer_var, 1);
-        assert_eq!(_middle_var, 2);
-        assert_eq!(_deeply_nested, 3);
+        assert_eq!(outer_var, 1);
+        assert_eq!(middle_var, 2);
+        assert_eq!(deeply_nested, 3);
     }
+
     macro set_var_macro {
         ($val:expr) => {
-            let _from_inner = $val;
+            let from_inner = $val;
         };
     }
+
     macro wrap_expose_macro {
         () => {
             expose!(set_var_macro!(123););
         };
     }
+
     #[test]
     fn test_expose_expansion_inside_wrap_expose_macro_with_param() {
         wrap_expose_macro!();
-        assert_eq!(_from_inner, 123);
+        assert_eq!(from_inner, 123);
     }
+
     macro expose_let_var {
         ($expr:expr) => {
             expose!(let expose_var = $expr;);
         };
     }
+
     #[test]
     fn test_expose_let_var_macro() {
         expose_let_var!(1);
