@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe, skip_diagnostic};
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast::{MacroElement, MacroParam};
@@ -465,15 +465,6 @@ pub struct MacroExpansionResult {
     pub text: Arc<str>,
     /// Information about placeholder expansions in this macro expansion.
     pub code_mappings: Arc<[CodeMapping]>,
-}
-
-impl MacroExpansionResult {
-    /// Returns the placeholder that was expanded at the given offset, if any.
-    pub fn get_placeholder_at(&self, offset: TextOffset) -> Option<&CodeMapping> {
-        self.code_mappings
-            .iter()
-            .find(|mapping| mapping.span.start <= offset && offset <= mapping.span.end)
-    }
 }
 
 /// Traverse the macro expansion and replace the placeholders with the provided values, creates a

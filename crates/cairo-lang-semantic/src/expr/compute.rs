@@ -19,6 +19,7 @@ use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPluginMetadata};
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::ids::{CodeMapping, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast::{
     BinaryOperator, BlockOrIf, ClosureParamWrapper, ConditionListAnd, ExprPtr,
@@ -69,9 +70,7 @@ use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
 use crate::items::imp::{ImplLookupContext, filter_candidate_traits, infer_impl_by_self};
-use crate::items::macro_declaration::{
-    MacroExpansionResult, MatcherContext, expand_macro_rule, is_macro_rule_match,
-};
+use crate::items::macro_declaration::{MatcherContext, expand_macro_rule, is_macro_rule_match};
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
@@ -91,6 +90,24 @@ use crate::{
     ConcreteEnumId, ConcreteVariant, GenericArgumentId, GenericParam, LocalItem, Member,
     Mutability, Parameter, PatternStringLiteral, PatternStruct, Signature, StatementItemKind,
 };
+
+/// The information of a macro expansion.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MacroExpansionInfo {
+    /// The code mappings for this expansion.
+    pub mappings: Arc<[CodeMapping]>,
+    /// The kind of macro the expansion is from.
+    pub kind: MacroKind,
+}
+
+impl MacroExpansionInfo {
+    /// Returns the placeholder that was expanded at the given offset, if any.
+    pub fn get_placeholder_at(&self, offset: TextOffset) -> Option<&CodeMapping> {
+        self.mappings
+            .iter()
+            .find(|mapping| mapping.span.start <= offset && offset <= mapping.span.end)
+    }
+}
 
 /// Describes the origin and hygiene behavior of a macro expansion.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -166,8 +183,7 @@ enum InnerContextKind {
 struct InlineMacroExpansion {
     pub content: Arc<str>,
     pub name: String,
-    pub code_mappings: Arc<[CodeMapping]>,
-    pub kind: MacroKind,
+    pub info: MacroExpansionInfo,
 }
 
 /// Context for computing the semantic model of expression trees.
@@ -235,18 +251,13 @@ impl<'ctx> ComputationContext<'ctx> {
     /// that points to the current environment as a parent, and also contains the macro expansion
     /// data. When looking up variables, we will get out of the macro expansion environment if
     /// and only if the text was originated from expanding a placeholder.
-    fn run_in_macro_subscope<T, F>(
-        &mut self,
-        operation: F,
-        macro_expansion: MacroExpansionResult,
-        macro_kind: MacroKind,
-    ) -> T
+    fn run_in_macro_subscope<T, F>(&mut self, operation: F, macro_info: MacroExpansionInfo) -> T
     where
         F: FnOnce(&mut Self) -> T,
     {
         let prev_macro_hygiene_kind = self.macro_defined_var_unhygienic;
         let prev_suppress_modifiers_diagnostics = self.resolver.suppress_modifiers_diagnostics;
-        match macro_kind {
+        match macro_info.kind {
             MacroKind::Unhygienic => {
                 self.macro_defined_var_unhygienic = true;
             }
@@ -255,7 +266,7 @@ impl<'ctx> ComputationContext<'ctx> {
             }
             MacroKind::UserDefined => {}
         }
-        let result = self.run_in_subscope_ex(operation, Some(macro_expansion));
+        let result = self.run_in_subscope_ex(operation, Some(macro_info));
         self.macro_defined_var_unhygienic = prev_macro_hygiene_kind;
         self.resolver.set_suppress_modifiers_diagnostics(prev_suppress_modifiers_diagnostics);
         result
@@ -263,17 +274,13 @@ impl<'ctx> ComputationContext<'ctx> {
     /// Runs a function with a modified context, with a new environment for a subscope.
     /// Shouldn't be called directly, use [Self::run_in_subscope] or [Self::run_in_macro_subscope]
     /// instead.
-    fn run_in_subscope_ex<T, F>(
-        &mut self,
-        f: F,
-        macro_expansion_data: Option<MacroExpansionResult>,
-    ) -> T
+    fn run_in_subscope_ex<T, F>(&mut self, f: F, macro_info: Option<MacroExpansionInfo>) -> T
     where
         F: FnOnce(&mut Self) -> T,
     {
         // Push an environment to the stack.
         let mut new_environment = Box::new(Environment::empty());
-        new_environment.macro_code_mappings = macro_expansion_data;
+        new_environment.macro_info = macro_info;
         let old_environment = std::mem::replace(&mut self.environment, new_environment);
         self.environment.parent = Some(old_environment);
 
@@ -389,9 +396,8 @@ pub struct Environment {
     used_variables: UnorderedHashSet<semantic::VarId>,
     use_items: EnvItems,
     used_use_items: UnorderedHashSet<SmolStr>,
-    /// The macro code mappings for the current environment, only exists if the environment is
-    /// created from expanding a macro.
-    macro_code_mappings: Option<MacroExpansionResult>,
+    /// Information for macro in case the current environment was create by expanding a macro.
+    macro_info: Option<MacroExpansionInfo>,
 }
 impl Environment {
     /// Adds a parameter to the environment.
@@ -423,7 +429,7 @@ impl Environment {
             used_variables: Default::default(),
             use_items: Default::default(),
             used_use_items: Default::default(),
-            macro_code_mappings: None,
+            macro_info: None,
         }
     }
 }
@@ -570,18 +576,17 @@ fn expand_inline_macro(
         let inference_id = ctx.resolver.inference().inference_id;
         let callsite_resolver = ctx.resolver.data.clone_with_inference_id(ctx.db, inference_id);
         let parent_macro_call_data = ctx.resolver.macro_call_data.clone();
+        let info = MacroExpansionInfo {
+            mappings: expanded_code.code_mappings,
+            kind: MacroKind::UserDefined,
+        };
         ctx.resolver.macro_call_data = Some(ResolverMacroData {
             defsite_module_file_id: macro_defsite_resolver_data.module_file_id,
             callsite_module_file_id: callsite_resolver.module_file_id,
-            expansion_result: expanded_code.clone(),
+            expansion_info: info.clone(),
             parent_macro_call_data: parent_macro_call_data.map(|data| data.into()),
         });
-        Ok(InlineMacroExpansion {
-            content: expanded_code.text,
-            name: macro_name.clone(),
-            code_mappings: expanded_code.code_mappings,
-            kind: MacroKind::UserDefined,
-        })
+        Ok(InlineMacroExpansion { content: expanded_code.text, name: macro_name, info })
     } else if let Some(macro_plugin_id) =
         ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name).cloned()
     {
@@ -618,8 +623,10 @@ fn expand_inline_macro(
         Ok(InlineMacroExpansion {
             content: code.content.into(),
             name: code.name.to_string(),
-            code_mappings: code.code_mappings.into(),
-            kind: if code.is_unhygienic { MacroKind::Unhygienic } else { MacroKind::Plugin },
+            info: MacroExpansionInfo {
+                mappings: code.code_mappings.into(),
+                kind: if code.is_unhygienic { MacroKind::Unhygienic } else { MacroKind::Plugin },
+            },
         })
     } else {
         Err(ctx.diagnostics.report(
@@ -637,13 +644,12 @@ fn compute_expr_inline_macro_semantic(
     syntax: &ast::ExprInlineMacro,
 ) -> Maybe<Expr> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
-    let InlineMacroExpansion { content, name, code_mappings: mappings, kind } =
-        expand_inline_macro(ctx, syntax)?;
+    let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
-        name: name.clone().into(),
-        content: content.clone(),
-        code_mappings: mappings.clone(),
+        name: name.into(),
+        content,
+        code_mappings: info.mappings.clone(),
         kind: FileKind::Expr,
         original_item_removed: true,
     })
@@ -659,11 +665,7 @@ fn compute_expr_inline_macro_semantic(
         }
         return Err(diag_added);
     }
-    let expr = ctx.run_in_macro_subscope(
-        |ctx| compute_expr_semantic(ctx, &expr_syntax),
-        MacroExpansionResult { text: content, code_mappings: mappings },
-        kind,
-    );
+    let expr = ctx.run_in_macro_subscope(|ctx| compute_expr_semantic(ctx, &expr_syntax), info);
     ctx.resolver.macro_call_data = prev_macro_call_data;
     Ok(expr.expr)
 }
@@ -702,13 +704,12 @@ fn expand_macro_for_statement(
     statements_ids: &mut Vec<StatementId>,
 ) -> Maybe<Option<ExprAndId>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
-    let InlineMacroExpansion { content, name, code_mappings: mappings, kind } =
-        expand_inline_macro(ctx, syntax)?;
+    let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
-        name: name.clone().into(),
-        content: content.clone(),
-        code_mappings: mappings.clone(),
+        name: name.into(),
+        content,
+        code_mappings: info.mappings.clone(),
         kind: FileKind::StatementList,
         original_item_removed: true,
     })
@@ -747,8 +748,7 @@ fn expand_macro_for_statement(
                 Ok(None)
             }
         },
-        MacroExpansionResult { text: content, code_mappings: mappings },
-        kind,
+        info,
     );
     ctx.resolver.macro_call_data = prev_macro_call_data;
     result
@@ -3780,8 +3780,8 @@ pub fn get_binded_expr_by_name(
     while let Some(env) = maybe_env {
         // If a variable is from an expanded macro placeholder, we need to look for it in the parent
         // env.
-        if let Some(macro_expansion) = &env.macro_code_mappings {
-            if let Some(placeholder_expansion) = macro_expansion.get_placeholder_at(cur_offset) {
+        if let Some(macro_info) = &env.macro_info {
+            if let Some(placeholder_expansion) = macro_info.get_placeholder_at(cur_offset) {
                 maybe_env = env.parent.as_deref_mut();
                 cur_offset = placeholder_expansion.origin.start();
                 continue;
@@ -3804,7 +3804,7 @@ pub fn get_binded_expr_by_name(
         }
 
         // Don't look inside a callsite environment unless explicitly stated.
-        if env.macro_code_mappings.is_some() {
+        if env.macro_info.is_some() {
             if is_callsite_prefixed && !found_callsite_scope {
                 found_callsite_scope = true;
             } else {
@@ -4067,7 +4067,7 @@ pub fn compute_and_append_statement_semantic(
                 let mut environment = ctx.environment.as_mut();
                 if ctx.macro_defined_var_unhygienic {
                     while let Some(parent_env) = environment.parent.as_deref_mut() {
-                        if environment.macro_code_mappings.is_some() {
+                        if environment.macro_info.is_some() {
                             environment = parent_env;
                         } else {
                             break;
