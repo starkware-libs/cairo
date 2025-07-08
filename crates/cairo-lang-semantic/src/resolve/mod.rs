@@ -33,7 +33,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{
-    ComputationContext, ContextFunction, Environment, compute_expr_semantic,
+    ComputationContext, ContextFunction, Environment, MacroExpansionInfo, compute_expr_semantic,
     get_statement_item_by_name,
 };
 use crate::expr::inference::canonic::ResultNoErrEx;
@@ -50,7 +50,6 @@ use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{
     ConcreteImplId, ConcreteImplLongId, DerefInfo, ImplImplId, ImplLongId, ImplLookupContext,
 };
-use crate::items::macro_declaration::MacroExpansionResult;
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{
     ConcreteTraitConstantLongId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
@@ -227,9 +226,9 @@ pub struct ResolverMacroData {
     /// 2. The path was supplied as a macro argument. In other words, the path is an expansion of a
     ///    placeholder and is not a part of the macro expansion template.
     pub callsite_module_file_id: ModuleFileId,
-    /// This is the result of the macro expansion. It is used to determine if a part of the code
-    /// came from a macro argument or from the macro expansion template.
-    pub expansion_result: MacroExpansionResult,
+    /// This is information about the macro expansion. It is used to determine if a part of the
+    /// code came from a macro argument or from the macro expansion template.
+    pub expansion_info: MacroExpansionInfo,
     /// The parent macro data. Exists in case of a macro calling another macro, and is used if we
     /// climb to the callsite environment.
     pub parent_macro_call_data: Option<Box<ResolverMacroData>>,
@@ -452,7 +451,7 @@ impl<'db> Resolver<'db> {
         // argument of a macro call.
         while let Some(macro_call_data) = &cur_macro_call_data {
             if let Some(placeholder_expansion) =
-                macro_call_data.expansion_result.get_placeholder_at(cur_offset)
+                macro_call_data.expansion_info.get_placeholder_at(cur_offset)
             {
                 cur_macro_call_data =
                     macro_call_data.parent_macro_call_data.as_ref().map(|data| data.as_ref());
