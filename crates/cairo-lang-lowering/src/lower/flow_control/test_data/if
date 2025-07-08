@@ -1,7 +1,7 @@
 //! > Test boolean if with else
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false)
+test_create_graph(expect_diagnostics: false, skip_lowering: false)
 
 //! > function_code
 fn foo(x: bool) -> felt252 {
@@ -48,3 +48,87 @@ blk3:
 Statements:
 End:
   Return(v5)
+
+//! > ==========================================================================
+
+//! > Test let chain with modified variables
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: false)
+
+//! > function_code
+fn foo(mut x: felt252, mut y: felt252) -> felt252 {
+    if let Some(_) = Some(modify(ref x)) && let Some(_) = Some(modify(ref y)) {
+        x + y
+    } else {
+        x + y
+    }
+}
+
+//! > module_code
+struct MyStruct {
+    x: felt252,
+    y: felt252,
+}
+
+extern fn modify(ref x: felt252) nopanic;
+
+//! > graph
+Root: 3
+0 ArmExpr { expr: Id { idx: 9 } }
+1 ArmExpr { expr: Id { idx: 13 } }
+2 BooleanIf { condition: Id { idx: 5 }, true_branch: NodeId(0), false_branch: NodeId(1) }
+3 BooleanIf { condition: Id { idx: 2 }, true_branch: NodeId(2), false_branch: NodeId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- test::modify(v0)
+  (v3: ()) <- struct_construct()
+  (v4: core::option::Option::<()>) <- Option::Some(v3)
+End:
+  Match(match_enum(v4) {
+    bool::False(v6) => blk2,
+    bool::True(v5) => blk1,
+  })
+
+blk1:
+Statements:
+  (v7: core::felt252) <- test::modify(v1)
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<()>) <- Option::Some(v8)
+End:
+  Match(match_enum(v9) {
+    bool::False(v11) => blk4,
+    bool::True(v10) => blk3,
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk5, {v1 -> v12})
+
+blk3:
+Statements:
+  (v14: core::felt252) <- core::Felt252Add::add(v2, v7)
+End:
+  Goto(blk6, {v7 -> v16, v14 -> v15})
+
+blk4:
+Statements:
+End:
+  Goto(blk5, {v7 -> v12})
+
+blk5:
+Statements:
+  (v13: core::felt252) <- core::Felt252Add::add(v2, v12)
+End:
+  Goto(blk6, {v12 -> v16, v13 -> v15})
+
+blk6:
+Statements:
+End:
+  Return(v15)

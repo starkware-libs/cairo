@@ -18,15 +18,27 @@ pub fn create_graph_expr_if(expr: &semantic::ExprIf) -> FlowControlGraph {
         graph.add_node(FlowControlNode::UnitResult)
     };
 
-    // Handle the condition.
-    let Condition::BoolExpr(condition) = expr.conditions[0] else {
-        panic!("Unsupported condition"); // TODO: fix.
-    };
+    // Handle the conditions.
+    let mut current_node = true_branch;
+    for condition in expr.conditions.iter().rev() {
+        current_node = match condition {
+            Condition::BoolExpr(condition) => {
+                graph.add_node(FlowControlNode::BooleanIf(BooleanIf {
+                    condition: condition.clone(),
+                    true_branch: current_node,
+                    false_branch,
+                }))
+            }
+            Condition::Let(expr, _patterns) => {
+                // TODO: fix.
+                graph.add_node(FlowControlNode::BooleanIf(BooleanIf {
+                    condition: expr.clone(),
+                    true_branch: current_node,
+                    false_branch,
+                }))
+            }
+        }
+    }
 
-    let root = graph.add_node(FlowControlNode::BooleanIf(BooleanIf {
-        condition,
-        true_branch,
-        false_branch,
-    }));
-    graph.finalize(root)
+    graph.finalize(current_node)
 }

@@ -13,7 +13,7 @@ use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
 use super::generators::StatementsBuilder;
-use super::refs::{SemanticLoweringMapping, StructRecomposer};
+use super::refs::{MergedScattered, SemanticLoweringMapping, StructRecomposer, merge_scattered};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
@@ -565,4 +565,52 @@ impl StructRecomposer for BlockStructRecomposer<'_, '_, '_> {
     fn db(&self) -> &dyn LoweringGroup {
         self.ctx.db
     }
+}
+
+// TODO: doc.
+pub fn merge_block_builders(
+    ctx: &mut LoweringContext<'_, '_>,
+    parent_builders: Vec<BlockBuilder>,
+    location: LocationId,
+) -> BlockBuilder {
+    // If there is only one parent builder, return it.
+    if parent_builders.len() == 1 {
+        return parent_builders.into_iter().next().unwrap();
+    }
+
+    // Assign a new block id for the current node.
+    let block_id = ctx.blocks.alloc_empty();
+
+    // TODO: fix below.
+    let mut child_builder = parent_builders.last().unwrap().child_block_builder(block_id);
+
+    // Compute the merged snapped semantics.
+    let scattered =
+        merge_scattered(parent_builders.iter().map(|builder| &builder.semantics).collect());
+
+    let member_path_value: OrderedHashMap<MemberPath, VariableId> = scattered
+        .iter()
+        .filter_map(|(path, scattered)| match scattered {
+            MergedScattered::Same(..) => None,
+            MergedScattered::Remap => {
+                let ty = get_ty(ctx, &path);
+                Some((path.clone(), ctx.new_var(VarRequest { ty, location })))
+            }
+        })
+        .collect();
+
+    let semantic_remapping = SemanticRemapping { expr: None, member_path_value };
+
+    // Finalize the intermediate blocks.
+    for parent_builder in parent_builders.into_iter() {
+        let sealed_block = parent_builder.goto_callsite(None);
+        sealed_block.finalize(ctx, block_id, &semantic_remapping, location);
+    }
+
+    // Apply remapping on builder.
+    for (semantic, var) in semantic_remapping.member_path_value {
+        child_builder.update_ref_raw(ctx, semantic, var, location);
+    }
+
+    child_builder
 }

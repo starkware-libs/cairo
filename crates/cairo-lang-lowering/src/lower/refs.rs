@@ -24,7 +24,7 @@ pub struct ClosureInfo {
 #[derive(Clone, Default, Debug)]
 pub struct SemanticLoweringMapping {
     /// Maps member paths ([MemberPath]) to lowered variable ids or scattered variable ids.
-    scattered: OrderedHashMap<MemberPath, Value>,
+    pub scattered: OrderedHashMap<MemberPath, Value>,
     /// Maps captured member paths to a closure that captured them.
     pub captured: UnorderedHashMap<MemberPath, VariableId>,
     /// Maps captured member paths which are copiable to a closure that captured them.
@@ -185,6 +185,47 @@ impl SemanticLoweringMapping {
     }
 }
 
+// TODO: doc.
+#[derive(Debug)]
+pub enum MergedScattered {
+    // TODO: doc.
+    Same(Value),
+    // TODO: doc.
+    Remap,
+}
+
+pub fn merge_scattered(
+    mappings: Vec<&SemanticLoweringMapping>,
+) -> OrderedHashMap<MemberPath, MergedScattered> {
+    let mut res: OrderedHashMap<MemberPath, Vec<Value>> = Default::default();
+
+    for map in &mappings {
+        println!("map: {:?}", map.scattered); // TODO: remove.
+        for (path, var) in map.scattered.iter() {
+            res.entry(path.clone()).or_insert_with(|| vec![]).push(var.clone());
+        }
+    }
+
+    res.into_iter()
+        .filter_map(|(path, variables)| {
+            if variables.len() != mappings.len() {
+                // The variable is missing in one or more of the maps.
+                // It cannot be used in the merged block.
+                None
+            } else {
+                let first_var = &variables[0];
+                // println!("{:?}: {:?} => {:?}", path, variables, variables.iter().all(|x| x == first_var) ); // TODO: remove.
+                let res = if variables.iter().all(|x| x == first_var) {
+                    MergedScattered::Same(first_var.clone())
+                } else {
+                    MergedScattered::Remap
+                };
+                Some((path, res))
+            }
+        })
+        .collect()
+}
+
 /// A trait for deconstructing and constructing structs.
 pub trait StructRecomposer {
     fn deconstruct(
@@ -209,18 +250,18 @@ pub trait StructRecomposer {
 }
 
 /// An intermediate value for a member path.
-#[derive(Clone, Debug, DebugWithDb)]
+#[derive(Clone, Debug, DebugWithDb, Eq, PartialEq)]
 #[debug_db(ExprFormatter<'a>)]
 enum Value {
     /// The value of member path is stored in a lowered variable.
     Var(VariableId),
-    /// The value of the member path is not stored. It should be reconstructed from the member
-    /// values.
+    /// The value of the member path is not stored. If needed, it should be reconstructed from the
+    /// member values.
     Scattered(Box<Scattered>),
 }
 
 /// A value for a non-stored member path. Recursively holds the [Value] for the members.
-#[derive(Clone, Debug, DebugWithDb)]
+#[derive(Clone, Debug, DebugWithDb, Eq, PartialEq)]
 #[debug_db(ExprFormatter<'a>)]
 struct Scattered {
     concrete_struct_id: semantic::ConcreteStructId,

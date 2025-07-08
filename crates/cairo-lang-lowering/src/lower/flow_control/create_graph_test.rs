@@ -2,7 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::test_utils::{
-    TestExpr, TestFunction, setup_test_expr, setup_test_function,
+    TestFunction, setup_test_function,
 };
 use cairo_lang_semantic::{self as semantic, ExprVarMemberPath};
 use cairo_lang_syntax::node::TypedStablePtr;
@@ -18,7 +18,7 @@ use super::lower_graph::lower_graph;
 use super::test_utils::format_graph;
 use crate::Lowered;
 use crate::db::LoweringGroup;
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyLongId, Signature};
+use crate::ids::{FunctionWithBodyLongId, Signature};
 use crate::lower::block_builder::BlockBuilder;
 use crate::lower::context::{EncapsulatingLoweringContext, LoweringContext, VarRequest};
 use crate::lower::{
@@ -66,13 +66,18 @@ fn test_create_graph(
     let error = verify_diagnostics_expectation(args, &semantic_diagnostics);
 
     // Lower the graph.
-    let lowered = lower_graph_as_function(db, &test_function, expr_id, &graph);
+    let lowered_str = if args["skip_lowering"] == "true" {
+        "".into()
+    } else {
+        let lowered = lower_graph_as_function(db, &test_function, expr_id, &graph);
+        formatted_lowered(db, Some(&lowered))
+    };
 
     TestRunnerResult {
         outputs: OrderedHashMap::from([
             ("graph".into(), format_graph(&graph)),
             ("semantic_diagnostics".into(), semantic_diagnostics),
-            ("lowered".into(), format!("{}", formatted_lowered(db, Some(&lowered)))),
+            ("lowered".into(), lowered_str),
         ]),
         error,
     }
@@ -91,6 +96,14 @@ fn lower_graph_as_function(
         EncapsulatingLoweringContext::new(db, test_function.function_id).unwrap();
     let lowering_signature = Signature::from_semantic(db, test_function.signature.clone());
     let return_type = lowering_signature.return_type;
+
+    for semantic_var in &test_function.signature.params {
+        encapsulating_ctx.semantic_defs.insert(
+            semantic::VarId::Param(semantic_var.id),
+            semantic::Binding::Param(semantic_var.clone()),
+        );
+    }
+
     let mut ctx = LoweringContext::new(
         &mut encapsulating_ctx,
         lowering_function_id,
@@ -100,7 +113,7 @@ fn lower_graph_as_function(
     .unwrap();
 
     let root_block_id = alloc_empty_block(&mut ctx);
-    let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
+    let mut builder = BlockBuilder::root(root_block_id);
 
     let parameters = ctx
         .signature
