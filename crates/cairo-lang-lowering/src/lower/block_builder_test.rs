@@ -1,6 +1,7 @@
 use crate::{db::LoweringGroup, fmt::LoweredFormatter, ids::{FunctionWithBodyLongId, Signature}, test_utils::LoweringDatabaseForTesting, BlockId, VariableId};
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_semantic::{self as semantic, corelib::unit_ty, test_utils::{setup_test_function, TestFunction}, ExprVarMemberPath};
+use cairo_lang_defs::ids::ModuleItemId;
+use cairo_lang_semantic::{self as semantic, corelib::unit_ty, test_utils::{setup_test_function, TestFunction}, usage::MemberPath, Expr, ExprVarMemberPath, Statement, StatementId};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::{extract_matches, ordered_hash_map::OrderedHashMap, Upcast};
@@ -47,7 +48,7 @@ fn test_merge_block_builders(
     let db = LoweringDatabaseForTesting::default();
     let test_function = setup_test_function(
         &db,
-        format!("{} {{}}", inputs["function_signature"]).as_str(),
+        &inputs["block_definitions"],
         "foo",
         inputs.get("module_code").unwrap_or(&"".into())
     ).unwrap();
@@ -79,7 +80,7 @@ fn test_merge_block_builders(
 
     let dummy_location = ctx.get_location(test_function.signature.stable_ptr.untyped());
 
-    let input_blocks = parse_block_builders(&mut ctx, &inputs, &parameters);
+    let input_blocks = create_block_builders(&mut ctx, &test_function, &parameters);
     let input_blocks_str = input_blocks.iter().map(|b| b.to_string()).join("\n");
 
     let merged_block = merge_block_builders(&mut ctx, input_blocks, dummy_location);
@@ -99,22 +100,71 @@ fn test_merge_block_builders(
     }
 }
 
-fn parse_block_builders(ctx: &mut LoweringContext, inputs: &OrderedHashMap<String, String>, parameters: &Vec<VariableId>) -> Vec<BlockBuilder> {
-    let n_blocks = inputs["n_blocks"].parse::<usize>().unwrap_or(0);
-    (0..n_blocks).map(|idx| parse_block_builder(ctx, inputs, idx, parameters)).collect()
+fn create_block_builders(
+    ctx: &mut LoweringContext,
+    test_function: &TestFunction,
+    parameters: &Vec<VariableId>,
+) -> Vec<BlockBuilder> {
+    let expr = ctx.function_body.arenas.exprs[test_function.body].clone();
+    let block_expr = extract_matches!(expr, Expr::Block);
+
+    block_expr.statements.iter().map(|statement_id| {
+        create_block_builder(ctx, test_function, *statement_id, parameters)
+    }).collect()
 }
 
-fn parse_block_builder(ctx: &mut LoweringContext, inputs: &OrderedHashMap<String, String>, idx: usize, parameters: &Vec<VariableId>) -> BlockBuilder {
+fn create_block_builder(
+    ctx: &mut LoweringContext,
+    test_function: &TestFunction,
+    statement_id: StatementId,
+    parameters: &Vec<VariableId>,
+) -> BlockBuilder {
     let block_id = ctx.blocks.alloc_empty();
     let mut block_builder = BlockBuilder::root(block_id);
 
-    for line in inputs[&format!("block_{idx}_semantic_vars")].lines() {
-        let line = line.split_once(" //").map(|(x, _)| x).unwrap_or(line);
-        let (var_id_str, param_idx_str) = line.split_once(": ").unwrap();
-        let var_id = var_id_str.parse::<u32>().unwrap_or(0);
-        let param_idx = param_idx_str.parse::<usize>().unwrap_or(0);
+    let statement_expr = extract_matches!(
+        &ctx.function_body.arenas.statements[statement_id],
+        Statement::Expr
+    );
+    let external_tuple = extract_matches!(
+        &ctx.function_body.arenas.exprs[statement_expr.expr],
+        Expr::Tuple
+    );
 
-        block_builder.put_semantic(semantic_param(var_id), parameters[param_idx]);
+    let expr_ids = external_tuple.items.clone();
+    for expr_id in expr_ids {
+        let inner_tuple = extract_matches!(
+            &ctx.function_body.arenas.exprs[expr_id],
+            Expr::Tuple
+        );
+        let lower_var_idx: usize = (&extract_matches!(
+            &ctx.function_body.arenas.exprs[inner_tuple.items[1]],
+            Expr::Literal
+        ).value).try_into().unwrap();
+
+        match &ctx.function_body.arenas.exprs[inner_tuple.items[0]] {
+            Expr::MemberAccess(member_access) => {
+                let member_path: MemberPath = (member_access.member_path.as_ref().unwrap()).into();
+                let mut var = &member_path;
+                while let MemberPath::Member{parent: v, ..} = var {
+                    var = v;
+                };
+                let var_id = extract_matches!(var, MemberPath::Var);
+
+                // TODO: Fix [0].
+                block_builder.put_semantic(*var_id, parameters[lower_var_idx]);
+
+                let location = ctx.get_location(member_access.stable_ptr.untyped());
+                block_builder.get_ref_raw(ctx, &member_path, location);
+            }
+            Expr::Var(var) => {
+                // TODO: Fix [0].
+                block_builder.put_semantic(var.var, parameters[lower_var_idx]);
+            }
+            expr => {
+                panic!("Unexpected expression: {:?}", expr);
+            }
+        }
     }
 
     block_builder

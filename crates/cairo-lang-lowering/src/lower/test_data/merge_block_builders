@@ -3,14 +3,10 @@
 //! > test_runner_name
 test_merge_block_builders
 
-//! > function_signature
-fn foo(x: felt252)
-
-//! > n_blocks
-1
-
-//! > block_0_semantic_vars
-1: 0
+//! > block_definitions
+fn foo(x: felt252) {
+    ((x, 0),);
+}
 
 //! > blocks
 block_id: BlockId(0)
@@ -23,13 +19,13 @@ semantics:
 block_id: BlockId(0)
 semantics:
   scattered:
-    Var(Param(ParamId(1))): Var(Id { idx: 0 })
+    Var(Param(ParamId(0))): Var(Id { idx: 0 })
 
 //! > merged_block_builder
 block_id: BlockId(0)
 semantics:
   scattered:
-    Var(Param(ParamId(1))): Var(Id { idx: 0 })
+    Var(Param(ParamId(0))): Var(Id { idx: 0 })
 
 //! > lowered
 blk0:
@@ -44,20 +40,18 @@ End:
 //! > test_runner_name
 test_merge_block_builders
 
-//! > function_signature
-fn foo(x: felt252, y: felt252, z: felt252, w: felt252)
-
-//! > n_blocks
-2
-
-//! > block_0_semantic_vars
-1: 0 // Same in both blocks
-2: 1 // Different in both blocks
-3: 2 // Only in block 0
-
-//! > block_1_semantic_vars
-1: 0
-2: 3
+//! > block_definitions
+fn foo(x: felt252, y: felt252, z: felt252, w: felt252) {
+    (
+        (x, 0), // Same in both blocks.
+        (y, 1), // Different.
+        (z, 2), // Only in block 0.
+    );
+    (
+        (x, 0), // Same in both blocks.
+        (y, 3), // Different.
+    );
+}
 
 //! > input_blocks
 block_id: BlockId(0)
@@ -103,35 +97,55 @@ End:
 //! > test_runner_name
 test_merge_block_builders
 
-//! > function_signature
-fn foo(x: MyStruct)
+//! > block_definitions
+fn foo(x: MyStruct) {
+    ((x.a, 0),);
+    ((x.a, 0),);
+}
 
 //! > module_code
 struct MyStruct {
-    x: felt252,
-    y: felt252,
+    a: felt252,
+    b: felt252,
 }
-
-//! > n_blocks
-1
-
-//! > block_0_semantic_vars
-1: 0
 
 //! > input_blocks
 block_id: BlockId(0)
+statements:
+  StructDestructure(StatementStructDestructure { input: VarUsage { var_id: Id { idx: 0 }, location: LocationId(9) }, outputs: [Id { idx: 1 }, Id { idx: 2 }] })
 semantics:
   scattered:
-    Var(Param(ParamId(1))): Var(Id { idx: 0 })
+    Var(Param(ParamId(5))): Scattered(Scattered { concrete_struct_id: ConcreteStructId(1), members: OrderedHashMap({MemberId(0): Var(Id { idx: 1 }), MemberId(1): Var(Id { idx: 2 })}) })
+
+block_id: BlockId(1)
+statements:
+  StructDestructure(StatementStructDestructure { input: VarUsage { var_id: Id { idx: 0 }, location: LocationId(10) }, outputs: [Id { idx: 3 }, Id { idx: 4 }] })
+semantics:
+  scattered:
+    Var(Param(ParamId(5))): Scattered(Scattered { concrete_struct_id: ConcreteStructId(1), members: OrderedHashMap({MemberId(0): Var(Id { idx: 3 }), MemberId(1): Var(Id { idx: 4 })}) })
 
 //! > lowered
 blk0:
+Statements:
+  (v1: core::felt252, v2: core::felt252) <- struct_destructure(v0)
+  (v6: test::MyStruct) <- struct_construct(v1, v2)
+End:
+  Goto(blk2, {v6 -> v5})
+
+blk1:
+Statements:
+  (v3: core::felt252, v4: core::felt252) <- struct_destructure(v0)
+  (v7: test::MyStruct) <- struct_construct(v3, v4)
+End:
+  Goto(blk2, {v7 -> v5})
+
+blk2:
 Statements:
 End:
   Not set
 
 //! > merged_block_builder
-block_id: BlockId(0)
+block_id: BlockId(2)
 semantics:
   scattered:
-    Var(Param(ParamId(1))): Var(Id { idx: 0 })
+    Var(Param(ParamId(5))): Var(Id { idx: 5 })
