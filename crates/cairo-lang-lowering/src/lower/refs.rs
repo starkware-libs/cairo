@@ -29,7 +29,7 @@ impl SemanticLoweringMapping {
     /// Returns the topmost mapped member path containing the given member path, or None no such
     /// member path exists in the mapping.
     pub fn topmost_mapped_containing_member_path(
-        &mut self,
+        &self,
         mut member_path: MemberPath,
     ) -> Option<MemberPath> {
         let mut res = None;
@@ -46,7 +46,7 @@ impl SemanticLoweringMapping {
 
     /// Returns the scattered members of the given member path, or None if the member path is not
     /// scattered.
-    pub fn get_scattered_members(&mut self, member_path: &MemberPath) -> Option<Vec<MemberPath>> {
+    pub fn get_scattered_members(&self, member_path: &MemberPath) -> Option<Vec<MemberPath>> {
         let Some(Value::Scattered(scattered)) = self.scattered.get(member_path) else {
             return None;
         };
