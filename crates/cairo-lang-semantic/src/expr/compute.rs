@@ -3312,7 +3312,7 @@ fn try_extract_identifier_from_path(
         return Some((first.ident(db), false));
     };
     let second = try_extract_matches!(second, PathSegment::Simple)?;
-    if first.ident(db).text(db) == MACRO_CALL_SITE && path.placeholder_marker(db).is_some() {
+    if first.identifier(db) == MACRO_CALL_SITE && path.placeholder_marker(db).is_some() {
         Some((second.ident(db), true))
     } else {
         None
