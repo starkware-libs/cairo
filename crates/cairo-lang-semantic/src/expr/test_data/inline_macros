@@ -1058,10 +1058,10 @@ macro a_macro {
 }
 
 //! > expected_diagnostics
-error: Empty path after `$defsite` is not allowed.
- --> lib.cairo[a_macro]:1:10
+error: Expected path after modifier.
+ --> lib.cairo[a_macro]:1:17
         $defsite
-         ^^^^^^^
+                ^
 
 //! > ==========================================================================
 
@@ -1493,3 +1493,96 @@ error: Missing semicolon
  --> lib.cairo:7:23
     only_statements!()
                       ^
+
+//! > ==========================================================================
+
+//! > Test usage of $ in plugin macros.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    assert_eq3!(1 + 2);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro assert_eq3 {
+    ($x:expr) => {
+        assert!($x == 3);
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test bad usage of $ in plugin macros.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    empty_path!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro empty_path {
+    () => {
+        $defsite;
+        $callsite;
+    };
+}
+
+//! > expected_diagnostics
+error: Expected path after modifier.
+ --> lib.cairo[empty_path]:1:17
+        $defsite;
+                ^
+
+error: Expected path after modifier.
+ --> lib.cairo[empty_path]:2:18
+        $callsite;
+                 ^
+
+//! > ==========================================================================
+
+//! > Test usage of $ in non-plugin scope.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    $path();
+    $defsite::some::path();
+    $callsite::other::path();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: `$` is not supported in this context.
+ --> lib.cairo:2:5
+    $path();
+    ^
+
+error: `$` is not supported in this context.
+ --> lib.cairo:3:5
+    $defsite::some::path();
+    ^
+
+error: `$` is not supported in this context.
+ --> lib.cairo:4:5
+    $callsite::other::path();
+    ^
