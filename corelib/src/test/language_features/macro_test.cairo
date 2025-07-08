@@ -490,10 +490,7 @@ mod unhygienic_expose_plugin_macro {
     macro middle {
         () => {
             expose!(let middle_var = 22;);
-            // TODO(orizi): Use `$callsite` directly within the `assert_eq!`. Currently causes:
-            // "Plugin diagnostic: Macro can not be parsed as legacy macro."
-            let outer_var = $callsite::outer_var;
-            assert_eq!(outer_var, 11);
+            assert_eq!($callsite::outer_var, 11);
             expose!(let outer_var = 1;);
             assert_eq!(outer_var, 1);
             inner_most!();
@@ -503,8 +500,7 @@ mod unhygienic_expose_plugin_macro {
     macro inner_most {
         () => {
             expose!(let deeply_nested = 3;);
-            let middle_var = $callsite::middle_var;
-            assert_eq!(middle_var, 22);
+            assert_eq!($callsite::middle_var, 22);
             expose!(let middle_var = 2;);
             assert_eq!(middle_var, 2);
         };

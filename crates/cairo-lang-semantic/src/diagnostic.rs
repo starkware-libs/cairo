@@ -955,14 +955,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::SelfMustBeFirst => {
                 "`Self` can only be the first segment of a path.".into()
             }
-            SemanticDiagnosticKind::ResolverModifierNotSupportedInContext => {
-                "`$defsite` is not supported in this context.".into()
+            SemanticDiagnosticKind::DollarNotSupportedInContext => {
+                "`$` is not supported in this context.".into()
             }
             SemanticDiagnosticKind::UnknownResolverModifier { modifier } => {
                 format!("`${modifier}` is not supported.")
             }
             SemanticDiagnosticKind::EmptyPathAfterResolverModifier => {
-                "Empty path after `$defsite` is not allowed.".into()
+                "Expected path after modifier.".into()
             }
             SemanticDiagnosticKind::PathInMacroWithoutModifier => {
                 "Path in a macro without a resolver modifier ($callsite or $defsite) - currently \
@@ -1478,7 +1478,7 @@ pub enum SemanticDiagnosticKind {
     FixedSizeArraySizeTooBig,
     SelfNotSupportedInContext,
     SelfMustBeFirst,
-    ResolverModifierNotSupportedInContext,
+    DollarNotSupportedInContext,
     UnknownResolverModifier {
         modifier: SmolStr,
     },

@@ -74,6 +74,7 @@ use crate::items::macro_declaration::{MatcherContext, expand_macro_rule, is_macr
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
+use crate::keyword::MACRO_CALL_SITE;
 use crate::resolve::{
     AsSegments, EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext, ResolvedConcreteItem,
     ResolvedGenericItem, Resolver, ResolverMacroData,
@@ -3311,7 +3312,7 @@ fn try_extract_identifier_from_path(
         return Some((first.ident(db), false));
     };
     let second = try_extract_matches!(second, PathSegment::Simple)?;
-    if first.ident(db).text(db) == "callsite" && path.is_placeholder(db) {
+    if first.ident(db).text(db) == MACRO_CALL_SITE && path.placeholder_marker(db).is_some() {
         Some((second.ident(db), true))
     } else {
         None

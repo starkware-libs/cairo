@@ -106,7 +106,6 @@ pub enum ParserDiagnosticKind {
     MissingWrappedArgList,
     MissingPattern,
     MissingMacroRuleParamKind,
-    InvalidPlaceholderPath,
     InvalidParamKindInMacroExpansion,
     InvalidParamKindInMacroRule,
     ExpectedInToken,
@@ -169,10 +168,6 @@ impl DiagnosticEntry for ParserDiagnostic {
             ParserDiagnosticKind::MissingMacroRuleParamKind => {
                 "Missing tokens. Expected a macro rule parameter kind.".to_string()
             }
-            ParserDiagnosticKind::InvalidPlaceholderPath => "Placeholder expression ($expression) \
-                                                             is allowed only in the context of a \
-                                                             macro rule."
-                .to_string(),
             ParserDiagnosticKind::ExpectedInToken => {
                 "Missing identifier token, expected 'in'.".to_string()
             }

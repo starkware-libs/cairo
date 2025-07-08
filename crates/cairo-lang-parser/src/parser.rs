@@ -2984,19 +2984,7 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with kind ExprPath.
     fn parse_path(&mut self) -> ExprPathGreen {
         let dollar = match self.peek().kind {
-            SyntaxKind::TerminalDollar => {
-                let dollar = self.take::<TerminalDollar>();
-                if self.macro_parsing_context == MacroParsingContext::None {
-                    self.add_diagnostic(
-                        ParserDiagnosticKind::InvalidPlaceholderPath,
-                        TextSpan {
-                            start: self.offset,
-                            end: self.offset.add_width(self.current_width),
-                        },
-                    )
-                };
-                dollar.into()
-            }
+            SyntaxKind::TerminalDollar => self.take::<TerminalDollar>().into(),
             _ => OptionTerminalDollarEmpty::new_green(self.db).into(),
         };
 
