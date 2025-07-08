@@ -434,6 +434,7 @@ dependencies = [
  "cairo-lang-executable",
  "cairo-lang-execute-utils",
  "cairo-lang-runner",
+ "cairo-lang-sierra-generator",
  "cairo-vm",
  "clap",
  "num-bigint",
