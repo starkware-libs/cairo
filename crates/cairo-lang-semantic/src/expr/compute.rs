@@ -98,6 +98,9 @@ struct MacroExpansionInfo {
     mappings: Arc<[CodeMapping]>,
     /// The kind of macro the expansion is from.
     kind: MacroKind,
+    /// The variables that should be exposed to the parent scope after the macro expansion.
+    /// This is used for unhygienic macros.
+    vars_to_expose: Vec<(SmolStr, Binding)>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -293,7 +296,32 @@ impl<'ctx> ComputationContext<'ctx> {
 
         // Pop the environment from the stack.
         let parent = self.environment.parent.take().unwrap();
-        let closed = std::mem::replace(&mut self.environment, parent);
+        let mut closed = std::mem::replace(&mut self.environment, parent);
+        let parent = &mut self.environment;
+        if let Some(macro_info) = closed.macro_info {
+            for (name, binding) in macro_info.vars_to_expose {
+                // Exposed variables are considered moved in the closed scope, as they still may be
+                // used later.
+                if !closed.used_variables.insert(binding.id()) {
+                    // In case a variable was already marked as used in the closed environment, it
+                    // means it was actually used, and is marked as used in the environment it is
+                    // moved to.
+                    parent.used_variables.insert(binding.id());
+                }
+                if let Some(old_var) = parent.variables.insert(name.clone(), binding.clone()) {
+                    add_unused_binding_warning(
+                        self.diagnostics,
+                        self.db,
+                        &parent.used_variables,
+                        &name,
+                        &old_var,
+                    );
+                }
+                if let Some(parent_macro_info) = parent.macro_info.as_mut() {
+                    parent_macro_info.vars_to_expose.push((name, binding));
+                }
+            }
+        }
         for (name, binding) in closed.variables {
             add_unused_binding_warning(
                 self.diagnostics,
@@ -596,6 +624,7 @@ fn expand_inline_macro(
         let info = MacroExpansionInfo {
             mappings: expanded_code.code_mappings,
             kind: MacroKind::UserDefined,
+            vars_to_expose: vec![],
         };
         ctx.resolver.macro_call_data = Some(ResolverMacroData {
             defsite_module_file_id: macro_defsite_resolver_data.module_file_id,
@@ -643,6 +672,7 @@ fn expand_inline_macro(
             info: MacroExpansionInfo {
                 mappings: code.code_mappings.into(),
                 kind: if code.is_unhygienic { MacroKind::Unhygienic } else { MacroKind::Plugin },
+                vars_to_expose: vec![],
             },
         })
     } else {
@@ -4082,17 +4112,8 @@ pub fn compute_and_append_statement_semantic(
             let variables = pattern.variables(&ctx.arenas.patterns);
             for v in variables {
                 let var_def = Binding::LocalVar(v.var.clone());
-                let mut environment = ctx.environment.as_mut();
-                if ctx.macro_defined_var_unhygienic {
-                    while let Some(parent_env) = environment.parent.as_deref_mut() {
-                        if environment.macro_info.is_some() {
-                            environment = parent_env;
-                        } else {
-                            break;
-                        }
-                    }
-                }
-                if let Some(old_var) = environment.variables.insert(v.name.clone(), var_def.clone())
+                if let Some(old_var) =
+                    ctx.environment.variables.insert(v.name.clone(), var_def.clone())
                 {
                     if matches!(old_var, Binding::LocalItem(_)) {
                         return Err(ctx
@@ -4102,10 +4123,15 @@ pub fn compute_and_append_statement_semantic(
                     add_unused_binding_warning(
                         ctx.diagnostics,
                         ctx.db,
-                        &environment.used_variables,
+                        &ctx.environment.used_variables,
                         &v.name,
                         &old_var,
                     );
+                }
+                if ctx.macro_defined_var_unhygienic {
+                    if let Some(macro_info) = &mut ctx.environment.macro_info {
+                        macro_info.vars_to_expose.push((v.name.clone(), var_def.clone()));
+                    }
                 }
                 ctx.semantic_defs.insert(var_def.id(), var_def);
             }
