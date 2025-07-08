@@ -185,6 +185,16 @@ impl SemanticLoweringMapping {
     }
 }
 
+impl std::fmt::Display for SemanticLoweringMapping {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "scattered:")?;
+        for (member_path, var_id) in self.scattered.iter() {
+            writeln!(f, "  {:?}: {:?}", member_path, var_id)?;
+        }
+        Ok(())
+    }
+}
+
 // TODO: doc.
 #[derive(Debug)]
 pub enum MergedScattered {

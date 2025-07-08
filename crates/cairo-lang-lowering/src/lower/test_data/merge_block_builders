@@ -1,0 +1,137 @@
+//! > Single block
+
+//! > test_runner_name
+test_merge_block_builders
+
+//! > function_signature
+fn foo(x: felt252)
+
+//! > n_blocks
+1
+
+//! > block_0_semantic_vars
+1: 0
+
+//! > blocks
+block_id: BlockId(0)
+statements:
+semantics:
+  scattered:
+    Var(Param(ParamId(0))): Var(Id { idx: 0 })
+
+//! > input_blocks
+block_id: BlockId(0)
+semantics:
+  scattered:
+    Var(Param(ParamId(1))): Var(Id { idx: 0 })
+
+//! > merged_block_builder
+block_id: BlockId(0)
+semantics:
+  scattered:
+    Var(Param(ParamId(1))): Var(Id { idx: 0 })
+
+//! > lowered
+blk0:
+Statements:
+End:
+  Not set
+
+//! > ==========================================================================
+
+//! > Two blocks
+
+//! > test_runner_name
+test_merge_block_builders
+
+//! > function_signature
+fn foo(x: felt252, y: felt252, z: felt252, w: felt252)
+
+//! > n_blocks
+2
+
+//! > block_0_semantic_vars
+1: 0 // Same in both blocks
+2: 1 // Different in both blocks
+3: 2 // Only in block 0
+
+//! > block_1_semantic_vars
+1: 0
+2: 3
+
+//! > input_blocks
+block_id: BlockId(0)
+semantics:
+  scattered:
+    Var(Param(ParamId(1))): Var(Id { idx: 0 })
+    Var(Param(ParamId(2))): Var(Id { idx: 1 })
+    Var(Param(ParamId(3))): Var(Id { idx: 2 })
+
+block_id: BlockId(1)
+semantics:
+  scattered:
+    Var(Param(ParamId(1))): Var(Id { idx: 0 })
+    Var(Param(ParamId(2))): Var(Id { idx: 3 })
+
+//! > merged_block_builder
+block_id: BlockId(2)
+semantics:
+  scattered:
+    Var(Param(ParamId(1))): Var(Id { idx: 0 })
+    Var(Param(ParamId(2))): Var(Id { idx: 4 })
+
+//! > lowered
+blk0:
+Statements:
+End:
+  Goto(blk2, {v1 -> v4})
+
+blk1:
+Statements:
+End:
+  Goto(blk2, {v3 -> v4})
+
+blk2:
+Statements:
+End:
+  Not set
+
+//! > ==========================================================================
+
+//! > Structs
+
+//! > test_runner_name
+test_merge_block_builders
+
+//! > function_signature
+fn foo(x: MyStruct)
+
+//! > module_code
+struct MyStruct {
+    x: felt252,
+    y: felt252,
+}
+
+//! > n_blocks
+1
+
+//! > block_0_semantic_vars
+1: 0
+
+//! > input_blocks
+block_id: BlockId(0)
+semantics:
+  scattered:
+    Var(Param(ParamId(1))): Var(Id { idx: 0 })
+
+//! > lowered
+blk0:
+Statements:
+End:
+  Not set
+
+//! > merged_block_builder
+block_id: BlockId(0)
+semantics:
+  scattered:
+    Var(Param(ParamId(1))): Var(Id { idx: 0 })

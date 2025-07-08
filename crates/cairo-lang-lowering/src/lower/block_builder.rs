@@ -1,3 +1,5 @@
+use std::fmt;
+
 use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
@@ -428,6 +430,26 @@ impl BlockBuilder {
             closure_info,
         )
     }
+}
+
+impl std::fmt::Display for BlockBuilder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "block_id: {:?}", self.block_id)?;
+        if !self.statements.statements.is_empty() {
+            writeln!(f, "statements:")?;
+            for statement in &self.statements.statements {
+                writeln!(f, "  {:?}", statement)?;
+            }
+        }
+        writeln!(f, "semantics:")?;
+        writeln!(f, "{}", indent(self.semantics.to_string()))?;
+
+        Ok(())
+    }
+}
+
+fn indent(s: String) -> String {
+    s.lines().map(|line| format!("  {}", line)).join("\n")
 }
 
 /// Gets the type of a semantic variable.
