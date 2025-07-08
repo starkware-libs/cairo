@@ -14,7 +14,9 @@ use cairo_lang_runnable_utils::builder::{
     CasmProgramWrapperInfo, EntryCodeConfig, RunnableBuilder,
 };
 use cairo_lang_sierra_generator::executables::find_executable_function_ids;
-use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
+use cairo_lang_sierra_generator::program_generator::{
+    SierraProgramDebugInfo, SierraProgramWithDebug,
+};
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::{Intern, write_comma_separated};
 use itertools::Itertools;
@@ -62,14 +64,21 @@ pub struct ExecutableConfig {
     pub unsafe_panic: bool,
 }
 
+/// The result of compiling an executable.
+///
+/// Contain the `CompiledFunction` and additiona object that are useful for profiling.
+pub struct CompileExecutableResult {
+    /// The compiled function.
+    pub compiled_function: CompiledFunction,
+    /// A runnable builder with the program corresponding to the compiled function.
+    pub builder: RunnableBuilder,
+    /// The debug info for the sierra program in the builder.
+    pub debug_info: SierraProgramDebugInfo,
+}
+
 /// Compile the function given by path.
 /// Errors if there is ambiguity.
-pub fn compile_executable(
-    path: &Path,
-    executable_path: Option<&str>,
-    diagnostics_reporter: DiagnosticsReporter<'_>,
-    config: ExecutableConfig,
-) -> Result<CompiledFunction> {
+pub fn prepare_db(config: &ExecutableConfig) -> Result<RootDatabase> {
     let mut builder = RootDatabase::builder();
     builder
         .skip_auto_withdraw_gas()
@@ -80,7 +89,18 @@ pub fn compile_executable(
         builder.with_unsafe_panic();
     }
 
-    let mut db = builder.build()?;
+    builder.build()
+}
+
+/// Compile the function given by path.
+/// Errors if there is ambiguity.
+pub fn compile_executable(
+    path: &Path,
+    executable_path: Option<&str>,
+    diagnostics_reporter: DiagnosticsReporter<'_>,
+    config: ExecutableConfig,
+) -> Result<CompileExecutableResult> {
+    let mut db = prepare_db(&config)?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
     let diagnostics_reporter = diagnostics_reporter.with_crates(&main_crate_ids);
@@ -103,7 +123,7 @@ pub fn compile_executable_in_prepared_db(
     main_crate_ids: Vec<CrateId>,
     mut diagnostics_reporter: DiagnosticsReporter<'_>,
     config: ExecutableConfig,
-) -> Result<CompiledFunction> {
+) -> Result<CompileExecutableResult> {
     let context = DbWarmupContext::new();
     context.ensure_diagnostics(db, &mut diagnostics_reporter)?;
 
@@ -183,7 +203,7 @@ pub fn compile_executable_function_in_prepared_db(
     executable: ConcreteFunctionWithBodyId,
     config: ExecutableConfig,
     context: DbWarmupContext,
-) -> Result<CompiledFunction> {
+) -> Result<CompileExecutableResult> {
     let SierraProgramWithDebug { program: sierra_program, debug_info } = Arc::unwrap_or_clone(
         get_sierra_program_for_functions(db, vec![executable], context)
             .ok()
@@ -228,5 +248,6 @@ pub fn compile_executable_function_in_prepared_db(
     let allow_unsound = config.allow_syscalls;
     let wrapper = builder
         .create_wrapper_info(&executable_func, EntryCodeConfig::executable(allow_unsound))?;
-    Ok(CompiledFunction { program: builder.casm_program().clone(), wrapper })
+    let compiled_function = CompiledFunction { program: builder.casm_program().clone(), wrapper };
+    Ok(CompileExecutableResult { compiled_function, builder, debug_info })
 }
