@@ -286,45 +286,30 @@ impl<'ctx> ComputationContext<'ctx> {
         F: FnOnce(&mut Self) -> T,
     {
         // Push an environment to the stack.
-        let mut new_environment = Box::new(Environment::empty());
-        new_environment.macro_info = macro_info;
-        let old_environment = std::mem::replace(&mut self.environment, new_environment);
-        self.environment.parent = Some(old_environment);
-
+        let parent = std::mem::replace(&mut self.environment, Environment::empty().into());
+        self.environment.parent = Some(parent);
+        self.environment.macro_info = macro_info;
         let res = f(self);
 
         // Pop the environment from the stack.
-        let parent = self.environment.parent.take();
-        for (var_name, var) in std::mem::take(&mut self.environment.variables) {
-            self.add_unused_binding_warning(&var_name, &var);
+        let parent = self.environment.parent.take().unwrap();
+        let closed = std::mem::replace(&mut self.environment, parent);
+        for (name, binding) in closed.variables {
+            add_unused_binding_warning(
+                self.diagnostics,
+                self.db,
+                &closed.used_variables,
+                &name,
+                &binding,
+            );
         }
         // Adds warning for unused items if required.
-        for (ty_name, statement_ty) in std::mem::take(&mut self.environment.use_items) {
-            if !self.environment.used_use_items.contains(&ty_name) && !ty_name.starts_with('_') {
+        for (ty_name, statement_ty) in closed.use_items {
+            if !closed.used_use_items.contains(&ty_name) && !ty_name.starts_with('_') {
                 self.diagnostics.report(statement_ty.stable_ptr, UnusedUse);
             }
         }
-        self.environment = parent.unwrap();
         res
-    }
-
-    /// Adds warning for unused bindings if required.
-    fn add_unused_binding_warning(&mut self, var_name: &str, var: &Binding) {
-        if !self.environment.used_variables.contains(&var.id()) && !var_name.starts_with('_') {
-            match var {
-                Binding::LocalItem(local_item) => match local_item.id {
-                    StatementItemId::Constant(_) => {
-                        self.diagnostics.report(var.stable_ptr(self.db), UnusedConstant);
-                    }
-                    StatementItemId::Use(_) => {
-                        self.diagnostics.report(var.stable_ptr(self.db), UnusedUse);
-                    }
-                },
-                Binding::LocalVar(_) | Binding::Param(_) => {
-                    self.diagnostics.report(var.stable_ptr(self.db), UnusedVariable);
-                }
-            }
-        }
     }
 
     /// Returns the return type in the current context if available.
@@ -376,6 +361,31 @@ impl<'ctx> ComputationContext<'ctx> {
         match inner_ctx.kind {
             InnerContextKind::Closure => false,
             InnerContextKind::Loop { .. } | InnerContextKind::While | InnerContextKind::For => true,
+        }
+    }
+}
+
+/// Adds warning for unused bindings if required.
+fn add_unused_binding_warning(
+    diagnostics: &mut SemanticDiagnostics,
+    db: &dyn SemanticGroup,
+    used_bindings: &UnorderedHashSet<VarId>,
+    name: &str,
+    binding: &Binding,
+) {
+    if !name.starts_with('_') && !used_bindings.contains(&binding.id()) {
+        match binding {
+            Binding::LocalItem(local_item) => match local_item.id {
+                StatementItemId::Constant(_) => {
+                    diagnostics.report(binding.stable_ptr(db), UnusedConstant);
+                }
+                StatementItemId::Use(_) => {
+                    diagnostics.report(binding.stable_ptr(db), UnusedUse);
+                }
+            },
+            Binding::LocalVar(_) | Binding::Param(_) => {
+                diagnostics.report(binding.stable_ptr(db), UnusedVariable);
+            }
         }
     }
 }
@@ -4089,7 +4099,13 @@ pub fn compute_and_append_statement_semantic(
                             .diagnostics
                             .report(v.stable_ptr, MultipleDefinitionforBinding(v.name.clone())));
                     }
-                    ctx.add_unused_binding_warning(&v.name, &old_var);
+                    add_unused_binding_warning(
+                        ctx.diagnostics,
+                        ctx.db,
+                        &environment.used_variables,
+                        &v.name,
+                        &old_var,
+                    );
                 }
                 ctx.semantic_defs.insert(var_def.id(), var_def);
             }
