@@ -1,15 +1,19 @@
 use std::io::{self, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use bincode::enc::write::Writer;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
-use cairo_lang_compiler::project::check_compiler_path;
-use cairo_lang_executable::compile::{ExecutableConfig, compile_executable};
+use cairo_lang_compiler::project::{check_compiler_path, setup_project};
+use cairo_lang_executable::compile::{
+    CompileExecutableResult, ExecutableConfig, compile_executable_in_prepared_db, prepare_db,
+};
 use cairo_lang_executable::executable::Executable;
 use cairo_lang_execute_utils::{program_and_hints_from_executable, user_args_from_flags};
 use cairo_lang_runner::casm_run::format_for_panic;
+use cairo_lang_runner::profiling::{ProfilingInfo, ProfilingInfoProcessor};
 use cairo_lang_runner::{Arg, CairoHintProcessor};
+use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_vm::cairo_run;
 use cairo_vm::cairo_run::{CairoRunConfig, cairo_run_program};
 use cairo_vm::types::layout::CairoLayoutParams;
@@ -38,12 +42,17 @@ struct Args {
     /// In `--build-only` this would be the executable artifact.
     /// In bootloader mode it will be the resulting cairo PIE file.
     /// In standalone mode this parameter is disallowed.
-    #[arg(long, required_unless_present("standalone"))]
+    #[arg(long, required_unless_present_any(["standalone", "profile"]))]
     output_path: Option<PathBuf>,
 
     /// Whether to only run a prebuilt executable.
     #[arg(long, default_value_t = false, conflicts_with = "build_only")]
     prebuilt: bool,
+
+    /// The path to save the profiling result.
+    /// Currently does not work with prebuilt executables as it requires additional debug info.
+    #[arg(long, conflicts_with_all = ["prebuilt", "standalone"])]
+    profile: bool,
 
     #[command(flatten)]
     build: BuildArgs,
@@ -165,30 +174,51 @@ struct ProofOutputArgs {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let executable = {
+    let (opt_debug_data, executable) = {
         if args.prebuilt {
-            serde_json::from_reader(std::fs::File::open(&args.input_path)?)
-                .with_context(|| "Failed reading prebuilt executable.")?
+            let executable: Executable =
+                serde_json::from_reader(std::fs::File::open(&args.input_path)?)
+                    .with_context(|| "Failed reading prebuilt executable.")?;
+            (None, executable)
         } else {
             // Check if args.path is a file or a directory.
             check_compiler_path(args.build.single_file, &args.input_path)?;
-            let mut reporter = DiagnosticsReporter::stderr();
+
+            let mut diagnostics_reporter = DiagnosticsReporter::stderr();
             if args.build.allow_warnings {
-                reporter = reporter.allow_warnings();
+                diagnostics_reporter = diagnostics_reporter.allow_warnings();
             }
             if args.build.ignore_warnings {
-                reporter = reporter.ignore_all_warnings();
+                diagnostics_reporter = diagnostics_reporter.ignore_all_warnings();
             }
+            let config = ExecutableConfig {
+                allow_syscalls: args.build.allow_syscalls,
+                unsafe_panic: args.build.unsafe_panic,
+            };
 
-            Executable::new(compile_executable(
-                &args.input_path,
-                args.build.executable.as_deref(),
-                reporter,
-                ExecutableConfig {
-                    allow_syscalls: args.build.allow_syscalls,
-                    unsafe_panic: args.build.unsafe_panic,
-                },
-            )?)
+            let mut db = prepare_db(&config)?;
+
+            let main_crate_ids = setup_project(&mut db, Path::new(&args.input_path))?;
+            let diagnostics_reporter = diagnostics_reporter.with_crates(&main_crate_ids);
+
+            let CompileExecutableResult { compiled_function, builder, debug_info } =
+                compile_executable_in_prepared_db(
+                    &db,
+                    args.build.executable.as_deref(),
+                    main_crate_ids,
+                    diagnostics_reporter,
+                    config,
+                )?;
+
+            let header_len = compiled_function
+                .wrapper
+                .header
+                .iter()
+                .map(|insn| insn.body.op_size())
+                .sum::<usize>();
+
+            let executable = Executable::new(compiled_function);
+            (Some((db, builder, debug_info, header_len)), executable)
         }
     };
 
@@ -223,8 +253,10 @@ fn main() -> anyhow::Result<()> {
         None => None,
     };
 
+    let trace_enabled = args.profile || args.run.proof_outputs.trace_file.is_some();
+
     let cairo_run_config = CairoRunConfig {
-        trace_enabled: args.run.proof_outputs.trace_file.is_some(),
+        trace_enabled,
         relocate_mem: args.run.proof_outputs.memory_file.is_some(),
         layout: args.run.layout,
         dynamic_layout_params,
@@ -289,6 +321,26 @@ fn main() -> anyhow::Result<()> {
             .get_cairo_pie()
             .with_context(|| "Failed getting cairo pie")?
             .write_zip_file(&file_name, true)?
+    }
+
+    if args.profile {
+        let (db, builder, debug_info, header_len) =
+            opt_debug_data.expect("debug data should be available when profiling");
+
+        let trace = runner.relocated_trace.as_ref().with_context(|| "Trace not relocated.")?;
+        let entry_point_offset = trace.first().unwrap().pc;
+        // TODO(ilya): Compute the correct load offset for standalone mode.
+        let load_offset = entry_point_offset + header_len;
+        let info = ProfilingInfo::from_trace(&builder, load_offset, &Default::default(), trace);
+
+        let profiling_processor = ProfilingInfoProcessor::new(
+            Some(&db),
+            replace_sierra_ids_in_program(&db, builder.sierra_program()),
+            debug_info.statements_locations.get_statements_functions_map_for_tests(&db),
+            Default::default(),
+        );
+        let processed_profiling_info = profiling_processor.process_ex(&info, &Default::default());
+        println!("{processed_profiling_info}");
     }
 
     Ok(())
