@@ -480,37 +480,42 @@ mod unhygienic_expose_plugin_macro {
         assert_eq!(a, 10);
     }
 
-    // TODO(Dean): Fix issue with macro exposed defined variables only findable at external
-    // definition block. Then it would be possible to test the value of the variables within the
-    // macro and remove `_` prefixes all around.
     macro outer {
         () => {
-            expose!(let _outer_var = 11;);
+            expose!(let outer_var = 11;);
             middle!();
         };
     }
 
     macro middle {
         () => {
-            expose!(let _middle_var = 22;);
-            expose!(let _outer_var = 1;);
+            expose!(let middle_var = 22;);
+            // TODO(orizi): Use `$callsite` directly within the `assert_eq!`. Currently causes:
+            // "Plugin diagnostic: Macro can not be parsed as legacy macro."
+            let outer_var = $callsite::outer_var;
+            assert_eq!(outer_var, 11);
+            expose!(let outer_var = 1;);
+            assert_eq!(outer_var, 1);
             inner_most!();
         };
     }
 
     macro inner_most {
         () => {
-            expose!(let _deeply_nested = 3;);
-            expose!(let _middle_var = 2;);
+            expose!(let deeply_nested = 3;);
+            let middle_var = $callsite::middle_var;
+            assert_eq!(middle_var, 22);
+            expose!(let middle_var = 2;);
+            assert_eq!(middle_var, 2);
         };
     }
 
     #[test]
     fn test_expose_deep_nested_macros() {
         outer!();
-        assert_eq!(_outer_var, 1);
-        assert_eq!(_middle_var, 2);
-        assert_eq!(_deeply_nested, 3);
+        assert_eq!(outer_var, 1);
+        assert_eq!(middle_var, 2);
+        assert_eq!(deeply_nested, 3);
     }
 
     macro set_var_macro {
