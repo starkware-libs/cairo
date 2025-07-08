@@ -93,19 +93,26 @@ use crate::{
 
 /// The information of a macro expansion.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MacroExpansionInfo {
+struct MacroExpansionInfo {
     /// The code mappings for this expansion.
-    pub mappings: Arc<[CodeMapping]>,
+    mappings: Arc<[CodeMapping]>,
     /// The kind of macro the expansion is from.
-    pub kind: MacroKind,
+    kind: MacroKind,
 }
 
-impl MacroExpansionInfo {
-    /// Returns the placeholder that was expanded at the given offset, if any.
-    pub fn get_placeholder_at(&self, offset: TextOffset) -> Option<&CodeMapping> {
-        self.mappings
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ExpansionOffset(TextOffset);
+impl ExpansionOffset {
+    /// Creates a new origin offset.
+    pub fn new(offset: TextOffset) -> Self {
+        Self(offset)
+    }
+    /// Returns the origin of the position that was expanded at the given offset, if any.
+    pub fn mapped(self, mappings: &[CodeMapping]) -> Option<Self> {
+        let mapping = mappings
             .iter()
-            .find(|mapping| mapping.span.start <= offset && offset <= mapping.span.end)
+            .find(|mapping| mapping.span.start <= self.0 && self.0 <= mapping.span.end)?;
+        Some(Self::new(mapping.origin.start()))
     }
 }
 
@@ -583,7 +590,7 @@ fn expand_inline_macro(
         ctx.resolver.macro_call_data = Some(ResolverMacroData {
             defsite_module_file_id: macro_defsite_resolver_data.module_file_id,
             callsite_module_file_id: callsite_resolver.module_file_id,
-            expansion_info: info.clone(),
+            expansion_mappings: info.mappings.clone(),
             parent_macro_call_data: parent_macro_call_data.map(|data| data.into()),
         });
         Ok(InlineMacroExpansion { content: expanded_code.text, name: macro_name, info })
@@ -3775,15 +3782,16 @@ pub fn get_binded_expr_by_name(
     stable_ptr: ast::ExprPtr,
 ) -> Option<Expr> {
     let mut maybe_env = Some(&mut *ctx.environment);
-    let mut cur_offset = stable_ptr.lookup(ctx.db).as_syntax_node().offset(ctx.db);
+    let mut cur_offset =
+        ExpansionOffset::new(stable_ptr.lookup(ctx.db).as_syntax_node().offset(ctx.db));
     let mut found_callsite_scope = false;
     while let Some(env) = maybe_env {
         // If a variable is from an expanded macro placeholder, we need to look for it in the parent
         // env.
         if let Some(macro_info) = &env.macro_info {
-            if let Some(placeholder_expansion) = macro_info.get_placeholder_at(cur_offset) {
+            if let Some(new_offset) = cur_offset.mapped(&macro_info.mappings) {
                 maybe_env = env.parent.as_deref_mut();
-                cur_offset = placeholder_expansion.origin.start();
+                cur_offset = new_offset;
                 continue;
             }
         }

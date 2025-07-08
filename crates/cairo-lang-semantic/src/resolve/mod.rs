@@ -9,7 +9,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
+use cairo_lang_filesystem::ids::{CodeMapping, CrateId, CrateLongId};
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
@@ -33,7 +33,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{
-    ComputationContext, ContextFunction, Environment, MacroExpansionInfo, compute_expr_semantic,
+    ComputationContext, ContextFunction, Environment, ExpansionOffset, compute_expr_semantic,
     get_statement_item_by_name,
 };
 use crate::expr::inference::canonic::ResultNoErrEx;
@@ -226,9 +226,9 @@ pub struct ResolverMacroData {
     /// 2. The path was supplied as a macro argument. In other words, the path is an expansion of a
     ///    placeholder and is not a part of the macro expansion template.
     pub callsite_module_file_id: ModuleFileId,
-    /// This is information about the macro expansion. It is used to determine if a part of the
+    /// This is the mappings of the macro expansion. It is used to determine if a part of the
     /// code came from a macro argument or from the macro expansion template.
-    pub expansion_info: MacroExpansionInfo,
+    pub expansion_mappings: Arc<[CodeMapping]>,
     /// The parent macro data. Exists in case of a macro calling another macro, and is used if we
     /// climb to the callsite environment.
     pub parent_macro_call_data: Option<Box<ResolverMacroData>>,
@@ -441,7 +441,8 @@ impl<'db> Resolver<'db> {
         let db = self.db;
         let is_placeholder = path.is_placeholder(db);
 
-        let mut cur_offset = path.offset(db).expect("Trying to resolve an empty path.");
+        let mut cur_offset =
+            ExpansionOffset::new(path.offset(db).expect("Trying to resolve an empty path."));
         let elements_vec = path.to_segments(db);
         let mut segments = elements_vec.iter().peekable();
         let segments_stable_ptr =
@@ -450,12 +451,10 @@ impl<'db> Resolver<'db> {
         // Climb up the macro call data while the current resolved path is being mapped to an
         // argument of a macro call.
         while let Some(macro_call_data) = &cur_macro_call_data {
-            if let Some(placeholder_expansion) =
-                macro_call_data.expansion_info.get_placeholder_at(cur_offset)
-            {
+            if let Some(new_offset) = cur_offset.mapped(&macro_call_data.expansion_mappings) {
                 cur_macro_call_data =
                     macro_call_data.parent_macro_call_data.as_ref().map(|data| data.as_ref());
-                cur_offset = placeholder_expansion.origin.start();
+                cur_offset = new_offset;
                 continue;
             }
             break;
