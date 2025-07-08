@@ -1,8 +1,8 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
 use itertools::zip_eq;
 
@@ -159,7 +159,7 @@ fn get_substorage_member_code(
             let last = elements.next_back().unwrap();
             match last {
                 ast::PathSegment::Simple(segment)
-                    if segment.ident(db).text(db) == STORAGE_STRUCT_NAME =>
+                    if segment.identifier(db) == STORAGE_STRUCT_NAME =>
                 {
                     let component_path = RewriteNode::interspersed(
                         elements.map(|e| RewriteNode::from_ast_trimmed(&e)),

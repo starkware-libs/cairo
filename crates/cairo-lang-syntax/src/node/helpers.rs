@@ -141,9 +141,42 @@ impl PathSegmentEx for ast::PathSegment {
 impl GetIdentifier for ast::PathSegment {
     /// Retrieves the text of the segment (without the generic args).
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.identifier_ast(db).text(db)
+        match self {
+            ast::PathSegment::Simple(segment) => segment.identifier(db),
+            ast::PathSegment::WithGenericArgs(segment) => segment.identifier(db),
+            ast::PathSegment::Missing(missing_segment) => missing_segment.identifier(db),
+        }
     }
 }
+impl GetIdentifier for ast::PathSegmentSimple {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        let green_node = self.as_syntax_node().green_node(db);
+        let GreenNodeDetails::Node { children, .. } = &green_node.details else {
+            unreachable!("Expected a node for PathSegment");
+        };
+        TerminalIdentifierGreen(children[0]).identifier(db)
+    }
+}
+impl GetIdentifier for ast::PathSegmentWithGenericArgs {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        let green_node = self.as_syntax_node().green_node(db);
+        let GreenNodeDetails::Node { children, .. } = &green_node.details else {
+            unreachable!("Expected a node for WithGenericArgs");
+        };
+        TerminalIdentifierGreen(children[0]).identifier(db)
+    }
+}
+
+impl GetIdentifier for ast::PathSegmentMissing {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        let green_node = self.as_syntax_node().green_node(db);
+        let GreenNodeDetails::Node { children, .. } = &green_node.details else {
+            unreachable!("Expected a node for WithGenericArgs");
+        };
+        TerminalIdentifierGreen(children[0]).identifier(db)
+    }
+}
+
 impl GetIdentifier for ast::Modifier {
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
         match self {
@@ -710,7 +743,7 @@ impl IsDependentType for ast::ExprPath {
     fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool {
         let segments = self.segments(db).elements_vec(db);
         if let [ast::PathSegment::Simple(arg_segment)] = &segments[..] {
-            identifiers.contains(&arg_segment.ident(db).text(db).as_str())
+            identifiers.contains(&arg_segment.identifier(db).as_str())
         } else {
             segments.into_iter().any(|segment| {
                 let ast::PathSegment::WithGenericArgs(with_generics) = segment else {

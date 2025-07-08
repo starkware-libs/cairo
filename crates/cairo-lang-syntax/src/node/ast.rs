@@ -871,7 +871,6 @@ impl TypedSyntaxNode for ExprList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Arg {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Arg {
     pub const INDEX_MODIFIERS: usize = 0;
@@ -894,10 +893,10 @@ impl Arg {
 }
 impl Arg {
     pub fn modifiers(&self, db: &dyn SyntaxGroup) -> ModifierList {
-        ModifierList::from_syntax_node(db, self.children[0])
+        ModifierList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn arg_clause(&self, db: &dyn SyntaxGroup) -> ArgClause {
-        ArgClause::from_syntax_node(db, self.children[1])
+        ArgClause::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -944,7 +943,7 @@ impl TypedSyntaxNode for Arg {
             kind,
             SyntaxKind::Arg
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -1073,7 +1072,6 @@ impl ArgClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgClauseNamed {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ArgClauseNamed {
     pub const INDEX_NAME: usize = 0;
@@ -1098,13 +1096,13 @@ impl ArgClauseNamed {
 }
 impl ArgClauseNamed {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[1])
+        TerminalColon::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn value(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[2])
+        Expr::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -1156,7 +1154,7 @@ impl TypedSyntaxNode for ArgClauseNamed {
             kind,
             SyntaxKind::ArgClauseNamed
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -1176,7 +1174,6 @@ impl TypedSyntaxNode for ArgClauseNamed {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgClauseUnnamed {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ArgClauseUnnamed {
     pub const INDEX_VALUE: usize = 0;
@@ -1194,7 +1191,7 @@ impl ArgClauseUnnamed {
 }
 impl ArgClauseUnnamed {
     pub fn value(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[0])
+        Expr::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -1241,7 +1238,7 @@ impl TypedSyntaxNode for ArgClauseUnnamed {
             kind,
             SyntaxKind::ArgClauseUnnamed
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -1261,7 +1258,6 @@ impl TypedSyntaxNode for ArgClauseUnnamed {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgClauseFieldInitShorthand {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ArgClauseFieldInitShorthand {
     pub const INDEX_COLON: usize = 0;
@@ -1284,10 +1280,10 @@ impl ArgClauseFieldInitShorthand {
 }
 impl ArgClauseFieldInitShorthand {
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[0])
+        TerminalColon::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> ExprFieldInitShorthand {
-        ExprFieldInitShorthand::from_syntax_node(db, self.children[1])
+        ExprFieldInitShorthand::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -1335,7 +1331,7 @@ impl TypedSyntaxNode for ArgClauseFieldInitShorthand {
             kind,
             SyntaxKind::ArgClauseFieldInitShorthand
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -1355,7 +1351,6 @@ impl TypedSyntaxNode for ArgClauseFieldInitShorthand {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprFieldInitShorthand {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprFieldInitShorthand {
     pub const INDEX_NAME: usize = 0;
@@ -1376,7 +1371,7 @@ impl ExprFieldInitShorthand {
 }
 impl ExprFieldInitShorthand {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -1423,7 +1418,7 @@ impl TypedSyntaxNode for ExprFieldInitShorthand {
             kind,
             SyntaxKind::ExprFieldInitShorthand
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -1539,7 +1534,6 @@ impl TypedSyntaxNode for ArgList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprMissing {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> ExprMissingGreen {
@@ -1599,7 +1593,7 @@ impl TypedSyntaxNode for ExprMissing {
             kind,
             SyntaxKind::ExprMissing
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -1728,7 +1722,6 @@ impl PathSegment {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PathSegmentSimple {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl PathSegmentSimple {
     pub const INDEX_IDENT: usize = 0;
@@ -1749,7 +1742,7 @@ impl PathSegmentSimple {
 }
 impl PathSegmentSimple {
     pub fn ident(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -1796,7 +1789,7 @@ impl TypedSyntaxNode for PathSegmentSimple {
             kind,
             SyntaxKind::PathSegmentSimple
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -1909,7 +1902,6 @@ impl OptionTerminalColonColon {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTerminalColonColonEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionTerminalColonColonEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalColonColonEmptyGreen {
@@ -1969,7 +1961,7 @@ impl TypedSyntaxNode for OptionTerminalColonColonEmpty {
             kind,
             SyntaxKind::OptionTerminalColonColonEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -1989,7 +1981,6 @@ impl TypedSyntaxNode for OptionTerminalColonColonEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PathSegmentWithGenericArgs {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl PathSegmentWithGenericArgs {
     pub const INDEX_IDENT: usize = 0;
@@ -2014,13 +2005,13 @@ impl PathSegmentWithGenericArgs {
 }
 impl PathSegmentWithGenericArgs {
     pub fn ident(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn separator(&self, db: &dyn SyntaxGroup) -> OptionTerminalColonColon {
-        OptionTerminalColonColon::from_syntax_node(db, self.children[1])
+        OptionTerminalColonColon::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn generic_args(&self, db: &dyn SyntaxGroup) -> GenericArgs {
-        GenericArgs::from_syntax_node(db, self.children[2])
+        GenericArgs::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2072,7 +2063,7 @@ impl TypedSyntaxNode for PathSegmentWithGenericArgs {
             kind,
             SyntaxKind::PathSegmentWithGenericArgs
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -2092,7 +2083,6 @@ impl TypedSyntaxNode for PathSegmentWithGenericArgs {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprPath {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprPath {
     pub const INDEX_DOLLAR: usize = 0;
@@ -2115,10 +2105,10 @@ impl ExprPath {
 }
 impl ExprPath {
     pub fn dollar(&self, db: &dyn SyntaxGroup) -> OptionTerminalDollar {
-        OptionTerminalDollar::from_syntax_node(db, self.children[0])
+        OptionTerminalDollar::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn segments(&self, db: &dyn SyntaxGroup) -> ExprPathInner {
-        ExprPathInner::from_syntax_node(db, self.children[1])
+        ExprPathInner::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2166,7 +2156,7 @@ impl TypedSyntaxNode for ExprPath {
             kind,
             SyntaxKind::ExprPath
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -2275,7 +2265,6 @@ impl OptionTerminalDollar {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTerminalDollarEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionTerminalDollarEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalDollarEmptyGreen {
@@ -2335,7 +2324,7 @@ impl TypedSyntaxNode for OptionTerminalDollarEmpty {
             kind,
             SyntaxKind::OptionTerminalDollarEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -2355,7 +2344,6 @@ impl TypedSyntaxNode for OptionTerminalDollarEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PathSegmentMissing {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl PathSegmentMissing {
     pub const INDEX_IDENT: usize = 0;
@@ -2376,7 +2364,7 @@ impl PathSegmentMissing {
 }
 impl PathSegmentMissing {
     pub fn ident(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2423,7 +2411,7 @@ impl TypedSyntaxNode for PathSegmentMissing {
             kind,
             SyntaxKind::PathSegmentMissing
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -2543,7 +2531,6 @@ impl TypedSyntaxNode for ExprPathInner {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprParenthesized {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprParenthesized {
     pub const INDEX_LPAREN: usize = 0;
@@ -2568,13 +2555,13 @@ impl ExprParenthesized {
 }
 impl ExprParenthesized {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1])
+        Expr::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2626,7 +2613,7 @@ impl TypedSyntaxNode for ExprParenthesized {
             kind,
             SyntaxKind::ExprParenthesized
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -2646,7 +2633,6 @@ impl TypedSyntaxNode for ExprParenthesized {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprUnary {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprUnary {
     pub const INDEX_OP: usize = 0;
@@ -2669,10 +2655,10 @@ impl ExprUnary {
 }
 impl ExprUnary {
     pub fn op(&self, db: &dyn SyntaxGroup) -> UnaryOperator {
-        UnaryOperator::from_syntax_node(db, self.children[0])
+        UnaryOperator::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1])
+        Expr::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2719,7 +2705,7 @@ impl TypedSyntaxNode for ExprUnary {
             kind,
             SyntaxKind::ExprUnary
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -2882,7 +2868,6 @@ impl UnaryOperator {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprBinary {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprBinary {
     pub const INDEX_LHS: usize = 0;
@@ -2907,13 +2892,13 @@ impl ExprBinary {
 }
 impl ExprBinary {
     pub fn lhs(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[0])
+        Expr::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn op(&self, db: &dyn SyntaxGroup) -> BinaryOperator {
-        BinaryOperator::from_syntax_node(db, self.children[1])
+        BinaryOperator::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rhs(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[2])
+        Expr::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2965,7 +2950,7 @@ impl TypedSyntaxNode for ExprBinary {
             kind,
             SyntaxKind::ExprBinary
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -3505,7 +3490,6 @@ impl BinaryOperator {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprListParenthesized {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprListParenthesized {
     pub const INDEX_LPAREN: usize = 0;
@@ -3530,13 +3514,13 @@ impl ExprListParenthesized {
 }
 impl ExprListParenthesized {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn expressions(&self, db: &dyn SyntaxGroup) -> ExprList {
-        ExprList::from_syntax_node(db, self.children[1])
+        ExprList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -3588,7 +3572,7 @@ impl TypedSyntaxNode for ExprListParenthesized {
             kind,
             SyntaxKind::ExprListParenthesized
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -3608,7 +3592,6 @@ impl TypedSyntaxNode for ExprListParenthesized {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprFunctionCall {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprFunctionCall {
     pub const INDEX_PATH: usize = 0;
@@ -3631,10 +3614,10 @@ impl ExprFunctionCall {
 }
 impl ExprFunctionCall {
     pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[0])
+        ExprPath::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> ArgListParenthesized {
-        ArgListParenthesized::from_syntax_node(db, self.children[1])
+        ArgListParenthesized::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -3681,7 +3664,7 @@ impl TypedSyntaxNode for ExprFunctionCall {
             kind,
             SyntaxKind::ExprFunctionCall
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -3701,7 +3684,6 @@ impl TypedSyntaxNode for ExprFunctionCall {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgListParenthesized {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ArgListParenthesized {
     pub const INDEX_LPAREN: usize = 0;
@@ -3726,13 +3708,13 @@ impl ArgListParenthesized {
 }
 impl ArgListParenthesized {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> ArgList {
-        ArgList::from_syntax_node(db, self.children[1])
+        ArgList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -3784,7 +3766,7 @@ impl TypedSyntaxNode for ArgListParenthesized {
             kind,
             SyntaxKind::ArgListParenthesized
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -3902,7 +3884,6 @@ impl OptionArgListParenthesized {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionArgListParenthesizedEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionArgListParenthesizedEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionArgListParenthesizedEmptyGreen {
@@ -3962,7 +3943,7 @@ impl TypedSyntaxNode for OptionArgListParenthesizedEmpty {
             kind,
             SyntaxKind::OptionArgListParenthesizedEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -3982,7 +3963,6 @@ impl TypedSyntaxNode for OptionArgListParenthesizedEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprStructCtorCall {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprStructCtorCall {
     pub const INDEX_PATH: usize = 0;
@@ -4005,10 +3985,10 @@ impl ExprStructCtorCall {
 }
 impl ExprStructCtorCall {
     pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[0])
+        ExprPath::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> StructArgListBraced {
-        StructArgListBraced::from_syntax_node(db, self.children[1])
+        StructArgListBraced::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4055,7 +4035,7 @@ impl TypedSyntaxNode for ExprStructCtorCall {
             kind,
             SyntaxKind::ExprStructCtorCall
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -4075,7 +4055,6 @@ impl TypedSyntaxNode for ExprStructCtorCall {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StructArgListBraced {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl StructArgListBraced {
     pub const INDEX_LBRACE: usize = 0;
@@ -4100,13 +4079,13 @@ impl StructArgListBraced {
 }
 impl StructArgListBraced {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> StructArgList {
-        StructArgList::from_syntax_node(db, self.children[1])
+        StructArgList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4158,7 +4137,7 @@ impl TypedSyntaxNode for StructArgListBraced {
             kind,
             SyntaxKind::StructArgListBraced
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -4178,7 +4157,6 @@ impl TypedSyntaxNode for StructArgListBraced {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprBlock {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprBlock {
     pub const INDEX_LBRACE: usize = 0;
@@ -4203,13 +4181,13 @@ impl ExprBlock {
 }
 impl ExprBlock {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn statements(&self, db: &dyn SyntaxGroup) -> StatementList {
-        StatementList::from_syntax_node(db, self.children[1])
+        StatementList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4261,7 +4239,7 @@ impl TypedSyntaxNode for ExprBlock {
             kind,
             SyntaxKind::ExprBlock
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -4277,7 +4255,6 @@ impl TypedSyntaxNode for ExprBlock {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprMatch {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprMatch {
     pub const INDEX_MATCH_KW: usize = 0;
@@ -4306,19 +4283,19 @@ impl ExprMatch {
 }
 impl ExprMatch {
     pub fn match_kw(&self, db: &dyn SyntaxGroup) -> TerminalMatch {
-        TerminalMatch::from_syntax_node(db, self.children[0])
+        TerminalMatch::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1])
+        Expr::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[2])
+        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn arms(&self, db: &dyn SyntaxGroup) -> MatchArms {
-        MatchArms::from_syntax_node(db, self.children[3])
+        MatchArms::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[4])
+        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4372,7 +4349,7 @@ impl TypedSyntaxNode for ExprMatch {
             kind,
             SyntaxKind::ExprMatch
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -4488,7 +4465,6 @@ impl TypedSyntaxNode for MatchArms {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct MatchArm {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl MatchArm {
     pub const INDEX_PATTERNS: usize = 0;
@@ -4513,13 +4489,13 @@ impl MatchArm {
 }
 impl MatchArm {
     pub fn patterns(&self, db: &dyn SyntaxGroup) -> PatternListOr {
-        PatternListOr::from_syntax_node(db, self.children[0])
+        PatternListOr::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn arrow(&self, db: &dyn SyntaxGroup) -> TerminalMatchArrow {
-        TerminalMatchArrow::from_syntax_node(db, self.children[1])
+        TerminalMatchArrow::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn expression(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[2])
+        Expr::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4571,7 +4547,7 @@ impl TypedSyntaxNode for MatchArm {
             kind,
             SyntaxKind::MatchArm
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -4587,7 +4563,6 @@ impl TypedSyntaxNode for MatchArm {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprIf {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprIf {
     pub const INDEX_IF_KW: usize = 0;
@@ -4614,16 +4589,16 @@ impl ExprIf {
 }
 impl ExprIf {
     pub fn if_kw(&self, db: &dyn SyntaxGroup) -> TerminalIf {
-        TerminalIf::from_syntax_node(db, self.children[0])
+        TerminalIf::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn conditions(&self, db: &dyn SyntaxGroup) -> ConditionListAnd {
-        ConditionListAnd::from_syntax_node(db, self.children[1])
+        ConditionListAnd::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn if_block(&self, db: &dyn SyntaxGroup) -> ExprBlock {
-        ExprBlock::from_syntax_node(db, self.children[2])
+        ExprBlock::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn else_clause(&self, db: &dyn SyntaxGroup) -> OptionElseClause {
-        OptionElseClause::from_syntax_node(db, self.children[3])
+        OptionElseClause::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4676,7 +4651,7 @@ impl TypedSyntaxNode for ExprIf {
             kind,
             SyntaxKind::ExprIf
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -4878,7 +4853,6 @@ impl Condition {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ConditionLet {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ConditionLet {
     pub const INDEX_LET_KW: usize = 0;
@@ -4905,16 +4879,16 @@ impl ConditionLet {
 }
 impl ConditionLet {
     pub fn let_kw(&self, db: &dyn SyntaxGroup) -> TerminalLet {
-        TerminalLet::from_syntax_node(db, self.children[0])
+        TerminalLet::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn patterns(&self, db: &dyn SyntaxGroup) -> PatternListOr {
-        PatternListOr::from_syntax_node(db, self.children[1])
+        PatternListOr::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
-        TerminalEq::from_syntax_node(db, self.children[2])
+        TerminalEq::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[3])
+        Expr::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4967,7 +4941,7 @@ impl TypedSyntaxNode for ConditionLet {
             kind,
             SyntaxKind::ConditionLet
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -4983,7 +4957,6 @@ impl TypedSyntaxNode for ConditionLet {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ConditionExpr {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ConditionExpr {
     pub const INDEX_EXPR: usize = 0;
@@ -5001,7 +4974,7 @@ impl ConditionExpr {
 }
 impl ConditionExpr {
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[0])
+        Expr::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5048,7 +5021,7 @@ impl TypedSyntaxNode for ConditionExpr {
             kind,
             SyntaxKind::ConditionExpr
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5150,7 +5123,6 @@ impl BlockOrIf {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprLoop {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprLoop {
     pub const INDEX_LOOP_KW: usize = 0;
@@ -5173,10 +5145,10 @@ impl ExprLoop {
 }
 impl ExprLoop {
     pub fn loop_kw(&self, db: &dyn SyntaxGroup) -> TerminalLoop {
-        TerminalLoop::from_syntax_node(db, self.children[0])
+        TerminalLoop::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> ExprBlock {
-        ExprBlock::from_syntax_node(db, self.children[1])
+        ExprBlock::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5223,7 +5195,7 @@ impl TypedSyntaxNode for ExprLoop {
             kind,
             SyntaxKind::ExprLoop
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5239,7 +5211,6 @@ impl TypedSyntaxNode for ExprLoop {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprWhile {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprWhile {
     pub const INDEX_WHILE_KW: usize = 0;
@@ -5264,13 +5235,13 @@ impl ExprWhile {
 }
 impl ExprWhile {
     pub fn while_kw(&self, db: &dyn SyntaxGroup) -> TerminalWhile {
-        TerminalWhile::from_syntax_node(db, self.children[0])
+        TerminalWhile::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn conditions(&self, db: &dyn SyntaxGroup) -> ConditionListAnd {
-        ConditionListAnd::from_syntax_node(db, self.children[1])
+        ConditionListAnd::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> ExprBlock {
-        ExprBlock::from_syntax_node(db, self.children[2])
+        ExprBlock::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5322,7 +5293,7 @@ impl TypedSyntaxNode for ExprWhile {
             kind,
             SyntaxKind::ExprWhile
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5338,7 +5309,6 @@ impl TypedSyntaxNode for ExprWhile {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprFor {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprFor {
     pub const INDEX_FOR_KW: usize = 0;
@@ -5367,19 +5337,19 @@ impl ExprFor {
 }
 impl ExprFor {
     pub fn for_kw(&self, db: &dyn SyntaxGroup) -> TerminalFor {
-        TerminalFor::from_syntax_node(db, self.children[0])
+        TerminalFor::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
-        Pattern::from_syntax_node(db, self.children[1])
+        Pattern::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn identifier(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[3])
+        Expr::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> ExprBlock {
-        ExprBlock::from_syntax_node(db, self.children[4])
+        ExprBlock::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5450,7 +5420,7 @@ impl TypedSyntaxNode for ExprFor {
             kind,
             SyntaxKind::ExprFor
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5466,7 +5436,6 @@ impl TypedSyntaxNode for ExprFor {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ElseClause {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ElseClause {
     pub const INDEX_ELSE_KW: usize = 0;
@@ -5489,10 +5458,10 @@ impl ElseClause {
 }
 impl ElseClause {
     pub fn else_kw(&self, db: &dyn SyntaxGroup) -> TerminalElse {
-        TerminalElse::from_syntax_node(db, self.children[0])
+        TerminalElse::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn else_block_or_if(&self, db: &dyn SyntaxGroup) -> BlockOrIf {
-        BlockOrIf::from_syntax_node(db, self.children[1])
+        BlockOrIf::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5539,7 +5508,7 @@ impl TypedSyntaxNode for ElseClause {
             kind,
             SyntaxKind::ElseClause
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5648,7 +5617,6 @@ impl OptionElseClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionElseClauseEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionElseClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionElseClauseEmptyGreen {
@@ -5708,7 +5676,7 @@ impl TypedSyntaxNode for OptionElseClauseEmpty {
             kind,
             SyntaxKind::OptionElseClauseEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5728,7 +5696,6 @@ impl TypedSyntaxNode for OptionElseClauseEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprErrorPropagate {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprErrorPropagate {
     pub const INDEX_EXPR: usize = 0;
@@ -5751,10 +5718,10 @@ impl ExprErrorPropagate {
 }
 impl ExprErrorPropagate {
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[0])
+        Expr::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn op(&self, db: &dyn SyntaxGroup) -> TerminalQuestionMark {
-        TerminalQuestionMark::from_syntax_node(db, self.children[1])
+        TerminalQuestionMark::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5801,7 +5768,7 @@ impl TypedSyntaxNode for ExprErrorPropagate {
             kind,
             SyntaxKind::ExprErrorPropagate
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5821,7 +5788,6 @@ impl TypedSyntaxNode for ExprErrorPropagate {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprIndexed {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprIndexed {
     pub const INDEX_EXPR: usize = 0;
@@ -5848,16 +5814,16 @@ impl ExprIndexed {
 }
 impl ExprIndexed {
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[0])
+        Expr::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
-        TerminalLBrack::from_syntax_node(db, self.children[1])
+        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn index_expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[2])
+        Expr::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
-        TerminalRBrack::from_syntax_node(db, self.children[3])
+        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5910,7 +5876,7 @@ impl TypedSyntaxNode for ExprIndexed {
             kind,
             SyntaxKind::ExprIndexed
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -5926,7 +5892,6 @@ impl TypedSyntaxNode for ExprIndexed {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprFixedSizeArray {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprFixedSizeArray {
     pub const INDEX_LBRACK: usize = 0;
@@ -5953,16 +5918,16 @@ impl ExprFixedSizeArray {
 }
 impl ExprFixedSizeArray {
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
-        TerminalLBrack::from_syntax_node(db, self.children[0])
+        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn exprs(&self, db: &dyn SyntaxGroup) -> ExprList {
-        ExprList::from_syntax_node(db, self.children[1])
+        ExprList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn size(&self, db: &dyn SyntaxGroup) -> OptionFixedSizeArraySize {
-        OptionFixedSizeArraySize::from_syntax_node(db, self.children[2])
+        OptionFixedSizeArraySize::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
-        TerminalRBrack::from_syntax_node(db, self.children[3])
+        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6015,7 +5980,7 @@ impl TypedSyntaxNode for ExprFixedSizeArray {
             kind,
             SyntaxKind::ExprFixedSizeArray
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -6035,7 +6000,6 @@ impl TypedSyntaxNode for ExprFixedSizeArray {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct FixedSizeArraySize {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl FixedSizeArraySize {
     pub const INDEX_SEMICOLON: usize = 0;
@@ -6058,10 +6022,10 @@ impl FixedSizeArraySize {
 }
 impl FixedSizeArraySize {
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[0])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn size(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1])
+        Expr::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6108,7 +6072,7 @@ impl TypedSyntaxNode for FixedSizeArraySize {
             kind,
             SyntaxKind::FixedSizeArraySize
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -6221,7 +6185,6 @@ impl OptionFixedSizeArraySize {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionFixedSizeArraySizeEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionFixedSizeArraySizeEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionFixedSizeArraySizeEmptyGreen {
@@ -6281,7 +6244,7 @@ impl TypedSyntaxNode for OptionFixedSizeArraySizeEmpty {
             kind,
             SyntaxKind::OptionFixedSizeArraySizeEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -6301,7 +6264,6 @@ impl TypedSyntaxNode for OptionFixedSizeArraySizeEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprClosure {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprClosure {
     pub const INDEX_WRAPPER: usize = 0;
@@ -6328,16 +6290,16 @@ impl ExprClosure {
 }
 impl ExprClosure {
     pub fn wrapper(&self, db: &dyn SyntaxGroup) -> ClosureParamWrapper {
-        ClosureParamWrapper::from_syntax_node(db, self.children[0])
+        ClosureParamWrapper::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn ret_ty(&self, db: &dyn SyntaxGroup) -> OptionReturnTypeClause {
-        OptionReturnTypeClause::from_syntax_node(db, self.children[1])
+        OptionReturnTypeClause::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn optional_no_panic(&self, db: &dyn SyntaxGroup) -> OptionTerminalNoPanic {
-        OptionTerminalNoPanic::from_syntax_node(db, self.children[2])
+        OptionTerminalNoPanic::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[3])
+        Expr::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6390,7 +6352,7 @@ impl TypedSyntaxNode for ExprClosure {
             kind,
             SyntaxKind::ExprClosure
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -6499,7 +6461,6 @@ impl ClosureParamWrapper {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ClosureParamWrapperNAry {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ClosureParamWrapperNAry {
     pub const INDEX_LEFTOR: usize = 0;
@@ -6524,13 +6485,13 @@ impl ClosureParamWrapperNAry {
 }
 impl ClosureParamWrapperNAry {
     pub fn leftor(&self, db: &dyn SyntaxGroup) -> TerminalOr {
-        TerminalOr::from_syntax_node(db, self.children[0])
+        TerminalOr::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn params(&self, db: &dyn SyntaxGroup) -> ParamList {
-        ParamList::from_syntax_node(db, self.children[1])
+        ParamList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rightor(&self, db: &dyn SyntaxGroup) -> TerminalOr {
-        TerminalOr::from_syntax_node(db, self.children[2])
+        TerminalOr::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6582,7 +6543,7 @@ impl TypedSyntaxNode for ClosureParamWrapperNAry {
             kind,
             SyntaxKind::ClosureParamWrapperNAry
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -6602,7 +6563,6 @@ impl TypedSyntaxNode for ClosureParamWrapperNAry {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprPlaceholder {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprPlaceholder {
     pub const INDEX_DOLLAR: usize = 0;
@@ -6625,10 +6585,10 @@ impl ExprPlaceholder {
 }
 impl ExprPlaceholder {
     pub fn dollar(&self, db: &dyn SyntaxGroup) -> TerminalDollar {
-        TerminalDollar::from_syntax_node(db, self.children[0])
+        TerminalDollar::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[1])
+        ExprPath::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6675,7 +6635,7 @@ impl TypedSyntaxNode for ExprPlaceholder {
             kind,
             SyntaxKind::ExprPlaceholder
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -6695,7 +6655,6 @@ impl TypedSyntaxNode for ExprPlaceholder {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StructArgExpr {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl StructArgExpr {
     pub const INDEX_COLON: usize = 0;
@@ -6718,10 +6677,10 @@ impl StructArgExpr {
 }
 impl StructArgExpr {
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[0])
+        TerminalColon::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1])
+        Expr::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6768,7 +6727,7 @@ impl TypedSyntaxNode for StructArgExpr {
             kind,
             SyntaxKind::StructArgExpr
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -6881,7 +6840,6 @@ impl OptionStructArgExpr {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionStructArgExprEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionStructArgExprEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionStructArgExprEmptyGreen {
@@ -6941,7 +6899,7 @@ impl TypedSyntaxNode for OptionStructArgExprEmpty {
             kind,
             SyntaxKind::OptionStructArgExprEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -6961,7 +6919,6 @@ impl TypedSyntaxNode for OptionStructArgExprEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StructArgSingle {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl StructArgSingle {
     pub const INDEX_IDENTIFIER: usize = 0;
@@ -6984,10 +6941,10 @@ impl StructArgSingle {
 }
 impl StructArgSingle {
     pub fn identifier(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn arg_expr(&self, db: &dyn SyntaxGroup) -> OptionStructArgExpr {
-        OptionStructArgExpr::from_syntax_node(db, self.children[1])
+        OptionStructArgExpr::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -7047,7 +7004,7 @@ impl TypedSyntaxNode for StructArgSingle {
             kind,
             SyntaxKind::StructArgSingle
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -7067,7 +7024,6 @@ impl TypedSyntaxNode for StructArgSingle {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StructArgTail {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl StructArgTail {
     pub const INDEX_DOTDOT: usize = 0;
@@ -7090,10 +7046,10 @@ impl StructArgTail {
 }
 impl StructArgTail {
     pub fn dotdot(&self, db: &dyn SyntaxGroup) -> TerminalDotDot {
-        TerminalDotDot::from_syntax_node(db, self.children[0])
+        TerminalDotDot::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn expression(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1])
+        Expr::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -7140,7 +7096,7 @@ impl TypedSyntaxNode for StructArgTail {
             kind,
             SyntaxKind::StructArgTail
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -7350,7 +7306,6 @@ impl TypedSyntaxNode for StructArgList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgListBraced {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ArgListBraced {
     pub const INDEX_LBRACE: usize = 0;
@@ -7375,13 +7330,13 @@ impl ArgListBraced {
 }
 impl ArgListBraced {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> ArgList {
-        ArgList::from_syntax_node(db, self.children[1])
+        ArgList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -7433,7 +7388,7 @@ impl TypedSyntaxNode for ArgListBraced {
             kind,
             SyntaxKind::ArgListBraced
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -7453,7 +7408,6 @@ impl TypedSyntaxNode for ArgListBraced {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgListBracketed {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ArgListBracketed {
     pub const INDEX_LBRACK: usize = 0;
@@ -7478,13 +7432,13 @@ impl ArgListBracketed {
 }
 impl ArgListBracketed {
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
-        TerminalLBrack::from_syntax_node(db, self.children[0])
+        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> ArgList {
-        ArgList::from_syntax_node(db, self.children[1])
+        ArgList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
-        TerminalRBrack::from_syntax_node(db, self.children[2])
+        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -7536,7 +7490,7 @@ impl TypedSyntaxNode for ArgListBracketed {
             kind,
             SyntaxKind::ArgListBracketed
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -7690,7 +7644,6 @@ impl WrappedArgList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WrappedArgListMissing {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl WrappedArgListMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> WrappedArgListMissingGreen {
@@ -7750,7 +7703,7 @@ impl TypedSyntaxNode for WrappedArgListMissing {
             kind,
             SyntaxKind::WrappedArgListMissing
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -8038,7 +7991,6 @@ impl Pattern {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternIdentifier {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl PatternIdentifier {
     pub const INDEX_MODIFIERS: usize = 0;
@@ -8061,10 +8013,10 @@ impl PatternIdentifier {
 }
 impl PatternIdentifier {
     pub fn modifiers(&self, db: &dyn SyntaxGroup) -> ModifierList {
-        ModifierList::from_syntax_node(db, self.children[0])
+        ModifierList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -8121,7 +8073,7 @@ impl TypedSyntaxNode for PatternIdentifier {
             kind,
             SyntaxKind::PatternIdentifier
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -8141,7 +8093,6 @@ impl TypedSyntaxNode for PatternIdentifier {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternStruct {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl PatternStruct {
     pub const INDEX_PATH: usize = 0;
@@ -8168,16 +8119,16 @@ impl PatternStruct {
 }
 impl PatternStruct {
     pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[0])
+        ExprPath::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[1])
+        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn params(&self, db: &dyn SyntaxGroup) -> PatternStructParamList {
-        PatternStructParamList::from_syntax_node(db, self.children[2])
+        PatternStructParamList::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[3])
+        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -8230,7 +8181,7 @@ impl TypedSyntaxNode for PatternStruct {
             kind,
             SyntaxKind::PatternStruct
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -8350,7 +8301,6 @@ impl TypedSyntaxNode for PatternStructParamList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternTuple {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl PatternTuple {
     pub const INDEX_LPAREN: usize = 0;
@@ -8375,13 +8325,13 @@ impl PatternTuple {
 }
 impl PatternTuple {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn patterns(&self, db: &dyn SyntaxGroup) -> PatternList {
-        PatternList::from_syntax_node(db, self.children[1])
+        PatternList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -8433,7 +8383,7 @@ impl TypedSyntaxNode for PatternTuple {
             kind,
             SyntaxKind::PatternTuple
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -8449,7 +8399,6 @@ impl TypedSyntaxNode for PatternTuple {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternFixedSizeArray {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl PatternFixedSizeArray {
     pub const INDEX_LBRACK: usize = 0;
@@ -8474,13 +8423,13 @@ impl PatternFixedSizeArray {
 }
 impl PatternFixedSizeArray {
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
-        TerminalLBrack::from_syntax_node(db, self.children[0])
+        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn patterns(&self, db: &dyn SyntaxGroup) -> PatternList {
-        PatternList::from_syntax_node(db, self.children[1])
+        PatternList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
-        TerminalRBrack::from_syntax_node(db, self.children[2])
+        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -8532,7 +8481,7 @@ impl TypedSyntaxNode for PatternFixedSizeArray {
             kind,
             SyntaxKind::PatternFixedSizeArray
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -8868,7 +8817,6 @@ impl PatternStructParam {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternStructParamWithExpr {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl PatternStructParamWithExpr {
     pub const INDEX_MODIFIERS: usize = 0;
@@ -8895,16 +8843,16 @@ impl PatternStructParamWithExpr {
 }
 impl PatternStructParamWithExpr {
     pub fn modifiers(&self, db: &dyn SyntaxGroup) -> ModifierList {
-        ModifierList::from_syntax_node(db, self.children[0])
+        ModifierList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[2])
+        TerminalColon::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
-        Pattern::from_syntax_node(db, self.children[3])
+        Pattern::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -8957,7 +8905,7 @@ impl TypedSyntaxNode for PatternStructParamWithExpr {
             kind,
             SyntaxKind::PatternStructParamWithExpr
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -8977,7 +8925,6 @@ impl TypedSyntaxNode for PatternStructParamWithExpr {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternEnum {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl PatternEnum {
     pub const INDEX_PATH: usize = 0;
@@ -9000,10 +8947,10 @@ impl PatternEnum {
 }
 impl PatternEnum {
     pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[0])
+        ExprPath::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn pattern(&self, db: &dyn SyntaxGroup) -> OptionPatternEnumInnerPattern {
-        OptionPatternEnumInnerPattern::from_syntax_node(db, self.children[1])
+        OptionPatternEnumInnerPattern::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -9054,7 +9001,7 @@ impl TypedSyntaxNode for PatternEnum {
             kind,
             SyntaxKind::PatternEnum
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -9070,7 +9017,6 @@ impl TypedSyntaxNode for PatternEnum {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternEnumInnerPattern {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl PatternEnumInnerPattern {
     pub const INDEX_LPAREN: usize = 0;
@@ -9095,13 +9041,13 @@ impl PatternEnumInnerPattern {
 }
 impl PatternEnumInnerPattern {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
-        Pattern::from_syntax_node(db, self.children[1])
+        Pattern::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -9153,7 +9099,7 @@ impl TypedSyntaxNode for PatternEnumInnerPattern {
             kind,
             SyntaxKind::PatternEnumInnerPattern
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -9275,7 +9221,6 @@ impl OptionPatternEnumInnerPattern {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionPatternEnumInnerPatternEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionPatternEnumInnerPatternEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionPatternEnumInnerPatternEmptyGreen {
@@ -9335,7 +9280,7 @@ impl TypedSyntaxNode for OptionPatternEnumInnerPatternEmpty {
             kind,
             SyntaxKind::OptionPatternEnumInnerPatternEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -9355,7 +9300,6 @@ impl TypedSyntaxNode for OptionPatternEnumInnerPatternEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TypeClause {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl TypeClause {
     pub const INDEX_COLON: usize = 0;
@@ -9378,10 +9322,10 @@ impl TypeClause {
 }
 impl TypeClause {
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[0])
+        TerminalColon::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn ty(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1])
+        Expr::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -9428,7 +9372,7 @@ impl TypedSyntaxNode for TypeClause {
             kind,
             SyntaxKind::TypeClause
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -9537,7 +9481,6 @@ impl OptionTypeClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTypeClauseEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionTypeClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionTypeClauseEmptyGreen {
@@ -9597,7 +9540,7 @@ impl TypedSyntaxNode for OptionTypeClauseEmpty {
             kind,
             SyntaxKind::OptionTypeClauseEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -9617,7 +9560,6 @@ impl TypedSyntaxNode for OptionTypeClauseEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ReturnTypeClause {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ReturnTypeClause {
     pub const INDEX_ARROW: usize = 0;
@@ -9640,10 +9582,10 @@ impl ReturnTypeClause {
 }
 impl ReturnTypeClause {
     pub fn arrow(&self, db: &dyn SyntaxGroup) -> TerminalArrow {
-        TerminalArrow::from_syntax_node(db, self.children[0])
+        TerminalArrow::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn ty(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1])
+        Expr::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -9690,7 +9632,7 @@ impl TypedSyntaxNode for ReturnTypeClause {
             kind,
             SyntaxKind::ReturnTypeClause
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -9803,7 +9745,6 @@ impl OptionReturnTypeClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionReturnTypeClauseEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionReturnTypeClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionReturnTypeClauseEmptyGreen {
@@ -9863,7 +9804,7 @@ impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
             kind,
             SyntaxKind::OptionReturnTypeClauseEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10140,7 +10081,6 @@ impl TypedSyntaxNode for StatementList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementMissing {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl StatementMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> StatementMissingGreen {
@@ -10200,7 +10140,7 @@ impl TypedSyntaxNode for StatementMissing {
             kind,
             SyntaxKind::StatementMissing
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10220,7 +10160,6 @@ impl TypedSyntaxNode for StatementMissing {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementLet {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl StatementLet {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -10264,28 +10203,28 @@ impl StatementLet {
 }
 impl StatementLet {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn let_kw(&self, db: &dyn SyntaxGroup) -> TerminalLet {
-        TerminalLet::from_syntax_node(db, self.children[1])
+        TerminalLet::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
-        Pattern::from_syntax_node(db, self.children[2])
+        Pattern::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> OptionTypeClause {
-        OptionTypeClause::from_syntax_node(db, self.children[3])
+        OptionTypeClause::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
-        TerminalEq::from_syntax_node(db, self.children[4])
+        TerminalEq::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn rhs(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[5])
+        Expr::from_syntax_node(db, self.node.get_children(db)[5])
     }
     pub fn let_else_clause(&self, db: &dyn SyntaxGroup) -> OptionLetElseClause {
-        OptionLetElseClause::from_syntax_node(db, self.children[6])
+        OptionLetElseClause::from_syntax_node(db, self.node.get_children(db)[6])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[7])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[7])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -10351,7 +10290,7 @@ impl TypedSyntaxNode for StatementLet {
             kind,
             SyntaxKind::StatementLet
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10367,7 +10306,6 @@ impl TypedSyntaxNode for StatementLet {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LetElseClause {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl LetElseClause {
     pub const INDEX_ELSE_KW: usize = 0;
@@ -10390,10 +10328,10 @@ impl LetElseClause {
 }
 impl LetElseClause {
     pub fn else_kw(&self, db: &dyn SyntaxGroup) -> TerminalElse {
-        TerminalElse::from_syntax_node(db, self.children[0])
+        TerminalElse::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn else_block(&self, db: &dyn SyntaxGroup) -> ExprBlock {
-        ExprBlock::from_syntax_node(db, self.children[1])
+        ExprBlock::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -10440,7 +10378,7 @@ impl TypedSyntaxNode for LetElseClause {
             kind,
             SyntaxKind::LetElseClause
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10553,7 +10491,6 @@ impl OptionLetElseClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionLetElseClauseEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionLetElseClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionLetElseClauseEmptyGreen {
@@ -10613,7 +10550,7 @@ impl TypedSyntaxNode for OptionLetElseClauseEmpty {
             kind,
             SyntaxKind::OptionLetElseClauseEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10726,7 +10663,6 @@ impl OptionTerminalSemicolon {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTerminalSemicolonEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionTerminalSemicolonEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalSemicolonEmptyGreen {
@@ -10786,7 +10722,7 @@ impl TypedSyntaxNode for OptionTerminalSemicolonEmpty {
             kind,
             SyntaxKind::OptionTerminalSemicolonEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10806,7 +10742,6 @@ impl TypedSyntaxNode for OptionTerminalSemicolonEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementExpr {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl StatementExpr {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -10831,13 +10766,13 @@ impl StatementExpr {
 }
 impl StatementExpr {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1])
+        Expr::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> OptionTerminalSemicolon {
-        OptionTerminalSemicolon::from_syntax_node(db, self.children[2])
+        OptionTerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -10889,7 +10824,7 @@ impl TypedSyntaxNode for StatementExpr {
             kind,
             SyntaxKind::StatementExpr
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -10909,7 +10844,6 @@ impl TypedSyntaxNode for StatementExpr {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementContinue {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl StatementContinue {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -10934,13 +10868,13 @@ impl StatementContinue {
 }
 impl StatementContinue {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn continue_kw(&self, db: &dyn SyntaxGroup) -> TerminalContinue {
-        TerminalContinue::from_syntax_node(db, self.children[1])
+        TerminalContinue::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[2])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -10992,7 +10926,7 @@ impl TypedSyntaxNode for StatementContinue {
             kind,
             SyntaxKind::StatementContinue
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -11012,7 +10946,6 @@ impl TypedSyntaxNode for StatementContinue {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprClause {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprClause {
     pub const INDEX_EXPR: usize = 0;
@@ -11030,7 +10963,7 @@ impl ExprClause {
 }
 impl ExprClause {
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[0])
+        Expr::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -11077,7 +11010,7 @@ impl TypedSyntaxNode for ExprClause {
             kind,
             SyntaxKind::ExprClause
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -11186,7 +11119,6 @@ impl OptionExprClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionExprClauseEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionExprClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionExprClauseEmptyGreen {
@@ -11246,7 +11178,7 @@ impl TypedSyntaxNode for OptionExprClauseEmpty {
             kind,
             SyntaxKind::OptionExprClauseEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -11266,7 +11198,6 @@ impl TypedSyntaxNode for OptionExprClauseEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementReturn {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl StatementReturn {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -11293,16 +11224,16 @@ impl StatementReturn {
 }
 impl StatementReturn {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn return_kw(&self, db: &dyn SyntaxGroup) -> TerminalReturn {
-        TerminalReturn::from_syntax_node(db, self.children[1])
+        TerminalReturn::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn expr_clause(&self, db: &dyn SyntaxGroup) -> OptionExprClause {
-        OptionExprClause::from_syntax_node(db, self.children[2])
+        OptionExprClause::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[3])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -11355,7 +11286,7 @@ impl TypedSyntaxNode for StatementReturn {
             kind,
             SyntaxKind::StatementReturn
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -11375,7 +11306,6 @@ impl TypedSyntaxNode for StatementReturn {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementBreak {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl StatementBreak {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -11402,16 +11332,16 @@ impl StatementBreak {
 }
 impl StatementBreak {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn break_kw(&self, db: &dyn SyntaxGroup) -> TerminalBreak {
-        TerminalBreak::from_syntax_node(db, self.children[1])
+        TerminalBreak::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn expr_clause(&self, db: &dyn SyntaxGroup) -> OptionExprClause {
-        OptionExprClause::from_syntax_node(db, self.children[2])
+        OptionExprClause::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[3])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -11464,7 +11394,7 @@ impl TypedSyntaxNode for StatementBreak {
             kind,
             SyntaxKind::StatementBreak
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -11484,7 +11414,6 @@ impl TypedSyntaxNode for StatementBreak {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementItem {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl StatementItem {
     pub const INDEX_ITEM: usize = 0;
@@ -11502,7 +11431,7 @@ impl StatementItem {
 }
 impl StatementItem {
     pub fn item(&self, db: &dyn SyntaxGroup) -> ModuleItem {
-        ModuleItem::from_syntax_node(db, self.children[0])
+        ModuleItem::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -11549,7 +11478,7 @@ impl TypedSyntaxNode for StatementItem {
             kind,
             SyntaxKind::StatementItem
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -11569,7 +11498,6 @@ impl TypedSyntaxNode for StatementItem {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Param {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Param {
     pub const INDEX_MODIFIERS: usize = 0;
@@ -11594,13 +11522,13 @@ impl Param {
 }
 impl Param {
     pub fn modifiers(&self, db: &dyn SyntaxGroup) -> ModifierList {
-        ModifierList::from_syntax_node(db, self.children[0])
+        ModifierList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> OptionTypeClause {
-        OptionTypeClause::from_syntax_node(db, self.children[2])
+        OptionTypeClause::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -11661,7 +11589,7 @@ impl TypedSyntaxNode for Param {
             kind,
             SyntaxKind::Param
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -11933,7 +11861,6 @@ impl TypedSyntaxNode for ParamList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ImplicitsClause {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ImplicitsClause {
     pub const INDEX_IMPLICITS_KW: usize = 0;
@@ -11960,16 +11887,16 @@ impl ImplicitsClause {
 }
 impl ImplicitsClause {
     pub fn implicits_kw(&self, db: &dyn SyntaxGroup) -> TerminalImplicits {
-        TerminalImplicits::from_syntax_node(db, self.children[0])
+        TerminalImplicits::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[1])
+        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn implicits(&self, db: &dyn SyntaxGroup) -> ImplicitsList {
-        ImplicitsList::from_syntax_node(db, self.children[2])
+        ImplicitsList::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[3])
+        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -12022,7 +11949,7 @@ impl TypedSyntaxNode for ImplicitsClause {
             kind,
             SyntaxKind::ImplicitsClause
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -12235,7 +12162,6 @@ impl OptionImplicitsClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionImplicitsClauseEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionImplicitsClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionImplicitsClauseEmptyGreen {
@@ -12295,7 +12221,7 @@ impl TypedSyntaxNode for OptionImplicitsClauseEmpty {
             kind,
             SyntaxKind::OptionImplicitsClauseEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -12408,7 +12334,6 @@ impl OptionTerminalNoPanic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTerminalNoPanicEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionTerminalNoPanicEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalNoPanicEmptyGreen {
@@ -12468,7 +12393,7 @@ impl TypedSyntaxNode for OptionTerminalNoPanicEmpty {
             kind,
             SyntaxKind::OptionTerminalNoPanicEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -12581,7 +12506,6 @@ impl OptionTerminalConst {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTerminalConstEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionTerminalConstEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalConstEmptyGreen {
@@ -12641,7 +12565,7 @@ impl TypedSyntaxNode for OptionTerminalConstEmpty {
             kind,
             SyntaxKind::OptionTerminalConstEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -12661,7 +12585,6 @@ impl TypedSyntaxNode for OptionTerminalConstEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct FunctionSignature {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl FunctionSignature {
     pub const INDEX_LPAREN: usize = 0;
@@ -12693,22 +12616,22 @@ impl FunctionSignature {
 }
 impl FunctionSignature {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn parameters(&self, db: &dyn SyntaxGroup) -> ParamList {
-        ParamList::from_syntax_node(db, self.children[1])
+        ParamList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn ret_ty(&self, db: &dyn SyntaxGroup) -> OptionReturnTypeClause {
-        OptionReturnTypeClause::from_syntax_node(db, self.children[3])
+        OptionReturnTypeClause::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn implicits_clause(&self, db: &dyn SyntaxGroup) -> OptionImplicitsClause {
-        OptionImplicitsClause::from_syntax_node(db, self.children[4])
+        OptionImplicitsClause::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn optional_no_panic(&self, db: &dyn SyntaxGroup) -> OptionTerminalNoPanic {
-        OptionTerminalNoPanic::from_syntax_node(db, self.children[5])
+        OptionTerminalNoPanic::from_syntax_node(db, self.node.get_children(db)[5])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -12763,7 +12686,7 @@ impl TypedSyntaxNode for FunctionSignature {
             kind,
             SyntaxKind::FunctionSignature
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -12783,7 +12706,6 @@ impl TypedSyntaxNode for FunctionSignature {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Member {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Member {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -12810,16 +12732,16 @@ impl Member {
 }
 impl Member {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1])
+        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
-        TypeClause::from_syntax_node(db, self.children[3])
+        TypeClause::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -12881,7 +12803,7 @@ impl TypedSyntaxNode for Member {
             kind,
             SyntaxKind::Member
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -12997,7 +12919,6 @@ impl TypedSyntaxNode for MemberList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Variant {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Variant {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -13022,13 +12943,13 @@ impl Variant {
 }
 impl Variant {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> OptionTypeClause {
-        OptionTypeClause::from_syntax_node(db, self.children[2])
+        OptionTypeClause::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -13089,7 +13010,7 @@ impl TypedSyntaxNode for Variant {
             kind,
             SyntaxKind::Variant
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -13619,7 +13540,6 @@ impl TypedSyntaxNode for ModuleItemList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ModuleItemMissing {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ModuleItemMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> ModuleItemMissingGreen {
@@ -13679,7 +13599,7 @@ impl TypedSyntaxNode for ModuleItemMissing {
             kind,
             SyntaxKind::ModuleItemMissing
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -13699,7 +13619,6 @@ impl TypedSyntaxNode for ModuleItemMissing {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Attribute {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Attribute {
     pub const INDEX_HASH: usize = 0;
@@ -13728,19 +13647,19 @@ impl Attribute {
 }
 impl Attribute {
     pub fn hash(&self, db: &dyn SyntaxGroup) -> TerminalHash {
-        TerminalHash::from_syntax_node(db, self.children[0])
+        TerminalHash::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
-        TerminalLBrack::from_syntax_node(db, self.children[1])
+        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn attr(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[2])
+        ExprPath::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> OptionArgListParenthesized {
-        OptionArgListParenthesized::from_syntax_node(db, self.children[3])
+        OptionArgListParenthesized::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
-        TerminalRBrack::from_syntax_node(db, self.children[4])
+        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -13794,7 +13713,7 @@ impl TypedSyntaxNode for Attribute {
             kind,
             SyntaxKind::Attribute
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -13884,7 +13803,6 @@ impl TypedSyntaxNode for AttributeList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct VisibilityDefault {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl VisibilityDefault {
     pub fn new_green(db: &dyn SyntaxGroup) -> VisibilityDefaultGreen {
@@ -13944,7 +13862,7 @@ impl TypedSyntaxNode for VisibilityDefault {
             kind,
             SyntaxKind::VisibilityDefault
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -13964,7 +13882,6 @@ impl TypedSyntaxNode for VisibilityDefault {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct VisibilityPubArgumentClause {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl VisibilityPubArgumentClause {
     pub const INDEX_LPAREN: usize = 0;
@@ -13989,13 +13906,13 @@ impl VisibilityPubArgumentClause {
 }
 impl VisibilityPubArgumentClause {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn argument(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -14047,7 +13964,7 @@ impl TypedSyntaxNode for VisibilityPubArgumentClause {
             kind,
             SyntaxKind::VisibilityPubArgumentClause
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -14172,7 +14089,6 @@ impl OptionVisibilityPubArgumentClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionVisibilityPubArgumentClauseEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionVisibilityPubArgumentClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionVisibilityPubArgumentClauseEmptyGreen {
@@ -14233,7 +14149,7 @@ impl TypedSyntaxNode for OptionVisibilityPubArgumentClauseEmpty {
             kind,
             SyntaxKind::OptionVisibilityPubArgumentClauseEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -14253,7 +14169,6 @@ impl TypedSyntaxNode for OptionVisibilityPubArgumentClauseEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct VisibilityPub {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl VisibilityPub {
     pub const INDEX_PUB_KW: usize = 0;
@@ -14276,10 +14191,10 @@ impl VisibilityPub {
 }
 impl VisibilityPub {
     pub fn pub_kw(&self, db: &dyn SyntaxGroup) -> TerminalPub {
-        TerminalPub::from_syntax_node(db, self.children[0])
+        TerminalPub::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn argument_clause(&self, db: &dyn SyntaxGroup) -> OptionVisibilityPubArgumentClause {
-        OptionVisibilityPubArgumentClause::from_syntax_node(db, self.children[1])
+        OptionVisibilityPubArgumentClause::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -14330,7 +14245,7 @@ impl TypedSyntaxNode for VisibilityPub {
             kind,
             SyntaxKind::VisibilityPub
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -14438,7 +14353,6 @@ impl Visibility {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemModule {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ItemModule {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -14467,19 +14381,19 @@ impl ItemModule {
 }
 impl ItemModule {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1])
+        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn module_kw(&self, db: &dyn SyntaxGroup) -> TerminalModule {
-        TerminalModule::from_syntax_node(db, self.children[2])
+        TerminalModule::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> MaybeModuleBody {
-        MaybeModuleBody::from_syntax_node(db, self.children[4])
+        MaybeModuleBody::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -14542,7 +14456,7 @@ impl TypedSyntaxNode for ItemModule {
             kind,
             SyntaxKind::ItemModule
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -14648,7 +14562,6 @@ impl MaybeModuleBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ModuleBody {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ModuleBody {
     pub const INDEX_LBRACE: usize = 0;
@@ -14673,13 +14586,13 @@ impl ModuleBody {
 }
 impl ModuleBody {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn items(&self, db: &dyn SyntaxGroup) -> ModuleItemList {
-        ModuleItemList::from_syntax_node(db, self.children[1])
+        ModuleItemList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -14731,7 +14644,7 @@ impl TypedSyntaxNode for ModuleBody {
             kind,
             SyntaxKind::ModuleBody
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -14747,7 +14660,6 @@ impl TypedSyntaxNode for ModuleBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct FunctionDeclaration {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl FunctionDeclaration {
     pub const INDEX_OPTIONAL_CONST: usize = 0;
@@ -14776,19 +14688,19 @@ impl FunctionDeclaration {
 }
 impl FunctionDeclaration {
     pub fn optional_const(&self, db: &dyn SyntaxGroup) -> OptionTerminalConst {
-        OptionTerminalConst::from_syntax_node(db, self.children[0])
+        OptionTerminalConst::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn function_kw(&self, db: &dyn SyntaxGroup) -> TerminalFunction {
-        TerminalFunction::from_syntax_node(db, self.children[1])
+        TerminalFunction::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
-        FunctionSignature::from_syntax_node(db, self.children[4])
+        FunctionSignature::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -14851,7 +14763,7 @@ impl TypedSyntaxNode for FunctionDeclaration {
             kind,
             SyntaxKind::FunctionDeclaration
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -14871,7 +14783,6 @@ impl TypedSyntaxNode for FunctionDeclaration {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemConstant {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ItemConstant {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -14915,28 +14826,28 @@ impl ItemConstant {
 }
 impl ItemConstant {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1])
+        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn const_kw(&self, db: &dyn SyntaxGroup) -> TerminalConst {
-        TerminalConst::from_syntax_node(db, self.children[2])
+        TerminalConst::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
-        TypeClause::from_syntax_node(db, self.children[4])
+        TypeClause::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
-        TerminalEq::from_syntax_node(db, self.children[5])
+        TerminalEq::from_syntax_node(db, self.node.get_children(db)[5])
     }
     pub fn value(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[6])
+        Expr::from_syntax_node(db, self.node.get_children(db)[6])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[7])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[7])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -15002,7 +14913,7 @@ impl TypedSyntaxNode for ItemConstant {
             kind,
             SyntaxKind::ItemConstant
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -15018,7 +14929,6 @@ impl TypedSyntaxNode for ItemConstant {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct FunctionWithBody {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl FunctionWithBody {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -15045,16 +14955,16 @@ impl FunctionWithBody {
 }
 impl FunctionWithBody {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1])
+        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn declaration(&self, db: &dyn SyntaxGroup) -> FunctionDeclaration {
-        FunctionDeclaration::from_syntax_node(db, self.children[2])
+        FunctionDeclaration::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> ExprBlock {
-        ExprBlock::from_syntax_node(db, self.children[3])
+        ExprBlock::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -15116,7 +15026,7 @@ impl TypedSyntaxNode for FunctionWithBody {
             kind,
             SyntaxKind::FunctionWithBody
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -15136,7 +15046,6 @@ impl TypedSyntaxNode for FunctionWithBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemExternFunction {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ItemExternFunction {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -15165,19 +15074,19 @@ impl ItemExternFunction {
 }
 impl ItemExternFunction {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1])
+        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn extern_kw(&self, db: &dyn SyntaxGroup) -> TerminalExtern {
-        TerminalExtern::from_syntax_node(db, self.children[2])
+        TerminalExtern::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn declaration(&self, db: &dyn SyntaxGroup) -> FunctionDeclaration {
-        FunctionDeclaration::from_syntax_node(db, self.children[3])
+        FunctionDeclaration::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[4])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -15240,7 +15149,7 @@ impl TypedSyntaxNode for ItemExternFunction {
             kind,
             SyntaxKind::ItemExternFunction
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -15260,7 +15169,6 @@ impl TypedSyntaxNode for ItemExternFunction {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemExternType {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ItemExternType {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -15301,25 +15209,25 @@ impl ItemExternType {
 }
 impl ItemExternType {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1])
+        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn extern_kw(&self, db: &dyn SyntaxGroup) -> TerminalExtern {
-        TerminalExtern::from_syntax_node(db, self.children[2])
+        TerminalExtern::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn type_kw(&self, db: &dyn SyntaxGroup) -> TerminalType {
-        TerminalType::from_syntax_node(db, self.children[3])
+        TerminalType::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[4])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[5])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[5])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[6])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[6])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -15384,7 +15292,7 @@ impl TypedSyntaxNode for ItemExternType {
             kind,
             SyntaxKind::ItemExternType
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -15404,7 +15312,6 @@ impl TypedSyntaxNode for ItemExternType {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemTrait {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ItemTrait {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -15435,22 +15342,22 @@ impl ItemTrait {
 }
 impl ItemTrait {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1])
+        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trait_kw(&self, db: &dyn SyntaxGroup) -> TerminalTrait {
-        TerminalTrait::from_syntax_node(db, self.children[2])
+        TerminalTrait::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> MaybeTraitBody {
-        MaybeTraitBody::from_syntax_node(db, self.children[5])
+        MaybeTraitBody::from_syntax_node(db, self.node.get_children(db)[5])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -15514,7 +15421,7 @@ impl TypedSyntaxNode for ItemTrait {
             kind,
             SyntaxKind::ItemTrait
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -15620,7 +15527,6 @@ impl MaybeTraitBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitBody {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl TraitBody {
     pub const INDEX_LBRACE: usize = 0;
@@ -15645,13 +15551,13 @@ impl TraitBody {
 }
 impl TraitBody {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn items(&self, db: &dyn SyntaxGroup) -> TraitItemList {
-        TraitItemList::from_syntax_node(db, self.children[1])
+        TraitItemList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -15703,7 +15609,7 @@ impl TypedSyntaxNode for TraitBody {
             kind,
             SyntaxKind::TraitBody
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -15940,7 +15846,6 @@ impl TraitItem {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitItemMissing {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl TraitItemMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> TraitItemMissingGreen {
@@ -16000,7 +15905,7 @@ impl TypedSyntaxNode for TraitItemMissing {
             kind,
             SyntaxKind::TraitItemMissing
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -16020,7 +15925,6 @@ impl TypedSyntaxNode for TraitItemMissing {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitItemFunction {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl TraitItemFunction {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -16045,13 +15949,13 @@ impl TraitItemFunction {
 }
 impl TraitItemFunction {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn declaration(&self, db: &dyn SyntaxGroup) -> FunctionDeclaration {
-        FunctionDeclaration::from_syntax_node(db, self.children[1])
+        FunctionDeclaration::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> MaybeTraitFunctionBody {
-        MaybeTraitFunctionBody::from_syntax_node(db, self.children[2])
+        MaybeTraitFunctionBody::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -16112,7 +16016,7 @@ impl TypedSyntaxNode for TraitItemFunction {
             kind,
             SyntaxKind::TraitItemFunction
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -16132,7 +16036,6 @@ impl TypedSyntaxNode for TraitItemFunction {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitItemType {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl TraitItemType {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -16161,19 +16064,19 @@ impl TraitItemType {
 }
 impl TraitItemType {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn type_kw(&self, db: &dyn SyntaxGroup) -> TerminalType {
-        TerminalType::from_syntax_node(db, self.children[1])
+        TerminalType::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[4])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -16236,7 +16139,7 @@ impl TypedSyntaxNode for TraitItemType {
             kind,
             SyntaxKind::TraitItemType
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -16256,7 +16159,6 @@ impl TypedSyntaxNode for TraitItemType {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitItemConstant {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl TraitItemConstant {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -16285,19 +16187,19 @@ impl TraitItemConstant {
 }
 impl TraitItemConstant {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn const_kw(&self, db: &dyn SyntaxGroup) -> TerminalConst {
-        TerminalConst::from_syntax_node(db, self.children[1])
+        TerminalConst::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
-        TypeClause::from_syntax_node(db, self.children[3])
+        TypeClause::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[4])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -16360,7 +16262,7 @@ impl TypedSyntaxNode for TraitItemConstant {
             kind,
             SyntaxKind::TraitItemConstant
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -16380,7 +16282,6 @@ impl TypedSyntaxNode for TraitItemConstant {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitItemImpl {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl TraitItemImpl {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -16411,22 +16312,22 @@ impl TraitItemImpl {
 }
 impl TraitItemImpl {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn impl_kw(&self, db: &dyn SyntaxGroup) -> TerminalImpl {
-        TerminalImpl::from_syntax_node(db, self.children[1])
+        TerminalImpl::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[3])
+        TerminalColon::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[4])
+        ExprPath::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[5])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[5])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -16490,7 +16391,7 @@ impl TypedSyntaxNode for TraitItemImpl {
             kind,
             SyntaxKind::TraitItemImpl
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -16603,7 +16504,6 @@ impl MaybeTraitFunctionBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemImpl {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ItemImpl {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -16647,28 +16547,28 @@ impl ItemImpl {
 }
 impl ItemImpl {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1])
+        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn impl_kw(&self, db: &dyn SyntaxGroup) -> TerminalImpl {
-        TerminalImpl::from_syntax_node(db, self.children[2])
+        TerminalImpl::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn of_kw(&self, db: &dyn SyntaxGroup) -> TerminalOf {
-        TerminalOf::from_syntax_node(db, self.children[5])
+        TerminalOf::from_syntax_node(db, self.node.get_children(db)[5])
     }
     pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[6])
+        ExprPath::from_syntax_node(db, self.node.get_children(db)[6])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> MaybeImplBody {
-        MaybeImplBody::from_syntax_node(db, self.children[7])
+        MaybeImplBody::from_syntax_node(db, self.node.get_children(db)[7])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -16734,7 +16634,7 @@ impl TypedSyntaxNode for ItemImpl {
             kind,
             SyntaxKind::ItemImpl
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -16750,7 +16650,6 @@ impl TypedSyntaxNode for ItemImpl {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemHeaderDoc {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ItemHeaderDoc {
     pub const INDEX_EMPTY: usize = 0;
@@ -16768,7 +16667,7 @@ impl ItemHeaderDoc {
 }
 impl ItemHeaderDoc {
     pub fn empty(&self, db: &dyn SyntaxGroup) -> TerminalEmpty {
-        TerminalEmpty::from_syntax_node(db, self.children[0])
+        TerminalEmpty::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -16815,7 +16714,7 @@ impl TypedSyntaxNode for ItemHeaderDoc {
             kind,
             SyntaxKind::ItemHeaderDoc
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -16921,7 +16820,6 @@ impl MaybeImplBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ImplBody {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ImplBody {
     pub const INDEX_LBRACE: usize = 0;
@@ -16946,13 +16844,13 @@ impl ImplBody {
 }
 impl ImplBody {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn items(&self, db: &dyn SyntaxGroup) -> ImplItemList {
-        ImplItemList::from_syntax_node(db, self.children[1])
+        ImplItemList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -17004,7 +16902,7 @@ impl TypedSyntaxNode for ImplBody {
             kind,
             SyntaxKind::ImplBody
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -17358,7 +17256,6 @@ impl ImplItem {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ImplItemMissing {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ImplItemMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> ImplItemMissingGreen {
@@ -17418,7 +17315,7 @@ impl TypedSyntaxNode for ImplItemMissing {
             kind,
             SyntaxKind::ImplItemMissing
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -17438,7 +17335,6 @@ impl TypedSyntaxNode for ImplItemMissing {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemImplAlias {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ItemImplAlias {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -17482,28 +17378,28 @@ impl ItemImplAlias {
 }
 impl ItemImplAlias {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1])
+        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn impl_kw(&self, db: &dyn SyntaxGroup) -> TerminalImpl {
-        TerminalImpl::from_syntax_node(db, self.children[2])
+        TerminalImpl::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
-        TerminalEq::from_syntax_node(db, self.children[5])
+        TerminalEq::from_syntax_node(db, self.node.get_children(db)[5])
     }
     pub fn impl_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[6])
+        ExprPath::from_syntax_node(db, self.node.get_children(db)[6])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[7])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[7])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -17569,7 +17465,7 @@ impl TypedSyntaxNode for ItemImplAlias {
             kind,
             SyntaxKind::ItemImplAlias
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -17589,7 +17485,6 @@ impl TypedSyntaxNode for ItemImplAlias {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemStruct {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ItemStruct {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -17633,28 +17528,28 @@ impl ItemStruct {
 }
 impl ItemStruct {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1])
+        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn struct_kw(&self, db: &dyn SyntaxGroup) -> TerminalStruct {
-        TerminalStruct::from_syntax_node(db, self.children[2])
+        TerminalStruct::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[5])
+        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[5])
     }
     pub fn members(&self, db: &dyn SyntaxGroup) -> MemberList {
-        MemberList::from_syntax_node(db, self.children[6])
+        MemberList::from_syntax_node(db, self.node.get_children(db)[6])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[7])
+        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[7])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -17720,7 +17615,7 @@ impl TypedSyntaxNode for ItemStruct {
             kind,
             SyntaxKind::ItemStruct
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -17736,7 +17631,6 @@ impl TypedSyntaxNode for ItemStruct {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemEnum {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ItemEnum {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -17780,28 +17674,28 @@ impl ItemEnum {
 }
 impl ItemEnum {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1])
+        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn enum_kw(&self, db: &dyn SyntaxGroup) -> TerminalEnum {
-        TerminalEnum::from_syntax_node(db, self.children[2])
+        TerminalEnum::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[5])
+        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[5])
     }
     pub fn variants(&self, db: &dyn SyntaxGroup) -> VariantList {
-        VariantList::from_syntax_node(db, self.children[6])
+        VariantList::from_syntax_node(db, self.node.get_children(db)[6])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[7])
+        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[7])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -17867,7 +17761,7 @@ impl TypedSyntaxNode for ItemEnum {
             kind,
             SyntaxKind::ItemEnum
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -17883,7 +17777,6 @@ impl TypedSyntaxNode for ItemEnum {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemTypeAlias {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ItemTypeAlias {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -17927,28 +17820,28 @@ impl ItemTypeAlias {
 }
 impl ItemTypeAlias {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1])
+        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn type_kw(&self, db: &dyn SyntaxGroup) -> TerminalType {
-        TerminalType::from_syntax_node(db, self.children[2])
+        TerminalType::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
-        TerminalEq::from_syntax_node(db, self.children[5])
+        TerminalEq::from_syntax_node(db, self.node.get_children(db)[5])
     }
     pub fn ty(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[6])
+        Expr::from_syntax_node(db, self.node.get_children(db)[6])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[7])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[7])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18014,7 +17907,7 @@ impl TypedSyntaxNode for ItemTypeAlias {
             kind,
             SyntaxKind::ItemTypeAlias
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -18034,7 +17927,6 @@ impl TypedSyntaxNode for ItemTypeAlias {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemUse {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ItemUse {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -18063,19 +17955,19 @@ impl ItemUse {
 }
 impl ItemUse {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1])
+        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn use_kw(&self, db: &dyn SyntaxGroup) -> TerminalUse {
-        TerminalUse::from_syntax_node(db, self.children[2])
+        TerminalUse::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn use_path(&self, db: &dyn SyntaxGroup) -> UsePath {
-        UsePath::from_syntax_node(db, self.children[3])
+        UsePath::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[4])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18138,7 +18030,7 @@ impl TypedSyntaxNode for ItemUse {
             kind,
             SyntaxKind::ItemUse
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -18274,7 +18166,6 @@ impl UsePath {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UsePathLeaf {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl UsePathLeaf {
     pub const INDEX_IDENT: usize = 0;
@@ -18297,10 +18188,10 @@ impl UsePathLeaf {
 }
 impl UsePathLeaf {
     pub fn ident(&self, db: &dyn SyntaxGroup) -> PathSegment {
-        PathSegment::from_syntax_node(db, self.children[0])
+        PathSegment::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn alias_clause(&self, db: &dyn SyntaxGroup) -> OptionAliasClause {
-        OptionAliasClause::from_syntax_node(db, self.children[1])
+        OptionAliasClause::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18364,7 +18255,7 @@ impl TypedSyntaxNode for UsePathLeaf {
             kind,
             SyntaxKind::UsePathLeaf
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -18380,7 +18271,6 @@ impl TypedSyntaxNode for UsePathLeaf {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UsePathSingle {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl UsePathSingle {
     pub const INDEX_IDENT: usize = 0;
@@ -18405,13 +18295,13 @@ impl UsePathSingle {
 }
 impl UsePathSingle {
     pub fn ident(&self, db: &dyn SyntaxGroup) -> PathSegment {
-        PathSegment::from_syntax_node(db, self.children[0])
+        PathSegment::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn colon_colon(&self, db: &dyn SyntaxGroup) -> TerminalColonColon {
-        TerminalColonColon::from_syntax_node(db, self.children[1])
+        TerminalColonColon::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn use_path(&self, db: &dyn SyntaxGroup) -> UsePath {
-        UsePath::from_syntax_node(db, self.children[2])
+        UsePath::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18463,7 +18353,7 @@ impl TypedSyntaxNode for UsePathSingle {
             kind,
             SyntaxKind::UsePathSingle
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -18483,7 +18373,6 @@ impl TypedSyntaxNode for UsePathSingle {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UsePathMulti {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl UsePathMulti {
     pub const INDEX_LBRACE: usize = 0;
@@ -18508,13 +18397,13 @@ impl UsePathMulti {
 }
 impl UsePathMulti {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn use_paths(&self, db: &dyn SyntaxGroup) -> UsePathList {
-        UsePathList::from_syntax_node(db, self.children[1])
+        UsePathList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18566,7 +18455,7 @@ impl TypedSyntaxNode for UsePathMulti {
             kind,
             SyntaxKind::UsePathMulti
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -18582,7 +18471,6 @@ impl TypedSyntaxNode for UsePathMulti {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UsePathStar {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl UsePathStar {
     pub const INDEX_STAR: usize = 0;
@@ -18600,7 +18488,7 @@ impl UsePathStar {
 }
 impl UsePathStar {
     pub fn star(&self, db: &dyn SyntaxGroup) -> TerminalMul {
-        TerminalMul::from_syntax_node(db, self.children[0])
+        TerminalMul::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18647,7 +18535,7 @@ impl TypedSyntaxNode for UsePathStar {
             kind,
             SyntaxKind::UsePathStar
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -18763,7 +18651,6 @@ impl TypedSyntaxNode for UsePathList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct AliasClause {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl AliasClause {
     pub const INDEX_AS_KW: usize = 0;
@@ -18786,10 +18673,10 @@ impl AliasClause {
 }
 impl AliasClause {
     pub fn as_kw(&self, db: &dyn SyntaxGroup) -> TerminalAs {
-        TerminalAs::from_syntax_node(db, self.children[0])
+        TerminalAs::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn alias(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18845,7 +18732,7 @@ impl TypedSyntaxNode for AliasClause {
             kind,
             SyntaxKind::AliasClause
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -18954,7 +18841,6 @@ impl OptionAliasClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionAliasClauseEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionAliasClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionAliasClauseEmptyGreen {
@@ -19014,7 +18900,7 @@ impl TypedSyntaxNode for OptionAliasClauseEmpty {
             kind,
             SyntaxKind::OptionAliasClauseEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -19124,7 +19010,6 @@ impl GenericArg {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericArgNamed {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl GenericArgNamed {
     pub const INDEX_NAME: usize = 0;
@@ -19149,13 +19034,13 @@ impl GenericArgNamed {
 }
 impl GenericArgNamed {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[1])
+        TerminalColon::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn value(&self, db: &dyn SyntaxGroup) -> GenericArgValue {
-        GenericArgValue::from_syntax_node(db, self.children[2])
+        GenericArgValue::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -19207,7 +19092,7 @@ impl TypedSyntaxNode for GenericArgNamed {
             kind,
             SyntaxKind::GenericArgNamed
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -19227,7 +19112,6 @@ impl TypedSyntaxNode for GenericArgNamed {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericArgUnnamed {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl GenericArgUnnamed {
     pub const INDEX_VALUE: usize = 0;
@@ -19245,7 +19129,7 @@ impl GenericArgUnnamed {
 }
 impl GenericArgUnnamed {
     pub fn value(&self, db: &dyn SyntaxGroup) -> GenericArgValue {
-        GenericArgValue::from_syntax_node(db, self.children[0])
+        GenericArgValue::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -19292,7 +19176,7 @@ impl TypedSyntaxNode for GenericArgUnnamed {
             kind,
             SyntaxKind::GenericArgUnnamed
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -19404,7 +19288,6 @@ impl GenericArgValue {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericArgValueExpr {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl GenericArgValueExpr {
     pub const INDEX_EXPR: usize = 0;
@@ -19422,7 +19305,7 @@ impl GenericArgValueExpr {
 }
 impl GenericArgValueExpr {
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[0])
+        Expr::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -19469,7 +19352,7 @@ impl TypedSyntaxNode for GenericArgValueExpr {
             kind,
             SyntaxKind::GenericArgValueExpr
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -19489,7 +19372,6 @@ impl TypedSyntaxNode for GenericArgValueExpr {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericArgs {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl GenericArgs {
     pub const INDEX_LANGLE: usize = 0;
@@ -19514,13 +19396,13 @@ impl GenericArgs {
 }
 impl GenericArgs {
     pub fn langle(&self, db: &dyn SyntaxGroup) -> TerminalLT {
-        TerminalLT::from_syntax_node(db, self.children[0])
+        TerminalLT::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn generic_args(&self, db: &dyn SyntaxGroup) -> GenericArgList {
-        GenericArgList::from_syntax_node(db, self.children[1])
+        GenericArgList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rangle(&self, db: &dyn SyntaxGroup) -> TerminalGT {
-        TerminalGT::from_syntax_node(db, self.children[2])
+        TerminalGT::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -19572,7 +19454,7 @@ impl TypedSyntaxNode for GenericArgs {
             kind,
             SyntaxKind::GenericArgs
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -19688,7 +19570,6 @@ impl TypedSyntaxNode for GenericArgList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct AssociatedItemConstraint {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl AssociatedItemConstraint {
     pub const INDEX_ITEM: usize = 0;
@@ -19713,13 +19594,13 @@ impl AssociatedItemConstraint {
 }
 impl AssociatedItemConstraint {
     pub fn item(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[1])
+        TerminalColon::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn value(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[2])
+        Expr::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -19771,7 +19652,7 @@ impl TypedSyntaxNode for AssociatedItemConstraint {
             kind,
             SyntaxKind::AssociatedItemConstraint
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -19791,7 +19672,6 @@ impl TypedSyntaxNode for AssociatedItemConstraint {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct AssociatedItemConstraints {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl AssociatedItemConstraints {
     pub const INDEX_LBRACK: usize = 0;
@@ -19816,16 +19696,16 @@ impl AssociatedItemConstraints {
 }
 impl AssociatedItemConstraints {
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
-        TerminalLBrack::from_syntax_node(db, self.children[0])
+        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn associated_item_constraints(
         &self,
         db: &dyn SyntaxGroup,
     ) -> AssociatedItemConstraintList {
-        AssociatedItemConstraintList::from_syntax_node(db, self.children[1])
+        AssociatedItemConstraintList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
-        TerminalRBrack::from_syntax_node(db, self.children[2])
+        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -19877,7 +19757,7 @@ impl TypedSyntaxNode for AssociatedItemConstraints {
             kind,
             SyntaxKind::AssociatedItemConstraints
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -20102,7 +19982,6 @@ impl OptionAssociatedItemConstraints {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionAssociatedItemConstraintsEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionAssociatedItemConstraintsEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionAssociatedItemConstraintsEmptyGreen {
@@ -20163,7 +20042,7 @@ impl TypedSyntaxNode for OptionAssociatedItemConstraintsEmpty {
             kind,
             SyntaxKind::OptionAssociatedItemConstraintsEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -20285,7 +20164,6 @@ impl OptionWrappedGenericParamList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionWrappedGenericParamListEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionWrappedGenericParamListEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionWrappedGenericParamListEmptyGreen {
@@ -20345,7 +20223,7 @@ impl TypedSyntaxNode for OptionWrappedGenericParamListEmpty {
             kind,
             SyntaxKind::OptionWrappedGenericParamListEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -20365,7 +20243,6 @@ impl TypedSyntaxNode for OptionWrappedGenericParamListEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WrappedGenericParamList {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl WrappedGenericParamList {
     pub const INDEX_LANGLE: usize = 0;
@@ -20390,13 +20267,13 @@ impl WrappedGenericParamList {
 }
 impl WrappedGenericParamList {
     pub fn langle(&self, db: &dyn SyntaxGroup) -> TerminalLT {
-        TerminalLT::from_syntax_node(db, self.children[0])
+        TerminalLT::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> GenericParamList {
-        GenericParamList::from_syntax_node(db, self.children[1])
+        GenericParamList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rangle(&self, db: &dyn SyntaxGroup) -> TerminalGT {
-        TerminalGT::from_syntax_node(db, self.children[2])
+        TerminalGT::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -20448,7 +20325,7 @@ impl TypedSyntaxNode for WrappedGenericParamList {
             kind,
             SyntaxKind::WrappedGenericParamList
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -20719,7 +20596,6 @@ impl GenericParam {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericParamType {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl GenericParamType {
     pub const INDEX_NAME: usize = 0;
@@ -20737,7 +20613,7 @@ impl GenericParamType {
 }
 impl GenericParamType {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -20793,7 +20669,7 @@ impl TypedSyntaxNode for GenericParamType {
             kind,
             SyntaxKind::GenericParamType
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -20813,7 +20689,6 @@ impl TypedSyntaxNode for GenericParamType {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericParamConst {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl GenericParamConst {
     pub const INDEX_CONST_KW: usize = 0;
@@ -20840,16 +20715,16 @@ impl GenericParamConst {
 }
 impl GenericParamConst {
     pub fn const_kw(&self, db: &dyn SyntaxGroup) -> TerminalConst {
-        TerminalConst::from_syntax_node(db, self.children[0])
+        TerminalConst::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[2])
+        TerminalColon::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn ty(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[3])
+        Expr::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -20911,7 +20786,7 @@ impl TypedSyntaxNode for GenericParamConst {
             kind,
             SyntaxKind::GenericParamConst
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -20931,7 +20806,6 @@ impl TypedSyntaxNode for GenericParamConst {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericParamImplNamed {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl GenericParamImplNamed {
     pub const INDEX_IMPL_KW: usize = 0;
@@ -20960,19 +20834,19 @@ impl GenericParamImplNamed {
 }
 impl GenericParamImplNamed {
     pub fn impl_kw(&self, db: &dyn SyntaxGroup) -> TerminalImpl {
-        TerminalImpl::from_syntax_node(db, self.children[0])
+        TerminalImpl::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[2])
+        TerminalColon::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[3])
+        ExprPath::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn type_constrains(&self, db: &dyn SyntaxGroup) -> OptionAssociatedItemConstraints {
-        OptionAssociatedItemConstraints::from_syntax_node(db, self.children[4])
+        OptionAssociatedItemConstraints::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21035,7 +20909,7 @@ impl TypedSyntaxNode for GenericParamImplNamed {
             kind,
             SyntaxKind::GenericParamImplNamed
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -21055,7 +20929,6 @@ impl TypedSyntaxNode for GenericParamImplNamed {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericParamImplAnonymous {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl GenericParamImplAnonymous {
     pub const INDEX_PLUS: usize = 0;
@@ -21080,13 +20953,13 @@ impl GenericParamImplAnonymous {
 }
 impl GenericParamImplAnonymous {
     pub fn plus(&self, db: &dyn SyntaxGroup) -> TerminalPlus {
-        TerminalPlus::from_syntax_node(db, self.children[0])
+        TerminalPlus::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[1])
+        ExprPath::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn type_constrains(&self, db: &dyn SyntaxGroup) -> OptionAssociatedItemConstraints {
-        OptionAssociatedItemConstraints::from_syntax_node(db, self.children[2])
+        OptionAssociatedItemConstraints::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21138,7 +21011,7 @@ impl TypedSyntaxNode for GenericParamImplAnonymous {
             kind,
             SyntaxKind::GenericParamImplAnonymous
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -21158,7 +21031,6 @@ impl TypedSyntaxNode for GenericParamImplAnonymous {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericParamNegativeImpl {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl GenericParamNegativeImpl {
     pub const INDEX_MINUS: usize = 0;
@@ -21181,10 +21053,10 @@ impl GenericParamNegativeImpl {
 }
 impl GenericParamNegativeImpl {
     pub fn minus(&self, db: &dyn SyntaxGroup) -> TerminalMinus {
-        TerminalMinus::from_syntax_node(db, self.children[0])
+        TerminalMinus::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[1])
+        ExprPath::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21231,7 +21103,7 @@ impl TypedSyntaxNode for GenericParamNegativeImpl {
             kind,
             SyntaxKind::GenericParamNegativeImpl
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -21325,7 +21197,6 @@ impl TypedSyntaxNode for TokenList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TokenTreeLeaf {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl TokenTreeLeaf {
     pub const INDEX_LEAF: usize = 0;
@@ -21343,7 +21214,7 @@ impl TokenTreeLeaf {
 }
 impl TokenTreeLeaf {
     pub fn leaf(&self, db: &dyn SyntaxGroup) -> TokenNode {
-        TokenNode::from_syntax_node(db, self.children[0])
+        TokenNode::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21390,7 +21261,7 @@ impl TypedSyntaxNode for TokenTreeLeaf {
             kind,
             SyntaxKind::TokenTreeLeaf
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -21410,7 +21281,6 @@ impl TypedSyntaxNode for TokenTreeLeaf {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TokenTreeNode {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl TokenTreeNode {
     pub const INDEX_SUBTREE: usize = 0;
@@ -21428,7 +21298,7 @@ impl TokenTreeNode {
 }
 impl TokenTreeNode {
     pub fn subtree(&self, db: &dyn SyntaxGroup) -> WrappedTokenTree {
-        WrappedTokenTree::from_syntax_node(db, self.children[0])
+        WrappedTokenTree::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21475,7 +21345,7 @@ impl TypedSyntaxNode for TokenTreeNode {
             kind,
             SyntaxKind::TokenTreeNode
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -21495,7 +21365,6 @@ impl TypedSyntaxNode for TokenTreeNode {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TokenTreeRepetition {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl TokenTreeRepetition {
     pub const INDEX_DOLLAR: usize = 0;
@@ -21526,22 +21395,22 @@ impl TokenTreeRepetition {
 }
 impl TokenTreeRepetition {
     pub fn dollar(&self, db: &dyn SyntaxGroup) -> TerminalDollar {
-        TerminalDollar::from_syntax_node(db, self.children[0])
+        TerminalDollar::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[1])
+        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn elements(&self, db: &dyn SyntaxGroup) -> TokenList {
-        TokenList::from_syntax_node(db, self.children[2])
+        TokenList::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[3])
+        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn separator(&self, db: &dyn SyntaxGroup) -> OptionTerminalComma {
-        OptionTerminalComma::from_syntax_node(db, self.children[4])
+        OptionTerminalComma::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn operator(&self, db: &dyn SyntaxGroup) -> MacroRepetitionOperator {
-        MacroRepetitionOperator::from_syntax_node(db, self.children[5])
+        MacroRepetitionOperator::from_syntax_node(db, self.node.get_children(db)[5])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21596,7 +21465,7 @@ impl TypedSyntaxNode for TokenTreeRepetition {
             kind,
             SyntaxKind::TokenTreeRepetition
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -21616,7 +21485,6 @@ impl TypedSyntaxNode for TokenTreeRepetition {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TokenTreeParam {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl TokenTreeParam {
     pub const INDEX_DOLLAR: usize = 0;
@@ -21639,10 +21507,10 @@ impl TokenTreeParam {
 }
 impl TokenTreeParam {
     pub fn dollar(&self, db: &dyn SyntaxGroup) -> TerminalDollar {
-        TerminalDollar::from_syntax_node(db, self.children[0])
+        TerminalDollar::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21690,7 +21558,7 @@ impl TypedSyntaxNode for TokenTreeParam {
             kind,
             SyntaxKind::TokenTreeParam
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -21861,7 +21729,6 @@ impl TokenTree {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TokenTreeMissing {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl TokenTreeMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> TokenTreeMissingGreen {
@@ -21921,7 +21788,7 @@ impl TypedSyntaxNode for TokenTreeMissing {
             kind,
             SyntaxKind::TokenTreeMissing
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -22076,7 +21943,6 @@ impl WrappedTokenTree {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WrappedTokenTreeMissing {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl WrappedTokenTreeMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> WrappedTokenTreeMissingGreen {
@@ -22136,7 +22002,7 @@ impl TypedSyntaxNode for WrappedTokenTreeMissing {
             kind,
             SyntaxKind::WrappedTokenTreeMissing
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -22156,7 +22022,6 @@ impl TypedSyntaxNode for WrappedTokenTreeMissing {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ParenthesizedTokenTree {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ParenthesizedTokenTree {
     pub const INDEX_LPAREN: usize = 0;
@@ -22181,13 +22046,13 @@ impl ParenthesizedTokenTree {
 }
 impl ParenthesizedTokenTree {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn tokens(&self, db: &dyn SyntaxGroup) -> TokenList {
-        TokenList::from_syntax_node(db, self.children[1])
+        TokenList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22239,7 +22104,7 @@ impl TypedSyntaxNode for ParenthesizedTokenTree {
             kind,
             SyntaxKind::ParenthesizedTokenTree
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -22259,7 +22124,6 @@ impl TypedSyntaxNode for ParenthesizedTokenTree {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct BracedTokenTree {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl BracedTokenTree {
     pub const INDEX_LBRACE: usize = 0;
@@ -22284,13 +22148,13 @@ impl BracedTokenTree {
 }
 impl BracedTokenTree {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn tokens(&self, db: &dyn SyntaxGroup) -> TokenList {
-        TokenList::from_syntax_node(db, self.children[1])
+        TokenList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22342,7 +22206,7 @@ impl TypedSyntaxNode for BracedTokenTree {
             kind,
             SyntaxKind::BracedTokenTree
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -22362,7 +22226,6 @@ impl TypedSyntaxNode for BracedTokenTree {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct BracketedTokenTree {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl BracketedTokenTree {
     pub const INDEX_LBRACK: usize = 0;
@@ -22387,13 +22250,13 @@ impl BracketedTokenTree {
 }
 impl BracketedTokenTree {
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
-        TerminalLBrack::from_syntax_node(db, self.children[0])
+        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn tokens(&self, db: &dyn SyntaxGroup) -> TokenList {
-        TokenList::from_syntax_node(db, self.children[1])
+        TokenList::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
-        TerminalRBrack::from_syntax_node(db, self.children[2])
+        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22445,7 +22308,7 @@ impl TypedSyntaxNode for BracketedTokenTree {
             kind,
             SyntaxKind::BracketedTokenTree
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -22465,7 +22328,6 @@ impl TypedSyntaxNode for BracketedTokenTree {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprInlineMacro {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ExprInlineMacro {
     pub const INDEX_PATH: usize = 0;
@@ -22490,13 +22352,13 @@ impl ExprInlineMacro {
 }
 impl ExprInlineMacro {
     pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[0])
+        ExprPath::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
-        TerminalNot::from_syntax_node(db, self.children[1])
+        TerminalNot::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> TokenTreeNode {
-        TokenTreeNode::from_syntax_node(db, self.children[2])
+        TokenTreeNode::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22548,7 +22410,7 @@ impl TypedSyntaxNode for ExprInlineMacro {
             kind,
             SyntaxKind::ExprInlineMacro
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -22568,7 +22430,6 @@ impl TypedSyntaxNode for ExprInlineMacro {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemInlineMacro {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ItemInlineMacro {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -22597,19 +22458,19 @@ impl ItemInlineMacro {
 }
 impl ItemInlineMacro {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
-        TerminalNot::from_syntax_node(db, self.children[2])
+        TerminalNot::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> TokenTreeNode {
-        TokenTreeNode::from_syntax_node(db, self.children[3])
+        TokenTreeNode::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[4])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22663,7 +22524,7 @@ impl TypedSyntaxNode for ItemInlineMacro {
             kind,
             SyntaxKind::ItemInlineMacro
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -22683,7 +22544,6 @@ impl TypedSyntaxNode for ItemInlineMacro {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemMacroDeclaration {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ItemMacroDeclaration {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -22717,25 +22577,25 @@ impl ItemMacroDeclaration {
 }
 impl ItemMacroDeclaration {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1])
+        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn macro_kw(&self, db: &dyn SyntaxGroup) -> TerminalMacro {
-        TerminalMacro::from_syntax_node(db, self.children[2])
+        TerminalMacro::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[4])
+        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn rules(&self, db: &dyn SyntaxGroup) -> MacroRulesList {
-        MacroRulesList::from_syntax_node(db, self.children[5])
+        MacroRulesList::from_syntax_node(db, self.node.get_children(db)[5])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[6])
+        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[6])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22800,7 +22660,7 @@ impl TypedSyntaxNode for ItemMacroDeclaration {
             kind,
             SyntaxKind::ItemMacroDeclaration
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -22894,7 +22754,6 @@ impl TypedSyntaxNode for MacroRulesList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct MacroRule {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl MacroRule {
     pub const INDEX_LHS: usize = 0;
@@ -22921,16 +22780,16 @@ impl MacroRule {
 }
 impl MacroRule {
     pub fn lhs(&self, db: &dyn SyntaxGroup) -> WrappedMacro {
-        WrappedMacro::from_syntax_node(db, self.children[0])
+        WrappedMacro::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn fat_arrow(&self, db: &dyn SyntaxGroup) -> TerminalMatchArrow {
-        TerminalMatchArrow::from_syntax_node(db, self.children[1])
+        TerminalMatchArrow::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rhs(&self, db: &dyn SyntaxGroup) -> BracedMacro {
-        BracedMacro::from_syntax_node(db, self.children[2])
+        BracedMacro::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[3])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22983,7 +22842,7 @@ impl TypedSyntaxNode for MacroRule {
             kind,
             SyntaxKind::MacroRule
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -22999,7 +22858,6 @@ impl TypedSyntaxNode for MacroRule {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ParamKind {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ParamKind {
     pub const INDEX_COLON: usize = 0;
@@ -23022,10 +22880,10 @@ impl ParamKind {
 }
 impl ParamKind {
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[0])
+        TerminalColon::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn kind(&self, db: &dyn SyntaxGroup) -> MacroParamKind {
-        MacroParamKind::from_syntax_node(db, self.children[1])
+        MacroParamKind::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23072,7 +22930,7 @@ impl TypedSyntaxNode for ParamKind {
             kind,
             SyntaxKind::ParamKind
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -23180,7 +23038,6 @@ impl OptionParamKind {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionParamKindEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionParamKindEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionParamKindEmptyGreen {
@@ -23240,7 +23097,7 @@ impl TypedSyntaxNode for OptionParamKindEmpty {
             kind,
             SyntaxKind::OptionParamKindEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -23260,7 +23117,6 @@ impl TypedSyntaxNode for OptionParamKindEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct MacroParam {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl MacroParam {
     pub const INDEX_DOLLAR: usize = 0;
@@ -23285,13 +23141,13 @@ impl MacroParam {
 }
 impl MacroParam {
     pub fn dollar(&self, db: &dyn SyntaxGroup) -> TerminalDollar {
-        TerminalDollar::from_syntax_node(db, self.children[0])
+        TerminalDollar::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn kind(&self, db: &dyn SyntaxGroup) -> OptionParamKind {
-        OptionParamKind::from_syntax_node(db, self.children[2])
+        OptionParamKind::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23343,7 +23199,7 @@ impl TypedSyntaxNode for MacroParam {
             kind,
             SyntaxKind::MacroParam
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -23359,7 +23215,6 @@ impl TypedSyntaxNode for MacroParam {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct MacroRepetition {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl MacroRepetition {
     pub const INDEX_DOLLAR: usize = 0;
@@ -23390,22 +23245,22 @@ impl MacroRepetition {
 }
 impl MacroRepetition {
     pub fn dollar(&self, db: &dyn SyntaxGroup) -> TerminalDollar {
-        TerminalDollar::from_syntax_node(db, self.children[0])
+        TerminalDollar::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[1])
+        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn elements(&self, db: &dyn SyntaxGroup) -> MacroElements {
-        MacroElements::from_syntax_node(db, self.children[2])
+        MacroElements::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[3])
+        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn separator(&self, db: &dyn SyntaxGroup) -> OptionTerminalComma {
-        OptionTerminalComma::from_syntax_node(db, self.children[4])
+        OptionTerminalComma::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn operator(&self, db: &dyn SyntaxGroup) -> MacroRepetitionOperator {
-        MacroRepetitionOperator::from_syntax_node(db, self.children[5])
+        MacroRepetitionOperator::from_syntax_node(db, self.node.get_children(db)[5])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23460,7 +23315,7 @@ impl TypedSyntaxNode for MacroRepetition {
             kind,
             SyntaxKind::MacroRepetition
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -23573,7 +23428,6 @@ impl OptionTerminalComma {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTerminalCommaEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl OptionTerminalCommaEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalCommaEmptyGreen {
@@ -23633,7 +23487,7 @@ impl TypedSyntaxNode for OptionTerminalCommaEmpty {
             kind,
             SyntaxKind::OptionTerminalCommaEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -23788,7 +23642,6 @@ impl MacroRepetitionOperator {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct MacroRepetitionOperatorMissing {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl MacroRepetitionOperatorMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> MacroRepetitionOperatorMissingGreen {
@@ -23848,7 +23701,7 @@ impl TypedSyntaxNode for MacroRepetitionOperatorMissing {
             kind,
             SyntaxKind::MacroRepetitionOperatorMissing
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -23868,7 +23721,6 @@ impl TypedSyntaxNode for MacroRepetitionOperatorMissing {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ParamIdent {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ParamIdent {
     pub const INDEX_IDENT: usize = 0;
@@ -23886,7 +23738,7 @@ impl ParamIdent {
 }
 impl ParamIdent {
     pub fn ident(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23933,7 +23785,7 @@ impl TypedSyntaxNode for ParamIdent {
             kind,
             SyntaxKind::ParamIdent
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -23949,7 +23801,6 @@ impl TypedSyntaxNode for ParamIdent {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ParamExpr {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ParamExpr {
     pub const INDEX_EXPR: usize = 0;
@@ -23967,7 +23818,7 @@ impl ParamExpr {
 }
 impl ParamExpr {
     pub fn expr(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24014,7 +23865,7 @@ impl TypedSyntaxNode for ParamExpr {
             kind,
             SyntaxKind::ParamExpr
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -24141,7 +23992,6 @@ impl MacroParamKind {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct MacroParamKindMissing {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl MacroParamKindMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> MacroParamKindMissingGreen {
@@ -24201,7 +24051,7 @@ impl TypedSyntaxNode for MacroParamKindMissing {
             kind,
             SyntaxKind::MacroParamKindMissing
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -24425,7 +24275,6 @@ impl TypedSyntaxNode for MacroElements {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct MacroWrapper {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl MacroWrapper {
     pub const INDEX_SUBTREE: usize = 0;
@@ -24443,7 +24292,7 @@ impl MacroWrapper {
 }
 impl MacroWrapper {
     pub fn subtree(&self, db: &dyn SyntaxGroup) -> WrappedMacro {
-        WrappedMacro::from_syntax_node(db, self.children[0])
+        WrappedMacro::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24490,7 +24339,7 @@ impl TypedSyntaxNode for MacroWrapper {
             kind,
             SyntaxKind::MacroWrapper
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -24617,7 +24466,6 @@ impl WrappedMacro {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ParenthesizedMacro {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl ParenthesizedMacro {
     pub const INDEX_LPAREN: usize = 0;
@@ -24642,13 +24490,13 @@ impl ParenthesizedMacro {
 }
 impl ParenthesizedMacro {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn elements(&self, db: &dyn SyntaxGroup) -> MacroElements {
-        MacroElements::from_syntax_node(db, self.children[1])
+        MacroElements::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24700,7 +24548,7 @@ impl TypedSyntaxNode for ParenthesizedMacro {
             kind,
             SyntaxKind::ParenthesizedMacro
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -24720,7 +24568,6 @@ impl TypedSyntaxNode for ParenthesizedMacro {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct BracedMacro {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl BracedMacro {
     pub const INDEX_LBRACE: usize = 0;
@@ -24745,13 +24592,13 @@ impl BracedMacro {
 }
 impl BracedMacro {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn elements(&self, db: &dyn SyntaxGroup) -> MacroElements {
-        MacroElements::from_syntax_node(db, self.children[1])
+        MacroElements::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24803,7 +24650,7 @@ impl TypedSyntaxNode for BracedMacro {
             kind,
             SyntaxKind::BracedMacro
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -24819,7 +24666,6 @@ impl TypedSyntaxNode for BracedMacro {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct BracketedMacro {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl BracketedMacro {
     pub const INDEX_LBRACK: usize = 0;
@@ -24844,13 +24690,13 @@ impl BracketedMacro {
 }
 impl BracketedMacro {
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
-        TerminalLBrack::from_syntax_node(db, self.children[0])
+        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn elements(&self, db: &dyn SyntaxGroup) -> MacroElements {
-        MacroElements::from_syntax_node(db, self.children[1])
+        MacroElements::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
-        TerminalRBrack::from_syntax_node(db, self.children[2])
+        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24902,7 +24748,7 @@ impl TypedSyntaxNode for BracketedMacro {
             kind,
             SyntaxKind::BracketedMacro
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -24922,7 +24768,6 @@ impl TypedSyntaxNode for BracketedMacro {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LegacyExprInlineMacro {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl LegacyExprInlineMacro {
     pub const INDEX_PATH: usize = 0;
@@ -24947,13 +24792,13 @@ impl LegacyExprInlineMacro {
 }
 impl LegacyExprInlineMacro {
     pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[0])
+        ExprPath::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
-        TerminalNot::from_syntax_node(db, self.children[1])
+        TerminalNot::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> WrappedArgList {
-        WrappedArgList::from_syntax_node(db, self.children[2])
+        WrappedArgList::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25005,7 +24850,7 @@ impl TypedSyntaxNode for LegacyExprInlineMacro {
             kind,
             SyntaxKind::LegacyExprInlineMacro
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -25025,7 +24870,6 @@ impl TypedSyntaxNode for LegacyExprInlineMacro {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LegacyItemInlineMacro {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl LegacyItemInlineMacro {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -25054,19 +24898,19 @@ impl LegacyItemInlineMacro {
 }
 impl LegacyItemInlineMacro {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0])
+        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
-        TerminalNot::from_syntax_node(db, self.children[2])
+        TerminalNot::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> WrappedArgList {
-        WrappedArgList::from_syntax_node(db, self.children[3])
+        WrappedArgList::from_syntax_node(db, self.node.get_children(db)[3])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[4])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25120,7 +24964,7 @@ impl TypedSyntaxNode for LegacyItemInlineMacro {
             kind,
             SyntaxKind::LegacyItemInlineMacro
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -25140,7 +24984,6 @@ impl TypedSyntaxNode for LegacyItemInlineMacro {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TriviumSkippedNode {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl TriviumSkippedNode {
     pub const INDEX_NODE: usize = 0;
@@ -25158,7 +25001,7 @@ impl TriviumSkippedNode {
 }
 impl TriviumSkippedNode {
     pub fn node(&self, db: &dyn SyntaxGroup) -> SkippedNode {
-        SkippedNode::from_syntax_node(db, self.children[0])
+        SkippedNode::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25205,7 +25048,7 @@ impl TypedSyntaxNode for TriviumSkippedNode {
             kind,
             SyntaxKind::TriviumSkippedNode
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -25394,7 +25237,6 @@ impl TypedSyntaxNode for TokenIdentifier {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalIdentifier {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalIdentifier {
     const KIND: SyntaxKind = SyntaxKind::TerminalIdentifier;
@@ -25416,18 +25258,23 @@ impl Terminal for TerminalIdentifier {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalIdentifier {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenIdentifier {
-        TokenIdentifier::from_syntax_node(db, self.children[1])
+        TokenIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25479,7 +25326,7 @@ impl TypedSyntaxNode for TerminalIdentifier {
             kind,
             SyntaxKind::TerminalIdentifier
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -25579,7 +25426,6 @@ impl TypedSyntaxNode for TokenLiteralNumber {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLiteralNumber {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLiteralNumber {
     const KIND: SyntaxKind = SyntaxKind::TerminalLiteralNumber;
@@ -25601,18 +25447,23 @@ impl Terminal for TerminalLiteralNumber {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalLiteralNumber {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLiteralNumber {
-        TokenLiteralNumber::from_syntax_node(db, self.children[1])
+        TokenLiteralNumber::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25664,7 +25515,7 @@ impl TypedSyntaxNode for TerminalLiteralNumber {
             kind,
             SyntaxKind::TerminalLiteralNumber
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -25763,7 +25614,6 @@ impl TypedSyntaxNode for TokenShortString {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalShortString {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalShortString {
     const KIND: SyntaxKind = SyntaxKind::TerminalShortString;
@@ -25785,18 +25635,23 @@ impl Terminal for TerminalShortString {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalShortString {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenShortString {
-        TokenShortString::from_syntax_node(db, self.children[1])
+        TokenShortString::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25848,7 +25703,7 @@ impl TypedSyntaxNode for TerminalShortString {
             kind,
             SyntaxKind::TerminalShortString
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -25947,7 +25802,6 @@ impl TypedSyntaxNode for TokenString {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalString {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalString {
     const KIND: SyntaxKind = SyntaxKind::TerminalString;
@@ -25969,18 +25823,23 @@ impl Terminal for TerminalString {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalString {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenString {
-        TokenString::from_syntax_node(db, self.children[1])
+        TokenString::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26032,7 +25891,7 @@ impl TypedSyntaxNode for TerminalString {
             kind,
             SyntaxKind::TerminalString
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -26131,7 +25990,6 @@ impl TypedSyntaxNode for TokenAs {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalAs {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalAs {
     const KIND: SyntaxKind = SyntaxKind::TerminalAs;
@@ -26153,18 +26011,23 @@ impl Terminal for TerminalAs {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalAs {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenAs {
-        TokenAs::from_syntax_node(db, self.children[1])
+        TokenAs::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26216,7 +26079,7 @@ impl TypedSyntaxNode for TerminalAs {
             kind,
             SyntaxKind::TerminalAs
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -26311,7 +26174,6 @@ impl TypedSyntaxNode for TokenConst {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalConst {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalConst {
     const KIND: SyntaxKind = SyntaxKind::TerminalConst;
@@ -26333,18 +26195,23 @@ impl Terminal for TerminalConst {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalConst {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenConst {
-        TokenConst::from_syntax_node(db, self.children[1])
+        TokenConst::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26396,7 +26263,7 @@ impl TypedSyntaxNode for TerminalConst {
             kind,
             SyntaxKind::TerminalConst
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -26495,7 +26362,6 @@ impl TypedSyntaxNode for TokenElse {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalElse {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalElse {
     const KIND: SyntaxKind = SyntaxKind::TerminalElse;
@@ -26517,18 +26383,23 @@ impl Terminal for TerminalElse {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalElse {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenElse {
-        TokenElse::from_syntax_node(db, self.children[1])
+        TokenElse::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26580,7 +26451,7 @@ impl TypedSyntaxNode for TerminalElse {
             kind,
             SyntaxKind::TerminalElse
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -26675,7 +26546,6 @@ impl TypedSyntaxNode for TokenEnum {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalEnum {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalEnum {
     const KIND: SyntaxKind = SyntaxKind::TerminalEnum;
@@ -26697,18 +26567,23 @@ impl Terminal for TerminalEnum {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalEnum {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenEnum {
-        TokenEnum::from_syntax_node(db, self.children[1])
+        TokenEnum::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26760,7 +26635,7 @@ impl TypedSyntaxNode for TerminalEnum {
             kind,
             SyntaxKind::TerminalEnum
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -26855,7 +26730,6 @@ impl TypedSyntaxNode for TokenExtern {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalExtern {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalExtern {
     const KIND: SyntaxKind = SyntaxKind::TerminalExtern;
@@ -26877,18 +26751,23 @@ impl Terminal for TerminalExtern {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalExtern {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenExtern {
-        TokenExtern::from_syntax_node(db, self.children[1])
+        TokenExtern::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26940,7 +26819,7 @@ impl TypedSyntaxNode for TerminalExtern {
             kind,
             SyntaxKind::TerminalExtern
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -27039,7 +26918,6 @@ impl TypedSyntaxNode for TokenFalse {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalFalse {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalFalse {
     const KIND: SyntaxKind = SyntaxKind::TerminalFalse;
@@ -27061,18 +26939,23 @@ impl Terminal for TerminalFalse {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalFalse {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenFalse {
-        TokenFalse::from_syntax_node(db, self.children[1])
+        TokenFalse::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27124,7 +27007,7 @@ impl TypedSyntaxNode for TerminalFalse {
             kind,
             SyntaxKind::TerminalFalse
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -27223,7 +27106,6 @@ impl TypedSyntaxNode for TokenFunction {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalFunction {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalFunction {
     const KIND: SyntaxKind = SyntaxKind::TerminalFunction;
@@ -27245,18 +27127,23 @@ impl Terminal for TerminalFunction {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalFunction {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenFunction {
-        TokenFunction::from_syntax_node(db, self.children[1])
+        TokenFunction::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27308,7 +27195,7 @@ impl TypedSyntaxNode for TerminalFunction {
             kind,
             SyntaxKind::TerminalFunction
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -27407,7 +27294,6 @@ impl TypedSyntaxNode for TokenIf {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalIf {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalIf {
     const KIND: SyntaxKind = SyntaxKind::TerminalIf;
@@ -27429,18 +27315,23 @@ impl Terminal for TerminalIf {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalIf {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenIf {
-        TokenIf::from_syntax_node(db, self.children[1])
+        TokenIf::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27492,7 +27383,7 @@ impl TypedSyntaxNode for TerminalIf {
             kind,
             SyntaxKind::TerminalIf
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -27587,7 +27478,6 @@ impl TypedSyntaxNode for TokenWhile {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalWhile {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalWhile {
     const KIND: SyntaxKind = SyntaxKind::TerminalWhile;
@@ -27609,18 +27499,23 @@ impl Terminal for TerminalWhile {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalWhile {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenWhile {
-        TokenWhile::from_syntax_node(db, self.children[1])
+        TokenWhile::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27672,7 +27567,7 @@ impl TypedSyntaxNode for TerminalWhile {
             kind,
             SyntaxKind::TerminalWhile
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -27771,7 +27666,6 @@ impl TypedSyntaxNode for TokenFor {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalFor {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalFor {
     const KIND: SyntaxKind = SyntaxKind::TerminalFor;
@@ -27793,18 +27687,23 @@ impl Terminal for TerminalFor {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalFor {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenFor {
-        TokenFor::from_syntax_node(db, self.children[1])
+        TokenFor::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27856,7 +27755,7 @@ impl TypedSyntaxNode for TerminalFor {
             kind,
             SyntaxKind::TerminalFor
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -27951,7 +27850,6 @@ impl TypedSyntaxNode for TokenLoop {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLoop {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLoop {
     const KIND: SyntaxKind = SyntaxKind::TerminalLoop;
@@ -27973,18 +27871,23 @@ impl Terminal for TerminalLoop {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalLoop {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLoop {
-        TokenLoop::from_syntax_node(db, self.children[1])
+        TokenLoop::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28036,7 +27939,7 @@ impl TypedSyntaxNode for TerminalLoop {
             kind,
             SyntaxKind::TerminalLoop
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -28131,7 +28034,6 @@ impl TypedSyntaxNode for TokenImpl {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalImpl {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalImpl {
     const KIND: SyntaxKind = SyntaxKind::TerminalImpl;
@@ -28153,18 +28055,23 @@ impl Terminal for TerminalImpl {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalImpl {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenImpl {
-        TokenImpl::from_syntax_node(db, self.children[1])
+        TokenImpl::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28216,7 +28123,7 @@ impl TypedSyntaxNode for TerminalImpl {
             kind,
             SyntaxKind::TerminalImpl
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -28311,7 +28218,6 @@ impl TypedSyntaxNode for TokenImplicits {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalImplicits {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalImplicits {
     const KIND: SyntaxKind = SyntaxKind::TerminalImplicits;
@@ -28333,18 +28239,23 @@ impl Terminal for TerminalImplicits {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalImplicits {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenImplicits {
-        TokenImplicits::from_syntax_node(db, self.children[1])
+        TokenImplicits::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28396,7 +28307,7 @@ impl TypedSyntaxNode for TerminalImplicits {
             kind,
             SyntaxKind::TerminalImplicits
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -28495,7 +28406,6 @@ impl TypedSyntaxNode for TokenLet {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLet {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLet {
     const KIND: SyntaxKind = SyntaxKind::TerminalLet;
@@ -28517,18 +28427,23 @@ impl Terminal for TerminalLet {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalLet {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLet {
-        TokenLet::from_syntax_node(db, self.children[1])
+        TokenLet::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28580,7 +28495,7 @@ impl TypedSyntaxNode for TerminalLet {
             kind,
             SyntaxKind::TerminalLet
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -28675,7 +28590,6 @@ impl TypedSyntaxNode for TokenMacro {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMacro {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMacro {
     const KIND: SyntaxKind = SyntaxKind::TerminalMacro;
@@ -28697,18 +28611,23 @@ impl Terminal for TerminalMacro {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalMacro {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMacro {
-        TokenMacro::from_syntax_node(db, self.children[1])
+        TokenMacro::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28760,7 +28679,7 @@ impl TypedSyntaxNode for TerminalMacro {
             kind,
             SyntaxKind::TerminalMacro
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -28859,7 +28778,6 @@ impl TypedSyntaxNode for TokenMatch {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMatch {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMatch {
     const KIND: SyntaxKind = SyntaxKind::TerminalMatch;
@@ -28881,18 +28799,23 @@ impl Terminal for TerminalMatch {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalMatch {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMatch {
-        TokenMatch::from_syntax_node(db, self.children[1])
+        TokenMatch::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28944,7 +28867,7 @@ impl TypedSyntaxNode for TerminalMatch {
             kind,
             SyntaxKind::TerminalMatch
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -29043,7 +28966,6 @@ impl TypedSyntaxNode for TokenModule {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalModule {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalModule {
     const KIND: SyntaxKind = SyntaxKind::TerminalModule;
@@ -29065,18 +28987,23 @@ impl Terminal for TerminalModule {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalModule {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenModule {
-        TokenModule::from_syntax_node(db, self.children[1])
+        TokenModule::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29128,7 +29055,7 @@ impl TypedSyntaxNode for TerminalModule {
             kind,
             SyntaxKind::TerminalModule
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -29227,7 +29154,6 @@ impl TypedSyntaxNode for TokenMut {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMut {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMut {
     const KIND: SyntaxKind = SyntaxKind::TerminalMut;
@@ -29249,18 +29175,23 @@ impl Terminal for TerminalMut {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalMut {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMut {
-        TokenMut::from_syntax_node(db, self.children[1])
+        TokenMut::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29312,7 +29243,7 @@ impl TypedSyntaxNode for TerminalMut {
             kind,
             SyntaxKind::TerminalMut
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -29407,7 +29338,6 @@ impl TypedSyntaxNode for TokenNoPanic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalNoPanic {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalNoPanic {
     const KIND: SyntaxKind = SyntaxKind::TerminalNoPanic;
@@ -29429,18 +29359,23 @@ impl Terminal for TerminalNoPanic {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalNoPanic {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenNoPanic {
-        TokenNoPanic::from_syntax_node(db, self.children[1])
+        TokenNoPanic::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29492,7 +29427,7 @@ impl TypedSyntaxNode for TerminalNoPanic {
             kind,
             SyntaxKind::TerminalNoPanic
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -29591,7 +29526,6 @@ impl TypedSyntaxNode for TokenOf {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalOf {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalOf {
     const KIND: SyntaxKind = SyntaxKind::TerminalOf;
@@ -29613,18 +29547,23 @@ impl Terminal for TerminalOf {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalOf {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenOf {
-        TokenOf::from_syntax_node(db, self.children[1])
+        TokenOf::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29676,7 +29615,7 @@ impl TypedSyntaxNode for TerminalOf {
             kind,
             SyntaxKind::TerminalOf
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -29771,7 +29710,6 @@ impl TypedSyntaxNode for TokenRef {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalRef {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalRef {
     const KIND: SyntaxKind = SyntaxKind::TerminalRef;
@@ -29793,18 +29731,23 @@ impl Terminal for TerminalRef {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalRef {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenRef {
-        TokenRef::from_syntax_node(db, self.children[1])
+        TokenRef::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29856,7 +29799,7 @@ impl TypedSyntaxNode for TerminalRef {
             kind,
             SyntaxKind::TerminalRef
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -29951,7 +29894,6 @@ impl TypedSyntaxNode for TokenContinue {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalContinue {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalContinue {
     const KIND: SyntaxKind = SyntaxKind::TerminalContinue;
@@ -29973,18 +29915,23 @@ impl Terminal for TerminalContinue {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalContinue {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenContinue {
-        TokenContinue::from_syntax_node(db, self.children[1])
+        TokenContinue::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30036,7 +29983,7 @@ impl TypedSyntaxNode for TerminalContinue {
             kind,
             SyntaxKind::TerminalContinue
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -30135,7 +30082,6 @@ impl TypedSyntaxNode for TokenReturn {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalReturn {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalReturn {
     const KIND: SyntaxKind = SyntaxKind::TerminalReturn;
@@ -30157,18 +30103,23 @@ impl Terminal for TerminalReturn {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalReturn {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenReturn {
-        TokenReturn::from_syntax_node(db, self.children[1])
+        TokenReturn::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30220,7 +30171,7 @@ impl TypedSyntaxNode for TerminalReturn {
             kind,
             SyntaxKind::TerminalReturn
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -30319,7 +30270,6 @@ impl TypedSyntaxNode for TokenBreak {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalBreak {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalBreak {
     const KIND: SyntaxKind = SyntaxKind::TerminalBreak;
@@ -30341,18 +30291,23 @@ impl Terminal for TerminalBreak {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalBreak {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenBreak {
-        TokenBreak::from_syntax_node(db, self.children[1])
+        TokenBreak::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30404,7 +30359,7 @@ impl TypedSyntaxNode for TerminalBreak {
             kind,
             SyntaxKind::TerminalBreak
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -30503,7 +30458,6 @@ impl TypedSyntaxNode for TokenStruct {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalStruct {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalStruct {
     const KIND: SyntaxKind = SyntaxKind::TerminalStruct;
@@ -30525,18 +30479,23 @@ impl Terminal for TerminalStruct {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalStruct {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenStruct {
-        TokenStruct::from_syntax_node(db, self.children[1])
+        TokenStruct::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30588,7 +30547,7 @@ impl TypedSyntaxNode for TerminalStruct {
             kind,
             SyntaxKind::TerminalStruct
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -30687,7 +30646,6 @@ impl TypedSyntaxNode for TokenTrait {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalTrait {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalTrait {
     const KIND: SyntaxKind = SyntaxKind::TerminalTrait;
@@ -30709,18 +30667,23 @@ impl Terminal for TerminalTrait {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalTrait {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenTrait {
-        TokenTrait::from_syntax_node(db, self.children[1])
+        TokenTrait::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30772,7 +30735,7 @@ impl TypedSyntaxNode for TerminalTrait {
             kind,
             SyntaxKind::TerminalTrait
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -30871,7 +30834,6 @@ impl TypedSyntaxNode for TokenTrue {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalTrue {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalTrue {
     const KIND: SyntaxKind = SyntaxKind::TerminalTrue;
@@ -30893,18 +30855,23 @@ impl Terminal for TerminalTrue {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalTrue {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenTrue {
-        TokenTrue::from_syntax_node(db, self.children[1])
+        TokenTrue::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30956,7 +30923,7 @@ impl TypedSyntaxNode for TerminalTrue {
             kind,
             SyntaxKind::TerminalTrue
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -31051,7 +31018,6 @@ impl TypedSyntaxNode for TokenType {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalType {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalType {
     const KIND: SyntaxKind = SyntaxKind::TerminalType;
@@ -31073,18 +31039,23 @@ impl Terminal for TerminalType {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalType {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenType {
-        TokenType::from_syntax_node(db, self.children[1])
+        TokenType::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31136,7 +31107,7 @@ impl TypedSyntaxNode for TerminalType {
             kind,
             SyntaxKind::TerminalType
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -31231,7 +31202,6 @@ impl TypedSyntaxNode for TokenUse {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalUse {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalUse {
     const KIND: SyntaxKind = SyntaxKind::TerminalUse;
@@ -31253,18 +31223,23 @@ impl Terminal for TerminalUse {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalUse {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenUse {
-        TokenUse::from_syntax_node(db, self.children[1])
+        TokenUse::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31316,7 +31291,7 @@ impl TypedSyntaxNode for TerminalUse {
             kind,
             SyntaxKind::TerminalUse
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -31411,7 +31386,6 @@ impl TypedSyntaxNode for TokenPub {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalPub {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalPub {
     const KIND: SyntaxKind = SyntaxKind::TerminalPub;
@@ -31433,18 +31407,23 @@ impl Terminal for TerminalPub {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalPub {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenPub {
-        TokenPub::from_syntax_node(db, self.children[1])
+        TokenPub::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31496,7 +31475,7 @@ impl TypedSyntaxNode for TerminalPub {
             kind,
             SyntaxKind::TerminalPub
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -31591,7 +31570,6 @@ impl TypedSyntaxNode for TokenAnd {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalAnd {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalAnd {
     const KIND: SyntaxKind = SyntaxKind::TerminalAnd;
@@ -31613,18 +31591,23 @@ impl Terminal for TerminalAnd {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalAnd {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenAnd {
-        TokenAnd::from_syntax_node(db, self.children[1])
+        TokenAnd::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31676,7 +31659,7 @@ impl TypedSyntaxNode for TerminalAnd {
             kind,
             SyntaxKind::TerminalAnd
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -31771,7 +31754,6 @@ impl TypedSyntaxNode for TokenAndAnd {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalAndAnd {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalAndAnd {
     const KIND: SyntaxKind = SyntaxKind::TerminalAndAnd;
@@ -31793,18 +31775,23 @@ impl Terminal for TerminalAndAnd {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalAndAnd {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenAndAnd {
-        TokenAndAnd::from_syntax_node(db, self.children[1])
+        TokenAndAnd::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31856,7 +31843,7 @@ impl TypedSyntaxNode for TerminalAndAnd {
             kind,
             SyntaxKind::TerminalAndAnd
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -31955,7 +31942,6 @@ impl TypedSyntaxNode for TokenArrow {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalArrow {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalArrow {
     const KIND: SyntaxKind = SyntaxKind::TerminalArrow;
@@ -31977,18 +31963,23 @@ impl Terminal for TerminalArrow {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalArrow {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenArrow {
-        TokenArrow::from_syntax_node(db, self.children[1])
+        TokenArrow::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32040,7 +32031,7 @@ impl TypedSyntaxNode for TerminalArrow {
             kind,
             SyntaxKind::TerminalArrow
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -32139,7 +32130,6 @@ impl TypedSyntaxNode for TokenAt {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalAt {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalAt {
     const KIND: SyntaxKind = SyntaxKind::TerminalAt;
@@ -32161,18 +32151,23 @@ impl Terminal for TerminalAt {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalAt {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenAt {
-        TokenAt::from_syntax_node(db, self.children[1])
+        TokenAt::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32224,7 +32219,7 @@ impl TypedSyntaxNode for TerminalAt {
             kind,
             SyntaxKind::TerminalAt
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -32320,7 +32315,6 @@ impl TypedSyntaxNode for TokenBadCharacters {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalBadCharacters {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalBadCharacters {
     const KIND: SyntaxKind = SyntaxKind::TerminalBadCharacters;
@@ -32342,18 +32336,23 @@ impl Terminal for TerminalBadCharacters {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalBadCharacters {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenBadCharacters {
-        TokenBadCharacters::from_syntax_node(db, self.children[1])
+        TokenBadCharacters::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32405,7 +32404,7 @@ impl TypedSyntaxNode for TerminalBadCharacters {
             kind,
             SyntaxKind::TerminalBadCharacters
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -32504,7 +32503,6 @@ impl TypedSyntaxNode for TokenColon {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalColon {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalColon {
     const KIND: SyntaxKind = SyntaxKind::TerminalColon;
@@ -32526,18 +32524,23 @@ impl Terminal for TerminalColon {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalColon {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenColon {
-        TokenColon::from_syntax_node(db, self.children[1])
+        TokenColon::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32589,7 +32592,7 @@ impl TypedSyntaxNode for TerminalColon {
             kind,
             SyntaxKind::TerminalColon
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -32688,7 +32691,6 @@ impl TypedSyntaxNode for TokenColonColon {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalColonColon {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalColonColon {
     const KIND: SyntaxKind = SyntaxKind::TerminalColonColon;
@@ -32710,18 +32712,23 @@ impl Terminal for TerminalColonColon {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalColonColon {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenColonColon {
-        TokenColonColon::from_syntax_node(db, self.children[1])
+        TokenColonColon::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32773,7 +32780,7 @@ impl TypedSyntaxNode for TerminalColonColon {
             kind,
             SyntaxKind::TerminalColonColon
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -32872,7 +32879,6 @@ impl TypedSyntaxNode for TokenComma {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalComma {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalComma {
     const KIND: SyntaxKind = SyntaxKind::TerminalComma;
@@ -32894,18 +32900,23 @@ impl Terminal for TerminalComma {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalComma {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenComma {
-        TokenComma::from_syntax_node(db, self.children[1])
+        TokenComma::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32957,7 +32968,7 @@ impl TypedSyntaxNode for TerminalComma {
             kind,
             SyntaxKind::TerminalComma
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -33056,7 +33067,6 @@ impl TypedSyntaxNode for TokenDiv {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalDiv {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalDiv {
     const KIND: SyntaxKind = SyntaxKind::TerminalDiv;
@@ -33078,18 +33088,23 @@ impl Terminal for TerminalDiv {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalDiv {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenDiv {
-        TokenDiv::from_syntax_node(db, self.children[1])
+        TokenDiv::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -33141,7 +33156,7 @@ impl TypedSyntaxNode for TerminalDiv {
             kind,
             SyntaxKind::TerminalDiv
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -33236,7 +33251,6 @@ impl TypedSyntaxNode for TokenDivEq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalDivEq {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalDivEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalDivEq;
@@ -33258,18 +33272,23 @@ impl Terminal for TerminalDivEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalDivEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenDivEq {
-        TokenDivEq::from_syntax_node(db, self.children[1])
+        TokenDivEq::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -33321,7 +33340,7 @@ impl TypedSyntaxNode for TerminalDivEq {
             kind,
             SyntaxKind::TerminalDivEq
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -33420,7 +33439,6 @@ impl TypedSyntaxNode for TokenDollar {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalDollar {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalDollar {
     const KIND: SyntaxKind = SyntaxKind::TerminalDollar;
@@ -33442,18 +33460,23 @@ impl Terminal for TerminalDollar {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalDollar {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenDollar {
-        TokenDollar::from_syntax_node(db, self.children[1])
+        TokenDollar::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -33505,7 +33528,7 @@ impl TypedSyntaxNode for TerminalDollar {
             kind,
             SyntaxKind::TerminalDollar
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -33604,7 +33627,6 @@ impl TypedSyntaxNode for TokenDot {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalDot {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalDot {
     const KIND: SyntaxKind = SyntaxKind::TerminalDot;
@@ -33626,18 +33648,23 @@ impl Terminal for TerminalDot {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalDot {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenDot {
-        TokenDot::from_syntax_node(db, self.children[1])
+        TokenDot::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -33689,7 +33716,7 @@ impl TypedSyntaxNode for TerminalDot {
             kind,
             SyntaxKind::TerminalDot
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -33784,7 +33811,6 @@ impl TypedSyntaxNode for TokenDotDot {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalDotDot {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalDotDot {
     const KIND: SyntaxKind = SyntaxKind::TerminalDotDot;
@@ -33806,18 +33832,23 @@ impl Terminal for TerminalDotDot {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalDotDot {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenDotDot {
-        TokenDotDot::from_syntax_node(db, self.children[1])
+        TokenDotDot::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -33869,7 +33900,7 @@ impl TypedSyntaxNode for TerminalDotDot {
             kind,
             SyntaxKind::TerminalDotDot
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -33968,7 +33999,6 @@ impl TypedSyntaxNode for TokenDotDotEq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalDotDotEq {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalDotDotEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalDotDotEq;
@@ -33990,18 +34020,23 @@ impl Terminal for TerminalDotDotEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalDotDotEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenDotDotEq {
-        TokenDotDotEq::from_syntax_node(db, self.children[1])
+        TokenDotDotEq::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34053,7 +34088,7 @@ impl TypedSyntaxNode for TerminalDotDotEq {
             kind,
             SyntaxKind::TerminalDotDotEq
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -34152,7 +34187,6 @@ impl TypedSyntaxNode for TokenEndOfFile {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalEndOfFile {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalEndOfFile {
     const KIND: SyntaxKind = SyntaxKind::TerminalEndOfFile;
@@ -34174,18 +34208,23 @@ impl Terminal for TerminalEndOfFile {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalEndOfFile {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenEndOfFile {
-        TokenEndOfFile::from_syntax_node(db, self.children[1])
+        TokenEndOfFile::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34237,7 +34276,7 @@ impl TypedSyntaxNode for TerminalEndOfFile {
             kind,
             SyntaxKind::TerminalEndOfFile
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -34336,7 +34375,6 @@ impl TypedSyntaxNode for TokenEq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalEq {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalEq;
@@ -34358,18 +34396,23 @@ impl Terminal for TerminalEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenEq {
-        TokenEq::from_syntax_node(db, self.children[1])
+        TokenEq::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34421,7 +34464,7 @@ impl TypedSyntaxNode for TerminalEq {
             kind,
             SyntaxKind::TerminalEq
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -34516,7 +34559,6 @@ impl TypedSyntaxNode for TokenEqEq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalEqEq {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalEqEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalEqEq;
@@ -34538,18 +34580,23 @@ impl Terminal for TerminalEqEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalEqEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenEqEq {
-        TokenEqEq::from_syntax_node(db, self.children[1])
+        TokenEqEq::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34601,7 +34648,7 @@ impl TypedSyntaxNode for TerminalEqEq {
             kind,
             SyntaxKind::TerminalEqEq
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -34696,7 +34743,6 @@ impl TypedSyntaxNode for TokenGE {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalGE {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalGE {
     const KIND: SyntaxKind = SyntaxKind::TerminalGE;
@@ -34718,18 +34764,23 @@ impl Terminal for TerminalGE {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalGE {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenGE {
-        TokenGE::from_syntax_node(db, self.children[1])
+        TokenGE::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34781,7 +34832,7 @@ impl TypedSyntaxNode for TerminalGE {
             kind,
             SyntaxKind::TerminalGE
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -34876,7 +34927,6 @@ impl TypedSyntaxNode for TokenGT {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalGT {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalGT {
     const KIND: SyntaxKind = SyntaxKind::TerminalGT;
@@ -34898,18 +34948,23 @@ impl Terminal for TerminalGT {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalGT {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenGT {
-        TokenGT::from_syntax_node(db, self.children[1])
+        TokenGT::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34961,7 +35016,7 @@ impl TypedSyntaxNode for TerminalGT {
             kind,
             SyntaxKind::TerminalGT
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -35056,7 +35111,6 @@ impl TypedSyntaxNode for TokenHash {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalHash {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalHash {
     const KIND: SyntaxKind = SyntaxKind::TerminalHash;
@@ -35078,18 +35132,23 @@ impl Terminal for TerminalHash {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalHash {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenHash {
-        TokenHash::from_syntax_node(db, self.children[1])
+        TokenHash::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -35141,7 +35200,7 @@ impl TypedSyntaxNode for TerminalHash {
             kind,
             SyntaxKind::TerminalHash
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -35236,7 +35295,6 @@ impl TypedSyntaxNode for TokenLBrace {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLBrace {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLBrace {
     const KIND: SyntaxKind = SyntaxKind::TerminalLBrace;
@@ -35258,18 +35316,23 @@ impl Terminal for TerminalLBrace {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalLBrace {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLBrace {
-        TokenLBrace::from_syntax_node(db, self.children[1])
+        TokenLBrace::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -35321,7 +35384,7 @@ impl TypedSyntaxNode for TerminalLBrace {
             kind,
             SyntaxKind::TerminalLBrace
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -35420,7 +35483,6 @@ impl TypedSyntaxNode for TokenLBrack {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLBrack {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLBrack {
     const KIND: SyntaxKind = SyntaxKind::TerminalLBrack;
@@ -35442,18 +35504,23 @@ impl Terminal for TerminalLBrack {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalLBrack {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLBrack {
-        TokenLBrack::from_syntax_node(db, self.children[1])
+        TokenLBrack::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -35505,7 +35572,7 @@ impl TypedSyntaxNode for TerminalLBrack {
             kind,
             SyntaxKind::TerminalLBrack
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -35604,7 +35671,6 @@ impl TypedSyntaxNode for TokenLE {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLE {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLE {
     const KIND: SyntaxKind = SyntaxKind::TerminalLE;
@@ -35626,18 +35692,23 @@ impl Terminal for TerminalLE {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalLE {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLE {
-        TokenLE::from_syntax_node(db, self.children[1])
+        TokenLE::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -35689,7 +35760,7 @@ impl TypedSyntaxNode for TerminalLE {
             kind,
             SyntaxKind::TerminalLE
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -35784,7 +35855,6 @@ impl TypedSyntaxNode for TokenLParen {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLParen {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLParen {
     const KIND: SyntaxKind = SyntaxKind::TerminalLParen;
@@ -35806,18 +35876,23 @@ impl Terminal for TerminalLParen {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalLParen {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLParen {
-        TokenLParen::from_syntax_node(db, self.children[1])
+        TokenLParen::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -35869,7 +35944,7 @@ impl TypedSyntaxNode for TerminalLParen {
             kind,
             SyntaxKind::TerminalLParen
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -35968,7 +36043,6 @@ impl TypedSyntaxNode for TokenLT {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLT {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLT {
     const KIND: SyntaxKind = SyntaxKind::TerminalLT;
@@ -35990,18 +36064,23 @@ impl Terminal for TerminalLT {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalLT {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLT {
-        TokenLT::from_syntax_node(db, self.children[1])
+        TokenLT::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36053,7 +36132,7 @@ impl TypedSyntaxNode for TerminalLT {
             kind,
             SyntaxKind::TerminalLT
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -36148,7 +36227,6 @@ impl TypedSyntaxNode for TokenMatchArrow {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMatchArrow {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMatchArrow {
     const KIND: SyntaxKind = SyntaxKind::TerminalMatchArrow;
@@ -36170,18 +36248,23 @@ impl Terminal for TerminalMatchArrow {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalMatchArrow {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMatchArrow {
-        TokenMatchArrow::from_syntax_node(db, self.children[1])
+        TokenMatchArrow::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36233,7 +36316,7 @@ impl TypedSyntaxNode for TerminalMatchArrow {
             kind,
             SyntaxKind::TerminalMatchArrow
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -36332,7 +36415,6 @@ impl TypedSyntaxNode for TokenMinus {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMinus {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMinus {
     const KIND: SyntaxKind = SyntaxKind::TerminalMinus;
@@ -36354,18 +36436,23 @@ impl Terminal for TerminalMinus {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalMinus {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMinus {
-        TokenMinus::from_syntax_node(db, self.children[1])
+        TokenMinus::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36417,7 +36504,7 @@ impl TypedSyntaxNode for TerminalMinus {
             kind,
             SyntaxKind::TerminalMinus
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -36516,7 +36603,6 @@ impl TypedSyntaxNode for TokenMinusEq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMinusEq {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMinusEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalMinusEq;
@@ -36538,18 +36624,23 @@ impl Terminal for TerminalMinusEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalMinusEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMinusEq {
-        TokenMinusEq::from_syntax_node(db, self.children[1])
+        TokenMinusEq::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36601,7 +36692,7 @@ impl TypedSyntaxNode for TerminalMinusEq {
             kind,
             SyntaxKind::TerminalMinusEq
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -36700,7 +36791,6 @@ impl TypedSyntaxNode for TokenMod {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMod {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMod {
     const KIND: SyntaxKind = SyntaxKind::TerminalMod;
@@ -36722,18 +36812,23 @@ impl Terminal for TerminalMod {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalMod {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMod {
-        TokenMod::from_syntax_node(db, self.children[1])
+        TokenMod::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36785,7 +36880,7 @@ impl TypedSyntaxNode for TerminalMod {
             kind,
             SyntaxKind::TerminalMod
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -36880,7 +36975,6 @@ impl TypedSyntaxNode for TokenModEq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalModEq {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalModEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalModEq;
@@ -36902,18 +36996,23 @@ impl Terminal for TerminalModEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalModEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenModEq {
-        TokenModEq::from_syntax_node(db, self.children[1])
+        TokenModEq::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36965,7 +37064,7 @@ impl TypedSyntaxNode for TerminalModEq {
             kind,
             SyntaxKind::TerminalModEq
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -37064,7 +37163,6 @@ impl TypedSyntaxNode for TokenMul {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMul {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMul {
     const KIND: SyntaxKind = SyntaxKind::TerminalMul;
@@ -37086,18 +37184,23 @@ impl Terminal for TerminalMul {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalMul {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMul {
-        TokenMul::from_syntax_node(db, self.children[1])
+        TokenMul::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -37149,7 +37252,7 @@ impl TypedSyntaxNode for TerminalMul {
             kind,
             SyntaxKind::TerminalMul
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -37244,7 +37347,6 @@ impl TypedSyntaxNode for TokenMulEq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMulEq {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMulEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalMulEq;
@@ -37266,18 +37368,23 @@ impl Terminal for TerminalMulEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalMulEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMulEq {
-        TokenMulEq::from_syntax_node(db, self.children[1])
+        TokenMulEq::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -37329,7 +37436,7 @@ impl TypedSyntaxNode for TerminalMulEq {
             kind,
             SyntaxKind::TerminalMulEq
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -37428,7 +37535,6 @@ impl TypedSyntaxNode for TokenNeq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalNeq {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalNeq {
     const KIND: SyntaxKind = SyntaxKind::TerminalNeq;
@@ -37450,18 +37556,23 @@ impl Terminal for TerminalNeq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalNeq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenNeq {
-        TokenNeq::from_syntax_node(db, self.children[1])
+        TokenNeq::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -37513,7 +37624,7 @@ impl TypedSyntaxNode for TerminalNeq {
             kind,
             SyntaxKind::TerminalNeq
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -37608,7 +37719,6 @@ impl TypedSyntaxNode for TokenNot {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalNot {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalNot {
     const KIND: SyntaxKind = SyntaxKind::TerminalNot;
@@ -37630,18 +37740,23 @@ impl Terminal for TerminalNot {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalNot {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenNot {
-        TokenNot::from_syntax_node(db, self.children[1])
+        TokenNot::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -37693,7 +37808,7 @@ impl TypedSyntaxNode for TerminalNot {
             kind,
             SyntaxKind::TerminalNot
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -37788,7 +37903,6 @@ impl TypedSyntaxNode for TokenBitNot {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalBitNot {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalBitNot {
     const KIND: SyntaxKind = SyntaxKind::TerminalBitNot;
@@ -37810,18 +37924,23 @@ impl Terminal for TerminalBitNot {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalBitNot {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenBitNot {
-        TokenBitNot::from_syntax_node(db, self.children[1])
+        TokenBitNot::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -37873,7 +37992,7 @@ impl TypedSyntaxNode for TerminalBitNot {
             kind,
             SyntaxKind::TerminalBitNot
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -37972,7 +38091,6 @@ impl TypedSyntaxNode for TokenOr {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalOr {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalOr {
     const KIND: SyntaxKind = SyntaxKind::TerminalOr;
@@ -37994,18 +38112,23 @@ impl Terminal for TerminalOr {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalOr {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenOr {
-        TokenOr::from_syntax_node(db, self.children[1])
+        TokenOr::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -38057,7 +38180,7 @@ impl TypedSyntaxNode for TerminalOr {
             kind,
             SyntaxKind::TerminalOr
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -38152,7 +38275,6 @@ impl TypedSyntaxNode for TokenOrOr {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalOrOr {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalOrOr {
     const KIND: SyntaxKind = SyntaxKind::TerminalOrOr;
@@ -38174,18 +38296,23 @@ impl Terminal for TerminalOrOr {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalOrOr {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenOrOr {
-        TokenOrOr::from_syntax_node(db, self.children[1])
+        TokenOrOr::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -38237,7 +38364,7 @@ impl TypedSyntaxNode for TerminalOrOr {
             kind,
             SyntaxKind::TerminalOrOr
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -38332,7 +38459,6 @@ impl TypedSyntaxNode for TokenPlus {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalPlus {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalPlus {
     const KIND: SyntaxKind = SyntaxKind::TerminalPlus;
@@ -38354,18 +38480,23 @@ impl Terminal for TerminalPlus {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalPlus {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenPlus {
-        TokenPlus::from_syntax_node(db, self.children[1])
+        TokenPlus::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -38417,7 +38548,7 @@ impl TypedSyntaxNode for TerminalPlus {
             kind,
             SyntaxKind::TerminalPlus
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -38512,7 +38643,6 @@ impl TypedSyntaxNode for TokenPlusEq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalPlusEq {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalPlusEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalPlusEq;
@@ -38534,18 +38664,23 @@ impl Terminal for TerminalPlusEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalPlusEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenPlusEq {
-        TokenPlusEq::from_syntax_node(db, self.children[1])
+        TokenPlusEq::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -38597,7 +38732,7 @@ impl TypedSyntaxNode for TerminalPlusEq {
             kind,
             SyntaxKind::TerminalPlusEq
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -38696,7 +38831,6 @@ impl TypedSyntaxNode for TokenQuestionMark {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalQuestionMark {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalQuestionMark {
     const KIND: SyntaxKind = SyntaxKind::TerminalQuestionMark;
@@ -38718,18 +38852,23 @@ impl Terminal for TerminalQuestionMark {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalQuestionMark {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenQuestionMark {
-        TokenQuestionMark::from_syntax_node(db, self.children[1])
+        TokenQuestionMark::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -38781,7 +38920,7 @@ impl TypedSyntaxNode for TerminalQuestionMark {
             kind,
             SyntaxKind::TerminalQuestionMark
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -38880,7 +39019,6 @@ impl TypedSyntaxNode for TokenRBrace {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalRBrace {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalRBrace {
     const KIND: SyntaxKind = SyntaxKind::TerminalRBrace;
@@ -38902,18 +39040,23 @@ impl Terminal for TerminalRBrace {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalRBrace {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenRBrace {
-        TokenRBrace::from_syntax_node(db, self.children[1])
+        TokenRBrace::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -38965,7 +39108,7 @@ impl TypedSyntaxNode for TerminalRBrace {
             kind,
             SyntaxKind::TerminalRBrace
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -39064,7 +39207,6 @@ impl TypedSyntaxNode for TokenRBrack {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalRBrack {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalRBrack {
     const KIND: SyntaxKind = SyntaxKind::TerminalRBrack;
@@ -39086,18 +39228,23 @@ impl Terminal for TerminalRBrack {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalRBrack {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenRBrack {
-        TokenRBrack::from_syntax_node(db, self.children[1])
+        TokenRBrack::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -39149,7 +39296,7 @@ impl TypedSyntaxNode for TerminalRBrack {
             kind,
             SyntaxKind::TerminalRBrack
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -39248,7 +39395,6 @@ impl TypedSyntaxNode for TokenRParen {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalRParen {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalRParen {
     const KIND: SyntaxKind = SyntaxKind::TerminalRParen;
@@ -39270,18 +39416,23 @@ impl Terminal for TerminalRParen {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalRParen {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenRParen {
-        TokenRParen::from_syntax_node(db, self.children[1])
+        TokenRParen::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -39333,7 +39484,7 @@ impl TypedSyntaxNode for TerminalRParen {
             kind,
             SyntaxKind::TerminalRParen
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -39432,7 +39583,6 @@ impl TypedSyntaxNode for TokenSemicolon {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalSemicolon {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalSemicolon {
     const KIND: SyntaxKind = SyntaxKind::TerminalSemicolon;
@@ -39454,18 +39604,23 @@ impl Terminal for TerminalSemicolon {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalSemicolon {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenSemicolon {
-        TokenSemicolon::from_syntax_node(db, self.children[1])
+        TokenSemicolon::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -39517,7 +39672,7 @@ impl TypedSyntaxNode for TerminalSemicolon {
             kind,
             SyntaxKind::TerminalSemicolon
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -39616,7 +39771,6 @@ impl TypedSyntaxNode for TokenUnderscore {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalUnderscore {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalUnderscore {
     const KIND: SyntaxKind = SyntaxKind::TerminalUnderscore;
@@ -39638,18 +39792,23 @@ impl Terminal for TerminalUnderscore {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalUnderscore {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenUnderscore {
-        TokenUnderscore::from_syntax_node(db, self.children[1])
+        TokenUnderscore::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -39701,7 +39860,7 @@ impl TypedSyntaxNode for TerminalUnderscore {
             kind,
             SyntaxKind::TerminalUnderscore
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -39800,7 +39959,6 @@ impl TypedSyntaxNode for TokenXor {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalXor {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalXor {
     const KIND: SyntaxKind = SyntaxKind::TerminalXor;
@@ -39822,18 +39980,23 @@ impl Terminal for TerminalXor {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalXor {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenXor {
-        TokenXor::from_syntax_node(db, self.children[1])
+        TokenXor::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -39885,7 +40048,7 @@ impl TypedSyntaxNode for TerminalXor {
             kind,
             SyntaxKind::TerminalXor
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -39901,7 +40064,6 @@ impl TypedSyntaxNode for TerminalXor {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SyntaxFile {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl SyntaxFile {
     pub const INDEX_ITEMS: usize = 0;
@@ -39924,10 +40086,10 @@ impl SyntaxFile {
 }
 impl SyntaxFile {
     pub fn items(&self, db: &dyn SyntaxGroup) -> ModuleItemList {
-        ModuleItemList::from_syntax_node(db, self.children[0])
+        ModuleItemList::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn eof(&self, db: &dyn SyntaxGroup) -> TerminalEndOfFile {
-        TerminalEndOfFile::from_syntax_node(db, self.children[1])
+        TerminalEndOfFile::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -39975,7 +40137,7 @@ impl TypedSyntaxNode for SyntaxFile {
             kind,
             SyntaxKind::SyntaxFile
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);
@@ -40070,7 +40232,6 @@ impl TypedSyntaxNode for TokenEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalEmpty {
     node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalEmpty {
     const KIND: SyntaxKind = SyntaxKind::TerminalEmpty;
@@ -40092,18 +40253,23 @@ impl Terminal for TerminalEmpty {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
+        let GreenNodeDetails::Node { children, .. } =
+            &self.node.lookup_intern(db).green.lookup_intern(db).details
+        else {
+            unreachable!("Expected a node, not a token");
+        };
+        extract_matches!(&children[1].lookup_intern(db).details, GreenNodeDetails::Token).clone()
     }
 }
 impl TerminalEmpty {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenEmpty {
-        TokenEmpty::from_syntax_node(db, self.children[1])
+        TokenEmpty::from_syntax_node(db, self.node.get_children(db)[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2])
+        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -40155,7 +40321,7 @@ impl TypedSyntaxNode for TerminalEmpty {
             kind,
             SyntaxKind::TerminalEmpty
         );
-        Self { children: node.get_children(db), node }
+        Self { node }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
         let kind = node.kind(db);

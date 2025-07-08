@@ -606,7 +606,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         params.extend(quote! {$name: $(&child_green),});
         body.extend(quote! {
             pub fn $name(&self, db: &dyn SyntaxGroup) -> $kind {
-                $kind::from_syntax_node(db, self.children[$i])
+                $kind::from_syntax_node(db, self.node.get_children(db)[$i])
             }
         });
         args_for_missing.extend(quote! {$kind::missing(db).0,});
@@ -647,7 +647,15 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                     }).intern(db))
                 }
                 fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-                    self.token(db).text(db)
+                    let GreenNodeDetails::Node{children,..} = &self.node.lookup_intern(db).green.lookup_intern(db).details else {
+                        unreachable!("Expected a node, not a token");
+                    };
+
+                    extract_matches!(
+                        &children[1].lookup_intern(db).details,
+                        GreenNodeDetails::Token
+                    )
+                    .clone()
                 }
             }
         }
@@ -671,7 +679,6 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         #[derive(Clone, Debug, Eq, Hash, PartialEq)]
         pub struct $(&name) {
             node: SyntaxNode,
-            children: Arc<[SyntaxNode]>,
         }
         $new_green_impl
         impl $(&name) {
@@ -716,7 +723,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
             fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
                 let kind = node.kind(db);
                 assert_eq!(kind, SyntaxKind::$(&name), "Unexpected SyntaxKind {:?}. Expected {:?}.", kind, SyntaxKind::$(&name));
-                Self { children: node.get_children(db), node }
+                Self { node }
             }
             fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
                 let kind = node.kind(db);
