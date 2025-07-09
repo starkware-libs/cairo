@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
@@ -34,6 +35,7 @@ use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
+use crate::expr::fmt::CountingWriter;
 use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::items::feature_kind::HasFeatureKind;
@@ -60,8 +62,9 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteTraitLongId {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
+        let mut f = CountingWriter::new(f);
         write!(f, "{}", self.trait_id.full_path(db))?;
-        fmt_generic_args(&self.generic_args, f, db)
+        fmt_generic_args(&self.generic_args, &mut f, db)
     }
 }
 

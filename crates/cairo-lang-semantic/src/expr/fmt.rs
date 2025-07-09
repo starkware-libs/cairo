@@ -21,3 +21,25 @@ impl Upcast<dyn DefsGroup + 'static> for ExprFormatter<'_> {
         self.db
     }
 }
+
+pub struct CountingWriter<'a, 'b> {
+    inner: &'a mut std::fmt::Formatter<'b>,
+    count: usize,
+}
+
+impl<'a, 'b> CountingWriter<'a, 'b> {
+    pub fn new(inner: &'a mut std::fmt::Formatter<'b>) -> Self {
+        Self { inner, count: 0 }
+    }
+
+    pub fn count(&self) -> usize {
+        self.count
+    }
+}
+
+impl<'a, 'b> std::fmt::Write for CountingWriter<'a, 'b> {
+    fn write_str(&mut self, s: &str) -> std::fmt::Result {
+        self.count += s.len();
+        self.inner.write_str(s)
+    }
+}
