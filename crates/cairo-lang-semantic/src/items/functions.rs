@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
@@ -31,6 +32,7 @@ use crate::corelib::{fn_traits, unit_ty};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
+use crate::expr::fmt::CountingWriter;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::GenericSubstitution;
 use crate::types::resolve_type;
@@ -589,6 +591,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunctionWithBody {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
+        let f = &mut CountingWriter::new(f);
         write!(f, "{}", self.generic_function.full_path(db))?;
         fmt_generic_args(&self.generic_args, f, db)
     }
@@ -688,6 +691,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
+        let f = &mut CountingWriter::new(f);
         write!(f, "{}", self.generic_function.format(db))?;
         fmt_generic_args(&self.generic_args, f, db)
     }
