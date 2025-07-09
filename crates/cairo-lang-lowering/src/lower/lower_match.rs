@@ -5,7 +5,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_semantic::{
-    self as semantic, ConcreteEnumId, ConcreteVariant, GenericArgumentId, corelib,
+    self as semantic, ConcreteEnumId, ConcreteVariant, GenericArgumentId, VarId, corelib,
 };
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -28,6 +28,8 @@ use super::context::{
     LoweredExpr, LoweredExprExternEnum, LoweringContext, LoweringFlowError, LoweringResult,
     lowering_flow_error_to_sealed_block,
 };
+use super::lower_if::{ConditionedExpr, lower_conditioned_expr_and_seal};
+use super::lower_let_else::lower_success_arm_body;
 use super::{
     alloc_empty_block, generators, lower_expr_block, lower_expr_literal, lower_tail_expr,
     lowered_expr_to_block_scope_end, recursively_call_loop_func,
@@ -63,6 +65,12 @@ pub enum MatchArmWrapper<'a> {
     ElseClause(semantic::ExprId),
     /// Default clause when else clause is not provided (if-let/while-let).
     DefaultClause,
+    /// The success arm of a let-else statement. See [super::lower_let_else::lower_let_else] for
+    /// more details.
+    LetElseSuccess(&'a [PatternId], Vec<(VarId, SyntaxStablePtrId)>, SyntaxStablePtrId),
+    /// Similar to [Self::Arm], except that the expression is a conditioned expression
+    /// (see [ConditionedExpr]).
+    ConditionedArm(&'a [PatternId], ConditionedExpr<'a>),
 }
 
 impl<'a> From<&'a semantic::MatchArm> for MatchArmWrapper<'a> {
@@ -72,21 +80,13 @@ impl<'a> From<&'a semantic::MatchArm> for MatchArmWrapper<'a> {
 }
 
 impl MatchArmWrapper<'_> {
-    /// Returns the expression of the guarded by the match arm.
-    pub fn expr(&self) -> Option<semantic::ExprId> {
-        match self {
-            MatchArmWrapper::Arm(_, expr) => Some(*expr),
-            MatchArmWrapper::ElseClause(expr) => Some(*expr),
-            MatchArmWrapper::DefaultClause => None,
-        }
-    }
-
     /// Returns the patterns of the match arm.
     pub fn patterns(&self) -> Option<&[PatternId]> {
         match self {
-            MatchArmWrapper::Arm(patterns, _) => Some(patterns),
-            MatchArmWrapper::ElseClause(_) => None,
-            MatchArmWrapper::DefaultClause => None,
+            MatchArmWrapper::Arm(patterns, _)
+            | MatchArmWrapper::ConditionedArm(patterns, _)
+            | MatchArmWrapper::LetElseSuccess(patterns, _, _) => Some(patterns),
+            MatchArmWrapper::ElseClause(_) | MatchArmWrapper::DefaultClause => None,
         }
     }
 
@@ -180,8 +180,8 @@ fn get_underscore_pattern_path_and_mark_unreachable(
         .iter()
         .enumerate()
         .filter_map(|(arm_index, arm)| {
-            let pattern_index = match arm {
-                MatchArmWrapper::Arm(patterns, _) => {
+            let pattern_index = match arm.patterns() {
+                Some(patterns) => {
                     let position = patterns.iter().position(|pattern| {
                         matches!(
                             ctx.function_body.arenas.patterns[*pattern],
@@ -190,7 +190,7 @@ fn get_underscore_pattern_path_and_mark_unreachable(
                     })?;
                     Some(position)
                 }
-                MatchArmWrapper::DefaultClause | MatchArmWrapper::ElseClause(_) => None,
+                None => None,
             };
             Some(PatternPath { arm_index, pattern_index })
         })
@@ -198,7 +198,9 @@ fn get_underscore_pattern_path_and_mark_unreachable(
 
     for arm in arms.iter().skip(otherwise_variant.arm_index + 1) {
         match arm {
-            MatchArmWrapper::Arm(patterns, _expr) => {
+            MatchArmWrapper::Arm(patterns, _)
+            | MatchArmWrapper::ConditionedArm(patterns, _)
+            | MatchArmWrapper::LetElseSuccess(patterns, _, _) => {
                 for pattern in *patterns {
                     let pattern_ptr = ctx.function_body.arenas.patterns[*pattern].stable_ptr();
                     ctx.diagnostics.report(
@@ -492,7 +494,7 @@ impl PatternTree {
                         .into_iter()
                         .zip(mapping_info.variants.iter())
                         .map(|(subtree, concrete_variant)| {
-                            variants_being_explored.push(concrete_variant.clone());
+                            variants_being_explored.push(*concrete_variant);
                             let variant_match_tree = build_tree_helper(
                                 subtree,
                                 ctx,
@@ -578,7 +580,7 @@ fn insert_tuple_path_patterns(
                 // TODO(TomerStarkware): Remove the match on the variant options in this case if
                 // there's no other conflicting arm.
                 let mut path = path.clone();
-                path.variants.push(variant.clone());
+                path.variants.push(*variant);
                 insert_tuple_path_patterns(
                     ctx,
                     patterns,
@@ -789,7 +791,7 @@ fn lower_full_match_tree(
             });
             arm_var_ids.push(vec![var_id]);
 
-            match_tuple_ctx.current_path.variants.push(concrete_variant.clone());
+            match_tuple_ctx.current_path.variants.push(*concrete_variant);
             match_tuple_ctx.current_var_ids.push(var_id);
             let result = if index + 1 == extracted_enums_details.len() {
                 lower_tuple_match_arm(
@@ -830,7 +832,7 @@ fn lower_full_match_tree(
             arm_var_ids,
         )
         .map(|((variant_id, block_id), var_ids)| MatchArm {
-            arm_selector: MatchArmSelector::VariantId(variant_id.clone()),
+            arm_selector: MatchArmSelector::VariantId(*variant_id),
             block_id,
             var_ids,
         })
@@ -1149,7 +1151,7 @@ trait EnumVariantScopeBuilder {
         //     │   └── None
         //     └── Felt252Dict
         // ```
-        // This can be generalized to a tree where each enum type intoduces one branch per variant.
+        // This can be generalized to a tree where each enum type introduces one branch per variant.
         // We use [PatternTree] to check patterns are legal (reachable and all branches end with a
         // pattern).
         let mut pattern_tree = PatternTree::Empty;
@@ -1175,7 +1177,9 @@ trait EnumVariantScopeBuilder {
                     );
                     continue;
                 }
-                MatchArmWrapper::Arm(patterns, _) => patterns,
+                MatchArmWrapper::Arm(patterns, _)
+                | MatchArmWrapper::ConditionedArm(patterns, _)
+                | MatchArmWrapper::LetElseSuccess(patterns, _, _) => patterns,
             };
             for (pattern_index, pattern) in patterns.iter().copied().enumerate() {
                 let pattern_path = PatternPath { arm_index, pattern_index: Some(pattern_index) };
@@ -1250,7 +1254,7 @@ trait EnumVariantScopeBuilder {
                         // Expand paths in map to include all variants of this enum_pattern.
                         if let Some(vmap) = pattern_tree.get_mapping_or_insert(
                             ctx,
-                            enum_pattern.variant.clone(),
+                            enum_pattern.variant,
                             n_snapshots,
                             stable_ptr,
                         )? {
@@ -1347,7 +1351,7 @@ trait EnumVariantScopeBuilder {
 
     /// Creates subscopes for match arms and collects them into block builders.
     /// It then merges the blocks and returns the resulting lowered expression.
-    ///  
+    ///
     /// This function is responsible for:
     /// * Building a pattern tree to track variant coverage
     /// * Creating subscopes for each match variant
@@ -1367,6 +1371,7 @@ trait EnumVariantScopeBuilder {
             for arm in builder_context.arms {
                 match arm {
                     MatchArmWrapper::Arm(_, expr) |
+                    MatchArmWrapper::ConditionedArm(_, ConditionedExpr{expr, ..}) |
                     // Should actually never happen, as we can't if-let, but careful anyway.
                     MatchArmWrapper::ElseClause(expr) => {
                         ctx.diagnostics.report(
@@ -1377,6 +1382,15 @@ trait EnumVariantScopeBuilder {
                             }),
                         );
                     },
+                    MatchArmWrapper::LetElseSuccess(_,_, stable_ptr) => {
+                        ctx.diagnostics.report(
+                            *stable_ptr,
+                            MatchError(MatchError {
+                                kind: builder_context.kind,
+                                error: MatchDiagnostic::UnreachableMatchArm,
+                            }),
+                        );
+                    }
                     MatchArmWrapper::DefaultClause => (),
                 }
             }
@@ -1779,10 +1793,16 @@ fn lower_arm_expr_and_seal(
     arm: &MatchArmWrapper<'_>,
     mut subscope: BlockBuilder,
 ) -> Maybe<SealedBlockBuilder> {
-    match (arm.expr(), kind) {
-        (Some(expr), MatchKind::IfLet | MatchKind::Match) => lower_tail_expr(ctx, subscope, expr),
-        (Some(expr), MatchKind::WhileLet(loop_expr_id, stable_ptr)) => {
-            let semantic::Expr::Block(expr) = ctx.function_body.arenas.exprs[expr].clone() else {
+    match (arm, kind) {
+        (
+            MatchArmWrapper::Arm(_, expr) | MatchArmWrapper::ElseClause(expr),
+            MatchKind::IfLet | MatchKind::Match,
+        ) => lower_tail_expr(ctx, subscope, *expr),
+        (
+            MatchArmWrapper::Arm(_, expr) | MatchArmWrapper::ElseClause(expr),
+            MatchKind::WhileLet(loop_expr_id, stable_ptr),
+        ) => {
+            let semantic::Expr::Block(expr) = ctx.function_body.arenas.exprs[*expr].clone() else {
                 unreachable!("WhileLet expression should be a block");
             };
             let block_expr = (|| {
@@ -1792,7 +1812,16 @@ fn lower_arm_expr_and_seal(
 
             lowered_expr_to_block_scope_end(ctx, subscope, block_expr)
         }
-        (None, _) => Ok(subscope.goto_callsite(None)),
+        (MatchArmWrapper::DefaultClause, _) => Ok(subscope.goto_callsite(None)),
+        (MatchArmWrapper::LetElseSuccess(_, vars, stable_ptr), MatchKind::Match) => {
+            Ok(lower_success_arm_body(ctx, subscope, vars, stable_ptr))
+        }
+        (MatchArmWrapper::LetElseSuccess(_, _, _), _) => {
+            unreachable!("Invalid MatchKind for LetElseSuccess.")
+        }
+        (MatchArmWrapper::ConditionedArm(_, expr), _) => {
+            lower_conditioned_expr_and_seal(ctx, subscope, expr)
+        }
     }
 }
 

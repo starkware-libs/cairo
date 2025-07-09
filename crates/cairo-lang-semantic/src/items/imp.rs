@@ -348,16 +348,9 @@ pub struct GeneratedImplLongId {
     pub generic_params: Vec<GenericParam>,
     pub impl_items: GeneratedImplItems,
 }
-#[derive(Clone, Debug, Default, PartialEq, Eq, SemanticObject)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, SemanticObject)]
 pub struct GeneratedImplItems(pub OrderedHashMap<TraitTypeId, TypeId>);
-impl Hash for GeneratedImplItems {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.iter().for_each(|(trait_type_id, type_id)| {
-            trait_type_id.hash(state);
-            type_id.hash(state);
-        });
-    }
-}
+
 pub enum GeneratedImplAssociatedTypes {
     /// The associated types are not yet resolved.
     Unresolved,
@@ -3416,8 +3409,8 @@ fn validate_impl_function_signature(
     }
     let concrete_trait_signature =
         impl_def_substitution.substitute(db, concrete_trait_signature)?;
-    for (idx, (param, trait_param)) in
-        izip!(signature.params.iter(), concrete_trait_signature.params.iter()).enumerate()
+    for (param, trait_param) in
+        izip!(signature.params.iter(), concrete_trait_signature.params.iter())
     {
         let expected_ty = inference.rewrite(trait_param.ty).no_err();
         let actual_ty = inference.rewrite(param.ty).no_err();
@@ -3425,7 +3418,7 @@ fn validate_impl_function_signature(
         if expected_ty != actual_ty && !expected_ty.is_missing(db) && !actual_ty.is_missing(db) {
             diagnostics.report(
                 extract_matches!(
-                    signature_syntax.parameters(db).elements(db)[idx].type_clause(db),
+                    param.stable_ptr(db).lookup(db).type_clause(db),
                     OptionTypeClause::TypeClause
                 )
                 .ty(db)
@@ -3443,14 +3436,14 @@ fn validate_impl_function_signature(
         if trait_param.mutability != param.mutability {
             if trait_param.mutability == Mutability::Reference {
                 diagnostics.report(
-                    signature_syntax.parameters(db).elements(db)[idx].modifiers(db).stable_ptr(db),
+                    param.stable_ptr(db).lookup(db).modifiers(db).stable_ptr(db),
                     ParameterShouldBeReference { impl_def_id, impl_function_id, trait_id },
                 );
             }
 
             if param.mutability == Mutability::Reference {
                 diagnostics.report(
-                    signature_syntax.parameters(db).elements(db)[idx].modifiers(db).stable_ptr(db),
+                    param.stable_ptr(db).lookup(db).modifiers(db).stable_ptr(db),
                     ParameterShouldNotBeReference { impl_def_id, impl_function_id, trait_id },
                 );
             }
@@ -3458,7 +3451,7 @@ fn validate_impl_function_signature(
 
         if trait_param.name != param.name {
             diagnostics.report(
-                signature_syntax.parameters(db).elements(db)[idx].name(db).stable_ptr(db),
+                param.stable_ptr(db).lookup(db).name(db).stable_ptr(db),
                 WrongParameterName {
                     impl_def_id,
                     impl_function_id,

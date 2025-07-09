@@ -16,7 +16,9 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
-use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
+use crate::resolve::{
+    ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData,
+};
 use crate::substitution::SemanticRewriter;
 use crate::{GenericParam, SemanticDiagnostic};
 
@@ -32,7 +34,7 @@ pub struct ImplAliasData {
 
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_alias_semantic_data].
 pub fn priv_impl_alias_semantic_data(
-    db: &(dyn SemanticGroup),
+    db: &dyn SemanticGroup,
     impl_alias_id: ImplAliasId,
     in_cycle: bool,
 ) -> Maybe<ImplAliasData> {
@@ -55,7 +57,7 @@ pub fn priv_impl_alias_semantic_data(
 
 /// A helper function to compute the semantic data of an impl-alias item.
 pub fn impl_alias_semantic_data_helper(
-    db: &(dyn SemanticGroup),
+    db: &dyn SemanticGroup,
     impl_alias_ast: &ast::ItemImplAlias,
     lookup_item_id: LookupItemId,
     generic_params_data: GenericParamsData,
@@ -113,7 +115,7 @@ pub fn priv_impl_alias_semantic_data_cycle(
 
 /// A helper function to compute the semantic data of an impl-alias item when a cycle is detected.
 pub fn impl_alias_semantic_data_cycle_helper(
-    db: &(dyn SemanticGroup),
+    db: &dyn SemanticGroup,
     impl_alias_ast: &ast::ItemImplAlias,
     lookup_item_id: LookupItemId,
     generic_params_data: GenericParamsData,
@@ -267,6 +269,7 @@ pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -
         &mut diagnostics,
         &impl_path_syntax,
         NotFoundItemType::Impl,
+        ResolutionContext::Default,
     ) {
         Ok(ResolvedGenericItem::Impl(imp)) => Ok(imp),
         Ok(ResolvedGenericItem::GenericImplAlias(impl_alias)) => db.impl_alias_impl_def(impl_alias),

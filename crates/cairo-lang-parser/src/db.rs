@@ -1,7 +1,7 @@
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind};
-use cairo_lang_syntax::node::ast::{Expr, SyntaxFile};
+use cairo_lang_syntax::node::ast::{Expr, StatementList, SyntaxFile};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
@@ -28,6 +28,9 @@ pub trait ParserGroup:
     /// Parses a file and returns its AST as an expression. Only used for inline macros expanded
     /// code.
     fn file_expr_syntax(&self, file_id: FileId) -> Maybe<Expr>;
+    /// Parses a file and returns its AST as a list of statements. Only used for inline macros
+    /// expanded code.
+    fn file_statement_list_syntax(&self, file_id: FileId) -> Maybe<StatementList>;
     /// Returns the parser diagnostics for this file.
     fn file_syntax_diagnostics(&self, file_id: FileId) -> Diagnostics<ParserDiagnostic>;
 }
@@ -45,6 +48,9 @@ pub fn priv_file_syntax_data(db: &dyn ParserGroup, file_id: FileId) -> SyntaxDat
         FileKind::Expr => {
             Parser::parse_file_expr(db, &mut diagnostics, file_id, &s).as_syntax_node()
         }
+        FileKind::StatementList => {
+            Parser::parse_file_statement_list(db, &mut diagnostics, file_id, &s).as_syntax_node()
+        }
     });
     SyntaxData { diagnostics: diagnostics.build(), syntax }
 }
@@ -59,8 +65,13 @@ pub fn file_module_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<Syntax
 }
 
 pub fn file_expr_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<Expr> {
-    assert_eq!(file_id.kind(db), FileKind::Expr, "file_id must be a module");
+    assert_eq!(file_id.kind(db), FileKind::Expr, "file_id must be an expr");
     Ok(Expr::from_syntax_node(db, db.file_syntax(file_id)?))
+}
+
+pub fn file_statement_list_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<StatementList> {
+    assert_eq!(file_id.kind(db), FileKind::StatementList, "file_id must be a for a statement list");
+    Ok(StatementList::from_syntax_node(db, db.file_syntax(file_id)?))
 }
 
 pub fn file_syntax_diagnostics(

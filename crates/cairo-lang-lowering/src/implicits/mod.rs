@@ -57,8 +57,9 @@ pub fn inner_lower_implicits(
     let mut variables = VariableAllocator::new(
         db,
         function_id.base_semantic_function(db).function_with_body_id(db),
-        lowered.variables.clone(),
-    )?;
+        std::mem::take(&mut lowered.variables.clone()),
+    )
+    .unwrap();
 
     let implicits_tys = db.function_with_body_implicits(function_id)?;
 

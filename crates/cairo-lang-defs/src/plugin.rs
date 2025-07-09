@@ -6,7 +6,7 @@ use cairo_lang_diagnostics::Severity;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::CodeMapping;
-use cairo_lang_filesystem::span::{TextSpan, TextWidth};
+use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, ast};
@@ -57,6 +57,9 @@ pub struct PluginGeneratedFile {
     /// This will be used as [`cairo_lang_diagnostics::DiagnosticNote`] on diagnostics originating
     /// from this file.
     pub diagnostics_note: Option<String>,
+    /// This needs to be set to true if the plugin is unhygienic, i.e. it does not preserve
+    /// variable hygiene.
+    pub is_unhygienic: bool,
 }
 
 /// Result of plugin code generation.
@@ -75,11 +78,6 @@ pub struct PluginResult {
 pub struct PluginDiagnostic {
     /// The stable pointer of the syntax node that caused the diagnostic.
     pub stable_ptr: SyntaxStablePtrId,
-    /// Span relative to the start of the `stable_ptr`.
-    /// No assertion is made that the span is fully contained within the node pointed to by
-    /// `stable_ptr`. When printing diagnostics, any part of the span that falls outside the
-    /// referenced node will be silently ignored.
-    pub relative_span: Option<TextSpan>,
     pub message: String,
     /// The severity of the diagnostic.
     pub severity: Severity,
@@ -93,7 +91,6 @@ impl PluginDiagnostic {
     pub fn error(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
         PluginDiagnostic {
             stable_ptr: stable_ptr.into(),
-            relative_span: None,
             message,
             severity: Severity::Error,
             inner_span: None,
@@ -113,7 +110,6 @@ impl PluginDiagnostic {
         PluginDiagnostic {
             stable_ptr,
             message,
-            relative_span: None,
             severity: Severity::Error,
             inner_span: Some((offset, width)),
         }
@@ -122,16 +118,10 @@ impl PluginDiagnostic {
     pub fn warning(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
         PluginDiagnostic {
             stable_ptr: stable_ptr.into(),
-            relative_span: None,
             message,
             severity: Severity::Warning,
             inner_span: None,
         }
-    }
-
-    pub fn with_relative_span(mut self, span: TextSpan) -> Self {
-        self.relative_span = Some(span);
-        self
     }
 }
 

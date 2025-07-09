@@ -106,7 +106,6 @@ pub enum ParserDiagnosticKind {
     MissingWrappedArgList,
     MissingPattern,
     MissingMacroRuleParamKind,
-    InvalidPlaceholderPath,
     InvalidParamKindInMacroExpansion,
     InvalidParamKindInMacroRule,
     ExpectedInToken,
@@ -128,6 +127,7 @@ pub enum ParserDiagnosticKind {
     DisallowedTrailingSeparatorOr,
     ConsecutiveMathOperators { first_op: SyntaxKind, second_op: SyntaxKind },
     ExpectedSemicolonOrBody,
+    LowPrecedenceOperatorInIfLet { op: SyntaxKind },
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -168,10 +168,6 @@ impl DiagnosticEntry for ParserDiagnostic {
             ParserDiagnosticKind::MissingMacroRuleParamKind => {
                 "Missing tokens. Expected a macro rule parameter kind.".to_string()
             }
-            ParserDiagnosticKind::InvalidPlaceholderPath => "Placeholder expression ($expression) \
-                                                             is allowed only in the context of a \
-                                                             macro rule."
-                .to_string(),
             ParserDiagnosticKind::ExpectedInToken => {
                 "Missing identifier token, expected 'in'.".to_string()
             }
@@ -237,6 +233,13 @@ Did you mean to write `{identifier}!{left}...{right}'?",
                 "Expected either ';' or '{' after module name. Use ';' for an external module \
                  declaration or '{' for a module with a body."
                     .to_string()
+            }
+            ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op } => {
+                format!(
+                    "Operator {} is not allowed in let chains. Consider wrapping the expression \
+                     in parentheses.",
+                    self.kind_to_string(*op)
+                )
             }
         }
     }

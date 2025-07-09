@@ -83,6 +83,7 @@ pub enum FileLongId {
 pub enum FileKind {
     Module,
     Expr,
+    StatementList,
 }
 
 /// A mapping for a code rewrite.

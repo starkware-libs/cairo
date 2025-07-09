@@ -5,832 +5,363 @@ use super::kind::SyntaxKind;
 ///
 /// Each SyntaxKind has some children that are defined in the spec to be its indexing key
 /// for its stable pointer. See [super::stable_ptr].
-pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
+pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Box<[GreenId]> {
     match kind {
-        SyntaxKind::Trivia => vec![],
-        SyntaxKind::ExprList => vec![],
-        SyntaxKind::Arg => {
-            vec![]
-        }
-        SyntaxKind::ArgClauseNamed => {
-            vec![]
-        }
-        SyntaxKind::ArgClauseUnnamed => {
-            vec![]
-        }
-        SyntaxKind::ArgClauseFieldInitShorthand => {
-            vec![]
-        }
-        SyntaxKind::ExprFieldInitShorthand => {
-            vec![]
-        }
-        SyntaxKind::ArgList => vec![],
-        SyntaxKind::ExprMissing => {
-            vec![]
-        }
-        SyntaxKind::PathSegmentSimple => {
-            vec![]
-        }
-        SyntaxKind::OptionTerminalColonColonEmpty => {
-            vec![]
-        }
-        SyntaxKind::PathSegmentWithGenericArgs => {
-            vec![]
-        }
-        SyntaxKind::ExprPath => {
-            vec![]
-        }
-        SyntaxKind::OptionTerminalDollarEmpty => {
-            vec![]
-        }
-        SyntaxKind::PathSegmentMissing => {
-            vec![]
-        }
-        SyntaxKind::ExprPathInner => vec![],
-        SyntaxKind::ExprParenthesized => {
-            vec![]
-        }
-        SyntaxKind::ExprUnary => {
-            vec![]
-        }
-        SyntaxKind::ExprBinary => {
-            vec![]
-        }
-        SyntaxKind::ExprListParenthesized => {
-            vec![]
-        }
-        SyntaxKind::ExprFunctionCall => {
-            vec![]
-        }
-        SyntaxKind::ArgListParenthesized => {
-            vec![]
-        }
-        SyntaxKind::OptionArgListParenthesizedEmpty => {
-            vec![]
-        }
-        SyntaxKind::ExprStructCtorCall => {
-            vec![]
-        }
-        SyntaxKind::StructArgListBraced => {
-            vec![]
-        }
-        SyntaxKind::ExprBlock => {
-            vec![]
-        }
-        SyntaxKind::ExprMatch => {
-            vec![]
-        }
-        SyntaxKind::MatchArms => vec![],
-        SyntaxKind::MatchArm => {
-            vec![]
-        }
-        SyntaxKind::ExprIf => {
-            vec![]
-        }
-        SyntaxKind::ConditionLet => {
-            vec![]
-        }
-        SyntaxKind::ConditionExpr => {
-            vec![]
-        }
-        SyntaxKind::ExprLoop => {
-            vec![]
-        }
-        SyntaxKind::ExprWhile => {
-            vec![]
-        }
-        SyntaxKind::ExprFor => {
-            vec![/* pattern */ children[1], /* identifier */ children[2]]
-        }
-        SyntaxKind::ElseClause => {
-            vec![]
-        }
-        SyntaxKind::OptionElseClauseEmpty => {
-            vec![]
-        }
-        SyntaxKind::ExprErrorPropagate => {
-            vec![]
-        }
-        SyntaxKind::ExprIndexed => {
-            vec![]
-        }
-        SyntaxKind::ExprFixedSizeArray => {
-            vec![]
-        }
-        SyntaxKind::FixedSizeArraySize => {
-            vec![]
-        }
-        SyntaxKind::OptionFixedSizeArraySizeEmpty => {
-            vec![]
-        }
-        SyntaxKind::ExprClosure => {
-            vec![]
-        }
-        SyntaxKind::ClosureParamWrapperNAry => {
-            vec![]
-        }
-        SyntaxKind::ExprPlaceholder => {
-            vec![]
-        }
-        SyntaxKind::StructArgExpr => {
-            vec![]
-        }
-        SyntaxKind::OptionStructArgExprEmpty => {
-            vec![]
-        }
-        SyntaxKind::StructArgSingle => {
-            vec![/* identifier */ children[0]]
-        }
-        SyntaxKind::StructArgTail => {
-            vec![]
-        }
-        SyntaxKind::StructArgList => vec![],
-        SyntaxKind::ArgListBraced => {
-            vec![]
-        }
-        SyntaxKind::ArgListBracketed => {
-            vec![]
-        }
-        SyntaxKind::WrappedArgListMissing => {
-            vec![]
-        }
-        SyntaxKind::PatternIdentifier => {
-            vec![/* name */ children[1]]
-        }
-        SyntaxKind::PatternStruct => {
-            vec![]
-        }
-        SyntaxKind::PatternStructParamList => vec![],
-        SyntaxKind::PatternTuple => {
-            vec![]
-        }
-        SyntaxKind::PatternFixedSizeArray => {
-            vec![]
-        }
-        SyntaxKind::PatternList => vec![],
-        SyntaxKind::PatternListOr => vec![],
-        SyntaxKind::PatternStructParamWithExpr => {
-            vec![]
-        }
-        SyntaxKind::PatternEnum => {
-            vec![]
-        }
-        SyntaxKind::PatternEnumInnerPattern => {
-            vec![]
-        }
-        SyntaxKind::OptionPatternEnumInnerPatternEmpty => {
-            vec![]
-        }
-        SyntaxKind::TypeClause => {
-            vec![]
-        }
-        SyntaxKind::OptionTypeClauseEmpty => {
-            vec![]
-        }
-        SyntaxKind::ReturnTypeClause => {
-            vec![]
-        }
-        SyntaxKind::OptionReturnTypeClauseEmpty => {
-            vec![]
-        }
-        SyntaxKind::StatementList => vec![],
-        SyntaxKind::StatementMissing => {
-            vec![]
-        }
-        SyntaxKind::StatementLet => {
-            vec![/* pattern */ children[2]]
-        }
-        SyntaxKind::OptionTerminalSemicolonEmpty => {
-            vec![]
-        }
-        SyntaxKind::StatementExpr => {
-            vec![]
-        }
-        SyntaxKind::StatementContinue => {
-            vec![]
-        }
-        SyntaxKind::ExprClause => {
-            vec![]
-        }
-        SyntaxKind::OptionExprClauseEmpty => {
-            vec![]
-        }
-        SyntaxKind::StatementReturn => {
-            vec![]
-        }
-        SyntaxKind::StatementBreak => {
-            vec![]
-        }
-        SyntaxKind::StatementItem => {
-            vec![]
-        }
-        SyntaxKind::Param => {
-            vec![/* name */ children[1]]
-        }
-        SyntaxKind::ModifierList => vec![],
-        SyntaxKind::ParamList => vec![],
-        SyntaxKind::ImplicitsClause => {
-            vec![]
-        }
-        SyntaxKind::ImplicitsList => vec![],
-        SyntaxKind::OptionImplicitsClauseEmpty => {
-            vec![]
-        }
-        SyntaxKind::OptionTerminalNoPanicEmpty => {
-            vec![]
-        }
-        SyntaxKind::OptionTerminalConstEmpty => {
-            vec![]
-        }
-        SyntaxKind::FunctionSignature => {
-            vec![]
-        }
-        SyntaxKind::Member => {
-            vec![/* name */ children[2]]
-        }
-        SyntaxKind::MemberList => vec![],
-        SyntaxKind::Variant => {
-            vec![/* name */ children[1]]
-        }
-        SyntaxKind::VariantList => vec![],
-        SyntaxKind::ModuleItemList => vec![],
-        SyntaxKind::ModuleItemMissing => {
-            vec![]
-        }
-        SyntaxKind::Attribute => {
-            vec![]
-        }
-        SyntaxKind::AttributeList => vec![],
-        SyntaxKind::VisibilityDefault => {
-            vec![]
-        }
-        SyntaxKind::VisibilityPubArgumentClause => {
-            vec![]
-        }
-        SyntaxKind::OptionVisibilityPubArgumentClauseEmpty => {
-            vec![]
-        }
-        SyntaxKind::VisibilityPub => {
-            vec![]
-        }
-        SyntaxKind::ItemModule => {
-            vec![/* name */ children[3]]
-        }
-        SyntaxKind::ModuleBody => {
-            vec![]
-        }
-        SyntaxKind::FunctionDeclaration => {
-            vec![/* name */ children[2]]
-        }
-        SyntaxKind::ItemConstant => {
-            vec![/* name */ children[3]]
-        }
-        SyntaxKind::FunctionWithBody => {
-            vec![/* declaration */ children[2]]
-        }
-        SyntaxKind::ItemExternFunction => {
-            vec![/* declaration */ children[3]]
-        }
-        SyntaxKind::ItemExternType => {
-            vec![/* name */ children[4]]
-        }
-        SyntaxKind::ItemTrait => {
-            vec![/* name */ children[3]]
-        }
-        SyntaxKind::TraitBody => {
-            vec![]
-        }
-        SyntaxKind::TraitItemList => vec![],
-        SyntaxKind::TraitItemMissing => {
-            vec![]
-        }
-        SyntaxKind::TraitItemFunction => {
-            vec![/* declaration */ children[1]]
-        }
-        SyntaxKind::TraitItemType => {
-            vec![/* name */ children[2]]
-        }
-        SyntaxKind::TraitItemConstant => {
-            vec![/* name */ children[2]]
-        }
-        SyntaxKind::TraitItemImpl => {
-            vec![/* name */ children[2]]
-        }
-        SyntaxKind::ItemImpl => {
-            vec![/* name */ children[3]]
-        }
-        SyntaxKind::ItemHeaderDoc => {
-            vec![]
-        }
-        SyntaxKind::ImplBody => {
-            vec![]
-        }
-        SyntaxKind::ImplItemList => vec![],
-        SyntaxKind::ImplItemMissing => {
-            vec![]
-        }
-        SyntaxKind::ItemImplAlias => {
-            vec![/* name */ children[3]]
-        }
-        SyntaxKind::ItemStruct => {
-            vec![/* name */ children[3]]
-        }
-        SyntaxKind::ItemEnum => {
-            vec![/* name */ children[3]]
-        }
-        SyntaxKind::ItemTypeAlias => {
-            vec![/* name */ children[3]]
-        }
-        SyntaxKind::ItemUse => {
-            vec![/* use_path */ children[3]]
-        }
+        SyntaxKind::Trivia => [].into(),
+        SyntaxKind::ExprList => [].into(),
+        SyntaxKind::Arg => [].into(),
+        SyntaxKind::ArgClauseNamed => [].into(),
+        SyntaxKind::ArgClauseUnnamed => [].into(),
+        SyntaxKind::ArgClauseFieldInitShorthand => [].into(),
+        SyntaxKind::ExprFieldInitShorthand => [].into(),
+        SyntaxKind::ArgList => [].into(),
+        SyntaxKind::ExprMissing => [].into(),
+        SyntaxKind::PathSegmentSimple => [].into(),
+        SyntaxKind::OptionTerminalColonColonEmpty => [].into(),
+        SyntaxKind::PathSegmentWithGenericArgs => [].into(),
+        SyntaxKind::ExprPath => [].into(),
+        SyntaxKind::OptionTerminalDollarEmpty => [].into(),
+        SyntaxKind::PathSegmentMissing => [].into(),
+        SyntaxKind::ExprPathInner => [].into(),
+        SyntaxKind::ExprParenthesized => [].into(),
+        SyntaxKind::ExprUnary => [].into(),
+        SyntaxKind::ExprBinary => [].into(),
+        SyntaxKind::ExprListParenthesized => [].into(),
+        SyntaxKind::ExprFunctionCall => [].into(),
+        SyntaxKind::ArgListParenthesized => [].into(),
+        SyntaxKind::OptionArgListParenthesizedEmpty => [].into(),
+        SyntaxKind::ExprStructCtorCall => [].into(),
+        SyntaxKind::StructArgListBraced => [].into(),
+        SyntaxKind::ExprBlock => [].into(),
+        SyntaxKind::ExprMatch => [].into(),
+        SyntaxKind::MatchArms => [].into(),
+        SyntaxKind::MatchArm => [].into(),
+        SyntaxKind::ExprIf => [].into(),
+        SyntaxKind::ConditionListAnd => [].into(),
+        SyntaxKind::ConditionLet => [].into(),
+        SyntaxKind::ConditionExpr => [].into(),
+        SyntaxKind::ExprLoop => [].into(),
+        SyntaxKind::ExprWhile => [].into(),
+        SyntaxKind::ExprFor => [/* pattern */ children[1], /* identifier */ children[2]].into(),
+        SyntaxKind::ElseClause => [].into(),
+        SyntaxKind::OptionElseClauseEmpty => [].into(),
+        SyntaxKind::ExprErrorPropagate => [].into(),
+        SyntaxKind::ExprIndexed => [].into(),
+        SyntaxKind::ExprFixedSizeArray => [].into(),
+        SyntaxKind::FixedSizeArraySize => [].into(),
+        SyntaxKind::OptionFixedSizeArraySizeEmpty => [].into(),
+        SyntaxKind::ExprClosure => [].into(),
+        SyntaxKind::ClosureParamWrapperNAry => [].into(),
+        SyntaxKind::ExprPlaceholder => [].into(),
+        SyntaxKind::StructArgExpr => [].into(),
+        SyntaxKind::OptionStructArgExprEmpty => [].into(),
+        SyntaxKind::StructArgSingle => [/* identifier */ children[0]].into(),
+        SyntaxKind::StructArgTail => [].into(),
+        SyntaxKind::StructArgList => [].into(),
+        SyntaxKind::ArgListBraced => [].into(),
+        SyntaxKind::ArgListBracketed => [].into(),
+        SyntaxKind::WrappedArgListMissing => [].into(),
+        SyntaxKind::PatternIdentifier => [/* name */ children[1]].into(),
+        SyntaxKind::PatternStruct => [].into(),
+        SyntaxKind::PatternStructParamList => [].into(),
+        SyntaxKind::PatternTuple => [].into(),
+        SyntaxKind::PatternFixedSizeArray => [].into(),
+        SyntaxKind::PatternList => [].into(),
+        SyntaxKind::PatternListOr => [].into(),
+        SyntaxKind::PatternStructParamWithExpr => [].into(),
+        SyntaxKind::PatternEnum => [].into(),
+        SyntaxKind::PatternEnumInnerPattern => [].into(),
+        SyntaxKind::OptionPatternEnumInnerPatternEmpty => [].into(),
+        SyntaxKind::TypeClause => [].into(),
+        SyntaxKind::OptionTypeClauseEmpty => [].into(),
+        SyntaxKind::ReturnTypeClause => [].into(),
+        SyntaxKind::OptionReturnTypeClauseEmpty => [].into(),
+        SyntaxKind::StatementList => [].into(),
+        SyntaxKind::StatementMissing => [].into(),
+        SyntaxKind::StatementLet => [/* pattern */ children[2]].into(),
+        SyntaxKind::LetElseClause => [].into(),
+        SyntaxKind::OptionLetElseClauseEmpty => [].into(),
+        SyntaxKind::OptionTerminalSemicolonEmpty => [].into(),
+        SyntaxKind::StatementExpr => [].into(),
+        SyntaxKind::StatementContinue => [].into(),
+        SyntaxKind::ExprClause => [].into(),
+        SyntaxKind::OptionExprClauseEmpty => [].into(),
+        SyntaxKind::StatementReturn => [].into(),
+        SyntaxKind::StatementBreak => [].into(),
+        SyntaxKind::StatementItem => [].into(),
+        SyntaxKind::Param => [/* name */ children[1]].into(),
+        SyntaxKind::ModifierList => [].into(),
+        SyntaxKind::ParamList => [].into(),
+        SyntaxKind::ImplicitsClause => [].into(),
+        SyntaxKind::ImplicitsList => [].into(),
+        SyntaxKind::OptionImplicitsClauseEmpty => [].into(),
+        SyntaxKind::OptionTerminalNoPanicEmpty => [].into(),
+        SyntaxKind::OptionTerminalConstEmpty => [].into(),
+        SyntaxKind::FunctionSignature => [].into(),
+        SyntaxKind::Member => [/* name */ children[2]].into(),
+        SyntaxKind::MemberList => [].into(),
+        SyntaxKind::Variant => [/* name */ children[1]].into(),
+        SyntaxKind::VariantList => [].into(),
+        SyntaxKind::ModuleItemList => [].into(),
+        SyntaxKind::ModuleItemMissing => [].into(),
+        SyntaxKind::Attribute => [].into(),
+        SyntaxKind::AttributeList => [].into(),
+        SyntaxKind::VisibilityDefault => [].into(),
+        SyntaxKind::VisibilityPubArgumentClause => [].into(),
+        SyntaxKind::OptionVisibilityPubArgumentClauseEmpty => [].into(),
+        SyntaxKind::VisibilityPub => [].into(),
+        SyntaxKind::ItemModule => [/* name */ children[3]].into(),
+        SyntaxKind::ModuleBody => [].into(),
+        SyntaxKind::FunctionDeclaration => [/* name */ children[2]].into(),
+        SyntaxKind::ItemConstant => [/* name */ children[3]].into(),
+        SyntaxKind::FunctionWithBody => [/* declaration */ children[2]].into(),
+        SyntaxKind::ItemExternFunction => [/* declaration */ children[3]].into(),
+        SyntaxKind::ItemExternType => [/* name */ children[4]].into(),
+        SyntaxKind::ItemTrait => [/* name */ children[3]].into(),
+        SyntaxKind::TraitBody => [].into(),
+        SyntaxKind::TraitItemList => [].into(),
+        SyntaxKind::TraitItemMissing => [].into(),
+        SyntaxKind::TraitItemFunction => [/* declaration */ children[1]].into(),
+        SyntaxKind::TraitItemType => [/* name */ children[2]].into(),
+        SyntaxKind::TraitItemConstant => [/* name */ children[2]].into(),
+        SyntaxKind::TraitItemImpl => [/* name */ children[2]].into(),
+        SyntaxKind::ItemImpl => [/* name */ children[3]].into(),
+        SyntaxKind::ItemHeaderDoc => [].into(),
+        SyntaxKind::ImplBody => [].into(),
+        SyntaxKind::ImplItemList => [].into(),
+        SyntaxKind::ImplItemMissing => [].into(),
+        SyntaxKind::ItemImplAlias => [/* name */ children[3]].into(),
+        SyntaxKind::ItemStruct => [/* name */ children[3]].into(),
+        SyntaxKind::ItemEnum => [/* name */ children[3]].into(),
+        SyntaxKind::ItemTypeAlias => [/* name */ children[3]].into(),
+        SyntaxKind::ItemUse => [/* use_path */ children[3]].into(),
         SyntaxKind::UsePathLeaf => {
-            vec![/* ident */ children[0], /* alias_clause */ children[1]]
-        }
-        SyntaxKind::UsePathSingle => {
-            vec![]
-        }
-        SyntaxKind::UsePathMulti => {
-            vec![]
-        }
-        SyntaxKind::UsePathStar => {
-            vec![]
-        }
-        SyntaxKind::UsePathList => vec![],
-        SyntaxKind::AliasClause => {
-            vec![/* alias */ children[1]]
-        }
-        SyntaxKind::OptionAliasClauseEmpty => {
-            vec![]
-        }
-        SyntaxKind::GenericArgNamed => {
-            vec![]
-        }
-        SyntaxKind::GenericArgUnnamed => {
-            vec![]
-        }
-        SyntaxKind::GenericArgValueExpr => {
-            vec![]
-        }
-        SyntaxKind::GenericArgs => {
-            vec![]
-        }
-        SyntaxKind::GenericArgList => vec![],
-        SyntaxKind::AssociatedItemConstraint => {
-            vec![]
-        }
-        SyntaxKind::AssociatedItemConstraints => {
-            vec![]
-        }
-        SyntaxKind::AssociatedItemConstraintList => vec![],
-        SyntaxKind::OptionAssociatedItemConstraintsEmpty => {
-            vec![]
-        }
-        SyntaxKind::OptionWrappedGenericParamListEmpty => {
-            vec![]
-        }
-        SyntaxKind::WrappedGenericParamList => {
-            vec![]
-        }
-        SyntaxKind::GenericParamList => vec![],
-        SyntaxKind::GenericParamType => {
-            vec![/* name */ children[0]]
-        }
-        SyntaxKind::GenericParamConst => {
-            vec![/* name */ children[1]]
-        }
-        SyntaxKind::GenericParamImplNamed => {
-            vec![/* name */ children[1]]
-        }
-        SyntaxKind::GenericParamImplAnonymous => {
-            vec![]
-        }
-        SyntaxKind::GenericParamNegativeImpl => {
-            vec![]
-        }
-        SyntaxKind::TokenList => vec![],
-        SyntaxKind::TokenTreeLeaf => {
-            vec![]
-        }
-        SyntaxKind::TokenTreeNode => {
-            vec![]
-        }
-        SyntaxKind::TokenTreeRepetition => {
-            vec![]
-        }
-        SyntaxKind::TokenTreeParam => {
-            vec![]
-        }
-        SyntaxKind::TokenTreeMissing => {
-            vec![]
-        }
-        SyntaxKind::WrappedTokenTreeMissing => {
-            vec![]
-        }
-        SyntaxKind::ParenthesizedTokenTree => {
-            vec![]
-        }
-        SyntaxKind::BracedTokenTree => {
-            vec![]
-        }
-        SyntaxKind::BracketedTokenTree => {
-            vec![]
-        }
-        SyntaxKind::ExprInlineMacro => {
-            vec![]
-        }
-        SyntaxKind::ItemInlineMacro => {
-            vec![]
-        }
-        SyntaxKind::ItemMacroDeclaration => {
-            vec![/* name */ children[3]]
-        }
-        SyntaxKind::MacroRulesList => vec![],
-        SyntaxKind::MacroRule => {
-            vec![]
-        }
-        SyntaxKind::ParamKind => {
-            vec![]
-        }
-        SyntaxKind::OptionParamKindEmpty => {
-            vec![]
-        }
-        SyntaxKind::MacroParam => {
-            vec![]
-        }
-        SyntaxKind::MacroRepetition => {
-            vec![]
-        }
-        SyntaxKind::OptionTerminalCommaEmpty => {
-            vec![]
-        }
-        SyntaxKind::MacroRepetitionOperatorMissing => {
-            vec![]
-        }
-        SyntaxKind::ParamIdent => {
-            vec![]
-        }
-        SyntaxKind::ParamExpr => {
-            vec![]
-        }
-        SyntaxKind::MacroParamKindMissing => {
-            vec![]
-        }
-        SyntaxKind::MacroElements => vec![],
-        SyntaxKind::MacroWrapper => {
-            vec![]
-        }
-        SyntaxKind::ParenthesizedMacro => {
-            vec![]
-        }
-        SyntaxKind::BracedMacro => {
-            vec![]
-        }
-        SyntaxKind::BracketedMacro => {
-            vec![]
-        }
-        SyntaxKind::LegacyExprInlineMacro => {
-            vec![]
-        }
-        SyntaxKind::LegacyItemInlineMacro => {
-            vec![]
-        }
-        SyntaxKind::TriviumSkippedNode => {
-            vec![]
-        }
-        SyntaxKind::TokenIdentifier => vec![],
-        SyntaxKind::TerminalIdentifier => {
-            vec![]
-        }
-        SyntaxKind::TokenLiteralNumber => vec![],
-        SyntaxKind::TerminalLiteralNumber => {
-            vec![]
-        }
-        SyntaxKind::TokenShortString => vec![],
-        SyntaxKind::TerminalShortString => {
-            vec![]
-        }
-        SyntaxKind::TokenString => vec![],
-        SyntaxKind::TerminalString => {
-            vec![]
-        }
-        SyntaxKind::TokenAs => vec![],
-        SyntaxKind::TerminalAs => {
-            vec![]
-        }
-        SyntaxKind::TokenConst => vec![],
-        SyntaxKind::TerminalConst => {
-            vec![]
-        }
-        SyntaxKind::TokenElse => vec![],
-        SyntaxKind::TerminalElse => {
-            vec![]
-        }
-        SyntaxKind::TokenEnum => vec![],
-        SyntaxKind::TerminalEnum => {
-            vec![]
-        }
-        SyntaxKind::TokenExtern => vec![],
-        SyntaxKind::TerminalExtern => {
-            vec![]
-        }
-        SyntaxKind::TokenFalse => vec![],
-        SyntaxKind::TerminalFalse => {
-            vec![]
-        }
-        SyntaxKind::TokenFunction => vec![],
-        SyntaxKind::TerminalFunction => {
-            vec![]
-        }
-        SyntaxKind::TokenIf => vec![],
-        SyntaxKind::TerminalIf => {
-            vec![]
-        }
-        SyntaxKind::TokenWhile => vec![],
-        SyntaxKind::TerminalWhile => {
-            vec![]
-        }
-        SyntaxKind::TokenFor => vec![],
-        SyntaxKind::TerminalFor => {
-            vec![]
-        }
-        SyntaxKind::TokenLoop => vec![],
-        SyntaxKind::TerminalLoop => {
-            vec![]
-        }
-        SyntaxKind::TokenImpl => vec![],
-        SyntaxKind::TerminalImpl => {
-            vec![]
-        }
-        SyntaxKind::TokenImplicits => vec![],
-        SyntaxKind::TerminalImplicits => {
-            vec![]
-        }
-        SyntaxKind::TokenLet => vec![],
-        SyntaxKind::TerminalLet => {
-            vec![]
-        }
-        SyntaxKind::TokenMacro => vec![],
-        SyntaxKind::TerminalMacro => {
-            vec![]
-        }
-        SyntaxKind::TokenMatch => vec![],
-        SyntaxKind::TerminalMatch => {
-            vec![]
-        }
-        SyntaxKind::TokenModule => vec![],
-        SyntaxKind::TerminalModule => {
-            vec![]
-        }
-        SyntaxKind::TokenMut => vec![],
-        SyntaxKind::TerminalMut => {
-            vec![]
-        }
-        SyntaxKind::TokenNoPanic => vec![],
-        SyntaxKind::TerminalNoPanic => {
-            vec![]
-        }
-        SyntaxKind::TokenOf => vec![],
-        SyntaxKind::TerminalOf => {
-            vec![]
-        }
-        SyntaxKind::TokenRef => vec![],
-        SyntaxKind::TerminalRef => {
-            vec![]
-        }
-        SyntaxKind::TokenContinue => vec![],
-        SyntaxKind::TerminalContinue => {
-            vec![]
-        }
-        SyntaxKind::TokenReturn => vec![],
-        SyntaxKind::TerminalReturn => {
-            vec![]
-        }
-        SyntaxKind::TokenBreak => vec![],
-        SyntaxKind::TerminalBreak => {
-            vec![]
-        }
-        SyntaxKind::TokenStruct => vec![],
-        SyntaxKind::TerminalStruct => {
-            vec![]
-        }
-        SyntaxKind::TokenTrait => vec![],
-        SyntaxKind::TerminalTrait => {
-            vec![]
-        }
-        SyntaxKind::TokenTrue => vec![],
-        SyntaxKind::TerminalTrue => {
-            vec![]
-        }
-        SyntaxKind::TokenType => vec![],
-        SyntaxKind::TerminalType => {
-            vec![]
-        }
-        SyntaxKind::TokenUse => vec![],
-        SyntaxKind::TerminalUse => {
-            vec![]
-        }
-        SyntaxKind::TokenPub => vec![],
-        SyntaxKind::TerminalPub => {
-            vec![]
-        }
-        SyntaxKind::TokenAnd => vec![],
-        SyntaxKind::TerminalAnd => {
-            vec![]
-        }
-        SyntaxKind::TokenAndAnd => vec![],
-        SyntaxKind::TerminalAndAnd => {
-            vec![]
-        }
-        SyntaxKind::TokenArrow => vec![],
-        SyntaxKind::TerminalArrow => {
-            vec![]
-        }
-        SyntaxKind::TokenAt => vec![],
-        SyntaxKind::TerminalAt => {
-            vec![]
-        }
-        SyntaxKind::TokenBadCharacters => vec![],
-        SyntaxKind::TerminalBadCharacters => {
-            vec![]
-        }
-        SyntaxKind::TokenColon => vec![],
-        SyntaxKind::TerminalColon => {
-            vec![]
-        }
-        SyntaxKind::TokenColonColon => vec![],
-        SyntaxKind::TerminalColonColon => {
-            vec![]
-        }
-        SyntaxKind::TokenComma => vec![],
-        SyntaxKind::TerminalComma => {
-            vec![]
-        }
-        SyntaxKind::TokenDiv => vec![],
-        SyntaxKind::TerminalDiv => {
-            vec![]
-        }
-        SyntaxKind::TokenDivEq => vec![],
-        SyntaxKind::TerminalDivEq => {
-            vec![]
-        }
-        SyntaxKind::TokenDollar => vec![],
-        SyntaxKind::TerminalDollar => {
-            vec![]
-        }
-        SyntaxKind::TokenDot => vec![],
-        SyntaxKind::TerminalDot => {
-            vec![]
-        }
-        SyntaxKind::TokenDotDot => vec![],
-        SyntaxKind::TerminalDotDot => {
-            vec![]
-        }
-        SyntaxKind::TokenDotDotEq => vec![],
-        SyntaxKind::TerminalDotDotEq => {
-            vec![]
-        }
-        SyntaxKind::TokenEndOfFile => vec![],
-        SyntaxKind::TerminalEndOfFile => {
-            vec![]
-        }
-        SyntaxKind::TokenEq => vec![],
-        SyntaxKind::TerminalEq => {
-            vec![]
-        }
-        SyntaxKind::TokenEqEq => vec![],
-        SyntaxKind::TerminalEqEq => {
-            vec![]
-        }
-        SyntaxKind::TokenGE => vec![],
-        SyntaxKind::TerminalGE => {
-            vec![]
-        }
-        SyntaxKind::TokenGT => vec![],
-        SyntaxKind::TerminalGT => {
-            vec![]
-        }
-        SyntaxKind::TokenHash => vec![],
-        SyntaxKind::TerminalHash => {
-            vec![]
-        }
-        SyntaxKind::TokenLBrace => vec![],
-        SyntaxKind::TerminalLBrace => {
-            vec![]
-        }
-        SyntaxKind::TokenLBrack => vec![],
-        SyntaxKind::TerminalLBrack => {
-            vec![]
-        }
-        SyntaxKind::TokenLE => vec![],
-        SyntaxKind::TerminalLE => {
-            vec![]
-        }
-        SyntaxKind::TokenLParen => vec![],
-        SyntaxKind::TerminalLParen => {
-            vec![]
-        }
-        SyntaxKind::TokenLT => vec![],
-        SyntaxKind::TerminalLT => {
-            vec![]
-        }
-        SyntaxKind::TokenMatchArrow => vec![],
-        SyntaxKind::TerminalMatchArrow => {
-            vec![]
-        }
-        SyntaxKind::TokenMinus => vec![],
-        SyntaxKind::TerminalMinus => {
-            vec![]
-        }
-        SyntaxKind::TokenMinusEq => vec![],
-        SyntaxKind::TerminalMinusEq => {
-            vec![]
-        }
-        SyntaxKind::TokenMod => vec![],
-        SyntaxKind::TerminalMod => {
-            vec![]
-        }
-        SyntaxKind::TokenModEq => vec![],
-        SyntaxKind::TerminalModEq => {
-            vec![]
-        }
-        SyntaxKind::TokenMul => vec![],
-        SyntaxKind::TerminalMul => {
-            vec![]
-        }
-        SyntaxKind::TokenMulEq => vec![],
-        SyntaxKind::TerminalMulEq => {
-            vec![]
-        }
-        SyntaxKind::TokenNeq => vec![],
-        SyntaxKind::TerminalNeq => {
-            vec![]
-        }
-        SyntaxKind::TokenNot => vec![],
-        SyntaxKind::TerminalNot => {
-            vec![]
-        }
-        SyntaxKind::TokenBitNot => vec![],
-        SyntaxKind::TerminalBitNot => {
-            vec![]
-        }
-        SyntaxKind::TokenOr => vec![],
-        SyntaxKind::TerminalOr => {
-            vec![]
-        }
-        SyntaxKind::TokenOrOr => vec![],
-        SyntaxKind::TerminalOrOr => {
-            vec![]
-        }
-        SyntaxKind::TokenPlus => vec![],
-        SyntaxKind::TerminalPlus => {
-            vec![]
-        }
-        SyntaxKind::TokenPlusEq => vec![],
-        SyntaxKind::TerminalPlusEq => {
-            vec![]
-        }
-        SyntaxKind::TokenQuestionMark => vec![],
-        SyntaxKind::TerminalQuestionMark => {
-            vec![]
-        }
-        SyntaxKind::TokenRBrace => vec![],
-        SyntaxKind::TerminalRBrace => {
-            vec![]
-        }
-        SyntaxKind::TokenRBrack => vec![],
-        SyntaxKind::TerminalRBrack => {
-            vec![]
-        }
-        SyntaxKind::TokenRParen => vec![],
-        SyntaxKind::TerminalRParen => {
-            vec![]
-        }
-        SyntaxKind::TokenSemicolon => vec![],
-        SyntaxKind::TerminalSemicolon => {
-            vec![]
-        }
-        SyntaxKind::TokenUnderscore => vec![],
-        SyntaxKind::TerminalUnderscore => {
-            vec![]
-        }
-        SyntaxKind::TokenXor => vec![],
-        SyntaxKind::TerminalXor => {
-            vec![]
-        }
-        SyntaxKind::SyntaxFile => {
-            vec![]
-        }
-        SyntaxKind::TokenEmpty => vec![],
-        SyntaxKind::TerminalEmpty => {
-            vec![]
-        }
-        SyntaxKind::TokenSingleLineComment => vec![],
-        SyntaxKind::TokenSingleLineInnerComment => vec![],
-        SyntaxKind::TokenSingleLineDocComment => vec![],
-        SyntaxKind::TokenWhitespace => vec![],
-        SyntaxKind::TokenNewline => vec![],
-        SyntaxKind::TokenMissing => vec![],
-        SyntaxKind::TokenSkipped => vec![],
+            [/* ident */ children[0], /* alias_clause */ children[1]].into()
+        }
+        SyntaxKind::UsePathSingle => [].into(),
+        SyntaxKind::UsePathMulti => [].into(),
+        SyntaxKind::UsePathStar => [].into(),
+        SyntaxKind::UsePathList => [].into(),
+        SyntaxKind::AliasClause => [/* alias */ children[1]].into(),
+        SyntaxKind::OptionAliasClauseEmpty => [].into(),
+        SyntaxKind::GenericArgNamed => [].into(),
+        SyntaxKind::GenericArgUnnamed => [].into(),
+        SyntaxKind::GenericArgValueExpr => [].into(),
+        SyntaxKind::GenericArgs => [].into(),
+        SyntaxKind::GenericArgList => [].into(),
+        SyntaxKind::AssociatedItemConstraint => [].into(),
+        SyntaxKind::AssociatedItemConstraints => [].into(),
+        SyntaxKind::AssociatedItemConstraintList => [].into(),
+        SyntaxKind::OptionAssociatedItemConstraintsEmpty => [].into(),
+        SyntaxKind::OptionWrappedGenericParamListEmpty => [].into(),
+        SyntaxKind::WrappedGenericParamList => [].into(),
+        SyntaxKind::GenericParamList => [].into(),
+        SyntaxKind::GenericParamType => [/* name */ children[0]].into(),
+        SyntaxKind::GenericParamConst => [/* name */ children[1]].into(),
+        SyntaxKind::GenericParamImplNamed => [/* name */ children[1]].into(),
+        SyntaxKind::GenericParamImplAnonymous => [].into(),
+        SyntaxKind::GenericParamNegativeImpl => [].into(),
+        SyntaxKind::TokenList => [].into(),
+        SyntaxKind::TokenTreeLeaf => [].into(),
+        SyntaxKind::TokenTreeNode => [].into(),
+        SyntaxKind::TokenTreeRepetition => [].into(),
+        SyntaxKind::TokenTreeParam => [].into(),
+        SyntaxKind::TokenTreeMissing => [].into(),
+        SyntaxKind::WrappedTokenTreeMissing => [].into(),
+        SyntaxKind::ParenthesizedTokenTree => [].into(),
+        SyntaxKind::BracedTokenTree => [].into(),
+        SyntaxKind::BracketedTokenTree => [].into(),
+        SyntaxKind::ExprInlineMacro => [].into(),
+        SyntaxKind::ItemInlineMacro => [].into(),
+        SyntaxKind::ItemMacroDeclaration => [/* name */ children[3]].into(),
+        SyntaxKind::MacroRulesList => [].into(),
+        SyntaxKind::MacroRule => [].into(),
+        SyntaxKind::ParamKind => [].into(),
+        SyntaxKind::OptionParamKindEmpty => [].into(),
+        SyntaxKind::MacroParam => [].into(),
+        SyntaxKind::MacroRepetition => [].into(),
+        SyntaxKind::OptionTerminalCommaEmpty => [].into(),
+        SyntaxKind::MacroRepetitionOperatorMissing => [].into(),
+        SyntaxKind::ParamIdent => [].into(),
+        SyntaxKind::ParamExpr => [].into(),
+        SyntaxKind::MacroParamKindMissing => [].into(),
+        SyntaxKind::MacroElements => [].into(),
+        SyntaxKind::MacroWrapper => [].into(),
+        SyntaxKind::ParenthesizedMacro => [].into(),
+        SyntaxKind::BracedMacro => [].into(),
+        SyntaxKind::BracketedMacro => [].into(),
+        SyntaxKind::LegacyExprInlineMacro => [].into(),
+        SyntaxKind::LegacyItemInlineMacro => [].into(),
+        SyntaxKind::TriviumSkippedNode => [].into(),
+        SyntaxKind::TokenIdentifier => [].into(),
+        SyntaxKind::TerminalIdentifier => [].into(),
+        SyntaxKind::TokenLiteralNumber => [].into(),
+        SyntaxKind::TerminalLiteralNumber => [].into(),
+        SyntaxKind::TokenShortString => [].into(),
+        SyntaxKind::TerminalShortString => [].into(),
+        SyntaxKind::TokenString => [].into(),
+        SyntaxKind::TerminalString => [].into(),
+        SyntaxKind::TokenAs => [].into(),
+        SyntaxKind::TerminalAs => [].into(),
+        SyntaxKind::TokenConst => [].into(),
+        SyntaxKind::TerminalConst => [].into(),
+        SyntaxKind::TokenElse => [].into(),
+        SyntaxKind::TerminalElse => [].into(),
+        SyntaxKind::TokenEnum => [].into(),
+        SyntaxKind::TerminalEnum => [].into(),
+        SyntaxKind::TokenExtern => [].into(),
+        SyntaxKind::TerminalExtern => [].into(),
+        SyntaxKind::TokenFalse => [].into(),
+        SyntaxKind::TerminalFalse => [].into(),
+        SyntaxKind::TokenFunction => [].into(),
+        SyntaxKind::TerminalFunction => [].into(),
+        SyntaxKind::TokenIf => [].into(),
+        SyntaxKind::TerminalIf => [].into(),
+        SyntaxKind::TokenWhile => [].into(),
+        SyntaxKind::TerminalWhile => [].into(),
+        SyntaxKind::TokenFor => [].into(),
+        SyntaxKind::TerminalFor => [].into(),
+        SyntaxKind::TokenLoop => [].into(),
+        SyntaxKind::TerminalLoop => [].into(),
+        SyntaxKind::TokenImpl => [].into(),
+        SyntaxKind::TerminalImpl => [].into(),
+        SyntaxKind::TokenImplicits => [].into(),
+        SyntaxKind::TerminalImplicits => [].into(),
+        SyntaxKind::TokenLet => [].into(),
+        SyntaxKind::TerminalLet => [].into(),
+        SyntaxKind::TokenMacro => [].into(),
+        SyntaxKind::TerminalMacro => [].into(),
+        SyntaxKind::TokenMatch => [].into(),
+        SyntaxKind::TerminalMatch => [].into(),
+        SyntaxKind::TokenModule => [].into(),
+        SyntaxKind::TerminalModule => [].into(),
+        SyntaxKind::TokenMut => [].into(),
+        SyntaxKind::TerminalMut => [].into(),
+        SyntaxKind::TokenNoPanic => [].into(),
+        SyntaxKind::TerminalNoPanic => [].into(),
+        SyntaxKind::TokenOf => [].into(),
+        SyntaxKind::TerminalOf => [].into(),
+        SyntaxKind::TokenRef => [].into(),
+        SyntaxKind::TerminalRef => [].into(),
+        SyntaxKind::TokenContinue => [].into(),
+        SyntaxKind::TerminalContinue => [].into(),
+        SyntaxKind::TokenReturn => [].into(),
+        SyntaxKind::TerminalReturn => [].into(),
+        SyntaxKind::TokenBreak => [].into(),
+        SyntaxKind::TerminalBreak => [].into(),
+        SyntaxKind::TokenStruct => [].into(),
+        SyntaxKind::TerminalStruct => [].into(),
+        SyntaxKind::TokenTrait => [].into(),
+        SyntaxKind::TerminalTrait => [].into(),
+        SyntaxKind::TokenTrue => [].into(),
+        SyntaxKind::TerminalTrue => [].into(),
+        SyntaxKind::TokenType => [].into(),
+        SyntaxKind::TerminalType => [].into(),
+        SyntaxKind::TokenUse => [].into(),
+        SyntaxKind::TerminalUse => [].into(),
+        SyntaxKind::TokenPub => [].into(),
+        SyntaxKind::TerminalPub => [].into(),
+        SyntaxKind::TokenAnd => [].into(),
+        SyntaxKind::TerminalAnd => [].into(),
+        SyntaxKind::TokenAndAnd => [].into(),
+        SyntaxKind::TerminalAndAnd => [].into(),
+        SyntaxKind::TokenArrow => [].into(),
+        SyntaxKind::TerminalArrow => [].into(),
+        SyntaxKind::TokenAt => [].into(),
+        SyntaxKind::TerminalAt => [].into(),
+        SyntaxKind::TokenBadCharacters => [].into(),
+        SyntaxKind::TerminalBadCharacters => [].into(),
+        SyntaxKind::TokenColon => [].into(),
+        SyntaxKind::TerminalColon => [].into(),
+        SyntaxKind::TokenColonColon => [].into(),
+        SyntaxKind::TerminalColonColon => [].into(),
+        SyntaxKind::TokenComma => [].into(),
+        SyntaxKind::TerminalComma => [].into(),
+        SyntaxKind::TokenDiv => [].into(),
+        SyntaxKind::TerminalDiv => [].into(),
+        SyntaxKind::TokenDivEq => [].into(),
+        SyntaxKind::TerminalDivEq => [].into(),
+        SyntaxKind::TokenDollar => [].into(),
+        SyntaxKind::TerminalDollar => [].into(),
+        SyntaxKind::TokenDot => [].into(),
+        SyntaxKind::TerminalDot => [].into(),
+        SyntaxKind::TokenDotDot => [].into(),
+        SyntaxKind::TerminalDotDot => [].into(),
+        SyntaxKind::TokenDotDotEq => [].into(),
+        SyntaxKind::TerminalDotDotEq => [].into(),
+        SyntaxKind::TokenEndOfFile => [].into(),
+        SyntaxKind::TerminalEndOfFile => [].into(),
+        SyntaxKind::TokenEq => [].into(),
+        SyntaxKind::TerminalEq => [].into(),
+        SyntaxKind::TokenEqEq => [].into(),
+        SyntaxKind::TerminalEqEq => [].into(),
+        SyntaxKind::TokenGE => [].into(),
+        SyntaxKind::TerminalGE => [].into(),
+        SyntaxKind::TokenGT => [].into(),
+        SyntaxKind::TerminalGT => [].into(),
+        SyntaxKind::TokenHash => [].into(),
+        SyntaxKind::TerminalHash => [].into(),
+        SyntaxKind::TokenLBrace => [].into(),
+        SyntaxKind::TerminalLBrace => [].into(),
+        SyntaxKind::TokenLBrack => [].into(),
+        SyntaxKind::TerminalLBrack => [].into(),
+        SyntaxKind::TokenLE => [].into(),
+        SyntaxKind::TerminalLE => [].into(),
+        SyntaxKind::TokenLParen => [].into(),
+        SyntaxKind::TerminalLParen => [].into(),
+        SyntaxKind::TokenLT => [].into(),
+        SyntaxKind::TerminalLT => [].into(),
+        SyntaxKind::TokenMatchArrow => [].into(),
+        SyntaxKind::TerminalMatchArrow => [].into(),
+        SyntaxKind::TokenMinus => [].into(),
+        SyntaxKind::TerminalMinus => [].into(),
+        SyntaxKind::TokenMinusEq => [].into(),
+        SyntaxKind::TerminalMinusEq => [].into(),
+        SyntaxKind::TokenMod => [].into(),
+        SyntaxKind::TerminalMod => [].into(),
+        SyntaxKind::TokenModEq => [].into(),
+        SyntaxKind::TerminalModEq => [].into(),
+        SyntaxKind::TokenMul => [].into(),
+        SyntaxKind::TerminalMul => [].into(),
+        SyntaxKind::TokenMulEq => [].into(),
+        SyntaxKind::TerminalMulEq => [].into(),
+        SyntaxKind::TokenNeq => [].into(),
+        SyntaxKind::TerminalNeq => [].into(),
+        SyntaxKind::TokenNot => [].into(),
+        SyntaxKind::TerminalNot => [].into(),
+        SyntaxKind::TokenBitNot => [].into(),
+        SyntaxKind::TerminalBitNot => [].into(),
+        SyntaxKind::TokenOr => [].into(),
+        SyntaxKind::TerminalOr => [].into(),
+        SyntaxKind::TokenOrOr => [].into(),
+        SyntaxKind::TerminalOrOr => [].into(),
+        SyntaxKind::TokenPlus => [].into(),
+        SyntaxKind::TerminalPlus => [].into(),
+        SyntaxKind::TokenPlusEq => [].into(),
+        SyntaxKind::TerminalPlusEq => [].into(),
+        SyntaxKind::TokenQuestionMark => [].into(),
+        SyntaxKind::TerminalQuestionMark => [].into(),
+        SyntaxKind::TokenRBrace => [].into(),
+        SyntaxKind::TerminalRBrace => [].into(),
+        SyntaxKind::TokenRBrack => [].into(),
+        SyntaxKind::TerminalRBrack => [].into(),
+        SyntaxKind::TokenRParen => [].into(),
+        SyntaxKind::TerminalRParen => [].into(),
+        SyntaxKind::TokenSemicolon => [].into(),
+        SyntaxKind::TerminalSemicolon => [].into(),
+        SyntaxKind::TokenUnderscore => [].into(),
+        SyntaxKind::TerminalUnderscore => [].into(),
+        SyntaxKind::TokenXor => [].into(),
+        SyntaxKind::TerminalXor => [].into(),
+        SyntaxKind::SyntaxFile => [].into(),
+        SyntaxKind::TokenEmpty => [].into(),
+        SyntaxKind::TerminalEmpty => [].into(),
+        SyntaxKind::TokenSingleLineComment => [].into(),
+        SyntaxKind::TokenSingleLineInnerComment => [].into(),
+        SyntaxKind::TokenSingleLineDocComment => [].into(),
+        SyntaxKind::TokenWhitespace => [].into(),
+        SyntaxKind::TokenNewline => [].into(),
+        SyntaxKind::TokenMissing => [].into(),
+        SyntaxKind::TokenSkipped => [].into(),
     }
 }

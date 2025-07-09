@@ -18,10 +18,10 @@ cairo_lang_test_utils::test_file_test!(
     generated,
     "src/lower/test_data",
     {
-        closure :"closure",
-        loop_ :"loop",
-        while_ :"while",
-        for_ :"for",
+        closure: "closure",
+        loop_: "loop",
+        while_: "while",
+        for_: "for",
     },
     test_generated_function
 );

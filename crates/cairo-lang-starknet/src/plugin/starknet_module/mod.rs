@@ -136,7 +136,7 @@ fn validate_module(
             remove_original_item: false,
         };
     };
-    let Some(storage_struct_ast) = body.items_vec(db).into_iter().find(|item| {
+    let Some(storage_struct_ast) = body.iter_items(db).find(|item| {
         matches!(item, ast::ModuleItem::Struct(struct_ast) if struct_ast.name(db).text(db) == STORAGE_STRUCT_NAME)
     }) else {
         return PluginResult {
@@ -228,6 +228,7 @@ pub(super) fn handle_module_by_storage(
                 StarknetModuleKind::Component => None,
             },
             diagnostics_note: Default::default(),
+            is_unhygienic: false,
         }),
         diagnostics,
         remove_original_item: backwards_compatible_storage(metadata.edition),

@@ -63,7 +63,7 @@ fn get_item_documentation_as_tokens(
             (None, None, get_crate_root_module_documentation(db, crate_id))
         }
         item_id => (
-            // We check for different type of comments for the item. Even modules can have both
+            // We check for different types of comments for the item. Even modules can have both
             // inner and module level comments.
             extract_item_outer_documentation(db, item_id),
             // In case if item_id is a module, there are 2 possible cases:

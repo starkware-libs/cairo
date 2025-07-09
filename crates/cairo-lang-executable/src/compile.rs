@@ -5,6 +5,7 @@ use anyhow::{Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
+use cairo_lang_compiler::{DbWarmupContext, get_sierra_program_for_functions};
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
@@ -12,7 +13,6 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_runnable_utils::builder::{
     CasmProgramWrapperInfo, EntryCodeConfig, RunnableBuilder,
 };
-use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::find_executable_function_ids;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
@@ -104,12 +104,14 @@ pub fn compile_executable_in_prepared_db(
     mut diagnostics_reporter: DiagnosticsReporter<'_>,
     config: ExecutableConfig,
 ) -> Result<CompiledFunction> {
+    let context = DbWarmupContext::new();
+    context.ensure_diagnostics(db, &mut diagnostics_reporter)?;
+
     let executables = find_executable_functions(db, main_crate_ids, executable_path);
 
     let executable = match executables.len() {
         0 => {
             // Report diagnostics as they might reveal the reason why no executable was found.
-            diagnostics_reporter.ensure(db)?;
             anyhow::bail!("Requested `#[executable]` not found.");
         }
         1 => executables[0],
@@ -126,7 +128,7 @@ pub fn compile_executable_in_prepared_db(
         }
     };
 
-    compile_executable_function_in_prepared_db(db, executable, diagnostics_reporter, config)
+    compile_executable_function_in_prepared_db(db, executable, config, context)
 }
 
 /// Search crates identified by `main_crate_ids` for executable functions.
@@ -179,12 +181,11 @@ pub fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWit
 pub fn compile_executable_function_in_prepared_db(
     db: &RootDatabase,
     executable: ConcreteFunctionWithBodyId,
-    mut diagnostics_reporter: DiagnosticsReporter<'_>,
     config: ExecutableConfig,
+    context: DbWarmupContext,
 ) -> Result<CompiledFunction> {
-    diagnostics_reporter.ensure(db)?;
     let SierraProgramWithDebug { program: sierra_program, debug_info } = Arc::unwrap_or_clone(
-        db.get_sierra_program_for_functions(vec![executable])
+        get_sierra_program_for_functions(db, vec![executable], context)
             .ok()
             .with_context(|| "Compilation failed without any diagnostics.")?,
     );

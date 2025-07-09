@@ -4,14 +4,17 @@ use cairo_lang_defs::plugin_utils::not_legacy_macro_diagnostic;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
+use cairo_lang_syntax::node::ast::OptionTypeClause;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{
-    GetIdentifier, PathSegmentEx, QueryAttrs, is_single_arg_attr,
+    BodyItems, GetIdentifier, PathSegmentEx, QueryAttrs, is_single_arg_attr,
 };
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::extract_matches;
 use const_format::formatcp;
 use indoc::formatdoc;
+use itertools::Itertools;
 use smol_str::SmolStr;
 
 use super::generation_data::{ContractGenerationData, StarknetModuleCommonGenerationData};
@@ -69,7 +72,7 @@ impl ComponentsGenerationData {
             }
             // TODO(yuval): consider supporting 2 components with the same name and different paths.
             // Currently it doesn't work as the name of the impl is the same.
-            let Some(component_segment) = component_path.segments(db).elements(db).last().cloned()
+            let Some(component_segment) = component_path.segments(db).elements(db).next_back()
             else {
                 diagnostics.push(PluginDiagnostic::error_with_inner_span(
                     db,
@@ -281,7 +284,7 @@ fn handle_contract_item(
             }
         }
         ast::ModuleItem::ImplAlias(alias_ast) => {
-            let abi_attrs = alias_ast.query_attr(db, ABI_ATTR);
+            let abi_attrs = alias_ast.query_attr(db, ABI_ATTR).collect_vec();
             if abi_attrs.is_empty() {
                 return;
             }
@@ -303,7 +306,8 @@ fn handle_contract_item(
             }
         }
         ast::ModuleItem::InlineMacro(inline_macro_ast)
-            if inline_macro_ast.name(db).text(db) == COMPONENT_INLINE_MACRO =>
+            if inline_macro_ast.path(db).as_syntax_node().get_text_without_trivia(db)
+                == COMPONENT_INLINE_MACRO =>
         {
             handle_component_inline_macro(db, diagnostics, inline_macro_ast, &mut data.specific)
         }
@@ -327,18 +331,102 @@ pub(super) fn generate_contract_specific_code(
         handle_contract_item(db, diagnostics, &item, metadata, &mut generation_data);
     }
 
+    let test_class_hash_node = generate_test_class_hash(db, module_ast);
+
+    let deploy_function_node = generate_constructor_deploy_function(db, diagnostics, body);
+
+    generation_data.specific.test_config =
+        RewriteNode::new_modified(vec![test_class_hash_node, deploy_function_node]);
+
+    generation_data.into_rewrite_node(db, diagnostics)
+}
+
+/// Generates contract class hash for deploying contracts using cairo-test
+fn generate_test_class_hash(db: &dyn SyntaxGroup, module_ast: &ast::ItemModule) -> RewriteNode {
     let test_class_hash = format!(
         "0x{:x}",
         starknet_keccak(module_ast.as_syntax_node().get_text_without_trivia(db).as_bytes(),)
     );
 
-    generation_data.specific.test_config = RewriteNode::Text(formatdoc!(
+    RewriteNode::Text(formatdoc!(
         "#[cfg(target: 'test')]
             pub const TEST_CLASS_HASH: starknet::ClassHash = {test_class_hash}.try_into().unwrap();
 "
-    ));
+    ))
+}
 
-    generation_data.into_rewrite_node(db, diagnostics)
+/// Generate contract-specific deploy functions.
+fn generate_constructor_deploy_function(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    body: &ast::ModuleBody,
+) -> RewriteNode {
+    let mut deploy_function_node = RewriteNode::empty();
+
+    for item in body.iter_items(db) {
+        if let ast::ModuleItem::FreeFunction(func) = item {
+            if let Some(EntryPointKind::Constructor) =
+                EntryPointKind::try_from_function_with_body(db, diagnostics, &func)
+            {
+                let params = func.declaration(db).signature(db).parameters(db).elements(db);
+                let mut constructor_params = Vec::new();
+
+                for param in params.skip(1) {
+                    let name = param.name(db).text(db);
+                    let type_clause =
+                        extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause);
+                    constructor_params.push((name, type_clause.ty(db)));
+                }
+
+                deploy_function_node = generate_deploy_function(db, constructor_params);
+
+                break;
+            }
+        }
+    }
+    deploy_function_node
+}
+
+/// Generates the deployment function for a contract.
+fn generate_deploy_function(
+    db: &dyn SyntaxGroup,
+    constructor_params: Vec<(SmolStr, ast::Expr)>,
+) -> RewriteNode {
+    let mut param_declarations = Vec::new();
+    let mut calldata_serialization = Vec::new();
+
+    for (name, ty) in constructor_params.clone() {
+        let type_text = ty.as_syntax_node().get_text_without_trivia(db);
+
+        param_declarations.push(format!("{name}: {type_text}"));
+        calldata_serialization
+            .push(format!("core::serde::Serde::<{type_text}>::serialize(@{name}, ref calldata);",));
+    }
+
+    let param_declarations_str = param_declarations.join(",\n");
+    let calldata_serialization_str = calldata_serialization.join("\n");
+
+    RewriteNode::Text(formatdoc!(
+        "
+        #[cfg(target: 'test')]
+        pub fn deploy_for_test(
+            class_hash: starknet::ClassHash,
+            deployment_params: starknet::deployment::DeploymentParams,
+            {param_declarations_str}
+        ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {{    
+            let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
+
+            {calldata_serialization_str}
+
+            starknet::syscalls::deploy_syscall(
+                class_hash,
+                deployment_params.salt,
+                core::array::ArrayTrait::span(@calldata),
+                deployment_params.deploy_from_zero,
+            )
+        }}
+    "
+    ))
 }
 
 /// Handles a contract entrypoint function.
@@ -510,7 +598,7 @@ fn handle_embed_impl_alias(
     let has_generic_params = match alias_ast.generic_params(db) {
         ast::OptionWrappedGenericParamList::Empty(_) => false,
         ast::OptionWrappedGenericParamList::WrappedGenericParamList(generics) => {
-            !generics.generic_params(db).elements(db).is_empty()
+            generics.generic_params(db).elements(db).len() != 0
         }
     };
     if has_generic_params {
@@ -523,12 +611,12 @@ fn handle_embed_impl_alias(
         ));
         return;
     }
-    let elements = alias_ast.impl_path(db).segments(db).elements(db);
-    let Some((impl_final_part, impl_module)) = elements.split_last() else {
+    let mut elements = alias_ast.impl_path(db).segments(db).elements(db);
+    let Some(impl_final_part) = elements.next_back() else {
         unreachable!("impl_path should have at least one segment")
     };
 
-    if !is_first_generic_arg_contract_state(db, impl_final_part) {
+    if !is_first_generic_arg_contract_state(db, &impl_final_part) {
         diagnostics.push(PluginDiagnostic::error(
             alias_ast.stable_ptr(db),
             format!(
@@ -540,7 +628,7 @@ fn handle_embed_impl_alias(
     }
     let impl_name = impl_final_part.identifier_ast(db);
     let impl_module = RewriteNode::interspersed(
-        impl_module.iter().map(RewriteNode::from_ast_trimmed),
+        elements.map(|e| RewriteNode::from_ast_trimmed(&e)),
         RewriteNode::text("::"),
     );
     data.generated_wrapper_functions.push(
@@ -587,7 +675,7 @@ pub fn handle_component_inline_macro(
         }
     };
     let arguments = macro_args.elements(db);
-    let [path_arg, storage_arg, event_arg] = arguments.as_slice() else {
+    let Some([path_arg, storage_arg, event_arg]) = arguments.collect_array() else {
         diagnostics.push(invalid_macro_diagnostic(db, component_macro_ast));
         return;
     };
@@ -596,7 +684,7 @@ pub fn handle_component_inline_macro(
         try_extract_named_macro_argument(
             db,
             diagnostics,
-            path_arg,
+            &path_arg,
             "path",
             false,
             component_macro_ast.stable_ptr(db),
@@ -604,7 +692,7 @@ pub fn handle_component_inline_macro(
         try_extract_named_macro_argument(
             db,
             diagnostics,
-            storage_arg,
+            &storage_arg,
             "storage",
             true,
             component_macro_ast.stable_ptr(db),
@@ -612,7 +700,7 @@ pub fn handle_component_inline_macro(
         try_extract_named_macro_argument(
             db,
             diagnostics,
-            event_arg,
+            &event_arg,
             "event",
             true,
             component_macro_ast.stable_ptr(db),
@@ -697,9 +785,9 @@ fn try_extract_named_macro_argument(
                     if !only_simple_identifier {
                         return Some(path);
                     }
-                    let elements = path.segments(db).elements(db);
+                    let mut elements = path.segments(db).elements(db);
                     if elements.len() != 1
-                        || !matches!(elements.last().unwrap(), ast::PathSegment::Simple(_))
+                        || !matches!(elements.next_back().unwrap(), ast::PathSegment::Simple(_))
                     {
                         diagnostics.push(PluginDiagnostic::error_with_inner_span(
                             db,

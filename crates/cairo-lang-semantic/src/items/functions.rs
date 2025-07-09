@@ -723,7 +723,7 @@ impl Signature {
             diagnostics,
             db,
             resolver,
-            &signature_syntax.parameters(db).elements(db),
+            &signature_syntax.parameters(db).elements_vec(db),
             Some(function_title_id),
             environment,
         );
@@ -767,22 +767,17 @@ pub fn function_signature_implicit_parameters(
     sig: &ast::FunctionSignature,
 ) -> Vec<semantic::TypeId> {
     let ast_implicits = match sig.implicits_clause(db) {
-        ast::OptionImplicitsClause::Empty(_) => Vec::new(),
+        ast::OptionImplicitsClause::Empty(_) => return vec![],
         ast::OptionImplicitsClause::ImplicitsClause(implicits_clause) => {
             implicits_clause.implicits(db).elements(db)
         }
     };
 
-    let mut implicits = Vec::new();
-    for implicit in ast_implicits {
-        implicits.push(resolve_type(
-            db,
-            diagnostics,
-            resolver,
-            &syntax::node::ast::Expr::Path(implicit),
-        ));
-    }
-    implicits
+    ast_implicits
+        .map(|implicit| {
+            resolve_type(db, diagnostics, resolver, &syntax::node::ast::Expr::Path(implicit))
+        })
+        .collect()
 }
 
 /// Returns the parameters of the given function signature's AST.
@@ -909,7 +904,7 @@ fn ast_param_to_semantic(
     };
 
     let mutability =
-        modifiers::compute_mutability(diagnostics, db, &ast_param.modifiers(db).elements(db));
+        modifiers::compute_mutability(diagnostics, db, &ast_param.modifiers(db).elements_vec(db));
 
     semantic::Parameter { id, name, ty, mutability, stable_ptr: ast_param.name(db).stable_ptr(db) }
 }

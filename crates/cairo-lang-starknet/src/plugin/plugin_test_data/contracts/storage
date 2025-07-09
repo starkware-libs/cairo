@@ -198,7 +198,9 @@ lib.cairo:1:16
                ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl OuterTypeSubPointersDrop<> of core::traits::Drop::<OuterTypeSubPointers>;
+#[doc(hidden)]
 impl OuterTypeSubPointersCopy<> of core::traits::Copy::<OuterTypeSubPointers>;
 
 
@@ -207,7 +209,9 @@ lib.cairo:1:16
                ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl OuterTypeSubPointersMutDrop<> of core::traits::Drop::<OuterTypeSubPointersMut>;
+#[doc(hidden)]
 impl OuterTypeSubPointersMutCopy<> of core::traits::Copy::<OuterTypeSubPointersMut>;
 
 
@@ -386,10 +390,13 @@ use starknet::storage::Map as LegacyMap;
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x25c680547752cece853ea35e00dbd269ee33545db32a2d900eb20e872e0d255.try_into().unwrap();
 
 
+#[doc(hidden)]
 pub mod __external {
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -448,7 +455,9 @@ lib.cairo:9:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -457,7 +466,9 @@ lib.cairo:9:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics

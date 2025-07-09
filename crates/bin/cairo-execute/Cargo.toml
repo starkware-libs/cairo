@@ -8,7 +8,7 @@ description = "Executable for creating executables and running them for the Cair
 
 [dependencies]
 anyhow.workspace = true
-bincode = { version = "2.0.1" }
+bincode.workspace = true
 cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.12.0-rc.1" }
 cairo-lang-executable = { path = "../../cairo-lang-executable", version = "~2.12.0-rc.1" }
 cairo-lang-execute-utils = { path = "../../cairo-lang-execute-utils", version = "~2.12.0-rc.1" }

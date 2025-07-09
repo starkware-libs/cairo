@@ -11,7 +11,7 @@ cairo_lang_test_utils::test_file_test!(
     test_solve_gas,
     "src/test_data",
     {
-        fib_jumps :"fib_jumps",
+        fib_jumps: "fib_jumps",
     },
     test_solve_gas
 );

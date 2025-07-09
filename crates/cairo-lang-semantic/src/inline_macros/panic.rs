@@ -66,7 +66,7 @@ impl InlineMacroExprPlugin for PanicMacro {
         };
 
         let mut builder = PatchBuilder::new(db, syntax);
-        let arguments = arguments_syntax.arguments(db).elements(db);
+        let arguments = arguments_syntax.arguments(db).elements_vec(db);
         if try_handle_simple_panic(db, &mut builder, &arguments).is_none() {
             builder.add_modified(RewriteNode::interpolate_patched(
                 &formatdoc! {
@@ -109,6 +109,7 @@ impl InlineMacroExprPlugin for PanicMacro {
                 code_mappings,
                 aux_data: None,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             }),
             diagnostics: vec![],
         }

@@ -49,6 +49,7 @@ ExprPath
     ├── type_clause (kind: OptionTypeClauseEmpty) []
     ├── eq (kind: TokenEq): '='
     ├── rhs (kind: ExprPath) <ignored>
+    ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -93,6 +94,7 @@ StatementLet
     ├── type_clause (kind: OptionTypeClauseEmpty) []
     ├── eq (kind: TokenEq): '='
     ├── rhs (kind: TokenLiteralNumber): '1'
+    ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -150,6 +152,7 @@ StatementLet
     │   │   └── item #3 (kind: TokenLiteralNumber): '4'
     │   ├── size (kind: OptionFixedSizeArraySizeEmpty) []
     │   └── rbrack (kind: TokenRBrack): ']'
+    ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -208,4 +211,5 @@ StatementLet
     │   │   └── item #2 (kind: TokenLiteralNumber): '3'
     │   ├── size (kind: OptionFixedSizeArraySizeEmpty) []
     │   └── rbrack (kind: TokenRBrack): ']'
+    ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     └── semicolon (kind: TokenSemicolon): ';'

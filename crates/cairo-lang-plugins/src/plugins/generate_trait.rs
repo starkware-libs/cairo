@@ -8,6 +8,7 @@ use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStr
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, GenericParamEx, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
+use itertools::Itertools;
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -49,7 +50,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         return PluginResult::default();
     };
     let trait_ast = impl_ast.trait_path(db);
-    let [trait_ast_segment] = &trait_ast.segments(db).elements(db)[..] else {
+    let Some([trait_ast_segment]) = trait_ast.segments(db).elements(db).collect_array() else {
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
@@ -65,7 +66,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
     let leading_trivia = impl_ast
         .attributes(db)
         .elements(db)
-        .first()
+        .next()
         .unwrap()
         .hash(db)
         .leading_trivia(db)
@@ -120,8 +121,8 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                         let ast::Expr::Path(trait_generic_arg) = trait_generic_arg.expr(db) else {
                             return false;
                         };
-                        let [ast::PathSegment::Simple(trait_generic_arg)] =
-                            &trait_generic_arg.segments(db).elements(db)[..]
+                        let Some([ast::PathSegment::Simple(trait_generic_arg)]) =
+                            trait_generic_arg.segments(db).elements(db).collect_array()
                         else {
                             return false;
                         };
@@ -166,7 +167,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         ast::MaybeImplBody::Some(body) => {
             builder.add_node(impl_generic_params.as_syntax_node());
             builder.add_node(body.lbrace(db).as_syntax_node());
-            for item in body.items_vec(db) {
+            for item in body.iter_items(db) {
                 match item {
                     ast::ImplItem::Function(function_item) => {
                         let decl = function_item.declaration(db);
@@ -263,6 +264,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
             code_mappings,
             aux_data: None,
             diagnostics_note: Default::default(),
+            is_unhygienic: false,
         }),
         diagnostics,
         remove_original_item: false,
