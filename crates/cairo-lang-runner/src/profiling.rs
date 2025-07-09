@@ -1,5 +1,4 @@
 use std::fmt::{Debug, Display};
-use std::ops::{Add, Sub};
 
 use cairo_lang_lowering::ids::FunctionLongId;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
@@ -46,22 +45,14 @@ pub struct ProfilingInfo {
 impl ProfilingInfo {
     pub fn from_trace(
         builder: &RunnableBuilder,
+        // The offset in memory where builder.casm_program() was loaded.
+        load_offset: usize,
         profiling_config: &ProfilingInfoCollectionConfig,
         trace: &[RelocatedTraceEntry],
     ) -> Self {
         let sierra_statement_info = &builder.casm_program().debug_info.sierra_statement_info;
         let sierra_len = sierra_statement_info.len();
         let bytecode_len = sierra_statement_info.last().unwrap().end_offset;
-        // The CASM program starts with a header of instructions to wrap the real program.
-        // `real_pc_0` is the PC in the trace that points to the same CASM instruction which is in
-        // the real PC=0 in the original CASM program. That is, all trace's PCs need to be
-        // subtracted by `real_pc_0` to get the real PC they point to in the original CASM
-        // program.
-        // This is the same as the PC of the last trace entry plus 1, as the header is built to have
-        // a `ret` last instruction, which must be the last in the trace of any execution.
-        // The first instruction after that is the first instruction in the original CASM program.
-
-        let real_pc_0 = trace.last().unwrap().pc.add(1);
 
         // The function stack trace of the current function, excluding the current function (that
         // is, the stack of the caller). Represented as a vector of indices of the functions
@@ -90,10 +81,10 @@ impl ProfilingInfo {
         let mut scoped_sierra_statement_weights = OrderedHashMap::default();
         for step in trace {
             // Skip the header.
-            if step.pc < real_pc_0 {
+            let Some(real_pc) = step.pc.checked_sub(load_offset) else {
                 continue;
-            }
-            let real_pc: usize = step.pc.sub(real_pc_0);
+            };
+
             // Skip the footer.
             // Also if pc is greater or equal the bytecode length it means that it is the outside
             // ret used for e.g. getting pointer to builtins costs table, const segments
