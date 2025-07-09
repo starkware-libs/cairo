@@ -136,3 +136,51 @@ error: Unexpected argument type. Expected: "()", found: "core::felt252".
  --> lib.cairo:2:18
     let _a: () = 3_felt252;
                  ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test let introduce variables into environment, even when diagnostics prevented evaluation.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let (a, b, c) = undefined();
+    let [d, e, f] = (a, b, c);
+    let (g, h, i) = [d, e, f];
+    let (j, k, l, m) = (g, h, i);
+    let [n, o, p] = [j, k, l, m];
+    let _ignore = n + o + p;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error[E0006]: Function not found.
+ --> lib.cairo:2:21
+    let (a, b, c) = undefined();
+                    ^^^^^^^^^
+
+error: Unexpected type for fixed size array pattern. "(<missing>, <missing>, <missing>)" is not a fixed size array.
+ --> lib.cairo:3:9
+    let [d, e, f] = (a, b, c);
+        ^^^^^^^^^
+
+error: Unexpected type for tuple pattern. "[<missing>; 3]" is not a tuple.
+ --> lib.cairo:4:9
+    let (g, h, i) = [d, e, f];
+        ^^^^^^^^^
+
+error: Wrong number of tuple elements in pattern. Expected: 3. Got: 4.
+ --> lib.cairo:5:9
+    let (j, k, l, m) = (g, h, i);
+        ^^^^^^^^^^^^
+
+error: Wrong number of fixed size array elements in pattern. Expected: 4. Got: 3.
+ --> lib.cairo:6:9
+    let [n, o, p] = [j, k, l, m];
+        ^^^^^^^^^
