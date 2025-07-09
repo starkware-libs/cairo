@@ -39,9 +39,14 @@ error: Missing tokens. Expected an expression.
                ^
 
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
- --> src/parser_test_data/cairo_test_files/test2.cairo:30:1
+ --> src/parser_test_data/cairo_test_files/test2.cairo:30:8
 skipped tokens
-^^^^^^^^^^^^^^
+       ^
+
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+ --> src/parser_test_data/cairo_test_files/test2.cairo:30:15
+skipped tokens
+              ^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -488,9 +493,14 @@ error: Missing tokens. Expected an expression.
                ^
 
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
- --> src/parser_test_data/cairo_test_files/test2.cairo:30:1
+ --> src/parser_test_data/cairo_test_files/test2.cairo:30:8
 skipped tokens
-^^^^^^^^^^^^^^
+       ^
+
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+ --> src/parser_test_data/cairo_test_files/test2.cairo:30:15
+skipped tokens
+              ^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -1418,10 +1428,26 @@ skipped tokens
     │                   └── child #0 (kind: TokenNewline).
     └── eof (kind: TerminalEndOfFile)
         ├── leading_trivia (kind: Trivia)
-        │   ├── child #0 (kind: TokenNewline).
-        │   ├── child #1 (kind: TokenSkipped): 'skipped'
-        │   ├── child #2 (kind: TokenWhitespace).
-        │   ├── child #3 (kind: TokenSkipped): 'tokens'
-        │   └── child #4 (kind: TokenNewline).
+        │   └── child #0 (kind: TriviumSkippedNode)
+        │       └── node (kind: ExprPath)
+        │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │           └── segments (kind: ExprPathInner)
+        │               └── item #0 (kind: PathSegmentSimple)
+        │                   └── ident (kind: TerminalIdentifier)
+        │                       ├── leading_trivia (kind: Trivia)
+        │                       │   └── child #0 (kind: TriviumSkippedNode)
+        │                       │       └── node (kind: ExprPath)
+        │                       │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │                       │           └── segments (kind: ExprPathInner)
+        │                       │               └── item #0 (kind: PathSegmentSimple)
+        │                       │                   └── ident (kind: TerminalIdentifier)
+        │                       │                       ├── leading_trivia (kind: Trivia)
+        │                       │                       │   └── child #0 (kind: TokenNewline).
+        │                       │                       ├── token (kind: TokenIdentifier): 'skipped'
+        │                       │                       └── trailing_trivia (kind: Trivia)
+        │                       │                           └── child #0 (kind: TokenWhitespace).
+        │                       ├── token (kind: TokenIdentifier): 'tokens'
+        │                       └── trailing_trivia (kind: Trivia)
+        │                           └── child #0 (kind: TokenNewline).
         ├── token (kind: TokenEndOfFile).
         └── trailing_trivia (kind: Trivia) []

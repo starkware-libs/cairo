@@ -306,7 +306,8 @@ fn handle_contract_item(
             }
         }
         ast::ModuleItem::InlineMacro(inline_macro_ast)
-            if inline_macro_ast.name(db).text(db) == COMPONENT_INLINE_MACRO =>
+            if inline_macro_ast.path(db).as_syntax_node().get_text_without_trivia(db)
+                == COMPONENT_INLINE_MACRO =>
         {
             handle_component_inline_macro(db, diagnostics, inline_macro_ast, &mut data.specific)
         }
