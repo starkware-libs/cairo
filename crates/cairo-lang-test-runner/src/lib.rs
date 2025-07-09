@@ -526,7 +526,7 @@ fn update_summary(
             panic!("profiler_data is None");
         };
         let profiling_processor = ProfilingInfoProcessor::new(
-            Some(*db),
+            *db,
             sierra_program.clone(),
             statements_functions.clone(),
             Default::default(),
