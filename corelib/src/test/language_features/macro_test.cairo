@@ -145,7 +145,7 @@ fn test_macro_add_ten() {
     assert_eq!(inner::add_ten!(x3), 13);
 }
 
-macro accessing_expanded_placehoders {
+macro accessing_expanded_placeholders {
     ($x:expr, $y:expr) => { ($x, $y) };
 
     ($x:expr) => {
@@ -153,15 +153,15 @@ macro accessing_expanded_placehoders {
             let z = 2;
             // TODO(Dean): Use $x directly in the macro call when supported.
             let y = $x;
-            $defsite::accessing_expanded_placehoders!(y, z)
+            $defsite::accessing_expanded_placeholders!(y, z)
         }
     };
 }
 
 #[test]
-fn test_accessing_expanded_placehoders() {
+fn test_accessing_expanded_placeholders() {
     let x = 1;
-    assert_eq!(accessing_expanded_placehoders!(x), (1, 2));
+    assert_eq!(accessing_expanded_placeholders!(x), (1, 2));
 }
 
 macro use_z_from_callsite {
