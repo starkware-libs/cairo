@@ -151,9 +151,7 @@ macro accessing_expanded_placeholders {
     ($x:expr) => {
         {
             let z = 2;
-            // TODO(Dean): Use $x directly in the macro call when supported.
-            let y = $x;
-            $defsite::accessing_expanded_placeholders!(y, z)
+            $defsite::accessing_expanded_placeholders!($x, z)
         }
     };
 }
