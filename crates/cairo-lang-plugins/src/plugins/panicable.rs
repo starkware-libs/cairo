@@ -6,8 +6,8 @@ use cairo_lang_syntax::attribute::structured::{
     Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
 use itertools::Itertools;
@@ -161,7 +161,7 @@ fn extract_success_ty_and_variants(
     else {
         return None;
     };
-    let ty = segment.ident(db).text(db);
+    let ty = segment.identifier(db);
     if ty == "Option" {
         let [inner] = segment.generic_args(db).generic_args(db).elements(db).collect_array()?;
         Some((inner.clone(), "Option::Some".to_owned(), "Option::None".to_owned()))
