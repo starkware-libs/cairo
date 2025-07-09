@@ -1250,12 +1250,20 @@ fn compute_expr_function_call_semantic(
         }
     }
 
-    let item = ctx.resolver.resolve_concrete_path_ex(
-        ctx.diagnostics,
-        &path,
-        NotFoundItemType::Function,
-        ResolutionContext::Statement(&mut ctx.environment),
-    )?;
+    let item = ctx
+        .resolver
+        .resolve_concrete_path_ex(
+            ctx.diagnostics,
+            &path,
+            NotFoundItemType::Function,
+            ResolutionContext::Statement(&mut ctx.environment),
+        )
+        .inspect_err(|_| {
+            // Getting better diagnostics and usage metrics for the function args.
+            for arg in args_syntax.elements(db) {
+                compute_named_argument_clause(ctx, arg, None);
+            }
+        })?;
 
     match item {
         ResolvedConcreteItem::Variant(variant) => {
@@ -3435,7 +3443,13 @@ fn method_call_expr(
             |_, trait_function_id0, trait_function_id1| {
                 Some(AmbiguousTrait { trait_function_id0, trait_function_id1 })
             },
-        )?;
+        )
+        .inspect_err(|_| {
+            // Getting better diagnostics and usage metrics for the function args.
+            for arg in expr.arguments(db).arguments(db).elements(db) {
+                compute_named_argument_clause(ctx, arg, None);
+            }
+        })?;
 
     if let Ok(trait_definition_data) = ctx.db.priv_trait_definition_data(actual_trait_id) {
         if let Some(trait_item_info) = trait_definition_data.get_trait_item_info(&func_name) {
