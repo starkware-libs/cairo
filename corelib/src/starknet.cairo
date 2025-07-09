@@ -147,4 +147,6 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait<T> {
 /// signal that the transaction should proceed.
 pub const VALIDATED: felt252 = 'VALID';
 
+pub mod deployment;
+
 pub mod testing;

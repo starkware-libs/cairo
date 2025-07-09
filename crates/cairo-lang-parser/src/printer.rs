@@ -229,7 +229,7 @@ impl<'a> Printer<'a> {
             }
             NodeKind::SeparatedList { .. } => {
                 for (i, child) in children.iter().enumerate() {
-                    let description = if i % 2 == 0 { "item" } else { "separator" };
+                    let description = if i.is_multiple_of(2) { "item" } else { "separator" };
                     self.print_tree(
                         format!("{description} #{}", i / 2).as_str(),
                         child,

@@ -13,7 +13,7 @@ use itertools::Itertools;
 
 use super::consts::CALLDATA_PARAM_NAME;
 use super::utils::{AstPathExtract, ParamEx};
-use super::{DEPRECATED_ABI_ATTR, INTERFACE_ATTR, STORE_TRAIT};
+use super::{DEPRECATED_ABI_ATTR, DISPATCHER_DOC_GROUP_ATTR, INTERFACE_ATTR, STORE_TRAIT};
 
 /// The name of the variable that holds the returned data.
 const RET_DATA: &str = "__dispatcher_return_data__";
@@ -53,8 +53,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let Some(single_generic_param) = (match &generic_params {
         ast::OptionWrappedGenericParamList::Empty(_) => None,
         ast::OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) => {
-            if let [ast::GenericParam::Type(param)] =
-                generic_params.generic_params(db).elements(db).as_slice()
+            if let Some([ast::GenericParam::Type(param)]) =
+                generic_params.generic_params(db).elements(db).collect_array()
             {
                 Some(param.name(db).text(db))
             } else {
@@ -87,7 +87,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let safe_contract_caller_name = format!("{base_name}SafeDispatcher");
     let library_caller_name = format!("{base_name}LibraryDispatcher");
     let safe_library_caller_name = format!("{base_name}SafeLibraryDispatcher");
-    for item_ast in body.items_vec(db) {
+    for item_ast in body.iter_items(db) {
         match item_ast {
             ast::TraitItem::Function(func) => {
                 let declaration = func.declaration(db);
@@ -95,7 +95,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 let mut skip_generation = false;
                 let mut serialization_code = vec![];
                 let signature = declaration.signature(db);
-                let mut params = signature.parameters(db).elements(db).into_iter();
+                let mut params = signature.parameters(db).elements(db);
                 // The first parameter is the `self` parameter.
                 let Some(self_param) = params.next() else {
                     diagnostics.push(PluginDiagnostic::error(
@@ -281,46 +281,56 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let mut builder = PatchBuilder::new(db, &interface_attr);
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
-            "$visibility$trait {dispatcher_trait_name}<T> {{$dispatcher_signatures$
+            "{DISPATCHER_DOC_GROUP_ATTR}
+            $visibility$trait {dispatcher_trait_name}<T> {{$dispatcher_signatures$
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
             $visibility$struct {contract_caller_name} {{
                 pub contract_address: starknet::ContractAddress,
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             impl {contract_caller_name}Impl of {dispatcher_trait_name}<{contract_caller_name}> {{
             $contract_caller_method_impls$
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
             $visibility$struct {library_caller_name} {{
                 pub class_hash: starknet::ClassHash,
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             impl {library_caller_name}Impl of {dispatcher_trait_name}<{library_caller_name}> {{
             $library_caller_method_impls$
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             $visibility$trait {safe_dispatcher_trait_name}<T> {{$safe_dispatcher_signatures$
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
             $visibility$struct {safe_library_caller_name} {{
                 pub class_hash: starknet::ClassHash,
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             impl {safe_library_caller_name}Impl of \
              {safe_dispatcher_trait_name}<{safe_library_caller_name}> {{
             $safe_library_caller_method_impls$
             }}
 
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
             $visibility$struct {safe_contract_caller_name} {{
                 pub contract_address: starknet::ContractAddress,
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             impl {safe_contract_caller_name}Impl of \
              {safe_dispatcher_trait_name}<{safe_contract_caller_name}> {{
             $safe_contract_caller_method_impls$
@@ -365,6 +375,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             code_mappings,
             aux_data: None,
             diagnostics_note: Default::default(),
+            is_unhygienic: false,
         }),
         diagnostics,
         remove_original_item: false,

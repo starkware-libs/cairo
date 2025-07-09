@@ -139,19 +139,20 @@ impl SyntaxNode {
 
     /// Implementation of [SyntaxNode::get_children].
     fn get_children_impl(&self, db: &dyn SyntaxGroup) -> Vec<SyntaxNode> {
-        let mut res: Vec<SyntaxNode> = Vec::new();
-
-        let long_id = self.lookup_intern(db);
-        let mut offset = long_id.offset;
+        let self_long_id = self.lookup_intern(db);
+        let mut offset = self_long_id.offset;
+        let self_green = self_long_id.green.lookup_intern(db);
+        let children = self_green.children();
+        let mut res: Vec<SyntaxNode> = Vec::with_capacity(children.len());
         let mut key_map = UnorderedHashMap::<_, usize>::default();
-        for green_id in long_id.green.lookup_intern(db).children() {
+        for green_id in children {
             let green = green_id.lookup_intern(db);
             let width = green.width();
             let kind = green.kind;
             let key_fields = key_fields::get_key_fields(kind, green.children());
             let key_count = key_map.entry((kind, key_fields.clone())).or_default();
             let stable_ptr = SyntaxStablePtr::Child {
-                parent: long_id.stable_ptr,
+                parent: self_long_id.stable_ptr,
                 kind,
                 key_fields,
                 index: *key_count,
@@ -170,32 +171,37 @@ impl SyntaxNode {
     }
 
     pub fn span_start_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
-        let green_node = self.green_node(db);
-        match green_node.details {
-            green::GreenNodeDetails::Node { .. } => {
-                if let Some(token_node) = self.get_terminal_token(db) {
-                    return token_node.offset(db);
-                }
-                let children = self.get_children(db);
-                if let Some(child) =
-                    children.iter().find(|child| child.width(db) != TextWidth::default())
+        let SyntaxNodeLongId { green, offset, .. } = self.lookup_intern(db);
+        let green_node = green.lookup_intern(db);
+        match &green_node.details {
+            green::GreenNodeDetails::Token(_) => offset,
+            green::GreenNodeDetails::Node { children, .. } => {
+                if green_node.kind.is_terminal() {
+                    let width0 = children[0].lookup_intern(db).width();
+                    offset.add_width(width0)
+                } else if let Some(child) = self
+                    .get_children(db)
+                    .iter()
+                    .find(|child| child.width(db) != TextWidth::default())
                 {
                     child.span_start_without_trivia(db)
                 } else {
-                    self.offset(db)
+                    offset
                 }
             }
-            green::GreenNodeDetails::Token(_) => self.offset(db),
         }
     }
     pub fn span_end_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
-        let green_node = self.green_node(db);
-        match green_node.details {
-            green::GreenNodeDetails::Node { .. } => {
-                if let Some(token_node) = self.get_terminal_token(db) {
-                    return token_node.span(db).end;
-                }
-                if let Some(child) = self
+        let SyntaxNodeLongId { green, offset, .. } = self.lookup_intern(db);
+        let green_node = green.lookup_intern(db);
+        match &green_node.details {
+            green::GreenNodeDetails::Token(text) => offset.add_width(TextWidth::from_str(text)),
+            green::GreenNodeDetails::Node { children, width } => {
+                if green_node.kind.is_terminal() {
+                    let width0 = children[0].lookup_intern(db).width();
+                    let width1 = children[1].lookup_intern(db).width();
+                    offset.add_width(width0).add_width(width1)
+                } else if let Some(child) = self
                     .get_children(db)
                     .iter()
                     .filter(|child| child.width(db) != TextWidth::default())
@@ -203,10 +209,9 @@ impl SyntaxNode {
                 {
                     child.span_end_without_trivia(db)
                 } else {
-                    self.span(db).end
+                    offset.add_width(*width)
                 }
             }
-            green::GreenNodeDetails::Token(_) => self.span(db).end,
         }
     }
 
@@ -275,7 +280,7 @@ impl SyntaxNode {
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.get_children(db).iter() {
                     if let Some(trivia) = ast::Trivia::cast(db, *child) {
-                        trivia.elements(db).iter().for_each(|element| {
+                        trivia.elements(db).for_each(|element| {
                             if !matches!(
                                 element,
                                 ast::Trivium::SingleLineComment(_)
@@ -304,9 +309,8 @@ impl SyntaxNode {
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
     pub fn get_text_without_trivia(self, db: &dyn SyntaxGroup) -> String {
-        let trimmed_span = self.span_without_trivia(db);
-
-        self.get_text_of_span(db, trimmed_span)
+        let node = self.lookup_intern(db).green.lookup_intern(db);
+        format!("{}", TrimmedGreenFormatter { node, trim_kind: TrimKind::Both, db })
     }
 
     /// Returns the text under the syntax node, according to the given span.
@@ -498,9 +502,119 @@ impl Display for NodeTextFormatter<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.node.green_node(self.db).as_ref().details {
             green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
-            green::GreenNodeDetails::Node { .. } => {
-                for child in self.node.get_children(self.db).iter() {
-                    write!(f, "{}", NodeTextFormatter { node: child, db: self.db })?;
+            green::GreenNodeDetails::Node { children, .. } => {
+                write!(f, "{}", GreenNodesFormatter { nodes: children, db: self.db })?;
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Wrapper for formatting the text of a green node while trimming trivia.
+struct TrimmedGreenFormatter<'a> {
+    /// The node to format.
+    pub node: Arc<GreenNode>,
+    /// The kind of trimming to apply.
+    pub trim_kind: TrimKind,
+    /// The syntax db.
+    pub db: &'a dyn SyntaxGroup,
+}
+
+enum TrimKind {
+    /// Trim the leading trivia.
+    Leading,
+    /// Trim the trailing trivia.
+    Trailing,
+    /// Trim both leading and trailing trivia.
+    Both,
+}
+
+impl Display for TrimmedGreenFormatter<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let db = self.db;
+        match &self.node.details {
+            green::GreenNodeDetails::Token(text) => write!(f, "{text}"),
+            green::GreenNodeDetails::Node { children, .. } => {
+                if self.node.kind.is_terminal() {
+                    let children = match self.trim_kind {
+                        TrimKind::Leading => &children[1..],
+                        TrimKind::Trailing => &children[..=1],
+                        TrimKind::Both => &children[1..=1],
+                    };
+                    return write!(f, "{}", GreenNodesFormatter { nodes: children, db });
+                }
+                match self.trim_kind {
+                    TrimKind::Leading => {
+                        let Some((first, rest)) = split_non_empty(db, children, <[_]>::split_first)
+                        else {
+                            return Ok(());
+                        };
+                        let trim_kind = TrimKind::Leading;
+                        write!(f, "{}", TrimmedGreenFormatter { node: first, trim_kind, db })?;
+                        write!(f, "{}", GreenNodesFormatter { nodes: rest, db })
+                    }
+                    TrimKind::Trailing => {
+                        let Some((last, rest)) = split_non_empty(db, children, <[_]>::split_last)
+                        else {
+                            return Ok(());
+                        };
+                        write!(f, "{}", GreenNodesFormatter { nodes: rest, db })?;
+                        let trim_kind = TrimKind::Trailing;
+                        write!(f, "{}", TrimmedGreenFormatter { node: last, trim_kind, db })
+                    }
+                    TrimKind::Both => {
+                        let Some((first, rest)) = split_non_empty(db, children, <[_]>::split_first)
+                        else {
+                            return Ok(());
+                        };
+                        if let Some((last, rest)) = split_non_empty(db, rest, <[_]>::split_last) {
+                            let trim_kind = TrimKind::Leading;
+                            write!(f, "{}", TrimmedGreenFormatter { node: first, trim_kind, db })?;
+                            write!(f, "{}", GreenNodesFormatter { nodes: rest, db })?;
+                            let trim_kind = TrimKind::Trailing;
+                            write!(f, "{}", TrimmedGreenFormatter { node: last, trim_kind, db })
+                        } else {
+                            let trim_kind = TrimKind::Both;
+                            write!(f, "{}", TrimmedGreenFormatter { node: first, trim_kind, db })
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Splits the given children slice into a non-empty part and the rest, using the provided split
+/// function.
+fn split_non_empty<'a>(
+    db: &dyn SyntaxGroup,
+    mut children: &'a [GreenId],
+    split: impl Fn(&[GreenId]) -> Option<(&GreenId, &[GreenId])>,
+) -> Option<(Arc<GreenNode>, &'a [GreenId])> {
+    while let Some((taken, rest)) = split(children) {
+        let taken = taken.lookup_intern(db);
+        if taken.width() != TextWidth::default() {
+            return Some((taken, rest));
+        }
+        children = rest;
+    }
+    None
+}
+
+/// Formatter for green nodes, used for formatting the text of syntax nodes.
+struct GreenNodesFormatter<'a> {
+    /// The green nodes to format.
+    nodes: &'a [GreenId],
+    /// The syntax db.
+    db: &'a dyn SyntaxGroup,
+}
+impl Display for GreenNodesFormatter<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for id in self.nodes.iter() {
+            match &id.lookup_intern(self.db).details {
+                green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
+                green::GreenNodeDetails::Node { children, .. } => {
+                    write!(f, "{}", GreenNodesFormatter { nodes: children, db: self.db })?;
                 }
             }
         }

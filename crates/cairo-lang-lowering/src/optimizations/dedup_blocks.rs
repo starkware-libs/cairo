@@ -145,7 +145,7 @@ impl CanonicBlockBuilder<'_> {
             }
             Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) => {
                 CanonicStatement::EnumConstruct {
-                    variant: variant.clone(),
+                    variant: *variant,
                     input: self.handle_input(input),
                     output: self.handle_output(output),
                 }

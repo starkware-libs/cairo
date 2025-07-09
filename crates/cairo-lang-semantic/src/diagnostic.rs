@@ -457,12 +457,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 };
                 format!(r#"{prefix}: "{}" and "{}""#, first_ty.format(db), different_ty.format(db))
             }
-            SemanticDiagnosticKind::LogicalOperatorNotAllowedInIfLet => {
-                "Logical operator not allowed in if-let.".into()
-            }
-            SemanticDiagnosticKind::LogicalOperatorNotAllowedInWhileLet => {
-                "Logical operator not allowed in while-let.".into()
-            }
             SemanticDiagnosticKind::TypeHasNoMembers { ty, member_name: _ } => {
                 format!(r#"Type "{}" has no members."#, ty.format(db))
             }
@@ -961,14 +955,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::SelfMustBeFirst => {
                 "`Self` can only be the first segment of a path.".into()
             }
-            SemanticDiagnosticKind::ResolverModifierNotSupportedInContext => {
-                "`$defsite` is not supported in this context.".into()
+            SemanticDiagnosticKind::DollarNotSupportedInContext => {
+                "`$` is not supported in this context.".into()
             }
             SemanticDiagnosticKind::UnknownResolverModifier { modifier } => {
                 format!("`${modifier}` is not supported.")
             }
             SemanticDiagnosticKind::EmptyPathAfterResolverModifier => {
-                "Empty path after `$defsite` is not allowed.".into()
+                "Expected path after modifier.".into()
             }
             SemanticDiagnosticKind::PathInMacroWithoutModifier => {
                 "Path in a macro without a resolver modifier ($callsite or $defsite) - currently \
@@ -1067,11 +1061,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::PatternMissingArgs(path) => {
                 format!(
                     "Pattern missing subpattern for the payload of variant. Consider using `{}(_)`",
-                    path.segments(db)
-                        .elements(db)
-                        .into_iter()
-                        .map(|seg| seg.identifier(db))
-                        .join("::")
+                    path.segments(db).elements(db).map(|seg| seg.identifier(db)).join("::")
                 )
             }
             SemanticDiagnosticKind::UndefinedMacroPlaceholder(name) => {
@@ -1080,27 +1070,22 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled => {
                 "User defined inline macros are disabled in the current crate.".into()
             }
+            SemanticDiagnosticKind::NonNeverLetElseType => concat!(
+                "`else` clause of `let...else` must exit the scope. ",
+                "Consider using `return`, `continue`, ..."
+            )
+            .into(),
         }
     }
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        match &self.kind {
-            SemanticDiagnosticKind::PluginDiagnostic(diag) => {
-                if let Some(relative_span) = diag.relative_span {
-                    return self.stable_location.diagnostic_location_with_offsets(
-                        db,
-                        relative_span.start.as_u32(),
-                        relative_span.end.as_u32(),
-                    );
-                }
-            }
-            SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(parser_diagnostic) => {
-                return DiagnosticLocation {
-                    file_id: parser_diagnostic.file_id,
-                    span: parser_diagnostic.span,
-                };
-            }
-            _ => (),
-        }
+        if let SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(parser_diagnostic) =
+            &self.kind
+        {
+            return DiagnosticLocation {
+                file_id: parser_diagnostic.file_id,
+                span: parser_diagnostic.span,
+            };
+        };
 
         let mut location = self.stable_location.diagnostic_location(db);
         if self.after {
@@ -1304,8 +1289,6 @@ pub enum SemanticDiagnosticKind {
         pending_ty: semantic::TypeId,
         different_ty: semantic::TypeId,
     },
-    LogicalOperatorNotAllowedInIfLet,
-    LogicalOperatorNotAllowedInWhileLet,
     TypeHasNoMembers {
         ty: semantic::TypeId,
         member_name: SmolStr,
@@ -1495,7 +1478,7 @@ pub enum SemanticDiagnosticKind {
     FixedSizeArraySizeTooBig,
     SelfNotSupportedInContext,
     SelfMustBeFirst,
-    ResolverModifierNotSupportedInContext,
+    DollarNotSupportedInContext,
     UnknownResolverModifier {
         modifier: SmolStr,
     },
@@ -1529,6 +1512,7 @@ pub enum SemanticDiagnosticKind {
     PatternMissingArgs(ast::ExprPath),
     UndefinedMacroPlaceholder(String),
     UserDefinedInlineMacrosDisabled,
+    NonNeverLetElseType,
 }
 
 /// The kind of an expression with multiple possible return types.

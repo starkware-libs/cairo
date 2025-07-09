@@ -166,10 +166,13 @@ fn __wrapper__CtorImpl__constructor(mut data: Span::<felt252>) -> Span::<felt252
 }
 
 
+#[doc(hidden)]
 pub mod __external {
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
     pub use super::__wrapper__CtorImpl__constructor as constructor;
 }
@@ -234,9 +237,13 @@ impl EventERC20TokenIntoEvent of Into<erc20_mini::Event, Event> {
             recipient: ContractAddress,
         );
     }
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
 
@@ -397,10 +404,13 @@ fn __wrapper__CtorImpl__constructor(mut data: Span::<felt252>) -> Span::<felt252
 }
 
 
+#[doc(hidden)]
 pub mod __external {
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
     pub use super::__wrapper__CtorImpl__constructor as constructor;
 }
@@ -465,9 +475,13 @@ impl EventERC20TokenIntoEvent of Into<erc20_mini::Event, Event> {
             recipient: ContractAddress,
         );
     }
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics

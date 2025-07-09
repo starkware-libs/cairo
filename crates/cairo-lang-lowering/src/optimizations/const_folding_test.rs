@@ -38,7 +38,9 @@ fn test_match_optimizer(
 
     let mut before =
         db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().deref().clone();
-    OptimizationPhase::ApplyInlining.apply(db, function_id, &mut before).unwrap();
+    OptimizationPhase::ApplyInlining { enable_const_folding: false }
+        .apply(db, function_id, &mut before)
+        .unwrap();
     OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();
     OptimizationPhase::CancelOps.apply(db, function_id, &mut before).unwrap();
     OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();

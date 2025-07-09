@@ -1092,7 +1092,6 @@ impl<'a> FormatterImpl<'a> {
                     use_item
                         .attributes(self.db)
                         .elements(self.db)
-                        .into_iter()
                         .map(|attr| attr.as_syntax_node().get_text_without_trivia(self.db)),
                     [use_item.visibility(self.db).as_syntax_node().get_text(self.db)],
                 )
@@ -1124,7 +1123,7 @@ impl<'a> FormatterImpl<'a> {
     fn has_only_whitespace_trivia(&self, node: &SyntaxNode) -> bool {
         node.descendants(self.db).all(|descendant| {
             if let Some(trivia) = ast::Trivia::cast(self.db, descendant) {
-                trivia.elements(self.db).into_iter().all(|element| {
+                trivia.elements(self.db).all(|element| {
                     matches!(element, ast::Trivium::Whitespace(_) | ast::Trivium::Newline(_))
                 })
             } else {
@@ -1280,7 +1279,7 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
         // Case for multi vs multi.
         (UsePath::Multi(a_multi), UsePath::Multi(b_multi)) => {
             let get_min_child = |multi: &ast::UsePathMulti| {
-                multi.use_paths(db).elements(db).into_iter().min_by_key(|child| match child {
+                multi.use_paths(db).elements(db).min_by_key(|child| match child {
                     UsePath::Leaf(leaf) => leaf.extract_ident(db),
                     UsePath::Single(single) => single.extract_ident(db),
                     _ => "".to_string(),

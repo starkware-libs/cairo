@@ -236,3 +236,42 @@ error: Unexpected type for tuple pattern. "[core::felt252; 3]" is not a tuple.
  --> lib.cairo:2:9
     let (_a, _b, _c) = s;
         ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Avoid crash on unknown patterns.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(s: [felt252; 3]) {
+    let (unresolved,) = if true {} else {
+        (array![(1, 2, 3)],)
+    };
+    for (_x, _y, _z) in unresolved.span() {}
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: If blocks have incompatible types: "()" and "(core::array::Array::<(?2, ?3, ?4)>,)"
+ --> lib.cairo:2:25-4:5
+      let (unresolved,) = if true {} else {
+ _________________________^
+|         (array![(1, 2, 3)],)
+|     };
+|_____^
+
+error: Wrong number of tuple elements in pattern. Expected: 0. Got: 1.
+ --> lib.cairo:2:9
+    let (unresolved,) = if true {} else {
+        ^^^^^^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:5:25
+    for (_x, _y, _z) in unresolved.span() {}
+                        ^^^^^^^^^^

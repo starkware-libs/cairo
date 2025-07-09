@@ -9,12 +9,12 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
+use cairo_lang_filesystem::ids::{CodeMapping, CrateId, CrateLongId};
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
-use cairo_lang_syntax::node::helpers::PathSegmentEx;
+use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -33,7 +33,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{
-    ComputationContext, ContextFunction, Environment, compute_expr_semantic,
+    ComputationContext, ContextFunction, Environment, ExpansionOffset, compute_expr_semantic,
     get_statement_item_by_name,
 };
 use crate::expr::inference::canonic::ResultNoErrEx;
@@ -50,7 +50,6 @@ use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{
     ConcreteImplId, ConcreteImplLongId, DerefInfo, ImplImplId, ImplLongId, ImplLookupContext,
 };
-use crate::items::macro_declaration::MacroExpansionResult;
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{
     ConcreteTraitConstantLongId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
@@ -227,9 +226,9 @@ pub struct ResolverMacroData {
     /// 2. The path was supplied as a macro argument. In other words, the path is an expansion of a
     ///    placeholder and is not a part of the macro expansion template.
     pub callsite_module_file_id: ModuleFileId,
-    /// This is the result of the macro expansion. It is used to determine if a part of the code
-    /// came from a macro argument or from the macro expansion template.
-    pub expansion_result: Arc<MacroExpansionResult>,
+    /// This is the mappings of the macro expansion. It is used to determine if a part of the
+    /// code came from a macro argument or from the macro expansion template.
+    pub expansion_mappings: Arc<[CodeMapping]>,
     /// The parent macro data. Exists in case of a macro calling another macro, and is used if we
     /// climb to the callsite environment.
     pub parent_macro_call_data: Option<Box<ResolverMacroData>>,
@@ -297,19 +296,20 @@ enum UseStarResult {
 /// A trait for things that can be interpreted as a path of segments.
 pub trait AsSegments {
     fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment>;
-    /// Is the path prefixed with a `$`, indicating a resolver site modifier.
-    fn is_placeholder(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Returns placeholder marker `$` if the path prefixed with one, indicating a resolver site
+    /// modifier.
+    fn placeholder_marker(&self, db: &dyn SyntaxGroup) -> Option<ast::TerminalDollar>;
     /// The offset of the path in the file.
     fn offset(&self, db: &dyn SyntaxGroup) -> Option<TextOffset>;
 }
 impl AsSegments for &ast::ExprPath {
     fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
-        self.segments(db).elements(db)
+        self.segments(db).elements_vec(db)
     }
-    fn is_placeholder(&self, db: &dyn SyntaxGroup) -> bool {
+    fn placeholder_marker(&self, db: &dyn SyntaxGroup) -> Option<ast::TerminalDollar> {
         match self.dollar(db) {
-            ast::OptionTerminalDollar::Empty(_) => false,
-            ast::OptionTerminalDollar::TerminalDollar(_) => true,
+            ast::OptionTerminalDollar::Empty(_) => None,
+            ast::OptionTerminalDollar::TerminalDollar(dollar) => Some(dollar),
         }
     }
 
@@ -321,10 +321,10 @@ impl AsSegments for Vec<ast::PathSegment> {
     fn to_segments(self, _: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
         self
     }
-    fn is_placeholder(&self, _: &dyn SyntaxGroup) -> bool {
+    fn placeholder_marker(&self, _: &dyn SyntaxGroup) -> Option<ast::TerminalDollar> {
         // A dollar can prefix only the first segment of a path, thus irrelevant to a list of
         // segments.
-        false
+        None
     }
     fn offset(&self, db: &dyn SyntaxGroup) -> Option<TextOffset> {
         self.first().map(|segment| segment.as_syntax_node().offset(db))
@@ -440,29 +440,35 @@ impl<'db> Resolver<'db> {
         >,
     ) -> Maybe<ResolvedItem> {
         let db = self.db;
-        let is_placeholder = path.is_placeholder(db);
+        let placeholder_marker = path.placeholder_marker(db);
 
-        let mut cur_offset = path.offset(db).expect("Trying to resolve an empty path.");
+        let mut cur_offset =
+            ExpansionOffset::new(path.offset(db).expect("Trying to resolve an empty path."));
         let elements_vec = path.to_segments(db);
         let mut segments = elements_vec.iter().peekable();
         let segments_stable_ptr =
             segments.peek().expect("Trying to resolve an empty path.").stable_ptr(db);
-        let mut cur_macro_call_data = self.macro_call_data.clone();
+        let mut cur_macro_call_data = self.macro_call_data.as_ref();
         // Climb up the macro call data while the current resolved path is being mapped to an
         // argument of a macro call.
-        while let Some(macro_call_data) = cur_macro_call_data.clone() {
-            if let Some(placeholder_expansion) =
-                macro_call_data.expansion_result.get_placeholder_at(cur_offset)
-            {
-                cur_macro_call_data = macro_call_data.parent_macro_call_data.map(|x| (*x).clone());
-                cur_offset = placeholder_expansion.origin.start();
+        while let Some(macro_call_data) = &cur_macro_call_data {
+            if let Some(new_offset) = cur_offset.mapped(&macro_call_data.expansion_mappings) {
+                cur_macro_call_data =
+                    macro_call_data.parent_macro_call_data.as_ref().map(|data| data.as_ref());
+                cur_offset = new_offset;
                 continue;
             }
             break;
         }
 
-        let macro_context_modifier = if is_placeholder {
-            self.handle_macro_context_modifier(diagnostics, &mut segments, cur_macro_call_data)?
+        let macro_context_modifier = if let Some(marker) = placeholder_marker {
+            if cur_macro_call_data.is_some() {
+                self.handle_macro_context_modifier(diagnostics, &mut segments)?
+            } else {
+                return Err(
+                    diagnostics.report(marker.stable_ptr(self.db), DollarNotSupportedInContext)
+                );
+            }
         } else {
             if cur_macro_call_data.is_some() && !self.suppress_modifiers_diagnostics {
                 diagnostics.report(segments_stable_ptr, PathInMacroWithoutModifier);
@@ -755,14 +761,9 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         path: impl AsSegments,
         item_type: NotFoundItemType,
+        ctx: ResolutionContext<'_>,
     ) -> Maybe<ResolvedGenericItem> {
-        self.resolve_generic_path_inner(
-            diagnostics,
-            path,
-            item_type,
-            true,
-            ResolutionContext::Default,
-        )
+        self.resolve_generic_path_inner(diagnostics, path, item_type, true, ctx)
     }
 
     /// Resolves a generic item, given a path.
@@ -832,7 +833,7 @@ impl<'db> Resolver<'db> {
         if let Some(base_module) = self.try_handle_super_segments(
             diagnostics,
             segments,
-            |resolved_items, db, segment, module_id| {
+            |resolved_items, db: &dyn SemanticGroup, segment, module_id| {
                 resolved_items.mark_generic(db, segment, ResolvedGenericItem::Module(module_id));
             },
             macro_context_modifier,
@@ -944,7 +945,7 @@ impl<'db> Resolver<'db> {
         let mut module_id = self.active_module_file_id(macro_context_modifier).0;
         for segment in segments.peeking_take_while(|segment| match segment {
             ast::PathSegment::WithGenericArgs(_) | ast::PathSegment::Missing(_) => false,
-            ast::PathSegment::Simple(simple) => simple.ident(db).text(db) == SUPER_KW,
+            ast::PathSegment::Simple(simple) => simple.identifier(db) == SUPER_KW,
         }) {
             module_id = match module_id {
                 ModuleId::CrateRoot(_) => {
@@ -2361,16 +2362,13 @@ impl<'db> Resolver<'db> {
     ///  - The modifier is not supported (i.e. starts with `$` but is not one of the supported
     ///    modifiers).
     ///  - The path after the modifier is empty.
-    ///  - The modifier is used in a code which was not generated by a macro (i.e. `macro_call_data`
-    ///    is `None`).
     fn handle_macro_context_modifier(
-        &mut self,
+        &self,
         diagnostics: &mut SemanticDiagnostics,
         segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
-        macro_call_data: Option<ResolverMacroData>,
     ) -> Maybe<MacroContextModifier> {
         if segments.len() == 1 {
-            return Err(diagnostics.report(
+            return Err(diagnostics.report_after(
                 segments.next().unwrap().stable_ptr(self.db),
                 EmptyPathAfterResolverModifier,
             ));
@@ -2382,17 +2380,10 @@ impl<'db> Resolver<'db> {
                 match ident_text.as_str() {
                     MACRO_DEF_SITE | MACRO_CALL_SITE => {
                         segments.next();
-                        if macro_call_data.is_some() {
-                            if ident_text.as_str() == MACRO_DEF_SITE {
-                                Ok(MacroContextModifier::DefSite)
-                            } else {
-                                Ok(MacroContextModifier::CallSite)
-                            }
+                        if ident_text.as_str() == MACRO_DEF_SITE {
+                            Ok(MacroContextModifier::DefSite)
                         } else {
-                            Err(diagnostics.report(
-                                ident.stable_ptr(self.db),
-                                ResolverModifierNotSupportedInContext,
-                            ))
+                            Ok(MacroContextModifier::CallSite)
                         }
                     }
                     _ => Err(diagnostics.report(

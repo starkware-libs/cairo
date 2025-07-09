@@ -587,7 +587,6 @@ fn maybe_resolve_type(
             let sub_tys = tuple_syntax
                 .expressions(db)
                 .elements(db)
-                .into_iter()
                 .map(|subexpr_syntax| {
                     resolve_type_ex(
                         db,
@@ -625,7 +624,7 @@ fn maybe_resolve_type(
             }
         }
         ast::Expr::FixedSizeArray(array_syntax) => {
-            let [ty] = &array_syntax.exprs(db).elements(db)[..] else {
+            let Some([ty]) = &array_syntax.exprs(db).elements(db).collect_array() else {
                 return Err(
                     diagnostics.report(ty_syntax.stable_ptr(db), FixedSizeArrayTypeNonSingleType)
                 );

@@ -47,7 +47,7 @@ trait CompareAssertionPlugin: NamedPlugin {
         else {
             return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax.stable_ptr(db));
         };
-        let arguments = arguments_syntax.arguments(db).elements(db);
+        let arguments = arguments_syntax.arguments(db).elements_vec(db);
         if arguments.len() < 2 {
             return InlinePluginResult {
                 code: None,
@@ -201,6 +201,7 @@ trait CompareAssertionPlugin: NamedPlugin {
                 code_mappings,
                 aux_data: None,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             }),
             diagnostics,
         }

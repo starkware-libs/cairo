@@ -209,6 +209,15 @@ impl<Key: Eq, Value: Eq, BH> PartialEq for OrderedHashMap<Key, Value, BH> {
 
 impl<Key: Hash + Eq, Value: Eq, BH: BuildHasher> Eq for OrderedHashMap<Key, Value, BH> {}
 
+impl<Key: Hash, Value: Hash, BH> Hash for OrderedHashMap<Key, Value, BH> {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        self.len().hash(state);
+        for e in self.iter() {
+            e.hash(state);
+        }
+    }
+}
+
 impl<Key: Hash + Eq, Value, BH: BuildHasher + Default> FromIterator<(Key, Value)>
     for OrderedHashMap<Key, Value, BH>
 {

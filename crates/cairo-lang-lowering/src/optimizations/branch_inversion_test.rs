@@ -16,7 +16,7 @@ cairo_lang_test_utils::test_file_test!(
     branch_inversion,
     "src/optimizations/test_data",
     {
-        branch_inversion :"branch_inversion",
+        branch_inversion: "branch_inversion",
     },
     test_branch_inversion
 );
@@ -40,7 +40,9 @@ fn test_branch_inversion(
         db.lowered_body(function_id, LoweringStage::Monomorphized).unwrap().deref().clone();
 
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
-    OptimizationPhase::ApplyInlining.apply(db, function_id, &mut before).unwrap();
+    OptimizationPhase::ApplyInlining { enable_const_folding: true }
+        .apply(db, function_id, &mut before)
+        .unwrap();
     OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();
 
     let mut after = before.clone();

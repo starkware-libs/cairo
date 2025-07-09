@@ -74,6 +74,10 @@ fn this_function_has_a_very_long_signature(
     yet_another_linked_parameter_at_the_end: Circle,
 ) -> Circle {}
 
+fn test_fixed_size_array(param: [u32; 8]) -> [u32; 8] {
+    return param;
+}
+
 //! > Item signature #1
 
 //! > Item documentation #1
@@ -291,3 +295,10 @@ fn this_function_has_a_very_long_signature(
 //! > Item documentation #28
 
 //! > Item documentation tokens #28
+
+//! > Item signature #29
+fn test_fixed_size_array(param: [u32; 8]) -> [u32; 8]
+
+//! > Item documentation #29
+
+//! > Item documentation tokens #29

@@ -2,8 +2,8 @@ use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ast::{
     self, AttributeListGreen, ExprInlineMacro, ExprPathGreen, ItemInlineMacro,
-    LegacyExprInlineMacro, LegacyItemInlineMacro, TerminalIdentifierGreen, TerminalNotGreen,
-    TerminalSemicolonGreen, TokenTree, TokenTreeNode, WrappedArgListGreen,
+    LegacyExprInlineMacro, LegacyItemInlineMacro, TerminalNotGreen, TerminalSemicolonGreen,
+    TokenTree, TokenTreeNode, WrappedArgListGreen,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -96,14 +96,14 @@ impl AsLegacyInlineMacro for ItemInlineMacro {
             return None;
         };
         let attributes = AttributeListGreen(*attributes);
-        let macro_name = TerminalIdentifierGreen(*macro_name);
+        let macro_path = ExprPathGreen(*macro_name);
         let bang = TerminalNotGreen(*bang);
         let wrapped_arg_list = token_tree_as_wrapped_arg_list(self.arguments(db), db)?;
         let semicolon = TerminalSemicolonGreen(*semicolon);
         let legacy_green = LegacyItemInlineMacro::new_green(
             db,
             attributes,
-            macro_name,
+            macro_path,
             bang,
             wrapped_arg_list,
             semicolon,

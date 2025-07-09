@@ -25,7 +25,7 @@ use cairo_lang_utils::ordered_hash_map::{
     OrderedHashMap, deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec,
 };
 use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
-use itertools::chain;
+use itertools::{Itertools, chain};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
@@ -184,8 +184,8 @@ fn get_impl_aliases_abi_functions(
             ),
         );
 
-        let impl_path_elements = impl_alias.impl_path(db).segments(db).elements(db);
-        let Some((impl_final_part, impl_module)) = impl_path_elements.split_last() else {
+        let mut impl_path_elements = impl_alias.impl_path(db).segments(db).elements(db);
+        let Some(impl_final_part) = impl_path_elements.next_back() else {
             unreachable!("impl_path should have at least one segment")
         };
         let impl_name = impl_final_part.identifier(db);
@@ -193,7 +193,7 @@ fn get_impl_aliases_abi_functions(
         let ResolvedConcreteItem::Module(impl_module) = resolver
             .resolve_concrete_path(
                 &mut diagnostics,
-                impl_module.to_vec(),
+                impl_path_elements.collect_vec(),
                 NotFoundItemType::Identifier,
             )
             .to_option()

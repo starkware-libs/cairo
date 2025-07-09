@@ -15,7 +15,7 @@ extern fn trace<const FLAG: felt252>() nopanic;
     feature: "bounded-int-utils",
     note: "Improper usage of the functionalities in this module is likely to cause compiler crashes, use with caution.",
 )]
-pub(crate) mod bounded_int;
+pub mod bounded_int;
 
 mod num;
 

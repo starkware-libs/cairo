@@ -52,7 +52,7 @@ pub enum RewriteResult {
 
 /// A substitution of generic arguments in generic parameters as well as the `Self` of traits. Used
 /// for concretization.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct GenericSubstitution {
     param_to_arg: OrderedHashMap<GenericParamId, GenericArgumentId>,
     self_impl: Option<ImplId>,
@@ -95,15 +95,6 @@ impl Deref for GenericSubstitution {
 impl DerefMut for GenericSubstitution {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.param_to_arg
-    }
-}
-#[allow(clippy::derived_hash_with_manual_eq)]
-impl std::hash::Hash for GenericSubstitution {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.param_to_arg.len().hash(state);
-        for e in self.param_to_arg.iter() {
-            e.hash(state);
-        }
     }
 }
 
