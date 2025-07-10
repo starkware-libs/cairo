@@ -7,7 +7,7 @@ use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, LookupIntern, require};
-use itertools::{Itertools, chain, izip, zip_eq};
+use itertools::{Itertools, chain, zip_eq};
 use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
@@ -263,7 +263,7 @@ impl BlockBuilder {
         ctx: &mut LoweringContext<'_, '_>,
         usage: Usage,
         expr: &semantic::ExprClosure,
-    ) -> VarUsage {
+    ) -> (VarUsage, ClosureInfo) {
         let location = ctx.get_location(expr.stable_ptr.untyped());
 
         let inputs = chain!(
@@ -311,25 +311,7 @@ impl BlockBuilder {
             generators::StructConstruct { inputs: inputs.clone(), ty: expr.ty, location }
                 .add(ctx, &mut self.statements);
 
-        let closure_info = ClosureInfo { members, snapshots };
-
-        for (var_usage, member) in izip!(inputs, usage.usage.keys()) {
-            if ctx.variables[var_usage.var_id].copyable.is_ok()
-                && !usage.changes.contains_key(member)
-            {
-                self.semantics.copiable_captured.insert(member.clone(), var_usage.var_id);
-            } else {
-                self.semantics.captured.insert(member.clone(), var_usage.var_id);
-            }
-        }
-
-        for member in usage.snap_usage.keys() {
-            self.semantics.copiable_captured.insert(member.clone(), var_usage.var_id);
-        }
-
-        self.semantics.closures.insert(var_usage.var_id, closure_info);
-
-        var_usage
+        (var_usage, ClosureInfo { members, snapshots })
     }
 
     /// Merges sibling sealed blocks.

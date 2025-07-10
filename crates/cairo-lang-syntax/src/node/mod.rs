@@ -172,44 +172,45 @@ impl SyntaxNode {
 
     pub fn span_start_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
         let SyntaxNodeLongId { green, offset, .. } = self.lookup_intern(db);
-        let green_node = green.lookup_intern(db);
-        match &green_node.details {
-            green::GreenNodeDetails::Token(_) => offset,
-            green::GreenNodeDetails::Node { children, .. } => {
-                if green_node.kind.is_terminal() {
-                    let width0 = children[0].lookup_intern(db).width();
-                    offset.add_width(width0)
-                } else if let Some(child) = self
-                    .get_children(db)
-                    .iter()
-                    .find(|child| child.width(db) != TextWidth::default())
-                {
-                    child.span_start_without_trivia(db)
-                } else {
-                    offset
+        let mut green_node = green.lookup_intern(db);
+        loop {
+            match &green_node.details {
+                green::GreenNodeDetails::Token(_) => return offset,
+                green::GreenNodeDetails::Node { children, .. } => {
+                    if green_node.kind.is_terminal() {
+                        return offset.add_width(children[0].lookup_intern(db).width());
+                    }
+                    if let Some(child) = children.iter().find_map(|child| {
+                        let child = child.lookup_intern(db);
+                        (child.width() != TextWidth::default()).then_some(child)
+                    }) {
+                        green_node = child;
+                    } else {
+                        return offset;
+                    }
                 }
             }
         }
     }
     pub fn span_end_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
         let SyntaxNodeLongId { green, offset, .. } = self.lookup_intern(db);
-        let green_node = green.lookup_intern(db);
-        match &green_node.details {
-            green::GreenNodeDetails::Token(text) => offset.add_width(TextWidth::from_str(text)),
-            green::GreenNodeDetails::Node { children, width } => {
-                if green_node.kind.is_terminal() {
-                    let width0 = children[0].lookup_intern(db).width();
-                    let width1 = children[1].lookup_intern(db).width();
-                    offset.add_width(width0).add_width(width1)
-                } else if let Some(child) = self
-                    .get_children(db)
-                    .iter()
-                    .filter(|child| child.width(db) != TextWidth::default())
-                    .next_back()
-                {
-                    child.span_end_without_trivia(db)
-                } else {
-                    offset.add_width(*width)
+        let mut green_node = green.lookup_intern(db);
+        let end_offset = offset.add_width(green_node.width());
+        loop {
+            match &green_node.details {
+                green::GreenNodeDetails::Token(_) => return end_offset,
+                green::GreenNodeDetails::Node { children, .. } => {
+                    if green_node.kind.is_terminal() {
+                        return end_offset.sub_width(children[2].lookup_intern(db).width());
+                    }
+                    if let Some(child) = children.iter().rev().find_map(|child| {
+                        let child = child.lookup_intern(db);
+                        (child.width() != TextWidth::default()).then_some(child)
+                    }) {
+                        green_node = child;
+                    } else {
+                        return end_offset;
+                    }
                 }
             }
         }

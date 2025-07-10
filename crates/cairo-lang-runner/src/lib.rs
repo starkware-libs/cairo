@@ -276,6 +276,9 @@ impl SierraCasmRunner {
                 hint_processor,
                 hints_dict,
             )?;
+
+        // The execution from the header created by self.builder.create_entry_code().
+        // We expect the last trace entry to be the `ret` instruction at the end of the header.
         let header_end = relocated_trace.last().unwrap().pc;
         used_resources.n_steps -=
             relocated_trace.iter().position(|e| e.pc > header_end).unwrap() - 1;
@@ -297,9 +300,12 @@ impl SierraCasmRunner {
 
         let Self { builder, starknet_contracts_info: _, run_profiler } = self;
 
-        let profiling_info = run_profiler
-            .as_ref()
-            .map(|config| ProfilingInfo::from_trace(builder, config, &relocated_trace));
+        // The real program starts right after the header.
+        let load_offset = header_end + 1;
+
+        let profiling_info = run_profiler.as_ref().map(|config| {
+            ProfilingInfo::from_trace(builder, load_offset, config, &relocated_trace)
+        });
 
         Ok(RunResult { gas_counter, memory, value, used_resources, profiling_info })
     }

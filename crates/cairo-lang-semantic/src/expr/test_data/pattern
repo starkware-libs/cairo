@@ -270,8 +270,3 @@ error: Wrong number of tuple elements in pattern. Expected: 0. Got: 1.
  --> lib.cairo:2:9
     let (unresolved,) = if true {} else {
         ^^^^^^^^^^^^^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:5:25
-    for (_x, _y, _z) in unresolved.span() {}
-                        ^^^^^^^^^^
