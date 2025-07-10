@@ -35,14 +35,15 @@ pub fn return_optimization(
     analysis.get_root_info();
     let ctx = analysis.analyzer;
 
+    let ReturnOptimizerContext { fixes, .. } = ctx;
     let mut variables = VariableAllocator::new(
         db,
         function_id.base_semantic_function(db).function_with_body_id(db),
-        lowered.variables.clone(),
+        std::mem::take(&mut lowered.variables),
     )
     .unwrap();
 
-    for FixInfo { location: (block_id, statement_idx), return_info } in ctx.fixes {
+    for FixInfo { location: (block_id, statement_idx), return_info } in fixes {
         let block = &mut lowered.blocks[block_id];
         block.statements.truncate(statement_idx);
         let mut ctx = EarlyReturnContext {
@@ -110,7 +111,7 @@ impl EarlyReturnContext<'_, '_> {
                             let output =
                                 self.variables.new_var(VarRequest { ty, location: self.location });
                             self.statements.push(Statement::EnumConstruct(
-                                StatementEnumConstruct { variant: variant.clone(), input, output },
+                                StatementEnumConstruct { variant: *variant, input, output },
                             ));
                             output
                         });
@@ -522,7 +523,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                     *output,
                     ValueInfo::EnumConstruct {
                         var_info: Box::new(self.get_var_info(input)),
-                        variant: variant.clone(),
+                        variant: *variant,
                     },
                 );
             }

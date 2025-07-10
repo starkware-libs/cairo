@@ -70,6 +70,9 @@ use crate::{
     VarRemapping, VarUsage, Variable,
 };
 
+type LookupCache =
+    (CacheLookups, SemanticCacheLookups, Vec<(DefsFunctionWithBodyIdCached, MultiLoweringCached)>);
+
 /// Load the cached lowering of a crate if it has a cache file configuration.
 pub fn load_cached_crate_functions(
     db: &dyn LoweringGroup,
@@ -86,11 +89,15 @@ pub fn load_cached_crate_functions(
 
     let content = &content[16 + def_size..]; // 16 bytes for both sizes.
 
-    let (lookups, semantic_lookups, lowerings): (
-        CacheLookups,
-        SemanticCacheLookups,
-        Vec<(DefsFunctionWithBodyIdCached, MultiLoweringCached)>,
-    ) = bincode::deserialize(content).unwrap_or_default();
+    let ((lookups, semantic_lookups, lowerings), _): (LookupCache, _) =
+        bincode::serde::decode_from_slice(content, bincode::config::standard()).unwrap_or_else(
+            |e| {
+                panic!(
+                    "failed to deserialize lookup cache for crate `{}`: {e}",
+                    crate_id.name(db),
+                )
+            },
+        );
 
     // TODO(tomer): Fail on version, cfg, and dependencies mismatch.
 
@@ -160,16 +167,18 @@ pub fn generate_crate_cache(
 
     let mut artifact = Vec::<u8>::new();
 
-    if let Ok(def) = bincode::serialize(&(
-        CachedCrateMetadata::new(crate_id, db),
-        def_cache,
-        &ctx.semantic_ctx.defs_ctx.lookups,
-    )) {
+    if let Ok(def) = bincode::serde::encode_to_vec(
+        &(CachedCrateMetadata::new(crate_id, db), def_cache, &ctx.semantic_ctx.defs_ctx.lookups),
+        bincode::config::standard(),
+    ) {
         artifact.extend(def.len().to_be_bytes());
         artifact.extend(def);
     }
 
-    if let Ok(lowered) = bincode::serialize(&(&ctx.lookups, &ctx.semantic_ctx.lookups, cached)) {
+    if let Ok(lowered) = bincode::serde::encode_to_vec(
+        &(&ctx.lookups, &ctx.semantic_ctx.lookups, cached),
+        bincode::config::standard(),
+    ) {
         artifact.extend(lowered.len().to_be_bytes());
         artifact.extend(lowered);
     }

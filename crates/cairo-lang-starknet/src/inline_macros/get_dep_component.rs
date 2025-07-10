@@ -9,6 +9,7 @@ use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::extract_matches;
+use itertools::Itertools;
 
 /// Macro for getting a component given a contract state that has it.
 #[derive(Debug, Default)]
@@ -71,12 +72,15 @@ fn get_dep_component_generate_code_helper(
             ast::WrappedArgList::ParenthesizedArgList
         )
         .arguments(db)
-        .elements(db)[0]
-            .modifiers(db)
-            .elements(db);
+        .elements(db)
+        .next()
+        .unwrap()
+        .modifiers(db)
+        .elements(db)
+        .collect_array();
 
         // Verify the first element has only a `ref` modifier.
-        if !matches!(&contract_arg_modifiers[..], &[ast::Modifier::Ref(_)]) {
+        if !matches!(contract_arg_modifiers, Some([ast::Modifier::Ref(_)])) {
             // TODO(Gil): The generated diagnostics points to the whole inline macro, it should
             // point to the arg.
             let diagnostics = vec![PluginDiagnostic::error_with_inner_span(
@@ -120,6 +124,7 @@ fn get_dep_component_generate_code_helper(
             code_mappings,
             aux_data: None,
             diagnostics_note: Default::default(),
+            is_unhygienic: false,
         }),
         diagnostics: vec![],
     }

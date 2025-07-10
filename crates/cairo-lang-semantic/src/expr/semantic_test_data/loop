@@ -32,11 +32,13 @@ Loop(
                 tail: Some(
                     If(
                         ExprIf {
-                            condition: BoolExpr(
-                                Var(
-                                    LocalVarId(test::cond),
+                            conditions: [
+                                BoolExpr(
+                                    Var(
+                                        LocalVarId(test::cond),
+                                    ),
                                 ),
-                            ),
+                            ],
                             if_block: Block(
                                 ExprBlock {
                                     statements: [
@@ -126,11 +128,13 @@ Loop(
                 tail: Some(
                     If(
                         ExprIf {
-                            condition: BoolExpr(
-                                Var(
-                                    LocalVarId(test::cond),
+                            conditions: [
+                                BoolExpr(
+                                    Var(
+                                        LocalVarId(test::cond),
+                                    ),
                                 ),
-                            ),
+                            ],
                             if_block: Block(
                                 ExprBlock {
                                     statements: [

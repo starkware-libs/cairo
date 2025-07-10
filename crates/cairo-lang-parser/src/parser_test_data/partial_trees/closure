@@ -60,6 +60,7 @@ ExprPath
         │   │   │   ├── lhs (kind: ExprPath) <ignored>
         │   │   │   ├── op (kind: TokenPlus): '+'
         │   │   │   └── rhs (kind: TokenLiteralNumber): '5'
+        │   │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
         │   │   └── semicolon (kind: TokenSemicolon): ';'
         │   └── child #1 (kind: StatementExpr)
         │       ├── attributes (kind: AttributeList) []
@@ -110,6 +111,7 @@ ExprPath
         │   │   │   ├── lhs (kind: ExprPath) <ignored>
         │   │   │   ├── op (kind: TokenPlus): '+'
         │   │   │   └── rhs (kind: TokenLiteralNumber): '5'
+        │   │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
         │   │   └── semicolon (kind: TokenSemicolon): ';'
         │   └── child #1 (kind: StatementExpr)
         │       ├── attributes (kind: AttributeList) []

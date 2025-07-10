@@ -38,7 +38,7 @@ Now `HTML` versions of the documentation will be generated.
 
 ## View in PDF
 ### Install `asciidoctor`
-> Note: when you install `asciidoctor`, `asciidoctor-pdf` also be installed.
+> Note: when you install `asciidoctor`, `asciidoctor-pdf` will also be installed.
 
 - Mac OS
 ```bash

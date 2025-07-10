@@ -182,6 +182,16 @@ impl CairoProgram {
         }
         AssembledCairoProgram { bytecode, hints }
     }
+
+    /// Returns the Sierra statement corresponding to the given PC.
+    pub fn sierra_statement_index_by_pc(&self, pc: usize) -> StatementIdx {
+        // the `-1` here can't cause an underflow as the first statement is always at
+        // offset 0, so it is always on the left side of the
+        // partition, and thus the partition index is >0.
+        StatementIdx(
+            self.debug_info.sierra_statement_info.partition_point(|x| x.start_offset <= pc) - 1,
+        )
+    }
 }
 
 /// The debug information of a compilation from Sierra to casm.

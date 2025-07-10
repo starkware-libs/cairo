@@ -221,6 +221,7 @@ impl MacroPlugin for DummyPlugin {
                         code_mappings: Default::default(),
                         aux_data: None,
                         diagnostics_note: Default::default(),
+                        is_unhygienic: false,
                     }),
                     diagnostics: vec![],
                     remove_original_item,
@@ -233,6 +234,7 @@ impl MacroPlugin for DummyPlugin {
                     code_mappings: Default::default(),
                     aux_data: None,
                     diagnostics_note: Default::default(),
+                    is_unhygienic: false,
                 }),
                 diagnostics: vec![PluginDiagnostic::error(
                     free_function_ast.stable_ptr(db),
@@ -352,6 +354,7 @@ impl MacroPlugin for FooToBarPlugin {
                 code_mappings: vec![],
                 aux_data: None,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             }),
             diagnostics: vec![],
             remove_original_item: false,
@@ -479,7 +482,7 @@ fn test_unknown_item_macro() {
     assert_eq!(
         format!("{:?}", db.module_plugin_diagnostics(module_id).unwrap()),
         "[(ModuleFileId(CrateRoot(CrateId(0)), FileIndex(0)), PluginDiagnostic { stable_ptr: \
-         SyntaxStablePtrId(3), relative_span: None, message: \"Unknown inline item macro: \
-         'unknown_item_macro'.\", severity: Error, inner_span: None })]"
+         SyntaxStablePtrId(3), message: \"Unknown inline item macro: 'unknown_item_macro'.\", \
+         severity: Error, inner_span: None })]"
     )
 }

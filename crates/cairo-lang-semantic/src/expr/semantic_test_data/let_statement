@@ -24,6 +24,7 @@ Block(
                             ty: core::felt252,
                         },
                     ),
+                    else_clause: None,
                 },
             ),
             Let(
@@ -34,6 +35,7 @@ Block(
                     expr: Var(
                         LocalVarId(test::a),
                     ),
+                    else_clause: None,
                 },
             ),
         ],
@@ -92,6 +94,7 @@ Block(
                             ty: [core::integer::u8; 3],
                         },
                     ),
+                    else_clause: None,
                 },
             ),
         ],

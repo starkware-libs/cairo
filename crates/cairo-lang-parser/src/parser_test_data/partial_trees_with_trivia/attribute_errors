@@ -229,7 +229,12 @@ error: Missing tokens. Expected an item after attributes.
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:2:1
 [bbb]
-^^^^^
+^
+
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+ --> dummy_file.cairo:2:5
+[bbb]
+    ^
 
 //! > expected_tree
 └── Top level kind: FunctionWithBody
@@ -238,27 +243,35 @@ error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/I
     │       ├── hash (kind: TerminalHash)
     │       │   ├── leading_trivia (kind: Trivia)
     │       │   │   ├── child #0 (kind: TriviumSkippedNode)
-    │       │   │   │   └── node (kind: AttributeList)
-    │       │   │   │       └── child #0 (kind: Attribute)
-    │       │   │   │           ├── hash (kind: TerminalHash)
-    │       │   │   │           │   ├── leading_trivia (kind: Trivia) []
-    │       │   │   │           │   ├── token (kind: TokenHash): '#'
-    │       │   │   │           │   └── trailing_trivia (kind: Trivia) []
-    │       │   │   │           ├── lbrack (kind: TerminalLBrack) <ignored>
-    │       │   │   │           ├── attr (kind: ExprPath)
-    │       │   │   │           │   ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │       │   │   │           │   └── segments (kind: ExprPathInner)
-    │       │   │   │           │       └── item #0 (kind: PathSegmentSimple)
-    │       │   │   │           │           └── ident (kind: TerminalIdentifier)
-    │       │   │   │           │               ├── leading_trivia (kind: Trivia) []
-    │       │   │   │           │               ├── token (kind: TokenIdentifier): 'aaa'
-    │       │   │   │           │               └── trailing_trivia (kind: Trivia) []
-    │       │   │   │           ├── arguments (kind: OptionArgListParenthesizedEmpty) []
-    │       │   │   │           └── rbrack (kind: TerminalRBrack) <ignored>
-    │       │   │   ├── child #1 (kind: TokenSkipped): '['
-    │       │   │   ├── child #2 (kind: TokenSkipped): 'bbb'
-    │       │   │   ├── child #3 (kind: TokenSkipped): ']'
-    │       │   │   └── child #4 (kind: TokenNewline).
+    │       │   │   │   └── node (kind: ExprPath)
+    │       │   │   │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   │   │       └── segments (kind: ExprPathInner)
+    │       │   │   │           └── item #0 (kind: PathSegmentSimple)
+    │       │   │   │               └── ident (kind: TerminalIdentifier)
+    │       │   │   │                   ├── leading_trivia (kind: Trivia)
+    │       │   │   │                   │   ├── child #0 (kind: TriviumSkippedNode)
+    │       │   │   │                   │   │   └── node (kind: AttributeList)
+    │       │   │   │                   │   │       └── child #0 (kind: Attribute)
+    │       │   │   │                   │   │           ├── hash (kind: TerminalHash)
+    │       │   │   │                   │   │           │   ├── leading_trivia (kind: Trivia) []
+    │       │   │   │                   │   │           │   ├── token (kind: TokenHash): '#'
+    │       │   │   │                   │   │           │   └── trailing_trivia (kind: Trivia) []
+    │       │   │   │                   │   │           ├── lbrack (kind: TerminalLBrack) <ignored>
+    │       │   │   │                   │   │           ├── attr (kind: ExprPath)
+    │       │   │   │                   │   │           │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   │   │                   │   │           │   └── segments (kind: ExprPathInner)
+    │       │   │   │                   │   │           │       └── item #0 (kind: PathSegmentSimple)
+    │       │   │   │                   │   │           │           └── ident (kind: TerminalIdentifier)
+    │       │   │   │                   │   │           │               ├── leading_trivia (kind: Trivia) []
+    │       │   │   │                   │   │           │               ├── token (kind: TokenIdentifier): 'aaa'
+    │       │   │   │                   │   │           │               └── trailing_trivia (kind: Trivia) []
+    │       │   │   │                   │   │           ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+    │       │   │   │                   │   │           └── rbrack (kind: TerminalRBrack) <ignored>
+    │       │   │   │                   │   └── child #1 (kind: TokenSkipped): '['
+    │       │   │   │                   ├── token (kind: TokenIdentifier): 'bbb'
+    │       │   │   │                   └── trailing_trivia (kind: Trivia) []
+    │       │   │   ├── child #1 (kind: TokenSkipped): ']'
+    │       │   │   └── child #2 (kind: TokenNewline).
     │       │   ├── token (kind: TokenHash): '#'
     │       │   └── trailing_trivia (kind: Trivia) []
     │       ├── lbrack (kind: TerminalLBrack) <ignored>
@@ -844,6 +857,7 @@ error: Missing tokens. Expected a statement after attributes.
     │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │   ├── eq (kind: TerminalEq) <ignored>
     │   │   ├── rhs (kind: TerminalLiteralNumber) <ignored>
+    │   │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     │   │   └── semicolon (kind: TerminalSemicolon) <ignored>
     │   └── child #1: Missing []
     └── rbrace (kind: TerminalRBrace)
@@ -1350,7 +1364,15 @@ error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/I
         │   │           │               └── trailing_trivia (kind: Trivia) []
         │   │           ├── arguments (kind: OptionArgListParenthesizedEmpty) []
         │   │           └── rbrack (kind: TerminalRBrack) <ignored>
-        │   └── child #1 (kind: TokenSkipped): 'a_macro'
+        │   └── child #1 (kind: TriviumSkippedNode)
+        │       └── node (kind: ExprPath)
+        │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │           └── segments (kind: ExprPathInner)
+        │               └── item #0 (kind: PathSegmentSimple)
+        │                   └── ident (kind: TerminalIdentifier)
+        │                       ├── leading_trivia (kind: Trivia) []
+        │                       ├── token (kind: TokenIdentifier): 'a_macro'
+        │                       └── trailing_trivia (kind: Trivia) []
         ├── token (kind: TokenEndOfFile).
         └── trailing_trivia (kind: Trivia) []
 
@@ -1439,7 +1461,15 @@ pub a_macro
         │   │       │   └── trailing_trivia (kind: Trivia)
         │   │       │       └── child #0 (kind: TokenWhitespace).
         │   │       └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
-        │   └── child #1 (kind: TokenSkipped): 'a_macro'
+        │   └── child #1 (kind: TriviumSkippedNode)
+        │       └── node (kind: ExprPath)
+        │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │           └── segments (kind: ExprPathInner)
+        │               └── item #0 (kind: PathSegmentSimple)
+        │                   └── ident (kind: TerminalIdentifier)
+        │                       ├── leading_trivia (kind: Trivia) []
+        │                       ├── token (kind: TokenIdentifier): 'a_macro'
+        │                       └── trailing_trivia (kind: Trivia) []
         ├── token (kind: TokenEndOfFile).
         └── trailing_trivia (kind: Trivia) []
 
@@ -1571,6 +1601,14 @@ error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/I
         │   │       │   └── trailing_trivia (kind: Trivia)
         │   │       │       └── child #0 (kind: TokenWhitespace).
         │   │       └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
-        │   └── child #2 (kind: TokenSkipped): 'a_macro'
+        │   └── child #2 (kind: TriviumSkippedNode)
+        │       └── node (kind: ExprPath)
+        │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │           └── segments (kind: ExprPathInner)
+        │               └── item #0 (kind: PathSegmentSimple)
+        │                   └── ident (kind: TerminalIdentifier)
+        │                       ├── leading_trivia (kind: Trivia) []
+        │                       ├── token (kind: TokenIdentifier): 'a_macro'
+        │                       └── trailing_trivia (kind: Trivia) []
         ├── token (kind: TokenEndOfFile).
         └── trailing_trivia (kind: Trivia) []

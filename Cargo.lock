@@ -309,15 +309,6 @@ checksum = "230c5f1ca6a325a32553f8640d31ac9b49f2411e901e427570154868b46da4f7"
 
 [[package]]
 name = "bincode"
-version = "1.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1f45e9417d87227c7a56d22e471c6206462cba514c7590c09aff4cf6d1ddcad"
-dependencies = [
- "serde",
-]
-
-[[package]]
-name = "bincode"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "36eaf5d7b090263e8150820482d5d93cd964a81e4019913c972f4edcc6edb740"
@@ -438,7 +429,7 @@ name = "cairo-execute"
 version = "2.12.0-rc.1"
 dependencies = [
  "anyhow",
- "bincode 2.0.1",
+ "bincode",
  "cairo-lang-compiler",
  "cairo-lang-executable",
  "cairo-lang-execute-utils",
@@ -519,7 +510,7 @@ dependencies = [
 name = "cairo-lang-defs"
 version = "2.12.0-rc.1"
 dependencies = [
- "bincode 1.3.3",
+ "bincode",
  "cairo-lang-debug",
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",
@@ -536,6 +527,7 @@ dependencies = [
  "smol_str",
  "test-log",
  "typetag",
+ "xxhash-rust",
 ]
 
 [[package]]
@@ -659,7 +651,6 @@ dependencies = [
  "ignore",
  "itertools 0.14.0",
  "pretty_assertions",
- "rust-analyzer-salsa",
  "serde",
  "test-case",
  "thiserror 2.0.12",
@@ -670,7 +661,7 @@ name = "cairo-lang-lowering"
 version = "2.12.0-rc.1"
 dependencies = [
  "assert_matches",
- "bincode 1.3.3",
+ "bincode",
  "cairo-lang-debug",
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
@@ -1209,7 +1200,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a01805fcadbebfbfd1e176bc58e6b1be26362792bb008efe59aae9df0bba60a1"
 dependencies = [
  "anyhow",
- "bincode 2.0.1",
+ "bincode",
  "bitvec",
  "clap",
  "generic-array",
@@ -4698,6 +4689,12 @@ name = "xshell-macros"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32ac00cd3f8ec9c1d33fb3e7958a82df6989c42d747bd326c822b1d625283547"
+
+[[package]]
+name = "xxhash-rust"
+version = "0.8.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fdd20c5420375476fbd4394763288da7eb0cc0b8c11deed431a91562af7335d3"
 
 [[package]]
 name = "yansi"

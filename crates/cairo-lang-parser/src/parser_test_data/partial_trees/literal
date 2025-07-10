@@ -30,6 +30,7 @@ ExprPath
     │   │   └── rhs (kind: TokenLiteralNumber): '456'
     │   ├── op (kind: TokenPlus): '+'
     │   └── rhs (kind: TokenShortString): ''abc''
+    ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -66,6 +67,7 @@ ExprPath
     │   │   └── rhs (kind: TokenLiteralNumber): '456_u256'
     │   ├── op (kind: TokenPlus): '+'
     │   └── rhs (kind: TokenShortString): ''abc'_u16'
+    ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -108,6 +110,7 @@ ExprPath
     │   └── rhs (kind: ExprUnary)
     │       ├── op (kind: TokenMinus): '-'
     │       └── expr (kind: TokenShortString): ''abc'_u16'
+    ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -128,6 +131,7 @@ fn foo() {
     let legal_hex = 0xf;
     let illegal_hex = 0xg;
     let illegal_hex = 0xfg;
+    let missing_suffix = 10000000_;
 }
 
 //! > top_level_kind
@@ -182,6 +186,11 @@ error: Missing token ';'.
     let illegal_hex = 0xfg;
                          ^
 
+error: Missing literal suffix.
+ --> dummy_file.cairo:11:35
+    let missing_suffix = 10000000_;
+                                  ^
+
 //! > expected_tree
 └── Top level kind: StatementList
     ├── child #0 (kind: StatementLet)
@@ -191,6 +200,7 @@ error: Missing token ';'.
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
     │   ├── rhs (kind: TokenLiteralNumber): '0b1'
+    │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #1 (kind: StatementLet)
     │   ├── attributes (kind: AttributeList) []
@@ -199,6 +209,7 @@ error: Missing token ';'.
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
     │   ├── rhs (kind: TokenLiteralNumber): '0b'
+    │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     │   └── semicolon: Missing
     ├── child #2 (kind: StatementExpr)
     │   ├── attributes (kind: AttributeList) []
@@ -211,6 +222,7 @@ error: Missing token ';'.
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
     │   ├── rhs (kind: TokenLiteralNumber): '0b1'
+    │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     │   └── semicolon: Missing
     ├── child #4 (kind: StatementExpr)
     │   ├── attributes (kind: AttributeList) []
@@ -223,6 +235,7 @@ error: Missing token ';'.
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
     │   ├── rhs (kind: TokenLiteralNumber): '0o1'
+    │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #6 (kind: StatementLet)
     │   ├── attributes (kind: AttributeList) []
@@ -231,6 +244,7 @@ error: Missing token ';'.
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
     │   ├── rhs (kind: TokenLiteralNumber): '0o'
+    │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     │   └── semicolon: Missing
     ├── child #7 (kind: StatementExpr)
     │   ├── attributes (kind: AttributeList) []
@@ -243,6 +257,7 @@ error: Missing token ';'.
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
     │   ├── rhs (kind: TokenLiteralNumber): '0o7'
+    │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     │   └── semicolon: Missing
     ├── child #9 (kind: StatementExpr)
     │   ├── attributes (kind: AttributeList) []
@@ -255,6 +270,7 @@ error: Missing token ';'.
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
     │   ├── rhs (kind: TokenLiteralNumber): '0xf'
+    │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #11 (kind: StatementLet)
     │   ├── attributes (kind: AttributeList) []
@@ -263,6 +279,7 @@ error: Missing token ';'.
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
     │   ├── rhs (kind: TokenLiteralNumber): '0x'
+    │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     │   └── semicolon: Missing
     ├── child #12 (kind: StatementExpr)
     │   ├── attributes (kind: AttributeList) []
@@ -275,10 +292,20 @@ error: Missing token ';'.
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
     │   ├── rhs (kind: TokenLiteralNumber): '0xf'
+    │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     │   └── semicolon: Missing
-    └── child #14 (kind: StatementExpr)
+    ├── child #14 (kind: StatementExpr)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── expr (kind: ExprPath) <ignored>
+    │   └── semicolon (kind: TokenSemicolon): ';'
+    └── child #15 (kind: StatementLet)
         ├── attributes (kind: AttributeList) []
-        ├── expr (kind: ExprPath) <ignored>
+        ├── let_kw (kind: TokenLet): 'let'
+        ├── pattern (kind: ExprPath) <ignored>
+        ├── type_clause (kind: OptionTypeClauseEmpty) []
+        ├── eq (kind: TokenEq): '='
+        ├── rhs (kind: TokenLiteralNumber): '10000000_'
+        ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
         └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -313,4 +340,5 @@ error: Missing token ';'.
     ├── type_clause (kind: OptionTypeClauseEmpty) []
     ├── eq (kind: TokenEq): '='
     ├── rhs (kind: TokenShortString): ''a''
+    ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     └── semicolon: Missing

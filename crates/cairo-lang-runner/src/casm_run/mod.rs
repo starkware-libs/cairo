@@ -1412,7 +1412,7 @@ fn vec_as_array<const COUNT: usize>(
 /// Executes the `keccak_syscall` syscall.
 fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, KECCAK);
-    if data.len() % 17 != 0 {
+    if !data.len().is_multiple_of(17) {
         fail_syscall!(b"Invalid keccak input size");
     }
     let mut state = [0u64; 25];

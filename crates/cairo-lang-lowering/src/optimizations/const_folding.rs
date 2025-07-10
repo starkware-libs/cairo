@@ -5,6 +5,7 @@ mod test;
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId};
+use cairo_lang_semantic::corelib::try_extract_nz_wrapped_type;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::{ConstCalcInfo, ConstValue};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, GenericFunctionWithBodyId};
@@ -30,10 +31,12 @@ use crate::ids::{
     ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, FunctionId, SemanticFunctionIdEx,
     SpecializedFunction,
 };
+use crate::specialization::SpecializationArg;
 use crate::{
-    BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, Statement,
-    StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct, StatementSnapshot,
-    StatementStructConstruct, StatementStructDestructure, VarUsage, Variable, VariableId,
+    Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
+    Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
+    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarUsage, Variable,
+    VariableId,
 };
 
 /// Keeps track of equivalent values that a variables might be replaced with.
@@ -58,8 +61,6 @@ enum VarInfo {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Reachability {
-    /// The block is not reachable from the function start after const-folding.
-    Unreachable,
     /// The block is reachable from the function start only through the goto at the end of the given
     /// block.
     FromSingleGoto(BlockId),
@@ -75,233 +76,308 @@ pub fn const_folding(
     function_id: ConcreteFunctionWithBodyId,
     lowered: &mut Lowered,
 ) {
-    if db.optimization_config().skip_const_folding || lowered.blocks.is_empty() {
+    if lowered.blocks.is_empty() {
         return;
     }
-    let libfunc_info = priv_const_folding_info(db);
-    // Skipping const-folding for `panic_with_const_felt252` - to avoid replacing a call to
-    // `panic_with_felt252` with `panic_with_const_felt252` and causing accidental recursion.
-    if function_id.base_semantic_function(db).generic_function(db)
-        == GenericFunctionWithBodyId::Free(libfunc_info.panic_with_const_felt252)
-    {
-        return;
-    }
-
-    let caller_base = match function_id.lookup_intern(db) {
-        ConcreteFunctionWithBodyLongId::Specialized(specialized_func) => specialized_func.base,
-        _ => function_id,
-    };
 
     // Note that we can keep the var_info across blocks because the lowering
     // is in static single assignment form.
-    let mut ctx = ConstFoldingContext {
-        db,
-        var_info: UnorderedHashMap::default(),
-        variables: &mut lowered.variables,
-        libfunc_info: &libfunc_info,
-        caller_base,
-    };
-    let mut reachability = vec![Reachability::Unreachable; lowered.blocks.len()];
-    reachability[0] = Reachability::Any;
-    for block_id in 0..lowered.blocks.len() {
-        match reachability[block_id] {
-            Reachability::Unreachable => continue,
+    let mut ctx = ConstFoldingContext::new(db, function_id, &mut lowered.variables);
+
+    if ctx.should_skip_const_folding(db) {
+        return;
+    }
+
+    for block_id in (0..lowered.blocks.len()).map(BlockId) {
+        if !ctx.visit_block_start(block_id, |block_id| &lowered.blocks[block_id]) {
+            continue;
+        }
+
+        let block = &mut lowered.blocks[block_id];
+        for stmt in block.statements.iter_mut() {
+            ctx.visit_statement(stmt);
+        }
+        ctx.visit_block_end(block_id, block);
+    }
+}
+
+pub struct ConstFoldingContext<'a> {
+    /// The used database.
+    db: &'a dyn LoweringGroup,
+    /// The variables arena, mostly used to get the type of variables.
+    pub variables: &'a mut Arena<Variable>,
+    /// The accumulated information about the const values of variables.
+    var_info: UnorderedHashMap<VariableId, VarInfo>,
+    /// The libfunc information.
+    libfunc_info: Arc<ConstFoldingLibfuncInfo>,
+    /// The specialization base of the caller function (or the caller if the function is not
+    /// specialized).
+    caller_base: ConcreteFunctionWithBodyId,
+    /// Reachability of blocks from the function start.
+    /// If the block is not in this map, it means that it is unreachable (or that it was already
+    /// visited and its reachability won't be checked again).
+    reachability: UnorderedHashMap<BlockId, Reachability>,
+    /// Additional statements to add to the block.
+    additional_stmts: Vec<Statement>,
+}
+
+impl<'a> ConstFoldingContext<'a> {
+    pub fn new(
+        db: &'a dyn LoweringGroup,
+        function_id: ConcreteFunctionWithBodyId,
+        variables: &'a mut Arena<Variable>,
+    ) -> Self {
+        let caller_base = match function_id.lookup_intern(db) {
+            ConcreteFunctionWithBodyLongId::Specialized(specialized_func) => specialized_func.base,
+            _ => function_id,
+        };
+
+        Self {
+            db,
+            var_info: UnorderedHashMap::default(),
+            variables,
+            libfunc_info: priv_const_folding_info(db),
+            caller_base,
+            reachability: UnorderedHashMap::from_iter([(BlockId::root(), Reachability::Any)]),
+            additional_stmts: vec![],
+        }
+    }
+
+    /// Determines if a block is reachable from the function start and propagates constant values
+    /// when the block is reachable via a single goto statement.
+    pub fn visit_block_start<'b>(
+        &mut self,
+        block_id: BlockId,
+        get_block: impl FnOnce(BlockId) -> &'b Block,
+    ) -> bool {
+        let Some(reachability) = self.reachability.remove(&block_id) else {
+            return false;
+        };
+        match reachability {
             Reachability::Any => {}
-            Reachability::FromSingleGoto(from_block) => match &lowered.blocks[from_block].end {
+            Reachability::FromSingleGoto(from_block) => match &get_block(from_block).end {
                 BlockEnd::Goto(_, remapping) => {
                     for (dst, src) in remapping.iter() {
-                        if let Some(v) = ctx.as_const(src.var_id) {
-                            ctx.var_info.insert(*dst, VarInfo::Const(v.clone()));
+                        if let Some(v) = self.as_const(src.var_id) {
+                            self.var_info.insert(*dst, VarInfo::Const(v.clone()));
                         }
                     }
                 }
                 _ => unreachable!("Expected a goto end"),
             },
         }
-        let block = &mut lowered.blocks[BlockId(block_id)];
-        let mut additional_stmts = vec![];
-        for stmt in block.statements.iter_mut() {
-            ctx.maybe_replace_inputs(stmt.inputs_mut());
-            match stmt {
-                Statement::Const(StatementConst { value, output }) => match value {
-                    value @ (ConstValue::Int(..)
-                    | ConstValue::Struct(..)
-                    | ConstValue::Enum(..)
-                    | ConstValue::NonZero(..)) => {
-                        ctx.var_info.insert(*output, VarInfo::Const(value.clone()));
-                    }
-                    ConstValue::Boxed(inner) => {
-                        ctx.var_info.insert(
-                            *output,
-                            VarInfo::Box(VarInfo::Const(inner.as_ref().clone()).into()),
-                        );
-                    }
-                    ConstValue::Generic(_)
-                    | ConstValue::ImplConstant(_)
-                    | ConstValue::Var(..)
-                    | ConstValue::Missing(_) => {}
-                },
-                Statement::Snapshot(stmt) => {
-                    if let Some(info) = ctx.var_info.get(&stmt.input.var_id).cloned() {
-                        ctx.var_info.insert(stmt.original(), info.clone());
-                        ctx.var_info.insert(stmt.snapshot(), VarInfo::Snapshot(info.into()));
-                    }
+        true
+    }
+
+    /// Processes a statement and applies the constant folding optimizations.
+    ///
+    /// This method performs the following operations:
+    /// - Updates the `var_info` map with constant values of variables
+    /// - Replace the input statement with optimized versions when possible
+    /// - Updates `self.additional_stmts` with statements that need to be added to the block.
+    ///
+    /// Note: `self.visit_block_end` must be called after processing all statements
+    /// in a block to actually add the additional statements.
+    pub fn visit_statement(&mut self, stmt: &mut Statement) {
+        self.maybe_replace_inputs(stmt.inputs_mut());
+        match stmt {
+            Statement::Const(StatementConst { value, output }) => match value {
+                value @ (ConstValue::Int(..)
+                | ConstValue::Struct(..)
+                | ConstValue::Enum(..)
+                | ConstValue::NonZero(..)) => {
+                    self.var_info.insert(*output, VarInfo::Const(value.clone()));
                 }
-                Statement::Desnap(StatementDesnap { input, output }) => {
-                    if let Some(VarInfo::Snapshot(info)) = ctx.var_info.get(&input.var_id) {
-                        ctx.var_info.insert(*output, info.as_ref().clone());
-                    }
+                ConstValue::Boxed(inner) => {
+                    self.var_info.insert(
+                        *output,
+                        VarInfo::Box(VarInfo::Const(inner.as_ref().clone()).into()),
+                    );
                 }
-                Statement::Call(call_stmt) => {
-                    if let Some(updated_stmt) =
-                        ctx.handle_statement_call(call_stmt, &mut additional_stmts)
-                    {
-                        *stmt = updated_stmt;
-                    } else if let Some(updated_stmt) = ctx.try_specialize_call(call_stmt) {
-                        *stmt = updated_stmt;
-                    }
+                ConstValue::Generic(_)
+                | ConstValue::ImplConstant(_)
+                | ConstValue::Var(..)
+                | ConstValue::Missing(_) => {}
+            },
+            Statement::Snapshot(stmt) => {
+                if let Some(info) = self.var_info.get(&stmt.input.var_id).cloned() {
+                    self.var_info.insert(stmt.original(), info.clone());
+                    self.var_info.insert(stmt.snapshot(), VarInfo::Snapshot(info.into()));
                 }
-                Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
-                    let mut const_args = vec![];
-                    let mut all_args = vec![];
-                    let mut contains_info = false;
-                    for input in inputs.iter() {
-                        let Some(info) = ctx.var_info.get(&input.var_id) else {
-                            all_args.push(var_info_if_copy(ctx.variables, *input));
-                            continue;
-                        };
-                        contains_info = true;
-                        if let VarInfo::Const(value) = info {
-                            const_args.push(value.clone());
+            }
+            Statement::Desnap(StatementDesnap { input, output }) => {
+                if let Some(VarInfo::Snapshot(info)) = self.var_info.get(&input.var_id) {
+                    self.var_info.insert(*output, info.as_ref().clone());
+                }
+            }
+            Statement::Call(call_stmt) => {
+                if let Some(updated_stmt) = self.handle_statement_call(call_stmt) {
+                    *stmt = updated_stmt;
+                } else if let Some(updated_stmt) = self.try_specialize_call(call_stmt) {
+                    *stmt = updated_stmt;
+                }
+            }
+            Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
+                let mut const_args = vec![];
+                let mut all_args = vec![];
+                let mut contains_info = false;
+                for input in inputs.iter() {
+                    let Some(info) = self.var_info.get(&input.var_id) else {
+                        all_args.push(var_info_if_copy(self.variables, *input));
+                        continue;
+                    };
+                    contains_info = true;
+                    if let VarInfo::Const(value) = info {
+                        const_args.push(value.clone());
+                    }
+                    all_args.push(Some(info.clone()));
+                }
+                if const_args.len() == inputs.len() {
+                    let value = ConstValue::Struct(const_args, self.variables[*output].ty);
+                    self.var_info.insert(*output, VarInfo::Const(value));
+                } else if contains_info {
+                    self.var_info.insert(*output, VarInfo::Struct(all_args));
+                }
+            }
+            Statement::StructDestructure(StatementStructDestructure { input, outputs }) => {
+                if let Some(mut info) = self.var_info.get(&input.var_id) {
+                    let mut n_snapshot = 0;
+                    while let VarInfo::Snapshot(inner) = info {
+                        info = inner.as_ref();
+                        n_snapshot += 1;
+                    }
+                    let wrap_with_snapshots = |mut info| {
+                        for _ in 0..n_snapshot {
+                            info = VarInfo::Snapshot(Box::new(info));
                         }
-                        all_args.push(Some(info.clone()));
-                    }
-                    if const_args.len() == inputs.len() {
-                        let value = ConstValue::Struct(const_args, ctx.variables[*output].ty);
-                        ctx.var_info.insert(*output, VarInfo::Const(value));
-                    } else if contains_info {
-                        ctx.var_info.insert(*output, VarInfo::Struct(all_args));
-                    }
-                }
-                Statement::StructDestructure(StatementStructDestructure { input, outputs }) => {
-                    if let Some(mut info) = ctx.var_info.get(&input.var_id) {
-                        let mut n_snapshot = 0;
-                        while let VarInfo::Snapshot(inner) = info {
-                            info = inner.as_ref();
-                            n_snapshot += 1;
-                        }
-                        let wrap_with_snapshots = |mut info| {
-                            for _ in 0..n_snapshot {
-                                info = VarInfo::Snapshot(Box::new(info));
+                        info
+                    };
+                    match info {
+                        VarInfo::Const(ConstValue::Struct(member_values, _)) => {
+                            for (output, value) in zip_eq(outputs, member_values.clone()) {
+                                self.var_info
+                                    .insert(*output, wrap_with_snapshots(VarInfo::Const(value)));
                             }
-                            info
-                        };
-                        match info {
-                            VarInfo::Const(ConstValue::Struct(member_values, _)) => {
-                                for (output, value) in zip_eq(outputs, member_values.clone()) {
-                                    ctx.var_info.insert(
-                                        *output,
-                                        wrap_with_snapshots(VarInfo::Const(value)),
-                                    );
+                        }
+                        VarInfo::Struct(members) => {
+                            for (output, member) in zip_eq(outputs, members.clone()) {
+                                if let Some(member) = member {
+                                    self.var_info.insert(*output, wrap_with_snapshots(member));
                                 }
                             }
-                            VarInfo::Struct(members) => {
-                                for (output, member) in zip_eq(outputs, members.clone()) {
-                                    if let Some(member) = member {
-                                        ctx.var_info.insert(*output, wrap_with_snapshots(member));
-                                    }
-                                }
-                            }
-                            _ => {}
                         }
-                    }
-                }
-                Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) => {
-                    if let Some(VarInfo::Const(val)) = ctx.var_info.get(&input.var_id) {
-                        let value = ConstValue::Enum(variant.clone(), val.clone().into());
-                        ctx.var_info.insert(*output, VarInfo::Const(value.clone()));
+                        _ => {}
                     }
                 }
             }
+            Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) => {
+                if let Some(VarInfo::Const(val)) = self.var_info.get(&input.var_id) {
+                    let value = ConstValue::Enum(*variant, val.clone().into());
+                    self.var_info.insert(*output, VarInfo::Const(value.clone()));
+                }
+            }
         }
-        block.statements.splice(0..0, additional_stmts);
+    }
+
+    /// Processes the block's end and incorporates additional statements into the block.
+    ///
+    /// This method handles the following tasks:
+    /// - Inserts the accumulated additional statements into the block.
+    /// - Converts match endings to goto when applicable.
+    /// - Updates self.reachability based on the block's ending.
+    pub fn visit_block_end(&mut self, block_id: BlockId, block: &mut crate::Block) {
+        block.statements.splice(0..0, self.additional_stmts.drain(..));
 
         match &mut block.end {
             BlockEnd::Goto(_, remappings) => {
                 for (_, v) in remappings.iter_mut() {
-                    ctx.maybe_replace_input(v);
+                    self.maybe_replace_input(v);
                 }
             }
             BlockEnd::Match { info } => {
-                ctx.maybe_replace_inputs(info.inputs_mut());
+                self.maybe_replace_inputs(info.inputs_mut());
                 match info {
                     MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) => {
                         if let Some(VarInfo::Const(ConstValue::Enum(variant, value))) =
-                            ctx.var_info.get(&input.var_id)
+                            self.var_info.get(&input.var_id)
                         {
                             let arm = &arms[variant.idx];
-                            ctx.var_info
-                                .insert(arm.var_ids[0], VarInfo::Const(value.as_ref().clone()));
+                            let value = value.as_ref().clone();
+                            let output = arm.var_ids[0];
+                            if self.variables[input.var_id].droppable.is_ok()
+                                && self.variables[output].copyable.is_ok()
+                            {
+                                if let Some(stmt) =
+                                    self.try_generate_const_statement(&value, output)
+                                {
+                                    block.statements.push(stmt);
+                                    block.end = BlockEnd::Goto(arm.block_id, Default::default());
+                                }
+                            }
+                            self.var_info.insert(output, VarInfo::Const(value));
+                        }
+                    }
+                    MatchInfo::Value(info) => {
+                        if let Some(value) =
+                            self.as_int(info.input.var_id).and_then(|x| x.to_usize())
+                        {
+                            if let Some(arm) = info.arms.iter().find(|arm| {
+                                matches!(
+                                    &arm.arm_selector,
+                                    MatchArmSelector::Value(v) if v.value == value
+                                )
+                            }) {
+                                // Create the variable that was previously introduced in match arm.
+                                block.statements.push(Statement::StructConstruct(
+                                    StatementStructConstruct {
+                                        inputs: vec![],
+                                        output: arm.var_ids[0],
+                                    },
+                                ));
+                                block.end = BlockEnd::Goto(arm.block_id, Default::default());
+                            }
                         }
                     }
                     MatchInfo::Extern(info) => {
-                        if let Some((extra_stmts, updated_end)) = ctx.handle_extern_block_end(info)
+                        if let Some((extra_stmts, updated_end)) = self.handle_extern_block_end(info)
                         {
                             block.statements.extend(extra_stmts);
                             block.end = updated_end;
                         }
                     }
-                    MatchInfo::Value(..) => {}
                 }
             }
-            BlockEnd::Return(ref mut inputs, _) => ctx.maybe_replace_inputs(inputs),
+            BlockEnd::Return(ref mut inputs, _) => self.maybe_replace_inputs(inputs),
             BlockEnd::Panic(_) | BlockEnd::NotSet => unreachable!(),
         }
         match &block.end {
             BlockEnd::Goto(dst_block_id, _) => {
-                reachability[dst_block_id.0] = match reachability[dst_block_id.0] {
-                    Reachability::Unreachable => Reachability::FromSingleGoto(BlockId(block_id)),
-                    Reachability::FromSingleGoto(_) | Reachability::Any => Reachability::Any,
-                }
+                match self.reachability.entry(*dst_block_id) {
+                    std::collections::hash_map::Entry::Occupied(mut e) => {
+                        e.insert(Reachability::Any)
+                    }
+                    std::collections::hash_map::Entry::Vacant(e) => {
+                        *e.insert(Reachability::FromSingleGoto(block_id))
+                    }
+                };
             }
             BlockEnd::Match { info } => {
                 for arm in info.arms() {
-                    assert_eq!(reachability[arm.block_id.0], Reachability::Unreachable);
-                    reachability[arm.block_id.0] = Reachability::Any;
+                    assert!(self.reachability.insert(arm.block_id, Reachability::Any).is_none());
                 }
             }
             BlockEnd::NotSet | BlockEnd::Return(..) | BlockEnd::Panic(..) => {}
         }
     }
-}
 
-struct ConstFoldingContext<'a> {
-    /// The used database.
-    db: &'a dyn LoweringGroup,
-    /// The variables arena, mostly used to get the type of variables.
-    variables: &'a mut Arena<Variable>,
-    /// The accumulated information about the const values of variables.
-    var_info: UnorderedHashMap<VariableId, VarInfo>,
-    /// The libfunc information.
-    libfunc_info: &'a ConstFoldingLibfuncInfo,
-    /// The specialization base of the caller function (or the caller if the function is not
-    /// specialized).
-    caller_base: ConcreteFunctionWithBodyId,
-}
-
-impl ConstFoldingContext<'_> {
     /// Handles a statement call.
     ///
     /// Returns None if no additional changes are required.
     /// If changes are required, returns an updated statement (to override the current
     /// statement).
-    /// May add additional statements to `additional_stmts` if just replacing the current statement
-    /// is not enough.
-    fn handle_statement_call(
-        &mut self,
-        stmt: &mut StatementCall,
-        additional_stmts: &mut Vec<Statement>,
-    ) -> Option<Statement> {
+    /// May add additional statements to `self.additional_stmts` if just replacing the current
+    /// statement is not enough.
+    fn handle_statement_call(&mut self, stmt: &mut StatementCall) -> Option<Statement> {
         let db = self.db;
         if stmt.function == self.panic_with_felt252 {
             let val = self.as_const(stmt.inputs[0].var_id)?;
@@ -344,17 +420,17 @@ impl ConstFoldingContext<'_> {
             };
             let arr_var = new_var(corelib::core_array_felt252_ty(db));
             let mut arr = self.variables.alloc(arr_var.clone());
-            additional_stmts.push(call_stmt(array_fn(self.array_new), vec![], vec![arr]));
+            self.additional_stmts.push(call_stmt(array_fn(self.array_new), vec![], vec![arr]));
             let felt252_var = new_var(felt252_ty);
             let arr_append_fn = array_fn(self.array_append);
             for word in panic_data {
                 let to_append = self.variables.alloc(felt252_var.clone());
                 let new_arr = self.variables.alloc(arr_var.clone());
-                additional_stmts.push(Statement::Const(StatementConst {
+                self.additional_stmts.push(Statement::Const(StatementConst {
                     value: ConstValue::Int(word, felt252_ty),
                     output: to_append,
                 }));
-                additional_stmts.push(call_stmt(
+                self.additional_stmts.push(call_stmt(
                     arr_append_fn,
                     vec![as_usage(arr), as_usage(to_append)],
                     vec![new_arr],
@@ -363,7 +439,7 @@ impl ConstFoldingContext<'_> {
             }
             let panic_ty = corelib::get_core_ty_by_name(db, "Panic".into(), vec![]);
             let panic_var = self.variables.alloc(new_var(panic_ty));
-            additional_stmts.push(Statement::StructConstruct(StatementStructConstruct {
+            self.additional_stmts.push(Statement::StructConstruct(StatementStructConstruct {
                 inputs: vec![],
                 output: panic_var,
             }));
@@ -399,7 +475,8 @@ impl ConstFoldingContext<'_> {
         } else if self.div_rem_fns.contains(&id) {
             let lhs = self.as_int(stmt.inputs[0].var_id);
             if lhs.map(Zero::is_zero).unwrap_or_default() {
-                additional_stmts.push(self.propagate_zero_and_get_statement(stmt.outputs[1]));
+                let additional_stmt = self.propagate_zero_and_get_statement(stmt.outputs[1]);
+                self.additional_stmts.push(additional_stmt);
                 return Some(self.propagate_zero_and_get_statement(stmt.outputs[0]));
             }
             let rhs = self.as_int(stmt.inputs[1].var_id)?;
@@ -410,7 +487,7 @@ impl ConstFoldingContext<'_> {
             let r_output = stmt.outputs[1];
             let r_value = ConstValue::Int(r, self.variables[r_output].ty);
             self.var_info.insert(r_output, VarInfo::Const(r_value.clone()));
-            additional_stmts
+            self.additional_stmts
                 .push(Statement::Const(StatementConst { value: r_value, output: r_output }));
             Some(Statement::Const(StatementConst { value: q_value, output: q_output }))
         } else if id == self.storage_base_address_from_felt252 {
@@ -511,10 +588,9 @@ impl ConstFoldingContext<'_> {
         let mut const_arg = vec![];
         let mut new_args = vec![];
         for arg in &call_stmt.inputs {
-            if let Some(VarInfo::Const(c)) = self.var_info.get(&arg.var_id) {
-                // Skip zero-sized constants as they are not supported in sierra-gen.
-                if self.db.type_size_info(self.variables[arg.var_id].ty).ok()?
-                    != TypeSizeInformation::ZeroSized
+            if let Some(var_info) = self.var_info.get(&arg.var_id) {
+                if let Some(c) =
+                    self.try_get_specialization_arg(var_info.clone(), self.variables[arg.var_id].ty)
                 {
                     const_arg.push(Some(c.clone()));
                     continue;
@@ -583,10 +659,14 @@ impl ConstFoldingContext<'_> {
         output: VariableId,
         nz_ty: bool,
     ) -> Statement {
-        let mut value = ConstValue::Int(value, self.variables[output].ty);
-        if nz_ty {
-            value = ConstValue::NonZero(Box::new(value));
-        }
+        let ty = self.variables[output].ty;
+        let value = if nz_ty {
+            let inner_ty =
+                try_extract_nz_wrapped_type(self.db, ty).expect("Expected a non-zero type");
+            ConstValue::NonZero(Box::new(ConstValue::Int(value, inner_ty)))
+        } else {
+            ConstValue::Int(value, ty)
+        };
         self.var_info.insert(output, VarInfo::Const(value.clone()));
         Statement::Const(StatementConst { value, output })
     }
@@ -594,6 +674,22 @@ impl ConstFoldingContext<'_> {
     /// Adds 0 const to `var_info` and return a const statement for it.
     fn propagate_zero_and_get_statement(&mut self, output: VariableId) -> Statement {
         self.propagate_const_and_get_statement(BigInt::zero(), output, false)
+    }
+
+    /// Returns a statement that introduces the requested value into `output`, or None if fails.
+    fn try_generate_const_statement(
+        &self,
+        value: &ConstValue,
+        output: VariableId,
+    ) -> Option<Statement> {
+        if self.db.type_size_info(self.variables[output].ty) == Ok(TypeSizeInformation::Other) {
+            Some(Statement::Const(StatementConst { value: value.clone(), output }))
+        } else if matches!(value, ConstValue::Struct(members, _) if members.is_empty()) {
+            // Handling const empty structs - which are not supported in sierra-gen.
+            Some(Statement::StructConstruct(StatementStructConstruct { inputs: vec![], output }))
+        } else {
+            None
+        }
     }
 
     /// Handles the end of an extern block.
@@ -971,6 +1067,67 @@ impl ConstFoldingContext<'_> {
             *input = *new_var;
         }
     }
+
+    /// Given a var_info and its type, return the corresponding specialization argument, if it
+    /// exists.
+    fn try_get_specialization_arg(
+        &mut self,
+        var_info: VarInfo,
+        ty: TypeId,
+    ) -> Option<SpecializationArg> {
+        if self.db.type_size_info(ty).ok()? == TypeSizeInformation::ZeroSized {
+            // Skip zero-sized constants as they are not supported in sierra-gen.
+            return None;
+        }
+
+        match var_info {
+            VarInfo::Const(c) => Some(SpecializationArg::Const(c.clone())),
+            VarInfo::Array(infos) if infos.is_empty() => {
+                let TypeLongId::Concrete(concrete_ty) = ty.lookup_intern(self.db) else {
+                    unreachable!("Expected a concrete type");
+                };
+                let [GenericArgumentId::Type(inner_ty)] = &concrete_ty.generic_args(self.db)[..]
+                else {
+                    unreachable!("Expected a single type generic argument");
+                };
+                Some(SpecializationArg::EmptyArray(*inner_ty))
+            }
+            VarInfo::Struct(infos) => {
+                let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) =
+                    ty.lookup_intern(self.db)
+                else {
+                    // TODO(ilya): Support closures and fixed size arrays.
+                    return None;
+                };
+
+                let members = self.db.concrete_struct_members(concrete_struct).unwrap();
+                let struct_args = zip_eq(members.values(), infos)
+                    .map(|(member, opt_var_info)| {
+                        self.try_get_specialization_arg(opt_var_info?.clone(), member.ty)
+                    })
+                    .collect::<Option<Vec<_>>>()?;
+
+                Some(SpecializationArg::Struct(struct_args))
+            }
+            _ => None,
+        }
+    }
+
+    /// Returns true if const-folding should be skipped for the current function.
+    pub fn should_skip_const_folding(&self, db: &dyn LoweringGroup) -> bool {
+        if db.optimization_config().skip_const_folding {
+            return true;
+        }
+
+        // Skipping const-folding for `panic_with_const_felt252` - to avoid replacing a call to
+        // `panic_with_felt252` with `panic_with_const_felt252` and causing accidental recursion.
+        if self.caller_base.base_semantic_function(db).generic_function(db)
+            == GenericFunctionWithBodyId::Free(self.libfunc_info.panic_with_const_felt252)
+        {
+            return true;
+        }
+        false
+    }
 }
 
 /// Returns a `VarInfo` of a variable only if it is copyable.
@@ -1041,7 +1198,7 @@ pub struct ConstFoldingLibfuncInfo {
     /// The `core::panic_with_felt252` function.
     panic_with_felt252: FunctionId,
     /// The `core::panic_with_const_felt252` function.
-    panic_with_const_felt252: FreeFunctionId,
+    pub panic_with_const_felt252: FreeFunctionId,
     /// The `core::panics::panic_with_byte_array` function.
     panic_with_byte_array: FunctionId,
     /// Type ranges.
@@ -1193,7 +1350,7 @@ impl ConstFoldingLibfuncInfo {
 impl std::ops::Deref for ConstFoldingContext<'_> {
     type Target = ConstFoldingLibfuncInfo;
     fn deref(&self) -> &ConstFoldingLibfuncInfo {
-        self.libfunc_info
+        &self.libfunc_info
     }
 }
 

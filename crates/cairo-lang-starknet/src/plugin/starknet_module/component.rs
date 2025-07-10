@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::helpers::{PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{extract_matches, require, try_extract_matches};
 use indoc::{formatdoc, indoc};
-use itertools::chain;
+use itertools::{Itertools, chain};
 
 use super::StarknetModuleKind;
 use super::generation_data::{ComponentGenerationData, StarknetModuleCommonGenerationData};
@@ -104,9 +104,7 @@ fn get_embeddable_as_attr_value(db: &dyn SyntaxGroup, attr: &ast::Attribute) -> 
         return None;
     };
 
-    let [arg] = &attribute_args.arguments(db).elements(db)[..] else {
-        return None;
-    };
+    let [arg] = attribute_args.arguments(db).elements(db).collect_array()?;
     let AttributeArgVariant::Unnamed(attr_arg_value) =
         AttributeArg::from_ast(arg.clone(), db).variant
     else {
@@ -138,7 +136,7 @@ fn get_embeddable_as_impl_generic_params(
         return Err(first_generic_param_diagnostic(item_impl.name(db).stable_ptr(db).untyped()));
     };
     let generic_params_node = params.generic_params(db);
-    let mut generic_param_elements = generic_params_node.elements(db).into_iter();
+    let mut generic_param_elements = generic_params_node.elements(db);
 
     // Verify the first generic param is `TContractState`.
     let Some(first_generic_param) = generic_param_elements.next() else {
@@ -237,7 +235,7 @@ fn handle_component_impl(
     else {
         return;
     };
-    for param in &params.generic_params_node.elements(db) {
+    for param in params.generic_params_node.elements(db) {
         if param.is_impl_of(db, "Destruct", GENERIC_CONTRACT_STATE_NAME)
             || param.is_impl_of(db, "PanicDestruct", GENERIC_CONTRACT_STATE_NAME)
         {
@@ -270,7 +268,6 @@ fn handle_component_impl(
     let has_drop_impl = params
         .generic_params_node
         .elements(db)
-        .iter()
         .any(|param| param.is_impl_of(db, "Drop", GENERIC_CONTRACT_STATE_NAME));
     let maybe_drop_impl = if has_drop_impl {
         "".to_string()
@@ -311,12 +308,12 @@ fn handle_component_impl(
 
 /// Returns a RewriteNode of a path similar to the given path, but without generic params.
 fn remove_generics_from_path(db: &dyn SyntaxGroup, trait_path: &ast::ExprPath) -> RewriteNode {
-    let elements = trait_path.segments(db).elements(db);
-    let (last, prefix) = elements.split_last().unwrap();
+    let mut elements = trait_path.segments(db).elements(db);
+    let last = elements.next_back().unwrap();
     let last_without_generics = RewriteNode::from_ast_trimmed(&last.identifier_ast(db));
 
     RewriteNode::interspersed(
-        chain!(prefix.iter().map(RewriteNode::from_ast_trimmed), [last_without_generics]),
+        chain!(elements.map(|e| RewriteNode::from_ast_trimmed(&e)), [last_without_generics]),
         RewriteNode::text("::"),
     )
 }
@@ -338,7 +335,7 @@ fn handle_component_embeddable_as_impl_item(
     let parameters = signature.parameters(db);
 
     let function_name = RewriteNode::from_ast_trimmed(&declaration.name(db));
-    let parameters_elements = parameters.elements(db);
+    let parameters_elements = parameters.elements_vec(db);
     let Some((first_param, rest_params)) = parameters_elements.split_first() else {
         diagnostics.push(PluginDiagnostic::error(
             parameters.stable_ptr(db),

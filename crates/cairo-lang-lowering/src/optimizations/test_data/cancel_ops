@@ -207,13 +207,9 @@ Statements:
   (v9: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v6, v8)
   (v11: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v9)
   (v12: core::felt252, v13: @core::felt252) <- snapshot(v0)
-  (v14: core::felt252) <- 0
-  (v15: core::felt252, v16: @core::felt252) <- snapshot(v14)
   (v17: core::felt252) <- desnap(v13)
-  (v18: core::felt252) <- desnap(v16)
-  (v19: core::felt252) <- core::felt252_sub(v17, v18)
 End:
-  Match(match core::felt252_is_zero(v19) {
+  Match(match core::felt252_is_zero(v17) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v20) => blk2,
   })
@@ -265,10 +261,8 @@ Statements:
   (v8: core::felt252) <- 12
   (v9: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v6, v8)
   (v11: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v9)
-  (v14: core::felt252) <- 0
-  (v19: core::felt252) <- core::felt252_sub(v0, v14)
 End:
-  Match(match core::felt252_is_zero(v19) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v20) => blk2,
   })
@@ -541,13 +535,9 @@ Parameters: v0: (core::integer::u32,), v1: core::felt252
 blk0 (root):
 Statements:
   (v2: core::felt252, v3: @core::felt252) <- snapshot(v1)
-  (v4: core::felt252) <- 0
-  (v5: core::felt252, v6: @core::felt252) <- snapshot(v4)
   (v7: core::felt252) <- desnap(v3)
-  (v8: core::felt252) <- desnap(v6)
-  (v9: core::felt252) <- core::felt252_sub(v7, v8)
 End:
-  Match(match core::felt252_is_zero(v9) {
+  Match(match core::felt252_is_zero(v7) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v10) => blk2,
   })
@@ -597,10 +587,8 @@ End:
 Parameters: v0: (core::integer::u32,), v1: core::felt252
 blk0 (root):
 Statements:
-  (v4: core::felt252) <- 0
-  (v9: core::felt252) <- core::felt252_sub(v1, v4)
 End:
-  Match(match core::felt252_is_zero(v9) {
+  Match(match core::felt252_is_zero(v1) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v10) => blk2,
   })

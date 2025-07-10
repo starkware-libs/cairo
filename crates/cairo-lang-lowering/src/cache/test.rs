@@ -15,7 +15,7 @@ cairo_lang_test_utils::test_file_test!(
     cache,
     "src/cache/test_data",
     {
-        cache :"cache",
+        cache: "cache",
     },
     test_cache_check
 );

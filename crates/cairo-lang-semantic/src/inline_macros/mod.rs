@@ -1,6 +1,7 @@
 mod array;
 mod assert;
 mod consteval_int;
+mod expose;
 mod format;
 mod panic;
 mod print;
@@ -9,6 +10,7 @@ mod write;
 use cairo_lang_plugins::get_base_plugins;
 
 use self::assert::AssertMacro;
+use self::expose::ExposeMacro;
 use self::format::FormatMacro;
 use self::panic::PanicMacro;
 use self::print::{PrintMacro, PrintlnMacro};
@@ -24,6 +26,7 @@ pub fn get_default_plugin_suite() -> PluginSuite {
         .add_inline_macro_plugin::<ArrayMacro>()
         .add_inline_macro_plugin::<AssertMacro>()
         .add_inline_macro_plugin::<ConstevalIntMacro>()
+        .add_inline_macro_plugin::<ExposeMacro>()
         .add_inline_macro_plugin::<FormatMacro>()
         .add_inline_macro_plugin::<PanicMacro>()
         .add_inline_macro_plugin::<PrintMacro>()

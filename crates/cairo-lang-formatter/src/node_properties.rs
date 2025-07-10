@@ -269,7 +269,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             },
             Some(SyntaxKind::ExprWhile) => match self.kind(db) {
                 SyntaxKind::ExprBlock => Some(1),
-                SyntaxKind::ConditionExpr | SyntaxKind::ConditionLet => Some(2),
+                SyntaxKind::ConditionListAnd => Some(2),
                 SyntaxKind::ExprBinary
                 | SyntaxKind::ExprErrorPropagate
                 | SyntaxKind::ExprFieldInitShorthand
@@ -297,7 +297,7 @@ impl SyntaxNodeFormat for SyntaxNode {
 
             Some(SyntaxKind::ExprIf) => match self.kind(db) {
                 SyntaxKind::ExprBlock => Some(1),
-                SyntaxKind::ConditionExpr | SyntaxKind::ConditionLet => Some(2),
+                SyntaxKind::ConditionListAnd => Some(2),
                 SyntaxKind::ElseClause => Some(3),
                 _ => None,
             },
@@ -1066,7 +1066,6 @@ fn is_statement_list_break_point_optional(db: &dyn SyntaxGroup, node: &SyntaxNod
             d.kind(db) != SyntaxKind::Trivia
                 || ast::Trivia::from_syntax_node(db, d)
                     .elements(db)
-                    .iter()
                     .all(|t| !matches!(t, ast::Trivium::SingleLineComment(_)))
         })
 }

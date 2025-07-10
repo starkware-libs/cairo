@@ -198,10 +198,13 @@ use starknet::storage::Map as LegacyMap;
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x31eca83a5f161f61a5b51407b0d5138ae6f487b968308516a9cddc5b9d4d8da.try_into().unwrap();
 
 
+#[doc(hidden)]
 pub mod __external {
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -747,7 +750,9 @@ lib.cairo:6:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -756,7 +761,9 @@ lib.cairo:6:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
@@ -765,7 +772,9 @@ lib.cairo:13:26
                          ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl WrappedFelt252SubPointersDrop<> of core::traits::Drop::<WrappedFelt252SubPointers>;
+#[doc(hidden)]
 impl WrappedFelt252SubPointersCopy<> of core::traits::Copy::<WrappedFelt252SubPointers>;
 
 
@@ -774,7 +783,9 @@ lib.cairo:13:26
                          ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl WrappedFelt252SubPointersMutDrop<> of core::traits::Drop::<WrappedFelt252SubPointersMut>;
+#[doc(hidden)]
 impl WrappedFelt252SubPointersMutCopy<> of core::traits::Copy::<WrappedFelt252SubPointersMut>;
 
 //! > expected_diagnostics

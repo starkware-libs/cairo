@@ -597,7 +597,6 @@ impl<'a> AbiBuilder<'a> {
                                     .lookup(self.db)
                                     .variants(self.db)
                                     .elements(self.db)
-                                    .into_iter()
                                     .find_map(|v| {
                                         if v.name(self.db).text(self.db) == name {
                                             v.find_attr(self.db, FLAT_ATTR)

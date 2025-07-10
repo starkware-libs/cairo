@@ -14,13 +14,14 @@ use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::{ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, SpecializedFunction};
+use crate::specialization::SpecializationArg;
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
     specialized,
     "src/lower/test_data",
     {
-        specialized :"specialized",
+        specialized: "specialized",
     },
     test_specialized_function
 );
@@ -49,7 +50,12 @@ fn test_specialized_function(
     // argument.
     let specialized_func = SpecializedFunction {
         base: function_id,
-        args: Arc::new([None, Some(ConstValue::Int(BigInt::one(), core.felt252))]),
+        args: Arc::new([
+            Some(SpecializationArg::EmptyArray(core.felt252)),
+            Some(SpecializationArg::Struct(vec![SpecializationArg::EmptyArray(core.felt252)])),
+            None,
+            Some(SpecializationArg::Const(ConstValue::Int(BigInt::one(), core.felt252))),
+        ]),
     };
 
     let specialized_func = ConcreteFunctionWithBodyLongId::Specialized(specialized_func).intern(db);

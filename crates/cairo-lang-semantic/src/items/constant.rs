@@ -559,9 +559,11 @@ impl ConstantEvaluateContext<'_> {
                 }
             }
             Expr::If(expr) => {
-                self.validate(match &expr.condition {
-                    Condition::BoolExpr(id) | Condition::Let(id, _) => *id,
-                });
+                for condition in &expr.conditions {
+                    self.validate(match condition {
+                        Condition::BoolExpr(id) | Condition::Let(id, _) => *id,
+                    });
+                }
                 self.validate(expr.if_block);
                 if let Some(else_block) = expr.else_block {
                     self.validate(else_block);
@@ -680,7 +682,7 @@ impl ConstantEvaluateContext<'_> {
                 )
             }
             Expr::EnumVariantCtor(expr) => {
-                ConstValue::Enum(expr.variant.clone(), Box::new(self.evaluate(expr.value_expr)))
+                ConstValue::Enum(expr.variant, Box::new(self.evaluate(expr.value_expr)))
             }
             Expr::MemberAccess(expr) => {
                 self.evaluate_member_access(expr).unwrap_or_else(ConstValue::Missing)
@@ -750,45 +752,58 @@ impl ConstantEvaluateContext<'_> {
                     ),
                 )
             }
-            Expr::If(expr) => match &expr.condition {
-                crate::Condition::BoolExpr(id) => {
-                    let condition = self.evaluate(*id);
-                    let ConstValue::Enum(variant, _) = condition else {
-                        return ConstValue::Missing(skip_diagnostic());
-                    };
-                    if variant == true_variant(self.db) {
-                        self.evaluate(expr.if_block)
-                    } else if let Some(else_block) = expr.else_block {
-                        self.evaluate(else_block)
-                    } else {
-                        self.unit_const.clone()
+            Expr::If(expr) => {
+                let mut if_condition: bool = true;
+                for condition in &expr.conditions {
+                    match condition {
+                        crate::Condition::BoolExpr(id) => {
+                            let condition = self.evaluate(*id);
+                            let ConstValue::Enum(variant, _) = condition else {
+                                return ConstValue::Missing(skip_diagnostic());
+                            };
+                            if variant != true_variant(self.db) {
+                                if_condition = false;
+                                break;
+                            }
+                        }
+                        crate::Condition::Let(id, patterns) => {
+                            let value = self.evaluate(*id);
+                            let ConstValue::Enum(variant, value) = value else {
+                                return ConstValue::Missing(skip_diagnostic());
+                            };
+                            let mut found_pattern = false;
+                            for pattern_id in patterns {
+                                let Pattern::EnumVariant(pattern) =
+                                    &self.arenas.patterns[*pattern_id]
+                                else {
+                                    continue;
+                                };
+                                if pattern.variant != variant {
+                                    // Continue to the next option in the `|` list.
+                                    continue;
+                                }
+                                if let Some(inner_pattern) = pattern.inner_pattern {
+                                    self.destructure_pattern(inner_pattern, *value);
+                                }
+                                found_pattern = true;
+                                break;
+                            }
+                            if !found_pattern {
+                                if_condition = false;
+                                break;
+                            }
+                        }
                     }
                 }
-                crate::Condition::Let(id, patterns) => {
-                    let value = self.evaluate(*id);
-                    let ConstValue::Enum(variant, value) = value else {
-                        return ConstValue::Missing(skip_diagnostic());
-                    };
-                    for pattern_id in patterns {
-                        let Pattern::EnumVariant(pattern) = &self.arenas.patterns[*pattern_id]
-                        else {
-                            continue;
-                        };
-                        if pattern.variant != variant {
-                            continue;
-                        }
-                        if let Some(inner_pattern) = pattern.inner_pattern {
-                            self.destructure_pattern(inner_pattern, *value);
-                        }
-                        return self.evaluate(expr.if_block);
-                    }
-                    if let Some(else_block) = expr.else_block {
-                        self.evaluate(else_block)
-                    } else {
-                        self.unit_const.clone()
-                    }
+
+                if if_condition {
+                    self.evaluate(expr.if_block)
+                } else if let Some(else_block) = expr.else_block {
+                    self.evaluate(else_block)
+                } else {
+                    self.unit_const.clone()
                 }
-            },
+            }
             _ => ConstValue::Missing(skip_diagnostic()),
         }
     }

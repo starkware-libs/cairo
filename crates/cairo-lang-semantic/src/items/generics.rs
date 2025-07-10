@@ -194,22 +194,12 @@ pub struct GenericParamConst {
     pub id: GenericParamId,
     pub ty: TypeId,
 }
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamImpl {
     pub id: GenericParamId,
     pub concrete_trait: Maybe<ConcreteTraitId>,
     pub type_constraints: OrderedHashMap<TraitTypeId, TypeId>,
-}
-impl Hash for GenericParamImpl {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
-        self.concrete_trait.hash(state);
-        self.type_constraints.iter().for_each(|(trait_type_id, type_id)| {
-            trait_type_id.hash(state);
-            type_id.hash(state);
-        });
-    }
 }
 
 /// The result of the computation of the semantic model of a generic parameter.
@@ -273,7 +263,6 @@ pub fn generic_impl_param_trait(
     let generic_param_syntax = generic_params_syntax
         .generic_params(syntax_db)
         .elements(syntax_db)
-        .into_iter()
         .find(|param_syntax| {
             GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db)).intern(db)
                 == generic_param_id
@@ -458,7 +447,6 @@ pub fn semantic_generic_params_ex(
         syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
             .generic_params(syntax_db)
             .elements(syntax_db)
-            .iter()
             .filter_map(|param_syntax| {
                 let generic_param_id =
                     GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db))

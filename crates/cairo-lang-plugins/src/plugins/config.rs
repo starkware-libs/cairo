@@ -9,8 +9,8 @@ use cairo_lang_syntax::attribute::structured::{
     Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
-use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::helpers::{BodyItems, GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::try_extract_matches;
 use itertools::Itertools;
 
@@ -79,6 +79,7 @@ impl MacroPlugin for ConfigPlugin {
                     code_mappings,
                     aux_data: None,
                     diagnostics_note: Default::default(),
+                    is_unhygienic: false,
                 }),
                 diagnostics,
                 remove_original_item: true,
@@ -93,29 +94,13 @@ impl MacroPlugin for ConfigPlugin {
     }
 }
 
-/// Iterator over the items that are included in the given config set, among the given items in
-/// `iterator`.
-pub struct ItemsInCfg<'a, Item: QueryAttrs> {
-    db: &'a dyn SyntaxGroup,
-    cfg_set: &'a CfgSet,
-    iterator: <Vec<Item> as IntoIterator>::IntoIter,
-}
-
-impl<Item: QueryAttrs> Iterator for ItemsInCfg<'_, Item> {
-    type Item = Item;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iterator.find(|item| !should_drop(self.db, self.cfg_set, item, &mut vec![]))
-    }
-}
-
 /// Extension trait for `BodyItems` filtering out items that are not included in the cfg.
 pub trait HasItemsInCfgEx<Item: QueryAttrs>: BodyItems<Item = Item> {
     fn iter_items_in_cfg<'a>(
         &self,
         db: &'a dyn SyntaxGroup,
         cfg_set: &'a CfgSet,
-    ) -> ItemsInCfg<'a, Item>;
+    ) -> impl Iterator<Item = Item> + 'a;
 }
 
 impl<Item: QueryAttrs, Body: BodyItems<Item = Item>> HasItemsInCfgEx<Item> for Body {
@@ -123,8 +108,8 @@ impl<Item: QueryAttrs, Body: BodyItems<Item = Item>> HasItemsInCfgEx<Item> for B
         &self,
         db: &'a dyn SyntaxGroup,
         cfg_set: &'a CfgSet,
-    ) -> ItemsInCfg<'a, Item> {
-        ItemsInCfg { db, cfg_set, iterator: self.items_vec(db).into_iter() }
+    ) -> impl Iterator<Item = Item> + 'a {
+        self.iter_items(db).filter(move |item| !should_drop(db, cfg_set, item, &mut vec![]))
     }
 }
 
@@ -140,7 +125,7 @@ fn handle_undropped_item<'a>(
     match item_ast {
         ast::ModuleItem::Trait(trait_item) => {
             let body = try_extract_matches!(trait_item.body(db), ast::MaybeTraitBody::Some)?;
-            let items = get_kept_items_nodes(db, cfg_set, &body.items_vec(db), diagnostics)?;
+            let items = get_kept_items_nodes(db, cfg_set, body.iter_items(db), diagnostics)?;
             let mut builder = PatchBuilder::new(db, &trait_item);
             builder.add_node(trait_item.attributes(db).as_syntax_node());
             builder.add_node(trait_item.trait_kw(db).as_syntax_node());
@@ -155,7 +140,7 @@ fn handle_undropped_item<'a>(
         }
         ast::ModuleItem::Impl(impl_item) => {
             let body = try_extract_matches!(impl_item.body(db), ast::MaybeImplBody::Some)?;
-            let items = get_kept_items_nodes(db, cfg_set, &body.items_vec(db), diagnostics)?;
+            let items = get_kept_items_nodes(db, cfg_set, body.iter_items(db), diagnostics)?;
             let mut builder = PatchBuilder::new(db, &impl_item);
             builder.add_node(impl_item.attributes(db).as_syntax_node());
             builder.add_node(impl_item.impl_kw(db).as_syntax_node());
@@ -179,13 +164,13 @@ fn handle_undropped_item<'a>(
 fn get_kept_items_nodes<Item: QueryAttrs + TypedSyntaxNode>(
     db: &dyn SyntaxGroup,
     cfg_set: &CfgSet,
-    all_items: &[Item],
+    all_items: impl Iterator<Item = Item>,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<Vec<cairo_lang_syntax::node::SyntaxNode>> {
     let mut any_dropped = false;
     let mut kept_items_nodes = vec![];
     for item in all_items {
-        if should_drop(db, cfg_set, item, diagnostics) {
+        if should_drop(db, cfg_set, &item, diagnostics) {
             any_dropped = true;
         } else {
             kept_items_nodes.push(item.as_syntax_node());
@@ -237,8 +222,7 @@ fn parse_predicate_item(
                 .arguments(db)
                 .arguments(db)
                 .elements(db)
-                .iter()
-                .map(|arg| AttributeArg::from_ast(arg.clone(), db))
+                .map(|arg| AttributeArg::from_ast(arg, db))
                 .collect_vec();
 
             match operator.as_str() {
@@ -313,9 +297,10 @@ fn extract_config_predicate_part(
 ) -> Option<ConfigPredicatePart> {
     match &arg.variant {
         AttributeArgVariant::Unnamed(ast::Expr::Path(path)) => {
-            let segments = path.segments(db).elements(db);
-            if let [ast::PathSegment::Simple(segment)] = &segments[..] {
-                Some(ConfigPredicatePart::Cfg(Cfg::name(segment.ident(db).text(db).to_string())))
+            if let Some([ast::PathSegment::Simple(segment)]) =
+                path.segments(db).elements(db).collect_array()
+            {
+                Some(ConfigPredicatePart::Cfg(Cfg::name(segment.identifier(db).to_string())))
             } else {
                 None
             }

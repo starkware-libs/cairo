@@ -1,9 +1,9 @@
+use std::hash::{Hash, Hasher};
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::{DiagnosticLocation, DiagnosticNote, Maybe, Severity};
-use cairo_lang_filesystem::db::CrateSettings;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{
     CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, VirtualFile,
@@ -40,8 +40,8 @@ use crate::plugin::{DynGeneratedFileAuxData, PluginDiagnostic};
 /// Metadata for a cached crate.
 #[derive(Serialize, Deserialize)]
 pub struct CachedCrateMetadata {
-    /// The settings the crate was compiles with.
-    pub settings: Option<CrateSettings>,
+    /// Hash of the settings the crate was compiles with.
+    pub settings: Option<u64>,
     /// The version of the compiler that compiled the crate.
     pub compiler_version: String,
     /// The global flags the crate was compiled with.
@@ -51,7 +51,11 @@ pub struct CachedCrateMetadata {
 impl CachedCrateMetadata {
     /// Creates a new [CachedCrateMetadata] from the input crate with the current settings.
     pub fn new(crate_id: CrateId, db: &dyn DefsGroup) -> Self {
-        let settings = db.crate_config(crate_id).map(|config| config.settings);
+        let settings = db.crate_config(crate_id).map(|config| config.settings).map(|v| {
+            let mut hasher = xxhash_rust::xxh3::Xxh3::default();
+            v.hash(&mut hasher);
+            hasher.finish()
+        });
         let compiler_version = env!("CARGO_PKG_VERSION").to_string();
         let global_flags = db
             .flags()
@@ -94,11 +98,15 @@ pub fn load_cached_crate_modules(
 
     let content = &content[8..size + 8];
 
-    let Ok((metadata, module_data, defs_lookups)): Result<DefCache, _> =
-        bincode::deserialize(content)
-    else {
-        return Default::default();
-    };
+    let ((metadata, module_data, defs_lookups), _): (DefCache, _) =
+        bincode::serde::borrow_decode_from_slice(content, bincode::config::standard())
+            .unwrap_or_else(|e| {
+                panic!(
+                    "failed to deserialize modules cache for crate `{}`: {e}",
+                    crate_id.name(db),
+                )
+            });
+
     validate_metadata(crate_id, &metadata, db);
 
     let mut ctx = DefCacheLoadingContext::new(db, defs_lookups, crate_id);
@@ -1560,8 +1568,8 @@ impl SyntaxStablePtrCached {
                     parent: SyntaxStablePtrIdCached::new(parent, ctx),
                     kind,
                     key_fields: key_fields
-                        .into_iter()
-                        .map(|field| GreenIdCached::new(field, ctx))
+                        .iter()
+                        .map(|field| GreenIdCached::new(*field, ctx))
                         .collect(),
                     index,
                 }
@@ -1839,7 +1847,6 @@ impl PluginDiagnosticCached {
     fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> PluginDiagnostic {
         PluginDiagnostic {
             stable_ptr: self.stable_ptr.embed(ctx),
-            relative_span: None,
             message: self.message,
             severity: match self.severity {
                 SeverityCached::Error => Severity::Error,
