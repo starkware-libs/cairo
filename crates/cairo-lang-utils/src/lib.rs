@@ -17,6 +17,7 @@ pub mod bigint;
 pub mod byte_array;
 pub mod casts;
 pub mod collection_arithmetics;
+pub mod deque;
 pub mod extract_matches;
 #[cfg(feature = "std")]
 pub mod graph_algos;
@@ -86,14 +87,15 @@ pub fn borrow_as_box<T: Default, R, F: FnOnce(Box<T>) -> (R, Box<T>)>(ptr: &mut 
     res
 }
 
-/// A trait for the `lookup_intern` method for short IDs (returning the long ID).
-pub trait LookupIntern<'a, DynDbGroup: ?Sized, LongId> {
-    fn lookup_intern(&self, db: &(impl Upcast<DynDbGroup> + ?Sized)) -> LongId;
-}
-pub trait Intern<'a, DynDbGroup: ?Sized, ShortId> {
-    fn intern(self, db: &(impl Upcast<DynDbGroup> + ?Sized)) -> ShortId;
+pub trait Intern<'db, Target> {
+    fn intern(self, db: &'db dyn salsa::Database) -> Target;
 }
 
+pub trait LookupIntern<'db, Target> {
+    fn lookup_intern(self, db: &'db dyn salsa::Database) -> Target;
+}
+
+/// TODO(eytan-starkware): Remove this macro entirely and rely on `salsa::interned`.
 // Defines a short id struct for use with salsa interning.
 // Interning is the process of representing a value as an id in a table.
 // We usually denote the value type as "long id", and the id type as "short id" or just "id".
@@ -105,50 +107,69 @@ pub trait Intern<'a, DynDbGroup: ?Sized, ShortId> {
 #[macro_export]
 macro_rules! define_short_id {
     ($short_id:ident, $long_id:path, $db:ident, $lookup:ident, $intern:ident) => {
-        #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-        pub struct $short_id(salsa::InternId);
-        impl<'a> cairo_lang_utils::LookupIntern<'a, dyn $db + 'a, $long_id> for $short_id {
-            fn lookup_intern(
-                &self,
-                db: &(impl cairo_lang_utils::Upcast<dyn $db + 'a> + ?Sized),
-            ) -> $long_id {
-                $db::$lookup(db.upcast(), *self)
+        // 1. Modern interned struct.
+        #[salsa::interned]
+        pub struct $short_id<'db> {
+            #[returns(ref)]
+            pub long: $long_id,
+        }
+
+        impl<'db> std::fmt::Debug for $short_id<'db> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}({:x})", stringify!($short_id), self.as_intern_id().as_u32())
             }
         }
-        impl<'a> cairo_lang_utils::Intern<'a, dyn $db + 'a, $short_id> for $long_id {
-            fn intern(
-                self,
-                db: &(impl cairo_lang_utils::Upcast<dyn $db + 'a> + ?Sized),
-            ) -> $short_id {
-                $db::$intern(db.upcast(), self)
+
+        impl<'db> cairo_lang_utils::Intern<'db, $short_id<'db>> for $long_id {
+            fn intern(self, db: &'db dyn salsa::Database) -> $short_id<'db> {
+                $short_id::new(db, self)
             }
         }
-        impl salsa::InternKey for $short_id {
-            fn from_intern_id(salsa_id: salsa::InternId) -> Self {
-                Self(salsa_id)
+
+        impl<'db> cairo_lang_utils::LookupIntern<'db, $long_id> for $short_id<'db> {
+            fn lookup_intern(self, db: &'db dyn salsa::Database) -> $long_id {
+                self.long(db).clone()
+            }
+        }
+
+        impl<'db> $short_id<'db> {
+            pub fn from_intern_id(intern_id: salsa::Id) -> Self {
+                use salsa::plumbing::FromId;
+                Self::from_id(intern_id)
             }
 
-            fn as_intern_id(&self) -> salsa::InternId {
-                self.0
+            pub fn as_intern_id(self) -> salsa::Id {
+                use salsa::plumbing::AsId;
+                self.as_id()
             }
         }
-        // Impl transparent DebugWithDb.
-        impl<T: ?Sized + cairo_lang_utils::Upcast<dyn $db + 'static>>
-            cairo_lang_debug::DebugWithDb<T> for $short_id
-        {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
+
+        // 4. DebugWithDb identical to old macro.
+        impl<'db> cairo_lang_debug::DebugWithDb<&'db dyn $db> for $short_id<'db> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &&'db dyn $db) -> std::fmt::Result {
                 use core::fmt::Debug;
 
                 use cairo_lang_debug::helper::Fallback;
-                let db = db.upcast();
+                let db = *db;
                 cairo_lang_debug::helper::HelperDebug::<$long_id, dyn $db>::helper_debug(
-                    &db.$lookup(*self),
+                    &self.long(db),
                     db,
                 )
                 .fmt(f)
             }
         }
     };
+}
+
+/// Returns `Some(())` if the condition is true, otherwise `None`.
+///
+/// Useful in functions returning `None` on some condition:
+/// `require(condition)?;`
+/// And for functions returning `Err` on some condition:
+/// `require(condition).ok_or_else(|| create_err())?;`
+#[must_use = "This function is only relevant to create a possible return."]
+pub fn require(condition: bool) -> Option<()> {
+    condition.then_some(())
 }
 
 pub trait Upcast<T: ?Sized> {
@@ -161,13 +182,22 @@ impl<T: ?Sized> Upcast<T> for T {
     }
 }
 
-/// Returns `Some(())` if the condition is true, otherwise `None`.
+/// Macro for conditional debug printing that checks the `CAIRO_DEBUG_MACRO` environment variable.
+/// This is specifically designed for use in procedural macros where you want to conditionally
+/// output debug information during compilation.
 ///
-/// Useful in functions returning `None` on some condition:
-/// `require(condition)?;`
-/// And for functions returning `Err` on some condition:
-/// `require(condition).ok_or_else(|| create_err())?;`
-#[must_use = "This function is only relevant to create a possible return."]
-pub fn require(condition: bool) -> Option<()> {
-    condition.then_some(())
+/// # Usage
+/// ```rust
+/// debug_macro!("Processing item: {}", item_name);
+/// debug_macro!("Complex debug: {} - {}", value1, value2);
+/// ```
+///
+/// The debug output will only be printed if the `CAIRO_DEBUG_MACRO` environment variable is set.
+#[macro_export]
+macro_rules! debug_macro {
+    ($($arg:tt)*) => {
+        if std::env::var("CAIRO_DEBUG_MACRO").is_ok() {
+            eprintln!($($arg)*);
+        }
+    };
 }

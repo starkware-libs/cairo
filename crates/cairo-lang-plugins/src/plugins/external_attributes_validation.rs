@@ -16,12 +16,12 @@ const GROUP_ATTR: &str = "group";
 const GROUP_ATTR_SYNTAX: &str = "#[doc(group: \"group name\")]";
 
 impl MacroPlugin for ExternalAttributesValidationPlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         match get_diagnostics(db, &item_ast) {
             Some(diagnostics) => {
                 PluginResult { code: None, remove_original_item: false, diagnostics }
@@ -35,10 +35,10 @@ impl MacroPlugin for ExternalAttributesValidationPlugin {
     }
 }
 
-fn get_diagnostics<Item: QueryAttrs>(
-    db: &dyn SyntaxGroup,
+fn get_diagnostics<'a, Item: QueryAttrs<'a>>(
+    db: &'a dyn SyntaxGroup,
     item: &Item,
-) -> Option<Vec<PluginDiagnostic>> {
+) -> Option<Vec<PluginDiagnostic<'a>>> {
     let mut diagnostics: Vec<PluginDiagnostic> = Vec::new();
     item.query_attr(db, DOC_ATTR).for_each(|attr| {
         let args = attr.clone().structurize(db).args;

@@ -11,11 +11,11 @@ use crate::plugin::AnalyzerPlugin;
 pub struct AnalyzerPluginLongId(pub Arc<dyn AnalyzerPlugin>);
 
 impl AnalyzerPlugin for AnalyzerPluginLongId {
-    fn diagnostics(
+    fn diagnostics<'db>(
         &self,
-        db: &dyn crate::db::SemanticGroup,
-        module_id: cairo_lang_defs::ids::ModuleId,
-    ) -> Vec<cairo_lang_defs::plugin::PluginDiagnostic> {
+        db: &'db dyn crate::db::SemanticGroup,
+        module_id: cairo_lang_defs::ids::ModuleId<'db>,
+    ) -> Vec<cairo_lang_defs::plugin::PluginDiagnostic<'db>> {
         self.0.diagnostics(db, module_id)
     }
 

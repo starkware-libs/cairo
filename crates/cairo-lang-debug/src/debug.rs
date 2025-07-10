@@ -12,7 +12,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
 pub trait DebugWithDb<Db: ?Sized> {
-    fn debug<'me, 'db>(&'me self, db: &'me Db) -> DebugWith<'me, Db>
+    fn debug<'me, 'db>(&'me self, db: &'db Db) -> DebugWith<'me, 'db, Db>
     where
         Self: Sized + 'me,
     {
@@ -20,7 +20,7 @@ pub trait DebugWithDb<Db: ?Sized> {
     }
 
     #[allow(dead_code)]
-    fn into_debug<'me, 'db>(self, db: &'me Db) -> DebugWith<'me, Db>
+    fn into_debug<'me, 'db>(self, db: &'db Db) -> DebugWith<'me, 'db, Db>
     where
         Self: Sized + 'me,
     {
@@ -30,9 +30,9 @@ pub trait DebugWithDb<Db: ?Sized> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result;
 }
 
-pub struct DebugWith<'me, Db: ?Sized> {
+pub struct DebugWith<'me, 'db, Db: ?Sized> {
     value: BoxRef<'me, dyn DebugWithDb<Db> + 'me>,
-    db: &'me Db,
+    db: &'db Db,
 }
 
 enum BoxRef<'me, T: ?Sized> {
@@ -51,7 +51,7 @@ impl<T: ?Sized> std::ops::Deref for BoxRef<'_, T> {
     }
 }
 
-impl<D: ?Sized> std::fmt::Debug for DebugWith<'_, D> {
+impl<D: ?Sized> std::fmt::Debug for DebugWith<'_, '_, D> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         DebugWithDb::fmt(&*self.value, f, self.db)
     }
@@ -240,7 +240,7 @@ pub mod helper {
 
     impl<T: DebugWithDb<Db>, Db: ?Sized> HelperDebug<T, Db> {
         #[allow(dead_code)]
-        pub fn helper_debug<'a, 'b: 'a>(a: &'a T, db: &'b Db) -> DebugWith<'a, Db> {
+        pub fn helper_debug<'a, 'b: 'a>(a: &'a T, db: &'b Db) -> DebugWith<'a, 'b, Db> {
             a.debug(db)
         }
     }

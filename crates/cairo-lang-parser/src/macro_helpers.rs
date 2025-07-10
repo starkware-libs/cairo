@@ -16,15 +16,15 @@ use crate::recovery::is_of_kind;
 
 /// Takes a token tree syntax node, which is assumed to be parsable as a wrapped argument list, try
 /// to parse it as such and return the result.
-pub fn token_tree_as_wrapped_arg_list(
-    token_tree: TokenTreeNode,
-    db: &dyn SyntaxGroup,
-) -> Option<WrappedArgListGreen> {
-    let mut diagnostics: DiagnosticsBuilder<ParserDiagnostic> = DiagnosticsBuilder::default();
+pub fn token_tree_as_wrapped_arg_list<'a>(
+    token_tree: TokenTreeNode<'a>,
+    db: &'a dyn SyntaxGroup,
+) -> Option<WrappedArgListGreen<'a>> {
+    let mut diagnostics: DiagnosticsBuilder<ParserDiagnostic<'a>> = DiagnosticsBuilder::default();
     let node_text = token_tree.as_syntax_node().get_text(db);
     let file_id = token_tree.stable_ptr(db).0.file_id(db);
     let mut parser = Parser::new(db, file_id, &node_text, &mut diagnostics);
-    let wrapped_arg_list_green = parser.parse_wrapped_arg_list();
+    let wrapped_arg_list_green: WrappedArgListGreen<'a> = parser.parse_wrapped_arg_list();
     if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
         parser.add_diagnostic(
             ParserDiagnosticKind::SkippedElement { element_name: "end arg list".into() },
@@ -41,11 +41,11 @@ pub fn token_tree_as_wrapped_arg_list(
 /// Takes a token tree syntax node, which is assumed to be parsable as an expression (it assumes
 /// that the prefix is an expr, not the whole iterator), tries to parse it as such, and returns the
 /// result. The token tree iterator is consumed entirely.
-pub fn as_expr_macro_token_tree(
-    token_tree: impl Iterator<Item = TokenTree>,
-    file_id: FileId,
-    db: &dyn SyntaxGroup,
-) -> Option<ast::Expr> {
+pub fn as_expr_macro_token_tree<'a>(
+    token_tree: impl Iterator<Item = TokenTree<'a>>,
+    file_id: FileId<'a>,
+    db: &'a dyn SyntaxGroup,
+) -> Option<ast::Expr<'a>> {
     let mut diagnostics: DiagnosticsBuilder<ParserDiagnostic> = DiagnosticsBuilder::default();
     let node_text: String = token_tree
         .map(|token| token.as_syntax_node().get_text(db).to_string())
@@ -59,17 +59,17 @@ pub fn as_expr_macro_token_tree(
 
 /// Trait for converting inline macros with token tree syntax as the argument to legacy inline which
 /// must have a wrapped argument list syntax node.
-pub trait AsLegacyInlineMacro {
+pub trait AsLegacyInlineMacro<'a> {
     /// The corresponding legacy inline macro type.
     type LegacyType;
     /// Converts the inline macro to the legacy inline macro.
-    fn as_legacy_inline_macro(&self, db: &dyn SyntaxGroup) -> Option<Self::LegacyType>;
+    fn as_legacy_inline_macro(&self, db: &'a dyn SyntaxGroup) -> Option<Self::LegacyType>;
 }
 
-impl AsLegacyInlineMacro for ExprInlineMacro {
-    type LegacyType = LegacyExprInlineMacro;
+impl<'a> AsLegacyInlineMacro<'a> for ExprInlineMacro<'a> {
+    type LegacyType = LegacyExprInlineMacro<'a>;
 
-    fn as_legacy_inline_macro(&self, db: &dyn SyntaxGroup) -> Option<Self::LegacyType> {
+    fn as_legacy_inline_macro(&self, db: &'a dyn SyntaxGroup) -> Option<Self::LegacyType> {
         let green_node = self.as_syntax_node().green_node(db);
         let [macro_name, bang, _arguments] = green_node.children() else {
             return None;
@@ -87,10 +87,10 @@ impl AsLegacyInlineMacro for ExprInlineMacro {
     }
 }
 
-impl AsLegacyInlineMacro for ItemInlineMacro {
-    type LegacyType = LegacyItemInlineMacro;
+impl<'a> AsLegacyInlineMacro<'a> for ItemInlineMacro<'a> {
+    type LegacyType = LegacyItemInlineMacro<'a>;
 
-    fn as_legacy_inline_macro(&self, db: &dyn SyntaxGroup) -> Option<Self::LegacyType> {
+    fn as_legacy_inline_macro(&self, db: &'a dyn SyntaxGroup) -> Option<Self::LegacyType> {
         let green_node = self.as_syntax_node().green_node(db);
         let [attributes, macro_name, bang, _arguments, semicolon] = green_node.children() else {
             return None;

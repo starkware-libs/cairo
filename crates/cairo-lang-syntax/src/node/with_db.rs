@@ -5,12 +5,12 @@ use super::SyntaxNode;
 use super::db::SyntaxGroup;
 
 pub struct SyntaxNodeWithDb<'a, Db: SyntaxGroup> {
-    node: &'a SyntaxNode,
+    node: &'a SyntaxNode<'a>,
     db: &'a Db,
 }
 
 impl<'a, Db: SyntaxGroup> SyntaxNodeWithDb<'a, Db> {
-    pub fn new(node: &'a SyntaxNode, db: &'a Db) -> Self {
+    pub fn new(node: &'a SyntaxNode<'a>, db: &'a Db) -> Self {
         Self { node, db }
     }
 }

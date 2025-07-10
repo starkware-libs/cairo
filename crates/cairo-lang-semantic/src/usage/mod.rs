@@ -22,20 +22,24 @@ mod test;
 /// syntax pointers.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
-pub enum MemberPath {
-    Var(VarId),
-    Member { parent: Box<MemberPath>, member_id: MemberId, concrete_struct_id: ConcreteStructId },
+pub enum MemberPath<'db> {
+    Var(VarId<'db>),
+    Member {
+        parent: Box<MemberPath<'db>>,
+        member_id: MemberId<'db>,
+        concrete_struct_id: ConcreteStructId<'db>,
+    },
 }
-impl MemberPath {
-    pub fn base_var(&self) -> VarId {
+impl<'db> MemberPath<'db> {
+    pub fn base_var(&self) -> VarId<'db> {
         match self {
             MemberPath::Var(var) => *var,
             MemberPath::Member { parent, .. } => parent.base_var(),
         }
     }
 }
-impl From<&ExprVarMemberPath> for MemberPath {
-    fn from(value: &ExprVarMemberPath) -> Self {
+impl<'db> From<&ExprVarMemberPath<'db>> for MemberPath<'db> {
+    fn from(value: &ExprVarMemberPath<'db>) -> Self {
         match value {
             ExprVarMemberPath::Var(expr) => MemberPath::Var(expr.var),
             ExprVarMemberPath::Member { parent, member_id, concrete_struct_id, .. } => {
@@ -52,22 +56,22 @@ impl From<&ExprVarMemberPath> for MemberPath {
 /// Usages of variables and member paths in semantic code.
 #[derive(Clone, Debug, Default, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
-pub struct Usage {
+pub struct Usage<'db> {
     /// Member paths that are read.
-    pub usage: OrderedHashMap<MemberPath, ExprVarMemberPath>,
+    pub usage: OrderedHashMap<MemberPath<'db>, ExprVarMemberPath<'db>>,
     /// Member paths that are assigned to.
-    pub changes: OrderedHashMap<MemberPath, ExprVarMemberPath>,
+    pub changes: OrderedHashMap<MemberPath<'db>, ExprVarMemberPath<'db>>,
     /// Member paths that are read as snapshots.
-    pub snap_usage: OrderedHashMap<MemberPath, ExprVarMemberPath>,
+    pub snap_usage: OrderedHashMap<MemberPath<'db>, ExprVarMemberPath<'db>>,
     /// Variables that are defined.
-    pub introductions: OrderedHashSet<VarId>,
+    pub introductions: OrderedHashSet<VarId<'db>>,
     /// indicates that the expression has an early return.
     pub has_early_return: bool,
 }
 
-impl Usage {
+impl<'db> Usage<'db> {
     /// Adds the usage and changes from 'usage' to self, Ignoring `introductions`.
-    pub fn add_usage_and_changes(&mut self, usage: &Usage) {
+    pub fn add_usage_and_changes(&mut self, usage: &Usage<'db>) {
         for (path, expr) in usage.usage.iter() {
             self.usage.insert(path.clone(), expr.clone());
         }
@@ -155,13 +159,13 @@ impl Usage {
 
 /// Usages of member paths in expressions of interest, currently loops and closures.
 #[derive(Debug, DebugWithDb)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct Usages {
+#[debug_db(ExprFormatter<'db>)]
+pub struct Usages<'db> {
     /// Mapping from an [ExprId] to its [Usage].
-    pub usages: OrderedHashMap<ExprId, Usage>,
+    pub usages: OrderedHashMap<ExprId<'db>, Usage<'db>>,
 }
-impl Usages {
-    pub fn from_function_body(function_body: &FunctionBody) -> Self {
+impl<'db> Usages<'db> {
+    pub fn from_function_body(function_body: &FunctionBody<'db>) -> Self {
         let mut current = Usage::default();
         let mut usages = Self { usages: Default::default() };
         usages.handle_expr(&function_body.arenas, function_body.body_expr, &mut current);
@@ -170,10 +174,10 @@ impl Usages {
 
     pub fn handle_closure(
         &mut self,
-        arenas: &Arenas,
-        param_ids: &[Parameter],
-        body: ExprId,
-    ) -> Usage {
+        arenas: &Arenas<'db>,
+        param_ids: &[Parameter<'db>],
+        body: ExprId<'db>,
+    ) -> Usage<'db> {
         let mut usage: Usage = Default::default();
 
         usage.introductions.extend(param_ids.iter().map(|param| VarId::Param(param.id)));
@@ -182,7 +186,12 @@ impl Usages {
         usage
     }
 
-    fn handle_expr(&mut self, arenas: &Arenas, expr_id: ExprId, current: &mut Usage) {
+    fn handle_expr(
+        &mut self,
+        arenas: &Arenas<'db>,
+        expr_id: ExprId<'db>,
+        current: &mut Usage<'db>,
+    ) {
         match &arenas.exprs[expr_id] {
             Expr::Tuple(expr) => {
                 for expr_id in &expr.items {
@@ -383,7 +392,11 @@ impl Usages {
         }
     }
 
-    fn handle_pattern(arena: &Arena<Pattern>, pattern: PatternId, current: &mut Usage) {
+    fn handle_pattern(
+        arena: &Arena<Pattern<'db>>,
+        pattern: PatternId<'db>,
+        current: &mut Usage<'db>,
+    ) {
         let pattern = &arena[pattern];
         match pattern {
             Pattern::Literal(_) | Pattern::StringLiteral(_) => {}

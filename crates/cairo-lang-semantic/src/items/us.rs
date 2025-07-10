@@ -16,7 +16,7 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use super::module::get_module_global_uses;
 use super::visibility::peek_visible_in;
 use crate::SemanticDiagnostic;
-use crate::db::SemanticGroup;
+use crate::db::{SemanticGroup, SemanticGroupData};
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder,
@@ -25,16 +25,19 @@ use crate::expr::inference::InferenceId;
 use crate::keyword::SELF_PARAM_KW;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverData};
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn SemanticGroup + 'static)]
-pub struct UseData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    resolved_item: Maybe<ResolvedGenericItem>,
-    resolver_data: Arc<ResolverData>,
+pub struct UseData<'db> {
+    diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    resolved_item: Maybe<ResolvedGenericItem<'db>>,
+    resolver_data: Arc<ResolverData<'db>>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_use_semantic_data].
-pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<UseData> {
+pub fn priv_use_semantic_data<'db>(
+    db: &'db dyn SemanticGroup,
+    use_id: UseId<'db>,
+) -> Maybe<UseData<'db>> {
     let module_file_id = use_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let module_item_id = ModuleItemId::Use(use_id);
@@ -66,12 +69,12 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
 /// This function checks if the `self` keyword is used correctly in a `use`
 /// statement and modifies the path segments accordingly. It also reports
 /// diagnostics for invalid usage of `self`.
-fn handle_self_path(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    mut segments: Vec<ast::PathSegment>,
-    use_path: ast::UsePath,
-) -> Maybe<Vec<ast::PathSegment>> {
+fn handle_self_path<'db>(
+    db: &'db dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    mut segments: Vec<ast::PathSegment<'db>>,
+    use_path: ast::UsePath<'db>,
+) -> Maybe<Vec<ast::PathSegment<'db>>> {
     if let Some(last) = segments.last() {
         if last.identifier(db) == SELF_PARAM_KW {
             if use_path.as_syntax_node().parent(db).unwrap().kind(db) != SyntaxKind::UsePathList {
@@ -95,10 +98,10 @@ fn handle_self_path(
 /// For example:
 /// Given the `c` of `use a::b::{c, d};` will return `[a, b, c]`.
 /// Given the `b` of `use a::b::{c, d};` will return `[a, b]`.
-pub fn get_use_path_segments(
-    db: &dyn SyntaxGroup,
-    use_path: ast::UsePath,
-) -> Maybe<Vec<ast::PathSegment>> {
+pub fn get_use_path_segments<'db>(
+    db: &'db dyn SyntaxGroup,
+    use_path: ast::UsePath<'db>,
+) -> Maybe<Vec<ast::PathSegment<'db>>> {
     let mut rev_segments = vec![];
     match &use_path {
         ast::UsePath::Leaf(use_ast) => rev_segments.push(use_ast.ident(db)),
@@ -117,10 +120,10 @@ pub fn get_use_path_segments(
 }
 
 /// Returns the parent `UsePathSingle` of a use path if it exists.
-fn get_parent_single_use_path(
-    db: &dyn SyntaxGroup,
-    use_path: &ast::UsePath,
-) -> Option<ast::UsePathSingle> {
+fn get_parent_single_use_path<'db>(
+    db: &'db dyn SyntaxGroup,
+    use_path: &ast::UsePath<'db>,
+) -> Option<ast::UsePathSingle<'db>> {
     use SyntaxKind::*;
     let mut node = use_path.as_syntax_node();
     loop {
@@ -136,17 +139,17 @@ fn get_parent_single_use_path(
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::priv_use_semantic_data].
-pub fn priv_use_semantic_data_cycle(
-    db: &dyn SemanticGroup,
-    _cycle: &salsa::Cycle,
-    use_id: &UseId,
-) -> Maybe<UseData> {
+pub fn priv_use_semantic_data_cycle<'db>(
+    db: &'db dyn SemanticGroup,
+    _input: SemanticGroupData,
+    use_id: UseId<'db>,
+) -> Maybe<UseData<'db>> {
     let module_file_id = use_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
-    let use_ast = db.module_use_by_id(*use_id)?.to_maybe()?;
+    let use_ast = db.module_use_by_id(use_id)?.to_maybe()?;
     let err = Err(diagnostics.report(use_ast.stable_ptr(db), UseCycle));
     let inference_id =
-        InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Use(*use_id)));
+        InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Use(use_id)));
     Ok(UseData {
         diagnostics: diagnostics.build(),
         resolved_item: err,
@@ -155,52 +158,55 @@ pub fn priv_use_semantic_data_cycle(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::use_semantic_diagnostics].
-pub fn use_semantic_diagnostics(
-    db: &dyn SemanticGroup,
-    use_id: UseId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn use_semantic_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    use_id: UseId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_use_semantic_data(use_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::use_resolver_data].
-pub fn use_resolver_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Arc<ResolverData>> {
+pub fn use_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    use_id: UseId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_use_semantic_data(use_id)?.resolver_data)
 }
 
 /// Trivial cycle handler for [crate::db::SemanticGroup::use_resolver_data].
-pub fn use_resolver_data_cycle(
-    db: &dyn SemanticGroup,
-    _cycle: &salsa::Cycle,
-    use_id: &UseId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn use_resolver_data_cycle<'db>(
+    db: &'db dyn SemanticGroup,
+    _input: SemanticGroupData,
+    use_id: UseId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     // Forwarding (not as a query) cycle handling to `priv_use_semantic_data` cycle handler.
-    use_resolver_data(db, *use_id)
+    use_resolver_data(db, use_id)
 }
 
-pub trait SemanticUseEx<'a>: Upcast<dyn SemanticGroup + 'a> {
+pub trait SemanticUseEx<'a>: Upcast<dyn SemanticGroup> {
     /// Returns the resolved item or an error if it can't be resolved.
     ///
     /// This is not a query as the cycle handling is done in priv_use_semantic_data.
-    fn use_resolved_item(&self, use_id: UseId) -> Maybe<ResolvedGenericItem> {
+    fn use_resolved_item(&'a self, use_id: UseId<'a>) -> Maybe<ResolvedGenericItem<'a>> {
         let db = self.upcast();
         db.priv_use_semantic_data(use_id)?.resolved_item
     }
 }
 
-impl<'a, T: Upcast<dyn SemanticGroup + 'a> + ?Sized> SemanticUseEx<'a> for T {}
+impl<'a, T: Upcast<dyn SemanticGroup> + ?Sized> SemanticUseEx<'a> for T {}
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn SemanticGroup + 'static)]
-pub struct UseGlobalData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    imported_module: Maybe<ModuleId>,
+pub struct UseGlobalData<'db> {
+    diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    imported_module: Maybe<ModuleId<'db>>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_global_use_semantic_data].
-pub fn priv_global_use_semantic_data(
-    db: &dyn SemanticGroup,
-    global_use_id: GlobalUseId,
-) -> Maybe<UseGlobalData> {
+pub fn priv_global_use_semantic_data<'db>(
+    db: &'db dyn SemanticGroup,
+    global_use_id: GlobalUseId<'db>,
+) -> Maybe<UseGlobalData<'db>> {
     let module_file_id = global_use_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let inference_id = InferenceId::GlobalUseStar(global_use_id);
@@ -241,32 +247,32 @@ pub fn priv_global_use_semantic_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_global_use_imported_module].
-pub fn priv_global_use_imported_module(
-    db: &dyn SemanticGroup,
-    global_use_id: GlobalUseId,
-) -> Maybe<ModuleId> {
+pub fn priv_global_use_imported_module<'db>(
+    db: &'db dyn SemanticGroup,
+    global_use_id: GlobalUseId<'db>,
+) -> Maybe<ModuleId<'db>> {
     db.priv_global_use_semantic_data(global_use_id)?.imported_module
 }
 
 /// Query implementation of [crate::db::SemanticGroup::global_use_semantic_diagnostics].
-pub fn global_use_semantic_diagnostics(
-    db: &dyn SemanticGroup,
-    global_use_id: GlobalUseId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn global_use_semantic_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    global_use_id: GlobalUseId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_global_use_semantic_data(global_use_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::priv_global_use_semantic_data].
-pub fn priv_global_use_semantic_data_cycle(
-    db: &dyn SemanticGroup,
-    cycle: &salsa::Cycle,
-    global_use_id: &GlobalUseId,
-) -> Maybe<UseGlobalData> {
+pub fn priv_global_use_semantic_data_cycle<'db>(
+    db: &'db dyn SemanticGroup,
+    _input: SemanticGroupData,
+    global_use_id: GlobalUseId<'db>,
+) -> Maybe<UseGlobalData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
-    let global_use_ast = db.module_global_use_by_id(*global_use_id)?.to_maybe()?;
-    let star_ast = ast::UsePath::Star(db.module_global_use_by_id(*global_use_id)?.to_maybe()?);
+    let global_use_ast = db.module_global_use_by_id(global_use_id)?.to_maybe()?;
+    let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?.to_maybe()?);
     let segments = get_use_path_segments(db, star_ast)?;
-    let err = if cycle.participant_keys().count() <= 3 && segments.len() == 1 {
+    let err = if segments.len() == 1 {
         // `use bad_name::*`, will attempt to find `bad_name` in the current module's global
         // uses, but which includes itself - but we don't want to report a cycle in this case.
         diagnostics.report(
@@ -280,20 +286,20 @@ pub fn priv_global_use_semantic_data_cycle(
 }
 
 /// The modules that are imported by a module, using global uses.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ImportedModules {
+#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+pub struct ImportedModules<'db> {
     /// The imported modules that have a path where each step is visible by the previous module.
-    pub accessible: OrderedHashSet<(ModuleId, ModuleId)>,
+    pub accessible: OrderedHashSet<(ModuleId<'db>, ModuleId<'db>)>,
     // TODO(Tomer-StarkWare): consider changing from all_modules to inaccessible_modules
     /// All the imported modules.
-    pub all: OrderedHashSet<ModuleId>,
+    pub all: OrderedHashSet<ModuleId<'db>>,
 }
 /// Returns the modules that are imported with `use *` in the current module.
 /// Query implementation of [crate::db::SemanticGroup::priv_module_use_star_modules].
-pub fn priv_module_use_star_modules(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-) -> Arc<ImportedModules> {
+pub fn priv_module_use_star_modules<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Arc<ImportedModules<'db>> {
     let mut visited = UnorderedHashSet::<_>::default();
     let mut stack = vec![(module_id, module_id)];
     let mut accessible_modules = OrderedHashSet::default();
