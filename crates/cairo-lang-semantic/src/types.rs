@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
@@ -27,10 +29,12 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosti
 use crate::expr::compute::{
     ComputationContext, ContextFunction, Environment, compute_expr_semantic,
 };
+use crate::expr::fmt::CountingWriter;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
+use crate::items::generics::fmt_generic_args;
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolutionContext, ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
@@ -305,28 +309,7 @@ impl ConcreteTypeId {
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        let generic_type_format = self.generic_type(db).format(db);
-        let mut generic_args = self.generic_args(db).into_iter();
-        if let Some(first) = generic_args.next() {
-            // Soft limit for the number of chars in the formatted type.
-            const CHARS_BOUND: usize = 500;
-            let mut f = generic_type_format;
-            f.push_str("::<");
-            f.push_str(&first.format(db));
-            for arg in generic_args {
-                f.push_str(", ");
-                if f.len() > CHARS_BOUND {
-                    // If the formatted type is becoming too long, add short version of arguments.
-                    f.push_str(&arg.short_name(db));
-                } else {
-                    f.push_str(&arg.format(db));
-                }
-            }
-            f.push('>');
-            f
-        } else {
-            generic_type_format
-        }
+        format!("{:?}", self.debug(db.elongate()))
     }
 
     /// Returns whether the type has the `#[must_use]` attribute.
@@ -354,7 +337,9 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteTypeId {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        write!(f, "{}", self.format(db))
+        let mut f = &mut CountingWriter::new(f);
+        write!(f, "{}", self.generic_type(db).format(db))?;
+        fmt_generic_args(&self.generic_args(db), &mut f, db)
     }
 }
 
