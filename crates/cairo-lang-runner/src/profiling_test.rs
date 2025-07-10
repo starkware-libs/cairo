@@ -79,7 +79,7 @@ pub fn test_profiling(
         )
         .unwrap();
     let profiling_processor = ProfilingInfoProcessor::new(
-        Some(&db),
+        &db,
         sierra_program,
         statements_functions,
         if inputs.contains_key("scoped_mode") {

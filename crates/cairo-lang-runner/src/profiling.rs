@@ -382,7 +382,7 @@ impl Default for ProfilingInfoProcessorParams {
 /// A processor for profiling info. Used to process the raw profiling info (basic info collected
 /// during the run) into a more detailed profiling info that can also be formatted.
 pub struct ProfilingInfoProcessor<'a> {
-    db: Option<&'a dyn SierraGenGroup>,
+    db: &'a dyn SierraGenGroup,
     sierra_program: Program,
     /// A map between sierra statement index and the string representation of the Cairo function
     /// that generated it. The function representation is composed of the function name and the
@@ -392,7 +392,7 @@ pub struct ProfilingInfoProcessor<'a> {
 }
 impl<'a> ProfilingInfoProcessor<'a> {
     pub fn new(
-        db: Option<&'a dyn SierraGenGroup>,
+        db: &'a dyn SierraGenGroup,
         sierra_program: Program,
         statements_functions: UnorderedHashMap<StatementIdx, String>,
         params: ProfilingInfoProcessorParams,
@@ -481,11 +481,10 @@ impl<'a> ProfilingInfoProcessor<'a> {
         });
 
         let cairo_stack_trace_weights = params.process_by_cairo_stack_trace.then(|| {
-            let db = self.db.expect("DB must be set with `process_by_cairo_stack_trace=true`.");
             raw_profiling_info
                 .stack_trace_weights
                 .iter()
-                .filter(|(trace, _)| is_cairo_trace(db, &self.sierra_program, trace))
+                .filter(|(trace, _)| is_cairo_trace(self.db, &self.sierra_program, trace))
                 .sorted_by_key(|&(trace, weight)| (usize::MAX - *weight, trace.clone()))
                 .map(resolve_names)
                 .collect()
@@ -518,12 +517,14 @@ impl<'a> ProfilingInfoProcessor<'a> {
         }
 
         let generic_libfunc_weights = params.process_by_generic_libfunc.then(|| {
-            let db: &dyn SierraGenGroup =
-                self.db.expect("DB must be set with `process_by_generic_libfunc=true`.");
             libfunc_weights
                 .aggregate_by(
                     |k| -> SmolStr {
-                        db.lookup_intern_concrete_lib_func(k.clone()).generic_id.to_string().into()
+                        self.db
+                            .lookup_intern_concrete_lib_func(k.clone())
+                            .generic_id
+                            .to_string()
+                            .into()
                     },
                     |v1: &usize, v2| v1 + v2,
                     &0,
@@ -572,8 +573,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
         }
 
         let original_user_function_weights = params.process_by_original_user_function.then(|| {
-            let db: &dyn SierraGenGroup =
-                self.db.expect("DB must be set with `process_by_original_user_function=true`.");
+            let db: &dyn SierraGenGroup = self.db;
             user_functions
                 .aggregate_by(
                     |idx| {
