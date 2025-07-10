@@ -66,11 +66,6 @@ fn foo(mut x: felt252, mut y: felt252) -> felt252 {
 }
 
 //! > module_code
-struct MyStruct {
-    x: felt252,
-    y: felt252,
-}
-
 extern fn modify(ref x: felt252) nopanic;
 
 //! > graph
@@ -132,3 +127,114 @@ blk6:
 Statements:
 End:
   Return(v15)
+
+//! > ==========================================================================
+
+//! > Test let chain with struct deconstruction
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: false)
+
+//! > function_code
+fn foo(mut x: felt252, mut y: MyStruct) -> (MyStruct, bool) {
+    if let Some(_) = Some(modify(ref x))
+        && let Some(_) = Some(modify(ref y.a))
+        && let Some(_) = Some(modify(ref y.b)) {
+        (y, true)
+    } else {
+        (y, false)
+    }
+}
+
+//! > module_code
+struct MyStruct {
+    a: felt252,
+    b: felt252,
+}
+
+extern fn modify(ref x: felt252) nopanic;
+
+//! > graph
+Root: 4
+0 ArmExpr { expr: Id { idx: 15 } }
+1 ArmExpr { expr: Id { idx: 20 } }
+2 BooleanIf { condition: Id { idx: 10 }, true_branch: NodeId(0), false_branch: NodeId(1) }
+3 BooleanIf { condition: Id { idx: 6 }, true_branch: NodeId(2), false_branch: NodeId(1) }
+4 BooleanIf { condition: Id { idx: 2 }, true_branch: NodeId(3), false_branch: NodeId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+Parameters: v0: core::felt252, v1: test::MyStruct
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- test::modify(v0)
+  (v3: ()) <- struct_construct()
+  (v4: core::option::Option::<()>) <- Option::Some(v3)
+End:
+  Match(match_enum(v4) {
+    bool::False(v6) => blk2,
+    bool::True(v5) => blk1,
+  })
+
+blk1:
+Statements:
+  (v7: core::felt252, v8: core::felt252) <- struct_destructure(v1)
+  (v9: core::felt252) <- test::modify(v7)
+  (v10: ()) <- struct_construct()
+  (v11: core::option::Option::<()>) <- Option::Some(v10)
+End:
+  Match(match_enum(v11) {
+    bool::False(v13) => blk4,
+    bool::True(v12) => blk3,
+  })
+
+blk2:
+Statements:
+  (v21: core::felt252, v22: core::felt252) <- struct_destructure(v1)
+End:
+  Goto(blk7, {v21 -> v19, v22 -> v20})
+
+blk3:
+Statements:
+  (v14: core::felt252) <- test::modify(v8)
+  (v15: ()) <- struct_construct()
+  (v16: core::option::Option::<()>) <- Option::Some(v15)
+End:
+  Match(match_enum(v16) {
+    bool::False(v18) => blk6,
+    bool::True(v17) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk7, {v9 -> v19, v8 -> v20})
+
+blk5:
+Statements:
+  (v27: ()) <- struct_construct()
+  (v28: core::bool) <- bool::True(v27)
+  (v29: test::MyStruct) <- struct_construct(v9, v14)
+  (v30: (test::MyStruct, core::bool)) <- struct_construct(v29, v28)
+End:
+  Goto(blk8, {v29 -> v32, v30 -> v31})
+
+blk6:
+Statements:
+End:
+  Goto(blk7, {v9 -> v19, v14 -> v20})
+
+blk7:
+Statements:
+  (v23: ()) <- struct_construct()
+  (v24: core::bool) <- bool::False(v23)
+  (v25: test::MyStruct) <- struct_construct(v19, v20)
+  (v26: (test::MyStruct, core::bool)) <- struct_construct(v25, v24)
+End:
+  Goto(blk8, {v25 -> v32, v26 -> v31})
+
+blk8:
+Statements:
+End:
+  Return(v31)

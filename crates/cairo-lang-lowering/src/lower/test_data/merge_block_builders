@@ -42,7 +42,7 @@ End:
 test_merge_block_builders
 
 //! > function_signature
-fn foo(x: felt252, y: felt252, z: felt252)
+fn foo(x: felt252, y: felt252, z: felt252, w: felt252)
 
 //! > block_definitions
 (
@@ -53,6 +53,7 @@ fn foo(x: felt252, y: felt252, z: felt252)
 (
     (x, 0), // Same in both blocks.
     (y, 3), // Different.
+    (w, 4), // Only in block 1.
 );
 
 //! > input_blocks
@@ -68,6 +69,7 @@ semantics:
   scattered:
     Var(Param(ParamId(1))): v0
     Var(Param(ParamId(2))): v3
+    Var(Param(ParamId(4))): v4
 
 //! > merged_block_builder
 block_id: BlockId(2)
@@ -137,17 +139,17 @@ struct B {
 block_id: BlockId(0)
 semantics:
   scattered:
-    Var(Param(ParamId(4))): Scattered(v3, v0, v1)
+    Var(Param(ParamId(5))): Scattered(v3, v0, v1)
 
 block_id: BlockId(1)
 semantics:
   scattered:
-    Var(Param(ParamId(4))): Scattered(Scattered(v4, v5), v0, v2)
+    Var(Param(ParamId(5))): Scattered(Scattered(v4, v5), v0, v2)
 
 block_id: BlockId(2)
 semantics:
   scattered:
-    Var(Param(ParamId(4))): Scattered(Scattered(v4, v5), v0, v2)
+    Var(Param(ParamId(5))): Scattered(Scattered(v4, v5), v0, v2)
 
 //! > lowered
 blk0:
@@ -175,4 +177,82 @@ End:
 block_id: BlockId(3)
 semantics:
   scattered:
-    Var(Param(ParamId(4))): Scattered(Scattered(v113, v114), v0, v115)
+    Var(Param(ParamId(5))): Scattered(Scattered(v113, v114), v0, v115)
+
+//! > ==========================================================================
+
+//! > Nested structs
+
+//! > test_runner_name
+test_merge_block_builders
+
+//! > function_signature
+fn foo(x: C)
+
+//! > block_definitions
+(
+    (x.a0, 0), // Same in both blocks.
+    (x.a1.m, 1), // Same in both blocks.
+    (x.a1.n, 2), // Different.
+    (x.b.a, 4), // x.b.a is packed in the first block.
+    (x.b.m, 7), // Same in both blocks.
+);
+(
+    (x.a0, 0), // Same in both blocks.
+    (x.a1.m, 1), // Same in both blocks.
+    (x.a1.n, 3), // Different.
+    (x.b.a.m, 5), // x.b.a is packed in the first block.
+    (x.b.a.n, 6),
+    (x.b.m, 7), // Same in both blocks.
+);
+
+//! > module_code
+struct A {
+    m: felt252,
+    n: felt252,
+}
+
+struct B {
+    a: A,
+    m: felt252,
+}
+
+struct C {
+    a0: A,
+    a1: A,
+    b: B,
+}
+
+//! > input_blocks
+block_id: BlockId(0)
+semantics:
+  scattered:
+    Var(Param(ParamId(6))): Scattered(v0, Scattered(v1, v2), Scattered(v4, v7))
+
+block_id: BlockId(1)
+semantics:
+  scattered:
+    Var(Param(ParamId(6))): Scattered(v0, Scattered(v1, v3), Scattered(Scattered(v5, v6), v7))
+
+//! > lowered
+blk0:
+Statements:
+  (v119: core::felt252, v120: core::felt252) <- struct_destructure(v4)
+End:
+  Goto(blk2, {v2 -> v116, v119 -> v117, v120 -> v118})
+
+blk1:
+Statements:
+End:
+  Goto(blk2, {v3 -> v116, v5 -> v117, v6 -> v118})
+
+blk2:
+Statements:
+End:
+  Not set
+
+//! > merged_block_builder
+block_id: BlockId(2)
+semantics:
+  scattered:
+    Var(Param(ParamId(6))): Scattered(v0, Scattered(v1, v116), Scattered(Scattered(v117, v118), v7))

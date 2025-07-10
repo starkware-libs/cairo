@@ -5,8 +5,9 @@ use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{self as semantic};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::{chain, Itertools};
+use itertools::{Itertools, chain};
 
 use crate::VariableId;
 use crate::db::LoweringGroup;
@@ -197,29 +198,19 @@ impl std::fmt::Display for SemanticLoweringMapping {
     }
 }
 
-// TODO: doc.
-#[derive(Debug)]
-pub enum MergedScattered {
-    // TODO: doc.
-    Same(Value),
-    // TODO: doc.
-    Remap,
-}
-
-pub fn merge_scattered(
+pub fn merge_semantics(
     mappings: Vec<&SemanticLoweringMapping>,
-) -> OrderedHashMap<MemberPath, MergedScattered> {
+    remapped_callback: &mut impl FnMut(&MemberPath) -> VariableId,
+) -> SemanticLoweringMapping {
     let mut path_to_values: OrderedHashMap<MemberPath, Vec<Value>> = Default::default();
 
     for map in &mappings {
-        println!("map: {:?}", map.scattered); // TODO: remove.
         for (path, var) in map.scattered.iter() {
             path_to_values.entry(path.clone()).or_insert_with(|| vec![]).push(var.clone());
         }
     }
 
-    let mut res: OrderedHashMap<MemberPath, MergedScattered> = Default::default();
-
+    let mut scattered: OrderedHashMap<MemberPath, Value> = Default::default();
     for (path, values) in path_to_values {
         // The variable is missing in one or more of the maps.
         // It cannot be used in the merged block.
@@ -227,10 +218,17 @@ pub fn merge_scattered(
             continue;
         }
 
-        compute_remapped_variables(values.iter().collect(), false, path, &mut res);
+        let merged_value =
+            compute_remapped_variables(values.iter().collect(), false, &path, remapped_callback);
+        scattered.insert(path.clone(), merged_value);
     }
 
-    res
+    SemanticLoweringMapping {
+        scattered,
+        captured: Default::default(),
+        copiable_captured: Default::default(),
+        closures: Default::default(),
+    }
 }
 
 /// Given a list of [Value]s, compute the list of [MemberPath]s that need to be remapped.
@@ -248,46 +246,62 @@ pub fn merge_scattered(
 fn compute_remapped_variables(
     values: Vec<&Value>,
     mut require_remapping: bool,
-    parent_path: MemberPath,
-    res: &mut OrderedHashMap<MemberPath, MergedScattered>
-) {
+    parent_path: &MemberPath,
+    remapped_callback: &mut impl FnMut(&MemberPath) -> VariableId,
+) -> Value {
     if !require_remapping {
         // If all values are the same, no remapping is needed.
         let first_var = values[0];
         if values.iter().all(|x| *x == first_var) {
-            res.insert(parent_path, MergedScattered::Same(first_var.clone()));
-            return;
+            return first_var.clone();
         }
     }
 
     // Collect all the `Value::Scattered` values.
-    let only_scattered: Vec<&Box<Scattered>> = values.iter().filter_map(|value| match value {
-        Value::Var(_) => {
-            // If we encounter a [Value::Var], we need to remap all the [Value::Scattered] values.
-            require_remapping = true;
-            None
-        }
-        Value::Scattered(scattered) => {
-            Some(scattered)
-        }
-    }).collect();
+    let only_scattered: Vec<&Box<Scattered>> = values
+        .iter()
+        .filter_map(|value| match value {
+            Value::Var(_) => {
+                // If we encounter a [Value::Var], we need to remap all the [Value::Scattered]
+                // values.
+                require_remapping = true;
+                None
+            }
+            Value::Scattered(scattered) => Some(scattered),
+        })
+        .collect();
 
     if only_scattered.is_empty() {
-        res.insert(parent_path, MergedScattered::Remap);
-        return;
+        let remapped_var = remapped_callback(parent_path);
+        return Value::Var(remapped_var);
     }
 
     let concrete_struct_id = only_scattered[0].concrete_struct_id;
-    for member_id in only_scattered[0].members.keys() {
-        let member_path = MemberPath::Member {
-            parent: parent_path.clone().into(),
-            member_id: *member_id,
-            concrete_struct_id,
-        };
-        let member_values = only_scattered.iter().map(|scattered| &scattered.members[member_id]).collect();
+    let members = only_scattered[0]
+        .members
+        .keys()
+        .map(|member_id| {
+            let member_path = MemberPath::Member {
+                parent: parent_path.clone().into(),
+                member_id: *member_id,
+                concrete_struct_id,
+            };
+            let member_values =
+                only_scattered.iter().map(|scattered| &scattered.members[member_id]).collect();
 
-        compute_remapped_variables(member_values, require_remapping, member_path, res);
-    }
+            (
+                *member_id,
+                compute_remapped_variables(
+                    member_values,
+                    require_remapping,
+                    &member_path,
+                    remapped_callback,
+                ),
+            )
+        })
+        .collect();
+
+    return Value::Scattered(Box::new(Scattered { concrete_struct_id, members }));
 }
 
 /// A trait for deconstructing and constructing structs.
@@ -331,7 +345,11 @@ impl std::fmt::Display for Value {
                 write!(f, "v{}", var.index())
             }
             Value::Scattered(scattered) => {
-                write!(f, "Scattered({})", scattered.members.values().map(|value| value.to_string()).join(", "))
+                write!(
+                    f,
+                    "Scattered({})",
+                    scattered.members.values().map(|value| value.to_string()).join(", ")
+                )
             }
         }
     }

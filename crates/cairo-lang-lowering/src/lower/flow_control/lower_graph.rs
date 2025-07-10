@@ -1,25 +1,18 @@
 //! This module is responsible for the lowering of a flow control graph [FlowControlGraph].
 
 use cairo_lang_semantic as semantic;
-use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{MatchArmSelector, corelib};
 use cairo_lang_syntax::node::TypedStablePtr;
-use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 use super::graph::{ArmExpr, BooleanIf, FlowControlGraph, FlowControlNode, NodeId};
 use crate::ids::LocationId;
-use crate::lower::block_builder::{
-    BlockBuilder, SealedBlockBuilder, SemanticRemapping, merge_block_builders,
-};
+use crate::lower::block_builder::{BlockBuilder, SealedBlockBuilder, merge_block_builders};
 use crate::lower::context::{
     LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest,
 };
-use crate::lower::refs::{MergedScattered, merge_scattered};
-use crate::lower::{
-    MultiLowering, lower_expr, lower_expr_to_var_usage, lowered_expr_to_block_scope_end,
-};
-use crate::{Block, BlockEnd, BlockId, MatchArm, MatchEnumInfo, MatchInfo, VariableId};
+use crate::lower::{lower_expr, lower_expr_to_var_usage, lowered_expr_to_block_scope_end};
+use crate::{BlockEnd, BlockId, MatchArm, MatchEnumInfo, MatchInfo};
 
 /// Lowers a flow control graph.
 #[allow(dead_code)]
@@ -201,6 +194,7 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
         };
 
         (
+            // TODO: Replace with `merge_block_builders`?
             builder.merge_and_end_with_match(self.ctx, info, sealed_blocks, condition_location),
             builder,
         )

@@ -1,9 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
-use cairo_lang_semantic::test_utils::{
-    TestFunction, setup_test_function,
-};
+use cairo_lang_semantic::test_utils::{TestFunction, setup_test_function};
 use cairo_lang_semantic::{self as semantic, ExprVarMemberPath};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;

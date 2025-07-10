@@ -15,7 +15,7 @@ use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
 use super::generators::StatementsBuilder;
-use super::refs::{MergedScattered, SemanticLoweringMapping, StructRecomposer, merge_scattered};
+use super::refs::{SemanticLoweringMapping, StructRecomposer, merge_semantics};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
@@ -453,16 +453,11 @@ fn indent(s: String) -> String {
 }
 
 /// Gets the type of a semantic variable.
-fn get_ty(
-    ctx: &LoweringContext<'_, '_>,
-    member_path: &MemberPath,
-) -> semantic::TypeId {
+fn get_ty(ctx: &LoweringContext<'_, '_>, member_path: &MemberPath) -> semantic::TypeId {
     match member_path {
         MemberPath::Var(var) => ctx.semantic_defs[var].ty(),
         MemberPath::Member { member_id, concrete_struct_id, .. } => {
-            ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()
-                [&member_id.name(ctx.db)]
-                .ty
+            ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()[&member_id.name(ctx.db)].ty
         }
     }
 }
@@ -589,7 +584,10 @@ impl StructRecomposer for BlockStructRecomposer<'_, '_, '_> {
     }
 }
 
-// TODO: doc.
+/// Given a list of block builders, creates a new single block builder and finalize all
+/// block builders with a [BlockEnd::Goto] to the new block.
+///
+/// If only one parent builder is given, returns it without creating a new block.
 pub fn merge_block_builders(
     ctx: &mut LoweringContext<'_, '_>,
     parent_builders: Vec<BlockBuilder>,
@@ -603,23 +601,18 @@ pub fn merge_block_builders(
     // Assign a new block id for the current node.
     let block_id = ctx.blocks.alloc_empty();
 
-    // TODO: fix below.
-    let mut child_builder = parent_builders.last().unwrap().child_block_builder(block_id);
+    // Compute the merged semantics.
+    let mut member_path_value: OrderedHashMap<MemberPath, VariableId> = Default::default();
 
-    // Compute the merged snapped semantics.
-    let scattered =
-        merge_scattered(parent_builders.iter().map(|builder| &builder.semantics).collect());
-
-    let member_path_value: OrderedHashMap<MemberPath, VariableId> = scattered
-        .iter()
-        .filter_map(|(path, scattered)| match scattered {
-            MergedScattered::Same(..) => None,
-            MergedScattered::Remap => {
-                let ty = get_ty(ctx, &path);
-                Some((path.clone(), ctx.new_var(VarRequest { ty, location })))
-            }
-        })
-        .collect();
+    let semantics = merge_semantics(
+        parent_builders.iter().map(|builder| &builder.semantics).collect(),
+        &mut |path| {
+            let ty = get_ty(ctx, &path);
+            let var = ctx.new_var(VarRequest { ty, location });
+            member_path_value.insert(path.clone(), var);
+            var
+        },
+    );
 
     let semantic_remapping = SemanticRemapping { expr: None, member_path_value };
 
@@ -630,9 +623,17 @@ pub fn merge_block_builders(
     }
 
     // Apply remapping on builder.
+    let mut new_builder = BlockBuilder {
+        semantics,
+        snapped_semantics: Default::default(),
+        changed_member_paths: Default::default(),
+        statements: Default::default(),
+        block_id,
+    };
+
     for (semantic, var) in semantic_remapping.member_path_value {
-        child_builder.update_ref_raw(ctx, semantic, var, location);
+        new_builder.update_ref_raw(ctx, semantic, var, location);
     }
 
-    child_builder
+    new_builder
 }
