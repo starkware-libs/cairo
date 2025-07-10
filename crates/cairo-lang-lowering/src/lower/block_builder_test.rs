@@ -1,14 +1,14 @@
 use crate::{db::LoweringGroup, fmt::LoweredFormatter, ids::{FunctionWithBodyLongId, Signature}, test_utils::LoweringDatabaseForTesting, BlockId, VariableId};
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_semantic::{self as semantic, corelib::unit_ty, test_utils::{setup_test_function, TestFunction}, usage::MemberPath, Expr, ExprVarMemberPath, Statement, StatementId};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
-use cairo_lang_utils::{extract_matches, ordered_hash_map::OrderedHashMap, Upcast};
+use cairo_lang_utils::{extract_matches, ordered_hash_map::OrderedHashMap, unordered_hash_set::UnorderedHashSet, Upcast};
 use itertools::Itertools;
-use salsa::{InternId, InternKey};
 
 use super::{block_builder::{merge_block_builders, BlockBuilder}, context::{EncapsulatingLoweringContext, LoweringContext, VarRequest}};
+
+const N_LOWERING_VARS: usize = 100;
 
 cairo_lang_test_utils::test_file_test!(
     merge_block_builders,
@@ -18,10 +18,6 @@ cairo_lang_test_utils::test_file_test!(
     },
     test_merge_block_builders
 );
-
-fn semantic_param(id: u32) -> semantic::VarId {
-    semantic::VarId::Param(semantic::ParamId::from_intern_id(id.into()))
-}
 
 fn create_context<'a, 'db>(db: &'db LoweringDatabaseForTesting, test_function: &TestFunction,
     encapsulating_ctx: &'a mut EncapsulatingLoweringContext<'db>) -> LoweringContext<'a, 'db> {
@@ -48,7 +44,7 @@ fn test_merge_block_builders(
     let db = LoweringDatabaseForTesting::default();
     let test_function = setup_test_function(
         &db,
-        &inputs["block_definitions"],
+        &format!("{} {{ {} }}", &inputs["function_signature"], &inputs["block_definitions"]),
         "foo",
         inputs.get("module_code").unwrap_or(&"".into())
     ).unwrap();
@@ -64,23 +60,16 @@ fn test_merge_block_builders(
 
     let mut ctx = create_context(&db, &test_function, &mut encapsulating_ctx);
 
-    let parameters: Vec<VariableId> = ctx
-        .signature
-        .params
-        .clone()
-        .into_iter()
-        .map(|param| {
-            let location = ctx.get_location(param.stable_ptr().untyped());
-            let var = ctx.new_var(VarRequest { ty: param.ty(), location });
+    // Create dummy lowering variables.
+    let dummy_location = ctx.get_location(test_function.signature.stable_ptr.untyped());
+    let lowering_vars: Vec<VariableId> = (0..N_LOWERING_VARS)
+        .map(|_| {
+            let var = ctx.new_var(VarRequest { ty: unit_ty(ctx.db), location: dummy_location });
             var
         })
         .collect();
 
-    println!("semantic_defs: {:?}", ctx.semantic_defs);
-
-    let dummy_location = ctx.get_location(test_function.signature.stable_ptr.untyped());
-
-    let input_blocks = create_block_builders(&mut ctx, &test_function, &parameters);
+    let input_blocks = create_block_builders(&mut ctx, &test_function, &lowering_vars);
     let input_blocks_str = input_blocks.iter().map(|b| b.to_string()).join("\n");
 
     let merged_block = merge_block_builders(&mut ctx, input_blocks, dummy_location);
@@ -100,27 +89,37 @@ fn test_merge_block_builders(
     }
 }
 
+/// Creates a block builder for each semantic "statement" in the function body.
+///
+/// See [create_block_builder] for more details.
 fn create_block_builders(
     ctx: &mut LoweringContext,
     test_function: &TestFunction,
-    parameters: &Vec<VariableId>,
+    lowering_vars: &Vec<VariableId>,
 ) -> Vec<BlockBuilder> {
     let expr = ctx.function_body.arenas.exprs[test_function.body].clone();
     let block_expr = extract_matches!(expr, Expr::Block);
 
     block_expr.statements.iter().map(|statement_id| {
-        create_block_builder(ctx, test_function, *statement_id, parameters)
+        create_block_builder(ctx, *statement_id, lowering_vars)
     }).collect()
 }
 
+/// Given a semantic "statement" of the form:
+///    `((member_path, lower_var_idx), ...)`
+/// creates a block builder with a semantic mapping that maps each member path to the corresponding
+/// given lowered variable.
+///
+/// Note that the statement is not a real statement - it is not lowered, and it is only used to
+/// define the semantic mapping.
 fn create_block_builder(
     ctx: &mut LoweringContext,
-    test_function: &TestFunction,
     statement_id: StatementId,
-    parameters: &Vec<VariableId>,
+    lowering_vars: &Vec<VariableId>,
 ) -> BlockBuilder {
     let block_id = ctx.blocks.alloc_empty();
     let mut block_builder = BlockBuilder::root(block_id);
+    let mut visited_vars: UnorderedHashSet<semantic::VarId> = Default::default();
 
     let statement_expr = extract_matches!(
         &ctx.function_body.arenas.statements[statement_id],
@@ -151,15 +150,17 @@ fn create_block_builder(
                 };
                 let var_id = extract_matches!(var, MemberPath::Var);
 
-                // TODO: Fix [0].
-                block_builder.put_semantic(*var_id, parameters[lower_var_idx]);
+                if visited_vars.insert(*var_id) {
+                    block_builder.put_semantic(*var_id, lowering_vars[lower_var_idx]);
+                }
 
                 let location = ctx.get_location(member_access.stable_ptr.untyped());
-                block_builder.get_ref_raw(ctx, &member_path, location);
+                block_builder.update_ref_raw(ctx, member_path, lowering_vars[lower_var_idx], location);
+                // Remove the statements that were created as part of the `update_ref_raw` call.
+                block_builder.statements.statements.clear();
             }
             Expr::Var(var) => {
-                // TODO: Fix [0].
-                block_builder.put_semantic(var.var, parameters[lower_var_idx]);
+                block_builder.put_semantic(var.var, lowering_vars[lower_var_idx]);
             }
             expr => {
                 panic!("Unexpected expression: {:?}", expr);

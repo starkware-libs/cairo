@@ -6,7 +6,7 @@ use cairo_lang_semantic::{self as semantic};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::chain;
+use itertools::{chain, Itertools};
 
 use crate::VariableId;
 use crate::db::LoweringGroup;
@@ -24,6 +24,8 @@ pub struct ClosureInfo {
 #[derive(Clone, Default, Debug)]
 pub struct SemanticLoweringMapping {
     /// Maps member paths ([MemberPath]) to lowered variable ids or scattered variable ids.
+    /// TODO: improve doc.
+    /// TODO: check what happens in a loop.
     pub scattered: OrderedHashMap<MemberPath, Value>,
     /// Maps captured member paths to a closure that captured them.
     pub captured: UnorderedHashMap<MemberPath, VariableId>,
@@ -188,8 +190,8 @@ impl SemanticLoweringMapping {
 impl std::fmt::Display for SemanticLoweringMapping {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "scattered:")?;
-        for (member_path, var_id) in self.scattered.iter() {
-            writeln!(f, "  {:?}: {:?}", member_path, var_id)?;
+        for (member_path, value) in self.scattered.iter() {
+            writeln!(f, "  {:?}: {}", member_path, value)?;
         }
         Ok(())
     }
@@ -207,33 +209,85 @@ pub enum MergedScattered {
 pub fn merge_scattered(
     mappings: Vec<&SemanticLoweringMapping>,
 ) -> OrderedHashMap<MemberPath, MergedScattered> {
-    let mut res: OrderedHashMap<MemberPath, Vec<Value>> = Default::default();
+    let mut path_to_values: OrderedHashMap<MemberPath, Vec<Value>> = Default::default();
 
     for map in &mappings {
         println!("map: {:?}", map.scattered); // TODO: remove.
         for (path, var) in map.scattered.iter() {
-            res.entry(path.clone()).or_insert_with(|| vec![]).push(var.clone());
+            path_to_values.entry(path.clone()).or_insert_with(|| vec![]).push(var.clone());
         }
     }
 
-    res.into_iter()
-        .filter_map(|(path, variables)| {
-            if variables.len() != mappings.len() {
-                // The variable is missing in one or more of the maps.
-                // It cannot be used in the merged block.
-                None
-            } else {
-                let first_var = &variables[0];
-                // println!("{:?}: {:?} => {:?}", path, variables, variables.iter().all(|x| x == first_var) ); // TODO: remove.
-                let res = if variables.iter().all(|x| x == first_var) {
-                    MergedScattered::Same(first_var.clone())
-                } else {
-                    MergedScattered::Remap
-                };
-                Some((path, res))
-            }
-        })
-        .collect()
+    let mut res: OrderedHashMap<MemberPath, MergedScattered> = Default::default();
+
+    for (path, values) in path_to_values {
+        // The variable is missing in one or more of the maps.
+        // It cannot be used in the merged block.
+        if values.len() != mappings.len() {
+            continue;
+        }
+
+        compute_remapped_variables(values.iter().collect(), false, path, &mut res);
+    }
+
+    res
+}
+
+/// Given a list of [Value]s, compute the list of [MemberPath]s that need to be remapped.
+///
+/// If all values are the same, no remapping is needed.
+/// If some of the values are [Value::Var] and some are [Value::Scattered], then all the values
+/// inside the [Value::Scattered] values need to be remapped.
+/// If all of them are [Value::Scattered], then it is possible that some of the members require
+/// remapping and some don't.
+///
+/// Pass require_remapping=true to indicate that during the recursion we encountered a [Value::Var],
+/// and thus we need to remap all the [Value::Scattered] values.
+///
+/// Returns a list of [MemberPath]s that need to be remapped.
+fn compute_remapped_variables(
+    values: Vec<&Value>,
+    mut require_remapping: bool,
+    parent_path: MemberPath,
+    res: &mut OrderedHashMap<MemberPath, MergedScattered>
+) {
+    if !require_remapping {
+        // If all values are the same, no remapping is needed.
+        let first_var = values[0];
+        if values.iter().all(|x| *x == first_var) {
+            res.insert(parent_path, MergedScattered::Same(first_var.clone()));
+            return;
+        }
+    }
+
+    // Collect all the `Value::Scattered` values.
+    let only_scattered: Vec<&Box<Scattered>> = values.iter().filter_map(|value| match value {
+        Value::Var(_) => {
+            // If we encounter a [Value::Var], we need to remap all the [Value::Scattered] values.
+            require_remapping = true;
+            None
+        }
+        Value::Scattered(scattered) => {
+            Some(scattered)
+        }
+    }).collect();
+
+    if only_scattered.is_empty() {
+        res.insert(parent_path, MergedScattered::Remap);
+        return;
+    }
+
+    let concrete_struct_id = only_scattered[0].concrete_struct_id;
+    for member_id in only_scattered[0].members.keys() {
+        let member_path = MemberPath::Member {
+            parent: parent_path.clone().into(),
+            member_id: *member_id,
+            concrete_struct_id,
+        };
+        let member_values = only_scattered.iter().map(|scattered| &scattered.members[member_id]).collect();
+
+        compute_remapped_variables(member_values, require_remapping, member_path, res);
+    }
 }
 
 /// A trait for deconstructing and constructing structs.
@@ -268,6 +322,19 @@ enum Value {
     /// The value of the member path is not stored. If needed, it should be reconstructed from the
     /// member values.
     Scattered(Box<Scattered>),
+}
+
+impl std::fmt::Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Var(var) => {
+                write!(f, "v{}", var.index())
+            }
+            Value::Scattered(scattered) => {
+                write!(f, "Scattered({})", scattered.members.values().map(|value| value.to_string()).join(", "))
+            }
+        }
+    }
 }
 
 /// A value for a non-stored member path. Recursively holds the [Value] for the members.

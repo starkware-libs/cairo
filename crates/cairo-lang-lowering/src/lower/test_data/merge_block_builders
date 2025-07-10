@@ -3,10 +3,11 @@
 //! > test_runner_name
 test_merge_block_builders
 
+//! > function_signature
+fn foo(x: felt252)
+
 //! > block_definitions
-fn foo(x: felt252) {
-    ((x, 0),);
-}
+((x, 0),);
 
 //! > blocks
 block_id: BlockId(0)
@@ -19,13 +20,13 @@ semantics:
 block_id: BlockId(0)
 semantics:
   scattered:
-    Var(Param(ParamId(0))): Var(Id { idx: 0 })
+    Var(Param(ParamId(0))): v0
 
 //! > merged_block_builder
 block_id: BlockId(0)
 semantics:
   scattered:
-    Var(Param(ParamId(0))): Var(Id { idx: 0 })
+    Var(Param(ParamId(0))): v0
 
 //! > lowered
 blk0:
@@ -40,50 +41,51 @@ End:
 //! > test_runner_name
 test_merge_block_builders
 
+//! > function_signature
+fn foo(x: felt252, y: felt252, z: felt252)
+
 //! > block_definitions
-fn foo(x: felt252, y: felt252, z: felt252, w: felt252) {
-    (
-        (x, 0), // Same in both blocks.
-        (y, 1), // Different.
-        (z, 2), // Only in block 0.
-    );
-    (
-        (x, 0), // Same in both blocks.
-        (y, 3), // Different.
-    );
-}
+(
+    (x, 0), // Same in both blocks.
+    (y, 1), // Different.
+    (z, 2), // Only in block 0.
+);
+(
+    (x, 0), // Same in both blocks.
+    (y, 3), // Different.
+);
 
 //! > input_blocks
 block_id: BlockId(0)
 semantics:
   scattered:
-    Var(Param(ParamId(1))): Var(Id { idx: 0 })
-    Var(Param(ParamId(2))): Var(Id { idx: 1 })
-    Var(Param(ParamId(3))): Var(Id { idx: 2 })
+    Var(Param(ParamId(1))): v0
+    Var(Param(ParamId(2))): v1
+    Var(Param(ParamId(3))): v2
 
 block_id: BlockId(1)
 semantics:
   scattered:
-    Var(Param(ParamId(1))): Var(Id { idx: 0 })
-    Var(Param(ParamId(2))): Var(Id { idx: 3 })
+    Var(Param(ParamId(1))): v0
+    Var(Param(ParamId(2))): v3
 
 //! > merged_block_builder
 block_id: BlockId(2)
 semantics:
   scattered:
-    Var(Param(ParamId(1))): Var(Id { idx: 0 })
-    Var(Param(ParamId(2))): Var(Id { idx: 4 })
+    Var(Param(ParamId(1))): v0
+    Var(Param(ParamId(2))): v100
 
 //! > lowered
 blk0:
 Statements:
 End:
-  Goto(blk2, {v1 -> v4})
+  Goto(blk2, {v1 -> v100})
 
 blk1:
 Statements:
 End:
-  Goto(blk2, {v3 -> v4})
+  Goto(blk2, {v3 -> v100})
 
 blk2:
 Statements:
@@ -97,55 +99,80 @@ End:
 //! > test_runner_name
 test_merge_block_builders
 
+//! > function_signature
+fn foo(x: B)
+
 //! > block_definitions
-fn foo(x: MyStruct) {
-    ((x.a, 0),);
-    ((x.a, 0),);
-}
+(
+    (x.a, 3), // x.a is packed in the first block.
+    (x.b, 0), // Same in all blocks.
+    (x.c, 1), // Different.
+);
+(
+    (x.a.a, 4), // x.a is packed in the first block.
+    (x.a.b, 5),
+    (x.b, 0), // Same in all blocks.
+    (x.c, 2), // Different.
+);
+(
+    (x.a.a, 4), // x.a is packed in the first block.
+    (x.a.b, 5),
+    (x.b, 0), // Same in all blocks.
+    (x.c, 2), // Different.
+);
 
 //! > module_code
-struct MyStruct {
+struct A {
     a: felt252,
     b: felt252,
 }
 
+struct B {
+    a: A,
+    b: felt252,
+    c: felt252,
+}
+
 //! > input_blocks
 block_id: BlockId(0)
-statements:
-  StructDestructure(StatementStructDestructure { input: VarUsage { var_id: Id { idx: 0 }, location: LocationId(9) }, outputs: [Id { idx: 1 }, Id { idx: 2 }] })
 semantics:
   scattered:
-    Var(Param(ParamId(5))): Scattered(Scattered { concrete_struct_id: ConcreteStructId(1), members: OrderedHashMap({MemberId(0): Var(Id { idx: 1 }), MemberId(1): Var(Id { idx: 2 })}) })
+    Var(Param(ParamId(4))): Scattered(v3, v0, v1)
 
 block_id: BlockId(1)
-statements:
-  StructDestructure(StatementStructDestructure { input: VarUsage { var_id: Id { idx: 0 }, location: LocationId(10) }, outputs: [Id { idx: 3 }, Id { idx: 4 }] })
 semantics:
   scattered:
-    Var(Param(ParamId(5))): Scattered(Scattered { concrete_struct_id: ConcreteStructId(1), members: OrderedHashMap({MemberId(0): Var(Id { idx: 3 }), MemberId(1): Var(Id { idx: 4 })}) })
+    Var(Param(ParamId(4))): Scattered(Scattered(v4, v5), v0, v2)
+
+block_id: BlockId(2)
+semantics:
+  scattered:
+    Var(Param(ParamId(4))): Scattered(Scattered(v4, v5), v0, v2)
 
 //! > lowered
 blk0:
 Statements:
-  (v1: core::felt252, v2: core::felt252) <- struct_destructure(v0)
-  (v6: test::MyStruct) <- struct_construct(v1, v2)
+  (v116: core::felt252, v117: core::felt252) <- struct_destructure(v3)
 End:
-  Goto(blk2, {v6 -> v5})
+  Goto(blk3, {v116 -> v113, v117 -> v114, v1 -> v115})
 
 blk1:
 Statements:
-  (v3: core::felt252, v4: core::felt252) <- struct_destructure(v0)
-  (v7: test::MyStruct) <- struct_construct(v3, v4)
 End:
-  Goto(blk2, {v7 -> v5})
+  Goto(blk3, {v4 -> v113, v5 -> v114, v2 -> v115})
 
 blk2:
+Statements:
+End:
+  Goto(blk3, {v4 -> v113, v5 -> v114, v2 -> v115})
+
+blk3:
 Statements:
 End:
   Not set
 
 //! > merged_block_builder
-block_id: BlockId(2)
+block_id: BlockId(3)
 semantics:
   scattered:
-    Var(Param(ParamId(5))): Var(Id { idx: 5 })
+    Var(Param(ParamId(4))): Scattered(Scattered(v113, v114), v0, v115)
