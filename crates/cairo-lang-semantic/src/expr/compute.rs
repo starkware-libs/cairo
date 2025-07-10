@@ -694,8 +694,8 @@ fn compute_expr_inline_macro_semantic(
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
     let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
-        name: name.into(),
+        parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
+        name: name.clone().into(),
         content,
         code_mappings: info.mappings.clone(),
         kind: FileKind::Expr,
@@ -754,7 +754,7 @@ fn expand_macro_for_statement(
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
     let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
+        parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
         name: name.into(),
         content,
         code_mappings: info.mappings.clone(),
