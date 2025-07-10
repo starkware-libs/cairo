@@ -150,7 +150,7 @@ fn test_keccak_byte_array() {
         0x70a4855d04d8fa7b3b2782ca53b600e5c003c7dcb27d7e923c23f7860146d2c5,
     );
     assert_eq!(
-        keccak::compute_keccak_byte_array(@"0123456789abedef"),
+        keccak::compute_keccak_byte_array(@"0123456789abcdef"),
         0x156c8d1049ee26f4f392bf8260b9e1c5ad5542778f003235f8cf5e0a19520886,
     );
     assert_eq!(
