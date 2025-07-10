@@ -5,7 +5,6 @@ use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{self as semantic};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::chain;
 
 use crate::VariableId;
@@ -25,12 +24,6 @@ pub struct ClosureInfo {
 pub struct SemanticLoweringMapping {
     /// Maps member paths ([MemberPath]) to lowered variable ids or scattered variable ids.
     scattered: OrderedHashMap<MemberPath, Value>,
-    /// Maps captured member paths to a closure that captured them.
-    pub captured: UnorderedHashMap<MemberPath, VariableId>,
-    /// Maps captured member paths which are copiable to a closure that captured them.
-    pub copiable_captured: UnorderedHashMap<MemberPath, VariableId>,
-    /// Maps the variable id of a closure to the closure info.
-    pub closures: UnorderedHashMap<VariableId, ClosureInfo>,
 }
 impl SemanticLoweringMapping {
     /// Returns the topmost mapped member path containing the given member path, or None no such
@@ -82,35 +75,11 @@ impl SemanticLoweringMapping {
         )
     }
 
-    pub fn invalidate_closure<TContext: StructRecomposer>(
-        &mut self,
-        ctx: &mut TContext,
-        closure_var: VariableId,
-    ) {
-        let opt_closure = self.closures.remove(&closure_var);
-        if let Some(closure_info) = opt_closure {
-            let new_vars = self.destructure_closure(ctx, closure_var, &closure_info);
-
-            // Note that members.keys() can be shorter than new_vars, as the members captured
-            // as snapshots don't need to be updated.
-            for (path, new_var) in closure_info.members.keys().zip(new_vars) {
-                if self.captured.remove(path).is_some() {
-                    self.update(ctx, path, new_var).unwrap();
-                } else {
-                    self.copiable_captured.remove(path);
-                }
-            }
-        }
-    }
-
     pub fn get<TContext: StructRecomposer>(
         &mut self,
         mut ctx: TContext,
         path: &MemberPath,
     ) -> Option<VariableId> {
-        if let Some(closure_var) = self.captured.get(path) {
-            self.invalidate_closure(&mut ctx, *closure_var);
-        }
         let value = self.break_into_value(&mut ctx, path)?;
         Self::assemble_value(&mut ctx, value)
     }
