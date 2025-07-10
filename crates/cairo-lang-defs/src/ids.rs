@@ -539,6 +539,14 @@ define_top_level_language_element_id!(
     intern_macro_declaration
 );
 
+define_language_element_id_basic!(
+    MacroCallId,
+    MacroCallLongId,
+    ast::ItemInlineMacro,
+    lookup_intern_macro_call,
+    intern_macro_call
+);
+
 impl UnstableSalsaId for FreeFunctionId {
     fn get_internal_id(&self) -> &salsa::InternId {
         &self.0
