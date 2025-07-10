@@ -28,7 +28,7 @@ use super::context::{
     LoweredExpr, LoweredExprExternEnum, LoweringContext, LoweringFlowError, LoweringResult,
     lowering_flow_error_to_sealed_block,
 };
-use super::lower_if::{ConditionedExpr, lower_conditioned_expr_and_seal};
+use super::lower_if::{ConditionedExpr, ElseBlockTracker, lower_conditioned_expr_and_seal};
 use super::lower_let_else::lower_success_arm_body;
 use super::{
     alloc_empty_block, generators, lower_expr_block, lower_expr_literal, lower_tail_expr,
@@ -71,6 +71,9 @@ pub enum MatchArmWrapper<'a> {
     /// Similar to [Self::Arm], except that the expression is a conditioned expression
     /// (see [ConditionedExpr]).
     ConditionedArm(&'a [PatternId], ConditionedExpr<'a>),
+    /// Similar to [Self::ElseClause], except that `expr` is not provided, and the else block is
+    /// expected to be built and handled by the caller.
+    SharedElseArm(ElseBlockTracker<'a>),
 }
 
 impl<'a> From<&'a semantic::MatchArm> for MatchArmWrapper<'a> {
@@ -86,7 +89,9 @@ impl MatchArmWrapper<'_> {
             MatchArmWrapper::Arm(patterns, _)
             | MatchArmWrapper::ConditionedArm(patterns, _)
             | MatchArmWrapper::LetElseSuccess(patterns, _, _) => Some(patterns),
-            MatchArmWrapper::ElseClause(_) | MatchArmWrapper::DefaultClause => None,
+            MatchArmWrapper::ElseClause(_)
+            | MatchArmWrapper::DefaultClause
+            | MatchArmWrapper::SharedElseArm(_) => None,
         }
     }
 
@@ -217,6 +222,15 @@ fn get_underscore_pattern_path_and_mark_unreachable(
                 let expr_ptr = ctx.function_body.arenas.exprs[*e].stable_ptr();
                 ctx.diagnostics.report(
                     expr_ptr,
+                    MatchError(MatchError {
+                        kind: match_type,
+                        error: MatchDiagnostic::UnreachableMatchArm,
+                    }),
+                );
+            }
+            MatchArmWrapper::SharedElseArm(tracker) => {
+                ctx.diagnostics.report(
+                    tracker.stable_ptr,
                     MatchError(MatchError {
                         kind: match_type,
                         error: MatchDiagnostic::UnreachableMatchArm,
@@ -1177,6 +1191,17 @@ trait EnumVariantScopeBuilder {
                     );
                     continue;
                 }
+                MatchArmWrapper::SharedElseArm(tracker) => {
+                    try_push(
+                        ctx,
+                        match_type,
+                        tracker.stable_ptr,
+                        PatternPath { arm_index, pattern_index: None },
+                        &mut pattern_tree,
+                        None,
+                    );
+                    continue;
+                }
                 MatchArmWrapper::Arm(patterns, _)
                 | MatchArmWrapper::ConditionedArm(patterns, _)
                 | MatchArmWrapper::LetElseSuccess(patterns, _, _) => patterns,
@@ -1392,6 +1417,15 @@ trait EnumVariantScopeBuilder {
                         );
                     }
                     MatchArmWrapper::DefaultClause => (),
+                    MatchArmWrapper::SharedElseArm(tracker) => {
+                        ctx.diagnostics.report(
+                            tracker.stable_ptr,
+                            MatchError(MatchError {
+                                kind: builder_context.kind,
+                                error: MatchDiagnostic::UnreachableMatchArm,
+                            }),
+                        );   continue;
+                    }
                 }
             }
             return builder_context.builder.merge_and_end_with_match(
@@ -1428,7 +1462,7 @@ trait EnumVariantScopeBuilder {
 
         let sealed = arm_blocks
             .into_iter()
-            .map(|(arm_index, group)| {
+            .filter_map(|(arm_index, group)| {
                 lower_match_arm_expr_and_seal_patterns(
                     ctx,
                     &builder_context.empty_match_info,
@@ -1438,6 +1472,7 @@ trait EnumVariantScopeBuilder {
                     arm_index,
                     group,
                 )
+                .transpose()
             })
             .collect::<LoweringResult<Vec<_>>>()?;
 
@@ -1709,7 +1744,7 @@ fn group_match_arms(
         .sorted_by_key(|MatchLeafBuilder { arm_index, .. }| *arm_index)
         .chunk_by(|MatchLeafBuilder { arm_index, .. }| *arm_index)
         .into_iter()
-        .map(|(arm_index, group)| {
+        .filter_map(|(arm_index, group)| {
             lower_match_arm_expr_and_seal_patterns(
                 ctx,
                 empty_match_info,
@@ -1719,6 +1754,7 @@ fn group_match_arms(
                 arm_index,
                 group,
             )
+            .transpose()
         })
         .collect()
 }
@@ -1734,7 +1770,7 @@ fn lower_match_arm_expr_and_seal_patterns(
     kind: MatchKind,
     arm_index: usize,
     group: impl IntoIterator<Item = MatchLeafBuilder>,
-) -> Result<SealedBlockBuilder, LoweringFlowError> {
+) -> Result<Option<SealedBlockBuilder>, LoweringFlowError> {
     let arm = &arms[arm_index];
     let mut lowering_inner_pattern_results_and_subscopes = group
         .into_iter()
@@ -1742,7 +1778,9 @@ fn lower_match_arm_expr_and_seal_patterns(
         .collect::<Vec<_>>();
 
     // If the arm has only one pattern, there is no need to create a parent scope.
-    if lowering_inner_pattern_results_and_subscopes.len() == 1 {
+    if lowering_inner_pattern_results_and_subscopes.len() == 1
+        && !matches!(arm, MatchArmWrapper::SharedElseArm(_))
+    {
         let (lowering_inner_pattern_result, subscope) =
             lowering_inner_pattern_results_and_subscopes.pop().unwrap();
 
@@ -1753,15 +1791,14 @@ fn lower_match_arm_expr_and_seal_patterns(
             }
             Err(err) => lowering_flow_error_to_sealed_block(ctx, subscope, err),
         }
-        .map_err(LoweringFlowError::Failed);
+        .map_err(LoweringFlowError::Failed)
+        .map(Some);
     }
 
     // A parent block builder where the variables of each pattern are introduced.
     // The parent block should have the same semantics and changed_member_paths as any of
     // the child blocks.
-    let mut outer_subscope = lowering_inner_pattern_results_and_subscopes[0]
-        .1
-        .sibling_block_builder(alloc_empty_block(ctx));
+    let first_block_builder = lowering_inner_pattern_results_and_subscopes[0].1.clone();
 
     let sealed_blocks: Vec<_> = lowering_inner_pattern_results_and_subscopes
         .into_iter()
@@ -1774,13 +1811,21 @@ fn lower_match_arm_expr_and_seal_patterns(
         })
         .collect::<LoweringResult<Vec<_>>>()?;
 
+    if let MatchArmWrapper::SharedElseArm(tracker) = arm {
+        tracker.extend_block_builders(sealed_blocks);
+        return Ok(None);
+    }
+
+    let mut outer_subscope = first_block_builder.sibling_block_builder(alloc_empty_block(ctx));
     outer_subscope.merge_and_end_with_match(
         ctx,
         empty_match_info.clone(),
         sealed_blocks,
         location,
     )?;
-    lower_arm_expr_and_seal(ctx, kind, arm, outer_subscope).map_err(LoweringFlowError::Failed)
+    lower_arm_expr_and_seal(ctx, kind, arm, outer_subscope)
+        .map_err(LoweringFlowError::Failed)
+        .map(Some)
 }
 
 /// Lowers the expression of a match arm and seals the block.
@@ -1821,6 +1866,9 @@ fn lower_arm_expr_and_seal(
         }
         (MatchArmWrapper::ConditionedArm(_, expr), _) => {
             lower_conditioned_expr_and_seal(ctx, subscope, expr)
+        }
+        (MatchArmWrapper::SharedElseArm(_), _) => {
+            unreachable!("Invalid MatchKind for SharedElseArm.");
         }
     }
 }
