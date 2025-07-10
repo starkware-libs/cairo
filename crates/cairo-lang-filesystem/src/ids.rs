@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 use path_clean::PathClean;
+use salsa::Durability;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
@@ -11,6 +12,38 @@ use crate::db::{CORELIB_CRATE_NAME, FilesGroup};
 use crate::span::{TextOffset, TextSpan};
 
 pub const CAIRO_FILE_EXTENSION: &str = "cairo";
+
+/// Same as `CrateLongId`, but without internal interning.
+/// This is used as salsa database inputs.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum CrateInput {
+    Real {
+        name: SmolStr,
+        discriminator: Option<SmolStr>,
+    },
+    Virtual {
+        name: SmolStr,
+        file_long_id: FileInput,
+        settings: String,
+        cache_file: Option<BlobLongId>,
+    },
+}
+
+impl CrateInput {
+    pub fn into_crate_long_id(self, db: &dyn FilesGroup) -> CrateLongId {
+        match self {
+            CrateInput::Real { name, discriminator } => CrateLongId::Real { name, discriminator },
+            CrateInput::Virtual { name, file_long_id, settings, cache_file } => {
+                CrateLongId::Virtual {
+                    name,
+                    file_id: file_long_id.into_file_long_id(db).intern(db),
+                    settings,
+                    cache_file: cache_file.map(|blob_long_id| blob_long_id.intern(db)),
+                }
+            }
+        }
+    }
+}
 
 /// A crate is a standalone file tree representing a single compilation unit.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -24,6 +57,18 @@ impl CrateLongId {
     pub fn name(&self) -> SmolStr {
         match self {
             CrateLongId::Real { name, .. } | CrateLongId::Virtual { name, .. } => name.clone(),
+        }
+    }
+
+    pub fn into_crate_input(self, db: &dyn FilesGroup) -> CrateInput {
+        match self {
+            CrateLongId::Real { name, discriminator } => CrateInput::Real { name, discriminator },
+            CrateLongId::Virtual { name, file_id, settings, cache_file } => CrateInput::Virtual {
+                name,
+                file_long_id: file_id.lookup_intern(db).into_file_input(db),
+                settings,
+                cache_file: cache_file.map(|blob_id| blob_id.lookup_intern(db)),
+            },
         }
     }
 }
@@ -272,6 +317,33 @@ impl FileId {
     }
 }
 
+/// Same as `Directory`, but without the interning inside virtual directories.
+/// This is used to avoid the need to intern the file id inside salsa database inputs.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum DirectoryInput {
+    Real(PathBuf),
+    Virtual { files: BTreeMap<SmolStr, FileInput>, dirs: BTreeMap<SmolStr, Box<DirectoryInput>> },
+}
+
+impl DirectoryInput {
+    /// Converts the input into a [`Directory`].
+    pub fn into_directory(self, db: &dyn FilesGroup) -> Directory {
+        match self {
+            DirectoryInput::Real(path) => Directory::Real(path),
+            DirectoryInput::Virtual { files, dirs } => Directory::Virtual {
+                files: files
+                    .into_iter()
+                    .map(|(name, file_input)| (name, file_input.into_file_long_id(db).intern(db)))
+                    .collect(),
+                dirs: dirs
+                    .into_iter()
+                    .map(|(name, dir_input)| (name, Box::new(dir_input.into_directory(db))))
+                    .collect(),
+            },
+        }
+    }
+}
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Directory {
     /// A directory on the file system.
@@ -307,6 +379,23 @@ impl Directory {
             }
         }
     }
+
+    /// Converts the directory into an [`DirectoryInput`].
+    pub fn into_directory_input(self, db: &dyn FilesGroup) -> DirectoryInput {
+        match self {
+            Directory::Real(path) => DirectoryInput::Real(path),
+            Directory::Virtual { files, dirs } => DirectoryInput::Virtual {
+                files: files
+                    .into_iter()
+                    .map(|(name, file_id)| (name, file_id.lookup_intern(db).into_file_input(db)))
+                    .collect(),
+                dirs: dirs
+                    .into_iter()
+                    .map(|(name, dir)| (name, Box::new(dir.into_directory_input(db))))
+                    .collect(),
+            },
+        }
+    }
 }
 
 /// A FileId for data that is not necessarily a valid UTF-8 string.
@@ -314,6 +403,25 @@ impl Directory {
 pub enum BlobLongId {
     OnDisk(PathBuf),
     Virtual(Arc<[u8]>),
+}
+
+impl BlobLongId {
+    pub fn content(self, db: &dyn FilesGroup) -> Option<Arc<[u8]>> {
+        match self {
+            BlobLongId::OnDisk(path) => {
+                // This does not result in performance cost due to OS caching and the fact that
+                // salsa will re-execute only this single query if the file content
+                // did not change.
+                db.salsa_runtime().report_synthetic_read(Durability::LOW);
+
+                match std::fs::read(path) {
+                    Ok(content) => Some(Arc::from(content)),
+                    Err(_) => None,
+                }
+            }
+            BlobLongId::Virtual(content) => Some(content),
+        }
+    }
 }
 
 define_short_id!(BlobId, BlobLongId, FilesGroup, lookup_intern_blob, intern_blob);
