@@ -8,7 +8,7 @@ use cairo_lang_utils::ordered_hash_map::Entry;
 use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::{Itertools, chain, zip_eq};
 
-use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, MapperError, ResultNoErrEx};
+use super::canonic::{CanonicalImpl,  CanonicalTrait, MapperError, ResultNoErrEx};
 use super::conform::InferenceConform;
 use super::infers::InferenceEmbeddings;
 use super::{
@@ -23,7 +23,9 @@ use crate::items::imp::{
 };
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ImplTypeById, ImplTypeId};
-use crate::{ConcreteTraitId, GenericArgumentId, TypeId, TypeLongId};
+use crate::{
+    ConcreteImplLongId, ConcreteTraitId, GenericArgumentId, GenericParam, TypeId, TypeLongId,
+};
 
 /// A generic solution set for an inference constraint system.
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -92,9 +94,7 @@ pub fn canonic_trait_solutions(
     // If the trait is not fully concrete, we might be able to use the trait's items to find a
     // more concrete trait.
     if !concrete_trait_id.is_fully_concrete(db) {
-        let mut solver =
-            Solver::new(db, canonical_trait, lookup_context.clone(), impl_type_bounds.clone());
-        match solver.solution_set(db) {
+        match Solver::solve(db, canonical_trait, lookup_context.clone(), impl_type_bounds.clone()) {
             SolutionSet::None => {}
             SolutionSet::Unique(imp) => {
                 concrete_trait_id =
@@ -106,14 +106,12 @@ pub fn canonic_trait_solutions(
         }
     }
     // Solve the trait without the trait items, so we'd be able to find conflicting impls.
-    let mut solver = Solver::new(
+     Ok(Solver::solve(
         db,
         CanonicalTrait { id: concrete_trait_id, mappings: ImplVarTraitItemMappings::default() },
         lookup_context,
         impl_type_bounds,
-    );
-
-    Ok(solver.solution_set(db))
+    ))
 }
 
 /// Cycle handling for [canonic_trait_solutions].
@@ -164,43 +162,29 @@ pub fn enrich_lookup_context_with_ty(
 /// A canonical trait solver.
 #[derive(Debug)]
 pub struct Solver {
-    pub canonical_trait: CanonicalTrait,
-    pub lookup_context: ImplLookupContext,
-    candidate_solvers: Vec<CandidateSolver>,
 }
 impl Solver {
-    fn new(
+    fn solve(
         db: &dyn SemanticGroup,
         canonical_trait: CanonicalTrait,
         lookup_context: ImplLookupContext,
         impl_type_bounds: Arc<BTreeMap<ImplTypeById, TypeId>>,
-    ) -> Self {
+    ) ->  SolutionSet<CanonicalImpl>  {
         let filter = canonical_trait.id.filter(db);
         let mut candidates =
             find_candidates_at_context(db, &lookup_context, &filter).unwrap_or_default();
         find_closure_generated_candidate(db, canonical_trait.id)
             .map(|candidate| candidates.insert(candidate));
-        let candidate_solvers = candidates
-            .into_iter()
-            .filter_map(|candidate| {
-                CandidateSolver::new(
-                    db,
-                    &canonical_trait,
-                    candidate,
-                    &lookup_context,
-                    impl_type_bounds.clone(),
-                )
-                .ok()
-            })
-            .collect();
 
-        Self { canonical_trait, lookup_context, candidate_solvers }
-    }
-
-    pub fn solution_set(&mut self, db: &dyn SemanticGroup) -> SolutionSet<CanonicalImpl> {
         let mut unique_solution: Option<CanonicalImpl> = None;
-        for candidate_solver in &mut self.candidate_solvers {
-            let Ok(candidate_solution_set) = candidate_solver.solution_set(db) else {
+        for candidate in candidates.into_iter() {
+            let Ok(candidate_solution_set) = CandidateSolver::solve(
+                db,
+                &canonical_trait,
+                candidate,
+                &lookup_context,
+                impl_type_bounds.clone(),
+            ) else {
                 continue;
             };
 
@@ -215,7 +199,7 @@ impl Solver {
                 // through an impl alias). This is valid.
                 if unique_solution.0 != candidate_solution.0 {
                     return SolutionSet::Ambiguous(Ambiguity::MultipleImplsFound {
-                        concrete_trait_id: self.canonical_trait.id,
+                        concrete_trait_id: canonical_trait.id,
                         impls: vec![unique_solution.0, candidate_solution.0],
                     });
                 }
@@ -229,20 +213,15 @@ impl Solver {
 /// A solver for a candidate to a canonical trait.
 #[derive(Debug)]
 pub struct CandidateSolver {
-    pub candidate: UninferredImpl,
-    inference_data: InferenceData,
-    canonical_embedding: CanonicalMapping,
-    candidate_impl: ImplId,
-    pub lookup_context: ImplLookupContext,
 }
 impl CandidateSolver {
-    fn new(
+    fn solve(
         db: &dyn SemanticGroup,
         canonical_trait: &CanonicalTrait,
         candidate: UninferredImpl,
         lookup_context: &ImplLookupContext,
         impl_type_bounds: Arc<BTreeMap<ImplTypeById, TypeId>>,
-    ) -> InferenceResult<CandidateSolver> {
+    ) -> InferenceResult<SolutionSet<CanonicalImpl>> {
         let candidate_concrete_trait = candidate.concrete_trait(db).unwrap();
         // If the candidate is fully concrete, or its a generic which is var free, there is nothing
         // to substitute. A generic param may not be var free, if it contains impl types.
@@ -282,6 +261,42 @@ impl CandidateSolver {
         lookup_context.insert_lookup_scope(db, &candidate);
         if res == CanConformResult::Rejected {
             return Err(super::ErrorSet);
+        } else if CanConformResult::Accepted == res {
+            match candidate {
+                UninferredImpl::Def(impl_def_id) => {
+                    let imp_generic_params =
+                        db.impl_def_generic_params(impl_def_id).map_err(|_| super::ErrorSet)?;
+
+                    match infer_generic_assignment(
+                        db,
+                        substitution,
+                        imp_generic_params,
+                        &lookup_context,
+                        impl_type_bounds.clone(),
+                    ) {
+                        Ok(SolutionSet::None) => {
+                            return Ok( SolutionSet::None);
+                        }
+                        Ok(SolutionSet::Ambiguous(ambiguity)) => {
+                            return Ok(SolutionSet::Ambiguous(ambiguity));
+                        }
+                        Ok(SolutionSet::Unique(generic_args)) => {
+                            let concrete_impl =
+                                ConcreteImplLongId { impl_def_id, generic_args }.intern(db);
+                            let impl_id = ImplLongId::Concrete(concrete_impl).intern(db);
+                            return Ok(SolutionSet::Unique(CanonicalImpl(impl_id)));
+                        }
+                        _ => {}
+                    }
+                }
+                UninferredImpl::GenericParam(generic_param_id) => {
+                    let impl_id = ImplLongId::GenericParameter(generic_param_id).intern(db);
+                    return Ok(SolutionSet::Unique(CanonicalImpl(impl_id)));
+                }
+                //TODO(TomerStarkware): try to solve for impl alias without inference.
+                UninferredImpl::ImplAlias(_) => {}
+                UninferredImpl::ImplImpl(_) | UninferredImpl::GeneratedImpl(_)  => {}
+            }
         }
 
         let mut inference_data: InferenceData = InferenceData::new(InferenceId::Canonical);
@@ -322,28 +337,16 @@ impl CandidateSolver {
             inference.conform_impl(mapped_impl_id, *impl_id)?;
         }
 
-        Ok(CandidateSolver {
-            candidate,
-            inference_data,
-            canonical_embedding,
-            candidate_impl,
-            lookup_context,
-        })
-    }
-    fn solution_set(
-        &mut self,
-        db: &dyn SemanticGroup,
-    ) -> InferenceResult<SolutionSet<CanonicalImpl>> {
-        let mut inference = self.inference_data.inference(db);
+        let mut inference = inference_data.inference(db);
         let solution_set = inference.solution_set()?;
         Ok(match solution_set {
             SolutionSet::None => SolutionSet::None,
             SolutionSet::Ambiguous(ambiguity) => SolutionSet::Ambiguous(ambiguity),
             SolutionSet::Unique(_) => {
-                let candidate_impl = inference.rewrite(self.candidate_impl).no_err();
-                match CanonicalImpl::canonicalize(db, candidate_impl, &self.canonical_embedding) {
+                let candidate_impl = inference.rewrite(candidate_impl).no_err();
+                match CanonicalImpl::canonicalize(db, candidate_impl, &canonical_embedding) {
                     Ok(canonical_impl) => {
-                        inference.validate_neg_impls(&self.lookup_context, canonical_impl)?
+                        inference.validate_neg_impls(&lookup_context, canonical_impl)?
                     }
                     Err(MapperError(var)) => {
                         return Ok(SolutionSet::Ambiguous(Ambiguity::FreeVariable {
@@ -355,6 +358,82 @@ impl CandidateSolver {
             }
         })
     }
+}
+
+fn infer_generic_assignment(
+    db: &dyn SemanticGroup,
+    mut substitution: GenericSubstitution,
+    params: Vec<GenericParam>,
+    lookup_context: &ImplLookupContext,
+    impl_type_bounds: Arc<BTreeMap<ImplTypeById, TypeId>>,
+) -> InferenceResult<SolutionSet<Vec<GenericArgumentId>>> {
+    let mut generic_args = Vec::with_capacity(params.len());
+    for param in params {
+        match param {
+            GenericParam::Type(generic_param_type) => {
+                if substitution.contains_key(&generic_param_type.id) {
+                    generic_args
+                        .push(*substitution.get(&generic_param_type.id).unwrap());
+                } else {
+                    // If the type is not in the substitution, we cannot solve it without inference.
+                    return Err(super::ErrorSet);
+                }
+            }
+            GenericParam::Const(generic_param_const) => {
+                if substitution.contains_key(&generic_param_const.id) {
+                    generic_args
+                        .push(*substitution.get(&generic_param_const.id).unwrap());
+                } else {
+                    // If the const is not in the substitution, we cannot solve it without inference.
+                    return Err(super::ErrorSet);
+                }
+            }
+            GenericParam::Impl(generic_param_impl) => {
+                if !generic_param_impl.type_constraints.is_empty() {
+                    return Err(super::ErrorSet);
+                }
+                if substitution.contains_key(&generic_param_impl.id) {
+                    generic_args
+                        .push(*substitution.get(&generic_param_impl.id).unwrap());
+                    continue;
+                }
+
+                let Ok(Ok(imp_concrete_trait_id)) =
+                    substitution.substitute(db, generic_param_impl.concrete_trait)
+                else {
+                    return Err(super::ErrorSet);
+                };
+                let canonical_trait = CanonicalTrait {
+                    id: imp_concrete_trait_id,
+                    mappings: ImplVarTraitItemMappings::default(),
+                };
+                let mut inner_context = lookup_context.clone();
+                enrich_lookup_context(db, imp_concrete_trait_id, &mut inner_context);
+                let Ok(solution) = db.canonic_trait_solutions(
+                    canonical_trait,
+                    inner_context,
+                    (*impl_type_bounds).clone(),
+                ) else {
+                    return Err(super::ErrorSet);
+                };
+                match solution {
+                    SolutionSet::None => return Ok(SolutionSet::None),
+                    SolutionSet::Unique(imp) => {
+                        substitution.insert(
+                            generic_param_impl.id,
+                            GenericArgumentId::Impl(imp.0),
+                        );
+                        generic_args.push(GenericArgumentId::Impl(imp.0));
+                    }
+                    SolutionSet::Ambiguous(ambiguity) => {
+                        return Ok(SolutionSet::Ambiguous(ambiguity));
+                    }
+                }
+            }
+            GenericParam::NegImpl(_) => return Err(super::ErrorSet),
+        }
+    }
+    Ok(SolutionSet::Unique(generic_args))
 }
 
 /// Enum for the result of `can_conform`.
