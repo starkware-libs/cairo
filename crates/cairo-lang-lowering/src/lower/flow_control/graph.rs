@@ -10,14 +10,31 @@
 //! During the construction of the graph, variables are assigned to values ([FlowControlVar]).
 //! These variable are not the ones used in the lowering process ([super::VariableId]).
 
+// TODO: add examples of graphs.
+
 use std::fmt::Debug;
 
-use cairo_lang_semantic as semantic;
-use cairo_lang_semantic::PatternVariable;
+use cairo_lang_semantic::{self as semantic, ConcreteVariant, PatternVariable};
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use itertools::Itertools;
 
 /// Represents a variable in the flow control graph.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct FlowControlVar(pub usize);
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FlowControlVar {
+    idx: usize,
+    ty: semantic::TypeId,
+}
+impl FlowControlVar {
+    pub fn ty(&self) -> semantic::TypeId {
+        self.ty
+    }
+}
+
+impl std::fmt::Debug for FlowControlVar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "FlowControlVar({})", self.idx)
+    }
+}
 
 /// Unique identifier for nodes in the flow control graph.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -35,14 +52,29 @@ pub struct BooleanIf {
 }
 
 /// Enum match node.
-#[derive(Debug)]
 pub struct EnumMatch {
     /// The input value to match.
-    pub value: FlowControlVar,
-    /// For each variant, the node to jump to.
-    pub variants: Vec<NodeId>,
-    /// The (output) variable for the inner value.
-    pub inner_value: FlowControlVar,
+    pub matched_var: FlowControlVar,
+    /// The concrete enum id.
+    pub concrete_enum_id: semantic::ConcreteEnumId,
+    /// For each variant, the node to jump to and an output variable for the inner value.
+    pub variants: Vec<(ConcreteVariant, NodeId, FlowControlVar)>,
+    /// The stable pointer of the expression initiating the match.
+    pub stable_ptr: SyntaxStablePtrId,
+    // TODO:
+    // The (output) variable for the inner value.
+    // pub inner_value: FlowControlVar,
+}
+
+impl std::fmt::Debug for EnumMatch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "EnumMatch {{ matched_var: {:?}, variants: {}}}",
+            self.matched_var,
+            self.variants.iter().map(|(_, node, var)| format!("({node:?}, {var:?})")).join(", ")
+        )
+    }
 }
 
 /// Terminal expression node.
@@ -107,7 +139,9 @@ impl FlowControlNode {
             FlowControlNode::BooleanIf(node) => {
                 vec![node.true_branch, node.false_branch]
             }
-            FlowControlNode::EnumMatch(node) => node.variants.clone(),
+            FlowControlNode::EnumMatch(node) => {
+                node.variants.iter().map(|(_, node, _)| *node).collect()
+            }
             FlowControlNode::ArmExpr(_) => {
                 // Terminal node - no next nodes
                 vec![]
@@ -158,7 +192,9 @@ pub struct FlowControlGraph {
 /// Graph of flow control nodes.
 pub struct FlowControlGraphBuilder {
     /// All nodes in the graph.
-    pub nodes: Vec<FlowControlNode>,
+    nodes: Vec<FlowControlNode>,
+    /// The number of [FlowControlVar]s allocated so far.
+    n_vars: usize,
 }
 
 impl FlowControlGraphBuilder {
@@ -171,10 +207,16 @@ impl FlowControlGraphBuilder {
     pub fn finalize(self, root: NodeId) -> FlowControlGraph {
         FlowControlGraph { nodes: self.nodes, root }
     }
+
+    pub fn new_var(&mut self, ty: semantic::TypeId) -> FlowControlVar {
+        let var = FlowControlVar { idx: self.n_vars, ty };
+        self.n_vars += 1;
+        var
+    }
 }
 
 impl Default for FlowControlGraphBuilder {
     fn default() -> Self {
-        Self { nodes: Vec::new() }
+        Self { nodes: Vec::new(), n_vars: 0 }
     }
 }

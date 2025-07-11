@@ -6,14 +6,18 @@ use cairo_lang_semantic::{MatchArmSelector, corelib};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
-use super::graph::{ArmExpr, BooleanIf, FlowControlGraph, FlowControlNode, NodeId};
+use super::graph::{
+    ArmExpr, BooleanIf, EnumMatch, ExprToVar, FlowControlGraph, FlowControlNode, FlowControlVar,
+    NodeId,
+};
 use crate::ids::LocationId;
 use crate::lower::block_builder::{BlockBuilder, SealedBlockBuilder, merge_block_builders};
 use crate::lower::context::{
-    lowering_flow_error_to_sealed_block, LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest
+    LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest,
+    lowering_flow_error_to_sealed_block,
 };
 use crate::lower::{lower_expr, lower_expr_to_var_usage, lowered_expr_to_block_scope_end};
-use crate::{BlockEnd, BlockId, MatchArm, MatchEnumInfo, MatchInfo};
+use crate::{BlockEnd, BlockId, MatchArm, MatchEnumInfo, MatchInfo, VarUsage};
 
 /// Lowers a flow control graph.
 #[allow(dead_code)]
@@ -46,6 +50,20 @@ enum BlockFinalization {
     Missing,
     // TODO: doc.
     JumpsOutside(BlockBuilder, LoweringFlowError),
+    /// The flow control was passed to the child node, and it contains the block builder.
+    Skip,
+}
+
+impl std::fmt::Debug for BlockFinalization {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BlockFinalization::End(_, block_end, _) => write!(f, "End({block_end:?})"),
+            BlockFinalization::Sealed(_) => write!(f, "Sealed"),
+            BlockFinalization::Missing => write!(f, "Missing"),
+            BlockFinalization::JumpsOutside(_, _) => write!(f, "JumpsOutside"),
+            BlockFinalization::Skip => write!(f, "Skip"),
+        }
+    }
 }
 
 struct LowerGraphContext<'a, 'b, 'db> {
@@ -61,6 +79,11 @@ struct LowerGraphContext<'a, 'b, 'db> {
     block_builders: UnorderedHashMap<NodeId, Vec<BlockBuilder>>,
     /// A map from a node id to its finalization info.
     block_finalizations: UnorderedHashMap<NodeId, BlockFinalization>,
+    /// A map from [FlowControlVar] to [VarUsage].
+    vars: UnorderedHashMap<FlowControlVar, crate::VarUsage>,
+    // TODO: doc.
+    // TODO: is this really needed?
+    effective_root: NodeId,
 }
 
 impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
@@ -76,18 +99,34 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
             predecessors: find_predecessors(graph),
             block_builders: UnorderedHashMap::default(),
             block_finalizations: UnorderedHashMap::default(),
+            vars: UnorderedHashMap::default(),
+            effective_root: graph.root,
         }
     }
 
+    // TODO: doc.
     fn assign_child_block_id(
         &mut self,
-        parent_id: NodeId,
+        child_id: NodeId,
         parent_block_builder: &BlockBuilder,
     ) -> BlockId {
         let block_id = self.ctx.blocks.alloc_empty();
         let child_builder = parent_block_builder.child_block_builder(block_id);
-        self.block_builders.entry(parent_id).or_insert_with(|| vec![]).push(child_builder);
+        self.block_builders.entry(child_id).or_insert_with(|| vec![]).push(child_builder);
         block_id
+    }
+
+    // TODO: doc.
+    fn pass_builder_to_child(
+        &mut self,
+        parent_id: NodeId,
+        child_id: NodeId,
+        builder: BlockBuilder,
+    ) {
+        if parent_id == self.effective_root {
+            self.effective_root = child_id;
+        }
+        self.block_builders.entry(child_id).or_insert_with(|| vec![]).push(builder);
     }
 
     /// Creates a [BlockBuilder] for the given node, based on the parent nodes.
@@ -105,12 +144,24 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
         }
     }
 
+    fn register_var(&mut self, var_id: FlowControlVar, lowered_var: crate::VarUsage) {
+        assert!(
+            self.vars.insert(var_id, lowered_var).is_none(),
+            "Variable {var_id:?} was already registered.",
+        );
+    }
+
+    // Functions for lowering nodes.
+    // TODO: move functions to another file (`lower_node.rs`).
+
     // TODO: Should we use `LoweringResult`?
     /// Lowers the given node.
     fn lower_node(&mut self, id: NodeId) -> Maybe<()> {
         let block_end = match &self.graph.nodes[id.0] {
             FlowControlNode::BooleanIf(node) => self.lower_boolean_if(id, node),
             FlowControlNode::ArmExpr(node) => self.lower_arm_expr(id, node),
+            FlowControlNode::ExprToVar(node) => self.lower_expr_to_var(id, node),
+            FlowControlNode::EnumMatch(node) => self.lower_enum_match(id, node),
             _ => todo!(),
         }?;
 
@@ -118,11 +169,7 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
         Ok(())
     }
 
-    fn lower_boolean_if(
-        &mut self,
-        id: NodeId,
-        node: &BooleanIf,
-    ) -> Maybe<BlockFinalization> {
+    fn lower_boolean_if(&mut self, id: NodeId, node: &BooleanIf) -> Maybe<BlockFinalization> {
         // The condition cannot be unit.
         let db = self.ctx.db;
         let unit_ty = corelib::unit_ty(db);
@@ -177,7 +224,8 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
     }
 
     fn lower_arm_expr(&mut self, id: NodeId, node: &ArmExpr) -> Maybe<BlockFinalization> {
-        let Some(mut builder) = self.start_builder(id, get_expr_location(self.ctx, &node.expr)) else {
+        let Some(mut builder) = self.start_builder(id, get_expr_location(self.ctx, &node.expr))
+        else {
             return Ok(BlockFinalization::Missing);
         };
 
@@ -186,10 +234,73 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
         Ok(BlockFinalization::Sealed(sealed_block))
     }
 
+    fn lower_expr_to_var(
+        &mut self,
+        id: NodeId,
+        node: &ExprToVar,
+    ) -> Result<BlockFinalization, cairo_lang_diagnostics::DiagnosticAdded> {
+        let Some(mut builder) = self.start_builder(id, get_expr_location(self.ctx, &node.expr))
+        else {
+            return Ok(BlockFinalization::Missing);
+        };
+
+        let lowered_expr = lower_expr_to_var_usage(self.ctx, &mut builder, node.expr);
+        match lowered_expr {
+            Ok(lowered_var) => {
+                self.register_var(node.var_id, lowered_var);
+                self.pass_builder_to_child(id, node.next, builder);
+                Ok(BlockFinalization::Skip)
+            }
+            Err(err) => Ok(BlockFinalization::JumpsOutside(builder, err)),
+        }
+    }
+
+    fn lower_enum_match(
+        &mut self,
+        id: NodeId,
+        node: &EnumMatch,
+    ) -> Result<BlockFinalization, cairo_lang_diagnostics::DiagnosticAdded> {
+        let match_location = self.ctx.get_location(node.stable_ptr);
+
+        let Some(builder) = self.start_builder(id, match_location) else {
+            return Ok(BlockFinalization::Missing);
+        };
+
+        let arms: Vec<MatchArm> = node
+            .variants
+            .iter()
+            .map(|(concrete_variant, variant_node, inner_var_id)| {
+                let location = match_location; // TODO: Fix.
+                let input_var = self.ctx.new_var(VarRequest {
+                    ty: concrete_variant.ty, // TODO: wrap in snapshots
+                    location,
+                });
+                let var_usage = VarUsage { var_id: input_var, location };
+                self.register_var(*inner_var_id, var_usage);
+                MatchArm {
+                    arm_selector: MatchArmSelector::VariantId(concrete_variant.clone()),
+                    block_id: self.assign_child_block_id(*variant_node, &builder),
+                    var_ids: vec![input_var],
+                }
+            })
+            .collect();
+
+        let match_info = MatchInfo::Enum(MatchEnumInfo {
+            concrete_enum_id: node.concrete_enum_id,
+            input: self.vars[&node.matched_var],
+            arms,
+            location: match_location,
+        });
+
+        Ok((BlockFinalization::End(builder, BlockEnd::Match { info: match_info }, match_location)))
+    }
+
+    // Finalization functions.
+
     fn finalize_blocks(&mut self) -> Maybe<Vec<SealedBlockBuilder>> {
         let mut sealed_blocks = vec![];
         for i in 0..self.graph.nodes.len() {
-            if i == self.graph.root.0 {
+            if i == self.effective_root.0 {
                 continue;
             }
 
@@ -200,7 +311,7 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
                 Some(BlockFinalization::Sealed(sealed_block)) => {
                     sealed_blocks.push(sealed_block);
                 }
-                Some(BlockFinalization::Missing) => {
+                Some(BlockFinalization::Missing | BlockFinalization::Skip) => {
                     println!("Node {} was skipped.", i); // TODO
                     continue;
                 }
@@ -216,24 +327,32 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
         Ok(sealed_blocks)
     }
 
-    fn finalize_root(&mut self, sealed_blocks: Vec<SealedBlockBuilder>) -> (LoweringResult<LoweredExpr>, BlockBuilder) {
-        match self.block_finalizations.remove(&self.graph.root) {
-            Some(BlockFinalization::End(mut builder, BlockEnd::Match { info }, condition_location)) => {
+    fn finalize_root(
+        &mut self,
+        sealed_blocks: Vec<SealedBlockBuilder>,
+    ) -> (LoweringResult<LoweredExpr>, BlockBuilder) {
+        match self.block_finalizations.remove(&self.effective_root) {
+            Some(BlockFinalization::End(
+                mut builder,
+                BlockEnd::Match { info },
+                condition_location,
+            )) => {
                 (
                     // TODO: Replace with `merge_block_builders`?
-                    builder.merge_and_end_with_match(self.ctx, info, sealed_blocks, condition_location),
+                    builder.merge_and_end_with_match(
+                        self.ctx,
+                        info,
+                        sealed_blocks,
+                        condition_location,
+                    ),
                     builder,
                 )
             }
-            Some(BlockFinalization::JumpsOutside(builder, err)) => {
-                (Err(err), builder)
-            }
-            _ => {
-                panic!("Root block was not finalized.");
+            Some(BlockFinalization::JumpsOutside(builder, err)) => (Err(err), builder),
+            block_finalization => {
+                panic!("Unexpected BlockFinalization for root block: {block_finalization:?}.");
             }
         }
-
-
     }
 }
 

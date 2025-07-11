@@ -10,7 +10,7 @@ use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
-use super::create_graph::create_graph_expr_if;
+use super::create_graph::{create_graph_expr_if, create_graph_expr_match};
 use super::graph::FlowControlGraph;
 use super::lower_graph::lower_graph;
 use super::test_utils::format_graph;
@@ -29,6 +29,7 @@ cairo_lang_test_utils::test_file_test!(
     "src/lower/flow_control/test_data",
     {
         if_: "if",
+        match_: "match",
     },
     test_create_graph
 );
@@ -54,8 +55,13 @@ fn test_create_graph(
     let expr = db.expr_semantic(test_function.function_id, expr_id);
     let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
 
+    let mut encapsulating_ctx =
+        EncapsulatingLoweringContext::new(db, test_function.function_id).unwrap();
+    let mut ctx = lowering_context(db, &test_function, &mut encapsulating_ctx);
+
     let graph = match &expr {
-        semantic::Expr::If(expr) => create_graph_expr_if(expr),
+        semantic::Expr::If(expr) => create_graph_expr_if(&mut ctx, expr),
+        semantic::Expr::Match(expr) => create_graph_expr_match(&mut ctx, expr),
         _ => {
             panic!("Unsupported expression: {:?}", expr.debug(&expr_formatter));
         }
@@ -67,7 +73,7 @@ fn test_create_graph(
     let lowered_str = if args["skip_lowering"] == "true" {
         "".into()
     } else {
-        let lowered = lower_graph_as_function(db, &test_function, expr_id, &graph);
+        let lowered = lower_graph_as_function(ctx, expr_id, &graph);
         formatted_lowered(db, Some(&lowered))
     };
 
@@ -81,17 +87,15 @@ fn test_create_graph(
     }
 }
 
-fn lower_graph_as_function(
-    db: &LoweringDatabaseForTesting,
+fn lowering_context<'a, 'db>(
+    db: &'db LoweringDatabaseForTesting,
     test_function: &TestFunction,
-    expr_id: semantic::ExprId,
-    graph: &FlowControlGraph,
-) -> Lowered {
+    encapsulating_ctx: &'a mut EncapsulatingLoweringContext<'db>,
+) -> LoweringContext<'a, 'db> {
     let lowering_function_id = db.intern_lowering_function_with_body(
         FunctionWithBodyLongId::Semantic(test_function.function_id),
     );
-    let mut encapsulating_ctx =
-        EncapsulatingLoweringContext::new(db, test_function.function_id).unwrap();
+
     let lowering_signature = Signature::from_semantic(db, test_function.signature.clone());
     let return_type = lowering_signature.return_type;
 
@@ -102,14 +106,17 @@ fn lower_graph_as_function(
         );
     }
 
-    let mut ctx = LoweringContext::new(
-        &mut encapsulating_ctx,
-        lowering_function_id,
-        lowering_signature,
-        return_type,
-    )
-    .unwrap();
+    LoweringContext::new(encapsulating_ctx, lowering_function_id, lowering_signature, return_type)
+        .unwrap()
+}
 
+fn lower_graph_as_function(
+    mut ctx: LoweringContext<'_, '_>,
+    // db: &LoweringDatabaseForTesting,
+    // test_function: &TestFunction,
+    expr_id: semantic::ExprId,
+    graph: &FlowControlGraph,
+) -> Lowered {
     let root_block_id = alloc_empty_block(&mut ctx);
     let mut builder = BlockBuilder::root(root_block_id);
 
@@ -129,6 +136,7 @@ fn lower_graph_as_function(
         .collect_vec();
 
     let block_expr = lower_graph(&mut ctx, &mut builder, &graph);
+
     let block_sealed = lowered_expr_to_block_scope_end(&mut ctx, builder, block_expr).unwrap();
 
     let expr = ctx.function_body.arenas.exprs[expr_id].clone();

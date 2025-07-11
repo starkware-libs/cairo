@@ -66,14 +66,16 @@ fn foo(mut x: felt252, mut y: felt252) -> felt252 {
 }
 
 //! > module_code
-extern fn modify(ref x: felt252) nopanic;
+extern fn modify(ref x: felt252) -> felt252 nopanic;
 
 //! > graph
-Root: 3
+Root: 5
 0 ArmExpr { expr: Id { idx: 9 } }
 1 ArmExpr { expr: Id { idx: 13 } }
-2 BooleanIf { condition: Id { idx: 5 }, true_branch: NodeId(0), false_branch: NodeId(1) }
-3 BooleanIf { condition: Id { idx: 2 }, true_branch: NodeId(2), false_branch: NodeId(1) }
+2 EnumMatch { matched_var: FlowControlVar(0), variants: (NodeId(0), FlowControlVar(1)), (NodeId(1), FlowControlVar(2))}
+3 ExprToVar { expr: Id { idx: 5 }, var_id: FlowControlVar(0), next: NodeId(2) }
+4 EnumMatch { matched_var: FlowControlVar(3), variants: (NodeId(3), FlowControlVar(4)), (NodeId(1), FlowControlVar(5))}
+5 ExprToVar { expr: Id { idx: 2 }, var_id: FlowControlVar(3), next: NodeId(4) }
 
 //! > semantic_diagnostics
 
@@ -81,24 +83,22 @@ Root: 3
 Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
-  (v2: core::felt252) <- test::modify(v0)
-  (v3: ()) <- struct_construct()
-  (v4: core::option::Option::<()>) <- Option::Some(v3)
+  (v3: core::felt252, v2: core::felt252) <- test::modify(v0)
+  (v4: core::option::Option::<core::felt252>) <- Option::Some(v2)
 End:
   Match(match_enum(v4) {
-    bool::False(v6) => blk2,
-    bool::True(v5) => blk1,
+    Option::Some(v5) => blk1,
+    Option::None(v6) => blk2,
   })
 
 blk1:
 Statements:
-  (v7: core::felt252) <- test::modify(v1)
-  (v8: ()) <- struct_construct()
-  (v9: core::option::Option::<()>) <- Option::Some(v8)
+  (v8: core::felt252, v7: core::felt252) <- test::modify(v1)
+  (v9: core::option::Option::<core::felt252>) <- Option::Some(v7)
 End:
   Match(match_enum(v9) {
-    bool::False(v11) => blk4,
-    bool::True(v10) => blk3,
+    Option::Some(v10) => blk3,
+    Option::None(v11) => blk4,
   })
 
 blk2:
@@ -108,18 +108,18 @@ End:
 
 blk3:
 Statements:
-  (v14: core::felt252) <- core::Felt252Add::add(v2, v7)
+  (v14: core::felt252) <- core::Felt252Add::add(v3, v8)
 End:
-  Goto(blk6, {v7 -> v16, v14 -> v15})
+  Goto(blk6, {v8 -> v16, v14 -> v15})
 
 blk4:
 Statements:
 End:
-  Goto(blk5, {v7 -> v12})
+  Goto(blk5, {v8 -> v12})
 
 blk5:
 Statements:
-  (v13: core::felt252) <- core::Felt252Add::add(v2, v12)
+  (v13: core::felt252) <- core::Felt252Add::add(v3, v12)
 End:
   Goto(blk6, {v12 -> v16, v13 -> v15})
 
@@ -152,15 +152,18 @@ struct MyStruct {
     b: felt252,
 }
 
-extern fn modify(ref x: felt252) nopanic;
+extern fn modify(ref x: felt252) -> felt252 nopanic;
 
 //! > graph
-Root: 4
+Root: 7
 0 ArmExpr { expr: Id { idx: 15 } }
 1 ArmExpr { expr: Id { idx: 20 } }
-2 BooleanIf { condition: Id { idx: 10 }, true_branch: NodeId(0), false_branch: NodeId(1) }
-3 BooleanIf { condition: Id { idx: 6 }, true_branch: NodeId(2), false_branch: NodeId(1) }
-4 BooleanIf { condition: Id { idx: 2 }, true_branch: NodeId(3), false_branch: NodeId(1) }
+2 EnumMatch { matched_var: FlowControlVar(0), variants: (NodeId(0), FlowControlVar(1)), (NodeId(1), FlowControlVar(2))}
+3 ExprToVar { expr: Id { idx: 10 }, var_id: FlowControlVar(0), next: NodeId(2) }
+4 EnumMatch { matched_var: FlowControlVar(3), variants: (NodeId(3), FlowControlVar(4)), (NodeId(1), FlowControlVar(5))}
+5 ExprToVar { expr: Id { idx: 6 }, var_id: FlowControlVar(3), next: NodeId(4) }
+6 EnumMatch { matched_var: FlowControlVar(6), variants: (NodeId(5), FlowControlVar(7)), (NodeId(1), FlowControlVar(8))}
+7 ExprToVar { expr: Id { idx: 2 }, var_id: FlowControlVar(6), next: NodeId(6) }
 
 //! > semantic_diagnostics
 
@@ -168,25 +171,23 @@ Root: 4
 Parameters: v0: core::felt252, v1: test::MyStruct
 blk0 (root):
 Statements:
-  (v2: core::felt252) <- test::modify(v0)
-  (v3: ()) <- struct_construct()
-  (v4: core::option::Option::<()>) <- Option::Some(v3)
+  (v3: core::felt252, v2: core::felt252) <- test::modify(v0)
+  (v4: core::option::Option::<core::felt252>) <- Option::Some(v2)
 End:
   Match(match_enum(v4) {
-    bool::False(v6) => blk2,
-    bool::True(v5) => blk1,
+    Option::Some(v5) => blk1,
+    Option::None(v6) => blk2,
   })
 
 blk1:
 Statements:
   (v7: core::felt252, v8: core::felt252) <- struct_destructure(v1)
-  (v9: core::felt252) <- test::modify(v7)
-  (v10: ()) <- struct_construct()
-  (v11: core::option::Option::<()>) <- Option::Some(v10)
+  (v10: core::felt252, v9: core::felt252) <- test::modify(v7)
+  (v11: core::option::Option::<core::felt252>) <- Option::Some(v9)
 End:
   Match(match_enum(v11) {
-    bool::False(v13) => blk4,
-    bool::True(v12) => blk3,
+    Option::Some(v12) => blk3,
+    Option::None(v13) => blk4,
   })
 
 blk2:
@@ -197,25 +198,24 @@ End:
 
 blk3:
 Statements:
-  (v14: core::felt252) <- test::modify(v8)
-  (v15: ()) <- struct_construct()
-  (v16: core::option::Option::<()>) <- Option::Some(v15)
+  (v15: core::felt252, v14: core::felt252) <- test::modify(v8)
+  (v16: core::option::Option::<core::felt252>) <- Option::Some(v14)
 End:
   Match(match_enum(v16) {
-    bool::False(v18) => blk6,
-    bool::True(v17) => blk5,
+    Option::Some(v17) => blk5,
+    Option::None(v18) => blk6,
   })
 
 blk4:
 Statements:
 End:
-  Goto(blk7, {v9 -> v19, v8 -> v20})
+  Goto(blk7, {v10 -> v19, v8 -> v20})
 
 blk5:
 Statements:
   (v27: ()) <- struct_construct()
   (v28: core::bool) <- bool::True(v27)
-  (v29: test::MyStruct) <- struct_construct(v9, v14)
+  (v29: test::MyStruct) <- struct_construct(v10, v15)
   (v30: (test::MyStruct, core::bool)) <- struct_construct(v29, v28)
 End:
   Goto(blk8, {v29 -> v32, v30 -> v31})
@@ -223,7 +223,7 @@ End:
 blk6:
 Statements:
 End:
-  Goto(blk7, {v9 -> v19, v14 -> v20})
+  Goto(blk7, {v10 -> v19, v15 -> v20})
 
 blk7:
 Statements:
@@ -298,11 +298,12 @@ fn foo() -> felt252 {
 //! > module_code
 
 //! > graph
-Root: 3
+Root: 4
 0 ArmExpr { expr: Id { idx: 7 } }
 1 ArmExpr { expr: Id { idx: 9 } }
 2 BooleanIf { condition: Id { idx: 5 }, true_branch: NodeId(0), false_branch: NodeId(1) }
-3 BooleanIf { condition: Id { idx: 1 }, true_branch: NodeId(2), false_branch: NodeId(1) }
+3 EnumMatch { matched_var: FlowControlVar(0), variants: (NodeId(2), FlowControlVar(1)), (NodeId(1), FlowControlVar(2))}
+4 ExprToVar { expr: Id { idx: 1 }, var_id: FlowControlVar(0), next: NodeId(3) }
 
 //! > semantic_diagnostics
 
@@ -314,8 +315,8 @@ Statements:
   (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
 End:
   Match(match_enum(v1) {
-    bool::False(v3) => blk2,
-    bool::True(v2) => blk1,
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk2,
   })
 
 blk1:
