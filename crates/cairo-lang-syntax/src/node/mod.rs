@@ -235,9 +235,10 @@ impl SyntaxNode {
     }
 
     /// Returns all the text under the syntax node.
-    /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
     pub fn get_text(&self, db: &dyn SyntaxGroup) -> String {
-        format!("{}", NodeTextFormatter { node: self, db })
+        let file_content = db.file_content(self.stable_ptr(db).file_id(db)).unwrap();
+
+        self.span(db).take(&file_content).to_string()
     }
 
     /// Returns all the text under the syntax node.
@@ -490,25 +491,6 @@ pub trait TypedStablePtr {
     fn lookup(&self, db: &dyn SyntaxGroup) -> Self::SyntaxNode;
     /// Returns the untyped stable pointer.
     fn untyped(&self) -> SyntaxStablePtrId;
-}
-
-/// Wrapper for formatting the text of syntax nodes.
-pub struct NodeTextFormatter<'a> {
-    /// The node to format.
-    pub node: &'a SyntaxNode,
-    /// The syntax db.
-    pub db: &'a dyn SyntaxGroup,
-}
-impl Display for NodeTextFormatter<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self.node.green_node(self.db).as_ref().details {
-            green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
-            green::GreenNodeDetails::Node { children, .. } => {
-                write!(f, "{}", GreenNodesFormatter { nodes: children, db: self.db })?;
-            }
-        }
-        Ok(())
-    }
 }
 
 /// Wrapper for formatting the text of a green node while trimming trivia.
