@@ -1115,7 +1115,7 @@ fn resolve_type(db: &dyn DocGroup, type_id: TypeId) -> Option<DocumentableItemId
                         ModuleId::Submodule(submodule_id) => Some(DocumentableItemId::from(
                             LookupItemId::ModuleItem(ModuleItemId::Submodule(submodule_id)),
                         )),
-                        ModuleId::MacroCall(_) => None,
+                        ModuleId::MacroCall(_, _) => None,
                     },
                     Err(_) => None,
                 }

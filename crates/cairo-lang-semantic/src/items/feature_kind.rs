@@ -285,7 +285,7 @@ pub fn extract_feature_config(
                 let ignored = &mut SemanticDiagnostics::default();
                 config_stack.push(extract_item_feature_config(db, crate_id, module, ignored));
             }
-            ModuleId::MacroCall(macro_call_id) => {
+            ModuleId::MacroCall(macro_call_id, _) => {
                 current_module_id = macro_call_id.module_file_id(db).0;
             }
         }
