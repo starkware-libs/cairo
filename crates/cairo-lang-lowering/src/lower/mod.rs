@@ -71,6 +71,12 @@ mod lower_match;
 pub mod refs;
 
 #[cfg(test)]
+mod test_utils;
+
+#[cfg(test)]
+mod block_builder_test;
+
+#[cfg(test)]
 mod generated_test;
 
 #[cfg(test)]
