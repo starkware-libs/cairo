@@ -191,8 +191,12 @@ pub fn merge_semantics(
             continue;
         }
 
-        let merged_value =
-            compute_remapped_variables(&values.iter().collect_vec(), &path, remapped_callback);
+        let merged_value = compute_remapped_variables(
+            &values.iter().collect_vec(),
+            false,
+            &path,
+            remapped_callback,
+        );
         scattered.insert(path, merged_value);
     }
 
@@ -207,26 +211,69 @@ pub fn merge_semantics(
 /// If all of them are [Value::Scattered], then it is possible that some of the members require
 /// remapping and some don't.
 ///
+/// Pass require_remapping=true to indicate that during the recursion we encountered a [Value::Var],
+/// and thus we need to remap all the [Value::Scattered] values.
+///
 /// Returns a list of [MemberPath]s that need to be remapped.
 fn compute_remapped_variables(
     values: &[&Value],
+    mut require_remapping: bool,
     parent_path: &MemberPath,
     remapped_callback: &mut impl FnMut(&MemberPath) -> VariableId,
 ) -> Value {
-    // If all values are the same, no remapping is needed.
-    let first_var = values[0];
-    if values.iter().all(|x| *x == first_var) {
-        return first_var.clone();
+    if !require_remapping {
+        // If all values are the same, no remapping is needed.
+        let first_var = values[0];
+        if values.iter().all(|x| *x == first_var) {
+            return first_var.clone();
+        }
     }
 
-    // TODO(lior): Support scattered values.
-    assert!(
-        values.iter().all(|x| matches!(x, Value::Var(_))),
-        "Scattered values are not supported yet."
-    );
+    // Collect all the `Value::Scattered` values.
+    let only_scattered: Vec<&Box<Scattered>> = values
+        .iter()
+        .filter_map(|value| match value {
+            Value::Var(_) => {
+                // If we encounter a [Value::Var], we need to remap all the [Value::Scattered]
+                // values.
+                require_remapping = true;
+                None
+            }
+            Value::Scattered(scattered) => Some(scattered),
+        })
+        .collect();
 
-    let remapped_var = remapped_callback(parent_path);
-    Value::Var(remapped_var)
+    if only_scattered.is_empty() {
+        let remapped_var = remapped_callback(parent_path);
+        return Value::Var(remapped_var);
+    }
+
+    let concrete_struct_id = only_scattered[0].concrete_struct_id;
+    let members = only_scattered[0]
+        .members
+        .keys()
+        .map(|member_id| {
+            let member_path = MemberPath::Member {
+                parent: parent_path.clone().into(),
+                member_id: *member_id,
+                concrete_struct_id,
+            };
+            let member_values =
+                only_scattered.iter().map(|scattered| &scattered.members[member_id]).collect_vec();
+
+            (
+                *member_id,
+                compute_remapped_variables(
+                    &member_values,
+                    require_remapping,
+                    &member_path,
+                    remapped_callback,
+                ),
+            )
+        })
+        .collect();
+
+    Value::Scattered(Box::new(Scattered { concrete_struct_id, members }))
 }
 
 /// A trait for deconstructing and constructing structs.
