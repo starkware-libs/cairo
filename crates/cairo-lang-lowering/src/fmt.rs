@@ -102,7 +102,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for BlockEnd {
             BlockEnd::Goto(block_id, remapping) => {
                 return write!(f, "  Goto({:?}, {:?})", block_id.debug(ctx), remapping.debug(ctx));
             }
-            BlockEnd::NotSet => unreachable!(),
+            BlockEnd::NotSet => return write!(f, "  Not set"),
             BlockEnd::Match { info } => {
                 return write!(f, "  Match({:?})", info.debug(ctx));
             }

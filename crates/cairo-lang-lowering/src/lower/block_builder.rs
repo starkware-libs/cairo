@@ -1,6 +1,8 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::usage::{MemberPath, Usage};
 use cairo_lang_syntax::node::TypedStablePtr;
@@ -406,6 +408,26 @@ impl BlockBuilder {
     }
 }
 
+impl<'a> DebugWithDb<ExprFormatter<'a>> for BlockBuilder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &ExprFormatter<'a>) -> std::fmt::Result {
+        writeln!(f, "block_id: {:?}", self.block_id)?;
+        if !self.statements.statements.is_empty() {
+            writeln!(f, "statements:")?;
+            for statement in &self.statements.statements {
+                writeln!(f, "  {statement:?}")?;
+            }
+        }
+        writeln!(f, "semantics:")?;
+        writeln!(f, "{}", indent(format!("{:?}", self.semantics.debug(db))))?;
+
+        Ok(())
+    }
+}
+
+fn indent(s: String) -> String {
+    s.lines().map(|line| format!("  {line}")).join("\n")
+}
+
 /// Gets the type of a semantic variable.
 fn get_ty(ctx: &LoweringContext<'_, '_>, member_path: &MemberPath) -> semantic::TypeId {
     match member_path {
@@ -536,4 +558,23 @@ impl StructRecomposer for BlockStructRecomposer<'_, '_, '_> {
     fn db(&self) -> &dyn LoweringGroup {
         self.ctx.db
     }
+}
+
+/// Given a list of block builders, creates a new single block builder and finalizes all
+/// block builders with a [BlockEnd::Goto] to the new block.
+///
+/// If only one parent builder is given, returns it without creating a new block.
+// TODO(lior): Remove `allow(dead_code)` once the function is used.
+#[allow(dead_code)]
+pub fn merge_block_builders(
+    _ctx: &mut LoweringContext<'_, '_>,
+    parent_builders: Vec<BlockBuilder>,
+    _location: LocationId,
+) -> BlockBuilder {
+    // If there is only one parent builder, return it.
+    if parent_builders.len() == 1 {
+        return parent_builders.into_iter().next().unwrap();
+    }
+
+    todo!("Merging multiple block builders is not supported yet.");
 }
