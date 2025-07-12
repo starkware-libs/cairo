@@ -1,0 +1,29 @@
+//! > Single block
+
+//! > test_runner_name
+test_merge_block_builders
+
+//! > variables
+x: felt252
+
+//! > block_definitions
+// A single block with a single variable `x`, mapped to lowered variable `v0`.
+(
+    (x, 0),
+);
+
+//! > input_blocks
+block_id: BlockId(0)
+semantics:
+  Var(ParamId(test::x)): v0
+
+//! > merged_block_builder
+block_id: BlockId(0)
+semantics:
+  Var(ParamId(test::x)): v0
+
+//! > lowered
+blk0:
+Statements:
+End:
+  Not set
