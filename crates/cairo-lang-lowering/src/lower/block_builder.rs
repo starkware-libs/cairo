@@ -15,7 +15,7 @@ use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
 use super::generators::StatementsBuilder;
-use super::refs::{SemanticLoweringMapping, StructRecomposer};
+use super::refs::{SemanticLoweringMapping, StructRecomposer, merge_semantics};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
@@ -567,14 +567,55 @@ impl StructRecomposer for BlockStructRecomposer<'_, '_, '_> {
 // TODO(lior): Remove `allow(dead_code)` once the function is used.
 #[allow(dead_code)]
 pub fn merge_block_builders(
-    _ctx: &mut LoweringContext<'_, '_>,
+    ctx: &mut LoweringContext<'_, '_>,
     parent_builders: Vec<BlockBuilder>,
-    _location: LocationId,
+    location: LocationId,
 ) -> BlockBuilder {
     // If there is only one parent builder, return it.
     if parent_builders.len() == 1 {
         return parent_builders.into_iter().next().unwrap();
     }
 
-    todo!("Merging multiple block builders is not supported yet.");
+    // TODO(lior): Support snapped semantics.
+    for builder in &parent_builders {
+        assert!(builder.snapped_semantics.is_empty(), "Snapped semantics is not supported yet.");
+    }
+
+    // Compute the merged semantics.
+
+    // A map from [MemberPath] that requires a new lowered variable (due to remapping) to the
+    // corresponding lowered variable.
+    let mut member_path_value: OrderedHashMap<MemberPath, VariableId> = Default::default();
+
+    let semantics = merge_semantics(
+        &parent_builders.iter().map(|builder| &builder.semantics).collect_vec(),
+        &mut |path| {
+            let ty = get_ty(ctx, path);
+            let var = ctx.new_var(VarRequest { ty, location });
+            member_path_value.insert(path.clone(), var);
+            var
+        },
+    );
+
+    let semantic_remapping = SemanticRemapping { expr: None, member_path_value };
+
+    // Assign a new block id for the current node.
+    let block_id = ctx.blocks.alloc_empty();
+
+    // Finalize the intermediate blocks.
+    for parent_builder in parent_builders.into_iter() {
+        // TODO(lior): Consider extracting the relevant code from `finalize` to a separate
+        //   `finalize` function.
+        let sealed_block = parent_builder.goto_callsite(None);
+        sealed_block.finalize(ctx, block_id, &semantic_remapping, location);
+    }
+
+    // Create a new [BlockBuilder] with the merged `semantics`.
+    BlockBuilder {
+        semantics,
+        snapped_semantics: Default::default(),
+        changed_member_paths: Default::default(),
+        statements: Default::default(),
+        block_id,
+    }
 }
