@@ -1,11 +1,12 @@
 use std::fmt::Write;
+use std::sync::{Arc, Mutex};
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_diagnostics::{
     DiagnosticEntry, Diagnostics, FormattedDiagnosticEntry, PluginFileDiagnosticNotes, Severity,
 };
-use cairo_lang_filesystem::ids::{CrateId, FileLongId};
+use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -258,20 +259,23 @@ impl<'a> DiagnosticsReporter<'a> {
             let snapshot = salsa::ParallelDatabase::snapshot(db);
             pool.spawn(move || {
                 let db = &*snapshot;
-
                 let crate_modules = db.crate_modules(crate_id);
+                let processed_file_ids =
+                    Arc::new(Mutex::new(UnorderedHashSet::<FileId>::default()));
                 for module_id in crate_modules.iter().copied() {
                     let snapshot = salsa::ParallelDatabase::snapshot(db);
+                    let processed_file_ids = processed_file_ids.clone();
                     rayon::spawn(move || {
                         let db = &*snapshot;
                         for file_id in
                             db.module_files(module_id).unwrap_or_default().iter().copied()
                         {
-                            db.file_syntax_diagnostics(file_id);
+                            if processed_file_ids.lock().unwrap().insert(file_id) {
+                                db.file_syntax_diagnostics(file_id);
+                            }
                         }
 
                         let _ = db.module_semantic_diagnostics(module_id);
-
                         let _ = db.module_lowering_diagnostics(module_id);
                     });
                 }
