@@ -5,7 +5,7 @@ use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{self as semantic};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::chain;
+use itertools::{Itertools, chain};
 
 use crate::VariableId;
 use crate::db::LoweringGroup;
@@ -154,6 +154,15 @@ impl SemanticLoweringMapping {
     }
 }
 
+impl<'a> cairo_lang_debug::debug::DebugWithDb<ExprFormatter<'a>> for SemanticLoweringMapping {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &ExprFormatter<'a>) -> std::fmt::Result {
+        for (member_path, value) in self.scattered.iter() {
+            writeln!(f, "{:?}: {value}", member_path.debug(db))?;
+        }
+        Ok(())
+    }
+}
+
 /// A trait for deconstructing and constructing structs.
 pub trait StructRecomposer {
     fn deconstruct(
@@ -183,9 +192,24 @@ pub trait StructRecomposer {
 enum Value {
     /// The value of member path is stored in a lowered variable.
     Var(VariableId),
-    /// The value of the member path is not stored. It should be reconstructed from the member
-    /// values.
+    /// The value of the member path is not stored. If needed, it should be reconstructed from the
+    /// member values.
     Scattered(Box<Scattered>),
+}
+
+impl std::fmt::Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Var(var) => write!(f, "v{}", var.index()),
+            Value::Scattered(scattered) => {
+                write!(
+                    f,
+                    "Scattered({})",
+                    scattered.members.values().map(|value| value.to_string()).join(", ")
+                )
+            }
+        }
+    }
 }
 
 /// A value for a non-stored member path. Recursively holds the [Value] for the members.
