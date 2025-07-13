@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_lowering::{self as lowering, LoweringStage};
+use cairo_lang_lowering::{self as lowering, Lowered, LoweringStage};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -29,15 +29,28 @@ use crate::utils::{
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SierraFunctionWithBodyData {
     pub function: Maybe<Arc<pre_sierra::Function>>,
+    pub known_ap_change: bool,
 }
 
 /// Query implementation of [SierraGenGroup::priv_function_with_body_sierra_data].
 pub fn priv_function_with_body_sierra_data(
     db: &dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId,
-) -> SierraFunctionWithBodyData {
-    let function = get_function_code(db, function_id);
-    SierraFunctionWithBodyData { function }
+) -> Maybe<SierraFunctionWithBodyData> {
+    let lowered_function = &*db.lowered_body(function_id, LoweringStage::Final)?;
+    lowered_function.blocks.has_root()?;
+
+    // Find the local variables.
+    let analyze_ap_changes_result = analyze_ap_changes(db, lowered_function)?;
+
+    let known_ap_change = analyze_ap_changes_result.known_ap_change;
+    let function = get_function_ap_change_and_code(
+        db,
+        function_id,
+        lowered_function,
+        analyze_ap_changes_result,
+    );
+    Ok(SierraFunctionWithBodyData { known_ap_change, function })
 }
 
 /// Query implementation of [SierraGenGroup::function_with_body_sierra].
@@ -45,19 +58,16 @@ pub fn function_with_body_sierra(
     db: &dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    db.priv_function_with_body_sierra_data(function_id).function
+    db.priv_function_with_body_sierra_data(function_id)?.function
 }
 
-fn get_function_code(
+fn get_function_ap_change_and_code(
     db: &dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId,
+    lowered_function: &Lowered,
+    AnalyzeApChangesResult { known_ap_change, local_variables, ap_tracking_configuration }: AnalyzeApChangesResult,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    let lowered_function = &*db.lowered_body(function_id, LoweringStage::Final)?;
     let root_block = lowered_function.blocks.root_block()?;
-
-    // Find the local variables.
-    let AnalyzeApChangesResult { known_ap_change, local_variables, ap_tracking_configuration } =
-        analyze_ap_changes(db, lowered_function)?;
 
     // Get lifetime information.
     let lifetime = find_variable_lifetime(lowered_function, &local_variables)?;
