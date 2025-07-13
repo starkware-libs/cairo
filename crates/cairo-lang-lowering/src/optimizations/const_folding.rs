@@ -9,7 +9,6 @@ use cairo_lang_semantic::corelib::try_extract_nz_wrapped_type;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::{ConstCalcInfo, ConstValue};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, GenericFunctionWithBodyId};
-use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::types::TypeSizeInformation;
 use cairo_lang_semantic::{
     ConcreteTypeId, GenericArgumentId, MatchArmSelector, TypeId, TypeLongId, corelib,
@@ -408,7 +407,7 @@ impl<'a> ConstFoldingContext<'a> {
             panic_data.extend([pending_word.clone(), pending_len.clone()]);
             let felt252_ty = self.felt252;
             let location = stmt.location;
-            let new_var = |ty| Variable::new(db, ImplLookupContext::default(), ty, location);
+            let new_var = |ty| Variable::with_default_context(db, ty, location);
             let as_usage = |var_id| VarUsage { var_id, location };
             let array_fn = |extern_id| {
                 let args = vec![GenericArgumentId::Type(felt252_ty)];
@@ -732,9 +731,8 @@ impl<'a> ConstFoldingContext<'a> {
                 let nz_input = info.inputs[if lhs.is_some() { 1 } else { 0 }];
                 let var = &self.variables[nz_input.var_id].clone();
                 let function = self.type_value_ranges.get(&var.ty)?.is_zero;
-                let unused_nz_var = Variable::new(
+                let unused_nz_var = Variable::with_default_context(
                     db,
-                    ImplLookupContext::default(),
                     corelib::core_nonzero_ty(db, var.ty),
                     var.location,
                 );
@@ -830,9 +828,8 @@ impl<'a> ConstFoldingContext<'a> {
                     else {
                         return None;
                     };
-                    let result = self.variables.alloc(Variable::new(
+                    let result = self.variables.alloc(Variable::with_default_context(
                         db,
-                        ImplLookupContext::default(),
                         function.signature(db).unwrap().return_type,
                         info.location,
                     ));
@@ -935,17 +932,12 @@ impl<'a> ConstFoldingContext<'a> {
                             let value_ty = value.ty(db).ok()?;
                             let value_box_ty = corelib::core_box_ty(db, value_ty);
                             let location = info.location;
-                            let boxed_var = Variable::new(
-                                db,
-                                ImplLookupContext::default(),
-                                value_box_ty,
-                                location,
-                            );
+                            let boxed_var =
+                                Variable::with_default_context(db, value_box_ty, location);
                             let boxed = self.variables.alloc(boxed_var.clone());
                             let unused_boxed = self.variables.alloc(boxed_var);
-                            let snapped = self.variables.alloc(Variable::new(
+                            let snapped = self.variables.alloc(Variable::with_default_context(
                                 db,
-                                ImplLookupContext::default(),
                                 TypeLongId::Snapshot(value_box_ty).intern(db),
                                 location,
                             ));
