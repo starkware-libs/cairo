@@ -275,7 +275,7 @@ impl BlockBuilder {
                 inputs
                     .iter()
                     .skip(members.len())
-                    .map(|var_usage| (ctx.variables.variables[var_usage.var_id].ty)),
+                    .map(|var_usage| ctx.variables.variables[var_usage.var_id].ty),
             )
             .collect();
 

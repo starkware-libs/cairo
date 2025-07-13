@@ -453,7 +453,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
 
         Some(
             sierra_statement_weights_iter
-                .filter(|&(_, weight)| (*weight >= params.min_weight))
+                .filter(|&(_, weight)| *weight >= params.min_weight)
                 .map(|(statement_idx, weight)| {
                     (*statement_idx, (*weight, self.statement_idx_to_gen_statement(statement_idx)))
                 })
