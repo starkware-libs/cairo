@@ -108,7 +108,17 @@ impl BlockBuilder {
         member_path: &ExprVarMemberPath,
     ) -> Option<VarUsage> {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
-        self.get_ref_raw(ctx, &member_path.into(), location)
+        // First try regular semantics
+        if let Some(var_usage) = self.get_ref_raw(ctx, &member_path.into(), location) {
+            return Some(var_usage);
+        }
+        // If not found in regular semantics, check if it's in snapped_semantics
+        // This handles the case where a variable was captured as a snapshot by an outer closure
+        // and needs to be accessed by a nested closure
+        if let Some(var_id) = self.snapped_semantics.get::<MemberPath>(&member_path.into()) {
+            return Some(VarUsage { var_id: *var_id, location });
+        }
+        None
     }
 
     pub fn get_ref_raw(
@@ -250,17 +260,31 @@ impl BlockBuilder {
     ) -> (VarUsage, ClosureInfo) {
         let location = ctx.get_location(expr.stable_ptr.untyped());
 
-        let inputs = chain!(
-            usage.usage.values().map(|expr| { LoweredExpr::Member(expr.clone(), location) }),
-            usage.snap_usage.values().map(|expr| {
-                LoweredExpr::Snapshot {
+        let mut inputs = Vec::new();
+
+        // Handle regular captured variables
+        for expr in usage.usage.values() {
+            let lowered = LoweredExpr::Member(expr.clone(), location);
+            inputs.push(lowered.as_var_usage(ctx, self).unwrap());
+        }
+
+        // Handle snapshot captured variables
+        for expr in usage.snap_usage.values() {
+            let member_path: MemberPath = expr.into();
+
+            // Check if this variable is already a snapshot in the current context
+            if let Some(snap_var_id) = self.snapped_semantics.get(&member_path) {
+                // Variable is already a snapshot, use it directly
+                inputs.push(VarUsage { var_id: *snap_var_id, location });
+            } else {
+                // Variable needs to be snapshotted
+                let lowered = LoweredExpr::Snapshot {
                     expr: Box::new(LoweredExpr::Member(expr.clone(), location)),
                     location,
-                }
-            })
-        )
-        .map(|expr| expr.as_var_usage(ctx, self).unwrap())
-        .collect_vec();
+                };
+                inputs.push(lowered.as_var_usage(ctx, self).unwrap());
+            }
+        }
 
         let members: OrderedHashMap<MemberPath, semantic::TypeId> =
             chain!(usage.usage.values(), usage.changes.values())
