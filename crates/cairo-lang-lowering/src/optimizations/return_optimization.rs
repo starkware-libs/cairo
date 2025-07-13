@@ -147,7 +147,7 @@ impl ReturnOptimizerContext<'_> {
 
     /// Returns true if the variable is droppable
     fn is_droppable(&self, var_id: VariableId) -> bool {
-        self.lowered.variables[var_id].droppable.is_ok()
+        self.lowered.variables[var_id].info.droppable.is_ok()
     }
 
     /// Helper function for `merge_match`.

@@ -891,7 +891,7 @@ pub fn type_info(
     db: &dyn SemanticGroup,
     lookup_context: ImplLookupContext,
     ty: TypeId,
-) -> Maybe<TypeInfo> {
+) -> TypeInfo {
     // Dummy stable pointer for type inference variables, since inference is disabled.
     let droppable =
         get_impl_at_context(db, lookup_context.clone(), concrete_drop_trait(db, ty), None);
@@ -901,7 +901,7 @@ pub fn type_info(
         get_impl_at_context(db, lookup_context.clone(), concrete_destruct_trait(db, ty), None);
     let panic_destruct_impl =
         get_impl_at_context(db, lookup_context, concrete_panic_destruct_trait(db, ty), None);
-    Ok(TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl })
+    TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl }
 }
 
 pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {

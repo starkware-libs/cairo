@@ -94,7 +94,7 @@ impl DemandReporter<VariableId, PanicState> for BorrowChecker<'_> {
         panic_state: PanicState,
     ) {
         let var = &self.lowered.variables[var_id];
-        let Err(drop_err) = var.droppable.clone() else {
+        let Err(drop_err) = var.info.droppable.clone() else {
             return;
         };
         let db = self.db;
@@ -113,7 +113,7 @@ impl DemandReporter<VariableId, PanicState> for BorrowChecker<'_> {
                 .lowered(db),
             );
         };
-        let destruct_err = match var.destruct_impl.clone() {
+        let destruct_err = match var.info.destruct_impl.clone() {
             Ok(impl_id) => {
                 add_called_fn(impl_id, self.destruct_fn);
                 return;
@@ -121,7 +121,7 @@ impl DemandReporter<VariableId, PanicState> for BorrowChecker<'_> {
             Err(err) => err,
         };
         let panic_destruct_err = if matches!(panic_state, PanicState::EndsWithPanic) {
-            match var.panic_destruct_impl.clone() {
+            match var.info.panic_destruct_impl.clone() {
                 Ok(impl_id) => {
                     add_called_fn(impl_id, self.panic_destruct_fn);
                     return;
@@ -150,7 +150,7 @@ impl DemandReporter<VariableId, PanicState> for BorrowChecker<'_> {
 
     fn dup(&mut self, position: LocationId, var_id: VariableId, next_usage_position: LocationId) {
         let var = &self.lowered.variables[var_id];
-        if let Err(inference_error) = var.copyable.clone() {
+        if let Err(inference_error) = var.info.copyable.clone() {
             self.diagnostics.report_by_location(
                 next_usage_position
                     .lookup_intern(self.db)
@@ -191,7 +191,7 @@ impl Analyzer<'_> for BorrowChecker<'_> {
             }
             Statement::Desnap(stmt) => {
                 let var = &self.lowered.variables[stmt.output];
-                if let Err(inference_error) = var.copyable.clone() {
+                if let Err(inference_error) = var.info.copyable.clone() {
                     self.diagnostics.report_by_location(
                         var.location.lookup_intern(self.db).with_note(DiagnosticNote::text_only(
                             inference_error.format(self.db.upcast()),
