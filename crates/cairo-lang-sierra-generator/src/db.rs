@@ -111,7 +111,7 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     fn priv_function_with_body_sierra_data(
         &self,
         function_id: ConcreteFunctionWithBodyId,
-    ) -> function_generator::SierraFunctionWithBodyData;
+    ) -> Maybe<function_generator::SierraFunctionWithBodyData>;
     /// Returns the Sierra code (as [pre_sierra::Function]) for a given function with body.
     #[salsa::invoke(function_generator::function_with_body_sierra)]
     fn function_with_body_sierra(
