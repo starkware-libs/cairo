@@ -42,18 +42,25 @@ pub fn token_tree_as_wrapped_arg_list(
 /// that the prefix is an expr, not the whole iterator), tries to parse it as such, and returns the
 /// result. The token tree iterator is consumed entirely.
 pub fn as_expr_macro_token_tree(
-    token_tree: impl Iterator<Item = TokenTree>,
+    mut token_tree: impl Iterator<Item = TokenTree>,
     file_id: FileId,
     db: &dyn SyntaxGroup,
 ) -> Option<ast::Expr> {
     let mut diagnostics: DiagnosticsBuilder<ParserDiagnostic> = DiagnosticsBuilder::default();
-    let node_text: String = token_tree
-        .map(|token| token.as_syntax_node().get_text(db).to_string())
-        .collect::<Vec<String>>()
-        .join("");
+    let first_token = token_tree.next()?.as_syntax_node();
+    let node_text: String = token_tree.map(|token| token.as_syntax_node().get_text(db)).fold(
+        first_token.get_text(db),
+        |mut acc, token_text| {
+            acc.push_str(&token_text);
+            acc
+        },
+    );
     let mut parser = Parser::new(db, file_id, &node_text, &mut diagnostics);
     let expr_green = parser.parse_expr();
-    let expr = ast::Expr::from_syntax_node(db, SyntaxNode::new_root(db, file_id, expr_green.0));
+    let expr = ast::Expr::from_syntax_node(
+        db,
+        SyntaxNode::new_root_with_offset(db, file_id, expr_green.0, Some(first_token.offset(db))),
+    );
     Some(expr)
 }
 
