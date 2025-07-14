@@ -1,5 +1,4 @@
 use core::hash::Hash;
-use std::fmt::Display;
 use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
@@ -237,7 +236,17 @@ impl SyntaxNode {
     /// Returns all the text under the syntax node.
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
     pub fn get_text(&self, db: &dyn SyntaxGroup) -> String {
-        format!("{}", NodeTextFormatter { node: self, db })
+        let node = self.lookup_intern(db);
+        let file_id = node.stable_ptr.file_id(db);
+        let Some(content) = db.file_content(file_id) else {
+            return Default::default();
+        };
+        TextSpan {
+            start: node.offset,
+            end: node.offset.add_width(node.green.lookup_intern(db).width()),
+        }
+        .take(&content)
+        .to_string()
     }
 
     /// Returns all the text under the syntax node.
@@ -310,8 +319,12 @@ impl SyntaxNode {
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
     pub fn get_text_without_trivia(self, db: &dyn SyntaxGroup) -> String {
-        let node = self.lookup_intern(db).green.lookup_intern(db);
-        format!("{}", TrimmedGreenFormatter { node, trim_kind: TrimKind::Both, db })
+        let node = self.lookup_intern(db);
+        let file_id = node.stable_ptr.file_id(db);
+        let Some(content) = db.file_content(file_id) else {
+            return Default::default();
+        };
+        self.span_without_trivia(db).take(&content).to_string()
     }
 
     /// Returns the text under the syntax node, according to the given span.
@@ -320,15 +333,13 @@ impl SyntaxNode {
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
     pub fn get_text_of_span(self, db: &dyn SyntaxGroup, span: TextSpan) -> String {
-        let orig_span = self.span(db);
-        assert!(orig_span.contains(span));
-        let full_text = self.get_text(db);
-
-        let span_in_span = TextSpan {
-            start: (span.start - orig_span.start).as_offset(),
-            end: (span.end - orig_span.start).as_offset(),
+        assert!(self.span(db).contains(span));
+        let node = self.lookup_intern(db);
+        let file_id = node.stable_ptr.file_id(db);
+        let Some(content) = db.file_content(file_id) else {
+            return Default::default();
         };
-        span_in_span.take(&full_text).to_string()
+        span.take(&content).to_string()
     }
 
     /// Traverse the subtree rooted at the current node (including the current node) in preorder.
@@ -490,135 +501,4 @@ pub trait TypedStablePtr {
     fn lookup(&self, db: &dyn SyntaxGroup) -> Self::SyntaxNode;
     /// Returns the untyped stable pointer.
     fn untyped(&self) -> SyntaxStablePtrId;
-}
-
-/// Wrapper for formatting the text of syntax nodes.
-pub struct NodeTextFormatter<'a> {
-    /// The node to format.
-    pub node: &'a SyntaxNode,
-    /// The syntax db.
-    pub db: &'a dyn SyntaxGroup,
-}
-impl Display for NodeTextFormatter<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self.node.green_node(self.db).as_ref().details {
-            green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
-            green::GreenNodeDetails::Node { children, .. } => {
-                write!(f, "{}", GreenNodesFormatter { nodes: children, db: self.db })?;
-            }
-        }
-        Ok(())
-    }
-}
-
-/// Wrapper for formatting the text of a green node while trimming trivia.
-struct TrimmedGreenFormatter<'a> {
-    /// The node to format.
-    pub node: Arc<GreenNode>,
-    /// The kind of trimming to apply.
-    pub trim_kind: TrimKind,
-    /// The syntax db.
-    pub db: &'a dyn SyntaxGroup,
-}
-
-enum TrimKind {
-    /// Trim the leading trivia.
-    Leading,
-    /// Trim the trailing trivia.
-    Trailing,
-    /// Trim both leading and trailing trivia.
-    Both,
-}
-
-impl Display for TrimmedGreenFormatter<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let db = self.db;
-        match &self.node.details {
-            green::GreenNodeDetails::Token(text) => write!(f, "{text}"),
-            green::GreenNodeDetails::Node { children, .. } => {
-                if self.node.kind.is_terminal() {
-                    let children = match self.trim_kind {
-                        TrimKind::Leading => &children[1..],
-                        TrimKind::Trailing => &children[..=1],
-                        TrimKind::Both => &children[1..=1],
-                    };
-                    return write!(f, "{}", GreenNodesFormatter { nodes: children, db });
-                }
-                match self.trim_kind {
-                    TrimKind::Leading => {
-                        let Some((first, rest)) = split_non_empty(db, children, <[_]>::split_first)
-                        else {
-                            return Ok(());
-                        };
-                        let trim_kind = TrimKind::Leading;
-                        write!(f, "{}", TrimmedGreenFormatter { node: first, trim_kind, db })?;
-                        write!(f, "{}", GreenNodesFormatter { nodes: rest, db })
-                    }
-                    TrimKind::Trailing => {
-                        let Some((last, rest)) = split_non_empty(db, children, <[_]>::split_last)
-                        else {
-                            return Ok(());
-                        };
-                        write!(f, "{}", GreenNodesFormatter { nodes: rest, db })?;
-                        let trim_kind = TrimKind::Trailing;
-                        write!(f, "{}", TrimmedGreenFormatter { node: last, trim_kind, db })
-                    }
-                    TrimKind::Both => {
-                        let Some((first, rest)) = split_non_empty(db, children, <[_]>::split_first)
-                        else {
-                            return Ok(());
-                        };
-                        if let Some((last, rest)) = split_non_empty(db, rest, <[_]>::split_last) {
-                            let trim_kind = TrimKind::Leading;
-                            write!(f, "{}", TrimmedGreenFormatter { node: first, trim_kind, db })?;
-                            write!(f, "{}", GreenNodesFormatter { nodes: rest, db })?;
-                            let trim_kind = TrimKind::Trailing;
-                            write!(f, "{}", TrimmedGreenFormatter { node: last, trim_kind, db })
-                        } else {
-                            let trim_kind = TrimKind::Both;
-                            write!(f, "{}", TrimmedGreenFormatter { node: first, trim_kind, db })
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/// Splits the given children slice into a non-empty part and the rest, using the provided split
-/// function.
-fn split_non_empty<'a>(
-    db: &dyn SyntaxGroup,
-    mut children: &'a [GreenId],
-    split: impl Fn(&[GreenId]) -> Option<(&GreenId, &[GreenId])>,
-) -> Option<(Arc<GreenNode>, &'a [GreenId])> {
-    while let Some((taken, rest)) = split(children) {
-        let taken = taken.lookup_intern(db);
-        if taken.width() != TextWidth::default() {
-            return Some((taken, rest));
-        }
-        children = rest;
-    }
-    None
-}
-
-/// Formatter for green nodes, used for formatting the text of syntax nodes.
-struct GreenNodesFormatter<'a> {
-    /// The green nodes to format.
-    nodes: &'a [GreenId],
-    /// The syntax db.
-    db: &'a dyn SyntaxGroup,
-}
-impl Display for GreenNodesFormatter<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for id in self.nodes.iter() {
-            match &id.lookup_intern(self.db).details {
-                green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
-                green::GreenNodeDetails::Node { children, .. } => {
-                    write!(f, "{}", GreenNodesFormatter { nodes: children, db: self.db })?;
-                }
-            }
-        }
-        Ok(())
-    }
 }
