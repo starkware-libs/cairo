@@ -78,7 +78,7 @@ impl OptimizationPhase {
             OptimizationPhase::OptimizeRemappings => optimize_remappings(lowered),
             OptimizationPhase::ReorderStatements => reorder_statements(db, lowered),
             OptimizationPhase::ReorganizeBlocks => reorganize_blocks(lowered),
-            OptimizationPhase::ReturnOptimization => return_optimization(db, function, lowered),
+            OptimizationPhase::ReturnOptimization => return_optimization(db, lowered),
             OptimizationPhase::SplitStructs => split_structs(lowered),
             OptimizationPhase::TrimUnreachable => trim_unreachable(db, lowered),
             OptimizationPhase::LowerImplicits => lower_implicits(db, function, lowered),
