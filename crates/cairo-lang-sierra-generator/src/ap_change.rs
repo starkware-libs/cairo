@@ -5,11 +5,8 @@ mod test;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
-use cairo_lang_sierra::program::GenStatement;
 
 use crate::db::SierraGenGroup;
-use crate::pre_sierra;
-use crate::utils::get_libfunc_signature;
 
 /// Query implementation of [SierraGenGroup::get_ap_change].
 pub fn get_ap_change(
@@ -22,19 +19,5 @@ pub fn get_ap_change(
         return Ok(SierraApChange::Unknown);
     }
 
-    let function = &*db.function_with_body_sierra(function_id)?;
-    for statement in &function.body {
-        if let pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) =
-            &statement.statement
-        {
-            let signature = get_libfunc_signature(db, invocation.libfunc_id.clone());
-            // Go over the branches.
-            for branch_signature in signature.branch_signatures {
-                if matches!(branch_signature.ap_change, SierraApChange::Unknown) {
-                    return Ok(SierraApChange::Unknown);
-                }
-            }
-        }
-    }
-    Ok(SierraApChange::Known { new_vars_only: false })
+    Ok(db.priv_function_with_body_sierra_data(function_id)?.ap_change)
 }
