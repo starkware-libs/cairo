@@ -6,7 +6,6 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering::ids::SemanticFunctionIdEx;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
-use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_sierra::extensions::snapshot::snapshot_ty;
 use cairo_lang_sierra::ids::UserTypeId;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGenericArg};
@@ -251,20 +250,12 @@ pub fn cycle_breaker_info(
     db: &dyn SierraGenGroup,
     ty: semantic::TypeId,
 ) -> Maybe<CycleBreakerTypeInfo> {
-    let info = db.type_info(ImplLookupContext::default(), ty);
-    if info.copyable.is_ok() && info.droppable.is_ok() {
-        return Ok(CycleBreakerTypeInfo { duplicatable: true, droppable: true });
+    let mut duplicatable = db.copyable(ty).is_ok();
+    let mut droppable = db.droppable(ty).is_ok();
+    if !duplicatable || !droppable {
+        let deps = db.type_dependencies(ty)?;
+        duplicatable = duplicatable || deps.iter().all(|dep| db.copyable(*dep).is_ok());
+        droppable = droppable || deps.iter().all(|dep| db.droppable(*dep).is_ok());
     }
-    let mut deps_copyable = true;
-    let mut deps_droppable = true;
-    let deps = db.type_dependencies(ty)?;
-    for dep in deps.iter() {
-        let dep_info = db.type_info(ImplLookupContext::default(), *dep);
-        deps_copyable &= dep_info.copyable.is_ok();
-        deps_droppable &= dep_info.droppable.is_ok();
-    }
-    Ok(CycleBreakerTypeInfo {
-        duplicatable: info.copyable.is_ok() || deps_copyable,
-        droppable: info.droppable.is_ok() || deps_droppable,
-    })
+    Ok(CycleBreakerTypeInfo { duplicatable, droppable })
 }
