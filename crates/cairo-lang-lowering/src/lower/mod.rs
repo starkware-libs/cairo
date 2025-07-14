@@ -1153,7 +1153,7 @@ fn lower_expr_fixed_size_array(
             }
             // If there are multiple elements, the type must be copyable as we copy the var `size`
             // times.
-            if size > 1 && ctx.variables[var_usage.var_id].copyable.is_err() {
+            if size > 1 && ctx.variables[var_usage.var_id].info.copyable.is_err() {
                 {
                     return Err(LoweringFlowError::Failed(
                         ctx.diagnostics.report(expr.stable_ptr.0, FixedSizeArrayNonCopyableType),
@@ -1848,9 +1848,9 @@ fn add_capture_destruct_impl(
     closure_info: &ClosureInfo,
     location: StableLocation,
 ) -> Maybe<()> {
-    let capture_var = &ctx.variables.variables[capture_var_usage.var_id];
+    let capture_ty_info = &ctx.variables.variables[capture_var_usage.var_id].info;
     // Skipping generation for the case of `Drop`.
-    let Some(Ok(impl_id)) = [&capture_var.destruct_impl, &capture_var.panic_destruct_impl]
+    let Some(Ok(impl_id)) = [&capture_ty_info.destruct_impl, &capture_ty_info.panic_destruct_impl]
         .iter()
         .find(|infer_result| infer_result.is_ok())
     else {
@@ -2092,7 +2092,7 @@ fn lower_expr_closure(
         ctx,
         expr,
         &closure_info,
-        if ctx.variables[capture_var_usage.var_id].copyable.is_ok() {
+        if ctx.variables[capture_var_usage.var_id].info.copyable.is_ok() {
             ctx.db.core_info().fn_trt
         } else {
             ctx.db.core_info().fn_once_trt

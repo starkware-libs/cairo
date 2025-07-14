@@ -251,7 +251,7 @@ pub fn cycle_breaker_info(
     db: &dyn SierraGenGroup,
     ty: semantic::TypeId,
 ) -> Maybe<CycleBreakerTypeInfo> {
-    let info = db.type_info(ImplLookupContext::default(), ty)?;
+    let info = db.type_info(ImplLookupContext::default(), ty);
     if info.copyable.is_ok() && info.droppable.is_ok() {
         return Ok(CycleBreakerTypeInfo { duplicatable: true, droppable: true });
     }
@@ -259,7 +259,7 @@ pub fn cycle_breaker_info(
     let mut deps_droppable = true;
     let deps = db.type_dependencies(ty)?;
     for dep in deps.iter() {
-        let dep_info = db.type_info(ImplLookupContext::default(), *dep)?;
+        let dep_info = db.type_info(ImplLookupContext::default(), *dep);
         deps_copyable &= dep_info.copyable.is_ok();
         deps_droppable &= dep_info.droppable.is_ok();
     }

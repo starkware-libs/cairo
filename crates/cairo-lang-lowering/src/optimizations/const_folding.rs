@@ -304,8 +304,8 @@ impl<'a> ConstFoldingContext<'a> {
                             let arm = &arms[variant.idx];
                             let value = value.as_ref().clone();
                             let output = arm.var_ids[0];
-                            if self.variables[input.var_id].droppable.is_ok()
-                                && self.variables[output].copyable.is_ok()
+                            if self.variables[input.var_id].info.droppable.is_ok()
+                                && self.variables[output].info.copyable.is_ok()
                             {
                                 if let Some(stmt) =
                                     self.try_generate_const_statement(&value, output)
@@ -1132,7 +1132,7 @@ impl<'a> ConstFoldingContext<'a> {
 
 /// Returns a `VarInfo` of a variable only if it is copyable.
 fn var_info_if_copy(variables: &Arena<Variable>, input: VarUsage) -> Option<VarInfo> {
-    variables[input.var_id].copyable.is_ok().then_some(VarInfo::Var(input))
+    variables[input.var_id].info.copyable.is_ok().then_some(VarInfo::Var(input))
 }
 
 /// Query implementation of [LoweringGroup::priv_const_folding_info].
