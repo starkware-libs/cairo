@@ -8,7 +8,7 @@ use cairo_lang_semantic::usage::{MemberPath, Usage};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{Intern, LookupIntern, require};
+use cairo_lang_utils::{Intern, LookupIntern, require, try_extract_matches};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 
@@ -570,20 +570,19 @@ impl StructRecomposer for BlockStructRecomposer<'_, '_, '_> {
 /// For variables that have different lowered variables, a remapping to a new variable occurs.
 ///
 /// If only one parent builder is given, returns it without creating a new block.
-// TODO(lior): Remove `allow(dead_code)` once the function is used.
-#[allow(dead_code)]
-pub fn merge_block_builders(
+pub fn merge_block_builders_ex(
     ctx: &mut LoweringContext<'_, '_>,
-    parent_builders: Vec<BlockBuilder>,
+    parent_builders: Vec<(BlockBuilder, Option<VarUsage>)>,
+    res_expr: Option<VariableId>,
     location: LocationId,
 ) -> BlockBuilder {
     // If there is only one parent builder, return it.
-    if parent_builders.len() == 1 {
-        return parent_builders.into_iter().next().unwrap();
+    if parent_builders.len() == 1 && parent_builders[0].1.is_none() {
+        return parent_builders.into_iter().next().unwrap().0;
     }
 
     // TODO(lior): Support snapped semantics.
-    for builder in &parent_builders {
+    for (builder, _) in &parent_builders {
         assert!(builder.snapped_semantics.is_empty(), "Snapped semantics is not supported yet.");
     }
 
@@ -594,7 +593,7 @@ pub fn merge_block_builders(
     let mut member_path_value: OrderedHashMap<MemberPath, VariableId> = Default::default();
 
     let semantics = merge_semantics(
-        &parent_builders.iter().map(|builder| &builder.semantics).collect_vec(),
+        &parent_builders.iter().map(|(builder, _)| &builder.semantics).collect_vec(),
         &mut |path| {
             let ty = get_ty(ctx, path);
             let var = ctx.new_var(VarRequest { ty, location });
@@ -603,16 +602,16 @@ pub fn merge_block_builders(
         },
     );
 
-    let semantic_remapping = SemanticRemapping { expr: None, member_path_value };
+    let semantic_remapping = SemanticRemapping { expr: res_expr, member_path_value };
 
     // Assign a new block id for the current node.
     let block_id = ctx.blocks.alloc_empty();
 
     // Finalize the intermediate blocks.
-    for parent_builder in parent_builders.into_iter() {
+    for (parent_builder, expr) in parent_builders.into_iter() {
         // TODO(lior): Consider extracting the relevant code from `finalize` to a separate
         //   `finalize` function.
-        let sealed_block = parent_builder.goto_callsite(None);
+        let sealed_block = parent_builder.goto_callsite(expr);
         sealed_block.finalize(ctx, block_id, &semantic_remapping, location);
     }
 
@@ -624,4 +623,51 @@ pub fn merge_block_builders(
         statements: Default::default(),
         block_id,
     }
+}
+
+pub fn merge_block_builders(
+    ctx: &mut LoweringContext<'_, '_>,
+    parent_builders: Vec<BlockBuilder>,
+    location: LocationId,
+) -> BlockBuilder {
+    let parent_builders = parent_builders.into_iter().map(|builder| (builder, None)).collect_vec();
+    merge_block_builders_ex(ctx, parent_builders, None, location)
+}
+
+// TODO: doc.
+// TODO(lior): Remove `allow(dead_code)` once the function is used.
+#[allow(dead_code)]
+pub fn merge_sealed_block_builders(
+    ctx: &mut LoweringContext<'_, '_>,
+    sealed_blocks: Vec<SealedBlockBuilder>,
+    location: LocationId,
+) -> Option<(BlockBuilder, LoweredExpr)> {
+    let mut res_var: Option<VariableId> = None;
+    let builders = sealed_blocks
+        .into_iter()
+        .filter_map(|sealed_block| match sealed_block {
+            SealedBlockBuilder::GotoCallsite { builder, expr } => {
+                if let Some(var_usage) = expr {
+                    res_var.get_or_insert_with(|| {
+                        let var = ctx.variables[var_usage.var_id].clone();
+                        ctx.variables.variables.alloc(var)
+                    });
+                }
+                Some((builder, expr))
+            }
+            SealedBlockBuilder::Ends(..) => None,
+        })
+        .collect_vec();
+
+    require(!builders.is_empty())?;
+
+    let lowered_expr = if let Some(res_var) = res_var {
+        LoweredExpr::AtVariable(VarUsage { var_id: res_var, location })
+    } else {
+        LoweredExpr::Tuple { exprs: vec![], location }
+    };
+
+    let merged_builder = merge_block_builders_ex(ctx, builders, res_var, location);
+
+    Some((merged_builder, lowered_expr))
 }

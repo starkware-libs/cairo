@@ -3,7 +3,8 @@ use cairo_lang_defs::ids::VariantId;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{
-    self as semantic, ConcreteTypeId, Condition, Pattern, PatternEnumVariant, PatternId, PatternOtherwise, TypeLongId
+    self as semantic, ConcreteTypeId, Condition, Pattern, PatternEnumVariant, PatternId,
+    PatternOtherwise, TypeLongId,
 };
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -92,13 +93,17 @@ pub fn create_graph_expr_match(
     let matched_var = graph.new_var(matched_expr.ty());
 
     // Create a list of patterns and nodes.
-    let pattern_and_nodes: Vec<(PatternId, NodeId)> =
-        expr.arms.iter().flat_map(|match_arm| {
+    let pattern_and_nodes: Vec<(PatternId, NodeId)> = expr
+        .arms
+        .iter()
+        .flat_map(|match_arm| {
             // For each arm, create a node for the arm expression.
-            let arm_node = graph.add_node(FlowControlNode::ArmExpr(ArmExpr { expr: match_arm.expression }));
+            let arm_node =
+                graph.add_node(FlowControlNode::ArmExpr(ArmExpr { expr: match_arm.expression }));
             // Then map the patterns to that node.
             match_arm.patterns.iter().map(move |pattern| (*pattern, arm_node))
-        }).collect();
+        })
+        .collect();
 
     let match_node_id = lower_patterns(
         ctx,

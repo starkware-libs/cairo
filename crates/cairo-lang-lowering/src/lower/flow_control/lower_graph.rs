@@ -11,7 +11,9 @@ use super::graph::{
     NodeId,
 };
 use crate::ids::LocationId;
-use crate::lower::block_builder::{BlockBuilder, SealedBlockBuilder, merge_block_builders};
+use crate::lower::block_builder::{
+    BlockBuilder, SealedBlockBuilder, merge_block_builders, merge_sealed_block_builders,
+};
 use crate::lower::context::{
     LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest,
     lowering_flow_error_to_sealed_block,
@@ -337,16 +339,14 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
                 BlockEnd::Match { info },
                 condition_location,
             )) => {
-                (
-                    // TODO: Replace with `merge_block_builders`?
-                    builder.merge_and_end_with_match(
-                        self.ctx,
-                        info,
-                        sealed_blocks,
-                        condition_location,
-                    ),
-                    builder,
-                )
+                if let Some((new_builder, lowered_expr)) =
+                    merge_sealed_block_builders(self.ctx, sealed_blocks, condition_location)
+                {
+                    builder.finalize(self.ctx, BlockEnd::Match { info });
+                    (Ok(lowered_expr), new_builder)
+                } else {
+                    (Err(LoweringFlowError::Match(info)), builder)
+                }
             }
             Some(BlockFinalization::JumpsOutside(builder, err)) => (Err(err), builder),
             block_finalization => {
