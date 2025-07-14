@@ -30,7 +30,8 @@ use crate::expr::compute::{
     ComputationContext, ContextFunction, Environment, compute_expr_semantic,
 };
 use crate::expr::fmt::CountingWriter;
-use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::expr::inference::canonic::{CanonicalTrait, ResultNoErrEx};
+use crate::expr::inference::solver::{SolutionSet, enrich_lookup_context};
 use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
@@ -714,6 +715,12 @@ pub fn get_impl_at_context(
     concrete_trait_id: ConcreteTraitId,
     stable_ptr: Option<SyntaxStablePtrId>,
 ) -> Result<ImplId, InferenceError> {
+    if lookup_context.generic_params.is_empty()
+        && lookup_context.modules_and_impls.is_empty()
+        && concrete_trait_id.is_fully_concrete(db)
+    {
+        return solve_concrete_trait_no_context(db, concrete_trait_id);
+    }
     let mut inference_data = InferenceData::new(InferenceId::NoContext);
     let mut inference = inference_data.inference(db);
     let constrains = db.generic_params_type_constraints(lookup_context.generic_params.clone());
@@ -902,6 +909,25 @@ pub fn type_info(
     let panic_destruct_impl =
         get_impl_at_context(db, lookup_context, concrete_panic_destruct_trait(db, ty), None);
     TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl }
+}
+
+/// Solves a concrete trait without any context, i.e., without any generic parameters or inference
+/// variables.
+fn solve_concrete_trait_no_context(
+    db: &dyn SemanticGroup,
+    id: ConcreteTraitId,
+) -> Result<ImplId, InferenceError> {
+    let mut lookup_context = ImplLookupContext::default();
+    enrich_lookup_context(db, id, &mut lookup_context);
+    match db.canonic_trait_solutions(
+        CanonicalTrait { id, mappings: Default::default() },
+        lookup_context,
+        Default::default(),
+    )? {
+        SolutionSet::None => Err(InferenceError::NoImplsFound(id)),
+        SolutionSet::Unique(solution) => Ok(solution.0),
+        SolutionSet::Ambiguous(ambiguity) => Err(InferenceError::Ambiguity(ambiguity)),
+    }
 }
 
 pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
