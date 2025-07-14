@@ -219,6 +219,15 @@ impl Variable {
     ) -> Self {
         Self { ty, location, info: db.type_info(ctx, ty) }
     }
+
+    /// Returns a new variable with the type, with info calculated with the default context.
+    pub fn with_default_context(
+        db: &dyn LoweringGroup,
+        ty: semantic::TypeId,
+        location: LocationId,
+    ) -> Self {
+        Self::new(db, Default::default(), ty, location)
+    }
 }
 
 /// Lowered statement.
