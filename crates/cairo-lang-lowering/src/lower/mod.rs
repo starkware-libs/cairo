@@ -1740,6 +1740,12 @@ fn lower_expr_member_access(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a member-access expression: {:?}", expr.debug(&ctx.expr_formatter));
+    if let Some(member_path) = &expr.member_path {
+        return Ok(LoweredExpr::Member(
+            member_path.clone(),
+            ctx.get_location(expr.stable_ptr.untyped()),
+        ));
+    }
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let members = ctx
         .db
@@ -1751,12 +1757,6 @@ fn lower_expr_member_access(
                 ctx.diagnostics.report(expr.stable_ptr.untyped(), UnexpectedError),
             )
         })?;
-    if let Some(member_path) = &expr.member_path {
-        return Ok(LoweredExpr::Member(
-            member_path.clone(),
-            ctx.get_location(expr.stable_ptr.untyped()),
-        ));
-    }
     Ok(LoweredExpr::AtVariable(
         generators::StructMemberAccess {
             input: lower_expr_to_var_usage(ctx, builder, expr.expr)?,
