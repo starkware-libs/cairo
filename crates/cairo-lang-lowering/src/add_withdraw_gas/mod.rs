@@ -10,10 +10,9 @@ use num_bigint::{BigInt, Sign};
 
 use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId, SemanticFunctionIdEx};
-use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
-    Statement, StatementCall, VarUsage,
+    Statement, StatementCall, VarUsage, Variable,
 };
 
 /// Main function for the add_withdraw_gas lowering phase. Adds a `withdraw_gas` statement to the
@@ -40,7 +39,7 @@ fn add_withdraw_gas_to_function(
 ) -> Maybe<()> {
     let location = LocationId::from_stable_location(db, function.stable_location(db)?)
         .with_auto_generation_note(db, "withdraw_gas");
-    let panic_block = create_panic_block(db, function, lowered, location)?;
+    let panic_block = create_panic_block(db, lowered, location)?;
 
     let old_root_block = lowered.blocks.root_block()?.clone();
     let old_root_new_id = lowered.blocks.push(old_root_block);
@@ -88,19 +87,12 @@ fn add_withdraw_gas_to_function(
 /// Creates the panic block for the case `withdraw_gas` failure.
 fn create_panic_block(
     db: &dyn LoweringGroup,
-    function: ConcreteFunctionWithBodyId,
     lowered: &mut Lowered,
     location: LocationId,
 ) -> Maybe<Block> {
-    let mut variables = VariableAllocator::new(
-        db,
-        function.base_semantic_function(db).function_with_body_id(db),
-        std::mem::take(&mut lowered.variables),
-    )
-    .unwrap();
     let never_ty = never_ty(db);
-    let never_var = variables.new_var(VarRequest { ty: never_ty, location });
-    lowered.variables = variables.variables;
+    let never_var =
+        lowered.variables.alloc(Variable::new(db, Default::default(), never_ty, location));
 
     let gas_panic_fn = get_function_id(
         db,
