@@ -1174,31 +1174,8 @@ fn lower_expr_snapshot(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a snapshot: {:?}", expr.debug(&ctx.expr_formatter));
-    // If the inner expression is a variable, or a member access, and we already have a snapshot var
-    // we can use it without creating a new one.
-    // Note that in a closure we might only have a snapshot of the variable and not the original.
-    match &ctx.function_body.arenas.exprs[expr.inner] {
-        semantic::Expr::Var(expr_var) => {
-            let member_path = ExprVarMemberPath::Var(expr_var.clone());
-            if let Some(var) = builder.get_snap_ref(ctx, &member_path) {
-                return Ok(LoweredExpr::AtVariable(var));
-            }
-        }
-        semantic::Expr::MemberAccess(expr) => {
-            if let Some(var) = expr
-                .member_path
-                .clone()
-                .and_then(|member_path| builder.get_snap_ref(ctx, &member_path))
-            {
-                return Ok(LoweredExpr::AtVariable(var));
-            }
-        }
-        _ => {}
-    }
-    let lowered = lower_expr(ctx, builder, expr.inner)?;
-
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let expr = Box::new(lowered);
+    let expr = Box::new(lower_expr(ctx, builder, expr.inner)?);
     Ok(LoweredExpr::Snapshot { expr, location })
 }
 
