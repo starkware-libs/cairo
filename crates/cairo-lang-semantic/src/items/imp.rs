@@ -14,7 +14,7 @@ use cairo_lang_defs::ids::{
     UseId,
 };
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption, skip_diagnostic,
+    DiagnosticAdded, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, skip_diagnostic,
 };
 use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -1422,7 +1422,7 @@ fn check_special_impls(
         let tys = get_inner_types(db, extract_matches!(generic_args[0], GenericArgumentId::Type))?;
         for inference_error in tys
             .into_iter()
-            .filter_map(|ty| db.type_info(lookup_context.clone(), ty).to_option())
+            .map(|ty| db.type_info(lookup_context.clone(), ty))
             .flat_map(|info| info.copyable.err())
         {
             if matches!(
@@ -1439,7 +1439,7 @@ fn check_special_impls(
         let tys = get_inner_types(db, extract_matches!(generic_args[0], GenericArgumentId::Type))?;
         for inference_error in tys
             .into_iter()
-            .filter_map(|ty| db.type_info(lookup_context.clone(), ty).to_option())
+            .map(|ty| db.type_info(lookup_context.clone(), ty))
             .flat_map(|info| info.droppable.err())
         {
             if matches!(

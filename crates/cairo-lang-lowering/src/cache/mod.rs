@@ -34,7 +34,7 @@ use cairo_lang_semantic::items::imp::{
 use cairo_lang_semantic::items::trt::ConcreteTraitGenericFunctionLongId;
 use cairo_lang_semantic::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
-    ImplTypeId,
+    ImplTypeId, TypeInfo,
 };
 use cairo_lang_semantic::{
     ConcreteFunction, ConcreteImplLongId, ConcreteTraitLongId, GenericParam, MatchArmSelector,
@@ -805,21 +805,18 @@ struct VariableCached {
 }
 impl VariableCached {
     fn new(variable: Variable, ctx: &mut CacheSavingContext<'_>) -> Self {
+        let TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl } = variable.info;
         Self {
-            droppable: variable
-                .droppable
+            droppable: droppable
                 .map(|impl_id| ImplIdCached::new(impl_id, &mut ctx.semantic_ctx))
                 .ok(),
-            copyable: variable
-                .copyable
+            copyable: copyable
                 .map(|impl_id| ImplIdCached::new(impl_id, &mut ctx.semantic_ctx))
                 .ok(),
-            destruct_impl: variable
-                .destruct_impl
+            destruct_impl: destruct_impl
                 .map(|impl_id| ImplIdCached::new(impl_id, &mut ctx.semantic_ctx))
                 .ok(),
-            panic_destruct_impl: variable
-                .panic_destruct_impl
+            panic_destruct_impl: panic_destruct_impl
                 .map(|impl_id| ImplIdCached::new(impl_id, &mut ctx.semantic_ctx))
                 .ok(),
             ty: TypeIdCached::new(variable.ty, &mut ctx.semantic_ctx),
@@ -828,24 +825,26 @@ impl VariableCached {
     }
     fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> Variable {
         Variable {
-            droppable: self
-                .droppable
-                .map(|impl_id| impl_id.embed(&mut ctx.semantic_ctx))
-                .ok_or(InferenceError::Reported(skip_diagnostic())),
-            copyable: self
-                .copyable
-                .map(|impl_id| impl_id.embed(&mut ctx.semantic_ctx))
-                .ok_or(InferenceError::Reported(skip_diagnostic())),
-            destruct_impl: self
-                .destruct_impl
-                .map(|impl_id| impl_id.embed(&mut ctx.semantic_ctx))
-                .ok_or(InferenceError::Reported(skip_diagnostic())),
-            panic_destruct_impl: self
-                .panic_destruct_impl
-                .map(|impl_id| impl_id.embed(&mut ctx.semantic_ctx))
-                .ok_or(InferenceError::Reported(skip_diagnostic())),
             ty: self.ty.embed(&mut ctx.semantic_ctx),
             location: self.location.embed(ctx),
+            info: TypeInfo {
+                droppable: self
+                    .droppable
+                    .map(|impl_id| impl_id.embed(&mut ctx.semantic_ctx))
+                    .ok_or(InferenceError::Reported(skip_diagnostic())),
+                copyable: self
+                    .copyable
+                    .map(|impl_id| impl_id.embed(&mut ctx.semantic_ctx))
+                    .ok_or(InferenceError::Reported(skip_diagnostic())),
+                destruct_impl: self
+                    .destruct_impl
+                    .map(|impl_id| impl_id.embed(&mut ctx.semantic_ctx))
+                    .ok_or(InferenceError::Reported(skip_diagnostic())),
+                panic_destruct_impl: self
+                    .panic_destruct_impl
+                    .map(|impl_id| impl_id.embed(&mut ctx.semantic_ctx))
+                    .ok_or(InferenceError::Reported(skip_diagnostic())),
+            },
         }
     }
 }

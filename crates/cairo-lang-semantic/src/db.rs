@@ -1543,11 +1543,7 @@ pub trait SemanticGroup:
     /// Returns the generic_type of a generic function. This include free types, extern
     /// types, etc...
     #[salsa::invoke(types::type_info)]
-    fn type_info(
-        &self,
-        lookup_context: ImplLookupContext,
-        ty: types::TypeId,
-    ) -> Maybe<types::TypeInfo>;
+    fn type_info(&self, lookup_context: ImplLookupContext, ty: types::TypeId) -> types::TypeInfo;
 
     /// Private query to check if a type is fully concrete.
     #[salsa::invoke(types::priv_type_is_fully_concrete)]

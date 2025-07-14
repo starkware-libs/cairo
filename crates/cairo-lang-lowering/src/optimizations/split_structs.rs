@@ -310,7 +310,7 @@ impl SplitStructsContext<'_> {
         // reconstruct it before the first usage. If not we need to reconstruct it at the
         // end of the original block as it might be used by more than one of the
         // children.
-        if block_id == split_info.block_id || self.variables[var_id].copyable.is_err() {
+        if block_id == split_info.block_id || self.variables[var_id].info.copyable.is_err() {
             let reconstructed_var_id = if block_id == split_info.block_id {
                 // If the reconstruction is in the original block we can reuse the variable id
                 // and mark the variable as reconstructed.

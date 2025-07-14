@@ -132,11 +132,11 @@ impl DemandReporter<VariableId, PanicState> for DestructAdder<'_> {
         // Note that droppable here means droppable before monomorphization.
         // I.e. it is possible that T was substituted with a unit type, but T was not droppable
         // and therefore the unit type var is not droppable here.
-        if var.droppable.is_ok() {
+        if var.info.droppable.is_ok() {
             return;
         };
         // If a non droppable variable gets out of scope, add a destruct call for it.
-        if let Ok(impl_id) = var.destruct_impl.clone() {
+        if let Ok(impl_id) = var.info.destruct_impl.clone() {
             self.destructions.push(DestructionEntry::Plain(PlainDestructionEntry {
                 position,
                 var_id,
@@ -145,7 +145,7 @@ impl DemandReporter<VariableId, PanicState> for DestructAdder<'_> {
             return;
         }
         // If a non destructible variable gets out of scope, add a panic_destruct call for it.
-        if let Ok(impl_id) = var.panic_destruct_impl.clone() {
+        if let Ok(impl_id) = var.info.panic_destruct_impl.clone() {
             if let PanicState::EndsWithPanic(panic_locations) = panic_state {
                 for panic_location in panic_locations {
                     self.destructions.push(DestructionEntry::Panic(PanicDeconstructionEntry {
