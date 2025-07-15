@@ -3209,21 +3209,21 @@ store_temp<core::starknet::storage::StoragePointer0Offset::<core::starknet::stor
 function_call<user@core::starknet::storage::MutableStorableStoragePointer0OffsetReadAccess::<core::starknet::storage::Mutable::<core::integer::u256>, core::starknet::storage::MutableImpl::<core::integer::u256>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::tuple::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::tuple::TupleNextDrop::<(core::integer::u128,), core::tuple::TupleSplitTupleSize1::<core::integer::u128>, core::tuple::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::tuple::TupleSize0Drop>, core::tuple::TupleSplitTupleSize1::<core::integer::u128>>>>::read>([22], [1], [3], [26]) -> ([27], [28], [29], [30]);
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([30]) { fallthrough([31]) F21_B10([32]) };
 branch_align() -> ();
-struct_deconstruct<Tuple<core::integer::u256>>([31]) -> ([33]);
-const_as_immediate<Const<u128, 340282366920938463463374607431768211455>>() -> ([34]);
-struct_deconstruct<core::integer::u256>([33]) -> ([35], [36]);
+const_as_immediate<Const<u128, 340282366920938463463374607431768211455>>() -> ([33]);
+struct_deconstruct<Tuple<core::integer::u256>>([31]) -> ([34]);
+struct_deconstruct<core::integer::u256>([34]) -> ([35], [36]);
 dup<u128>([35]) -> ([35], [37]);
-dup<u128>([34]) -> ([34], [38]);
+dup<u128>([33]) -> ([33], [38]);
 u128_eq([37], [38]) { fallthrough() F21_B0() };
 branch_align() -> ();
-drop<u128>([34]) -> ();
+drop<u128>([33]) -> ();
 redeposit_gas([28]) -> ([39]);
 store_temp<GasBuiltin>([39]) -> ([40]);
 jump() { F21_B1() };
 F21_B0:
 branch_align() -> ();
 dup<u128>([36]) -> ([36], [41]);
-u128_eq([41], [34]) { fallthrough() F21_B9() };
+u128_eq([41], [33]) { fallthrough() F21_B9() };
 branch_align() -> ();
 redeposit_gas([28]) -> ([42]);
 store_temp<GasBuiltin>([42]) -> ([40]);
