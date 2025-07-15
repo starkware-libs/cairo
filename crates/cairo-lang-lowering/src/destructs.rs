@@ -18,11 +18,14 @@ use crate::borrow_check::Demand;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::demand::{AuxCombine, DemandReporter};
 use crate::db::LoweringGroup;
-use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
+use crate::ids::{
+    ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, GeneratedFunction,
+    SemanticFunctionIdEx,
+};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockEnd, BlockId, Lowered, MatchInfo, Statement, StatementCall, StatementStructConstruct,
-    StatementStructDestructure, VarRemapping, VarUsage, Variable, VariableId,
+    StatementStructDestructure, VarRemapping, VarUsage, VariableId,
 };
 
 pub type DestructAdderDemand = Demand<VariableId, (), PanicState>;
@@ -538,8 +541,25 @@ pub fn add_destructs(
 
     lowered.variables = variables.variables;
 
+    match function_id.lookup_intern(db) {
+        // If specialized, destructors are already correct.
+        ConcreteFunctionWithBodyLongId::Specialized(_) => return,
+        ConcreteFunctionWithBodyLongId::Semantic(id)
+        | ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent: id, .. }) => {
+            // If there is no substitution, destructors are already correct.
+            if id.substitution(db).map(|s| s.is_empty()).unwrap_or_default() {
+                return;
+            }
+        }
+    }
+
     for (_, var) in lowered.variables.iter_mut() {
         // After adding destructors, we can infer the concrete `Copyable` and `Droppable` impls.
-        *var = Variable::with_default_context(db, var.ty, var.location);
+        if var.info.copyable.is_err() {
+            var.info.copyable = db.copyable(var.ty);
+        }
+        if var.info.droppable.is_err() {
+            var.info.droppable = db.droppable(var.ty);
+        }
     }
 }
