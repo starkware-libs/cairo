@@ -78,6 +78,10 @@ impl GenericSubstitution {
         }
         self
     }
+    /// Returns whether the substitution is empty.
+    pub fn is_empty(&self) -> bool {
+        self.param_to_arg.is_empty() && self.self_impl.is_none()
+    }
     pub fn substitute<'a, Obj>(&'a self, db: &'a dyn SemanticGroup, obj: Obj) -> Maybe<Obj>
     where
         SubstitutionRewriter<'a>: SemanticRewriter<Obj, DiagnosticAdded>,
