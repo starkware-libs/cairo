@@ -1339,12 +1339,6 @@ impl TraitConstantCached {
 }
 
 #[derive(Serialize, Deserialize)]
-struct ConstStatementCached {
-    /// Value of the constant.
-    value: i32,
-}
-
-#[derive(Serialize, Deserialize)]
 struct StatementCallCached {
     /// A function to "call".
     function: FunctionIdCached,
