@@ -20,7 +20,8 @@ use crate::diagnostic::{
     LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics, LoweringDiagnosticsBuilder,
 };
 use crate::ids::{
-    ConcreteFunctionWithBodyId, FunctionWithBodyId, FunctionWithBodyLongId, LocationId,
+    ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, FunctionWithBodyId,
+    FunctionWithBodyLongId, LocationId,
 };
 use crate::optimizations::const_folding::ConstFoldingContext;
 use crate::utils::{InliningStrategy, Rebuilder, RebuilderEx};
@@ -56,15 +57,16 @@ pub fn priv_should_inline(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
+    if db.priv_never_inline(function_id)? {
+        return Ok(false);
+    }
+
     // Breaks cycles.
     if db.concrete_in_cycle(function_id, DependencyType::Call, LoweringStage::Monomorphized)? {
         return Ok(false);
     }
 
-    let config = db.function_declaration_inline_config(
-        function_id.base_semantic_function(db).function_with_body_id(db),
-    )?;
-    match (db.optimization_config().inlining_strategy, config) {
+    match (db.optimization_config().inlining_strategy, function_inline_config(db, function_id)?) {
         (_, InlineConfiguration::Always(_)) => Ok(true),
         (InliningStrategy::Avoid, _) | (_, InlineConfiguration::Never(_)) => Ok(false),
         (_, InlineConfiguration::Should(_)) => Ok(true),
@@ -76,6 +78,30 @@ pub fn priv_should_inline(
         }
         (InliningStrategy::InlineSmallFunctions(threshold), InlineConfiguration::None) => {
             should_inline_lowered(db, function_id, threshold)
+        }
+    }
+}
+
+/// Query implementation of [LoweringGroup::priv_never_inline].
+pub fn priv_never_inline(
+    db: &dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId,
+) -> Maybe<bool> {
+    Ok(matches!(function_inline_config(db, function_id)?, InlineConfiguration::Never(_)))
+}
+
+/// Query implementation of [LoweringGroup::priv_never_inline].
+pub fn function_inline_config(
+    db: &dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId,
+) -> Maybe<InlineConfiguration> {
+    match function_id.lookup_intern(db) {
+        ConcreteFunctionWithBodyLongId::Semantic(id) => {
+            db.function_declaration_inline_config(id.function_with_body_id(db))
+        }
+        ConcreteFunctionWithBodyLongId::Generated(_) => Ok(InlineConfiguration::None),
+        ConcreteFunctionWithBodyLongId::Specialized(specialized) => {
+            function_inline_config(db, specialized.base)
         }
     }
 }
@@ -308,7 +334,7 @@ fn should_inline<'a>(
         }
 
         if let Some(called_func) = stmt.function.body(db)? {
-            if let crate::ids::ConcreteFunctionWithBodyLongId::Specialized(specialized) =
+            if let ConcreteFunctionWithBodyLongId::Specialized(specialized) =
                 calling_function_id.lookup_intern(db)
             {
                 if specialized.base == called_func {
