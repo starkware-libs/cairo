@@ -182,17 +182,31 @@ pub fn priv_should_specialize(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
-    let ids::ConcreteFunctionWithBodyLongId::Specialized(specialized_func) =
+    let ids::ConcreteFunctionWithBodyLongId::Specialized(SpecializedFunction { base, .. }) =
         function_id.lookup_intern(db)
     else {
         panic!("Expected a specialized function");
     };
 
-    // If the function is marked as #[inline(never)], it should not be specialized.
-    let inline_config = db.function_declaration_inline_config(
-        specialized_func.base.base_semantic_function(db).function_with_body_id(db),
-    )?;
-    if let InlineConfiguration::Never(_) = inline_config {
+    match base.lookup_intern(db) {
+        // Generated functions may be specialized.
+        ids::ConcreteFunctionWithBodyLongId::Generated(_) => {}
+        ids::ConcreteFunctionWithBodyLongId::Specialized(_) => {
+            unreachable!("No specialized function of specialized function")
+        }
+        ids::ConcreteFunctionWithBodyLongId::Semantic(id) => {
+            if let InlineConfiguration::Never(_) =
+                db.function_declaration_inline_config(id.function_with_body_id(db))?
+            {
+                // If the function is marked as #[inline(never)], it should not be specialized.
+                return Ok(false);
+            }
+        }
+    }
+
+    // If a function is going to be inlined in any case, there is not need specialize it before
+    // inlining.
+    if db.priv_should_inline(base)? {
         return Ok(false);
     }
 
@@ -200,15 +214,11 @@ pub fn priv_should_specialize(
     // We cannot estimate the size of functions in a cycle, since the implicits computation requires
     // the finalized lowering of all the functions in the cycle which requires us to know the
     // answer of the current function.
-    if db.concrete_in_cycle(
-        specialized_func.base,
-        DependencyType::Call,
-        LoweringStage::Monomorphized,
-    )? {
+    if db.concrete_in_cycle(base, DependencyType::Call, LoweringStage::Monomorphized)? {
         return Ok(false);
     }
 
     // The heuristic is that the size is 8/10*orig_size > specialized_size of the original size.
-    Ok(db.estimate_size(specialized_func.base)?.saturating_mul(8)
+    Ok(db.estimate_size(base)?.saturating_mul(8)
         > db.estimate_size(function_id)?.saturating_mul(10))
 }
