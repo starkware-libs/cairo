@@ -1382,22 +1382,22 @@ trait IdentExtractor {
 }
 impl IdentExtractor for ast::UsePathLeaf {
     fn extract_ident(&self, db: &dyn SyntaxGroup) -> String {
-        self.ident(db).as_syntax_node().get_text_without_trivia(db)
+        self.ident(db).as_syntax_node().get_text_without_trivia(db).to_string()
     }
 
     fn extract_alias(&self, db: &dyn SyntaxGroup) -> Option<String> {
         match self.alias_clause(db) {
             ast::OptionAliasClause::Empty(_) => None,
-            ast::OptionAliasClause::AliasClause(alias_clause) => {
-                Some(alias_clause.alias(db).as_syntax_node().get_text_without_trivia(db))
-            }
+            ast::OptionAliasClause::AliasClause(alias_clause) => Some(
+                alias_clause.alias(db).as_syntax_node().get_text_without_trivia(db).to_string(),
+            ),
         }
     }
 }
 
 impl IdentExtractor for ast::UsePathSingle {
     fn extract_ident(&self, db: &dyn SyntaxGroup) -> String {
-        self.ident(db).as_syntax_node().get_text_without_trivia(db)
+        self.ident(db).as_syntax_node().get_text_without_trivia(db).to_string()
     }
 
     fn extract_alias(&self, _db: &dyn SyntaxGroup) -> Option<String> {

@@ -13,6 +13,7 @@ use core::fmt;
 /// instance the compiler does.
 pub use ::smol_str;
 
+pub mod arc_str;
 pub mod bigint;
 pub mod byte_array;
 pub mod casts;

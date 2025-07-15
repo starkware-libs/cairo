@@ -70,7 +70,7 @@ impl MockToken {
 
     /// Create a token based on [SyntaxNode]
     pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> MockToken {
-        MockToken::new(node.get_text(db), node.span(db))
+        MockToken::new(node.get_text(db).to_string(), node.span(db))
     }
 }
 

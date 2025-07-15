@@ -43,9 +43,9 @@ pub fn expand_module_text(
                     submodule_item.module_kw(db).as_syntax_node().get_text(db),
                     submodule_item.name(db).as_syntax_node().get_text(db),
                     body.lbrace(db).as_syntax_node().get_text(db),
-                    expand_module_text(db, ModuleId::Submodule(*item), diagnostics),
-                    body.rbrace(db).as_syntax_node().get_text(db),
                 ]);
+                output.push_str(&expand_module_text(db, ModuleId::Submodule(*item), diagnostics));
+                output.push_str(&body.rbrace(db).as_syntax_node().get_text(db));
                 continue;
             }
         } else if let ModuleItemId::Use(use_id) = item_id {
