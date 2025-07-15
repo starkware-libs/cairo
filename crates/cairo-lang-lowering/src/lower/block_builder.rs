@@ -251,12 +251,12 @@ impl BlockBuilder {
         let location = ctx.get_location(expr.stable_ptr.untyped());
 
         let inputs = chain!(
-            usage.usage.values().map(|expr| { LoweredExpr::Member(expr.clone(), location) }),
-            usage.snap_usage.values().map(|expr| {
-                LoweredExpr::Snapshot {
-                    expr: Box::new(LoweredExpr::Member(expr.clone(), location)),
-                    location,
-                }
+            usage
+                .usage
+                .values()
+                .map(|member_path| { LoweredExpr::Member(member_path.clone(), location) }),
+            usage.snap_usage.values().map(|member_path| {
+                LoweredExpr::MemberSnapshot { member_path: member_path.clone(), location }
             })
         )
         .map(|expr| expr.as_var_usage(ctx, self).unwrap())

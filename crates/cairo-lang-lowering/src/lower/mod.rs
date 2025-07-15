@@ -1175,8 +1175,13 @@ fn lower_expr_snapshot(
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a snapshot: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let expr = Box::new(lower_expr(ctx, builder, expr.inner)?);
-    Ok(LoweredExpr::Snapshot { expr, location })
+
+    Ok(match lower_expr(ctx, builder, expr.inner)? {
+        LoweredExpr::Member(member_path, _) => {
+            LoweredExpr::MemberSnapshot { member_path, location }
+        }
+        expr => LoweredExpr::ExprSnapshot { expr: Box::new(expr), location },
+    })
 }
 
 /// Lowers an expression of type [semantic::ExprDesnap].
@@ -1188,14 +1193,24 @@ fn lower_expr_desnap(
     log::trace!("Lowering a desnap: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let expr = lower_expr(ctx, builder, expr.inner)?;
-    if let LoweredExpr::Snapshot { expr, .. } = &expr {
-        return Ok(expr.as_ref().clone());
-    }
-    let input = expr.as_var_usage(ctx, builder)?;
 
-    Ok(LoweredExpr::AtVariable(
-        generators::Desnap { input, location }.add(ctx, &mut builder.statements),
-    ))
+    Ok(match expr {
+        LoweredExpr::ExprSnapshot { expr, .. } => *expr,
+        LoweredExpr::MemberSnapshot { member_path, .. } => {
+            LoweredExpr::Member(member_path, location)
+        }
+        LoweredExpr::AtVariable(_)
+        | LoweredExpr::Tuple { .. }
+        | LoweredExpr::FixedSizeArray { .. }
+        | LoweredExpr::ExternEnum(_)
+        | LoweredExpr::Member(_, _) => {
+            let input = expr.as_var_usage(ctx, builder)?;
+
+            LoweredExpr::AtVariable(
+                generators::Desnap { input, location }.add(ctx, &mut builder.statements),
+            )
+        }
+    })
 }
 
 /// Lowers an expression of type [semantic::ExprFunctionCall].

@@ -242,7 +242,13 @@ pub enum LoweredExpr {
     /// The expression value is an enum result from an extern call.
     ExternEnum(LoweredExprExternEnum),
     Member(ExprVarMemberPath, LocationId),
-    Snapshot {
+    /// The expression value is a snapshot of a member path.
+    MemberSnapshot {
+        member_path: ExprVarMemberPath,
+        location: LocationId,
+    },
+    /// The expression value is a snapshot of a non-member expression.
+    ExprSnapshot {
         expr: Box<LoweredExpr>,
         location: LocationId,
     },
@@ -271,22 +277,28 @@ impl LoweredExpr {
             LoweredExpr::Member(member_path, _location) => {
                 Ok(builder.get_ref(ctx, &member_path).unwrap())
             }
-            LoweredExpr::Snapshot { expr, location } => {
-                if let LoweredExpr::Member(member_path, _location) = &*expr {
-                    if let Some(var_usage) = builder.get_snap_ref(ctx, member_path) {
-                        return Ok(VarUsage { var_id: var_usage.var_id, location });
-                    }
+            LoweredExpr::MemberSnapshot { member_path, location } => {
+                if let Some(var_usage) = builder.get_snap_ref(ctx, &member_path) {
+                    return Ok(VarUsage { var_id: var_usage.var_id, location });
                 }
 
-                let input = expr.clone().as_var_usage(ctx, builder)?;
+                let input = builder.get_ref(ctx, &member_path).unwrap();
                 let (original, snapshot) =
                     generators::Snapshot { input, location }.add(ctx, &mut builder.statements);
-                if let LoweredExpr::Member(member_path, _location) = &*expr {
-                    // `update_ref` invalidates snapshots so it must be called before `update_snap_ref`.
-                    builder.update_ref(ctx, member_path, original);
-                    builder.update_snap_ref(member_path, snapshot);
+                // `update_ref` invalidates snapshots so it must be called before `update_snap_ref`.
+                builder.update_ref(ctx, &member_path, original);
+                builder.update_snap_ref(&member_path, snapshot);
+
+                Ok(VarUsage { var_id: snapshot, location })
+            }
+            LoweredExpr::ExprSnapshot { expr, location } => {
+                if let LoweredExpr::Member(_, _) = &*expr {
+                    panic!("ExprSnapshot should not be used with a member path");
                 }
 
+                let input = expr.as_var_usage(ctx, builder)?;
+                let (_original, snapshot) =
+                    generators::Snapshot { input, location }.add(ctx, &mut builder.statements);
                 Ok(VarUsage { var_id: snapshot, location })
             }
             LoweredExpr::FixedSizeArray { exprs, location, ty } => {
@@ -312,7 +324,10 @@ impl LoweredExpr {
             )
             .intern(ctx.db),
             LoweredExpr::Member(member_path, _) => member_path.ty(),
-            LoweredExpr::Snapshot { expr, .. } => wrap_in_snapshots(ctx.db, expr.ty(ctx), 1),
+            LoweredExpr::MemberSnapshot { member_path, .. } => {
+                wrap_in_snapshots(ctx.db, member_path.ty(), 1)
+            }
+            LoweredExpr::ExprSnapshot { expr, .. } => wrap_in_snapshots(ctx.db, expr.ty(ctx), 1),
             LoweredExpr::FixedSizeArray { ty, .. } => *ty,
         }
     }
@@ -322,7 +337,8 @@ impl LoweredExpr {
             | LoweredExpr::Tuple { location, .. }
             | LoweredExpr::ExternEnum(LoweredExprExternEnum { location, .. })
             | LoweredExpr::Member(_, location)
-            | LoweredExpr::Snapshot { location, .. } => *location,
+            | LoweredExpr::MemberSnapshot { location, .. }
+            | LoweredExpr::ExprSnapshot { location, .. } => *location,
             LoweredExpr::FixedSizeArray { location, .. } => *location,
         }
     }
