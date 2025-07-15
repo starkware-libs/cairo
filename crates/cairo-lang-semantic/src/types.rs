@@ -927,6 +927,16 @@ fn solve_concrete_trait_no_constraints(
     }
 }
 
+/// Query implementation of [crate::db::SemanticGroup::copyable].
+pub fn copyable(db: &dyn SemanticGroup, ty: TypeId) -> Result<ImplId, InferenceError> {
+    solve_concrete_trait_no_constraints(db, Default::default(), concrete_copy_trait(db, ty))
+}
+
+/// Query implementation of [crate::db::SemanticGroup::droppable].
+pub fn droppable(db: &dyn SemanticGroup, ty: TypeId) -> Result<ImplId, InferenceError> {
+    solve_concrete_trait_no_constraints(db, Default::default(), concrete_drop_trait(db, ty))
+}
+
 pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
     match ty.lookup_intern(db) {
         TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
