@@ -31,6 +31,7 @@ use crate::ids::{
     SpecializedFunction,
 };
 use crate::specialization::SpecializationArg;
+use crate::utils::InliningStrategy;
 use crate::{
     Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
     Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
@@ -570,10 +571,18 @@ impl<'a> ConstFoldingContext<'a> {
         if call_stmt.with_coupon {
             return None;
         }
+        // No specialization when avoiding inlining.
+        if matches!(self.db.optimization_config().inlining_strategy, InliningStrategy::Avoid) {
+            return None;
+        }
 
         let Ok(Some(mut base)) = call_stmt.function.body(self.db) else {
             return None;
         };
+
+        if self.db.priv_never_inline(base).ok()? {
+            return None;
+        }
 
         if call_stmt
             .inputs
