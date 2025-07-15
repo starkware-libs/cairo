@@ -363,19 +363,20 @@ pub fn get_dummy_program_for_size_estimation(
         UnorderedHashSet::<ConcreteFunctionWithBodyId>::from_iter([function_id]);
 
     let mut functions = vec![function.clone()];
-    let mut statements = function.body.clone();
 
     for statement in &function.body {
         if let Some(function_id) = try_get_function_with_body_id(db, statement) {
-            if !processed_function_ids.insert(function_id) {
-                continue;
+            if processed_function_ids.insert(function_id) {
+                functions.push(db.priv_get_dummy_function(function_id)?);
             }
-
-            let callee: Arc<pre_sierra::Function> = db.priv_get_dummy_function(function_id)?;
-            statements.extend(callee.body.iter().cloned());
-            functions.push(callee.clone());
         }
     }
+    // Since we are not interested in the locations, we can remove them from the statements.
+    let statements = functions
+        .iter()
+        .flat_map(|f| f.body.iter())
+        .map(|s| s.statement.clone().into_statement_without_location())
+        .collect();
 
     let (program, _statements_locations) = assemble_program(db, functions, statements);
 
