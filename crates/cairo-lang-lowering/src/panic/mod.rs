@@ -17,7 +17,8 @@ use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
 use crate::blocks::BlocksBuilder;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::{
-    ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, SemanticFunctionIdEx, Signature,
+    ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, LocationId, SemanticFunctionIdEx,
+    Signature,
 };
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
@@ -262,8 +263,8 @@ impl<'a> PanicBlockLoweringContext<'a> {
         self.ctx.db()
     }
 
-    fn new_var(&mut self, req: VarRequest) -> VariableId {
-        self.ctx.variables.new_var(req)
+    fn new_var(&mut self, ty: TypeId, location: LocationId) -> VariableId {
+        self.ctx.variables.new_var(VarRequest { ty, location })
     }
 
     /// Handles a statement. If needed, returns the continuation block and the block end for this
@@ -293,12 +294,11 @@ impl<'a> PanicBlockLoweringContext<'a> {
         let location = call.location.with_auto_generation_note(self.db(), "Panic handling");
 
         // Get callee info.
-        let callee_signature = call.function.signature(self.ctx.variables.db)?;
-        let callee_info = PanicSignatureInfo::new(self.ctx.variables.db, &callee_signature);
+        let callee_signature = call.function.signature(self.db())?;
+        let callee_info = PanicSignatureInfo::new(self.db(), &callee_signature);
         if callee_info.always_panic {
             // The panic value, which is actually of type (Panics, Array<felt252>).
-            let panic_result_var =
-                self.new_var(VarRequest { ty: callee_info.actual_return_ty, location });
+            let panic_result_var = self.new_var(callee_info.actual_return_ty, location);
             // Emit the new statement.
             self.statements.push(Statement::Call(StatementCall {
                 function: call.function,
@@ -312,19 +312,18 @@ impl<'a> PanicBlockLoweringContext<'a> {
 
         // Allocate 2 new variables.
         // panic_result_var - for the new return variable, with is actually of type PanicResult<ty>.
-        let panic_result_var =
-            self.new_var(VarRequest { ty: callee_info.actual_return_ty, location });
+        let panic_result_var = self.new_var(callee_info.actual_return_ty, location);
         let n_callee_implicits = original_outputs.len() - callee_info.ok_ret_tys.len();
         let mut call_outputs = original_outputs.drain(..n_callee_implicits).collect_vec();
         call_outputs.push(panic_result_var);
         // inner_ok_value - for the Ok() match arm input.
-        let inner_ok_value = self.new_var(VarRequest { ty: callee_info.ok_ty, location });
+        let inner_ok_value = self.new_var(callee_info.ok_ty, location);
         // inner_ok_values - for the destructure.
         let inner_ok_values = callee_info
             .ok_ret_tys
             .iter()
             .copied()
-            .map(|ty| self.new_var(VarRequest { ty, location }))
+            .map(|ty| self.new_var(ty, location))
             .collect_vec();
 
         // Emit the new statement.
@@ -361,7 +360,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
         });
 
         // Prepare Err() match arm block.
-        let err_var = self.new_var(VarRequest { ty: self.ctx.panic_info.err_variant.ty, location });
+        let err_var = self.new_var(self.ctx.panic_info.err_variant.ty, location);
         let block_err = self.ctx.enqueue_block(Block {
             statements: vec![],
             end: BlockEnd::Panic(VarUsage { var_id: err_var, location }),
@@ -400,7 +399,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 let output = if self.ctx.panic_info.always_panic {
                     err_data.var_id
                 } else {
-                    let output = self.new_var(VarRequest { ty, location });
+                    let output = self.new_var(ty, location);
                     self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
                         variant: self.ctx.panic_info.err_variant,
                         input: err_data,
@@ -412,8 +411,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
             }
             BlockEnd::Return(returns, location) => {
                 // Tuple construction.
-                let tupled_res =
-                    self.new_var(VarRequest { ty: self.ctx.panic_info.ok_ty, location });
+                let tupled_res = self.new_var(self.ctx.panic_info.ok_ty, location);
                 self.statements.push(Statement::StructConstruct(StatementStructConstruct {
                     inputs: returns,
                     output: tupled_res,
@@ -421,7 +419,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
 
                 // Wrap with PanicResult::Ok.
                 let ty = self.ctx.panic_info.actual_return_ty;
-                let output = self.new_var(VarRequest { ty, location });
+                let output = self.new_var(ty, location);
                 self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
                     variant: self.ctx.panic_info.ok_variant,
                     input: VarUsage { var_id: tupled_res, location },
