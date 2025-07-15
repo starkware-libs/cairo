@@ -938,7 +938,11 @@ impl GenericParamId {
             SyntaxKind::GenericParamImplAnonymous | SyntaxKind::GenericParamNegativeImpl
         ) {
             // For anonymous impls print the declaration.
-            return self.stable_location(db).syntax_node(db).get_text_without_trivia(db);
+            return self
+                .stable_location(db)
+                .syntax_node(db)
+                .get_text_without_trivia(db)
+                .to_string();
         }
 
         let name_green = TerminalIdentifierGreen(key_fields[0]);
