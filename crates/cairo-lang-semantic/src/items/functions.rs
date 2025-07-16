@@ -936,9 +936,9 @@ pub struct FunctionDeclarationData {
 pub enum InlineConfiguration {
     /// The user did not specify any inlining preferences.
     None,
-    Always(Attribute),
-    Should(Attribute),
-    Never(Attribute),
+    Always(ast::AttributePtr),
+    Should(ast::AttributePtr),
+    Never(ast::AttributePtr),
 }
 
 /// If a function with impl generic parameters is marked as '#[inline(always)]', raise a diagnostic.
@@ -949,9 +949,9 @@ pub fn forbid_inline_always_with_impl_generic_param(
 ) {
     let has_impl_generic_param = generic_params.iter().any(|p| matches!(p, GenericParam::Impl(_)));
     match &inline_config {
-        InlineConfiguration::Always(attr) if has_impl_generic_param => {
+        InlineConfiguration::Always(stable_ptr) if has_impl_generic_param => {
             diagnostics.report(
-                attr.stable_ptr.untyped(),
+                stable_ptr.untyped(),
                 SemanticDiagnosticKind::InlineAlwaysWithImplGenericArgNotAllowed,
             );
         }
