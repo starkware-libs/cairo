@@ -906,7 +906,7 @@ fn lower_expr(
         semantic::Expr::Var(expr) => {
             let member_path = ExprVarMemberPath::Var(expr.clone());
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
-            Ok(LoweredExpr::Member(member_path, ctx.get_location(expr.stable_ptr.untyped())))
+            Ok(LoweredExpr::MemberPath(member_path, ctx.get_location(expr.stable_ptr.untyped())))
         }
         semantic::Expr::Literal(expr) => lower_expr_literal(ctx, expr, builder),
         semantic::Expr::StringLiteral(expr) => lower_expr_string_literal(ctx, expr, builder),
@@ -1718,7 +1718,7 @@ fn lower_expr_member_access(
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a member-access expression: {:?}", expr.debug(&ctx.expr_formatter));
     if let Some(member_path) = &expr.member_path {
-        return Ok(LoweredExpr::Member(
+        return Ok(LoweredExpr::MemberPath(
             member_path.clone(),
             ctx.get_location(expr.stable_ptr.untyped()),
         ));
@@ -1768,7 +1768,7 @@ fn lower_expr_struct_ctor(
     if members.len() != member_expr_usages.len() {
         // Semantic model should have made sure base struct exist if some members are missing.
         let base_struct = lower_expr(ctx, builder, expr.base_struct.unwrap())?;
-        if let LoweredExpr::Member(path, location) = base_struct {
+        if let LoweredExpr::MemberPath(path, location) = base_struct {
             for (_, member) in members.iter() {
                 let Entry::Vacant(entry) = member_expr_usages.entry(member.id) else {
                     continue;
@@ -1780,9 +1780,9 @@ fn lower_expr_struct_ctor(
                     concrete_struct_id: expr.concrete_struct_id,
                     ty: member.ty,
                 };
-                entry.insert(Ok(
-                    LoweredExpr::Member(member_path, location).as_var_usage(ctx, builder)?
-                ));
+                entry
+                    .insert(Ok(LoweredExpr::MemberPath(member_path, location)
+                        .as_var_usage(ctx, builder)?));
             }
         } else {
             for (base_member, (_, member)) in izip!(
