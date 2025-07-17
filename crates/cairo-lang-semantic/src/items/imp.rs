@@ -1,4 +1,5 @@
 use std::collections::BTreeSet;
+use std::fmt::Write;
 use std::hash::Hash;
 use std::sync::Arc;
 use std::{mem, panic, vec};
@@ -13,7 +14,7 @@ use cairo_lang_defs::ids::{
     UseId,
 };
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption, skip_diagnostic,
+    DiagnosticAdded, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, skip_diagnostic,
 };
 use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -66,6 +67,7 @@ use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
+use crate::expr::fmt::CountingWriter;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
@@ -113,8 +115,9 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteImplLongId {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
+        let mut f = CountingWriter::new(f);
         write!(f, "{}", self.impl_def_id.full_path(db))?;
-        fmt_generic_args(&self.generic_args, f, db)
+        fmt_generic_args(&self.generic_args, &mut f, db)
     }
 }
 impl ConcreteImplId {
@@ -1419,7 +1422,7 @@ fn check_special_impls(
         let tys = get_inner_types(db, extract_matches!(generic_args[0], GenericArgumentId::Type))?;
         for inference_error in tys
             .into_iter()
-            .filter_map(|ty| db.type_info(lookup_context.clone(), ty).to_option())
+            .map(|ty| db.type_info(lookup_context.clone(), ty))
             .flat_map(|info| info.copyable.err())
         {
             if matches!(
@@ -1436,7 +1439,7 @@ fn check_special_impls(
         let tys = get_inner_types(db, extract_matches!(generic_args[0], GenericArgumentId::Type))?;
         for inference_error in tys
             .into_iter()
-            .filter_map(|ty| db.type_info(lookup_context.clone(), ty).to_option())
+            .map(|ty| db.type_info(lookup_context.clone(), ty))
             .flat_map(|info| info.droppable.err())
         {
             if matches!(

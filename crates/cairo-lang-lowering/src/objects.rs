@@ -10,6 +10,9 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{DiagnosticNote, Diagnostics};
 use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::corelib::{concrete_destruct_trait, concrete_panic_destruct_trait};
+use cairo_lang_semantic::expr::inference::InferenceError;
+use cairo_lang_semantic::expr::inference::solver::Ambiguity;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::types::TypeInfo;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
@@ -20,9 +23,7 @@ use id_arena::{Arena, Id};
 pub mod blocks;
 pub use blocks::BlockId;
 use semantic::MatchArmSelector;
-use semantic::expr::inference::InferenceError;
 use semantic::items::constant::ConstValue;
-use semantic::items::imp::ImplId;
 
 use self::blocks::Blocks;
 use crate::db::LoweringGroup;
@@ -205,18 +206,12 @@ pub enum BlockEnd {
 /// Lowered variable representation.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Variable {
-    /// Can the type be (trivially) dropped.
-    pub droppable: Result<ImplId, InferenceError>,
-    /// Can the type be (trivially) copied.
-    pub copyable: Result<ImplId, InferenceError>,
-    /// A Destruct impl for the type, if found.
-    pub destruct_impl: Result<ImplId, InferenceError>,
-    /// A PanicDestruct impl for the type, if found.
-    pub panic_destruct_impl: Result<ImplId, InferenceError>,
     /// Semantic type of the variable.
     pub ty: semantic::TypeId,
     /// Location of the variable.
     pub location: LocationId,
+    /// The semantic type info of the variable.
+    pub info: TypeInfo,
 }
 impl Variable {
     pub fn new(
@@ -225,17 +220,29 @@ impl Variable {
         ty: semantic::TypeId,
         location: LocationId,
     ) -> Self {
-        let TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl } =
-            match db.type_info(ctx, ty) {
-                Ok(info) => info,
-                Err(diag_added) => TypeInfo {
-                    droppable: Err(InferenceError::Reported(diag_added)),
-                    copyable: Err(InferenceError::Reported(diag_added)),
-                    destruct_impl: Err(InferenceError::Reported(diag_added)),
-                    panic_destruct_impl: Err(InferenceError::Reported(diag_added)),
-                },
-            };
-        Self { copyable, droppable, destruct_impl, panic_destruct_impl, ty, location }
+        Self { ty, location, info: db.type_info(ctx, ty) }
+    }
+
+    /// Returns a new variable with the type, with info calculated with the default context.
+    pub fn with_default_context(
+        db: &dyn LoweringGroup,
+        ty: semantic::TypeId,
+        location: LocationId,
+    ) -> Self {
+        Self {
+            ty,
+            location,
+            info: TypeInfo {
+                copyable: db.copyable(ty),
+                droppable: db.droppable(ty),
+                destruct_impl: Err(InferenceError::Ambiguity(Ambiguity::WillNotInfer(
+                    concrete_destruct_trait(db, ty),
+                ))),
+                panic_destruct_impl: Err(InferenceError::Ambiguity(Ambiguity::WillNotInfer(
+                    concrete_panic_destruct_trait(db, ty),
+                ))),
+            },
+        }
     }
 }
 

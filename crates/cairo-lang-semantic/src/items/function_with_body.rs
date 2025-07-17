@@ -273,17 +273,17 @@ pub fn get_inline_config(
                     variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
             ] if &path.as_syntax_node().get_text(db) == "always" => {
-                config = InlineConfiguration::Always(attr.clone());
+                config = InlineConfiguration::Always(attr.stable_ptr);
             }
             [
                 AttributeArg {
                     variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
             ] if &path.as_syntax_node().get_text(db) == "never" => {
-                config = InlineConfiguration::Never(attr.clone());
+                config = InlineConfiguration::Never(attr.stable_ptr);
             }
             [] => {
-                config = InlineConfiguration::Should(attr.clone());
+                config = InlineConfiguration::Should(attr.stable_ptr);
             }
             _ => {
                 diagnostics.report(

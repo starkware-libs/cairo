@@ -1,5 +1,6 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::substitution::GenericSubstitution;
+use cairo_lang_semantic::types::TypeInfo;
 use cairo_lang_utils::{Intern, LookupIntern};
 
 use crate::db::LoweringGroup;
@@ -40,9 +41,8 @@ pub fn concretize_lowered(
     // Substitute all types.
     for (_, var) in lowered.variables.iter_mut() {
         var.ty = substitution.substitute(db, var.ty)?;
-
-        for impl_id in [&mut var.destruct_impl, &mut var.panic_destruct_impl].into_iter().flatten()
-        {
+        let TypeInfo { destruct_impl, panic_destruct_impl, .. } = &mut var.info;
+        for impl_id in [destruct_impl, panic_destruct_impl].into_iter().flatten() {
             *impl_id = substitution.substitute(db, *impl_id)?;
         }
     }

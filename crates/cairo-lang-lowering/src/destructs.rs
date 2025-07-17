@@ -9,7 +9,7 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteFunction;
 use cairo_lang_semantic::corelib::{core_array_felt252_ty, core_module, get_ty_by_name, unit_ty};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use cairo_lang_semantic::items::imp::{ImplId, ImplLookupContext};
+use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{TypeId, TypeLongId};
@@ -18,11 +18,14 @@ use crate::borrow_check::Demand;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::demand::{AuxCombine, DemandReporter};
 use crate::db::LoweringGroup;
-use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
+use crate::ids::{
+    ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, GeneratedFunction,
+    SemanticFunctionIdEx,
+};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockEnd, BlockId, Lowered, MatchInfo, Statement, StatementCall, StatementStructConstruct,
-    StatementStructDestructure, VarRemapping, VarUsage, Variable, VariableId,
+    StatementStructDestructure, VarRemapping, VarUsage, VariableId,
 };
 
 pub type DestructAdderDemand = Demand<VariableId, (), PanicState>;
@@ -132,11 +135,11 @@ impl DemandReporter<VariableId, PanicState> for DestructAdder<'_> {
         // Note that droppable here means droppable before monomorphization.
         // I.e. it is possible that T was substituted with a unit type, but T was not droppable
         // and therefore the unit type var is not droppable here.
-        if var.droppable.is_ok() {
+        if var.info.droppable.is_ok() {
             return;
         };
         // If a non droppable variable gets out of scope, add a destruct call for it.
-        if let Ok(impl_id) = var.destruct_impl.clone() {
+        if let Ok(impl_id) = var.info.destruct_impl.clone() {
             self.destructions.push(DestructionEntry::Plain(PlainDestructionEntry {
                 position,
                 var_id,
@@ -145,7 +148,7 @@ impl DemandReporter<VariableId, PanicState> for DestructAdder<'_> {
             return;
         }
         // If a non destructible variable gets out of scope, add a panic_destruct call for it.
-        if let Ok(impl_id) = var.panic_destruct_impl.clone() {
+        if let Ok(impl_id) = var.info.panic_destruct_impl.clone() {
             if let PanicState::EndsWithPanic(panic_locations) = panic_state {
                 for panic_location in panic_locations {
                     self.destructions.push(DestructionEntry::Panic(PanicDeconstructionEntry {
@@ -538,8 +541,25 @@ pub fn add_destructs(
 
     lowered.variables = variables.variables;
 
+    match function_id.lookup_intern(db) {
+        // If specialized, destructors are already correct.
+        ConcreteFunctionWithBodyLongId::Specialized(_) => return,
+        ConcreteFunctionWithBodyLongId::Semantic(id)
+        | ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent: id, .. }) => {
+            // If there is no substitution, destructors are already correct.
+            if id.substitution(db).map(|s| s.is_empty()).unwrap_or_default() {
+                return;
+            }
+        }
+    }
+
     for (_, var) in lowered.variables.iter_mut() {
         // After adding destructors, we can infer the concrete `Copyable` and `Droppable` impls.
-        *var = Variable::new(db, ImplLookupContext::default(), var.ty, var.location);
+        if var.info.copyable.is_err() {
+            var.info.copyable = db.copyable(var.ty);
+        }
+        if var.info.droppable.is_err() {
+            var.info.droppable = db.droppable(var.ty);
+        }
     }
 }

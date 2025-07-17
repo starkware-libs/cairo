@@ -177,7 +177,7 @@ impl<'a> CancelOpsContext<'a> {
                 }
 
                 if !(can_remove_struct_destructure
-                    || self.lowered.variables[stmt.input.var_id].copyable.is_ok())
+                    || self.lowered.variables[stmt.input.var_id].info.copyable.is_ok())
                 {
                     // We can't remove any of the construct statements.
                     self.stmts_to_remove.truncate(self.stmts_to_remove.len() - constructs.len());
@@ -213,7 +213,7 @@ impl<'a> CancelOpsContext<'a> {
                     || stmt
                         .inputs
                         .iter()
-                        .all(|input| self.lowered.variables[input.var_id].copyable.is_ok()))
+                        .all(|input| self.lowered.variables[input.var_id].info.copyable.is_ok()))
                 {
                     // We can't remove any of the destructure statements.
                     self.stmts_to_remove.truncate(self.stmts_to_remove.len() - destructures.len());
@@ -259,7 +259,7 @@ impl<'a> CancelOpsContext<'a> {
                     self.rename_var(stmt.original(), stmt.input.var_id);
                     stmt.input.var_id
                 } else if desnaps.is_empty()
-                    && self.lowered.variables[stmt.input.var_id].copyable.is_err()
+                    && self.lowered.variables[stmt.input.var_id].info.copyable.is_err()
                 {
                     stmt.original()
                 } else {

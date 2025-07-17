@@ -132,7 +132,11 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
             }
 
             self.statement_to_move.push((statement_location, Some(target_location)))
-        } else if stmt.inputs().iter().all(|v| self.lowered.variables[v.var_id].droppable.is_ok()) {
+        } else if stmt
+            .inputs()
+            .iter()
+            .all(|v| self.lowered.variables[v.var_id].info.droppable.is_ok())
+        {
             // If a movable statement is unused, and all its inputs are droppable removing it is
             // valid.
             self.statement_to_move.push((statement_location, None))

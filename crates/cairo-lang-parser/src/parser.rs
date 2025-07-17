@@ -225,10 +225,10 @@ impl<'a> Parser<'a> {
         db: &'a dyn SyntaxGroup,
         diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
         file_id: FileId,
-        token_stream: &'a dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
+        content: &str,
+        offset: Option<TextOffset>,
     ) -> Expr {
-        let (content, offset) = primitive_token_stream_content_and_offset(token_stream);
-        let mut parser = Parser::new(db, file_id, &content, diagnostics);
+        let mut parser = Parser::new(db, file_id, content, diagnostics);
         let green = parser.parse_expr();
         if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
             parser.diagnostics.add(ParserDiagnostic {

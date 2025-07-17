@@ -176,10 +176,10 @@ pub fn priv_extern_function_declaration_data(
 
     match &inline_config {
         InlineConfiguration::None => {}
-        InlineConfiguration::Always(attr)
-        | InlineConfiguration::Never(attr)
-        | InlineConfiguration::Should(attr) => {
-            diagnostics.report(attr.stable_ptr.untyped(), InlineAttrForExternFunctionNotAllowed);
+        InlineConfiguration::Always(stable_ptr)
+        | InlineConfiguration::Never(stable_ptr)
+        | InlineConfiguration::Should(stable_ptr) => {
+            diagnostics.report(stable_ptr.untyped(), InlineAttrForExternFunctionNotAllowed);
         }
     }
 

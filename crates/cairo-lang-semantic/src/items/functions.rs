@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
@@ -31,6 +32,7 @@ use crate::corelib::{fn_traits, unit_ty};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
+use crate::expr::fmt::CountingWriter;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::GenericSubstitution;
 use crate::types::resolve_type;
@@ -589,6 +591,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunctionWithBody {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
+        let f = &mut CountingWriter::new(f);
         write!(f, "{}", self.generic_function.full_path(db))?;
         fmt_generic_args(&self.generic_args, f, db)
     }
@@ -688,6 +691,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
+        let f = &mut CountingWriter::new(f);
         write!(f, "{}", self.generic_function.format(db))?;
         fmt_generic_args(&self.generic_args, f, db)
     }
@@ -932,9 +936,9 @@ pub struct FunctionDeclarationData {
 pub enum InlineConfiguration {
     /// The user did not specify any inlining preferences.
     None,
-    Always(Attribute),
-    Should(Attribute),
-    Never(Attribute),
+    Always(ast::AttributePtr),
+    Should(ast::AttributePtr),
+    Never(ast::AttributePtr),
 }
 
 /// If a function with impl generic parameters is marked as '#[inline(always)]', raise a diagnostic.
@@ -945,9 +949,9 @@ pub fn forbid_inline_always_with_impl_generic_param(
 ) {
     let has_impl_generic_param = generic_params.iter().any(|p| matches!(p, GenericParam::Impl(_)));
     match &inline_config {
-        InlineConfiguration::Always(attr) if has_impl_generic_param => {
+        InlineConfiguration::Always(stable_ptr) if has_impl_generic_param => {
             diagnostics.report(
-                attr.stable_ptr.untyped(),
+                stable_ptr.untyped(),
                 SemanticDiagnosticKind::InlineAlwaysWithImplGenericArgNotAllowed,
             );
         }

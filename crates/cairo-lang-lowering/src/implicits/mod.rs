@@ -6,21 +6,20 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{LookupIntern, Upcast};
+use id_arena::Arena;
 use itertools::{Itertools, chain, zip_eq};
 use semantic::TypeId;
 
 use crate::blocks::Blocks;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, LocationId};
-use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockEnd, BlockId, DependencyType, Lowered, LoweringStage, MatchArm, MatchInfo, Statement,
-    VarUsage,
+    VarUsage, Variable,
 };
 
 struct Context<'a> {
     db: &'a dyn LoweringGroup,
-    variables: &'a mut VariableAllocator<'a>,
     lowered: &'a mut Lowered,
     implicit_index: UnorderedHashMap<TypeId, usize>,
     implicits_tys: Vec<TypeId>,
@@ -54,19 +53,11 @@ pub fn inner_lower_implicits(
     lowered.blocks.has_root()?;
     let root_block_id = BlockId::root();
 
-    let mut variables = VariableAllocator::new(
-        db,
-        function_id.base_semantic_function(db).function_with_body_id(db),
-        std::mem::take(&mut lowered.variables.clone()),
-    )
-    .unwrap();
-
     let implicits_tys = db.function_with_body_implicits(function_id)?;
 
     let implicit_index = implicits_tys.iter().enumerate().map(|(i, ty)| (*ty, i)).collect();
     let mut ctx = Context {
         db,
-        variables: &mut variables,
         lowered,
         implicit_index,
         implicits_tys,
@@ -82,22 +73,24 @@ pub fn inner_lower_implicits(
     let implicit_vars = &ctx.implicit_vars_for_block[&root_block_id];
     ctx.lowered.parameters.splice(0..0, implicit_vars.iter().map(|var_usage| var_usage.var_id));
 
-    lowered.variables = std::mem::take(&mut ctx.variables.variables);
-
     Ok(())
 }
 
 /// Allocates and returns new variables with usage location for each of the current function's
 /// implicits.
 fn alloc_implicits(
-    ctx: &mut VariableAllocator<'_>,
+    db: &dyn LoweringGroup,
+    variables: &mut Arena<Variable>,
     implicits_tys: &[TypeId],
     location: LocationId,
 ) -> Vec<VarUsage> {
     implicits_tys
         .iter()
         .copied()
-        .map(|ty| VarUsage { var_id: ctx.new_var(VarRequest { ty, location }), location })
+        .map(|ty| VarUsage {
+            var_id: variables.alloc(Variable::with_default_context(db, ty, location)),
+            location,
+        })
         .collect_vec()
 }
 
@@ -111,7 +104,8 @@ fn block_body_implicits(
         .entry(block_id)
         .or_insert_with(|| {
             alloc_implicits(
-                ctx.variables,
+                ctx.db,
+                &mut ctx.lowered.variables,
                 &ctx.implicits_tys,
                 ctx.location.with_auto_generation_note(ctx.db, "implicits"),
             )
@@ -139,10 +133,15 @@ fn block_body_implicits(
             let implicit_output_vars = callee_implicits
                 .iter()
                 .copied()
-                .map(|ty| ctx.variables.new_var(VarRequest { ty, location }))
+                .map(|ty| {
+                    ctx.lowered
+                        .variables
+                        .alloc(Variable::with_default_context(ctx.db, ty, location))
+                })
                 .collect_vec();
             for (i, var) in zip_eq(indices, implicit_output_vars.iter()) {
-                implicits[i] = VarUsage { var_id: *var, location: ctx.variables[*var].location };
+                implicits[i] =
+                    VarUsage { var_id: *var, location: ctx.lowered.variables[*var].location };
             }
             stmt.outputs.splice(0..0, implicit_output_vars);
         }
@@ -174,7 +173,12 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
                     .implicit_vars_for_block
                     .entry(*block_id)
                     .or_insert_with(|| {
-                        alloc_implicits(ctx.variables, &ctx.implicits_tys, ctx.location)
+                        alloc_implicits(
+                            ctx.db,
+                            &mut ctx.lowered.variables,
+                            &ctx.implicits_tys,
+                            ctx.location,
+                        )
                     })
                     .clone();
                 let old_remapping = std::mem::take(&mut remapping.remapping);
@@ -216,7 +220,10 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
                             let mut arm_implicits = implicits.clone();
                             let mut implicit_input_vars = vec![];
                             for ty in callee_implicits.iter().copied() {
-                                let var = ctx.variables.new_var(VarRequest { ty, location });
+                                let var = ctx
+                                    .lowered
+                                    .variables
+                                    .alloc(Variable::with_default_context(ctx.db, ty, location));
                                 implicit_input_vars.push(var);
                                 let implicit_index = ctx.implicit_index[&ty];
                                 arm_implicits[implicit_index] = VarUsage { var_id: var, location };
