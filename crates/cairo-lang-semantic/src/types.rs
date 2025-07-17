@@ -35,6 +35,7 @@ use crate::expr::inference::solver::{SolutionSet, enrich_lookup_context};
 use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
+use crate::items::enm::SemanticEnumEx;
 use crate::items::generics::fmt_generic_args;
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolutionContext, ResolvedConcreteItem, Resolver};
@@ -821,15 +822,15 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInfor
             ConcreteTypeId::Struct(id) => {
                 if check_all_type_are_zero_sized(
                     db,
-                    db.struct_members(id.struct_id(db))?.iter().map(|(_, member)| &member.ty),
+                    db.concrete_struct_members(id)?.iter().map(|(_, member)| &member.ty),
                 )? {
                     return Ok(TypeSizeInformation::ZeroSized);
                 }
             }
             ConcreteTypeId::Enum(id) => {
-                for (_, variant) in db.enum_variants(id.enum_id(db))? {
+                for variant in &db.concrete_enum_variants(id)? {
                     // Recursive calling in order to find infinite sized types.
-                    db.type_size_info(db.variant_semantic(id.enum_id(db), variant)?.ty)?;
+                    db.type_size_info(variant.ty)?;
                 }
             }
             ConcreteTypeId::Extern(_) => {}
