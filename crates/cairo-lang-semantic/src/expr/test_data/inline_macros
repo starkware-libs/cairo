@@ -1640,3 +1640,36 @@ error: `$` is not supported in this context.
  --> lib.cairo:4:5
     $callsite::other::path();
     ^
+
+//! > ==========================================================================
+
+//! > Test usage of super in macro scope.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    super_path!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro super_path {
+    () => {
+        super::some::path();
+    };
+}
+
+//! > expected_diagnostics
+warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
+ --> lib.cairo[super_path]:1:9
+        super::some::path();
+        ^^^^^
+
+error: 'super' cannot be used for the crate's root module.
+ --> lib.cairo[super_path]:1:9
+        super::some::path();
+        ^^^^^
