@@ -13,7 +13,10 @@ pub extern fn blake2s_compress(
 ) -> Blake2sState nopanic;
 
 
-/// Similar to `blake2s_compress`, but used for the final block of the message.
+/// Similar to `blake2s_compress`, but specifically intended for processing the final block of the message.
+///
+/// The input `msg` must be padded with zeros so that its length is a multiple of 16 elements (64 bytes).
+/// Using any padding scheme other than zero-padding will result in a different output.
 pub extern fn blake2s_finalize(
     state: Blake2sState, byte_count: u32, msg: Blake2sInput,
 ) -> Blake2sState nopanic;
