@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe, PluginFileDiagnosticNotes, ToMaybe};
 use cairo_lang_filesystem::ids::{
-    CrateId, CrateLongId, Directory, FileId, FileKind, FileLongId, VirtualFile,
+    CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, VirtualFile,
 };
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
@@ -107,7 +107,7 @@ pub trait DefsGroup: ParserGroup {
     #[salsa::input]
     fn macro_plugin_overrides_input(
         &self,
-    ) -> Arc<OrderedHashMap<CrateLongId, Arc<[MacroPluginLongId]>>>;
+    ) -> Arc<OrderedHashMap<CrateInput, Arc<[MacroPluginLongId]>>>;
 
     /// Interned version of `macro_plugin_overrides_input`.
     fn macro_plugin_overrides(&self) -> Arc<OrderedHashMap<CrateId, Arc<[MacroPluginId]>>>;
@@ -132,7 +132,7 @@ pub trait DefsGroup: ParserGroup {
     #[salsa::input]
     fn inline_macro_plugin_overrides_input(
         &self,
-    ) -> Arc<OrderedHashMap<CrateLongId, Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>>>;
+    ) -> Arc<OrderedHashMap<CrateInput, Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>>>;
 
     /// Interned version of `inline_macro_plugin_overrides_input`.
     fn inline_macro_plugin_overrides(
@@ -366,7 +366,7 @@ pub fn macro_plugin_overrides(
         inp.iter()
             .map(|(crate_id, plugins)| {
                 (
-                    crate_id.clone().intern(db),
+                    crate_id.clone().into_crate_long_id(db).intern(db),
                     Arc::from(plugins.iter().map(|plugin| plugin.clone().intern(db)).collect_vec()),
                 )
             })
@@ -382,7 +382,7 @@ pub fn inline_macro_plugin_overrides(
         inp.iter()
             .map(|(crate_id, plugins)| {
                 (
-                    crate_id.clone().intern(db),
+                    crate_id.clone().into_crate_long_id(db).intern(db),
                     Arc::new(
                         plugins
                             .iter()
@@ -1470,11 +1470,11 @@ pub trait DefsGroupEx: DefsGroup {
         crate_id: CrateId,
         plugins: Arc<[MacroPluginId]>,
     ) {
-        let crate_long_id = crate_id.lookup_intern(self);
+        let crate_input = self.crate_input(crate_id);
         let mut overrides = self.macro_plugin_overrides_input().as_ref().clone();
         let plugins =
             plugins.iter().map(|plugin| self.lookup_intern_macro_plugin(*plugin)).collect();
-        overrides.insert(crate_long_id, plugins);
+        overrides.insert(crate_input, plugins);
         self.set_macro_plugin_overrides_input(Arc::new(overrides));
     }
 
@@ -1486,7 +1486,7 @@ pub trait DefsGroupEx: DefsGroup {
         crate_id: CrateId,
         plugins: Arc<OrderedHashMap<String, InlineMacroExprPluginId>>,
     ) {
-        let crate_id = crate_id.lookup_intern(self);
+        let crate_input = self.crate_input(crate_id);
         let mut overrides = self.inline_macro_plugin_overrides_input().as_ref().clone();
         let plugins = Arc::new(
             plugins
@@ -1496,7 +1496,7 @@ pub trait DefsGroupEx: DefsGroup {
                 })
                 .collect(),
         );
-        overrides.insert(crate_id, plugins);
+        overrides.insert(crate_input, plugins);
         self.set_inline_macro_plugin_overrides_input(Arc::new(overrides));
     }
 }
