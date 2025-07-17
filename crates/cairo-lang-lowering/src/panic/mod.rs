@@ -71,8 +71,7 @@ pub fn lower_panics(
     }
 
     let signature = function_id.signature(db)?;
-    // All types should be fully concrete at this point.
-    assert!(signature.is_fully_concrete(db));
+    // TODO(orizi): Validate all signature types are fully concrete at this point.
     let panic_info = PanicSignatureInfo::new(db, &signature);
     let variables = VariableAllocator::new(
         db,

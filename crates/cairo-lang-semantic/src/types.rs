@@ -952,7 +952,8 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
             type_id.is_fully_concrete(db) && size.is_fully_concrete(db)
         }
         TypeLongId::Closure(closure) => {
-            closure.param_tys.iter().all(|param| param.is_fully_concrete(db))
+            closure.parent_function.map(|id| id.is_fully_concrete(db)).unwrap_or(true)
+                && closure.param_tys.iter().all(|param| param.is_fully_concrete(db))
                 && closure.ret_ty.is_fully_concrete(db)
         }
     }
