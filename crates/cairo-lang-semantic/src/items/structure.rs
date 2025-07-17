@@ -4,12 +4,12 @@ use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MemberId, MemberLongId, ModuleItemId, StructId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};
-use smol_str::SmolStr;
 
 use super::attribute::SemanticQueryAttrs;
 use super::feature_kind::extract_item_feature_config;
@@ -32,20 +32,20 @@ mod test;
 // TODO(spapini): Check for bad recursive types - those that will fail in Sierra generation.
 
 // Declaration.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct StructDeclarationData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    generic_params: Vec<semantic::GenericParam>,
-    attributes: Vec<Attribute>,
-    resolver_data: Arc<ResolverData>,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct StructDeclarationData<'db> {
+    diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    generic_params: Vec<semantic::GenericParam<'db>>,
+    attributes: Vec<Attribute<'db>>,
+    resolver_data: Arc<ResolverData<'db>>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_struct_declaration_data].
-pub fn priv_struct_declaration_data(
-    db: &dyn SemanticGroup,
-    struct_id: StructId,
-) -> Maybe<StructDeclarationData> {
+pub fn priv_struct_declaration_data<'db>(
+    db: &'db dyn SemanticGroup,
+    struct_id: StructId<'db>,
+) -> Maybe<StructDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -82,26 +82,26 @@ pub fn priv_struct_declaration_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_declaration_diagnostics].
-pub fn struct_declaration_diagnostics(
-    db: &dyn SemanticGroup,
-    struct_id: StructId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn struct_declaration_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    struct_id: StructId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_struct_declaration_data(struct_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_generic_params].
-pub fn struct_generic_params(
-    db: &dyn SemanticGroup,
-    struct_id: StructId,
-) -> Maybe<Vec<GenericParam>> {
+pub fn struct_generic_params<'db>(
+    db: &'db dyn SemanticGroup,
+    struct_id: StructId<'db>,
+) -> Maybe<Vec<GenericParam<'db>>> {
     db.struct_generic_params_data(struct_id).map(|data| data.generic_params)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_generic_params_data].
-pub fn struct_generic_params_data(
-    db: &dyn SemanticGroup,
-    struct_id: StructId,
-) -> Maybe<GenericParamsData> {
+pub fn struct_generic_params_data<'db>(
+    db: &'db dyn SemanticGroup,
+    struct_id: StructId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = struct_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
@@ -130,40 +130,43 @@ pub fn struct_generic_params_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_attributes].
-pub fn struct_attributes(db: &dyn SemanticGroup, struct_id: StructId) -> Maybe<Vec<Attribute>> {
+pub fn struct_attributes<'db>(
+    db: &'db dyn SemanticGroup,
+    struct_id: StructId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_struct_declaration_data(struct_id)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_declaration_resolver_data].
-pub fn struct_declaration_resolver_data(
-    db: &dyn SemanticGroup,
-    struct_id: StructId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn struct_declaration_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    struct_id: StructId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_struct_declaration_data(struct_id)?.resolver_data)
 }
 
 // Definition.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct StructDefinitionData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    members: Arc<OrderedHashMap<SmolStr, Member>>,
-    resolver_data: Arc<ResolverData>,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct StructDefinitionData<'db> {
+    diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    members: Arc<OrderedHashMap<SmolStrId<'db>, Member<'db>>>,
+    resolver_data: Arc<ResolverData<'db>>,
 }
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct Member {
-    pub id: MemberId,
-    pub ty: semantic::TypeId,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct Member<'db> {
+    pub id: MemberId<'db>,
+    pub ty: semantic::TypeId<'db>,
     #[dont_rewrite]
     pub visibility: Visibility,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_struct_definition_data].
-pub fn priv_struct_definition_data(
-    db: &dyn SemanticGroup,
-    struct_id: StructId,
-) -> Maybe<StructDefinitionData> {
+pub fn priv_struct_definition_data<'db>(
+    db: &'db dyn SemanticGroup,
+    struct_id: StructId<'db>,
+) -> Maybe<StructDefinitionData<'db>> {
     let module_file_id = struct_id.module_file_id(db);
     let crate_id = module_file_id.0.owning_crate(db);
     let mut diagnostics = SemanticDiagnostics::default();
@@ -194,10 +197,8 @@ pub fn priv_struct_definition_data(
         let id = MemberLongId(module_file_id, member.stable_ptr(db)).intern(db);
         let ty = resolve_type(db, &mut diagnostics, &mut resolver, &member.type_clause(db).ty(db));
         let visibility = Visibility::from_ast(db, &mut diagnostics, &member.visibility(db));
-        let member_name = member.name(db).text(db);
-        if let Some(_other_member) =
-            members.insert(member_name.clone(), Member { id, ty, visibility })
-        {
+        let member_name = member.name(db).text(db).intern(db);
+        if let Some(_other_member) = members.insert(member_name, Member { id, ty, visibility }) {
             diagnostics
                 .report(member.stable_ptr(db), StructMemberRedefinition { struct_id, member_name });
         }
@@ -221,10 +222,10 @@ pub fn priv_struct_definition_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_definition_diagnostics].
-pub fn struct_definition_diagnostics(
-    db: &dyn SemanticGroup,
-    struct_id: StructId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn struct_definition_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    struct_id: StructId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     let Ok(data) = db.priv_struct_definition_data(struct_id) else {
         return Default::default();
     };
@@ -252,26 +253,26 @@ pub fn struct_definition_diagnostics(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_members].
-pub fn struct_members(
-    db: &dyn SemanticGroup,
-    struct_id: StructId,
-) -> Maybe<Arc<OrderedHashMap<SmolStr, Member>>> {
+pub fn struct_members<'db>(
+    db: &'db dyn SemanticGroup,
+    struct_id: StructId<'db>,
+) -> Maybe<Arc<OrderedHashMap<SmolStrId<'db>, Member<'db>>>> {
     Ok(db.priv_struct_definition_data(struct_id)?.members)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_definition_resolver_data].
-pub fn struct_definition_resolver_data(
-    db: &dyn SemanticGroup,
-    struct_id: StructId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn struct_definition_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    struct_id: StructId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_struct_definition_data(struct_id)?.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_struct_members].
-pub fn concrete_struct_members(
-    db: &dyn SemanticGroup,
-    concrete_struct_id: ConcreteStructId,
-) -> Maybe<Arc<OrderedHashMap<SmolStr, semantic::Member>>> {
+pub fn concrete_struct_members<'db>(
+    db: &'db dyn SemanticGroup,
+    concrete_struct_id: ConcreteStructId<'db>,
+) -> Maybe<Arc<OrderedHashMap<SmolStrId<'db>, semantic::Member<'db>>>> {
     // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
     //   always have the correct number of generic arguments.
     let generic_params = db.struct_generic_params(concrete_struct_id.struct_id(db))?;

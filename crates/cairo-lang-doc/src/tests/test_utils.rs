@@ -56,32 +56,32 @@ impl TestDatabase {
     }
 }
 impl Upcast<dyn DocGroup> for TestDatabase {
-    fn upcast(&self) -> &(dyn DocGroup + 'static) {
+    fn upcast(&self) -> &(dyn DocGroup) {
         self
     }
 }
 impl Upcast<dyn DefsGroup> for TestDatabase {
-    fn upcast(&self) -> &(dyn DefsGroup + 'static) {
+    fn upcast(&self) -> &(dyn DefsGroup) {
         self
     }
 }
 impl Upcast<dyn FilesGroup> for TestDatabase {
-    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
+    fn upcast(&self) -> &(dyn FilesGroup) {
         self
     }
 }
 impl Upcast<dyn ParserGroup> for TestDatabase {
-    fn upcast(&self) -> &(dyn ParserGroup + 'static) {
+    fn upcast(&self) -> &(dyn ParserGroup) {
         self
     }
 }
 impl Upcast<dyn SemanticGroup> for TestDatabase {
-    fn upcast(&self) -> &(dyn SemanticGroup + 'static) {
+    fn upcast(&self) -> &(dyn SemanticGroup) {
         self
     }
 }
 impl Upcast<dyn SyntaxGroup> for TestDatabase {
-    fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
+    fn upcast(&self) -> &(dyn SyntaxGroup) {
         self
     }
 }

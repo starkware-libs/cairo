@@ -75,12 +75,12 @@ fn test_missing_module_file() {
 struct AddInlineModuleDummyPlugin;
 
 impl MacroPlugin for AddInlineModuleDummyPlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         match item_ast {
             ast::ModuleItem::FreeFunction(func) if func.has_attr(db, "test_change_return_type") => {
                 let mut builder = PatchBuilder::new(db, &func);
@@ -90,7 +90,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                     ast::OptionReturnTypeClause::ReturnTypeClause(_)
                 ) {
                     // Change the return type.
-                    new_func
+                    (&mut new_func)
                         .modify_child(db, ast::FunctionWithBody::INDEX_DECLARATION)
                         .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
                         .modify_child(db, ast::FunctionSignature::INDEX_RET_TY)
@@ -225,7 +225,11 @@ fn test_inline_inline_module_diagnostics() {
 #[derive(Debug)]
 struct NoU128RenameAnalyzerPlugin;
 impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
-    fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic> {
+    fn diagnostics<'db>(
+        &self,
+        db: &'db dyn SemanticGroup,
+        module_id: ModuleId<'db>,
+    ) -> Vec<PluginDiagnostic<'db>> {
         let mut diagnostics = vec![];
         let Ok(uses) = db.module_uses_ids(module_id) else {
             return diagnostics;

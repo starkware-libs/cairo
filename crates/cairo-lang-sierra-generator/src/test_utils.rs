@@ -96,32 +96,32 @@ impl Default for SierraGenDatabaseForTesting {
     }
 }
 impl Upcast<dyn FilesGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
+    fn upcast(&self) -> &(dyn FilesGroup) {
         self
     }
 }
 impl Upcast<dyn SyntaxGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
+    fn upcast(&self) -> &(dyn SyntaxGroup) {
         self
     }
 }
 impl Upcast<dyn DefsGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&self) -> &(dyn DefsGroup + 'static) {
+    fn upcast(&self) -> &(dyn DefsGroup) {
         self
     }
 }
 impl Upcast<dyn SemanticGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&self) -> &(dyn SemanticGroup + 'static) {
+    fn upcast(&self) -> &(dyn SemanticGroup) {
         self
     }
 }
 impl Upcast<dyn LoweringGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&self) -> &(dyn LoweringGroup + 'static) {
+    fn upcast(&self) -> &(dyn LoweringGroup) {
         self
     }
 }
 impl Upcast<dyn ParserGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&self) -> &(dyn ParserGroup + 'static) {
+    fn upcast(&self) -> &(dyn ParserGroup) {
         self
     }
 }

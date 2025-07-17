@@ -1,43 +1,60 @@
-use std::fmt::Debug;
-
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_utils::{Intern, Upcast, define_short_id};
+use cairo_lang_utils::Upcast;
+use salsa::{Database, Storage};
 use test_log::test;
 
-use crate::debug as cairo_lang_debug;
 use crate::debug::DebugWithDb;
 
 // Test database query group.
-#[salsa::query_group(TestDatabase)]
-trait TestGroup {
-    #[salsa::interned]
-    fn intern_b(&self, crt: DummyLongId) -> DummyShortId;
-}
-// Database impl.
-#[salsa::database(TestDatabase)]
-#[derive(Default)]
-pub struct DatabaseForTesting {
-    storage: salsa::Storage<DatabaseForTesting>,
-}
-impl salsa::Database for DatabaseForTesting {}
+#[cairo_lang_proc_macros::query_group]
+trait TestGroup: salsa::Database {}
 
-impl Upcast<dyn TestGroup> for DatabaseForTesting {
-    fn upcast(&self) -> &(dyn TestGroup + 'static) {
+// Structs.
+#[salsa::interned]
+struct Dummy {
+    id: usize,
+}
+
+#[salsa::db]
+#[derive(Clone, Default)]
+struct DummyDb {
+    storage: Storage<Self>,
+}
+
+#[salsa::db]
+impl Database for DummyDb {}
+
+impl<'db> DebugWithDb<'db> for Dummy<'db> {
+    type Db = dyn Database;
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
+        write!(f, "Dummy({})", self.id(db))
+    }
+}
+
+impl<'db> Upcast<'db, dyn TestGroup> for DummyDb {
+    fn upcast(&'db self) -> &'db dyn TestGroup {
         self
     }
 }
 
-// Structs.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-struct DummyLongId(usize);
+impl<'db> Upcast<'db, ()> for dyn TestGroup {
+    fn upcast(&'db self) -> &'db () {
+        &()
+    }
+}
 
-define_short_id!(DummyShortId, DummyLongId, TestGroup, lookup_intern_b, intern_b);
+impl<'db> Upcast<'db, dyn Database> for dyn TestGroup {
+    fn upcast(&'db self) -> &'db dyn Database {
+        self
+    }
+}
 
 #[derive(DebugWithDb)]
-#[debug_db(dyn TestGroup + 'static)]
-struct ComplexStruct {
+#[debug_db(dyn TestGroup)]
+struct ComplexStruct<'db> {
     a: Option<usize>,
-    b: DummyShortId,
+    b: Dummy<'db>,
     #[hide_field_debug_with_db]
     c: usize,
     #[hide_field_debug_with_db]
@@ -46,7 +63,8 @@ struct ComplexStruct {
 
 #[test]
 fn test_debug() {
-    let db = DatabaseForTesting::default();
-    let a = ComplexStruct { a: Some(5), b: DummyLongId(6).intern(&db), c: 7, d: 8 };
-    assert_eq!(format!("{:?}", a.debug(&db)), "ComplexStruct { a: Some(5), b: DummyLongId(6) }");
+    let db = DummyDb::default();
+    let db_ref: &dyn TestGroup = &db;
+    let a = ComplexStruct { a: Some(5), b: Dummy::new(db_ref, 6), c: 7, d: 8 };
+    assert_eq!(format!("{:?}", a.debug(db_ref)), "ComplexStruct { a: Some(5), b: Dummy(6) }");
 }

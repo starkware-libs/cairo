@@ -40,12 +40,12 @@ pub mod visibility;
 mod test;
 
 /// Tries to resolve a trait path. Reports a diagnostic if the path doesn't point to a trait.
-fn resolve_trait_path(
-    syntax_db: &dyn SyntaxGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    resolver: &mut Resolver<'_>,
-    trait_path_syntax: &ExprPath,
-) -> Maybe<TraitId> {
+fn resolve_trait_path<'db>(
+    syntax_db: &'db dyn SyntaxGroup,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    resolver: &mut Resolver<'db>,
+    trait_path_syntax: &ExprPath<'db>,
+) -> Maybe<TraitId<'db>> {
     try_extract_matches!(
         resolver.resolve_generic_path_with_args(
             diagnostics,
@@ -60,25 +60,25 @@ fn resolve_trait_path(
 
 /// A context of a trait or an impl, if in any of those. This is used in the resolver to resolve
 /// "Self::" paths.
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-pub enum TraitOrImplContext {
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, salsa::Update)]
+pub enum TraitOrImplContext<'db> {
     /// No trait/impl context.
     None,
     /// The context is of a trait.
-    Trait(TraitId),
+    Trait(TraitId<'db>),
     /// The context is of an impl.
-    Impl(ImplDefId),
+    Impl(ImplDefId<'db>),
 }
 
-impl DebugWithDb<dyn SemanticGroup> for TraitOrImplContext {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &(dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+impl<'db> DebugWithDb<'db> for TraitOrImplContext<'db> {
+    type Db = dyn SemanticGroup;
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
         match self {
             TraitOrImplContext::None => write!(f, "None"),
-            TraitOrImplContext::Trait(trait_ctx) => write!(f, "{:?}", trait_ctx.debug(db)),
+            TraitOrImplContext::Trait(trait_ctx) => {
+                write!(f, "{:?}", trait_ctx.debug(db))
+            }
             TraitOrImplContext::Impl(impl_ctx) => write!(f, "{:?}", impl_ctx.debug(db)),
         }
     }

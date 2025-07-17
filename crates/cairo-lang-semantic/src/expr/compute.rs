@@ -18,7 +18,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPluginMetadata};
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::cfg::CfgSet;
-use cairo_lang_filesystem::ids::{CodeMapping, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{CodeMapping, FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast::{
@@ -93,15 +93,15 @@ use crate::{
 };
 
 /// The information of a macro expansion.
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct MacroExpansionInfo {
+#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+struct MacroExpansionInfo<'db> {
     /// The code mappings for this expansion.
     mappings: Arc<[CodeMapping]>,
     /// The kind of macro the expansion is from.
     kind: MacroKind,
     /// The variables that should be exposed to the parent scope after the macro expansion.
     /// This is used for unhygienic macros.
-    vars_to_expose: Vec<(SmolStr, Binding)>,
+    vars_to_expose: Vec<(SmolStrId<'db>, Binding<'db>)>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -133,12 +133,12 @@ pub enum MacroKind {
 
 /// Expression with its id.
 #[derive(Debug, Clone)]
-pub struct ExprAndId {
-    pub expr: Expr,
-    pub id: ExprId,
+pub struct ExprAndId<'db> {
+    pub expr: Expr<'db>,
+    pub id: ExprId<'db>,
 }
-impl Deref for ExprAndId {
-    type Target = Expr;
+impl<'db> Deref for ExprAndId<'db> {
+    type Target = Expr<'db>;
 
     fn deref(&self) -> &Self::Target {
         &self.expr
@@ -146,12 +146,12 @@ impl Deref for ExprAndId {
 }
 
 #[derive(Debug, Clone)]
-pub struct PatternAndId {
-    pub pattern: Pattern,
-    pub id: PatternId,
+pub struct PatternAndId<'db> {
+    pub pattern: Pattern<'db>,
+    pub id: PatternId<'db>,
 }
-impl Deref for PatternAndId {
-    type Target = Pattern;
+impl<'db> Deref for PatternAndId<'db> {
+    type Target = Pattern<'db>;
 
     fn deref(&self) -> &Self::Target {
         &self.pattern
@@ -160,27 +160,27 @@ impl Deref for PatternAndId {
 
 /// Named argument in a function call.
 #[derive(Debug, Clone)]
-pub struct NamedArg(ExprAndId, Option<ast::TerminalIdentifier>, Mutability);
+pub struct NamedArg<'db>(ExprAndId<'db>, Option<ast::TerminalIdentifier<'db>>, Mutability);
 
-pub enum ContextFunction {
+pub enum ContextFunction<'db> {
     Global,
-    Function(Maybe<FunctionId>),
+    Function(Maybe<FunctionId<'db>>),
 }
 
 /// Context inside loops or closures.
 #[derive(Debug, Clone)]
-struct InnerContext {
+struct InnerContext<'db> {
     /// The return type in the current context.
-    return_type: TypeId,
+    return_type: TypeId<'db>,
     /// The kind of inner context.
-    kind: InnerContextKind,
+    kind: InnerContextKind<'db>,
 }
 
 /// Kinds of inner context.
 #[derive(Debug, Clone)]
-enum InnerContextKind {
+enum InnerContextKind<'db> {
     /// Context inside a `loop`
-    Loop { type_merger: FlowMergeTypeHelper },
+    Loop { type_merger: FlowMergeTypeHelper<'db> },
     /// Context inside a `while` loop
     While,
     /// Context inside a `for` loop
@@ -191,25 +191,25 @@ enum InnerContextKind {
 
 /// The result of expanding an inline macro.
 #[derive(Debug, Clone)]
-struct InlineMacroExpansion {
+struct InlineMacroExpansion<'db> {
     pub content: Arc<str>,
     pub name: String,
-    pub info: MacroExpansionInfo,
+    pub info: MacroExpansionInfo<'db>,
 }
 
 /// Context for computing the semantic model of expression trees.
-pub struct ComputationContext<'ctx> {
+pub struct ComputationContext<'ctx, 'mt, 's> {
     pub db: &'ctx dyn SemanticGroup,
-    pub diagnostics: &'ctx mut SemanticDiagnostics,
+    pub diagnostics: &'mt mut SemanticDiagnostics<'ctx>,
     pub resolver: Resolver<'ctx>,
-    signature: Option<&'ctx Signature>,
-    environment: Box<Environment>,
+    signature: Option<&'s Signature<'ctx>>,
+    environment: Box<Environment<'ctx>>,
     /// Arenas of semantic objects.
-    pub arenas: Arenas,
-    function_id: ContextFunction,
+    pub arenas: Arenas<'ctx>,
+    function_id: ContextFunction<'ctx>,
     /// Definitions of semantic variables.
-    pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Binding>,
-    inner_ctx: Option<InnerContext>,
+    pub semantic_defs: UnorderedHashMap<semantic::VarId<'ctx>, semantic::Binding<'ctx>>,
+    inner_ctx: Option<InnerContext<'ctx>>,
     cfg_set: Arc<CfgSet>,
     /// Whether to look for closures when calling variables.
     /// TODO(TomerStarkware): Remove this once we disallow calling shadowed functions.
@@ -218,14 +218,14 @@ pub struct ComputationContext<'ctx> {
     /// scope.
     macro_defined_var_unhygienic: bool,
 }
-impl<'ctx> ComputationContext<'ctx> {
+impl<'ctx, 'mt, 's> ComputationContext<'ctx, 'mt, 's> {
     pub fn new(
         db: &'ctx dyn SemanticGroup,
-        diagnostics: &'ctx mut SemanticDiagnostics,
+        diagnostics: &'mt mut SemanticDiagnostics<'ctx>,
         resolver: Resolver<'ctx>,
-        signature: Option<&'ctx Signature>,
-        environment: Environment,
-        function_id: ContextFunction,
+        signature: Option<&'s Signature<'ctx>>,
+        environment: Environment<'ctx>,
+        function_id: ContextFunction<'ctx>,
     ) -> Self {
         let semantic_defs =
             environment.variables.values().by_ref().map(|var| (var.id(), var.clone())).collect();
@@ -262,7 +262,11 @@ impl<'ctx> ComputationContext<'ctx> {
     /// that points to the current environment as a parent, and also contains the macro expansion
     /// data. When looking up variables, we will get out of the macro expansion environment if
     /// and only if the text was originated from expanding a placeholder.
-    fn run_in_macro_subscope<T, F>(&mut self, operation: F, macro_info: MacroExpansionInfo) -> T
+    fn run_in_macro_subscope<T, F>(
+        &mut self,
+        operation: F,
+        macro_info: MacroExpansionInfo<'ctx>,
+    ) -> T
     where
         F: FnOnce(&mut Self) -> T,
     {
@@ -285,7 +289,7 @@ impl<'ctx> ComputationContext<'ctx> {
     /// Runs a function with a modified context, with a new environment for a subscope.
     /// Shouldn't be called directly, use [Self::run_in_subscope] or [Self::run_in_macro_subscope]
     /// instead.
-    fn run_in_subscope_ex<T, F>(&mut self, f: F, macro_info: Option<MacroExpansionInfo>) -> T
+    fn run_in_subscope_ex<T, F>(&mut self, f: F, macro_info: Option<MacroExpansionInfo<'ctx>>) -> T
     where
         F: FnOnce(&mut Self) -> T,
     {
@@ -309,12 +313,12 @@ impl<'ctx> ComputationContext<'ctx> {
                     // moved to.
                     parent.used_variables.insert(binding.id());
                 }
-                if let Some(old_var) = parent.variables.insert(name.clone(), binding.clone()) {
+                if let Some(old_var) = parent.variables.insert(name, binding.clone()) {
                     add_unused_binding_warning(
                         self.diagnostics,
                         self.db,
                         &parent.used_variables,
-                        &name,
+                        name.as_str(self.db),
                         &old_var,
                     );
                 }
@@ -328,13 +332,15 @@ impl<'ctx> ComputationContext<'ctx> {
                 self.diagnostics,
                 self.db,
                 &closed.used_variables,
-                &name,
+                name.as_str(self.db),
                 &binding,
             );
         }
         // Adds warning for unused items if required.
         for (ty_name, statement_ty) in closed.use_items {
-            if !closed.used_use_items.contains(&ty_name) && !ty_name.starts_with('_') {
+            if !closed.used_use_items.contains(&ty_name)
+                && !ty_name.as_str(self.db).starts_with('_')
+            {
                 self.diagnostics.report(statement_ty.stable_ptr, UnusedUse);
             }
         }
@@ -342,7 +348,7 @@ impl<'ctx> ComputationContext<'ctx> {
     }
 
     /// Returns the return type in the current context if available.
-    fn get_return_type(&mut self) -> Option<TypeId> {
+    fn get_return_type(&mut self) -> Option<TypeId<'ctx>> {
         if let Some(inner_ctx) = &self.inner_ctx {
             return Some(inner_ctx.return_type);
         }
@@ -354,7 +360,7 @@ impl<'ctx> ComputationContext<'ctx> {
         None
     }
 
-    fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
+    fn reduce_ty(&mut self, ty: TypeId<'ctx>) -> TypeId<'ctx> {
         self.resolver.inference().rewrite(ty).no_err()
     }
 
@@ -395,12 +401,12 @@ impl<'ctx> ComputationContext<'ctx> {
 }
 
 /// Adds warning for unused bindings if required.
-fn add_unused_binding_warning(
-    diagnostics: &mut SemanticDiagnostics,
-    db: &dyn SemanticGroup,
-    used_bindings: &UnorderedHashSet<VarId>,
+fn add_unused_binding_warning<'db>(
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    db: &'db dyn SemanticGroup,
+    used_bindings: &UnorderedHashSet<VarId<'db>>,
     name: &str,
-    binding: &Binding,
+    binding: &Binding<'db>,
 ) {
     if !name.starts_with('_') && !used_bindings.contains(&binding.id()) {
         match binding {
@@ -420,40 +426,40 @@ fn add_unused_binding_warning(
 }
 
 // TODO(ilya): Change value to VarId.
-pub type EnvVariables = OrderedHashMap<SmolStr, Binding>;
+pub type EnvVariables<'db> = OrderedHashMap<SmolStrId<'db>, Binding<'db>>;
 
-type EnvItems = OrderedHashMap<SmolStr, StatementGenericItemData>;
+type EnvItems<'db> = OrderedHashMap<SmolStrId<'db>, StatementGenericItemData<'db>>;
 
 /// Struct that holds the resolved generic type of a statement item.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-struct StatementGenericItemData {
-    resolved_generic_item: ResolvedGenericItem,
-    stable_ptr: SyntaxStablePtrId,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+struct StatementGenericItemData<'db> {
+    resolved_generic_item: ResolvedGenericItem<'db>,
+    stable_ptr: SyntaxStablePtrId<'db>,
 }
 
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current resolver until now, and a
 /// pointer to the parent environment.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Environment {
-    parent: Option<Box<Environment>>,
-    variables: EnvVariables,
-    used_variables: UnorderedHashSet<semantic::VarId>,
-    use_items: EnvItems,
-    used_use_items: UnorderedHashSet<SmolStr>,
+#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+pub struct Environment<'db> {
+    parent: Option<Box<Environment<'db>>>,
+    variables: EnvVariables<'db>,
+    used_variables: UnorderedHashSet<semantic::VarId<'db>>,
+    use_items: EnvItems<'db>,
+    used_use_items: UnorderedHashSet<SmolStrId<'db>>,
     /// Information for macro in case the current environment was create by expanding a macro.
-    macro_info: Option<MacroExpansionInfo>,
+    macro_info: Option<MacroExpansionInfo<'db>>,
 }
-impl Environment {
+impl<'db> Environment<'db> {
     /// Adds a parameter to the environment.
     pub fn add_param(
         &mut self,
-        db: &dyn SemanticGroup,
-        diagnostics: &mut SemanticDiagnostics,
-        semantic_param: Parameter,
-        ast_param: &ast::Param,
-        function_title_id: Option<FunctionTitleId>,
+        db: &'db dyn SemanticGroup,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        semantic_param: Parameter<'db>,
+        ast_param: &ast::Param<'db>,
+        function_title_id: Option<FunctionTitleId<'db>>,
     ) -> Maybe<()> {
         if let utils::ordered_hash_map::Entry::Vacant(entry) =
             self.variables.entry(semantic_param.name.clone())
@@ -481,14 +487,14 @@ impl Environment {
 }
 
 /// Returns the requested item from the environment if it exists. Returns None otherwise.
-pub fn get_statement_item_by_name(
-    env: &mut Environment,
-    item_name: &SmolStr,
-) -> Option<ResolvedGenericItem> {
+pub fn get_statement_item_by_name<'db>(
+    env: &mut Environment<'db>,
+    item_name: SmolStrId<'db>,
+) -> Option<ResolvedGenericItem<'db>> {
     let mut maybe_env = Some(&mut *env);
     while let Some(curr_env) = maybe_env {
-        if let Some(var) = curr_env.use_items.get(item_name) {
-            curr_env.used_use_items.insert(item_name.clone());
+        if let Some(var) = curr_env.use_items.get(&item_name) {
+            curr_env.used_use_items.insert(item_name);
             return Some(var.resolved_generic_item.clone());
         }
         maybe_env = curr_env.parent.as_deref_mut();
@@ -499,7 +505,10 @@ pub fn get_statement_item_by_name(
 /// Computes the semantic model of an expression.
 /// Note that this expr will always be "registered" in the arena, so it can be looked up in the
 /// language server.
-pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr) -> ExprAndId {
+pub fn compute_expr_semantic<'db, 'mt>(
+    ctx: &'mt mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::Expr<'db>,
+) -> ExprAndId<'db> {
     let expr = maybe_compute_expr_semantic(ctx, syntax);
     let expr = wrap_maybe_with_missing(ctx, expr, syntax.stable_ptr(ctx.db));
     let id = ctx.arenas.exprs.alloc(expr.clone());
@@ -507,11 +516,11 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Exp
 }
 
 /// Converts `Maybe<Expr>` to a possibly [missing](ExprMissing) [Expr].
-fn wrap_maybe_with_missing(
-    ctx: &mut ComputationContext<'_>,
-    expr: Maybe<Expr>,
-    stable_ptr: ast::ExprPtr,
-) -> Expr {
+fn wrap_maybe_with_missing<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    expr: Maybe<Expr<'db>>,
+    stable_ptr: ast::ExprPtr<'db>,
+) -> Expr<'db> {
     expr.unwrap_or_else(|diag_added| {
         Expr::Missing(ExprMissing {
             ty: TypeId::missing(ctx.db, diag_added),
@@ -522,10 +531,10 @@ fn wrap_maybe_with_missing(
 }
 
 /// Computes the semantic model of an expression, or returns a SemanticDiagnosticKind on error.
-pub fn maybe_compute_expr_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::Expr,
-) -> Maybe<Expr> {
+pub fn maybe_compute_expr_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::Expr<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
 
     // TODO(spapini): When Expr holds the syntax pointer, add it here as well.
@@ -571,12 +580,12 @@ pub fn maybe_compute_expr_semantic(
 }
 
 /// Expands an inline macro invocation and returns the generated code and related metadata.
-fn expand_inline_macro(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprInlineMacro,
-) -> Maybe<InlineMacroExpansion> {
+fn expand_inline_macro<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprInlineMacro<'db>,
+) -> Maybe<InlineMacroExpansion<'db>> {
     let db = ctx.db;
-    let macro_name = syntax.path(db).identifier(ctx.db).to_string();
+    let macro_name = syntax.path(db).identifier(ctx.db);
     let crate_id = ctx.resolver.owning_crate_id;
     // Skipping expanding an inline macro if it had a parser error.
     if syntax.as_syntax_node().descendants(db).any(|node| {
@@ -610,7 +619,7 @@ fn expand_inline_macro(
         }) else {
             return Err(ctx.diagnostics.report(
                 syntax.stable_ptr(ctx.db),
-                InlineMacroNoMatchingRule(macro_name.clone().into()),
+                InlineMacroNoMatchingRule(macro_name.intern(ctx.db)),
             ));
         };
         let mut matcher_ctx =
@@ -633,9 +642,9 @@ fn expand_inline_macro(
             expansion_mappings: info.mappings.clone(),
             parent_macro_call_data: parent_macro_call_data.map(|data| data.into()),
         });
-        Ok(InlineMacroExpansion { content: expanded_code.text, name: macro_name, info })
+        Ok(InlineMacroExpansion { content: expanded_code.text, name: macro_name.to_string(), info })
     } else if let Some(macro_plugin_id) =
-        ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name).cloned()
+        ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name.to_string()).cloned()
     {
         let macro_plugin = ctx.db.lookup_intern_inline_macro_plugin(macro_plugin_id);
         let result = macro_plugin.generate_code(
@@ -663,8 +672,10 @@ fn expand_inline_macro(
         }
         let Some(code) = result.code else {
             return Err(diag_added.unwrap_or_else(|| {
-                ctx.diagnostics
-                    .report(syntax.stable_ptr(ctx.db), InlineMacroNotFound(macro_name.into()))
+                ctx.diagnostics.report(
+                    syntax.stable_ptr(ctx.db),
+                    InlineMacroNotFound(macro_name.intern(ctx.db)),
+                )
             }));
         };
         Ok(InlineMacroExpansion {
@@ -677,20 +688,19 @@ fn expand_inline_macro(
             },
         })
     } else {
-        Err(ctx.diagnostics.report(
-            syntax.stable_ptr(db),
-            InlineMacroNotFound(
-                syntax.path(db).as_syntax_node().get_text_without_trivia(db).into(),
-            ),
-        ))
+        let macro_name: SmolStr =
+            syntax.path(db).as_syntax_node().get_text_without_trivia(db).into();
+        Err(ctx
+            .diagnostics
+            .report(syntax.stable_ptr(db), InlineMacroNotFound(macro_name.intern(ctx.db))))
     }
 }
 
 /// Expands and computes the semantic model of an inline macro used in expression position.
-fn compute_expr_inline_macro_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprInlineMacro,
-) -> Maybe<Expr> {
+fn compute_expr_inline_macro_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprInlineMacro<'db>,
+) -> Maybe<Expr<'db>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
     let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
@@ -720,11 +730,11 @@ fn compute_expr_inline_macro_semantic(
 
 /// Computes the semantic model of a tail expression, handling inline macros recursively and
 /// ensuring the correct tail expression is extracted from the resulting statements.
-fn compute_tail_semantic(
-    ctx: &mut ComputationContext<'_>,
-    tail: &ast::StatementExpr,
-    statements_ids: &mut Vec<StatementId>,
-) -> ExprAndId {
+fn compute_tail_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    tail: &ast::StatementExpr<'db>,
+    statements_ids: &mut Vec<StatementId<'db>>,
+) -> ExprAndId<'db> {
     let expr = tail.expr(ctx.db);
     let ast::Expr::InlineMacro(inline_macro_syntax) = &expr else {
         return compute_expr_semantic(ctx, &expr);
@@ -745,12 +755,12 @@ fn compute_tail_semantic(
 
 /// Expands an inline macro used in statement position, computes its semantic model, and extends
 /// `statements` with it.
-fn expand_macro_for_statement(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprInlineMacro,
+fn expand_macro_for_statement<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprInlineMacro<'db>,
     is_tail: bool,
-    statements_ids: &mut Vec<StatementId>,
-) -> Maybe<Option<ExprAndId>> {
+    statements_ids: &mut Vec<StatementId<'db>>,
+) -> Maybe<Option<ExprAndId<'db>>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
     let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
@@ -802,10 +812,10 @@ fn expand_macro_for_statement(
     result
 }
 
-fn compute_expr_unary_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprUnary,
-) -> Maybe<Expr> {
+fn compute_expr_unary_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprUnary<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
     let unary_op = syntax.op(db);
     let inner = syntax.expr(db);
@@ -875,9 +885,10 @@ fn compute_expr_unary_semantic(
         (_, inner) => {
             let expr = compute_expr_semantic(ctx, inner);
 
+            let mut inference = ctx.resolver.inference();
             let concrete_trait_function = match core_unary_operator(
                 ctx.db,
-                &mut ctx.resolver.inference(),
+                &mut inference,
                 &unary_op,
                 syntax.stable_ptr(db).untyped(),
             )? {
@@ -888,7 +899,7 @@ fn compute_expr_unary_semantic(
             };
 
             let impl_lookup_context = ctx.resolver.impl_lookup_context();
-            let inference = &mut ctx.resolver.inference();
+            let mut inference = ctx.resolver.inference();
             let function = inference
                 .infer_trait_function(
                     concrete_trait_function,
@@ -914,10 +925,10 @@ fn compute_expr_unary_semantic(
     }
 }
 
-fn compute_expr_binary_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprBinary,
-) -> Maybe<Expr> {
+fn compute_expr_binary_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprBinary<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
 
     let stable_ptr = syntax.stable_ptr(db).into();
@@ -1003,12 +1014,12 @@ fn compute_expr_binary_semantic(
 }
 
 /// Get the function call expression of a binary operation that is defined in the corelib.
-fn call_core_binary_op(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprBinary,
-    lhs_syntax: &ast::Expr,
-    rhs_syntax: &ast::Expr,
-) -> Maybe<Expr> {
+fn call_core_binary_op<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprBinary<'db>,
+    lhs_syntax: &ast::Expr<'db>,
+    rhs_syntax: &ast::Expr<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
     let stable_ptr = syntax.stable_ptr(db);
     let binary_op = syntax.op(db);
@@ -1076,10 +1087,10 @@ fn call_core_binary_op(
     )
 }
 
-fn compute_expr_tuple_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprListParenthesized,
-) -> Maybe<Expr> {
+fn compute_expr_tuple_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprListParenthesized<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
 
     let mut items: Vec<ExprId> = vec![];
@@ -1096,10 +1107,10 @@ fn compute_expr_tuple_semantic(
     }))
 }
 /// Computes the semantic model of an expression of type [ast::ExprFixedSizeArray].
-fn compute_expr_fixed_size_array_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprFixedSizeArray,
-) -> Maybe<Expr> {
+fn compute_expr_fixed_size_array_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprFixedSizeArray<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
     let exprs = syntax.exprs(db).elements_vec(db);
     let size_ty = get_usize_ty(db);
@@ -1161,10 +1172,10 @@ fn compute_expr_fixed_size_array_semantic(
     }))
 }
 
-fn compute_expr_function_call_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprFunctionCall,
-) -> Maybe<Expr> {
+fn compute_expr_function_call_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprFunctionCall<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
 
     let path = syntax.path(db);
@@ -1172,10 +1183,10 @@ fn compute_expr_function_call_semantic(
     // Check if this is a variable.
     let mut is_shadowed_by_variable = false;
     if let Some((identifier, is_callsite_prefixed)) = try_extract_identifier_from_path(db, &path) {
-        let variable_name = identifier.text(ctx.db);
+        let variable_name = identifier.text(ctx.db).intern(ctx.db);
         if let Some(var) = get_binded_expr_by_name(
             ctx,
-            &variable_name,
+            variable_name,
             is_callsite_prefixed,
             path.stable_ptr(ctx.db).into(),
         ) {
@@ -1187,7 +1198,7 @@ fn compute_expr_function_call_semantic(
                 let fn_once_trait = info.fn_once_trt;
                 let fn_trait = info.fn_trt;
                 let self_expr = ExprAndId { expr: var.clone(), id: ctx.arenas.exprs.alloc(var) };
-                let mut closure_call_data = |call_trait| {
+                let mut closure_call_data = |call_trait: TraitId<'db>| {
                     compute_method_function_call_data(
                         ctx,
                         &[call_trait],
@@ -1319,7 +1330,8 @@ fn compute_expr_function_call_semantic(
                             .elements(db)
                             .next()
                             .unwrap()
-                            .identifier(db),
+                            .identifier(db)
+                            .intern(db),
                     },
                 ));
             }
@@ -1359,11 +1371,11 @@ fn compute_expr_function_call_semantic(
 /// Computes the semantic model of an expression of type [ast::Arg].
 ///
 /// Returns the value and the optional argument name.
-pub fn compute_named_argument_clause(
-    ctx: &mut ComputationContext<'_>,
-    arg_syntax: ast::Arg,
-    closure_params_tuple_ty: Option<TypeId>,
-) -> NamedArg {
+pub fn compute_named_argument_clause<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    arg_syntax: ast::Arg<'db>,
+    closure_params_tuple_ty: Option<TypeId<'db>>,
+) -> NamedArg<'db> {
     let db = ctx.db;
 
     let mutability =
@@ -1396,11 +1408,11 @@ pub fn compute_named_argument_clause(
 /// It processes a closure expression, computes its semantic model,
 /// allocates it in the expression arena, and ensures that the closure's
 /// parameter types are conformed if provided.
-fn handle_possible_closure_expr(
-    ctx: &mut ComputationContext<'_>,
-    expr: &ast::Expr,
-    closure_param_types: Option<TypeId>,
-) -> ExprAndId {
+fn handle_possible_closure_expr<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    expr: &ast::Expr<'db>,
+    closure_param_types: Option<TypeId<'db>>,
+) -> ExprAndId<'db> {
     if let ast::Expr::Closure(expr_closure) = expr {
         let expr = compute_expr_closure_semantic(ctx, expr_closure, closure_param_types);
         let expr = wrap_maybe_with_missing(ctx, expr, expr_closure.stable_ptr(ctx.db).into());
@@ -1411,11 +1423,11 @@ fn handle_possible_closure_expr(
     }
 }
 
-pub fn compute_root_expr(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprBlock,
-    return_type: TypeId,
-) -> Maybe<ExprId> {
+pub fn compute_root_expr<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprBlock<'db>,
+    return_type: TypeId<'db>,
+) -> Maybe<ExprId<'db>> {
     // Conform TypeEqual constraints for Associated type bounds.
     let inference = &mut ctx.resolver.data.inference_data.inference(ctx.db);
     for param in &ctx.resolver.data.generic_params {
@@ -1467,10 +1479,10 @@ pub fn compute_root_expr(
 }
 
 /// Computes the semantic model for a list of statements, flattening the result.
-pub fn compute_statements_semantic_and_extend(
-    ctx: &mut ComputationContext<'_>,
-    statements_syntax: impl Iterator<Item = ast::Statement>,
-    statement_ids: &mut Vec<StatementId>,
+pub fn compute_statements_semantic_and_extend<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    statements_syntax: impl Iterator<Item = ast::Statement<'db>>,
+    statement_ids: &mut Vec<StatementId<'db>>,
 ) {
     for statement_syntax in statements_syntax {
         compute_and_append_statement_semantic(ctx, statement_syntax, statement_ids)
@@ -1479,10 +1491,10 @@ pub fn compute_statements_semantic_and_extend(
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprBlock].
-pub fn compute_expr_block_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprBlock,
-) -> Maybe<Expr> {
+pub fn compute_expr_block_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprBlock<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
     ctx.run_in_subscope(|new_ctx| {
         let (statements, tail) = statements_and_tail(db, syntax.statements(db));
@@ -1501,11 +1513,11 @@ pub fn compute_expr_block_semantic(
 }
 
 /// The type returned from a block with the given statements and tail.
-fn block_ty(
-    ctx: &ComputationContext<'_>,
-    statements: &[StatementId],
-    tail: &Option<ExprAndId>,
-) -> TypeId {
+fn block_ty<'db>(
+    ctx: &ComputationContext<'db, '_, '_>,
+    statements: &[StatementId<'db>],
+    tail: &Option<ExprAndId<'db>>,
+) -> TypeId<'db> {
     if let Some(tail) = tail {
         return tail.ty();
     }
@@ -1530,15 +1542,15 @@ fn block_ty(
 
 /// Helper for merging the return types of branch blocks (match or if else).
 #[derive(Debug, Clone)]
-struct FlowMergeTypeHelper {
+struct FlowMergeTypeHelper<'db> {
     multi_arm_expr_kind: MultiArmExprKind,
-    never_type: TypeId,
-    final_type: Option<TypeId>,
+    never_type: TypeId<'db>,
+    final_type: Option<TypeId<'db>>,
     /// Whether or not the Helper had a previous type merge error.
     had_merge_error: bool,
 }
-impl FlowMergeTypeHelper {
-    fn new(db: &dyn SemanticGroup, multi_arm_expr_kind: MultiArmExprKind) -> Self {
+impl<'db> FlowMergeTypeHelper<'db> {
+    fn new(db: &'db dyn SemanticGroup, multi_arm_expr_kind: MultiArmExprKind) -> Self {
         Self {
             multi_arm_expr_kind,
             never_type: never_ty(db),
@@ -1552,11 +1564,11 @@ impl FlowMergeTypeHelper {
     /// the types have already been conformed earlier, in which case it has no external effect.
     fn try_merge_types(
         &mut self,
-        db: &dyn SemanticGroup,
-        diagnostics: &mut SemanticDiagnostics,
-        inference: &mut Inference<'_>,
-        ty: TypeId,
-        stable_ptr: SyntaxStablePtrId,
+        db: &'db dyn SemanticGroup,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        inference: &mut Inference<'db, '_>,
+        ty: TypeId<'db>,
+        stable_ptr: SyntaxStablePtrId<'db>,
     ) -> bool {
         if self.had_merge_error {
             return false;
@@ -1591,18 +1603,18 @@ impl FlowMergeTypeHelper {
     }
 
     /// Returns the merged type.
-    fn get_final_type(self) -> TypeId {
+    fn get_final_type(self) -> TypeId<'db> {
         self.final_type.unwrap_or(self.never_type)
     }
 }
 
 /// Computes the semantic of a match arm pattern and the block expression.
-fn compute_arm_semantic(
-    ctx: &mut ComputationContext<'_>,
-    expr: &Expr,
-    arm_expr_syntax: ast::Expr,
-    patterns_syntax: &PatternListOr,
-) -> (Vec<PatternAndId>, ExprAndId) {
+fn compute_arm_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    expr: &Expr<'db>,
+    arm_expr_syntax: ast::Expr<'db>,
+    patterns_syntax: &PatternListOr<'db>,
+) -> (Vec<PatternAndId<'db>>, ExprAndId<'db>) {
     ctx.run_in_subscope(|new_ctx| {
         let patterns = compute_pattern_list_or_semantic(new_ctx, expr, patterns_syntax);
         let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
@@ -1611,17 +1623,17 @@ fn compute_arm_semantic(
 }
 
 /// Computes the semantic of `PatternListOr` and introducing the pattern variables into the scope.
-fn compute_pattern_list_or_semantic(
-    ctx: &mut ComputationContext<'_>,
-    expr: &Expr,
-    patterns_syntax: &PatternListOr,
-) -> Vec<PatternAndId> {
+fn compute_pattern_list_or_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    expr: &Expr<'db>,
+    patterns_syntax: &PatternListOr<'db>,
+) -> Vec<PatternAndId<'db>> {
     let db = ctx.db;
 
     // Typecheck the arms's patterns, and introduce the new variables to the subscope.
     // Note that if the arm expr is a block, there will be *another* subscope
     // for it.
-    let mut arm_patterns_variables: UnorderedHashMap<SmolStr, LocalVariable> =
+    let mut arm_patterns_variables: UnorderedHashMap<SmolStr, LocalVariable<'db>> =
         UnorderedHashMap::default();
 
     let patterns: Vec<_> = patterns_syntax
@@ -1683,7 +1695,7 @@ fn compute_pattern_list_or_semantic(
             let var_def = Binding::LocalVar(v.var.clone());
             // TODO(spapini): Wrap this in a function to couple with semantic_defs
             // insertion.
-            ctx.environment.variables.insert(v.name.clone(), var_def.clone());
+            ctx.environment.variables.insert(v.name.clone().intern(db), var_def.clone());
             ctx.semantic_defs.insert(var_def.id(), var_def);
         }
     }
@@ -1692,14 +1704,14 @@ fn compute_pattern_list_or_semantic(
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprMatch].
-fn compute_expr_match_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprMatch,
-) -> Maybe<Expr> {
+fn compute_expr_match_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprMatch<'db>,
+) -> Maybe<Expr<'db>> {
     // TODO(yuval): verify exhaustiveness.
     let db = ctx.db;
-
-    let syntax_arms = syntax.arms(db).elements(db);
+    let arms = syntax.arms(db);
+    let syntax_arms = arms.elements(db);
     let expr = compute_expr_semantic(ctx, &syntax.expr(db));
     // Run compute_pattern_semantic on every arm, even if other arms failed, to get as many
     // diagnostics as possible.
@@ -1739,7 +1751,10 @@ fn compute_expr_match_semantic(
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprIf].
-fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::ExprIf) -> Maybe<Expr> {
+fn compute_expr_if_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprIf<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
 
     let (conditions, if_block) = compute_condition_list_semantic(
@@ -1791,11 +1806,11 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
 /// Computes the semantic of the given condition list and the given body.
 ///
 /// Note that pattern variables in the conditions can be used in the body.
-fn compute_condition_list_semantic(
-    ctx: &mut ComputationContext<'_>,
-    condition_list_syntax: &ConditionListAnd,
-    body_syntax: &ast::Expr,
-) -> (Vec<Condition>, ExprAndId) {
+fn compute_condition_list_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    condition_list_syntax: &ConditionListAnd<'db>,
+    body_syntax: &ast::Expr<'db>,
+) -> (Vec<Condition<'db>>, ExprAndId<'db>) {
     let mut conditions = Vec::new();
     let conditions_syntax = condition_list_syntax.elements(ctx.db);
     conditions.reserve(conditions_syntax.len());
@@ -1810,13 +1825,16 @@ fn compute_condition_list_semantic(
     (conditions, body)
 }
 
-/// Helper function for `compute_condition_list_semantic`.
-fn compute_condition_list_semantic_helper(
-    ctx: &mut ComputationContext<'_>,
-    mut conditions_syntax: impl Iterator<Item = ast::Condition>,
-    conditions: &mut Vec<Condition>,
-    body_syntax: &ast::Expr,
-) -> ExprAndId {
+/// Computes the semantic of the given condition list and the given body.
+///
+/// Note that pattern variables in the conditions can be used in the body.
+
+fn compute_condition_list_semantic_helper<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    mut conditions_syntax: impl Iterator<Item = ast::Condition<'db>>,
+    conditions: &mut Vec<Condition<'db>>,
+    body_syntax: &ast::Expr<'db>,
+) -> ExprAndId<'db> {
     match conditions_syntax.next() {
         None => compute_expr_semantic(ctx, body_syntax),
         Some(ast::Condition::Let(condition)) => {
@@ -1848,10 +1866,10 @@ fn compute_condition_list_semantic_helper(
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprLoop].
-fn compute_expr_loop_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprLoop,
-) -> Maybe<Expr> {
+fn compute_expr_loop_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprLoop<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
 
     let (body, inner_ctx) = compute_loop_body_semantic(
@@ -1873,10 +1891,10 @@ fn compute_expr_loop_semantic(
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprWhile].
-fn compute_expr_while_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprWhile,
-) -> Maybe<Expr> {
+fn compute_expr_while_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprWhile<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
 
     let Some([condition_syntax]) = &syntax.conditions(db).elements(db).collect_array() else {
@@ -1915,10 +1933,10 @@ fn compute_expr_while_semantic(
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprFor].
-fn compute_expr_for_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprFor,
-) -> Maybe<Expr> {
+fn compute_expr_for_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprFor<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
     let expr_ptr = syntax.expr(db).stable_ptr(db);
     let expr = compute_expr_semantic(ctx, &syntax.expr(db));
@@ -2011,7 +2029,7 @@ fn compute_expr_for_semantic(
         let variables = inner_pattern.variables(&new_ctx.arenas.patterns);
         for v in variables {
             let var_def = Binding::LocalVar(v.var.clone());
-            new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
+            new_ctx.environment.variables.insert(v.name.clone().intern(db), var_def.clone());
             new_ctx.semantic_defs.insert(var_def.id(), var_def);
         }
         let (body, _inner_ctx) =
@@ -2031,11 +2049,11 @@ fn compute_expr_for_semantic(
 }
 
 /// Computes the semantic model for a body of a loop.
-fn compute_loop_body_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: ast::ExprBlock,
-    kind: InnerContextKind,
-) -> (ExprId, InnerContext) {
+fn compute_loop_body_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: ast::ExprBlock<'db>,
+    kind: InnerContextKind<'db>,
+) -> (ExprId<'db>, InnerContext<'db>) {
     let db: &dyn SemanticGroup = ctx.db;
     ctx.run_in_subscope(|new_ctx| {
         let return_type = new_ctx.get_return_type().unwrap();
@@ -2062,11 +2080,11 @@ fn compute_loop_body_semantic(
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprClosure].
-fn compute_expr_closure_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprClosure,
-    params_tuple_ty: Option<TypeId>,
-) -> Maybe<Expr> {
+fn compute_expr_closure_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprClosure<'db>,
+    params_tuple_ty: Option<TypeId<'db>>,
+) -> Maybe<Expr<'db>> {
     ctx.are_closures_in_context = true;
     let db = ctx.db;
     let (params, ret_ty, body) = ctx.run_in_subscope(|new_ctx| {
@@ -2185,17 +2203,17 @@ fn compute_expr_closure_semantic(
 
     Ok(Expr::ExprClosure(ExprClosure {
         body,
-        params,
+        params: params.to_vec(),
         stable_ptr: syntax.stable_ptr(db).into(),
         ty,
     }))
 }
 
 /// Computes the semantic model for a body of a closure.
-fn compute_closure_body_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: ast::ExprBlock,
-) -> ExprId {
+fn compute_closure_body_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: ast::ExprBlock<'db>,
+) -> ExprId<'db> {
     let db = ctx.db;
     let (statements, tail) = statements_and_tail(db, syntax.statements(db));
     let mut statements_semantic = vec![];
@@ -2212,10 +2230,10 @@ fn compute_closure_body_semantic(
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprErrorPropagate].
-fn compute_expr_error_propagate_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprErrorPropagate,
-) -> Maybe<Expr> {
+fn compute_expr_error_propagate_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprErrorPropagate<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
 
     let return_type = ctx.get_return_type().ok_or_else(|| {
@@ -2285,10 +2303,10 @@ fn compute_expr_error_propagate_semantic(
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprIndexed].
-fn compute_expr_indexed_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprIndexed,
-) -> Maybe<Expr> {
+fn compute_expr_indexed_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::ExprIndexed<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
     let expr = compute_expr_semantic(ctx, &syntax.expr(db));
     let index_expr_syntax = &syntax.index_expr(db);
@@ -2328,24 +2346,24 @@ fn compute_expr_indexed_semantic(
 /// function_id to call, the trait containing the function, the self argument, with snapshots added
 /// if needed, and the mutability of the self argument.
 #[expect(clippy::too_many_arguments)]
-fn compute_method_function_call_data(
-    ctx: &mut ComputationContext<'_>,
-    candidate_traits: &[TraitId],
+fn compute_method_function_call_data<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    candidate_traits: &[TraitId<'db>],
     func_name: SmolStr,
-    self_expr: ExprAndId,
-    method_syntax: SyntaxStablePtrId,
-    generic_args_syntax: Option<Vec<ast::GenericArg>>,
+    self_expr: ExprAndId<'db>,
+    method_syntax: SyntaxStablePtrId<'db>,
+    generic_args_syntax: Option<Vec<ast::GenericArg<'db>>>,
     no_implementation_diagnostic: impl Fn(
-        TypeId,
+        TypeId<'db>,
         SmolStr,
-        TraitInferenceErrors,
-    ) -> Option<SemanticDiagnosticKind>,
+        TraitInferenceErrors<'db>,
+    ) -> Option<SemanticDiagnosticKind<'db>>,
     multiple_trait_diagnostic: fn(
-        TypeId,
-        TraitFunctionId,
-        TraitFunctionId,
-    ) -> Option<SemanticDiagnosticKind>,
-) -> Maybe<(FunctionId, TraitId, ExprAndId, Mutability)> {
+        TypeId<'db>,
+        TraitFunctionId<'db>,
+        TraitFunctionId<'db>,
+    ) -> Option<SemanticDiagnosticKind<'db>>,
+) -> Maybe<(FunctionId<'db>, TraitId<'db>, ExprAndId<'db>, Mutability)> {
     let expr_ptr = self_expr.stable_ptr();
     let self_ty = ctx.reduce_ty(self_expr.ty());
     // Inference errors found when looking for candidates. Only relevant in the case of 0 candidates
@@ -2413,23 +2431,26 @@ fn compute_method_function_call_data(
 /// Also returns the expression to be used as self for the method call, its type and whether deref
 /// was used.
 #[expect(clippy::too_many_arguments)]
-fn get_method_function_candidates(
-    ctx: &mut ComputationContext<'_>,
-    candidate_traits: &[TraitId],
+fn get_method_function_candidates<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    candidate_traits: &[TraitId<'db>],
     func_name: &SmolStr,
-    self_expr: ExprAndId,
-    method_syntax: SyntaxStablePtrId,
-    expr_ptr: ExprPtr,
-    self_ty: TypeId,
-    inference_errors: &mut Vec<(TraitFunctionId, InferenceError)>,
-) -> Result<(Vec<TraitFunctionId>, ExprAndId, TypeId, bool), cairo_lang_diagnostics::DiagnosticAdded>
-{
+    self_expr: ExprAndId<'db>,
+    method_syntax: SyntaxStablePtrId<'db>,
+    expr_ptr: ExprPtr<'db>,
+    self_ty: TypeId<'db>,
+    inference_errors: &mut Vec<(TraitFunctionId<'db>, InferenceError<'db>)>,
+) -> Result<
+    (Vec<TraitFunctionId<'db>>, ExprAndId<'db>, TypeId<'db>, bool),
+    cairo_lang_diagnostics::DiagnosticAdded,
+> {
+    let func_name_id = func_name.clone().intern(ctx.db);
     let mut candidates = filter_candidate_traits(
         ctx,
         inference_errors,
         self_ty,
         candidate_traits,
-        func_name.clone(),
+        func_name_id,
         method_syntax,
     );
     if !candidates.is_empty() {
@@ -2469,7 +2490,7 @@ fn get_method_function_candidates(
             inference_errors,
             deref_info.target_ty,
             candidate_traits,
-            func_name.clone(),
+            func_name_id,
             method_syntax,
         );
         if !candidates.is_empty() {
@@ -2484,12 +2505,12 @@ fn get_method_function_candidates(
 /// Computes the semantic model of a pattern.
 /// Note that this pattern will always be "registered" in the arena, so it can be looked up in the
 /// language server.
-pub fn compute_pattern_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::Pattern,
-    ty: TypeId,
-    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable>,
-) -> PatternAndId {
+pub fn compute_pattern_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::Pattern<'db>,
+    ty: TypeId<'db>,
+    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable<'db>>,
+) -> PatternAndId<'db> {
     let pat = maybe_compute_pattern_semantic(ctx, syntax, ty, or_pattern_variables_map);
     let pat = pat.unwrap_or_else(|diag_added| {
         Pattern::Missing(PatternMissing {
@@ -2503,12 +2524,12 @@ pub fn compute_pattern_semantic(
 }
 
 /// Computes the semantic model of a pattern, or None if invalid.
-fn maybe_compute_pattern_semantic(
-    ctx: &mut ComputationContext<'_>,
-    pattern_syntax: &ast::Pattern,
-    ty: TypeId,
-    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable>,
-) -> Maybe<Pattern> {
+fn maybe_compute_pattern_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    pattern_syntax: &ast::Pattern<'db>,
+    ty: TypeId<'db>,
+    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable<'db>>,
+) -> Maybe<Pattern<'db>> {
     // TODO(spapini): Check for missing type, and don't reemit an error.
     let db = ctx.db;
     let ty = ctx.reduce_ty(ty);
@@ -2609,7 +2630,8 @@ fn maybe_compute_pattern_semantic(
             // Paths with a single element are treated as identifiers, which will result in a
             // variable pattern if no matching enum variant is found. If a matching enum
             // variant exists, it is resolved to the corresponding concrete variant.
-            let mut segments = path.segments(db).elements(db);
+            let segments_var = path.segments(db);
+            let mut segments = segments_var.elements(db);
             if segments.len() > 1 {
                 return Err(ctx.diagnostics.report(path.stable_ptr(ctx.db), Unsupported));
             }
@@ -2665,35 +2687,37 @@ fn maybe_compute_pattern_semantic(
                         .diagnostics
                         .report(pattern_struct.stable_ptr(db), UnexpectedStructPattern(ty)))
                 })?;
-            let pattern_param_asts = pattern_struct.params(db).elements(db);
+            let params = pattern_struct.params(db);
+            let pattern_param_asts = params.elements(db);
             let struct_id = concrete_struct_id.struct_id(ctx.db);
             let mut members = ctx.db.concrete_struct_members(concrete_struct_id)?.as_ref().clone();
             let mut used_members = UnorderedHashSet::<_>::default();
-            let mut get_member = |ctx: &mut ComputationContext<'_>,
-                                  member_name: SmolStr,
-                                  stable_ptr: SyntaxStablePtrId| {
-                let member = members.swap_remove(&member_name).on_none(|| {
-                    ctx.diagnostics.report(
-                        stable_ptr,
-                        if used_members.contains(&member_name) {
-                            StructMemberRedefinition { struct_id, member_name: member_name.clone() }
-                        } else {
-                            NoSuchStructMember { struct_id, member_name: member_name.clone() }
-                        },
-                    );
-                })?;
-                check_struct_member_is_visible(ctx, &member, stable_ptr, &member_name);
-                used_members.insert(member_name);
-                Some(member)
-            };
+            let mut get_member =
+                |ctx: &mut ComputationContext<'db, '_, '_>,
+                 member_name: SmolStrId<'db>,
+                 stable_ptr: SyntaxStablePtrId<'db>| {
+                    let member = members.swap_remove(&member_name).on_none(|| {
+                        ctx.diagnostics.report(
+                            stable_ptr,
+                            if used_members.contains(&member_name) {
+                                StructMemberRedefinition { struct_id, member_name }
+                            } else {
+                                NoSuchStructMember { struct_id, member_name }
+                            },
+                        );
+                    })?;
+                    check_struct_member_is_visible(ctx, &member, stable_ptr, member_name);
+                    used_members.insert(member_name);
+                    Some(member)
+                };
             let mut field_patterns = vec![];
             let mut has_tail = false;
             for pattern_param_ast in pattern_param_asts {
                 match pattern_param_ast {
                     PatternStructParam::Single(single) => {
                         let name = single.name(db);
-                        let Some(member) =
-                            get_member(ctx, name.text(db), name.stable_ptr(db).untyped())
+                        let name_id = name.text(ctx.db).intern(ctx.db);
+                        let Some(member) = get_member(ctx, name_id, name.stable_ptr(db).untyped())
                         else {
                             continue;
                         };
@@ -2706,12 +2730,12 @@ fn maybe_compute_pattern_semantic(
                             single.stable_ptr(db).into(),
                             or_pattern_variables_map,
                         );
-                        field_patterns.push((member, ctx.arenas.patterns.alloc(pattern)));
+                        field_patterns.push((ctx.arenas.patterns.alloc(pattern), member));
                     }
                     PatternStructParam::WithExpr(with_expr) => {
                         let name = with_expr.name(db);
-                        let Some(member) =
-                            get_member(ctx, name.text(db), name.stable_ptr(db).untyped())
+                        let name_id = name.text(ctx.db).intern(ctx.db);
+                        let Some(member) = get_member(ctx, name_id, name.stable_ptr(db).untyped())
                         else {
                             continue;
                         };
@@ -2722,7 +2746,7 @@ fn maybe_compute_pattern_semantic(
                             ty,
                             or_pattern_variables_map,
                         );
-                        field_patterns.push((member, pattern.id));
+                        field_patterns.push((pattern.id, member));
                     }
                     PatternStructParam::Tail(_) => {
                         has_tail = true;
@@ -2748,7 +2772,7 @@ fn maybe_compute_pattern_semantic(
             pattern_syntax,
             ty,
             or_pattern_variables_map,
-            |ty: TypeId| UnexpectedTuplePattern(ty),
+            |ty: TypeId<'db>| UnexpectedTuplePattern(ty),
             |expected, actual| WrongNumberOfTupleElements { expected, actual },
         ),
         ast::Pattern::FixedSizeArray(_) => compute_tuple_like_pattern_semantic(
@@ -2756,7 +2780,7 @@ fn maybe_compute_pattern_semantic(
             pattern_syntax,
             ty,
             or_pattern_variables_map,
-            |ty: TypeId| UnexpectedFixedSizeArrayPattern(ty),
+            |ty: TypeId<'db>| UnexpectedFixedSizeArrayPattern(ty),
             |expected, actual| WrongNumberOfFixedSizeArrayElements { expected, actual },
         ),
         ast::Pattern::False(pattern_false) => {
@@ -2808,14 +2832,14 @@ fn maybe_compute_pattern_semantic(
 
 /// Computes the semantic model of a pattern of a tuple or a fixed size array. Assumes that the
 /// pattern is one of these types.
-fn compute_tuple_like_pattern_semantic(
-    ctx: &mut ComputationContext<'_>,
-    pattern_syntax: &ast::Pattern,
-    ty: TypeId,
-    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable>,
-    unexpected_pattern: fn(TypeId) -> SemanticDiagnosticKind,
-    wrong_number_of_elements: fn(usize, usize) -> SemanticDiagnosticKind,
-) -> Pattern {
+fn compute_tuple_like_pattern_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    pattern_syntax: &ast::Pattern<'db>,
+    ty: TypeId<'db>,
+    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable<'db>>,
+    unexpected_pattern: fn(TypeId<'db>) -> SemanticDiagnosticKind<'db>,
+    wrong_number_of_elements: fn(usize, usize) -> SemanticDiagnosticKind<'db>,
+) -> Pattern<'db> {
     let db = ctx.db;
     let (n_snapshots, mut long_ty) =
         match finalized_snapshot_peeled_ty(ctx, ty, pattern_syntax.stable_ptr(db)) {
@@ -2924,12 +2948,12 @@ fn compute_tuple_like_pattern_semantic(
 }
 
 /// Validates that the semantic type of an enum pattern is an enum, and returns the concrete enum.
-fn extract_concrete_enum_from_pattern_and_validate(
-    ctx: &mut ComputationContext<'_>,
-    pattern: &ast::Pattern,
-    ty: TypeId,
-    concrete_enum_id: ConcreteEnumId,
-) -> Maybe<(ConcreteEnumId, usize)> {
+fn extract_concrete_enum_from_pattern_and_validate<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    pattern: &ast::Pattern<'db>,
+    ty: TypeId<'db>,
+    concrete_enum_id: ConcreteEnumId<'db>,
+) -> Maybe<(ConcreteEnumId<'db>, usize)> {
     // Peel all snapshot wrappers.
     let (n_snapshots, long_ty) = finalized_snapshot_peeled_ty(ctx, ty, pattern.stable_ptr(ctx.db))?;
 
@@ -2957,11 +2981,11 @@ fn extract_concrete_enum_from_pattern_and_validate(
 /// Validates that the semantic type of an enum pattern is an enum.
 /// After that finds the concrete variant in the pattern, and verifies it has args if needed.
 /// Returns the number of snapshots.
-fn validate_pattern_type_and_args(
-    ctx: &mut ComputationContext<'_>,
-    pattern: &ast::Pattern,
-    ty: TypeId,
-    concrete_variant: ConcreteVariant,
+fn validate_pattern_type_and_args<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    pattern: &ast::Pattern<'db>,
+    ty: TypeId<'db>,
+    concrete_variant: ConcreteVariant<'db>,
 ) -> Maybe<usize> {
     let db = ctx.db;
 
@@ -3014,14 +3038,14 @@ fn validate_pattern_type_and_args(
 }
 
 /// Creates a local variable pattern.
-fn create_variable_pattern(
-    ctx: &mut ComputationContext<'_>,
-    identifier: ast::TerminalIdentifier,
-    modifier_list: &[ast::Modifier],
-    ty: TypeId,
-    stable_ptr: ast::PatternPtr,
-    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable>,
-) -> Pattern {
+fn create_variable_pattern<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    identifier: ast::TerminalIdentifier<'db>,
+    modifier_list: &[ast::Modifier<'db>],
+    ty: TypeId<'db>,
+    stable_ptr: ast::PatternPtr<'db>,
+    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable<'db>>,
+) -> Pattern<'db> {
     let db = ctx.db;
 
     let var_id = match or_pattern_variables_map.get(&identifier.text(db)) {
@@ -3046,10 +3070,10 @@ fn create_variable_pattern(
 }
 
 /// Creates a struct constructor semantic expression from its AST.
-fn struct_ctor_expr(
-    ctx: &mut ComputationContext<'_>,
-    ctor_syntax: &ast::ExprStructCtorCall,
-) -> Maybe<Expr> {
+fn struct_ctor_expr<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    ctor_syntax: &ast::ExprStructCtorCall<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
     let path = ctor_syntax.path(db);
 
@@ -3080,7 +3104,7 @@ fn struct_ctor_expr(
         match arg {
             ast::StructArg::StructArgSingle(arg) => {
                 let arg_identifier = arg.identifier(db);
-                let arg_name = arg_identifier.text(db);
+                let arg_name = arg_identifier.text(db).intern(ctx.db);
 
                 // Find struct member by name.
                 let Some(member) = members.get(&arg_name) else {
@@ -3091,7 +3115,7 @@ fn struct_ctor_expr(
                     ctx,
                     member,
                     arg_identifier.stable_ptr(db).untyped(),
-                    &arg_name,
+                    arg_name,
                 );
 
                 // Extract expression.
@@ -3177,11 +3201,10 @@ fn struct_ctor_expr(
                     ctx,
                     member,
                     base_struct.clone().unwrap().1.stable_ptr(db).untyped(),
-                    member_name,
+                    *member_name,
                 );
             } else {
-                ctx.diagnostics
-                    .report(ctor_syntax.stable_ptr(db), MissingMember(member_name.clone()));
+                ctx.diagnostics.report(ctor_syntax.stable_ptr(db), MissingMember(*member_name));
             }
         }
     }
@@ -3194,7 +3217,7 @@ fn struct_ctor_expr(
     }
     Ok(Expr::StructCtor(ExprStructCtor {
         concrete_struct_id,
-        members: member_exprs.into_iter().filter_map(|(x, y)| Some((x, y?))).collect(),
+        members: member_exprs.into_iter().filter_map(|(x, y)| Some((y?, x))).collect(),
         base_struct: base_struct.map(|(x, _)| x),
         ty: TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)).intern(db),
         stable_ptr: ctor_syntax.stable_ptr(db).into(),
@@ -3206,8 +3229,8 @@ fn struct_ctor_expr(
 /// it does not end with a semicolon.
 fn statements_and_tail<'a>(
     db: &'a dyn SemanticGroup,
-    syntax: ast::StatementList,
-) -> (impl Iterator<Item = ast::Statement> + 'a, Option<ast::StatementExpr>) {
+    syntax: ast::StatementList<'a>,
+) -> (impl Iterator<Item = ast::Statement<'a>> + 'a, Option<ast::StatementExpr<'a>>) {
     let mut statements = syntax.elements(db);
     let last = statements.next_back();
     if let Some(ast::Statement::Expr(expr)) = &last {
@@ -3220,12 +3243,12 @@ fn statements_and_tail<'a>(
 }
 
 /// Creates a new numeric literal expression.
-fn new_literal_expr(
-    ctx: &mut ComputationContext<'_>,
+fn new_literal_expr<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
     ty: Option<&str>,
     value: BigInt,
-    stable_ptr: ExprPtr,
-) -> Maybe<ExprLiteral> {
+    stable_ptr: ExprPtr<'db>,
+) -> Maybe<ExprLiteral<'db>> {
     if let Some(ty_str) = ty {
         // Requires specific blocking as `NonZero` now has NumericLiteral support.
         if ty_str == "NonZero" {
@@ -3255,10 +3278,10 @@ fn new_literal_expr(
 }
 
 /// Creates the semantic model of a literal expression from its AST.
-fn literal_to_semantic(
-    ctx: &mut ComputationContext<'_>,
-    literal_syntax: &ast::TerminalLiteralNumber,
-) -> Maybe<ExprLiteral> {
+fn literal_to_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    literal_syntax: &ast::TerminalLiteralNumber<'db>,
+) -> Maybe<ExprLiteral<'db>> {
     let db = ctx.db;
 
     let (value, ty) = literal_syntax.numeric_value_and_suffix(db).unwrap_or_default();
@@ -3268,10 +3291,10 @@ fn literal_to_semantic(
 }
 
 /// Creates the semantic model of a short string from its AST.
-fn short_string_to_semantic(
-    ctx: &mut ComputationContext<'_>,
-    short_string_syntax: &ast::TerminalShortString,
-) -> Maybe<ExprLiteral> {
+fn short_string_to_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    short_string_syntax: &ast::TerminalShortString<'db>,
+) -> Maybe<ExprLiteral<'db>> {
     let db = ctx.db;
 
     let value = short_string_syntax.numeric_value(db).unwrap_or_default();
@@ -3283,11 +3306,11 @@ fn short_string_to_semantic(
 }
 
 /// Creates a new string literal expression.
-fn new_string_literal_expr(
-    ctx: &mut ComputationContext<'_>,
+fn new_string_literal_expr<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
     value: String,
-    stable_ptr: ExprPtr,
-) -> Maybe<ExprStringLiteral> {
+    stable_ptr: ExprPtr<'db>,
+) -> Maybe<ExprStringLiteral<'db>> {
     let ty = ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()));
 
     let trait_id = ctx.db.core_info().string_literal_trt;
@@ -3301,10 +3324,10 @@ fn new_string_literal_expr(
 }
 
 /// Creates the semantic model of a string literal from its AST.
-fn string_literal_to_semantic(
-    ctx: &mut ComputationContext<'_>,
-    string_syntax: &ast::TerminalString,
-) -> Maybe<ExprStringLiteral> {
+fn string_literal_to_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    string_syntax: &ast::TerminalString<'db>,
+) -> Maybe<ExprStringLiteral<'db>> {
     let db = ctx.db;
     let stable_ptr = string_syntax.stable_ptr(db);
 
@@ -3316,11 +3339,12 @@ fn string_literal_to_semantic(
 /// Given path, if it's a single segment or a $callsite-prefixed segment,
 /// returns a tuple of (identifier, is_callsite_prefixed).
 /// Otherwise, returns None.
-fn try_extract_identifier_from_path(
-    db: &dyn SyntaxGroup,
-    path: &ast::ExprPath,
-) -> Option<(TerminalIdentifier, bool)> {
-    let mut segments = path.segments(db).elements(db);
+fn try_extract_identifier_from_path<'a>(
+    db: &'a dyn SyntaxGroup,
+    path: &ast::ExprPath<'a>,
+) -> Option<(TerminalIdentifier<'a>, bool)> {
+    let segments_var = path.segments(db);
+    let mut segments = segments_var.elements(db);
     require(segments.len() <= 2)?;
     let Some(PathSegment::Simple(first)) = segments.next() else {
         return None;
@@ -3338,12 +3362,13 @@ fn try_extract_identifier_from_path(
 
 /// Given an expression syntax, if it's an identifier, returns it. Otherwise, returns the proper
 /// error.
-fn expr_as_identifier(
-    ctx: &mut ComputationContext<'_>,
-    path: &ast::ExprPath,
-    db: &dyn SyntaxGroup,
+fn expr_as_identifier<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    path: &ast::ExprPath<'db>,
+    db: &'db dyn SyntaxGroup,
 ) -> Maybe<SmolStr> {
-    let mut segments = path.segments(db).elements(db);
+    let segments_var = path.segments(db);
+    let mut segments = segments_var.elements(db);
     if segments.len() == 1 {
         Ok(segments.next().unwrap().identifier(db))
     } else {
@@ -3353,12 +3378,12 @@ fn expr_as_identifier(
 
 // TODO(spapini): Consider moving some checks here to the responsibility of the parser.
 /// Computes the semantic expression for a dot expression.
-fn dot_expr(
-    ctx: &mut ComputationContext<'_>,
-    lexpr: ExprAndId,
-    rhs_syntax: ast::Expr,
-    stable_ptr: ast::ExprPtr,
-) -> Maybe<Expr> {
+fn dot_expr<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    lexpr: ExprAndId<'db>,
+    rhs_syntax: ast::Expr<'db>,
+    stable_ptr: ast::ExprPtr<'db>,
+) -> Maybe<Expr<'db>> {
     // Find MemberId.
     match rhs_syntax {
         ast::Expr::Path(expr) => member_access_expr(ctx, lexpr, expr, stable_ptr),
@@ -3368,9 +3393,9 @@ fn dot_expr(
 }
 
 /// Finds all the trait ids usable in the current context.
-fn traits_in_context(
-    ctx: &mut ComputationContext<'_>,
-) -> Maybe<OrderedHashMap<TraitId, LookupItemId>> {
+fn traits_in_context<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+) -> Maybe<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>> {
     let mut traits =
         ctx.db.module_usable_trait_ids(ctx.resolver.prelude_submodule())?.deref().clone();
     traits.extend(
@@ -3385,12 +3410,12 @@ fn traits_in_context(
 /// Computes the semantic model of a method call expression (e.g. "expr.method(..)").
 /// Finds all traits with at least one candidate impl with a matching `self` param.
 /// If more/less than 1 such trait exists, fails.
-fn method_call_expr(
-    ctx: &mut ComputationContext<'_>,
-    lexpr: ExprAndId,
-    expr: ast::ExprFunctionCall,
-    stable_ptr: ast::ExprPtr,
-) -> Maybe<Expr> {
+fn method_call_expr<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    lexpr: ExprAndId<'db>,
+    expr: ast::ExprFunctionCall<'db>,
+    stable_ptr: ast::ExprPtr<'db>,
+) -> Maybe<Expr<'db>> {
     // TODO(spapini): Add ctx.module_id.
     // TODO(spapini): Look also in uses.
     let db = ctx.db;
@@ -3435,13 +3460,14 @@ fn method_call_expr(
             path.stable_ptr(db).untyped(),
             generic_args_syntax,
             |ty, method_name, inference_errors| {
+                let method_name = method_name.intern(ctx.db);
                 let relevant_traits = if !inference_errors.is_empty() {
                     vec![]
                 } else {
                     match_method_to_traits(
                         db,
                         ty,
-                        &method_name,
+                        method_name,
                         lookup_context.clone(),
                         module_file_id,
                         lexpr_clone.stable_ptr().untyped(),
@@ -3461,7 +3487,9 @@ fn method_call_expr(
         })?;
 
     if let Ok(trait_definition_data) = ctx.db.priv_trait_definition_data(actual_trait_id) {
-        if let Some(trait_item_info) = trait_definition_data.get_trait_item_info(&func_name) {
+        if let Some(trait_item_info) =
+            trait_definition_data.get_trait_item_info(func_name.intern(ctx.db))
+        {
             ctx.resolver.validate_feature_constraints(
                 ctx.diagnostics,
                 &segment.identifier_ast(db),
@@ -3479,11 +3507,12 @@ fn method_call_expr(
     );
 
     // Note there may be n+1 arguments for n parameters, if the last one is a coupon.
-    let mut args_iter = expr.arguments(db).arguments(db).elements(db);
+    let arguments_var = expr.arguments(db).arguments(db);
+    let mut args_iter = arguments_var.elements(db);
     // Self argument.
     let mut named_args = vec![NamedArg(fixed_lexpr, None, mutability)];
     // Other arguments.
-    let closure_params: OrderedHashMap<TypeId, TypeId> =
+    let closure_params: OrderedHashMap<TypeId<'db>, TypeId> =
         concrete_function_closure_params(ctx.db, function_id)?;
     for ty in function_parameter_types(ctx, function_id)?.skip(1) {
         let Some(arg_syntax) = args_iter.next() else {
@@ -3505,23 +3534,23 @@ fn method_call_expr(
 }
 
 /// Computes the semantic model of a member access expression (e.g. "expr.member").
-fn member_access_expr(
-    ctx: &mut ComputationContext<'_>,
-    lexpr: ExprAndId,
-    rhs_syntax: ast::ExprPath,
-    stable_ptr: ast::ExprPtr,
-) -> Maybe<Expr> {
+fn member_access_expr<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    lexpr: ExprAndId<'db>,
+    rhs_syntax: ast::ExprPath<'db>,
+    stable_ptr: ast::ExprPtr<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
 
     // Find MemberId.
-    let member_name = expr_as_identifier(ctx, &rhs_syntax, db)?;
+    let member_name = expr_as_identifier(ctx, &rhs_syntax, db)?.intern(ctx.db);
     let (n_snapshots, long_ty) =
         finalized_snapshot_peeled_ty(ctx, lexpr.ty(), rhs_syntax.stable_ptr(db))?;
 
     match &long_ty {
         TypeLongId::Concrete(_) | TypeLongId::Tuple(_) | TypeLongId::FixedSizeArray { .. } => {
             let Some(EnrichedTypeMemberAccess { member, deref_functions }) =
-                get_enriched_type_member_access(ctx, lexpr.clone(), stable_ptr, &member_name)?
+                get_enriched_type_member_access(ctx, lexpr.clone(), stable_ptr, member_name)?
             else {
                 return Err(ctx.diagnostics.report(
                     rhs_syntax.stable_ptr(db),
@@ -3532,7 +3561,7 @@ fn member_access_expr(
                 ctx,
                 &member,
                 rhs_syntax.stable_ptr(db).untyped(),
-                &member_name,
+                member_name,
             );
             let member_path = match &long_ty {
                 TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id))
@@ -3615,12 +3644,12 @@ fn member_access_expr(
 ///
 /// Enriched members include both direct members (in case of a struct), and members of derefed types
 /// if the type implements the Deref trait into a struct.
-fn get_enriched_type_member_access(
-    ctx: &mut ComputationContext<'_>,
-    expr: ExprAndId,
-    stable_ptr: ast::ExprPtr,
-    accessed_member_name: &str,
-) -> Maybe<Option<EnrichedTypeMemberAccess>> {
+fn get_enriched_type_member_access<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    expr: ExprAndId<'db>,
+    stable_ptr: ast::ExprPtr<'db>,
+    accessed_member_name: SmolStrId<'db>,
+) -> Maybe<Option<EnrichedTypeMemberAccess<'db>>> {
     let mut ty = ctx.reduce_ty(expr.ty());
     if !ty.is_var_free(ctx.db) {
         // Run solver to get as much info on the type as possible.
@@ -3660,7 +3689,7 @@ fn get_enriched_type_member_access(
             let members =
                 if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
                     let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
-                    if let Some(member) = members.get(accessed_member_name) {
+                    if let Some(member) = members.get(&accessed_member_name) {
                         // Found direct member access - so directly returning it.
                         return Ok(Some(EnrichedTypeMemberAccess {
                             member: member.clone(),
@@ -3688,11 +3717,11 @@ fn get_enriched_type_member_access(
 ///
 /// The function will stop enriching if it encounters a cycle in the deref chain, or if the
 /// requested member is found.
-fn enrich_members(
-    ctx: &mut ComputationContext<'_>,
-    enriched_members: &mut EnrichedMembers,
-    stable_ptr: ast::ExprPtr,
-    accessed_member_name: &str,
+fn enrich_members<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    enriched_members: &mut EnrichedMembers<'db>,
+    stable_ptr: ast::ExprPtr<'db>,
+    accessed_member_name: SmolStrId<'db>,
 ) -> Maybe<()> {
     let EnrichedMembers { members: enriched, deref_chain, explored_derefs } = enriched_members;
 
@@ -3709,7 +3738,7 @@ fn enrich_members(
                     .or_insert_with(|| (member.clone(), *explored_derefs));
             }
             // If member is contained we can stop the calculation post the lookup.
-            if members.contains_key(accessed_member_name) {
+            if members.contains_key(&accessed_member_name) {
                 // Found member, so exploration isn't done.
                 break;
             }
@@ -3719,11 +3748,11 @@ fn enrich_members(
 }
 
 /// Peels snapshots from a type and making sure it is fully not a variable type.
-fn finalized_snapshot_peeled_ty(
-    ctx: &mut ComputationContext<'_>,
-    ty: TypeId,
-    stable_ptr: impl Into<SyntaxStablePtrId>,
-) -> Maybe<(usize, TypeLongId)> {
+fn finalized_snapshot_peeled_ty<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    ty: TypeId<'db>,
+    stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
+) -> Maybe<(usize, TypeLongId<'db>)> {
     let ty = ctx.reduce_ty(ty);
     let (base_snapshots, mut long_ty) = peel_snapshots(ctx.db, ty);
     if let TypeLongId::ImplType(impl_type_id) = long_ty {
@@ -3745,7 +3774,10 @@ fn finalized_snapshot_peeled_ty(
 }
 
 /// Resolves a variable or a constant given a context and a path expression.
-fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> Maybe<Expr> {
+fn resolve_expr_path<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    path: &ast::ExprPath<'db>,
+) -> Maybe<Expr<'db>> {
     let db = ctx.db;
     if path.segments(db).elements(db).len() == 0 {
         return Err(ctx.diagnostics.report(path.stable_ptr(db), Unsupported));
@@ -3753,10 +3785,10 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
 
     // Check if this is a variable.
     if let Some((identifier, is_callsite_prefixed)) = try_extract_identifier_from_path(db, path) {
-        let variable_name = identifier.text(ctx.db);
+        let variable_name = identifier.text(ctx.db).intern(ctx.db);
         if let Some(res) = get_binded_expr_by_name(
             ctx,
-            &variable_name,
+            variable_name,
             is_callsite_prefixed,
             path.stable_ptr(ctx.db).into(),
         ) {
@@ -3824,13 +3856,13 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
 /// named function call and struct constructor arguments.
 ///
 /// Reports a diagnostic if the variable was not found.
-pub fn resolve_variable_by_name(
-    ctx: &mut ComputationContext<'_>,
-    identifier: &ast::TerminalIdentifier,
-    stable_ptr: ast::ExprPtr,
-) -> Maybe<Expr> {
-    let variable_name = identifier.text(ctx.db);
-    let res = get_binded_expr_by_name(ctx, &variable_name, false, stable_ptr).ok_or_else(|| {
+pub fn resolve_variable_by_name<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    identifier: &ast::TerminalIdentifier<'db>,
+    stable_ptr: ast::ExprPtr<'db>,
+) -> Maybe<Expr<'db>> {
+    let variable_name = identifier.text(ctx.db).intern(ctx.db);
+    let res = get_binded_expr_by_name(ctx, variable_name, false, stable_ptr).ok_or_else(|| {
         ctx.diagnostics.report(identifier.stable_ptr(ctx.db), VariableNotFound(variable_name))
     })?;
     let item = ResolvedGenericItem::Variable(extract_matches!(&res, Expr::Var).var);
@@ -3839,12 +3871,12 @@ pub fn resolve_variable_by_name(
 }
 
 /// Returns the requested variable from the environment if it exists. Returns None otherwise.
-pub fn get_binded_expr_by_name(
-    ctx: &mut ComputationContext<'_>,
-    variable_name: &SmolStr,
+pub fn get_binded_expr_by_name<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    variable_name: SmolStrId<'db>,
     is_callsite_prefixed: bool,
-    stable_ptr: ast::ExprPtr,
-) -> Option<Expr> {
+    stable_ptr: ast::ExprPtr<'db>,
+) -> Option<Expr<'db>> {
     let mut maybe_env = Some(&mut *ctx.environment);
     let mut cur_offset =
         ExpansionOffset::new(stable_ptr.lookup(ctx.db).as_syntax_node().offset(ctx.db));
@@ -3860,7 +3892,7 @@ pub fn get_binded_expr_by_name(
             }
         }
         if !is_callsite_prefixed || found_callsite_scope {
-            if let Some(var) = env.variables.get(variable_name) {
+            if let Some(var) = env.variables.get(&variable_name) {
                 env.used_variables.insert(var.id());
                 return match var {
                     Binding::LocalItem(local_const) => match local_const.kind.clone() {
@@ -3889,13 +3921,13 @@ pub fn get_binded_expr_by_name(
 }
 
 /// Typechecks a function call.
-fn expr_function_call(
-    ctx: &mut ComputationContext<'_>,
-    function_id: FunctionId,
-    mut named_args: Vec<NamedArg>,
-    call_ptr: impl Into<SyntaxStablePtrId>,
-    stable_ptr: ast::ExprPtr,
-) -> Maybe<Expr> {
+fn expr_function_call<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    function_id: FunctionId<'db>,
+    mut named_args: Vec<NamedArg<'db>>,
+    call_ptr: impl Into<SyntaxStablePtrId<'db>>,
+    stable_ptr: ast::ExprPtr<'db>,
+) -> Maybe<Expr<'db>> {
     let coupon_arg = maybe_pop_coupon_argument(ctx, &mut named_args, function_id);
 
     let signature = ctx.db.concrete_function_signature(function_id)?;
@@ -3973,11 +4005,11 @@ fn expr_function_call(
 
 /// Checks if the last item in `named_args`, has the argument name `__coupon__`, and removes and
 /// returns it if so.
-fn maybe_pop_coupon_argument(
-    ctx: &mut ComputationContext<'_>,
-    named_args: &mut Vec<NamedArg>,
-    function_id: FunctionId,
-) -> Option<id_arena::Id<Expr>> {
+fn maybe_pop_coupon_argument<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    named_args: &mut Vec<NamedArg<'db>>,
+    function_id: FunctionId<'db>,
+) -> Option<id_arena::Id<Expr<'db>>> {
     let mut coupon_arg: Option<ExprId> = None;
     if let Some(NamedArg(arg, Some(name_terminal), mutability)) = named_args.last() {
         let coupons_enabled = are_coupons_enabled(ctx.db, ctx.resolver.module_file_id);
@@ -4011,7 +4043,7 @@ fn maybe_pop_coupon_argument(
 }
 
 /// Checks if a panicable function is called from a disallowed context.
-fn has_panic_incompatibility(ctx: &mut ComputationContext<'_>) -> bool {
+fn has_panic_incompatibility(ctx: &mut ComputationContext<'_, '_, '_>) -> bool {
     if let Some(signature) = ctx.signature {
         // If the caller is nopanic, then this is a panic incompatibility.
         !signature.panicable
@@ -4021,10 +4053,10 @@ fn has_panic_incompatibility(ctx: &mut ComputationContext<'_>) -> bool {
 }
 
 /// Checks the correctness of the named arguments, and outputs diagnostics on errors.
-fn check_named_arguments(
-    named_args: &[NamedArg],
-    signature: &Signature,
-    ctx: &mut ComputationContext<'_>,
+fn check_named_arguments<'db>(
+    named_args: &[NamedArg<'db>],
+    signature: &Signature<'db>,
+    ctx: &mut ComputationContext<'db, '_, '_>,
 ) -> Maybe<()> {
     let mut res: Maybe<()> = Ok(());
 
@@ -4040,11 +4072,11 @@ fn check_named_arguments(
         // Check name.
         if let Some(name_terminal) = name_opt {
             seen_named_arguments = true;
-            let name = name_terminal.text(ctx.db);
-            if param.name != name.clone() {
+            let name = name_terminal.text(ctx.db).intern(ctx.db);
+            if param.name != name {
                 res = Err(ctx.diagnostics.report(
                     name_terminal.stable_ptr(ctx.db),
-                    NamedArgumentMismatch { expected: param.name.clone(), found: name },
+                    NamedArgumentMismatch { expected: param.name, found: name },
                 ));
             }
         } else if seen_named_arguments && !reported_unnamed_argument_follows_named {
@@ -4057,10 +4089,10 @@ fn check_named_arguments(
 
 /// Computes the semantic model for a statement and appends the resulting statement IDs to the
 /// provided vector.
-pub fn compute_and_append_statement_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: ast::Statement,
-    statements: &mut Vec<StatementId>,
+pub fn compute_and_append_statement_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: ast::Statement<'db>,
+    statements: &mut Vec<StatementId<'db>>,
 ) -> Maybe<()> {
     let db = ctx.db;
     let crate_id = ctx.resolver.owning_crate_id;
@@ -4136,13 +4168,13 @@ pub fn compute_and_append_statement_semantic(
             let variables = pattern.variables(&ctx.arenas.patterns);
             for v in variables {
                 let var_def = Binding::LocalVar(v.var.clone());
-                if let Some(old_var) =
-                    ctx.environment.variables.insert(v.name.clone(), var_def.clone())
+                let v_name_id = v.name.clone().intern(ctx.db);
+                if let Some(old_var) = ctx.environment.variables.insert(v_name_id, var_def.clone())
                 {
                     if matches!(old_var, Binding::LocalItem(_)) {
                         return Err(ctx
                             .diagnostics
-                            .report(v.stable_ptr, MultipleDefinitionforBinding(v.name.clone())));
+                            .report(v.stable_ptr, MultipleDefinitionforBinding(v_name_id)));
                     }
                     add_unused_binding_warning(
                         ctx.diagnostics,
@@ -4154,7 +4186,7 @@ pub fn compute_and_append_statement_semantic(
                 }
                 if ctx.macro_defined_var_unhygienic {
                     if let Some(macro_info) = &mut ctx.environment.macro_info {
-                        macro_info.vars_to_expose.push((v.name.clone(), var_def.clone()));
+                        macro_info.vars_to_expose.push((v.name.intern(ctx.db), var_def.clone()));
                     }
                 }
                 ctx.semantic_defs.insert(var_def.id(), var_def);
@@ -4331,7 +4363,7 @@ pub fn compute_and_append_statement_semantic(
                         false,
                     );
                     let name_syntax = const_syntax.name(db);
-                    let name = name_syntax.text(db);
+                    let name = name_syntax.text(db).intern(ctx.db);
                     let rhs_id = StatementConstLongId(
                         ctx.resolver.module_file_id,
                         const_syntax.stable_ptr(db),
@@ -4363,7 +4395,7 @@ pub fn compute_and_append_statement_semantic(
                         let var_def_id = StatementItemId::Use(
                             StatementUseLongId(ctx.resolver.module_file_id, stable_ptr).intern(db),
                         );
-                        let name = var_def_id.name(db);
+                        let name = var_def_id.name(db).intern(ctx.db);
                         match resolved_item {
                             ResolvedGenericItem::GenericConstant(const_id) => {
                                 let var_def = Binding::LocalItem(LocalItem {
@@ -4433,13 +4465,13 @@ pub fn compute_and_append_statement_semantic(
 }
 /// Adds an item to the statement environment and reports a diagnostic if the item is already
 /// defined.
-fn add_item_to_statement_environment(
-    ctx: &mut ComputationContext<'_>,
-    name: SmolStr,
-    var_def: Binding,
-    stable_ptr: impl Into<SyntaxStablePtrId>,
+fn add_item_to_statement_environment<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    name: SmolStrId<'db>,
+    var_def: Binding<'db>,
+    stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
 ) {
-    if let Some(old_var) = ctx.environment.variables.insert(name.clone(), var_def.clone()) {
+    if let Some(old_var) = ctx.environment.variables.insert(name, var_def.clone()) {
         ctx.diagnostics.report(
             stable_ptr,
             match old_var {
@@ -4453,17 +4485,17 @@ fn add_item_to_statement_environment(
 
 /// Adds a type to the statement environment and reports a diagnostic if the type is already
 /// defined.
-fn add_type_to_statement_environment(
-    ctx: &mut ComputationContext<'_>,
-    name: SmolStr,
-    resolved_generic_item: ResolvedGenericItem,
-    stable_ptr: impl Into<SyntaxStablePtrId> + std::marker::Copy,
+fn add_type_to_statement_environment<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    name: SmolStrId<'db>,
+    resolved_generic_item: ResolvedGenericItem<'db>,
+    stable_ptr: impl Into<SyntaxStablePtrId<'db>> + std::marker::Copy,
 ) {
     if ctx
         .environment
         .use_items
         .insert(
-            name.clone(),
+            name,
             StatementGenericItemData { resolved_generic_item, stable_ptr: stable_ptr.into() },
         )
         .is_some()
@@ -4474,10 +4506,10 @@ fn add_type_to_statement_environment(
 
 /// Computes the semantic model of an expression and reports diagnostics if the expression does not
 /// evaluate to a boolean value.
-fn compute_bool_condition_semantic(
-    ctx: &mut ComputationContext<'_>,
-    condition_syntax: &ast::Expr,
-) -> ExprAndId {
+fn compute_bool_condition_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    condition_syntax: &ast::Expr<'db>,
+) -> ExprAndId<'db> {
     let condition = compute_expr_semantic(ctx, condition_syntax);
     let inference = &mut ctx.resolver.inference();
     let _ = inference.conform_ty_for_diag(
@@ -4491,11 +4523,11 @@ fn compute_bool_condition_semantic(
 }
 
 /// Validates a struct member is visible and otherwise adds a diagnostic.
-fn check_struct_member_is_visible(
-    ctx: &mut ComputationContext<'_>,
-    member: &Member,
-    stable_ptr: SyntaxStablePtrId,
-    member_name: &SmolStr,
+fn check_struct_member_is_visible<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    member: &Member<'db>,
+    stable_ptr: SyntaxStablePtrId<'db>,
+    member_name: SmolStrId<'db>,
 ) {
     let db = ctx.db;
     let containing_module_id = member.id.parent_module(db);
@@ -4504,13 +4536,16 @@ fn check_struct_member_is_visible(
     }
     let user_module_id = ctx.resolver.module_file_id.0;
     if !visibility::peek_visible_in(db, member.visibility, containing_module_id, user_module_id) {
-        ctx.diagnostics.report(stable_ptr, MemberNotVisible(member_name.clone()));
+        ctx.diagnostics.report(stable_ptr, MemberNotVisible(member_name));
     }
 }
 
 /// Verifies that the statement attributes are valid statements attributes, if not a diagnostic is
 /// reported.
-fn validate_statement_attributes(ctx: &mut ComputationContext<'_>, syntax: &ast::Statement) {
+fn validate_statement_attributes<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    syntax: &ast::Statement<'db>,
+) {
     let allowed_attributes = ctx.db.allowed_statement_attributes();
     let mut diagnostics = vec![];
     validate_attributes_flat(
@@ -4528,10 +4563,10 @@ fn validate_statement_attributes(ctx: &mut ComputationContext<'_>, syntax: &ast:
 }
 
 /// Gets an iterator with the types of the parameters of the given function.
-fn function_parameter_types(
-    ctx: &mut ComputationContext<'_>,
-    function: FunctionId,
-) -> Maybe<impl Iterator<Item = TypeId>> {
+fn function_parameter_types<'db>(
+    ctx: &mut ComputationContext<'db, '_, '_>,
+    function: FunctionId<'db>,
+) -> Maybe<impl Iterator<Item = TypeId<'db>>> {
     let signature = ctx.db.concrete_function_signature(function)?;
     let param_types = signature.params.into_iter().map(|param| param.ty);
     Ok(param_types)
@@ -4540,13 +4575,13 @@ fn function_parameter_types(
 /// Finds traits which contain a method matching the given name and type.
 /// This function checks for visible traits in the specified module file and filters
 /// methods based on their association with the given type and method name.
-fn match_method_to_traits(
+fn match_method_to_traits<'db>(
     db: &dyn SemanticGroup,
-    ty: semantic::TypeId,
-    method_name: &SmolStr,
-    lookup_context: ImplLookupContext,
-    module_file_id: ModuleFileId,
-    stable_ptr: SyntaxStablePtrId,
+    ty: semantic::TypeId<'db>,
+    method_name: SmolStrId<'db>,
+    lookup_context: ImplLookupContext<'db>,
+    module_file_id: ModuleFileId<'db>,
+    stable_ptr: SyntaxStablePtrId<'db>,
 ) -> Vec<String> {
     let visible_traits = db
         .visible_traits_from_module(module_file_id)
@@ -4557,14 +4592,12 @@ fn match_method_to_traits(
         .filter_map(|(trait_id, path)| {
             let mut data = InferenceData::new(InferenceId::NoContext);
             let mut inference = data.inference(db);
-            let trait_function =
-                db.trait_function_by_name(*trait_id, method_name.clone()).ok()??;
-            let (concrete_trait_id, _) = inference.infer_concrete_trait_by_self(
+            let trait_function = db.trait_function_by_name(*trait_id, method_name).ok()??;
+            let (concrete_trait_id, _) = inference.infer_concrete_trait_by_self_without_errors(
                 trait_function,
                 ty,
                 &lookup_context,
                 Some(stable_ptr),
-                |_| {},
             )?;
             inference.solve().ok();
             match inference.trait_solution_set(

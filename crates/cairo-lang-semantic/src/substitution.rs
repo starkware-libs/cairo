@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 
@@ -8,6 +7,7 @@ use cairo_lang_defs::ids::{
     TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_utils::deque::Deque;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{LookupIntern, extract_matches};
 use itertools::zip_eq;
@@ -52,16 +52,19 @@ pub enum RewriteResult {
 
 /// A substitution of generic arguments in generic parameters as well as the `Self` of traits. Used
 /// for concretization.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
-pub struct GenericSubstitution {
-    param_to_arg: OrderedHashMap<GenericParamId, GenericArgumentId>,
-    self_impl: Option<ImplId>,
+#[derive(Clone, Debug, Default, PartialEq, Eq, salsa::Update, Hash)]
+pub struct GenericSubstitution<'db> {
+    param_to_arg: OrderedHashMap<GenericParamId<'db>, GenericArgumentId<'db>>,
+    self_impl: Option<ImplId<'db>>,
 }
-impl GenericSubstitution {
-    pub fn from_impl(self_impl: ImplId) -> Self {
+impl<'db> GenericSubstitution<'db> {
+    pub fn from_impl(self_impl: ImplId<'db>) -> Self {
         GenericSubstitution { param_to_arg: OrderedHashMap::default(), self_impl: Some(self_impl) }
     }
-    pub fn new(generic_params: &[GenericParam], generic_args: &[GenericArgumentId]) -> Self {
+    pub fn new(
+        generic_params: &[GenericParam<'db>],
+        generic_args: &[GenericArgumentId<'db>],
+    ) -> Self {
         GenericSubstitution {
             param_to_arg: zip_eq(generic_params, generic_args)
                 .map(|(param, arg)| (param.id(), *arg))
@@ -69,7 +72,20 @@ impl GenericSubstitution {
             self_impl: None,
         }
     }
-    pub fn concat(mut self, other: GenericSubstitution) -> Self {
+    pub fn new_from_vec(
+        generic_params: Vec<GenericParam<'db>>,
+        generic_args: Vec<GenericArgumentId<'db>>,
+    ) -> Self {
+        GenericSubstitution {
+            param_to_arg: generic_params
+                .into_iter()
+                .zip(generic_args)
+                .map(|(param, arg)| (param.id(), arg))
+                .collect(),
+            self_impl: None,
+        }
+    }
+    pub fn concat(mut self, other: GenericSubstitution<'db>) -> Self {
         for (key, value) in other.param_to_arg {
             self.param_to_arg.insert(key, value);
         }
@@ -82,21 +98,23 @@ impl GenericSubstitution {
     pub fn is_empty(&self) -> bool {
         self.param_to_arg.is_empty() && self.self_impl.is_none()
     }
-    pub fn substitute<'a, Obj>(&'a self, db: &'a dyn SemanticGroup, obj: Obj) -> Maybe<Obj>
+    pub fn substitute<'a, 'r, Obj>(&'r self, db: &'a dyn SemanticGroup, obj: Obj) -> Maybe<Obj>
     where
-        SubstitutionRewriter<'a>: SemanticRewriter<Obj, DiagnosticAdded>,
+        'a: 'r,
+        'db: 'a,
+        SubstitutionRewriter<'a, 'r>: SemanticRewriter<Obj, DiagnosticAdded>,
     {
         SubstitutionRewriter { db, substitution: self }.rewrite(obj)
     }
 }
-impl Deref for GenericSubstitution {
-    type Target = OrderedHashMap<GenericParamId, GenericArgumentId>;
+impl<'db> Deref for GenericSubstitution<'db> {
+    type Target = OrderedHashMap<GenericParamId<'db>, GenericArgumentId<'db>>;
 
     fn deref(&self) -> &Self::Target {
         &self.param_to_arg
     }
 }
-impl DerefMut for GenericSubstitution {
+impl<'db> DerefMut for GenericSubstitution<'db> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.param_to_arg
     }
@@ -104,7 +122,7 @@ impl DerefMut for GenericSubstitution {
 
 #[macro_export]
 macro_rules! semantic_object_for_id {
-    ($name:ident, $lookup:ident, $intern:ident, $long_ty:ident) => {
+    ($name:path, $lookup:ident, $intern:ident, $long_ty:path) => {
         impl<
             'a,
             Error,
@@ -138,7 +156,7 @@ macro_rules! semantic_object_for_id {
 
 #[macro_export]
 macro_rules! add_rewrite {
-    (<$($generics:lifetime),*>, $self_ty:ty, $err_ty:ty, $ty:ident) => {
+    (<$($generics:lifetime),*>, $self_ty:ty, $err_ty:ty, $ty:path) => {
         impl <$($generics),*> SemanticRewriter<$ty, $err_ty> for $self_ty {
             fn internal_rewrite(
                 &mut self,
@@ -152,7 +170,7 @@ macro_rules! add_rewrite {
 
 #[macro_export]
 macro_rules! add_rewrite_identity {
-    (<$($generics:lifetime),*>, $self_ty:ty, $err_ty:ty, $ty:ident) => {
+    (<$($generics:lifetime),*>, $self_ty:ty, $err_ty:ty, $ty:path) => {
         impl <$($generics),*> SemanticRewriter<$ty, $err_ty> for $self_ty {
             fn internal_rewrite(
                 &mut self,
@@ -182,8 +200,8 @@ impl<T: Clone, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<Vec<T>, E>
         Ok(result)
     }
 }
-impl<T, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<VecDeque<T>, E> for TRewriter {
-    fn internal_rewrite(&mut self, value: &mut VecDeque<T>) -> Result<RewriteResult, E> {
+impl<T, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<Deque<T>, E> for TRewriter {
+    fn internal_rewrite(&mut self, value: &mut Deque<T>) -> Result<RewriteResult, E> {
         let mut result = RewriteResult::NoChange;
         for el in value.iter_mut() {
             match self.internal_rewrite(el)? {
@@ -203,7 +221,7 @@ impl<T, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<Box<T>, E> for TR
     }
 }
 
-impl<K: Hash + Eq + LanguageElementId, V: Clone, E, TRewriter: SemanticRewriter<V, E>>
+impl<'a, K: Hash + Eq + LanguageElementId<'a>, V: Clone, E, TRewriter: SemanticRewriter<V, E>>
     SemanticRewriter<OrderedHashMap<K, V>, E> for TRewriter
 {
     fn internal_rewrite(&mut self, value: &mut OrderedHashMap<K, V>) -> Result<RewriteResult, E> {
@@ -274,12 +292,21 @@ macro_rules! prune_single {
 #[macro_export]
 macro_rules! add_basic_rewrites {
     (<$($generics:lifetime),*>, $self_ty:ty, $err_ty:ty, @exclude $($exclude:ident)*) => {
+        // TODO(eytan-starkware) Cleanup to a single macro that deals with generics as an input
         macro_rules! __identity_helper {
+            ($item:ident) => {
+                $crate::add_rewrite_identity!(<$($generics),*>, $self_ty, $err_ty, $item<'a>);
+            }
+        }
+        macro_rules! __identity_helper_no_lifetime {
             ($item:ident) => {
                 $crate::add_rewrite_identity!(<$($generics),*>, $self_ty, $err_ty, $item);
             }
         }
         macro_rules! __regular_helper {
+            ($item:ident) => { $crate::add_rewrite!(<$($generics),*>, $self_ty, $err_ty, $item<'a>); }
+        }
+        macro_rules! __regular_helper_no_lifetime {
             ($item:ident) => { $crate::add_rewrite!(<$($generics),*>, $self_ty, $err_ty, $item); }
         }
 
@@ -306,10 +333,10 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identity_helper, VarId, $($exclude)*);
         $crate::prune_single!(__identity_helper, MemberId, $($exclude)*);
         $crate::prune_single!(__identity_helper, LocalVarId, $($exclude)*);
-        $crate::prune_single!(__identity_helper, LocalImplVarId, $($exclude)*);
-        $crate::prune_single!(__identity_helper, LocalTypeVarId, $($exclude)*);
-        $crate::prune_single!(__identity_helper, LocalConstVarId, $($exclude)*);
-        $crate::prune_single!(__identity_helper, InferenceVar, $($exclude)*);
+        $crate::prune_single!(__identity_helper_no_lifetime, LocalImplVarId, $($exclude)*);
+        $crate::prune_single!(__identity_helper_no_lifetime, LocalTypeVarId, $($exclude)*);
+        $crate::prune_single!(__identity_helper_no_lifetime, LocalConstVarId, $($exclude)*);
+        $crate::prune_single!(__identity_helper_no_lifetime, InferenceVar, $($exclude)*);
         $crate::prune_single!(__identity_helper, ImplFunctionBodyId, $($exclude)*);
         $crate::prune_single!(__identity_helper, ExprId, $($exclude)*);
 
@@ -336,7 +363,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ConstValueId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConstValue, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteVariant, $($exclude)*);
-        $crate::prune_single!(__regular_helper, ValueSelectorArm, $($exclude)*);
+        $crate::prune_single!(__regular_helper_no_lifetime, ValueSelectorArm, $($exclude)*);
         $crate::prune_single!(__regular_helper, MatchArmSelector, $($exclude)*);
         $crate::prune_single!(__regular_helper, ClosureTypeLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTypeId, $($exclude)*);
@@ -377,17 +404,16 @@ macro_rules! add_expr_rewrites {
     (<$($generics:lifetime),*>, $self_ty:ty, $err_ty:ty, @exclude $($exclude:ident)*) => {
         macro_rules! __identity_helper {
             ($item:ident) => {
-                 $crate::add_rewrite_identity!(<$($generics),*>, $self_ty, $err_ty, $item);
+                 $crate::add_rewrite_identity!(<$($generics),*>, $self_ty, $err_ty, $item<'a>);
             }
         }
         macro_rules! __regular_helper {
-            ($item:ident) => { $crate::add_rewrite!(<$($generics),*>, $self_ty, $err_ty, $item); }
+            ($item:ident) => { $crate::add_rewrite!(<$($generics),*>, $self_ty, $err_ty, $item<'a>); }
         }
 
         $crate::prune_single!(__identity_helper, PatternId, $($exclude)*);
         $crate::prune_single!(__identity_helper, StatementId, $($exclude)*);
         $crate::prune_single!(__identity_helper, ConstantId, $($exclude)*);
-
         $crate::prune_single!(__regular_helper, Expr, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprTuple, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprSnapshot, $($exclude)*);
@@ -437,25 +463,25 @@ macro_rules! add_expr_rewrites {
     };
 }
 
-pub struct SubstitutionRewriter<'a> {
+pub struct SubstitutionRewriter<'a, 'r> {
     db: &'a dyn SemanticGroup,
-    substitution: &'a GenericSubstitution,
+    substitution: &'r GenericSubstitution<'a>,
 }
-impl<'a> HasDb<&'a dyn SemanticGroup> for SubstitutionRewriter<'a> {
+impl<'a> HasDb<&'a dyn SemanticGroup> for SubstitutionRewriter<'a, '_> {
     fn get_db(&self) -> &'a dyn SemanticGroup {
         self.db
     }
 }
 
 add_basic_rewrites!(
-    <'a>,
-    SubstitutionRewriter<'a>,
+    <'a, 'r>,
+    SubstitutionRewriter<'a, 'r>,
     DiagnosticAdded,
     @exclude TypeId TypeLongId ImplId ImplLongId ConstValue GenericFunctionWithBodyId
 );
 
-impl SemanticRewriter<TypeId, DiagnosticAdded> for SubstitutionRewriter<'_> {
-    fn internal_rewrite(&mut self, value: &mut TypeId) -> Maybe<RewriteResult> {
+impl<'db> SemanticRewriter<TypeId<'db>, DiagnosticAdded> for SubstitutionRewriter<'db, '_> {
+    fn internal_rewrite(&mut self, value: &mut TypeId<'db>) -> Maybe<RewriteResult> {
         if value.is_fully_concrete(self.db) {
             return Ok(RewriteResult::NoChange);
         }
@@ -463,8 +489,8 @@ impl SemanticRewriter<TypeId, DiagnosticAdded> for SubstitutionRewriter<'_> {
     }
 }
 
-impl SemanticRewriter<ImplId, DiagnosticAdded> for SubstitutionRewriter<'_> {
-    fn internal_rewrite(&mut self, value: &mut ImplId) -> Maybe<RewriteResult> {
+impl<'db> SemanticRewriter<ImplId<'db>, DiagnosticAdded> for SubstitutionRewriter<'db, '_> {
+    fn internal_rewrite(&mut self, value: &mut ImplId<'db>) -> Maybe<RewriteResult> {
         if value.is_fully_concrete(self.db) {
             return Ok(RewriteResult::NoChange);
         }
@@ -472,8 +498,8 @@ impl SemanticRewriter<ImplId, DiagnosticAdded> for SubstitutionRewriter<'_> {
     }
 }
 
-impl SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<'_> {
-    fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Maybe<RewriteResult> {
+impl<'db> SemanticRewriter<TypeLongId<'db>, DiagnosticAdded> for SubstitutionRewriter<'db, '_> {
+    fn internal_rewrite(&mut self, value: &mut TypeLongId<'db>) -> Maybe<RewriteResult> {
         match value {
             TypeLongId::GenericParameter(generic_param) => {
                 if let Some(generic_arg) = self.substitution.get(generic_param) {
@@ -499,8 +525,8 @@ impl SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<'_> 
         value.default_rewrite(self)
     }
 }
-impl SemanticRewriter<ConstValue, DiagnosticAdded> for SubstitutionRewriter<'_> {
-    fn internal_rewrite(&mut self, value: &mut ConstValue) -> Maybe<RewriteResult> {
+impl<'db> SemanticRewriter<ConstValue<'db>, DiagnosticAdded> for SubstitutionRewriter<'db, '_> {
+    fn internal_rewrite(&mut self, value: &mut ConstValue<'db>) -> Maybe<RewriteResult> {
         match value {
             ConstValue::Generic(param_id) => {
                 if let Some(generic_arg) = self.substitution.get(param_id) {
@@ -529,8 +555,8 @@ impl SemanticRewriter<ConstValue, DiagnosticAdded> for SubstitutionRewriter<'_> 
         value.default_rewrite(self)
     }
 }
-impl SemanticRewriter<ImplLongId, DiagnosticAdded> for SubstitutionRewriter<'_> {
-    fn internal_rewrite(&mut self, value: &mut ImplLongId) -> Maybe<RewriteResult> {
+impl<'db> SemanticRewriter<ImplLongId<'db>, DiagnosticAdded> for SubstitutionRewriter<'db, '_> {
+    fn internal_rewrite(&mut self, value: &mut ImplLongId<'db>) -> Maybe<RewriteResult> {
         match value {
             ImplLongId::GenericParameter(generic_param) => {
                 if let Some(generic_arg) = self.substitution.get(generic_param) {
@@ -568,8 +594,13 @@ impl SemanticRewriter<ImplLongId, DiagnosticAdded> for SubstitutionRewriter<'_> 
         value.default_rewrite(self)
     }
 }
-impl SemanticRewriter<GenericFunctionWithBodyId, DiagnosticAdded> for SubstitutionRewriter<'_> {
-    fn internal_rewrite(&mut self, value: &mut GenericFunctionWithBodyId) -> Maybe<RewriteResult> {
+impl<'db> SemanticRewriter<GenericFunctionWithBodyId<'db>, DiagnosticAdded>
+    for SubstitutionRewriter<'db, '_>
+{
+    fn internal_rewrite(
+        &mut self,
+        value: &mut GenericFunctionWithBodyId<'db>,
+    ) -> Maybe<RewriteResult> {
         if let GenericFunctionWithBodyId::Trait(id) = value {
             if let Some(self_impl) = &self.substitution.self_impl {
                 if let ImplLongId::Concrete(concrete_impl_id) = self_impl.lookup_intern(self.db) {

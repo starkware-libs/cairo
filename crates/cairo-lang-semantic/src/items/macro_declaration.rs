@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MacroDeclarationId, ModuleFileId, ModuleItemId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe, skip_diagnostic};
-use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
+use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin, SmolStrId};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -13,8 +13,10 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use smol_str::SmolStr;
 
 use crate::SemanticDiagnostic;
 use crate::db::SemanticGroup;
@@ -30,15 +32,15 @@ pub struct RepetitionId(usize);
 
 /// The captures collected during macro pattern matching.
 /// Each macro parameter name maps to a flat list of matched strings.
-type Captures = OrderedHashMap<String, Vec<CapturedValue>>;
+type Captures<'db> = OrderedHashMap<String, Vec<CapturedValue<'db>>>;
 
 /// Context used during macro pattern matching and expansion.
 /// Tracks captured values, active repetition scopes, and repetition ownership per placeholder.
 #[derive(Default, Clone, Debug)]
-pub struct MatcherContext {
+pub struct MatcherContext<'db> {
     /// The captured values per macro parameter name.
     /// These are flat lists, even for repeated placeholders.
-    pub captures: Captures,
+    pub captures: Captures<'db>,
 
     /// Maps each placeholder to the `RepetitionId` of the repetition block
     /// they are part of. This helps the expansion phase know which iterators to advance together.
@@ -58,23 +60,23 @@ pub struct MatcherContext {
     pub repetition_match_counts: OrderedHashMap<RepetitionId, usize>,
 
     /// Store the repetition operator for each repetition.
-    pub repetition_operators: OrderedHashMap<RepetitionId, ast::MacroRepetitionOperator>,
+    pub repetition_operators: OrderedHashMap<RepetitionId, ast::MacroRepetitionOperator<'db>>,
 }
 
 /// The semantic data for a macro declaration.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MacroDeclarationData {
-    rules: Vec<MacroRuleData>,
-    attributes: Vec<Attribute>,
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    resolver_data: Arc<ResolverData>,
+#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+pub struct MacroDeclarationData<'db> {
+    rules: Vec<MacroRuleData<'db>>,
+    attributes: Vec<Attribute<'db>>,
+    diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    resolver_data: Arc<ResolverData<'db>>,
 }
 
 /// The semantic data for a single macro rule in a macro declaration.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MacroRuleData {
-    pub pattern: ast::WrappedMacro,
-    pub expansion: ast::MacroElements,
+#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+pub struct MacroRuleData<'db> {
+    pub pattern: ast::WrappedMacro<'db>,
+    pub expansion: ast::MacroElements<'db>,
 }
 
 /// The possible kinds of placeholders in a macro rule.
@@ -84,8 +86,8 @@ enum PlaceholderKind {
     Expr,
 }
 
-impl From<ast::MacroParamKind> for PlaceholderKind {
-    fn from(kind: ast::MacroParamKind) -> Self {
+impl<'db> From<ast::MacroParamKind<'db>> for PlaceholderKind {
+    fn from(kind: ast::MacroParamKind<'db>) -> Self {
         match kind {
             ast::MacroParamKind::Identifier(_) => PlaceholderKind::Identifier,
             ast::MacroParamKind::Expr(_) => PlaceholderKind::Expr,
@@ -98,16 +100,16 @@ impl From<ast::MacroParamKind> for PlaceholderKind {
 
 /// Information about a captured value in a macro.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CapturedValue {
+pub struct CapturedValue<'db> {
     pub text: String,
-    pub stable_ptr: SyntaxStablePtrId,
+    pub stable_ptr: SyntaxStablePtrId<'db>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_macro_declaration_data].
-pub fn priv_macro_declaration_data(
-    db: &dyn SemanticGroup,
-    macro_declaration_id: MacroDeclarationId,
-) -> Maybe<MacroDeclarationData> {
+pub fn priv_macro_declaration_data<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<MacroDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
 
     let module_file_id = macro_declaration_id.module_file_id(db);
@@ -159,7 +161,7 @@ pub fn priv_macro_declaration_data(
         let used_placeholders = collect_expansion_placeholders(db, expansion.as_syntax_node());
         // Verify all used placeholders are defined
         for (placeholder_ptr, used_placeholder) in used_placeholders {
-            if !defined_placeholders.contains(&used_placeholder) {
+            if !defined_placeholders.contains(used_placeholder.as_str(db)) {
                 diagnostics.report(
                     placeholder_ptr,
                     SemanticDiagnosticKind::UndefinedMacroPlaceholder(used_placeholder),
@@ -173,7 +175,10 @@ pub fn priv_macro_declaration_data(
 }
 
 /// Helper function to extract pattern elements from a WrappedMacro.
-fn get_macro_elements(db: &dyn SyntaxGroup, pattern: ast::WrappedMacro) -> ast::MacroElements {
+fn get_macro_elements<'db>(
+    db: &'db dyn SyntaxGroup,
+    pattern: ast::WrappedMacro<'db>,
+) -> ast::MacroElements<'db> {
     match pattern {
         ast::WrappedMacro::Parenthesized(inner) => inner.elements(db),
         ast::WrappedMacro::Braced(inner) => inner.elements(db),
@@ -192,15 +197,16 @@ fn extract_placeholder(db: &dyn SyntaxGroup, path_node: &MacroParam) -> Option<S
 }
 
 /// Helper function to collect all placeholder names used in a macro expansion.
-fn collect_expansion_placeholders(
-    db: &dyn SyntaxGroup,
-    node: SyntaxNode,
-) -> Vec<(SyntaxStablePtrId, String)> {
+fn collect_expansion_placeholders<'db>(
+    db: &'db dyn SyntaxGroup,
+    node: SyntaxNode<'db>,
+) -> Vec<(SyntaxStablePtrId<'db>, SmolStrId<'db>)> {
     let mut placeholders = Vec::new();
     if node.kind(db) == SyntaxKind::MacroParam {
         let path_node = MacroParam::from_syntax_node(db, node);
         if let Some(placeholder_name) = extract_placeholder(db, &path_node) {
-            placeholders.push((path_node.stable_ptr(db).untyped(), placeholder_name));
+            let placeholder_name_id = SmolStr::from(placeholder_name).intern(db);
+            placeholders.push((path_node.stable_ptr(db).untyped(), placeholder_name_id));
             return placeholders;
         }
     }
@@ -221,11 +227,11 @@ fn collect_expansion_placeholders(
 
 /// Given a macro declaration and an input token tree, checks if the input the given rule, and
 /// returns the captured params if it does.
-pub fn is_macro_rule_match(
-    db: &dyn SemanticGroup,
-    rule: &MacroRuleData,
-    input: &ast::TokenTreeNode,
-) -> Option<(Captures, OrderedHashMap<String, RepetitionId>)> {
+pub fn is_macro_rule_match<'db>(
+    db: &'db dyn SemanticGroup,
+    rule: &MacroRuleData<'db>,
+    input: &ast::TokenTreeNode<'db>,
+) -> Option<(Captures<'db>, OrderedHashMap<String, RepetitionId>)> {
     let mut ctx = MatcherContext::default();
 
     let matcher_elements = get_macro_elements(db, rule.pattern.clone());
@@ -247,11 +253,11 @@ pub fn is_macro_rule_match(
 /// Helper function for [expand_macro_rule].
 /// Traverses the macro expansion and replaces the placeholders with the provided values,
 /// while collecting the result in `res_buffer`.
-fn is_macro_rule_match_ex(
-    db: &dyn SemanticGroup,
-    matcher_elements: ast::MacroElements,
-    input_iter: &mut std::iter::Peekable<std::slice::Iter<'_, ast::TokenTree>>,
-    ctx: &mut MatcherContext,
+fn is_macro_rule_match_ex<'db>(
+    db: &'db dyn SemanticGroup,
+    matcher_elements: ast::MacroElements<'db>,
+    input_iter: &mut std::iter::Peekable<std::slice::Iter<'_, ast::TokenTree<'db>>>,
+    ctx: &mut MatcherContext<'db>,
     consume_all_input: bool,
 ) -> Option<()> {
     for matcher_element in matcher_elements.elements(db) {
@@ -578,20 +584,20 @@ fn expand_macro_rule_ex(
 }
 
 /// Gets a Vec of MacroElement, and returns a vec of the params within it.
-fn get_repetition_params(
-    db: &dyn SyntaxGroup,
-    elements: impl IntoIterator<Item = MacroElement>,
-) -> Vec<MacroParam> {
+fn get_repetition_params<'db>(
+    db: &'db dyn SyntaxGroup,
+    elements: impl IntoIterator<Item = MacroElement<'db>>,
+) -> Vec<MacroParam<'db>> {
     let mut params = vec![];
     repetition_params_extend(db, elements, &mut params);
     params
 }
 
 /// Recursively extends the provided params vector with all params within the given macro elements.
-fn repetition_params_extend(
-    db: &dyn SyntaxGroup,
-    elements: impl IntoIterator<Item = MacroElement>,
-    params: &mut Vec<MacroParam>,
+fn repetition_params_extend<'db>(
+    db: &'db dyn SyntaxGroup,
+    elements: impl IntoIterator<Item = MacroElement<'db>>,
+    params: &mut Vec<MacroParam<'db>>,
 ) {
     for element in elements {
         match element {
@@ -612,43 +618,43 @@ fn repetition_params_extend(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_diagnostics].
-pub fn macro_declaration_diagnostics(
-    db: &dyn SemanticGroup,
-    macro_declaration_id: MacroDeclarationId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn macro_declaration_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     priv_macro_declaration_data(db, macro_declaration_id)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_attributes].
-pub fn macro_declaration_attributes(
-    db: &dyn SemanticGroup,
-    macro_declaration_id: MacroDeclarationId,
-) -> Maybe<Vec<Attribute>> {
+pub fn macro_declaration_attributes<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_resolver_data].
-pub fn macro_declaration_resolver_data(
-    db: &dyn SemanticGroup,
-    macro_declaration_id: MacroDeclarationId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn macro_declaration_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_rules].
-pub fn macro_declaration_rules(
-    db: &dyn SemanticGroup,
-    macro_declaration_id: MacroDeclarationId,
-) -> Maybe<Vec<MacroRuleData>> {
+pub fn macro_declaration_rules<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<Vec<MacroRuleData<'db>>> {
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.rules)
 }
 
 /// Returns true if user defined user macros are enabled for the given module.
-fn are_user_defined_inline_macros_enabled(
+fn are_user_defined_inline_macros_enabled<'db>(
     db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId,
+    module_file_id: ModuleFileId<'db>,
 ) -> bool {
     let owning_crate = module_file_id.0.owning_crate(db);
     let Some(config) = db.crate_config(owning_crate) else { return false };

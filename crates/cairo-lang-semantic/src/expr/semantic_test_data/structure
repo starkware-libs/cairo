@@ -128,19 +128,19 @@ StructCtor(
         concrete_struct_id: test::A,
         members: [
             (
-                MemberId(test::a),
                 Literal(
                     ExprLiteral {
                         value: 1,
                         ty: core::felt252,
                     },
                 ),
+                MemberId(test::a),
             ),
             (
-                MemberId(test::b),
                 Var(
                     LocalVarId(test::b),
                 ),
+                MemberId(test::b),
             ),
         ],
         base_struct: None,

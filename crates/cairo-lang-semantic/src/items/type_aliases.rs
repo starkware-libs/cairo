@@ -17,23 +17,23 @@ use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
 use crate::{GenericParam, TypeId};
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct TypeAliasData {
-    pub resolved_type: Maybe<TypeId>,
-    pub generic_params: Vec<GenericParam>,
-    pub attributes: Vec<Attribute>,
-    pub resolver_data: Arc<ResolverData>,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct TypeAliasData<'db> {
+    pub resolved_type: Maybe<TypeId<'db>>,
+    pub generic_params: Vec<GenericParam<'db>>,
+    pub attributes: Vec<Attribute<'db>>,
+    pub resolver_data: Arc<ResolverData<'db>>,
 }
 
 /// Computes data about the generic parameters of a type-alias item.
-pub fn type_alias_generic_params_data_helper(
-    db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId,
-    type_alias_ast: &ast::ItemTypeAlias,
-    lookup_item_id: LookupItemId,
-    parent_resolver_data: Option<Arc<ResolverData>>,
-) -> Maybe<GenericParamsData> {
+pub fn type_alias_generic_params_data_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    module_file_id: ModuleFileId<'db>,
+    type_alias_ast: &ast::ItemTypeAlias<'db>,
+    lookup_item_id: LookupItemId<'db>,
+    parent_resolver_data: Option<Arc<ResolverData<'db>>>,
+) -> Maybe<GenericParamsData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
     let inference_id = InferenceId::LookupItemGenerics(lookup_item_id);
 
@@ -61,13 +61,13 @@ pub fn type_alias_generic_params_data_helper(
 }
 
 /// Computes data about a type-alias item.
-pub fn type_alias_semantic_data_helper(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    type_alias_ast: &ast::ItemTypeAlias,
-    lookup_item_id: LookupItemId,
-    generic_params_data: GenericParamsData,
-) -> Maybe<TypeAliasData> {
+pub fn type_alias_semantic_data_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    type_alias_ast: &ast::ItemTypeAlias<'db>,
+    lookup_item_id: LookupItemId<'db>,
+    generic_params_data: GenericParamsData<'db>,
+) -> Maybe<TypeAliasData<'db>> {
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let mut resolver = Resolver::with_data(
         db,
@@ -89,13 +89,13 @@ pub fn type_alias_semantic_data_helper(
 }
 
 /// Cycle handling for a type-alias item.
-pub fn type_alias_semantic_data_cycle_helper(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    type_alias_ast: &ast::ItemTypeAlias,
-    lookup_item_id: LookupItemId,
-    generic_params_data: GenericParamsData,
-) -> Maybe<TypeAliasData> {
+pub fn type_alias_semantic_data_cycle_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    type_alias_ast: &ast::ItemTypeAlias<'db>,
+    lookup_item_id: LookupItemId<'db>,
+    generic_params_data: GenericParamsData<'db>,
+) -> Maybe<TypeAliasData<'db>> {
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let err = Err(diagnostics.report(type_alias_ast.name(db).stable_ptr(db), TypeAliasCycle));
 

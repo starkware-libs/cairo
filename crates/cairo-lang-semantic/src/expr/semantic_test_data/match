@@ -315,36 +315,36 @@ Match(
                                         concrete_struct_id: test::P,
                                         field_patterns: [
                                             (
+                                                Variable(
+                                                    x,
+                                                ),
                                                 Member {
                                                     id: MemberId(test::x),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },
-                                                Variable(
-                                                    x,
-                                                ),
                                             ),
                                             (
-                                                Member {
-                                                    id: MemberId(test::y),
-                                                    ty: core::integer::u8,
-                                                    visibility: Private,
-                                                },
                                                 Otherwise(
                                                     PatternOtherwise {
                                                         ty: core::integer::u8,
                                                     },
                                                 ),
+                                                Member {
+                                                    id: MemberId(test::y),
+                                                    ty: core::integer::u8,
+                                                    visibility: Private,
+                                                },
                                             ),
                                             (
+                                                Variable(
+                                                    t,
+                                                ),
                                                 Member {
                                                     id: MemberId(test::z),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },
-                                                Variable(
-                                                    t,
-                                                ),
                                             ),
                                         ],
                                         ty: test::P,
@@ -699,36 +699,36 @@ Match(
                                         concrete_struct_id: test::P,
                                         field_patterns: [
                                             (
+                                                Variable(
+                                                    x,
+                                                ),
                                                 Member {
                                                     id: MemberId(test::x),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },
-                                                Variable(
-                                                    x,
-                                                ),
                                             ),
                                             (
-                                                Member {
-                                                    id: MemberId(test::y),
-                                                    ty: core::integer::u8,
-                                                    visibility: Private,
-                                                },
                                                 Otherwise(
                                                     PatternOtherwise {
                                                         ty: core::integer::u8,
                                                     },
                                                 ),
+                                                Member {
+                                                    id: MemberId(test::y),
+                                                    ty: core::integer::u8,
+                                                    visibility: Private,
+                                                },
                                             ),
                                             (
+                                                Variable(
+                                                    t,
+                                                ),
                                                 Member {
                                                     id: MemberId(test::z),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },
-                                                Variable(
-                                                    t,
-                                                ),
                                             ),
                                         ],
                                         ty: test::P,
@@ -897,38 +897,38 @@ Match(
                                         concrete_struct_id: test::P,
                                         field_patterns: [
                                             (
+                                                Variable(
+                                                    x,
+                                                ),
                                                 Member {
                                                     id: MemberId(test::x),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },
-                                                Variable(
-                                                    x,
-                                                ),
                                             ),
                                             (
+                                                Otherwise(
+                                                    PatternOtherwise {
+                                                        ty: core::integer::u8,
+                                                    },
+                                                ),
                                                 Member {
                                                     id: MemberId(test::y),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },
+                                            ),
+                                            (
                                                 Otherwise(
                                                     PatternOtherwise {
                                                         ty: core::integer::u8,
                                                     },
                                                 ),
-                                            ),
-                                            (
                                                 Member {
                                                     id: MemberId(test::z),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },
-                                                Otherwise(
-                                                    PatternOtherwise {
-                                                        ty: core::integer::u8,
-                                                    },
-                                                ),
                                             ),
                                         ],
                                         ty: test::P,

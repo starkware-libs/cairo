@@ -9,6 +9,7 @@ use cairo_lang_defs::ids::{
     TraitTypeId, TraitTypeLongId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::helpers::OptionWrappedGenericParamListHelper;
@@ -31,7 +32,7 @@ use super::generics::{
     semantic_generic_params_ex,
 };
 use super::imp::{GenericsHeadFilter, ImplLongId, TraitFilter};
-use crate::db::{SemanticGroup, get_resolver_data_options};
+use crate::db::{SemanticGroup, SemanticGroupData, get_resolver_data_options};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
@@ -52,15 +53,17 @@ use crate::{
 mod test;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
-pub struct ConcreteTraitLongId {
-    pub trait_id: TraitId,
-    pub generic_args: Vec<GenericArgumentId>,
+pub struct ConcreteTraitLongId<'db> {
+    pub trait_id: TraitId<'db>,
+    pub generic_args: Vec<GenericArgumentId<'db>>,
 }
-impl DebugWithDb<dyn SemanticGroup> for ConcreteTraitLongId {
+impl<'db> DebugWithDb<'db> for ConcreteTraitLongId<'db> {
+    type Db = dyn SemanticGroup;
+
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,
-        db: &(dyn SemanticGroup + 'static),
+        db: &'db (dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
         let mut f = CountingWriter::new(f);
         write!(f, "{}", self.trait_id.full_path(db))?;
@@ -70,22 +73,22 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteTraitLongId {
 
 define_short_id!(
     ConcreteTraitId,
-    ConcreteTraitLongId,
+    ConcreteTraitLongId<'db>,
     SemanticGroup,
     lookup_intern_concrete_trait,
     intern_concrete_trait
 );
 semantic_object_for_id!(
-    ConcreteTraitId,
+    ConcreteTraitId<'a>,
     lookup_intern_concrete_trait,
     intern_concrete_trait,
-    ConcreteTraitLongId
+    ConcreteTraitLongId<'a>
 );
-impl ConcreteTraitId {
-    pub fn trait_id(&self, db: &dyn SemanticGroup) -> TraitId {
+impl<'db> ConcreteTraitId<'db> {
+    pub fn trait_id(&self, db: &'db dyn SemanticGroup) -> TraitId<'db> {
         self.lookup_intern(db).trait_id
     }
-    pub fn generic_args(&self, db: &dyn SemanticGroup) -> Vec<GenericArgumentId> {
+    pub fn generic_args(&self, db: &'db dyn SemanticGroup) -> Vec<GenericArgumentId<'db>> {
         self.lookup_intern(db).generic_args
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
@@ -94,7 +97,7 @@ impl ConcreteTraitId {
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
         format!("{:?}", self.debug(db.elongate()))
     }
-    pub fn filter(&self, db: &dyn SemanticGroup) -> TraitFilter {
+    pub fn filter(&self, db: &'db dyn SemanticGroup) -> TraitFilter<'db> {
         let generics_filter = match self.generic_args(db).first() {
             Some(first_generic) => match first_generic.head(db) {
                 Some(head) => GenericsHeadFilter::FirstGenericFilter(head),
@@ -123,17 +126,17 @@ impl ConcreteTraitId {
 
 /// The ID of a generic function in a concrete trait.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ConcreteTraitGenericFunctionLongId {
+#[debug_db(dyn SemanticGroup)]
+pub struct ConcreteTraitGenericFunctionLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.
-    concrete_trait: ConcreteTraitId,
-    trait_function: TraitFunctionId,
+    concrete_trait: ConcreteTraitId<'db>,
+    trait_function: TraitFunctionId<'db>,
 }
-impl ConcreteTraitGenericFunctionLongId {
+impl<'db> ConcreteTraitGenericFunctionLongId<'db> {
     pub fn new(
         db: &dyn SemanticGroup,
-        concrete_trait: ConcreteTraitId,
-        trait_function: TraitFunctionId,
+        concrete_trait: ConcreteTraitId<'db>,
+        trait_function: TraitFunctionId<'db>,
     ) -> Self {
         assert_eq!(
             concrete_trait.trait_id(db),
@@ -145,48 +148,48 @@ impl ConcreteTraitGenericFunctionLongId {
 }
 define_short_id!(
     ConcreteTraitGenericFunctionId,
-    ConcreteTraitGenericFunctionLongId,
+    ConcreteTraitGenericFunctionLongId<'db>,
     SemanticGroup,
     lookup_intern_concrete_trait_function,
     intern_concrete_trait_function
 );
 semantic_object_for_id!(
-    ConcreteTraitGenericFunctionId,
+    ConcreteTraitGenericFunctionId<'a>,
     lookup_intern_concrete_trait_function,
     intern_concrete_trait_function,
-    ConcreteTraitGenericFunctionLongId
+    ConcreteTraitGenericFunctionLongId<'a>
 );
-impl ConcreteTraitGenericFunctionId {
-    pub fn new(
-        db: &dyn SemanticGroup,
-        concrete_trait: ConcreteTraitId,
-        trait_function: TraitFunctionId,
+impl<'db> ConcreteTraitGenericFunctionId<'db> {
+    pub fn new_from_data(
+        db: &'db dyn SemanticGroup,
+        concrete_trait: ConcreteTraitId<'db>,
+        trait_function: TraitFunctionId<'db>,
     ) -> Self {
         ConcreteTraitGenericFunctionLongId::new(db, concrete_trait, trait_function).intern(db)
     }
 
-    pub fn trait_function(&self, db: &dyn SemanticGroup) -> TraitFunctionId {
-        self.lookup_intern(db).trait_function
+    pub fn trait_function(&self, db: &'db dyn SemanticGroup) -> TraitFunctionId<'db> {
+        self.long(db).trait_function
     }
 
-    pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
-        self.lookup_intern(db).concrete_trait
+    pub fn concrete_trait(&self, db: &'db dyn SemanticGroup) -> ConcreteTraitId<'db> {
+        self.long(db).concrete_trait
     }
 }
 
 /// The ID of a type item in a concrete trait.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ConcreteTraitTypeLongId {
+#[debug_db(dyn SemanticGroup)]
+pub struct ConcreteTraitTypeLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.
-    concrete_trait: ConcreteTraitId,
-    trait_type: TraitTypeId,
+    concrete_trait: ConcreteTraitId<'db>,
+    trait_type: TraitTypeId<'db>,
 }
-impl ConcreteTraitTypeLongId {
+impl<'db> ConcreteTraitTypeLongId<'db> {
     pub fn new(
         db: &dyn SemanticGroup,
-        concrete_trait: ConcreteTraitId,
-        trait_type: TraitTypeId,
+        concrete_trait: ConcreteTraitId<'db>,
+        trait_type: TraitTypeId<'db>,
     ) -> Self {
         assert_eq!(
             concrete_trait.trait_id(db),
@@ -198,48 +201,48 @@ impl ConcreteTraitTypeLongId {
 }
 define_short_id!(
     ConcreteTraitTypeId,
-    ConcreteTraitTypeLongId,
+    ConcreteTraitTypeLongId<'db>,
     SemanticGroup,
     lookup_intern_concrete_trait_type,
     intern_concrete_trait_type
 );
 semantic_object_for_id!(
-    ConcreteTraitTypeId,
+    ConcreteTraitTypeId<'a>,
     lookup_intern_concrete_trait_type,
     intern_concrete_trait_type,
-    ConcreteTraitTypeLongId
+    ConcreteTraitTypeLongId<'a>
 );
-impl ConcreteTraitTypeId {
-    pub fn new(
-        db: &dyn SemanticGroup,
-        concrete_trait: ConcreteTraitId,
-        trait_type: TraitTypeId,
+impl<'db> ConcreteTraitTypeId<'db> {
+    pub fn new_from_data(
+        db: &'db dyn SemanticGroup,
+        concrete_trait: ConcreteTraitId<'db>,
+        trait_type: TraitTypeId<'db>,
     ) -> Self {
         ConcreteTraitTypeLongId::new(db, concrete_trait, trait_type).intern(db)
     }
 
-    pub fn trait_type(&self, db: &dyn SemanticGroup) -> TraitTypeId {
-        self.lookup_intern(db).trait_type
+    pub fn trait_type(&self, db: &'db dyn SemanticGroup) -> TraitTypeId<'db> {
+        self.long(db).trait_type
     }
 
-    pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
-        self.lookup_intern(db).concrete_trait
+    pub fn concrete_trait(&self, db: &'db dyn SemanticGroup) -> ConcreteTraitId<'db> {
+        self.long(db).concrete_trait
     }
 }
 
 /// The ID of a constant item in a concrete trait.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ConcreteTraitConstantLongId {
+#[debug_db(dyn SemanticGroup)]
+pub struct ConcreteTraitConstantLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.
-    concrete_trait: ConcreteTraitId,
-    trait_constant: TraitConstantId,
+    concrete_trait: ConcreteTraitId<'db>,
+    trait_constant: TraitConstantId<'db>,
 }
-impl ConcreteTraitConstantLongId {
+impl<'db> ConcreteTraitConstantLongId<'db> {
     pub fn new(
-        db: &dyn SemanticGroup,
-        concrete_trait: ConcreteTraitId,
-        trait_constant: TraitConstantId,
+        db: &'db dyn SemanticGroup,
+        concrete_trait: ConcreteTraitId<'db>,
+        trait_constant: TraitConstantId<'db>,
     ) -> Self {
         assert_eq!(
             concrete_trait.trait_id(db),
@@ -251,48 +254,48 @@ impl ConcreteTraitConstantLongId {
 }
 define_short_id!(
     ConcreteTraitConstantId,
-    ConcreteTraitConstantLongId,
+    ConcreteTraitConstantLongId<'db>,
     SemanticGroup,
     lookup_intern_concrete_trait_constant,
     intern_concrete_trait_constant
 );
 semantic_object_for_id!(
-    ConcreteTraitConstantId,
+    ConcreteTraitConstantId<'a>,
     lookup_intern_concrete_trait_constant,
     intern_concrete_trait_constant,
-    ConcreteTraitConstantLongId
+    ConcreteTraitConstantLongId<'a>
 );
-impl ConcreteTraitConstantId {
-    pub fn new(
-        db: &dyn SemanticGroup,
-        concrete_trait: ConcreteTraitId,
-        trait_constant: TraitConstantId,
+impl<'db> ConcreteTraitConstantId<'db> {
+    pub fn new_from_data(
+        db: &'db dyn SemanticGroup,
+        concrete_trait: ConcreteTraitId<'db>,
+        trait_constant: TraitConstantId<'db>,
     ) -> Self {
         ConcreteTraitConstantLongId::new(db, concrete_trait, trait_constant).intern(db)
     }
 
-    pub fn trait_constant(&self, db: &dyn SemanticGroup) -> TraitConstantId {
-        self.lookup_intern(db).trait_constant
+    pub fn trait_constant(&self, db: &'db dyn SemanticGroup) -> TraitConstantId<'db> {
+        self.long(db).trait_constant
     }
 
-    pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
-        self.lookup_intern(db).concrete_trait
+    pub fn concrete_trait(&self, db: &'db dyn SemanticGroup) -> ConcreteTraitId<'db> {
+        self.long(db).concrete_trait
     }
 }
 
 /// The ID of a impl item in a concrete trait.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ConcreteTraitImplLongId {
+#[debug_db(dyn SemanticGroup)]
+pub struct ConcreteTraitImplLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.
-    concrete_trait: ConcreteTraitId,
-    trait_impl: TraitImplId,
+    concrete_trait: ConcreteTraitId<'db>,
+    trait_impl: TraitImplId<'db>,
 }
-impl ConcreteTraitImplLongId {
-    pub fn new(
+impl<'db> ConcreteTraitImplLongId<'db> {
+    pub fn new_from_data(
         db: &dyn SemanticGroup,
-        concrete_trait: ConcreteTraitId,
-        trait_impl: TraitImplId,
+        concrete_trait: ConcreteTraitId<'db>,
+        trait_impl: TraitImplId<'db>,
     ) -> Self {
         assert_eq!(
             concrete_trait.trait_id(db),
@@ -304,76 +307,79 @@ impl ConcreteTraitImplLongId {
 }
 define_short_id!(
     ConcreteTraitImplId,
-    ConcreteTraitImplLongId,
+    ConcreteTraitImplLongId<'db>,
     SemanticGroup,
     lookup_intern_concrete_trait_impl,
     intern_concrete_trait_impl
 );
 semantic_object_for_id!(
-    ConcreteTraitImplId,
+    ConcreteTraitImplId<'a>,
     lookup_intern_concrete_trait_impl,
     intern_concrete_trait_impl,
-    ConcreteTraitImplLongId
+    ConcreteTraitImplLongId<'a>
 );
-impl ConcreteTraitImplId {
-    pub fn new(
-        db: &dyn SemanticGroup,
-        concrete_trait: ConcreteTraitId,
-        trait_impl: TraitImplId,
+impl<'db> ConcreteTraitImplId<'db> {
+    pub fn new_from_data(
+        db: &'db dyn SemanticGroup,
+        concrete_trait: ConcreteTraitId<'db>,
+        trait_impl: TraitImplId<'db>,
     ) -> Self {
-        ConcreteTraitImplLongId::new(db, concrete_trait, trait_impl).intern(db)
+        ConcreteTraitImplLongId::new_from_data(db, concrete_trait, trait_impl).intern(db)
     }
 
-    pub fn trait_impl(&self, db: &dyn SemanticGroup) -> TraitImplId {
+    pub fn trait_impl(&self, db: &'db dyn SemanticGroup) -> TraitImplId<'db> {
         self.lookup_intern(db).trait_impl
     }
 
-    pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
+    pub fn concrete_trait(&self, db: &'db dyn SemanticGroup) -> ConcreteTraitId<'db> {
         self.lookup_intern(db).concrete_trait
     }
 }
 
 // === Trait Declaration ===
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct TraitDeclarationData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    generic_params: Vec<GenericParam>,
-    attributes: Vec<Attribute>,
-    resolver_data: Arc<ResolverData>,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct TraitDeclarationData<'db> {
+    diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    generic_params: Vec<GenericParam<'db>>,
+    attributes: Vec<Attribute<'db>>,
+    resolver_data: Arc<ResolverData<'db>>,
 }
 
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::trait_semantic_declaration_diagnostics].
-pub fn trait_semantic_declaration_diagnostics(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn trait_semantic_declaration_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_trait_declaration_data(trait_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_generic_params].
-pub fn trait_generic_params(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Vec<GenericParam>> {
+pub fn trait_generic_params<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+) -> Maybe<Vec<GenericParam<'db>>> {
     Ok(db.trait_generic_params_data(trait_id, false)?.generic_params)
 }
 /// Cycle handling for [crate::db::SemanticGroup::trait_generic_params].
-pub fn trait_generic_params_cycle(
-    db: &dyn SemanticGroup,
-    _cycle: &salsa::Cycle,
-    trait_id: &TraitId,
-) -> Maybe<Vec<GenericParam>> {
+pub fn trait_generic_params_cycle<'db>(
+    db: &'db dyn SemanticGroup,
+    _input: SemanticGroupData,
+    trait_id: TraitId<'db>,
+) -> Maybe<Vec<GenericParam<'db>>> {
     // Forwarding cycle handling to `priv_generic_param_data` handler.
-    Ok(db.trait_generic_params_data(*trait_id, true)?.generic_params)
+    Ok(db.trait_generic_params_data(trait_id, true)?.generic_params)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_generic_params_data].
-pub fn trait_generic_params_data(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
+pub fn trait_generic_params_data<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
     in_cycle: bool,
-) -> Maybe<GenericParamsData> {
+) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = trait_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let trait_ast = db.module_trait_by_id(trait_id)?.to_maybe()?;
@@ -400,32 +406,38 @@ pub fn trait_generic_params_data(
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
 /// Cycle handling for [crate::db::SemanticGroup::trait_generic_params_data].
-pub fn trait_generic_params_data_cycle(
-    db: &dyn SemanticGroup,
-    _cycle: &salsa::Cycle,
-    trait_id: &TraitId,
-    _in_cycle: &bool,
-) -> Maybe<GenericParamsData> {
+pub fn trait_generic_params_data_cycle<'db>(
+    db: &'db dyn SemanticGroup,
+    _input: SemanticGroupData,
+    trait_id: TraitId<'db>,
+    _in_cycle: bool,
+) -> Maybe<GenericParamsData<'db>> {
     // Forwarding cycle handling to `priv_generic_param_data` handler.
-    trait_generic_params_data(db, *trait_id, true)
+    trait_generic_params_data(db, trait_id, true)
 }
 /// Query implementation of [crate::db::SemanticGroup::trait_attributes].
-pub fn trait_attributes(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Vec<Attribute>> {
+pub fn trait_attributes<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_trait_declaration_data(trait_id)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_resolver_data].
-pub fn trait_resolver_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Arc<ResolverData>> {
+pub fn trait_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_trait_declaration_data(trait_id)?.resolver_data)
 }
 
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_declaration_data].
-pub fn priv_trait_declaration_data(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-) -> Maybe<TraitDeclarationData> {
+pub fn priv_trait_declaration_data<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+) -> Maybe<TraitDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -463,41 +475,41 @@ pub fn priv_trait_declaration_data(
 
 // === Trait Definition ===
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct TraitDefinitionData {
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct TraitDefinitionData<'db> {
     /// The diagnostics here are "flat" - that is, only the diagnostics found on the trait level
     /// itself, and don't include the diagnostics of its items. The reason it's this way is that
     /// computing the items' diagnostics require a query about their trait, forming a cycle of
     /// queries. Adding the items' diagnostics only after the whole computation breaks this cycle.
-    diagnostics: Diagnostics<SemanticDiagnostic>,
+    diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
 
     // AST maps.
-    function_asts: OrderedHashMap<TraitFunctionId, ast::TraitItemFunction>,
-    item_type_asts: OrderedHashMap<TraitTypeId, ast::TraitItemType>,
-    item_constant_asts: OrderedHashMap<TraitConstantId, ast::TraitItemConstant>,
-    item_impl_asts: OrderedHashMap<TraitImplId, ast::TraitItemImpl>,
+    function_asts: OrderedHashMap<TraitFunctionId<'db>, ast::TraitItemFunction<'db>>,
+    item_type_asts: OrderedHashMap<TraitTypeId<'db>, ast::TraitItemType<'db>>,
+    item_constant_asts: OrderedHashMap<TraitConstantId<'db>, ast::TraitItemConstant<'db>>,
+    item_impl_asts: OrderedHashMap<TraitImplId<'db>, ast::TraitItemImpl<'db>>,
 
     /// Mapping of item names to their IDs. All the IDs should appear in one of the AST maps above.
-    item_id_by_name: Arc<OrderedHashMap<SmolStr, TraitItemInfo>>,
+    item_id_by_name: Arc<OrderedHashMap<SmolStrId<'db>, TraitItemInfo<'db>>>,
 }
 
-impl TraitDefinitionData {
+impl<'db> TraitDefinitionData<'db> {
     /// Retrieves trait item information by its name.
-    pub fn get_trait_item_info(&self, item_name: &SmolStr) -> Option<TraitItemInfo> {
-        self.item_id_by_name.get(item_name).cloned()
+    pub fn get_trait_item_info(&self, item_name: SmolStrId<'db>) -> Option<TraitItemInfo<'db>> {
+        self.item_id_by_name.get(&item_name).cloned()
     }
 }
 /// Stores metadata for a trait item, including its ID and feature kind.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TraitItemInfo {
+#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+pub struct TraitItemInfo<'db> {
     /// The unique identifier of the trait item.
-    pub id: TraitItemId,
+    pub id: TraitItemId<'db>,
     /// The feature kind associated with this trait item.
     pub feature_kind: FeatureKind,
 }
 
-impl HasFeatureKind for TraitItemInfo {
+impl<'db> HasFeatureKind for TraitItemInfo<'db> {
     /// Returns the feature kind of this trait item.
     fn feature_kind(&self) -> &FeatureKind {
         &self.feature_kind
@@ -507,10 +519,10 @@ impl HasFeatureKind for TraitItemInfo {
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::trait_semantic_definition_diagnostics].
-pub fn trait_semantic_definition_diagnostics(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn trait_semantic_definition_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     let mut diagnostics = DiagnosticsBuilder::default();
 
     let Ok(data) = db.priv_trait_definition_data(trait_id) else {
@@ -538,10 +550,10 @@ pub fn trait_semantic_definition_diagnostics(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_required_item_names].
-pub fn trait_required_item_names(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-) -> Maybe<OrderedHashSet<SmolStr>> {
+pub fn trait_required_item_names<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+) -> Maybe<OrderedHashSet<SmolStrId<'db>>> {
     let mut required_items = OrderedHashSet::<_>::default();
     for (item_name, item_id) in db.priv_trait_definition_data(trait_id)?.item_id_by_name.iter() {
         if match item_id.id {
@@ -559,29 +571,29 @@ pub fn trait_required_item_names(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_item_by_name].
-pub fn trait_item_by_name(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-    name: SmolStr,
-) -> Maybe<Option<TraitItemId>> {
+pub fn trait_item_by_name<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+    name: SmolStrId<'db>,
+) -> Maybe<Option<TraitItemId<'db>>> {
     Ok(db.priv_trait_definition_data(trait_id)?.item_id_by_name.get(&name).map(|info| info.id))
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_item_info_by_name].
-pub fn trait_item_info_by_name(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-    name: SmolStr,
-) -> Maybe<Option<TraitItemInfo>> {
+pub fn trait_item_info_by_name<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+    name: SmolStrId<'db>,
+) -> Maybe<Option<TraitItemInfo<'db>>> {
     let trait_definition_data = db.priv_trait_definition_data(trait_id)?;
-    Ok(trait_definition_data.get_trait_item_info(&name))
+    Ok(trait_definition_data.get_trait_item_info(name))
 }
 
 /// Query implementation of [SemanticGroup::trait_all_used_uses].
-pub fn trait_all_used_uses(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-) -> Maybe<Arc<OrderedHashSet<UseId>>> {
+pub fn trait_all_used_uses<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
     let mut all_used_uses = db.trait_resolver_data(trait_id)?.used_uses.clone();
     let data = db.priv_trait_definition_data(trait_id)?;
     for item in data.item_id_by_name.values() {
@@ -593,112 +605,112 @@ pub fn trait_all_used_uses(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_functions].
-pub fn trait_functions(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-) -> Maybe<OrderedHashMap<SmolStr, TraitFunctionId>> {
+pub fn trait_functions<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+) -> Maybe<OrderedHashMap<SmolStrId<'db>, TraitFunctionId<'db>>> {
     Ok(db
         .priv_trait_definition_data(trait_id)?
         .function_asts
         .keys()
         .map(|function_id| {
             let function_long_id = function_id.lookup_intern(db);
-            (function_long_id.name(db), *function_id)
+            (function_long_id.name(db).intern(db), *function_id)
         })
         .collect())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_by_name].
-pub fn trait_function_by_name(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-    name: SmolStr,
-) -> Maybe<Option<TraitFunctionId>> {
+pub fn trait_function_by_name<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+    name: SmolStrId<'db>,
+) -> Maybe<Option<TraitFunctionId<'db>>> {
     Ok(db.trait_functions(trait_id)?.get(&name).copied())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_types].
-pub fn trait_types(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-) -> Maybe<OrderedHashMap<SmolStr, TraitTypeId>> {
+pub fn trait_types<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+) -> Maybe<OrderedHashMap<SmolStrId<'db>, TraitTypeId<'db>>> {
     Ok(db
         .priv_trait_definition_data(trait_id)?
         .item_type_asts
         .keys()
         .map(|type_id| {
             let type_long_id = type_id.lookup_intern(db);
-            (type_long_id.name(db), *type_id)
+            (type_long_id.name(db).intern(db), *type_id)
         })
         .collect())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_type_by_name].
-pub fn trait_type_by_name(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-    name: SmolStr,
-) -> Maybe<Option<TraitTypeId>> {
+pub fn trait_type_by_name<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+    name: SmolStrId<'db>,
+) -> Maybe<Option<TraitTypeId<'db>>> {
     Ok(db.trait_types(trait_id)?.get(&name).copied())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_constants].
-pub fn trait_constants(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-) -> Maybe<OrderedHashMap<SmolStr, TraitConstantId>> {
+pub fn trait_constants<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+) -> Maybe<OrderedHashMap<SmolStrId<'db>, TraitConstantId<'db>>> {
     Ok(db
         .priv_trait_definition_data(trait_id)?
         .item_constant_asts
         .keys()
         .map(|constant_id| {
             let constant_long_id = constant_id.lookup_intern(db);
-            (constant_long_id.name(db), *constant_id)
+            (constant_long_id.name(db).intern(db), *constant_id)
         })
         .collect())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_constant_by_name].
-pub fn trait_constant_by_name(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
+pub fn trait_constant_by_name<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
     name: SmolStr,
-) -> Maybe<Option<TraitConstantId>> {
-    Ok(db.trait_constants(trait_id)?.get(&name).copied())
+) -> Maybe<Option<TraitConstantId<'db>>> {
+    Ok(db.trait_constants(trait_id)?.get(&name.intern(db)).copied())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_impls].
-pub fn trait_impls(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-) -> Maybe<OrderedHashMap<SmolStr, TraitImplId>> {
+pub fn trait_impls<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+) -> Maybe<OrderedHashMap<SmolStrId<'db>, TraitImplId<'db>>> {
     Ok(db
         .priv_trait_definition_data(trait_id)?
         .item_impl_asts
         .keys()
         .map(|impl_id| {
             let impl_long_id = impl_id.lookup_intern(db);
-            (impl_long_id.name(db), *impl_id)
+            (impl_long_id.name(db).intern(db), *impl_id)
         })
         .collect())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_impl_by_name].
-pub fn trait_impl_by_name(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
+pub fn trait_impl_by_name<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
     name: SmolStr,
-) -> Maybe<Option<TraitImplId>> {
-    Ok(db.trait_impls(trait_id)?.get(&name).copied())
+) -> Maybe<Option<TraitImplId<'db>>> {
+    Ok(db.trait_impls(trait_id)?.get(&name.intern(db)).copied())
 }
 
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_definition_data].
-pub fn priv_trait_definition_data(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-) -> Maybe<TraitDefinitionData> {
+pub fn priv_trait_definition_data<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+) -> Maybe<TraitDefinitionData<'db>> {
     let module_file_id = trait_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
 
@@ -711,7 +723,8 @@ pub fn priv_trait_definition_data(
     let mut item_type_asts = OrderedHashMap::default();
     let mut item_constant_asts = OrderedHashMap::default();
     let mut item_impl_asts = OrderedHashMap::default();
-    let mut item_id_by_name: OrderedHashMap<SmolStr, TraitItemInfo> = OrderedHashMap::default();
+    let mut item_id_by_name: OrderedHashMap<SmolStrId<'db>, TraitItemInfo<'db>> =
+        OrderedHashMap::default();
 
     if let ast::MaybeTraitBody::Some(body) = trait_ast.body(db) {
         for item in body.items(db).elements(db) {
@@ -720,12 +733,12 @@ pub fn priv_trait_definition_data(
                     let trait_func_id =
                         TraitFunctionLongId(module_file_id, func.stable_ptr(db)).intern(db);
                     let name_node = func.declaration(db).name(db);
-                    let name = name_node.text(db);
+                    let name = name_node.text(db).intern(db);
                     let attributes = func.attributes(db);
                     let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
                     if item_id_by_name
                         .insert(
-                            name.clone(),
+                            name,
                             TraitItemInfo {
                                 id: TraitItemId::Function(trait_func_id),
                                 feature_kind,
@@ -744,12 +757,12 @@ pub fn priv_trait_definition_data(
                     let trait_type_id =
                         TraitTypeLongId(module_file_id, ty.stable_ptr(db)).intern(db);
                     let name_node = ty.name(db);
-                    let name = name_node.text(db);
+                    let name = name_node.text(db).intern(db);
                     let attributes = ty.attributes(db);
                     let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
                     if item_id_by_name
                         .insert(
-                            name.clone(),
+                            name,
                             TraitItemInfo { id: TraitItemId::Type(trait_type_id), feature_kind },
                         )
                         .is_some()
@@ -766,12 +779,12 @@ pub fn priv_trait_definition_data(
                         TraitConstantLongId(module_file_id, constant.stable_ptr(db)).intern(db);
 
                     let name_node = constant.name(db);
-                    let name = name_node.text(db);
+                    let name = name_node.text(db).intern(db);
                     let attributes = constant.attributes(db);
                     let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
                     if item_id_by_name
                         .insert(
-                            name.clone(),
+                            name,
                             TraitItemInfo {
                                 id: TraitItemId::Constant(trait_constant),
                                 feature_kind,
@@ -790,12 +803,12 @@ pub fn priv_trait_definition_data(
                     let trait_impl = TraitImplLongId(module_file_id, imp.stable_ptr(db)).intern(db);
 
                     let name_node = imp.name(db);
-                    let name = name_node.text(db);
+                    let name = name_node.text(db).intern(db);
                     let attributes = imp.attributes(db);
                     let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
                     if item_id_by_name
                         .insert(
-                            name.clone(),
+                            name,
                             TraitItemInfo { id: TraitItemId::Impl(trait_impl), feature_kind },
                         )
                         .is_some()
@@ -824,56 +837,56 @@ pub fn priv_trait_definition_data(
 
 // === Trait item type ===
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct TraitItemTypeData {
-    pub diagnostics: Diagnostics<SemanticDiagnostic>,
-    pub generic_params: Vec<semantic::GenericParam>,
-    pub attributes: Vec<Attribute>,
-    pub resolver_data: Arc<ResolverData>,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct TraitItemTypeData<'db> {
+    pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    pub generic_params: Vec<semantic::GenericParam<'db>>,
+    pub attributes: Vec<Attribute<'db>>,
+    pub resolver_data: Arc<ResolverData<'db>>,
 }
 
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::trait_type_diagnostics].
-pub fn trait_type_diagnostics(
-    db: &dyn SemanticGroup,
-    trait_type_id: TraitTypeId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn trait_type_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_type_id: TraitTypeId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_trait_type_data(trait_type_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_type_generic_params].
-pub fn trait_type_generic_params(
-    db: &dyn SemanticGroup,
-    trait_type_id: TraitTypeId,
-) -> Maybe<Vec<GenericParam>> {
+pub fn trait_type_generic_params<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_type_id: TraitTypeId<'db>,
+) -> Maybe<Vec<GenericParam<'db>>> {
     Ok(db.priv_trait_type_generic_params_data(trait_type_id)?.generic_params)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_type_attributes].
-pub fn trait_type_attributes(
-    db: &dyn SemanticGroup,
-    trait_type_id: TraitTypeId,
-) -> Maybe<Vec<Attribute>> {
+pub fn trait_type_attributes<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_type_id: TraitTypeId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_trait_type_data(trait_type_id)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_type_resolver_data].
-pub fn trait_type_resolver_data(
-    db: &dyn SemanticGroup,
-    trait_type_id: TraitTypeId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn trait_type_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_type_id: TraitTypeId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_trait_type_data(trait_type_id)?.resolver_data)
 }
 
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_type_generic_params_data].
-pub fn priv_trait_type_generic_params_data(
-    db: &dyn SemanticGroup,
-    trait_type_id: TraitTypeId,
-) -> Maybe<GenericParamsData> {
+pub fn priv_trait_type_generic_params_data<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_type_id: TraitTypeId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = trait_type_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_type_id.trait_id(db);
@@ -915,10 +928,10 @@ pub fn priv_trait_type_generic_params_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_type_data].
-pub fn priv_trait_type_data(
-    db: &dyn SemanticGroup,
-    trait_type_id: TraitTypeId,
-) -> Maybe<TraitItemTypeData> {
+pub fn priv_trait_type_data<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_type_id: TraitTypeId<'db>,
+) -> Maybe<TraitItemTypeData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_type_id.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;
@@ -948,56 +961,56 @@ pub fn priv_trait_type_data(
 
 // === Trait item constant ===
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct TraitItemConstantData {
-    pub diagnostics: Diagnostics<SemanticDiagnostic>,
-    pub ty: TypeId,
-    pub attributes: Vec<Attribute>,
-    pub resolver_data: Arc<ResolverData>,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct TraitItemConstantData<'db> {
+    pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    pub ty: TypeId<'db>,
+    pub attributes: Vec<Attribute<'db>>,
+    pub resolver_data: Arc<ResolverData<'db>>,
 }
 
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::trait_constant_diagnostics].
-pub fn trait_constant_diagnostics(
-    db: &dyn SemanticGroup,
-    trait_constant: TraitConstantId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn trait_constant_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_constant: TraitConstantId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_trait_constant_data(trait_constant).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_constant_resolver_data].
-pub fn trait_constant_resolver_data(
-    db: &dyn SemanticGroup,
-    trait_constant: TraitConstantId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn trait_constant_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_constant: TraitConstantId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_trait_constant_data(trait_constant)?.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_constant_attributes].
-pub fn trait_constant_attributes(
-    db: &dyn SemanticGroup,
-    trait_constant: TraitConstantId,
-) -> Maybe<Vec<Attribute>> {
+pub fn trait_constant_attributes<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_constant: TraitConstantId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_trait_constant_data(trait_constant)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_constant_type].
-pub fn trait_constant_type(
-    db: &dyn SemanticGroup,
-    trait_constant_id: TraitConstantId,
-) -> Maybe<TypeId> {
+pub fn trait_constant_type<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_constant_id: TraitConstantId<'db>,
+) -> Maybe<TypeId<'db>> {
     Ok(db.priv_trait_constant_data(trait_constant_id)?.ty)
 }
 
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_constant_data].
-pub fn priv_trait_constant_data(
-    db: &dyn SemanticGroup,
-    trait_constant: TraitConstantId,
-) -> Maybe<TraitItemConstantData> {
+pub fn priv_trait_constant_data<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_constant: TraitConstantId<'db>,
+) -> Maybe<TraitItemConstantData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_constant.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;
@@ -1018,10 +1031,10 @@ pub fn priv_trait_constant_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_trait_constant_type].
-pub fn concrete_trait_constant_type(
-    db: &dyn SemanticGroup,
-    concrete_trait_constant_id: ConcreteTraitConstantId,
-) -> Maybe<TypeId> {
+pub fn concrete_trait_constant_type<'db>(
+    db: &'db dyn SemanticGroup,
+    concrete_trait_constant_id: ConcreteTraitConstantId<'db>,
+) -> Maybe<TypeId<'db>> {
     let concrete_trait_id = concrete_trait_constant_id.concrete_trait(db);
     let substitution = GenericSubstitution::new(
         &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
@@ -1033,56 +1046,56 @@ pub fn concrete_trait_constant_type(
 
 // === Trait item impl ===
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct TraitItemImplData {
-    pub diagnostics: Diagnostics<SemanticDiagnostic>,
-    pub concrete_trait: Maybe<ConcreteTraitId>,
-    pub attributes: Vec<Attribute>,
-    pub resolver_data: Arc<ResolverData>,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct TraitItemImplData<'db> {
+    pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    pub concrete_trait: Maybe<ConcreteTraitId<'db>>,
+    pub attributes: Vec<Attribute<'db>>,
+    pub resolver_data: Arc<ResolverData<'db>>,
 }
 
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::trait_impl_diagnostics].
-pub fn trait_impl_diagnostics(
-    db: &dyn SemanticGroup,
-    trait_impl: TraitImplId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn trait_impl_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_impl: TraitImplId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_trait_impl_data(trait_impl).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_impl_resolver_data].
-pub fn trait_impl_resolver_data(
-    db: &dyn SemanticGroup,
-    trait_impl: TraitImplId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn trait_impl_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_impl: TraitImplId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_trait_impl_data(trait_impl)?.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_impl_attributes].
-pub fn trait_impl_attributes(
-    db: &dyn SemanticGroup,
-    trait_impl: TraitImplId,
-) -> Maybe<Vec<Attribute>> {
+pub fn trait_impl_attributes<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_impl: TraitImplId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_trait_impl_data(trait_impl)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_impl_concrete_trait].
-pub fn trait_impl_concrete_trait(
-    db: &dyn SemanticGroup,
-    trait_impl_id: TraitImplId,
-) -> Maybe<ConcreteTraitId> {
+pub fn trait_impl_concrete_trait<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_impl_id: TraitImplId<'db>,
+) -> Maybe<ConcreteTraitId<'db>> {
     db.priv_trait_impl_data(trait_impl_id)?.concrete_trait
 }
 
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_impl_data].
-pub fn priv_trait_impl_data(
-    db: &dyn SemanticGroup,
-    trait_impl: TraitImplId,
-) -> Maybe<TraitItemImplData> {
+pub fn priv_trait_impl_data<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_impl: TraitImplId<'db>,
+) -> Maybe<TraitItemImplData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_impl.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;
@@ -1113,10 +1126,10 @@ pub fn priv_trait_impl_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_trait_impl_concrete_trait].
-pub fn concrete_trait_impl_concrete_trait(
-    db: &dyn SemanticGroup,
-    concrete_trait_impl_id: ConcreteTraitImplId,
-) -> Maybe<ConcreteTraitId> {
+pub fn concrete_trait_impl_concrete_trait<'db>(
+    db: &'db dyn SemanticGroup,
+    concrete_trait_impl_id: ConcreteTraitImplId<'db>,
+) -> Maybe<ConcreteTraitId<'db>> {
     let concrete_trait_id = concrete_trait_impl_id.concrete_trait(db);
     GenericSubstitution::new(
         &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
@@ -1130,36 +1143,36 @@ pub fn concrete_trait_impl_concrete_trait(
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_declaration_diagnostics].
-pub fn trait_function_declaration_diagnostics(
-    db: &dyn SemanticGroup,
-    trait_function_id: TraitFunctionId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn trait_function_declaration_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_trait_function_declaration_data(trait_function_id)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_signature].
-pub fn trait_function_signature(
-    db: &dyn SemanticGroup,
-    trait_function_id: TraitFunctionId,
-) -> Maybe<semantic::Signature> {
+pub fn trait_function_signature<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<semantic::Signature<'db>> {
     Ok(db.priv_trait_function_declaration_data(trait_function_id)?.signature)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_generic_params].
-pub fn trait_function_generic_params(
-    db: &dyn SemanticGroup,
-    trait_function_id: TraitFunctionId,
-) -> Maybe<Vec<GenericParam>> {
+pub fn trait_function_generic_params<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<Vec<GenericParam<'db>>> {
     Ok(db.priv_trait_function_generic_params_data(trait_function_id)?.generic_params)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_function_generic_params_data].
-pub fn priv_trait_function_generic_params_data(
-    db: &dyn SemanticGroup,
-    trait_function_id: TraitFunctionId,
-) -> Maybe<GenericParamsData> {
+pub fn priv_trait_function_generic_params_data<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = trait_function_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_function_id.trait_id(db);
@@ -1193,52 +1206,52 @@ pub fn priv_trait_function_generic_params_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_attributes].
-pub fn trait_function_attributes(
-    db: &dyn SemanticGroup,
-    trait_function_id: TraitFunctionId,
-) -> Maybe<Vec<Attribute>> {
+pub fn trait_function_attributes<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_trait_function_declaration_data(trait_function_id)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_resolver_data].
-pub fn trait_function_resolver_data(
-    db: &dyn SemanticGroup,
-    trait_function_id: TraitFunctionId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn trait_function_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_trait_function_declaration_data(trait_function_id)?.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_declaration_inline_config].
-pub fn trait_function_declaration_inline_config(
-    db: &dyn SemanticGroup,
-    trait_function_id: TraitFunctionId,
-) -> Maybe<InlineConfiguration> {
+pub fn trait_function_declaration_inline_config<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<InlineConfiguration<'db>> {
     Ok(db.priv_trait_function_declaration_data(trait_function_id)?.inline_config)
 }
 
 /// Query implementation of [SemanticGroup::trait_function_declaration_implicit_precedence].
-pub fn trait_function_declaration_implicit_precedence(
-    db: &dyn SemanticGroup,
-    trait_function_id: TraitFunctionId,
-) -> Maybe<ImplicitPrecedence> {
+pub fn trait_function_declaration_implicit_precedence<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<ImplicitPrecedence<'db>> {
     Ok(db.priv_trait_function_declaration_data(trait_function_id)?.implicit_precedence)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_declaration_implicits].
-pub fn trait_function_declaration_implicits(
-    db: &dyn SemanticGroup,
-    trait_function_id: TraitFunctionId,
-) -> Maybe<Vec<TypeId>> {
+pub fn trait_function_declaration_implicits<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<Vec<TypeId<'db>>> {
     Ok(db.priv_trait_function_declaration_data(trait_function_id)?.signature.implicits)
 }
 
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_function_declaration_data].
-pub fn priv_trait_function_declaration_data(
-    db: &dyn SemanticGroup,
-    trait_function_id: TraitFunctionId,
-) -> Maybe<FunctionDeclarationData> {
+pub fn priv_trait_function_declaration_data<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<FunctionDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_function_id.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;
@@ -1298,12 +1311,12 @@ pub fn priv_trait_function_declaration_data(
     })
 }
 
-fn validate_trait_function_signature(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    trait_id: TraitId,
-    function_id: TraitFunctionId,
-    sig: &semantic::Signature,
+fn validate_trait_function_signature<'db>(
+    db: &'db dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    trait_id: TraitId<'db>,
+    function_id: TraitFunctionId<'db>,
+    sig: &semantic::Signature<'db>,
 ) {
     for param in &sig.params {
         if param.mutability == Mutability::Mutable {
@@ -1321,10 +1334,10 @@ fn validate_trait_function_signature(
 // === Concrete Trait Function ===
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_trait_function_generic_params].
-pub fn concrete_trait_function_generic_params(
-    db: &dyn SemanticGroup,
-    concrete_trait_function_id: ConcreteTraitGenericFunctionId,
-) -> Maybe<Vec<GenericParam>> {
+pub fn concrete_trait_function_generic_params<'db>(
+    db: &'db dyn SemanticGroup,
+    concrete_trait_function_id: ConcreteTraitGenericFunctionId<'db>,
+) -> Maybe<Vec<GenericParam<'db>>> {
     let concrete_trait_id = concrete_trait_function_id.concrete_trait(db);
     GenericSubstitution::new(
         &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
@@ -1337,10 +1350,10 @@ pub fn concrete_trait_function_generic_params(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_trait_function_signature].
-pub fn concrete_trait_function_signature(
-    db: &dyn SemanticGroup,
-    concrete_trait_function_id: ConcreteTraitGenericFunctionId,
-) -> Maybe<semantic::Signature> {
+pub fn concrete_trait_function_signature<'db>(
+    db: &'db dyn SemanticGroup,
+    concrete_trait_function_id: ConcreteTraitGenericFunctionId<'db>,
+) -> Maybe<semantic::Signature<'db>> {
     let concrete_trait_id = concrete_trait_function_id.concrete_trait(db);
     GenericSubstitution::new(
         &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
@@ -1354,10 +1367,10 @@ pub fn concrete_trait_function_signature(
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_body_diagnostics].
-pub fn trait_function_body_diagnostics(
-    db: &dyn SemanticGroup,
-    trait_function_id: TraitFunctionId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn trait_function_body_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_trait_function_body_data(trait_function_id)
         .map(|data| match data {
             Some(data) => data.diagnostics,
@@ -1367,10 +1380,10 @@ pub fn trait_function_body_diagnostics(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_body].
-pub fn trait_function_body(
-    db: &dyn SemanticGroup,
-    trait_function_id: TraitFunctionId,
-) -> Maybe<Option<Arc<FunctionBody>>> {
+pub fn trait_function_body<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<Option<Arc<FunctionBody<'db>>>> {
     Ok(match db.priv_trait_function_body_data(trait_function_id)? {
         Some(body_data) => Some(body_data.body),
         None => None,
@@ -1380,16 +1393,16 @@ pub fn trait_function_body(
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_function_body_data].
-pub fn priv_trait_function_body_data(
-    db: &dyn SemanticGroup,
-    trait_function_id: TraitFunctionId,
-) -> Maybe<Option<FunctionBodyData>> {
+pub fn priv_trait_function_body_data<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<Option<FunctionBodyData<'db>>> {
     let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_function_id.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[&trait_function_id];
     // Compute declaration semantic.
-    let trait_function_declaration_data =
+    let trait_function_declaration_data: FunctionDeclarationData<'db> =
         db.priv_trait_function_declaration_data(trait_function_id)?;
     let parent_resolver_data = trait_function_declaration_data.resolver_data;
     let inference_id = InferenceId::LookupItemDefinition(LookupItemId::TraitItem(
@@ -1400,22 +1413,23 @@ pub fn priv_trait_function_body_data(
     resolver.trait_or_impl_ctx = TraitOrImplContext::Trait(trait_id);
     let environment = trait_function_declaration_data.environment;
 
-    let function_id = (|| {
-        let generic_parameters = db.trait_generic_params(trait_id)?;
-        let concrete_trait = ConcreteTraitLongId {
-            trait_id,
-            generic_args: generic_params_to_args(&generic_parameters, db),
-        }
-        .intern(db);
-        let generic_function = GenericFunctionId::Impl(ImplGenericFunctionId {
-            impl_id: ImplLongId::SelfImpl(concrete_trait).intern(db),
-            function: trait_function_id,
-        });
+    let function_id: Result<crate::FunctionId<'db>, cairo_lang_diagnostics::DiagnosticAdded> =
+        (|| {
+            let generic_parameters = db.trait_generic_params(trait_id)?;
+            let concrete_trait = ConcreteTraitLongId {
+                trait_id,
+                generic_args: generic_params_to_args(&generic_parameters, db),
+            }
+            .intern(db);
+            let generic_function = GenericFunctionId::Impl(ImplGenericFunctionId {
+                impl_id: ImplLongId::SelfImpl(concrete_trait).intern(db),
+                function: trait_function_id,
+            });
 
-        Ok(FunctionLongId::from_generic(db, generic_function)?.intern(db))
-    })();
+            Ok(FunctionLongId::from_generic(db, generic_function)?.intern(db))
+        })();
     // Compute body semantic expr.
-    let mut ctx = ComputationContext::new(
+    let mut ctx: ComputationContext<'db, '_, '_> = ComputationContext::new(
         db,
         &mut diagnostics,
         resolver,

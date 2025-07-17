@@ -13,53 +13,22 @@ use crate::db::SemanticGroup;
 use crate::items::constant::ConstValueId;
 use crate::{ConcreteStructId, FunctionId, TypeId, semantic};
 
-pub type PatternId = Id<Pattern>;
-pub type ExprId = Id<Expr>;
-pub type StatementId = Id<Statement>;
-
-impl DebugWithDb<ExprFormatter<'_>> for PatternId {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        expr_formatter: &ExprFormatter<'_>,
-    ) -> std::fmt::Result {
-        expr_formatter.db.pattern_semantic(expr_formatter.function_id, *self).fmt(f, expr_formatter)
-    }
-}
-impl DebugWithDb<ExprFormatter<'_>> for ExprId {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        expr_formatter: &ExprFormatter<'_>,
-    ) -> std::fmt::Result {
-        expr_formatter.db.expr_semantic(expr_formatter.function_id, *self).fmt(f, expr_formatter)
-    }
-}
-impl DebugWithDb<ExprFormatter<'_>> for StatementId {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        expr_formatter: &ExprFormatter<'_>,
-    ) -> std::fmt::Result {
-        expr_formatter
-            .db
-            .statement_semantic(expr_formatter.function_id, *self)
-            .fmt(f, expr_formatter)
-    }
-}
+pub type PatternId<'db> = Id<Pattern<'db>>;
+pub type ExprId<'db> = Id<Expr<'db>>;
+pub type StatementId<'db> = Id<Statement<'db>>;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub enum Statement {
-    Expr(StatementExpr),
-    Let(StatementLet),
-    Continue(StatementContinue),
-    Return(StatementReturn),
-    Break(StatementBreak),
-    Item(StatementItem),
+#[debug_db(ExprFormatter<'db>)]
+pub enum Statement<'db> {
+    Expr(StatementExpr<'db>),
+    Let(StatementLet<'db>),
+    Continue(StatementContinue<'db>),
+    Return(StatementReturn<'db>),
+    Break(StatementBreak<'db>),
+    Item(StatementItem<'db>),
 }
-impl Statement {
-    pub fn stable_ptr(&self) -> ast::StatementPtr {
+impl<'db> Statement<'db> {
+    pub fn stable_ptr(&self) -> ast::StatementPtr<'db> {
         match self {
             Statement::Expr(stmt) => stmt.stable_ptr,
             Statement::Let(stmt) => stmt.stable_ptr,
@@ -71,96 +40,96 @@ impl Statement {
     }
 }
 
-impl From<&Statement> for SyntaxStablePtrId {
-    fn from(statement: &Statement) -> Self {
+impl<'db> From<&Statement<'db>> for SyntaxStablePtrId<'db> {
+    fn from(statement: &Statement<'db>) -> Self {
         statement.stable_ptr().into()
     }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct StatementExpr {
-    pub expr: ExprId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct StatementExpr<'db> {
+    pub expr: ExprId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::StatementPtr,
+    pub stable_ptr: ast::StatementPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct StatementLet {
-    pub pattern: PatternId,
-    pub expr: ExprId,
-    pub else_clause: Option<ExprId>,
+#[debug_db(ExprFormatter<'db>)]
+pub struct StatementLet<'db> {
+    pub pattern: PatternId<'db>,
+    pub expr: ExprId<'db>,
+    pub else_clause: Option<ExprId<'db>>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::StatementPtr,
+    pub stable_ptr: ast::StatementPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct StatementContinue {
+#[debug_db(ExprFormatter<'db>)]
+pub struct StatementContinue<'db> {
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::StatementPtr,
+    pub stable_ptr: ast::StatementPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct StatementReturn {
-    pub expr_option: Option<ExprId>,
+#[debug_db(ExprFormatter<'db>)]
+pub struct StatementReturn<'db> {
+    pub expr_option: Option<ExprId<'db>>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::StatementPtr,
+    pub stable_ptr: ast::StatementPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct StatementBreak {
-    pub expr_option: Option<ExprId>,
+#[debug_db(ExprFormatter<'db>)]
+pub struct StatementBreak<'db> {
+    pub expr_option: Option<ExprId<'db>>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::StatementPtr,
+    pub stable_ptr: ast::StatementPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct StatementItem {
+#[debug_db(ExprFormatter<'db>)]
+pub struct StatementItem<'db> {
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::StatementPtr,
+    pub stable_ptr: ast::StatementPtr<'db>,
 }
 
 // Expressions.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub enum Expr {
-    Tuple(ExprTuple),
-    Snapshot(ExprSnapshot),
-    Desnap(ExprDesnap),
-    Assignment(ExprAssignment),
-    LogicalOperator(ExprLogicalOperator),
-    Block(ExprBlock),
-    Loop(ExprLoop),
-    While(ExprWhile),
-    For(ExprFor),
-    FunctionCall(ExprFunctionCall),
-    Match(ExprMatch),
-    If(ExprIf),
-    Var(ExprVar),
-    Literal(ExprLiteral),
-    StringLiteral(ExprStringLiteral),
-    MemberAccess(ExprMemberAccess),
-    StructCtor(ExprStructCtor),
-    EnumVariantCtor(ExprEnumVariantCtor),
-    PropagateError(ExprPropagateError),
-    Constant(ExprConstant),
-    FixedSizeArray(ExprFixedSizeArray),
-    ExprClosure(ExprClosure),
-    Missing(ExprMissing),
+#[debug_db(ExprFormatter<'db>)]
+pub enum Expr<'db> {
+    Tuple(ExprTuple<'db>),
+    Snapshot(ExprSnapshot<'db>),
+    Desnap(ExprDesnap<'db>),
+    Assignment(ExprAssignment<'db>),
+    LogicalOperator(ExprLogicalOperator<'db>),
+    Block(ExprBlock<'db>),
+    Loop(ExprLoop<'db>),
+    While(ExprWhile<'db>),
+    For(ExprFor<'db>),
+    FunctionCall(ExprFunctionCall<'db>),
+    Match(ExprMatch<'db>),
+    If(ExprIf<'db>),
+    Var(ExprVar<'db>),
+    Literal(ExprLiteral<'db>),
+    StringLiteral(ExprStringLiteral<'db>),
+    MemberAccess(ExprMemberAccess<'db>),
+    StructCtor(ExprStructCtor<'db>),
+    EnumVariantCtor(ExprEnumVariantCtor<'db>),
+    PropagateError(ExprPropagateError<'db>),
+    Constant(ExprConstant<'db>),
+    FixedSizeArray(ExprFixedSizeArray<'db>),
+    ExprClosure(ExprClosure<'db>),
+    Missing(ExprMissing<'db>),
 }
-impl Expr {
-    pub fn ty(&self) -> semantic::TypeId {
+impl<'db> Expr<'db> {
+    pub fn ty(&self) -> semantic::TypeId<'db> {
         match self {
             Expr::Assignment(expr) => expr.ty,
             Expr::Tuple(expr) => expr.ty,
@@ -187,7 +156,7 @@ impl Expr {
             Expr::ExprClosure(expr) => expr.ty,
         }
     }
-    pub fn stable_ptr(&self) -> ast::ExprPtr {
+    pub fn stable_ptr(&self) -> ast::ExprPtr<'db> {
         match self {
             Expr::Assignment(expr) => expr.stable_ptr,
             Expr::Tuple(expr) => expr.stable_ptr,
@@ -215,7 +184,7 @@ impl Expr {
         }
     }
 
-    pub fn as_member_path(&self) -> Option<ExprVarMemberPath> {
+    pub fn as_member_path(&self) -> Option<ExprVarMemberPath<'db>> {
         match self {
             Expr::Var(expr) => Some(ExprVarMemberPath::Var(expr.clone())),
             Expr::MemberAccess(expr) => expr.member_path.clone(),
@@ -224,236 +193,238 @@ impl Expr {
     }
 }
 
-impl From<&Expr> for SyntaxStablePtrId {
-    fn from(expr: &Expr) -> Self {
+impl<'db> From<&Expr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(expr: &Expr<'db>) -> Self {
         expr.stable_ptr().into()
     }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprTuple {
-    pub items: Vec<ExprId>,
-    pub ty: semantic::TypeId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprTuple<'db> {
+    pub items: Vec<ExprId<'db>>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprFixedSizeArray {
-    pub items: FixedSizeArrayItems,
-    pub ty: semantic::TypeId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprFixedSizeArray<'db> {
+    pub items: FixedSizeArrayItems<'db>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 /// Either a vector of items, if all was written in the code i.e. ([10, 11, 12] or [10, 10, 10]), or
 /// a value and a size, if the array was written as ([10; 3]).
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub enum FixedSizeArrayItems {
-    Items(Vec<ExprId>),
-    ValueAndSize(ExprId, ConstValueId),
+#[debug_db(ExprFormatter<'db>)]
+pub enum FixedSizeArrayItems<'db> {
+    Items(Vec<ExprId<'db>>),
+    ValueAndSize(ExprId<'db>, ConstValueId<'db>),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprSnapshot {
-    pub inner: ExprId,
-    pub ty: semantic::TypeId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprSnapshot<'db> {
+    pub inner: ExprId<'db>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprDesnap {
-    pub inner: ExprId,
-    pub ty: semantic::TypeId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprDesnap<'db> {
+    pub inner: ExprId<'db>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprBlock {
-    pub statements: Vec<StatementId>,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprBlock<'db> {
+    pub statements: Vec<StatementId<'db>>,
     /// Blocks may end with an expression, without a trailing `;`.
     /// In this case, `tail` will be Some(expr) with that expression.
     /// The block expression will evaluate to this tail expression.
     /// Otherwise, this will be None.
-    pub tail: Option<ExprId>,
-    pub ty: semantic::TypeId,
+    pub tail: Option<ExprId<'db>>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprLoop {
-    pub body: ExprId,
-    pub ty: semantic::TypeId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprLoop<'db> {
+    pub body: ExprId<'db>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprWhile {
-    pub condition: Condition,
-    pub body: ExprId,
-    pub ty: semantic::TypeId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprWhile<'db> {
+    pub condition: Condition<'db>,
+    pub body: ExprId<'db>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprFor {
-    pub into_iter: FunctionId,
-    pub into_iter_member_path: ExprVarMemberPath,
-    pub next_function_id: FunctionId,
-    pub expr_id: ExprId,
-    pub pattern: PatternId,
-    pub body: ExprId,
-    pub ty: semantic::TypeId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprFor<'db> {
+    pub into_iter: FunctionId<'db>,
+    pub into_iter_member_path: ExprVarMemberPath<'db>,
+    pub next_function_id: FunctionId<'db>,
+    pub expr_id: ExprId<'db>,
+    pub pattern: PatternId<'db>,
+    pub body: ExprId<'db>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 /// A sequence of member accesses of a variable. For example: a, a.b, a.b.c, ...
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
-pub enum ExprVarMemberPath {
-    Var(ExprVar),
+pub enum ExprVarMemberPath<'db> {
+    Var(ExprVar<'db>),
     Member {
-        parent: Box<ExprVarMemberPath>,
-        member_id: MemberId,
+        parent: Box<ExprVarMemberPath<'db>>,
+        member_id: MemberId<'db>,
         #[dont_rewrite]
-        stable_ptr: ast::ExprPtr,
-        concrete_struct_id: ConcreteStructId,
+        stable_ptr: ast::ExprPtr<'db>,
+        concrete_struct_id: ConcreteStructId<'db>,
         // Type of the member.
-        ty: TypeId,
+        ty: TypeId<'db>,
     },
 }
-impl ExprVarMemberPath {
-    pub fn base_var(&self) -> VarId {
+impl<'db> ExprVarMemberPath<'db> {
+    pub fn base_var(&self) -> VarId<'db> {
         match self {
             ExprVarMemberPath::Var(expr) => expr.var,
             ExprVarMemberPath::Member { parent, .. } => parent.base_var(),
         }
     }
-    pub fn ty(&self) -> TypeId {
+    pub fn ty(&self) -> TypeId<'db> {
         match self {
             ExprVarMemberPath::Var(expr) => expr.ty,
             ExprVarMemberPath::Member { ty, .. } => *ty,
         }
     }
-    pub fn stable_ptr(&self) -> ast::ExprPtr {
+    pub fn stable_ptr(&self) -> ast::ExprPtr<'db> {
         match self {
             ExprVarMemberPath::Var(var) => var.stable_ptr,
             ExprVarMemberPath::Member { stable_ptr, .. } => *stable_ptr,
         }
     }
 }
-impl<'a> DebugWithDb<ExprFormatter<'a>> for ExprVarMemberPath {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &ExprFormatter<'a>) -> std::fmt::Result {
+impl<'db> DebugWithDb<'db> for ExprVarMemberPath<'db> {
+    type Db = dyn SemanticGroup;
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
         match self {
             ExprVarMemberPath::Var(var) => var.fmt(f, db),
             ExprVarMemberPath::Member { parent, member_id, .. } => {
-                write!(f, "{:?}::{}", parent.debug(db), member_id.name(db.db))
+                write!(f, "{:?}::{}", parent.debug(db), member_id.name(db))
             }
         }
     }
 }
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprClosure {
-    pub body: ExprId,
-    pub params: Vec<semantic::Parameter>,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprClosure<'db> {
+    pub body: ExprId<'db>,
+    pub params: Vec<semantic::Parameter<'db>>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
-    pub ty: TypeId,
+    pub stable_ptr: ast::ExprPtr<'db>,
+    pub ty: TypeId<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub enum ExprFunctionCallArg {
-    Reference(ExprVarMemberPath),
-    Value(ExprId),
+#[debug_db(ExprFormatter<'db>)]
+pub enum ExprFunctionCallArg<'db> {
+    Reference(ExprVarMemberPath<'db>),
+    Value(ExprId<'db>),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprFunctionCall {
-    pub function: FunctionId,
-    pub args: Vec<ExprFunctionCallArg>,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprFunctionCall<'db> {
+    pub function: FunctionId<'db>,
+    pub args: Vec<ExprFunctionCallArg<'db>>,
     /// The `__coupon__` argument of the function call, if used. Attaching a coupon to a function
     /// means that the coupon is used instead of reducing the cost of the called function from the
     /// gas wallet. In particular, the cost of such a call is constant.
-    pub coupon_arg: Option<ExprId>,
-    pub ty: semantic::TypeId,
+    pub coupon_arg: Option<ExprId<'db>>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprMatch {
-    pub matched_expr: ExprId,
-    pub arms: Vec<MatchArm>,
-    pub ty: semantic::TypeId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprMatch<'db> {
+    pub matched_expr: ExprId<'db>,
+    pub arms: Vec<MatchArm<'db>>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprIf {
-    pub conditions: Vec<Condition>,
-    pub if_block: ExprId,
-    pub else_block: Option<ExprId>,
-    pub ty: semantic::TypeId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprIf<'db> {
+    pub conditions: Vec<Condition<'db>>,
+    pub if_block: ExprId<'db>,
+    pub else_block: Option<ExprId<'db>>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub enum Condition {
-    BoolExpr(ExprId),
-    Let(ExprId, Vec<PatternId>),
+#[debug_db(ExprFormatter<'db>)]
+pub enum Condition<'db> {
+    BoolExpr(ExprId<'db>),
+    Let(ExprId<'db>, Vec<PatternId<'db>>),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct MatchArm {
-    pub patterns: Vec<PatternId>,
-    pub expression: ExprId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct MatchArm<'db> {
+    pub patterns: Vec<PatternId<'db>>,
+    pub expression: ExprId<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprAssignment {
-    pub ref_arg: ExprVarMemberPath,
-    pub rhs: semantic::ExprId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprAssignment<'db> {
+    pub ref_arg: ExprVarMemberPath<'db>,
+    pub rhs: semantic::ExprId<'db>,
     // ExprAssignment is always of unit type.
-    pub ty: semantic::TypeId,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -463,136 +434,138 @@ pub enum LogicalOperator {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprLogicalOperator {
-    pub lhs: semantic::ExprId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprLogicalOperator<'db> {
+    pub lhs: semantic::ExprId<'db>,
     #[dont_rewrite]
     pub op: LogicalOperator,
-    pub rhs: semantic::ExprId,
+    pub rhs: semantic::ExprId<'db>,
     // ExprLogicalOperator is always of bool type.
-    pub ty: semantic::TypeId,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
-pub struct ExprVar {
-    pub var: VarId,
-    pub ty: semantic::TypeId,
+pub struct ExprVar<'db> {
+    pub var: VarId<'db>,
+    pub ty: semantic::TypeId<'db>,
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
-impl<'a> DebugWithDb<ExprFormatter<'a>> for ExprVar {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &ExprFormatter<'a>) -> std::fmt::Result {
+impl<'db> DebugWithDb<'db> for ExprVar<'db> {
+    type Db = dyn SemanticGroup;
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
         self.var.fmt(f, db)
     }
 }
 
 // TODO(yuval): rename to ExprNumericLiteral.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprLiteral {
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprLiteral<'db> {
     #[dont_rewrite]
     pub value: BigInt,
-    pub ty: semantic::TypeId,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprStringLiteral {
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprStringLiteral<'db> {
     #[dont_rewrite]
     pub value: String,
-    pub ty: semantic::TypeId,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprMemberAccess {
-    pub expr: semantic::ExprId,
-    pub concrete_struct_id: ConcreteStructId,
-    pub member: MemberId,
-    pub ty: semantic::TypeId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprMemberAccess<'db> {
+    pub expr: semantic::ExprId<'db>,
+    pub concrete_struct_id: ConcreteStructId<'db>,
+    pub member: MemberId<'db>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
-    pub member_path: Option<ExprVarMemberPath>,
+    pub member_path: Option<ExprVarMemberPath<'db>>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub n_snapshots: usize,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprStructCtor {
-    pub concrete_struct_id: ConcreteStructId,
-    pub members: Vec<(MemberId, ExprId)>,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprStructCtor<'db> {
+    pub concrete_struct_id: ConcreteStructId<'db>,
+    pub members: Vec<(ExprId<'db>, MemberId<'db>)>,
     /// The base struct to copy missing members from if provided.
     /// For example `let x = MyStruct { a: 1, ..base }`.
-    pub base_struct: Option<ExprId>,
-    pub ty: semantic::TypeId,
+    pub base_struct: Option<ExprId<'db>>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprEnumVariantCtor {
-    pub variant: semantic::ConcreteVariant,
-    pub value_expr: ExprId,
-    pub ty: semantic::TypeId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprEnumVariantCtor<'db> {
+    pub variant: semantic::ConcreteVariant<'db>,
+    pub value_expr: ExprId<'db>,
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprPropagateError {
-    pub inner: ExprId,
-    pub ok_variant: semantic::ConcreteVariant,
-    pub err_variant: semantic::ConcreteVariant,
-    pub func_err_variant: semantic::ConcreteVariant,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprPropagateError<'db> {
+    pub inner: ExprId<'db>,
+    pub ok_variant: semantic::ConcreteVariant<'db>,
+    pub err_variant: semantic::ConcreteVariant<'db>,
+    pub func_err_variant: semantic::ConcreteVariant<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprConstant {
-    pub const_value_id: ConstValueId,
-    pub ty: semantic::TypeId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprConstant<'db> {
+    pub const_value_id: ConstValueId<'db>,
+    pub ty: semantic::TypeId<'db>,
     #[dont_rewrite]
     #[hide_field_debug_with_db]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprUse {
-    pub const_value_id: StatementUseId,
-    pub ty: semantic::TypeId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprUse<'db> {
+    pub const_value_id: StatementUseId<'db>,
+    pub ty: semantic::TypeId<'db>,
     #[dont_rewrite]
     #[hide_field_debug_with_db]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprMissing {
-    pub ty: semantic::TypeId,
+#[debug_db(ExprFormatter<'db>)]
+pub struct ExprMissing<'db> {
+    pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr,
+    pub stable_ptr: ast::ExprPtr<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub diag_added: DiagnosticAdded,
@@ -600,9 +573,25 @@ pub struct ExprMissing {
 
 /// Arena for semantic expressions, patterns, and statements.
 #[derive(Clone, Debug, Default, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct Arenas {
-    pub exprs: Arena<semantic::Expr>,
-    pub patterns: Arena<semantic::Pattern>,
-    pub statements: Arena<semantic::Statement>,
+#[debug_db(dyn SemanticGroup)]
+pub struct Arenas<'db> {
+    pub exprs: Arena<semantic::Expr<'db>>,
+    pub patterns: Arena<semantic::Pattern<'db>>,
+    pub statements: Arena<semantic::Statement<'db>>,
+}
+
+unsafe impl<'db> salsa::Update for Arenas<'db> {
+    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
+        let old_arenas: &mut Arenas<'db> = unsafe { &mut *old_pointer };
+
+        // Next id includes both arena length and arena id.
+        if old_arenas.exprs.next_id() != new_value.exprs.next_id()
+            || old_arenas.patterns.next_id() != new_value.patterns.next_id()
+            || old_arenas.statements.next_id() != new_value.statements.next_id()
+        {
+            *old_arenas = new_value;
+            return true;
+        }
+        false
+    }
 }
