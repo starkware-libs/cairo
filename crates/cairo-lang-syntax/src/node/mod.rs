@@ -218,7 +218,7 @@ impl SyntaxNode {
         let file_content =
             db.file_content(self.stable_ptr(db).file_id(db)).expect("Failed to read file content");
 
-        self.span(db).take(&file_content).to_string()
+        self.span(db).take(&file_content).unwrap_or_default().to_string()
     }
 
     /// Returns all the text under the syntax node.
@@ -293,7 +293,7 @@ impl SyntaxNode {
     pub fn get_text_without_trivia(self, db: &dyn SyntaxGroup) -> String {
         let file_content =
             db.file_content(self.stable_ptr(db).file_id(db)).expect("Failed to read file content");
-        self.span_without_trivia(db).take(&file_content).to_string()
+        self.span_without_trivia(db).take(&file_content).unwrap_or_default().to_string()
     }
 
     /// Returns the text under the syntax node, according to the given span.
@@ -305,7 +305,7 @@ impl SyntaxNode {
         assert!(self.span(db).contains(span));
         let file_content =
             db.file_content(self.stable_ptr(db).file_id(db)).expect("Failed to read file content");
-        span.take(&file_content).to_string()
+        span.take(&file_content).unwrap_or_default().to_string()
     }
 
     /// Traverse the subtree rooted at the current node (including the current node) in preorder.

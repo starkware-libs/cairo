@@ -53,7 +53,7 @@ fn get_single_line_location_marks(
     };
 
     let first_line_span = TextSpan { start: first_line_start, end: first_line_end };
-    let mut res = first_line_span.take(&content).to_string();
+    let mut res = first_line_span.take(&content).unwrap_or_default().to_string();
     res.push('\n');
     res.extend(repeat_n(' ', col));
     let subspan_in_first_line =
@@ -116,5 +116,9 @@ fn get_line_content(
     };
 
     let line_span = TextSpan { start: line_start, end: line_end };
-    format!("{}{}\n", if first_line { "  " } else { "| " }, line_span.take(&content))
+    format!(
+        "{}{}\n",
+        if first_line { "  " } else { "| " },
+        line_span.take(&content).unwrap_or_default()
+    )
 }
