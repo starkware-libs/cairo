@@ -72,9 +72,9 @@ fn test_token_stream_parser() {
     let token_stream = MockTokenStream::from_syntax_node(db, root_node);
     let (node_from_token_stream, _) = db.parse_token_stream(&token_stream);
 
-    let original_leaves: Vec<SyntaxNode> = root_node.tokens(db).collect();
+    let original_leaves: Vec<_> = root_node.tokens(db).collect();
 
-    let token_stream_origin_leaves: Vec<SyntaxNode> = node_from_token_stream.tokens(db).collect();
+    let token_stream_origin_leaves: Vec<_> = node_from_token_stream.tokens(db).collect();
 
     assert_eq!(original_leaves.len(), token_stream_origin_leaves.len());
     assert_eq!(

@@ -352,7 +352,8 @@ impl<'a> DocumentationCommentParser<'a> {
             &mut DiagnosticsBuilder::default(),
             virtual_file,
             &path,
-        );
+        )
+        .1;
 
         if let Expr::Path(expr_path) = expr { Some(expr_path) } else { None }
     }

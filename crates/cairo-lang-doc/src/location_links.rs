@@ -61,7 +61,7 @@ fn get_virtual_syntax_file_signature(
 
     let mut diagnostics_builder = DiagnosticsBuilder::default();
     let syntax_file =
-        Parser::parse_file(&sig_db, &mut diagnostics_builder, virtual_file, signature.as_str())
+        Parser::parse_file(&sig_db, &mut diagnostics_builder, virtual_file, signature.as_str()).1
             .as_syntax_node();
 
     let diagnostics = sig_db.file_syntax_diagnostics(virtual_file);

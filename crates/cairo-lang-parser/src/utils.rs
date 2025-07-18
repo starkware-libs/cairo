@@ -97,6 +97,7 @@ impl SimpleParserDatabase {
 
         (
             Parser::parse_token_stream(self, &mut diagnostics, file_id, token_stream)
+                .1
                 .as_syntax_node(),
             diagnostics.build(),
         )
@@ -123,6 +124,7 @@ impl SimpleParserDatabase {
 
         (
             Parser::parse_token_stream_expr(self, &mut diagnostics, file_id, &content, offset)
+                .1
                 .as_syntax_node(),
             diagnostics.build(),
         )
@@ -157,7 +159,7 @@ pub fn get_syntax_file_and_diagnostics(
 ) -> (SyntaxFile, Diagnostics<ParserDiagnostic>) {
     let mut diagnostics = DiagnosticsBuilder::default();
     let syntax_file = Parser::parse_file(db, &mut diagnostics, file_id, contents);
-    (syntax_file, diagnostics.build())
+    (syntax_file.1, diagnostics.build())
 }
 
 /// Collect content string and start offset from a struct implementing `[ToPrimitiveTokenStream`]

@@ -3,6 +3,7 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind};
 use cairo_lang_syntax::node::ast::{Expr, StatementList, SyntaxFile};
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::ids::GreenId;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 
@@ -23,6 +24,8 @@ pub trait ParserGroup:
     fn priv_file_syntax_data(&self, file_id: FileId) -> SyntaxData;
     /// Parses a file and returns its SyntaxNode.
     fn file_syntax(&self, file_id: FileId) -> Maybe<SyntaxNode>;
+    /// Parses a file and returns its GreeIn list.
+    fn file_tokens(&self, file_id: FileId) -> Maybe<Vec<GreenId>>;
     /// Parses a file and returns its AST as a root SyntaxFile.
     fn file_module_syntax(&self, file_id: FileId) -> Maybe<SyntaxFile>;
     /// Parses a file and returns its AST as an expression. Only used for inline macros expanded
@@ -38,25 +41,35 @@ pub trait ParserGroup:
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct SyntaxData {
     diagnostics: Diagnostics<ParserDiagnostic>,
-    syntax: Maybe<SyntaxNode>,
+    syntax: Maybe<(Vec<GreenId>, SyntaxNode)>,
 }
 
 pub fn priv_file_syntax_data(db: &dyn ParserGroup, file_id: FileId) -> SyntaxData {
     let mut diagnostics = DiagnosticsBuilder::default();
     let syntax = db.file_content(file_id).to_maybe().map(|s| match file_id.kind(db) {
-        FileKind::Module => Parser::parse_file(db, &mut diagnostics, file_id, &s).as_syntax_node(),
+        FileKind::Module => {
+            let (terminals, node) = Parser::parse_file(db, &mut diagnostics, file_id, &s);
+            (terminals, node.as_syntax_node())
+        }
         FileKind::Expr => {
-            Parser::parse_file_expr(db, &mut diagnostics, file_id, &s).as_syntax_node()
+            let (terminals, node) = Parser::parse_file_expr(db, &mut diagnostics, file_id, &s);
+            (terminals, node.as_syntax_node())
         }
         FileKind::StatementList => {
-            Parser::parse_file_statement_list(db, &mut diagnostics, file_id, &s).as_syntax_node()
+            let (terminals, node) =
+                Parser::parse_file_statement_list(db, &mut diagnostics, file_id, &s);
+            (terminals, node.as_syntax_node())
         }
     });
     SyntaxData { diagnostics: diagnostics.build(), syntax }
 }
 
 pub fn file_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<SyntaxNode> {
-    db.priv_file_syntax_data(file_id).syntax
+    Ok(db.priv_file_syntax_data(file_id).syntax?.1)
+}
+
+pub fn file_tokens(db: &dyn ParserGroup, file_id: FileId) -> Maybe<Vec<GreenId>> {
+    Ok(db.priv_file_syntax_data(file_id).syntax?.0)
 }
 
 pub fn file_module_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<SyntaxFile> {

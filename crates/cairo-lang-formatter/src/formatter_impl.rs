@@ -136,7 +136,7 @@ impl UseTree {
         .intern(db);
 
         let mut diagnostics = DiagnosticsBuilder::<ParserDiagnostic>::default();
-        Parser::parse_file(db, &mut diagnostics, file_id, &formatted_use_items).as_syntax_node()
+        Parser::parse_file(db, &mut diagnostics, file_id, &formatted_use_items).1.as_syntax_node()
     }
 }
 

@@ -160,10 +160,13 @@ impl<'a> Parser<'a> {
         diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
         file_id: FileId,
         text: &'a str,
-    ) -> SyntaxFile {
-        let parser = Parser::new(db, file_id, text, diagnostics);
+    ) -> (Vec<GreenId>, SyntaxFile) {
+        let mut parser = Parser::new(db, file_id, text, diagnostics);
         let green = parser.parse_syntax_file();
-        SyntaxFile::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
+        (
+            parser.terminals,
+            SyntaxFile::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0)),
+        )
     }
 
     /// Parses a file expr.
@@ -172,7 +175,7 @@ impl<'a> Parser<'a> {
         diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
         file_id: FileId,
         text: &'a str,
-    ) -> Expr {
+    ) -> (Vec<GreenId>, Expr) {
         let mut parser = Parser::new(db, file_id, text, diagnostics);
         parser.macro_parsing_context = MacroParsingContext::ExpandedMacro;
         let green = parser.parse_expr();
@@ -182,7 +185,7 @@ impl<'a> Parser<'a> {
                 span,
             );
         }
-        Expr::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
+        (parser.terminals, Expr::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0)))
     }
 
     /// Parses a file as a list of statements.
@@ -191,14 +194,17 @@ impl<'a> Parser<'a> {
         diagnostics: &'a mut DiagnosticsBuilder<ParserDiagnostic>,
         file_id: FileId,
         text: &'a str,
-    ) -> StatementList {
+    ) -> (Vec<GreenId>, StatementList) {
         let mut parser = Parser::new(db, file_id, text, diagnostics);
         parser.macro_parsing_context = MacroParsingContext::ExpandedMacro;
         let statements = StatementList::new_green(
             db,
             &parser.parse_list(Self::try_parse_statement, Self::is_eof, "statement"),
         );
-        StatementList::from_syntax_node(db, SyntaxNode::new_root(db, file_id, statements.0))
+        (
+            parser.terminals,
+            StatementList::from_syntax_node(db, SyntaxNode::new_root(db, file_id, statements.0)),
+        )
     }
 
     /// Checks if the given kind is an end of file token.
@@ -212,13 +218,16 @@ impl<'a> Parser<'a> {
         diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
         file_id: FileId,
         token_stream: &'a dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
-    ) -> SyntaxFile {
+    ) -> (Vec<GreenId>, SyntaxFile) {
         let (content, offset) = primitive_token_stream_content_and_offset(token_stream);
-        let parser = Parser::new(db, file_id, &content, diagnostics);
+        let mut parser = Parser::new(db, file_id, &content, diagnostics);
         let green = parser.parse_syntax_file();
-        SyntaxFile::from_syntax_node(
-            db,
-            SyntaxNode::new_root_with_offset(db, file_id, green.0, offset),
+        (
+            parser.terminals,
+            SyntaxFile::from_syntax_node(
+                db,
+                SyntaxNode::new_root_with_offset(db, file_id, green.0, offset),
+            ),
         )
     }
 
@@ -229,7 +238,7 @@ impl<'a> Parser<'a> {
         file_id: FileId,
         content: &str,
         offset: Option<TextOffset>,
-    ) -> Expr {
+    ) -> (Vec<GreenId>, Expr) {
         let mut parser = Parser::new(db, file_id, content, diagnostics);
         let green = parser.parse_expr();
         if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
@@ -239,7 +248,13 @@ impl<'a> Parser<'a> {
                 span,
             });
         }
-        Expr::from_syntax_node(db, SyntaxNode::new_root_with_offset(db, file_id, green.0, offset))
+        (
+            parser.terminals,
+            Expr::from_syntax_node(
+                db,
+                SyntaxNode::new_root_with_offset(db, file_id, green.0, offset),
+            ),
+        )
     }
 
     /// Returns a GreenId of an ExprMissing and adds a diagnostic describing it.
@@ -262,7 +277,7 @@ impl<'a> Parser<'a> {
         ))
     }
 
-    pub fn parse_syntax_file(mut self) -> SyntaxFileGreen {
+    pub fn parse_syntax_file(&mut self) -> SyntaxFileGreen {
         let mut module_items = vec![];
         if let Some(doc_item) = self.take_doc() {
             module_items.push(doc_item.into());
