@@ -420,13 +420,17 @@ impl SyntaxNode {
     }
 }
 
+pub trait Id<T> {
+    fn id(&self) -> T;
+}
+
 /// Trait for the typed view of the syntax tree. All the internal node implementations are under
 /// the ast module.
 pub trait TypedSyntaxNode: Sized {
     /// The relevant SyntaxKind. None for enums.
     const OPTIONAL_KIND: Option<SyntaxKind>;
     type StablePtr: TypedStablePtr;
-    type Green;
+    type Green: Id<GreenId>;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green;
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self;
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self>;

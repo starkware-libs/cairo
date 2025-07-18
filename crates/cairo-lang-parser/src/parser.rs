@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Id, SyntaxNode, Token, TypedSyntaxNode};
 use cairo_lang_utils::{LookupIntern, extract_matches, require};
 use syntax::node::green::{GreenNode, GreenNodeDetails};
 use syntax::node::ids::GreenId;
@@ -63,6 +63,7 @@ pub struct Parser<'a> {
     pending_skipped_token_diagnostics: Vec<PendingParserDiagnostic>,
     /// An indicator if we are inside a macro rule expansion.
     macro_parsing_context: MacroParsingContext,
+    terminals: Vec<GreenId>,
 }
 
 /// The possible results of a try_parse_* function failing to parse.
@@ -144,6 +145,7 @@ impl<'a> Parser<'a> {
             diagnostics,
             pending_skipped_token_diagnostics: Vec::new(),
             macro_parsing_context: MacroParsingContext::None,
+            terminals: vec![],
         }
     }
 
@@ -3426,7 +3428,7 @@ impl<'a> Parser<'a> {
                     continue;
                 }
                 Ok(element) => {
-                    children.push(element.into());
+                    children.push(ElementOrSeparatorGreen::from(element));
                 }
             };
 
@@ -3439,7 +3441,7 @@ impl<'a> Parser<'a> {
                 ),
                 Ok(separator) => separator,
             };
-            children.push(separator.into());
+            children.push(ElementOrSeparatorGreen::from(separator));
         }
         children
     }
@@ -3625,12 +3627,14 @@ impl<'a> Parser<'a> {
         self.consume_pending_skipped_diagnostics();
 
         new_leading_trivia.extend(leading_trivia);
-        Terminal::new_green(
+        let terminal = Terminal::new_green(
             self.db,
             Trivia::new_green(self.db, &new_leading_trivia),
             token,
             Trivia::new_green(self.db, &trailing_trivia),
-        )
+        );
+        self.terminals.push(terminal.id());
+        terminal
     }
 
     /// Adds the pending skipped-tokens diagnostics, merging consecutive similar ones, and reset

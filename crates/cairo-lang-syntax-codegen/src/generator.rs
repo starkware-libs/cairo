@@ -184,7 +184,7 @@ fn generate_ast_code() -> rust::Tokens {
         use super::kind::SyntaxKind;
         use super::{
             GreenId, GreenNode, SyntaxGroup, SyntaxNode, SyntaxStablePtr, SyntaxStablePtrId,
-            Terminal, Token, TypedStablePtr, TypedSyntaxNode,
+            Terminal, Token, TypedStablePtr, TypedSyntaxNode, Id
         };
 
         #[path = "ast_ext.rs"]
@@ -352,6 +352,11 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
     quote! {
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $green_name(pub GreenId);
+        impl Id<GreenId> for $green_name {
+            fn id(&self) -> GreenId {
+                self.0
+            }
+        }
         impl TypedSyntaxNode for $name {
             const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::$name);
             type StablePtr = $ptr_name;
@@ -460,6 +465,11 @@ fn gen_enum_code(
         $green_conversions
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&green_name)(pub GreenId);
+        impl Id<GreenId> for $(&green_name) {
+            fn id(&self) -> GreenId {
+                self.0
+            }
+        }
         impl TypedSyntaxNode for $(&name){
             const OPTIONAL_KIND: Option<SyntaxKind> = None;
             type StablePtr = $(&ptr_name);
@@ -542,6 +552,11 @@ fn gen_token_code(name: String) -> rust::Tokens {
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&green_name)(pub GreenId);
+        impl Id<GreenId> for $(&green_name) {
+            fn id(&self) -> GreenId {
+                self.0
+            }
+        }
         impl $(&green_name) {
             pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
                 extract_matches!(
@@ -705,6 +720,11 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&green_name)(pub GreenId);
+        impl Id<GreenId> for $(&green_name) {
+            fn id(&self) -> GreenId {
+                self.0
+            }
+        }
         impl TypedSyntaxNode for $(&name) {
             const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::$(&name));
             type StablePtr = $(&ptr_name);
