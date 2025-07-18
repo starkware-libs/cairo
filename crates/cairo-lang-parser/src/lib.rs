@@ -14,6 +14,7 @@ pub mod printer;
 pub mod recovery;
 pub mod utils;
 mod validation;
+pub mod with_db;
 
 #[cfg(test)]
 pub mod test_utils;

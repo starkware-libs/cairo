@@ -7,6 +7,7 @@ use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::CodeMapping;
 use cairo_lang_filesystem::span::TextWidth;
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, ast};
@@ -146,7 +147,7 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send + Any {
     /// with that name and content should be created.
     fn generate_code(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn ParserGroup,
         item_ast: ast::ModuleItem,
         metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult;
@@ -204,7 +205,7 @@ pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send + Any {
     /// with that name and content should be created.
     fn generate_code(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn ParserGroup,
         item_ast: &ast::ExprInlineMacro,
         metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult;

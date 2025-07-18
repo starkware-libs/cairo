@@ -4,6 +4,7 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_defs::plugin_utils::extract_single_unnamed_arg;
 use cairo_lang_filesystem::ids::CodeMapping;
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_plugins::plugins::utils::GenericParamsInfo;
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
@@ -62,7 +63,7 @@ pub struct StorageInterfacesPlugin;
 impl MacroPlugin for StorageInterfacesPlugin {
     fn generate_code(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn ParserGroup,
         item_ast: ast::ModuleItem,
         metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {

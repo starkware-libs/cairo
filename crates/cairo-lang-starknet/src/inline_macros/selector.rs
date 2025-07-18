@@ -4,9 +4,9 @@ use cairo_lang_defs::plugin::{
     PluginGeneratedFile,
 };
 use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 
 /// Macro for expanding a selector to a string literal.
@@ -18,7 +18,7 @@ impl NamedPlugin for SelectorMacro {
 impl InlineMacroExprPlugin for SelectorMacro {
     fn generate_code(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn ParserGroup,
         syntax: &ast::ExprInlineMacro,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {

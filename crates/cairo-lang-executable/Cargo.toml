@@ -14,6 +14,7 @@ cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.11.4" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.11.4" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.11.4" }
 cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "~2.11.4" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.11.4" }
 cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "~2.11.4" }
 cairo-lang-runnable-utils = { path = "../cairo-lang-runnable-utils", version = "~2.11.4" }
 cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.11.4" }

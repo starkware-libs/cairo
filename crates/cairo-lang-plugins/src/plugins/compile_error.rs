@@ -1,8 +1,8 @@
 use cairo_lang_defs::extract_macro_single_unnamed_arg;
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginResult};
 use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 
 /// Plugin that allows writing item level `compile_error!` causing a diagnostic.
@@ -14,7 +14,7 @@ pub struct CompileErrorPlugin;
 impl MacroPlugin for CompileErrorPlugin {
     fn generate_code(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn ParserGroup,
         item_ast: ast::ModuleItem,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {

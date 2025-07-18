@@ -28,6 +28,7 @@ use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 pub use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName, NameGreen};
@@ -346,7 +347,7 @@ pub struct MacroPluginLongId(pub Arc<dyn MacroPlugin>);
 impl MacroPlugin for MacroPluginLongId {
     fn generate_code(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn ParserGroup,
         item_ast: ast::ModuleItem,
         metadata: &crate::plugin::MacroPluginMetadata<'_>,
     ) -> crate::plugin::PluginResult {
@@ -407,7 +408,7 @@ pub struct InlineMacroExprPluginLongId(pub Arc<dyn InlineMacroExprPlugin>);
 impl InlineMacroExprPlugin for InlineMacroExprPluginLongId {
     fn generate_code(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn ParserGroup,
         item_ast: &ast::ExprInlineMacro,
         metadata: &crate::plugin::MacroPluginMetadata<'_>,
     ) -> crate::plugin::InlinePluginResult {

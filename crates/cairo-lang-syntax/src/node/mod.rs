@@ -25,7 +25,6 @@ pub mod iter;
 pub mod key_fields;
 pub mod kind;
 pub mod stable_ptr;
-pub mod with_db;
 
 #[cfg(test)]
 mod ast_test;
@@ -328,14 +327,6 @@ impl SyntaxNode {
         Preorder::new(*self, db)
     }
 
-    /// Gets all the leaves of the SyntaxTree, where the self node is the root of a tree.
-    pub fn tokens<'a>(&'a self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self> + 'a {
-        self.preorder(db).filter_map(|event| match event {
-            WalkEvent::Enter(node) if node.green_node(db).kind.is_terminal() => Some(node),
-            _ => None,
-        })
-    }
-
     /// Mirror of [`TypedSyntaxNode::cast`].
     pub fn cast<T: TypedSyntaxNode>(self, db: &dyn SyntaxGroup) -> Option<T> {
         T::cast(db, self)
@@ -510,7 +501,7 @@ fn trailing_trivia_width(db: &dyn SyntaxGroup, green: &GreenNode) -> TextWidth {
 }
 
 /// Returns the width of the leading and trailing trivia of the given green node.
-fn both_trivia_width(db: &dyn SyntaxGroup, green: &GreenNode) -> (TextWidth, TextWidth) {
+pub fn both_trivia_width(db: &dyn SyntaxGroup, green: &GreenNode) -> (TextWidth, TextWidth) {
     match &green.details {
         green::GreenNodeDetails::Token(_) => (TextWidth::default(), TextWidth::default()),
         green::GreenNodeDetails::Node { children, width } => {

@@ -6,7 +6,7 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use indoc::indoc;
@@ -77,7 +77,7 @@ struct AddInlineModuleDummyPlugin;
 impl MacroPlugin for AddInlineModuleDummyPlugin {
     fn generate_code(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn ParserGroup,
         item_ast: ast::ModuleItem,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {

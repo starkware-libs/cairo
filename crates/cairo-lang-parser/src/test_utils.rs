@@ -2,15 +2,15 @@ use std::fmt::Display;
 use std::vec::IntoIter;
 
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
-use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_primitive_token::{PrimitiveSpan, PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax::node::SyntaxNode;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 
+use crate::db::{ParserGroup, SyntaxNodeExt};
 use crate::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics};
 
 pub fn get_diagnostics(
@@ -69,8 +69,9 @@ impl MockToken {
     }
 
     /// Create a token based on [SyntaxNode]
-    pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> MockToken {
-        MockToken::new(node.get_text(db), node.span(db))
+    pub fn from_green(file_content: &str, offset: TextOffset, width: TextWidth) -> MockToken {
+        let span = TextSpan { start: offset, end: offset.add_width(width) };
+        MockToken::new(span.take(file_content).to_string(), span)
     }
 }
 
@@ -81,9 +82,20 @@ impl MockTokenStream {
     }
 
     /// Create whole [MockTokenStream] based upon the [SyntaxNode].
-    pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+    pub fn from_syntax_node(db: &dyn ParserGroup, node: SyntaxNode) -> Self {
+        let file_content = db.file_content(node.stable_ptr(db).file_id(db)).unwrap();
+        let mut offset = node.offset(db);
         let leaves = node.tokens(db);
-        let tokens = leaves.map(|node| MockToken::from_syntax_node(db, node)).collect();
+
+        let tokens = leaves
+            .into_iter()
+            .map(|green| {
+                let width = green.width(db);
+                let result = MockToken::from_green(&file_content, offset, green.width(db));
+                offset = offset.add_width(width);
+                result
+            })
+            .collect();
         Self::new(tokens)
     }
 }

@@ -4,7 +4,6 @@ mod test;
 pub mod consts;
 
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginResult};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use consts::*;
@@ -20,6 +19,7 @@ mod storage;
 pub(crate) mod storage_interfaces;
 pub(crate) mod utils;
 
+use cairo_lang_parser::db::ParserGroup;
 use dispatcher::handle_trait;
 
 use self::derive::{derive_needed, handle_derive};
@@ -33,7 +33,7 @@ pub struct StarknetPlugin;
 impl MacroPlugin for StarknetPlugin {
     fn generate_code(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn ParserGroup,
         item_ast: ast::ModuleItem,
         metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {

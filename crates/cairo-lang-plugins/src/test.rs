@@ -14,7 +14,7 @@ use cairo_lang_filesystem::ids::{
     CodeMapping, CodeOrigin, CrateId, Directory, FileLongId, VirtualFile,
 };
 use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_parser::db::ParserDatabase;
+use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
@@ -159,7 +159,7 @@ struct DoubleIndirectionPlugin;
 impl MacroPlugin for DoubleIndirectionPlugin {
     fn generate_code(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn ParserGroup,
         item_ast: ast::ModuleItem,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {

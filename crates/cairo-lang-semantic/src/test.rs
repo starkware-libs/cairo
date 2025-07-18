@@ -5,8 +5,8 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+use cairo_lang_parser::db::{ParserGroup, SyntaxNodeExt};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast, both_trivia_width};
 use cairo_lang_utils::extract_matches;
 use indoc::indoc;
 use itertools::Itertools;
@@ -77,7 +77,7 @@ struct MappingsPlugin;
 impl MacroPlugin for MappingsPlugin {
     fn generate_code(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn ParserGroup,
         item_ast: ast::ModuleItem,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
@@ -92,13 +92,28 @@ impl MacroPlugin for MappingsPlugin {
         // Create code mappings.
         let node = item_ast.as_syntax_node();
         let leaves = node.tokens(db);
+        let mut offset = node.span(db).start;
         let code_mappings: Vec<CodeMapping> = leaves
-            .flat_map(|node| {
-                let span_with_trivia = node.span(db);
-                let span_without_trivia = node.span_without_trivia(db);
-                let prefix =
-                    TextSpan { start: span_with_trivia.start, end: span_without_trivia.start };
-                let suffix = TextSpan { start: span_without_trivia.end, end: span_with_trivia.end };
+            .into_iter()
+            .flat_map(|green| {
+                let green_node = db.lookup_intern_green(green);
+                let (leading_trivia, trailing_trivia) = both_trivia_width(db, &green_node);
+                let leading_trivia = leading_trivia;
+                let trailing_trivia = trailing_trivia;
+
+                let width = green_node.width();
+                let token_width = width - leading_trivia - trailing_trivia;
+                let after_leading_trivia = offset.add_width(leading_trivia);
+                let after_token = after_leading_trivia.add_width(token_width);
+                let after_trailing_trivia = after_token.add_width(trailing_trivia);
+
+                let prefix = TextSpan { start: offset, end: after_leading_trivia };
+                let span_without_trivia =
+                    TextSpan { start: after_leading_trivia, end: after_token };
+                let suffix = TextSpan { start: after_token, end: after_trailing_trivia };
+
+                offset = offset.add_width(width);
+
                 vec![
                     CodeMapping { span: prefix, origin: CodeOrigin::Span(prefix) },
                     CodeMapping {

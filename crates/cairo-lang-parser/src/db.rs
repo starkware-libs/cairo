@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind};
@@ -25,7 +27,7 @@ pub trait ParserGroup:
     /// Parses a file and returns its SyntaxNode.
     fn file_syntax(&self, file_id: FileId) -> Maybe<SyntaxNode>;
     /// Parses a file and returns its GreeIn list.
-    fn file_tokens(&self, file_id: FileId) -> Maybe<Vec<GreenId>>;
+    fn file_tokens(&self, file_id: FileId) -> Maybe<Arc<[GreenId]>>;
     /// Parses a file and returns its AST as a root SyntaxFile.
     fn file_module_syntax(&self, file_id: FileId) -> Maybe<SyntaxFile>;
     /// Parses a file and returns its AST as an expression. Only used for inline macros expanded
@@ -41,7 +43,7 @@ pub trait ParserGroup:
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct SyntaxData {
     diagnostics: Diagnostics<ParserDiagnostic>,
-    syntax: Maybe<(Vec<GreenId>, SyntaxNode)>,
+    syntax: Maybe<(Arc<[GreenId]>, SyntaxNode)>,
 }
 
 pub fn priv_file_syntax_data(db: &dyn ParserGroup, file_id: FileId) -> SyntaxData {
@@ -49,16 +51,16 @@ pub fn priv_file_syntax_data(db: &dyn ParserGroup, file_id: FileId) -> SyntaxDat
     let syntax = db.file_content(file_id).to_maybe().map(|s| match file_id.kind(db) {
         FileKind::Module => {
             let (terminals, node) = Parser::parse_file(db, &mut diagnostics, file_id, &s);
-            (terminals, node.as_syntax_node())
+            (terminals.into(), node.as_syntax_node())
         }
         FileKind::Expr => {
             let (terminals, node) = Parser::parse_file_expr(db, &mut diagnostics, file_id, &s);
-            (terminals, node.as_syntax_node())
+            (terminals.into(), node.as_syntax_node())
         }
         FileKind::StatementList => {
             let (terminals, node) =
                 Parser::parse_file_statement_list(db, &mut diagnostics, file_id, &s);
-            (terminals, node.as_syntax_node())
+            (terminals.into(), node.as_syntax_node())
         }
     });
     SyntaxData { diagnostics: diagnostics.build(), syntax }
@@ -68,7 +70,7 @@ pub fn file_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<SyntaxNode> {
     Ok(db.priv_file_syntax_data(file_id).syntax?.1)
 }
 
-pub fn file_tokens(db: &dyn ParserGroup, file_id: FileId) -> Maybe<Vec<GreenId>> {
+pub fn file_tokens(db: &dyn ParserGroup, file_id: FileId) -> Maybe<Arc<[GreenId]>> {
     Ok(db.priv_file_syntax_data(file_id).syntax?.0)
 }
 
@@ -92,4 +94,34 @@ pub fn file_syntax_diagnostics(
     file_id: FileId,
 ) -> Diagnostics<ParserDiagnostic> {
     db.priv_file_syntax_data(file_id).diagnostics
+}
+
+pub trait SyntaxNodeExt {
+    /// Gets all the leaves of the SyntaxTree, where the self node is the root of a tree.
+    fn tokens<'a>(&'a self, db: &'a dyn ParserGroup) -> impl IntoIterator<Item = GreenId> + 'a;
+}
+
+impl SyntaxNodeExt for SyntaxNode {
+    fn tokens<'a>(&'a self, db: &'a dyn ParserGroup) -> impl IntoIterator<Item = GreenId> + 'a {
+        let span = self.span(db);
+        let mut offset = 0;
+        let mut width = 0;
+        db.file_tokens(self.stable_ptr(db).file_id(db))
+            .unwrap()
+            .into_iter()
+            .skip_while(move |green| {
+                let skip = offset != span.start.as_u32();
+                offset += green.width(db).as_u32();
+
+                skip
+            })
+            .take_while(move |green| {
+                let take = width != span.end.as_u32();
+                width += green.width(db).as_u32();
+
+                take
+            })
+            .copied()
+            .collect::<Vec<_>>()
+    }
 }

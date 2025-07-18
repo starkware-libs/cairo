@@ -7,6 +7,7 @@ use cairo_lang_defs::plugin_utils::{
     PluginResultTrait, not_legacy_macro_diagnostic, try_extract_unnamed_arg,
     unsupported_bracket_diagnostic,
 };
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::ast::{Arg, WrappedArgList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -50,7 +51,7 @@ impl NamedPlugin for PanicMacro {
 impl InlineMacroExprPlugin for PanicMacro {
     fn generate_code(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn ParserGroup,
         syntax: &ast::ExprInlineMacro,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
