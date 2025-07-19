@@ -64,7 +64,7 @@ impl<'a> Lexer<'a> {
 
     fn peek_span_text(&self) -> &'a str {
         let span = TextSpan { start: self.previous_position, end: self.current_position };
-        span.take(self.text)
+        span.take(self.text).unwrap_or_default()
     }
 
     fn consume_span(&mut self) -> &str {

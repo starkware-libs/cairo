@@ -122,11 +122,14 @@ impl TextSpan {
     pub fn contains(self, other: Self) -> bool {
         self.start <= other.start && self.end >= other.end
     }
-    pub fn take(self, content: &str) -> &str {
-        &content[(self.start.0.0 as usize)..(self.end.0.0 as usize)]
+    pub fn take(self, content: &str) -> Option<&str> {
+        if self.end.0.0 > content.len() as u32 {
+            return None;
+        }
+        Some(&content[(self.start.0.0 as usize)..(self.end.0.0 as usize)])
     }
     pub fn n_chars(self, content: &str) -> usize {
-        self.take(content).chars().count()
+        self.take(content).unwrap_or_default().chars().count()
     }
     /// Get the span of width 0, located right after this span.
     pub fn after(self) -> Self {
