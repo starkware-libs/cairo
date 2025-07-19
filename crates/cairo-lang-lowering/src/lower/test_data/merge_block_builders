@@ -27,3 +27,60 @@ blk0:
 Statements:
 End:
   Not set
+
+//! > ==========================================================================
+
+//! > Two blocks
+
+//! > test_runner_name
+test_merge_block_builders
+
+//! > variables
+x: felt252, y: felt252, z: felt252, w: felt252
+
+//! > block_definitions
+(
+    (x, 0), // Same in both blocks.
+    (y, 1), // Different.
+    (z, 2), // Only in block 0.
+);
+(
+    (x, 0), // Same in both blocks.
+    (y, 3), // Different.
+    (w, 4), // Only in block 1.
+);
+
+//! > input_blocks
+block_id: BlockId(0)
+semantics:
+  Var(ParamId(test::x)): v0
+  Var(ParamId(test::y)): v1
+  Var(ParamId(test::z)): v2
+
+block_id: BlockId(1)
+semantics:
+  Var(ParamId(test::x)): v0
+  Var(ParamId(test::y)): v3
+  Var(ParamId(test::w)): v4
+
+//! > merged_block_builder
+block_id: BlockId(2)
+semantics:
+  Var(ParamId(test::x)): v0
+  Var(ParamId(test::y)): v100
+
+//! > lowered
+blk0:
+Statements:
+End:
+  Goto(blk2, {v1 -> v100})
+
+blk1:
+Statements:
+End:
+  Goto(blk2, {v3 -> v100})
+
+blk2:
+Statements:
+End:
+  Not set
