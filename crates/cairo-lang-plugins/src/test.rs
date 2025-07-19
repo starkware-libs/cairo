@@ -65,11 +65,8 @@ impl Default for DatabaseForTesting {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         init_defs_group(&mut res);
-        res.set_default_macro_plugins(
-            get_base_plugins()
-                .into_iter()
-                .map(|plugin| res.intern_macro_plugin(MacroPluginLongId(plugin)))
-                .collect(),
+        res.set_default_macro_plugins_input(
+            get_base_plugins().into_iter().map(MacroPluginLongId).collect(),
         );
         res
     }
@@ -114,14 +111,11 @@ pub fn test_expand_plugin_inner(
 ) -> TestRunnerResult {
     let db = &mut DatabaseForTesting::default();
 
-    let extra_plugins = extra_plugins
-        .iter()
-        .cloned()
-        .map(|plugin| db.intern_macro_plugin(MacroPluginLongId(plugin)));
+    let extra_plugins = extra_plugins.iter().cloned().map(MacroPluginLongId);
 
-    let default_plugins = db.default_macro_plugins();
+    let default_plugins = db.default_macro_plugins_input();
     let plugins = chain!(default_plugins.iter().cloned(), extra_plugins).collect::<Arc<[_]>>();
-    db.set_default_macro_plugins(plugins);
+    db.set_default_macro_plugins_input(plugins);
 
     let cfg_set: Option<CfgSet> =
         inputs.get("cfg").map(|s| serde_json::from_str(s.as_str()).unwrap());
