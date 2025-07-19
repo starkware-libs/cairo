@@ -84,3 +84,159 @@ blk2:
 Statements:
 End:
   Not set
+
+//! > ==========================================================================
+
+//! > Structs
+
+//! > test_runner_name
+test_merge_block_builders
+
+//! > variables
+x: B
+
+//! > block_definitions
+(
+    (x.a, 3), // x.a is packed in the first block.
+    (x.m, 0), // Same in all blocks.
+    (x.n, 1), // Different.
+);
+(
+    (x.a.m, 4), // x.a is packed in the first block.
+    (x.a.n, 5),
+    (x.m, 0), // Same in all blocks.
+    (x.n, 2), // Different.
+);
+(
+    (x.a.m, 4), // x.a is packed in the first block.
+    (x.a.n, 5),
+    (x.m, 0), // Same in all blocks.
+    (x.n, 2), // Different.
+);
+
+//! > module_code
+struct A {
+    m: felt252,
+    n: felt252,
+}
+
+struct B {
+    a: A,
+    m: felt252,
+    n: felt252,
+}
+
+//! > merged_block_builder
+block_id: BlockId(3)
+semantics:
+  Var(ParamId(test::x)): Scattered(Scattered(v113, v114), v0, v115)
+
+//! > input_blocks
+block_id: BlockId(0)
+semantics:
+  Var(ParamId(test::x)): Scattered(v3, v0, v1)
+
+block_id: BlockId(1)
+semantics:
+  Var(ParamId(test::x)): Scattered(Scattered(v4, v5), v0, v2)
+
+block_id: BlockId(2)
+semantics:
+  Var(ParamId(test::x)): Scattered(Scattered(v4, v5), v0, v2)
+
+//! > lowered
+blk0:
+Statements:
+  (v116: core::felt252, v117: core::felt252) <- struct_destructure(v3)
+End:
+  Goto(blk3, {v116 -> v113, v117 -> v114, v1 -> v115})
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v4 -> v113, v5 -> v114, v2 -> v115})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {v4 -> v113, v5 -> v114, v2 -> v115})
+
+blk3:
+Statements:
+End:
+  Not set
+
+//! > ==========================================================================
+
+//! > Nested structs
+
+//! > test_runner_name
+test_merge_block_builders
+
+//! > variables
+x: C
+
+//! > block_definitions
+(
+    (x.a0, 0), // Same in both blocks.
+    (x.a1.m, 1), // Same in both blocks.
+    (x.a1.n, 2), // Different.
+    (x.b.a, 4), // x.b.a is packed in the first block.
+    (x.b.m, 7), // Same in both blocks.
+);
+(
+    (x.a0, 0), // Same in both blocks.
+    (x.a1.m, 1), // Same in both blocks.
+    (x.a1.n, 3), // Different.
+    (x.b.a.m, 5), // x.b.a is packed in the first block.
+    (x.b.a.n, 6),
+    (x.b.m, 7), // Same in both blocks.
+);
+
+//! > module_code
+struct A {
+    m: felt252,
+    n: felt252,
+}
+
+struct B {
+    a: A,
+    m: felt252,
+}
+
+struct C {
+    a0: A,
+    a1: A,
+    b: B,
+}
+
+//! > input_blocks
+block_id: BlockId(0)
+semantics:
+  Var(ParamId(test::x)): Scattered(v0, Scattered(v1, v2), Scattered(v4, v7))
+
+block_id: BlockId(1)
+semantics:
+  Var(ParamId(test::x)): Scattered(v0, Scattered(v1, v3), Scattered(Scattered(v5, v6), v7))
+
+//! > merged_block_builder
+block_id: BlockId(2)
+semantics:
+  Var(ParamId(test::x)): Scattered(v0, Scattered(v1, v116), Scattered(Scattered(v117, v118), v7))
+
+//! > lowered
+blk0:
+Statements:
+  (v119: core::felt252, v120: core::felt252) <- struct_destructure(v4)
+End:
+  Goto(blk2, {v2 -> v116, v119 -> v117, v120 -> v118})
+
+blk1:
+Statements:
+End:
+  Goto(blk2, {v3 -> v116, v5 -> v117, v6 -> v118})
+
+blk2:
+Statements:
+End:
+  Not set
