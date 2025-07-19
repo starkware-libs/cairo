@@ -142,7 +142,11 @@ impl ComponentsGenerationData {
         let mut is_valid = true;
 
         let storage_name_syntax_node = storage_name.as_syntax_node();
-        if !self.substorage_members.contains(&storage_name_syntax_node.get_text(db)) {
+        if !self
+            .substorage_members
+            .iter()
+            .any(|member| **member == *storage_name_syntax_node.get_text(db))
+        {
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
                 component_macro.stable_ptr(db).untyped(),

@@ -134,9 +134,10 @@ pub fn priv_macro_declaration_data(
         let expansion = rule_syntax.rhs(db).elements(db);
         let pattern_elements = get_macro_elements(db, pattern.clone());
         // Collect defined placeholders from pattern
-        let defined_placeholders =
-            OrderedHashSet::<_>::from_iter(pattern_elements.elements(db).filter_map(|element| {
-                match element {
+        let defined_placeholders = OrderedHashSet::<_>::from_iter(
+            pattern_elements
+                .elements(db)
+                .filter_map(|element| match element {
                     ast::MacroElement::Param(param) => {
                         Some(param.name(db).as_syntax_node().get_text_without_trivia(db))
                     }
@@ -153,13 +154,14 @@ pub fn priv_macro_declaration_data(
                         .into_iter()
                         .next(),
                     _ => None,
-                }
-            }));
+                })
+                .map(|placeholder| placeholder.to_string()),
+        );
 
         let used_placeholders = collect_expansion_placeholders(db, expansion.as_syntax_node());
         // Verify all used placeholders are defined
         for (placeholder_ptr, used_placeholder) in used_placeholders {
-            if !defined_placeholders.contains(&used_placeholder) {
+            if !defined_placeholders.contains(&used_placeholder.to_string()) {
                 diagnostics.report(
                     placeholder_ptr,
                     SemanticDiagnosticKind::UndefinedMacroPlaceholder(used_placeholder),
@@ -186,7 +188,7 @@ fn get_macro_elements(db: &dyn SyntaxGroup, pattern: ast::WrappedMacro) -> ast::
 fn extract_placeholder(db: &dyn SyntaxGroup, path_node: &MacroParam) -> Option<String> {
     let placeholder_name = path_node.name(db).as_syntax_node().get_text_without_trivia(db);
     if ![MACRO_DEF_SITE, MACRO_CALL_SITE].contains(&placeholder_name.as_str()) {
-        return Some(placeholder_name);
+        return Some(placeholder_name.to_string());
     }
     None
 }
@@ -298,14 +300,14 @@ fn is_macro_rule_match_ex(
                             }
                             _ => return None,
                         };
-                        ctx.captures.entry(placeholder_name.clone()).or_default().push(
+                        ctx.captures.entry(placeholder_name.to_string()).or_default().push(
                             CapturedValue {
                                 text: captured_text,
                                 stable_ptr: input_token.stable_ptr(db).untyped(),
                             },
                         );
                         if let Some(rep_id) = ctx.current_repetition_stack.last() {
-                            ctx.placeholder_to_rep_id.insert(placeholder_name.clone(), *rep_id);
+                            ctx.placeholder_to_rep_id.insert(placeholder_name.to_string(), *rep_id);
                         }
                         continue;
                     }
@@ -323,14 +325,14 @@ fn is_macro_rule_match_ex(
                             return None;
                         }
 
-                        ctx.captures.entry(placeholder_name.clone()).or_default().push(
+                        ctx.captures.entry(placeholder_name.to_string()).or_default().push(
                             CapturedValue {
                                 text: expr_text.to_string(),
                                 stable_ptr: peek_token.stable_ptr(db).untyped(),
                             },
                         );
                         if let Some(rep_id) = ctx.current_repetition_stack.last() {
-                            ctx.placeholder_to_rep_id.insert(placeholder_name.clone(), *rep_id);
+                            ctx.placeholder_to_rep_id.insert(placeholder_name.to_string(), *rep_id);
                         }
                         let expr_length = expr_text.len();
                         let mut current_length = 0;
