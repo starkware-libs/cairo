@@ -99,7 +99,7 @@ pub struct ExprToVar {
 
 /// Destructure (for structs and tuples).
 #[derive(Debug)]
-pub struct Destructure {
+pub struct Deconstruct {
     /// The input value to destructure (a variable of type struct or tuple).
     pub input: FlowControlVar,
     /// The (output) variables to assign the result to. The number of variables is equal to the
@@ -127,7 +127,7 @@ pub enum FlowControlNode {
     EnumMatch(EnumMatch),
     ArmExpr(ArmExpr),
     ExprToVar(ExprToVar),
-    Destructure(Destructure),
+    Deconstruct(Deconstruct),
     Capture(Capture),
     UnitResult,
 }
@@ -149,7 +149,7 @@ impl FlowControlNode {
             FlowControlNode::ExprToVar(node) => {
                 vec![node.next]
             }
-            FlowControlNode::Destructure(node) => {
+            FlowControlNode::Deconstruct(node) => {
                 vec![node.next]
             }
             FlowControlNode::Capture(node) => {
@@ -170,7 +170,7 @@ impl Debug for FlowControlNode {
             FlowControlNode::EnumMatch(node) => node.fmt(f),
             FlowControlNode::ArmExpr(node) => node.fmt(f),
             FlowControlNode::ExprToVar(node) => node.fmt(f),
-            FlowControlNode::Destructure(node) => node.fmt(f),
+            FlowControlNode::Deconstruct(node) => node.fmt(f),
             FlowControlNode::Capture(node) => node.fmt(f),
             FlowControlNode::UnitResult => write!(f, "UnitResult"),
         }

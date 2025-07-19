@@ -46,6 +46,9 @@ fn test_create_graph(
         inputs["module_code"].as_str(),
     )
     .split();
+
+    println!("{}", semantic_diagnostics); // TODO: Remove.
+
     let semantic::Expr::Block(semantic::ExprBlock { tail: Some(expr_id), .. }) =
         db.expr_semantic(test_function.function_id, test_function.body)
     else {

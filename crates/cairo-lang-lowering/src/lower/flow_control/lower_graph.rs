@@ -294,7 +294,7 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
             location: match_location,
         });
 
-        Ok((BlockFinalization::End(builder, BlockEnd::Match { info: match_info }, match_location)))
+        Ok(BlockFinalization::End(builder, BlockEnd::Match { info: match_info }, match_location))
     }
 
     // Finalization functions.
