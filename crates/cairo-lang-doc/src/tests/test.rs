@@ -76,6 +76,7 @@ impl<'a> ResultDocBuilder<'a> {
                     ModuleItemId::Submodule(submodule_id),
                 )))
             }
+            ModuleId::MacroCall { id: _, generated_file_id: _ } => None,
         };
 
         let doc_tokens = match module_id {
@@ -87,6 +88,7 @@ impl<'a> ResultDocBuilder<'a> {
                     LookupItemId::ModuleItem(ModuleItemId::Submodule(submodule_id)),
                 ))
             }
+            ModuleId::MacroCall { id: _, generated_file_id: _ } => None,
         };
 
         self.insert_doc_to_test_output(module_doc, Some("".to_owned()), doc_tokens);
