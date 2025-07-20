@@ -61,7 +61,7 @@ impl TestFileRunner for ExpandContractTestRunner {
             file_contents.push(format!("{origin}{file_name}:\n\n{content}"));
         }
 
-        let diagnostics = get_diagnostics_as_string(&db, &[test_module.crate_id]);
+        let diagnostics = get_diagnostics_as_string(&db, Some(vec![test_module.crate_id]));
         let error = verify_diagnostics_expectation(args, &diagnostics);
 
         TestRunnerResult {
