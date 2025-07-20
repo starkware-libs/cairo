@@ -1,17 +1,13 @@
 use std::fmt::Write;
 
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_diagnostics::{
     DiagnosticEntry, Diagnostics, FormattedDiagnosticEntry, PluginFileDiagnosticNotes, Severity,
 };
 use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use rayon::ThreadPool;
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -139,7 +135,7 @@ impl<'a> DiagnosticsReporter<'a> {
     }
 
     /// Returns the crate ids for which the diagnostics will be checked.
-    fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateId> {
+    pub(crate) fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateId> {
         if self.crate_ids.is_empty() { db.crates() } else { self.crate_ids.clone() }
     }
 
@@ -248,35 +244,6 @@ impl<'a> DiagnosticsReporter<'a> {
     /// Returns `Err` if diagnostics were found.
     pub fn ensure(&mut self, db: &dyn LoweringGroup) -> Result<(), DiagnosticsError> {
         if self.check(db) { Err(DiagnosticsError) } else { Ok(()) }
-    }
-
-    /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
-    /// would be faster as the queries were already computed.
-    pub(crate) fn warm_up_diagnostics(&self, db: &RootDatabase, pool: &ThreadPool) {
-        let crates = self.crates_of_interest(db);
-        for crate_id in crates {
-            let snapshot = salsa::ParallelDatabase::snapshot(db);
-            pool.spawn(move || {
-                let db = &*snapshot;
-
-                let crate_modules = db.crate_modules(crate_id);
-                for module_id in crate_modules.iter().copied() {
-                    let snapshot = salsa::ParallelDatabase::snapshot(db);
-                    rayon::spawn(move || {
-                        let db = &*snapshot;
-                        for file_id in
-                            db.module_files(module_id).unwrap_or_default().iter().copied()
-                        {
-                            db.file_syntax_diagnostics(file_id);
-                        }
-
-                        let _ = db.module_semantic_diagnostics(module_id);
-
-                        let _ = db.module_lowering_diagnostics(module_id);
-                    });
-                }
-            });
-        }
     }
 
     pub fn skip_lowering_diagnostics(mut self) -> Self {
