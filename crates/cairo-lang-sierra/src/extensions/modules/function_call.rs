@@ -166,7 +166,7 @@ impl NamedLibfunc for DummyFunctionCallLibfunc {
     }
 }
 
-/// Given the generic arguments of a dummy function call, returns the function signature and and
+/// Given the generic arguments of a dummy function call, returns the function signature and
 /// ap_change.
 fn try_extract_dummy_func_info<'a>(
     mut args: impl Iterator<Item = &'a GenericArg>,
