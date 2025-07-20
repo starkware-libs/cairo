@@ -337,9 +337,8 @@ fn main() -> anyhow::Result<()> {
             Some(&db),
             replace_sierra_ids_in_program(&db, builder.sierra_program()),
             debug_info.statements_locations.get_statements_functions_map_for_tests(&db),
-            Default::default(),
         );
-        let processed_profiling_info = profiling_processor.process_ex(&info, &Default::default());
+        let processed_profiling_info = profiling_processor.process(&info, &Default::default());
         println!("{processed_profiling_info}");
     }
 
