@@ -4,7 +4,8 @@ use std::path::PathBuf;
 
 use anyhow::Ok;
 use cairo_lang_compiler::project::check_compiler_path;
-use cairo_lang_test_runner::{ProfilerConfig, TestRunConfig, TestRunner};
+use cairo_lang_runner::profiling::ProfilerConfig;
+use cairo_lang_test_runner::{TestRunConfig, TestRunner};
 use clap::{Parser, ValueEnum};
 use serde::Serialize;
 
