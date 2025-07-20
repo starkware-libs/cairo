@@ -152,15 +152,9 @@ impl MyImpl of MyTrait {}
 Parameters:
 blk0 (root):
 Statements:
-  (v0: {closure@lib.cairo:3:17: 3:20}) <- struct_construct()
-  (v1: {closure@lib.cairo:3:17: 3:20}, v2: @{closure@lib.cairo:3:17: 3:20}) <- snapshot(v0)
-  (v3: core::integer::i32) <- 3
-  (v4: (core::integer::i32,)) <- struct_construct(v3)
-  (v5: core::integer::i32) <- Generated core::ops::function::Fn::<{closure@lib.cairo:3:17: 3:20}, (core::integer::i32,)>::call(v2, v4)
-  (v6: (core::integer::i32,)) <- struct_construct(v5)
-  (v7: core::panics::PanicResult::<(core::integer::i32,)>) <- PanicResult::Ok(v6)
+  (v0: core::integer::i32) <- 3
 End:
-  Return(v7)
+  Return(v0)
 
 //! > ==========================================================================
 

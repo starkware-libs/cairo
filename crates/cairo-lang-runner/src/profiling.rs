@@ -388,26 +388,18 @@ pub struct ProfilingInfoProcessor<'a> {
     /// that generated it. The function representation is composed of the function name and the
     /// path (modules and impls) to the function in the file.
     statements_functions: UnorderedHashMap<StatementIdx, String>,
-    params: ProfilingInfoProcessorParams,
 }
 impl<'a> ProfilingInfoProcessor<'a> {
     pub fn new(
         db: Option<&'a dyn SierraGenGroup>,
         sierra_program: Program,
         statements_functions: UnorderedHashMap<StatementIdx, String>,
-        params: ProfilingInfoProcessorParams,
     ) -> Self {
-        Self { db, sierra_program, statements_functions, params }
+        Self { db, sierra_program, statements_functions }
     }
 
-    /// Processes the raw profiling info according to the params set in the processor.
-    pub fn process(&self, raw_profiling_info: &ProfilingInfo) -> ProcessedProfilingInfo {
-        self.process_ex(raw_profiling_info, &self.params)
-    }
-
-    /// Processes the raw profiling info according to the given params (can be used to override the
-    /// processor params).
-    pub fn process_ex(
+    /// Processes the raw profiling info according to the given params.
+    pub fn process(
         &self,
         raw_profiling_info: &ProfilingInfo,
         params: &ProfilingInfoProcessorParams,
@@ -453,7 +445,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
 
         Some(
             sierra_statement_weights_iter
-                .filter(|&(_, weight)| (*weight >= params.min_weight))
+                .filter(|&(_, weight)| *weight >= params.min_weight)
                 .map(|(statement_idx, weight)| {
                     (*statement_idx, (*weight, self.statement_idx_to_gen_statement(statement_idx)))
                 })

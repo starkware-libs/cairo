@@ -133,7 +133,7 @@ pub fn lower_function(
 
     // Initialize builder.
     let root_block_id = alloc_empty_block(&mut ctx);
-    let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
+    let mut builder = BlockBuilder::root(root_block_id);
 
     let parameters = ctx
         .signature
@@ -399,7 +399,7 @@ pub fn lower_loop_function(
 
     // Initialize builder.
     let root_block_id = alloc_empty_block(&mut ctx);
-    let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
+    let mut builder = BlockBuilder::root(root_block_id);
 
     let snapped_params = ctx.usages.usages[&loop_expr_id].snap_usage.clone();
     let parameters = ctx
@@ -1153,7 +1153,7 @@ fn lower_expr_fixed_size_array(
             }
             // If there are multiple elements, the type must be copyable as we copy the var `size`
             // times.
-            if size > 1 && ctx.variables[var_usage.var_id].copyable.is_err() {
+            if size > 1 && ctx.variables[var_usage.var_id].info.copyable.is_err() {
                 {
                     return Err(LoweringFlowError::Failed(
                         ctx.diagnostics.report(expr.stable_ptr.0, FixedSizeArrayNonCopyableType),
@@ -1174,31 +1174,8 @@ fn lower_expr_snapshot(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a snapshot: {:?}", expr.debug(&ctx.expr_formatter));
-    // If the inner expression is a variable, or a member access, and we already have a snapshot var
-    // we can use it without creating a new one.
-    // Note that in a closure we might only have a snapshot of the variable and not the original.
-    match &ctx.function_body.arenas.exprs[expr.inner] {
-        semantic::Expr::Var(expr_var) => {
-            let member_path = ExprVarMemberPath::Var(expr_var.clone());
-            if let Some(var) = builder.get_snap_ref(ctx, &member_path) {
-                return Ok(LoweredExpr::AtVariable(var));
-            }
-        }
-        semantic::Expr::MemberAccess(expr) => {
-            if let Some(var) = expr
-                .member_path
-                .clone()
-                .and_then(|member_path| builder.get_snap_ref(ctx, &member_path))
-            {
-                return Ok(LoweredExpr::AtVariable(var));
-            }
-        }
-        _ => {}
-    }
-    let lowered = lower_expr(ctx, builder, expr.inner)?;
-
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let expr = Box::new(lowered);
+    let expr = Box::new(lower_expr(ctx, builder, expr.inner)?);
     Ok(LoweredExpr::Snapshot { expr, location })
 }
 
@@ -1740,6 +1717,12 @@ fn lower_expr_member_access(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a member-access expression: {:?}", expr.debug(&ctx.expr_formatter));
+    if let Some(member_path) = &expr.member_path {
+        return Ok(LoweredExpr::Member(
+            member_path.clone(),
+            ctx.get_location(expr.stable_ptr.untyped()),
+        ));
+    }
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let members = ctx
         .db
@@ -1751,12 +1734,6 @@ fn lower_expr_member_access(
                 ctx.diagnostics.report(expr.stable_ptr.untyped(), UnexpectedError),
             )
         })?;
-    if let Some(member_path) = &expr.member_path {
-        return Ok(LoweredExpr::Member(
-            member_path.clone(),
-            ctx.get_location(expr.stable_ptr.untyped()),
-        ));
-    }
     Ok(LoweredExpr::AtVariable(
         generators::StructMemberAccess {
             input: lower_expr_to_var_usage(ctx, builder, expr.expr)?,
@@ -1848,9 +1825,9 @@ fn add_capture_destruct_impl(
     closure_info: &ClosureInfo,
     location: StableLocation,
 ) -> Maybe<()> {
-    let capture_var = &ctx.variables.variables[capture_var_usage.var_id];
+    let capture_ty_info = &ctx.variables.variables[capture_var_usage.var_id].info;
     // Skipping generation for the case of `Drop`.
-    let Some(Ok(impl_id)) = [&capture_var.destruct_impl, &capture_var.panic_destruct_impl]
+    let Some(Ok(impl_id)) = [&capture_ty_info.destruct_impl, &capture_ty_info.panic_destruct_impl]
         .iter()
         .find(|infer_result| infer_result.is_ok())
     else {
@@ -1904,7 +1881,7 @@ fn get_destruct_lowering(
     closure_info: &ClosureInfo,
 ) -> Maybe<Lowered> {
     let root_block_id = alloc_empty_block(&mut ctx);
-    let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
+    let mut builder = BlockBuilder::root(root_block_id);
 
     let parameters = ctx
         .signature
@@ -1991,7 +1968,7 @@ fn add_closure_call_function(
         LoweringContext::new(encapsulated_ctx, function_with_body_id, signature, return_type)?;
 
     let root_block_id = alloc_empty_block(&mut ctx);
-    let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
+    let mut builder = BlockBuilder::root(root_block_id);
 
     let info = ctx.db.core_info();
     let (closure_param_var_id, closure_var) = if trait_id == info.fn_once_trt {
@@ -2092,7 +2069,7 @@ fn lower_expr_closure(
         ctx,
         expr,
         &closure_info,
-        if ctx.variables[capture_var_usage.var_id].copyable.is_ok() {
+        if ctx.variables[capture_var_usage.var_id].info.copyable.is_ok() {
             ctx.db.core_info().fn_trt
         } else {
             ctx.db.core_info().fn_once_trt

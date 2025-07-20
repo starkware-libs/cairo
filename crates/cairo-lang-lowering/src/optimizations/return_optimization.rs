@@ -5,16 +5,16 @@ mod test;
 use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeId, TypeLongId};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, require};
+use id_arena::Arena;
 use semantic::MatchArmSelector;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
-use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
-use crate::lower::context::{VarRequest, VariableAllocator};
+use crate::ids::LocationId;
 use crate::{
     Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure, VarRemapping,
-    VarUsage, VariableId,
+    VarUsage, Variable, VariableId,
 };
 
 /// Adds early returns when applicable.
@@ -22,11 +22,7 @@ use crate::{
 /// This optimization does backward analysis from return statement and keeps track of
 /// each returned value (see `ValueInfo`), whenever all the returned values are available at a block
 /// end and there were no side effects later, the end is replaced with a return statement.
-pub fn return_optimization(
-    db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut Lowered,
-) {
+pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut Lowered) {
     if lowered.blocks.is_empty() {
         return;
     }
@@ -36,43 +32,37 @@ pub fn return_optimization(
     let ctx = analysis.analyzer;
 
     let ReturnOptimizerContext { fixes, .. } = ctx;
-    let mut variables = VariableAllocator::new(
-        db,
-        function_id.base_semantic_function(db).function_with_body_id(db),
-        std::mem::take(&mut lowered.variables),
-    )
-    .unwrap();
-
     for FixInfo { location: (block_id, statement_idx), return_info } in fixes {
         let block = &mut lowered.blocks[block_id];
         block.statements.truncate(statement_idx);
         let mut ctx = EarlyReturnContext {
+            db,
             constructed: UnorderedHashMap::default(),
-            variables: &mut variables,
+            variables: &mut lowered.variables,
             statements: &mut block.statements,
             location: return_info.location,
         };
         let vars = ctx.prepare_early_return_vars(&return_info.returned_vars);
         block.end = BlockEnd::Return(vars, return_info.location)
     }
-
-    lowered.variables = variables.variables;
 }
 
 /// Context for applying an early return to a block.
-struct EarlyReturnContext<'a, 'b> {
+struct EarlyReturnContext<'a> {
+    /// The lowering database.
+    db: &'a dyn LoweringGroup,
     /// A map from (type, inputs) to the variable_id for Structs/Enums that were created
     /// while processing the early return.
     constructed: UnorderedHashMap<(TypeId, Vec<VariableId>), VariableId>,
     /// A variable allocator.
-    variables: &'a mut VariableAllocator<'b>,
+    variables: &'a mut Arena<Variable>,
     /// The statements in the block where the early return is going to happen.
     statements: &'a mut Vec<Statement>,
     /// The location associated with the early return.
     location: LocationId,
 }
 
-impl EarlyReturnContext<'_, '_> {
+impl EarlyReturnContext<'_> {
     /// Return a vector of VarUsage's based on the input `ret_infos`.
     /// Adds `StructConstruct` and `EnumConstruct` statements to the block as needed.
     /// Assumes that early return is possible for the given `ret_infos`.
@@ -90,9 +80,11 @@ impl EarlyReturnContext<'_, '_> {
                         .constructed
                         .entry((*ty, inputs.iter().map(|var_usage| var_usage.var_id).collect()))
                         .or_insert_with(|| {
-                            let output = self
-                                .variables
-                                .new_var(VarRequest { ty: *ty, location: self.location });
+                            let output = self.variables.alloc(Variable::with_default_context(
+                                self.db,
+                                *ty,
+                                self.location,
+                            ));
                             self.statements.push(Statement::StructConstruct(
                                 StatementStructConstruct { inputs, output },
                             ));
@@ -104,12 +96,15 @@ impl EarlyReturnContext<'_, '_> {
                     let input = self.prepare_early_return_vars(std::slice::from_ref(var_info))[0];
 
                     let ty = TypeLongId::Concrete(ConcreteTypeId::Enum(variant.concrete_enum_id))
-                        .intern(self.variables.db);
+                        .intern(self.db);
 
                     let output =
                         *self.constructed.entry((ty, vec![input.var_id])).or_insert_with(|| {
-                            let output =
-                                self.variables.new_var(VarRequest { ty, location: self.location });
+                            let output = self.variables.alloc(Variable::with_default_context(
+                                self.db,
+                                ty,
+                                self.location,
+                            ));
                             self.statements.push(Statement::EnumConstruct(
                                 StatementEnumConstruct { variant: *variant, input, output },
                             ));
@@ -147,7 +142,7 @@ impl ReturnOptimizerContext<'_> {
 
     /// Returns true if the variable is droppable
     fn is_droppable(&self, var_id: VariableId) -> bool {
-        self.lowered.variables[var_id].droppable.is_ok()
+        self.lowered.variables[var_id].info.droppable.is_ok()
     }
 
     /// Helper function for `merge_match`.

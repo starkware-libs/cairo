@@ -9,7 +9,6 @@ use cairo_lang_semantic::corelib::try_extract_nz_wrapped_type;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::{ConstCalcInfo, ConstValue};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, GenericFunctionWithBodyId};
-use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::types::TypeSizeInformation;
 use cairo_lang_semantic::{
     ConcreteTypeId, GenericArgumentId, MatchArmSelector, TypeId, TypeLongId, corelib,
@@ -32,6 +31,7 @@ use crate::ids::{
     SpecializedFunction,
 };
 use crate::specialization::SpecializationArg;
+use crate::utils::InliningStrategy;
 use crate::{
     Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
     Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
@@ -304,8 +304,8 @@ impl<'a> ConstFoldingContext<'a> {
                             let arm = &arms[variant.idx];
                             let value = value.as_ref().clone();
                             let output = arm.var_ids[0];
-                            if self.variables[input.var_id].droppable.is_ok()
-                                && self.variables[output].copyable.is_ok()
+                            if self.variables[input.var_id].info.droppable.is_ok()
+                                && self.variables[output].info.copyable.is_ok()
                             {
                                 if let Some(stmt) =
                                     self.try_generate_const_statement(&value, output)
@@ -408,7 +408,7 @@ impl<'a> ConstFoldingContext<'a> {
             panic_data.extend([pending_word.clone(), pending_len.clone()]);
             let felt252_ty = self.felt252;
             let location = stmt.location;
-            let new_var = |ty| Variable::new(db, ImplLookupContext::default(), ty, location);
+            let new_var = |ty| Variable::with_default_context(db, ty, location);
             let as_usage = |var_id| VarUsage { var_id, location };
             let array_fn = |extern_id| {
                 let args = vec![GenericArgumentId::Type(felt252_ty)];
@@ -571,10 +571,18 @@ impl<'a> ConstFoldingContext<'a> {
         if call_stmt.with_coupon {
             return None;
         }
+        // No specialization when avoiding inlining.
+        if matches!(self.db.optimization_config().inlining_strategy, InliningStrategy::Avoid) {
+            return None;
+        }
 
-        let Ok(Some(func_with_body)) = call_stmt.function.body(self.db) else {
+        let Ok(Some(mut base)) = call_stmt.function.body(self.db) else {
             return None;
         };
+
+        if self.db.priv_never_inline(base).ok()? {
+            return None;
+        }
 
         if call_stmt
             .inputs
@@ -585,18 +593,18 @@ impl<'a> ConstFoldingContext<'a> {
             return None;
         }
 
-        let mut const_arg = vec![];
+        let mut const_args = vec![];
         let mut new_args = vec![];
         for arg in &call_stmt.inputs {
             if let Some(var_info) = self.var_info.get(&arg.var_id) {
                 if let Some(c) =
                     self.try_get_specialization_arg(var_info.clone(), self.variables[arg.var_id].ty)
                 {
-                    const_arg.push(Some(c.clone()));
+                    const_args.push(Some(c.clone()));
                     continue;
                 }
             }
-            const_arg.push(None);
+            const_args.push(None);
             new_args.push(*arg);
         }
 
@@ -605,39 +613,29 @@ impl<'a> ConstFoldingContext<'a> {
             return None;
         }
 
-        let (base, args) = match func_with_body.lookup_intern(self.db) {
-            ConcreteFunctionWithBodyLongId::Semantic(_)
-            | ConcreteFunctionWithBodyLongId::Generated(_) => {
-                (func_with_body, const_arg.into_iter().collect())
+        if let ConcreteFunctionWithBodyLongId::Specialized(specialized_function) =
+            base.lookup_intern(self.db)
+        {
+            // Canonicalize the specialization rather than adding a specialization of a specialized
+            // function.
+            base = specialized_function.base;
+            let mut new_args_iter = const_args.into_iter();
+            const_args = specialized_function.args.to_vec();
+            for arg in &mut const_args {
+                if arg.is_none() {
+                    *arg = new_args_iter.next().unwrap_or_default();
+                }
             }
-            ConcreteFunctionWithBodyLongId::Specialized(specialized_function) => {
-                // Canonicalize the specialization rather than adding a specialization of a
-                // specializaed function.
-                let mut new_args_iter = chain!(const_arg.into_iter(), std::iter::once(None));
-                let args = specialized_function
-                    .args
-                    .iter()
-                    .map(|arg| {
-                        if arg.is_none() {
-                            return new_args_iter.next().unwrap();
-                        }
-                        arg.clone()
-                    })
-                    .collect();
-
-                (specialized_function.base, args)
-            }
-        };
+        }
 
         // Avoid specializing with the same base as the current function as it may lead to infinite
         // specialization.
         if base == self.caller_base {
             return None;
         }
-
+        let specialized = SpecializedFunction { base, args: const_args.into() };
         let specialized_func_id =
-            ConcreteFunctionWithBodyLongId::Specialized(SpecializedFunction { base, args })
-                .intern(self.db);
+            ConcreteFunctionWithBodyLongId::Specialized(specialized).intern(self.db);
 
         if self.db.priv_should_specialize(specialized_func_id) == Ok(false) {
             return None;
@@ -732,9 +730,8 @@ impl<'a> ConstFoldingContext<'a> {
                 let nz_input = info.inputs[if lhs.is_some() { 1 } else { 0 }];
                 let var = &self.variables[nz_input.var_id].clone();
                 let function = self.type_value_ranges.get(&var.ty)?.is_zero;
-                let unused_nz_var = Variable::new(
+                let unused_nz_var = Variable::with_default_context(
                     db,
-                    ImplLookupContext::default(),
                     corelib::core_nonzero_ty(db, var.ty),
                     var.location,
                 );
@@ -830,9 +827,8 @@ impl<'a> ConstFoldingContext<'a> {
                     else {
                         return None;
                     };
-                    let result = self.variables.alloc(Variable::new(
+                    let result = self.variables.alloc(Variable::with_default_context(
                         db,
-                        ImplLookupContext::default(),
                         function.signature(db).unwrap().return_type,
                         info.location,
                     ));
@@ -935,17 +931,12 @@ impl<'a> ConstFoldingContext<'a> {
                             let value_ty = value.ty(db).ok()?;
                             let value_box_ty = corelib::core_box_ty(db, value_ty);
                             let location = info.location;
-                            let boxed_var = Variable::new(
-                                db,
-                                ImplLookupContext::default(),
-                                value_box_ty,
-                                location,
-                            );
+                            let boxed_var =
+                                Variable::with_default_context(db, value_box_ty, location);
                             let boxed = self.variables.alloc(boxed_var.clone());
                             let unused_boxed = self.variables.alloc(boxed_var);
-                            let snapped = self.variables.alloc(Variable::new(
+                            let snapped = self.variables.alloc(Variable::with_default_context(
                                 db,
-                                ImplLookupContext::default(),
                                 TypeLongId::Snapshot(value_box_ty).intern(db),
                                 location,
                             ));
@@ -1132,7 +1123,7 @@ impl<'a> ConstFoldingContext<'a> {
 
 /// Returns a `VarInfo` of a variable only if it is copyable.
 fn var_info_if_copy(variables: &Arena<Variable>, input: VarUsage) -> Option<VarInfo> {
-    variables[input.var_id].copyable.is_ok().then_some(VarInfo::Var(input))
+    variables[input.var_id].info.copyable.is_ok().then_some(VarInfo::Var(input))
 }
 
 /// Query implementation of [LoweringGroup::priv_const_folding_info].

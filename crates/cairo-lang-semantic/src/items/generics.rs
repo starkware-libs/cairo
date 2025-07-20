@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use std::hash::Hash;
 use std::sync::Arc;
 
@@ -25,6 +26,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::{
     NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
+use crate::expr::fmt::CountingWriter;
 use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::lookup_item::LookupItemEx;
@@ -638,16 +640,24 @@ fn impl_generic_param_semantic(
 /// Formats a list of generic arguments.
 pub fn fmt_generic_args(
     generic_args: &[GenericArgumentId],
-    f: &mut std::fmt::Formatter<'_>,
+    f: &mut CountingWriter<'_, '_>,
     db: &(dyn SemanticGroup + 'static),
 ) -> std::fmt::Result {
-    if !generic_args.is_empty() {
+    let mut generic_args = generic_args.iter();
+    if let Some(first) = generic_args.next() {
+        // Soft limit for the number of chars in the formatted type.
+        const CHARS_BOUND: usize = 500;
         write!(f, "::<")?;
-        for (i, arg) in generic_args.iter().enumerate() {
-            if i > 0 {
-                write!(f, ", ")?;
+        write!(f, "{}", &first.format(db))?;
+
+        for arg in generic_args {
+            write!(f, ", ")?;
+            if f.count() > CHARS_BOUND {
+                // If the formatted type is becoming too long, add short version of arguments.
+                write!(f, "{}", &arg.short_name(db))?;
+            } else {
+                write!(f, "{}", &arg.format(db))?;
             }
-            write!(f, "{}", arg.format(db))?;
         }
         write!(f, ">")?;
     }

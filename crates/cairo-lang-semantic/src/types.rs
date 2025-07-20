@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
@@ -27,10 +29,14 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosti
 use crate::expr::compute::{
     ComputationContext, ContextFunction, Environment, compute_expr_semantic,
 };
-use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::expr::fmt::CountingWriter;
+use crate::expr::inference::canonic::{CanonicalTrait, ResultNoErrEx};
+use crate::expr::inference::solver::{SolutionSet, enrich_lookup_context};
 use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
+use crate::items::enm::SemanticEnumEx;
+use crate::items::generics::fmt_generic_args;
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolutionContext, ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
@@ -305,28 +311,7 @@ impl ConcreteTypeId {
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        let generic_type_format = self.generic_type(db).format(db);
-        let mut generic_args = self.generic_args(db).into_iter();
-        if let Some(first) = generic_args.next() {
-            // Soft limit for the number of chars in the formatted type.
-            const CHARS_BOUND: usize = 500;
-            let mut f = generic_type_format;
-            f.push_str("::<");
-            f.push_str(&first.format(db));
-            for arg in generic_args {
-                f.push_str(", ");
-                if f.len() > CHARS_BOUND {
-                    // If the formatted type is becoming too long, add short version of arguments.
-                    f.push_str(&arg.short_name(db));
-                } else {
-                    f.push_str(&arg.format(db));
-                }
-            }
-            f.push('>');
-            f
-        } else {
-            generic_type_format
-        }
+        format!("{:?}", self.debug(db.elongate()))
     }
 
     /// Returns whether the type has the `#[must_use]` attribute.
@@ -354,7 +339,9 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteTypeId {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        write!(f, "{}", self.format(db))
+        let f = &mut CountingWriter::new(f);
+        write!(f, "{}", self.generic_type(db).format(db))?;
+        fmt_generic_args(&self.generic_args(db), f, db)
     }
 }
 
@@ -729,9 +716,12 @@ pub fn get_impl_at_context(
     concrete_trait_id: ConcreteTraitId,
     stable_ptr: Option<SyntaxStablePtrId>,
 ) -> Result<ImplId, InferenceError> {
+    let constrains = db.generic_params_type_constraints(lookup_context.generic_params.clone());
+    if constrains.is_empty() && concrete_trait_id.is_var_free(db) {
+        return solve_concrete_trait_no_constraints(db, lookup_context, concrete_trait_id);
+    }
     let mut inference_data = InferenceData::new(InferenceId::NoContext);
     let mut inference = inference_data.inference(db);
-    let constrains = db.generic_params_type_constraints(lookup_context.generic_params.clone());
     inference.conform_generic_params_type_constraints(&constrains);
     // It's ok to consume the errors without reporting as this is a helper function meant to find an
     // impl and return it, but it's ok if the impl can't be found.
@@ -832,15 +822,15 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInfor
             ConcreteTypeId::Struct(id) => {
                 if check_all_type_are_zero_sized(
                     db,
-                    db.struct_members(id.struct_id(db))?.iter().map(|(_, member)| &member.ty),
+                    db.concrete_struct_members(id)?.iter().map(|(_, member)| &member.ty),
                 )? {
                     return Ok(TypeSizeInformation::ZeroSized);
                 }
             }
             ConcreteTypeId::Enum(id) => {
-                for (_, variant) in db.enum_variants(id.enum_id(db))? {
+                for variant in &db.concrete_enum_variants(id)? {
                     // Recursive calling in order to find infinite sized types.
-                    db.type_size_info(db.variant_semantic(id.enum_id(db), variant)?.ty)?;
+                    db.type_size_info(variant.ty)?;
                 }
             }
             ConcreteTypeId::Extern(_) => {}
@@ -906,7 +896,7 @@ pub fn type_info(
     db: &dyn SemanticGroup,
     lookup_context: ImplLookupContext,
     ty: TypeId,
-) -> Maybe<TypeInfo> {
+) -> TypeInfo {
     // Dummy stable pointer for type inference variables, since inference is disabled.
     let droppable =
         get_impl_at_context(db, lookup_context.clone(), concrete_drop_trait(db, ty), None);
@@ -916,7 +906,36 @@ pub fn type_info(
         get_impl_at_context(db, lookup_context.clone(), concrete_destruct_trait(db, ty), None);
     let panic_destruct_impl =
         get_impl_at_context(db, lookup_context, concrete_panic_destruct_trait(db, ty), None);
-    Ok(TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl })
+    TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl }
+}
+
+/// Solves a concrete trait without any constraints.
+/// Only works when the given trait is var free.
+fn solve_concrete_trait_no_constraints(
+    db: &dyn SemanticGroup,
+    mut lookup_context: ImplLookupContext,
+    id: ConcreteTraitId,
+) -> Result<ImplId, InferenceError> {
+    enrich_lookup_context(db, id, &mut lookup_context);
+    match db.canonic_trait_solutions(
+        CanonicalTrait { id, mappings: Default::default() },
+        lookup_context,
+        Default::default(),
+    )? {
+        SolutionSet::None => Err(InferenceError::NoImplsFound(id)),
+        SolutionSet::Unique(solution) => Ok(solution.0),
+        SolutionSet::Ambiguous(ambiguity) => Err(InferenceError::Ambiguity(ambiguity)),
+    }
+}
+
+/// Query implementation of [crate::db::SemanticGroup::copyable].
+pub fn copyable(db: &dyn SemanticGroup, ty: TypeId) -> Result<ImplId, InferenceError> {
+    solve_concrete_trait_no_constraints(db, Default::default(), concrete_copy_trait(db, ty))
+}
+
+/// Query implementation of [crate::db::SemanticGroup::droppable].
+pub fn droppable(db: &dyn SemanticGroup, ty: TypeId) -> Result<ImplId, InferenceError> {
+    solve_concrete_trait_no_constraints(db, Default::default(), concrete_drop_trait(db, ty))
 }
 
 pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
@@ -933,7 +952,8 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
             type_id.is_fully_concrete(db) && size.is_fully_concrete(db)
         }
         TypeLongId::Closure(closure) => {
-            closure.param_tys.iter().all(|param| param.is_fully_concrete(db))
+            closure.parent_function.map(|id| id.is_fully_concrete(db)).unwrap_or(true)
+                && closure.param_tys.iter().all(|param| param.is_fully_concrete(db))
                 && closure.ret_ty.is_fully_concrete(db)
         }
     }
