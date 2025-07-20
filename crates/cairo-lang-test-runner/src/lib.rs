@@ -66,7 +66,7 @@ impl TestRunner {
             config.gas_enabled,
             TestsCompilationConfig {
                 starknet,
-                add_statements_functions: config.run_profiler == RunProfilerConfig::Cairo,
+                add_statements_functions: config.profiler_config == Some(ProfilerConfig::Cairo),
                 add_statements_code_locations: false,
                 contract_declarations: None,
                 contract_crate_ids: None,
@@ -109,7 +109,7 @@ impl CompiledTestRunner {
         );
 
         let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
-            if self.config.run_profiler == RunProfilerConfig::Cairo {
+            if self.config.profiler_config == Some(ProfilerConfig::Cairo) {
                 let db = db.expect("db must be passed when profiling.");
                 let statements_locations = compiled
                     .metadata
@@ -164,16 +164,12 @@ impl CompiledTestRunner {
     }
 }
 
-/// Whether to run the profiler, and what results to produce.
-///
-/// With `None`, don't run the profiler.
-/// With `Sierra`, run the profiler and produce sierra profiling information.
-/// With `Cairo`, run the profiler and additionally produce cairo profiling information (e.g.
-///     filtering out generated functions).
+/// Profiler configuration.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum RunProfilerConfig {
-    None,
+pub enum ProfilerConfig {
+    /// Profiler with Cairo level debug information.
     Cairo,
+    /// Sierra level profiling, no cairo level debug information.
     Sierra,
 }
 
@@ -184,7 +180,7 @@ pub struct TestRunConfig {
     pub include_ignored: bool,
     pub ignored: bool,
     /// Whether to run the profiler and how.
-    pub run_profiler: RunProfilerConfig,
+    pub profiler_config: Option<ProfilerConfig>,
     /// Whether to enable gas calculation.
     pub gas_enabled: bool,
     /// Whether to print used resources after each test.
@@ -350,9 +346,9 @@ pub fn run_tests(
             None
         },
         contracts_info,
-        match config.run_profiler {
-            RunProfilerConfig::None => None,
-            RunProfilerConfig::Cairo | RunProfilerConfig::Sierra => {
+        match config.profiler_config {
+            None => None,
+            Some(ProfilerConfig::Cairo | ProfilerConfig::Sierra) => {
                 Some(ProfilingInfoCollectionConfig::default())
             }
         },
