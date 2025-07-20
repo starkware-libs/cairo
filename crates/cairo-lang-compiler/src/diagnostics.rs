@@ -45,8 +45,9 @@ pub struct DiagnosticsReporter<'a> {
     /// Adding ids that are not in `crate_ids` has no effect.
     ignore_warnings_crate_ids: Vec<CrateId>,
     /// Check diagnostics for these crates only.
-    /// If empty, check all crates in the db.
-    crate_ids: Vec<CrateId>,
+    /// If `None`, check all crates in the db.
+    /// If empty, do not check any crates at all.
+    crate_ids: Option<Vec<CrateId>>,
     /// If true, compilation will not fail due to warnings.
     allow_warnings: bool,
     /// If true, will ignore diagnostics from LoweringGroup during the ensure function.
@@ -58,7 +59,7 @@ impl DiagnosticsReporter<'static> {
     pub fn ignoring() -> Self {
         Self {
             callback: None,
-            crate_ids: vec![],
+            crate_ids: Default::default(),
             ignore_all_warnings: false,
             ignore_warnings_crate_ids: vec![],
             allow_warnings: false,
@@ -103,7 +104,7 @@ impl<'a> DiagnosticsReporter<'a> {
     fn new(callback: impl DiagnosticCallback + 'a) -> Self {
         Self {
             callback: Some(Box::new(callback)),
-            crate_ids: vec![],
+            crate_ids: Default::default(),
             ignore_all_warnings: false,
             ignore_warnings_crate_ids: vec![],
             allow_warnings: false,
@@ -113,7 +114,7 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Sets crates to be checked, instead of all crates in the db.
     pub fn with_crates(mut self, crate_ids: &[CrateId]) -> Self {
-        self.crate_ids = crate_ids.to_vec();
+        self.crate_ids = Some(crate_ids.to_vec());
         self
     }
 
@@ -140,7 +141,7 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Returns the crate ids for which the diagnostics will be checked.
     fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateId> {
-        if self.crate_ids.is_empty() { db.crates() } else { self.crate_ids.clone() }
+        if let Some(crates) = self.crate_ids.as_ref() { crates.clone() } else { db.crates() }
     }
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
@@ -294,8 +295,19 @@ impl Default for DiagnosticsReporter<'static> {
 /// Returns a string with all the diagnostics in the db.
 ///
 /// This is a shortcut for `DiagnosticsReporter::write_to_string(&mut string).check(db)`.
-pub fn get_diagnostics_as_string(db: &RootDatabase, extra_crate_ids: &[CrateId]) -> String {
+///
+/// If `crates_to_check` is `Some`, only diagnostics for these crates will be checked.
+/// If `crates_to_check` is `None`, diagnostics for all crates in the db will be checked.
+pub fn get_diagnostics_as_string(
+    db: &RootDatabase,
+    crates_to_check: Option<Vec<CrateId>>,
+) -> String {
     let mut diagnostics = String::default();
-    DiagnosticsReporter::write_to_string(&mut diagnostics).with_crates(extra_crate_ids).check(db);
+    let mut reporter = DiagnosticsReporter::write_to_string(&mut diagnostics);
+    if let Some(crates) = crates_to_check.as_ref() {
+        reporter = reporter.with_crates(crates);
+    }
+    reporter.check(db);
+    drop(reporter);
     diagnostics
 }
