@@ -13,12 +13,15 @@ inherits = "dev"
 incremental = false
 [profile.ci-dev.package."*"] # external dependencies
 opt-level = 1
-[profile.ci-dev.package."tokio"]
-opt-level = 3
 [profile.ci-dev.package."bimap"]
-
+opt-level = 3
+[profile.ci-dev.package."cairo-vm"]
+opt-level = 3
+[profile.ci-dev.package."rayon"]
 opt-level = 3
 [profile.ci-dev.package."rust-analyzer-salsa"]
+opt-level = 3
+[profile.ci-dev.package."tokio"]
 opt-level = 3
 
 [workspace]
