@@ -571,7 +571,7 @@ impl<'a> ConstFoldingContext<'a> {
             return None;
         }
 
-        let Ok(Some(func_with_body)) = call_stmt.function.body(self.db) else {
+        let Ok(Some(mut base)) = call_stmt.function.body(self.db) else {
             return None;
         };
 
@@ -584,18 +584,18 @@ impl<'a> ConstFoldingContext<'a> {
             return None;
         }
 
-        let mut const_arg = vec![];
+        let mut const_args = vec![];
         let mut new_args = vec![];
         for arg in &call_stmt.inputs {
             if let Some(var_info) = self.var_info.get(&arg.var_id) {
                 if let Some(c) =
                     self.try_get_specialization_arg(var_info.clone(), self.variables[arg.var_id].ty)
                 {
-                    const_arg.push(Some(c.clone()));
+                    const_args.push(Some(c.clone()));
                     continue;
                 }
             }
-            const_arg.push(None);
+            const_args.push(None);
             new_args.push(*arg);
         }
 
@@ -604,39 +604,29 @@ impl<'a> ConstFoldingContext<'a> {
             return None;
         }
 
-        let (base, args) = match func_with_body.lookup_intern(self.db) {
-            ConcreteFunctionWithBodyLongId::Semantic(_)
-            | ConcreteFunctionWithBodyLongId::Generated(_) => {
-                (func_with_body, const_arg.into_iter().collect())
+        if let ConcreteFunctionWithBodyLongId::Specialized(specialized_function) =
+            base.lookup_intern(self.db)
+        {
+            // Canonicalize the specialization rather than adding a specialization of a specialized
+            // function.
+            base = specialized_function.base;
+            let mut new_args_iter = const_args.into_iter();
+            const_args = specialized_function.args.to_vec();
+            for arg in &mut const_args {
+                if arg.is_none() {
+                    *arg = new_args_iter.next().unwrap_or_default();
+                }
             }
-            ConcreteFunctionWithBodyLongId::Specialized(specialized_function) => {
-                // Canonicalize the specialization rather than adding a specialization of a
-                // specializaed function.
-                let mut new_args_iter = chain!(const_arg.into_iter(), std::iter::once(None));
-                let args = specialized_function
-                    .args
-                    .iter()
-                    .map(|arg| {
-                        if arg.is_none() {
-                            return new_args_iter.next().unwrap();
-                        }
-                        arg.clone()
-                    })
-                    .collect();
-
-                (specialized_function.base, args)
-            }
-        };
+        }
 
         // Avoid specializing with the same base as the current function as it may lead to infinite
         // specialization.
         if base == self.caller_base {
             return None;
         }
-
+        let specialized = SpecializedFunction { base, args: const_args.into() };
         let specialized_func_id =
-            ConcreteFunctionWithBodyLongId::Specialized(SpecializedFunction { base, args })
-                .intern(self.db);
+            ConcreteFunctionWithBodyLongId::Specialized(specialized).intern(self.db);
 
         if self.db.priv_should_specialize(specialized_func_id) == Ok(false) {
             return None;
