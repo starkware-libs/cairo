@@ -1190,6 +1190,7 @@ version = "2.11.4"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
+ "cairo-lang-runner",
  "cairo-lang-test-runner",
  "clap",
  "serde",
