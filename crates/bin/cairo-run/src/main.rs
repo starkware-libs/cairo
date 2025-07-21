@@ -99,13 +99,13 @@ fn main() -> anyhow::Result<()> {
         .with_context(|| "Failed to run the function.")?;
 
     if args.run_profiler {
-        let profiling_info_processor = ProfilingInfoProcessor::new(
-            Some(db),
-            sierra_program,
-            debug_info.statements_locations.get_statements_functions_map_for_tests(db),
-        );
         match result.profiling_info {
             Some(raw_profiling_info) => {
+                let statements_functions =
+                    debug_info.statements_locations.get_statements_functions_map_for_tests(db);
+                let profiling_info_processor =
+                    ProfilingInfoProcessor::new(Some(db), &sierra_program, &statements_functions);
+
                 let profiling_info =
                     profiling_info_processor.process(&raw_profiling_info, &Default::default());
                 println!("Profiling info:\n{profiling_info}");

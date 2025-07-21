@@ -510,13 +510,13 @@ fn update_summary(
     if let Some(profiling_params) = profiling_params {
         let (opt_db, statements_functions) =
             if let Some(PorfilingAuxData { db, statements_functions }) = profiler_data {
-                (Some(*db), statements_functions.clone())
+                (Some(*db), statements_functions)
             } else {
-                (None, UnorderedHashMap::default())
+                (None, &UnorderedHashMap::default())
             };
 
         let profiling_processor =
-            ProfilingInfoProcessor::new(opt_db, sierra_program.clone(), statements_functions);
+            ProfilingInfoProcessor::new(opt_db, sierra_program, statements_functions);
         let processed_profiling_info = profiling_processor.process(
             &profiling_info.expect("profiling_info must be Some when profiler_config is Some"),
             profiling_params,

@@ -333,12 +333,12 @@ fn main() -> anyhow::Result<()> {
         let load_offset = entry_point_offset + header_len;
         let info = ProfilingInfo::from_trace(&builder, load_offset, &Default::default(), trace);
 
-        let profiling_processor = ProfilingInfoProcessor::new(
+        let processed_profiling_info = ProfilingInfoProcessor::new(
             Some(&db),
-            replace_sierra_ids_in_program(&db, builder.sierra_program()),
-            debug_info.statements_locations.get_statements_functions_map_for_tests(&db),
-        );
-        let processed_profiling_info = profiling_processor.process(&info, &Default::default());
+            &replace_sierra_ids_in_program(&db, builder.sierra_program()),
+            &debug_info.statements_locations.get_statements_functions_map_for_tests(&db),
+        )
+        .process(&info, &Default::default());
         println!("{processed_profiling_info}");
     }
 
