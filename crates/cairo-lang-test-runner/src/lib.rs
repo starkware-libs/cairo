@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::mpsc::channel;
 
 use anyhow::{Context, Result, bail};
 use cairo_lang_compiler::db::RootDatabase;
@@ -329,56 +329,48 @@ pub fn run_tests(
     .with_context(|| "Failed setting up runner.")?;
     let suffix = if named_tests.len() != 1 { "s" } else { "" };
     println!("running {} test{}", named_tests.len(), suffix);
-    let wrapped_summary = Mutex::new(Ok(TestsSummary {
+
+    let (tx, rx) = channel::<_>();
+    rayon::spawn(move || {
+        named_tests.into_par_iter().for_each(|(name, test)| {
+            tx.send(run_single_test(test, name, &runner)).unwrap();
+        })
+    });
+
+    let profiling_params =
+        config.profiler_config.as_ref().map(ProfilingInfoProcessorParams::from_profiler_config);
+    let profiler_data =
+        if config.profiler_config.as_ref().is_some_and(|c| c.requires_cairo_debug_info()) {
+            let db = opt_db.expect("db must be passed when doing cairo level profiling.");
+            Some(PorfilingAuxData {
+                db,
+                statements_functions: statements_locations
+                    .expect(
+                        "statements locations must be present when doing cairo level profiling.",
+                    )
+                    .get_statements_functions_map_for_tests(db),
+            })
+        } else {
+            None
+        };
+    let mut summary = TestsSummary {
         passed: vec![],
         failed: vec![],
         ignored: vec![],
         failed_run_results: vec![],
-    }));
-
-    let profiling_params =
-        config.profiler_config.as_ref().map(ProfilingInfoProcessorParams::from_profiler_config);
-
-    // Run in parallel if possible. If running with db, parallelism is impossible.
-    if config.profiler_config.as_ref().is_some_and(|c| c.requires_cairo_debug_info()) {
-        eprintln!("Note: Tests don't run in parallel when running with profiling.");
-        let db = opt_db.expect("db must be passed when doing cairo level profiling.");
-        let profiler_data = Some(PorfilingAuxData {
-            db,
-            statements_functions: statements_locations
-                .expect("statements locations must be present when doing cairo level profiling.")
-                .get_statements_functions_map_for_tests(db),
-        });
-        named_tests
-            .into_iter()
-            .map(move |(name, test)| run_single_test(test, name, &runner))
-            .for_each(|test_result| {
-                update_summary(
-                    &wrapped_summary,
-                    test_result,
-                    &profiler_data,
-                    &sierra_program,
-                    &profiling_params,
-                    config.print_resource_usage,
-                );
-            });
-    } else {
-        named_tests
-            .into_par_iter()
-            .map(|(name, test)| run_single_test(test, name, &runner))
-            .for_each(|res| {
-                update_summary(
-                    &wrapped_summary,
-                    res,
-                    &None,
-                    &sierra_program,
-                    &profiling_params,
-                    config.print_resource_usage,
-                );
-            });
+    };
+    while let Ok(test_result) = rx.recv() {
+        update_summary(
+            &mut summary,
+            test_result?,
+            &profiler_data,
+            &sierra_program,
+            &profiling_params,
+            config.print_resource_usage,
+        );
     }
 
-    wrapped_summary.into_inner().unwrap()
+    Ok(wrapped_summary)
 }
 
 /// Runs a single test and returns a tuple of its name and result.
@@ -429,25 +421,14 @@ fn run_single_test(
 
 /// Updates the test summary with the given test result.
 fn update_summary(
-    wrapped_summary: &Mutex<std::prelude::v1::Result<TestsSummary, anyhow::Error>>,
-    test_result: std::prelude::v1::Result<(String, Option<TestResult>), anyhow::Error>,
+    summary: &mut TestsSummary,
+    test_result: (String, Option<TestResult>),
     profiler_data: &Option<PorfilingAuxData<'_>>,
     sierra_program: &Program,
     profiling_params: &Option<ProfilingInfoProcessorParams>,
     print_resource_usage: bool,
 ) {
-    let mut wrapped_summary = wrapped_summary.lock().unwrap();
-    if wrapped_summary.is_err() {
-        return;
-    }
-    let (name, opt_result) = match test_result {
-        Ok((name, opt_result)) => (name, opt_result),
-        Err(err) => {
-            *wrapped_summary = Err(err);
-            return;
-        }
-    };
-    let summary = wrapped_summary.as_mut().unwrap();
+    let (name, opt_result) = test_result;
     let (res_type, status_str, gas_usage, used_resources, profiling_info) =
         if let Some(result) = opt_result {
             let (res_type, status_str) = match result.status {
