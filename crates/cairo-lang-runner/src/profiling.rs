@@ -19,6 +19,15 @@ use crate::ProfilingInfoCollectionConfig;
 #[path = "profiling_test.rs"]
 mod test;
 
+/// Profiler configuration.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ProfilerConfig {
+    /// Profiler with Cairo level debug information.
+    Cairo,
+    /// Sierra level profiling, no cairo level debug information.
+    Sierra,
+}
+
 /// Profiling into of a single run. This is the raw info - went through minimum processing, as this
 /// is done during the run. To enrich it before viewing/printing, use the `ProfilingInfoProcessor`.
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -379,6 +388,22 @@ impl Default for ProfilingInfoProcessorParams {
         }
     }
 }
+
+impl ProfilingInfoProcessorParams {
+    pub fn from_profiler_config(config: &ProfilerConfig) -> Self {
+        match config {
+            ProfilerConfig::Cairo => Default::default(),
+            ProfilerConfig::Sierra => Self {
+                process_by_generic_libfunc: false,
+                process_by_cairo_stack_trace: false,
+                process_by_original_user_function: false,
+                process_by_cairo_function: false,
+                ..ProfilingInfoProcessorParams::default()
+            },
+        }
+    }
+}
+
 /// A processor for profiling info. Used to process the raw profiling info (basic info collected
 /// during the run) into a more detailed profiling info that can also be formatted.
 pub struct ProfilingInfoProcessor<'a> {
