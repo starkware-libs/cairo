@@ -521,11 +521,8 @@ fn update_summary(
         let Some(PorfilingAuxData { db, statements_functions }) = profiler_data else {
             panic!("profiler_data is None");
         };
-        let profiling_processor = ProfilingInfoProcessor::new(
-            Some(*db),
-            sierra_program.clone(),
-            statements_functions.clone(),
-        );
+        let profiling_processor =
+            ProfilingInfoProcessor::new(Some(*db), sierra_program, statements_functions);
         let processed_profiling_info =
             profiling_processor.process(&profiling_info, profiling_params);
         println!("Profiling info:\n{processed_profiling_info}");
