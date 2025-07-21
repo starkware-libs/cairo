@@ -9,7 +9,7 @@ use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_runner::casm_run::format_for_panic;
 use cairo_lang_runner::profiling::{
-    ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
+    ProfilerConfig, ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
 };
 use cairo_lang_runner::{
     ProfilingInfoCollectionConfig, RunResultValue, SierraCasmRunner, StarknetExecutionResources,
@@ -66,7 +66,7 @@ impl TestRunner {
             config.gas_enabled,
             TestsCompilationConfig {
                 starknet,
-                add_statements_functions: config.run_profiler == RunProfilerConfig::Cairo,
+                add_statements_functions: config.profiler_config == Some(ProfilerConfig::Cairo),
                 add_statements_code_locations: false,
                 contract_declarations: None,
                 contract_crate_ids: None,
@@ -109,7 +109,7 @@ impl CompiledTestRunner {
         );
 
         let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
-            if self.config.run_profiler == RunProfilerConfig::Cairo {
+            if self.config.profiler_config == Some(ProfilerConfig::Cairo) {
                 let db = db.expect("db must be passed when profiling.");
                 let statements_locations = compiled
                     .metadata
@@ -164,19 +164,6 @@ impl CompiledTestRunner {
     }
 }
 
-/// Whether to run the profiler, and what results to produce.
-///
-/// With `None`, don't run the profiler.
-/// With `Sierra`, run the profiler and produce sierra profiling information.
-/// With `Cairo`, run the profiler and additionally produce cairo profiling information (e.g.
-///     filtering out generated functions).
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum RunProfilerConfig {
-    None,
-    Cairo,
-    Sierra,
-}
-
 /// Configuration of compiled tests runner.
 #[derive(Clone, Debug)]
 pub struct TestRunConfig {
@@ -184,7 +171,7 @@ pub struct TestRunConfig {
     pub include_ignored: bool,
     pub ignored: bool,
     /// Whether to run the profiler and how.
-    pub run_profiler: RunProfilerConfig,
+    pub profiler_config: Option<ProfilerConfig>,
     /// Whether to enable gas calculation.
     pub gas_enabled: bool,
     /// Whether to print used resources after each test.
@@ -350,9 +337,9 @@ pub fn run_tests(
             None
         },
         contracts_info,
-        match config.run_profiler {
-            RunProfilerConfig::None => None,
-            RunProfilerConfig::Cairo | RunProfilerConfig::Sierra => {
+        match config.profiler_config {
+            None => None,
+            Some(ProfilerConfig::Cairo | ProfilerConfig::Sierra) => {
                 Some(ProfilingInfoCollectionConfig::default())
             }
         },
@@ -367,8 +354,11 @@ pub fn run_tests(
         failed_run_results: vec![],
     }));
 
+    let profiling_params =
+        config.profiler_config.as_ref().map(ProfilingInfoProcessorParams::from_profiler_config);
+
     // Run in parallel if possible. If running with db, parallelism is impossible.
-    if profiler_data.is_none() {
+    if config.profiler_config != Some(ProfilerConfig::Cairo) {
         named_tests
             .into_par_iter()
             .map(|(name, test)| run_single_test(test, name, &runner))
@@ -378,11 +368,7 @@ pub fn run_tests(
                     res,
                     &None,
                     &sierra_program,
-                    &ProfilingInfoProcessorParams {
-                        process_by_original_user_function: false,
-                        process_by_cairo_function: false,
-                        ..ProfilingInfoProcessorParams::default()
-                    },
+                    &profiling_params,
                     config.print_resource_usage,
                 );
             });
@@ -397,7 +383,7 @@ pub fn run_tests(
                     test_result,
                     &profiler_data,
                     &sierra_program,
-                    &ProfilingInfoProcessorParams::default(),
+                    &profiling_params,
                     config.print_resource_usage,
                 );
             });
@@ -458,7 +444,7 @@ fn update_summary(
     test_result: std::prelude::v1::Result<(String, Option<TestResult>), anyhow::Error>,
     profiler_data: &Option<PorfilingAuxData<'_>>,
     sierra_program: &Program,
-    profiling_params: &ProfilingInfoProcessorParams,
+    profiling_params: &Option<ProfilingInfoProcessorParams>,
     print_resource_usage: bool,
 ) {
     let mut wrapped_summary = wrapped_summary.lock().unwrap();
@@ -521,17 +507,20 @@ fn update_summary(
         );
         print_resource_map(used_resources.syscalls.into_iter(), "syscalls");
     }
-    if let Some(profiling_info) = profiling_info {
-        let Some(PorfilingAuxData { db, statements_functions }) = profiler_data else {
-            panic!("profiler_data is None");
-        };
-        let profiling_processor = ProfilingInfoProcessor::new(
-            Some(*db),
-            sierra_program.clone(),
-            statements_functions.clone(),
+    if let Some(profiling_params) = profiling_params {
+        let (opt_db, statements_functions) =
+            if let Some(PorfilingAuxData { db, statements_functions }) = profiler_data {
+                (Some(*db), statements_functions)
+            } else {
+                (None, &UnorderedHashMap::default())
+            };
+
+        let profiling_processor =
+            ProfilingInfoProcessor::new(opt_db, sierra_program, statements_functions);
+        let processed_profiling_info = profiling_processor.process(
+            &profiling_info.expect("profiling_info must be Some when profiler_config is Some"),
+            profiling_params,
         );
-        let processed_profiling_info =
-            profiling_processor.process(&profiling_info, profiling_params);
         println!("Profiling info:\n{processed_profiling_info}");
     }
     res_type.push(name);

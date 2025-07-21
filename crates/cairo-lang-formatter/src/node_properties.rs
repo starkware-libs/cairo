@@ -384,7 +384,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                         | SyntaxKind::ExprListParenthesized
                         | SyntaxKind::ArgListBraced
                         | SyntaxKind::ArgListBracketed
-                        | SyntaxKind::ExprUnary => Some(1),
+                        | SyntaxKind::ExprUnary => Some(9),
+                        SyntaxKind::LetElseClause => Some(7),
                         SyntaxKind::TerminalEq => Some(10),
                         SyntaxKind::PatternEnum
                         | SyntaxKind::PatternTuple

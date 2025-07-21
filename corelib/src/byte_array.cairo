@@ -114,10 +114,9 @@ pub impl ByteArrayImpl of ByteArrayTrait {
 
         // The split index is the number of bytes left for the next word (new pending_word of the
         // modified ByteArray).
-        let split_index = if let Some(split_index) =
-            crate::num::traits::CheckedSub::checked_sub(total_pending_bytes, BYTES_IN_BYTES31) {
-            split_index
-        } else {
+        let Some(split_index) = crate::num::traits::CheckedSub::checked_sub(
+            total_pending_bytes, BYTES_IN_BYTES31,
+        ) else {
             self.pending_word = word + self.pending_word * one_shift_left_bytes_felt252(len);
             self.pending_word_len = total_pending_bytes;
             return;
