@@ -112,10 +112,9 @@ pub fn check_ecdsa_signature(
     // Calculate the point `r * Q`.
     let mut rQ_state = init_ec;
     rQ_state.add_mul(signature_r, public_key_point);
-    let rQ = match rQ_state.finalize_nz() {
-        Some(pt) => pt,
+    let Some(rQ) = rQ_state.finalize_nz() else {
         // The zero case is not actually possible, as `signature_r` isn't 0.
-        None => { return false; },
+        return false;
     };
 
     // Check the `(zG + rQ).x = sR.x` case.
