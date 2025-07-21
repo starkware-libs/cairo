@@ -11,14 +11,6 @@ anyhow.workspace = true
 clap.workspace = true
 serde = { workspace = true, default-features = true }
 
-<<<<<<< HEAD
 cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.12.0-rc.2" }
+cairo-lang-runner = { path = "../../cairo-lang-runner", version = "~2.12.0-rc.2" }
 cairo-lang-test-runner = { path = "../../cairo-lang-test-runner", version = "~2.12.0-rc.2" }
-||||||| parent of c89d21c71... Fix cairo-test with ProfilerConfig::Sierra. (#8000)
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.11.4" }
-cairo-lang-test-runner = { path = "../../cairo-lang-test-runner", version = "~2.11.4" }
-=======
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.11.4" }
-cairo-lang-runner = { path = "../../cairo-lang-runner", version = "~2.11.4" }
-cairo-lang-test-runner = { path = "../../cairo-lang-test-runner", version = "~2.11.4" }
->>>>>>> c89d21c71... Fix cairo-test with ProfilerConfig::Sierra. (#8000)
