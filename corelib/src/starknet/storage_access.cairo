@@ -874,8 +874,8 @@ fn inner_byte_array_pointer(address: StorageAddress, chunk: felt252) -> StorageB
 fn inner_read_byte_array(address_domain: u32, address: StorageAddress) -> SyscallResult<ByteArray> {
     let Some::<usize>(len) = starknet::syscalls::storage_read_syscall(address_domain, address)?
         .try_into() else {
-            return Err(array!['Invalid ByteArray length']);
-        };
+        return Err(array!['Invalid ByteArray length']);
+    };
     let (mut remaining_full_words, pending_word_len) = core::DivRem::div_rem(
         len, BYTES_IN_BYTES31.try_into().unwrap(),
     );
