@@ -104,6 +104,7 @@ pub trait SyntaxNodeExt {
 impl SyntaxNodeExt for SyntaxNode {
     fn tokens<'a>(&'a self, db: &'a dyn ParserGroup) -> impl IntoIterator<Item = GreenId> + 'a {
         let span = self.span(db);
+
         let mut offset = 0;
         let mut width = 0;
         db.file_tokens(self.stable_ptr(db).file_id(db))
@@ -116,7 +117,7 @@ impl SyntaxNodeExt for SyntaxNode {
                 skip
             })
             .take_while(move |green| {
-                let take = width != span.end.as_u32();
+                let take = width + offset != span.end.as_u32();
                 width += green.width(db).as_u32();
 
                 take

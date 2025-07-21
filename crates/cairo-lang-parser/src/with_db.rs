@@ -1,6 +1,7 @@
 use cairo_lang_primitive_token::{PrimitiveSpan, PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax::node::ids::GreenId;
 use cairo_lang_syntax::node::{SyntaxNode, both_trivia_width};
+use cairo_lang_utils::LookupIntern;
 
 use crate::db::{ParserGroup, SyntaxNodeExt};
 
@@ -23,15 +24,13 @@ impl<'a, Db: ParserGroup> ToPrimitiveTokenStream for SyntaxNodeWithDb<'a, Db> {
             .db
             .file_content(self.node.stable_ptr(self.db).file_id(self.db))
             .expect("Failed to read file content");
-        let offset = self.node.span(self.db).start.as_u32();
+        let mut offset = self.node.offset(self.db).as_u32() as usize;
         let db = self.db;
         // The lifetime of the iterator should extend 'a because it derives from both node and db
         SyntaxNodeWithDbIterator::new(
-            Box::new(
-                self.node.tokens(db).into_iter().flat_map(move |green| {
-                    token_from_syntax_node(&file_content, offset, green, db)
-                }),
-            ),
+            Box::new(self.node.tokens(db).into_iter().flat_map(move |green| {
+                token_from_syntax_node(&file_content, &mut offset, green, db)
+            })),
             self.db,
         )
     }
@@ -66,18 +65,19 @@ impl<Db: ParserGroup> Iterator for SyntaxNodeWithDbIterator<'_, Db> {
 /// with its corresponding span.
 fn token_from_syntax_node(
     file_content: &str,
-    offset: u32,
+    offset_mut: &mut usize,
     green: GreenId,
     db: &dyn ParserGroup,
 ) -> Vec<PrimitiveToken> {
     let mut result = vec![];
-    let green_node = db.lookup_intern_green(green);
+    let green_node = green.lookup_intern(db);
+    debug_assert!(green_node.kind.is_terminal());
     let (leading_trivia, trailing_trivia) = both_trivia_width(db, &green_node);
     let leading_trivia = leading_trivia.as_u32() as usize;
     let trailing_trivia = trailing_trivia.as_u32() as usize;
-    let offset = offset as usize;
+    let offset = *offset_mut;
 
-    let token_width = green_node.width().as_u32() as usize - leading_trivia - trailing_trivia;
+    let token_width = green_node.children()[1].lookup_intern(db).width().as_u32() as usize;
     let after_leading_trivia = offset + leading_trivia;
     let after_token = after_leading_trivia + token_width;
     let after_trailing_trivia = after_token + trailing_trivia;
@@ -102,5 +102,8 @@ fn token_from_syntax_node(
             span: Some(PrimitiveSpan { start: after_token, end: after_trailing_trivia }),
         });
     }
+
+    *offset_mut += green_node.width().as_u32() as usize;
+
     result
 }
