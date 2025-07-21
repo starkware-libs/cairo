@@ -306,6 +306,11 @@ fn struct_line_breaking() {
         long_long_long_long_key_e,
     } = my_val;
 }
+fn let_else_line_breaking() {
+    let MyEnum::MyVariant(info) = my_val.calc0().calc1().calc2() else {
+        return rather_long_return_value;
+    };
+}
 fn closure_line_breaking() {
     let closure_with_a_very_very_very_very_very_very_very_very_large_name = |
         left: usize, right: usize,

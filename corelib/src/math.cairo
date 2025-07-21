@@ -47,12 +47,9 @@ pub fn egcd<
 ) -> (T, T, T, bool) {
     let (q, r) = DivRem::<T>::div_rem(a.into(), b);
 
-    let Some(r) = r
-        .try_into() else {
-            return (
-                b.into(), core::num::traits::Zero::zero(), core::num::traits::One::one(), false,
-            );
-        };
+    let Some(r) = r.try_into() else {
+        return (b.into(), core::num::traits::Zero::zero(), core::num::traits::One::one(), false);
+    };
 
     // `sign` (1 for true, -1 for false) is the sign of `g` in the current iteration.
     // 0 is considered negative for this purpose.
