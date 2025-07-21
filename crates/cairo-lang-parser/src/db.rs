@@ -107,18 +107,20 @@ impl SyntaxNodeExt for SyntaxNode {
 
         let mut offset = 0;
         let mut width = 0;
-        db.file_tokens(self.stable_ptr(db).file_id(db))
-            .unwrap()
+        let offset = &mut offset;
+        let width = &mut width;
+        let tokens = db.file_tokens(self.stable_ptr(db).file_id(db)).unwrap();
+        tokens
             .into_iter()
             .skip_while(move |green| {
-                let skip = offset != span.start.as_u32();
-                offset += green.width(db).as_u32();
+                let skip = *offset != span.start.as_u32();
+                *offset += green.width(db).as_u32();
 
                 skip
             })
             .take_while(move |green| {
-                let take = width + offset != span.end.as_u32();
-                width += green.width(db).as_u32();
+                let take = *width != span.width().as_u32();
+                *width += green.width(db).as_u32();
 
                 take
             })
