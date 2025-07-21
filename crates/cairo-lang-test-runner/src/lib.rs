@@ -28,7 +28,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use colored::Colorize;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
-use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use salsa::Snapshot;
 
 #[cfg(test)]
 mod test;
@@ -284,15 +284,9 @@ pub struct TestsSummary {
     failed_run_results: Vec<RunResultValue>,
 }
 
-/// Auxiliary data that is required when running tests with profiling.
-pub struct PorfilingAuxData<'a> {
-    pub db: &'a dyn SierraGenGroup,
-    pub statements_functions: UnorderedHashMap<StatementIdx, String>,
-}
-
 /// Runs the tests and process the results for a summary.
 pub fn run_tests(
-    opt_db: Option<&dyn SierraGenGroup>,
+    opt_db: Option<&RootDatabase>,
     compiled: TestCompilation,
     config: &TestRunConfig,
 ) -> Result<TestsSummary> {
@@ -338,46 +332,45 @@ pub fn run_tests(
         failed_run_results: vec![],
     }));
 
-    let profiling_params =
-        config.profiler_config.as_ref().map(ProfilingInfoProcessorParams::from_profiler_config);
+    let statements_locations_for_tests = &match config.profiler_config {
+        Some(ProfilerConfig::Cairo) => statements_locations
+            .expect("statements locations must be present when profiling.")
+            .get_statements_functions_map_for_tests(
+                opt_db.expect("db must be present when profiling."),
+            ),
+        None | Some(ProfilerConfig::Sierra) => {
+            // `statements_functions_map_for_tests is not needed in this case.
+            UnorderedHashMap::default()
+        }
+    };
 
-    // Run in parallel if possible. If running with db, parallelism is impossible.
-    if config.profiler_config != Some(ProfilerConfig::Cairo) {
-        named_tests
-            .into_par_iter()
-            .map(|(name, test)| run_single_test(test, name, &runner))
-            .for_each(|res| {
+    let runner_ref = &runner;
+    let wrapped_summary_ref = &wrapped_summary;
+    let sierra_program_ref = &sierra_program;
+    let profiling_params =
+        &config.profiler_config.as_ref().map(ProfilingInfoProcessorParams::from_profiler_config);
+    let opt_snapshot = opt_db.map(salsa::ParallelDatabase::snapshot);
+
+    rayon::scope(move |s| {
+        for (name, test) in named_tests {
+            let opt_snapshot = opt_snapshot
+                .as_ref()
+                .map(|snapshot| salsa::ParallelDatabase::snapshot(&**snapshot));
+            s.spawn(move |_| {
+                let test_result = run_single_test(test, name, runner_ref);
+
                 update_summary(
-                    &wrapped_summary,
-                    res,
-                    &None,
-                    &sierra_program,
-                    &profiling_params,
-                    config.print_resource_usage,
-                );
-            });
-    } else {
-        let profiler_data = opt_db.map(|db| PorfilingAuxData {
-            db,
-            statements_functions: statements_locations
-                .expect("statements locations must be present when profiling.")
-                .get_statements_functions_map_for_tests(db),
-        });
-        eprintln!("Note: Tests don't run in parallel when running with profiling.");
-        named_tests
-            .into_iter()
-            .map(move |(name, test)| run_single_test(test, name, &runner))
-            .for_each(|test_result| {
-                update_summary(
-                    &wrapped_summary,
+                    opt_snapshot,
+                    statements_locations_for_tests,
+                    wrapped_summary_ref,
                     test_result,
-                    &profiler_data,
-                    &sierra_program,
-                    &profiling_params,
+                    sierra_program_ref,
+                    profiling_params,
                     config.print_resource_usage,
                 );
             });
-    }
+        }
+    });
 
     wrapped_summary.into_inner().unwrap()
 }
@@ -430,9 +423,10 @@ fn run_single_test(
 
 /// Updates the test summary with the given test result.
 fn update_summary(
+    opt_db: Option<Snapshot<RootDatabase>>,
+    statements_functions_for_tests: &UnorderedHashMap<StatementIdx, String>,
     wrapped_summary: &Mutex<std::prelude::v1::Result<TestsSummary, anyhow::Error>>,
     test_result: std::prelude::v1::Result<(String, Option<TestResult>), anyhow::Error>,
-    profiler_data: &Option<PorfilingAuxData<'_>>,
     sierra_program: &Program,
     profiling_params: &Option<ProfilingInfoProcessorParams>,
     print_resource_usage: bool,
@@ -498,15 +492,11 @@ fn update_summary(
         print_resource_map(used_resources.syscalls.into_iter(), "syscalls");
     }
     if let Some(profiling_params) = profiling_params {
-        let (opt_db, statements_functions) =
-            if let Some(PorfilingAuxData { db, statements_functions }) = profiler_data {
-                (Some(*db), statements_functions)
-            } else {
-                (None, &UnorderedHashMap::default())
-            };
-
-        let profiling_processor =
-            ProfilingInfoProcessor::new(opt_db, sierra_program, statements_functions);
+        let profiling_processor = ProfilingInfoProcessor::new(
+            opt_db.as_ref().map(|db| &**db as &dyn SierraGenGroup),
+            sierra_program,
+            statements_functions_for_tests,
+        );
         let processed_profiling_info = profiling_processor.process(
             &profiling_info.expect("profiling_info must be Some when profiler_config is Some"),
             profiling_params,

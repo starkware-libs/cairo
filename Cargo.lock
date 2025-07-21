@@ -1110,6 +1110,7 @@ dependencies = [
  "itertools 0.14.0",
  "num-traits",
  "rayon",
+ "rust-analyzer-salsa",
  "serde_json",
  "starknet-types-core",
 ]
