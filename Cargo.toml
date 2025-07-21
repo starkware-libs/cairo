@@ -106,6 +106,7 @@ env_logger = "0.11.6"
 genco = "0.17.10"
 good_lp = { version = "1.11.0", features = ["minilp"], default-features = false }
 hashbrown = "0.15.2"
+hipstr = "0.8.0"
 id-arena = "2.2.1"
 ignore = "0.4.23"
 indent = "0.1.1"

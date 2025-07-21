@@ -140,7 +140,7 @@ fn extract_item_outer_documentation(
         // Takes all the lines before the definition.
         // Anything other than doc comments will be filtered out later.
         .take_while_ref(|line| is_comment_line(line) || line.trim_start().starts_with("#"))
-        .filter_map(|line| extract_comment_from_code_line(line, &["///"]))
+        .filter_map(|line| extract_comment_from_code_line(&line, &["///"]))
         .join("\n"),
     )
 }

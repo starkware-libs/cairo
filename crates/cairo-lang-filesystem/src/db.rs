@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use hipstr::HipStr;
 use salsa::Durability;
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -200,7 +201,7 @@ pub trait FilesGroup: ExternalFiles {
     /// Change this mechanism to hold file_overrides on the db struct outside salsa mechanism,
     /// and invalidate manually.
     #[salsa::input]
-    fn file_overrides(&self) -> Arc<OrderedHashMap<FileId, Arc<str>>>;
+    fn file_overrides(&self) -> Arc<OrderedHashMap<FileId, HipStr<'static>>>;
 
     // TODO(yuval): consider moving this to a separate crate, or rename this crate.
     /// The compilation flags.
@@ -216,9 +217,9 @@ pub trait FilesGroup: ExternalFiles {
     fn crate_config(&self, crate_id: CrateId) -> Option<CrateConfiguration>;
 
     /// Query for raw file contents. Private.
-    fn priv_raw_file_content(&self, file_id: FileId) -> Option<Arc<str>>;
+    fn priv_raw_file_content(&self, file_id: FileId) -> Option<HipStr<'static>>;
     /// Query for the file contents. This takes overrides into consideration.
-    fn file_content(&self, file_id: FileId) -> Option<Arc<str>>;
+    fn file_content(&self, file_id: FileId) -> Option<HipStr<'static>>;
     fn file_summary(&self, file_id: FileId) -> Option<Arc<FileSummary>>;
 
     /// Query for the blob content.
@@ -260,7 +261,7 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
 
 pub trait FilesGroupEx: FilesGroup {
     /// Overrides file content. None value removes the override.
-    fn override_file_content(&mut self, file: FileId, content: Option<Arc<str>>) {
+    fn override_file_content(&mut self, file: FileId, content: Option<HipStr<'static>>) {
         let mut overrides = self.file_overrides().as_ref().clone();
         match content {
             Some(content) => overrides.insert(file, content),
@@ -316,7 +317,7 @@ fn crate_config(db: &dyn FilesGroup, crt: CrateId) -> Option<CrateConfiguration>
     }
 }
 
-fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> {
+fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<HipStr<'static>> {
     match file.lookup_intern(db) {
         FileLongId::OnDisk(path) => {
             // This does not result in performance cost due to OS caching and the fact that salsa
@@ -332,7 +333,7 @@ fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> 
         FileLongId::External(external_id) => Some(db.ext_as_virtual(external_id).content),
     }
 }
-fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> {
+fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<HipStr<'static>> {
     let overrides = db.file_overrides();
     overrides.get(&file).cloned().or_else(|| db.priv_raw_file_content(file))
 }

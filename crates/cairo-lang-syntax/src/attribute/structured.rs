@@ -96,7 +96,7 @@ impl AttributeStructurize for ast::Attribute {
 
         Attribute {
             stable_ptr: self.stable_ptr(db),
-            id: attr_id.as_syntax_node().get_text_without_trivia(db).into(),
+            id: attr_id.as_syntax_node().get_text_without_trivia(db).as_str().into(),
             id_stable_ptr: attr_id.stable_ptr(db),
             args: match attr_args {
                 ast::OptionArgListParenthesized::ArgListParenthesized(ref attribute_args) => {
@@ -148,7 +148,7 @@ impl AttributeArg {
     pub fn text(&self, db: &dyn SyntaxGroup) -> String {
         match &self.variant {
             AttributeArgVariant::Unnamed(value) => {
-                value.as_syntax_node().get_text_without_trivia(db)
+                value.as_syntax_node().get_text_without_trivia(db).to_string()
             }
             AttributeArgVariant::Named { value, name } => {
                 format!("{}: {}", name.text, value.as_syntax_node().get_text_without_trivia(db))
@@ -165,7 +165,7 @@ impl Modifier {
     fn from(modifier: ast::Modifier, db: &dyn SyntaxGroup) -> Modifier {
         Modifier {
             stable_ptr: modifier.stable_ptr(db),
-            text: modifier.as_syntax_node().get_text(db).into(),
+            text: modifier.as_syntax_node().get_text(db).as_str().into(),
         }
     }
 }

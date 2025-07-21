@@ -43,7 +43,7 @@ pub fn priv_macro_call_data(
             diagnostics.report(
                 macro_call_path.stable_ptr(db).untyped(),
                 SemanticDiagnosticKind::MacroCallToNotAMacro(
-                    macro_call_path.as_syntax_node().get_text_without_trivia(db).into(),
+                    macro_call_path.as_syntax_node().get_text_without_trivia(db).as_str().into(),
                 ),
             );
             None
