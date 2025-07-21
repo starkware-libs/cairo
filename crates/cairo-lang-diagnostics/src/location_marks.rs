@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_filesystem::span::{FileSummary, TextPosition, TextSpan, TextWidth};
+use hipstr::HipStr;
 use itertools::repeat_n;
 
 use crate::DiagnosticLocation;
@@ -106,7 +107,7 @@ fn get_multiple_lines_location_marks(
 fn get_line_content(
     summary: Arc<FileSummary>,
     row_index: usize,
-    content: Arc<str>,
+    content: HipStr<'static>,
     first_line: bool,
 ) -> String {
     let line_start = summary.line_offsets[row_index];

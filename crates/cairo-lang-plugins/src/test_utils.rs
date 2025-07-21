@@ -37,15 +37,13 @@ pub fn expand_module_text(
             let submodule_item = item.stable_ptr(db).lookup(db);
             if let ast::MaybeModuleBody::Some(body) = submodule_item.body(db) {
                 // Recursively expand inline submodules.
-                output.extend([
-                    submodule_item.attributes(db).as_syntax_node().get_text(db),
-                    submodule_item.visibility(db).as_syntax_node().get_text(db),
-                    submodule_item.module_kw(db).as_syntax_node().get_text(db),
-                    submodule_item.name(db).as_syntax_node().get_text(db),
-                    body.lbrace(db).as_syntax_node().get_text(db),
-                    expand_module_text(db, ModuleId::Submodule(*item), diagnostics),
-                    body.rbrace(db).as_syntax_node().get_text(db),
-                ]);
+                output.push_str(&submodule_item.attributes(db).as_syntax_node().get_text(db));
+                output.push_str(&submodule_item.visibility(db).as_syntax_node().get_text(db));
+                output.push_str(&submodule_item.module_kw(db).as_syntax_node().get_text(db));
+                output.push_str(&submodule_item.name(db).as_syntax_node().get_text(db));
+                output.push_str(&body.lbrace(db).as_syntax_node().get_text(db));
+                output.push_str(&expand_module_text(db, ModuleId::Submodule(*item), diagnostics));
+                output.push_str(&body.rbrace(db).as_syntax_node().get_text(db));
                 continue;
             }
         } else if let ModuleItemId::Use(use_id) = item_id {

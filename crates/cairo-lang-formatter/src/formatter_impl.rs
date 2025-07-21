@@ -967,7 +967,7 @@ impl<'a> FormatterImpl<'a> {
     fn format_node(&mut self, syntax_node: &SyntaxNode) {
         if self.is_merging_use_items {
             // When merging, only format this node once and return to avoid recursion.
-            self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
+            self.line_state.line_buffer.push_str(&syntax_node.get_text(self.db).trim());
             return;
         }
         // If we encounter a token tree node, i.e. a macro, we try to parse it as a
@@ -1009,7 +1009,7 @@ impl<'a> FormatterImpl<'a> {
             if spacing_data.add_space_before && !self.line_state.prevent_next_space {
                 self.line_state.line_buffer.push_space();
             }
-            self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
+            self.line_state.line_buffer.push_str(&syntax_node.get_text(self.db).trim());
             self.line_state.prevent_next_space = spacing_data.prevent_space_after;
         } else if syntax_node.kind(self.db).is_terminal() {
             self.format_terminal(syntax_node);
@@ -1382,22 +1382,22 @@ trait IdentExtractor {
 }
 impl IdentExtractor for ast::UsePathLeaf {
     fn extract_ident(&self, db: &dyn SyntaxGroup) -> String {
-        self.ident(db).as_syntax_node().get_text_without_trivia(db)
+        self.ident(db).as_syntax_node().get_text_without_trivia(db).to_string()
     }
 
     fn extract_alias(&self, db: &dyn SyntaxGroup) -> Option<String> {
         match self.alias_clause(db) {
             ast::OptionAliasClause::Empty(_) => None,
-            ast::OptionAliasClause::AliasClause(alias_clause) => {
-                Some(alias_clause.alias(db).as_syntax_node().get_text_without_trivia(db))
-            }
+            ast::OptionAliasClause::AliasClause(alias_clause) => Some(
+                alias_clause.alias(db).as_syntax_node().get_text_without_trivia(db).to_string(),
+            ),
         }
     }
 }
 
 impl IdentExtractor for ast::UsePathSingle {
     fn extract_ident(&self, db: &dyn SyntaxGroup) -> String {
-        self.ident(db).as_syntax_node().get_text_without_trivia(db)
+        self.ident(db).as_syntax_node().get_text_without_trivia(db).to_string()
     }
 
     fn extract_alias(&self, _db: &dyn SyntaxGroup) -> Option<String> {

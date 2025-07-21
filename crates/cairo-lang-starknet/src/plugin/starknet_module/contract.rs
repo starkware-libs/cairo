@@ -142,24 +142,24 @@ impl ComponentsGenerationData {
         let mut is_valid = true;
 
         let storage_name_syntax_node = storage_name.as_syntax_node();
-        if !self.substorage_members.contains(&storage_name_syntax_node.get_text(db)) {
+        let storage_name = storage_name_syntax_node.get_text_without_trivia(db);
+        if !self.substorage_members.iter().any(|n| n.as_str() == storage_name.as_str()) {
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
                 component_macro.stable_ptr(db).untyped(),
-                storage_name.as_syntax_node(),
+                storage_name_syntax_node,
                 format!(
-                    "`{0}` is not a substorage member in the contract's \
+                    "`{storage_name}` is not a substorage member in the contract's \
                      `{STORAGE_STRUCT_NAME}`.\nConsider adding to \
-                     `{STORAGE_STRUCT_NAME}`:\n```\n#[{SUBSTORAGE_ATTR}(v0)]\n{0}: \
+                     `{STORAGE_STRUCT_NAME}`:\n```\n#[{SUBSTORAGE_ATTR}(v0)]\n{storage_name}: \
                      path::to::component::{STORAGE_STRUCT_NAME},\n````",
-                    storage_name_syntax_node.get_text_without_trivia(db)
                 ),
             ));
             is_valid = false;
         }
 
         let event_name_str = event_name.as_syntax_node().get_text_without_trivia(db);
-        if !self.nested_event_variants.contains(&event_name_str.clone().into()) {
+        if !self.nested_event_variants.iter().any(|n| n.as_str() == event_name_str.as_str()) {
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
                 component_macro.stable_ptr(db).untyped(),

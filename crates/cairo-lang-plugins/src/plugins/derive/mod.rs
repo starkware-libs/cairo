@@ -116,7 +116,7 @@ fn generate_derive_code_for_type(
                 "PartialEq" => Some(partial_eq::handle_partial_eq(&info)),
                 "Serde" => Some(serde::handle_serde(&info)),
                 _ => {
-                    if !metadata.declared_derives.contains(&derived) {
+                    if !metadata.declared_derives.contains(derived.as_str()) {
                         diagnostics.push(PluginDiagnostic::error(
                             derived_path.stable_ptr(db),
                             format!("Unknown derive `{derived}` - a plugin might be missing."),
