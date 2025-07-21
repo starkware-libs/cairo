@@ -14,12 +14,9 @@ use cairo_lang_runner::profiling::{
 use cairo_lang_runner::{
     ProfilingInfoCollectionConfig, RunResultValue, SierraCasmRunner, StarknetExecutionResources,
 };
-use cairo_lang_sierra::extensions::gas::CostTokenType;
-use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Program, StatementIdx};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
-use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_plugin::test_config::{PanicExpectation, TestExpectation};
 use cairo_lang_test_plugin::{
@@ -27,13 +24,11 @@ use cairo_lang_test_plugin::{
     compile_test_prepared_db, test_plugin_suite,
 };
 use cairo_lang_utils::casts::IntoOrPanic;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use colored::Colorize;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use starknet_types_core::felt::Felt as Felt252;
 
 #[cfg(test)]
 mod test;
@@ -103,7 +98,7 @@ impl CompiledTestRunner {
     }
 
     /// Execute preconfigured test execution.
-    pub fn run(self, db: Option<&RootDatabase>) -> Result<Option<TestsSummary>> {
+    pub fn run(self, opt_db: Option<&RootDatabase>) -> Result<Option<TestsSummary>> {
         let (compiled, filtered_out) = filter_test_cases(
             self.compiled,
             self.config.include_ignored,
@@ -111,27 +106,8 @@ impl CompiledTestRunner {
             &self.config.filter,
         );
 
-        let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
-            if self.config.profiler_config.as_ref().is_some_and(|c| c.requires_cairo_debug_info()) {
-                let db = db.expect("db must be passed when doing cairo level profiling.");
-                let statements_locations = compiled
-                    .metadata
-                    .statements_locations
-                    .expect("statements locations must be present when profiling.");
-                Some(PorfilingAuxData {
-                    db,
-                    statements_functions: statements_locations
-                        .get_statements_functions_map_for_tests(db),
-                })
-            } else {
-                None
-            },
-            compiled.metadata.named_tests,
-            compiled.sierra_program.program,
-            compiled.metadata.function_set_costs,
-            compiled.metadata.contracts_info,
-            &self.config,
-        )?;
+        let TestsSummary { passed, failed, ignored, failed_run_results } =
+            run_tests(opt_db.map(|db| db as &dyn SierraGenGroup), compiled, &self.config)?;
 
         if failed.is_empty() {
             println!(
@@ -319,13 +295,21 @@ pub struct PorfilingAuxData<'a> {
 
 /// Runs the tests and process the results for a summary.
 pub fn run_tests(
-    profiler_data: Option<PorfilingAuxData<'_>>,
-    named_tests: Vec<(String, TestConfig)>,
-    sierra_program: Program,
-    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
-    contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+    opt_db: Option<&dyn SierraGenGroup>,
+    compiled: TestCompilation,
     config: &TestRunConfig,
 ) -> Result<TestsSummary> {
+    let TestCompilation {
+        sierra_program: sierra_program_with_debug_info,
+        metadata:
+            TestCompilationMetadata {
+                named_tests,
+                function_set_costs,
+                contracts_info,
+                statements_locations,
+            },
+    } = compiled;
+    let sierra_program = sierra_program_with_debug_info.program;
     let runner = SierraCasmRunner::new(
         sierra_program.clone(),
         if config.gas_enabled {
@@ -358,6 +342,13 @@ pub fn run_tests(
     // Run in parallel if possible. If running with db, parallelism is impossible.
     if config.profiler_config.as_ref().is_some_and(|c| c.requires_cairo_debug_info()) {
         eprintln!("Note: Tests don't run in parallel when running with profiling.");
+        let db = opt_db.expect("db must be passed when doing cairo level profiling.");
+        let profiler_data = Some(PorfilingAuxData {
+            db,
+            statements_functions: statements_locations
+                .expect("statements locations must be present when doing cairo level profiling.")
+                .get_statements_functions_map_for_tests(db),
+        });
         named_tests
             .into_iter()
             .map(move |(name, test)| run_single_test(test, name, &runner))
