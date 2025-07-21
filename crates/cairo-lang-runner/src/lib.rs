@@ -28,6 +28,7 @@ use starknet_types_core::felt::Felt as Felt252;
 use thiserror::Error;
 
 use crate::casm_run::RunFunctionResult;
+use crate::profiling::ProfilerConfig;
 
 pub mod casm_run;
 pub mod clap;
@@ -486,6 +487,16 @@ impl ProfilingInfoCollectionConfig {
     pub fn set_max_stack_trace_depth(&mut self, max_stack_depth: usize) -> &mut Self {
         self.max_stack_trace_depth = max_stack_depth;
         self
+    }
+
+    pub fn from_profiler_config(profiler_config: &ProfilerConfig) -> Self {
+        match profiler_config {
+            ProfilerConfig::Cairo | ProfilerConfig::Sierra => Self::default(),
+            ProfilerConfig::Scoped => ProfilingInfoCollectionConfig {
+                collect_scoped_sierra_statement_weights: true,
+                ..Self::default()
+            },
+        }
     }
 }
 

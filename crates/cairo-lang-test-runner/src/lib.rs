@@ -66,7 +66,10 @@ impl TestRunner {
             config.gas_enabled,
             TestsCompilationConfig {
                 starknet,
-                add_statements_functions: config.profiler_config == Some(ProfilerConfig::Cairo),
+                add_statements_functions: config
+                    .profiler_config
+                    .as_ref()
+                    .is_some_and(|c| c.requires_cairo_debug_info()),
                 add_statements_code_locations: false,
                 contract_declarations: None,
                 contract_crate_ids: None,
@@ -109,8 +112,8 @@ impl CompiledTestRunner {
         );
 
         let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
-            if self.config.profiler_config == Some(ProfilerConfig::Cairo) {
-                let db = db.expect("db must be passed when profiling.");
+            if self.config.profiler_config.as_ref().is_some_and(|c| c.requires_cairo_debug_info()) {
+                let db = db.expect("db must be passed when doing cairo level profiling.");
                 let statements_locations = compiled
                     .metadata
                     .statements_locations
@@ -337,12 +340,7 @@ pub fn run_tests(
             None
         },
         contracts_info,
-        match config.profiler_config {
-            None => None,
-            Some(ProfilerConfig::Cairo | ProfilerConfig::Sierra) => {
-                Some(ProfilingInfoCollectionConfig::default())
-            }
-        },
+        config.profiler_config.as_ref().map(ProfilingInfoCollectionConfig::from_profiler_config),
     )
     .with_context(|| "Failed setting up runner.")?;
     let suffix = if named_tests.len() != 1 { "s" } else { "" };
@@ -358,21 +356,7 @@ pub fn run_tests(
         config.profiler_config.as_ref().map(ProfilingInfoProcessorParams::from_profiler_config);
 
     // Run in parallel if possible. If running with db, parallelism is impossible.
-    if config.profiler_config != Some(ProfilerConfig::Cairo) {
-        named_tests
-            .into_par_iter()
-            .map(|(name, test)| run_single_test(test, name, &runner))
-            .for_each(|res| {
-                update_summary(
-                    &wrapped_summary,
-                    res,
-                    &None,
-                    &sierra_program,
-                    &profiling_params,
-                    config.print_resource_usage,
-                );
-            });
-    } else {
+    if config.profiler_config.as_ref().is_some_and(|c| c.requires_cairo_debug_info()) {
         eprintln!("Note: Tests don't run in parallel when running with profiling.");
         named_tests
             .into_iter()
@@ -382,6 +366,20 @@ pub fn run_tests(
                     &wrapped_summary,
                     test_result,
                     &profiler_data,
+                    &sierra_program,
+                    &profiling_params,
+                    config.print_resource_usage,
+                );
+            });
+    } else {
+        named_tests
+            .into_par_iter()
+            .map(|(name, test)| run_single_test(test, name, &runner))
+            .for_each(|res| {
+                update_summary(
+                    &wrapped_summary,
+                    res,
+                    &None,
                     &sierra_program,
                     &profiling_params,
                     config.print_resource_usage,
