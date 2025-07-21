@@ -408,17 +408,17 @@ impl ProfilingInfoProcessorParams {
 /// during the run) into a more detailed profiling info that can also be formatted.
 pub struct ProfilingInfoProcessor<'a> {
     db: Option<&'a dyn SierraGenGroup>,
-    sierra_program: Program,
+    sierra_program: &'a Program,
     /// A map between sierra statement index and the string representation of the Cairo function
     /// that generated it. The function representation is composed of the function name and the
     /// path (modules and impls) to the function in the file.
-    statements_functions: UnorderedHashMap<StatementIdx, String>,
+    statements_functions: &'a UnorderedHashMap<StatementIdx, String>,
 }
 impl<'a> ProfilingInfoProcessor<'a> {
     pub fn new(
         db: Option<&'a dyn SierraGenGroup>,
-        sierra_program: Program,
-        statements_functions: UnorderedHashMap<StatementIdx, String>,
+        sierra_program: &'a Program,
+        statements_functions: &'a UnorderedHashMap<StatementIdx, String>,
     ) -> Self {
         Self { db, sierra_program, statements_functions }
     }
@@ -485,7 +485,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
         params: &ProfilingInfoProcessorParams,
     ) -> StackTraceWeights {
         let resolve_names = |(idx_stack_trace, weight): (&Vec<usize>, &usize)| {
-            (index_stack_trace_to_name_stack_trace(&self.sierra_program, idx_stack_trace), *weight)
+            (index_stack_trace_to_name_stack_trace(self.sierra_program, idx_stack_trace), *weight)
         };
 
         let sierra_stack_trace_weights = params.process_by_stack_trace.then(|| {
@@ -502,7 +502,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
             raw_profiling_info
                 .stack_trace_weights
                 .iter()
-                .filter(|(trace, _)| is_cairo_trace(db, &self.sierra_program, trace))
+                .filter(|(trace, _)| is_cairo_trace(db, self.sierra_program, trace))
                 .sorted_by_key(|&(trace, weight)| (usize::MAX - *weight, trace.clone()))
                 .map(resolve_names)
                 .collect()
@@ -584,7 +584,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
         let mut user_functions = UnorderedHashMap::<usize, usize>::default();
         for (statement_idx, weight) in sierra_statement_weights {
             let function_idx: usize =
-                user_function_idx_by_sierra_statement_idx(&self.sierra_program, *statement_idx);
+                user_function_idx_by_sierra_statement_idx(self.sierra_program, *statement_idx);
             *(user_functions.entry(function_idx).or_insert(0)) += weight;
         }
 
@@ -678,7 +678,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
                             };
                         let key: Vec<String> = chain!(
                             index_stack_trace_to_name_stack_trace(
-                                &self.sierra_program,
+                                self.sierra_program,
                                 idx_stack_trace
                             ),
                             [statement_name]
