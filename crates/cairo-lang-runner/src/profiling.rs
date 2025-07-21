@@ -24,6 +24,8 @@ mod test;
 pub enum ProfilerConfig {
     /// Profiler with Cairo level debug information.
     Cairo,
+    /// Similar to Cairo, but stack frames are deduplicated, and the output format is more compact.
+    Scoped,
     /// Sierra level profiling, no cairo level debug information.
     Sierra,
 }
@@ -393,6 +395,18 @@ impl ProfilingInfoProcessorParams {
     pub fn from_profiler_config(config: &ProfilerConfig) -> Self {
         match config {
             ProfilerConfig::Cairo => Default::default(),
+            ProfilerConfig::Scoped => Self {
+                min_weight: 1,
+                process_by_statement: false,
+                process_by_concrete_libfunc: false,
+                process_by_generic_libfunc: false,
+                process_by_user_function: false,
+                process_by_original_user_function: false,
+                process_by_cairo_function: false,
+                process_by_stack_trace: false,
+                process_by_cairo_stack_trace: false,
+                process_by_scoped_statement: true,
+            },
             ProfilerConfig::Sierra => Self {
                 process_by_generic_libfunc: false,
                 process_by_cairo_stack_trace: false,

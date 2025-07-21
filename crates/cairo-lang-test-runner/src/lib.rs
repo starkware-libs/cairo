@@ -337,12 +337,7 @@ pub fn run_tests(
             None
         },
         contracts_info,
-        match config.profiler_config {
-            None => None,
-            Some(ProfilerConfig::Cairo | ProfilerConfig::Sierra) => {
-                Some(ProfilingInfoCollectionConfig::default())
-            }
-        },
+        config.profiler_config.as_ref().map(ProfilingInfoCollectionConfig::from_profiler_config),
     )
     .with_context(|| "Failed setting up runner.")?;
     let suffix = if named_tests.len() != 1 { "s" } else { "" };
