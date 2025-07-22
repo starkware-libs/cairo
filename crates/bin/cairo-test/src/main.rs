@@ -2,7 +2,6 @@
 
 use std::path::PathBuf;
 
-use anyhow::Ok;
 use cairo_lang_compiler::project::check_compiler_path;
 use cairo_lang_runner::profiling::ProfilerConfig;
 use cairo_lang_test_runner::{TestRunConfig, TestRunner};
@@ -18,13 +17,14 @@ enum RunProfilerConfigArg {
     Cairo,
     Sierra,
 }
-impl From<RunProfilerConfigArg> for Option<ProfilerConfig> {
-    fn from(val: RunProfilerConfigArg) -> Self {
-        match val {
-            RunProfilerConfigArg::None => None,
-            RunProfilerConfigArg::Cairo => Some(ProfilerConfig::Cairo),
-            RunProfilerConfigArg::Sierra => Some(ProfilerConfig::Sierra),
-        }
+impl TryFrom<RunProfilerConfigArg> for ProfilerConfig {
+    type Error = ();
+    fn try_from(val: RunProfilerConfigArg) -> Result<Self, Self::Error> {
+        Ok(match val {
+            RunProfilerConfigArg::None => return Err(()),
+            RunProfilerConfigArg::Cairo => ProfilerConfig::Cairo,
+            RunProfilerConfigArg::Sierra => ProfilerConfig::Sierra,
+        })
     }
 }
 
@@ -75,7 +75,7 @@ fn main() -> anyhow::Result<()> {
         filter: args.filter,
         ignored: args.ignored,
         include_ignored: args.include_ignored,
-        profiler_config: args.run_profiler.into(),
+        profiler_config: args.run_profiler.try_into().ok(),
         gas_enabled: !args.gas_disabled,
         print_resource_usage: args.print_resource_usage,
     };
