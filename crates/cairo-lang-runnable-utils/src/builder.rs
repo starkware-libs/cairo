@@ -98,11 +98,12 @@ impl RunnableBuilder {
         sierra_program: SierraProgram,
         metadata_config: Option<MetadataComputationConfig>,
     ) -> Result<Self, BuildError> {
-        let gas_usage_check = metadata_config.is_some();
-        let metadata = create_metadata(&sierra_program, metadata_config)?;
         let program_info = ProgramRegistryInfo::new(&sierra_program)?;
+        let gas_usage_check = metadata_config.is_some();
+        let metadata = create_metadata(&sierra_program, &program_info, metadata_config)?;
         let casm_program = cairo_lang_sierra_to_casm::compiler::compile(
             &sierra_program,
+            &program_info,
             &metadata,
             SierraToCasmConfig { gas_usage_check, max_bytecode_size: usize::MAX },
         )?;
@@ -632,12 +633,13 @@ pub fn create_code_footer() -> Vec<Instruction> {
 /// Creates the metadata required for a Sierra program lowering to casm.
 fn create_metadata(
     sierra_program: &SierraProgram,
+    program_info: &ProgramRegistryInfo,
     metadata_config: Option<MetadataComputationConfig>,
 ) -> Result<Metadata, BuildError> {
     if let Some(metadata_config) = metadata_config {
-        calc_metadata(sierra_program, metadata_config)
+        calc_metadata(sierra_program, program_info, metadata_config)
     } else {
-        calc_metadata_ap_change_only(sierra_program)
+        calc_metadata_ap_change_only(sierra_program, program_info)
     }
     .map_err(|err| match err {
         MetadataError::ApChangeError(err) => BuildError::ApChangeError(err),
