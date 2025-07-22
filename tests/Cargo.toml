@@ -6,6 +6,7 @@ rust-version.workspace = true
 repository.workspace = true
 license-file.workspace = true
 description = ""
+publish = false
 
 [dev-dependencies]
 assert_matches.workspace = true

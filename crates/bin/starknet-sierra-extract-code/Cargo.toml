@@ -5,6 +5,7 @@ edition.workspace = true
 repository.workspace = true
 license-file.workspace = true
 description = "Compiler executable for printing Starknet Sierra json included code"
+publish = false
 
 [dependencies]
 anyhow.workspace = true
