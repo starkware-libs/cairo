@@ -254,10 +254,11 @@ fn main() -> anyhow::Result<()> {
     };
 
     let trace_enabled = args.profile || args.run.proof_outputs.trace_file.is_some();
+    let relocate_mem = args.profile || args.run.proof_outputs.memory_file.is_some();
 
     let cairo_run_config = CairoRunConfig {
         trace_enabled,
-        relocate_mem: args.run.proof_outputs.memory_file.is_some(),
+        relocate_mem,
         layout: args.run.layout,
         dynamic_layout_params,
         proof_mode: args.run.standalone,
@@ -340,6 +341,7 @@ fn main() -> anyhow::Result<()> {
         )
         .process(&info, &Default::default());
         println!("{processed_profiling_info}");
+        println!("Memory size: {}", runner.relocated_memory.len());
     }
 
     Ok(())
