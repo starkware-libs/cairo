@@ -30,6 +30,7 @@ use thiserror::Error;
 use crate::casm_run::RunFunctionResult;
 
 pub mod casm_run;
+pub mod clap;
 pub mod profiling;
 pub mod short_string;
 

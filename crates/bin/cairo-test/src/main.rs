@@ -3,30 +3,9 @@
 use std::path::PathBuf;
 
 use cairo_lang_compiler::project::check_compiler_path;
-use cairo_lang_runner::profiling::ProfilerConfig;
+use cairo_lang_runner::clap::RunProfilerConfigArg;
 use cairo_lang_test_runner::{TestRunConfig, TestRunner};
-use clap::{Parser, ValueEnum};
-use serde::Serialize;
-
-/// A clap-arg wrapper for Option<[ProfilerConfig]>.
-#[derive(ValueEnum, Clone, Default, Debug, Serialize, PartialEq, Eq, Hash)]
-#[serde(rename_all = "kebab-case")]
-enum RunProfilerConfigArg {
-    #[default]
-    None,
-    Cairo,
-    Sierra,
-}
-impl TryFrom<RunProfilerConfigArg> for ProfilerConfig {
-    type Error = ();
-    fn try_from(val: RunProfilerConfigArg) -> Result<Self, Self::Error> {
-        Ok(match val {
-            RunProfilerConfigArg::None => return Err(()),
-            RunProfilerConfigArg::Cairo => ProfilerConfig::Cairo,
-            RunProfilerConfigArg::Sierra => ProfilerConfig::Sierra,
-        })
-    }
-}
+use clap::Parser;
 
 /// Compiles a Cairo project and runs all the functions marked as `#[test]`.
 /// Exits with 1 if the compilation or run fails, otherwise 0.
