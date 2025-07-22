@@ -79,7 +79,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
     /// Creates a new helper.
     fn new(program: &'a Program, token_usages: TokenUsages) -> Result<Self, ApChangeError> {
         let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-        let type_sizes = get_type_size_map(program, &registry).unwrap();
+        let type_sizes = get_type_size_map(program, &registry)?;
         Ok(Self {
             program,
             registry,
