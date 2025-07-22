@@ -144,7 +144,7 @@ struct ComputeCostInfoProvider {
 impl ComputeCostInfoProvider {
     fn new(program: &Program) -> Result<Self, Box<ProgramRegistryError>> {
         let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-        let type_sizes = get_type_size_map(program, &registry).unwrap();
+        let type_sizes = get_type_size_map(program, &registry)?;
         Ok(Self { registry, type_sizes })
     }
 }
@@ -195,7 +195,7 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
     ap_change_var_value: ApChangeVarValue,
 ) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-    let type_sizes = get_type_size_map(program, &registry).unwrap();
+    let type_sizes = get_type_size_map(program, &registry)?;
     let mut info = calc_gas_info_inner(
         program,
         |statement_future_cost, idx, libfunc_id| {
