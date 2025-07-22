@@ -24,20 +24,6 @@ impl ProgramRegistryInfo {
         Ok(Self { registry, type_sizes })
     }
 
-    /// Creates a new ProgramRegistryInfo with custom AP change information.
-    pub fn new_with_ap_change(
-        program: &Program,
-        ap_changes: cairo_lang_utils::ordered_hash_map::OrderedHashMap<
-            cairo_lang_sierra::ids::FunctionId,
-            usize,
-        >,
-    ) -> Result<Self, Box<ProgramRegistryError>> {
-        let registry =
-            ProgramRegistry::<CoreType, CoreLibfunc>::new_with_ap_change(program, ap_changes)?;
-        let type_sizes = get_type_size_map(program, &registry)?;
-        Ok(Self { registry, type_sizes })
-    }
-
     /// Get a reference to the program registry.
     pub fn registry(&self) -> &ProgramRegistry<CoreType, CoreLibfunc> {
         &self.registry

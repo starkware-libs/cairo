@@ -433,6 +433,7 @@ pub fn check_basic_structure(
 /// and gas usage, and config additional compilation flavours.
 pub fn compile(
     program: &Program,
+    program_info: &ProgramRegistryInfo,
     metadata: &Metadata,
     config: SierraToCasmConfig,
 ) -> Result<CairoProgram, Box<CompilationError>> {
@@ -445,11 +446,6 @@ pub fn compile(
     let mut sierra_statement_info: Vec<SierraStatementDebugInfo> =
         Vec::with_capacity(program.statements.len());
 
-    let program_info = ProgramRegistryInfo::new_with_ap_change(
-        program,
-        metadata.ap_change_info.function_ap_change.clone(),
-    )
-    .map_err(CompilationError::ProgramRegistryError)?;
     validate_metadata(program, &program_info.registry, metadata)?;
     let mut backwards_jump_indices = UnorderedHashSet::<_>::default();
     for (statement_id, statement) in program.statements.iter().enumerate() {
@@ -556,7 +552,7 @@ pub fn compile(
                         metadata,
                         type_sizes: &program_info.type_sizes,
                         circuits_info: &circuits_info,
-                        const_data_values: &|ty| extract_const_value(&program_info, ty).unwrap(),
+                        const_data_values: &|ty| extract_const_value(program_info, ty).unwrap(),
                     },
                     invocation,
                     libfunc,
@@ -644,7 +640,7 @@ pub fn compile(
         .checked_sub(program_offset)
         .ok_or_else(|| Box::new(CompilationError::CodeSizeLimitExceeded))?;
     let consts_info = ConstsInfo::new(
-        &program_info,
+        program_info,
         program.libfunc_declarations.iter().map(|ld| &ld.id),
         &circuits_info.circuits,
         const_segments_max_size,

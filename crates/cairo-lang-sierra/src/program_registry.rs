@@ -91,9 +91,8 @@ pub struct ProgramRegistry<TType: GenericType, TLibfunc: GenericLibfunc> {
 }
 impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfunc> {
     /// Create a registry for the program.
-    pub fn new_with_ap_change(
+    pub fn new(
         program: &Program,
-        function_ap_change: OrderedHashMap<FunctionId, usize>,
     ) -> Result<ProgramRegistry<TType, TLibfunc>, Box<ProgramRegistryError>> {
         let functions = get_functions(program)?;
         let (concrete_types, concrete_type_ids) = get_concrete_types_maps::<TType>(program)?;
@@ -103,7 +102,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
                 functions: &functions,
                 concrete_type_ids: &concrete_type_ids,
                 concrete_types: &concrete_types,
-                function_ap_change,
+                function_ap_change: &Default::default(),
             },
         )?;
         let registry = ProgramRegistry { functions, concrete_types, concrete_libfuncs };
@@ -111,11 +110,6 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
         Ok(registry)
     }
 
-    pub fn new(
-        program: &Program,
-    ) -> Result<ProgramRegistry<TType, TLibfunc>, Box<ProgramRegistryError>> {
-        Self::new_with_ap_change(program, Default::default())
-    }
     /// Gets a function from the input program.
     pub fn get_function<'a>(
         &'a self,
@@ -356,7 +350,7 @@ pub struct SpecializationContextForRegistry<'a, TType: GenericType> {
     pub concrete_type_ids: &'a ConcreteTypeIdMap<'a>,
     pub concrete_types: &'a TypeMap<TType::Concrete>,
     /// AP changes information for Sierra user functions.
-    pub function_ap_change: OrderedHashMap<FunctionId, usize>,
+    pub function_ap_change: &'a OrderedHashMap<FunctionId, usize>,
 }
 impl<TType: GenericType> TypeSpecializationContext for SpecializationContextForRegistry<'_, TType> {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {

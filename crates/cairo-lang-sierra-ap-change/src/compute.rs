@@ -53,7 +53,7 @@ struct ApChangeCalcHelper<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> us
     /// The program.
     program: &'a Program,
     /// The program info containing registry and type sizes.
-    program_info: ProgramRegistryInfo,
+    program_info: &'a ProgramRegistryInfo,
     /// Closure providing the token usages for the invocation.
     token_usages: TokenUsages,
     /// The size of allocated locals until the statement.
@@ -73,8 +73,11 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
     ApChangeCalcHelper<'a, TokenUsages>
 {
     /// Creates a new helper.
-    fn new(program: &'a Program, token_usages: TokenUsages) -> Result<Self, ApChangeError> {
-        let program_info = ProgramRegistryInfo::new(program)?;
+    fn new(
+        program: &'a Program,
+        program_info: &'a ProgramRegistryInfo,
+        token_usages: TokenUsages,
+    ) -> Result<Self, ApChangeError> {
         Ok(Self {
             program,
             program_info,
@@ -351,9 +354,10 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
 /// Calculates ap change information for a given program.
 pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
     program: &Program,
+    program_info: &ProgramRegistryInfo,
     token_usages: TokenUsages,
 ) -> Result<ApChangeInfo, ApChangeError> {
-    let mut helper = ApChangeCalcHelper::new(program, token_usages)?;
+    let mut helper = ApChangeCalcHelper::new(program, program_info, token_usages)?;
     helper.calc_locals_and_function_ap_changes()?;
     let ap_tracked_reverse_topological_ordering =
         helper.tracked_ap_change_reverse_topological_order()?;
