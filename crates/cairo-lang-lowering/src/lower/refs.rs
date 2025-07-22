@@ -163,6 +163,76 @@ impl<'a> cairo_lang_debug::debug::DebugWithDb<ExprFormatter<'a>> for SemanticLow
     }
 }
 
+/// Merges [SemanticLoweringMapping] from multiple blocks to a single [SemanticLoweringMapping].
+///
+/// The mapping from semantic variables to lowered variables in the new block follows these rules:
+///
+/// * Variables mapped to the same lowered variable across all input blocks are kept as-is.
+/// * Local variables that appear in only a subset of the blocks are removed.
+/// * Variables with different mappings across blocks are remapped to a new lowered variable, by
+///   invoking the `remapped_callback` function.
+pub fn merge_semantics<'a>(
+    mappings: impl Iterator<Item = &'a SemanticLoweringMapping>,
+    remapped_callback: &mut impl FnMut(&MemberPath) -> VariableId,
+) -> SemanticLoweringMapping {
+    // A map from [MemberPath] to its [Value] in the `mappings` where it appears.
+    // If the number of [Value]s is not the length of `mappings`, it is later dropped.
+    let mut path_to_values: OrderedHashMap<MemberPath, Vec<Value>> = Default::default();
+
+    let mut n_mappings = 0;
+    for map in mappings {
+        for (path, var) in map.scattered.iter() {
+            path_to_values.entry(path.clone()).or_default().push(var.clone());
+        }
+        n_mappings += 1;
+    }
+
+    let mut scattered: OrderedHashMap<MemberPath, Value> = Default::default();
+    for (path, values) in path_to_values {
+        // The variable is missing in one or more of the maps.
+        // It cannot be used in the merged block.
+        if values.len() != n_mappings {
+            continue;
+        }
+
+        let merged_value =
+            compute_remapped_variables(&values.iter().collect_vec(), &path, remapped_callback);
+        scattered.insert(path, merged_value);
+    }
+
+    SemanticLoweringMapping { scattered }
+}
+
+/// Given a list of [Value]s, compute the list of [MemberPath]s that need to be remapped.
+///
+/// If all values are the same, no remapping is needed.
+/// If some of the values are [Value::Var] and some are [Value::Scattered], then all the values
+/// inside the [Value::Scattered] values need to be remapped.
+/// If all of them are [Value::Scattered], then it is possible that some of the members require
+/// remapping and some don't.
+///
+/// Returns a list of [MemberPath]s that need to be remapped.
+fn compute_remapped_variables(
+    values: &[&Value],
+    parent_path: &MemberPath,
+    remapped_callback: &mut impl FnMut(&MemberPath) -> VariableId,
+) -> Value {
+    // If all values are the same, no remapping is needed.
+    let first_var = values[0];
+    if values.iter().all(|x| *x == first_var) {
+        return first_var.clone();
+    }
+
+    // TODO(lior): Support scattered values.
+    assert!(
+        values.iter().all(|x| matches!(x, Value::Var(_))),
+        "Scattered values are not supported yet."
+    );
+
+    let remapped_var = remapped_callback(parent_path);
+    Value::Var(remapped_var)
+}
+
 /// A trait for deconstructing and constructing structs.
 pub trait StructRecomposer {
     fn deconstruct(
@@ -187,7 +257,7 @@ pub trait StructRecomposer {
 }
 
 /// An intermediate value for a member path.
-#[derive(Clone, Debug, DebugWithDb)]
+#[derive(Clone, Debug, DebugWithDb, Eq, PartialEq)]
 #[debug_db(ExprFormatter<'a>)]
 enum Value {
     /// The value of member path is stored in a lowered variable.
@@ -213,7 +283,7 @@ impl std::fmt::Display for Value {
 }
 
 /// A value for a non-stored member path. Recursively holds the [Value] for the members.
-#[derive(Clone, Debug, DebugWithDb)]
+#[derive(Clone, Debug, DebugWithDb, Eq, PartialEq)]
 #[debug_db(ExprFormatter<'a>)]
 struct Scattered {
     concrete_struct_id: semantic::ConcreteStructId,
