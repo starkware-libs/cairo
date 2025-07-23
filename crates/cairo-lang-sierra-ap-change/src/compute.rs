@@ -1,10 +1,8 @@
 use cairo_lang_sierra::algorithm::topological_order::reverse_topological_ordering;
-use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
-use cairo_lang_sierra::program_registry::ProgramRegistry;
-use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
+use cairo_lang_sierra_type_size::{ProgramRegistryInfo, TypeSizeMap};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
@@ -54,10 +52,8 @@ struct ApTrackingInfo {
 struct ApChangeCalcHelper<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize> {
     /// The program.
     program: &'a Program,
-    /// The program registry.
-    registry: ProgramRegistry<CoreType, CoreLibfunc>,
-    /// Registry for providing the sizes of the types.
-    type_sizes: TypeSizeMap,
+    /// The program info containing registry and type sizes.
+    program_info: ProgramRegistryInfo,
     /// Closure providing the token usages for the invocation.
     token_usages: TokenUsages,
     /// The size of allocated locals until the statement.
@@ -78,12 +74,10 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
 {
     /// Creates a new helper.
     fn new(program: &'a Program, token_usages: TokenUsages) -> Result<Self, ApChangeError> {
-        let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-        let type_sizes = get_type_size_map(program, &registry)?;
+        let program_info = ProgramRegistryInfo::new(program)?;
         Ok(Self {
             program,
-            registry,
-            type_sizes,
+            program_info,
             token_usages,
             locals_size: Default::default(),
             known_ap_change_to_return: Default::default(),
@@ -331,11 +325,11 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
     ) -> Result<Vec<(ApChange, StatementIdx)>, ApChangeError> {
         Ok(match self.program.get_statement(&idx).unwrap() {
             Statement::Invocation(invocation) => {
-                let libfunc = self.registry.get_libfunc(&invocation.libfunc_id)?;
+                let libfunc = self.program_info.registry.get_libfunc(&invocation.libfunc_id)?;
                 core_libfunc_ap_change::core_libfunc_ap_change(
                     libfunc,
                     &InvocationApChangeInfoProviderForEqGen {
-                        type_sizes: &self.type_sizes,
+                        type_sizes: &self.program_info.type_sizes,
                         token_usages: |token_type| (self.token_usages)(idx, token_type),
                     },
                 )
@@ -350,7 +344,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
 
     /// Returns the entry point of a function.
     fn func_entry_point(&self, id: &FunctionId) -> Result<StatementIdx, ApChangeError> {
-        Ok(self.registry.get_function(id)?.entry_point)
+        Ok(self.program_info.registry.get_function(id)?.entry_point)
     }
 }
 

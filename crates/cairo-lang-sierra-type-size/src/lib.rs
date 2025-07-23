@@ -8,6 +8,47 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 pub type TypeSizeMap = UnorderedHashMap<ConcreteTypeId, i16>;
 
+/// A wrapper that combines a program registry with its corresponding type size map.
+/// This is commonly used together throughout the codebase.
+pub struct ProgramRegistryInfo {
+    pub registry: ProgramRegistry<CoreType, CoreLibfunc>,
+    pub type_sizes: TypeSizeMap,
+}
+
+impl ProgramRegistryInfo {
+    /// Creates a new ProgramRegistryInfo by building both the registry and type size map from a
+    /// program.
+    pub fn new(program: &Program) -> Result<Self, Box<ProgramRegistryError>> {
+        let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
+        let type_sizes = get_type_size_map(program, &registry)?;
+        Ok(Self { registry, type_sizes })
+    }
+
+    /// Creates a new ProgramRegistryInfo with custom AP change information.
+    pub fn new_with_ap_change(
+        program: &Program,
+        ap_changes: cairo_lang_utils::ordered_hash_map::OrderedHashMap<
+            cairo_lang_sierra::ids::FunctionId,
+            usize,
+        >,
+    ) -> Result<Self, Box<ProgramRegistryError>> {
+        let registry =
+            ProgramRegistry::<CoreType, CoreLibfunc>::new_with_ap_change(program, ap_changes)?;
+        let type_sizes = get_type_size_map(program, &registry)?;
+        Ok(Self { registry, type_sizes })
+    }
+
+    /// Get a reference to the program registry.
+    pub fn registry(&self) -> &ProgramRegistry<CoreType, CoreLibfunc> {
+        &self.registry
+    }
+
+    /// Get a reference to the type size map.
+    pub fn type_sizes(&self) -> &TypeSizeMap {
+        &self.type_sizes
+    }
+}
+
 /// Returns a mapping for the sizes of all types for the given program.
 pub fn get_type_size_map(
     program: &Program,

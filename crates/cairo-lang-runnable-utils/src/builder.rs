@@ -29,7 +29,7 @@ use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError, Sierra
 use cairo_lang_sierra_to_casm::metadata::{
     Metadata, MetadataComputationConfig, MetadataError, calc_metadata, calc_metadata_ap_change_only,
 };
-use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
+use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -84,10 +84,8 @@ pub struct RunnableBuilder {
     sierra_program: SierraProgram,
     /// Metadata for the Sierra program.
     metadata: Metadata,
-    /// Program registry for the Sierra program.
-    sierra_program_registry: ProgramRegistry<CoreType, CoreLibfunc>,
-    /// Type sizes for the Sierra program.
-    type_sizes: TypeSizeMap,
+    /// Program registry and type sizes for the Sierra program.
+    program_info: ProgramRegistryInfo,
     /// The CASM program matching the Sierra code.
     casm_program: CairoProgram,
     /// The types of the non-user argument variables.
@@ -102,9 +100,7 @@ impl RunnableBuilder {
     ) -> Result<Self, BuildError> {
         let gas_usage_check = metadata_config.is_some();
         let metadata = create_metadata(&sierra_program, metadata_config)?;
-        let sierra_program_registry =
-            ProgramRegistry::<CoreType, CoreLibfunc>::new(&sierra_program)?;
-        let type_sizes = get_type_size_map(&sierra_program, &sierra_program_registry)?;
+        let program_info = ProgramRegistryInfo::new(&sierra_program)?;
         let casm_program = cairo_lang_sierra_to_casm::compiler::compile(
             &sierra_program,
             &metadata,
@@ -114,8 +110,7 @@ impl RunnableBuilder {
         Ok(Self {
             sierra_program,
             metadata,
-            sierra_program_registry,
-            type_sizes,
+            program_info,
             casm_program,
             non_args_types: UnorderedHashSet::from_iter([
                 AddModType::ID,
@@ -150,7 +145,7 @@ impl RunnableBuilder {
 
     /// Returns the program registry of the Sierra program.
     pub fn registry(&self) -> &ProgramRegistry<CoreType, CoreLibfunc> {
-        &self.sierra_program_registry
+        &self.program_info.registry
     }
 
     /// Finds the first function ending with `name_suffix`.
@@ -166,7 +161,7 @@ impl RunnableBuilder {
 
     /// Returns the type info of a given `ConcreteTypeId`.
     fn type_info(&self, ty: &ConcreteTypeId) -> &cairo_lang_sierra::extensions::types::TypeInfo {
-        self.sierra_program_registry.get_type(ty).unwrap().info()
+        self.program_info.registry.get_type(ty).unwrap().info()
     }
 
     /// Returns the long id of a given `ConcreteTypeId`.
@@ -176,7 +171,7 @@ impl RunnableBuilder {
 
     /// Returns the size of a given `ConcreteTypeId`.
     pub fn type_size(&self, ty: &ConcreteTypeId) -> i16 {
-        self.type_sizes[ty]
+        self.program_info.type_sizes[ty]
     }
 
     /// Returns whether `ty` is a user argument type (e.g., not a builtin).
@@ -242,7 +237,7 @@ impl RunnableBuilder {
             .map(|pt| {
                 let info = self.type_info(pt);
                 let generic_id = &info.long_id.generic_id;
-                let size = self.type_sizes[pt];
+                let size = self.type_size(pt);
                 (generic_id.clone(), size)
             })
             .collect()
