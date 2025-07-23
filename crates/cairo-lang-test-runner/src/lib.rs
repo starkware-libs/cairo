@@ -14,7 +14,7 @@ use cairo_lang_runner::profiling::{
 use cairo_lang_runner::{
     ProfilingInfoCollectionConfig, RunResultValue, SierraCasmRunner, StarknetExecutionResources,
 };
-use cairo_lang_sierra::program::{Program, StatementIdx};
+use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::starknet_plugin_suite;
@@ -343,29 +343,32 @@ pub fn run_tests(
         })
     });
 
-    let profiling_params =
-        config.profiler_config.as_ref().map(ProfilingInfoProcessorParams::from_profiler_config);
-    let profiler_data =
-        if config.profiler_config.as_ref().is_some_and(|c| c.requires_cairo_debug_info()) {
-            let db = opt_db.expect("db must be passed when doing cairo level profiling.");
-            Some(PorfilingAuxData {
-                db,
-                statements_functions: statements_locations
+    let profiler_data = config.profiler_config.as_ref().and_then(|profiler_config| {
+        if !profiler_config.requires_cairo_debug_info() {
+            return None;
+        }
+
+        let db = opt_db.expect("db must be passed when doing cairo level profiling.");
+
+        Some((
+            ProfilingInfoProcessor::new(
+                Some(db),
+                &sierra_program,
+                statements_locations
                     .expect(
                         "statements locations must be present when doing cairo level profiling.",
                     )
                     .get_statements_functions_map_for_tests(db),
-            })
-        } else {
-            None
-        };
+            ),
+            ProfilingInfoProcessorParams::from_profiler_config(profiler_config),
+        ))
+    });
+
     while let Ok(test_result) = rx.recv() {
         update_summary(
             &mut wrapped_summary,
             test_result?,
             &profiler_data,
-            &sierra_program,
-            &profiling_params,
             config.print_resource_usage,
         );
     }
@@ -423,9 +426,7 @@ fn run_single_test(
 fn update_summary(
     summary: &mut TestsSummary,
     test_result: (String, Option<TestResult>),
-    profiler_data: &Option<PorfilingAuxData<'_>>,
-    sierra_program: &Program,
-    profiling_params: &Option<ProfilingInfoProcessorParams>,
+    profiler_data: &Option<(ProfilingInfoProcessor<'_>, ProfilingInfoProcessorParams)>,
     print_resource_usage: bool,
 ) {
     let (name, opt_result) = test_result;
@@ -477,16 +478,7 @@ fn update_summary(
         );
         print_resource_map(used_resources.syscalls.into_iter(), "syscalls");
     }
-    if let Some(profiling_params) = profiling_params {
-        let (opt_db, statements_functions) =
-            if let Some(PorfilingAuxData { db, statements_functions }) = profiler_data {
-                (Some(*db), statements_functions)
-            } else {
-                (None, &UnorderedHashMap::default())
-            };
-
-        let profiling_processor =
-            ProfilingInfoProcessor::new(opt_db, sierra_program, statements_functions);
+    if let Some((profiling_processor, profiling_params)) = profiler_data {
         let processed_profiling_info = profiling_processor.process(
             &profiling_info.expect("profiling_info must be Some when profiler_config is Some"),
             profiling_params,
