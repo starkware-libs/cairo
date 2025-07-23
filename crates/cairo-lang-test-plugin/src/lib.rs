@@ -15,7 +15,7 @@ use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
 use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
-use cairo_lang_sierra::extensions::gas::CostTokenType;
+use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::ProgramArtifact;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -148,16 +148,15 @@ pub fn compile_test_prepared_db(
     let SierraProgramWithDebug { program: mut sierra_program, debug_info } =
         Arc::unwrap_or_clone(get_sierra_program_for_functions(db, func_ids, context)?);
 
-    let function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>> =
-        all_entry_points
-            .iter()
-            .map(|func_id| {
-                (
-                    db.function_with_body_sierra(*func_id).unwrap().id.clone(),
-                    [(CostTokenType::Const, ENTRY_POINT_COST)].into(),
-                )
-            })
-            .collect();
+    let function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>> = all_entry_points
+        .iter()
+        .map(|func_id| {
+            (
+                db.function_with_body_sierra(*func_id).unwrap().id.clone(),
+                CostTokenMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST)]),
+            )
+        })
+        .collect();
 
     let replacer = DebugReplacer { db };
     replacer.enrich_function_names(&mut sierra_program);
@@ -238,7 +237,7 @@ pub struct TestCompilationMetadata {
         serialize_with = "serialize_ordered_hashmap_vec",
         deserialize_with = "deserialize_ordered_hashmap_vec"
     )]
-    pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    pub function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>>,
     pub named_tests: Vec<(String, TestConfig)>,
     /// Optional `StatementsLocations` for the compiled tests.
     /// See [StatementsLocations] for more information.
