@@ -11,7 +11,10 @@ use cairo_lang_executable::compile::{
 use cairo_lang_executable::executable::Executable;
 use cairo_lang_execute_utils::{program_and_hints_from_executable, user_args_from_flags};
 use cairo_lang_runner::casm_run::format_for_panic;
-use cairo_lang_runner::profiling::{ProfilingInfo, ProfilingInfoProcessor};
+use cairo_lang_runner::clap::RunProfilerConfigArg;
+use cairo_lang_runner::profiling::{
+    ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
+};
 use cairo_lang_runner::{Arg, CairoHintProcessor};
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_vm::cairo_run;
@@ -49,10 +52,11 @@ struct Args {
     #[arg(long, default_value_t = false, conflicts_with = "build_only")]
     prebuilt: bool,
 
-    /// The path to save the profiling result.
+    /// Whether to run the profiler, and what results to produce. See
+    /// [cairo_lang_runner::profiling::ProfilerConfig]
     /// Currently does not work with prebuilt executables as it requires additional debug info.
-    #[arg(long, conflicts_with_all = ["prebuilt", "standalone"])]
-    profile: bool,
+    #[arg(short, long, default_value_t, value_enum, conflicts_with_all = ["prebuilt", "standalone"])]
+    run_profiler: RunProfilerConfigArg,
 
     #[command(flatten)]
     build: BuildArgs,
@@ -253,7 +257,8 @@ fn main() -> anyhow::Result<()> {
         None => None,
     };
 
-    let trace_enabled = args.profile || args.run.proof_outputs.trace_file.is_some();
+    let trace_enabled = args.run_profiler != RunProfilerConfigArg::None
+        || args.run.proof_outputs.trace_file.is_some();
 
     let cairo_run_config = CairoRunConfig {
         trace_enabled,
@@ -323,7 +328,7 @@ fn main() -> anyhow::Result<()> {
             .write_zip_file(&file_name, true)?
     }
 
-    if args.profile {
+    if let Ok(profiler_config) = &args.run_profiler.try_into() {
         let (db, builder, debug_info, header_len) =
             opt_debug_data.expect("debug data should be available when profiling");
 
@@ -338,7 +343,7 @@ fn main() -> anyhow::Result<()> {
             &replace_sierra_ids_in_program(&db, builder.sierra_program()),
             &debug_info.statements_locations.get_statements_functions_map_for_tests(&db),
         )
-        .process(&info, &Default::default());
+        .process(&info, &ProfilingInfoProcessorParams::from_profiler_config(profiler_config));
         println!("{processed_profiling_info}");
     }
 

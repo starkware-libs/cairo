@@ -20,12 +20,14 @@ cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "
 cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "~2.11.4" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.11.4" }
 cairo-vm.workspace = true
+clap.workspace = true
 itertools = { workspace = true, default-features = true }
 keccak.workspace = true
 num-bigint = { workspace = true, default-features = true }
 num-integer.workspace = true
 num-traits = { workspace = true, default-features = true }
 rand.workspace = true
+serde.workspace = true
 sha2.workspace = true
 smol_str.workspace = true
 starknet-types-core.workspace = true
