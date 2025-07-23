@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::hash::Hash;
 
-use cairo_lang_utils::collection_arithmetics::{HasZero, add_maps, sub_maps};
+use cairo_lang_utils::collection_arithmetics::{AddCollection, HasZero, SubCollection};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 #[cfg(test)]
@@ -40,7 +40,7 @@ impl<Var: Clone + Debug + PartialEq + Eq + Hash> std::ops::Add for Expr<Var> {
     fn add(self, other: Self) -> Self {
         Self {
             const_term: self.const_term + other.const_term,
-            var_to_coef: add_maps(self.var_to_coef, other.var_to_coef),
+            var_to_coef: self.var_to_coef.add_collection(other.var_to_coef),
         }
     }
 }
@@ -50,7 +50,7 @@ impl<Var: Clone + Debug + PartialEq + Eq + Hash> std::ops::Sub for Expr<Var> {
     fn sub(self, other: Self) -> Self {
         Self {
             const_term: self.const_term - other.const_term,
-            var_to_coef: sub_maps(self.var_to_coef, other.var_to_coef),
+            var_to_coef: self.var_to_coef.sub_collection(other.var_to_coef),
         }
     }
 }
