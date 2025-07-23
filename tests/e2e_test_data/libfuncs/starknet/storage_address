@@ -50,7 +50,7 @@ jmp rel 4 if [ap + -3] != 0;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1410})
+test::foo: CostTokenMap({Const: 1410})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -88,7 +88,7 @@ fn foo(base: starknet::StorageBaseAddress, offset: u8) -> starknet::StorageAddre
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > sierra_code
 type StorageBaseAddress = StorageBaseAddress [storable: true, drop: true, dup: true, zero_sized: false];
@@ -161,7 +161,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1410})
+test::foo: CostTokenMap({Const: 1410})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];

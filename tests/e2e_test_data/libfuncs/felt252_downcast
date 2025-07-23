@@ -45,7 +45,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1510})
+test::foo: CostTokenMap({Const: 1510})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -128,7 +128,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1510})
+test::foo: CostTokenMap({Const: 1510})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -214,7 +214,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1510})
+test::foo: CostTokenMap({Const: 1510})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -333,7 +333,7 @@ return([4], [7]);
 test::foo@F0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<test::BoundedInt::<-10633823966279327296825105735305134080, -1>>);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1410})
+test::foo: CostTokenMap({Const: 1410})
 
 //! > ==========================================================================
 
@@ -425,7 +425,7 @@ return([4], [7]);
 test::foo@F0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<test::BoundedInt::<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>>);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1510})
+test::foo: CostTokenMap({Const: 1510})
 
 //! > ==========================================================================
 
@@ -513,4 +513,4 @@ return([4], [7]);
 test::foo@F0([0]: RangeCheck, [1]: BoundedInt<-3618502788666131213697322783095070105623107215331596699973092056135872020480, 0>) -> (RangeCheck, core::option::Option::<test::BoundedInt::<0, 10>>);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1510})
+test::foo: CostTokenMap({Const: 1510})

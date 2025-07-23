@@ -1,4 +1,4 @@
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::collection_arithmetics::{HasZero, MergeCollection};
 use convert_case::Casing;
 use itertools::chain;
 use serde::{Deserialize, Serialize};
@@ -167,7 +167,71 @@ impl NoGenericArgsGenericLibfunc for GetUnspentGasLibfunc {
 /// A mapping from const tokens to some value.
 ///
 /// This would be the recommended mapping with `CostTokenType` as key.
-pub type CostTokenMap<Value> = OrderedHashMap<CostTokenType, Value>;
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CostTokenMap<Value>(vector_map::VecMap<CostTokenType, Value>);
+impl<Value: Eq> PartialEq for CostTokenMap<Value> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.len() == other.0.len() && self.0.iter().all(|(k, v)| other.0.get(k) == Some(v))
+    }
+}
+impl<Value: Eq> Eq for CostTokenMap<Value> {}
+impl<Value> Default for CostTokenMap<Value> {
+    fn default() -> Self {
+        Self(vector_map::VecMap::new())
+    }
+}
+impl<Value> FromIterator<(CostTokenType, Value)> for CostTokenMap<Value> {
+    fn from_iter<T: IntoIterator<Item = (CostTokenType, Value)>>(iter: T) -> Self {
+        Self(iter.into_iter().collect())
+    }
+}
+impl<Value> IntoIterator for CostTokenMap<Value> {
+    type Item = (CostTokenType, Value);
+    type IntoIter = vector_map::IntoIter<CostTokenType, Value>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+impl<Value> core::ops::Deref for CostTokenMap<Value> {
+    type Target = vector_map::VecMap<CostTokenType, Value>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl<Value> core::ops::DerefMut for CostTokenMap<Value> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+impl<Value: HasZero + Clone + Eq> MergeCollection<CostTokenType, Value> for CostTokenMap<Value> {
+    fn merge_collection(
+        mut self,
+        other: impl IntoIterator<Item = (CostTokenType, Value)>,
+        action: impl Fn(Value, Value) -> Value,
+    ) -> Self {
+        for (key, other_val) in other {
+            match self.entry(key) {
+                vector_map::Entry::Occupied(mut e) => {
+                    let new_val = action(e.get().clone(), other_val);
+                    if new_val == Value::zero() {
+                        e.remove();
+                    } else {
+                        e.insert(new_val);
+                    }
+                }
+                vector_map::Entry::Vacant(e) => {
+                    let zero = Value::zero();
+                    if other_val != zero {
+                        e.insert(action(zero, other_val));
+                    }
+                }
+            }
+        }
+        self
+    }
+}
 
 /// Represents different types of costs.
 /// Note that if you add a type here you should update 'iter_precost'

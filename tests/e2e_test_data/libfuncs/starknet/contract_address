@@ -52,7 +52,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1410})
+test::foo: CostTokenMap({Const: 1410})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -105,7 +105,7 @@ fn foo(address: starknet::ContractAddress) -> felt252 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > sierra_code
 type ContractAddress = ContractAddress [storable: true, drop: true, dup: true, zero_sized: false];

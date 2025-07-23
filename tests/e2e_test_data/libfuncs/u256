@@ -94,7 +94,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 6450})
+test::foo: CostTokenMap({Const: 6450})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -149,7 +149,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 400})
+test::foo: CostTokenMap({Const: 400})
 
 //! > sierra_code
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -244,7 +244,7 @@ jmp rel 5;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 3690})
+test::foo: CostTokenMap({Const: 3690})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -673,7 +673,7 @@ ap += 122;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 28470})
+test::foo: CostTokenMap({Const: 28470})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];

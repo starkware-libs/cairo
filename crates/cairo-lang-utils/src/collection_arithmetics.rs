@@ -44,7 +44,7 @@ pub trait SubCollection<Key, Value> {
     fn sub_collection(self, other: impl IntoIterator<Item = (Key, Value)>) -> Self;
 }
 
-trait MergeCollection<Key, Value> {
+pub trait MergeCollection<Key, Value> {
     /// Returns a collection which contains the combination by using `action` of the values from the
     /// given two collections, for each key.
     ///

@@ -97,7 +97,8 @@ impl CostTypeTrait for PreCost {
         let mut res = Self::default();
         for value in values {
             for (token_type, val) in value.0 {
-                res.0.insert(token_type, std::cmp::max(*res.0.get(&token_type).unwrap_or(&0), val));
+                let new_val = std::cmp::max(*res.0.get(&token_type).unwrap_or(&0), val);
+                res.0.insert(token_type, new_val);
             }
         }
         res

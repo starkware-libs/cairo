@@ -20,7 +20,7 @@ fn foo(a: u8, b: u8) -> (u8, u8, u8) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
+test::foo: CostTokenMap({Bitwise: 1, Const: 600})
 
 //! > sierra_code
 type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
@@ -65,7 +65,7 @@ fn foo(a: u16, b: u16) -> (u16, u16, u16) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
+test::foo: CostTokenMap({Bitwise: 1, Const: 600})
 
 //! > sierra_code
 type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
@@ -110,7 +110,7 @@ fn foo(a: u32, b: u32) -> (u32, u32, u32) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
+test::foo: CostTokenMap({Bitwise: 1, Const: 600})
 
 //! > sierra_code
 type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
@@ -155,7 +155,7 @@ fn foo(a: u64, b: u64) -> (u64, u64, u64) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
+test::foo: CostTokenMap({Bitwise: 1, Const: 600})
 
 //! > sierra_code
 type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
@@ -200,7 +200,7 @@ fn foo(a: u128, b: u128) -> (u128, u128, u128) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
+test::foo: CostTokenMap({Bitwise: 1, Const: 600})
 
 //! > sierra_code
 type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
