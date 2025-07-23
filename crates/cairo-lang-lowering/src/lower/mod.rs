@@ -63,6 +63,7 @@ use crate::{
 mod block_builder;
 pub mod context;
 mod external;
+mod flow_control;
 pub mod generators;
 mod logical_op;
 mod lower_if;
