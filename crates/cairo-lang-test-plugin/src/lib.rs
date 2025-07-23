@@ -234,8 +234,8 @@ pub struct TestCompilationMetadata {
     )]
     pub contracts_info: OrderedHashMap<Felt252, ContractInfo>,
     #[serde(
-        serialize_with = "serialize_ordered_hashmap_vec",
-        deserialize_with = "deserialize_ordered_hashmap_vec"
+        serialize_with = "serialize_cost_token_fullmap",
+        deserialize_with = "deserialize_cost_token_fullmap"
     )]
     pub function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>>,
     pub named_tests: Vec<(String, TestConfig)>,
@@ -244,6 +244,29 @@ pub struct TestCompilationMetadata {
     // TODO(Gil): consider serializing this field once it is stable.
     #[serde(skip)]
     pub statements_locations: Option<StatementsLocations>,
+}
+
+fn serialize_cost_token_fullmap<S>(
+    map: &OrderedHashMap<FunctionId, CostTokenMap<i32>>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    map.iter()
+        .map(|(key, value)| (key, value.iter().map(|(k, v)| (k, v)).collect_vec()))
+        .collect_vec()
+        .serialize(serializer)
+}
+
+fn deserialize_cost_token_fullmap<'de, D>(
+    deserializer: D,
+) -> Result<OrderedHashMap<FunctionId, CostTokenMap<i32>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let vec = Vec::<(FunctionId, Vec<(CostTokenType, i32)>)>::deserialize(deserializer)?;
+    Ok(vec.into_iter().map(|(key, value)| (key, CostTokenMap::from_iter(value))).collect())
 }
 
 /// Finds the tests in the requested crates.

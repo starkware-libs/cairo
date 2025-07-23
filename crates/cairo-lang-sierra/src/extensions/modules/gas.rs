@@ -1,4 +1,3 @@
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use convert_case::Casing;
 use itertools::chain;
 use serde::{Deserialize, Serialize};
@@ -167,7 +166,7 @@ impl NoGenericArgsGenericLibfunc for GetUnspentGasLibfunc {
 /// A mapping from const tokens to some value.
 ///
 /// This would be the recommended mapping with `CostTokenType` as key.
-pub type CostTokenMap<Value> = OrderedHashMap<CostTokenType, Value>;
+pub type CostTokenMap<Value> = vector_map::VecMap<CostTokenType, Value>;
 
 /// Represents different types of costs.
 /// Note that if you add a type here you should update 'iter_precost'

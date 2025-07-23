@@ -13,7 +13,7 @@ fn foo() -> bytes31 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: {Const: 100}
 
 //! > sierra_code
 type bytes31 = bytes31 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -82,7 +82,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1410})
+test::foo: {Const: 1410}
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -133,7 +133,7 @@ fn foo(value: bytes31) -> felt252 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: {Const: 100}
 
 //! > sierra_code
 type bytes31 = bytes31 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -166,7 +166,7 @@ fn foo(value: u8) -> bytes31 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: {Const: 100}
 
 //! > sierra_code
 type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];

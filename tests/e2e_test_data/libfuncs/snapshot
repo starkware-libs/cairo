@@ -23,8 +23,8 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 600})
-test::bar: OrderedHashMap({})
+test::foo: {Const: 600}
+test::bar: {}
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -89,8 +89,8 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1300})
-test::bar: OrderedHashMap({})
+test::foo: {Const: 1300}
+test::bar: {}
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -179,9 +179,9 @@ call rel -14;
 ret;
 
 //! > function_costs
-test::bar0: OrderedHashMap({})
-test::bar1: OrderedHashMap({})
-test::foo: OrderedHashMap({Const: 810})
+test::bar0: {}
+test::bar1: {}
+test::foo: {Const: 810}
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];

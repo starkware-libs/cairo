@@ -15,7 +15,7 @@ fn foo(a: felt252, b: NonZero<felt252>) -> felt252 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1000})
+test::foo: {Const: 1000}
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -54,7 +54,7 @@ fn foo(a: felt252, b: felt252) -> felt252 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: {Const: 100}
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];

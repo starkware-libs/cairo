@@ -4,6 +4,8 @@ mod test;
 
 use core::hash::{BuildHasher, Hash};
 use core::ops::{Add, Sub};
+use std::collections::BTreeMap;
+use std::collections::btree_map::Entry;
 
 use crate::ordered_hash_map::{self, OrderedHashMap};
 
@@ -91,6 +93,64 @@ impl<Key: Hash + Eq, Value: HasZero + Clone + Eq, BH: BuildHasher> MergeCollecti
                     }
                 }
                 ordered_hash_map::Entry::Vacant(e) => {
+                    let zero = Value::zero();
+                    if other_val != zero {
+                        e.insert(action(zero, other_val));
+                    }
+                }
+            }
+        }
+        self
+    }
+}
+
+impl<Key: Ord, Value: HasZero + Clone + Eq> MergeCollection<Key, Value> for BTreeMap<Key, Value> {
+    fn merge_collection(
+        mut self,
+        other: impl IntoIterator<Item = (Key, Value)>,
+        action: impl Fn(Value, Value) -> Value,
+    ) -> Self {
+        for (key, other_val) in other {
+            match self.entry(key) {
+                Entry::Occupied(mut e) => {
+                    let new_val = action(e.get().clone(), other_val);
+                    if new_val == Value::zero() {
+                        e.remove_entry();
+                    } else {
+                        e.insert(new_val);
+                    }
+                }
+                Entry::Vacant(e) => {
+                    let zero = Value::zero();
+                    if other_val != zero {
+                        e.insert(action(zero, other_val));
+                    }
+                }
+            }
+        }
+        self
+    }
+}
+
+impl<Key: Eq, Value: HasZero + Clone + Eq> MergeCollection<Key, Value>
+    for vector_map::VecMap<Key, Value>
+{
+    fn merge_collection(
+        mut self,
+        other: impl IntoIterator<Item = (Key, Value)>,
+        action: impl Fn(Value, Value) -> Value,
+    ) -> Self {
+        for (key, other_val) in other {
+            match self.entry(key) {
+                vector_map::Entry::Occupied(mut e) => {
+                    let new_val = action(e.get().clone(), other_val);
+                    if new_val == Value::zero() {
+                        e.remove();
+                    } else {
+                        e.insert(new_val);
+                    }
+                }
+                vector_map::Entry::Vacant(e) => {
                     let zero = Value::zero();
                     if other_val != zero {
                         e.insert(action(zero, other_val));
