@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use cairo_lang_sierra::extensions::NamedLibfunc;
 use cairo_lang_sierra::extensions::branch_align::BranchAlignLibfunc;
-use cairo_lang_sierra::extensions::gas::CostTokenType;
+use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_utils::collection_arithmetics::sub_maps;
@@ -15,7 +15,7 @@ pub struct GasInfo {
     /// The values of variables at matching libfuncs at given statements indices.
     pub variable_values: OrderedHashMap<(StatementIdx, CostTokenType), i64>,
     /// The costs of calling the given function.
-    pub function_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i64>>,
+    pub function_costs: OrderedHashMap<FunctionId, CostTokenMap<i64>>,
 }
 impl GasInfo {
     pub fn combine(mut self, mut other: GasInfo) -> GasInfo {
@@ -115,8 +115,7 @@ impl GasInfo {
 impl Display for GasInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Reorder the variable values by statement index.
-        let mut var_values: OrderedHashMap<StatementIdx, OrderedHashMap<CostTokenType, i64>> =
-            Default::default();
+        let mut var_values: OrderedHashMap<StatementIdx, CostTokenMap<i64>> = Default::default();
         for ((statement_idx, cost_type), value) in self.variable_values.iter() {
             var_values.entry(*statement_idx).or_default().insert(*cost_type, *value);
         }

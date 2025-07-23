@@ -10,7 +10,7 @@ use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
 use cairo_lang_sierra::extensions::ec::EcOpType;
 use cairo_lang_sierra::extensions::enm::EnumType;
 use cairo_lang_sierra::extensions::felt252::Felt252Type;
-use cairo_lang_sierra::extensions::gas::{CostTokenType, GasBuiltinType};
+use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType, GasBuiltinType};
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::poseidon::PoseidonType;
 use cairo_lang_sierra::extensions::range_check::{RangeCheck96Type, RangeCheckType};
@@ -27,7 +27,6 @@ use cairo_lang_sierra_to_casm::metadata::{
     MetadataComputationConfig, MetadataError, calc_metadata,
 };
 use cairo_lang_utils::bigint::{BigUintAsHex, deserialize_big_uint, serialize_big_uint};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -421,7 +420,7 @@ impl CasmContractClass {
         let no_eq_solver = sierra_version.minor >= 4;
         let metadata_computation_config = MetadataComputationConfig {
             function_set_costs: entrypoint_ids
-                .map(|id| (id, [(CostTokenType::Const, ENTRY_POINT_COST)].into()))
+                .map(|id| (id, CostTokenMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST)])))
                 .collect(),
             linear_gas_solver: no_eq_solver,
             linear_ap_change_solver: no_eq_solver,
@@ -531,7 +530,7 @@ impl CasmContractClass {
                 .start_offset;
             assert_eq!(
                 metadata.gas_info.function_costs[&function.id],
-                OrderedHashMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST as i64)]),
+                CostTokenMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST as i64)]),
                 "Unexpected entry point cost."
             );
             Ok::<CasmContractEntryPoint, StarknetSierraCompilationError>(CasmContractEntryPoint {

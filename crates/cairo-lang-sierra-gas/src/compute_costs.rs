@@ -1,7 +1,7 @@
 use std::ops::{Add, Sub};
 
 use cairo_lang_sierra::algorithm::topological_order::reverse_topological_ordering;
-use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType};
+use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{BranchInfo, Invocation, Program, Statement, StatementIdx};
 use cairo_lang_utils::casts::IntoOrPanic;
@@ -310,7 +310,7 @@ fn analyze_gas_statements<
 
 pub trait SpecificCostContextTrait<CostType: CostTypeTrait> {
     /// Converts a `CostType` to a [OrderedHashMap] from [CostTokenType] to i64.
-    fn to_cost_map(cost: CostType) -> OrderedHashMap<CostTokenType, i64>;
+    fn to_cost_map(cost: CostType) -> CostTokenMap<i64>;
 
     /// Converts a `CostType` to a [OrderedHashMap] from [CostTokenType] to i64.
     /// All relevant [CostTokenType] are included (even if their value is 0).
@@ -700,7 +700,7 @@ fn compute_reverse_topological_order(
 pub struct PreCostContext {}
 
 impl SpecificCostContextTrait<PreCost> for PreCostContext {
-    fn to_cost_map(cost: PreCost) -> OrderedHashMap<CostTokenType, i64> {
+    fn to_cost_map(cost: PreCost) -> CostTokenMap<i64> {
         cost.0.into_iter().map(|(token_type, val)| (token_type, val as i64)).collect()
     }
 
@@ -794,7 +794,7 @@ pub struct PostcostContext<'a, GetApChangeFn: Fn(&StatementIdx) -> usize> {
 impl<CostType: PostCostTypeEx, GetApChangeFn: Fn(&StatementIdx) -> usize>
     SpecificCostContextTrait<CostType> for PostcostContext<'_, GetApChangeFn>
 {
-    fn to_cost_map(cost: CostType) -> OrderedHashMap<CostTokenType, i64> {
+    fn to_cost_map(cost: CostType) -> CostTokenMap<i64> {
         if cost == CostType::default() {
             Default::default()
         } else {
