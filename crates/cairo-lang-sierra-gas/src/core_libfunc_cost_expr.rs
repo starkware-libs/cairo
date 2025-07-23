@@ -2,7 +2,7 @@ use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType, GasConcreteLibfunc};
 use cairo_lang_sierra::program::StatementIdx;
-use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
+use cairo_lang_utils::collection_arithmetics::{AddCollection, SubCollection};
 
 use crate::core_libfunc_cost_base::{
     CostOperations, InvocationCostInfoProvider, core_libfunc_postcost, core_libfunc_precost,
@@ -44,11 +44,11 @@ impl CostOperations for Ops<'_> {
     }
 
     fn add(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType {
-        add_maps(lhs, rhs)
+        lhs.add_collection(rhs)
     }
 
     fn sub(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType {
-        sub_maps(lhs, rhs)
+        lhs.sub_collection(rhs)
     }
 }
 
