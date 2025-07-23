@@ -10,6 +10,7 @@ description = "Starknet definitions for contract classes."
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "~2.11.4", default-features = true, features = ["serde"] }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.11.4" }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "~2.11.4" }
+cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "~2.11.4" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.11.4" }
 convert_case.workspace = true
 itertools = { workspace = true, default-features = true }

@@ -93,14 +93,15 @@ impl<TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usize>
 /// Sierra classes. Generally, the new [compute_precost_info] is used.
 pub fn calc_gas_precost_info(
     program: &Program,
+    program_info: &ProgramRegistryInfo,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
 ) -> Result<GasInfo, CostError> {
-    let cost_provider = ComputeCostInfoProvider::new(program)?;
-    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
+    let cost_provider = ComputeCostInfoProvider::new(program_info);
     let mut info = calc_gas_info_inner(
         program,
         |statement_future_cost, idx, libfunc_id| -> Vec<OrderedHashMap<CostTokenType, Expr<Var>>> {
-            let libfunc = registry
+            let libfunc = program_info
+                .registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registry creation would have already failed.");
             core_libfunc_cost_expr::core_libfunc_precost_expr(
@@ -111,14 +112,14 @@ pub fn calc_gas_precost_info(
             )
         },
         function_set_costs,
-        &registry,
+        &program_info.registry,
     )?;
     // Make `withdraw_gas` and `refund` libfuncs return 0 valued variables for all tokens.
     for (i, statement) in program.statements.iter().enumerate() {
         let Statement::Invocation(invocation) = statement else {
             continue;
         };
-        let Ok(libfunc) = registry.get_libfunc(&invocation.libfunc_id) else {
+        let Ok(libfunc) = program_info.registry.get_libfunc(&invocation.libfunc_id) else {
             continue;
         };
         let is_withdraw_gas =
@@ -136,19 +137,18 @@ pub fn calc_gas_precost_info(
 }
 
 /// Info provider used for the computation of libfunc costs.
-struct ComputeCostInfoProvider {
-    pub program_info: ProgramRegistryInfo,
+struct ComputeCostInfoProvider<'a> {
+    pub program_info: &'a ProgramRegistryInfo,
 }
 
-impl ComputeCostInfoProvider {
-    fn new(program: &Program) -> Result<Self, Box<ProgramRegistryError>> {
-        let program_info = ProgramRegistryInfo::new(program)?;
-        Ok(Self { program_info })
+impl<'a> ComputeCostInfoProvider<'a> {
+    fn new(program_info: &'a ProgramRegistryInfo) -> Self {
+        Self { program_info }
     }
 }
 
 /// Implementation of [CostInfoProvider] for [ComputeCostInfoProvider].
-impl CostInfoProvider for ComputeCostInfoProvider {
+impl CostInfoProvider for ComputeCostInfoProvider<'_> {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
         self.program_info.type_sizes[ty].into_or_panic()
     }
@@ -166,8 +166,11 @@ impl CostInfoProvider for ComputeCostInfoProvider {
 }
 
 /// Calculates gas pre-cost information for a given program - the gas costs of non-step tokens.
-pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
-    let cost_provider = ComputeCostInfoProvider::new(program)?;
+pub fn compute_precost_info(
+    program: &Program,
+    program_info: &ProgramRegistryInfo,
+) -> Result<GasInfo, CostError> {
+    let cost_provider = ComputeCostInfoProvider::new(program_info);
     compute_costs::compute_costs(
         program,
         &(|libfunc_id| {
@@ -189,11 +192,11 @@ pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
 /// Sierra classes. Generally, the new [compute_postcost_info] is used.
 pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
     program: &Program,
+    program_info: &ProgramRegistryInfo,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
     precost_gas_info: &GasInfo,
     ap_change_var_value: ApChangeVarValue,
 ) -> Result<GasInfo, CostError> {
-    let program_info = ProgramRegistryInfo::new(program)?;
     let mut info = calc_gas_info_inner(
         program,
         |statement_future_cost, idx, libfunc_id| {
@@ -352,11 +355,12 @@ fn calc_gas_info_inner<
 /// or `ConstCost` to get the separate components (steps, holes, range-checks).
 pub fn compute_postcost_info<CostType: PostCostTypeEx>(
     program: &Program,
+    program_info: &ProgramRegistryInfo,
     get_ap_change_fn: &dyn Fn(&StatementIdx) -> usize,
     precost_gas_info: &GasInfo,
     enforced_function_costs: &OrderedHashMap<FunctionId, CostType>,
 ) -> Result<GasInfo, CostError> {
-    let cost_provider = ComputeCostInfoProvider::new(program)?;
+    let cost_provider = ComputeCostInfoProvider::new(program_info);
     let specific_cost_context =
         compute_costs::PostcostContext { get_ap_change_fn, precost_gas_info };
     compute_costs::compute_costs(

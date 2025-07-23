@@ -1,4 +1,5 @@
 use cairo_lang_sierra::ProgramParser;
+use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::indoc;
@@ -761,19 +762,18 @@ indoc! {"
     "Get builtin costs with a const segment.")]
 fn sierra_to_casm(sierra_code: &str, gas_usage_check: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
+    let program_info = ProgramRegistryInfo::new(&program).unwrap();
+    let metadata = if gas_usage_check {
+        calc_metadata(&program, &program_info, Default::default()).unwrap()
+    } else {
+        calc_metadata_ap_change_only(&program, &program_info).unwrap()
+    };
+    // `max_bytecode_size` is a small value to ensure we can pass with small values.
+    let config = SierraToCasmConfig { gas_usage_check, max_bytecode_size: 100 };
     pretty_assertions::assert_eq!(
-        compile(
-            &program,
-            &if gas_usage_check {
-                calc_metadata(&program, Default::default()).unwrap_or_default()
-            } else {
-                calc_metadata_ap_change_only(&program).unwrap_or_default()
-            },
-            // `max_bytecode_size` is a small value to ensure we can pass with small values.
-            SierraToCasmConfig { gas_usage_check, max_bytecode_size: 100 }
-        )
-        .expect("Compilation failed.")
-        .to_string(),
+        compile(&program, &program_info, &metadata, config)
+            .expect("Compilation failed.")
+            .to_string(),
         strip_comments_and_linebreaks(expected_casm)
     );
 }
@@ -792,17 +792,23 @@ fn compiler_errors(
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let program = ProgramParser::new().parse(inputs["sierra_code"].as_str()).unwrap();
+    let program_info = ProgramRegistryInfo::new(&program).map_err(|e| e.to_string());
 
-    let metadata = match inputs.get("metadata").map(|x| x.as_str()) {
-        Some("gas") => calc_metadata(&program, Default::default()),
-        Some("none") | None => {
-            // In this case, metadata errors are ignored.
-            Ok(calc_metadata_ap_change_only(&program).unwrap_or_default())
+    let metadata_and_info = program_info.and_then(|info| {
+        match inputs.get("metadata").map(|x| x.as_str()) {
+            Some("gas") => Ok((
+                calc_metadata(&program, &info, Default::default()).map_err(|e| e.to_string())?,
+                info,
+            )),
+            Some("none") | None => {
+                // In this case, metadata errors are ignored.
+                Ok((calc_metadata_ap_change_only(&program, &info).unwrap_or_default(), info))
+            }
+            Some(metadata) => {
+                panic!("Invalid value for metadata argument: '{metadata}'.");
+            }
         }
-        Some(metadata) => {
-            panic!("Invalid value for metadata argument: '{metadata}'.");
-        }
-    };
+    });
     let max_bytecode_size = inputs
         .get("max_bytecode_size")
         .map(|x| {
@@ -811,15 +817,16 @@ fn compiler_errors(
         })
         .unwrap_or(usize::MAX);
 
-    let error_str = match metadata {
-        Ok(metadata) => compile(
+    let error_str = match metadata_and_info {
+        Ok((metadata, info)) => compile(
             &program,
+            &info,
             &metadata,
             SierraToCasmConfig { gas_usage_check: false, max_bytecode_size },
         )
         .expect_err("Compilation is expected to fail.")
         .to_string(),
-        Err(err) => err.to_string(),
+        Err(err) => err,
     };
     TestRunnerResult::success(OrderedHashMap::from([("error".into(), error_str)]))
 }

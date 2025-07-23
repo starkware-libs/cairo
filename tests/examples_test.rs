@@ -17,6 +17,7 @@ use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_to_casm::compiler::SierraToCasmConfig;
 use cairo_lang_sierra_to_casm::metadata::{calc_metadata, calc_metadata_ap_change_only};
+use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use cairo_lang_utils::extract_matches;
 use itertools::Itertools;
@@ -151,16 +152,19 @@ fn cairo_to_casm(
     example_dir_data: &ExampleDirData,
 ) {
     let program = checked_compile_to_sierra(name, example_dir_data, false);
+    let program_info = ProgramRegistryInfo::new(&program).unwrap();
+    let metadata = if gas_usage_check {
+        calc_metadata(&program, &program_info, Default::default()).unwrap()
+    } else {
+        calc_metadata_ap_change_only(&program, &program_info).unwrap()
+    };
     compare_contents_or_fix(
         name,
         "casm",
         cairo_lang_sierra_to_casm::compiler::compile(
             &program,
-            &if gas_usage_check {
-                calc_metadata(&program, Default::default()).unwrap()
-            } else {
-                calc_metadata_ap_change_only(&program).unwrap()
-            },
+            &program_info,
+            &metadata,
             SierraToCasmConfig { gas_usage_check, max_bytecode_size: usize::MAX },
         )
         .unwrap()
@@ -173,12 +177,15 @@ fn cairo_to_casm(
 #[case::fib("fib")]
 fn cairo_to_casm_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirData) {
     let program = checked_compile_to_sierra(name, example_dir_data, true);
+    let program_info = ProgramRegistryInfo::new(&program).unwrap();
+    let metadata = calc_metadata(&program, &program_info, Default::default()).unwrap();
     compare_contents_or_fix(
         &format!("{name}_gas"),
         "casm",
         cairo_lang_sierra_to_casm::compiler::compile(
             &program,
-            &calc_metadata(&program, Default::default()).unwrap(),
+            &program_info,
+            &metadata,
             SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX },
         )
         .unwrap()

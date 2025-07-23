@@ -14,6 +14,7 @@ use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_to_casm::compiler;
 use cairo_lang_sierra_to_casm::metadata::{MetadataComputationConfig, calc_metadata};
+use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::test_lock;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -239,6 +240,7 @@ fn run_e2e_test(
             "`get_sierra_program` failed. run with RUST_LOG=warn (or less) to see diagnostics",
         ));
     let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
+    let program_info = ProgramRegistryInfo::new(&sierra_program).unwrap();
     let sierra_program_str = sierra_program.to_string();
 
     // Handle the `enforced_costs` argument.
@@ -255,13 +257,15 @@ fn run_e2e_test(
         compute_runtime_costs: params.metadata_computation,
         ..Default::default()
     };
-    let metadata_with_linear = calc_metadata(&sierra_program, metadata_config.clone()).unwrap();
+    let metadata_with_linear =
+        calc_metadata(&sierra_program, &program_info, metadata_config.clone()).unwrap();
 
     let config =
         compiler::SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX };
     // Compile to casm.
-    let casm =
-        compiler::compile(&sierra_program, &metadata_with_linear, config).unwrap().to_string();
+    let casm = compiler::compile(&sierra_program, &program_info, &metadata_with_linear, config)
+        .unwrap()
+        .to_string();
 
     let mut res: OrderedHashMap<String, String> =
         OrderedHashMap::from([("casm".into(), casm), ("sierra_code".into(), sierra_program_str)]);
@@ -269,14 +273,15 @@ fn run_e2e_test(
         metadata_config.linear_gas_solver = false;
         metadata_config.linear_ap_change_solver = false;
         metadata_config.skip_non_linear_solver_comparisons = true;
-        let metadata_with_lp = calc_metadata(&sierra_program, metadata_config).unwrap();
+        let metadata_with_lp =
+            calc_metadata(&sierra_program, &program_info, metadata_config).unwrap();
         res.insert("gas_solution_lp".into(), format!("{}", metadata_with_lp.gas_info));
         res.insert("gas_solution_linear".into(), format!("{}", metadata_with_linear.gas_info));
         res.insert("ap_solution_lp".into(), format!("{}", metadata_with_lp.ap_change_info));
         res.insert("ap_solution_linear".into(), format!("{}", metadata_with_linear.ap_change_info));
 
         // Compile again, this time with the no-solver metadata.
-        compiler::compile(&sierra_program, &metadata_with_lp, config).unwrap();
+        compiler::compile(&sierra_program, &program_info, &metadata_with_lp, config).unwrap();
     } else {
         let function_costs_str = metadata_with_linear
             .gas_info

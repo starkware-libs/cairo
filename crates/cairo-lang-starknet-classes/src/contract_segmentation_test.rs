@@ -1,5 +1,6 @@
 use cairo_lang_sierra::ProgramParser;
 use cairo_lang_sierra_to_casm::compiler::SierraToCasmConfig;
+use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
@@ -20,20 +21,28 @@ impl TestFileRunner for BytecodeSegmentLengthTest {
 
         let function_segments_str = format!("{:?}", find_functions_segments(&sierra_program));
 
-        let cairo_program =
-            cairo_lang_sierra_to_casm::metadata::calc_metadata(&sierra_program, Default::default())
-                .ok()
-                .and_then(|metadata| {
-                    cairo_lang_sierra_to_casm::compiler::compile(
+        let cairo_program = ProgramRegistryInfo::new(&sierra_program)
+            .ok()
+            .and_then(|program_info| {
+                Some((
+                    cairo_lang_sierra_to_casm::metadata::calc_metadata(
                         &sierra_program,
-                        &metadata,
-                        SierraToCasmConfig {
-                            gas_usage_check: false,
-                            max_bytecode_size: usize::MAX,
-                        },
+                        &program_info,
+                        Default::default(),
                     )
-                    .ok()
-                });
+                    .ok()?,
+                    program_info,
+                ))
+            })
+            .and_then(|(metadata, program_info)| {
+                cairo_lang_sierra_to_casm::compiler::compile(
+                    &sierra_program,
+                    &program_info,
+                    &metadata,
+                    SierraToCasmConfig { gas_usage_check: false, max_bytecode_size: usize::MAX },
+                )
+                .ok()
+            });
         let (cairo_program_str, bytecode_lengths_str) = match cairo_program {
             Some(cairo_program) => {
                 let bytecode_len = cairo_program.assemble().bytecode.len();

@@ -80,9 +80,9 @@ impl<TokenUsages: Fn(CostTokenType) -> usize> InvocationApChangeInfoProvider
 /// Calculates gas information for a given program.
 pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
     program: &Program,
+    program_info: &ProgramRegistryInfo,
     token_usages: TokenUsages,
 ) -> Result<ApChangeInfo, ApChangeError> {
-    let program_info = ProgramRegistryInfo::new(program)?;
     let equations = generate_equations::generate_equations(program, |idx, libfunc_id| {
         let libfunc = program_info.registry.get_libfunc(libfunc_id)?;
         core_libfunc_ap_change::core_libfunc_ap_change(
