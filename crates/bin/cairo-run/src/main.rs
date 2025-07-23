@@ -104,7 +104,7 @@ fn main() -> anyhow::Result<()> {
                 let statements_functions =
                     debug_info.statements_locations.get_statements_functions_map_for_tests(db);
                 let profiling_info_processor =
-                    ProfilingInfoProcessor::new(Some(db), &sierra_program, &statements_functions);
+                    ProfilingInfoProcessor::new(Some(db), &sierra_program, statements_functions);
 
                 let profiling_info =
                     profiling_info_processor.process(&raw_profiling_info, &Default::default());

@@ -433,13 +433,13 @@ pub struct ProfilingInfoProcessor<'a> {
     /// A map between sierra statement index and the string representation of the Cairo function
     /// that generated it. The function representation is composed of the function name and the
     /// path (modules and impls) to the function in the file.
-    statements_functions: &'a UnorderedHashMap<StatementIdx, String>,
+    statements_functions: UnorderedHashMap<StatementIdx, String>,
 }
 impl<'a> ProfilingInfoProcessor<'a> {
     pub fn new(
         db: Option<&'a dyn SierraGenGroup>,
         sierra_program: &'a Program,
-        statements_functions: &'a UnorderedHashMap<StatementIdx, String>,
+        statements_functions: UnorderedHashMap<StatementIdx, String>,
     ) -> Self {
         Self { db, sierra_program, statements_functions }
     }
