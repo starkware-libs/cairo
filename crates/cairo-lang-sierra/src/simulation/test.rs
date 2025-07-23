@@ -11,9 +11,7 @@ use super::value::CoreValue::{
 use super::{SimulationError, core};
 use crate::extensions::GenericLibfunc;
 use crate::extensions::core::CoreLibfunc;
-use crate::extensions::lib_func::{
-    SierraApChange, SignatureSpecializationContext, SpecializationContext,
-};
+use crate::extensions::lib_func::{SignatureSpecializationContext, SpecializationContext};
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
@@ -97,10 +95,6 @@ impl SignatureSpecializationContext for MockSpecializationContext {
 
     fn try_get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
         self.try_get_function(function_id).map(|f| f.signature)
-    }
-
-    fn try_get_function_ap_change(&self, _function_id: &FunctionId) -> Option<SierraApChange> {
-        Some(SierraApChange::Unknown)
     }
 }
 

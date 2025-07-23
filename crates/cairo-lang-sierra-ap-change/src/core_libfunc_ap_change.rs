@@ -465,6 +465,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 cairo_lang_sierra::extensions::lib_func::SierraApChange::BranchAlign => {
                     unreachable!("DummyFunctionCall is not a branch align libfunc.")
                 }
+                cairo_lang_sierra::extensions::lib_func::SierraApChange::FunctionCall(_) => {
+                    unreachable!("DummyFunctionCall ap change is always set.")
+                }
             }]
         }
     }
