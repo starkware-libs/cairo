@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, izip};
 use thiserror::Error;
 
@@ -102,7 +101,6 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
                 functions: &functions,
                 concrete_type_ids: &concrete_type_ids,
                 concrete_types: &concrete_types,
-                function_ap_change: &Default::default(),
             },
         )?;
         let registry = ProgramRegistry { functions, concrete_types, concrete_libfuncs };
@@ -349,8 +347,6 @@ pub struct SpecializationContextForRegistry<'a, TType: GenericType> {
     pub functions: &'a FunctionMap,
     pub concrete_type_ids: &'a ConcreteTypeIdMap<'a>,
     pub concrete_types: &'a TypeMap<TType::Concrete>,
-    /// AP changes information for Sierra user functions.
-    pub function_ap_change: &'a OrderedHashMap<FunctionId, usize>,
 }
 impl<TType: GenericType> TypeSpecializationContext for SpecializationContextForRegistry<'_, TType> {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
@@ -370,14 +366,6 @@ impl<TType: GenericType> SignatureSpecializationContext
 
     fn try_get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
         self.try_get_function(function_id).map(|f| f.signature)
-    }
-
-    fn try_get_function_ap_change(&self, function_id: &FunctionId) -> Option<SierraApChange> {
-        Some(if self.function_ap_change.contains_key(function_id) {
-            SierraApChange::Known { new_vars_only: false }
-        } else {
-            SierraApChange::Unknown
-        })
     }
 }
 impl<TType: GenericType> SpecializationContext for SpecializationContextForRegistry<'_, TType> {

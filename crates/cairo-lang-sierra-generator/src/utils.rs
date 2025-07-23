@@ -447,7 +447,8 @@ pub fn dummy_call_libfunc_id(
             cairo_lang_sierra::extensions::lib_func::SierraApChange::Known { new_vars_only: _ } => {
                 0
             }
-            cairo_lang_sierra::extensions::lib_func::SierraApChange::BranchAlign => {
+            cairo_lang_sierra::extensions::lib_func::SierraApChange::BranchAlign
+            | cairo_lang_sierra::extensions::lib_func::SierraApChange::FunctionCall(_) => {
                 unreachable!("should never happen")
             }
         }

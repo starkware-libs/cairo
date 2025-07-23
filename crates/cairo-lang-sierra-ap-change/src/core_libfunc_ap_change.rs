@@ -455,15 +455,15 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         UnsafePanic(_) => vec![],
         DummyFunctionCall(libfunc) => {
-            vec![match libfunc.signature.branch_signatures[0].ap_change {
-                cairo_lang_sierra::extensions::lib_func::SierraApChange::Unknown => {
-                    ApChange::Unknown
-                }
-                cairo_lang_sierra::extensions::lib_func::SierraApChange::Known {
-                    new_vars_only: _,
-                } => ApChange::Known(2),
-                cairo_lang_sierra::extensions::lib_func::SierraApChange::BranchAlign => {
-                    unreachable!("DummyFunctionCall is not a branch align libfunc.")
+            use cairo_lang_sierra::extensions::lib_func::SierraApChange;
+            let ap_change = &libfunc.signature.branch_signatures[0].ap_change;
+            vec![match ap_change {
+                SierraApChange::Unknown => ApChange::Unknown,
+                SierraApChange::Known { .. } => ApChange::Known(2),
+                SierraApChange::BranchAlign | SierraApChange::FunctionCall(_) => {
+                    unreachable!(
+                        "DummyFunctionCall ap change is `Unknown` or `Known` got {ap_change:?}"
+                    )
                 }
             }]
         }
