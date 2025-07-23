@@ -15,7 +15,7 @@ use cairo_lang_runner::clap::RunProfilerConfigArg;
 use cairo_lang_runner::profiling::{
     ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
 };
-use cairo_lang_runner::{Arg, CairoHintProcessor};
+use cairo_lang_runner::{Arg, CairoHintProcessor, ProfilingInfoCollectionConfig};
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_vm::cairo_run;
 use cairo_vm::cairo_run::{CairoRunConfig, cairo_run_program};
@@ -336,7 +336,12 @@ fn main() -> anyhow::Result<()> {
         let entry_point_offset = trace.first().unwrap().pc;
         // TODO(ilya): Compute the correct load offset for standalone mode.
         let load_offset = entry_point_offset + header_len;
-        let info = ProfilingInfo::from_trace(&builder, load_offset, &Default::default(), trace);
+        let info = ProfilingInfo::from_trace(
+            &builder,
+            load_offset,
+            &ProfilingInfoCollectionConfig::from_profiler_config(profiler_config),
+            trace,
+        );
 
         let processed_profiling_info = ProfilingInfoProcessor::new(
             Some(&db),
@@ -344,7 +349,7 @@ fn main() -> anyhow::Result<()> {
             &debug_info.statements_locations.get_statements_functions_map_for_tests(&db),
         )
         .process(&info, &ProfilingInfoProcessorParams::from_profiler_config(profiler_config));
-        println!("{processed_profiling_info}");
+        print!("{processed_profiling_info}");
     }
 
     Ok(())

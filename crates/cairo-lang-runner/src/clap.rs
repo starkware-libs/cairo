@@ -10,6 +10,7 @@ pub enum RunProfilerConfigArg {
     #[default]
     None,
     Cairo,
+    Scoped,
     Sierra,
 }
 impl TryFrom<RunProfilerConfigArg> for ProfilerConfig {
@@ -18,6 +19,7 @@ impl TryFrom<RunProfilerConfigArg> for ProfilerConfig {
         Ok(match val {
             RunProfilerConfigArg::None => return Err(()),
             RunProfilerConfigArg::Cairo => ProfilerConfig::Cairo,
+            RunProfilerConfigArg::Scoped => ProfilerConfig::Scoped,
             RunProfilerConfigArg::Sierra => ProfilerConfig::Sierra,
         })
     }
