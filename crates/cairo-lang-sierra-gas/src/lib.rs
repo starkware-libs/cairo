@@ -353,7 +353,7 @@ fn calc_gas_info_inner<
 /// or `ConstCost` to get the separate components (steps, holes, range-checks).
 pub fn compute_postcost_info<CostType: PostCostTypeEx>(
     program: &Program,
-    get_ap_change_fn: &dyn Fn(&StatementIdx) -> usize,
+    get_ap_change_fn: &impl Fn(&StatementIdx) -> usize,
     precost_gas_info: &GasInfo,
     enforced_function_costs: &OrderedHashMap<FunctionId, CostType>,
 ) -> Result<GasInfo, CostError> {
