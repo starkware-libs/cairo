@@ -5,7 +5,7 @@ use cairo_lang_sierra::extensions::branch_align::BranchAlignLibfunc;
 use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
-use cairo_lang_utils::collection_arithmetics::sub_maps;
+use cairo_lang_utils::collection_arithmetics::SubCollection;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{Itertools, chain};
 
@@ -67,7 +67,7 @@ impl GasInfo {
         });
         let mut fail = false;
         for ((idx, token), val) in
-            sub_maps(self.variable_values.clone(), other.variable_values.clone())
+            self.variable_values.clone().sub_collection(other.variable_values.clone())
         {
             if val != 0
                 && !matches!(
@@ -95,11 +95,11 @@ impl GasInfo {
             let self_val = self.function_costs.get(key);
             let other_val = other.function_costs.get(key);
             let is_same = match (self_val, other_val) {
-                (Some(self_val), Some(other_val)) => {
-                    sub_maps(self_val.clone(), other_val.iter().map(|(k, v)| (*k, *v)))
-                        .into_iter()
-                        .all(|(_, val)| val == 0)
-                }
+                (Some(self_val), Some(other_val)) => self_val
+                    .clone()
+                    .sub_collection(other_val.iter().map(|(k, v)| (*k, *v)))
+                    .into_iter()
+                    .all(|(_, val)| val == 0),
                 (None, None) => true,
                 _ => false,
             };

@@ -3,7 +3,7 @@ use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenMap, CostTok
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 use cairo_lang_utils::casts::IntoOrPanic;
-use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
+use cairo_lang_utils::collection_arithmetics::{AddCollection, SubCollection};
 
 /// Represents constant cost.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -81,7 +81,7 @@ impl std::ops::Add for PreCost {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        PreCost(add_maps(self.0, rhs.0))
+        PreCost(self.0.add_collection(rhs.0))
     }
 }
 
@@ -90,7 +90,7 @@ impl std::ops::Sub for PreCost {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        PreCost(sub_maps(self.0, rhs.0))
+        PreCost(self.0.sub_collection(rhs.0))
     }
 }
 
