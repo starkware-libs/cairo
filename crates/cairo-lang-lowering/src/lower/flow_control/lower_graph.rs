@@ -2,14 +2,14 @@
 
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
-use super::graph::{FlowControlGraph, NodeId};
+use super::graph::{FlowControlGraph, FlowControlVar, NodeId};
 use crate::ids::LocationId;
 use crate::lower::block_builder::{
     BlockBuilder, SealedBlockBuilder, SealedGotoCallsite, merge_block_builders,
     merge_sealed_block_builders,
 };
 use crate::lower::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
-use crate::{BlockEnd, BlockId, MatchInfo};
+use crate::{BlockEnd, BlockId, MatchInfo, VarUsage};
 
 mod lower_node;
 
@@ -58,6 +58,12 @@ struct LowerGraphContext<'a, 'b, 'db> {
     /// A list of sealed blocks for the arms (excluding the arms that do not continue to the
     /// callsite).
     sealed_blocks: Vec<SealedGotoCallsite>,
+    /// A map from [FlowControlVar] to [VarUsage].
+    vars: UnorderedHashMap<FlowControlVar, VarUsage>,
+    /// The first node (starting from the root) that does not pass its block builder directly to
+    /// the child node (see [Self::pass_builder_to_child]).
+    /// The block builder of this node is the original block builder.
+    effective_root: NodeId,
     /// The location of the expression being lowered.
     /// This is used for the location of the variables created by block merges during the lowering.
     location: LocationId,
@@ -77,6 +83,8 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
             result: None,
             parent_builders: [(graph.root(), vec![root_builder])].into_iter().collect(),
             sealed_blocks: vec![],
+            vars: UnorderedHashMap::default(),
+            effective_root: graph.root(),
             location,
         }
     }
@@ -94,12 +102,38 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
         block_id
     }
 
+    /// Passes the parent block builder to the child node.
+    /// This function is used by nodes that has a single child node.
+    fn pass_builder_to_child(
+        &mut self,
+        parent_id: NodeId,
+        child_id: NodeId,
+        builder: BlockBuilder,
+    ) {
+        if parent_id == self.effective_root {
+            self.effective_root = child_id;
+        }
+        self.parent_builders.entry(child_id).or_default().push(builder);
+    }
+
     /// Creates a [BlockBuilder] for the given node, based on the parent nodes.
     fn start_builder(&mut self, id: NodeId) -> BlockBuilder {
         // Extract the builders of the parent nodes (the nodes leading to the current node).
         // TODO(lior): Replace unwrap with handling a non-reachable node.
         let parent_builders = self.parent_builders.remove(&id).unwrap();
         merge_block_builders(self.ctx, parent_builders, self.location)
+    }
+
+    /// Registers that a [FlowControlVar] is stored in the lowering context as [VarUsage].
+    ///
+    /// This function is called when lowering the node creating the [FlowControlVar].
+    /// Later, when the [FlowControlVar] is used in another node, [Self::vars] is used to get the
+    /// [VarUsage].
+    fn register_var(&mut self, var_id: FlowControlVar, lowered_var: VarUsage) {
+        assert!(
+            self.vars.insert(var_id, lowered_var).is_none(),
+            "Variable {var_id:?} was already registered.",
+        );
     }
 
     // Finalization functions.
@@ -110,7 +144,7 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
     /// requires that the block will not be finalized if it does not continue to the
     /// callsite (for example, if all the arms panic or return from the function).
     fn finalize_with_match(&mut self, id: NodeId, builder: BlockBuilder, info: MatchInfo) {
-        if id == self.graph.root() {
+        if id == self.effective_root {
             self.result = Some((builder, info));
         } else {
             builder.finalize(self.ctx, BlockEnd::Match { info });
