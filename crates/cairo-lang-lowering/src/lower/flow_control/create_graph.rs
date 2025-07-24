@@ -1,7 +1,7 @@
 use cairo_lang_semantic::{self as semantic, Condition};
 
 use super::graph::{
-    ArmExpr, BooleanIf, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode,
+    ArmExpr, BooleanIf, ExprToVar, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode,
 };
 
 /// Creates a graph node for [semantic::ExprIf].
@@ -26,10 +26,17 @@ pub fn create_graph_expr_if(expr: &semantic::ExprIf) -> FlowControlGraph {
     for condition in expr.conditions.iter().rev() {
         current_node = match condition {
             Condition::BoolExpr(condition) => {
-                graph.add_node(FlowControlNode::BooleanIf(BooleanIf {
-                    condition: *condition,
+                let condition_var = graph.new_var();
+                current_node = graph.add_node(FlowControlNode::BooleanIf(BooleanIf {
+                    condition_var,
                     true_branch: current_node,
                     false_branch,
+                }));
+
+                graph.add_node(FlowControlNode::ExprToVar(ExprToVar {
+                    expr: *condition,
+                    var_id: condition_var,
+                    next: current_node,
                 }))
             }
             Condition::Let(..) => {

@@ -7,7 +7,7 @@ use cairo_lang_syntax::node::TypedStablePtr;
 use super::{BlockFinalization, LowerGraphContext};
 use crate::ids::LocationId;
 use crate::lower::context::{LoweringContext, VarRequest};
-use crate::lower::flow_control::graph::{ArmExpr, BooleanIf, FlowControlNode, NodeId};
+use crate::lower::flow_control::graph::{ArmExpr, BooleanIf, ExprToVar, FlowControlNode, NodeId};
 use crate::lower::{lower_expr_to_var_usage, lower_tail_expr};
 use crate::{BlockEnd, MatchArm, MatchEnumInfo, MatchInfo};
 
@@ -16,6 +16,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
     let block_end = match &ctx.graph.nodes[id.0] {
         FlowControlNode::BooleanIf(node) => lower_boolean_if(ctx, id, node),
         FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, id, node),
+        FlowControlNode::ExprToVar(node) => lower_expr_to_var(ctx, id, node),
     }?;
 
     // Update `block_finalizations` for the current node.
@@ -31,12 +32,9 @@ fn lower_boolean_if(
 ) -> Maybe<BlockFinalization> {
     let db = ctx.ctx.db;
 
-    let condition_location = get_expr_location(ctx.ctx, &node.condition);
-    let mut builder = ctx.start_builder(id, condition_location);
-
-    let lowered_condition = lower_expr_to_var_usage(ctx.ctx, &mut builder, node.condition);
-    // TODO(lior): Replace unwrap with a proper error handling.
-    let condition_var = lowered_condition.unwrap();
+    let condition_var = ctx.vars[&node.condition_var];
+    let condition_location = condition_var.location;
+    let builder = ctx.start_builder(id, condition_location);
 
     // Allocate/retrieve block ids for the two branches.
     let true_branch_block_id = ctx.assign_child_block_id(node.true_branch, &builder);
@@ -80,6 +78,21 @@ fn lower_arm_expr(
     let builder = ctx.start_builder(id, get_expr_location(ctx.ctx, &node.expr));
     let sealed_block = lower_tail_expr(ctx.ctx, builder, node.expr)?;
     Ok(BlockFinalization::Sealed(sealed_block))
+}
+
+/// Lowers an [ExprToVar] node.
+fn lower_expr_to_var(
+    ctx: &mut LowerGraphContext<'_, '_, '_>,
+    id: NodeId,
+    node: &ExprToVar,
+) -> Maybe<BlockFinalization> {
+    let mut builder = ctx.start_builder(id, get_expr_location(ctx.ctx, &node.expr));
+
+    // TODO(lior): Replace unwrap with a proper error handling.
+    let lowered_var = lower_expr_to_var_usage(ctx.ctx, &mut builder, node.expr).unwrap();
+    ctx.register_var(node.var_id, lowered_var);
+    ctx.pass_builder_to_child(id, node.next, builder);
+    Ok(BlockFinalization::Skip)
 }
 
 /// Returns the location of the given expression.
