@@ -26,6 +26,11 @@ fn test_nullable_u256() {
     let nullable_y = NullableTrait::new(y);
     assert(!nullable_y.is_null(), 'nullable_y.is_null() true');
     assert_eq(@nullable_y.deref(), @y, '*&y != y');
+
+    let nullable_y_or_else = nullable_y.deref_or_else(|| 12);
+    assert_eq!(nullable_y_or_else, 11);
+
     let null: Nullable<u256> = null();
     assert(null.is_null(), 'null.is_null() false');
+    assert_eq!(null.deref_or(5), 5);
 }
