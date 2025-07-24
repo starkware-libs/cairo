@@ -10,7 +10,9 @@ use test_case::test_case;
 use crate::allowed_libfuncs::{
     BUILTIN_AUDITED_LIBFUNCS_LIST, ListSelector, lookup_allowed_libfuncs_list,
 };
-use crate::casm_contract_class::{BigUintAsHex, CasmContractClass, StarknetSierraCompilationError};
+use crate::casm_contract_class::{
+    BigUintAsHex, CasmCompiledClassHashType, CasmContractClass, StarknetSierraCompilationError,
+};
 use crate::contract_class::ContractClass;
 use crate::felt252_serde::sierra_from_felt252s;
 use crate::test_utils::get_example_file_path;
@@ -100,8 +102,17 @@ fn test_contract_libfuncs_coverage(name: &str) {
 
 /// Tests that compiled_class_hash() returns the correct hash, by comparing it to hard-coded
 /// constant that was computed by other implementations.
-#[test_case("account__account", "55777cf783678c5c5bf957adb2beb6307dd411b6ae2046b85a72a59918ecf4e")]
-fn test_compiled_class_hash(name: &str, expected_hash: &str) {
+#[test_case(
+    "account__account",
+    "55777cf783678c5c5bf957adb2beb6307dd411b6ae2046b85a72a59918ecf4e",
+    CasmCompiledClassHashType::Poseidon
+)]
+#[test_case(
+    "account__account",
+    "d8d55bd269fbbc149e9b81c6502afa9639682891e450bf57685f06bb",
+    CasmCompiledClassHashType::Blake2s
+)]
+fn test_compiled_class_hash(name: &str, expected_hash: &str, hash_type: CasmCompiledClassHashType) {
     let compiled_json_path =
         get_example_file_path(format!("{name}.compiled_contract_class.json").as_str());
     let compiled_json_str = fs::read_to_string(compiled_json_path.clone())
@@ -109,7 +120,7 @@ fn test_compiled_class_hash(name: &str, expected_hash: &str) {
     let casm_contract_class: CasmContractClass =
         serde_json::from_str(compiled_json_str.as_str()).unwrap();
     assert_eq!(
-        format!("{:x}", casm_contract_class.compiled_class_hash().to_biguint()),
+        format!("{:x}", casm_contract_class.compiled_class_hash(hash_type).to_biguint()),
         expected_hash
     );
 }
