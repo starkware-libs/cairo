@@ -24,6 +24,25 @@ Root: 2
 Parameters: v0: core::bool
 blk0 (root):
 Statements:
-  (v1: ()) <- struct_construct()
 End:
-  Return(v1)
+  Match(match_enum(v0) {
+    bool::False(v2) => blk2,
+    bool::True(v1) => blk1,
+  })
+
+blk1:
+Statements:
+  (v4: core::felt252) <- 3
+End:
+  Goto(blk3, {v4 -> v5})
+
+blk2:
+Statements:
+  (v3: core::felt252) <- 4
+End:
+  Goto(blk3, {v3 -> v5})
+
+blk3:
+Statements:
+End:
+  Return(v5)
