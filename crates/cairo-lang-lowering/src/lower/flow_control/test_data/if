@@ -1,0 +1,21 @@
+//! > Test boolean if with else
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(x: bool) -> felt252 {
+    if x {
+        3
+    } else {
+        4
+    }
+}
+
+//! > graph
+Root: 2
+0 ArmExpr { expr: Id { idx: 2 } }
+1 ArmExpr { expr: Id { idx: 4 } }
+2 BooleanIf { condition: Id { idx: 0 }, true_branch: NodeId(0), false_branch: NodeId(1) }
+
+//! > semantic_diagnostics

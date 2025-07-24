@@ -48,9 +48,7 @@ pub struct ArmExpr {
 
 /// A node in the flow control graph for a match or if lowering.
 pub enum FlowControlNode {
-    #[expect(dead_code)]
     BooleanIf(BooleanIf),
-    #[expect(dead_code)]
     ArmExpr(ArmExpr),
 }
 
@@ -64,16 +62,22 @@ impl Debug for FlowControlNode {
 }
 
 /// Graph of flow control nodes.
-#[derive(Debug)]
 pub struct FlowControlGraph {
     /// All nodes in the graph.
-    #[expect(dead_code)]
     pub nodes: Vec<FlowControlNode>,
     /// The initial node of the graph.
-    #[expect(dead_code)]
     pub root: NodeId,
 }
 
+impl Debug for FlowControlGraph {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Root: {}", self.root.0)?;
+        for (i, node) in self.nodes.iter().enumerate() {
+            writeln!(f, "{i} {node:?}")?;
+        }
+        Ok(())
+    }
+}
 /// Builder for [FlowControlGraph].
 #[derive(Default)]
 pub struct FlowControlGraphBuilder {
@@ -83,7 +87,6 @@ pub struct FlowControlGraphBuilder {
 
 impl FlowControlGraphBuilder {
     /// Adds a new node to the graph. Returns the new node's id.
-    #[expect(dead_code)]
     pub fn add_node(&mut self, node: FlowControlNode) -> NodeId {
         let id = NodeId(self.nodes.len());
         self.nodes.push(node);
@@ -91,7 +94,6 @@ impl FlowControlGraphBuilder {
     }
 
     /// Finalizes the graph and returns the final [FlowControlGraph].
-    #[expect(dead_code)]
     pub fn finalize(self, root: NodeId) -> FlowControlGraph {
         FlowControlGraph { nodes: self.nodes, root }
     }
