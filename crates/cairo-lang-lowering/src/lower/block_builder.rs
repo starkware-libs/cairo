@@ -618,8 +618,6 @@ pub fn merge_sealed_block_builders(
 /// If only one parent builder is given, returns it as-is without sealing and creating a new block.
 ///
 /// See [merge_sealed_block_builders] for more details.
-// TODO(lior): Remove `allow(dead_code)` once the function is used.
-#[allow(dead_code)]
 pub fn merge_block_builders(
     ctx: &mut LoweringContext<'_, '_>,
     parent_builders: Vec<BlockBuilder>,
