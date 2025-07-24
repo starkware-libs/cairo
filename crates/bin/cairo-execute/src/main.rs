@@ -346,7 +346,7 @@ fn main() -> anyhow::Result<()> {
         let processed_profiling_info = ProfilingInfoProcessor::new(
             Some(&db),
             &replace_sierra_ids_in_program(&db, builder.sierra_program()),
-            &debug_info.statements_locations.get_statements_functions_map_for_tests(&db),
+            debug_info.statements_locations.get_statements_functions_map_for_tests(&db),
         )
         .process(&info, &ProfilingInfoProcessorParams::from_profiler_config(profiler_config));
         print!("{processed_profiling_info}");
