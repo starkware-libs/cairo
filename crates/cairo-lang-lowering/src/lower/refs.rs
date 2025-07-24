@@ -22,6 +22,8 @@ pub struct ClosureInfo {
 
 #[derive(Clone, Default, Debug)]
 pub struct SemanticLoweringMapping {
+    // TODO: improve doc.
+    // TODO: check what happens in a loop.
     /// Maps member paths ([MemberPath]) to lowered variable ids or scattered variable ids.
     scattered: OrderedHashMap<MemberPath, Value>,
 }

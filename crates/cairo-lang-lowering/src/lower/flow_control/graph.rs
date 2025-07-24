@@ -19,14 +19,37 @@
 //! 2 - BooleanIf { condition: `x`, true_branch: NodeId(0), false_branch: NodeId(1) }
 //! ```
 
+// TODO: add examples of graphs.
+
 use std::fmt::Debug;
 
-use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::{self as semantic, ConcreteVariant, LocalVariable, PatternVariable};
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use itertools::Itertools;
+
+use crate::ids::LocationId;
 
 /// Represents a variable in the flow control graph.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FlowControlVar {
     idx: usize,
+    ty: semantic::TypeId,
+    location: LocationId,
+}
+impl FlowControlVar {
+    pub fn ty(&self) -> semantic::TypeId {
+        self.ty
+    }
+
+    pub fn location(&self) -> LocationId {
+        self.location
+    }
+}
+
+impl std::fmt::Debug for FlowControlVar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "FlowControlVar({})", self.idx)
+    }
 }
 
 /// Unique identifier for nodes in the flow control graph.
@@ -44,6 +67,30 @@ pub struct BooleanIf {
     pub false_branch: NodeId,
 }
 
+/// Enum match node.
+pub struct EnumMatch {
+    /// The input value to match.
+    pub matched_var: FlowControlVar,
+    /// The concrete enum id.
+    pub concrete_enum_id: semantic::ConcreteEnumId,
+    /// For each variant, the node to jump to and an output variable for the inner value.
+    pub variants: Vec<(ConcreteVariant, NodeId, FlowControlVar)>,
+    // TODO:
+    // The (output) variable for the inner value.
+    // pub inner_value: FlowControlVar,
+}
+
+impl std::fmt::Debug for EnumMatch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "EnumMatch {{ matched_var: {:?}, variants: {}}}",
+            self.matched_var,
+            self.variants.iter().map(|(_, node, var)| format!("({node:?}, {var:?})")).join(", ")
+        )
+    }
+}
+
 /// Terminal expression node.
 #[derive(Debug)]
 pub struct ArmExpr {
@@ -54,7 +101,7 @@ pub struct ArmExpr {
 /// Instructs to perform lower_expr & as_var_usage.
 ///
 /// Used to lower the `if` condition or `match` expression and get a [FlowControlVar] that can be
-/// used in [BooleanIf] or `EnumMatch`.
+/// used in [BooleanIf] or [EnumMatch].
 #[derive(Debug)]
 pub struct ExprToVar {
     /// The expression to evaluate.
@@ -65,19 +112,60 @@ pub struct ExprToVar {
     pub next: NodeId,
 }
 
+/// Destructure (for structs and tuples).
+#[derive(Debug)]
+pub struct Deconstruct {
+    /// The input value to destructure (a variable of type struct or tuple).
+    pub input: FlowControlVar,
+    /// The (output) variables to assign the result to. The number of variables is equal to the
+    /// number of fields in the struct or tuple.
+    pub outputs: Vec<FlowControlVar>,
+    /// The next node.
+    pub next: NodeId,
+}
+
+/// Capture - assigns a [PatternVariable] to an existing [FlowControlVar] that can be later used
+/// in the expressions.
+pub struct Capture {
+    /// The input variable to capture.
+    pub input: FlowControlVar,
+    /// The (output) pattern variable to assign the result to.
+    pub output: PatternVariable,
+    /// The next node.
+    pub next: NodeId,
+}
+
+impl std::fmt::Debug for Capture {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Capture {{ input: {:?}, output: {:?}, next: {:?} }}",
+            self.input, self.output.name, self.next
+        )
+    }
+}
+
 /// A node in the flow control graph for a match or if lowering.
 pub enum FlowControlNode {
     BooleanIf(BooleanIf),
+    EnumMatch(EnumMatch),
     ArmExpr(ArmExpr),
     ExprToVar(ExprToVar),
+    Deconstruct(Deconstruct),
+    Capture(Capture),
+    UnitResult,
 }
 
 impl Debug for FlowControlNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             FlowControlNode::BooleanIf(node) => node.fmt(f),
+            FlowControlNode::EnumMatch(node) => node.fmt(f),
             FlowControlNode::ArmExpr(node) => node.fmt(f),
             FlowControlNode::ExprToVar(node) => node.fmt(f),
+            FlowControlNode::Deconstruct(node) => node.fmt(f),
+            FlowControlNode::Capture(node) => node.fmt(f),
+            FlowControlNode::UnitResult => write!(f, "UnitResult"),
         }
     }
 }
@@ -124,9 +212,8 @@ impl FlowControlGraphBuilder {
         FlowControlGraph { nodes: self.nodes, root }
     }
 
-    /// Creates a new [FlowControlVar].
-    pub fn new_var(&mut self) -> FlowControlVar {
-        let var = FlowControlVar { idx: self.n_vars };
+    pub fn new_var(&mut self, ty: semantic::TypeId, location: LocationId) -> FlowControlVar {
+        let var = FlowControlVar { idx: self.n_vars, ty, location };
         self.n_vars += 1;
         var
     }

@@ -10,7 +10,7 @@ use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
-use super::create_graph::create_graph_expr_if;
+use super::create_graph::{create_graph_expr_if, create_graph_expr_match};
 use super::graph::FlowControlGraph;
 use super::lower_graph::lower_graph;
 use crate::Lowered;
@@ -27,6 +27,7 @@ cairo_lang_test_utils::test_file_test!(
     "src/lower/flow_control/test_data",
     {
         if_: "if",
+        match_: "match",
     },
     test_create_graph
 );
@@ -44,6 +45,8 @@ fn test_create_graph(
     )
     .split();
 
+    println!("{}", semantic_diagnostics); // TODO: Remove.
+
     // Extract the expression from the function's body.
     let semantic::Expr::Block(semantic::ExprBlock { tail: Some(expr_id), .. }) =
         db.expr_semantic(test_function.function_id, test_function.body)
@@ -54,8 +57,18 @@ fn test_create_graph(
     let expr = db.expr_semantic(test_function.function_id, expr_id);
     let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
 
+    let mut encapsulating_ctx =
+        create_encapsulating_ctx(db, test_function.function_id, &test_function.signature);
+    let mut ctx = create_lowering_context(
+        db,
+        test_function.function_id,
+        &test_function.signature,
+        &mut encapsulating_ctx,
+    );
+
     let graph = match &expr {
-        semantic::Expr::If(expr) => create_graph_expr_if(expr),
+        semantic::Expr::If(expr) => create_graph_expr_if(&mut ctx, expr),
+        semantic::Expr::Match(expr) => create_graph_expr_match(&mut ctx, expr),
         _ => {
             panic!("Unsupported expression: {:?}", expr.debug(&expr_formatter));
         }
@@ -63,19 +76,13 @@ fn test_create_graph(
 
     let error = verify_diagnostics_expectation(args, &semantic_diagnostics);
 
-    let mut encapsulating_ctx =
-        create_encapsulating_ctx(db, test_function.function_id, &test_function.signature);
-
-    let ctx = create_lowering_context(
-        db,
-        test_function.function_id,
-        &test_function.signature,
-        &mut encapsulating_ctx,
-    );
-
     // Lower the graph.
-    let lowered = lower_graph_as_function(ctx, expr_id, &graph);
-    let lowered_str = formatted_lowered(db, Some(&lowered));
+    let lowered_str = if args["skip_lowering"] == "true" {
+        "".into()
+    } else {
+        let lowered = lower_graph_as_function(ctx, expr_id, &graph);
+        formatted_lowered(db, Some(&lowered))
+    };
 
     TestRunnerResult {
         outputs: OrderedHashMap::from([

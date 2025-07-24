@@ -9,8 +9,11 @@ use crate::lower::block_builder::{
     BlockBuilder, SealedBlockBuilder, SealedGotoCallsite, merge_block_builders,
     merge_sealed_block_builders,
 };
-use crate::lower::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
-use crate::{BlockEnd, BlockId, VarUsage};
+use crate::lower::context::{
+    LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult,
+    lowering_flow_error_to_sealed_block,
+};
+use crate::{BlockEnd, BlockId};
 
 mod lower_node;
 
@@ -45,6 +48,10 @@ enum BlockFinalization {
     /// The block is an arm's block that was already sealed and should be merged with the other
     /// arms.
     Sealed(SealedBlockBuilder),
+    // TODO: doc.
+    Missing,
+    // TODO: doc.
+    JumpsOutside(BlockBuilder, LoweringFlowError),
     /// The flow control was passed to the child node, and it contains the block builder.
     Skip,
 }
@@ -54,6 +61,8 @@ impl std::fmt::Debug for BlockFinalization {
         match self {
             BlockFinalization::End(_, block_end, _) => write!(f, "End({block_end:?})"),
             BlockFinalization::Sealed(_) => write!(f, "Sealed"),
+            BlockFinalization::Missing => write!(f, "Missing"),
+            BlockFinalization::JumpsOutside(_, _) => write!(f, "JumpsOutside"),
             BlockFinalization::Skip => write!(f, "Skip"),
         }
     }
@@ -128,15 +137,17 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
     }
 
     /// Creates a [BlockBuilder] for the given node, based on the parent nodes.
-    fn start_builder(&mut self, id: NodeId, location: LocationId) -> BlockBuilder {
+    fn start_builder(&mut self, id: NodeId, location: LocationId) -> Option<BlockBuilder> {
         if id == self.graph.root {
             let dummy_block_builder = BlockBuilder::root(BlockId(0));
-            std::mem::replace(self.root_builder, dummy_block_builder)
+            Some(std::mem::replace(self.root_builder, dummy_block_builder))
         } else {
             // Extract the builders of the parent nodes (the nodes leading to the current node).
-            // TODO(lior): Replace unwrap with handling a non-reachable node.
-            let parent_builders = self.block_builders.remove(&id).unwrap();
-            merge_block_builders(self.ctx, parent_builders, location)
+            if let Some(parent_builders) = self.block_builders.remove(&id) {
+                Some(merge_block_builders(self.ctx, parent_builders, location))
+            } else {
+                None
+            }
         }
     }
 
@@ -170,8 +181,12 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
                         sealed_blocks.push(sealed_block);
                     }
                 }
-                Some(BlockFinalization::Skip) => {
+                Some(BlockFinalization::Missing | BlockFinalization::Skip) => {
+                    println!("Node {} was skipped.", i); // TODO
                     continue;
+                }
+                Some(BlockFinalization::JumpsOutside(builder, err)) => {
+                    lowering_flow_error_to_sealed_block(self.ctx, builder, err)?;
                 }
                 None => {
                     panic!("Block {i} was not lowered.");
@@ -198,6 +213,7 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
                     (Err(LoweringFlowError::Match(info)), builder)
                 }
             }
+            Some(BlockFinalization::JumpsOutside(builder, err)) => (Err(err), builder),
             block_finalization => {
                 panic!("Unexpected BlockFinalization for root block: {block_finalization:?}.");
             }

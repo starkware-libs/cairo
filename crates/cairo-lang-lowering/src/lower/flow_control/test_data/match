@@ -1,0 +1,207 @@
+//! > Simple match
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: false)
+
+//! > function_code
+fn foo(color: Color) -> felt252 {
+    match color {
+        Color::Red | Color::Green => 1,
+        Color::Red | Color::Blue => 2, // TODO: Color::Red should produce diagnostics.
+        _ => 3,
+    }
+}
+
+//! > module_code
+enum Color {
+    Red,
+    Green,
+    Blue,
+    Black,
+    White,
+}
+
+//! > graph
+Root: 4
+0 ArmExpr { expr: Id { idx: 1 } }
+1 ArmExpr { expr: Id { idx: 2 } }
+2 ArmExpr { expr: Id { idx: 3 } }
+3 EnumMatch { matched_var: FlowControlVar(0), variants: (NodeId(0), FlowControlVar(1)), (NodeId(0), FlowControlVar(2)), (NodeId(1), FlowControlVar(3)), (NodeId(2), FlowControlVar(4)), (NodeId(2), FlowControlVar(5))}
+4 ExprToVar { expr: Id { idx: 0 }, var_id: FlowControlVar(0), next: NodeId(3) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+Parameters: v0: test::Color
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Color::Red(v1) => blk1,
+    Color::Green(v2) => blk2,
+    Color::Blue(v3) => blk3,
+    Color::Black(v4) => blk4,
+    Color::White(v5) => blk5,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk3:
+Statements:
+  (v7: core::felt252) <- 2
+End:
+  Goto(blk8, {v7 -> v9})
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk6:
+Statements:
+  (v6: core::felt252) <- 3
+End:
+  Goto(blk8, {v6 -> v9})
+
+blk7:
+Statements:
+  (v8: core::felt252) <- 1
+End:
+  Goto(blk8, {v8 -> v9})
+
+blk8:
+Statements:
+End:
+  Return(v9)
+
+//! > ==========================================================================
+
+//! > Tuple of enums
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: true)
+
+//! > function_code
+fn foo(color: (Color, Color)) -> felt252 {
+    match color {
+        (Color::Red, _) => 1,
+        (_, Color::Red) => 2,
+        _ => 3,
+        // TODO: Uncomment when supported.
+    // (Color::Red | Color::Green, Color::Red) => 1,
+    // (Color::Red | Color::Blue, _) => 2, // TODO: Color::Red should produce diagnostics.
+    // _ => 3,
+    }
+}
+
+//! > module_code
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+//! > graph
+Root: 6
+0 ArmExpr { expr: Id { idx: 1 } }
+1 ArmExpr { expr: Id { idx: 2 } }
+2 ArmExpr { expr: Id { idx: 3 } }
+3 EnumMatch { matched_var: FlowControlVar(2), variants: (NodeId(1), FlowControlVar(8)), (NodeId(2), FlowControlVar(9)), (NodeId(2), FlowControlVar(10))}
+4 EnumMatch { matched_var: FlowControlVar(1), variants: (NodeId(0), FlowControlVar(3)), (NodeId(3), FlowControlVar(7)), (NodeId(3), FlowControlVar(11))}
+5 Deconstruct { input: FlowControlVar(0), outputs: [FlowControlVar(1), FlowControlVar(2)], next: NodeId(4) }
+6 ExprToVar { expr: Id { idx: 0 }, var_id: FlowControlVar(0), next: NodeId(5) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+
+//! > ==========================================================================
+
+//! > Tuple inside enum
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: true)
+
+//! > function_code
+fn foo(color: Option<(Color, Color)>) -> felt252 {
+    match color {
+        Some((Color::Red, _)) | None => 1,
+        Some((_, Color::Red)) => 2,
+        _ => 3,
+    }
+}
+
+//! > module_code
+enum Color {
+    Red,
+    Green,
+}
+
+//! > graph
+Root: 7
+0 ArmExpr { expr: Id { idx: 1 } }
+1 ArmExpr { expr: Id { idx: 2 } }
+2 ArmExpr { expr: Id { idx: 3 } }
+3 EnumMatch { matched_var: FlowControlVar(3), variants: (NodeId(1), FlowControlVar(8)), (NodeId(2), FlowControlVar(9))}
+4 EnumMatch { matched_var: FlowControlVar(2), variants: (NodeId(0), FlowControlVar(4)), (NodeId(3), FlowControlVar(7))}
+5 Deconstruct { input: FlowControlVar(1), outputs: [FlowControlVar(2), FlowControlVar(3)], next: NodeId(4) }
+6 EnumMatch { matched_var: FlowControlVar(0), variants: (NodeId(5), FlowControlVar(1)), (NodeId(0), FlowControlVar(10))}
+7 ExprToVar { expr: Id { idx: 0 }, var_id: FlowControlVar(0), next: NodeId(6) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+
+//! > ==========================================================================
+
+//! > Complex enum inside tuple
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: true)
+
+//! > function_code
+fn foo(color: (Option<Color>, Color)) -> felt252 {
+    match color {
+        (Some(Color::Red), Color::Red) | (Some(Color::Green), Color::Red) | (None, Color::Red) => 1,
+        (_, Color::Green) => 2,
+        _ => 3,
+    }
+}
+
+//! > module_code
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+//! > graph
+Root: 10
+0 ArmExpr { expr: Id { idx: 1 } }
+1 ArmExpr { expr: Id { idx: 2 } }
+2 ArmExpr { expr: Id { idx: 3 } }
+3 EnumMatch { matched_var: FlowControlVar(2), variants: (NodeId(0), FlowControlVar(5)), (NodeId(1), FlowControlVar(6)), (NodeId(2), FlowControlVar(7))}
+4 EnumMatch { matched_var: FlowControlVar(2), variants: (NodeId(0), FlowControlVar(9)), (NodeId(1), FlowControlVar(10)), (NodeId(2), FlowControlVar(11))}
+5 EnumMatch { matched_var: FlowControlVar(2), variants: (NodeId(2), FlowControlVar(13)), (NodeId(1), FlowControlVar(14)), (NodeId(2), FlowControlVar(15))}
+6 EnumMatch { matched_var: FlowControlVar(3), variants: (NodeId(3), FlowControlVar(4)), (NodeId(4), FlowControlVar(8)), (NodeId(5), FlowControlVar(12))}
+7 EnumMatch { matched_var: FlowControlVar(2), variants: (NodeId(0), FlowControlVar(17)), (NodeId(1), FlowControlVar(18)), (NodeId(2), FlowControlVar(19))}
+8 EnumMatch { matched_var: FlowControlVar(1), variants: (NodeId(6), FlowControlVar(3)), (NodeId(7), FlowControlVar(16))}
+9 Deconstruct { input: FlowControlVar(0), outputs: [FlowControlVar(1), FlowControlVar(2)], next: NodeId(8) }
+10 ExprToVar { expr: Id { idx: 0 }, var_id: FlowControlVar(0), next: NodeId(9) }
+
+//! > semantic_diagnostics
+
+//! > lowered

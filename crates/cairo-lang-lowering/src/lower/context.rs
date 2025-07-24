@@ -423,7 +423,9 @@ pub type LoweringResult<T> = Result<T, LoweringFlowError>;
 pub enum LoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
     Failed(DiagnosticAdded),
+    /// The expression always panics, and does not flow to the parent builder.
     Panic(VarUsage, LocationId),
+    /// The expression always returns from the function, and does not flow to the parent builder.
     Return(VarUsage, LocationId),
     /// Every match arm is terminating - does not flow to parent builder
     /// e.g. returns or panics.
