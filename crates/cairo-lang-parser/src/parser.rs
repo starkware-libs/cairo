@@ -212,11 +212,14 @@ impl<'a> Parser<'a> {
         token_stream: &'a dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
     ) -> SyntaxFile {
         let (content, offset) = primitive_token_stream_content_and_offset(token_stream);
+        let to_fill = offset.unwrap_or_default();
+        let filling = " ".repeat(to_fill.as_u32() as usize);
+        let content = format!("{filling}{content}");
         let parser = Parser::new(db, file_id, &content, diagnostics);
         let green = parser.parse_syntax_file();
         SyntaxFile::from_syntax_node(
             db,
-            SyntaxNode::new_root_with_offset(db, file_id, green.0, offset),
+            SyntaxNode::new_root_with_offset(db, file_id, green.0, None),
         )
     }
 

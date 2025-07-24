@@ -83,7 +83,12 @@ impl SimpleParserDatabase {
         &self,
         token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
     ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
-        let (content, _offset) = primitive_token_stream_content_and_offset(token_stream);
+        let (content, offset) = primitive_token_stream_content_and_offset(token_stream);
+
+        let to_fill = offset.unwrap_or_default();
+        let filling = " ".repeat(to_fill.as_u32() as usize);
+        let content = format!("{filling}{content}");
+
         let file_id = FileLongId::Virtual(VirtualFile {
             parent: Default::default(),
             name: "token_stream_file_parser_input".into(),
