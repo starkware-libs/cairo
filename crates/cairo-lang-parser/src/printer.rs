@@ -10,7 +10,7 @@ use smol_str::SmolStr;
 
 pub fn print_tree(
     db: &dyn SyntaxGroup,
-    syntax_root: &SyntaxNode,
+    syntax_root: &SyntaxNode<'_>,
     print_colors: bool,
     print_trivia: bool,
 ) -> String {
@@ -21,7 +21,7 @@ pub fn print_tree(
 
 pub fn print_partial_tree(
     db: &dyn SyntaxGroup,
-    syntax_root: &SyntaxNode,
+    syntax_root: &SyntaxNode<'_>,
     top_level_kind: &str,
     ignored_kinds: Vec<&str>,
     print_trivia: bool,
@@ -84,7 +84,7 @@ impl<'a> Printer<'a> {
     fn print_tree(
         &mut self,
         field_description: &str,
-        syntax_node: &SyntaxNode,
+        syntax_node: &SyntaxNode<'_>,
         indent: &str,
         is_last: bool,
         under_top_level: bool,
@@ -147,7 +147,7 @@ impl<'a> Printer<'a> {
         indent: &str,
         extra_head_indent: &str,
         is_last: bool,
-        syntax_node: &SyntaxNode,
+        syntax_node: &SyntaxNode<'_>,
         kind: SyntaxKind,
         under_top_level: bool,
     ) {
@@ -247,7 +247,7 @@ impl<'a> Printer<'a> {
     /// `under_top_level`: whether we are in a subtree of the top-level kind.
     fn print_internal_struct(
         &mut self,
-        children: &[SyntaxNode],
+        children: &[SyntaxNode<'_>],
         expected_children: &[Member],
         indent: &str,
         under_top_level: bool,

@@ -2,10 +2,10 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LocalVarId, StatementItemId};
 // Reexport objects
 pub use cairo_lang_defs::ids::{ParamId, VarId};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
-use smol_str::SmolStr;
 
 pub use super::expr::objects::*;
 use crate::db::SemanticGroup;
@@ -28,56 +28,56 @@ pub use crate::types::{
 };
 
 /// Semantic model of a variable.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct LocalVariable {
-    pub id: LocalVarId,
-    pub ty: TypeId,
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct LocalVariable<'db> {
+    pub id: LocalVarId<'db>,
+    pub ty: TypeId<'db>,
     #[dont_rewrite]
     pub is_mut: bool,
 }
-impl LocalVariable {
-    pub fn stable_ptr(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifierPtr {
+impl<'db> LocalVariable<'db> {
+    pub fn stable_ptr(&self, db: &'db dyn DefsGroup) -> ast::TerminalIdentifierPtr<'db> {
         self.id.stable_ptr(db)
     }
 }
 
 /// Semantic model of a local item.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct LocalItem {
-    pub id: StatementItemId,
-    pub kind: StatementItemKind,
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct LocalItem<'db> {
+    pub id: StatementItemId<'db>,
+    pub kind: StatementItemKind<'db>,
 }
 
 /// Semantic model of statement item kind.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub enum StatementItemKind {
-    Constant(ConstValueId, TypeId),
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub enum StatementItemKind<'db> {
+    Constant(ConstValueId<'db>, TypeId<'db>),
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct Parameter {
-    pub id: ParamId,
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct Parameter<'db> {
+    pub id: ParamId<'db>,
     #[dont_rewrite]
-    pub name: SmolStr,
-    pub ty: TypeId,
+    pub name: SmolStrId<'db>,
+    pub ty: TypeId<'db>,
     #[dont_rewrite]
     pub mutability: Mutability,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::TerminalIdentifierPtr,
+    pub stable_ptr: ast::TerminalIdentifierPtr<'db>,
 }
-impl Parameter {
-    pub fn stable_ptr(&self, db: &dyn DefsGroup) -> ast::ParamPtr {
+impl<'db> Parameter<'db> {
+    pub fn stable_ptr(&self, db: &'db dyn DefsGroup) -> ast::ParamPtr<'db> {
         self.id.stable_ptr(db)
     }
 }
 
 /// The mutability attribute of a variable.
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Copy)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Copy, salsa::Update)]
 pub enum Mutability {
     /// The variable can't be changed.
     Immutable,
@@ -88,22 +88,22 @@ pub enum Mutability {
     Reference,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub enum Binding {
-    LocalVar(LocalVariable),
-    Param(Parameter),
-    LocalItem(LocalItem),
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub enum Binding<'db> {
+    LocalVar(LocalVariable<'db>),
+    Param(Parameter<'db>),
+    LocalItem(LocalItem<'db>),
 }
-impl Binding {
-    pub fn id(&self) -> VarId {
+impl<'db> Binding<'db> {
+    pub fn id(&self) -> VarId<'db> {
         match self {
             Binding::LocalVar(local) => VarId::Local(local.id),
             Binding::Param(param) => VarId::Param(param.id),
             Binding::LocalItem(local) => VarId::Item(local.id),
         }
     }
-    pub fn ty(&self) -> TypeId {
+    pub fn ty(&self) -> TypeId<'db> {
         match self {
             Binding::LocalVar(local) => local.ty,
             Binding::Param(param) => param.ty,
@@ -119,7 +119,7 @@ impl Binding {
             Binding::LocalItem(_) => false,
         }
     }
-    pub fn stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
+    pub fn stable_ptr(&self, db: &'db dyn DefsGroup) -> SyntaxStablePtrId<'db> {
         match self {
             Binding::LocalVar(local) => local.stable_ptr(db).untyped(),
             Binding::Param(param) => param.stable_ptr(db).untyped(),
@@ -127,13 +127,13 @@ impl Binding {
         }
     }
 }
-impl From<LocalVariable> for Binding {
-    fn from(var: LocalVariable) -> Self {
+impl<'db> From<LocalVariable<'db>> for Binding<'db> {
+    fn from(var: LocalVariable<'db>) -> Self {
         Self::LocalVar(var)
     }
 }
-impl From<Parameter> for Binding {
-    fn from(param: Parameter) -> Self {
+impl<'db> From<Parameter<'db>> for Binding<'db> {
+    fn from(param: Parameter<'db>) -> Self {
         Self::Param(param)
     }
 }

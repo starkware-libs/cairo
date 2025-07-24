@@ -9,6 +9,7 @@ use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_utils::get_direct_or_file_content;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::{ProfilingInfoProcessor, ProfilingInfoProcessorParams};
@@ -48,11 +49,8 @@ pub fn test_profiling(
         .unwrap();
     let (_path, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
     let test_module = setup_test_module(&db, &cairo_code).unwrap();
-    DiagnosticsReporter::stderr()
-        .with_crates(&[test_module.crate_id])
-        .allow_warnings()
-        .ensure(&db)
-        .unwrap();
+    let crate_input = test_module.crate_id.lookup_intern(&db).into_crate_input(&db);
+    DiagnosticsReporter::stderr().with_crates(&[crate_input]).allow_warnings().ensure(&db).unwrap();
 
     // Compile to Sierra.
     let SierraProgramWithDebug { program: sierra_program, debug_info } =

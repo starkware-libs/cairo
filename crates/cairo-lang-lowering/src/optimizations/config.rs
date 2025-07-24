@@ -50,9 +50,9 @@ impl Default for OptimizationConfig {
     }
 }
 
-pub fn priv_movable_function_ids(
-    db: &dyn LoweringGroup,
-) -> Arc<UnorderedHashSet<ExternFunctionId>> {
+pub fn priv_movable_function_ids<'db>(
+    db: &'db dyn LoweringGroup,
+) -> Arc<UnorderedHashSet<ExternFunctionId<'db>>> {
     let libfunc_by_name = |name: &String| {
         let mut path_iter = name.split("::");
 

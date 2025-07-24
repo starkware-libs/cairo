@@ -24,19 +24,54 @@ use hashbrown::HashMap;
 pub use hashbrown::hash_map::Entry;
 use itertools::Itertools;
 
+#[cfg(feature = "std")]
+type BHImpl = RandomState;
+#[cfg(not(feature = "std"))]
+type BHImpl = hashbrown::DefaultHashBuilder;
+
 /// A hash map that does not care about the order of insertion.
 ///
 /// In particular, it does not support iterating, in order to guarantee deterministic compilation.
 /// It does support aggregation which can be used in intermediate computations (see `aggregate_by`).
 /// For an iterable version see [OrderedHashMap](crate::ordered_hash_map::OrderedHashMap).
-#[cfg(feature = "std")]
 #[derive(Clone, Debug)]
-pub struct UnorderedHashMap<Key, Value, BH = RandomState>(HashMap<Key, Value, BH>);
-#[cfg(not(feature = "std"))]
-#[derive(Clone, Debug)]
-pub struct UnorderedHashMap<Key, Value, BH = hashbrown::DefaultHashBuilder>(
-    HashMap<Key, Value, BH>,
-);
+pub struct UnorderedHashMap<Key, Value, BH = BHImpl>(HashMap<Key, Value, BH>);
+
+#[cfg(feature = "salsa")]
+unsafe impl<Key: salsa::Update + Eq + Hash, Value: salsa::Update> salsa::Update
+    for UnorderedHashMap<Key, Value, BHImpl>
+{
+    // This code was taken from the salsa::Update trait implementation for IndexMap.
+    // It is defined privately in macro_rules! maybe_update_map in the db-ext-macro repo.
+    unsafe fn maybe_update(old_pointer: *mut Self, new_map: Self) -> bool {
+        let new_map = new_map;
+        let old_map: &mut Self = unsafe { &mut *old_pointer };
+
+        // To be considered "equal", the set of keys
+        // must be the same between the two maps.
+        let same_keys =
+            old_map.len() == new_map.len() && old_map.0.keys().all(|k| new_map.0.contains_key(k));
+
+        // If the set of keys has changed, then just pull in the new values
+        // from new_map and discard the old ones.
+        if !same_keys {
+            old_map.0.clear();
+            old_map.0.extend(new_map.0);
+            return true;
+        }
+
+        // Otherwise, recursively descend to the values.
+        // We do not invoke `K::update` because we assume
+        // that if the values are `Eq` they must not need
+        // updating (see the trait criteria).
+        let mut changed = false;
+        for (key, new_value) in new_map.0.into_iter() {
+            let old_value = old_map.0.get_mut(&key).unwrap();
+            changed |= unsafe { Value::maybe_update(old_value, new_value) };
+        }
+        changed
+    }
+}
 
 impl<Key, Value, BH> UnorderedHashMap<Key, Value, BH> {
     fn with_hasher(hash_builder: BH) -> Self {

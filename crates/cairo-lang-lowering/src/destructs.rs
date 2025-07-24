@@ -28,7 +28,7 @@ use crate::{
     StatementStructDestructure, VarRemapping, VarUsage, VariableId,
 };
 
-pub type DestructAdderDemand = Demand<VariableId, (), PanicState>;
+pub type DestructAdderDemand<'db> = Demand<VariableId<'db>, (), PanicState>;
 
 /// The add destruct flow type, used for grouping of destruct calls.
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
@@ -42,41 +42,41 @@ enum AddDestructFlowType {
 }
 
 /// Context for the destructor call addition phase,
-pub struct DestructAdder<'a> {
-    db: &'a dyn LoweringGroup,
-    lowered: &'a Lowered,
-    destructions: Vec<DestructionEntry>,
-    panic_ty: TypeId,
+pub struct DestructAdder<'db, 'a> {
+    db: &'db dyn LoweringGroup,
+    lowered: &'a Lowered<'db>,
+    destructions: Vec<DestructionEntry<'db>>,
+    panic_ty: TypeId<'db>,
     /// The actual return type of a never function after adding panics.
-    never_fn_actual_return_ty: TypeId,
+    never_fn_actual_return_ty: TypeId<'db>,
     is_panic_destruct_fn: bool,
 }
 
 /// A destructor call that needs to be added.
-enum DestructionEntry {
+enum DestructionEntry<'db> {
     /// A normal destructor call.
-    Plain(PlainDestructionEntry),
+    Plain(PlainDestructionEntry<'db>),
     /// A panic destructor call.
-    Panic(PanicDeconstructionEntry),
+    Panic(PanicDeconstructionEntry<'db>),
 }
 
-struct PlainDestructionEntry {
+struct PlainDestructionEntry<'db> {
     position: StatementLocation,
-    var_id: VariableId,
-    impl_id: ImplId,
+    var_id: VariableId<'db>,
+    impl_id: ImplId<'db>,
 }
-struct PanicDeconstructionEntry {
+struct PanicDeconstructionEntry<'db> {
     panic_location: PanicLocation,
-    var_id: VariableId,
-    impl_id: ImplId,
+    var_id: VariableId<'db>,
+    impl_id: ImplId<'db>,
 }
 
-impl DestructAdder<'_> {
+impl<'db> DestructAdder<'db, '_> {
     /// Checks if the statement introduces a panic variable and sets the panic state accordingly.
     fn set_post_stmt_destruct(
         &mut self,
-        introductions: &[VariableId],
-        info: &mut DestructAdderDemand,
+        introductions: &[VariableId<'db>],
+        info: &mut DestructAdderDemand<'db>,
         block_id: BlockId,
         statement_index: usize,
     ) {
@@ -94,8 +94,8 @@ impl DestructAdder<'_> {
     /// accordingly.
     fn set_post_match_state(
         &mut self,
-        introduced_vars: &[VariableId],
-        info: &mut DestructAdderDemand,
+        introduced_vars: &[VariableId<'db>],
+        info: &mut DestructAdderDemand<'db>,
         match_block_id: BlockId,
         target_block_id: BlockId,
         arm_idx: usize,
@@ -121,14 +121,14 @@ impl DestructAdder<'_> {
     }
 }
 
-impl DemandReporter<VariableId, PanicState> for DestructAdder<'_> {
+impl<'db> DemandReporter<VariableId<'db>, PanicState> for DestructAdder<'db, '_> {
     type IntroducePosition = StatementLocation;
     type UsePosition = ();
 
     fn drop_aux(
         &mut self,
         position: StatementLocation,
-        var_id: VariableId,
+        var_id: VariableId<'db>,
         panic_state: PanicState,
     ) {
         let var = &self.lowered.variables[var_id];
@@ -204,14 +204,14 @@ pub enum PanicLocation {
     PanicMatch { match_block_id: BlockId, target_block_id: BlockId },
 }
 
-impl Analyzer<'_> for DestructAdder<'_> {
-    type Info = DestructAdderDemand;
+impl<'db> Analyzer<'db, '_> for DestructAdder<'db, '_> {
+    type Info = DestructAdderDemand<'db>;
 
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
         (block_id, statement_index): StatementLocation,
-        stmt: &Statement,
+        stmt: &Statement<'db>,
     ) {
         self.set_post_stmt_destruct(stmt.outputs(), info, block_id, statement_index);
         // Since we need to insert destructor call right after the statement.
@@ -224,7 +224,7 @@ impl Analyzer<'_> for DestructAdder<'_> {
         info: &mut Self::Info,
         _statement_location: StatementLocation,
         _target_block_id: BlockId,
-        remapping: &VarRemapping,
+        remapping: &VarRemapping<'db>,
     ) {
         info.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
     }
@@ -232,7 +232,7 @@ impl Analyzer<'_> for DestructAdder<'_> {
     fn merge_match(
         &mut self,
         (block_id, _statement_index): StatementLocation,
-        match_info: &MatchInfo,
+        match_info: &MatchInfo<'db>,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         let arm_demands = zip_eq(match_info.arms(), infos)
@@ -261,7 +261,7 @@ impl Analyzer<'_> for DestructAdder<'_> {
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
-        vars: &[VarUsage],
+        vars: &[VarUsage<'db>],
     ) -> Self::Info {
         let mut info = DestructAdderDemand::default();
         // Allow panic destructors to be called inside panic destruct functions.
@@ -275,7 +275,7 @@ impl Analyzer<'_> for DestructAdder<'_> {
     }
 }
 
-fn panic_ty(db: &dyn LoweringGroup) -> semantic::TypeId {
+fn panic_ty<'db>(db: &'db dyn LoweringGroup) -> semantic::TypeId<'db> {
     get_ty_by_name(db, core_module(db), "Panic".into(), vec![])
 }
 
@@ -284,10 +284,10 @@ fn panic_ty(db: &dyn LoweringGroup) -> semantic::TypeId {
 /// Additionally overrides the inferred impls for the `Copyable` and `Droppable` traits according to
 /// the concrete type. This is performed here instead of in `concretize_lowered` to support custom
 /// destructors for droppable types.
-pub fn add_destructs(
-    db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut Lowered,
+pub fn add_destructs<'db>(
+    db: &'db dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
+    lowered: &mut Lowered<'db>,
 ) {
     if lowered.blocks.is_empty() {
         return;
@@ -341,7 +341,7 @@ pub fn add_destructs(
     // where each one consumes a panic variable and creates a new one.
     // To facilitate this, we convert each entry to a tuple we the relevant information for
     // ordering and grouping.
-    let as_tuple = |entry: &DestructionEntry| match entry {
+    let as_tuple = |entry: &DestructionEntry<'_>| match entry {
         DestructionEntry::Plain(plain_destruct) => {
             (plain_destruct.position.0.0, plain_destruct.position.1, AddDestructFlowType::Plain, 0)
         }

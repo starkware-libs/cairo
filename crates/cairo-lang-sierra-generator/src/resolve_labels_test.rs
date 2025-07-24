@@ -21,7 +21,7 @@ fn test_resolve_labels() {
             .into_statement_without_location()
     };
 
-    let statements: Vec<pre_sierra::StatementWithLocation> = vec![
+    let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         label(7),
         label(5),
         simple_statement(ConcreteLibfuncId::from_string("Instruction0"), &[], &[]),

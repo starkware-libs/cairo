@@ -6,7 +6,7 @@ use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Serde` trait.
-pub fn handle_serde(info: &PluginTypeInfo) -> String {
+pub fn handle_serde(info: &PluginTypeInfo<'_>) -> String {
     const SERDE_TRAIT: &str = "core::serde::Serde";
     const DESTRUCT_TRAIT: &str = "core::traits::Destruct";
     let ty = &info.name;

@@ -7,14 +7,14 @@ use crate::{DependencyType, LoweringStage};
 
 /// A node to use in graph-algorithms.
 #[derive(Clone)]
-pub struct ConcreteFunctionWithBodyNode<'a> {
-    pub function_id: ConcreteFunctionWithBodyId,
-    pub db: &'a dyn LoweringGroup,
+pub struct ConcreteFunctionWithBodyNode<'db> {
+    pub function_id: ConcreteFunctionWithBodyId<'db>,
+    pub db: &'db dyn LoweringGroup,
     pub dependency_type: DependencyType,
     pub stage: LoweringStage,
 }
-impl GraphNode for ConcreteFunctionWithBodyNode<'_> {
-    type NodeId = ConcreteFunctionWithBodyId;
+impl<'db> GraphNode for ConcreteFunctionWithBodyNode<'db> {
+    type NodeId = ConcreteFunctionWithBodyId<'db>;
 
     fn get_neighbors(&self) -> Vec<Self> {
         let Ok(direct_callees) = self.db.lowered_direct_callees_with_body(

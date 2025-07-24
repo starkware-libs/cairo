@@ -19,7 +19,10 @@ use super::{DEPRECATED_ABI_ATTR, DISPATCHER_DOC_GROUP_ATTR, INTERFACE_ATTR, STOR
 const RET_DATA: &str = "__dispatcher_return_data__";
 
 /// If the trait is annotated with INTERFACE_ATTR, generate the relevant dispatcher logic.
-pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
+pub fn handle_trait<'db>(
+    db: &'db dyn SyntaxGroup,
+    trait_ast: ast::ItemTrait<'db>,
+) -> PluginResult<'db> {
     if trait_ast.has_attr(db, DEPRECATED_ABI_ATTR) {
         return PluginResult {
             code: None,
@@ -95,7 +98,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 let mut skip_generation = false;
                 let mut serialization_code = vec![];
                 let signature = declaration.signature(db);
-                let mut params = signature.parameters(db).elements(db);
+                let sig_params = signature.parameters(db);
+                let mut params = sig_params.elements(db);
                 // The first parameter is the `self` parameter.
                 let Some(self_param) = params.next() else {
                     diagnostics.push(PluginDiagnostic::error(
@@ -383,15 +387,15 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
 }
 
 /// Returns the method implementation rewrite node for a declaration.
-fn declaration_method_impl(
-    func_declaration: RewriteNode,
-    entry_point_selector: RewriteNode,
+fn declaration_method_impl<'db>(
+    func_declaration: RewriteNode<'db>,
+    entry_point_selector: RewriteNode<'db>,
     member: &str,
     syscall: &str,
-    serialization_code: Vec<RewriteNode>,
+    serialization_code: Vec<RewriteNode<'db>>,
     ret_decode: String,
     unwrap: bool,
-) -> RewriteNode {
+) -> RewriteNode<'db> {
     let deserialization_code = if ret_decode.is_empty() {
         RewriteNode::text("()")
     } else {
@@ -447,12 +451,12 @@ fn declaration_method_impl(
 }
 
 /// Returns the matching signature for a dispatcher implementation for the given declaration.
-fn dispatcher_signature(
-    db: &dyn SyntaxGroup,
-    declaration: &ast::FunctionDeclaration,
+fn dispatcher_signature<'db>(
+    db: &'db dyn SyntaxGroup,
+    declaration: &ast::FunctionDeclaration<'db>,
     self_type_name: &str,
     unwrap: bool,
-) -> RewriteNode {
+) -> RewriteNode<'db> {
     let mut func_declaration = RewriteNode::from_ast(declaration);
     let params = func_declaration
         .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)

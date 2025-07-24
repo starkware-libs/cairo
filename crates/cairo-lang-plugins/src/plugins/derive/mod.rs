@@ -28,12 +28,12 @@ pub struct DerivePlugin;
 const DERIVE_ATTR: &str = "derive";
 
 impl MacroPlugin for DerivePlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         generate_derive_code_for_type(
             db,
             metadata,
@@ -77,11 +77,11 @@ impl MacroPlugin for DerivePlugin {
 }
 
 /// Adds an implementation for all requested derives for the type.
-fn generate_derive_code_for_type(
-    db: &dyn SyntaxGroup,
+fn generate_derive_code_for_type<'db>(
+    db: &'db dyn SyntaxGroup,
     metadata: &MacroPluginMetadata<'_>,
-    info: PluginTypeInfo,
-) -> PluginResult {
+    info: PluginTypeInfo<'db>,
+) -> PluginResult<'db> {
     let mut diagnostics = vec![];
     let mut builder = PatchBuilder::new(db, &info.attributes);
     for attr in info.attributes.query_attr(db, DERIVE_ATTR) {
@@ -148,7 +148,7 @@ fn generate_derive_code_for_type(
     }
 }
 
-fn get_empty_impl(derived_trait: &str, info: &PluginTypeInfo) -> String {
+fn get_empty_impl(derived_trait: &str, info: &PluginTypeInfo<'_>) -> String {
     let derive_trait = format!("core::traits::{derived_trait}");
     format!("{};\n", info.impl_header(&derive_trait, &[&derive_trait]))
 }

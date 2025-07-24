@@ -7,18 +7,18 @@ use super::contract::ContractSpecificGenerationData;
 
 /// The data for generating the code of a contract.
 #[derive(Default)]
-pub struct ContractGenerationData {
+pub struct ContractGenerationData<'db> {
     /// Common data - relevant for all starknet modules (component/contract).
-    pub common: StarknetModuleCommonGenerationData,
+    pub common: StarknetModuleCommonGenerationData<'db>,
     /// Specific data - relevant only for contracts.
-    pub specific: ContractSpecificGenerationData,
+    pub specific: ContractSpecificGenerationData<'db>,
 }
-impl ContractGenerationData {
+impl<'db> ContractGenerationData<'db> {
     pub fn into_rewrite_node(
         self,
-        db: &dyn SyntaxGroup,
-        diagnostics: &mut Vec<PluginDiagnostic>,
-    ) -> RewriteNode {
+        db: &'db dyn SyntaxGroup,
+        diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    ) -> RewriteNode<'db> {
         RewriteNode::interpolate_patched(
             "$common$\n$specific$",
             &[
@@ -32,18 +32,18 @@ impl ContractGenerationData {
 
 /// The data for generating the code of a component.
 #[derive(Default)]
-pub struct ComponentGenerationData {
+pub struct ComponentGenerationData<'db> {
     /// Common data - relevant for all starknet modules (component/contract).
-    pub common: StarknetModuleCommonGenerationData,
+    pub common: StarknetModuleCommonGenerationData<'db>,
     /// Specific data - relevant only for components.
-    pub specific: ComponentSpecificGenerationData,
+    pub specific: ComponentSpecificGenerationData<'db>,
 }
-impl ComponentGenerationData {
+impl<'db> ComponentGenerationData<'db> {
     pub fn into_rewrite_node(
         self,
-        db: &dyn SyntaxGroup,
-        diagnostics: &mut [PluginDiagnostic],
-    ) -> RewriteNode {
+        db: &'db dyn SyntaxGroup,
+        diagnostics: &mut [PluginDiagnostic<'db>],
+    ) -> RewriteNode<'db> {
         RewriteNode::interpolate_patched(
             "$common$\n\n$specific$",
             &[
@@ -57,18 +57,18 @@ impl ComponentGenerationData {
 
 /// Accumulated data for code generation that is common to both contracts and components.
 #[derive(Default)]
-pub struct StarknetModuleCommonGenerationData {
+pub struct StarknetModuleCommonGenerationData<'db> {
     /// The code of the state struct.
-    pub state_struct_code: RewriteNode,
+    pub state_struct_code: RewriteNode<'db>,
     /// The generated event-related code.
-    pub event_code: RewriteNode,
+    pub event_code: RewriteNode<'db>,
 }
-impl StarknetModuleCommonGenerationData {
+impl<'db> StarknetModuleCommonGenerationData<'db> {
     pub fn into_rewrite_node(
         self,
-        _db: &dyn SyntaxGroup,
-        _diagnostics: &mut [PluginDiagnostic],
-    ) -> RewriteNode {
+        _db: &'db dyn SyntaxGroup,
+        _diagnostics: &mut [PluginDiagnostic<'db>],
+    ) -> RewriteNode<'db> {
         RewriteNode::interpolate_patched(
             "$event_code$
 

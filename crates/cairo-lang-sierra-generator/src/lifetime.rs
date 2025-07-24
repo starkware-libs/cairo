@@ -45,26 +45,26 @@ impl Debug for UseLocation {
 /// Instead, we refer to it as [SierraGenVar::UninitializedLocal] by the actual local variable
 /// (not the uninitialized version).
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
-pub enum SierraGenVar {
+pub enum SierraGenVar<'db> {
     /// Represents a regular variable.
-    LoweringVar(VariableId),
+    LoweringVar(VariableId<'db>),
     /// Represents an uninitialized local variable, by the corresponding local variable.
-    UninitializedLocal(VariableId),
+    UninitializedLocal(VariableId<'db>),
 }
 
-impl From<VariableId> for SierraGenVar {
-    fn from(var: VariableId) -> Self {
+impl<'db> From<VariableId<'db>> for SierraGenVar<'db> {
+    fn from(var: VariableId<'db>) -> Self {
         SierraGenVar::LoweringVar(var)
     }
 }
 
-impl From<VarUsage> for SierraGenVar {
-    fn from(var_usage: VarUsage) -> Self {
+impl<'db> From<VarUsage<'db>> for SierraGenVar<'db> {
+    fn from(var_usage: VarUsage<'db>) -> Self {
         SierraGenVar::LoweringVar(var_usage.var_id)
     }
 }
 
-impl Debug for SierraGenVar {
+impl Debug for SierraGenVar<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::LoweringVar(var) => write!(f, "v{}", var.index()),
@@ -75,7 +75,7 @@ impl Debug for SierraGenVar {
 
 /// Information returned by [find_variable_lifetime] regarding the lifetime of variables.
 #[derive(Default)]
-pub struct VariableLifetimeResult {
+pub struct VariableLifetimeResult<'db> {
     /// A set of [UseLocation] where a variable is used, but not required after.
     ///
     /// Note that a variable may be mentioned twice. For example, when it's last used within two
@@ -85,11 +85,11 @@ pub struct VariableLifetimeResult {
     /// this means that the last use was in `block.end`.
     pub last_use: OrderedHashSet<UseLocation>,
     /// A map from [DropLocation] to the list of variables that should be dropped at this location.
-    pub drops: OrderedHashMap<DropLocation, Vec<SierraGenVar>>,
+    pub drops: OrderedHashMap<DropLocation, Vec<SierraGenVar<'db>>>,
 }
-impl VariableLifetimeResult {
+impl<'db> VariableLifetimeResult<'db> {
     /// Registers where a drop statement should appear.
-    fn add_drop(&mut self, var_id: SierraGenVar, drop_location: DropLocation) {
+    fn add_drop(&mut self, var_id: SierraGenVar<'db>, drop_location: DropLocation) {
         if let Some(vars) = self.drops.get_mut(&drop_location) {
             vars.push(var_id);
         } else {
@@ -100,10 +100,10 @@ impl VariableLifetimeResult {
 
 /// Given the lowering of a function, returns lifetime information for all the variables.
 /// See [VariableLifetimeResult].
-pub fn find_variable_lifetime(
-    lowered_function: &Lowered,
-    local_vars: &OrderedHashSet<VariableId>,
-) -> Maybe<VariableLifetimeResult> {
+pub fn find_variable_lifetime<'db>(
+    lowered_function: &Lowered<'db>,
+    local_vars: &OrderedHashSet<VariableId<'db>>,
+) -> Maybe<VariableLifetimeResult<'db>> {
     lowered_function.blocks.has_root()?;
     let context = VariableLifetimeContext { local_vars, res: VariableLifetimeResult::default() };
     let mut analysis = BackAnalysis::new(lowered_function, context);
@@ -129,9 +129,9 @@ pub fn find_variable_lifetime(
 }
 
 /// Context information for [find_variable_lifetime] and its helper functions.
-struct VariableLifetimeContext<'a> {
-    local_vars: &'a OrderedHashSet<VariableId>,
-    res: VariableLifetimeResult,
+struct VariableLifetimeContext<'db, 'a> {
+    local_vars: &'a OrderedHashSet<VariableId<'db>>,
+    res: VariableLifetimeResult<'db>,
 }
 
 /// Can this state lead to any return.
@@ -158,13 +158,13 @@ impl AuxCombine for ReturnState {
     }
 }
 
-type SierraDemand = Demand<SierraGenVar, UseLocation, ReturnState>;
+type SierraDemand<'db> = Demand<SierraGenVar<'db>, UseLocation, ReturnState>;
 
-impl DemandReporter<SierraGenVar, ReturnState> for VariableLifetimeContext<'_> {
+impl<'db> DemandReporter<SierraGenVar<'db>, ReturnState> for VariableLifetimeContext<'db, '_> {
     type IntroducePosition = DropLocation;
     type UsePosition = UseLocation;
 
-    fn drop_aux(&mut self, position: DropLocation, var: SierraGenVar, aux: ReturnState) {
+    fn drop_aux(&mut self, position: DropLocation, var: SierraGenVar<'db>, aux: ReturnState) {
         // No need for drops when no return statement is reachable, as this is what validates all
         // variables are used. This specifically handles the case of matching on a never
         // enum, so we won't try to drop variables containing builtins.
@@ -173,19 +173,19 @@ impl DemandReporter<SierraGenVar, ReturnState> for VariableLifetimeContext<'_> {
         }
     }
 
-    fn last_use(&mut self, use_location: UseLocation, _var: SierraGenVar) {
+    fn last_use(&mut self, use_location: UseLocation, _var: SierraGenVar<'db>) {
         self.res.last_use.insert(use_location);
     }
 }
 
-impl Analyzer<'_> for VariableLifetimeContext<'_> {
-    type Info = SierraDemand;
+impl<'db> Analyzer<'db, '_> for VariableLifetimeContext<'db, '_> {
+    type Info = SierraDemand<'db>;
 
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
         statement_location: StatementLocation,
-        stmt: &lowering::Statement,
+        stmt: &lowering::Statement<'db>,
     ) {
         self.introduce(
             info,
@@ -207,7 +207,7 @@ impl Analyzer<'_> for VariableLifetimeContext<'_> {
         info: &mut Self::Info,
         statement_location: StatementLocation,
         _target_block_id: BlockId,
-        remapping: &lowering::VarRemapping,
+        remapping: &lowering::VarRemapping<'db>,
     ) {
         info.apply_remapping(
             self,
@@ -233,7 +233,7 @@ impl Analyzer<'_> for VariableLifetimeContext<'_> {
     fn merge_match(
         &mut self,
         statement_location: StatementLocation,
-        match_info: &lowering::MatchInfo,
+        match_info: &lowering::MatchInfo<'db>,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         let arm_demands = zip_eq(match_info.arms(), infos)
@@ -263,7 +263,7 @@ impl Analyzer<'_> for VariableLifetimeContext<'_> {
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
-        vars: &[VarUsage],
+        vars: &[VarUsage<'db>],
     ) -> Self::Info {
         let mut info = SierraDemand::default();
         info.variables_used(
@@ -275,13 +275,13 @@ impl Analyzer<'_> for VariableLifetimeContext<'_> {
         info
     }
 }
-impl VariableLifetimeContext<'_> {
+impl<'db> VariableLifetimeContext<'db, '_> {
     /// A wrapper for info.variables_introduced that adds demand for uninitialized locals.
     /// Note that this function is not called for the parameters of the analyzed function.
     fn introduce(
         &mut self,
-        info: &mut SierraDemand,
-        vars: &[VariableId],
+        info: &mut SierraDemand<'db>,
+        vars: &[VariableId<'db>],
         statement_location: StatementLocation,
         drop_location: DropLocation,
     ) {

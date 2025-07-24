@@ -27,10 +27,10 @@ pub enum {EVENT_TYPE_NAME} {{}}
 
 /// Checks whether the given item is a starknet event, and if so - makes sure it's valid and returns
 /// its variants. Returns None if it's not a starknet event.
-pub fn get_starknet_event_variants(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    item: &ast::ModuleItem,
+pub fn get_starknet_event_variants<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    item: &ast::ModuleItem<'db>,
     module_kind: StarknetModuleKind,
 ) -> Option<Vec<SmolStr>> {
     let (has_event_name, stable_ptr, variants) = match item {

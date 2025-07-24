@@ -8,7 +8,7 @@ use cairo_lang_compiler::{DbWarmupContext, get_sierra_program_for_functions};
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::ids::{CrateId, CrateInput};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
@@ -50,22 +50,22 @@ const STATIC_GAS_ARG: &str = "static";
 
 /// Configuration for test compilation.
 #[derive(Clone)]
-pub struct TestsCompilationConfig {
+pub struct TestsCompilationConfig<'db> {
     /// Adds the starknet contracts to the compiled tests.
     pub starknet: bool,
 
     /// Contracts to compile.
     /// If defined, only this contacts will be available in tests.
     /// If not, all contracts from `contract_crate_ids` will be compiled.
-    pub contract_declarations: Option<Vec<ContractDeclaration>>,
+    pub contract_declarations: Option<Vec<ContractDeclaration<'db>>>,
 
     /// Crates to be searched for contracts.
     /// If not defined, all crates will be searched.
-    pub contract_crate_ids: Option<Vec<CrateId>>,
+    pub contract_crate_ids: Option<Vec<CrateId<'db>>>,
 
     /// Crates to be searched for executable attributes.
     /// If not defined, test crates will be searched.
-    pub executable_crate_ids: Option<Vec<CrateId>>,
+    pub executable_crate_ids: Option<Vec<CrateId<'db>>>,
 
     /// Adds mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
     /// [Annotations] in [DebugInfo] in the compiled tests.
@@ -87,12 +87,12 @@ pub struct TestsCompilationConfig {
 /// # Returns
 /// * `Ok(TestCompilation)` - The compiled test cases with metadata.
 /// * `Err(anyhow::Error)` - Compilation failed.
-pub fn compile_test_prepared_db(
-    db: &RootDatabase,
-    tests_compilation_config: TestsCompilationConfig,
-    test_crate_ids: Vec<CrateId>,
-    mut diagnostics_reporter: DiagnosticsReporter<'_>,
-) -> Result<TestCompilation> {
+pub fn compile_test_prepared_db<'db>(
+    db: &'db RootDatabase,
+    tests_compilation_config: TestsCompilationConfig<'db>,
+    test_crate_ids: Vec<CrateInput>,
+    mut diagnostics_reporter: DiagnosticsReporter,
+) -> Result<TestCompilation<'db>> {
     ensure!(
         tests_compilation_config.starknet
             || tests_compilation_config.contract_declarations.is_none(),
@@ -129,6 +129,7 @@ pub fn compile_test_prepared_db(
         vec![]
     };
 
+    let test_crate_ids = CrateInput::into_crate_ids(db, test_crate_ids);
     let executable_functions = find_executable_function_ids(
         db,
         tests_compilation_config.executable_crate_ids.unwrap_or_else(|| test_crate_ids.clone()),
@@ -217,10 +218,10 @@ pub fn compile_test_prepared_db(
 /// data extracted from it.
 /// This can be stored on the filesystem and shared externally.
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
-pub struct TestCompilation {
+pub struct TestCompilation<'db> {
     pub sierra_program: ProgramArtifact,
     #[serde(flatten)]
-    pub metadata: TestCompilationMetadata,
+    pub metadata: TestCompilationMetadata<'db>,
 }
 
 /// Encapsulation of all data required to execute tests, except for the Sierra program itself.
@@ -228,7 +229,7 @@ pub struct TestCompilation {
 /// This includes all cairo-test specific data extracted from the program.
 /// This can be stored on the filesystem and shared externally.
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
-pub struct TestCompilationMetadata {
+pub struct TestCompilationMetadata<'db> {
     #[serde(
         serialize_with = "serialize_ordered_hashmap_vec",
         deserialize_with = "deserialize_ordered_hashmap_vec"
@@ -244,14 +245,14 @@ pub struct TestCompilationMetadata {
     /// See [StatementsLocations] for more information.
     // TODO(Gil): consider serializing this field once it is stable.
     #[serde(skip)]
-    pub statements_locations: Option<StatementsLocations>,
+    pub statements_locations: Option<StatementsLocations<'db>>,
 }
 
 /// Finds the tests in the requested crates.
-fn find_all_tests(
-    db: &dyn SemanticGroup,
-    main_crates: Vec<CrateId>,
-) -> Vec<(FreeFunctionId, TestConfig)> {
+fn find_all_tests<'db>(
+    db: &'db dyn SemanticGroup,
+    main_crates: Vec<CrateId<'db>>,
+) -> Vec<(FreeFunctionId<'db>, TestConfig)> {
     let mut tests = vec![];
     for crate_id in main_crates {
         let modules = db.crate_modules(crate_id);

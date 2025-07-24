@@ -36,17 +36,17 @@ use crate::{Lowered, MatchArm, MatchExternInfo, MatchInfo, VarUsage, VariableId}
 pub struct VariableAllocator<'db> {
     pub db: &'db dyn LoweringGroup,
     /// Arena of allocated lowered variables.
-    pub variables: Arena<Variable>,
+    pub variables: Arena<Variable<'db>>,
     /// Module and file of the declared function.
-    pub module_file_id: ModuleFileId,
+    pub module_file_id: ModuleFileId<'db>,
     // Lookup context for impls.
-    pub lookup_context: ImplLookupContext,
+    pub lookup_context: ImplLookupContext<'db>,
 }
 impl<'db> VariableAllocator<'db> {
     pub fn new(
         db: &'db dyn LoweringGroup,
-        function_id: defs::ids::FunctionWithBodyId,
-        variables: Arena<Variable>,
+        function_id: defs::ids::FunctionWithBodyId<'db>,
+        variables: Arena<Variable<'db>>,
     ) -> Maybe<Self> {
         let generic_params = db.function_with_body_generic_params(function_id)?;
         let generic_param_ids = generic_params.iter().map(|p| p.id()).collect_vec();
@@ -62,7 +62,7 @@ impl<'db> VariableAllocator<'db> {
     }
 
     /// Allocates a new variable in the context's variable arena according to the context.
-    pub fn new_var(&mut self, req: VarRequest) -> VariableId {
+    pub fn new_var(&mut self, req: VarRequest<'db>) -> VariableId<'db> {
         self.variables.alloc(Variable::new(
             self.db,
             self.lookup_context.clone(),
@@ -72,14 +72,14 @@ impl<'db> VariableAllocator<'db> {
     }
 
     /// Retrieves the LocationId of a stable syntax pointer in the current function file.
-    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> LocationId {
+    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId<'db>) -> LocationId<'db> {
         LocationId::from_stable_location(self.db, StableLocation::new(stable_ptr))
     }
 }
-impl Index<VariableId> for VariableAllocator<'_> {
-    type Output = Variable;
+impl<'db> Index<VariableId<'db>> for VariableAllocator<'db> {
+    type Output = Variable<'db>;
 
-    fn index(&self, index: VariableId) -> &Self::Output {
+    fn index(&self, index: VariableId<'db>) -> &Self::Output {
         &self.variables[index]
     }
 }
@@ -91,24 +91,24 @@ impl Index<VariableId> for VariableAllocator<'_> {
 pub struct EncapsulatingLoweringContext<'db> {
     pub db: &'db dyn LoweringGroup,
     /// Id for the current function being lowered.
-    pub semantic_function_id: defs::ids::FunctionWithBodyId,
+    pub semantic_function_id: defs::ids::FunctionWithBodyId<'db>,
     /// Semantic model for current function body.
-    pub function_body: Arc<semantic::FunctionBody>,
+    pub function_body: Arc<semantic::FunctionBody<'db>>,
     /// Definitions encountered for semantic bindings. Since Constants are not lowered, this is
     /// only used for variables.
     // TODO(spapini): consider moving to semantic model.
-    pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Binding>,
+    pub semantic_defs: UnorderedHashMap<semantic::VarId<'db>, semantic::Binding<'db>>,
     /// Expression formatter of the free function.
     pub expr_formatter: ExprFormatter<'db>,
     /// Block usages for the entire encapsulating function.
-    pub usages: Usages,
+    pub usages: Usages<'db>,
     /// Lowerings of generated functions.
-    pub lowerings: OrderedHashMap<GeneratedFunctionKey, Lowered>,
+    pub lowerings: OrderedHashMap<GeneratedFunctionKey<'db>, Lowered<'db>>,
 }
 impl<'db> EncapsulatingLoweringContext<'db> {
     pub fn new(
         db: &'db dyn LoweringGroup,
-        semantic_function_id: defs::ids::FunctionWithBodyId,
+        semantic_function_id: defs::ids::FunctionWithBodyId<'db>,
     ) -> Maybe<Self> {
         let function_body = db.function_body(semantic_function_id)?;
         let usages = Usages::from_function_body(&function_body);
@@ -126,48 +126,48 @@ impl<'db> EncapsulatingLoweringContext<'db> {
 
 /// The loop result variants for a loop with an early return.
 #[derive(Clone)]
-pub struct LoopEarlyReturnInfo {
-    pub normal_return_variant: ConcreteVariant,
-    pub early_return_variant: ConcreteVariant,
+pub struct LoopEarlyReturnInfo<'db> {
+    pub normal_return_variant: ConcreteVariant<'db>,
+    pub early_return_variant: ConcreteVariant<'db>,
 }
 
 /// Context for lowering a loop.
-pub struct LoopContext {
+pub struct LoopContext<'db> {
     /// The loop expression
-    pub loop_expr_id: semantic::ExprId,
+    pub loop_expr_id: semantic::ExprId<'db>,
     /// Optional info related to early return from the loop.
-    pub early_return_info: Option<LoopEarlyReturnInfo>,
+    pub early_return_info: Option<LoopEarlyReturnInfo<'db>>,
 }
 
-pub struct LoweringContext<'a, 'db> {
-    pub encapsulating_ctx: Option<&'a mut EncapsulatingLoweringContext<'db>>,
+pub struct LoweringContext<'db, 'mt> {
+    pub encapsulating_ctx: Option<&'mt mut EncapsulatingLoweringContext<'db>>,
     /// Variable allocator.
     pub variables: VariableAllocator<'db>,
     /// Current function signature.
-    pub signature: Signature,
+    pub signature: Signature<'db>,
     /// Id for the current function being lowered.
-    pub function_id: FunctionWithBodyId,
+    pub function_id: FunctionWithBodyId<'db>,
     /// Id for the current concrete function to be used when generating recursive calls.
     /// This is the generic function specialized with its own generic parameters.
-    pub concrete_function_id: ConcreteFunctionWithBodyId,
+    pub concrete_function_id: ConcreteFunctionWithBodyId<'db>,
     /// Current loop context.
-    pub current_loop_ctx: Option<LoopContext>,
+    pub current_loop_ctx: Option<LoopContext<'db>>,
     /// Current emitted diagnostics.
-    pub diagnostics: LoweringDiagnostics,
+    pub diagnostics: LoweringDiagnostics<'db>,
     /// Lowered blocks of the function.
-    pub blocks: BlocksBuilder,
+    pub blocks: BlocksBuilder<'db>,
     // The return type in the current context, for loops this differs from signature.return_type.
-    pub return_type: semantic::TypeId,
+    pub return_type: semantic::TypeId<'db>,
 }
-impl<'a, 'db> LoweringContext<'a, 'db> {
+impl<'db, 'mt> LoweringContext<'db, 'mt> {
     pub fn new(
-        global_ctx: &'a mut EncapsulatingLoweringContext<'db>,
-        function_id: FunctionWithBodyId,
-        signature: Signature,
-        return_type: semantic::TypeId,
+        global_ctx: &'mt mut EncapsulatingLoweringContext<'db>,
+        function_id: FunctionWithBodyId<'db>,
+        signature: Signature<'db>,
+        return_type: semantic::TypeId<'db>,
     ) -> Maybe<Self>
     where
-        'db: 'a,
+        'db: 'mt,
     {
         let db = global_ctx.db;
         let concrete_function_id = function_id.to_concrete(db)?;
@@ -185,7 +185,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
         })
     }
 }
-impl<'db> Deref for LoweringContext<'_, 'db> {
+impl<'db, 'mt> Deref for LoweringContext<'db, 'mt> {
     type Target = EncapsulatingLoweringContext<'db>;
 
     fn deref(&self) -> &Self::Target {
@@ -197,64 +197,64 @@ impl DerefMut for LoweringContext<'_, '_> {
         self.encapsulating_ctx.as_mut().unwrap()
     }
 }
-impl LoweringContext<'_, '_> {
+impl<'db, 'mt> LoweringContext<'db, 'mt> {
     /// Allocates a new variable in the context's variable arena according to the context.
-    pub fn new_var(&mut self, req: VarRequest) -> VariableId {
+    pub fn new_var(&mut self, req: VarRequest<'db>) -> VariableId<'db> {
         self.variables.new_var(req)
     }
 
     /// Same as `new_var` but returns it as a `VarUsage`.
     /// This is useful when the variable definition and usage locations are the same.
-    pub fn new_var_usage(&mut self, req: VarRequest) -> VarUsage {
+    pub fn new_var_usage(&mut self, req: VarRequest<'db>) -> VarUsage<'db> {
         let location = req.location;
 
         VarUsage { var_id: self.variables.new_var(req), location }
     }
 
     /// Retrieves the LocationId of a stable syntax pointer in the current function file.
-    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> LocationId {
+    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId<'db>) -> LocationId<'db> {
         self.variables.get_location(stable_ptr)
     }
 }
 
 /// Request for a lowered variable allocation.
-pub struct VarRequest {
-    pub ty: semantic::TypeId,
-    pub location: LocationId,
+pub struct VarRequest<'db> {
+    pub ty: semantic::TypeId<'db>,
+    pub location: LocationId<'db>,
 }
 
 /// Representation of the value of a computed expression.
 #[derive(Clone, Debug)]
-pub enum LoweredExpr {
+pub enum LoweredExpr<'db> {
     /// The expression value lies in a variable.
-    AtVariable(VarUsage),
+    AtVariable(VarUsage<'db>),
     /// The expression value is a tuple.
     Tuple {
-        exprs: Vec<LoweredExpr>,
-        location: LocationId,
+        exprs: Vec<LoweredExpr<'db>>,
+        location: LocationId<'db>,
     },
     /// The expression value is a fixed size array.
     FixedSizeArray {
-        ty: semantic::TypeId,
-        exprs: Vec<LoweredExpr>,
-        location: LocationId,
+        ty: semantic::TypeId<'db>,
+        exprs: Vec<LoweredExpr<'db>>,
+        location: LocationId<'db>,
     },
     /// The expression value is an enum result from an extern call.
-    ExternEnum(LoweredExprExternEnum),
+    ExternEnum(LoweredExprExternEnum<'db>),
     /// The expression value resides at a specific member path.
-    MemberPath(ExprVarMemberPath, LocationId),
+    MemberPath(ExprVarMemberPath<'db>, LocationId<'db>),
     Snapshot {
-        expr: Box<LoweredExpr>,
-        location: LocationId,
+        expr: Box<LoweredExpr<'db>>,
+        location: LocationId<'db>,
     },
 }
-impl LoweredExpr {
+impl<'db> LoweredExpr<'db> {
     // Returns a VarUsage corresponding to the lowered expression.
     pub fn as_var_usage(
         self,
-        ctx: &mut LoweringContext<'_, '_>,
-        builder: &mut BlockBuilder,
-    ) -> Result<VarUsage, LoweringFlowError> {
+        ctx: &mut LoweringContext<'db, '_>,
+        builder: &mut BlockBuilder<'db>,
+    ) -> LoweringResult<'db, VarUsage<'db>> {
         match self {
             LoweredExpr::AtVariable(var_usage) => Ok(var_usage),
             LoweredExpr::Tuple { exprs, location } => {
@@ -302,7 +302,7 @@ impl LoweredExpr {
         }
     }
 
-    pub fn ty(&self, ctx: &mut LoweringContext<'_, '_>) -> semantic::TypeId {
+    pub fn ty(&self, ctx: &mut LoweringContext<'db, '_>) -> semantic::TypeId<'db> {
         match self {
             LoweredExpr::AtVariable(var_usage) => ctx.variables[var_usage.var_id].ty,
             LoweredExpr::Tuple { exprs, .. } => {
@@ -318,7 +318,7 @@ impl LoweredExpr {
             LoweredExpr::FixedSizeArray { ty, .. } => *ty,
         }
     }
-    pub fn location(&self) -> LocationId {
+    pub fn location(&self) -> LocationId<'db> {
         match &self {
             LoweredExpr::AtVariable(VarUsage { location, .. })
             | LoweredExpr::Tuple { location, .. }
@@ -332,19 +332,19 @@ impl LoweredExpr {
 
 /// Lazy expression value of an extern call returning an enum.
 #[derive(Clone, Debug)]
-pub struct LoweredExprExternEnum {
-    pub function: semantic::FunctionId,
-    pub concrete_enum_id: semantic::ConcreteEnumId,
-    pub inputs: Vec<VarUsage>,
-    pub member_paths: Vec<semantic::ExprVarMemberPath>,
-    pub location: LocationId,
+pub struct LoweredExprExternEnum<'db> {
+    pub function: semantic::FunctionId<'db>,
+    pub concrete_enum_id: semantic::ConcreteEnumId<'db>,
+    pub inputs: Vec<VarUsage<'db>>,
+    pub member_paths: Vec<semantic::ExprVarMemberPath<'db>>,
+    pub location: LocationId<'db>,
 }
-impl LoweredExprExternEnum {
+impl<'db> LoweredExprExternEnum<'db> {
     pub fn as_var_usage(
         self,
-        ctx: &mut LoweringContext<'_, '_>,
-        builder: &mut BlockBuilder,
-    ) -> LoweringResult<VarUsage> {
+        ctx: &mut LoweringContext<'db, '_>,
+        builder: &mut BlockBuilder<'db>,
+    ) -> LoweringResult<'db, VarUsage<'db>> {
         let concrete_variants = ctx
             .db
             .concrete_enum_variants(self.concrete_enum_id)
@@ -416,20 +416,20 @@ impl LoweredExprExternEnum {
     }
 }
 
-pub type LoweringResult<T> = Result<T, LoweringFlowError>;
+pub type LoweringResult<'db, T> = Result<T, LoweringFlowError<'db>>;
 
 /// Cases where the flow of lowering an expression should halt.
 #[derive(Debug, Clone)]
-pub enum LoweringFlowError {
+pub enum LoweringFlowError<'db> {
     /// Computation failure. A corresponding diagnostic should be emitted.
     Failed(DiagnosticAdded),
-    Panic(VarUsage, LocationId),
-    Return(VarUsage, LocationId),
+    Panic(VarUsage<'db>, LocationId<'db>),
+    Return(VarUsage<'db>, LocationId<'db>),
     /// Every match arm is terminating - does not flow to parent builder
     /// e.g. returns or panics.
-    Match(MatchInfo),
+    Match(MatchInfo<'db>),
 }
-impl LoweringFlowError {
+impl<'db> LoweringFlowError<'db> {
     pub fn is_unreachable(&self) -> bool {
         match self {
             LoweringFlowError::Failed(_) => false,
@@ -441,11 +441,11 @@ impl LoweringFlowError {
 }
 
 /// Converts a lowering flow error to the appropriate block builder end, if possible.
-pub fn lowering_flow_error_to_sealed_block(
-    ctx: &mut LoweringContext<'_, '_>,
-    mut builder: BlockBuilder,
-    err: LoweringFlowError,
-) -> Maybe<SealedBlockBuilder> {
+pub fn lowering_flow_error_to_sealed_block<'db, 'mt>(
+    ctx: &mut LoweringContext<'db, 'mt>,
+    mut builder: BlockBuilder<'db>,
+    err: LoweringFlowError<'db>,
+) -> Maybe<SealedBlockBuilder<'db>> {
     let block_id = builder.block_id;
     match err {
         LoweringFlowError::Failed(diag_added) => return Err(diag_added),

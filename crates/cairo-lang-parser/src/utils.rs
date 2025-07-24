@@ -1,25 +1,26 @@
 use std::path::PathBuf;
 
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
-use cairo_lang_filesystem::db::{ExternalFiles, FilesDatabase, FilesGroup, init_files_group};
+use cairo_lang_filesystem::db::{ExternalFiles, FilesGroup, init_files_group};
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextWidth};
 use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax::node::ast::SyntaxFile;
-use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::{Intern, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::chain;
 
 use crate::ParserDiagnostic;
-use crate::db::ParserDatabase;
 use crate::parser::Parser;
 
 /// A salsa database for parsing only.
-#[salsa::database(ParserDatabase, SyntaxDatabase, FilesDatabase)]
+#[salsa::db]
+#[derive(Clone)]
 pub struct SimpleParserDatabase {
     storage: salsa::Storage<SimpleParserDatabase>,
 }
+#[salsa::db]
 impl salsa::Database for SimpleParserDatabase {}
 impl ExternalFiles for SimpleParserDatabase {}
 impl Default for SimpleParserDatabase {
@@ -30,13 +31,13 @@ impl Default for SimpleParserDatabase {
     }
 }
 
-impl Upcast<dyn SyntaxGroup> for SimpleParserDatabase {
-    fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
+impl<'db> Upcast<'db, dyn SyntaxGroup> for SimpleParserDatabase {
+    fn upcast(&'db self) -> &'db dyn SyntaxGroup {
         self
     }
 }
-impl Upcast<dyn FilesGroup> for SimpleParserDatabase {
-    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
+impl<'db> Upcast<'db, dyn FilesGroup> for SimpleParserDatabase {
+    fn upcast(&'db self) -> &'db dyn FilesGroup {
         self
     }
 }
@@ -51,7 +52,7 @@ impl SimpleParserDatabase {
     pub fn parse_virtual(
         &self,
         content: impl ToString,
-    ) -> Result<SyntaxNode, Diagnostics<ParserDiagnostic>> {
+    ) -> Result<SyntaxNode<'_>, Diagnostics<'_, ParserDiagnostic<'_>>> {
         let (node, diagnostics) = self.parse_virtual_with_diagnostics(content);
         if diagnostics.check_error_free().is_ok() { Ok(node) } else { Err(diagnostics) }
     }
@@ -63,7 +64,7 @@ impl SimpleParserDatabase {
     pub fn parse_virtual_with_diagnostics(
         &self,
         content: impl ToString,
-    ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
+    ) -> (SyntaxNode<'_>, Diagnostics<'_, ParserDiagnostic<'_>>) {
         let file = FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "parser_input".into(),
@@ -82,7 +83,7 @@ impl SimpleParserDatabase {
     pub fn parse_token_stream(
         &self,
         token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
-    ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
+    ) -> (SyntaxNode<'_>, Diagnostics<'_, ParserDiagnostic<'_>>) {
         let (content, _offset) = primitive_token_stream_content_and_offset(token_stream);
         let file_id = FileLongId::Virtual(VirtualFile {
             parent: Default::default(),
@@ -107,7 +108,7 @@ impl SimpleParserDatabase {
     pub fn parse_token_stream_expr(
         &self,
         token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
-    ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
+    ) -> (SyntaxNode<'_>, Diagnostics<'_, ParserDiagnostic<'_>>) {
         let (content, offset) = primitive_token_stream_content_and_offset(token_stream);
         let vfs = VirtualFile {
             parent: Default::default(),
@@ -133,28 +134,28 @@ impl SimpleParserDatabase {
 pub fn get_syntax_root_and_diagnostics_from_file(
     db: &SimpleParserDatabase,
     cairo_filepath: PathBuf,
-) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
-    let file_id = FileId::new(db, cairo_filepath);
+) -> (SyntaxNode<'_>, Diagnostics<'_, ParserDiagnostic<'_>>) {
+    let file_id = FileId::new_on_disk(db, cairo_filepath);
     let contents = db.file_content(file_id).unwrap();
-    get_syntax_root_and_diagnostics(db, file_id, &contents)
+    get_syntax_root_and_diagnostics(db, file_id, contents.lookup_intern(db).as_ref())
 }
 
 /// Returns the syntax_root and diagnostic of a file in the db.
-pub fn get_syntax_root_and_diagnostics(
-    db: &SimpleParserDatabase,
-    file_id: FileId,
+pub fn get_syntax_root_and_diagnostics<'a>(
+    db: &'a SimpleParserDatabase,
+    file_id: FileId<'a>,
     contents: &str,
-) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
+) -> (SyntaxNode<'a>, Diagnostics<'a, ParserDiagnostic<'a>>) {
     let (syntax_file, diagnostics) = get_syntax_file_and_diagnostics(db, file_id, contents);
     (syntax_file.as_syntax_node(), diagnostics)
 }
 
 /// Returns the syntax_file and diagnostic of a file in the db.
-pub fn get_syntax_file_and_diagnostics(
-    db: &SimpleParserDatabase,
-    file_id: FileId,
+pub fn get_syntax_file_and_diagnostics<'a>(
+    db: &'a SimpleParserDatabase,
+    file_id: FileId<'a>,
     contents: &str,
-) -> (SyntaxFile, Diagnostics<ParserDiagnostic>) {
+) -> (SyntaxFile<'a>, Diagnostics<'a, ParserDiagnostic<'a>>) {
     let mut diagnostics = DiagnosticsBuilder::default();
     let syntax_file = Parser::parse_file(db, &mut diagnostics, file_id, contents);
     (syntax_file, diagnostics.build())

@@ -6,7 +6,7 @@ use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Hash` trait.
-pub fn handle_hash(info: &PluginTypeInfo) -> String {
+pub fn handle_hash(info: &PluginTypeInfo<'_>) -> String {
     const HASH_TRAIT: &str = "core::hash::Hash";
     const DROP_TRAIT: &str = "core::traits::Drop";
     let full_typename = info.full_typename();

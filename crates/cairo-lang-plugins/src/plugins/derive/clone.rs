@@ -5,7 +5,7 @@ use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Clone` trait.
-pub fn handle_clone(info: &PluginTypeInfo) -> String {
+pub fn handle_clone(info: &PluginTypeInfo<'_>) -> String {
     const CLONE_TRAIT: &str = "core::clone::Clone";
     const DESTRUCT_TRAIT: &str = "core::traits::Destruct";
     let full_typename = info.full_typename();

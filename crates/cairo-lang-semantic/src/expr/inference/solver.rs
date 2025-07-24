@@ -15,7 +15,7 @@ use super::{
     ImplVarTraitItemMappings, InferenceData, InferenceError, InferenceId, InferenceResult,
     InferenceVar, LocalImplVarId,
 };
-use crate::db::SemanticGroup;
+use crate::db::{SemanticGroup, SemanticGroupData};
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::imp::{
     ImplId, ImplImplId, ImplLongId, ImplLookupContext, UninferredImpl, find_candidates_at_context,
@@ -29,31 +29,53 @@ use crate::{
 
 /// A generic solution set for an inference constraint system.
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub enum SolutionSet<T> {
+pub enum SolutionSet<'db, T> {
     None,
     Unique(T),
-    Ambiguous(Ambiguity),
+    Ambiguous(Ambiguity<'db>),
+}
+
+// Somewhat taken from the salsa::Update derive macro.
+unsafe impl<'db, T: salsa::Update> salsa::Update for SolutionSet<'db, T> {
+    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
+        let old_pointer = unsafe { &mut *old_pointer };
+        match (old_pointer, new_value) {
+            (SolutionSet::None, SolutionSet::None) => false,
+            (SolutionSet::Unique(u1), SolutionSet::Unique(u2)) => {
+                salsa::plumbing::UpdateDispatch::<T>::maybe_update(u1, u2)
+            }
+            (SolutionSet::Ambiguous(ambiguity), SolutionSet::Ambiguous(ambiguity2)) => {
+                salsa::plumbing::UpdateDispatch::<Ambiguity<'db>>::maybe_update(
+                    ambiguity, ambiguity2,
+                )
+            }
+            (old_pointer, new_value) => {
+                *old_pointer = new_value;
+                true
+            }
+        }
+    }
 }
 
 /// Describes the kinds of inference ambiguities.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, SemanticObject)]
-pub enum Ambiguity {
+#[derive(Clone, Debug, Eq, Hash, PartialEq, SemanticObject, salsa::Update)]
+pub enum Ambiguity<'db> {
     MultipleImplsFound {
-        concrete_trait_id: ConcreteTraitId,
-        impls: Vec<ImplId>,
+        concrete_trait_id: ConcreteTraitId<'db>,
+        impls: Vec<ImplId<'db>>,
     },
     FreeVariable {
-        impl_id: ImplId,
+        impl_id: ImplId<'db>,
         #[dont_rewrite]
         var: InferenceVar,
     },
-    WillNotInfer(ConcreteTraitId),
+    WillNotInfer(ConcreteTraitId<'db>),
     NegativeImplWithUnresolvedGenericArgs {
-        impl_id: ImplId,
-        ty: TypeId,
+        impl_id: ImplId<'db>,
+        ty: TypeId<'db>,
     },
 }
-impl Ambiguity {
+impl<'db> Ambiguity<'db> {
     pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
         match self {
             Ambiguity::MultipleImplsFound { concrete_trait_id, impls } => {
@@ -83,12 +105,12 @@ impl Ambiguity {
 
 /// Query implementation of [SemanticGroup::canonic_trait_solutions].
 /// Assumes the lookup context is already enriched by [enrich_lookup_context].
-pub fn canonic_trait_solutions(
-    db: &dyn SemanticGroup,
-    canonical_trait: CanonicalTrait,
-    lookup_context: ImplLookupContext,
-    impl_type_bounds: BTreeMap<ImplTypeById, TypeId>,
-) -> Result<SolutionSet<CanonicalImpl>, InferenceError> {
+pub fn canonic_trait_solutions<'db>(
+    db: &'db dyn SemanticGroup,
+    canonical_trait: CanonicalTrait<'db>,
+    lookup_context: ImplLookupContext<'db>,
+    impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
+) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
     let mut concrete_trait_id = canonical_trait.id;
     let impl_type_bounds = Arc::new(impl_type_bounds);
     // If the trait is not fully concrete, we might be able to use the trait's items to find a
@@ -120,21 +142,21 @@ pub fn canonic_trait_solutions(
 }
 
 /// Cycle handling for [canonic_trait_solutions].
-pub fn canonic_trait_solutions_cycle(
+pub fn canonic_trait_solutions_cycle<'db>(
     _db: &dyn SemanticGroup,
-    _cycle: &salsa::Cycle,
-    _canonical_trait: &CanonicalTrait,
-    _lookup_context: &ImplLookupContext,
-    _impl_type_bounds: &BTreeMap<ImplTypeById, TypeId>,
-) -> Result<SolutionSet<CanonicalImpl>, InferenceError> {
+    _input: SemanticGroupData,
+    _canonical_trait: CanonicalTrait<'db>,
+    _lookup_context: ImplLookupContext<'db>,
+    _impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
+) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
     Err(InferenceError::Cycle(InferenceVar::Impl(LocalImplVarId(0))))
 }
 
 /// Adds the defining module of the trait and the generic arguments to the lookup context.
-pub fn enrich_lookup_context(
-    db: &dyn SemanticGroup,
-    concrete_trait_id: ConcreteTraitId,
-    lookup_context: &mut ImplLookupContext,
+pub fn enrich_lookup_context<'db>(
+    db: &'db dyn SemanticGroup,
+    concrete_trait_id: ConcreteTraitId<'db>,
+    lookup_context: &mut ImplLookupContext<'db>,
 ) {
     lookup_context.insert_module(concrete_trait_id.trait_id(db).module_file_id(db).0);
     let generic_args = concrete_trait_id.generic_args(db);
@@ -147,10 +169,10 @@ pub fn enrich_lookup_context(
 }
 
 /// Adds the defining module of the type to the lookup context.
-pub fn enrich_lookup_context_with_ty(
-    db: &dyn SemanticGroup,
-    ty: TypeId,
-    lookup_context: &mut ImplLookupContext,
+pub fn enrich_lookup_context_with_ty<'db>(
+    db: &'db dyn SemanticGroup,
+    ty: TypeId<'db>,
+    lookup_context: &mut ImplLookupContext<'db>,
 ) {
     match ty.lookup_intern(db) {
         TypeLongId::ImplType(impl_type_id) => {
@@ -166,19 +188,19 @@ pub fn enrich_lookup_context_with_ty(
 
 /// Attempts to solve a `canonical_trait`. Will try to find candidates in the given
 /// `lookup_context`.
-fn solve_canonical_trait(
-    db: &dyn SemanticGroup,
-    canonical_trait: CanonicalTrait,
-    lookup_context: ImplLookupContext,
-    impl_type_bounds: Arc<BTreeMap<ImplTypeById, TypeId>>,
-) -> SolutionSet<CanonicalImpl> {
+fn solve_canonical_trait<'db>(
+    db: &'db dyn SemanticGroup,
+    canonical_trait: CanonicalTrait<'db>,
+    lookup_context: ImplLookupContext<'db>,
+    impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
+) -> SolutionSet<'db, CanonicalImpl<'db>> {
     let filter = canonical_trait.id.filter(db);
     let mut candidates =
         find_candidates_at_context(db, &lookup_context, &filter).unwrap_or_default();
     find_closure_generated_candidate(db, canonical_trait.id)
         .map(|candidate| candidates.insert(candidate));
 
-    let mut unique_solution: Option<CanonicalImpl> = None;
+    let mut unique_solution: Option<CanonicalImpl<'_>> = None;
     for candidate in candidates.into_iter() {
         let Ok(candidate_solution_set) = solve_candidate(
             db,
@@ -212,13 +234,13 @@ fn solve_canonical_trait(
 }
 
 /// Attempts to solve `candidate` as the requested `canonical_trait`.
-fn solve_candidate(
-    db: &dyn SemanticGroup,
-    canonical_trait: &CanonicalTrait,
-    candidate: UninferredImpl,
-    lookup_context: &ImplLookupContext,
-    impl_type_bounds: Arc<BTreeMap<ImplTypeById, TypeId>>,
-) -> InferenceResult<SolutionSet<CanonicalImpl>> {
+fn solve_candidate<'db>(
+    db: &'db dyn SemanticGroup,
+    canonical_trait: &CanonicalTrait<'db>,
+    candidate: UninferredImpl<'db>,
+    lookup_context: &ImplLookupContext<'db>,
+    impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
+) -> InferenceResult<SolutionSet<'db, CanonicalImpl<'db>>> {
     let candidate_concrete_trait = candidate.concrete_trait(db).unwrap();
     // If the candidate is fully concrete, or its a generic which is var free, there is nothing
     // to substitute. A generic param may not be var free, if it contains impl types.
@@ -294,7 +316,7 @@ fn solve_candidate(
         }
     }
 
-    let mut inference_data: InferenceData = InferenceData::new(InferenceId::Canonical);
+    let mut inference_data: InferenceData<'_> = InferenceData::new(InferenceId::Canonical);
     let mut inference = inference_data.inference(db);
     inference.data.impl_type_bounds = impl_type_bounds;
     let (canonical_trait, canonical_embedding) = canonical_trait.embed(&mut inference);
@@ -381,7 +403,7 @@ impl CanConformResult {
 /// 'vars' or associated items.
 struct LiteInference<'db> {
     db: &'db dyn SemanticGroup,
-    substitution: GenericSubstitution,
+    substitution: GenericSubstitution<'db>,
 }
 
 impl<'db> LiteInference<'db> {
@@ -393,10 +415,10 @@ impl<'db> LiteInference<'db> {
     /// If the inference fails (i.e. requires full inferece), returns an error.
     fn infer_generic_assignment(
         &mut self,
-        params: Vec<GenericParam>,
-        lookup_context: &ImplLookupContext,
-        impl_type_bounds: Arc<BTreeMap<ImplTypeById, TypeId>>,
-    ) -> InferenceResult<SolutionSet<Vec<GenericArgumentId>>> {
+        params: Vec<GenericParam<'db>>,
+        lookup_context: &ImplLookupContext<'db>,
+        impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
+    ) -> InferenceResult<SolutionSet<'db, Vec<GenericArgumentId<'db>>>> {
         let mut generic_args = Vec::with_capacity(params.len());
         for param in params {
             match param {
@@ -468,8 +490,8 @@ impl<'db> LiteInference<'db> {
     /// using inference).
     fn can_conform_generic_args(
         &mut self,
-        (candidate_args, candidate_final): (&[GenericArgumentId], bool),
-        (target_args, target_final): (&[GenericArgumentId], bool),
+        (candidate_args, candidate_final): (&[GenericArgumentId<'db>], bool),
+        (target_args, target_final): (&[GenericArgumentId<'db>], bool),
     ) -> CanConformResult {
         CanConformResult::fold(zip_eq(candidate_args, target_args).map(
             |(candidate_arg, target_arg)| {
@@ -485,8 +507,8 @@ impl<'db> LiteInference<'db> {
     /// of the trait.
     fn can_conform_generic_arg(
         &mut self,
-        (candidate_arg, mut candidate_final): (GenericArgumentId, bool),
-        (target_arg, mut target_final): (GenericArgumentId, bool),
+        (candidate_arg, mut candidate_final): (GenericArgumentId<'db>, bool),
+        (target_arg, mut target_final): (GenericArgumentId<'db>, bool),
     ) -> CanConformResult {
         if candidate_arg == target_arg {
             return CanConformResult::Accepted;
@@ -517,8 +539,8 @@ impl<'db> LiteInference<'db> {
     /// [TypeId] of the trait.
     fn can_conform_ty(
         &mut self,
-        (candidate_ty, mut candidate_final): (TypeId, bool),
-        (target_ty, mut target_final): (TypeId, bool),
+        (candidate_ty, mut candidate_final): (TypeId<'db>, bool),
+        (target_ty, mut target_final): (TypeId<'db>, bool),
     ) -> CanConformResult {
         if candidate_ty == target_ty {
             return CanConformResult::Accepted;
@@ -671,8 +693,8 @@ impl<'db> LiteInference<'db> {
     /// [ImplId] of the trait.
     fn can_conform_impl(
         &mut self,
-        (candidate_impl, mut candidate_final): (ImplId, bool),
-        (target_impl, mut target_final): (ImplId, bool),
+        (candidate_impl, mut candidate_final): (ImplId<'db>, bool),
+        (target_impl, mut target_final): (ImplId<'db>, bool),
     ) -> CanConformResult {
         let long_impl_trait = target_impl.lookup_intern(self.db);
         if candidate_impl == target_impl {
@@ -742,8 +764,8 @@ impl<'db> LiteInference<'db> {
     /// [ConstValueId] of the trait.
     fn can_conform_const(
         &mut self,
-        (candidate_id, mut candidate_final): (ConstValueId, bool),
-        (target_id, mut target_final): (ConstValueId, bool),
+        (candidate_id, mut candidate_final): (ConstValueId<'db>, bool),
+        (target_id, mut target_final): (ConstValueId<'db>, bool),
     ) -> CanConformResult {
         if candidate_id == target_id {
             return CanConformResult::Accepted;

@@ -17,10 +17,10 @@ use crate::{
 
 /// Main function for the add_withdraw_gas lowering phase. Adds a `withdraw_gas` statement to the
 /// given function, if needed.
-pub fn add_withdraw_gas(
-    db: &dyn LoweringGroup,
-    function: ConcreteFunctionWithBodyId,
-    lowered: &mut Lowered,
+pub fn add_withdraw_gas<'db>(
+    db: &'db dyn LoweringGroup,
+    function: ConcreteFunctionWithBodyId<'db>,
+    lowered: &mut Lowered<'db>,
 ) -> Maybe<()> {
     if db.needs_withdraw_gas(function)? {
         add_withdraw_gas_to_function(db, function, lowered)?;
@@ -32,10 +32,10 @@ pub fn add_withdraw_gas(
 /// Adds a `withdraw_gas` call statement to the given function.
 /// Creates a new root block that matches on `withdraw_gas`, moves the old root block to the success
 /// arm of it, and creates a new panic block for the failure arm.
-fn add_withdraw_gas_to_function(
-    db: &dyn LoweringGroup,
-    function: ConcreteFunctionWithBodyId,
-    lowered: &mut Lowered,
+fn add_withdraw_gas_to_function<'db>(
+    db: &'db dyn LoweringGroup,
+    function: ConcreteFunctionWithBodyId<'db>,
+    lowered: &mut Lowered<'db>,
 ) -> Maybe<()> {
     let location = LocationId::from_stable_location(db, function.stable_location(db)?)
         .with_auto_generation_note(db, "withdraw_gas");
@@ -85,11 +85,11 @@ fn add_withdraw_gas_to_function(
 }
 
 /// Creates the panic block for the case `withdraw_gas` failure.
-fn create_panic_block(
-    db: &dyn LoweringGroup,
-    lowered: &mut Lowered,
-    location: LocationId,
-) -> Maybe<Block> {
+fn create_panic_block<'db>(
+    db: &'db dyn LoweringGroup,
+    lowered: &mut Lowered<'db>,
+    location: LocationId<'db>,
+) -> Maybe<Block<'db>> {
     let never_ty = never_ty(db);
     let never_var = lowered.variables.alloc(Variable::with_default_context(db, never_ty, location));
 

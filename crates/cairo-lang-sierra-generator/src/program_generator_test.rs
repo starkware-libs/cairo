@@ -8,10 +8,11 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::try_extract_matches;
+use cairo_lang_utils::{Intern, try_extract_matches};
 use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
+use smol_str::SmolStr;
 use test_case::test_case;
 
 use super::get_dummy_program_for_size_estimation;
@@ -89,7 +90,10 @@ fn test_program_generator(
 #[test_case("f5", &["f5", "f6"]; "f5 -> f6")]
 #[test_case("f6", &["f6"]; "self loop")]
 fn test_only_include_dependencies(func_name: &str, sierra_used_funcs: &[&str]) {
-    let (db, crate_id) = setup_db_and_get_crate_id(indoc! {"
+    let db = SierraGenDatabaseForTesting::default();
+    let crate_id = setup_db_and_get_crate_id(
+        &db,
+        indoc! {"
         #[inline(never)]
         fn f1() { f2(); f3(); }
         #[inline(never)]
@@ -102,14 +106,17 @@ fn test_only_include_dependencies(func_name: &str, sierra_used_funcs: &[&str]) {
         fn f5() { f6(); }
         #[inline(never)]
         fn f6() { f6(); }
-    "});
+    "},
+    );
     let func_id = ConcreteFunctionWithBodyId::from_no_generics_free(
         &db,
         db.crate_modules(crate_id)
             .iter()
             .find_map(|module_id| {
                 try_extract_matches!(
-                    db.module_item_by_name(*module_id, func_name.into()).unwrap().unwrap(),
+                    db.module_item_by_name(*module_id, SmolStr::from(func_name).intern(&db))
+                        .unwrap()
+                        .unwrap(),
                     ModuleItemId::FreeFunction
                 )
             })

@@ -24,13 +24,13 @@ use crate::{MatchArm, MatchEnumInfo, MatchInfo};
 ///
 /// In particular, note that if `conditions` is empty, there are no conditions and the
 /// expression is simply [Self::expr].
-pub struct ConditionedExpr<'a> {
-    pub expr: semantic::ExprId,
-    pub conditions: &'a [Condition],
-    pub else_block: Option<semantic::ExprId>,
+pub struct ConditionedExpr<'db, 'a> {
+    pub expr: semantic::ExprId<'db>,
+    pub conditions: &'a [Condition<'db>],
+    pub else_block: Option<semantic::ExprId<'db>>,
 }
 
-impl ConditionedExpr<'_> {
+impl ConditionedExpr<'_, '_> {
     /// Returns a copy of self, without the first condition.
     pub fn remove_first(&self) -> Self {
         Self { conditions: &self.conditions[1..], ..*self }
@@ -38,11 +38,11 @@ impl ConditionedExpr<'_> {
 }
 
 /// Lowers an expression of type [semantic::ExprIf].
-pub fn lower_expr_if(
-    ctx: &mut LoweringContext<'_, '_>,
-    builder: &mut BlockBuilder,
-    expr: &semantic::ExprIf,
-) -> LoweringResult<LoweredExpr> {
+pub fn lower_expr_if<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    builder: &mut BlockBuilder<'db>,
+    expr: &semantic::ExprIf<'db>,
+) -> LoweringResult<'db, LoweredExpr<'db>> {
     // Else block is not supported yet for multiple conditions.
     if expr.conditions.len() > 1 {
         if let Some(else_block) = expr.else_block {
@@ -64,12 +64,12 @@ pub fn lower_expr_if(
 }
 
 /// Lowers an expression of type [semantic::ExprIf].
-pub fn lower_if_bool_condition(
-    ctx: &mut LoweringContext<'_, '_>,
-    builder: &mut BlockBuilder,
-    condition: semantic::ExprId,
-    inner_expr: ConditionedExpr<'_>,
-) -> LoweringResult<LoweredExpr> {
+pub fn lower_if_bool_condition<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    builder: &mut BlockBuilder<'db>,
+    condition: semantic::ExprId<'db>,
+    inner_expr: ConditionedExpr<'db, '_>,
+) -> LoweringResult<'db, LoweredExpr<'db>> {
     // The condition cannot be unit.
     let condition_var = lower_expr_to_var_usage(ctx, builder, condition)?;
     let db = ctx.db;
@@ -123,13 +123,13 @@ pub fn lower_if_bool_condition(
 }
 
 /// Lowers an expression of type if where the condition is of type [semantic::Condition::Let].
-pub fn lower_if_let_condition(
-    ctx: &mut LoweringContext<'_, '_>,
-    builder: &mut BlockBuilder,
-    matched_expr_id: semantic::ExprId,
-    patterns: &[semantic::PatternId],
-    inner_expr: ConditionedExpr<'_>,
-) -> LoweringResult<LoweredExpr> {
+pub fn lower_if_let_condition<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    builder: &mut BlockBuilder<'db>,
+    matched_expr_id: semantic::ExprId<'db>,
+    patterns: &[semantic::PatternId<'db>],
+    inner_expr: ConditionedExpr<'db, '_>,
+) -> LoweringResult<'db, LoweredExpr<'db>> {
     let matched_expr = &ctx.function_body.arenas.exprs[matched_expr_id];
     let stable_ptr = matched_expr.stable_ptr().untyped();
     let ty = matched_expr.ty();
@@ -166,11 +166,11 @@ pub fn lower_if_let_condition(
 
 /// Lowers a [ConditionedExpr] recursively by iterating over the conditions and calling
 /// [lower_if_let_condition] or [lower_if_bool_condition].
-fn lower_conditioned_expr(
-    ctx: &mut LoweringContext<'_, '_>,
-    builder: &mut BlockBuilder,
-    expr: &ConditionedExpr<'_>,
-) -> LoweringResult<LoweredExpr> {
+fn lower_conditioned_expr<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    builder: &mut BlockBuilder<'db>,
+    expr: &ConditionedExpr<'db, '_>,
+) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!(
         "Lowering a conditioned expression: {:?} (# of conditions: {})",
         expr.expr.debug(&ctx.expr_formatter),
@@ -193,11 +193,11 @@ fn lower_conditioned_expr(
 }
 
 /// Lowers a [ConditionedExpr] and seals the block. See [lower_conditioned_expr].
-pub fn lower_conditioned_expr_and_seal(
-    ctx: &mut LoweringContext<'_, '_>,
-    mut builder: BlockBuilder,
-    expr: &ConditionedExpr<'_>,
-) -> Maybe<SealedBlockBuilder> {
+pub fn lower_conditioned_expr_and_seal<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    mut builder: BlockBuilder<'db>,
+    expr: &ConditionedExpr<'db, '_>,
+) -> Maybe<SealedBlockBuilder<'db>> {
     let lowered_expr = lower_conditioned_expr(ctx, &mut builder, expr);
     lowered_expr_to_block_scope_end(ctx, builder, lowered_expr)
 }
@@ -205,12 +205,12 @@ pub fn lower_conditioned_expr_and_seal(
 /// Lowers an optional else block. If the else block is missing it is replaced with a block
 /// returning a unit.
 /// Returns the sealed block builder of the else block.
-fn lower_optional_else_block(
-    ctx: &mut LoweringContext<'_, '_>,
-    mut builder: BlockBuilder,
-    else_expr_opt: Option<semantic::ExprId>,
-    if_location: LocationId,
-) -> Maybe<SealedBlockBuilder> {
+fn lower_optional_else_block<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    mut builder: BlockBuilder<'db>,
+    else_expr_opt: Option<semantic::ExprId<'db>>,
+    if_location: LocationId<'db>,
+) -> Maybe<SealedBlockBuilder<'db>> {
     log::trace!("Started lowering of an optional else block.");
     match else_expr_opt {
         Some(else_expr) => {

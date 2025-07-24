@@ -9,7 +9,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
-use cairo_lang_filesystem::ids::{CodeMapping, CrateId, CrateLongId};
+use cairo_lang_filesystem::ids::{CodeMapping, CrateId, CrateLongId, SmolStrId};
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
@@ -74,21 +74,21 @@ const STARKNET_CRATE_NAME: &str = "starknet";
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
-#[derive(Clone, Default, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ResolvedItems {
-    pub concrete: UnorderedHashMap<ast::TerminalIdentifierPtr, ResolvedConcreteItem>,
-    pub generic: UnorderedHashMap<ast::TerminalIdentifierPtr, ResolvedGenericItem>,
+#[derive(Clone, Default, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct ResolvedItems<'db> {
+    pub concrete: UnorderedHashMap<ast::TerminalIdentifierPtr<'db>, ResolvedConcreteItem<'db>>,
+    pub generic: UnorderedHashMap<ast::TerminalIdentifierPtr<'db>, ResolvedGenericItem<'db>>,
 }
-impl ResolvedItems {
+impl<'db> ResolvedItems<'db> {
     // Relates a path segment to a ResolvedConcreteItem, and adds to a resolved_items map. This will
     // be used in "Go to definition".
     pub fn mark_concrete(
         &mut self,
-        db: &dyn SemanticGroup,
-        segment: &syntax::node::ast::PathSegment,
-        resolved_item: ResolvedConcreteItem,
-    ) -> ResolvedConcreteItem {
+        db: &'db dyn SemanticGroup,
+        segment: &syntax::node::ast::PathSegment<'db>,
+        resolved_item: ResolvedConcreteItem<'db>,
+    ) -> ResolvedConcreteItem<'db> {
         let identifier = segment.identifier_ast(db);
         if let Some(generic_item) = resolved_item.generic(db) {
             // Mark the generic item as well, for language server resolved_items.
@@ -101,10 +101,10 @@ impl ResolvedItems {
     // be used in "Go to definition".
     pub fn mark_generic(
         &mut self,
-        db: &dyn SemanticGroup,
-        segment: &syntax::node::ast::PathSegment,
-        resolved_item: ResolvedGenericItem,
-    ) -> ResolvedGenericItem {
+        db: &'db dyn SemanticGroup,
+        segment: &syntax::node::ast::PathSegment<'db>,
+        resolved_item: ResolvedGenericItem<'db>,
+    ) -> ResolvedGenericItem<'db> {
         let identifier = segment.identifier_ast(db);
         self.generic.insert(identifier.stable_ptr(db), resolved_item.clone());
         resolved_item
@@ -113,21 +113,21 @@ impl ResolvedItems {
 
 /// The enriched members of a type, including direct members of structs, as well as members of
 /// targets of `Deref` and `DerefMut` of the type.
-#[derive(Debug, PartialEq, Eq, DebugWithDb, Clone)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct EnrichedMembers {
+#[derive(Debug, PartialEq, Eq, DebugWithDb, Clone, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct EnrichedMembers<'db> {
     /// A map from member names to their semantic representation and the number of deref operations
     /// needed to access them.
-    pub members: OrderedHashMap<SmolStr, (Member, usize)>,
+    pub members: OrderedHashMap<SmolStrId<'db>, (Member<'db>, usize)>,
     /// The sequence of deref needed to access the members.
-    pub deref_chain: Arc<[DerefInfo]>,
+    pub deref_chain: Arc<Vec<DerefInfo<'db>>>,
     // The number of derefs that were explored.
     pub explored_derefs: usize,
 }
-impl EnrichedMembers {
+impl<'db> EnrichedMembers<'db> {
     /// Returns `EnrichedTypeMemberAccess` for a single member if exists.
-    pub fn get_member(&self, name: &str) -> Option<EnrichedTypeMemberAccess> {
-        let (member, n_derefs) = self.members.get(name)?;
+    pub fn get_member(&self, name: SmolStrId<'db>) -> Option<EnrichedTypeMemberAccess<'db>> {
+        let (member, n_derefs) = self.members.get(&name)?;
         Some(EnrichedTypeMemberAccess {
             member: member.clone(),
             deref_functions: self
@@ -142,15 +142,15 @@ impl EnrichedMembers {
 
 /// The enriched member of a type, including the member itself and the deref functions needed to
 /// access it.
-pub struct EnrichedTypeMemberAccess {
+pub struct EnrichedTypeMemberAccess<'db> {
     /// The member itself.
-    pub member: Member,
+    pub member: Member<'db>,
     /// The sequence of deref functions needed to access the member.
-    pub deref_functions: Vec<(FunctionId, Mutability)>,
+    pub deref_functions: Vec<(FunctionId<'db>, Mutability)>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[debug_db(dyn SemanticGroup)]
 pub enum MacroContextModifier {
     /// The path is resolved in the macro definition site.
     DefSite,
@@ -160,30 +160,30 @@ pub enum MacroContextModifier {
     None,
 }
 
-#[derive(Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ResolverData {
+#[derive(Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct ResolverData<'db> {
     /// Current module in which to resolve the path.
-    pub module_file_id: ModuleFileId,
+    pub module_file_id: ModuleFileId<'db>,
     /// Named generic parameters accessible to the resolver.
-    generic_param_by_name: OrderedHashMap<SmolStr, GenericParamId>,
+    generic_param_by_name: OrderedHashMap<SmolStrId<'db>, GenericParamId<'db>>,
     /// All generic parameters accessible to the resolver.
-    pub generic_params: Vec<GenericParamId>,
+    pub generic_params: Vec<GenericParamId<'db>>,
     /// The enriched members per type and its mutability in the resolver context.
-    pub type_enriched_members: OrderedHashMap<(TypeId, bool), EnrichedMembers>,
+    pub type_enriched_members: OrderedHashMap<(TypeId<'db>, bool), EnrichedMembers<'db>>,
     /// Lookback map for resolved identifiers in path. Used in "Go to definition".
-    pub resolved_items: ResolvedItems,
+    pub resolved_items: ResolvedItems<'db>,
     /// Inference data for the resolver.
-    pub inference_data: InferenceData,
+    pub inference_data: InferenceData<'db>,
     /// The trait/impl context the resolver is currently in. Used to resolve "Self::" paths.
-    pub trait_or_impl_ctx: TraitOrImplContext,
+    pub trait_or_impl_ctx: TraitOrImplContext<'db>,
     /// The configuration of allowed features.
     pub feature_config: FeatureConfig,
     /// The set of used `use` items in the current context.
-    pub used_uses: OrderedHashSet<UseId>,
+    pub used_uses: OrderedHashSet<UseId<'db>>,
 }
-impl ResolverData {
-    pub fn new(module_file_id: ModuleFileId, inference_id: InferenceId) -> Self {
+impl<'db> ResolverData<'db> {
+    pub fn new(module_file_id: ModuleFileId<'db>, inference_id: InferenceId<'db>) -> Self {
         Self {
             module_file_id,
             generic_param_by_name: Default::default(),
@@ -198,8 +198,8 @@ impl ResolverData {
     }
     pub fn clone_with_inference_id(
         &self,
-        db: &dyn SemanticGroup,
-        inference_id: InferenceId,
+        db: &'db dyn SemanticGroup,
+        inference_id: InferenceId<'db>,
     ) -> Self {
         Self {
             module_file_id: self.module_file_id,
@@ -217,38 +217,38 @@ impl ResolverData {
 
 /// Resolving data needed for resolving macro expanded code in the correct context.
 #[derive(Debug, Clone)]
-pub struct ResolverMacroData {
+pub struct ResolverMacroData<'db> {
     /// The module file id of the macro definition site. It is used if the path begins with
     /// `$defsite`.
-    pub defsite_module_file_id: ModuleFileId,
+    pub defsite_module_file_id: ModuleFileId<'db>,
     /// The module file id of the macro call site. Items are resolved in this context in two cases:
     /// 1. The path begins with `$callsite`.
     /// 2. The path was supplied as a macro argument. In other words, the path is an expansion of a
     ///    placeholder and is not a part of the macro expansion template.
-    pub callsite_module_file_id: ModuleFileId,
+    pub callsite_module_file_id: ModuleFileId<'db>,
     /// This is the mappings of the macro expansion. It is used to determine if a part of the
     /// code came from a macro argument or from the macro expansion template.
     pub expansion_mappings: Arc<[CodeMapping]>,
     /// The parent macro data. Exists in case of a macro calling another macro, and is used if we
     /// climb to the callsite environment.
-    pub parent_macro_call_data: Option<Box<ResolverMacroData>>,
+    pub parent_macro_call_data: Option<Box<ResolverMacroData<'db>>>,
 }
 
 /// Resolves paths semantically.
 pub struct Resolver<'db> {
     db: &'db dyn SemanticGroup,
-    pub data: ResolverData,
+    pub data: ResolverData<'db>,
     /// The resolving context for macro related resolving. Should be `Some` only if the current
     /// code is an expansion of a macro.
-    pub macro_call_data: Option<ResolverMacroData>,
+    pub macro_call_data: Option<ResolverMacroData<'db>>,
     /// If true, suppresses diagnostics for missing resolver modifiers (`$defsite` or `$callsite`).
     /// Should be true only within plugin macros generated code.
     pub suppress_modifiers_diagnostics: bool,
-    pub owning_crate_id: CrateId,
+    pub owning_crate_id: CrateId<'db>,
     pub settings: CrateSettings,
 }
-impl Deref for Resolver<'_> {
-    type Target = ResolverData;
+impl<'db> Deref for Resolver<'db> {
+    type Target = ResolverData<'db>;
 
     fn deref(&self) -> &Self::Target {
         &self.data
@@ -259,74 +259,74 @@ impl DerefMut for Resolver<'_> {
         &mut self.data
     }
 }
-impl Resolver<'_> {
+impl<'db> Resolver<'db> {
     /// Extracts the allowed node from the syntax, and sets it as the allowed features of the
     /// resolver.
     pub fn set_feature_config(
         &mut self,
-        element_id: &impl LanguageElementId,
-        syntax: &impl QueryAttrs,
-        diagnostics: &mut SemanticDiagnostics,
+        element_id: &impl LanguageElementId<'db>,
+        syntax: &impl QueryAttrs<'db>,
+        diagnostics: &mut SemanticDiagnostics<'db>,
     ) {
         self.feature_config = extract_feature_config(self.db, element_id, syntax, diagnostics);
     }
 }
 
-pub enum ResolutionContext<'a> {
+pub enum ResolutionContext<'a, 'mt> {
     /// Default resolution.
     Default,
     /// The resolution is of a module item.
-    ModuleItem(ModuleItemId),
+    ModuleItem(ModuleItemId<'a>),
     /// The resolution is in a statement environment.
-    Statement(&'a mut Environment),
+    Statement(&'mt mut Environment<'a>),
 }
 
 /// The result of resolveing an item using `use *` imports.
-enum UseStarResult {
+enum UseStarResult<'db> {
     /// A unique path was found, considering only the `use *` imports.
-    UniquePathFound(ModuleItemInfo),
+    UniquePathFound(ModuleItemInfo<'db>),
     /// The path is ambiguous, considering only the `use *` imports.
-    AmbiguousPath(Vec<ModuleItemId>),
+    AmbiguousPath(Vec<ModuleItemId<'db>>),
     /// The path was not found, considering only the `use *` imports.
     PathNotFound,
     /// Item is not visible in the current module, considering only the `use *` imports.
-    ItemNotVisible(ModuleItemId, Vec<ModuleId>),
+    ItemNotVisible(ModuleItemId<'db>, Vec<ModuleId<'db>>),
 }
 
 /// A trait for things that can be interpreted as a path of segments.
-pub trait AsSegments {
-    fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment>;
+pub trait AsSegments<'db> {
+    fn to_segments(self, db: &'db dyn SyntaxGroup) -> Vec<ast::PathSegment<'db>>;
     /// Returns placeholder marker `$` if the path prefixed with one, indicating a resolver site
     /// modifier.
-    fn placeholder_marker(&self, db: &dyn SyntaxGroup) -> Option<ast::TerminalDollar>;
+    fn placeholder_marker(&self, db: &'db dyn SyntaxGroup) -> Option<ast::TerminalDollar<'db>>;
     /// The offset of the path in the file.
-    fn offset(&self, db: &dyn SyntaxGroup) -> Option<TextOffset>;
+    fn offset(&self, db: &'db dyn SyntaxGroup) -> Option<TextOffset>;
 }
-impl AsSegments for &ast::ExprPath {
-    fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
+impl<'db> AsSegments<'db> for &ast::ExprPath<'db> {
+    fn to_segments(self, db: &'db dyn SyntaxGroup) -> Vec<ast::PathSegment<'db>> {
         self.segments(db).elements_vec(db)
     }
-    fn placeholder_marker(&self, db: &dyn SyntaxGroup) -> Option<ast::TerminalDollar> {
+    fn placeholder_marker(&self, db: &'db dyn SyntaxGroup) -> Option<ast::TerminalDollar<'db>> {
         match self.dollar(db) {
             ast::OptionTerminalDollar::Empty(_) => None,
             ast::OptionTerminalDollar::TerminalDollar(dollar) => Some(dollar),
         }
     }
 
-    fn offset(&self, db: &dyn SyntaxGroup) -> Option<TextOffset> {
+    fn offset(&self, db: &'db dyn SyntaxGroup) -> Option<TextOffset> {
         Some(self.as_syntax_node().offset(db))
     }
 }
-impl AsSegments for Vec<ast::PathSegment> {
-    fn to_segments(self, _: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
+impl<'db> AsSegments<'db> for Vec<ast::PathSegment<'db>> {
+    fn to_segments(self, _: &'db dyn SyntaxGroup) -> Vec<ast::PathSegment<'db>> {
         self
     }
-    fn placeholder_marker(&self, _: &dyn SyntaxGroup) -> Option<ast::TerminalDollar> {
+    fn placeholder_marker(&self, _: &'db dyn SyntaxGroup) -> Option<ast::TerminalDollar<'db>> {
         // A dollar can prefix only the first segment of a path, thus irrelevant to a list of
         // segments.
         None
     }
-    fn offset(&self, db: &dyn SyntaxGroup) -> Option<TextOffset> {
+    fn offset(&self, db: &'db dyn SyntaxGroup) -> Option<TextOffset> {
         self.first().map(|segment| segment.as_syntax_node().offset(db))
     }
 }
@@ -334,13 +334,13 @@ impl AsSegments for Vec<ast::PathSegment> {
 impl<'db> Resolver<'db> {
     pub fn new(
         db: &'db dyn SemanticGroup,
-        module_file_id: ModuleFileId,
-        inference_id: InferenceId,
+        module_file_id: ModuleFileId<'db>,
+        inference_id: InferenceId<'db>,
     ) -> Self {
         Self::with_data(db, ResolverData::new(module_file_id, inference_id))
     }
 
-    pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
+    pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData<'db>) -> Self {
         let owning_crate_id = data.module_file_id.0.owning_crate(db);
         let settings = db.crate_config(owning_crate_id).map(|c| c.settings).unwrap_or_default();
         Self {
@@ -353,17 +353,18 @@ impl<'db> Resolver<'db> {
         }
     }
 
-    pub fn inference(&mut self) -> Inference<'_> {
+    pub fn inference(&mut self) -> Inference<'db, '_> {
         self.data.inference_data.inference(self.db)
     }
 
     /// Adds a generic param to an existing resolver.
     /// This is required since a resolver needs to exist before resolving the generic params,
     /// and thus, they are added to the Resolver only after they are resolved.
-    pub fn add_generic_param(&mut self, generic_param_id: GenericParamId) {
+    pub fn add_generic_param(&mut self, generic_param_id: GenericParamId<'db>) {
         self.generic_params.push(generic_param_id);
         if let Some(name) = generic_param_id.name(self.db) {
-            self.generic_param_by_name.insert(name, generic_param_id);
+            let name_id = name.intern(self.db);
+            self.generic_param_by_name.insert(name_id, generic_param_id);
         }
     }
 
@@ -376,7 +377,7 @@ impl<'db> Resolver<'db> {
     pub fn active_module_file_id(
         &self,
         macro_context_modifier: MacroContextModifier,
-    ) -> ModuleFileId {
+    ) -> ModuleFileId<'db> {
         match macro_context_modifier {
             MacroContextModifier::DefSite => *self
                 .macro_call_data
@@ -394,7 +395,10 @@ impl<'db> Resolver<'db> {
 
     /// Returns the owning crate id of the active module file id, with respect to the macro context
     /// modifier, see [`MacroContextModifier`].
-    pub fn active_owning_crate_id(&self, macro_context_modifier: MacroContextModifier) -> CrateId {
+    pub fn active_owning_crate_id(
+        &self,
+        macro_context_modifier: MacroContextModifier,
+    ) -> CrateId<'db> {
         self.active_module_file_id(macro_context_modifier).0.owning_crate(self.db)
     }
 
@@ -409,36 +413,40 @@ impl<'db> Resolver<'db> {
 
     /// Resolves an item, given a path.
     /// Guaranteed to result in at most one diagnostic.
-    fn resolve_path_inner<ResolvedItem: Clone>(
-        &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        path: impl AsSegments,
+    fn resolve_path_inner<'a, ResolvedItem: Clone>(
+        &'a mut self,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        path: impl AsSegments<'db>,
         item_type: NotFoundItemType,
         mut callbacks: ResolvePathInnerCallbacks<
+            'db,
             ResolvedItem,
             impl FnOnce(
-                &mut Resolver<'_>,
-                &mut SemanticDiagnostics,
-                &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+                &mut Resolver<'db>,
+                &mut SemanticDiagnostics<'db>,
+                &mut Peekable<std::slice::Iter<'_, ast::PathSegment<'db>>>,
                 MacroContextModifier,
             ) -> Maybe<ResolvedItem>,
             impl FnMut(
-                &mut Resolver<'_>,
-                &mut SemanticDiagnostics,
+                &mut Resolver<'db>,
+                &mut SemanticDiagnostics<'db>,
                 &ResolvedItem,
-                &ast::PathSegment,
+                &ast::PathSegment<'db>,
                 NotFoundItemType,
                 MacroContextModifier,
             ) -> Maybe<ResolvedItem>,
-            impl FnMut(&mut SemanticDiagnostics, &ast::PathSegment) -> Maybe<()>,
+            impl FnMut(&mut SemanticDiagnostics<'db>, &ast::PathSegment<'db>) -> Maybe<()>,
             impl FnMut(
-                &mut ResolvedItems,
-                &dyn SemanticGroup,
-                &syntax::node::ast::PathSegment,
+                &mut ResolvedItems<'db>,
+                &'db dyn SemanticGroup,
+                &syntax::node::ast::PathSegment<'db>,
                 ResolvedItem,
             ),
         >,
-    ) -> Maybe<ResolvedItem> {
+    ) -> Maybe<ResolvedItem>
+    where
+        'db: 'a,
+    {
         let db = self.db;
         let placeholder_marker = path.placeholder_marker(db);
 
@@ -511,10 +519,10 @@ impl<'db> Resolver<'db> {
     /// Item not inside a statement.
     pub fn resolve_concrete_path(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        path: impl AsSegments,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        path: impl AsSegments<'db>,
         item_type: NotFoundItemType,
-    ) -> Maybe<ResolvedConcreteItem> {
+    ) -> Maybe<ResolvedConcreteItem<'db>> {
         self.resolve_concrete_path_ex(diagnostics, path, item_type, ResolutionContext::Default)
     }
 
@@ -522,12 +530,12 @@ impl<'db> Resolver<'db> {
     /// Guaranteed to result in at most one diagnostic.
     pub fn resolve_concrete_path_ex(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        path: impl AsSegments,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        path: impl AsSegments<'db>,
         item_type: NotFoundItemType,
-        ctx: ResolutionContext<'_>,
-    ) -> Maybe<ResolvedConcreteItem> {
-        self.resolve_path_inner::<ResolvedConcreteItem>(
+        ctx: ResolutionContext<'db, '_>,
+    ) -> Maybe<ResolvedConcreteItem<'db>> {
+        self.resolve_path_inner::<ResolvedConcreteItem<'db>>(
             diagnostics,
             path,
             item_type,
@@ -553,7 +561,7 @@ impl<'db> Resolver<'db> {
                         )
                     },
                 validate_segment: |_, _| Ok(()),
-                mark: |resolved_items, db, segment, item| {
+                mark: |resolved_items: &mut ResolvedItems<'db>, db, segment, item| {
                     resolved_items.mark_concrete(db, segment, item);
                 },
             },
@@ -563,13 +571,13 @@ impl<'db> Resolver<'db> {
     /// Specializes the item found in the current segment, and checks its usability.
     fn specialize_generic_inner_item(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        module_id: ModuleId,
-        identifier: &TerminalIdentifier,
-        inner_item_info: ModuleItemInfo,
-        segment: &ast::PathSegment,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        module_id: ModuleId<'db>,
+        identifier: &TerminalIdentifier<'db>,
+        inner_item_info: ModuleItemInfo<'db>,
+        segment: &ast::PathSegment<'db>,
         macro_context_modifier: MacroContextModifier,
-    ) -> Maybe<ResolvedConcreteItem> {
+    ) -> Maybe<ResolvedConcreteItem<'db>> {
         let generic_args_syntax = segment.generic_args(self.db);
         let segment_stable_ptr = segment.stable_ptr(self.db).untyped();
         self.validate_module_item_usability(
@@ -601,11 +609,11 @@ impl<'db> Resolver<'db> {
     /// Resolves the first segment of a concrete path.
     fn resolve_concrete_path_first_segment(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
-        ctx: ResolutionContext<'_>,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment<'db>>>,
+        ctx: ResolutionContext<'db, '_>,
         macro_context_modifier: MacroContextModifier,
-    ) -> Maybe<ResolvedConcreteItem> {
+    ) -> Maybe<ResolvedConcreteItem<'db>> {
         if let Some(base_module) = self.try_handle_super_segments(
             diagnostics,
             segments,
@@ -747,22 +755,22 @@ impl<'db> Resolver<'db> {
     /// Guaranteed to result in at most one diagnostic.
     pub fn resolve_generic_path(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        path: impl AsSegments,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        path: impl AsSegments<'db>,
         item_type: NotFoundItemType,
-        ctx: ResolutionContext<'_>,
-    ) -> Maybe<ResolvedGenericItem> {
+        ctx: ResolutionContext<'db, '_>,
+    ) -> Maybe<ResolvedGenericItem<'db>> {
         self.resolve_generic_path_inner(diagnostics, path, item_type, false, ctx)
     }
     /// Resolves a generic item, given a concrete item path, while ignoring the generic args.
     /// Guaranteed to result in at most one diagnostic.
     pub fn resolve_generic_path_with_args(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        path: impl AsSegments,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        path: impl AsSegments<'db>,
         item_type: NotFoundItemType,
-        ctx: ResolutionContext<'_>,
-    ) -> Maybe<ResolvedGenericItem> {
+        ctx: ResolutionContext<'db, '_>,
+    ) -> Maybe<ResolvedGenericItem<'db>> {
         self.resolve_generic_path_inner(diagnostics, path, item_type, true, ctx)
     }
 
@@ -772,20 +780,22 @@ impl<'db> Resolver<'db> {
     /// params will be ignored.
     fn resolve_generic_path_inner(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        path: impl AsSegments,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        path: impl AsSegments<'db>,
         item_type: NotFoundItemType,
         allow_generic_args: bool,
-        ctx: ResolutionContext<'_>,
-    ) -> Maybe<ResolvedGenericItem> {
-        let validate_segment =
-            |diagnostics: &mut SemanticDiagnostics, segment: &ast::PathSegment| match segment {
+        ctx: ResolutionContext<'db, '_>,
+    ) -> Maybe<ResolvedGenericItem<'db>> {
+        let validate_segment = |diagnostics: &mut SemanticDiagnostics<'db>,
+                                segment: &ast::PathSegment<'db>| {
+            match segment {
                 ast::PathSegment::WithGenericArgs(generic_args) if !allow_generic_args => {
                     Err(diagnostics.report(generic_args.stable_ptr(self.db), UnexpectedGenericArgs))
                 }
                 _ => Ok(()),
-            };
-        self.resolve_path_inner::<ResolvedGenericItem>(
+            }
+        };
+        self.resolve_path_inner::<ResolvedGenericItem<'_>>(
             diagnostics,
             path,
             item_type,
@@ -824,16 +834,16 @@ impl<'db> Resolver<'db> {
     /// If `allow_generic_args` is true the generic args will be ignored.
     fn resolve_generic_path_first_segment(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment<'db>>>,
         allow_generic_args: bool,
-        ctx: ResolutionContext<'_>,
+        ctx: ResolutionContext<'db, '_>,
         macro_context_modifier: MacroContextModifier,
-    ) -> Maybe<ResolvedGenericItem> {
+    ) -> Maybe<ResolvedGenericItem<'db>> {
         if let Some(base_module) = self.try_handle_super_segments(
             diagnostics,
             segments,
-            |resolved_items, db: &dyn SemanticGroup, segment, module_id| {
+            |resolved_items, db, segment, module_id| {
                 resolved_items.mark_generic(db, segment, ResolvedGenericItem::Module(module_id));
             },
             macro_context_modifier,
@@ -931,16 +941,16 @@ impl<'db> Resolver<'db> {
     /// If there are, but that's an invalid path, adds to diagnostics and returns `Some(Err)`.
     fn try_handle_super_segments(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment<'db>>>,
         mut mark: impl FnMut(
-            &mut ResolvedItems,
-            &dyn SemanticGroup,
-            &syntax::node::ast::PathSegment,
-            ModuleId,
+            &mut ResolvedItems<'db>,
+            &'db dyn SemanticGroup,
+            &syntax::node::ast::PathSegment<'db>,
+            ModuleId<'db>,
         ),
         macro_context_modifier: MacroContextModifier,
-    ) -> Option<Maybe<ModuleId>> {
+    ) -> Option<Maybe<ModuleId<'db>>> {
         let db = self.db;
         let mut module_id = self.active_module_file_id(macro_context_modifier).0;
         for segment in segments.peeking_take_while(|segment| match segment {
@@ -967,14 +977,14 @@ impl<'db> Resolver<'db> {
     /// Resolves the inner item of a module, given the current segment of the path.
     fn resolve_module_inner_item(
         &mut self,
-        module_id: &ModuleId,
+        module_id: &ModuleId<'db>,
         ident: SmolStr,
-        diagnostics: &mut SemanticDiagnostics,
-        identifier: &TerminalIdentifier,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        identifier: &TerminalIdentifier<'db>,
         item_type: NotFoundItemType,
-    ) -> Maybe<ModuleItemInfo> {
+    ) -> Maybe<ModuleItemInfo<'db>> {
         let db = self.db;
-        match self.db.module_item_info_by_name(*module_id, ident)? {
+        match self.db.module_item_info_by_name(*module_id, ident.intern(db))? {
             Some(info) => Ok(info),
             None => match self.resolve_path_using_use_star(*module_id, identifier) {
                 UseStarResult::UniquePathFound(item_info) => Ok(item_info),
@@ -997,12 +1007,12 @@ impl<'db> Resolver<'db> {
     /// Given the current resolved item, resolves the next segment.
     fn resolve_path_next_segment_concrete(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        containing_item: &ResolvedConcreteItem,
-        segment: &ast::PathSegment,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        containing_item: &ResolvedConcreteItem<'db>,
+        segment: &ast::PathSegment<'db>,
         item_type: NotFoundItemType,
         macro_context_modifier: MacroContextModifier,
-    ) -> Maybe<ResolvedConcreteItem> {
+    ) -> Maybe<ResolvedConcreteItem<'db>> {
         let db = self.db;
         let identifier = &segment.identifier_ast(db);
         let generic_args_syntax = segment.generic_args(db);
@@ -1042,14 +1052,15 @@ impl<'db> Resolver<'db> {
                     ty.lookup_intern(self.db)
                 {
                     let enum_id = concrete_enum_id.enum_id(self.db);
+                    let ident_id = ident.intern(db);
                     let variants = self
                         .db
                         .enum_variants(enum_id)
                         .map_err(|_| diagnostics.report(identifier.stable_ptr(db), UnknownEnum))?;
-                    let variant_id = variants.get(&ident).ok_or_else(|| {
+                    let variant_id = variants.get(&ident_id).ok_or_else(|| {
                         diagnostics.report(
                             identifier.stable_ptr(db),
-                            NoSuchVariant { enum_id, variant_name: ident },
+                            NoSuchVariant { enum_id, variant_name: ident_id },
                         )
                     })?;
                     let variant = self.db.variant_semantic(enum_id, *variant_id)?;
@@ -1061,15 +1072,15 @@ impl<'db> Resolver<'db> {
                 }
             }
             ResolvedConcreteItem::SelfTrait(concrete_trait_id) => {
+                let ident_id = ident.intern(db);
                 let impl_id = ImplLongId::SelfImpl(*concrete_trait_id).intern(self.db);
-                let Some(trait_item_id) = self
-                    .db
-                    .trait_item_by_name(concrete_trait_id.trait_id(self.db), ident.clone())?
+                let Some(trait_item_id) =
+                    self.db.trait_item_by_name(concrete_trait_id.trait_id(self.db), ident_id)?
                 else {
                     return Err(diagnostics.report(identifier.stable_ptr(db), InvalidPath));
                 };
                 if let Ok(Some(trait_item_info)) =
-                    self.db.trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident)
+                    self.db.trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident_id)
                 {
                     self.validate_feature_constraints(diagnostics, identifier, &trait_item_info);
                 }
@@ -1104,15 +1115,15 @@ impl<'db> Resolver<'db> {
                 })
             }
             ResolvedConcreteItem::Trait(concrete_trait_id) => {
-                let Some(trait_item_id) = self
-                    .db
-                    .trait_item_by_name(concrete_trait_id.trait_id(self.db), ident.clone())?
+                let ident_id = ident.intern(db);
+                let Some(trait_item_id) =
+                    self.db.trait_item_by_name(concrete_trait_id.trait_id(self.db), ident_id)?
                 else {
                     return Err(diagnostics.report(identifier.stable_ptr(db), InvalidPath));
                 };
 
                 if let Ok(Some(trait_item_info)) =
-                    self.db.trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident)
+                    self.db.trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident_id)
                 {
                     self.validate_feature_constraints(diagnostics, identifier, &trait_item_info);
                 }
@@ -1143,8 +1154,11 @@ impl<'db> Resolver<'db> {
                         )?))
                     }
                     TraitItemId::Type(trait_type_id) => {
-                        let concrete_trait_type =
-                            ConcreteTraitTypeId::new(self.db, *concrete_trait_id, trait_type_id);
+                        let concrete_trait_type = ConcreteTraitTypeId::new_from_data(
+                            self.db,
+                            *concrete_trait_id,
+                            trait_type_id,
+                        );
 
                         let impl_lookup_context =
                             self.impl_lookup_context_ex(macro_context_modifier);
@@ -1182,7 +1196,7 @@ impl<'db> Resolver<'db> {
                         ))
                     }
                     TraitItemId::Impl(trait_impl_id) => {
-                        let concrete_trait_impl = ConcreteTraitImplLongId::new(
+                        let concrete_trait_impl = ConcreteTraitImplLongId::new_from_data(
                             self.db,
                             *concrete_trait_id,
                             trait_impl_id,
@@ -1211,21 +1225,20 @@ impl<'db> Resolver<'db> {
             ResolvedConcreteItem::Impl(impl_id) => {
                 let concrete_trait_id = self.db.impl_concrete_trait(*impl_id)?;
                 let trait_id = concrete_trait_id.trait_id(self.db);
-                let Some(trait_item_id) = self.db.trait_item_by_name(trait_id, ident.clone())?
-                else {
+                let ident_id = ident.intern(db);
+                let Some(trait_item_id) = self.db.trait_item_by_name(trait_id, ident_id)? else {
                     return Err(diagnostics.report(identifier.stable_ptr(db), InvalidPath));
                 };
-                if let Ok(Some(trait_item_info)) = self
-                    .db
-                    .trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident.clone())
+                if let Ok(Some(trait_item_info)) =
+                    self.db.trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident_id)
                 {
                     self.validate_feature_constraints(diagnostics, identifier, &trait_item_info);
                 }
                 if let ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(self.db) {
-                    let impl_def_id: ImplDefId = concrete_impl.impl_def_id(self.db);
+                    let impl_def_id: ImplDefId<'_> = concrete_impl.impl_def_id(self.db);
 
                     if let Ok(Some(impl_item_info)) =
-                        self.db.impl_item_info_by_name(impl_def_id, ident)
+                        self.db.impl_item_info_by_name(impl_def_id, ident_id)
                     {
                         self.validate_feature_constraints(diagnostics, identifier, &impl_item_info);
                     }
@@ -1296,15 +1309,15 @@ impl<'db> Resolver<'db> {
     /// Specializes a ResolvedGenericItem that came from a ModuleItem.
     fn specialize_generic_module_item(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        identifier: &syntax::node::ast::TerminalIdentifier,
-        generic_item: ResolvedGenericItem,
-        generic_args_syntax: Option<Vec<ast::GenericArg>>,
-    ) -> Maybe<ResolvedConcreteItem> {
-        let db = self.db;
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        identifier: &syntax::node::ast::TerminalIdentifier<'db>,
+        generic_item: ResolvedGenericItem<'db>,
+        generic_args_syntax: Option<Vec<ast::GenericArg<'db>>>,
+    ) -> Maybe<ResolvedConcreteItem<'db>> {
+        let db: &'db dyn SemanticGroup = self.db;
         Ok(match generic_item {
             ResolvedGenericItem::GenericConstant(id) => {
-                ResolvedConcreteItem::Constant(self.db.constant_const_value(id)?)
+                ResolvedConcreteItem::Constant(db.constant_const_value(id)?)
             }
             ResolvedGenericItem::Module(module_id) => {
                 if generic_args_syntax.is_some() {
@@ -1342,13 +1355,12 @@ impl<'db> Resolver<'db> {
                     identifier.stable_ptr(db).untyped(),
                 )?;
                 ResolvedConcreteItem::Type(
-                    GenericSubstitution::new(&generic_params, &generic_args)
-                        .substitute(self.db, ty)?,
+                    GenericSubstitution::new(&generic_params, &generic_args).substitute(db, ty)?,
                 )
             }
             ResolvedGenericItem::GenericImplAlias(impl_alias_id) => {
-                let impl_id = self.db.impl_alias_resolved_impl(impl_alias_id)?;
-                let generic_params = self.db.impl_alias_generic_params(impl_alias_id)?;
+                let impl_id = db.impl_alias_resolved_impl(impl_alias_id)?;
+                let generic_params = db.impl_alias_generic_params(impl_alias_id)?;
                 let generic_args = self.resolve_generic_args(
                     diagnostics,
                     GenericSubstitution::default(),
@@ -1358,7 +1370,7 @@ impl<'db> Resolver<'db> {
                 )?;
                 ResolvedConcreteItem::Impl(
                     GenericSubstitution::new(&generic_params, &generic_args)
-                        .substitute(self.db, impl_id)?,
+                        .substitute(db, impl_id)?,
                 )
             }
             ResolvedGenericItem::Trait(trait_id) => {
@@ -1391,7 +1403,7 @@ impl<'db> Resolver<'db> {
             }
             ResolvedGenericItem::Variable(_) => panic!("Variable is not a module item."),
             ResolvedGenericItem::TraitItem(id) => {
-                panic!("`{}` is not a module item.", id.full_path(self.db))
+                panic!("`{}` is not a module item.", id.full_path(db))
             }
         })
     }
@@ -1399,11 +1411,11 @@ impl<'db> Resolver<'db> {
     /// Resolves an item using the `use *` imports.
     fn resolve_path_using_use_star(
         &mut self,
-        module_id: ModuleId,
-        identifier: &ast::TerminalIdentifier,
-    ) -> UseStarResult {
+        module_id: ModuleId<'db>,
+        identifier: &ast::TerminalIdentifier<'db>,
+    ) -> UseStarResult<'db> {
         let mut item_info = None;
-        let mut module_items_found: OrderedHashSet<ModuleItemId> = OrderedHashSet::default();
+        let mut module_items_found: OrderedHashSet<ModuleItemId<'_>> = OrderedHashSet::default();
         let imported_modules = self.db.priv_module_use_star_modules(module_id);
         for (star_module_id, item_module_id) in &imported_modules.accessible {
             if let Some(inner_item_info) =
@@ -1449,10 +1461,11 @@ impl<'db> Resolver<'db> {
     /// Resolves an item in an imported module.
     fn resolve_item_in_imported_module(
         &mut self,
-        module_id: ModuleId,
-        identifier: &ast::TerminalIdentifier,
-    ) -> Option<ModuleItemInfo> {
-        let inner_item_info = self.db.module_item_info_by_name(module_id, identifier.text(self.db));
+        module_id: ModuleId<'db>,
+        identifier: &ast::TerminalIdentifier<'db>,
+    ) -> Option<ModuleItemInfo<'db>> {
+        let inner_item_info =
+            self.db.module_item_info_by_name(module_id, identifier.text(self.db).intern(self.db));
         if let Ok(Some(inner_item_info)) = inner_item_info {
             self.insert_used_use(inner_item_info.item_id);
             return Some(inner_item_info);
@@ -1463,12 +1476,12 @@ impl<'db> Resolver<'db> {
     /// Given the current resolved item, resolves the next segment.
     fn resolve_path_next_segment_generic(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        containing_item: &ResolvedGenericItem,
-        identifier: &ast::TerminalIdentifier,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        containing_item: &ResolvedGenericItem<'db>,
+        identifier: &ast::TerminalIdentifier<'db>,
         item_type: NotFoundItemType,
         macro_context_modifier: MacroContextModifier,
-    ) -> Maybe<ResolvedGenericItem> {
+    ) -> Maybe<ResolvedGenericItem<'db>> {
         let db = self.db;
         let ident = identifier.text(db);
         match containing_item {
@@ -1492,6 +1505,7 @@ impl<'db> Resolver<'db> {
                 ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
+                let ident = ident.intern(self.db);
                 let variants = self.db.enum_variants(*enum_id)?;
                 let variant_id = variants.get(&ident).ok_or_else(|| {
                     diagnostics.report(
@@ -1509,13 +1523,14 @@ impl<'db> Resolver<'db> {
     /// Determines whether the first identifier of a path is a local item.
     fn determine_base_item_in_local_scope(
         &mut self,
-        identifier: &ast::TerminalIdentifier,
-    ) -> Option<ResolvedConcreteItem> {
+        identifier: &ast::TerminalIdentifier<'db>,
+    ) -> Option<ResolvedConcreteItem<'db>> {
         let db = self.db;
         let ident = identifier.text(db);
 
         // If a generic param with this name is found, use it.
-        if let Some(generic_param_id) = self.data.generic_param_by_name.get(&ident) {
+        if let Some(generic_param_id) = self.data.generic_param_by_name.get(&ident.intern(self.db))
+        {
             let item = match generic_param_id.kind(self.db) {
                 GenericKind::Type => ResolvedConcreteItem::Type(
                     TypeLongId::GenericParameter(*generic_param_id).intern(self.db),
@@ -1539,41 +1554,43 @@ impl<'db> Resolver<'db> {
     /// (i.e. current module, or crates).
     fn determine_base(
         &mut self,
-        identifier: &ast::TerminalIdentifier,
-        mut ctx: ResolutionContext<'_>,
+        identifier: &ast::TerminalIdentifier<'db>,
+        mut ctx: ResolutionContext<'db, '_>,
         macro_context_modifier: MacroContextModifier,
-    ) -> ResolvedBase {
+    ) -> ResolvedBase<'db> {
         let db = self.db;
-        let ident = identifier.text(db);
+        let ident = identifier.text(db).intern(db);
+        let ident_str = ident.as_str(db);
         let module_id = self.active_module_file_id(macro_context_modifier).0;
         if let ResolutionContext::Statement(ref mut env) = ctx {
-            if let Some(inner_generic_arg) = get_statement_item_by_name(env, &ident) {
+            if let Some(inner_generic_arg) = get_statement_item_by_name(env, ident) {
                 return ResolvedBase::StatementEnvironment(inner_generic_arg);
             }
         }
 
         // If an item with this name is found inside the current module, use the current module.
-        if let Ok(Some(item_id)) = self.db.module_item_by_name(module_id, ident.clone()) {
+        if let Ok(Some(item_id)) = self.db.module_item_by_name(module_id, ident) {
             if !matches!(ctx, ResolutionContext::ModuleItem(id) if id == item_id) {
                 return ResolvedBase::Module(module_id);
             }
         }
 
         // If the first element is `crate`, use the crate's root module as the base module.
-        if ident == CRATE_KW {
+        if ident_str == CRATE_KW {
             return ResolvedBase::Crate(self.active_owning_crate_id(macro_context_modifier));
         }
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
-        if let Some(dep) =
-            self.active_settings(macro_context_modifier).dependencies.get(ident.as_str())
+        if let Some(dep) = self.active_settings(macro_context_modifier).dependencies.get(ident_str)
         {
-            let dep_crate_id =
-                CrateLongId::Real { name: ident, discriminator: dep.discriminator.clone() }
-                    .intern(self.db);
+            let dep_crate_id = CrateLongId::Real {
+                name: ident.lookup_intern(db),
+                discriminator: dep.discriminator.clone(),
+            }
+            .intern(self.db);
             let configs = self.db.crate_configs();
             if !configs.contains_key(&dep_crate_id) {
-                let get_long_id = |crate_id: CrateId| crate_id.lookup_intern(self.db);
+                let get_long_id = |crate_id: CrateId<'db>| crate_id.lookup_intern(self.db);
                 panic!(
                     "Invalid crate dependency: {:?}\nconfigured crates: {:#?}",
                     get_long_id(dep_crate_id),
@@ -1584,11 +1601,11 @@ impl<'db> Resolver<'db> {
             return ResolvedBase::Crate(dep_crate_id);
         }
         // If the first segment is `core` - and it was not overridden by a dependency - using it.
-        if ident == CORELIB_CRATE_NAME {
+        if ident_str == CORELIB_CRATE_NAME {
             return ResolvedBase::Crate(CrateId::core(self.db));
         }
         // TODO(orizi): Remove when `starknet` becomes a proper crate.
-        if ident == STARKNET_CRATE_NAME {
+        if ident_str == STARKNET_CRATE_NAME {
             // Making sure we don't look for it in `*` modules, to prevent cycles.
             return ResolvedBase::Module(self.prelude_submodule_ex(macro_context_modifier));
         }
@@ -1615,12 +1632,15 @@ impl<'db> Resolver<'db> {
         ResolvedBase::Module(self.prelude_submodule_ex(macro_context_modifier))
     }
 
-    pub fn prelude_submodule(&self) -> ModuleId {
+    pub fn prelude_submodule(&self) -> ModuleId<'db> {
         self.prelude_submodule_ex(MacroContextModifier::None)
     }
 
     /// Returns the crate's `prelude` submodule.
-    pub fn prelude_submodule_ex(&self, macro_context_modifier: MacroContextModifier) -> ModuleId {
+    pub fn prelude_submodule_ex(
+        &self,
+        macro_context_modifier: MacroContextModifier,
+    ) -> ModuleId<'db> {
         let active_settings = self.active_settings(macro_context_modifier);
         let prelude_submodule_name = active_settings.edition.prelude_submodule_name();
         let core_prelude_submodule = core_submodule(self.db, "prelude");
@@ -1637,11 +1657,11 @@ impl<'db> Resolver<'db> {
     /// Specializes a trait.
     fn specialize_trait(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        stable_ptr: SyntaxStablePtrId,
-        trait_id: TraitId,
-        generic_args: &[ast::GenericArg],
-    ) -> Maybe<ConcreteTraitId> {
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        stable_ptr: SyntaxStablePtrId<'db>,
+        trait_id: TraitId<'db>,
+        generic_args: &[ast::GenericArg<'db>],
+    ) -> Maybe<ConcreteTraitId<'db>> {
         // TODO(lior): Should we report diagnostic if `trait_generic_params` failed?
         let generic_params = self
             .db
@@ -1661,11 +1681,11 @@ impl<'db> Resolver<'db> {
     /// Specializes an impl.
     fn specialize_impl(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        stable_ptr: SyntaxStablePtrId,
-        impl_def_id: ImplDefId,
-        generic_args: &[ast::GenericArg],
-    ) -> Maybe<ConcreteImplId> {
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        stable_ptr: SyntaxStablePtrId<'db>,
+        impl_def_id: ImplDefId<'db>,
+        generic_args: &[ast::GenericArg<'db>],
+    ) -> Maybe<ConcreteImplId<'db>> {
         // TODO(lior): Should we report diagnostic if `impl_def_generic_params` failed?
         let generic_params = self
             .db
@@ -1685,11 +1705,11 @@ impl<'db> Resolver<'db> {
     /// Specializes a variant.
     fn specialize_variant(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        stable_ptr: SyntaxStablePtrId,
-        variant_id: VariantId,
-        generic_args: &[ast::GenericArg],
-    ) -> Maybe<ConcreteVariant> {
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        stable_ptr: SyntaxStablePtrId<'db>,
+        variant_id: VariantId<'db>,
+        generic_args: &[ast::GenericArg<'db>],
+    ) -> Maybe<ConcreteVariant<'db>> {
         let concrete_enum_id = ConcreteEnumLongId {
             enum_id: variant_id.enum_id(self.db),
             generic_args: self.resolve_generic_args(
@@ -1710,11 +1730,11 @@ impl<'db> Resolver<'db> {
     /// Specializes a generic function.
     pub fn specialize_function(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        stable_ptr: SyntaxStablePtrId,
-        generic_function: GenericFunctionId,
-        generic_args: &[ast::GenericArg],
-    ) -> Maybe<FunctionId> {
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        stable_ptr: SyntaxStablePtrId<'db>,
+        generic_function: GenericFunctionId<'db>,
+        generic_args: &[ast::GenericArg<'db>],
+    ) -> Maybe<FunctionId<'db>> {
         // TODO(lior): Should we report diagnostic if `impl_def_generic_params` failed?
         let generic_params: Vec<_> = generic_function.generic_params(self.db)?;
         let generic_args = self.resolve_generic_args(
@@ -1732,11 +1752,11 @@ impl<'db> Resolver<'db> {
     /// Specializes a generic type.
     pub fn specialize_type(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        stable_ptr: SyntaxStablePtrId,
-        generic_type: GenericTypeId,
-        generic_args: &[ast::GenericArg],
-    ) -> Maybe<TypeId> {
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        stable_ptr: SyntaxStablePtrId<'db>,
+        generic_type: GenericTypeId<'db>,
+        generic_args: &[ast::GenericArg<'db>],
+    ) -> Maybe<TypeId<'db>> {
         let generic_params = self
             .db
             .generic_type_generic_params(generic_type)
@@ -1754,7 +1774,7 @@ impl<'db> Resolver<'db> {
     }
 
     /// Returns the current impl lookup context.
-    pub fn impl_lookup_context(&self) -> ImplLookupContext {
+    pub fn impl_lookup_context(&self) -> ImplLookupContext<'db> {
         self.impl_lookup_context_ex(MacroContextModifier::None)
     }
 
@@ -1763,7 +1783,7 @@ impl<'db> Resolver<'db> {
     pub fn impl_lookup_context_ex(
         &self,
         macro_context_modifier: MacroContextModifier,
-    ) -> ImplLookupContext {
+    ) -> ImplLookupContext<'db> {
         let mut lookup_context = ImplLookupContext::new(
             self.active_module_file_id(macro_context_modifier).0,
             self.generic_params.clone(),
@@ -1774,7 +1794,7 @@ impl<'db> Resolver<'db> {
                 return lookup_context;
             };
             let generic_args = generic_params_to_args(generic_params.as_slice(), self.db);
-            let impl_id: ConcreteImplId =
+            let impl_id: ConcreteImplId<'_> =
                 ConcreteImplLongId { impl_def_id: *impl_def_id, generic_args }.intern(self.db);
             lookup_context.insert_impl(ImplLongId::Concrete(impl_id).intern(self.db));
         }
@@ -1786,12 +1806,12 @@ impl<'db> Resolver<'db> {
     /// Otherwise, resolved by type.
     pub fn resolve_generic_args(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        mut substitution: GenericSubstitution,
-        generic_params: &[GenericParam],
-        generic_args_syntax: &[ast::GenericArg],
-        stable_ptr: SyntaxStablePtrId,
-    ) -> Maybe<Vec<GenericArgumentId>> {
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        mut substitution: GenericSubstitution<'db>,
+        generic_params: &[GenericParam<'db>],
+        generic_args_syntax: &[ast::GenericArg<'db>],
+        stable_ptr: SyntaxStablePtrId<'db>,
+    ) -> Maybe<Vec<GenericArgumentId<'db>>> {
         let mut resolved_args = vec![];
         let arg_syntax_per_param =
             self.get_arg_syntax_per_param(diagnostics, generic_params, generic_args_syntax)?;
@@ -1823,13 +1843,13 @@ impl<'db> Resolver<'db> {
     /// Returns a map of generic param id -> its assigned arg syntax.
     fn get_arg_syntax_per_param(
         &self,
-        diagnostics: &mut SemanticDiagnostics,
-        generic_params: &[GenericParam],
-        generic_args_syntax: &[ast::GenericArg],
-    ) -> Maybe<UnorderedHashMap<GenericParamId, ast::GenericArgValue>> {
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        generic_params: &[GenericParam<'db>],
+        generic_args_syntax: &[ast::GenericArg<'db>],
+    ) -> Maybe<UnorderedHashMap<GenericParamId<'db>, ast::GenericArgValue<'db>>> {
         let db = self.db;
         let mut arg_syntax_per_param =
-            UnorderedHashMap::<GenericParamId, ast::GenericArgValue>::default();
+            UnorderedHashMap::<GenericParamId<'_>, ast::GenericArgValue<'_>>::default();
         let mut last_named_arg_index = None;
         let generic_param_by_name = generic_params
             .iter()
@@ -1839,8 +1859,9 @@ impl<'db> Resolver<'db> {
         for (idx, generic_arg_syntax) in generic_args_syntax.iter().enumerate() {
             match generic_arg_syntax {
                 ast::GenericArg::Named(arg_syntax) => {
-                    let name = arg_syntax.name(db).text(db);
-                    let Some((index, generic_param_id)) = generic_param_by_name.get(&name) else {
+                    let name = arg_syntax.name(db).text(db).intern(db);
+                    let Some((index, generic_param_id)) = generic_param_by_name.get(name.long(db))
+                    else {
                         return Err(diagnostics
                             .report(arg_syntax.stable_ptr(db), UnknownGenericParam(name)));
                     };
@@ -1889,11 +1910,11 @@ impl<'db> Resolver<'db> {
     /// If a syntax Expr is provided, it will be resolved by type.
     fn resolve_generic_arg(
         &mut self,
-        generic_param: &GenericParam,
-        generic_arg_syntax_opt: Option<&ast::Expr>,
-        stable_ptr: SyntaxStablePtrId,
-        diagnostics: &mut SemanticDiagnostics,
-    ) -> Result<GenericArgumentId, cairo_lang_diagnostics::DiagnosticAdded> {
+        generic_param: &GenericParam<'db>,
+        generic_arg_syntax_opt: Option<&ast::Expr<'db>>,
+        stable_ptr: SyntaxStablePtrId<'db>,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+    ) -> Result<GenericArgumentId<'db>, cairo_lang_diagnostics::DiagnosticAdded> {
         let Some(generic_arg_syntax) = generic_arg_syntax_opt else {
             let lookup_context = self.impl_lookup_context();
             let inference = &mut self.data.inference_data.inference(self.db);
@@ -2011,7 +2032,7 @@ impl<'db> Resolver<'db> {
 
     /// Should visibility checks not actually happen for lookups in this module.
     // TODO(orizi): Remove this check when performing a major Cairo update.
-    pub fn ignore_visibility_checks(&self, module_id: ModuleId) -> bool {
+    pub fn ignore_visibility_checks(&self, module_id: ModuleId<'db>) -> bool {
         self.ignore_visibility_checks_ex(module_id, MacroContextModifier::None)
     }
 
@@ -2019,7 +2040,7 @@ impl<'db> Resolver<'db> {
     /// modifier.
     pub fn ignore_visibility_checks_ex(
         &self,
-        module_id: ModuleId,
+        module_id: ModuleId<'db>,
         macro_context_modifier: MacroContextModifier,
     ) -> bool {
         let module_crate = module_id.owning_crate(self.db);
@@ -2036,8 +2057,8 @@ impl<'db> Resolver<'db> {
     /// that is not permitted, a corresponding diagnostic error is reported.
     pub fn validate_feature_constraints<T: HasFeatureKind>(
         &self,
-        diagnostics: &mut SemanticDiagnostics,
-        identifier: &ast::TerminalIdentifier,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        identifier: &ast::TerminalIdentifier<'db>,
         item_info: &T,
     ) {
         let db = self.db;
@@ -2047,7 +2068,10 @@ impl<'db> Resolver<'db> {
             {
                 diagnostics.report(
                     identifier.stable_ptr(db),
-                    UnstableFeature { feature_name: feature.clone(), note: note.clone() },
+                    UnstableFeature {
+                        feature_name: feature.clone().intern(db),
+                        note: note.clone().map(|note| note.intern(db)),
+                    },
                 );
             }
             FeatureKind::Deprecated { feature, note }
@@ -2056,7 +2080,10 @@ impl<'db> Resolver<'db> {
             {
                 diagnostics.report(
                     identifier.stable_ptr(db),
-                    DeprecatedFeature { feature_name: feature.clone(), note: note.clone() },
+                    DeprecatedFeature {
+                        feature_name: feature.clone().intern(db),
+                        note: note.clone().map(|note| note.intern(db)),
+                    },
                 );
             }
             FeatureKind::Internal { feature, note }
@@ -2064,7 +2091,10 @@ impl<'db> Resolver<'db> {
             {
                 diagnostics.report(
                     identifier.stable_ptr(db),
-                    InternalFeature { feature_name: feature.clone(), note: note.clone() },
+                    InternalFeature {
+                        feature_name: feature.clone().intern(db),
+                        note: note.clone().map(|note| note.intern(db)),
+                    },
                 );
             }
             _ => {}
@@ -2075,10 +2105,10 @@ impl<'db> Resolver<'db> {
     /// This includes visibility checks and feature checks.
     fn validate_module_item_usability(
         &self,
-        diagnostics: &mut SemanticDiagnostics,
-        containing_module_id: ModuleId,
-        identifier: &ast::TerminalIdentifier,
-        item_info: &ModuleItemInfo,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        containing_module_id: ModuleId<'db>,
+        identifier: &ast::TerminalIdentifier<'db>,
+        item_info: &ModuleItemInfo<'db>,
         macro_context_modifier: MacroContextModifier,
     ) {
         if !self.is_item_visible_ex(
@@ -2096,9 +2126,9 @@ impl<'db> Resolver<'db> {
     /// Checks if an item is visible from the current module.
     pub fn is_item_visible(
         &self,
-        containing_module_id: ModuleId,
-        item_info: &ModuleItemInfo,
-        user_module: ModuleId,
+        containing_module_id: ModuleId<'db>,
+        item_info: &ModuleItemInfo<'db>,
+        user_module: ModuleId<'db>,
     ) -> bool {
         self.is_item_visible_ex(
             containing_module_id,
@@ -2112,9 +2142,9 @@ impl<'db> Resolver<'db> {
     /// modifier.
     pub fn is_item_visible_ex(
         &self,
-        containing_module_id: ModuleId,
-        item_info: &ModuleItemInfo,
-        user_module: ModuleId,
+        containing_module_id: ModuleId<'db>,
+        item_info: &ModuleItemInfo<'db>,
+        user_module: ModuleId<'db>,
         macro_context_modifier: MacroContextModifier,
     ) -> bool {
         let db = self.db;
@@ -2128,14 +2158,14 @@ impl<'db> Resolver<'db> {
     }
 
     /// Inserts an item into the used uses set, if it is indeed a use.
-    pub fn insert_used_use(&mut self, item_id: ModuleItemId) {
+    pub fn insert_used_use(&mut self, item_id: ModuleItemId<'db>) {
         if let ModuleItemId::Use(use_id) = item_id {
             self.data.used_uses.insert(use_id);
         }
     }
 
     /// Checks if an item uses a feature that is not allowed.
-    fn is_item_feature_usable(&self, item_info: &ModuleItemInfo) -> bool {
+    fn is_item_feature_usable(&self, item_info: &ModuleItemInfo<'db>) -> bool {
         match &item_info.feature_kind {
             FeatureKind::Unstable { feature, .. }
             | FeatureKind::Deprecated { feature, .. }
@@ -2153,10 +2183,10 @@ impl<'db> Resolver<'db> {
     /// That is, warns about using the actual path equivalent to `Self`, where `Self` can be used.
     fn handle_same_impl_trait(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        specialized_item: &mut ResolvedConcreteItem,
-        generic_args_syntax_slice: &[ast::GenericArg],
-        segment_stable_ptr: SyntaxStablePtrId,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        specialized_item: &mut ResolvedConcreteItem<'db>,
+        generic_args_syntax_slice: &[ast::GenericArg<'db>],
+        segment_stable_ptr: SyntaxStablePtrId<'db>,
     ) {
         match *specialized_item {
             ResolvedConcreteItem::Trait(current_segment_concrete_trait) => {
@@ -2214,11 +2244,11 @@ impl<'db> Resolver<'db> {
     /// context of that impl (that is, could be expressed as `Self`).
     fn warn_impl_in_same_impl(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        current_segment_impl_def_id: ImplDefId,
-        current_segment_generic_args: &[ast::GenericArg],
-        ctx_impl: ImplDefId,
-        segment_stable_ptr: SyntaxStablePtrId,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        current_segment_impl_def_id: ImplDefId<'db>,
+        current_segment_generic_args: &[ast::GenericArg<'db>],
+        ctx_impl: ImplDefId<'db>,
+        segment_stable_ptr: SyntaxStablePtrId<'db>,
     ) -> Maybe<()> {
         if current_segment_impl_def_id != ctx_impl {
             return Ok(());
@@ -2239,10 +2269,10 @@ impl<'db> Resolver<'db> {
     /// the context of an impl of that concrete trait (that is, could be expressed as `Self`).
     fn warn_trait_in_its_impl(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        current_segment_concrete_trait_id: ConcreteTraitId,
-        impl_ctx: ImplDefId,
-        segment_stable_ptr: SyntaxStablePtrId,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        current_segment_concrete_trait_id: ConcreteTraitId<'db>,
+        impl_ctx: ImplDefId<'db>,
+        segment_stable_ptr: SyntaxStablePtrId<'db>,
     ) -> Maybe<()> {
         let ctx_impl_trait = self.db.impl_def_trait(impl_ctx)?;
         if current_segment_concrete_trait_id.trait_id(self.db) != ctx_impl_trait {
@@ -2262,11 +2292,11 @@ impl<'db> Resolver<'db> {
     /// context of that trait (that is, could be expressed as `Self`).
     fn warn_trait_in_same_trait(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        current_segment_trait_id: TraitId,
-        current_segment_generic_args: &[ast::GenericArg],
-        ctx_trait: TraitId,
-        segment_stable_ptr: SyntaxStablePtrId,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        current_segment_trait_id: TraitId<'db>,
+        current_segment_generic_args: &[ast::GenericArg<'db>],
+        ctx_trait: TraitId<'db>,
+        segment_stable_ptr: SyntaxStablePtrId<'db>,
     ) -> Maybe<()> {
         if current_segment_trait_id != ctx_trait {
             return Ok(());
@@ -2291,12 +2321,12 @@ impl<'db> Resolver<'db> {
     /// the same as the parameters.
     fn compare_segment_args_to_params(
         &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        current_segment_generic_args: &[ast::GenericArg],
-        generic_params: Vec<GenericParam>,
-        segment_stable_ptr: SyntaxStablePtrId,
-        must_be_explicit_error: SemanticDiagnosticKind,
-        item_forbidden_in_itself_explicit_error: SemanticDiagnosticKind,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        current_segment_generic_args: &[ast::GenericArg<'db>],
+        generic_params: Vec<GenericParam<'db>>,
+        segment_stable_ptr: SyntaxStablePtrId<'db>,
+        must_be_explicit_error: SemanticDiagnosticKind<'db>,
+        item_forbidden_in_itself_explicit_error: SemanticDiagnosticKind<'db>,
     ) -> Maybe<()> {
         // This assumes the current segment item and the context items are equal. In this specific
         // case we disallow implicit arguments.
@@ -2326,12 +2356,12 @@ impl<'db> Resolver<'db> {
     /// Specializes a ResolvedGenericItem that came from a Statement Environment.
     fn specialize_generic_statement_arg(
         &mut self,
-        segment: &ast::PathSegment,
-        diagnostics: &mut SemanticDiagnostics,
-        identifier: &ast::TerminalIdentifier,
-        inner_generic_item: ResolvedGenericItem,
-        generic_args_syntax: Option<Vec<ast::GenericArg>>,
-    ) -> ResolvedConcreteItem {
+        segment: &ast::PathSegment<'db>,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        identifier: &ast::TerminalIdentifier<'db>,
+        inner_generic_item: ResolvedGenericItem<'db>,
+        generic_args_syntax: Option<Vec<ast::GenericArg<'db>>>,
+    ) -> ResolvedConcreteItem<'db> {
         let segment_stable_ptr = segment.stable_ptr(self.db).untyped();
         let mut specialized_item = self
             .specialize_generic_module_item(
@@ -2364,8 +2394,8 @@ impl<'db> Resolver<'db> {
     ///  - The path after the modifier is empty.
     fn handle_macro_context_modifier(
         &self,
-        diagnostics: &mut SemanticDiagnostics,
-        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment<'db>>>,
     ) -> Maybe<MacroContextModifier> {
         if segments.len() == 1 {
             return Err(diagnostics.report_after(
@@ -2388,7 +2418,7 @@ impl<'db> Resolver<'db> {
                     }
                     _ => Err(diagnostics.report(
                         ident.stable_ptr(self.db),
-                        UnknownResolverModifier { modifier: ident_text },
+                        UnknownResolverModifier { modifier: ident_text.intern(self.db) },
                     )),
                 }
             }
@@ -2402,23 +2432,23 @@ impl<'db> Resolver<'db> {
 
 /// Resolves the segment if it's `Self`. Returns the Some(ResolvedConcreteItem) or Some(Err) if
 /// segment == `Self` or None otherwise.
-fn resolve_self_segment(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    identifier: &ast::TerminalIdentifier,
-    trait_or_impl_ctx: &TraitOrImplContext,
-) -> Option<Maybe<ResolvedConcreteItem>> {
+fn resolve_self_segment<'db>(
+    db: &'db dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    identifier: &ast::TerminalIdentifier<'db>,
+    trait_or_impl_ctx: &TraitOrImplContext<'db>,
+) -> Option<Maybe<ResolvedConcreteItem<'db>>> {
     require(identifier.text(db) == SELF_TYPE_KW)?;
     Some(resolve_actual_self_segment(db, diagnostics, identifier, trait_or_impl_ctx))
 }
 
 /// Resolves the `Self` segment given that it's actually `Self`.
-fn resolve_actual_self_segment(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    identifier: &ast::TerminalIdentifier,
-    trait_or_impl_ctx: &TraitOrImplContext,
-) -> Maybe<ResolvedConcreteItem> {
+fn resolve_actual_self_segment<'db>(
+    db: &'db dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    identifier: &ast::TerminalIdentifier<'db>,
+    trait_or_impl_ctx: &TraitOrImplContext<'db>,
+) -> Maybe<ResolvedConcreteItem<'db>> {
     match trait_or_impl_ctx {
         TraitOrImplContext::None => {
             Err(diagnostics.report(identifier.stable_ptr(db), SelfNotSupportedInContext))
@@ -2447,48 +2477,48 @@ fn resolve_actual_self_segment(
 }
 
 /// The base module or crate for the path resolving.
-enum ResolvedBase {
+enum ResolvedBase<'db> {
     /// The base module is a module.
-    Module(ModuleId),
+    Module(ModuleId<'db>),
     /// The base module is a crate.
-    Crate(CrateId),
+    Crate(CrateId<'db>),
     /// The base module to address is the statement
-    StatementEnvironment(ResolvedGenericItem),
+    StatementEnvironment(ResolvedGenericItem<'db>),
     /// The item is imported using global use.
-    FoundThroughGlobalUse { item_info: ModuleItemInfo, containing_module: ModuleId },
+    FoundThroughGlobalUse { item_info: ModuleItemInfo<'db>, containing_module: ModuleId<'db> },
     /// The base module is ambiguous.
-    Ambiguous(Vec<ModuleItemId>),
+    Ambiguous(Vec<ModuleItemId<'db>>),
     /// The base module is inaccessible.
-    ItemNotVisible(ModuleItemId, Vec<ModuleId>),
+    ItemNotVisible(ModuleItemId<'db>, Vec<ModuleId<'db>>),
 }
 
 /// The callbacks to be used by `resolve_path_inner`.
-struct ResolvePathInnerCallbacks<ResolvedItem, ResolveFirst, ResolveNext, Validate, Mark>
+struct ResolvePathInnerCallbacks<'db, ResolvedItem, ResolveFirst, ResolveNext, Validate, Mark>
 where
     ResolveFirst: FnOnce(
-        &mut Resolver<'_>,
-        &mut SemanticDiagnostics,
-        &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+        &mut Resolver<'db>,
+        &mut SemanticDiagnostics<'db>,
+        &mut Peekable<std::slice::Iter<'_, ast::PathSegment<'db>>>,
         MacroContextModifier,
     ) -> Maybe<ResolvedItem>,
     ResolveNext: FnMut(
-        &mut Resolver<'_>,
-        &mut SemanticDiagnostics,
+        &mut Resolver<'db>,
+        &mut SemanticDiagnostics<'db>,
         &ResolvedItem,
-        &ast::PathSegment,
+        &ast::PathSegment<'db>,
         NotFoundItemType,
         MacroContextModifier,
     ) -> Maybe<ResolvedItem>,
-    Validate: FnMut(&mut SemanticDiagnostics, &ast::PathSegment) -> Maybe<()>,
+    Validate: FnMut(&mut SemanticDiagnostics<'db>, &ast::PathSegment<'db>) -> Maybe<()>,
     Mark: FnMut(
-        &mut ResolvedItems,
-        &dyn SemanticGroup,
-        &syntax::node::ast::PathSegment,
+        &mut ResolvedItems<'db>,
+        &'db dyn SemanticGroup,
+        &syntax::node::ast::PathSegment<'db>,
         ResolvedItem,
     ),
 {
     /// Type for the resolved item pointed by the path segments.
-    resolved_item_type: PhantomData<ResolvedItem>,
+    resolved_item_type: PhantomData<(ResolvedItem, &'db ())>,
     /// Resolves the first segment of a path.
     resolve_path_first_segment: ResolveFirst,
     /// Given the current resolved item, resolves the next segment.
