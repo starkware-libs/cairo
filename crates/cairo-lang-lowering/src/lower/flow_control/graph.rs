@@ -28,7 +28,6 @@ pub struct NodeId(pub usize);
 #[derive(Debug)]
 pub struct BooleanIf {
     /// The condition expression.
-    #[expect(dead_code)]
     pub condition: semantic::ExprId,
     /// The node to jump to if the condition is true.
     #[expect(dead_code)]
