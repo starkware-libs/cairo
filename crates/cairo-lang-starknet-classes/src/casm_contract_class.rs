@@ -38,7 +38,8 @@ use num_integer::Integer;
 use num_traits::Signed;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
-use starknet_types_core::hash::{Poseidon, StarkHash};
+use starknet_types_core::hash::StarkHash;
+use starknet_types_core::hash::Blake2Felt252;
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
@@ -125,7 +126,7 @@ pub struct CasmContractClass {
 impl CasmContractClass {
     /// Returns the Poseidon hash value for the compiled contract class.
     pub fn compiled_class_hash(&self) -> Felt252 {
-        self.compiled_class_hash_inner::<Poseidon>()
+        self.compiled_class_hash_inner::<Blake2Felt252>()
     }
 
     /// Returns the lengths of the bytecode segments.

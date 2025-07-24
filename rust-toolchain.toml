@@ -1,0 +1,3 @@
+[toolchain]
+channel = "1.86.1"      # or simply "stable" if your stable toolchain is already ≥1.86
+components = ["clippy"] # so Clippy gets installed automatically

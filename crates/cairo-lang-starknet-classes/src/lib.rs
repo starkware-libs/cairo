@@ -19,3 +19,6 @@ pub use contract_segmentation::NestedIntList;
 
 #[cfg(test)]
 mod test_utils;
+
+#[cfg(feature = "benchmark")]
+pub mod compiled_class_hash_benchmark;
