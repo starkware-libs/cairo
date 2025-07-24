@@ -1,6 +1,5 @@
 use std::vec;
 
-use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
@@ -36,7 +35,7 @@ use semantic::{
 };
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
-use self::block_builder::SealedBlockBuilder;
+use self::block_builder::{BlockBuilder, SealedBlockBuilder, SealedGotoCallsite};
 use self::context::{
     EncapsulatingLoweringContext, LoweredExpr, LoweredExprExternEnum, LoweringContext,
     LoweringFlowError, lowering_flow_error_to_sealed_block,
@@ -493,7 +492,8 @@ fn wrap_sealed_block_as_function(
     block_sealed: SealedBlockBuilder,
     stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<()> {
-    let SealedBlockBuilder::GotoCallsite { mut builder, expr } = block_sealed else {
+    let SealedBlockBuilder::GotoCallsite(SealedGotoCallsite { mut builder, expr }) = block_sealed
+    else {
         return Ok(());
     };
     let location = ctx.get_location(stable_ptr);
