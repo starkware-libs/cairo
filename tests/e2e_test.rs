@@ -6,7 +6,7 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::optimizations::config::OptimizationConfig;
 use cairo_lang_semantic::test_utils::setup_test_module;
-use cairo_lang_sierra::extensions::gas::CostTokenType;
+use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Function, Program};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -242,7 +242,7 @@ fn run_e2e_test(
     let sierra_program_str = sierra_program.to_string();
 
     // Handle the `enforced_costs` argument.
-    let enforced_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>> =
+    let enforced_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>> =
         if let Some(enforced_costs_str) = inputs.get("enforced_costs") {
             parse_enforced_costs(&sierra_program, enforced_costs_str)
         } else {
@@ -297,7 +297,7 @@ fn run_e2e_test(
 fn parse_enforced_costs(
     sierra_program: &Program,
     enforced_costs_str: &str,
-) -> OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>> {
+) -> OrderedHashMap<FunctionId, CostTokenMap<i32>> {
     // Create a map from function name to function id.
     let function_name_to_id: UnorderedHashMap<&str, _> = sierra_program
         .funcs

@@ -8,7 +8,7 @@ use cairo_lang_sierra::extensions::core::{
     CoreConcreteLibfunc, CoreLibfunc, CoreType, CoreTypeConcrete,
 };
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
-use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
+use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType, GasConcreteLibfunc};
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
@@ -93,13 +93,13 @@ impl<TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usize>
 /// Sierra classes. Generally, the new [compute_precost_info] is used.
 pub fn calc_gas_precost_info(
     program: &Program,
-    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>>,
 ) -> Result<GasInfo, CostError> {
     let cost_provider = ComputeCostInfoProvider::new(program)?;
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
     let mut info = calc_gas_info_inner(
         program,
-        |statement_future_cost, idx, libfunc_id| -> Vec<OrderedHashMap<CostTokenType, Expr<Var>>> {
+        |statement_future_cost, idx, libfunc_id| -> Vec<CostTokenMap<Expr<Var>>> {
             let libfunc = registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registry creation would have already failed.");
@@ -190,7 +190,7 @@ pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
 /// Sierra classes. Generally, the new [compute_postcost_info] is used.
 pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
     program: &Program,
-    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>>,
     precost_gas_info: &GasInfo,
     ap_change_var_value: ApChangeVarValue,
 ) -> Result<GasInfo, CostError> {
@@ -245,7 +245,7 @@ fn calc_gas_info_inner<
 >(
     program: &Program,
     get_cost: GetCost,
-    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>>,
     registry: &ProgramRegistry<CoreType, CoreLibfunc>,
 ) -> Result<GasInfo, CostError> {
     let mut equations = generate_equations::generate_equations(program, get_cost)?;
@@ -257,7 +257,7 @@ fn calc_gas_info_inner<
         .collect();
     for (func_id, cost_terms) in function_set_costs {
         for token_type in CostTokenType::iter_casm_tokens() {
-            equations[token_type].push(
+            equations.get_mut(token_type).unwrap().push(
                 Expr::from_var(Var::StatementFuture(
                     registry.get_function(&func_id)?.entry_point,
                     *token_type,
@@ -322,7 +322,7 @@ fn calc_gas_info_inner<
         for func in &program.funcs {
             let id = &func.id;
             if !function_costs.contains_key(id) {
-                function_costs.insert(id.clone(), OrderedHashMap::default());
+                function_costs.insert(id.clone(), CostTokenMap::default());
             }
             // The `None` case is of a function that can never actually be called, as it has no
             // return, so solver for it would not actually be calculated. (Such a function may exist

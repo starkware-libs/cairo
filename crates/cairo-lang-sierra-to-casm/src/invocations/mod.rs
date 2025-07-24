@@ -7,7 +7,7 @@ use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::extensions::circuit::CircuitInfo;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
-use cairo_lang_sierra::extensions::gas::CostTokenType;
+use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::extensions::lib_func::{BranchSignature, OutputVarInfo, SierraApChange};
 use cairo_lang_sierra::extensions::{ConcreteLibfunc, OutputVarReferenceInfo};
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -18,7 +18,6 @@ use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
 use cairo_lang_sierra_gas::core_libfunc_cost::{InvocationCostInfoProvider, core_libfunc_cost};
 use cairo_lang_sierra_gas::objects::ConstCost;
 use cairo_lang_sierra_type_size::TypeSizeMap;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
@@ -123,7 +122,7 @@ pub struct BranchChanges {
     /// A change to the ap tracking status.
     pub ap_tracking_change: ApTrackingChange,
     /// The change to the remaining gas value in the wallet.
-    pub gas_change: OrderedHashMap<CostTokenType, i64>,
+    pub gas_change: CostTokenMap<i64>,
     /// Should the stack be cleared due to a gap between stack items.
     pub clear_old_stack: bool,
     /// The expected size of the known stack after the change.
@@ -135,7 +134,7 @@ impl BranchChanges {
     fn new<'a, ParamRef: Fn(usize) -> &'a ReferenceValue>(
         ap_change: ApChange,
         ap_tracking_change: ApTrackingChange,
-        gas_change: OrderedHashMap<CostTokenType, i64>,
+        gas_change: CostTokenMap<i64>,
         expressions: impl ExactSizeIterator<Item = ReferenceExpression>,
         branch_signature: &BranchSignature,
         prev_env: &Environment,
