@@ -28,13 +28,10 @@ pub struct NodeId(pub usize);
 #[derive(Debug)]
 pub struct BooleanIf {
     /// The condition expression.
-    #[expect(dead_code)]
     pub condition: semantic::ExprId,
     /// The node to jump to if the condition is true.
-    #[expect(dead_code)]
     pub true_branch: NodeId,
     /// The node to jump to if the condition is false.
-    #[expect(dead_code)]
     pub false_branch: NodeId,
 }
 
@@ -42,7 +39,6 @@ pub struct BooleanIf {
 #[derive(Debug)]
 pub struct ArmExpr {
     /// The expression to evaluate.
-    #[expect(dead_code)]
     pub expr: semantic::ExprId,
 }
 
@@ -62,16 +58,24 @@ impl Debug for FlowControlNode {
 }
 
 /// Graph of flow control nodes.
+///
+/// Invariant: The next nodes of a node are always before the node in [Self::nodes] (and therefore
+/// have a smaller node id).
 pub struct FlowControlGraph {
     /// All nodes in the graph.
     pub nodes: Vec<FlowControlNode>,
-    /// The initial node of the graph.
-    pub root: NodeId,
+}
+impl FlowControlGraph {
+    /// Returns the root node of the graph.
+    pub fn root(&self) -> NodeId {
+        // The root is always the last node.
+        NodeId(self.nodes.len() - 1)
+    }
 }
 
 impl Debug for FlowControlGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "Root: {}", self.root.0)?;
+        writeln!(f, "Root: {}", self.root().0)?;
         for (i, node) in self.nodes.iter().enumerate() {
             writeln!(f, "{i} {node:?}")?;
         }
@@ -95,6 +99,7 @@ impl FlowControlGraphBuilder {
 
     /// Finalizes the graph and returns the final [FlowControlGraph].
     pub fn finalize(self, root: NodeId) -> FlowControlGraph {
-        FlowControlGraph { nodes: self.nodes, root }
+        assert_eq!(root.0, self.nodes.len() - 1, "The root must be the last node.");
+        FlowControlGraph { nodes: self.nodes }
     }
 }
