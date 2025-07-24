@@ -30,30 +30,30 @@ fn two() -> u32 {
 }
 
 //! > gas_solution_lp
-#5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 250, Step: 2, Hole: 0, RangeCheck: 1})
-#10: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 5, RangeCheck: 0})
-#20: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 0})
-#36: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 260, Step: 3, Hole: 0, RangeCheck: 0})
-#43: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 90, Step: 1, Hole: 0, RangeCheck: 0})
-#47: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 1, RangeCheck: 0})
+#5: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 250, Step: 2, Hole: 0, RangeCheck: 1}
+#10: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 5, RangeCheck: 0}
+#20: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 0}
+#36: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 260, Step: 3, Hole: 0, RangeCheck: 0}
+#43: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 90, Step: 1, Hole: 0, RangeCheck: 0}
+#47: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 1, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Const: 1570, Step: 15, Hole: 6, RangeCheck: 1})
-test::holes: OrderedHashMap({Const: 600, Step: 6, Hole: 4, RangeCheck: 0})
-test::use_rc: OrderedHashMap({Const: 1070, Step: 10, Hole: 1, RangeCheck: 1})
-test::two: OrderedHashMap({Const: 100, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: {Const: 1570, Step: 15, Hole: 6, RangeCheck: 1}
+test::holes: {Const: 600, Step: 6, Hole: 4, RangeCheck: 0}
+test::use_rc: {Const: 1070, Step: 10, Hole: 1, RangeCheck: 1}
+test::two: {Const: 100, Step: 1, Hole: 0, RangeCheck: 0}
 
 //! > gas_solution_linear
-#5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 250, Step: 2, Hole: 0, RangeCheck: 1})
-#10: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 5, RangeCheck: 0})
-#20: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 0})
-#36: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 260, Step: 3, Hole: 0, RangeCheck: 0})
-#43: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 90, Step: 1, Hole: 0, RangeCheck: 0})
-#47: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 1, RangeCheck: 0})
+#5: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 250, Step: 2, Hole: 0, RangeCheck: 1}
+#10: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 5, RangeCheck: 0}
+#20: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 0}
+#36: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 260, Step: 3, Hole: 0, RangeCheck: 0}
+#43: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 90, Step: 1, Hole: 0, RangeCheck: 0}
+#47: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 1, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Const: 1570, Step: 15, Hole: 6, RangeCheck: 1})
-test::holes: OrderedHashMap({Const: 600, Step: 6, Hole: 4, RangeCheck: 0})
-test::use_rc: OrderedHashMap({Const: 1070, Step: 10, Hole: 1, RangeCheck: 1})
-test::two: OrderedHashMap({Const: 100, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: {Const: 1570, Step: 15, Hole: 6, RangeCheck: 1}
+test::holes: {Const: 600, Step: 6, Hole: 4, RangeCheck: 0}
+test::use_rc: {Const: 1070, Step: 10, Hole: 1, RangeCheck: 1}
+test::two: {Const: 100, Step: 1, Hole: 0, RangeCheck: 0}
 
 //! > ap_solution_lp
 #5: 2
@@ -258,28 +258,28 @@ fn bar() {
 test::bar 10000
 
 //! > gas_solution_lp
-#5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9880, Step: 0, Hole: 0, RangeCheck: 0})
-#11: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9780, Step: 0, Hole: 0, RangeCheck: 0})
-#16: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#18: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 100, Step: 1, Hole: 0, RangeCheck: 0})
-#23: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 1, Hole: 2, RangeCheck: 0})
-#30: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 1, Hole: 4, RangeCheck: 0})
-#38: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
+#5: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9880, Step: 0, Hole: 0, RangeCheck: 0}
+#11: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9780, Step: 0, Hole: 0, RangeCheck: 0}
+#16: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#18: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 100, Step: 1, Hole: 0, RangeCheck: 0}
+#23: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 1, Hole: 2, RangeCheck: 0}
+#30: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 1, Hole: 4, RangeCheck: 0}
+#38: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Const: 30900, Step: 13, Hole: 4, RangeCheck: 0})
-test::bar: OrderedHashMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: {Const: 30900, Step: 13, Hole: 4, RangeCheck: 0}
+test::bar: {Const: 10000, Step: 1, Hole: 0, RangeCheck: 0}
 
 //! > gas_solution_linear
-#5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#11: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#16: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19660, Step: 0, Hole: 0, RangeCheck: 0})
-#18: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19760, Step: 1, Hole: 0, RangeCheck: 0})
-#23: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9880, Step: 1, Hole: 2, RangeCheck: 0})
-#30: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 1, Hole: 4, RangeCheck: 0})
-#38: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
+#5: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#11: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#16: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19660, Step: 0, Hole: 0, RangeCheck: 0}
+#18: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19760, Step: 1, Hole: 0, RangeCheck: 0}
+#23: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9880, Step: 1, Hole: 2, RangeCheck: 0}
+#30: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 1, Hole: 4, RangeCheck: 0}
+#38: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Const: 30900, Step: 13, Hole: 4, RangeCheck: 0})
-test::bar: OrderedHashMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: {Const: 30900, Step: 13, Hole: 4, RangeCheck: 0}
+test::bar: {Const: 10000, Step: 1, Hole: 0, RangeCheck: 0}
 
 //! > ap_solution_lp
 #5: 2
@@ -438,32 +438,32 @@ fn bar() {
 test::bar 10000
 
 //! > gas_solution_lp
-#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 1})
-#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9640, Step: 0, Hole: 0, RangeCheck: 0})
-#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#7: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 0})
-#8: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 5, RangeCheck: 0})
-#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 10250, Step: 2, Hole: 0, RangeCheck: 0})
-#16: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 350, Step: 1, Hole: 3, RangeCheck: 1})
-#24: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#32: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
+#0: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 1}
+#1: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9640, Step: 0, Hole: 0, RangeCheck: 0}
+#6: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#7: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 0}
+#8: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 5, RangeCheck: 0}
+#12: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 10250, Step: 2, Hole: 0, RangeCheck: 0}
+#16: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 350, Step: 1, Hole: 3, RangeCheck: 1}
+#24: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#32: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Const: 21280, Step: 14, Hole: 1, RangeCheck: 1})
-test::bar: OrderedHashMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: {Const: 21280, Step: 14, Hole: 1, RangeCheck: 1}
+test::bar: {Const: 10000, Step: 1, Hole: 0, RangeCheck: 0}
 
 //! > gas_solution_linear
-#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 1})
-#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#7: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 0})
-#8: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9640, Step: 0, Hole: 5, RangeCheck: 0})
-#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19890, Step: 2, Hole: 0, RangeCheck: 0})
-#16: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9990, Step: 1, Hole: 3, RangeCheck: 1})
-#24: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#32: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
+#0: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 1}
+#1: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#6: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#7: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 0}
+#8: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9640, Step: 0, Hole: 5, RangeCheck: 0}
+#12: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19890, Step: 2, Hole: 0, RangeCheck: 0}
+#16: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9990, Step: 1, Hole: 3, RangeCheck: 1}
+#24: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#32: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Const: 21280, Step: 14, Hole: 1, RangeCheck: 1})
-test::bar: OrderedHashMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: {Const: 21280, Step: 14, Hole: 1, RangeCheck: 1}
+test::bar: {Const: 10000, Step: 1, Hole: 0, RangeCheck: 0}
 
 //! > ap_solution_lp
 #12: 5
@@ -627,32 +627,32 @@ fn bar() {
 test::bar 2000
 
 //! > gas_solution_lp
-#4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 1})
-#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#7: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 700, Step: 4, Hole: 0, RangeCheck: 0})
-#8: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 7, RangeCheck: 0})
-#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1550, Step: 0, Hole: 2, RangeCheck: 0})
-#16: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 1, Hole: 0, RangeCheck: 0})
-#20: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 3, RangeCheck: 1})
-#28: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0})
+#4: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#5: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 1}
+#6: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#7: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 700, Step: 4, Hole: 0, RangeCheck: 0}
+#8: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 7, RangeCheck: 0}
+#12: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1550, Step: 0, Hole: 2, RangeCheck: 0}
+#16: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 1, Hole: 0, RangeCheck: 0}
+#20: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 3, RangeCheck: 1}
+#28: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Const: 2940, Step: 10, Hole: 7, RangeCheck: 1})
-test::bar: OrderedHashMap({Const: 2000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: {Const: 2940, Step: 10, Hole: 7, RangeCheck: 1}
+test::bar: {Const: 2000, Step: 1, Hole: 0, RangeCheck: 0}
 
 //! > gas_solution_linear
-#4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 1})
-#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#7: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 700, Step: 4, Hole: 0, RangeCheck: 0})
-#8: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 7, RangeCheck: 0})
-#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1550, Step: 0, Hole: 2, RangeCheck: 0})
-#16: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 1, Hole: 0, RangeCheck: 0})
-#20: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 3, RangeCheck: 1})
-#28: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0})
+#4: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#5: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 1}
+#6: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#7: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 700, Step: 4, Hole: 0, RangeCheck: 0}
+#8: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 7, RangeCheck: 0}
+#12: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1550, Step: 0, Hole: 2, RangeCheck: 0}
+#16: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 1, Hole: 0, RangeCheck: 0}
+#20: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 3, RangeCheck: 1}
+#28: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Const: 2940, Step: 10, Hole: 7, RangeCheck: 1})
-test::bar: OrderedHashMap({Const: 2000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: {Const: 2940, Step: 10, Hole: 7, RangeCheck: 1}
+test::bar: {Const: 2000, Step: 1, Hole: 0, RangeCheck: 0}
 
 //! > ap_solution_lp
 #12: 5
@@ -807,30 +807,30 @@ test::bar 10000
 test::foo 100000
 
 //! > gas_solution_lp
-#5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#10: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 79200, Step: 0, Hole: 5, RangeCheck: 0})
-#13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#15: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 89170, Step: 1, Hole: 0, RangeCheck: 0})
-#20: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 2, RangeCheck: 0})
-#24: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#27: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9980, Step: 1, Hole: 0, RangeCheck: 0})
-#30: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
+#5: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#10: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 79200, Step: 0, Hole: 5, RangeCheck: 0}
+#13: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#15: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 89170, Step: 1, Hole: 0, RangeCheck: 0}
+#20: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 2, RangeCheck: 0}
+#24: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#27: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9980, Step: 1, Hole: 0, RangeCheck: 0}
+#30: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Const: 100000, Step: 10, Hole: 5, RangeCheck: 0})
-test::bar: OrderedHashMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: {Const: 100000, Step: 10, Hole: 5, RangeCheck: 0}
+test::bar: {Const: 10000, Step: 1, Hole: 0, RangeCheck: 0}
 
 //! > gas_solution_linear
-#5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#10: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 79200, Step: 0, Hole: 5, RangeCheck: 0})
-#13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#15: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 89170, Step: 1, Hole: 0, RangeCheck: 0})
-#20: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 2, RangeCheck: 0})
-#24: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#27: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9980, Step: 1, Hole: 0, RangeCheck: 0})
-#30: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
+#5: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#10: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 79200, Step: 0, Hole: 5, RangeCheck: 0}
+#13: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#15: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 89170, Step: 1, Hole: 0, RangeCheck: 0}
+#20: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 2, RangeCheck: 0}
+#24: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#27: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9980, Step: 1, Hole: 0, RangeCheck: 0}
+#30: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Const: 100000, Step: 10, Hole: 5, RangeCheck: 0})
-test::bar: OrderedHashMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: {Const: 100000, Step: 10, Hole: 5, RangeCheck: 0}
+test::bar: {Const: 10000, Step: 1, Hole: 0, RangeCheck: 0}
 
 //! > ap_solution_lp
 #13: 3
@@ -944,18 +944,18 @@ fn foo() -> u128 {
 }
 
 //! > gas_solution_lp
-#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 180, Step: 2, Hole: 0, RangeCheck: 0})
-#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 2, RangeCheck: 0})
-#14: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#0: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 180, Step: 2, Hole: 0, RangeCheck: 0}
+#1: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 2, RangeCheck: 0}
+#14: {Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Bitwise: 1, Const: 990, Step: 9, Hole: 2, RangeCheck: 1})
+test::foo: {Bitwise: 1, Const: 990, Step: 9, Hole: 2, RangeCheck: 1}
 
 //! > gas_solution_linear
-#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, AddMod: 0, MulMod: 0, Const: 90, Step: 1, Hole: 0, RangeCheck: 0})
-#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 1, RangeCheck: 0})
-#14: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#0: {Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, AddMod: 0, MulMod: 0, Const: 90, Step: 1, Hole: 0, RangeCheck: 0}
+#1: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 1, RangeCheck: 0}
+#14: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Const: 1680, Step: 16, Hole: 1, RangeCheck: 1})
+test::foo: {Const: 1680, Step: 16, Hole: 1, RangeCheck: 1}
 
 //! > ap_solution_lp
 #14: 2
@@ -1073,20 +1073,20 @@ fn bar() {
 }
 
 //! > gas_solution_lp
-#4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 9, RangeCheck: 0})
-#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#14: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 3, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1310, Step: 14, Hole: 0, RangeCheck: 0})
+#4: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 9, RangeCheck: 0}
+#12: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#14: {Pedersen: 0, Poseidon: 0, Bitwise: 3, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1310, Step: 14, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Bitwise: 3, Const: 2600, Step: 26, Hole: 9, RangeCheck: 0})
-test::bar: OrderedHashMap({Bitwise: 1, Const: 500, Step: 5, Hole: 0, RangeCheck: 0})
+test::foo: {Bitwise: 3, Const: 2600, Step: 26, Hole: 9, RangeCheck: 0}
+test::bar: {Bitwise: 1, Const: 500, Step: 5, Hole: 0, RangeCheck: 0}
 
 //! > gas_solution_linear
-#4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 9, RangeCheck: 0})
-#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#14: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 3, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1310, Step: 14, Hole: 0, RangeCheck: 0})
+#4: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 9, RangeCheck: 0}
+#12: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#14: {Pedersen: 0, Poseidon: 0, Bitwise: 3, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1310, Step: 14, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Bitwise: 3, Const: 2600, Step: 26, Hole: 9, RangeCheck: 0})
-test::bar: OrderedHashMap({Bitwise: 1, Const: 500, Step: 5, Hole: 0, RangeCheck: 0})
+test::foo: {Bitwise: 3, Const: 2600, Step: 26, Hole: 9, RangeCheck: 0}
+test::bar: {Bitwise: 1, Const: 500, Step: 5, Hole: 0, RangeCheck: 0}
 
 //! > ap_solution_lp
 #12: 9
@@ -1224,22 +1224,22 @@ fn foo(cond: bool) {
 }
 
 //! > gas_solution_lp
-#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 10470, Step: 117, Hole: 0, RangeCheck: 0})
-#30: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 123, RangeCheck: 0})
+#1: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#6: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#12: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 10470, Step: 117, Hole: 0, RangeCheck: 0}
+#30: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 123, RangeCheck: 0}
 
-test::function_with_branch_align: OrderedHashMap({Const: 710, Step: 3, Hole: 41, RangeCheck: 0})
-test::foo: OrderedHashMap({Const: 13600, Step: 136, Hole: 123, RangeCheck: 0})
+test::function_with_branch_align: {Const: 710, Step: 3, Hole: 41, RangeCheck: 0}
+test::foo: {Const: 13600, Step: 136, Hole: 123, RangeCheck: 0}
 
 //! > gas_solution_linear
-#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 10670, Step: 119, Hole: 0, RangeCheck: 0})
-#30: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 123, RangeCheck: 0})
+#1: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#6: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#12: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 10670, Step: 119, Hole: 0, RangeCheck: 0}
+#30: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 123, RangeCheck: 0}
 
-test::function_with_branch_align: OrderedHashMap({Const: 200, Step: 2, Hole: 0, RangeCheck: 0})
-test::foo: OrderedHashMap({Const: 13600, Step: 136, Hole: 123, RangeCheck: 0})
+test::function_with_branch_align: {Const: 200, Step: 2, Hole: 0, RangeCheck: 0}
+test::foo: {Const: 13600, Step: 136, Hole: 123, RangeCheck: 0}
 
 //! > ap_solution_lp
 #1: 41
@@ -1919,16 +1919,16 @@ fn bar() {
 test::bar 2000
 
 //! > gas_solution_lp
-#9: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0})
+#9: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Const: 6300, Step: 6, Hole: 0, RangeCheck: 0})
-test::bar: OrderedHashMap({Const: 2000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: {Const: 6300, Step: 6, Hole: 0, RangeCheck: 0}
+test::bar: {Const: 2000, Step: 1, Hole: 0, RangeCheck: 0}
 
 //! > gas_solution_linear
-#9: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0})
+#9: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Const: 6300, Step: 6, Hole: 0, RangeCheck: 0})
-test::bar: OrderedHashMap({Const: 2000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: {Const: 6300, Step: 6, Hole: 0, RangeCheck: 0}
+test::bar: {Const: 2000, Step: 1, Hole: 0, RangeCheck: 0}
 
 //! > ap_solution_lp
 
@@ -2021,30 +2021,30 @@ test::bar20000 20000
 test::bar1000 1000
 
 //! > gas_solution_lp
-#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#8: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#9: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19900, Step: 0, Hole: 0, RangeCheck: 0})
-#16: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 900, Step: 0, Hole: 0, RangeCheck: 0})
+#0: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#4: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#5: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#8: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#9: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#13: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19900, Step: 0, Hole: 0, RangeCheck: 0}
+#16: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 900, Step: 0, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Const: 43100, Step: 12, Hole: 0, RangeCheck: 0})
-test::bar20000: OrderedHashMap({Const: 20000, Step: 1, Hole: 0, RangeCheck: 0})
-test::bar1000: OrderedHashMap({Const: 1000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: {Const: 43100, Step: 12, Hole: 0, RangeCheck: 0}
+test::bar20000: {Const: 20000, Step: 1, Hole: 0, RangeCheck: 0}
+test::bar1000: {Const: 1000, Step: 1, Hole: 0, RangeCheck: 0}
 
 //! > gas_solution_linear
-#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#8: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 18700, Step: 0, Hole: 0, RangeCheck: 0})
-#9: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 18700, Step: 0, Hole: 0, RangeCheck: 0})
-#13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19900, Step: 0, Hole: 0, RangeCheck: 0})
-#16: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 900, Step: 0, Hole: 0, RangeCheck: 0})
+#0: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#4: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#5: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0}
+#8: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 18700, Step: 0, Hole: 0, RangeCheck: 0}
+#9: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 18700, Step: 0, Hole: 0, RangeCheck: 0}
+#13: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19900, Step: 0, Hole: 0, RangeCheck: 0}
+#16: {Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 900, Step: 0, Hole: 0, RangeCheck: 0}
 
-test::foo: OrderedHashMap({Const: 20500, Step: 12, Hole: 0, RangeCheck: 0})
-test::bar20000: OrderedHashMap({Const: 20000, Step: 1, Hole: 0, RangeCheck: 0})
-test::bar1000: OrderedHashMap({Const: 1000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: {Const: 20500, Step: 12, Hole: 0, RangeCheck: 0}
+test::bar20000: {Const: 20000, Step: 1, Hole: 0, RangeCheck: 0}
+test::bar1000: {Const: 1000, Step: 1, Hole: 0, RangeCheck: 0}
 
 //! > ap_solution_lp
 

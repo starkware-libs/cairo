@@ -23,8 +23,8 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 500})
-test::bar: OrderedHashMap({})
+test::foo: {Const: 500}
+test::bar: {}
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];

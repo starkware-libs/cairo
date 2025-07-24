@@ -152,6 +152,7 @@ time = { version = "0.3.37", features = [
     "macros",
     "local-offset",
 ] }
+linear-map = "1.2.0"
 tokio = { version = "1.43.0", features = ["full", "sync"] }
 toml = "0.8.20"
 unescaper = "0.1.5"
