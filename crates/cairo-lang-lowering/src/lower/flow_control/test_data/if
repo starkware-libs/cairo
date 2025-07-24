@@ -19,3 +19,11 @@ Root: 2
 2 BooleanIf { condition: Id { idx: 0 }, true_branch: NodeId(0), false_branch: NodeId(1) }
 
 //! > semantic_diagnostics
+
+//! > lowered
+Parameters: v0: core::bool
+blk0 (root):
+Statements:
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
