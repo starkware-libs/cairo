@@ -188,7 +188,7 @@ impl BlockBuilder {
 
     /// Ends a block with Callsite.
     pub fn goto_callsite(self, expr: Option<VarUsage>) -> SealedBlockBuilder {
-        SealedBlockBuilder::GotoCallsite { builder: self, expr }
+        SealedBlockBuilder::GotoCallsite(SealedGotoCallsite { builder: self, expr })
     }
 
     /// Ends a block with Return.
@@ -319,7 +319,9 @@ impl BlockBuilder {
 
         // Remap Variables from all blocks.
         for sealed_block in &sealed_blocks {
-            let SealedBlockBuilder::GotoCallsite { builder: subscope, expr } = sealed_block else {
+            let SealedBlockBuilder::GotoCallsite(SealedGotoCallsite { builder: subscope, expr }) =
+                sealed_block
+            else {
                 continue;
             };
             n_reachable_blocks += 1;
@@ -442,11 +444,19 @@ pub struct SemanticRemapping {
     member_path_value: OrderedHashMap<MemberPath, VariableId>,
 }
 
-/// A sealed BlockBuilder, ready to be merged with sibling blocks to end the block.
+/// Represents a sealed [BlockBuilder] that ends with returning (goto) to the callsite.
+pub struct SealedGotoCallsite {
+    pub builder: BlockBuilder,
+    /// The expression that is returned by the block to the callsite. Can be `None` if the block
+    /// returns the unit type.
+    pub expr: Option<VarUsage>,
+}
+
+/// A sealed [BlockBuilder], ready to be merged with sibling blocks to end the block.
 #[allow(clippy::large_enum_variant)]
 pub enum SealedBlockBuilder {
     /// Block should end by goto callsite. `expr` may be None for blocks that return the unit type.
-    GotoCallsite { builder: BlockBuilder, expr: Option<VarUsage> },
+    GotoCallsite(SealedGotoCallsite),
     /// Block end is already known.
     Ends(BlockId),
 }
@@ -460,7 +470,7 @@ impl SealedBlockBuilder {
         semantic_remapping: &SemanticRemapping,
         location: LocationId,
     ) {
-        if let SealedBlockBuilder::GotoCallsite { mut builder, expr } = self {
+        if let SealedBlockBuilder::GotoCallsite(SealedGotoCallsite { mut builder, expr }) = self {
             let mut remapping = VarRemapping::default();
             // Since SemanticRemapping should have unique variable ids, these asserts will pass.
             for (semantic, remapped_var) in semantic_remapping.member_path_value.iter() {
