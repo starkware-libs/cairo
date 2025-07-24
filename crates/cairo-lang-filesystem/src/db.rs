@@ -14,7 +14,7 @@ use crate::cfg::CfgSet;
 use crate::flag::Flag;
 use crate::ids::{
     BlobId, BlobLongId, CodeMapping, CodeOrigin, CrateId, CrateLongId, Directory, FileId,
-    FileLongId, FlagId, FlagLongId, VirtualFile,
+    FileInput, FileLongId, FlagId, FlagLongId, VirtualFile,
 };
 use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
@@ -203,7 +203,7 @@ pub trait FilesGroup: ExternalFiles {
     /// Change this mechanism to hold file_overrides on the db struct outside salsa mechanism,
     /// and invalidate manually.
     #[salsa::input]
-    fn file_overrides_input(&self) -> Arc<OrderedHashMap<FileLongId, Arc<str>>>;
+    fn file_overrides_input(&self) -> Arc<OrderedHashMap<FileInput, Arc<str>>>;
 
     /// Interned version of `file_overrides_input`.
     fn file_overrides(&self) -> Arc<OrderedHashMap<FileId, Arc<str>>>;
@@ -235,6 +235,9 @@ pub trait FilesGroup: ExternalFiles {
     fn blob_content(&self, blob_id: BlobId) -> Option<Arc<[u8]>>;
     /// Query to get a compilation flag by its ID.
     fn get_flag(&self, id: FlagId) -> Option<Arc<Flag>>;
+
+    /// Create an input file from an interned file id.
+    fn file_input(&self, file_id: FileId) -> FileInput;
 }
 
 pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
@@ -249,7 +252,9 @@ pub fn file_overrides(db: &dyn FilesGroup) -> Arc<OrderedHashMap<FileId, Arc<str
     let inp = db.file_overrides_input();
     Arc::new(
         inp.iter()
-            .map(|(file_id, content)| (file_id.clone().intern(db), content.clone()))
+            .map(|(file_id, content)| {
+                (file_id.clone().into_file_long_id(db).intern(db), content.clone())
+            })
             .collect(),
     )
 }
@@ -266,6 +271,10 @@ pub fn crate_configs(db: &dyn FilesGroup) -> Arc<OrderedHashMap<CrateId, CrateCo
 pub fn flags(db: &dyn FilesGroup) -> Arc<OrderedHashMap<FlagId, Arc<Flag>>> {
     let inp = db.flags_input();
     Arc::new(inp.iter().map(|(flag_id, flag)| (flag_id.clone().intern(db), flag.clone())).collect())
+}
+
+fn file_input(db: &dyn FilesGroup, file_id: FileId) -> FileInput {
+    file_id.lookup_intern(db).into_file_input(db)
 }
 
 pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathBuf) {
@@ -294,7 +303,7 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
 pub trait FilesGroupEx: FilesGroup {
     /// Overrides file content. None value removes the override.
     fn override_file_content(&mut self, file: FileId, content: Option<Arc<str>>) {
-        let file = self.lookup_intern_file(file);
+        let file = self.file_input(file);
         let mut overrides = self.file_overrides_input().as_ref().clone();
         match content {
             Some(content) => overrides.insert(file, content),
