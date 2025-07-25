@@ -131,6 +131,13 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     #[salsa::invoke(ap_change::get_ap_change)]
     fn get_ap_change(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<SierraApChange>;
 
+    /// Private query to returns the type dependencies of a given libfunc.
+    #[salsa::invoke(program_generator::priv_libfunc_dependencies)]
+    fn priv_libfunc_dependencies(
+        &self,
+        libfunc_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
+    ) -> Arc<[ConcreteTypeId]>;
+
     /// Returns the [SierraProgramWithDebug] object of the requested functions.
     #[salsa::invoke(program_generator::get_sierra_program_for_functions)]
     fn get_sierra_program_for_functions(

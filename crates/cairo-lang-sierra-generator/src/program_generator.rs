@@ -28,29 +28,22 @@ use crate::statements_locations::StatementsLocations;
 mod test;
 
 /// Generates the list of [cairo_lang_sierra::program::LibfuncDeclaration] for the given list of
-/// [ConcreteLibfuncId].
-fn generate_libfunc_declarations<'a>(
+/// [pre_sierra::StatementWithLocation].
+fn collect_and_generate_libfunc_declarations(
     db: &dyn SierraGenGroup,
-    libfuncs: impl Iterator<Item = &'a ConcreteLibfuncId>,
-) -> Vec<program::LibfuncDeclaration> {
-    libfuncs
-        .into_iter()
-        .map(|libfunc_id| program::LibfuncDeclaration {
-            id: libfunc_id.clone(),
-            long_id: libfunc_id.lookup_intern(db),
-        })
-        .collect()
-}
-
-/// Collects the set of all [ConcreteLibfuncId] used in the given list of [pre_sierra::Statement].
-fn collect_used_libfuncs(
     statements: &[pre_sierra::StatementWithLocation],
-) -> OrderedHashSet<ConcreteLibfuncId> {
+) -> Vec<program::LibfuncDeclaration> {
+    let mut declared_libfuncs = UnorderedHashSet::<ConcreteLibfuncId>::default();
     statements
         .iter()
         .filter_map(|statement| match &statement.statement {
             pre_sierra::Statement::Sierra(program::GenStatement::Invocation(invocation)) => {
-                Some(invocation.libfunc_id.clone())
+                declared_libfuncs.insert(invocation.libfunc_id.clone()).then(|| {
+                    program::LibfuncDeclaration {
+                        id: invocation.libfunc_id.clone(),
+                        long_id: invocation.libfunc_id.lookup_intern(db),
+                    }
+                })
             }
             pre_sierra::Statement::Sierra(program::GenStatement::Return(_))
             | pre_sierra::Statement::Label(_) => None,
@@ -65,10 +58,12 @@ fn collect_used_libfuncs(
 /// [ConcreteTypeId].
 fn generate_type_declarations(
     db: &dyn SierraGenGroup,
-    mut remaining_types: OrderedHashSet<ConcreteTypeId>,
+    libfunc_declarations: &[program::LibfuncDeclaration],
+    functions: &[program::Function],
 ) -> Vec<program::TypeDeclaration> {
     let mut declarations = vec![];
     let mut already_declared = UnorderedHashSet::default();
+    let mut remaining_types = collect_used_types(db, libfunc_declarations, functions);
     while let Some(ty) = remaining_types.iter().next().cloned() {
         remaining_types.swap_remove(&ty);
         generate_type_declarations_helper(
@@ -138,27 +133,12 @@ fn collect_used_types(
     libfunc_declarations: &[program::LibfuncDeclaration],
     functions: &[program::Function],
 ) -> OrderedHashSet<ConcreteTypeId> {
+    let mut all_types = OrderedHashSet::default();
     // Collect types that appear in libfuncs.
-    let types_in_libfuncs = libfunc_declarations.iter().flat_map(|libfunc| {
-        // TODO(orizi): replace expect() with a diagnostic (unless this can never happen).
-        let signature = CoreLibfunc::specialize_signature_by_id(
-                &SierraSignatureSpecializationContext(db),
-                &libfunc.long_id.generic_id,
-                &libfunc.long_id.generic_args,
-            )
-            // If panic happens here, make sure the specified libfunc name is in one of the STR_IDs of
-            // the libfuncs in the [`CoreLibfunc`] structured enum.
-            .unwrap_or_else(|err| panic!("Failed to specialize: `{}`. Error: {err}",
-                DebugReplacer { db }.replace_libfunc_id(&libfunc.id)));
-        chain!(
-            signature.param_signatures.into_iter().map(|param_signature| param_signature.ty),
-            signature.branch_signatures.into_iter().flat_map(|info| info.vars).map(|var| var.ty),
-            libfunc.long_id.generic_args.iter().filter_map(|arg| match arg {
-                program::GenericArg::Type(ty) => Some(ty.clone()),
-                _ => None,
-            })
-        )
-    });
+    for libfunc in libfunc_declarations {
+        let types = db.priv_libfunc_dependencies(libfunc.id.clone());
+        all_types.extend(types.iter().cloned());
+    }
 
     // Gather types used in user-defined functions.
     // This is necessary for types that are used as entry point arguments but do not appear in any
@@ -167,11 +147,50 @@ fn collect_used_types(
     // Additionally, we include the return types of functions, since with unsafe panic enabled,
     // a function that always panics might declare a return type that does not appear in anywhere
     // else in the program.
-    let types_in_user_functions = functions
-        .iter()
-        .flat_map(|func| chain!(&func.signature.param_types, &func.signature.ret_types).cloned());
+    all_types.extend(
+        functions.iter().flat_map(|func| {
+            chain!(&func.signature.param_types, &func.signature.ret_types).cloned()
+        }),
+    );
+    all_types
+}
 
-    chain!(types_in_libfuncs, types_in_user_functions).collect()
+/// Query implementation of [SierraGenGroup::priv_libfunc_dependencies].
+pub fn priv_libfunc_dependencies(
+    db: &dyn SierraGenGroup,
+    libfunc_id: ConcreteLibfuncId,
+) -> Arc<[ConcreteTypeId]> {
+    let long_id = libfunc_id.lookup_intern(db);
+    let signature = CoreLibfunc::specialize_signature_by_id(
+        &SierraSignatureSpecializationContext(db),
+        &long_id.generic_id,
+        &long_id.generic_args,
+    )
+    // If panic happens here, make sure the specified libfunc name is in one of the STR_IDs of
+    // the libfuncs in the [`CoreLibfunc`] structured enum.
+    .unwrap_or_else(|err| panic!("Failed to specialize: `{}`. Error: {err}",
+        DebugReplacer { db }.replace_libfunc_id(&libfunc_id)));
+    // Collecting types as a vector since the set should be very small.
+    let mut all_types = vec![];
+    let mut add_ty = |ty: ConcreteTypeId| {
+        if !all_types.contains(&ty) {
+            all_types.push(ty);
+        }
+    };
+    for param_signature in signature.param_signatures {
+        add_ty(param_signature.ty);
+    }
+    for info in signature.branch_signatures {
+        for var in info.vars {
+            add_ty(var.ty);
+        }
+    }
+    for arg in long_id.generic_args {
+        if let program::GenericArg::Type(ty) = arg {
+            add_ty(ty);
+        }
+    }
+    all_types.into()
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -281,10 +300,8 @@ pub fn assemble_program(
         })
         .collect_vec();
 
-    let libfunc_declarations =
-        generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
-    let type_declarations =
-        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations, &funcs));
+    let libfunc_declarations = collect_and_generate_libfunc_declarations(db, &statements);
+    let type_declarations = generate_type_declarations(db, &libfunc_declarations, &funcs);
     // Resolve labels.
     let (resolved_statements, statements_locations) =
         resolve_labels_and_extract_locations(statements, &label_replacer);
