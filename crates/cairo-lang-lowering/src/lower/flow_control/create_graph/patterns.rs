@@ -4,16 +4,16 @@ use std::sync::Arc;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{
-    self as semantic, ConcreteEnumId, ConcreteTypeId, PatternEnumVariant,
-    PatternTuple, TypeId, TypeLongId,
+    self as semantic, ConcreteEnumId, ConcreteTypeId, PatternEnumVariant, PatternTuple,
+    PatternVariable, TypeId, TypeLongId,
 };
 use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 
 use super::super::graph::{
-    Capture, Deconstruct, EnumMatch,
-    FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
+    Capture, Deconstruct, EnumMatch, FlowControlGraphBuilder, FlowControlNode, FlowControlVar,
+    NodeId,
 };
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
@@ -25,7 +25,10 @@ pub enum Pattern<'a> {
 }
 impl<'a> Pattern<'a> {
     /// Constructs a [Pattern] from a [semantic::PatternId].
-    pub fn from_semantic(ctx: &'a LoweringContext<'_, '_>, semantic_pattern: semantic::PatternId) -> Self {
+    pub fn from_semantic(
+        ctx: &'a LoweringContext<'_, '_>,
+        semantic_pattern: semantic::PatternId,
+    ) -> Self {
         Self::Semantic(&ctx.function_body.arenas.patterns[semantic_pattern])
     }
 }
@@ -47,18 +50,42 @@ impl<'a> Pattern<'a> {
 /// For the latter, it is important to return both `0` and `1` because which arm is chosen depends
 /// on the value of `y` (which will be handled by the calling pattern matching function).
 pub struct FilteredPatterns {
-    indices: Vec<usize>,
+    /// The indices of the patterns that are accepted by the filter, together with capture
+    /// information.
+    filter: Vec<IndexAndCaptures>,
 }
-type FilteredPatternsKey = Vec<usize>;
+
+type FilteredPatternsKey = Vec<IndexAndCaptures>;
 
 impl FilteredPatterns {
+    fn empty() -> Self {
+        Self { filter: vec![] }
+    }
+
     /// Returns a [FilteredPatterns] that accepts all patterns (no filtering).
-    pub fn all(n_patterns: usize) -> Self {
-        Self { indices: (0..n_patterns).collect_vec() }
+    fn all(n_patterns: usize) -> Self {
+        Self {
+            filter: (0..n_patterns)
+                .map(|idx| IndexAndCaptures { index: idx, captures: Captures::default() })
+                .collect_vec(),
+        }
+    }
+
+    fn all_with_captures(captures_vec: impl Iterator<Item = Captures>) -> Self {
+        Self {
+            filter: captures_vec
+                .enumerate()
+                .map(|(index, captures)| IndexAndCaptures { index, captures })
+                .collect_vec(),
+        }
+    }
+
+    fn add(&mut self, idx: usize, captures: Captures) {
+        self.filter.push(IndexAndCaptures { index: idx, captures });
     }
 
     fn key(&self) -> &FilteredPatternsKey {
-        &self.indices
+        &self.filter
     }
 
     /// Returns a lifted [FilteredPatterns] after a filtering a list of patterns.
@@ -67,18 +94,59 @@ impl FilteredPatterns {
     /// patterns at indices `[1, 2]`. Suppose that `bar` filters it to only the last pattern.
     /// `bar` returns `[1]` since it uses its own indexing.
     /// `foo` needs to lift it to `[2]` to return to its caller using `foo`'s indexing.
-    pub fn lift(&self, outer_indices: &Vec<usize>) -> Self {
-        Self { indices: self.indices.iter().map(|idx| outer_indices[*idx]).collect_vec() }
+    fn lift(self, outer_filter: &FilteredPatterns) -> Self {
+        Self {
+            filter: self.filter.into_iter().map(|capture| capture.lift(outer_filter)).collect_vec(),
+        }
     }
 
     /// Returns the first index of the filtered patterns.
-    pub fn first_index(&self) -> usize {
-        self.indices[0]
+    // TODO: rename. Fix doc.
+    pub fn first(self) -> Option<IndexAndCaptures> {
+        self.filter.into_iter().next()
+    }
+}
+
+#[derive(Clone, Hash, Eq, PartialEq)]
+pub struct IndexAndCaptures {
+    /// The index of the pattern in the list of patterns.
+    pub index: usize,
+    /// The captures that should be applied if the pattern is chosen.
+    captures: Captures,
+}
+impl IndexAndCaptures {
+    /// Lifts the index of the pattern to the outer level.
+    /// See [FilteredPatterns::lift] for more details.
+    fn lift(self, outer_filter: &FilteredPatterns) -> IndexAndCaptures {
+        IndexAndCaptures {
+            index: outer_filter.filter[self.index].index,
+            captures: self.captures.union(&outer_filter.filter[self.index].captures),
+        }
     }
 
-    /// Returns `true` if the no pattern was accepted by the filter.
-    pub fn is_empty(&self) -> bool {
-        self.indices.is_empty()
+    // TODO: doc.
+    pub fn wrap_node(self, graph: &mut FlowControlGraphBuilder, mut node: NodeId) -> NodeId {
+        for (input, output) in self.captures.captures {
+            node = graph.add_node(FlowControlNode::Capture(Capture { input, output, next: node }));
+        }
+        node
+    }
+}
+
+#[derive(Clone, Default, Hash, Eq, PartialEq)]
+struct Captures {
+    /// The captures that should be applied if the pattern is chosen.
+    captures: Vec<(FlowControlVar, PatternVariable)>,
+}
+impl Captures {
+    fn single(input: FlowControlVar, output: PatternVariable) -> Self {
+        Self { captures: vec![(input, output)] }
+    }
+
+    fn union(&self, captures: &Self) -> Self {
+        Self {
+            captures: self.captures.iter().chain(captures.captures.iter()).cloned().collect_vec(),
+        }
     }
 }
 
@@ -89,9 +157,9 @@ struct FilteredPatternsCache {
 impl FilteredPatternsCache {
     fn get_or_compute(
         &self,
-        build_node_callback: &(dyn Fn(&mut FlowControlGraphBuilder, FilteredPatterns) -> NodeId),
+        build_node_callback: &dyn Fn(&mut FlowControlGraphBuilder, FilteredPatterns) -> NodeId,
         graph: &mut FlowControlGraphBuilder,
-        pattern_indices: FilteredPatterns
+        pattern_indices: FilteredPatterns,
     ) -> NodeId {
         let key_ref = pattern_indices.key();
         if let Some(node_id) = self.cache.borrow().get(key_ref) {
@@ -125,18 +193,27 @@ pub fn create_node_for_patterns(
 ) -> NodeId {
     // TODO: Check for semantic::Pattern::Otherwise in addition to Pattern::Otherwise.
     if patterns.iter().all(|pattern| pattern_is_any(pattern)) {
-        let node = build_node_callback(graph, FilteredPatterns::all(patterns.len()));
+        return build_node_callback(
+            graph,
+            FilteredPatterns::all_with_captures(patterns.iter().map(|pattern| {
+                if let Pattern::Semantic(semantic::Pattern::Variable(pattern_variable)) = pattern {
+                    Captures::single(input_var, pattern_variable.clone())
+                } else {
+                    Captures::default()
+                }
+            })),
+        );
         // TODO: Each variable should be registered for the appropriate node.
-        for pattern in patterns {
-            if let Pattern::Semantic(semantic::Pattern::Variable(pattern_variable)) = pattern {
-                return graph.add_node(FlowControlNode::Capture(Capture {
-                    input: input_var,
-                    output: pattern_variable.clone(),
-                    next: node,
-                }));
-            }
-        }
-        return node;
+        // for pattern in patterns {
+        //     if let Pattern::Semantic(semantic::Pattern::Variable(pattern_variable)) = pattern {
+        //         return graph.add_node(FlowControlNode::Capture(Capture {
+        //             input: input_var,
+        //             output: pattern_variable.clone(),
+        //             next: node,
+        //         }));
+        //     }
+        // }
+        // return node;
     }
 
     let cache = FilteredPatternsCache::default();
@@ -182,7 +259,8 @@ fn create_node_for_enum(
     let concrete_variants = ctx.db.concrete_enum_variants(concrete_enum_id).unwrap(); // TODO: Fix unwrap.
 
     // Maps variant index to the list of the indices of the patterns that match it.
-    let mut variant_to_pattern_indices: Vec<Vec<usize>> = vec![vec![]; concrete_variants.len()];
+    let mut variant_to_pattern_indices: Vec<FilteredPatterns> = (0..concrete_variants.len()).map(|_|
+        FilteredPatterns::empty()).collect_vec();
     // TODO: doc.
     let mut variant_to_inner_patterns: Vec<Vec<Pattern>> = vec![vec![]; concrete_variants.len()];
     for (idx, pattern) in patterns.iter().enumerate() {
@@ -192,16 +270,24 @@ fn create_node_for_enum(
                 inner_pattern,
                 ..
             })) => {
-                variant_to_pattern_indices[variant.idx].push(idx);
+                variant_to_pattern_indices[variant.idx].add(idx, Captures::default());
                 variant_to_inner_patterns[variant.idx].push(
                     inner_pattern
                         .map(|inner_pattern| Pattern::from_semantic(ctx, inner_pattern))
-                        .unwrap_or_else(|| Pattern::Otherwise),
+                        .unwrap_or(Pattern::Otherwise),
                 );
             }
             Pattern::Semantic(semantic::Pattern::Otherwise(..)) | Pattern::Otherwise => {
                 for pattern_indices in variant_to_pattern_indices.iter_mut() {
-                    pattern_indices.push(idx);
+                    pattern_indices.add(idx, Captures::default());
+                }
+                for inner_patterns in variant_to_inner_patterns.iter_mut() {
+                    inner_patterns.push(Pattern::Otherwise);
+                }
+            }
+            Pattern::Semantic(semantic::Pattern::Variable(pattern_variable)) => {
+                for pattern_indices in variant_to_pattern_indices.iter_mut() {
+                    pattern_indices.add(idx, Captures::single(input_var, pattern_variable.clone()));
                 }
                 for inner_patterns in variant_to_inner_patterns.iter_mut() {
                     inner_patterns.push(Pattern::Otherwise);
@@ -321,12 +407,9 @@ fn create_node_for_tuple_inner(
                 inner_vars,
                 types,
                 location,
-                &pattern_indices.indices.iter().map(|idx| patterns[*idx].clone()).collect_vec(),
+                &pattern_indices.filter.iter().map(|idx| patterns[idx.index].clone()).collect_vec(),
                 &|graph, pattern_indices_inner| {
-                    build_node_callback(
-                        graph,
-                        pattern_indices_inner.lift(&pattern_indices.indices),
-                    )
+                    build_node_callback(graph, pattern_indices_inner.lift(&pattern_indices))
                 },
                 item_idx + 1,
             )

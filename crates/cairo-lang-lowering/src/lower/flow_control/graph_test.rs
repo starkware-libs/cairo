@@ -45,7 +45,7 @@ fn test_create_graph(
     )
     .split();
 
-    println!("{}", semantic_diagnostics); // TODO: Remove.
+    println!("{semantic_diagnostics}"); // TODO: Remove.
 
     // Extract the expression from the function's body.
     let semantic::Expr::Block(semantic::ExprBlock { tail: Some(expr_id), .. }) =

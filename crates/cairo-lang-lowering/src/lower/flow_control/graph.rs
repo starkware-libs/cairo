@@ -23,8 +23,7 @@
 
 use std::fmt::Debug;
 
-use cairo_lang_semantic::{self as semantic, ConcreteVariant, LocalVariable, PatternVariable};
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_semantic::{self as semantic, ConcreteVariant, PatternVariable};
 use itertools::Itertools;
 
 use crate::ids::LocationId;

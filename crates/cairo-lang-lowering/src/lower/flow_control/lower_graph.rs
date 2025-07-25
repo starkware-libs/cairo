@@ -182,7 +182,7 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
                     }
                 }
                 Some(BlockFinalization::Missing | BlockFinalization::Skip) => {
-                    println!("Node {} was skipped.", i); // TODO
+                    println!("Node {i} was skipped."); // TODO
                     continue;
                 }
                 Some(BlockFinalization::JumpsOutside(builder, err)) => {

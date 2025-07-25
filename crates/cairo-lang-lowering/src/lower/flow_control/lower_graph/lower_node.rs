@@ -10,9 +10,7 @@ use crate::lower::context::{LoweringContext, VarRequest};
 use crate::lower::flow_control::graph::{
     ArmExpr, BooleanIf, Capture, EnumMatch, ExprToVar, FlowControlNode, NodeId,
 };
-use crate::lower::{
-    lower_expr, lower_expr_to_var_usage, lower_tail_expr, lowered_expr_to_block_scope_end,
-};
+use crate::lower::{lower_expr_to_var_usage, lower_tail_expr};
 use crate::{BlockEnd, MatchArm, MatchEnumInfo, MatchInfo, VarUsage};
 
 // TODO: Should we use `LoweringResult`?
@@ -137,7 +135,7 @@ fn lower_enum_match(
             let var_usage = VarUsage { var_id: input_var, location };
             ctx.register_var(*inner_var_id, var_usage);
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(concrete_variant.clone()),
+                arm_selector: MatchArmSelector::VariantId(*concrete_variant),
                 block_id: ctx.assign_child_block_id(*variant_node, &builder),
                 var_ids: vec![input_var],
             }

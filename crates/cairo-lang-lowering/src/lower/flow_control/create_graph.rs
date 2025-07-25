@@ -1,23 +1,12 @@
-use std::cell::RefCell;
-use std::sync::Arc;
-
-use cairo_lang_semantic::items::enm::SemanticEnumEx;
-use cairo_lang_semantic::types::peel_snapshots;
-use cairo_lang_semantic::{
-    self as semantic, ConcreteEnumId, ConcreteTypeId, Condition, PatternEnumVariant, PatternId,
-    PatternTuple, TypeId, TypeLongId,
-};
+use cairo_lang_semantic::{self as semantic, Condition, PatternId};
 use cairo_lang_syntax::node::TypedStablePtr;
-use cairo_lang_utils::iterators::zip_eq3;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
-use patterns::{create_node_for_patterns, Pattern};
+use patterns::{Pattern, create_node_for_patterns};
 
 use super::graph::{
-    ArmExpr, BooleanIf, Capture, Deconstruct, EnumMatch, ExprToVar, FlowControlGraph,
-    FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
+    ArmExpr, BooleanIf, ExprToVar, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode,
+    NodeId,
 };
-use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
 
 mod patterns;
@@ -83,14 +72,19 @@ pub fn create_graph_expr_if(
                         .iter()
                         .map(|pattern| Pattern::from_semantic(ctx, *pattern))
                         .collect_vec(),
-                    &|_graph, pattern_indices| {
-                        if pattern_indices.is_empty() { false_branch } else { current_node }
+                    &|graph, pattern_indices| {
+                        pattern_indices
+                            .first()
+                            .map(|index_and_captures| {
+                                index_and_captures.wrap_node(graph, current_node)
+                            })
+                            .unwrap_or(false_branch)
                     },
                 );
 
                 // Create a node for lowering `expr` into `expr_var` and continue to the match.
                 graph.add_node(FlowControlNode::ExprToVar(ExprToVar {
-                    expr: expr_id.clone(),
+                    expr: *expr_id,
                     var_id: expr_var,
                     next: match_node_id,
                 }))
@@ -135,14 +129,16 @@ pub fn create_graph_expr_match(
             .iter()
             .map(|(pattern, _)| Pattern::from_semantic(ctx, *pattern))
             .collect_vec(),
-        &|_graph, pattern_indices| {
+        &|graph, pattern_indices| {
             // TODO: produce diagnostics if pattern_indices is empty.
-            pattern_and_nodes[pattern_indices.first_index()].1
+            let index_and_captures = pattern_indices.first().unwrap();
+            let index = index_and_captures.index;
+            index_and_captures.wrap_node(graph, pattern_and_nodes[index].1)
         },
     );
 
     let root = graph.add_node(FlowControlNode::ExprToVar(ExprToVar {
-        expr: expr.matched_expr.clone(),
+        expr: expr.matched_expr,
         var_id: matched_var,
         next: match_node_id,
     }));
