@@ -426,6 +426,10 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
                 db.module_dir(parent)?.file(db, format!("{name}.cairo").into())
             }
         }
+        ModuleId::MacroCall { generated_file_id, .. } => {
+            // This is a macro-generated module, so the main file is the generated file.
+            generated_file_id
+        }
     })
 }
 
@@ -446,6 +450,11 @@ fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
             let parent = submodule_id.parent_module(db);
             let name = submodule_id.name(db);
             Ok(db.module_dir(parent)?.subdir(name))
+        }
+        ModuleId::MacroCall { id: macro_call_id, .. } => {
+            // This is a macro call, we return the directory for the file that contained the macro
+            // call, as it is considered the location of the macro itself.
+            db.module_dir(macro_call_id.module_file_id(db).0)
         }
     }
 }
