@@ -60,6 +60,11 @@ mod test;
 /// The expected gas cost of an entrypoint.
 pub const ENTRY_POINT_COST: i32 = 10000;
 
+/// Current version of the compiled class hash.
+/// Part of the hash of the compiled class.
+pub static COMPILED_CLASS_V1: LazyLock<Felt252> =
+    LazyLock::new(|| Felt252::from_bytes_be_slice(b"COMPILED_CLASS_V1"));
+
 static CONSTRUCTOR_ENTRY_POINT_SELECTOR: LazyLock<BigUint> =
     LazyLock::new(|| starknet_keccak(b"constructor"));
 
@@ -175,7 +180,7 @@ impl CasmContractClass {
 
         // Compute total hash by hashing each component on top of the previous one.
         H::hash_array(&[
-            Felt252::from_bytes_be_slice(b"COMPILED_CLASS_V1"),
+            *COMPILED_CLASS_V1,
             external_funcs_hash,
             l1_handlers_hash,
             constructors_hash,
