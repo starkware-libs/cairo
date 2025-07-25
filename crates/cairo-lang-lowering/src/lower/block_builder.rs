@@ -452,6 +452,38 @@ pub struct SealedGotoCallsite {
     /// returns the unit type.
     pub expr: Option<VarUsage>,
 }
+impl SealedGotoCallsite {
+    /// Finalizes a non-finalized block, given the semantic remapping of variables and the target
+    /// block to jump to.
+    fn finalize(
+        self,
+        ctx: &mut LoweringContext<'_, '_>,
+        target: BlockId,
+        semantic_remapping: &SemanticRemapping,
+        location: LocationId,
+    ) {
+        let SealedGotoCallsite { mut builder, expr } = self;
+        let mut remapping = VarRemapping::default();
+        // Since SemanticRemapping should have unique variable ids, these asserts will pass.
+        for (semantic, remapped_var) in semantic_remapping.member_path_value.iter() {
+            assert!(
+                remapping
+                    .insert(*remapped_var, builder.get_ref_raw(ctx, semantic, location).unwrap())
+                    .is_none()
+            );
+        }
+        if let Some(remapped_var) = semantic_remapping.expr {
+            let var_usage = expr.unwrap_or_else(|| {
+                LoweredExpr::Tuple { exprs: vec![], location: ctx.variables[remapped_var].location }
+                    .as_var_usage(ctx, &mut builder)
+                    .unwrap()
+            });
+            assert!(remapping.insert(remapped_var, var_usage).is_none());
+        }
+
+        builder.finalize(ctx, BlockEnd::Goto(target, remapping));
+    }
+}
 
 /// A sealed [BlockBuilder], ready to be merged with sibling blocks to end the block.
 #[allow(clippy::large_enum_variant)]
@@ -471,32 +503,8 @@ impl SealedBlockBuilder {
         semantic_remapping: &SemanticRemapping,
         location: LocationId,
     ) {
-        if let SealedBlockBuilder::GotoCallsite(SealedGotoCallsite { mut builder, expr }) = self {
-            let mut remapping = VarRemapping::default();
-            // Since SemanticRemapping should have unique variable ids, these asserts will pass.
-            for (semantic, remapped_var) in semantic_remapping.member_path_value.iter() {
-                assert!(
-                    remapping
-                        .insert(
-                            *remapped_var,
-                            builder.get_ref_raw(ctx, semantic, location).unwrap()
-                        )
-                        .is_none()
-                );
-            }
-            if let Some(remapped_var) = semantic_remapping.expr {
-                let var_usage = expr.unwrap_or_else(|| {
-                    LoweredExpr::Tuple {
-                        exprs: vec![],
-                        location: ctx.variables[remapped_var].location,
-                    }
-                    .as_var_usage(ctx, &mut builder)
-                    .unwrap()
-                });
-                assert!(remapping.insert(remapped_var, var_usage).is_none());
-            }
-
-            builder.finalize(ctx, BlockEnd::Goto(target, remapping));
+        if let SealedBlockBuilder::GotoCallsite(sealed_goto_callsite) = self {
+            sealed_goto_callsite.finalize(ctx, target, semantic_remapping, location);
         }
     }
 }
@@ -667,10 +675,7 @@ fn merge_block_builders_inner(
 
     // Finalize the intermediate blocks.
     for sealed_block in parent_sealed_blocks.into_iter() {
-        // TODO(lior): Consider extracting the relevant code from `finalize` to a separate
-        //   `finalize` function.
-        let sealed_block_builder = SealedBlockBuilder::GotoCallsite(sealed_block);
-        sealed_block_builder.finalize(ctx, block_id, &semantic_remapping, location);
+        sealed_block.finalize(ctx, block_id, &semantic_remapping, location);
     }
 
     // Create a new [BlockBuilder] with the merged `semantics`.
