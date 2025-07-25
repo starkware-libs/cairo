@@ -8,7 +8,7 @@ use crate::diagnostics::get_diagnostics_as_string;
 fn test_diagnostics() {
     let mut db = RootDatabase::default();
 
-    let crate_id = CrateId::plain(&db, "bad_create");
+    let crate_id = CrateId::plain(&db, "bad_crate");
     db.set_crate_config(
         crate_id,
         Some(CrateConfiguration::default_for_root(Directory::Real("no/such/path".into()))),
