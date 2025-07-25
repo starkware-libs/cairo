@@ -67,6 +67,10 @@ pub enum ProgramRegistryError {
     MultipleJumpsToSameStatement { src1: StatementIdx, src2: StatementIdx, dst: StatementIdx },
     #[error("#{0}: Jump out of range")]
     JumpOutOfRange(StatementIdx),
+    #[error("Type size computation failed for `{ty}`: missing size information for `{dep}`")]
+    TypeSizeDependencyMissing { ty: ConcreteTypeId, dep: ConcreteTypeId },
+    #[error("Type size computation failed for `{0}`: circuit limb count overflow.")]
+    CircuitTypeSizeOverflow(ConcreteTypeId),
 }
 
 type TypeMap<TType> = HashMap<ConcreteTypeId, TType>;

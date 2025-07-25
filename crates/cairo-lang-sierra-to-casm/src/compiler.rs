@@ -42,8 +42,6 @@ mod test;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum CompilationError {
-    #[error("Failed building type information")]
-    FailedBuildingTypeInformation,
     #[error("Error from program registry: {0}")]
     ProgramRegistryError(Box<ProgramRegistryError>),
     #[error(transparent)]
@@ -454,8 +452,8 @@ pub fn compile(
     )
     .map_err(CompilationError::ProgramRegistryError)?;
     validate_metadata(program, &registry, metadata)?;
-    let type_sizes = get_type_size_map(program, &registry)
-        .ok_or(CompilationError::FailedBuildingTypeInformation)?;
+    let type_sizes =
+        get_type_size_map(program, &registry).map_err(CompilationError::ProgramRegistryError)?;
     let mut backwards_jump_indices = UnorderedHashSet::<_>::default();
     for (statement_id, statement) in program.statements.iter().enumerate() {
         if let Statement::Invocation(invocation) = statement {
