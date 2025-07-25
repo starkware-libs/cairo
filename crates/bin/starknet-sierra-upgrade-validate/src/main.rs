@@ -6,7 +6,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use anyhow::Context;
 use cairo_lang_starknet_classes::allowed_libfuncs::{AllowedLibfuncsError, ListSelector};
 use cairo_lang_starknet_classes::casm_contract_class::{
-    CasmContractClass, StarknetSierraCompilationError,
+    CasmCompiledClassHashType, CasmContractClass, StarknetSierraCompilationError,
 };
 use cairo_lang_starknet_classes::compiler_version::VersionId;
 use cairo_lang_starknet_classes::contract_class::{ContractClass, ContractEntryPoints};
@@ -52,8 +52,8 @@ struct Cli {
     /// files should be provided.
     #[arg(
         long,
-        requires_ifs = [("fullnode_url", "FullnodeArgs")], 
-        required_unless_present = "input_files", 
+        requires_ifs = [("fullnode_url", "FullnodeArgs")],
+        required_unless_present = "input_files",
         conflicts_with = "input_files"
     )]
     fullnode_url: Option<String>,
@@ -365,7 +365,11 @@ fn run_single(mut sierra_class: ContractClassInfo, config: &RunConfig) -> RunRes
         }
     };
     let old = sierra_class.compiled_class_hash;
-    let new = BigUintAsHex { value: compiled_contract_class.compiled_class_hash().to_biguint() };
+    let new = BigUintAsHex {
+        value: compiled_contract_class
+            .compiled_class_hash(CasmCompiledClassHashType::Poseidon)
+            .to_biguint(),
+    };
     if old != new {
         RunResult::CompilationMismatch(CompilationMismatch { class_hash, old, new })
     } else {

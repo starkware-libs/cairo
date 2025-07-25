@@ -38,7 +38,7 @@ use num_integer::Integer;
 use num_traits::Signed;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
-use starknet_types_core::hash::{Poseidon, StarkHash};
+use starknet_types_core::hash::{Blake2Felt252, Poseidon, StarkHash};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
@@ -102,6 +102,12 @@ pub enum StarknetSierraCompilationError {
     UnsupportedSierraVersion { version_in_contract: VersionId, version_of_compiler: VersionId },
 }
 
+// This enum is used to specify the type of hash function to use for the compiled class hash.
+pub enum CasmCompiledClassHashType {
+    Poseidon,
+    Blake2s,
+}
+
 fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
     opt_field.is_none()
 }
@@ -124,8 +130,11 @@ pub struct CasmContractClass {
 }
 impl CasmContractClass {
     /// Returns the Poseidon hash value for the compiled contract class.
-    pub fn compiled_class_hash(&self) -> Felt252 {
-        self.compiled_class_hash_inner::<Poseidon>()
+    pub fn compiled_class_hash(&self, hash_type: CasmCompiledClassHashType) -> Felt252 {
+        match hash_type {
+            CasmCompiledClassHashType::Poseidon => self.compiled_class_hash_inner::<Poseidon>(),
+            CasmCompiledClassHashType::Blake2s => self.compiled_class_hash_inner::<Blake2Felt252>(),
+        }
     }
 
     /// Returns the lengths of the bytecode segments.
