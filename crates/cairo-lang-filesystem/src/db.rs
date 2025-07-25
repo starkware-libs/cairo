@@ -14,7 +14,7 @@ use crate::cfg::CfgSet;
 use crate::flag::Flag;
 use crate::ids::{
     BlobId, BlobLongId, CodeMapping, CodeOrigin, CrateId, CrateLongId, Directory, FileId,
-    FileLongId, FlagId, FlagLongId, VirtualFile,
+    FileLongId, FlagId, FlagLongId, SpanInFile, VirtualFile,
 };
 use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
@@ -371,25 +371,20 @@ fn blob_content(db: &dyn FilesGroup, blob: BlobId) -> Option<Arc<[u8]>> {
 /// Returns the location of the originating user code.
 pub fn get_originating_location(
     db: &dyn FilesGroup,
-    mut file_id: FileId,
-    mut span: TextSpan,
+    SpanInFile { mut file_id, mut span }: SpanInFile,
     mut parent_files: Option<&mut Vec<FileId>>,
-) -> (FileId, TextSpan) {
+) -> SpanInFile {
     if let Some(ref mut parent_files) = parent_files {
         parent_files.push(file_id);
     }
     while let Some((parent, code_mappings)) = get_parent_and_mapping(db, file_id) {
-        if let Some(origin) = translate_location(&code_mappings, span) {
-            span = origin;
-            file_id = parent;
-            if let Some(ref mut parent_files) = parent_files {
-                parent_files.push(file_id);
-            }
-        } else {
-            break;
+        file_id = parent.file_id;
+        if let Some(ref mut parent_files) = parent_files {
+            parent_files.push(file_id);
         }
+        span = translate_location(&code_mappings, span).unwrap_or(parent.span);
     }
-    (file_id, span)
+    SpanInFile { file_id, span }
 }
 
 /// This function finds a span in original code that corresponds to the provided span in the
@@ -485,7 +480,7 @@ pub fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Optio
 pub fn get_parent_and_mapping(
     db: &dyn FilesGroup,
     file_id: FileId,
-) -> Option<(FileId, Arc<[CodeMapping]>)> {
+) -> Option<(SpanInFile, Arc<[CodeMapping]>)> {
     let vf = match file_id.lookup_intern(db) {
         FileLongId::OnDisk(_) => return None,
         FileLongId::Virtual(vf) => vf,
