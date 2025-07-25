@@ -71,6 +71,7 @@ fn get_multiple_lines_location_marks(
     location: &DiagnosticLocation,
     skip_middle_lines: bool,
 ) -> String {
+    dbg!(&location.span);
     let content = db.file_content(location.file_id).expect("File missing from DB.");
     let summary = db.file_summary(location.file_id).expect("File missing from DB.");
 
@@ -88,6 +89,7 @@ fn get_multiple_lines_location_marks(
 
     const LINES_TO_REPLACE_MIDDLE: usize = 3;
     if !skip_middle_lines || first_line_idx + LINES_TO_REPLACE_MIDDLE > last_line_idx {
+        dbg!(last_line_idx);
         for row_index in first_line_idx + 1..=last_line_idx - 1 {
             res += &get_line_content(summary.clone(), row_index, content.clone(), false);
         }

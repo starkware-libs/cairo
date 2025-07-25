@@ -59,7 +59,9 @@ impl<Db: SyntaxGroup> Iterator for SyntaxNodeWithDbIterator<'_, Db> {
 fn token_from_syntax_node(node: SyntaxNode, db: &dyn SyntaxGroup) -> Vec<PrimitiveToken> {
     let span_without_trivia = node.span_without_trivia(db);
     let span_with_trivia = node.span(db);
+    dbg!(&span_with_trivia);
     let text = node.get_text(db);
+    dbg!(&text);
     let mut result = Vec::new();
     let prefix_len = span_without_trivia.start - span_with_trivia.start;
     let (prefix, rest) = text.split_at(prefix_len.as_u32() as usize);

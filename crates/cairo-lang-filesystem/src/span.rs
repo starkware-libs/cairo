@@ -161,6 +161,7 @@ pub struct TextPosition {
 
 impl TextOffset {
     fn get_line_number(self, db: &dyn FilesGroup, file: FileId) -> Option<usize> {
+        dbg!(file.full_path(db));
         let summary = db.file_summary(file)?;
         assert!(
             self <= summary.last_offset,

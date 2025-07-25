@@ -379,7 +379,8 @@ pub fn get_originating_location(
         parent_files.push(file_id);
     }
     while let Some((parent, code_mappings)) = get_parent_and_mapping(db, file_id) {
-        if let Some(origin) = translate_location(&code_mappings, span) {
+        dbg!(&span);
+        if let Some(origin) = dbg!(translate_location(&code_mappings, span)) {
             span = origin;
             file_id = parent;
             if let Some(ref mut parent_files) = parent_files {
