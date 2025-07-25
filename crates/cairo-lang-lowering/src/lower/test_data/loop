@@ -834,54 +834,74 @@ Generated loop lowering for source location:
 Parameters: v0: core::integer::u8
 blk0 (root):
 Statements:
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
 End:
   Match(match_enum(v2) {
-    bool::False(v5) => blk2,
-    bool::True(v3) => blk1,
+    bool::False(v5) => blk3,
+    bool::True(v3) => blk2,
   })
-
-blk1:
-Statements:
-  (v4: core::integer::u8) <- 0
-End:
-  Goto(blk3, {v4 -> v7})
 
 blk2:
 Statements:
-  (v6: core::integer::u8) <- 0
+  (v4: core::integer::u8) <- 0
 End:
-  Goto(blk3, {v6 -> v7})
+  Goto(blk4, {v4 -> v6})
 
 blk3:
-Statements:
-  (v8: core::integer::u8, v9: @core::integer::u8) <- snapshot(v7)
-  (v10: core::integer::u8) <- 0
-  (v11: core::integer::u8, v12: @core::integer::u8) <- snapshot(v10)
-  (v13: core::bool) <- core::integer::U8PartialEq::eq(v9, v12)
-End:
-  Match(match_enum(v13) {
-    bool::False(v16) => blk5,
-    bool::True(v14) => blk4,
-  })
-
-blk4:
-Statements:
-  (v15: ()) <- struct_construct()
-End:
-  Return(v8, v15)
-
-blk5:
 Statements:
 End:
   Goto(blk6, {})
 
+blk4:
+Statements:
+End:
+  Goto(blk7, {v6 -> v8})
+
+blk5:
+Statements:
+End:
+  Goto(blk5, {})
+
 blk6:
 Statements:
-  (v18: core::integer::u8, v17: ()) <- test::foo[45-203](v8)
+  (v7: core::integer::u8) <- 0
 End:
-  Return(v18, v17)
+  Goto(blk7, {v7 -> v8})
+
+blk7:
+Statements:
+  (v9: core::integer::u8, v10: @core::integer::u8) <- snapshot(v8)
+  (v11: core::integer::u8) <- 0
+  (v12: core::integer::u8, v13: @core::integer::u8) <- snapshot(v11)
+  (v14: core::bool) <- core::integer::U8PartialEq::eq(v10, v13)
+End:
+  Match(match_enum(v14) {
+    bool::False(v17) => blk9,
+    bool::True(v15) => blk8,
+  })
+
+blk8:
+Statements:
+  (v16: ()) <- struct_construct()
+End:
+  Return(v9, v16)
+
+blk9:
+Statements:
+End:
+  Goto(blk10, {})
+
+blk10:
+Statements:
+  (v19: core::integer::u8, v18: ()) <- test::foo[45-203](v9)
+End:
+  Return(v19, v18)
 
 
 Final lowering:
