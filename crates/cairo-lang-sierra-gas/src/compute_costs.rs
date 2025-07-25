@@ -118,7 +118,7 @@ pub fn compute_costs<
     SpecificCostContext: SpecificCostContextTrait<CostType>,
 >(
     program: &Program,
-    get_cost_fn: &dyn Fn(&ConcreteLibfuncId) -> Vec<BranchCost>,
+    get_cost_fn: &impl Fn(&ConcreteLibfuncId) -> Vec<BranchCost>,
     specific_cost_context: &SpecificCostContext,
     enforced_wallet_values: &OrderedHashMap<StatementIdx, CostType>,
 ) -> Result<GasInfo, CostError> {
@@ -206,7 +206,7 @@ fn get_branch_requirements<
     SpecificCostContext: SpecificCostContextTrait<CostType>,
 >(
     specific_context: &SpecificCostContext,
-    wallet_at_fn: &dyn Fn(&StatementIdx) -> WalletInfo<CostType>,
+    wallet_at_fn: &impl Fn(&StatementIdx) -> WalletInfo<CostType>,
     idx: &StatementIdx,
     invocation: &Invocation,
     libfunc_cost: &[BranchCost],
@@ -235,8 +235,9 @@ fn get_branch_requirements<
 fn analyze_gas_statements<
     CostType: CostTypeTrait,
     SpecificCostContext: SpecificCostContextTrait<CostType>,
+    GetCostFn: Fn(&ConcreteLibfuncId) -> Vec<BranchCost>,
 >(
-    context: &CostContext<'_, CostType>,
+    context: &CostContext<'_, CostType, GetCostFn>,
     specific_context: &SpecificCostContext,
     idx: &StatementIdx,
     variable_values: &mut VariableValues,
@@ -327,7 +328,7 @@ pub trait SpecificCostContextTrait<CostType: CostTypeTrait> {
     /// Returns the required value for the wallet for a single branch.
     fn get_branch_requirement(
         &self,
-        wallet_at_fn: &dyn Fn(&StatementIdx) -> WalletInfo<CostType>,
+        wallet_at_fn: &impl Fn(&StatementIdx) -> WalletInfo<CostType>,
         idx: &StatementIdx,
         branch_info: &BranchInfo,
         branch_cost: &BranchCost,
@@ -395,11 +396,15 @@ impl<CostType: CostTypeTrait> std::ops::Add for WalletInfo<CostType> {
 }
 
 /// Helper struct for computing the wallet value at each statement.
-struct CostContext<'a, CostType: CostTypeTrait> {
+struct CostContext<
+    'a,
+    CostType: CostTypeTrait,
+    GetCostFn: Fn(&ConcreteLibfuncId) -> Vec<BranchCost>,
+> {
     /// The Sierra program.
     program: &'a Program,
     /// A callback function returning the cost of a libfunc for every output branch.
-    get_cost_fn: &'a dyn Fn(&ConcreteLibfuncId) -> Vec<BranchCost>,
+    get_cost_fn: &'a GetCostFn,
     /// A map from statement index to an enforced wallet value. For example, some functions
     /// may have a required cost, in this case the functions entry points should have a predefined
     /// wallet value.
@@ -409,7 +414,9 @@ struct CostContext<'a, CostType: CostTypeTrait> {
     /// A partial map from StatementIdx to a requested lower bound on the wallet value.
     target_values: UnorderedHashMap<StatementIdx, CostType>,
 }
-impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
+impl<CostType: CostTypeTrait, GetCostFn: Fn(&ConcreteLibfuncId) -> Vec<BranchCost>>
+    CostContext<'_, CostType, GetCostFn>
+{
     /// Returns the cost of a libfunc for every output branch.
     fn get_cost(&self, libfunc_id: &ConcreteLibfuncId) -> Vec<BranchCost> {
         (self.get_cost_fn)(libfunc_id)
@@ -715,7 +722,7 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
 
     fn get_branch_requirement(
         &self,
-        wallet_at_fn: &dyn Fn(&StatementIdx) -> WalletInfo<PreCost>,
+        wallet_at_fn: &impl Fn(&StatementIdx) -> WalletInfo<PreCost>,
         idx: &StatementIdx,
         branch_info: &BranchInfo,
         branch_cost: &BranchCost,
@@ -779,12 +786,14 @@ impl PostCostTypeEx for ConstCost {
     }
 }
 
-pub struct PostcostContext<'a> {
-    pub get_ap_change_fn: &'a dyn Fn(&StatementIdx) -> usize,
+pub struct PostcostContext<'a, GetApChangeFn: Fn(&StatementIdx) -> usize> {
+    pub get_ap_change_fn: &'a GetApChangeFn,
     pub precost_gas_info: &'a GasInfo,
 }
 
-impl<CostType: PostCostTypeEx> SpecificCostContextTrait<CostType> for PostcostContext<'_> {
+impl<CostType: PostCostTypeEx, GetApChangeFn: Fn(&StatementIdx) -> usize>
+    SpecificCostContextTrait<CostType> for PostcostContext<'_, GetApChangeFn>
+{
     fn to_cost_map(cost: CostType) -> OrderedHashMap<CostTokenType, i64> {
         if cost == CostType::default() {
             Default::default()
@@ -816,7 +825,7 @@ impl<CostType: PostCostTypeEx> SpecificCostContextTrait<CostType> for PostcostCo
 
     fn get_branch_requirement(
         &self,
-        wallet_at_fn: &dyn Fn(&StatementIdx) -> WalletInfo<CostType>,
+        wallet_at_fn: &impl Fn(&StatementIdx) -> WalletInfo<CostType>,
         idx: &StatementIdx,
         branch_info: &BranchInfo,
         branch_cost: &BranchCost,
@@ -866,7 +875,7 @@ impl<CostType: PostCostTypeEx> SpecificCostContextTrait<CostType> for PostcostCo
     }
 }
 
-impl PostcostContext<'_> {
+impl<'a, GetApChangeFn: Fn(&StatementIdx) -> usize> PostcostContext<'a, GetApChangeFn> {
     /// Computes the cost of the withdraw_gas libfunc.
     fn compute_withdraw_gas_cost(
         &self,
