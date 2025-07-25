@@ -124,6 +124,28 @@ pub impl NullableImpl<T> of NullableTrait<T> {
         }
     }
 
+    ///  Returns the contained value if not null, or computes it from a closure.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let value: Nullable<u32> = NullableTrait::new(42);
+    /// assert!(value.deref_or_else(|| 0) == 42);
+    ///
+    /// let null_value: Nullable<u32> = Default::default();
+    /// assert!(null_value.deref_or_else(|| 0) == 0);
+    /// ```
+    fn deref_or_else<
+        F, +Drop<F>, impl func: core::ops::FnOnce<F, ()>[Output: T], +Drop<func::Output>,
+    >(
+        self: Nullable<T>, f: F,
+    ) -> T {
+        match match_nullable(self) {
+            FromNullableResult::Null => f(),
+            FromNullableResult::NotNull(value) => value.unbox(),
+        }
+    }
+
     /// Creates a new non-null `Nullable` with the given value.
     ///
     /// # Examples
