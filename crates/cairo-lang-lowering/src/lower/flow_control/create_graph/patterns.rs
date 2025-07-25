@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::sync::Arc;
 
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::types::peel_snapshots;
@@ -49,13 +48,12 @@ impl<'a> Pattern<'a> {
 /// If `x=B` then the filtered list is `[0, 1]`.
 /// For the latter, it is important to return both `0` and `1` because which arm is chosen depends
 /// on the value of `y` (which will be handled by the calling pattern matching function).
+#[derive(Clone, Hash, Eq, PartialEq)]
 pub struct FilteredPatterns {
     /// The indices of the patterns that are accepted by the filter, together with capture
     /// information.
     filter: Vec<IndexAndCaptures>,
 }
-
-type FilteredPatternsKey = Vec<IndexAndCaptures>;
 
 impl FilteredPatterns {
     fn empty() -> Self {
@@ -82,10 +80,6 @@ impl FilteredPatterns {
 
     fn add(&mut self, idx: usize, captures: Captures) {
         self.filter.push(IndexAndCaptures { index: idx, captures });
-    }
-
-    fn key(&self) -> &FilteredPatternsKey {
-        &self.filter
     }
 
     /// Returns a lifted [FilteredPatterns] after a filtering a list of patterns.
@@ -150,27 +144,30 @@ impl Captures {
     }
 }
 
-#[derive(Default)]
-struct FilteredPatternsCache {
-    cache: Arc<RefCell<UnorderedHashMap<FilteredPatternsKey, NodeId>>>,
+pub struct Cache<Input> {
+    cache: RefCell<UnorderedHashMap<Input, NodeId>>,
 }
-impl FilteredPatternsCache {
-    fn get_or_compute(
+impl<Input: std::hash::Hash + Eq + Clone> Cache<Input> {
+    pub fn get_or_compute(
         &self,
-        build_node_callback: &dyn Fn(&mut FlowControlGraphBuilder, FilteredPatterns) -> NodeId,
+        callback: &dyn Fn(&mut FlowControlGraphBuilder, Input) -> NodeId,
         graph: &mut FlowControlGraphBuilder,
-        pattern_indices: FilteredPatterns,
+        input: Input,
     ) -> NodeId {
-        let key_ref = pattern_indices.key();
-        if let Some(node_id) = self.cache.borrow().get(key_ref) {
+        if let Some(node_id) = self.cache.borrow().get(&input) {
             return *node_id;
         }
 
-        let key = key_ref.clone();
-        let node_id = build_node_callback(graph, pattern_indices);
-        assert!(!self.cache.borrow().contains_key(&key));
-        self.cache.borrow_mut().insert(key, node_id);
+        let node_id = callback(graph, input.clone());
+        assert!(!self.cache.borrow().contains_key(&input));
+        self.cache.borrow_mut().insert(input, node_id);
         node_id
+    }
+}
+
+impl<Input: std::hash::Hash + Eq + Clone> std::default::Default for Cache<Input> {
+    fn default() -> Self {
+        Self { cache: Default::default() }
     }
 }
 
@@ -216,7 +213,7 @@ pub fn create_node_for_patterns(
         // return node;
     }
 
-    let cache = FilteredPatternsCache::default();
+    let cache = Cache::default();
 
     let (n_snapshots, long_ty) = peel_snapshots(ctx.db, input_var.ty());
     // TODO: Handle n_snapshots.

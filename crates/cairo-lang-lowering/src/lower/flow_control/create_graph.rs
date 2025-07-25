@@ -1,7 +1,7 @@
 use cairo_lang_semantic::{self as semantic, Condition, PatternId};
 use cairo_lang_syntax::node::TypedStablePtr;
 use itertools::Itertools;
-use patterns::{Pattern, create_node_for_patterns};
+use patterns::{create_node_for_patterns, Cache, IndexAndCaptures, Pattern};
 
 use super::graph::{
     ArmExpr, BooleanIf, ExprToVar, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode,
@@ -63,6 +63,8 @@ pub fn create_graph_expr_if(
                 let expr_location = ctx.get_location(expr.stable_ptr().untyped());
                 let expr_var = graph.new_var(expr.ty(), expr_location);
 
+                let cache = Cache::default();
+
                 let match_node_id = create_node_for_patterns(
                     ctx,
                     &mut graph,
@@ -73,12 +75,17 @@ pub fn create_graph_expr_if(
                         .map(|pattern| Pattern::from_semantic(ctx, *pattern))
                         .collect_vec(),
                     &|graph, pattern_indices| {
-                        pattern_indices
-                            .first()
-                            .map(|index_and_captures| {
-                                index_and_captures.wrap_node(graph, current_node)
-                            })
-                            .unwrap_or(false_branch)
+                        if let Some(index_and_captures) = pattern_indices.first() {
+                            cache.get_or_compute(
+                                &|graph, index_and_captures: IndexAndCaptures| {
+                                    index_and_captures.wrap_node(graph, current_node)
+                                },
+                                graph,
+                                index_and_captures
+                            )
+                        } else {
+                            false_branch
+                        }
                     },
                 );
 
@@ -120,6 +127,8 @@ pub fn create_graph_expr_match(
         })
         .collect();
 
+    let cache = Cache::default();
+
     let match_node_id = create_node_for_patterns(
         ctx,
         &mut graph,
@@ -132,8 +141,14 @@ pub fn create_graph_expr_match(
         &|graph, pattern_indices| {
             // TODO: produce diagnostics if pattern_indices is empty.
             let index_and_captures = pattern_indices.first().unwrap();
-            let index = index_and_captures.index;
-            index_and_captures.wrap_node(graph, pattern_and_nodes[index].1)
+            cache.get_or_compute(
+                &|graph, index_and_captures: IndexAndCaptures| {
+                    let index = index_and_captures.index;
+                    index_and_captures.wrap_node(graph, pattern_and_nodes[index].1)
+                },
+                graph,
+                index_and_captures
+            )
         },
     );
 
