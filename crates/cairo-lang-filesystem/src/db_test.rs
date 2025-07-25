@@ -24,7 +24,7 @@ fn test_filesystem() {
     assert_eq!(db.crate_config(crt), Some(config));
     assert!(db.crate_config(crt2).is_none());
 
-    assert_eq!(db.file_content(file_id).unwrap().as_ref(), "content\n");
+    assert_eq!(db.file_content(file_id).unwrap(), "content\n");
 }
 
 #[test]

@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
+use hipstr::HipStr;
 use path_clean::PathClean;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
@@ -143,7 +144,7 @@ impl CodeOrigin {
 pub struct VirtualFile {
     pub parent: Option<FileId>,
     pub name: SmolStr,
-    pub content: Arc<str>,
+    pub content: HipStr<'static>,
     pub code_mappings: Arc<[CodeMapping]>,
     pub kind: FileKind,
     /// Whether an original item was removed when this virtual file was created

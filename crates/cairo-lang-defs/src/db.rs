@@ -907,9 +907,9 @@ pub fn validate_attributes_flat(
     let local_extra_attributes = collect_extra_allowed_attributes(db, item, plugin_diagnostics);
     for attr in item.attributes_elements(db) {
         let attr_text = attr.attr(db).as_syntax_node().get_text_without_trivia(db);
-        if !(allowed_attributes.contains(&attr_text)
-            || extra_allowed_attributes.contains(&attr_text)
-            || local_extra_attributes.contains(&attr_text))
+        if !(allowed_attributes.contains(attr_text.as_str())
+            || extra_allowed_attributes.contains(attr_text.as_str())
+            || local_extra_attributes.contains(attr_text.as_str()))
         {
             plugin_diagnostics.push(PluginDiagnostic::error(
                 attr.stable_ptr(db),

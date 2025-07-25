@@ -38,6 +38,7 @@ use cairo_lang_utils::{
     self as utils, Intern, LookupIntern, OptionHelper, extract_matches, require,
     try_extract_matches,
 };
+use hipstr::HipStr;
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
@@ -192,7 +193,7 @@ enum InnerContextKind {
 /// The result of expanding an inline macro.
 #[derive(Debug, Clone)]
 struct InlineMacroExpansion {
-    pub content: Arc<str>,
+    pub content: HipStr<'static>,
     pub name: String,
     pub info: MacroExpansionInfo,
 }
@@ -680,7 +681,7 @@ fn expand_inline_macro(
         Err(ctx.diagnostics.report(
             syntax.stable_ptr(db),
             InlineMacroNotFound(
-                syntax.path(db).as_syntax_node().get_text_without_trivia(db).into(),
+                syntax.path(db).as_syntax_node().get_text_without_trivia(db).as_str().into(),
             ),
         ))
     }

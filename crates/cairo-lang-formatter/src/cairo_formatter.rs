@@ -204,7 +204,7 @@ fn format_input(
     }
     let formatted_text = get_formatted_file(&db, &syntax_root, config.clone());
 
-    if formatted_text == original_text.as_ref() {
+    if formatted_text == original_text {
         Ok(FormatOutcome::Identical(original_text.to_string()))
     } else {
         let diff = FileDiff { original: original_text.to_string(), formatted: formatted_text };

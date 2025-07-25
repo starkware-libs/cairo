@@ -20,6 +20,7 @@ cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.11.
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.11.4" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.11.4" }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "~2.11.4", optional = true, features = ["testing"] }
+hipstr.workspace = true
 id-arena.workspace = true
 indoc.workspace = true
 itertools = { workspace = true, default-features = true }

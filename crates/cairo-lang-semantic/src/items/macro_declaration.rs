@@ -15,6 +15,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use hipstr::HipStr;
 
 use crate::SemanticDiagnostic;
 use crate::db::SemanticGroup;
@@ -159,7 +160,7 @@ pub fn priv_macro_declaration_data(
         let used_placeholders = collect_expansion_placeholders(db, expansion.as_syntax_node());
         // Verify all used placeholders are defined
         for (placeholder_ptr, used_placeholder) in used_placeholders {
-            if !defined_placeholders.contains(&used_placeholder) {
+            if !defined_placeholders.contains(used_placeholder.as_str()) {
                 diagnostics.report(
                     placeholder_ptr,
                     SemanticDiagnosticKind::UndefinedMacroPlaceholder(used_placeholder),
@@ -186,7 +187,7 @@ fn get_macro_elements(db: &dyn SyntaxGroup, pattern: ast::WrappedMacro) -> ast::
 fn extract_placeholder(db: &dyn SyntaxGroup, path_node: &MacroParam) -> Option<String> {
     let placeholder_name = path_node.name(db).as_syntax_node().get_text_without_trivia(db);
     if ![MACRO_DEF_SITE, MACRO_CALL_SITE].contains(&placeholder_name.as_str()) {
-        return Some(placeholder_name);
+        return Some(placeholder_name.to_string());
     }
     None
 }
@@ -283,7 +284,8 @@ fn is_macro_rule_match_ex(
                              parser."
                         )
                     };
-                let placeholder_name = param.name(db).as_syntax_node().get_text_without_trivia(db);
+                let placeholder_name =
+                    param.name(db).as_syntax_node().get_text_without_trivia(db).to_string();
                 match placeholder_kind {
                     PlaceholderKind::Identifier => {
                         let input_token = input_iter.next()?;
@@ -462,7 +464,7 @@ fn validate_repetition_operator_constraints(ctx: &MatcherContext) -> bool {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MacroExpansionResult {
     /// The expanded text.
-    pub text: Arc<str>,
+    pub text: HipStr<'static>,
     /// Information about placeholder expansions in this macro expansion.
     pub code_mappings: Arc<[CodeMapping]>,
 }
