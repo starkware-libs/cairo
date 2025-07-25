@@ -13,7 +13,7 @@ use crate::lower::context::{
     LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult,
     lowering_flow_error_to_sealed_block,
 };
-use crate::{BlockEnd, BlockId};
+use crate::{BlockEnd, BlockId, VarUsage};
 
 mod lower_node;
 

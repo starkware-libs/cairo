@@ -92,7 +92,7 @@ End:
 //! > Tuple of enums
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, skip_lowering: true)
+test_create_graph(expect_diagnostics: false, skip_lowering: false)
 
 //! > function_code
 fn foo(color: (Color, Color)) -> felt252 {
@@ -127,13 +127,75 @@ Root: 6
 //! > semantic_diagnostics
 
 //! > lowered
+Parameters: v0: (test::Color, test::Color)
+blk0 (root):
+Statements:
+  (v1: test::Color, v2: test::Color) <- struct_destructure(v0)
+End:
+  Match(match_enum(v1) {
+    Color::Red(v3) => blk1,
+    Color::Green(v4) => blk2,
+    Color::Blue(v5) => blk3,
+  })
+
+blk1:
+Statements:
+  (v11: core::felt252) <- 1
+End:
+  Goto(blk9, {v11 -> v12})
+
+blk2:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk4:
+Statements:
+End:
+  Match(match_enum(v2) {
+    Color::Red(v6) => blk5,
+    Color::Green(v7) => blk6,
+    Color::Blue(v8) => blk7,
+  })
+
+blk5:
+Statements:
+  (v10: core::felt252) <- 2
+End:
+  Goto(blk9, {v10 -> v12})
+
+blk6:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk8:
+Statements:
+  (v9: core::felt252) <- 3
+End:
+  Goto(blk9, {v9 -> v12})
+
+blk9:
+Statements:
+End:
+  Return(v12)
 
 //! > ==========================================================================
 
 //! > Tuple inside enum
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, skip_lowering: true)
+test_create_graph(expect_diagnostics: false, skip_lowering: false)
 
 //! > function_code
 fn foo(color: Option<(Color, Color)>) -> felt252 {
@@ -164,6 +226,64 @@ Root: 7
 //! > semantic_diagnostics
 
 //! > lowered
+Parameters: v0: core::option::Option::<(test::Color, test::Color)>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: test::Color, v4: test::Color) <- struct_destructure(v1)
+End:
+  Match(match_enum(v3) {
+    Color::Red(v5) => blk3,
+    Color::Green(v6) => blk4,
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk4:
+Statements:
+End:
+  Match(match_enum(v4) {
+    Color::Red(v7) => blk5,
+    Color::Green(v8) => blk6,
+  })
+
+blk5:
+Statements:
+  (v10: core::felt252) <- 2
+End:
+  Goto(blk8, {v10 -> v12})
+
+blk6:
+Statements:
+  (v9: core::felt252) <- 3
+End:
+  Goto(blk8, {v9 -> v12})
+
+blk7:
+Statements:
+  (v11: core::felt252) <- 1
+End:
+  Goto(blk8, {v11 -> v12})
+
+blk8:
+Statements:
+End:
+  Return(v12)
 
 //! > ==========================================================================
 
@@ -211,7 +331,7 @@ Root: 10
 //! > Capture variable in match
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, skip_lowering: true)
+test_create_graph(expect_diagnostics: false, skip_lowering: false)
 
 //! > function_code
 fn foo(color: (Color, Color)) -> felt252 {
@@ -242,6 +362,71 @@ Root: 7
 //! > semantic_diagnostics
 
 //! > lowered
+Parameters: v0: (test::Color, test::Color)
+blk0 (root):
+Statements:
+  (v1: test::Color, v2: test::Color) <- struct_destructure(v0)
+End:
+  Match(match_enum(v1) {
+    Color::Red(v3) => blk1,
+    Color::Green(v4) => blk2,
+    Color::Blue(v5) => blk3,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk9, {v3 -> v10})
+
+blk2:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk4:
+Statements:
+End:
+  Match(match_enum(v2) {
+    Color::Red(v6) => blk5,
+    Color::Green(v7) => blk6,
+    Color::Blue(v8) => blk7,
+  })
+
+blk5:
+Statements:
+End:
+  Goto(blk9, {v6 -> v10})
+
+blk6:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk8:
+Statements:
+  (v9: core::felt252) <- 0
+End:
+  Goto(blk10, {v9 -> v11})
+
+blk9:
+Statements:
+End:
+  Goto(blk10, {v10 -> v11})
+
+blk10:
+Statements:
+End:
+  Return(v11)
 
 //! > ==========================================================================
 

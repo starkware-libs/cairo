@@ -1,16 +1,18 @@
 //! Functions for lowering nodes of a [super::FlowControlGraph].
 
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_semantic::types::wrap_in_snapshots;
 use cairo_lang_semantic::{self as semantic, MatchArmSelector, corelib};
 use cairo_lang_syntax::node::TypedStablePtr;
+use itertools::zip_eq;
 
 use super::{BlockFinalization, LowerGraphContext};
 use crate::ids::LocationId;
-use crate::lower::context::{LoweringContext, VarRequest};
+use crate::lower::context::{LoweredExpr, LoweringContext, VarRequest};
 use crate::lower::flow_control::graph::{
-    ArmExpr, BooleanIf, Capture, EnumMatch, ExprToVar, FlowControlNode, NodeId,
+    ArmExpr, BooleanIf, Capture, Deconstruct, EnumMatch, ExprToVar, FlowControlNode, NodeId
 };
-use crate::lower::{lower_expr_to_var_usage, lower_tail_expr};
+use crate::lower::{generators, lower_expr_to_var_usage, lower_tail_expr};
 use crate::{BlockEnd, MatchArm, MatchEnumInfo, MatchInfo, VarUsage};
 
 // TODO: Should we use `LoweringResult`?
@@ -22,6 +24,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::ExprToVar(node) => lower_expr_to_var(ctx, id, node),
         FlowControlNode::EnumMatch(node) => lower_enum_match(ctx, id, node),
         FlowControlNode::Capture(node) => lower_capture(ctx, id, node),
+        FlowControlNode::Deconstruct(node) => lower_deconstruct(ctx, id, node),
         _ => todo!(),
     }?;
 
@@ -92,6 +95,7 @@ fn lower_arm_expr(
     Ok(BlockFinalization::Sealed(sealed_block))
 }
 
+/// Lowers an [ExprToVar] node.
 fn lower_expr_to_var(
     ctx: &mut LowerGraphContext<'_, '_, '_>,
     id: NodeId,
@@ -112,8 +116,9 @@ fn lower_expr_to_var(
     }
 }
 
+/// Lowers an [EnumMatch] node.
 fn lower_enum_match(
-    ctx: &mut LowerGraphContext,
+    ctx: &mut LowerGraphContext<'_, '_, '_>,
     id: NodeId,
     node: &EnumMatch,
 ) -> Maybe<BlockFinalization> {
@@ -154,7 +159,7 @@ fn lower_enum_match(
 
 /// Lowers a [Capture] node.
 fn lower_capture(
-    ctx: &mut LowerGraphContext,
+    ctx: &mut LowerGraphContext<'_, '_, '_>,
     id: NodeId,
     node: &Capture,
 ) -> Maybe<BlockFinalization> {
@@ -172,6 +177,43 @@ fn lower_capture(
     // ctx.ctx.get_location(node.output.stable_ptr.untyped());
     builder.put_semantic(sem_var.id(), var);
     ctx.ctx.semantic_defs.insert(sem_var.id(), sem_var);
+
+    ctx.pass_builder_to_child(id, node.next, builder);
+    Ok(BlockFinalization::Skip)
+}
+
+/// Lowers a [Deconstruct] node.
+fn lower_deconstruct(
+    ctx: &mut LowerGraphContext<'_, '_, '_>,
+    id: NodeId,
+    node: &Deconstruct,
+) -> Maybe<BlockFinalization> {
+    // TODO: Check location.
+    let Some(mut builder) = ctx.start_builder(id, node.input.location()) else {
+        return Ok(BlockFinalization::Missing);
+    };
+
+    let var_requests = node.outputs
+    .iter()
+    .map(|output| VarRequest {
+        // TODO: Fix wrap in snapshots value.
+        ty: wrap_in_snapshots(ctx.ctx.db, output.ty(), 0),
+        location: output.location(),
+    })
+    .collect();
+
+    let variable_ids = generators::StructDestructure { input: ctx.vars[&node.input], var_reqs: var_requests }
+    .add(ctx.ctx, &mut builder.statements);
+
+    for (var_id, output) in zip_eq(variable_ids, &node.outputs) {
+        ctx.register_var(*output, VarUsage {
+            var_id,
+            // TODO: Check location.
+            // The variable is used immediately after the destructure, so the usage
+            // location is the same as the definition location.
+            location: ctx.ctx.variables[var_id].location,
+        });
+    }
 
     ctx.pass_builder_to_child(id, node.next, builder);
     Ok(BlockFinalization::Skip)
