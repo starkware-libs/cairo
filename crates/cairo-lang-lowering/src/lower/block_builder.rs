@@ -567,16 +567,49 @@ impl StructRecomposer for BlockStructRecomposer<'_, '_, '_> {
     }
 }
 
-/// Given a list of block builders, creates a new single block builder and finalizes all
-/// the block builders with a [BlockEnd::Goto] to the new block.
+/// Given a list of sealed block builders ([SealedGotoCallsite]), creates a new single block builder
+/// and finalizes all the block builders with a [BlockEnd::Goto] to the new block.
 ///
 /// The mapping from semantic variables to lowered variables in the new block follows these rules:
 ///
 /// * Variables mapped to the same lowered variable across all input blocks are kept as-is.
 /// * Local variables that appear in only a subset of the blocks are removed.
 /// * Variables with different mappings across blocks are remapped to a new lowered variable.
+// TODO(lior): Remove `allow(dead_code)` once the function is used.
+#[allow(dead_code)]
+pub fn merge_sealed_block_builders(
+    ctx: &mut LoweringContext<'_, '_>,
+    sealed_blocks: Vec<SealedGotoCallsite>,
+    location: LocationId,
+) -> Option<(BlockBuilder, LoweredExpr)> {
+    require(!sealed_blocks.is_empty())?;
+
+    // Handle the expression returned by the block (if exists).
+    let mut res_var: Option<VariableId> = None;
+
+    for sealed_block in sealed_blocks.iter() {
+        if let Some(var_usage) = sealed_block.expr {
+            let var = ctx.variables[var_usage.var_id].clone();
+            res_var = Some(ctx.variables.variables.alloc(var));
+            break;
+        }
+    }
+
+    let lowered_expr = if let Some(res_var) = res_var {
+        LoweredExpr::AtVariable(VarUsage { var_id: res_var, location })
+    } else {
+        LoweredExpr::Tuple { exprs: vec![], location }
+    };
+
+    let merged_builder = merge_block_builders_inner(ctx, sealed_blocks, res_var, location);
+
+    Some((merged_builder, lowered_expr))
+}
+
+/// Seals and merges the given [BlockBuilder]s into a single [BlockBuilder].
+/// If only one parent builder is given, returns it as-is without sealing and creating a new block.
 ///
-/// If only one parent builder is given, returns it without creating a new block.
+/// See [merge_sealed_block_builders] for more details.
 // TODO(lior): Remove `allow(dead_code)` once the function is used.
 #[allow(dead_code)]
 pub fn merge_block_builders(
@@ -589,9 +622,26 @@ pub fn merge_block_builders(
         return parent_builders.into_iter().next().unwrap();
     }
 
+    let parent_builders = parent_builders
+        .into_iter()
+        .map(|builder| SealedGotoCallsite { builder, expr: None })
+        .collect_vec();
+    merge_block_builders_inner(ctx, parent_builders, None, location)
+}
+
+/// Helper function for [merge_sealed_block_builders] and [merge_block_builders].
+fn merge_block_builders_inner(
+    ctx: &mut LoweringContext<'_, '_>,
+    parent_sealed_blocks: Vec<SealedGotoCallsite>,
+    res_expr: Option<VariableId>,
+    location: LocationId,
+) -> BlockBuilder {
     // TODO(lior): Support snapped semantics.
-    for builder in &parent_builders {
-        assert!(builder.snapped_semantics.is_empty(), "Snapped semantics is not supported yet.");
+    for sealed_block in &parent_sealed_blocks {
+        assert!(
+            sealed_block.builder.snapped_semantics.is_empty(),
+            "Snapped semantics is not supported yet."
+        );
     }
 
     // Compute the merged semantics.
@@ -600,25 +650,27 @@ pub fn merge_block_builders(
     // corresponding lowered variable.
     let mut member_path_value = OrderedHashMap::<MemberPath, VariableId>::default();
 
-    let semantics =
-        merge_semantics(parent_builders.iter().map(|builder| &builder.semantics), &mut |path| {
+    let semantics = merge_semantics(
+        parent_sealed_blocks.iter().map(|sealed_block| &sealed_block.builder.semantics),
+        &mut |path| {
             let ty = get_ty(ctx, path);
             let var = ctx.new_var(VarRequest { ty, location });
             member_path_value.insert(path.clone(), var);
             var
-        });
+        },
+    );
 
-    let semantic_remapping = SemanticRemapping { expr: None, member_path_value };
+    let semantic_remapping = SemanticRemapping { expr: res_expr, member_path_value };
 
     // Assign a new block id for the current node.
     let block_id = ctx.blocks.alloc_empty();
 
     // Finalize the intermediate blocks.
-    for parent_builder in parent_builders.into_iter() {
+    for sealed_block in parent_sealed_blocks.into_iter() {
         // TODO(lior): Consider extracting the relevant code from `finalize` to a separate
         //   `finalize` function.
-        let sealed_block = parent_builder.goto_callsite(None);
-        sealed_block.finalize(ctx, block_id, &semantic_remapping, location);
+        let sealed_block_builder = SealedBlockBuilder::GotoCallsite(sealed_block);
+        sealed_block_builder.finalize(ctx, block_id, &semantic_remapping, location);
     }
 
     // Create a new [BlockBuilder] with the merged `semantics`.
