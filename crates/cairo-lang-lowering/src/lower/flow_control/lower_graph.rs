@@ -3,14 +3,14 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
-use super::graph::{FlowControlGraph, NodeId};
+use super::graph::{FlowControlGraph, FlowControlVar, NodeId};
 use crate::ids::LocationId;
 use crate::lower::block_builder::{
     BlockBuilder, SealedBlockBuilder, SealedGotoCallsite, merge_block_builders,
     merge_sealed_block_builders,
 };
 use crate::lower::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
-use crate::{BlockEnd, BlockId};
+use crate::{BlockEnd, BlockId, VarUsage};
 
 mod lower_node;
 
@@ -46,6 +46,8 @@ enum BlockFinalization {
     /// The block is an arm's block that was already sealed and should be merged with the other
     /// arms.
     Sealed(SealedBlockBuilder),
+    /// The flow control was passed to the child node, and it contains the block builder.
+    Skip,
 }
 
 impl std::fmt::Debug for BlockFinalization {
@@ -53,6 +55,7 @@ impl std::fmt::Debug for BlockFinalization {
         match self {
             BlockFinalization::End(_, block_end) => write!(f, "End({block_end:?})"),
             BlockFinalization::Sealed(_) => write!(f, "Sealed"),
+            BlockFinalization::Skip => write!(f, "Skip"),
         }
     }
 }
@@ -72,6 +75,12 @@ struct LowerGraphContext<'a, 'b, 'db> {
     block_builders: UnorderedHashMap<NodeId, Vec<BlockBuilder>>,
     /// A map from [NodeId] to its finalization info.
     block_finalizations: UnorderedHashMap<NodeId, BlockFinalization>,
+    /// A map from [FlowControlVar] to [VarUsage].
+    vars: UnorderedHashMap<FlowControlVar, VarUsage>,
+    /// The first node (starting from the root) that does not pass its block builder directly to
+    /// the child node (see [Self::pass_builder_to_child]).
+    /// The block builder of this node is the original block builder.
+    effective_root: NodeId,
     /// The location of the expression being lowered.
     /// This is used for the location of the variables created by block merges during the lowering.
     location: LocationId,
@@ -91,6 +100,8 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
             root_builder: builder,
             block_builders: UnorderedHashMap::default(),
             block_finalizations: UnorderedHashMap::default(),
+            vars: UnorderedHashMap::default(),
+            effective_root: graph.root,
             location,
         }
     }
@@ -108,6 +119,20 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
         block_id
     }
 
+    /// Passes the parent block builder to the child node.
+    /// This function is used by nodes that has a single child node.
+    fn pass_builder_to_child(
+        &mut self,
+        parent_id: NodeId,
+        child_id: NodeId,
+        builder: BlockBuilder,
+    ) {
+        if parent_id == self.effective_root {
+            self.effective_root = child_id;
+        }
+        self.block_builders.entry(child_id).or_default().push(builder);
+    }
+
     /// Creates a [BlockBuilder] for the given node, based on the parent nodes.
     fn start_builder(&mut self, id: NodeId) -> BlockBuilder {
         if id == self.graph.root {
@@ -121,6 +146,13 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
         }
     }
 
+    fn register_var(&mut self, var_id: FlowControlVar, lowered_var: crate::VarUsage) {
+        assert!(
+            self.vars.insert(var_id, lowered_var).is_none(),
+            "Variable {var_id:?} was already registered.",
+        );
+    }
+
     // Finalization functions.
 
     /// Finalizes all the blocks created during the graph lowering (except for the root block).
@@ -128,7 +160,7 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
     fn finalize_blocks(&mut self) -> Maybe<Vec<SealedGotoCallsite>> {
         let mut sealed_blocks = vec![];
         for i in 0..self.graph.nodes.len() {
-            if i == self.graph.root.0 {
+            if i == self.effective_root.0 {
                 // The root is finalized in `finalize_root`.
                 continue;
             }
@@ -144,6 +176,9 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
                         sealed_blocks.push(sealed_block);
                     }
                 }
+                Some(BlockFinalization::Skip) => {
+                    continue;
+                }
                 None => {
                     panic!("Block {i} was not lowered.");
                 }
@@ -158,7 +193,7 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
         &mut self,
         sealed_blocks: Vec<SealedGotoCallsite>,
     ) -> (LoweringResult<LoweredExpr>, BlockBuilder) {
-        match self.block_finalizations.remove(&self.graph.root) {
+        match self.block_finalizations.remove(&self.effective_root) {
             Some(BlockFinalization::End(builder, BlockEnd::Match { info })) => {
                 if let Some((new_builder, lowered_expr)) =
                     merge_sealed_block_builders(self.ctx, sealed_blocks, self.location)
