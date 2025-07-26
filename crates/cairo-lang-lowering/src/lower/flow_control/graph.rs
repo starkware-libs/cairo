@@ -28,13 +28,10 @@ pub struct NodeId(pub usize);
 #[derive(Debug)]
 pub struct BooleanIf {
     /// The condition expression.
-    #[expect(dead_code)]
     pub condition: semantic::ExprId,
     /// The node to jump to if the condition is true.
-    #[expect(dead_code)]
     pub true_branch: NodeId,
     /// The node to jump to if the condition is false.
-    #[expect(dead_code)]
     pub false_branch: NodeId,
 }
 
@@ -42,7 +39,6 @@ pub struct BooleanIf {
 #[derive(Debug)]
 pub struct ArmExpr {
     /// The expression to evaluate.
-    #[expect(dead_code)]
     pub expr: semantic::ExprId,
 }
 
@@ -62,6 +58,9 @@ impl Debug for FlowControlNode {
 }
 
 /// Graph of flow control nodes.
+///
+/// Invariant: The next nodes of a node are always before the node in [Self::nodes] (and therefore
+/// have a smaller node id).
 pub struct FlowControlGraph {
     /// All nodes in the graph.
     pub nodes: Vec<FlowControlNode>,
