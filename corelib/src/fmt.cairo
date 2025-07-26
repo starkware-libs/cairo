@@ -315,7 +315,7 @@ impl SpanTDebug<T, +Debug<T>> of Debug<Span<T>> {
 /// # Examples
 ///
 /// ```
-/// impl MyTypeDebug = crate::fmt::into_felt252_based::DebugImpl<MyType>;`
+/// impl MyTypeDebug = crate::fmt::into_felt252_based::DebugImpl<MyType>;
 /// impl MyTypeLowerHex = crate::fmt::into_felt252_based::LowerHexImpl<MyType>;
 /// ```
 pub mod into_felt252_based {
