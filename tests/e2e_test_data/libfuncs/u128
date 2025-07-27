@@ -28,7 +28,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 870})
+test::foo: CostTokenMap({Const: 870})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -90,7 +90,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 870})
+test::foo: CostTokenMap({Const: 870})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -168,7 +168,7 @@ ap += 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 3330})
+test::foo: CostTokenMap({Const: 3330})
 
 //! > sierra_code
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -225,7 +225,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1680})
+test::foo: CostTokenMap({Const: 1680})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -289,7 +289,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1710})
+test::foo: CostTokenMap({Const: 1710})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -345,7 +345,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 400})
+test::foo: CostTokenMap({Const: 400})
 
 //! > sierra_code
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -398,7 +398,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 500})
+test::foo: CostTokenMap({Const: 500})
 
 //! > sierra_code
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -468,7 +468,7 @@ memory[ap + 5] = math.isqrt(memory[fp + -3])
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1380})
+test::foo: CostTokenMap({Const: 1380})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -531,7 +531,7 @@ fn foo(input: u128) -> u128 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Bitwise: 4, Const: 2600})
+test::foo: CostTokenMap({Bitwise: 4, Const: 2600})
 
 //! > sierra_code
 type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];

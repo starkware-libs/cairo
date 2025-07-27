@@ -16,7 +16,7 @@ fn foo() -> EcPoint {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 200})
+test::foo: CostTokenMap({Const: 200})
 
 //! > sierra_code
 type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
@@ -63,7 +63,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1000})
+test::foo: CostTokenMap({Const: 1000})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -157,7 +157,7 @@ ap += 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 2010})
+test::foo: CostTokenMap({Const: 2010})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -212,7 +212,7 @@ fn foo(p: ec::NonZeroEcPoint) -> (felt252, felt252) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 200})
+test::foo: CostTokenMap({Const: 200})
 
 //! > sierra_code
 type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
@@ -261,7 +261,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 200})
+test::foo: CostTokenMap({Const: 200})
 
 //! > sierra_code
 type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
@@ -311,7 +311,7 @@ fn foo(a: ec::EcPoint) -> ec::EcPoint {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 200})
+test::foo: CostTokenMap({Const: 200})
 
 //! > sierra_code
 type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
@@ -362,7 +362,7 @@ __boxed_segment += 2
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 700})
+test::foo: CostTokenMap({Const: 700})
 
 //! > sierra_code
 type EcState = EcState [storable: true, drop: true, dup: true, zero_sized: false];
@@ -407,7 +407,7 @@ jmp rel 4 if [ap + -1] != 0;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1300})
+test::foo: CostTokenMap({Const: 1300})
 
 //! > sierra_code
 type EcState = EcState [storable: true, drop: true, dup: true, zero_sized: false];
@@ -464,7 +464,7 @@ ap += 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1500})
+test::foo: CostTokenMap({Const: 1500})
 
 //! > sierra_code
 type EcState = EcState [storable: true, drop: true, dup: true, zero_sized: false];
@@ -522,7 +522,7 @@ fn foo(ref s: ec::EcState, m: felt252, p: ec::NonZeroEcPoint) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({EcOp: 1, Const: 900})
+test::foo: CostTokenMap({EcOp: 1, Const: 900})
 
 //! > sierra_code
 type EcOp = EcOp [storable: true, drop: false, dup: false, zero_sized: false];
