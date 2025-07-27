@@ -116,7 +116,13 @@ impl ExpansionOffset {
         let mapping = mappings
             .iter()
             .find(|mapping| mapping.span.start <= self.0 && self.0 <= mapping.span.end)?;
-        Some(Self::new(mapping.origin.start()))
+        Some(Self::new(match mapping.origin {
+            cairo_lang_filesystem::ids::CodeOrigin::Start(text_offset) => {
+                text_offset.add_width(self.0 - mapping.span.start)
+            }
+            cairo_lang_filesystem::ids::CodeOrigin::Span(text_span)
+            | cairo_lang_filesystem::ids::CodeOrigin::CallSite(text_span) => text_span.start,
+        }))
     }
 }
 

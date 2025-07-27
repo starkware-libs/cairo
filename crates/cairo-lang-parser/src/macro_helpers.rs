@@ -1,6 +1,5 @@
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::ast::{
     self, AttributeListGreen, ExprInlineMacro, ExprPathGreen, ItemInlineMacro,
     LegacyExprInlineMacro, LegacyItemInlineMacro, TerminalNotGreen, TerminalSemicolonGreen,
@@ -49,20 +48,20 @@ pub fn as_expr_macro_token_tree(
     db: &dyn SyntaxGroup,
 ) -> Option<ast::Expr> {
     let mut diagnostics: DiagnosticsBuilder<ParserDiagnostic> = DiagnosticsBuilder::default();
-    let first_token = token_tree.next()?.as_syntax_node();
-    let last_token =
-        token_tree.next_back().map(|last| last.as_syntax_node()).unwrap_or(first_token);
-    let file_content = db.file_content(file_id).expect("Failed to read file content");
-
-    let start = first_token.offset(db);
-    let end = last_token.span(db).end;
-    let span = TextSpan { start, end };
-
-    let mut parser = Parser::new(db, file_id, span.take(&file_content), &mut diagnostics);
+    let first = token_tree.next()?;
+    let last = token_tree.next_back();
+    let last = last.as_ref().unwrap_or(&first);
+    let start_offset = first.stable_ptr(db).0.lookup(db).offset(db);
+    let end_offset =
+        last.stable_ptr(db).0.lookup(db).offset(db).add_width(last.as_syntax_node().width(db));
+    let file_content = db.file_content(file_id)?;
+    let node_text =
+        file_content[start_offset.as_u32() as usize..end_offset.as_u32() as usize].to_string();
+    let mut parser = Parser::new(db, file_id, &node_text, &mut diagnostics);
     let expr_green = parser.parse_expr();
     let expr = ast::Expr::from_syntax_node(
         db,
-        SyntaxNode::new_root_with_offset(db, file_id, expr_green.0, Some(first_token.offset(db))),
+        SyntaxNode::new_root_with_offset(db, file_id, expr_green.0, Some(start_offset)),
     );
     Some(expr)
 }
