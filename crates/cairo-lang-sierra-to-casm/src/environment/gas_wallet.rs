@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
-use cairo_lang_utils::collection_arithmetics::add_maps;
+use cairo_lang_utils::collection_arithmetics::AddCollection;
 use thiserror::Error;
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -27,7 +27,8 @@ impl GasWallet {
     pub fn update(&self, request: CostTokenMap<i64>) -> Result<Self, GasWalletError> {
         match &self {
             Self::Value(existing) => {
-                let new_value = add_maps(existing.clone(), request.iter().map(|(k, v)| (*k, *v)));
+                let new_value =
+                    existing.clone().add_collection(request.iter().map(|(k, v)| (*k, *v)));
                 for (token_type, val) in new_value.iter() {
                     if *val < 0 {
                         return Err(GasWalletError::OutOfGas {

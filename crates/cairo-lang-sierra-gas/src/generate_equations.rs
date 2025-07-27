@@ -2,7 +2,7 @@ use cairo_lang_sierra::algorithm::topological_order::reverse_topological_orderin
 use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
-use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
+use cairo_lang_utils::collection_arithmetics::{AddCollection, SubCollection};
 use itertools::zip_eq;
 
 use super::CostError;
@@ -49,7 +49,8 @@ pub fn generate_equations<
                 for (branch, branch_cost) in zip_eq(&invocation.branches, libfunc_cost) {
                     let next_future_cost =
                         generator.get_future_cost(&idx.next(&branch.target)).clone();
-                    generator.set_or_add_constraint(&idx, add_maps(branch_cost, next_future_cost));
+                    generator
+                        .set_or_add_constraint(&idx, branch_cost.add_collection(next_future_cost));
                 }
             }
         }
@@ -76,7 +77,7 @@ impl EquationGenerator {
     fn set_or_add_constraint(&mut self, idx: &StatementIdx, cost: CostExprMap) {
         let entry = &mut self.future_costs[idx.0];
         if let Some(other) = entry {
-            for (token_type, val) in sub_maps(other.clone(), cost) {
+            for (token_type, val) in other.clone().sub_collection(cost) {
                 self.equations.get_mut(&token_type).unwrap().push(val);
             }
         } else {
