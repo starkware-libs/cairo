@@ -1,8 +1,7 @@
 use std::fmt::Display;
 
-use cairo_lang_sierra::extensions::gas::CostTokenType;
+use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_utils::collection_arithmetics::add_maps;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use thiserror::Error;
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -11,28 +10,21 @@ pub enum GasWalletError {
         "Ran out of gas ({token_type:?}) in the wallet, requested {request:?} while state is \
          {state}."
     )]
-    OutOfGas {
-        state: GasWallet,
-        request: Box<OrderedHashMap<CostTokenType, i64>>,
-        token_type: CostTokenType,
-    },
+    OutOfGas { state: GasWallet, request: Box<CostTokenMap<i64>>, token_type: CostTokenType },
 }
 
 /// Environment tracking the amount of gas available in a statement's context.
 #[derive(Clone, Debug, Eq)]
 pub enum GasWallet {
     /// A known value.
-    Value(OrderedHashMap<CostTokenType, i64>),
+    Value(CostTokenMap<i64>),
     /// If gas tracking is disabled, this value should be used for all the statements.
     Disabled,
 }
 impl GasWallet {
     /// Updates the value in the wallet by `request`. Can be both negative (for most libfuncs) and
     /// positive (for gas acquisition libfuncs).
-    pub fn update(
-        &self,
-        request: OrderedHashMap<CostTokenType, i64>,
-    ) -> Result<Self, GasWalletError> {
+    pub fn update(&self, request: CostTokenMap<i64>) -> Result<Self, GasWalletError> {
         match &self {
             Self::Value(existing) => {
                 let new_value = add_maps(existing.clone(), request.iter().map(|(k, v)| (*k, *v)));

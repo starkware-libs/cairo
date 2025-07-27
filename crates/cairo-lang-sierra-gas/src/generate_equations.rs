@@ -1,9 +1,8 @@
 use cairo_lang_sierra::algorithm::topological_order::reverse_topological_ordering;
-use cairo_lang_sierra::extensions::gas::CostTokenType;
+use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
 
 use super::CostError;
@@ -27,7 +26,7 @@ pub fn generate_equations<
 >(
     program: &Program,
     get_cost: GetCost,
-) -> Result<OrderedHashMap<CostTokenType, Vec<CostExpr>>, CostError> {
+) -> Result<CostTokenMap<Vec<CostExpr>>, CostError> {
     // Calculating first to fail early.
     let statement_topological_ordering = get_reverse_topological_ordering(program)?;
     // Vector containing the cost from a statement until the end of the function in some path (may
@@ -61,13 +60,13 @@ pub fn generate_equations<
 /// Helper to generate the equations for calculating gas variables.
 struct EquationGenerator {
     pub future_costs: Vec<Option<CostExprMap>>,
-    pub equations: OrderedHashMap<CostTokenType, Vec<CostExpr>>,
+    pub equations: CostTokenMap<Vec<CostExpr>>,
 }
 impl EquationGenerator {
     fn new(future_costs: Vec<Option<CostExprMap>>) -> Self {
         Self {
             future_costs,
-            equations: OrderedHashMap::from_iter(
+            equations: CostTokenMap::from_iter(
                 CostTokenType::iter_casm_tokens().map(|token_type| (*token_type, vec![])),
             ),
         }
@@ -78,7 +77,7 @@ impl EquationGenerator {
         let entry = &mut self.future_costs[idx.0];
         if let Some(other) = entry {
             for (token_type, val) in sub_maps(other.clone(), cost) {
-                self.equations[&token_type].push(val);
+                self.equations.get_mut(&token_type).unwrap().push(val);
             }
         } else {
             *entry = Some(cost);

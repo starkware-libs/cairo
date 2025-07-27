@@ -1,4 +1,4 @@
-use cairo_lang_sierra::extensions::gas::CostTokenType;
+use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_ap_change::ap_change_info::ApChangeInfo;
@@ -35,7 +35,7 @@ pub enum MetadataError {
 #[derive(Clone)]
 pub struct MetadataComputationConfig {
     /// Functions to enforce costs for, as well as the costs to enforce.
-    pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    pub function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>>,
     /// If true, uses a linear-time algorithm for calculating the gas, instead of solving
     /// equations.
     pub linear_gas_solver: bool,
