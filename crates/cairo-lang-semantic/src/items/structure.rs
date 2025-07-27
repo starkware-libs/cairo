@@ -8,8 +8,8 @@ use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
 
 use super::attribute::SemanticQueryAttrs;
 use super::feature_kind::extract_item_feature_config;
@@ -276,7 +276,7 @@ pub fn concrete_struct_members<'db>(
     // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
     //   always have the correct number of generic arguments.
     let generic_params = db.struct_generic_params(concrete_struct_id.struct_id(db))?;
-    let generic_args = concrete_struct_id.lookup_intern(db).generic_args;
+    let generic_args = concrete_struct_id.long(db).generic_args.clone();
     let substitution = GenericSubstitution::new(&generic_params, &generic_args);
 
     let generic_members = db.struct_members(concrete_struct_id.struct_id(db))?;

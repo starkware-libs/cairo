@@ -16,8 +16,8 @@ use cairo_lang_semantic::expr::inference::solver::Ambiguity;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::types::TypeInfo;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
 use id_arena::{Arena, Id};
 
 pub mod blocks;
@@ -73,7 +73,7 @@ impl<'db> Location<'db> {
     ) -> Self {
         self.with_note(DiagnosticNote::with_location(
             text.into(),
-            location.lookup_intern(db).stable_location.diagnostic_location(db),
+            location.long(db).stable_location.diagnostic_location(db),
         ))
     }
 }
@@ -99,13 +99,13 @@ impl<'db> LocationId<'db> {
         db: &'db dyn LoweringGroup,
         inlining_location: StableLocation<'db>,
     ) -> Self {
-        let mut location = self.lookup_intern(db);
+        let mut location = self.long(db).clone();
         location.inline_locations.push(inlining_location);
         location.intern(db)
     }
     /// Returns all relevant stable pointers of the location.
     pub fn all_locations(self, db: &'db dyn LoweringGroup) -> Vec<StableLocation<'db>> {
-        let location = self.lookup_intern(db);
+        let location = self.long(db);
         let mut all_locations = vec![location.stable_location];
         all_locations.extend(location.inline_locations.iter().cloned());
         all_locations

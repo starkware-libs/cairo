@@ -1,7 +1,7 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::substitution::GenericSubstitution;
 use cairo_lang_semantic::types::TypeInfo;
-use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lang_utils::Intern;
 
 use crate::db::LoweringGroup;
 use crate::ids::{FunctionId, FunctionLongId, GeneratedFunction, SemanticFunctionIdEx};
@@ -13,15 +13,15 @@ fn concretize_function<'db>(
     substitution: &GenericSubstitution<'db>,
     function: FunctionId<'db>,
 ) -> Maybe<FunctionId<'db>> {
-    match function.lookup_intern(db) {
+    match function.long(db) {
         FunctionLongId::Semantic(id) => {
             // We call `lowered` here in case the function will be substituted to a generated one.
-            Ok(substitution.substitute(db, id)?.lowered(db))
+            Ok(substitution.substitute(db, *id)?.lowered(db))
         }
         FunctionLongId::Generated(GeneratedFunction { parent, key }) => {
             Ok(FunctionLongId::Generated(GeneratedFunction {
-                parent: substitution.substitute(db, parent)?,
-                key,
+                parent: substitution.substitute(db, *parent)?,
+                key: *key,
             })
             .intern(db))
         }

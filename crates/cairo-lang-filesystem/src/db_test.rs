@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lang_utils::Intern;
 use smol_str::SmolStr;
 use test_log::test;
 
@@ -18,7 +18,7 @@ fn test_filesystem() {
     let directory = Directory::Real("src".into());
     let child_str: SmolStr = "child.cairo".into();
     let file_id = directory.file(&db, child_str.clone().intern(&db));
-    let file_input = file_id.lookup_intern(&db).into_file_input(&db);
+    let file_input = file_id.long(&db).into_file_input(&db);
     let overrides = db.update_file_overrides_input(file_input, Some("content\n".into()));
     db.set_file_overrides_input(overrides);
 

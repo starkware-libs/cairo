@@ -19,7 +19,7 @@ use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{Intern, LookupIntern, Upcast, require};
+use cairo_lang_utils::{Intern, Upcast, require};
 use itertools::Itertools;
 use smol_str::SmolStr;
 
@@ -2047,7 +2047,7 @@ fn module_semantic_diagnostics<'db>(
                         // Note that the error location is in the parent module, not the
                         // submodule.
 
-                        let path = match file_id.lookup_intern(db) {
+                        let path = match file_id.long(db) {
                             FileLongId::OnDisk(path) => path.display().to_string(),
                             FileLongId::Virtual(_) | FileLongId::External(_) => {
                                 panic!("Expected OnDisk file.")

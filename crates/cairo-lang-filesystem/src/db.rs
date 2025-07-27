@@ -3,8 +3,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
 use salsa::Database;
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -83,7 +83,7 @@ impl<'db> CrateConfiguration<'db> {
         CrateConfigurationInput {
             root: self.root.into_directory_input(db),
             settings: self.settings,
-            cache_file: self.cache_file.map(|blob_id| blob_id.lookup_intern(db)),
+            cache_file: self.cache_file.map(|blob_id| blob_id.long(db).clone()),
         }
     }
 }
@@ -323,11 +323,11 @@ pub fn flags(db: &dyn FilesGroup) -> Arc<OrderedHashMap<FlagId<'_>, Arc<Flag>>> 
 }
 
 fn file_input(db: &dyn FilesGroup, file_id: FileId<'_>) -> FileInput {
-    file_id.lookup_intern(db).into_file_input(db)
+    file_id.long(db).into_file_input(db)
 }
 
 fn crate_input(db: &dyn FilesGroup, crt: CrateId<'_>) -> CrateInput {
-    crt.lookup_intern(db).into_crate_input(db)
+    crt.long(db).clone().into_crate_input(db)
 }
 
 fn crate_configuration_input(
@@ -437,25 +437,25 @@ fn crate_config<'db>(
     db: &'db dyn FilesGroup,
     crt: CrateId<'db>,
 ) -> Option<CrateConfiguration<'db>> {
-    match crt.lookup_intern(db) {
+    match crt.long(db) {
         CrateLongId::Real { .. } => db.crate_configs().get(&crt).cloned(),
         CrateLongId::Virtual { name: _, file_id, settings, cache_file } => {
             let lib_cairo_id = <&str as Into<SmolStr>>::into("lib.cairo").intern(db);
             Some(CrateConfiguration {
                 root: Directory::Virtual {
-                    files: BTreeMap::from([(lib_cairo_id, file_id)]),
+                    files: BTreeMap::from([(lib_cairo_id, *file_id)]),
                     dirs: Default::default(),
                 },
-                settings: toml::from_str(&settings)
+                settings: toml::from_str(settings)
                     .expect("Failed to parse virtual crate settings."),
-                cache_file,
+                cache_file: *cache_file,
             })
         }
     }
 }
 
 fn priv_raw_file_content<'db>(db: &'db dyn FilesGroup, file: FileId<'db>) -> Option<StrId<'db>> {
-    match file.lookup_intern(db) {
+    match file.long(db) {
         FileLongId::OnDisk(path) => {
             // This does not result in performance cost due to OS caching and the fact that salsa
             // will re-execute only this single query if the file content did not change.
@@ -471,9 +471,9 @@ fn priv_raw_file_content<'db>(db: &'db dyn FilesGroup, file: FileId<'db>) -> Opt
                 Err(_) => None,
             }
         }
-        FileLongId::Virtual(virt) => Some(virt.content.intern(db)),
+        FileLongId::Virtual(virt) => Some(virt.content.clone().intern(db)),
         FileLongId::External(external_id) => {
-            Some(db.ext_as_virtual(external_id).content.intern(db))
+            Some(db.ext_as_virtual(*external_id).content.intern(db))
         }
     }
 }
@@ -485,7 +485,7 @@ fn file_summary<'db>(db: &'db dyn FilesGroup, file: FileId<'db>) -> Option<Arc<F
     let content = db.file_content(file)?;
     let mut line_offsets = vec![TextOffset::START];
     let mut offset = TextOffset::START;
-    for ch in content.lookup_intern(db).chars() {
+    for ch in content.long(db).chars() {
         offset = offset.add_width(TextWidth::from_char(ch));
         if ch == '\n' {
             line_offsets.push(offset);
@@ -498,7 +498,7 @@ fn get_flag(db: &dyn FilesGroup, id: FlagId<'_>) -> Option<Arc<Flag>> {
 }
 
 fn blob_content<'db>(db: &'db dyn FilesGroup, blob: BlobId<'db>) -> Option<Arc<[u8]>> {
-    blob.lookup_intern(db).content()
+    blob.long(db).clone().content()
 }
 
 /// Returns the location of the originating user code.
@@ -619,7 +619,7 @@ pub fn get_parent_and_mapping<'db>(
     db: &'db dyn FilesGroup,
     file_id: FileId<'db>,
 ) -> Option<(FileId<'db>, Arc<[CodeMapping]>)> {
-    let vf = match file_id.lookup_intern(db) {
+    let vf = match file_id.long(db).clone() {
         FileLongId::OnDisk(_) => return None,
         FileLongId::Virtual(vf) => vf,
         FileLongId::External(id) => db.ext_as_virtual(id),

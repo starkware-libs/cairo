@@ -3,7 +3,7 @@
 
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteVariant;
-use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
+use cairo_lang_utils::{Intern, extract_matches};
 use itertools::chain;
 use semantic::items::constant::ConstValue;
 
@@ -172,10 +172,10 @@ impl<'db> Desnap<'db> {
         builder: &mut StatementsBuilder<'db>,
     ) -> VarUsage<'db> {
         let ty = extract_matches!(
-            ctx.variables[self.input.var_id].ty.lookup_intern(ctx.db),
+            ctx.variables[self.input.var_id].ty.long(ctx.db),
             semantic::TypeLongId::Snapshot
         );
-        let output = ctx.new_var(VarRequest { ty, location: self.location });
+        let output = ctx.new_var(VarRequest { ty: *ty, location: self.location });
         builder.push_statement(Statement::Desnap(StatementDesnap { input: self.input, output }));
         VarUsage { var_id: output, location: self.location }
     }

@@ -26,7 +26,7 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{Intern, LookupIntern, require, try_extract_matches};
+use cairo_lang_utils::{Intern, require, try_extract_matches};
 use itertools::zip_eq;
 use thiserror::Error;
 
@@ -550,7 +550,7 @@ impl<'db> AbiBuilder<'db> {
             return Ok(());
         }
 
-        let concrete = try_extract_matches!(type_id.lookup_intern(self.db), TypeLongId::Concrete)
+        let concrete = try_extract_matches!(type_id.long(self.db), TypeLongId::Concrete)
             .ok_or(ABIError::UnexpectedType)?;
         let (event_kind, source) = match fetch_event_data(self.db, type_id)
             .ok_or(ABIError::EventNotDerived(source))?
@@ -559,7 +559,7 @@ impl<'db> AbiBuilder<'db> {
                 let ConcreteTypeId::Struct(concrete_struct_id) = concrete else {
                     unreachable!();
                 };
-                let concrete_members = self.db.concrete_struct_members(concrete_struct_id)?;
+                let concrete_members = self.db.concrete_struct_members(*concrete_struct_id)?;
                 let event_fields = members
                     .into_iter()
                     .map(|(name, kind)| {
@@ -570,7 +570,7 @@ impl<'db> AbiBuilder<'db> {
                     })
                     .collect::<Result<_, ABIError<'_>>>()?;
                 self.event_info.insert(type_id, EventInfo::Struct);
-                (EventKind::Struct { members: event_fields }, Source::Struct(concrete_struct_id))
+                (EventKind::Struct { members: event_fields }, Source::Struct(*concrete_struct_id))
             }
             EventData::Enum { variants } => {
                 let ConcreteTypeId::Enum(concrete_enum_id) = concrete else {
@@ -588,7 +588,7 @@ impl<'db> AbiBuilder<'db> {
                         Ok(())
                     }
                 };
-                let concrete_variants = self.db.concrete_enum_variants(concrete_enum_id)?;
+                let concrete_variants = self.db.concrete_enum_variants(*concrete_enum_id)?;
                 let event_fields = zip_eq(variants, concrete_variants)
                     .map(|((name, kind), concrete_variant)| {
                         let source = Source::Variant(concrete_variant.id);
@@ -629,7 +629,7 @@ impl<'db> AbiBuilder<'db> {
                     })
                     .collect::<Result<_, ABIError<'_>>>()?;
                 self.event_info.insert(type_id, EventInfo::Enum(selectors));
-                (EventKind::Enum { variants: event_fields }, Source::Enum(concrete_enum_id))
+                (EventKind::Enum { variants: event_fields }, Source::Enum(*concrete_enum_id))
             }
         };
         let event_item = Item::Event(Event { name: type_id.format(self.db), kind: event_kind });
@@ -660,17 +660,17 @@ impl<'db> AbiBuilder<'db> {
             return Ok(());
         }
 
-        match type_id.lookup_intern(self.db) {
-            TypeLongId::Concrete(concrete) => self.add_concrete_type(concrete),
+        match type_id.long(self.db) {
+            TypeLongId::Concrete(concrete) => self.add_concrete_type(concrete.clone()),
             TypeLongId::Tuple(inner_types) => {
                 for ty in inner_types {
-                    self.add_type(ty)?;
+                    self.add_type(*ty)?;
                 }
                 Ok(())
             }
-            TypeLongId::Snapshot(ty) => self.add_type(ty),
+            TypeLongId::Snapshot(ty) => self.add_type(*ty),
             TypeLongId::FixedSizeArray { type_id, .. } => {
-                self.add_type(type_id)?;
+                self.add_type(*type_id)?;
                 Ok(())
             }
             TypeLongId::Coupon(_)
@@ -853,8 +853,7 @@ fn fetch_event_data<'db>(
     // The impl of `starknet::event::Event<ThisEvent>`.
     let event_impl =
         get_impl_at_context(db, ImplLookupContext::default(), concrete_trait_id, None).ok()?;
-    let concrete_event_impl =
-        try_extract_matches!(event_impl.lookup_intern(db), ImplLongId::Concrete)?;
+    let concrete_event_impl = try_extract_matches!(event_impl.long(db), ImplLongId::Concrete)?;
     let impl_def_id = concrete_event_impl.impl_def_id(db);
 
     // Attempt to extract the event data from the aux data from the impl generation.

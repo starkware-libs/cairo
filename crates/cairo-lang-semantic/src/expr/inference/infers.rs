@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{ImplAliasId, ImplDefId, TraitFunctionId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::{Intern, LookupIntern, extract_matches, require};
+use cairo_lang_utils::{Intern, extract_matches, require};
 use itertools::Itertools;
 
 use super::canonic::ResultNoErrEx;
@@ -151,7 +151,7 @@ impl<'db> InferenceEmbeddings<'db> for Inference<'db, '_> {
                 ImplLongId::GenericParameter(param_id).intern(self.db)
             }
             UninferredImpl::GeneratedImpl(generated_impl) => {
-                let long_id = generated_impl.lookup_intern(self.db);
+                let long_id = generated_impl.long(self.db);
 
                 // Only making sure the args can be inferred - as they are unused later.
                 self.infer_generic_args(&long_id.generic_params[..], lookup_context, stable_ptr)?;
@@ -159,8 +159,8 @@ impl<'db> InferenceEmbeddings<'db> for Inference<'db, '_> {
                 ImplLongId::GeneratedImpl(
                     GeneratedImplLongId {
                         concrete_trait: long_id.concrete_trait,
-                        generic_params: long_id.generic_params,
-                        impl_items: long_id.impl_items,
+                        generic_params: long_id.generic_params.clone(),
+                        impl_items: long_id.impl_items.clone(),
                     }
                     .intern(self.db),
                 )
@@ -194,8 +194,8 @@ impl<'db> InferenceEmbeddings<'db> for Inference<'db, '_> {
             }));
         }
 
-        let long_concrete_trait = concrete_trait_id.lookup_intern(self.db);
-        let long_imp_concrete_trait = imp_concrete_trait.lookup_intern(self.db);
+        let long_concrete_trait = concrete_trait_id.long(self.db);
+        let long_imp_concrete_trait = imp_concrete_trait.long(self.db);
         let generic_args = self.infer_generic_assignment(
             &imp_generic_params,
             &long_imp_concrete_trait.generic_args,
@@ -234,8 +234,8 @@ impl<'db> InferenceEmbeddings<'db> for Inference<'db, '_> {
             }));
         }
 
-        let long_concrete_trait = concrete_trait_id.lookup_intern(self.db);
-        let long_imp_concrete_trait = imp_concrete_trait.lookup_intern(self.db);
+        let long_concrete_trait = concrete_trait_id.long(self.db);
+        let long_imp_concrete_trait = imp_concrete_trait.long(self.db);
         let generic_args = self.infer_generic_assignment(
             &impl_alias_generic_params,
             &long_imp_concrete_trait.generic_args,

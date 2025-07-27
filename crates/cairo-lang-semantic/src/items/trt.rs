@@ -17,7 +17,7 @@ use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
+use cairo_lang_utils::{Intern, define_short_id};
 use smol_str::SmolStr;
 
 use super::TraitOrImplContext;
@@ -60,11 +60,7 @@ pub struct ConcreteTraitLongId<'db> {
 impl<'db> DebugWithDb<'db> for ConcreteTraitLongId<'db> {
     type Db = dyn SemanticGroup;
 
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &'db (dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
         let mut f = CountingWriter::new(f);
         write!(f, "{}", self.trait_id.full_path(db))?;
         fmt_generic_args(&self.generic_args, &mut f, db)
@@ -86,10 +82,10 @@ semantic_object_for_id!(
 );
 impl<'db> ConcreteTraitId<'db> {
     pub fn trait_id(&self, db: &'db dyn SemanticGroup) -> TraitId<'db> {
-        self.lookup_intern(db).trait_id
+        self.long(db).trait_id
     }
     pub fn generic_args(&self, db: &'db dyn SemanticGroup) -> Vec<GenericArgumentId<'db>> {
-        self.lookup_intern(db).generic_args
+        self.long(db).generic_args.clone()
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         self.trait_id(db).name(db)
@@ -110,14 +106,14 @@ impl<'db> ConcreteTraitId<'db> {
 
     /// Returns true if the `trait` does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
-        self.lookup_intern(db)
+        self.long(db)
             .generic_args
             .iter()
             .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
     }
     /// Returns true if the `trait` does not depend on impl or type variables.
     pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
-        self.lookup_intern(db)
+        self.long(db)
             .generic_args
             .iter()
             .all(|generic_argument_id| generic_argument_id.is_var_free(db))
@@ -328,11 +324,11 @@ impl<'db> ConcreteTraitImplId<'db> {
     }
 
     pub fn trait_impl(&self, db: &'db dyn SemanticGroup) -> TraitImplId<'db> {
-        self.lookup_intern(db).trait_impl
+        self.long(db).trait_impl
     }
 
     pub fn concrete_trait(&self, db: &'db dyn SemanticGroup) -> ConcreteTraitId<'db> {
-        self.lookup_intern(db).concrete_trait
+        self.long(db).concrete_trait
     }
 }
 
@@ -614,7 +610,7 @@ pub fn trait_functions<'db>(
         .function_asts
         .keys()
         .map(|function_id| {
-            let function_long_id = function_id.lookup_intern(db);
+            let function_long_id = function_id.long(db);
             (function_long_id.name(db).intern(db), *function_id)
         })
         .collect())
@@ -639,7 +635,7 @@ pub fn trait_types<'db>(
         .item_type_asts
         .keys()
         .map(|type_id| {
-            let type_long_id = type_id.lookup_intern(db);
+            let type_long_id = type_id.long(db);
             (type_long_id.name(db).intern(db), *type_id)
         })
         .collect())
@@ -664,7 +660,7 @@ pub fn trait_constants<'db>(
         .item_constant_asts
         .keys()
         .map(|constant_id| {
-            let constant_long_id = constant_id.lookup_intern(db);
+            let constant_long_id = constant_id.long(db);
             (constant_long_id.name(db).intern(db), *constant_id)
         })
         .collect())
@@ -689,7 +685,7 @@ pub fn trait_impls<'db>(
         .item_impl_asts
         .keys()
         .map(|impl_id| {
-            let impl_long_id = impl_id.lookup_intern(db);
+            let impl_long_id = impl_id.long(db);
             (impl_long_id.name(db).intern(db), *impl_id)
         })
         .collect())

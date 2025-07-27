@@ -7,7 +7,6 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::items::functions::InlineConfiguration;
-use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -34,8 +33,8 @@ pub fn get_inline_diagnostics<'db>(
     db: &'db dyn LoweringGroup,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<Diagnostics<'db, LoweringDiagnostic<'db>>> {
-    let inline_config = match function_id.lookup_intern(db) {
-        FunctionWithBodyLongId::Semantic(id) => db.function_declaration_inline_config(id)?,
+    let inline_config = match function_id.long(db) {
+        FunctionWithBodyLongId::Semantic(id) => db.function_declaration_inline_config(*id)?,
         FunctionWithBodyLongId::Generated { .. } => InlineConfiguration::None,
     };
     let mut diagnostics = LoweringDiagnostics::default();
@@ -95,7 +94,7 @@ pub fn function_inline_config<'db>(
     db: &'db dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<InlineConfiguration<'db>> {
-    match function_id.lookup_intern(db) {
+    match function_id.long(db) {
         ConcreteFunctionWithBodyLongId::Semantic(id) => {
             db.function_declaration_inline_config(id.function_with_body_id(db))
         }
@@ -147,7 +146,7 @@ impl<'db, 'mt, 'l> Mapper<'db, 'mt, 'l> {
             call_stmt.inputs.iter().map(|var_usage| var_usage.var_id),
         ));
 
-        let inlining_location = call_stmt.location.lookup_intern(db).stable_location;
+        let inlining_location = call_stmt.location.long(db).stable_location;
 
         Self {
             db,
@@ -338,7 +337,7 @@ where
 
         if let Some(called_func) = stmt.function.body(db)? {
             if let ConcreteFunctionWithBodyLongId::Specialized(specialized) =
-                calling_function_id.lookup_intern(db)
+                calling_function_id.long(db)
             {
                 if specialized.base == called_func {
                     // A specialized function should always inline its base.

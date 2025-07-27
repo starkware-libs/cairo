@@ -23,7 +23,7 @@ use cairo_lang_syntax::node::ast::OptionTypeClause;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, define_short_id, extract_matches};
+use cairo_lang_utils::{Intern, define_short_id, extract_matches};
 use itertools::{Itertools, chain, izip};
 use smol_str::SmolStr;
 use syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -124,7 +124,7 @@ impl<'db> DebugWithDb<'db> for ConcreteImplLongId<'db> {
 }
 impl<'db> ConcreteImplId<'db> {
     pub fn impl_def_id(&self, db: &'db dyn SemanticGroup) -> ImplDefId<'db> {
-        self.lookup_intern(db).impl_def_id
+        self.long(db).impl_def_id
     }
     pub fn get_impl_function(
         &self,
@@ -143,20 +143,20 @@ impl<'db> ConcreteImplId<'db> {
         Ok(GenericSubstitution::from_impl(ImplLongId::Concrete(*self).intern(db)).concat(
             GenericSubstitution::new(
                 &db.impl_def_generic_params(self.impl_def_id(db))?,
-                &self.lookup_intern(db).generic_args,
+                &self.long(db).generic_args,
             ),
         ))
     }
     /// Returns true if the `impl` does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
-        self.lookup_intern(db)
+        self.long(db)
             .generic_args
             .iter()
             .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
     }
     /// Returns true if the `impl` does not depend on impl or type variables.
     pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
-        self.lookup_intern(db)
+        self.long(db)
             .generic_args
             .iter()
             .all(|generic_argument_id| generic_argument_id.is_var_free(db))
@@ -239,7 +239,7 @@ impl<'db> ImplLongId<'db> {
             ImplLongId::GeneratedImpl(generated_impl) => {
                 generated_impl.concrete_trait(db).is_var_free(db)
                     && generated_impl
-                        .lookup_intern(db)
+                        .long(db)
                         .impl_items
                         .0
                         .values()
@@ -258,7 +258,7 @@ impl<'db> ImplLongId<'db> {
             ImplLongId::GeneratedImpl(generated_impl) => {
                 generated_impl.concrete_trait(db).is_fully_concrete(db)
                     && generated_impl
-                        .lookup_intern(db)
+                        .long(db)
                         .impl_items
                         .0
                         .values()
@@ -280,7 +280,7 @@ impl<'db> DebugWithDb<'db> for ImplLongId<'db> {
                 write!(f, "{:?}", concrete_impl_id.debug(db))
             }
             ImplLongId::GenericParameter(param) => write!(f, "{}", param.debug_name(db)),
-            ImplLongId::ImplVar(var) => write!(f, "?{}", var.lookup_intern(db).id.0),
+            ImplLongId::ImplVar(var) => write!(f, "?{}", var.long(db).id.0),
             ImplLongId::ImplImpl(impl_impl) => write!(f, "{:?}", impl_impl.debug(db)),
             ImplLongId::SelfImpl(trait_impl) => write!(f, "{:?}", trait_impl.debug(db)),
             ImplLongId::GeneratedImpl(generated_impl) => {
@@ -309,16 +309,16 @@ impl<'db> ImplId<'db> {
 
     /// Returns the [ImplHead] of an impl if available.
     pub fn head(&self, db: &'db dyn SemanticGroup) -> Option<ImplHead<'db>> {
-        self.lookup_intern(db).head(db)
+        self.long(db).head(db)
     }
 
     /// Returns the name of the impl.
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
-        self.lookup_intern(db).name(db)
+        self.long(db).name(db)
     }
 
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        self.lookup_intern(db).format(db)
+        self.long(db).format(db)
     }
 }
 
@@ -396,7 +396,7 @@ impl<'db> ImplImplId<'db> {
         trait_impl_id: TraitImplId<'db>,
         db: &dyn SemanticGroup,
     ) -> Self {
-        if let crate::items::imp::ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(db) {
+        if let crate::items::imp::ImplLongId::Concrete(concrete_impl) = impl_id.long(db) {
             let impl_def_id = concrete_impl.impl_def_id(db);
             assert_eq!(Ok(trait_impl_id.trait_id(db)), db.impl_def_trait(impl_def_id));
         }
@@ -590,9 +590,9 @@ pub fn impl_concrete_trait<'db>(
     db: &'db dyn SemanticGroup,
     impl_id: ImplId<'db>,
 ) -> Maybe<ConcreteTraitId<'db>> {
-    match impl_id.lookup_intern(db) {
+    match impl_id.long(db) {
         ImplLongId::Concrete(concrete_impl_id) => {
-            let long_impl = concrete_impl_id.lookup_intern(db);
+            let long_impl = concrete_impl_id.long(db);
             let substitution = GenericSubstitution::new(
                 &db.impl_def_generic_params(long_impl.impl_def_id)?,
                 &long_impl.generic_args,
@@ -603,12 +603,12 @@ pub fn impl_concrete_trait<'db>(
         }
         ImplLongId::GenericParameter(param) => {
             let param_impl =
-                extract_matches!(db.generic_param_semantic(param)?, GenericParam::Impl);
+                extract_matches!(db.generic_param_semantic(*param)?, GenericParam::Impl);
             param_impl.concrete_trait
         }
-        ImplLongId::ImplVar(var) => Ok(var.lookup_intern(db).concrete_trait_id),
-        ImplLongId::ImplImpl(impl_impl) => db.impl_impl_concrete_trait(impl_impl),
-        ImplLongId::SelfImpl(concrete_trait_id) => Ok(concrete_trait_id),
+        ImplLongId::ImplVar(var) => Ok(var.long(db).concrete_trait_id),
+        ImplLongId::ImplImpl(impl_impl) => db.impl_impl_concrete_trait(*impl_impl),
+        ImplLongId::SelfImpl(concrete_trait_id) => Ok(*concrete_trait_id),
         ImplLongId::GeneratedImpl(generated_impl) => Ok(generated_impl.concrete_trait(db)),
     }
 }
@@ -895,8 +895,8 @@ fn try_get_deref_func_and_target<'db>(
     let Ok(deref_impl) = get_impl_at_context(db, lookup_context, concrete_trait, None) else {
         return Ok(None);
     };
-    let concrete_impl_id: ConcreteImplId<'db> = match deref_impl.lookup_intern(db) {
-        ImplLongId::Concrete(concrete_impl_id) => concrete_impl_id,
+    let concrete_impl_id: ConcreteImplId<'db> = match deref_impl.long(db) {
+        ImplLongId::Concrete(concrete_impl_id) => *concrete_impl_id,
         _ => panic!("Expected concrete impl"),
     };
 
@@ -945,7 +945,7 @@ fn deref_impl_diagnostics<'db>(
 
     let gargs = concrete_trait.generic_args(db);
     let deref_ty = extract_matches!(gargs[0], GenericArgumentId::Type);
-    if let Some(module_id) = deref_ty.lookup_intern(db).module_id(db) {
+    if let Some(module_id) = deref_ty.long(db).module_id(db) {
         if module_id == impl_module {
             impl_in_valid_location = true;
         }
@@ -972,7 +972,7 @@ fn deref_impl_diagnostics<'db>(
             return;
         };
 
-        impl_def_id = match impl_id.lookup_intern(db) {
+        impl_def_id = match impl_id.long(db) {
             ImplLongId::Concrete(concrete_impl_id) => concrete_impl_id.impl_def_id(db),
             _ => return,
         };
@@ -1033,7 +1033,7 @@ pub fn impl_functions<'db>(
         .function_asts
         .keys()
         .map(|function_id| {
-            let function_long_id = function_id.lookup_intern(db);
+            let function_long_id = function_id.long(db);
             (function_long_id.name(db).intern(db), *function_id)
         })
         .collect())
@@ -1047,7 +1047,7 @@ pub fn impl_function_by_trait_function<'db>(
 ) -> Maybe<Option<ImplFunctionId<'db>>> {
     let name = trait_function_id.name(db);
     for impl_function_id in db.priv_impl_definition_data(impl_def_id)?.function_asts.keys() {
-        if impl_function_id.lookup_intern(db).name(db) == name {
+        if impl_function_id.long(db).name(db) == name {
             return Ok(Some(*impl_function_id));
         }
     }
@@ -1390,7 +1390,7 @@ pub fn priv_impl_definition_data<'db>(
 
     let mut implicit_impls_id_by_name = OrderedHashMap::default();
 
-    let trait_id = concrete_trait.lookup_intern(db).trait_id;
+    let trait_id = concrete_trait.long(db).trait_id;
     for trait_impl_id in db.trait_impls(trait_id)? {
         if item_id_by_name.contains_key(&trait_impl_id.0) {
             continue;
@@ -1449,12 +1449,12 @@ fn check_special_impls<'db>(
     concrete_trait: ConcreteTraitId<'db>,
     stable_ptr: SyntaxStablePtrId<'db>,
 ) -> Maybe<()> {
-    let ConcreteTraitLongId { trait_id, generic_args } = concrete_trait.lookup_intern(db);
+    let ConcreteTraitLongId { trait_id, generic_args } = concrete_trait.long(db);
     let info = db.core_info();
     let copy = info.copy_trt;
     let drop = info.drop_trt;
 
-    if trait_id == copy {
+    if *trait_id == copy {
         let tys = get_inner_types(db, extract_matches!(generic_args[0], GenericArgumentId::Type))?;
         for inference_error in tys
             .into_iter()
@@ -1471,7 +1471,7 @@ fn check_special_impls<'db>(
             return Err(diagnostics.report(stable_ptr, InvalidCopyTraitImpl(inference_error)));
         }
     }
-    if trait_id == drop {
+    if *trait_id == drop {
         let tys = get_inner_types(db, extract_matches!(generic_args[0], GenericArgumentId::Type))?;
         for inference_error in tys
             .into_iter()
@@ -1499,24 +1499,24 @@ fn check_special_impls<'db>(
 ///
 /// For example, a struct containing a type T can implement Drop only if T implements Drop.
 fn get_inner_types<'db>(db: &'db dyn SemanticGroup, ty: TypeId<'db>) -> Maybe<Vec<TypeId<'db>>> {
-    Ok(match ty.lookup_intern(db) {
+    Ok(match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => {
             // Look for Copy and Drop trait in the defining module.
             match concrete_type_id {
                 crate::ConcreteTypeId::Struct(concrete_struct_id) => db
-                    .concrete_struct_members(concrete_struct_id)?
+                    .concrete_struct_members(*concrete_struct_id)?
                     .values()
                     .map(|member| member.ty)
                     .collect(),
                 crate::ConcreteTypeId::Enum(concrete_enum_id) => db
-                    .concrete_enum_variants(concrete_enum_id)?
+                    .concrete_enum_variants(*concrete_enum_id)?
                     .into_iter()
                     .map(|variant| variant.ty)
                     .collect(),
                 crate::ConcreteTypeId::Extern(_) => vec![],
             }
         }
-        TypeLongId::Tuple(tys) => tys,
+        TypeLongId::Tuple(tys) => tys.to_vec(),
         TypeLongId::Snapshot(_) | TypeLongId::Closure(_) => vec![],
         TypeLongId::GenericParameter(_) => {
             return Err(skip_diagnostic());
@@ -1525,9 +1525,9 @@ fn get_inner_types<'db>(db: &'db dyn SemanticGroup, ty: TypeId<'db>) -> Maybe<Ve
             panic!("Types should be fully resolved at this point.")
         }
         TypeLongId::Coupon(_) => vec![],
-        TypeLongId::FixedSizeArray { type_id, .. } => vec![type_id],
+        TypeLongId::FixedSizeArray { type_id, .. } => vec![*type_id],
         TypeLongId::Missing(diag_added) => {
-            return Err(diag_added);
+            return Err(*diag_added);
         }
     })
 }
@@ -1966,7 +1966,7 @@ pub fn find_closure_generated_candidate<'db>(
     let GenericArgumentId::Type(closure_type) = *concrete_trait_id.generic_args(db).first()? else {
         return None;
     };
-    let TypeLongId::Closure(closure_type_long) = closure_type.lookup_intern(db) else {
+    let TypeLongId::Closure(closure_type_long) = closure_type.long(db) else {
         return None;
     };
 
@@ -2412,11 +2412,11 @@ pub fn impl_type_concrete_implized<'db>(
     db: &'db dyn SemanticGroup,
     impl_type_id: ImplTypeId<'db>,
 ) -> Maybe<TypeId<'db>> {
-    let concrete_impl = match impl_type_id.impl_id().lookup_intern(db) {
+    let concrete_impl = match impl_type_id.impl_id().long(db) {
         ImplLongId::Concrete(concrete_impl) => concrete_impl,
         ImplLongId::ImplImpl(imp_impl_id) => {
             let ImplLongId::Concrete(concrete_impl) =
-                db.impl_impl_concrete_implized(imp_impl_id)?.lookup_intern(db)
+                db.impl_impl_concrete_implized(*imp_impl_id)?.long(db)
             else {
                 return Ok(TypeLongId::ImplType(impl_type_id).intern(db));
             };
@@ -2426,7 +2426,7 @@ pub fn impl_type_concrete_implized<'db>(
             return Ok(TypeLongId::ImplType(impl_type_id).intern(db));
         }
         ImplLongId::GeneratedImpl(generated) => {
-            return Ok(*generated.lookup_intern(db).impl_items.0.get(&impl_type_id.ty()).unwrap());
+            return Ok(*generated.long(db).impl_items.0.get(&impl_type_id.ty()).unwrap());
         }
     };
 
@@ -2644,7 +2644,7 @@ pub fn impl_constant_concrete_implized_value<'db>(
     db: &'db dyn SemanticGroup,
     impl_constant_id: ImplConstantId<'db>,
 ) -> Maybe<ConstValueId<'db>> {
-    if let ImplLongId::Concrete(concrete_impl) = impl_constant_id.impl_id().lookup_intern(db) {
+    if let ImplLongId::Concrete(concrete_impl) = impl_constant_id.impl_id().long(db) {
         let impl_def_id = concrete_impl.impl_def_id(db);
         let constant: ConstValueId<'db> =
             db.impl_constant_implized_by_context(impl_constant_id, impl_def_id)?;
@@ -2672,7 +2672,7 @@ pub fn impl_constant_concrete_implized_type<'db>(
     db: &'db dyn SemanticGroup,
     impl_constant_id: ImplConstantId<'db>,
 ) -> Maybe<TypeId<'db>> {
-    let concrete_trait_id = match impl_constant_id.impl_id().lookup_intern(db) {
+    let concrete_trait_id = match impl_constant_id.impl_id().long(db) {
         ImplLongId::Concrete(concrete_impl) => {
             let impl_def_id = concrete_impl.impl_def_id(db);
             let ty = db.impl_constant_implized_by_context(impl_constant_id, impl_def_id)?.ty(db)?;
@@ -2680,12 +2680,12 @@ pub fn impl_constant_concrete_implized_type<'db>(
         }
         ImplLongId::GenericParameter(param) => {
             let param_impl =
-                extract_matches!(db.generic_param_semantic(param)?, GenericParam::Impl);
+                extract_matches!(db.generic_param_semantic(*param)?, GenericParam::Impl);
             param_impl.concrete_trait?
         }
-        ImplLongId::ImplVar(var) => var.lookup_intern(db).concrete_trait_id,
-        ImplLongId::ImplImpl(impl_impl) => db.impl_impl_concrete_trait(impl_impl)?,
-        ImplLongId::SelfImpl(concrete_trait_id) => concrete_trait_id,
+        ImplLongId::ImplVar(var) => var.long(db).concrete_trait_id,
+        ImplLongId::ImplImpl(impl_impl) => db.impl_impl_concrete_trait(*impl_impl)?,
+        ImplLongId::SelfImpl(concrete_trait_id) => *concrete_trait_id,
         ImplLongId::GeneratedImpl(generated_impl) => generated_impl.concrete_trait(db),
     };
 
@@ -3065,7 +3065,7 @@ fn impl_impl_concrete_implized_ex<'db>(
     impl_impl_id: ImplImplId<'db>,
     in_cycle: bool,
 ) -> Maybe<ImplId<'db>> {
-    if let ImplLongId::Concrete(concrete_impl) = impl_impl_id.impl_id().lookup_intern(db) {
+    if let ImplLongId::Concrete(concrete_impl) = impl_impl_id.impl_id().long(db) {
         let impl_def_id = concrete_impl.impl_def_id(db);
         let imp = db.impl_impl_implized_by_context(impl_impl_id, impl_def_id, in_cycle)?;
         return concrete_impl.substitution(db)?.substitute(db, imp);
@@ -3654,9 +3654,9 @@ pub fn priv_impl_function_body_data<'db>(
 }
 
 pub fn priv_impl_is_fully_concrete(db: &dyn SemanticGroup, impl_id: ImplId<'_>) -> bool {
-    impl_id.lookup_intern(db).is_fully_concrete(db)
+    impl_id.long(db).is_fully_concrete(db)
 }
 
 pub fn priv_impl_is_var_free(db: &dyn SemanticGroup, impl_id: ImplId<'_>) -> bool {
-    impl_id.lookup_intern(db).is_var_free(db)
+    impl_id.long(db).is_var_free(db)
 }

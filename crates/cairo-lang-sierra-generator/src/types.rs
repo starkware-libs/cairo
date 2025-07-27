@@ -9,7 +9,7 @@ use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_sierra::extensions::snapshot::snapshot_ty;
 use cairo_lang_sierra::ids::UserTypeId;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGenericArg};
-use cairo_lang_utils::{Intern, LookupIntern, try_extract_matches};
+use cairo_lang_utils::{Intern, try_extract_matches};
 use itertools::chain;
 use num_traits::ToPrimitive;
 
@@ -23,9 +23,9 @@ pub fn get_concrete_type_id<'db>(
     db: &'db dyn SierraGenGroup,
     type_id: semantic::TypeId<'db>,
 ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
-    match type_id.lookup_intern(db) {
+    match type_id.long(db) {
         semantic::TypeLongId::Snapshot(inner_ty) => {
-            let inner = db.get_concrete_type_id(inner_ty)?;
+            let inner = db.get_concrete_type_id(*inner_ty)?;
             if matches!(
                 db.lookup_concrete_type(inner.clone()),
                 SierraGeneratorTypeLongId::CycleBreaker(ty) if cycle_breaker_info(db, ty)?.duplicatable
@@ -87,7 +87,7 @@ pub fn get_concrete_long_type_id<'db>(
             .collect::<Maybe<_>>()?,
         })
     };
-    Ok(match type_id.lookup_intern(db) {
+    Ok(match type_id.long(db) {
         semantic::TypeLongId::Concrete(ty) => {
             match ty {
                 semantic::ConcreteTypeId::Struct(_) => {
@@ -109,7 +109,8 @@ pub fn get_concrete_long_type_id<'db>(
                                 }
                                 semantic::GenericArgumentId::Constant(value_id) => {
                                     let value = value_id
-                                        .lookup_intern(db)
+                                        .long(db)
+                                        .clone()
                                         .into_int()
                                         .expect("Expected ConstValue::Int for size");
 
@@ -132,7 +133,7 @@ pub fn get_concrete_long_type_id<'db>(
             user_type_long_id("Struct", "Tuple".into())?.into()
         }
         semantic::TypeLongId::Snapshot(ty) => {
-            let inner_ty = db.get_concrete_type_id(ty).unwrap();
+            let inner_ty = db.get_concrete_type_id(*ty).unwrap();
             let ty =
                 snapshot_ty(&SierraSignatureSpecializationContext(db), inner_ty.clone()).unwrap();
             if ty == inner_ty {
@@ -177,13 +178,15 @@ pub fn type_dependencies<'db>(
     db: &'db dyn SierraGenGroup,
     type_id: semantic::TypeId<'db>,
 ) -> Maybe<Arc<Vec<semantic::TypeId<'db>>>> {
-    Ok(Arc::new(match type_id.lookup_intern(db) {
+    Ok(Arc::new(match type_id.long(db) {
         semantic::TypeLongId::Concrete(ty) => match ty {
-            semantic::ConcreteTypeId::Struct(structure) => {
-                db.concrete_struct_members(structure)?.iter().map(|(_, member)| member.ty).collect()
-            }
+            semantic::ConcreteTypeId::Struct(structure) => db
+                .concrete_struct_members(*structure)?
+                .iter()
+                .map(|(_, member)| member.ty)
+                .collect(),
             semantic::ConcreteTypeId::Enum(enm) => {
-                db.concrete_enum_variants(enm)?.into_iter().map(|variant| variant.ty).collect()
+                db.concrete_enum_variants(*enm)?.into_iter().map(|variant| variant.ty).collect()
             }
             semantic::ConcreteTypeId::Extern(_extrn) => ty
                 .generic_args(db)
@@ -191,18 +194,19 @@ pub fn type_dependencies<'db>(
                 .filter_map(|arg| try_extract_matches!(arg, semantic::GenericArgumentId::Type))
                 .collect(),
         },
-        semantic::TypeLongId::Tuple(inner_types) => inner_types,
-        semantic::TypeLongId::Snapshot(ty) => vec![ty],
+        semantic::TypeLongId::Tuple(inner_types) => inner_types.clone(),
+        semantic::TypeLongId::Snapshot(ty) => vec![*ty],
         semantic::TypeLongId::Coupon(_) => vec![],
-        semantic::TypeLongId::Closure(closure_ty) => closure_ty.captured_types,
+        semantic::TypeLongId::Closure(closure_ty) => closure_ty.captured_types.clone(),
         semantic::TypeLongId::FixedSizeArray { type_id, size } => {
             let size = size
-                .lookup_intern(db)
+                .long(db)
+                .clone()
                 .into_int()
                 .expect("Expected ConstValue::Int for size")
                 .to_usize()
                 .unwrap();
-            [type_id].repeat(size)
+            [*type_id].repeat(size)
         }
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)

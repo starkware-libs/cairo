@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
+use cairo_lang_utils::{Intern, define_short_id};
 use path_clean::PathClean;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
@@ -76,9 +76,9 @@ impl<'db> CrateLongId<'db> {
             CrateLongId::Real { name, discriminator } => CrateInput::Real { name, discriminator },
             CrateLongId::Virtual { name, file_id, settings, cache_file } => CrateInput::Virtual {
                 name,
-                file_long_id: file_id.lookup_intern(db).into_file_input(db),
+                file_long_id: file_id.long(db).clone().into_file_input(db),
                 settings,
-                cache_file: cache_file.map(|blob_id| blob_id.lookup_intern(db)),
+                cache_file: cache_file.map(|blob_id| blob_id.long(db).clone()),
             },
         }
     }
@@ -261,7 +261,7 @@ impl<'db> VirtualFile<'db> {
 
     fn into_virtual_file_input(self, db: &dyn FilesGroup) -> VirtualFileInput {
         VirtualFileInput {
-            parent: self.parent.map(|id| Arc::new(id.lookup_intern(db).into_file_input(db))),
+            parent: self.parent.map(|id| Arc::new(id.long(db).clone().into_file_input(db))),
             name: self.name,
             content: self.content,
             code_mappings: self.code_mappings,
@@ -312,15 +312,15 @@ impl<'db> FileId<'db> {
     }
 
     pub fn file_name(self, db: &dyn FilesGroup) -> String {
-        self.lookup_intern(db).file_name(db)
+        self.long(db).file_name(db)
     }
 
     pub fn full_path(self, db: &dyn FilesGroup) -> String {
-        self.lookup_intern(db).full_path(db)
+        self.long(db).full_path(db)
     }
 
     pub fn kind(self, db: &dyn FilesGroup) -> FileKind {
-        self.lookup_intern(db).kind()
+        self.long(db).kind()
     }
 }
 
@@ -397,14 +397,11 @@ impl<'db> Directory<'db> {
     /// the file system. These are ids/paths to them.
     pub fn file(&self, db: &'db dyn FilesGroup, name: SmolStrId<'db>) -> FileId<'db> {
         match self {
-            Directory::Real(path) => {
-                FileId::new_on_disk(db, path.join(name.lookup_intern(db).as_str()))
-            }
-            Directory::Virtual { files, dirs: _ } => {
-                files.get(&name).copied().unwrap_or_else(|| {
-                    FileId::new_on_disk(db, PathBuf::from(name.lookup_intern(db).as_str()))
-                })
-            }
+            Directory::Real(path) => FileId::new_on_disk(db, path.join(name.long(db).as_str())),
+            Directory::Virtual { files, dirs: _ } => files
+                .get(&name)
+                .copied()
+                .unwrap_or_else(|| FileId::new_on_disk(db, PathBuf::from(name.long(db).as_str()))),
         }
     }
 
@@ -412,7 +409,7 @@ impl<'db> Directory<'db> {
     /// the file system. These are ids/paths to them.
     pub fn subdir(&self, db: &'db dyn FilesGroup, name: SmolStrId<'db>) -> Directory<'db> {
         match self {
-            Directory::Real(path) => Directory::Real(path.join(name.lookup_intern(db).as_str())),
+            Directory::Real(path) => Directory::Real(path.join(name.long(db).as_str())),
             Directory::Virtual { files: _, dirs } => {
                 if let Some(dir) = dirs.get(&name) {
                     dir.as_ref().clone()
@@ -431,13 +428,13 @@ impl<'db> Directory<'db> {
                 files: files
                     .into_iter()
                     .map(|(name, file_id)| {
-                        (name.lookup_intern(db), file_id.lookup_intern(db).into_file_input(db))
+                        (name.long(db).clone(), file_id.long(db).clone().into_file_input(db))
                     })
                     .collect(),
                 dirs: dirs
                     .into_iter()
                     .map(|(name, dir)| {
-                        (name.lookup_intern(db), Box::new(dir.into_directory_input(db)))
+                        (name.long(db).clone(), Box::new(dir.into_directory_input(db)))
                     })
                     .collect(),
             },
