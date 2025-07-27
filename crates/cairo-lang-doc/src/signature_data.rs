@@ -10,7 +10,7 @@ use cairo_lang_semantic::items::module::ModuleItemInfo;
 use cairo_lang_semantic::items::visibility::Visibility;
 use cairo_lang_semantic::{Expr, GenericArgumentId, GenericParam, Parameter, TypeId};
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lang_utils::Intern;
 use smol_str::SmolStr;
 
 use crate::db::DocGroup;
@@ -70,7 +70,7 @@ pub(crate) fn get_enum_signature_data<'db>(
         let variant_semantic = db.variant_semantic(item_id, variant_id).map_err(|_| {
             SignatureError::FailedRetrievingSemanticData(module_item_id.full_path(db))
         })?;
-        variants.push((name.lookup_intern(db), variant_semantic.ty));
+        variants.push((name.long(db).clone(), variant_semantic.ty));
     }
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Enum(item_id))),
@@ -105,7 +105,7 @@ pub(crate) fn get_struct_signature_data<'db>(
         .struct_members(item_id)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?
         .iter()
-        .map(|(name, member)| (name.lookup_intern(db), member.ty, member.visibility))
+        .map(|(name, member)| (name.long(db).clone(), member.ty, member.visibility))
         .collect();
 
     let generic_params = db
@@ -144,7 +144,7 @@ pub(crate) fn get_member_signature_data<'db>(
     {
         Ok(DocumentableItemSignatureData {
             item_id: Member(item_id),
-            name: name.lookup_intern(db),
+            name: name.long(db).clone(),
             visibility: member.visibility,
             generic_args: None,
             generic_params: None,
@@ -398,13 +398,13 @@ pub(crate) fn get_impl_def_signature_data<'db>(
     let intern = db
         .impl_def_concrete_trait(item_id)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?
-        .lookup_intern(db);
+        .long(db);
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Impl(item_id))),
         name: item_id.name(db),
         visibility: module_item_info.visibility,
-        generic_args: Some(intern.generic_args),
+        generic_args: Some(intern.generic_args.clone()),
         generic_params: None,
         variants: None,
         members: None,

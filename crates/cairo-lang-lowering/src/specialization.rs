@@ -6,7 +6,6 @@ use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId};
-use cairo_lang_utils::LookupIntern;
 use itertools::{Itertools, chain, zip_eq};
 
 use crate::blocks::BlocksBuilder;
@@ -115,12 +114,12 @@ pub fn specialized_function_lowered<'db>(
                 SpecializationArg::Struct(consts) => {
                     let var = &variables[var_id];
                     let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) =
-                        var.ty.lookup_intern(db)
+                        var.ty.long(db)
                     else {
                         unreachable!("Expected a concrete struct type");
                     };
 
-                    let members = db.concrete_struct_members(concrete_struct)?;
+                    let members = db.concrete_struct_members(*concrete_struct)?;
 
                     let location = var.location;
                     let var_ids = members
@@ -180,7 +179,7 @@ pub fn priv_should_specialize<'db>(
     function_id: ids::ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
     let ids::ConcreteFunctionWithBodyLongId::Specialized(SpecializedFunction { base, .. }) =
-        function_id.lookup_intern(db)
+        function_id.long(db)
     else {
         panic!("Expected a specialized function");
     };
@@ -189,11 +188,11 @@ pub fn priv_should_specialize<'db>(
     // We cannot estimate the size of functions in a cycle, since the implicits computation requires
     // the finalized lowering of all the functions in the cycle which requires us to know the
     // answer of the current function.
-    if db.concrete_in_cycle(base, DependencyType::Call, LoweringStage::Monomorphized)? {
+    if db.concrete_in_cycle(*base, DependencyType::Call, LoweringStage::Monomorphized)? {
         return Ok(false);
     }
 
     // The heuristic is that the size is 8/10*orig_size > specialized_size of the original size.
-    Ok(db.estimate_size(base)?.saturating_mul(8)
+    Ok(db.estimate_size(*base)?.saturating_mul(8)
         > db.estimate_size(function_id)?.saturating_mul(10))
 }

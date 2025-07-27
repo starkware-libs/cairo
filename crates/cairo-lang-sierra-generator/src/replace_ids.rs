@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_sierra::program;
-use cairo_lang_utils::{LookupIntern, extract_matches};
+use cairo_lang_utils::extract_matches;
 
 use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId};
 use crate::pre_sierra::{self, PushValue};
@@ -141,9 +141,7 @@ impl SierraIdReplacer for DebugReplacer<'_> {
         let lowering_id = self.db.lookup_sierra_function(sierra_id.clone());
         cairo_lang_sierra::ids::FunctionId {
             id: sierra_id.id,
-            debug_name: Some(
-                format!("{:?}", lowering_id.lookup_intern(self.db).debug(self.db)).into(),
-            ),
+            debug_name: Some(format!("{:?}", lowering_id.long(self.db).debug(self.db)).into()),
         }
     }
 }

@@ -16,9 +16,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{
-    Intern, LookupIntern, define_short_id, extract_matches, require, try_extract_matches,
-};
+use cairo_lang_utils::{Intern, define_short_id, extract_matches, require, try_extract_matches};
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::{Num, ToPrimitive, Zero};
@@ -105,22 +103,22 @@ semantic_object_for_id!(
 );
 impl<'db> ConstValueId<'db> {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        format!("{:?}", self.lookup_intern(db).debug(db.elongate()))
+        format!("{:?}", self.long(db).debug(db.elongate()))
     }
 
     /// Returns true if the const does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
-        self.lookup_intern(db).is_fully_concrete(db)
+        self.long(db).is_fully_concrete(db)
     }
 
     /// Returns true if the const does not contain any inference variables.
     pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
-        self.lookup_intern(db).is_var_free(db)
+        self.long(db).is_var_free(db)
     }
 
     /// Returns the type of the const.
     pub fn ty(&self, db: &'db dyn SemanticGroup) -> Maybe<TypeId<'db>> {
-        self.lookup_intern(db).ty(db)
+        self.long(db).ty(db)
     }
 }
 
@@ -220,7 +218,7 @@ impl<'db> ImplConstantId<'db> {
         trait_constant_id: TraitConstantId<'db>,
         db: &dyn SemanticGroup,
     ) -> Self {
-        if let ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(db) {
+        if let ImplLongId::Concrete(concrete_impl) = impl_id.long(db) {
             let impl_def_id = concrete_impl.impl_def_id(db);
             assert_eq!(Ok(trait_constant_id.trait_id(db)), db.impl_def_trait(impl_def_id));
         }
@@ -427,7 +425,7 @@ pub fn resolve_const_expr_and_evaluate<'db, 'mt>(
     ctx.apply_inference_rewriter_to_exprs();
 
     match &value.expr {
-        Expr::Constant(ExprConstant { const_value_id, .. }) => const_value_id.lookup_intern(db),
+        Expr::Constant(ExprConstant { const_value_id, .. }) => const_value_id.long(db).clone(),
         // Check that the expression is a valid constant.
         _ if ctx.diagnostics.error_count > prev_err_count => ConstValue::Missing(skip_diagnostic()),
         _ => {
@@ -612,7 +610,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             GenericFunctionId::Free(id) => db.free_function_signature(id),
             GenericFunctionId::Extern(id) => db.extern_function_signature(id),
             GenericFunctionId::Impl(id) => {
-                if let ImplLongId::Concrete(impl_id) = id.impl_id.lookup_intern(db) {
+                if let ImplLongId::Concrete(impl_id) = id.impl_id.long(db) {
                     if let Ok(Some(impl_function_id)) = impl_id.get_impl_function(db, id.function) {
                         return self.db.impl_function_signature(impl_function_id);
                     }
@@ -650,7 +648,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             }),
             Expr::Constant(expr) => self
                 .generic_substitution
-                .substitute(self.db, expr.const_value_id.lookup_intern(db))
+                .substitute(self.db, expr.const_value_id.long(db).clone())
                 .unwrap_or_else(ConstValue::Missing),
             Expr::Block(ExprBlock { statements, tail: Some(inner), .. }) => {
                 for statement_id in statements {
@@ -717,7 +715,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     }
                     crate::FixedSizeArrayItems::ValueAndSize(value, count) => {
                         let value = self.evaluate(*value);
-                        let count = count.lookup_intern(db);
+                        let count = count.long(db).clone();
                         if let Some(count) = count.into_int() {
                             (0..count.to_usize().unwrap()).map(|_| value.clone()).collect()
                         } else {
@@ -949,12 +947,11 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 return Some(value.as_ref().clone());
             } else if let Some(reversed) = self.downcast_fns.get(&extern_fn) {
                 let [ConstValue::Int(value, _)] = args else { return None };
-                let TypeLongId::Concrete(ConcreteTypeId::Enum(enm)) = expr_ty.lookup_intern(db)
-                else {
+                let TypeLongId::Concrete(ConcreteTypeId::Enum(enm)) = expr_ty.long(db) else {
                     return None;
                 };
                 let (variant0, variant1) =
-                    db.concrete_enum_variants(enm).ok()?.into_iter().collect_tuple()?;
+                    db.concrete_enum_variants(*enm).ok()?.into_iter().collect_tuple()?;
                 let (some, none) =
                     if *reversed { (variant1, variant0) } else { (variant0, variant1) };
                 let success_ty = some.ty;

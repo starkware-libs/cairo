@@ -1,7 +1,6 @@
 use std::iter::Sum;
 use std::ops::{Add, Range, Sub};
 
-use cairo_lang_utils::LookupIntern;
 use serde::{Deserialize, Serialize};
 
 use crate::db::FilesGroup;
@@ -204,8 +203,7 @@ impl TextOffset {
         let line_number = self.get_line_number(db, file)?;
         let line_offset = summary.line_offsets[line_number];
         let content = db.file_content(file)?;
-        let col =
-            TextSpan { start: line_offset, end: self }.n_chars(content.lookup_intern(db).as_ref());
+        let col = TextSpan { start: line_offset, end: self }.n_chars(content.long(db).as_ref());
         Some(TextPosition { line: line_number, col })
     }
 }
@@ -219,7 +217,7 @@ impl TextPosition {
     /// Returns `None` if file is not found in `db`.
     pub fn offset_in_file(self, db: &dyn FilesGroup, file: FileId<'_>) -> Option<TextOffset> {
         let file_summary = db.file_summary(file)?;
-        let content = db.file_content(file)?.lookup_intern(db);
+        let content = db.file_content(file)?.long(db);
 
         // Get the offset of the first character in line, or clamp to the last offset in the file.
         let mut offset =

@@ -20,7 +20,7 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, extract_matches, require, try_extract_matches};
+use cairo_lang_utils::{Intern, extract_matches, require, try_extract_matches};
 pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -1049,7 +1049,7 @@ impl<'db> Resolver<'db> {
             }
             ResolvedConcreteItem::Type(ty) => {
                 if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) =
-                    ty.lookup_intern(self.db)
+                    ty.long(self.db)
                 {
                     let enum_id = concrete_enum_id.enum_id(self.db);
                     let ident_id = ident.intern(db);
@@ -1065,7 +1065,7 @@ impl<'db> Resolver<'db> {
                     })?;
                     let variant = self.db.variant_semantic(enum_id, *variant_id)?;
                     let concrete_variant =
-                        self.db.concrete_enum_variant(concrete_enum_id, &variant)?;
+                        self.db.concrete_enum_variant(*concrete_enum_id, &variant)?;
                     Ok(ResolvedConcreteItem::Variant(concrete_variant))
                 } else {
                     Err(diagnostics.report(identifier.stable_ptr(db), InvalidPath))
@@ -1234,7 +1234,7 @@ impl<'db> Resolver<'db> {
                 {
                     self.validate_feature_constraints(diagnostics, identifier, &trait_item_info);
                 }
-                if let ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(self.db) {
+                if let ImplLongId::Concrete(concrete_impl) = impl_id.long(self.db) {
                     let impl_def_id: ImplDefId<'_> = concrete_impl.impl_def_id(self.db);
 
                     if let Ok(Some(impl_item_info)) =
@@ -1584,13 +1584,13 @@ impl<'db> Resolver<'db> {
         if let Some(dep) = self.active_settings(macro_context_modifier).dependencies.get(ident_str)
         {
             let dep_crate_id = CrateLongId::Real {
-                name: ident.lookup_intern(db),
+                name: ident.long(db).clone(),
                 discriminator: dep.discriminator.clone(),
             }
             .intern(self.db);
             let configs = self.db.crate_configs();
             if !configs.contains_key(&dep_crate_id) {
-                let get_long_id = |crate_id: CrateId<'db>| crate_id.lookup_intern(self.db);
+                let get_long_id = |crate_id: CrateId<'db>| crate_id.long(self.db);
                 panic!(
                     "Invalid crate dependency: {:?}\nconfigured crates: {:#?}",
                     get_long_id(dep_crate_id),
@@ -2223,7 +2223,7 @@ impl<'db> Resolver<'db> {
                     // A ResolvedConcreteItem::Impl returned by
                     // `specialize_generic_module_item` must be ImplLongId::Concrete.
                     let current_segment_concrete_impl_id = extract_matches!(
-                        current_segment_impl_id.lookup_intern(self.db),
+                        current_segment_impl_id.long(self.db),
                         ImplLongId::Concrete
                     );
                     self.warn_impl_in_same_impl(

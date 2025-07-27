@@ -19,8 +19,8 @@ use cairo_lang_syntax::node::ids::{GreenId, SyntaxStablePtrId};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
@@ -59,7 +59,7 @@ impl CachedCrateMetadata {
         let global_flags = db
             .flags()
             .iter()
-            .map(|(flag_id, flag)| (flag_id.lookup_intern(db).0, (**flag).clone()))
+            .map(|(flag_id, flag)| (flag_id.long(db).0.clone(), (**flag).clone()))
             .collect();
         Self { settings, compiler_version, global_flags }
     }
@@ -790,7 +790,7 @@ impl CrateIdCached {
         if let Some(id) = ctx.crate_ids.get(&crate_id) {
             return *id;
         }
-        let crate_long_id = CrateCached::new(crate_id.lookup_intern(ctx.db), ctx);
+        let crate_long_id = CrateCached::new(crate_id.long(ctx.db).clone(), ctx);
         let id = CrateIdCached::Other(ctx.crate_ids_lookup.len());
         ctx.crate_ids_lookup.push(crate_long_id);
         ctx.crate_ids.insert(crate_id, id);
@@ -938,7 +938,7 @@ impl ConstantIdCached {
         if let Some(id) = ctx.constant_ids.get(&constant_id) {
             return *id;
         }
-        let constant = ConstantCached::new(constant_id.lookup_intern(ctx.db), ctx);
+        let constant = ConstantCached::new(constant_id.long(ctx.db).clone(), ctx);
         let id = ConstantIdCached(ctx.constant_ids_lookup.len());
         ctx.constant_ids_lookup.push(constant);
         ctx.constant_ids.insert(constant_id, id);
@@ -978,7 +978,7 @@ impl SubmoduleIdCached {
         if let Some(id) = ctx.submodule_ids.get(&submodule_id) {
             return *id;
         }
-        let submodule = SubmoduleCached::new(submodule_id.lookup_intern(ctx.db), ctx);
+        let submodule = SubmoduleCached::new(submodule_id.long(ctx.db).clone(), ctx);
         let id = SubmoduleIdCached(ctx.submodule_ids_lookup.len());
         ctx.submodule_ids_lookup.push(submodule);
         ctx.submodule_ids.insert(submodule_id, id);
@@ -1021,7 +1021,7 @@ impl UseIdCached {
         if let Some(id) = ctx.use_ids.get(&use_id) {
             return *id;
         }
-        let use_cache = UseCached::new(use_id.lookup_intern(ctx.db), ctx);
+        let use_cache = UseCached::new(use_id.long(ctx.db).clone(), ctx);
         let id = UseIdCached(ctx.use_ids_lookup.len());
         ctx.use_ids_lookup.push(use_cache);
         ctx.use_ids.insert(use_id, id);
@@ -1067,7 +1067,7 @@ impl FreeFunctionIdCached {
         if let Some(id) = ctx.free_function_ids.get(&free_function_id) {
             return *id;
         }
-        let free_function = FreeFunctionCached::new(free_function_id.lookup_intern(ctx.db), ctx);
+        let free_function = FreeFunctionCached::new(free_function_id.long(ctx.db).clone(), ctx);
         let id = FreeFunctionIdCached(ctx.free_function_ids_lookup.len());
         ctx.free_function_ids_lookup.push(free_function);
         ctx.free_function_ids.insert(free_function_id, id);
@@ -1107,7 +1107,7 @@ impl StructIdCached {
         if let Some(id) = ctx.struct_ids.get(&struct_id) {
             return *id;
         }
-        let struct_cached = StructCached::new(struct_id.lookup_intern(ctx.db), ctx);
+        let struct_cached = StructCached::new(struct_id.long(ctx.db).clone(), ctx);
         let id = StructIdCached(ctx.struct_ids_lookup.len());
         ctx.struct_ids_lookup.push(struct_cached);
         ctx.struct_ids.insert(struct_id, id);
@@ -1147,7 +1147,7 @@ impl EnumIdCached {
         if let Some(id) = ctx.enum_ids.get(&enum_id) {
             return *id;
         }
-        let enum_cached = EnumCached::new(enum_id.lookup_intern(ctx.db), ctx);
+        let enum_cached = EnumCached::new(enum_id.long(ctx.db).clone(), ctx);
         let id = EnumIdCached(ctx.enum_ids_lookup.len());
         ctx.enum_ids_lookup.push(enum_cached);
         ctx.enum_ids.insert(enum_id, id);
@@ -1193,7 +1193,7 @@ impl ModuleTypeAliasIdCached {
         if let Some(id) = ctx.type_alias_ids.get(&type_alias_id) {
             return *id;
         }
-        let type_alias = ModuleTypeAliasCached::new(type_alias_id.lookup_intern(ctx.db), ctx);
+        let type_alias = ModuleTypeAliasCached::new(type_alias_id.long(ctx.db).clone(), ctx);
         let id = ModuleTypeAliasIdCached(ctx.type_alias_ids_lookup.len());
         ctx.type_alias_ids_lookup.push(type_alias);
         ctx.type_alias_ids.insert(type_alias_id, id);
@@ -1233,7 +1233,7 @@ impl ImplAliasIdCached {
         if let Some(id) = ctx.impl_alias_ids.get(&impl_alias_id) {
             return *id;
         }
-        let impl_alias = ImplAliasCached::new(impl_alias_id.lookup_intern(ctx.db), ctx);
+        let impl_alias = ImplAliasCached::new(impl_alias_id.long(ctx.db).clone(), ctx);
         let id = ImplAliasIdCached(ctx.impl_alias_ids_lookup.len());
         ctx.impl_alias_ids_lookup.push(impl_alias);
         ctx.impl_alias_ids.insert(impl_alias_id, id);
@@ -1273,7 +1273,7 @@ impl TraitIdCached {
         if let Some(id) = ctx.trait_ids.get(&trait_id) {
             return *id;
         }
-        let trait_cached = TraitCached::new(trait_id.lookup_intern(ctx.db), ctx);
+        let trait_cached = TraitCached::new(trait_id.long(ctx.db).clone(), ctx);
         let id = TraitIdCached(ctx.trait_ids_lookup.len());
         ctx.trait_ids_lookup.push(trait_cached);
         ctx.trait_ids.insert(trait_id, id);
@@ -1313,7 +1313,7 @@ impl ImplDefIdCached {
         if let Some(id) = ctx.impl_def_ids.get(&impl_def_id) {
             return *id;
         }
-        let impl_def = ImplDefCached::new(impl_def_id.lookup_intern(ctx.db), ctx);
+        let impl_def = ImplDefCached::new(impl_def_id.long(ctx.db).clone(), ctx);
         let id = ImplDefIdCached(ctx.impl_def_ids_lookup.len());
         ctx.impl_def_ids_lookup.push(impl_def);
         ctx.impl_def_ids.insert(impl_def_id, id);
@@ -1361,7 +1361,7 @@ impl ExternTypeIdCached {
         if let Some(id) = ctx.extern_type_ids.get(&extern_type_id) {
             return *id;
         }
-        let extern_type = ExternTypeCached::new(extern_type_id.lookup_intern(ctx.db), ctx);
+        let extern_type = ExternTypeCached::new(extern_type_id.long(ctx.db).clone(), ctx);
         let id = ExternTypeIdCached(ctx.extern_type_ids_lookup.len());
         ctx.extern_type_ids_lookup.push(extern_type);
         ctx.extern_type_ids.insert(extern_type_id, id);
@@ -1410,7 +1410,7 @@ impl ExternFunctionIdCached {
             return *id;
         }
         let extern_function =
-            ExternFunctionCached::new(extern_function_id.lookup_intern(ctx.db), ctx);
+            ExternFunctionCached::new(extern_function_id.long(ctx.db).clone(), ctx);
         let id = ExternFunctionIdCached(ctx.extern_function_ids_lookup.len());
         ctx.extern_function_ids_lookup.push(extern_function);
         ctx.extern_function_ids.insert(extern_function_id, id);
@@ -1459,7 +1459,7 @@ impl MacroDeclarationIdCached {
             return *id;
         }
         let macro_declaration =
-            MacroDeclarationCached::new(macro_declaration_id.lookup_intern(ctx.db), ctx);
+            MacroDeclarationCached::new(macro_declaration_id.long(ctx.db).clone(), ctx);
         let id = MacroDeclarationIdCached(ctx.macro_declaration_ids_lookup.len());
         ctx.macro_declaration_ids_lookup.push(macro_declaration);
         ctx.macro_declaration_ids.insert(macro_declaration_id, id);
@@ -1499,7 +1499,7 @@ impl GlobalUseIdCached {
         if let Some(id) = ctx.global_use_ids.get(&global_use_id) {
             return *id;
         }
-        let global_use = GlobalUseCached::new(global_use_id.lookup_intern(ctx.db), ctx);
+        let global_use = GlobalUseCached::new(global_use_id.long(ctx.db).clone(), ctx);
         let id = GlobalUseIdCached(ctx.global_use_ids_lookup.len());
         ctx.global_use_ids_lookup.push(global_use);
         ctx.global_use_ids.insert(global_use_id, id);
@@ -1652,8 +1652,7 @@ impl SyntaxStablePtrIdCached {
         if let Some(id) = ctx.syntax_stable_ptr_ids.get(&syntax_stable_ptr_id) {
             return *id;
         }
-        let stable_ptr =
-            SyntaxStablePtrCached::new(syntax_stable_ptr_id.lookup_intern(ctx.db), ctx);
+        let stable_ptr = SyntaxStablePtrCached::new(syntax_stable_ptr_id.long(ctx.db).clone(), ctx);
         let id = SyntaxStablePtrIdCached(ctx.syntax_stable_ptr_ids_lookup.len());
         ctx.syntax_stable_ptr_ids_lookup.push(stable_ptr);
         ctx.syntax_stable_ptr_ids.insert(syntax_stable_ptr_id, id);
@@ -1729,7 +1728,7 @@ impl GreenIdCached {
         if let Some(id) = ctx.green_ids.get(&green_id) {
             return *id;
         }
-        let green_node = GreenNodeCached::new(green_id.lookup_intern(ctx.db).as_ref(), ctx);
+        let green_node = GreenNodeCached::new(green_id.long(ctx.db).as_ref(), ctx);
         let id = GreenIdCached(ctx.green_ids_lookup.len());
         ctx.green_ids_lookup.push(green_node);
         ctx.green_ids.insert(green_id, id);
@@ -1786,7 +1785,7 @@ impl FileIdCached {
         if let Some(id) = ctx.file_ids.get(&file_id) {
             return *id;
         }
-        let file = FileCached::new(&file_id.lookup_intern(ctx.db), ctx);
+        let file = FileCached::new(file_id.long(ctx.db), ctx);
         let id = FileIdCached(ctx.file_ids_lookup.len());
         ctx.file_ids_lookup.push(file);
         ctx.file_ids.insert(file_id, id);
@@ -1849,11 +1848,11 @@ impl PluginGeneratedFileCached {
         plugin_generated_file: PluginGeneratedFileId<'db>,
         ctx: &mut DefCacheSavingContext<'db>,
     ) -> Self {
-        let long_id = plugin_generated_file.lookup_intern(ctx.db);
+        let long_id = plugin_generated_file.long(ctx.db);
         Self {
             module_id: ModuleIdCached::new(long_id.module_id, ctx),
             stable_ptr: SyntaxStablePtrIdCached::new(long_id.stable_ptr, ctx),
-            name: long_id.name,
+            name: long_id.name.clone(),
         }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> PluginGeneratedFileId<'db> {

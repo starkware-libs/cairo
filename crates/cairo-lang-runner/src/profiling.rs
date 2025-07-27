@@ -7,8 +7,8 @@ use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{LookupIntern, require};
 use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use itertools::{Itertools, chain};
 use smol_str::SmolStr;
@@ -730,7 +730,7 @@ fn is_cairo_trace(
     sierra_trace.iter().all(|sierra_function_idx| {
         let sierra_function = &sierra_program.funcs[*sierra_function_idx];
         let lowering_function_id = db.lookup_sierra_function(sierra_function.id.clone());
-        matches!(lowering_function_id.lookup_intern(db), FunctionLongId::Semantic(_))
+        matches!(lowering_function_id.long(db), FunctionLongId::Semantic(_))
     })
 }
 

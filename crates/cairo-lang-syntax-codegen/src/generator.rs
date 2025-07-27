@@ -176,7 +176,7 @@ fn generate_ast_code() -> rust::Tokens {
         use std::sync::Arc;
 
         use cairo_lang_filesystem::span::TextWidth;
-        use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
+        use cairo_lang_utils::{extract_matches, Intern};
         use smol_str::SmolStr;
 
         use super::element_list::ElementList;
@@ -238,7 +238,7 @@ fn gen_list_code(name: String, element_type: String) -> rust::Tokens {
                 db: &'db dyn SyntaxGroup, children: &[$(&element_green_name)<'db>]
             ) -> $(&green_name)<'db> {
                 let width = children.iter().map(|id|
-                    id.0.lookup_intern(db).width()).sum();
+                    id.0.long(db).width()).sum();
                 $(&green_name)(Arc::new(GreenNode {
                     kind: SyntaxKind::$(&name),
                     details: GreenNodeDetails::Node {
@@ -295,7 +295,7 @@ fn gen_separated_list_code(
                 db: &'db dyn SyntaxGroup, children: &[$(&element_or_separator_green_name)<'db>]
             ) -> $(&green_name)<'db> {
                 let width = children.iter().map(|id|
-                    id.id().lookup_intern(db).width()).sum();
+                    id.id().long(db).width()).sum();
                 $(&green_name)(Arc::new(GreenNode {
                     kind: SyntaxKind::$(&name),
                     details: GreenNodeDetails::Node {
@@ -490,7 +490,7 @@ fn gen_enum_code(
                 }
             }
             fn stable_ptr(&self, db: &'db dyn SyntaxGroup) -> Self::StablePtr {
-                $(&ptr_name)(self.as_syntax_node().lookup_intern(db).stable_ptr)
+                $(&ptr_name)(self.as_syntax_node().long(db).stable_ptr)
             }
         }
         impl<'db> $(&name)<'db> {
@@ -520,7 +520,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
                 }).intern(db))
             }
             fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-                extract_matches!(&self.node.lookup_intern(db).green.lookup_intern(db).details,
+                extract_matches!(&self.node.long(db).green.long(db).details,
                     GreenNodeDetails::Token).clone()
             }
         }
@@ -545,7 +545,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
         impl<'db> $(&green_name)<'db> {
             pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
                 extract_matches!(
-                    &self.0.lookup_intern(db).details, GreenNodeDetails::Token).clone()
+                    &self.0.long(db).details, GreenNodeDetails::Token).clone()
             }
         }
         impl<'db> TypedSyntaxNode<'db> for $(&name)<'db>{
@@ -559,7 +559,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
                 }).intern(db))
             }
             fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
-                match node.lookup_intern(db).green.lookup_intern(db).details {
+                match node.long(db).green.long(db).details {
                     GreenNodeDetails::Token(_) => Self { node },
                     GreenNodeDetails::Node { .. } => panic!(
                         "Expected a token {:?}, not an internal node",
@@ -568,7 +568,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
                 }
             }
             fn cast(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Option<Self> {
-                match node.lookup_intern(db).green.lookup_intern(db).details {
+                match node.long(db).green.long(db).details {
                     GreenNodeDetails::Token(_) => Some(Self { node }),
                     GreenNodeDetails::Node { .. } => None,
                 }
@@ -614,7 +614,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         if *key {
             ptr_getters.extend(quote! {
                 pub fn $(&key_name_green)(self, db: &'db dyn SyntaxGroup) -> $(&child_green)<'db> {
-                    let ptr = self.0.lookup_intern(db);
+                    let ptr = self.0.long(db);
                     if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
                         $(&child_green)(key_fields[$key_field_index])
                     } else {
@@ -640,19 +640,19 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 ) -> Self::Green {
                     let children = [$args];
                     let width =
-                        children.into_iter().map(|id: GreenId<'_>| id.lookup_intern(db).width()).sum();
+                        children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
                     $(&green_name)(Arc::new(GreenNode {
                         kind: SyntaxKind::$(&name),
                         details: GreenNodeDetails::Node { children: children.into(), width },
                     }).intern(db))
                 }
                 fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-                    let GreenNodeDetails::Node{children,..} = &self.node.lookup_intern(db).green.lookup_intern(db).details else {
+                    let GreenNodeDetails::Node{children,..} = &self.node.long(db).green.long(db).details else {
                         unreachable!("Expected a node, not a token");
                     };
 
                     extract_matches!(
-                        &children[1].lookup_intern(db).details,
+                        &children[1].long(db).details,
                         GreenNodeDetails::Token
                     )
                     .clone()
@@ -666,7 +666,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 pub fn new_green(db: &'db dyn SyntaxGroup, $params) -> $(&green_name)<'db> {
                     let children = [$args];
                     let width =
-                        children.into_iter().map(|id: GreenId<'_>| id.lookup_intern(db).width()).sum();
+                        children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
                     $(&green_name)(Arc::new(GreenNode {
                         kind: SyntaxKind::$(&name),
                         details: GreenNodeDetails::Node { children: children.into(), width },

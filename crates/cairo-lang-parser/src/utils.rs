@@ -8,7 +8,7 @@ use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax::node::ast::SyntaxFile;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use cairo_lang_utils::{Intern, Upcast};
 use itertools::chain;
 
 use crate::ParserDiagnostic;
@@ -137,7 +137,7 @@ pub fn get_syntax_root_and_diagnostics_from_file(
 ) -> (SyntaxNode<'_>, Diagnostics<'_, ParserDiagnostic<'_>>) {
     let file_id = FileId::new_on_disk(db, cairo_filepath);
     let contents = db.file_content(file_id).unwrap();
-    get_syntax_root_and_diagnostics(db, file_id, contents.lookup_intern(db).as_ref())
+    get_syntax_root_and_diagnostics(db, file_id, contents.long(db).as_ref())
 }
 
 /// Returns the syntax_root and diagnostic of a file in the db.

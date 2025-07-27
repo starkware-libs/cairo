@@ -8,9 +8,7 @@ use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::{
-    Intern, LookupIntern, OptionFrom, extract_matches, require, try_extract_matches,
-};
+use cairo_lang_utils::{Intern, OptionFrom, extract_matches, require, try_extract_matches};
 use num_bigint::BigInt;
 use num_traits::{Num, Signed, ToPrimitive, Zero};
 use smol_str::SmolStr;
@@ -399,13 +397,13 @@ pub fn get_enum_concrete_variant<'db>(
     variant_name: &str,
 ) -> ConcreteVariant<'db> {
     let ty = get_ty_by_name(db, module_id, enum_name.into(), generic_args);
-    let concrete_ty = extract_matches!(ty.lookup_intern(db), TypeLongId::Concrete);
+    let concrete_ty = extract_matches!(ty.long(db), TypeLongId::Concrete);
     let concrete_enum_id = extract_matches!(concrete_ty, ConcreteTypeId::Enum);
     let enum_id = concrete_enum_id.enum_id(db);
     let variant_key_smol: SmolStr = variant_name.into();
     let variant_id = db.enum_variants(enum_id).unwrap()[&variant_key_smol.intern(db)];
     let variant = db.variant_semantic(enum_id, variant_id).unwrap();
-    db.concrete_enum_variant(concrete_enum_id, &variant).unwrap()
+    db.concrete_enum_variant(*concrete_enum_id, &variant).unwrap()
 }
 
 /// Gets a [ConcreteVariant] instance for an enum variant from the core module, by name.
@@ -462,11 +460,11 @@ pub fn unwrap_error_propagation_type<'db>(
     db: &'db dyn SemanticGroup,
     ty: TypeId<'db>,
 ) -> Option<ErrorPropagationType<'db>> {
-    match ty.lookup_intern(db) {
+    match ty.long(db) {
         // Only enums may be `Result` and `Option` types.
         TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(enm)) => {
             if let [ok_variant, err_variant] =
-                db.concrete_enum_variants(enm).to_option()?.as_slice()
+                db.concrete_enum_variants(*enm).to_option()?.as_slice()
             {
                 let name = enm.enum_id(db).name(db);
                 if name == "Option" {
@@ -848,9 +846,9 @@ pub fn try_extract_nz_wrapped_type<'db>(
     db: &'db dyn SemanticGroup,
     ty: TypeId<'db>,
 ) -> Option<TypeId<'db>> {
-    let concrete_ty = try_extract_matches!(ty.lookup_intern(db), TypeLongId::Concrete)?;
+    let concrete_ty = try_extract_matches!(ty.long(db), TypeLongId::Concrete)?;
     let extern_ty = try_extract_matches!(concrete_ty, ConcreteTypeId::Extern)?;
-    let ConcreteExternTypeLongId { extern_type_id, generic_args } = extern_ty.lookup_intern(db);
+    let ConcreteExternTypeLongId { extern_type_id, generic_args } = extern_ty.long(db);
     let [GenericArgumentId::Type(inner)] = generic_args[..] else { return None };
     (extern_type_id.name(db) == "NonZero").then_some(inner)
 }

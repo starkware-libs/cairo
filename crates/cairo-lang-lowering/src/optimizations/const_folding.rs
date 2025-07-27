@@ -17,7 +17,7 @@ use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, extract_matches, try_extract_matches};
+use cairo_lang_utils::{Intern, extract_matches, try_extract_matches};
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
@@ -127,7 +127,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         function_id: ConcreteFunctionWithBodyId<'db>,
         variables: &'mt mut Arena<Variable<'db>>,
     ) -> Self {
-        let caller_base = match function_id.lookup_intern(db) {
+        let caller_base = match function_id.long(db) {
             ConcreteFunctionWithBodyLongId::Specialized(specialized_func) => specialized_func.base,
             _ => function_id,
         };
@@ -620,7 +620,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         }
 
         if let ConcreteFunctionWithBodyLongId::Specialized(specialized_function) =
-            base.lookup_intern(self.db)
+            base.long(self.db)
         {
             // Canonicalize the specialization rather than adding a specialization of a specialized
             // function.
@@ -829,7 +829,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     };
                     let enum_ty = function.signature(db).ok()?.return_type;
                     let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) =
-                        enum_ty.lookup_intern(db)
+                        enum_ty.long(db)
                     else {
                         return None;
                     };
@@ -848,7 +848,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                         })],
                         BlockEnd::Match {
                             info: MatchInfo::Enum(MatchEnumInfo {
-                                concrete_enum_id,
+                                concrete_enum_id: *concrete_enum_id,
                                 input: VarUsage { var_id: result, location: info.location },
                                 arms: core::mem::take(&mut info.arms),
                                 location: info.location,
@@ -914,7 +914,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let (value, nz_ty) = self.as_int_ex(input_var)?;
             let generic_arg = generic_args[1];
             let constrain_value = extract_matches!(generic_arg, GenericArgumentId::Constant)
-                .lookup_intern(db)
+                .long(db)
+                .clone()
                 .into_int()
                 .unwrap();
             let arm_idx = if value < &constrain_value { 0 } else { 1 };
@@ -1080,7 +1081,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         match var_info {
             VarInfo::Const(c) => Some(SpecializationArg::Const(c.clone())),
             VarInfo::Array(infos) if infos.is_empty() => {
-                let TypeLongId::Concrete(concrete_ty) = ty.lookup_intern(self.db) else {
+                let TypeLongId::Concrete(concrete_ty) = ty.long(self.db) else {
                     unreachable!("Expected a concrete type");
                 };
                 let [GenericArgumentId::Type(inner_ty)] = &concrete_ty.generic_args(self.db)[..]
@@ -1091,13 +1092,13 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             }
             VarInfo::Struct(infos) => {
                 let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) =
-                    ty.lookup_intern(self.db)
+                    ty.long(self.db)
                 else {
                     // TODO(ilya): Support closures and fixed size arrays.
                     return None;
                 };
 
-                let members = self.db.concrete_struct_members(concrete_struct).unwrap();
+                let members = self.db.concrete_struct_members(*concrete_struct).unwrap();
                 let struct_args = zip_eq(members.values(), infos)
                     .map(|(member, opt_var_info)| {
                         self.try_get_specialization_arg(opt_var_info?.clone(), member.ty)

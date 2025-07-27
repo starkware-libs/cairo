@@ -92,11 +92,6 @@ pub trait Intern<'db, Target> {
     fn intern(self, db: &'db dyn salsa::Database) -> Target;
 }
 
-#[cfg(feature = "std")]
-pub trait LookupIntern<'db, Target> {
-    fn lookup_intern(self, db: &'db dyn salsa::Database) -> Target;
-}
-
 /// TODO(eytan-starkware): Remove this macro entirely and rely on `salsa::interned`.
 // Defines a short id struct for use with salsa interning.
 // Interning is the process of representing a value as an id in a table.
@@ -125,12 +120,6 @@ macro_rules! define_short_id {
         impl<'db> cairo_lang_utils::Intern<'db, $short_id<'db>> for $long_id {
             fn intern(self, db: &'db dyn salsa::Database) -> $short_id<'db> {
                 $short_id::new(db, self)
-            }
-        }
-
-        impl<'db> cairo_lang_utils::LookupIntern<'db, $long_id> for $short_id<'db> {
-            fn lookup_intern(self, db: &'db dyn salsa::Database) -> $long_id {
-                self.long(db).clone()
             }
         }
 

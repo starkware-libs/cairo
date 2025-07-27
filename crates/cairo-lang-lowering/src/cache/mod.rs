@@ -47,8 +47,8 @@ use cairo_lang_syntax::node::ast::{
     TraitItemConstantPtr, TraitItemFunctionPtr, TraitItemImplPtr, TraitItemTypePtr, UsePathLeafPtr,
     VariantPtr,
 };
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
 use id_arena::Arena;
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
@@ -1445,7 +1445,7 @@ impl FunctionIdCached {
         if let Some(id) = ctx.function_ids.get(&function_id) {
             return *id;
         }
-        let function = FunctionCached::new(function_id.lookup_intern(ctx.db), ctx);
+        let function = FunctionCached::new(function_id.long(ctx.db).clone(), ctx);
         let id = FunctionIdCached(ctx.function_ids_lookup.len());
         ctx.function_ids_lookup.push(function);
         ctx.function_ids.insert(function_id, id);
@@ -1506,7 +1506,7 @@ impl SemanticFunctionIdCached {
         if let Some(id) = ctx.function_ids.get(&function_id) {
             return *id;
         }
-        let function = SemanticFunctionCached::new(function_id.lookup_intern(ctx.db), ctx);
+        let function = SemanticFunctionCached::new(function_id.long(ctx.db).clone(), ctx);
         let id = SemanticFunctionIdCached(ctx.function_ids_lookup.len());
         ctx.function_ids_lookup.push(function);
         ctx.function_ids.insert(function_id, id);
@@ -1619,8 +1619,9 @@ impl SemanticConcreteFunctionWithBodyCached {
                 ctx,
             ),
             generic_args: function_id
-                .lookup_intern(ctx.db)
+                .long(ctx.db)
                 .generic_args
+                .clone()
                 .into_iter()
                 .map(|arg| GenericArgumentCached::new(arg, ctx))
                 .collect(),
@@ -1915,7 +1916,7 @@ impl GenericArgumentCached {
             }
             semantic::GenericArgumentId::Constant(const_value_id) => {
                 GenericArgumentCached::Value(ConstValueCached::new(
-                    const_value_id.lookup_intern(ctx.db), // todo intern
+                    const_value_id.long(ctx.db).clone(), // todo intern
                     ctx,
                 ))
             }
@@ -1976,7 +1977,7 @@ impl TypeCached {
             }
             semantic::TypeLongId::FixedSizeArray { type_id, size } => TypeCached::FixedSizeArray(
                 TypeIdCached::new(type_id, ctx),
-                ConstValueCached::new(size.lookup_intern(ctx.db), ctx),
+                ConstValueCached::new(size.long(ctx.db).clone(), ctx),
             ),
             TypeLongId::Closure(closure_ty) => {
                 TypeCached::ClosureType(ClosureTypeCached::new(closure_ty, ctx))
@@ -2017,7 +2018,7 @@ impl TypeIdCached {
         if let Some(id) = ctx.type_ids.get(&ty) {
             return *id;
         }
-        let ty_long = TypeCached::new(ty.lookup_intern(ctx.db), ctx);
+        let ty_long = TypeCached::new(ty.long(ctx.db).clone(), ctx);
         let id = TypeIdCached(ctx.type_ids_lookup.len());
         ctx.type_ids_lookup.push(ty_long);
         ctx.type_ids.insert(ty, id);
@@ -2212,7 +2213,7 @@ impl ImplIdCached {
         if let Some(id) = ctx.impl_ids.get(&impl_id) {
             return *id;
         }
-        let imp = ImplCached::new(impl_id.lookup_intern(ctx.db), ctx);
+        let imp = ImplCached::new(impl_id.long(ctx.db).clone(), ctx);
         let id = ImplIdCached(ctx.impl_ids_lookup.len());
         ctx.impl_ids_lookup.push(imp);
         ctx.impl_ids.insert(impl_id, id);
@@ -2240,11 +2241,12 @@ impl ConcreteImplCached {
         concrete_impl: semantic::ConcreteImplId<'db>,
         ctx: &mut SemanticCacheSavingContext<'db>,
     ) -> Self {
-        let long_id = concrete_impl.lookup_intern(ctx.db);
+        let long_id = concrete_impl.long(ctx.db);
         Self {
             impl_def_id: ImplDefIdCached::new(long_id.impl_def_id, &mut ctx.defs_ctx),
             generic_args: long_id
                 .generic_args
+                .clone()
                 .into_iter()
                 .map(|arg| GenericArgumentCached::new(arg, ctx))
                 .collect(),
@@ -2313,17 +2315,19 @@ impl GeneratedImplCached {
         generated_impl: GeneratedImplId<'db>,
         ctx: &mut SemanticCacheSavingContext<'db>,
     ) -> Self {
-        let generated_impl = generated_impl.lookup_intern(ctx.db);
+        let generated_impl = generated_impl.long(ctx.db);
         Self {
             concrete_trait: ConcreteTraitCached::new(generated_impl.concrete_trait, ctx),
             generic_params: generated_impl
                 .generic_params
+                .clone()
                 .into_iter()
                 .map(|param| SemanticGenericParamCached::new(param, ctx))
                 .collect(),
             impl_items: generated_impl
                 .impl_items
                 .0
+                .clone()
                 .into_iter()
                 .map(|(k, v)| (TraitTypeCached::new(k, ctx), TypeIdCached::new(v, ctx)))
                 .collect(),
@@ -2507,11 +2511,12 @@ impl ConcreteEnumCached {
         concrete_enum: semantic::ConcreteEnumId<'db>,
         ctx: &mut SemanticCacheSavingContext<'db>,
     ) -> Self {
-        let long_id = concrete_enum.lookup_intern(ctx.db);
+        let long_id = concrete_enum.long(ctx.db);
         Self {
             enum_id: LanguageElementCached::new(long_id.enum_id, &mut ctx.defs_ctx),
             generic_args: long_id
                 .generic_args
+                .clone()
                 .into_iter()
                 .map(|arg| GenericArgumentCached::new(arg, ctx))
                 .collect(),
@@ -2541,11 +2546,12 @@ impl ConcreteStructCached {
         concrete_struct: semantic::ConcreteStructId<'db>,
         ctx: &mut SemanticCacheSavingContext<'db>,
     ) -> Self {
-        let long_id = concrete_struct.lookup_intern(ctx.db);
+        let long_id = concrete_struct.long(ctx.db);
         Self {
             struct_id: LanguageElementCached::new(long_id.struct_id, &mut ctx.defs_ctx),
             generic_args: long_id
                 .generic_args
+                .clone()
                 .into_iter()
                 .map(|arg| GenericArgumentCached::new(arg, ctx))
                 .collect(),
@@ -2575,11 +2581,12 @@ impl ConcreteExternTypeCached {
         concrete_extern_type: semantic::ConcreteExternTypeId<'db>,
         ctx: &mut SemanticCacheSavingContext<'db>,
     ) -> Self {
-        let long_id = concrete_extern_type.lookup_intern(ctx.db);
+        let long_id = concrete_extern_type.long(ctx.db);
         Self {
             language_element: LanguageElementCached::new(long_id.extern_type_id, &mut ctx.defs_ctx),
             generic_args: long_id
                 .generic_args
+                .clone()
                 .into_iter()
                 .map(|arg| GenericArgumentCached::new(arg, ctx))
                 .collect(),
@@ -2612,11 +2619,12 @@ impl ConcreteTraitCached {
         concrete_trait: semantic::ConcreteTraitId<'db>,
         ctx: &mut SemanticCacheSavingContext<'db>,
     ) -> Self {
-        let long_id = concrete_trait.lookup_intern(ctx.db);
+        let long_id = concrete_trait.long(ctx.db);
         Self {
             trait_id: LanguageElementCached::new(long_id.trait_id, &mut ctx.defs_ctx),
             generic_args: long_id
                 .generic_args
+                .clone()
                 .into_iter()
                 .map(|arg| GenericArgumentCached::new(arg, ctx))
                 .collect(),
@@ -2684,7 +2692,7 @@ impl LocationIdCached {
         if let Some(id) = ctx.location_ids.get(&location_id) {
             return *id;
         }
-        let location = LocationCached::new(location_id.lookup_intern(ctx.db), ctx);
+        let location = LocationCached::new(location_id.long(ctx.db).clone(), ctx);
         let id = LocationIdCached(ctx.location_ids_lookup.len());
         ctx.location_ids_lookup.push(location);
         ctx.location_ids.insert(location_id, id);

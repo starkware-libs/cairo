@@ -1,5 +1,5 @@
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
+use cairo_lang_utils::{Intern, define_short_id};
 
 use super::dedup_blocks::dedup_blocks;
 use super::early_unsafe_panic::early_unsafe_panic;
@@ -122,7 +122,7 @@ impl<'db> OptimizationStrategyId<'db> {
         function: ConcreteFunctionWithBodyId<'db>,
         lowered: &mut Lowered<'db>,
     ) -> Maybe<()> {
-        for phase in self.lookup_intern(db).0 {
+        for phase in self.long(db).0.clone() {
             phase.apply(db, function, lowered)?;
         }
 

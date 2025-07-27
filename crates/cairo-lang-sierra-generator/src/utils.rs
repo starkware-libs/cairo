@@ -12,7 +12,7 @@ use cairo_lang_sierra::extensions::{
 };
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, GenericLibfuncId};
 use cairo_lang_sierra::program::{self, FunctionSignature, GenericArg};
-use cairo_lang_utils::{LookupIntern, extract_matches};
+use cairo_lang_utils::extract_matches;
 use semantic::items::constant::ConstValue;
 use semantic::items::functions::GenericFunctionId;
 use smol_str::SmolStr;
@@ -384,9 +384,8 @@ pub fn get_concrete_libfunc_id<'db>(
 
     assert!(!with_coupon, "Coupon cannot be used with extern functions.");
 
-    let semantic =
-        extract_matches!(function.lookup_intern(db), lowering::ids::FunctionLongId::Semantic);
-    let concrete_function = semantic.lookup_intern(db).function;
+    let semantic = extract_matches!(function.long(db), lowering::ids::FunctionLongId::Semantic);
+    let concrete_function = semantic.long(db).function.clone();
     let GenericFunctionId::Extern(extern_id) = concrete_function.generic_function else {
         panic!("Expected an extern function, found: {:?}", concrete_function.full_path(db));
     };
@@ -400,7 +399,8 @@ pub fn get_concrete_libfunc_id<'db>(
             }
             semantic::GenericArgumentId::Constant(value_id) => {
                 let size = value_id
-                    .lookup_intern(db)
+                    .long(db)
+                    .clone()
                     .into_int()
                     .expect("Expected ConstValue::Int for size");
 

@@ -4,7 +4,6 @@ use cairo_lang_filesystem::ids::{FileId, FileKind};
 use cairo_lang_syntax::node::ast::{Expr, StatementList, SyntaxFile};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::LookupIntern;
 
 use crate::diagnostic::ParserDiagnostic;
 use crate::parser::Parser;
@@ -46,11 +45,10 @@ pub fn priv_file_syntax_data<'a>(db: &'a dyn ParserGroup, file_id: FileId<'a>) -
     let mut diagnostics = DiagnosticsBuilder::default();
     let syntax = db.file_content(file_id).to_maybe().map(|s| match file_id.kind(db) {
         FileKind::Module => {
-            Parser::parse_file(db, &mut diagnostics, file_id, s.lookup_intern(db).as_ref())
-                .as_syntax_node()
+            Parser::parse_file(db, &mut diagnostics, file_id, s.long(db).as_ref()).as_syntax_node()
         }
         FileKind::Expr => {
-            Parser::parse_file_expr(db, &mut diagnostics, file_id, s.lookup_intern(db).as_ref())
+            Parser::parse_file_expr(db, &mut diagnostics, file_id, s.long(db).as_ref())
                 .as_syntax_node()
         }
         FileKind::StatementList => {

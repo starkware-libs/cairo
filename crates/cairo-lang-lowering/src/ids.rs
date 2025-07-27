@@ -12,7 +12,7 @@ use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
 use cairo_lang_syntax::node::ast::ExprPtr;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
-use cairo_lang_utils::{Intern, LookupIntern, define_short_id, try_extract_matches};
+use cairo_lang_utils::{Intern, define_short_id, try_extract_matches};
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{ExternFunctionId, FreeFunctionId};
 use itertools::zip_eq;
@@ -70,7 +70,7 @@ impl<'db> FunctionWithBodyId<'db> {
         &self,
         db: &'db dyn LoweringGroup,
     ) -> cairo_lang_defs::ids::FunctionWithBodyId<'db> {
-        self.lookup_intern(db).base_semantic_function(db)
+        self.long(db).base_semantic_function(db)
     }
     pub fn signature(&self, db: &'db dyn LoweringGroup) -> Maybe<Signature<'db>> {
         Ok(db.priv_function_with_body_lowering(*self)?.signature.clone())
@@ -79,7 +79,7 @@ impl<'db> FunctionWithBodyId<'db> {
         &self,
         db: &'db dyn LoweringGroup,
     ) -> Maybe<ConcreteFunctionWithBodyId<'db>> {
-        Ok(self.lookup_intern(db).to_concrete(db)?.intern(db))
+        Ok(self.long(db).to_concrete(db)?.intern(db))
     }
 }
 pub trait SemanticFunctionWithBodyIdEx<'db> {
@@ -129,7 +129,7 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
     /// Returns the generic version of the function if it exists, otherwise the function is a
     /// specialized function and the `SpecializedFunction` struct is returned.
     pub fn generic_or_specialized(&self, db: &'db dyn LoweringGroup) -> GenericOrSpecialized<'db> {
-        self.lookup_intern(db).generic_or_specialized(db)
+        self.long(db).clone().generic_or_specialized(db)
     }
 }
 
@@ -208,13 +208,13 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
         ConcreteFunctionWithBodyLongId::Semantic(semantic).intern(db)
     }
     pub fn substitution(&self, db: &'db dyn LoweringGroup) -> Maybe<GenericSubstitution<'db>> {
-        self.lookup_intern(db).substitution(db)
+        self.long(db).substitution(db)
     }
     pub fn function_id(&self, db: &'db dyn LoweringGroup) -> Maybe<FunctionId<'db>> {
-        self.lookup_intern(db).function_id(db)
+        self.long(db).function_id(db)
     }
     pub fn full_path(&self, db: &dyn LoweringGroup) -> String {
-        self.lookup_intern(db).full_path(db)
+        self.long(db).full_path(db)
     }
     pub fn signature(&self, db: &'db dyn LoweringGroup) -> Maybe<Signature<'db>> {
         match self.generic_or_specialized(db) {
@@ -237,10 +237,10 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
         &self,
         db: &'db dyn LoweringGroup,
     ) -> semantic::ConcreteFunctionWithBodyId<'db> {
-        self.lookup_intern(db).base_semantic_function(db)
+        self.long(db).base_semantic_function(db)
     }
     pub fn stable_location(&self, db: &'db dyn LoweringGroup) -> Maybe<StableLocation<'db>> {
-        Ok(match self.lookup_intern(db) {
+        Ok(match self.long(db) {
             ConcreteFunctionWithBodyLongId::Semantic(id) => id.stable_location(db),
             ConcreteFunctionWithBodyLongId::Generated(generated) => match generated.key {
                 GeneratedFunctionKey::Loop(stable_ptr) => StableLocation::new(stable_ptr.untyped()),
@@ -298,7 +298,7 @@ impl<'db> FunctionLongId<'db> {
                         let Some(GenericArgumentId::Type(ty)) = generic_args.first() else {
                             unreachable!("Expected Generated Impl to have a type argument");
                         };
-                        let TypeLongId::Closure(ty) = ty.lookup_intern(db) else {
+                        let TypeLongId::Closure(ty) = ty.long(db) else {
                             unreachable!("Expected Generated Impl to have a closure type argument");
                         };
 
@@ -354,16 +354,16 @@ impl<'db> FunctionId<'db> {
         &self,
         db: &'db dyn LoweringGroup,
     ) -> Maybe<Option<ConcreteFunctionWithBodyId<'db>>> {
-        self.lookup_intern(db).body(db)
+        self.long(db).body(db)
     }
     pub fn signature(&self, db: &'db dyn LoweringGroup) -> Maybe<Signature<'db>> {
-        self.lookup_intern(db).signature(db)
+        self.long(db).signature(db)
     }
     pub fn full_path(&self, db: &dyn LoweringGroup) -> String {
-        self.lookup_intern(db).full_path(db)
+        self.long(db).full_path(db)
     }
     pub fn semantic_full_path(&self, db: &dyn LoweringGroup) -> String {
-        self.lookup_intern(db).semantic_full_path(db)
+        self.long(db).semantic_full_path(db)
     }
     /// Returns the function as an `ExternFunctionId` and its generic arguments, if it is an
     /// `extern` functions.
@@ -371,7 +371,7 @@ impl<'db> FunctionId<'db> {
         &self,
         db: &'db dyn LoweringGroup,
     ) -> Option<(ExternFunctionId<'db>, Vec<GenericArgumentId<'db>>)> {
-        let semantic = try_extract_matches!(self.lookup_intern(db), FunctionLongId::Semantic)?;
+        let semantic = try_extract_matches!(self.long(db), FunctionLongId::Semantic)?;
         let concrete = semantic.get_concrete(db);
         Some((
             try_extract_matches!(concrete.generic_function, GenericFunctionId::Extern)?,
@@ -600,7 +600,7 @@ impl<'db> LocationId<'db> {
         db: &'db dyn LoweringGroup,
         note: DiagnosticNote<'db>,
     ) -> LocationId<'db> {
-        self.lookup_intern(db).with_note(note).intern(db)
+        self.long(db).clone().with_note(note).intern(db)
     }
 
     /// Adds a note that this location was generated while compiling an auto-generated function.

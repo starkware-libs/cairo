@@ -14,7 +14,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use cairo_lang_utils::{Intern, Upcast};
 use defs::ids::NamedLanguageElementId;
 use itertools::{Itertools, chain};
 use num_traits::ToPrimitive;
@@ -428,7 +428,7 @@ fn priv_function_with_body_lowering<'db>(
 ) -> Maybe<Arc<Lowered<'db>>> {
     let semantic_function_id = function_id.base_semantic_function(db);
     let multi_lowering = db.priv_function_with_body_multi_lowering(semantic_function_id)?;
-    let lowered = match &function_id.lookup_intern(db) {
+    let lowered = match &function_id.long(db) {
         ids::FunctionWithBodyLongId::Semantic(_) => multi_lowering.main_lowering.clone(),
         ids::FunctionWithBodyLongId::Generated { key, .. } => {
             multi_lowering.generated_lowerings[key].clone()
@@ -600,7 +600,7 @@ fn extract_coupon_function<'db>(
     concrete: ids::FunctionId<'db>,
 ) -> Maybe<Option<ids::ConcreteFunctionWithBodyId<'db>>> {
     // Check that the function is a semantic function.
-    let ids::FunctionLongId::Semantic(function_id) = concrete.lookup_intern(db) else {
+    let ids::FunctionLongId::Semantic(function_id) = concrete.long(db) else {
         return Ok(None);
     };
 
@@ -612,7 +612,7 @@ fn extract_coupon_function<'db>(
     else {
         return Ok(None);
     };
-    let name = extern_function_id.lookup_intern(db).name(db);
+    let name = extern_function_id.long(db).name(db);
     if !(name == "coupon_buy" || name == "coupon_refund") {
         return Ok(None);
     }
@@ -621,7 +621,7 @@ fn extract_coupon_function<'db>(
     let [semantic::GenericArgumentId::Type(type_id)] = concrete_function.generic_args[..] else {
         panic!("Unexpected generic_args for coupon_buy().");
     };
-    let semantic::TypeLongId::Coupon(coupon_function) = type_id.lookup_intern(db) else {
+    let semantic::TypeLongId::Coupon(coupon_function) = type_id.long(db) else {
         panic!("Unexpected generic_args for coupon_buy().");
     };
 
@@ -765,17 +765,17 @@ fn file_lowering_diagnostics<'db>(
 }
 
 fn type_size<'db>(db: &'db dyn LoweringGroup, ty: TypeId<'db>) -> usize {
-    match ty.lookup_intern(db) {
+    match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(struct_id) => db
-                .concrete_struct_members(struct_id)
+                .concrete_struct_members(*struct_id)
                 .unwrap()
                 .iter()
                 .map(|(_, member)| db.type_size(member.ty))
                 .sum::<usize>(),
             ConcreteTypeId::Enum(enum_id) => {
                 1 + db
-                    .concrete_enum_variants(enum_id)
+                    .concrete_enum_variants(*enum_id)
                     .unwrap()
                     .into_iter()
                     .map(|variant| db.type_size(variant.ty))
@@ -791,12 +791,13 @@ fn type_size<'db>(db: &'db dyn LoweringGroup, ty: TypeId<'db>) -> usize {
                 }
             }
         },
-        TypeLongId::Tuple(types) => types.into_iter().map(|ty| db.type_size(ty)).sum::<usize>(),
-        TypeLongId::Snapshot(ty) => db.type_size(ty),
+        TypeLongId::Tuple(types) => types.iter().map(|ty| db.type_size(*ty)).sum::<usize>(),
+        TypeLongId::Snapshot(ty) => db.type_size(*ty),
         TypeLongId::FixedSizeArray { type_id, size } => {
-            db.type_size(type_id)
+            db.type_size(*type_id)
                 * size
-                    .lookup_intern(db)
+                    .long(db)
+                    .clone()
                     .into_int()
                     .expect("Expected ConstValue::Int for size")
                     .to_usize()

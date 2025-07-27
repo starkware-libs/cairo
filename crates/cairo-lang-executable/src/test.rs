@@ -7,7 +7,6 @@ use cairo_lang_plugins::test_utils::expand_module_text;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
-use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::compile;
@@ -77,8 +76,11 @@ impl TestFileRunner for CompileExecutableTestRunner {
             &db,
             None,
             vec![test_module.crate_id],
-            DiagnosticsReporter::stderr()
-                .with_crates(&[test_module.crate_id.lookup_intern(&db).into_crate_input(&db)]),
+            DiagnosticsReporter::stderr().with_crates(&[test_module
+                .crate_id
+                .long(&db)
+                .clone()
+                .into_crate_input(&db)]),
             Default::default(),
         )
         .map(|compiled| compiled.compiled_function.to_string())

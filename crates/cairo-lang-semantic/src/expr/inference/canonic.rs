@@ -4,7 +4,6 @@ use cairo_lang_defs::ids::{
     TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
 };
 use cairo_lang_proc_macros::SemanticObject;
-use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::{
@@ -270,7 +269,7 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, NoError> for Canonicalizer<'db> {
             }
             return value.default_rewrite(self);
         };
-        let var = var_id.lookup_intern(self.db);
+        let var = var_id.long(self.db);
         if var.inference_id != self.to_canonic.source_inference_id {
             return value.default_rewrite(self);
         }
@@ -279,7 +278,7 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, NoError> for Canonicalizer<'db> {
         let mut var = ImplVar {
             id: *self.to_canonic.impl_var_mapping.entry(var.id).or_insert(next_id),
             inference_id: InferenceId::Canonical,
-            lookup_context: var.lookup_context,
+            lookup_context: var.lookup_context.clone(),
             concrete_trait_id: var.concrete_trait_id,
         };
         var.concrete_trait_id.default_rewrite(self)?;
@@ -378,7 +377,7 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, NoError> for Embedder<'db, '_, '_> {
             }
             return value.default_rewrite(self);
         };
-        let var = var_id.lookup_intern(self.get_db());
+        let var = var_id.long(self.get_db());
         if var.inference_id != InferenceId::Canonical {
             return value.default_rewrite(self);
         }
@@ -487,14 +486,14 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, MapperError> for Mapper<'db, '_> {
         let ImplLongId::ImplVar(var_id) = value else {
             return value.default_rewrite(self);
         };
-        let var = var_id.lookup_intern(self.get_db());
+        let var = var_id.long(self.get_db());
         let id = self
             .mapping
             .impl_var_mapping
             .get(&var.id)
             .copied()
             .ok_or(MapperError(InferenceVar::Impl(var.id)))?;
-        let var = ImplVar { id, inference_id: self.mapping.target_inference_id, ..var };
+        let var = ImplVar { id, inference_id: self.mapping.target_inference_id, ..var.clone() };
 
         *value = ImplLongId::ImplVar(var.intern(self.get_db()));
         Ok(RewriteResult::Modified)
