@@ -17,9 +17,9 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::{Itertools, chain};
 use smol_str::SmolStr;
 
@@ -926,7 +926,7 @@ pub fn try_ext_as_virtual_impl<'db>(
     db: &'db dyn DefsGroup,
     external_id: salsa::Id,
 ) -> Option<VirtualFile<'db>> {
-    let long_id = PluginGeneratedFileId::from_intern_id(external_id).lookup_intern(db);
+    let long_id = PluginGeneratedFileId::from_intern_id(external_id).long(db);
     let file_id = FileLongId::External(external_id).intern(db);
     let data = db.priv_module_sub_files(long_id.module_id, long_id.stable_ptr.file_id(db)).unwrap();
     data.files.get(&file_id).cloned()

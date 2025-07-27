@@ -30,8 +30,8 @@ use cairo_lang_semantic::items::functions::{
 };
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_plugin::test_plugin_suite;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
 use clap::Parser;
 use convert_case::Casing;
 use itertools::Itertools;
@@ -138,7 +138,7 @@ impl<'a> fmt::Display for PhasesDisplay<'a> {
             (db.baseline_optimization_strategy(), post_base_opts),
             (db.final_optimization_strategy(), final_state),
         ] {
-            for phase in strategy.lookup_intern(db).0 {
+            for phase in strategy.long(db).0.clone() {
                 let name = format!("{phase:?}").to_case(convert_case::Case::Snake);
                 phase.apply(db, function_id, &mut curr_state).unwrap();
                 add_stage_state(&name, &curr_state);

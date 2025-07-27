@@ -8,7 +8,7 @@ use cairo_lang_semantic::usage::{MemberPath, Usage};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{Intern, LookupIntern, require};
+use cairo_lang_utils::{Intern, require};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 
@@ -207,7 +207,7 @@ impl<'db> BlockBuilder<'db> {
             .collect::<Option<Vec<_>>>()
             .ok_or_else(|| {
                 ctx.diagnostics.report_by_location(
-                    location.lookup_intern(ctx.db),
+                    location.long(ctx.db).clone(),
                     LoweringDiagnosticKind::UnexpectedError,
                 )
             })?;
@@ -281,7 +281,7 @@ impl<'db> BlockBuilder<'db> {
             )
             .collect();
 
-        let TypeLongId::Closure(closure_id) = expr.ty.lookup_intern(ctx.db) else {
+        let TypeLongId::Closure(closure_id) = expr.ty.long(ctx.db) else {
             unreachable!("Closure Expr should have a Closure type.");
         };
 

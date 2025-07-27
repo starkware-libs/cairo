@@ -11,8 +11,8 @@ use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function, setu
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
+use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{LookupIntern, extract_matches};
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
@@ -120,7 +120,7 @@ fn test_location_and_diagnostics() {
             db,
             DiagnosticNote::with_location("Adding destructor for".to_string(), expr_location),
         )
-        .lookup_intern(db);
+        .long(db);
 
     assert_eq!(
         format!("{:?}", location.debug(db)),
@@ -141,7 +141,7 @@ a = a * 3
     let mut builder = DiagnosticsBuilder::default();
 
     builder.add(LoweringDiagnostic {
-        location,
+        location: location.clone(),
         kind: LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
     });
 

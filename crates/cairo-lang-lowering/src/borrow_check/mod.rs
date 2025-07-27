@@ -5,8 +5,8 @@ mod test;
 use cairo_lang_defs::ids::TraitFunctionId;
 use cairo_lang_diagnostics::{DiagnosticNote, Diagnostics};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::{Itertools, zip_eq};
 
 use self::analysis::{Analyzer, StatementLocation};
@@ -72,12 +72,12 @@ impl<'db> DropPosition<'db> {
                 ("the variable needs to be dropped due to the divergence here", location)
             }
         };
-        let location = location.lookup_intern(db);
+        let location = location.long(db);
         notes.push(DiagnosticNote::with_location(
             text.into(),
             location.stable_location.diagnostic_location(db),
         ));
-        notes.extend(location.notes);
+        notes.extend(location.notes.clone());
     }
 }
 
@@ -132,7 +132,7 @@ impl<'db, 'mt> DemandReporter<VariableId<'db>, PanicState> for BorrowChecker<'db
             None
         };
 
-        let mut location = var.location.lookup_intern(db);
+        let mut location = var.location.long(db).clone();
         if let Some(drop_position) = opt_drop_position {
             drop_position.enrich_as_notes(db, &mut location.notes);
         }
@@ -158,7 +158,8 @@ impl<'db, 'mt> DemandReporter<VariableId<'db>, PanicState> for BorrowChecker<'db
         if let Err(inference_error) = var.info.copyable.clone() {
             self.diagnostics.report_by_location(
                 next_usage_position
-                    .lookup_intern(self.db)
+                    .long(self.db)
+                    .clone()
                     .add_note_with_location(self.db, "variable was previously used here", position)
                     .with_note(DiagnosticNote::text_only(inference_error.format(self.db.upcast()))),
                 VariableMoved { inference_error },
@@ -198,7 +199,7 @@ impl<'db, 'mt> Analyzer<'db, '_> for BorrowChecker<'db, 'mt, '_> {
                 let var = &self.lowered.variables[stmt.output];
                 if let Err(inference_error) = var.info.copyable.clone() {
                     self.diagnostics.report_by_location(
-                        var.location.lookup_intern(self.db).with_note(DiagnosticNote::text_only(
+                        var.location.long(self.db).clone().with_note(DiagnosticNote::text_only(
                             inference_error.format(self.db.upcast()),
                         )),
                         DesnappingANonCopyableType { inference_error },

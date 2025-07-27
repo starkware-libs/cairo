@@ -8,8 +8,8 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_utils::deque::Deque;
+use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{LookupIntern, extract_matches};
 use itertools::zip_eq;
 
 use crate::db::SemanticGroup;
@@ -497,17 +497,16 @@ impl<'db> SemanticRewriter<TypeLongId<'db>, DiagnosticAdded> for SubstitutionRew
             TypeLongId::GenericParameter(generic_param) => {
                 if let Some(generic_arg) = self.substitution.get(generic_param) {
                     let type_id = *extract_matches!(generic_arg, GenericArgumentId::Type);
-                    // return self.rewrite(type_id.lookup_intern(self.db));
-                    *value = type_id.lookup_intern(self.db);
+                    // return self.rewrite(type_id.long(self.db));
+                    *value = type_id.long(self.db).clone();
                     return Ok(RewriteResult::Modified);
                 }
             }
             TypeLongId::ImplType(impl_type_id) => {
                 let impl_type_id_rewrite_result = self.internal_rewrite(impl_type_id)?;
-                let new_value =
-                    self.db.impl_type_concrete_implized(*impl_type_id)?.lookup_intern(self.db);
-                if new_value != *value {
-                    *value = new_value;
+                let new_value = self.db.impl_type_concrete_implized(*impl_type_id)?.long(self.db);
+                if *new_value != *value {
+                    *value = new_value.clone();
                     return Ok(RewriteResult::Modified);
                 } else {
                     return Ok(impl_type_id_rewrite_result);
@@ -525,18 +524,16 @@ impl<'db> SemanticRewriter<ConstValue<'db>, DiagnosticAdded> for SubstitutionRew
                 if let Some(generic_arg) = self.substitution.get(param_id) {
                     let const_value_id = extract_matches!(generic_arg, GenericArgumentId::Constant);
 
-                    *value = const_value_id.lookup_intern(self.db);
+                    *value = const_value_id.long(self.db).clone();
                     return Ok(RewriteResult::Modified);
                 }
             }
             ConstValue::ImplConstant(impl_constant_id) => {
                 let impl_const_id_rewrite_result = self.internal_rewrite(impl_constant_id)?;
-                let new_value = self
-                    .db
-                    .impl_constant_concrete_implized_value(*impl_constant_id)?
-                    .lookup_intern(self.db);
-                if new_value != *value {
-                    *value = new_value;
+                let new_value =
+                    self.db.impl_constant_concrete_implized_value(*impl_constant_id)?.long(self.db);
+                if *new_value != *value {
+                    *value = new_value.clone();
                     return Ok(RewriteResult::Modified);
                 } else {
                     return Ok(impl_const_id_rewrite_result);
@@ -554,7 +551,8 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, DiagnosticAdded> for SubstitutionRew
             ImplLongId::GenericParameter(generic_param) => {
                 if let Some(generic_arg) = self.substitution.get(generic_param) {
                     *value = extract_matches!(generic_arg, GenericArgumentId::Impl)
-                        .lookup_intern(self.db);
+                        .long(self.db)
+                        .clone();
                     // TODO(GIL): Reduce and check for cycles when the substitution is created.
                     // Substitution is guaranteed to not contain its own variables.
                     return Ok(RewriteResult::Modified);
@@ -562,10 +560,9 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, DiagnosticAdded> for SubstitutionRew
             }
             ImplLongId::ImplImpl(impl_impl_id) => {
                 let impl_impl_id_rewrite_result = self.internal_rewrite(impl_impl_id)?;
-                let new_value =
-                    self.db.impl_impl_concrete_implized(*impl_impl_id)?.lookup_intern(self.db);
-                if new_value != *value {
-                    *value = new_value;
+                let new_value = self.db.impl_impl_concrete_implized(*impl_impl_id)?.long(self.db);
+                if *new_value != *value {
+                    *value = new_value.clone();
                     return Ok(RewriteResult::Modified);
                 } else {
                     return Ok(impl_impl_id_rewrite_result);
@@ -575,7 +572,7 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, DiagnosticAdded> for SubstitutionRew
                 let rewrite_result = self.internal_rewrite(concrete_trait_id)?;
                 if let Some(self_impl) = &self.substitution.self_impl {
                     if *concrete_trait_id == self_impl.concrete_trait(self.db)? {
-                        *value = self_impl.lookup_intern(self.db);
+                        *value = self_impl.long(self.db).clone();
                         return Ok(RewriteResult::Modified);
                     }
                 } else {
@@ -596,12 +593,12 @@ impl<'db> SemanticRewriter<GenericFunctionWithBodyId<'db>, DiagnosticAdded>
     ) -> Maybe<RewriteResult> {
         if let GenericFunctionWithBodyId::Trait(id) = value {
             if let Some(self_impl) = &self.substitution.self_impl {
-                if let ImplLongId::Concrete(concrete_impl_id) = self_impl.lookup_intern(self.db) {
+                if let ImplLongId::Concrete(concrete_impl_id) = self_impl.long(self.db) {
                     if self.rewrite(id.concrete_trait(self.db))?
                         == self_impl.concrete_trait(self.db)?
                     {
                         *value = GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
-                            concrete_impl_id,
+                            concrete_impl_id: *concrete_impl_id,
                             function_body: ImplFunctionBodyId::Trait(id.trait_function(self.db)),
                         });
                         return Ok(RewriteResult::Modified);

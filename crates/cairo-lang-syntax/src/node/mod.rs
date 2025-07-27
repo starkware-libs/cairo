@@ -4,7 +4,7 @@ use std::sync::Arc;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, define_short_id, require};
+use cairo_lang_utils::{Intern, define_short_id, require};
 use smol_str::SmolStr;
 
 use self::ast::TriviaGreen;
@@ -87,7 +87,7 @@ impl<'a> SyntaxNode<'a> {
     }
 
     pub fn offset(&self, db: &dyn SyntaxGroup) -> TextOffset {
-        self.lookup_intern(db).offset
+        self.long(db).offset
     }
     pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
         self.green_node(db).width()
@@ -110,23 +110,23 @@ impl<'a> SyntaxNode<'a> {
 
     /// Returns the green node of the syntax node.
     pub fn green_node(&self, db: &'a dyn SyntaxGroup) -> Arc<GreenNode<'a>> {
-        self.lookup_intern(db).green.lookup_intern(db)
+        self.long(db).green.long(db).clone()
     }
 
     /// Returns the span of the syntax node without trivia.
     pub fn span_without_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
-        let node = self.lookup_intern(db);
-        let green_node = node.green.lookup_intern(db);
-        let (leading, trailing) = both_trivia_width(db, &green_node);
+        let node = self.long(db);
+        let green_node = node.green.long(db);
+        let (leading, trailing) = both_trivia_width(db, green_node);
         let start = node.offset.add_width(leading);
         let end = node.offset.add_width(green_node.width()).sub_width(trailing);
         TextSpan { start, end }
     }
     pub fn parent(&self, db: &'a dyn SyntaxGroup) -> Option<SyntaxNode<'a>> {
-        self.lookup_intern(db).parent
+        self.long(db).parent
     }
     pub fn stable_ptr(&self, db: &'a dyn SyntaxGroup) -> SyntaxStablePtrId<'a> {
-        self.lookup_intern(db).stable_ptr
+        self.long(db).stable_ptr
     }
 
     /// Gets the inner token from a terminal SyntaxNode. If the given node is not a terminal,
@@ -145,14 +145,14 @@ impl<'a> SyntaxNode<'a> {
 
     /// Implementation of [SyntaxNode::get_children].
     fn get_children_impl(&self, db: &'a dyn SyntaxGroup) -> Vec<SyntaxNode<'a>> {
-        let self_long_id = self.lookup_intern(db);
+        let self_long_id = self.long(db);
         let mut offset = self_long_id.offset;
-        let self_green = self_long_id.green.lookup_intern(db);
+        let self_green = self_long_id.green.long(db);
         let children = self_green.children();
         let mut res: Vec<SyntaxNode<'_>> = Vec::with_capacity(children.len());
         let mut key_map = UnorderedHashMap::<_, usize>::default();
         for green_id in children {
-            let green = green_id.lookup_intern(db);
+            let green = green_id.long(db);
             let width = green.width();
             let kind = green.kind;
             let key_fields = key_fields::get_key_fields(kind, green.children());
@@ -178,17 +178,17 @@ impl<'a> SyntaxNode<'a> {
 
     /// Returns the start of the span of the syntax node without trivia.
     pub fn span_start_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
-        let node = self.lookup_intern(db);
-        let green_node = node.green.lookup_intern(db);
-        let leading = leading_trivia_width(db, &green_node);
+        let node = self.long(db);
+        let green_node = node.green.long(db);
+        let leading = leading_trivia_width(db, green_node);
         node.offset.add_width(leading)
     }
 
     /// Returns the end of the span of the syntax node without trivia.
     pub fn span_end_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
-        let node = self.lookup_intern(db);
-        let green_node = node.green.lookup_intern(db);
-        let trailing = trailing_trivia_width(db, &green_node);
+        let node = self.long(db);
+        let green_node = node.green.long(db);
+        let trailing = trailing_trivia_width(db, green_node);
         node.offset.add_width(green_node.width()).sub_width(trailing)
     }
 
@@ -496,7 +496,7 @@ fn leading_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> T
                 return TextWidth::default();
             }
             if green.kind.is_terminal() {
-                return children[0].lookup_intern(db).width();
+                return children[0].long(db).width();
             }
             let non_empty = find_non_empty_child(db, &mut children.iter())
                 .expect("Parent width non-empty - one of the children should be non-empty");
@@ -514,7 +514,7 @@ fn trailing_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> 
                 return TextWidth::default();
             }
             if green.kind.is_terminal() {
-                return children[2].lookup_intern(db).width();
+                return children[2].long(db).width();
             }
             let non_empty = find_non_empty_child(db, &mut children.iter().rev())
                 .expect("Parent width non-empty - one of the children should be non-empty");
@@ -532,10 +532,7 @@ fn both_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> (Tex
                 return (TextWidth::default(), TextWidth::default());
             }
             if green.kind.is_terminal() {
-                return (
-                    children[0].lookup_intern(db).width(),
-                    children[2].lookup_intern(db).width(),
-                );
+                return (children[0].long(db).width(), children[2].long(db).width());
             }
             let mut iter = children.iter();
             let first_non_empty = find_non_empty_child(db, &mut iter)
@@ -557,8 +554,10 @@ fn find_non_empty_child<'a>(
     db: &'a dyn SyntaxGroup,
     child_iter: &mut impl Iterator<Item = &'a GreenId<'a>>,
 ) -> Option<Arc<GreenNode<'a>>> {
-    child_iter.find_map(|child| {
-        let child = child.lookup_intern(db);
-        (child.width() != TextWidth::default()).then_some(child)
-    })
+    child_iter
+        .find_map(|child| {
+            let child = child.long(db);
+            (child.width() != TextWidth::default()).then_some(child)
+        })
+        .cloned()
 }

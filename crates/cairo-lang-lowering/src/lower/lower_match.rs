@@ -10,8 +10,8 @@ use cairo_lang_semantic::{
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
-use cairo_lang_utils::{LookupIntern, try_extract_matches};
 use itertools::{Itertools, zip_eq};
 use log::trace;
 use num_traits::ToPrimitive;
@@ -2250,7 +2250,7 @@ fn report_missing_arm_error<'db>(
     variants_string: String,
 ) -> LoweringFlowError<'db> {
     LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
-        location.lookup_intern(ctx.db),
+        location.long(ctx.db).clone(),
         MatchError(MatchError {
             kind: match_type,
             error: MatchDiagnostic::MissingMatchArm(variants_string),

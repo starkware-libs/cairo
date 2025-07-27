@@ -15,8 +15,8 @@ use cairo_lang_syntax::attribute::consts::{ALLOW_ATTR, STARKNET_INTERFACE_ATTR};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
 use smol_str::SmolStr;
 
 use crate::abi::{ABIError, AbiBuilder, BuilderConfig};
@@ -182,7 +182,7 @@ fn analyze_storage_struct<'db>(
 
     for (member_name, member) in members.iter() {
         let member_ast = member.id.stable_ptr(db).lookup(db);
-        let member_type = member.ty.lookup_intern(db);
+        let member_type = member.ty.long(db).clone();
         let concrete_trait_id = concrete_valid_storage_trait(db, db.intern_type(member_type));
 
         let member_allows_invalid =
@@ -218,7 +218,7 @@ fn analyze_storage_struct<'db>(
         member_analyze(
             db,
             member,
-            member_name.lookup_intern(db),
+            member_name.long(db).clone(),
             paths_data,
             &mut vec![],
             member_ast.name(db).stable_ptr(db).untyped(),
@@ -285,19 +285,18 @@ fn member_analyze<'db>(
         user_data_path.pop();
         return;
     }
-    let TypeLongId::Concrete(ConcreteTypeId::Struct(member_struct)) = member.ty.lookup_intern(db)
-    else {
+    let TypeLongId::Concrete(ConcreteTypeId::Struct(member_struct)) = member.ty.long(db) else {
         paths_data.handle(member_name, user_data_path.clone(), pointer_to_code, diagnostics);
         user_data_path.pop();
         return;
     };
     for (inner_member_name, inner_member) in
-        db.struct_members(member_struct.lookup_intern(db).struct_id).unwrap().iter()
+        db.struct_members(member_struct.long(db).struct_id).unwrap().iter()
     {
         member_analyze(
             db,
             inner_member,
-            inner_member_name.lookup_intern(db),
+            inner_member_name.long(db).clone(),
             paths_data,
             user_data_path,
             pointer_to_code,

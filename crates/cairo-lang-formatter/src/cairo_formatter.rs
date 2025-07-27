@@ -8,7 +8,7 @@ use cairo_lang_diagnostics::FormattedDiagnosticEntry;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CAIRO_FILE_EXTENSION, FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics};
-use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lang_utils::Intern;
 use diffy::{PatchFormatter, create_patch};
 use ignore::WalkBuilder;
 use ignore::types::TypesBuilder;
@@ -198,7 +198,7 @@ fn format_input(
     let original_text = db_ref
         .file_content(file_id)
         .ok_or_else(|| anyhow!("Unable to read from input."))?
-        .lookup_intern(db_ref);
+        .long(db_ref);
     let (syntax_root, diagnostics) =
         get_syntax_root_and_diagnostics(&db, file_id, original_text.as_ref());
     if diagnostics.check_error_free().is_err() {

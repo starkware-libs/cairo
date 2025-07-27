@@ -12,7 +12,7 @@ use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, define_short_id, try_extract_matches};
+use cairo_lang_utils::{Intern, OptionFrom, define_short_id, try_extract_matches};
 use itertools::{Itertools, chain};
 use num_bigint::BigInt;
 use num_traits::Zero;
@@ -74,16 +74,12 @@ impl<'db> TypeId<'db> {
     }
 
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        self.lookup_intern(db).format(db)
+        self.long(db).format(db)
     }
 
     /// Returns [Maybe::Err] if the type is [TypeLongId::Missing].
     pub fn check_not_missing(&self, db: &dyn SemanticGroup) -> Maybe<()> {
-        if let TypeLongId::Missing(diag_added) = self.lookup_intern(db) {
-            Err(diag_added)
-        } else {
-            Ok(())
-        }
+        if let TypeLongId::Missing(diag_added) = self.long(db) { Err(*diag_added) } else { Ok(()) }
     }
 
     /// Returns `true` if the type is [TypeLongId::Missing].
@@ -93,12 +89,12 @@ impl<'db> TypeId<'db> {
 
     /// Returns `true` if the type is `()`.
     pub fn is_unit(&self, db: &dyn SemanticGroup) -> bool {
-        matches!(self.lookup_intern(db), TypeLongId::Tuple(types) if types.is_empty())
+        matches!(self.long(db), TypeLongId::Tuple(types) if types.is_empty())
     }
 
     /// Returns the [TypeHead] for a type if available.
     pub fn head(&self, db: &'db dyn SemanticGroup) -> Option<TypeHead<'db>> {
-        self.lookup_intern(db).head(db)
+        self.long(db).head(db)
     }
 
     /// Returns true if the type does not depend on any generics.
@@ -115,7 +111,7 @@ impl<'db> TypeId<'db> {
     /// Type is considered phantom if it has the `#[phantom]` attribute, or is a tuple or fixed
     /// sized array containing it.
     pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
-        self.lookup_intern(db).is_phantom(db)
+        self.long(db).is_phantom(db)
     }
 
     /// Short name of the type argument.
@@ -298,11 +294,9 @@ impl<'db> ConcreteTypeId<'db> {
     }
     pub fn generic_type(&self, db: &'db dyn SemanticGroup) -> GenericTypeId<'db> {
         match self {
-            ConcreteTypeId::Struct(id) => GenericTypeId::Struct(id.lookup_intern(db).struct_id),
-            ConcreteTypeId::Enum(id) => GenericTypeId::Enum(id.lookup_intern(db).enum_id),
-            ConcreteTypeId::Extern(id) => {
-                GenericTypeId::Extern(id.lookup_intern(db).extern_type_id)
-            }
+            ConcreteTypeId::Struct(id) => GenericTypeId::Struct(id.long(db).struct_id),
+            ConcreteTypeId::Enum(id) => GenericTypeId::Enum(id.long(db).enum_id),
+            ConcreteTypeId::Extern(id) => GenericTypeId::Extern(id.long(db).extern_type_id),
         }
     }
     pub fn generic_args(
@@ -310,9 +304,9 @@ impl<'db> ConcreteTypeId<'db> {
         db: &'db dyn SemanticGroup,
     ) -> Vec<semantic::GenericArgumentId<'db>> {
         match self {
-            ConcreteTypeId::Struct(id) => id.lookup_intern(db).generic_args,
-            ConcreteTypeId::Enum(id) => id.lookup_intern(db).generic_args,
-            ConcreteTypeId::Extern(id) => id.lookup_intern(db).generic_args,
+            ConcreteTypeId::Struct(id) => id.long(db).generic_args.clone(),
+            ConcreteTypeId::Enum(id) => id.long(db).generic_args.clone(),
+            ConcreteTypeId::Extern(id) => id.long(db).generic_args.clone(),
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -372,7 +366,7 @@ semantic_object_for_id!(
 );
 impl<'db> ConcreteStructId<'db> {
     pub fn struct_id(&self, db: &'db dyn SemanticGroup) -> StructId<'db> {
-        self.lookup_intern(db).struct_id
+        self.long(db).struct_id
     }
 }
 impl<'db> DebugWithDb<'db> for ConcreteStructLongId<'db> {
@@ -419,7 +413,7 @@ semantic_object_for_id!(
 );
 impl<'db> ConcreteEnumId<'db> {
     pub fn enum_id(&self, db: &'db dyn SemanticGroup) -> EnumId<'db> {
-        self.lookup_intern(db).enum_id
+        self.long(db).enum_id
     }
 }
 
@@ -443,7 +437,7 @@ semantic_object_for_id!(
 );
 impl<'db> ConcreteExternTypeId<'db> {
     pub fn extern_type_id(&self, db: &'db dyn SemanticGroup) -> ExternTypeId<'db> {
-        self.lookup_intern(db).extern_type_id
+        self.long(db).extern_type_id
     }
 }
 
@@ -487,7 +481,7 @@ impl<'db> ImplTypeId<'db> {
     /// Creates a new impl type id. For an impl type of a concrete impl, asserts that the trait
     /// type belongs to the same trait that the impl implements (panics if not).
     pub fn new(impl_id: ImplId<'db>, ty: TraitTypeId<'db>, db: &'db dyn SemanticGroup) -> Self {
-        if let crate::items::imp::ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(db) {
+        if let crate::items::imp::ImplLongId::Concrete(concrete_impl) = impl_id.long(db) {
             let impl_def_id = concrete_impl.impl_def_id(db);
             assert_eq!(Ok(ty.trait_id(db)), db.impl_def_trait(impl_def_id));
         }
@@ -617,10 +611,8 @@ fn maybe_resolve_type<'db>(
             if matches!(unary_syntax.op(db), ast::UnaryOperator::Desnap(_)) =>
         {
             let ty = resolve_type_ex(db, diagnostics, resolver, &unary_syntax.expr(db), ctx);
-            if let Some(desnapped_ty) =
-                try_extract_matches!(ty.lookup_intern(db), TypeLongId::Snapshot)
-            {
-                desnapped_ty
+            if let Some(desnapped_ty) = try_extract_matches!(ty.long(db), TypeLongId::Snapshot) {
+                *desnapped_ty
             } else {
                 return Err(diagnostics.report(ty_syntax.stable_ptr(db), DesnapNonSnapshot));
             }
@@ -751,7 +743,7 @@ pub fn get_impl_at_context<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::single_value_type].
 pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<bool> {
-    Ok(match ty.lookup_intern(db) {
+    Ok(match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(id) => {
                 for member in db.struct_members(id.struct_id(db))?.values() {
@@ -774,14 +766,14 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<bool> 
             ConcreteTypeId::Extern(_) => false,
         },
         TypeLongId::Tuple(types) => {
-            for ty in &types {
+            for ty in types {
                 if !db.single_value_type(*ty)? {
                     return Ok(false);
                 }
             }
             true
         }
-        TypeLongId::Snapshot(ty) => db.single_value_type(ty)?,
+        TypeLongId::Snapshot(ty) => db.single_value_type(*ty)?,
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_)
@@ -789,8 +781,8 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<bool> 
         | TypeLongId::ImplType(_)
         | TypeLongId::Closure(_) => false,
         TypeLongId::FixedSizeArray { type_id, size } => {
-            db.single_value_type(type_id)?
-                || matches!(size.lookup_intern(db),
+            db.single_value_type(*type_id)?
+                || matches!(size.long(db),
                             ConstValue::Int(value, _) if value.is_zero())
         }
     })
@@ -806,8 +798,8 @@ pub fn add_type_based_diagnostics<'db>(
     if db.type_size_info(ty) == Ok(TypeSizeInformation::Infinite) {
         diagnostics.report(stable_ptr, InfiniteSizeType(ty));
     }
-    if let TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) = ty.lookup_intern(db) {
-        let long_id = extrn.lookup_intern(db);
+    if let TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) = ty.long(db) {
+        let long_id = extrn.long(db);
         if long_id.extern_type_id.name(db).as_str() == "Array" {
             if let [GenericArgumentId::Type(arg_ty)] = &long_id.generic_args[..] {
                 if db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized) {
@@ -832,18 +824,18 @@ pub enum TypeSizeInformation {
 
 /// Query implementation of [crate::db::SemanticGroup::type_size_info].
 pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<TypeSizeInformation> {
-    match ty.lookup_intern(db) {
+    match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(id) => {
                 if check_all_type_are_zero_sized(
                     db,
-                    db.concrete_struct_members(id)?.iter().map(|(_, member)| &member.ty),
+                    db.concrete_struct_members(*id)?.iter().map(|(_, member)| &member.ty),
                 )? {
                     return Ok(TypeSizeInformation::ZeroSized);
                 }
             }
             ConcreteTypeId::Enum(id) => {
-                for variant in &db.concrete_enum_variants(id)? {
+                for variant in &db.concrete_enum_variants(*id)? {
                     // Recursive calling in order to find infinite sized types.
                     db.type_size_info(variant.ty)?;
                 }
@@ -856,7 +848,7 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<TypeSizeI
             }
         }
         TypeLongId::Snapshot(ty) => {
-            if db.type_size_info(ty)? == TypeSizeInformation::ZeroSized {
+            if db.type_size_info(*ty)? == TypeSizeInformation::ZeroSized {
                 return Ok(TypeSizeInformation::ZeroSized);
             }
         }
@@ -871,8 +863,8 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<TypeSizeI
         | TypeLongId::Missing(_)
         | TypeLongId::ImplType(_) => {}
         TypeLongId::FixedSizeArray { type_id, size } => {
-            if matches!(size.lookup_intern(db), ConstValue::Int(value,_) if value.is_zero())
-                || db.type_size_info(type_id)? == TypeSizeInformation::ZeroSized
+            if matches!(size.long(db), ConstValue::Int(value,_) if value.is_zero())
+                || db.type_size_info(*type_id)? == TypeSizeInformation::ZeroSized
             {
                 return Ok(TypeSizeInformation::ZeroSized);
             }
@@ -960,7 +952,7 @@ pub fn droppable<'db>(
 }
 
 pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId<'_>) -> bool {
-    match ty.lookup_intern(db) {
+    match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
         TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_fully_concrete(db)),
         TypeLongId::Snapshot(ty) => ty.is_fully_concrete(db),
@@ -981,7 +973,7 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId<'_>) -> bo
 }
 
 pub fn priv_type_is_var_free<'db>(db: &'db dyn SemanticGroup, ty: TypeId<'db>) -> bool {
-    match ty.lookup_intern(db) {
+    match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_var_free(db),
         TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_var_free(db)),
         TypeLongId::Snapshot(ty) => ty.is_var_free(db),
@@ -1002,7 +994,7 @@ pub fn priv_type_is_var_free<'db>(db: &'db dyn SemanticGroup, ty: TypeId<'db>) -
 }
 
 pub fn priv_type_short_name(db: &dyn SemanticGroup, ty: TypeId<'_>) -> String {
-    match ty.lookup_intern(db) {
+    match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => {
             let mut result = concrete_type_id.generic_type(db).format(db);
             let mut generic_args = concrete_type_id.generic_args(db).into_iter().peekable();
@@ -1047,7 +1039,7 @@ pub fn peel_snapshots<'db>(
     db: &'db dyn SemanticGroup,
     ty: TypeId<'db>,
 ) -> (usize, TypeLongId<'db>) {
-    peel_snapshots_ex(db, ty.lookup_intern(db))
+    peel_snapshots_ex(db, ty.long(db).clone())
 }
 
 /// Same as `peel_snapshots`, but takes a `TypeLongId` instead of a `TypeId`.
@@ -1057,7 +1049,7 @@ pub fn peel_snapshots_ex<'db>(
 ) -> (usize, TypeLongId<'db>) {
     let mut n_snapshots = 0;
     while let TypeLongId::Snapshot(ty) = long_ty {
-        long_ty = ty.lookup_intern(db);
+        long_ty = ty.long(db).clone();
         n_snapshots += 1;
     }
     (n_snapshots, long_ty)

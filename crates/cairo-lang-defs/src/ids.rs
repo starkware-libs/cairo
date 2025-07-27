@@ -35,7 +35,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, define_short_id, require};
+use cairo_lang_utils::{Intern, OptionFrom, define_short_id, require};
 use smol_str::SmolStr;
 
 use crate::db::DefsGroup;
@@ -295,7 +295,7 @@ pub enum ModuleId<'db> {
 impl<'db> ModuleId<'db> {
     pub fn full_path(&self, db: &dyn DefsGroup) -> String {
         match self {
-            ModuleId::CrateRoot(id) => id.lookup_intern(db).name().into(),
+            ModuleId::CrateRoot(id) => id.long(db).name().into(),
             ModuleId::Submodule(id) => {
                 format!("{}::{}", id.parent_module(db).full_path(db), id.name(db))
             }
@@ -303,7 +303,7 @@ impl<'db> ModuleId<'db> {
     }
     pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
         match self {
-            ModuleId::CrateRoot(id) => id.lookup_intern(db).name(),
+            ModuleId::CrateRoot(id) => id.long(db).name(),
             ModuleId::Submodule(id) => id.name(db),
         }
     }
@@ -586,7 +586,7 @@ define_named_language_element_id!(
 );
 impl<'db> ImplTypeDefId<'db> {
     pub fn impl_def_id(&self, db: &'db dyn DefsGroup) -> ImplDefId<'db> {
-        let ImplTypeDefLongId(module_file_id, ptr) = self.lookup_intern(db);
+        let ImplTypeDefLongId(module_file_id, ptr) = self.long(db).clone();
 
         // Impl type ast lies 3 levels below the impl ast.
         let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db, 3));
@@ -609,7 +609,7 @@ define_named_language_element_id!(
 );
 impl<'db> ImplConstantDefId<'db> {
     pub fn impl_def_id(&self, db: &'db dyn DefsGroup) -> ImplDefId<'db> {
-        let ImplConstantDefLongId(module_file_id, ptr) = self.lookup_intern(db);
+        let ImplConstantDefLongId(module_file_id, ptr) = self.long(db).clone();
 
         // Impl constant ast lies 3 levels below the impl ast.
         let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db, 3));
@@ -632,7 +632,7 @@ define_named_language_element_id!(
 );
 impl<'db> ImplImplDefId<'db> {
     pub fn impl_def_id(&self, db: &'db dyn DefsGroup) -> ImplDefId<'db> {
-        let ImplImplDefLongId(module_file_id, ptr) = self.lookup_intern(db);
+        let ImplImplDefLongId(module_file_id, ptr) = self.long(db).clone();
 
         // Impl constant ast lies 3 levels below the impl ast.
         let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db, 3));
@@ -655,7 +655,7 @@ define_named_language_element_id!(
 );
 impl<'db> ImplFunctionId<'db> {
     pub fn impl_def_id(&self, db: &'db dyn DefsGroup) -> ImplDefId<'db> {
-        let ImplFunctionLongId(module_file_id, ptr) = self.lookup_intern(db);
+        let ImplFunctionLongId(module_file_id, ptr) = self.long(db).clone();
 
         // Impl function ast lies 3 levels below the impl ast.
         let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db, 3));
@@ -745,7 +745,7 @@ define_named_language_element_id!(
 );
 impl<'db> TraitTypeId<'db> {
     pub fn trait_id(&self, db: &'db dyn DefsGroup) -> TraitId<'db> {
-        let TraitTypeLongId(module_file_id, ptr) = self.lookup_intern(db);
+        let TraitTypeLongId(module_file_id, ptr) = self.long(db).clone();
         // Trait type ast lies 3 levels below the trait ast.
         let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
@@ -772,7 +772,7 @@ define_named_language_element_id!(
 );
 impl<'db> TraitConstantId<'db> {
     pub fn trait_id(&self, db: &'db dyn DefsGroup) -> TraitId<'db> {
-        let TraitConstantLongId(module_file_id, ptr) = self.lookup_intern(db);
+        let TraitConstantLongId(module_file_id, ptr) = self.long(db).clone();
         // Trait constant ast lies 3 levels below the trait ast.
         let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
@@ -794,7 +794,7 @@ define_named_language_element_id!(
 );
 impl<'db> TraitImplId<'db> {
     pub fn trait_id(&self, db: &'db dyn DefsGroup) -> TraitId<'db> {
-        let TraitImplLongId(module_file_id, ptr) = self.lookup_intern(db);
+        let TraitImplLongId(module_file_id, ptr) = self.long(db).clone();
         // Trait impl ast lies 3 levels below the trait ast.
         let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
@@ -816,7 +816,7 @@ define_named_language_element_id!(
 );
 impl<'db> TraitFunctionId<'db> {
     pub fn trait_id(&self, db: &'db dyn DefsGroup) -> TraitId<'db> {
-        let TraitFunctionLongId(module_file_id, ptr) = self.lookup_intern(db);
+        let TraitFunctionLongId(module_file_id, ptr) = self.long(db).clone();
         // Trait function ast lies 3 levels below the trait ast.
         let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
@@ -838,7 +838,7 @@ define_named_language_element_id!(
 );
 impl<'db> MemberId<'db> {
     pub fn struct_id(&self, db: &'db dyn DefsGroup) -> StructId<'db> {
-        let MemberLongId(module_file_id, ptr) = self.lookup_intern(db);
+        let MemberLongId(module_file_id, ptr) = self.long(db).clone();
         let struct_ptr = ast::ItemStructPtr(ptr.untyped().nth_parent(db, 2));
         StructLongId(module_file_id, struct_ptr).intern(db)
     }
@@ -860,7 +860,7 @@ define_named_language_element_id!(
 );
 impl<'db> VariantId<'db> {
     pub fn enum_id(&self, db: &'db dyn DefsGroup) -> EnumId<'db> {
-        let VariantLongId(module_file_id, ptr) = self.lookup_intern(db);
+        let VariantLongId(module_file_id, ptr) = self.long(db).clone();
         let struct_ptr = ast::ItemEnumPtr(ptr.untyped().nth_parent(db, 2));
         EnumLongId(module_file_id, struct_ptr).intern(db)
     }
@@ -899,7 +899,7 @@ define_language_element_id_basic!(
 );
 impl<'db> GenericParamLongId<'db> {
     pub fn name(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
-        let SyntaxStablePtr::Child { key_fields, kind, .. } = self.1.0.lookup_intern(db) else {
+        let SyntaxStablePtr::Child { key_fields, kind, .. } = self.1.0.long(db) else {
             unreachable!()
         };
         require(!matches!(
@@ -915,9 +915,7 @@ impl<'db> GenericParamLongId<'db> {
         self.name(db).unwrap_or_else(|| "_".into())
     }
     pub fn kind(&self, db: &dyn SyntaxGroup) -> GenericKind {
-        let SyntaxStablePtr::Child { kind, .. } = self.1.0.lookup_intern(db) else {
-            unreachable!()
-        };
+        let SyntaxStablePtr::Child { kind, .. } = self.1.0.long(db) else { unreachable!() };
         match kind {
             SyntaxKind::GenericParamType => GenericKind::Type,
             SyntaxKind::GenericParamConst => GenericKind::Const,
@@ -936,14 +934,14 @@ impl<'db> GenericParamLongId<'db> {
 }
 impl<'db> GenericParamId<'db> {
     pub fn name(&self, db: &dyn DefsGroup) -> Option<SmolStr> {
-        self.lookup_intern(db).name(db)
+        self.long(db).name(db)
     }
     pub fn debug_name(&self, db: &dyn DefsGroup) -> SmolStr {
-        self.lookup_intern(db).debug_name(db)
+        self.long(db).debug_name(db)
     }
     pub fn format(&self, db: &dyn DefsGroup) -> String {
-        let long_ids = self.lookup_intern(db);
-        let SyntaxStablePtr::Child { key_fields, kind, .. } = long_ids.1.0.lookup_intern(db) else {
+        let long_ids = self.long(db);
+        let SyntaxStablePtr::Child { key_fields, kind, .. } = long_ids.1.0.long(db) else {
             unreachable!()
         };
 
@@ -960,7 +958,7 @@ impl<'db> GenericParamId<'db> {
     }
 
     pub fn kind(&self, db: &dyn DefsGroup) -> GenericKind {
-        self.lookup_intern(db).kind(db)
+        self.long(db).kind(db)
     }
     pub fn generic_item(&self, db: &'db dyn DefsGroup) -> GenericItemId<'db> {
         self.long(db).generic_item(db)
@@ -1027,27 +1025,24 @@ impl<'db> GenericItemId<'db> {
         module_file: ModuleFileId<'db>,
         stable_ptr: SyntaxStablePtrId<'db>,
     ) -> Self {
-        let SyntaxStablePtr::Child { parent: parent0, kind, .. } = stable_ptr.lookup_intern(db)
-        else {
+        let SyntaxStablePtr::Child { parent: parent0, kind, .. } = stable_ptr.long(db) else {
             panic!()
         };
         match kind {
             SyntaxKind::FunctionDeclaration => {
-                let SyntaxStablePtr::Child { parent: parent1, kind, .. } =
-                    parent0.lookup_intern(db)
-                else {
+                let SyntaxStablePtr::Child { parent: parent1, kind, .. } = parent0.long(db) else {
                     panic!()
                 };
                 match kind {
                     SyntaxKind::FunctionWithBody => {
                         // `FunctionWithBody` must be at least 2 levels below the root, and thus
                         // `parent1.parent()` is safe.
-                        match parent1.parent(db).lookup_intern(db) {
+                        match parent1.parent(db).long(db) {
                             SyntaxStablePtr::Root(_, _) => {
                                 GenericItemId::ModuleItem(GenericModuleItemId::FreeFunc(
                                     FreeFunctionLongId(
                                         module_file,
-                                        ast::FunctionWithBodyPtr(parent0),
+                                        ast::FunctionWithBodyPtr(*parent0),
                                     )
                                     .intern(db),
                                 ))
@@ -1057,7 +1052,7 @@ impl<'db> GenericItemId<'db> {
                                     GenericItemId::ModuleItem(GenericModuleItemId::FreeFunc(
                                         FreeFunctionLongId(
                                             module_file,
-                                            ast::FunctionWithBodyPtr(parent0),
+                                            ast::FunctionWithBodyPtr(*parent0),
                                         )
                                         .intern(db),
                                     ))
@@ -1066,7 +1061,7 @@ impl<'db> GenericItemId<'db> {
                                     GenericItemId::ModuleItem(GenericModuleItemId::ImplFunc(
                                         ImplFunctionLongId(
                                             module_file,
-                                            ast::FunctionWithBodyPtr(parent0),
+                                            ast::FunctionWithBodyPtr(*parent0),
                                         )
                                         .intern(db),
                                     ))
@@ -1077,13 +1072,13 @@ impl<'db> GenericItemId<'db> {
                     }
                     SyntaxKind::ItemExternFunction => {
                         GenericItemId::ModuleItem(GenericModuleItemId::ExternFunc(
-                            ExternFunctionLongId(module_file, ast::ItemExternFunctionPtr(parent0))
+                            ExternFunctionLongId(module_file, ast::ItemExternFunctionPtr(*parent0))
                                 .intern(db),
                         ))
                     }
                     SyntaxKind::TraitItemFunction => {
                         GenericItemId::ModuleItem(GenericModuleItemId::TraitFunc(
-                            TraitFunctionLongId(module_file, ast::TraitItemFunctionPtr(parent0))
+                            TraitFunctionLongId(module_file, ast::TraitItemFunctionPtr(*parent0))
                                 .intern(db),
                         ))
                     }

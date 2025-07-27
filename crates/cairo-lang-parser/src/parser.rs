@@ -10,7 +10,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
-use cairo_lang_utils::{LookupIntern, extract_matches, require};
+use cairo_lang_utils::{extract_matches, require};
 use syntax::node::green::{GreenNode, GreenNodeDetails};
 use syntax::node::ids::GreenId;
 
@@ -2048,7 +2048,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         let GreenNode {
             kind: SyntaxKind::ExprPath,
             details: GreenNodeDetails::Node { children: children0, .. },
-        } = &*expr.0.lookup_intern(self.db)
+        } = &*expr.0.long(self.db).clone()
         else {
             return None;
         };
@@ -2061,7 +2061,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         let GreenNode {
             kind: SyntaxKind::ExprPathInner,
             details: GreenNodeDetails::Node { children: children1, .. },
-        } = &*path_inner.lookup_intern(self.db)
+        } = &*path_inner.long(self.db).clone()
         else {
             return None;
         };
@@ -2075,7 +2075,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         let GreenNode {
             kind: SyntaxKind::PathSegmentSimple,
             details: GreenNodeDetails::Node { children: children2, .. },
-        } = &*path_segment.lookup_intern(self.db)
+        } = &*path_segment.long(self.db).clone()
         else {
             return None;
         };
@@ -2086,8 +2086,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         };
 
         // Check that it is indeed `TerminalIdentifier`.
-        let GreenNode { kind: SyntaxKind::TerminalIdentifier, .. } =
-            ident.lookup_intern(self.db).as_ref()
+        let GreenNode { kind: SyntaxKind::TerminalIdentifier, .. } = ident.long(self.db).as_ref()
         else {
             return None;
         };
@@ -2593,7 +2592,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
                         let GreenNode {
                             kind: SyntaxKind::ExprPath,
                             details: GreenNodeDetails::Node { children: path_children, .. },
-                        } = &*path.0.lookup_intern(self.db)
+                        } = &*path.0.long(self.db).clone()
                         else {
                             return Err(TryParseFailure::SkipToken);
                         };
@@ -2606,7 +2605,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
                         let GreenNode {
                             kind: SyntaxKind::ExprPathInner,
                             details: GreenNodeDetails::Node { children: inner_path_children, .. },
-                        } = &*path_inner.lookup_intern(self.db)
+                        } = &*path_inner.long(self.db).clone()
                         else {
                             return Err(TryParseFailure::SkipToken);
                         };
@@ -3726,7 +3725,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         let mut has_header_doc = false;
         let mut split_index = 0;
         for trivium in &self.next_terminal.leading_trivia {
-            match trivium.0.lookup_intern(self.db).kind {
+            match trivium.0.long(self.db).kind {
                 SyntaxKind::TokenSingleLineComment | SyntaxKind::TokenSingleLineInnerComment => {
                     has_header_doc = true;
                 }
@@ -3856,7 +3855,7 @@ fn trivia_total_width(db: &dyn SyntaxGroup, trivia: &[TriviumGreen<'_>]) -> Text
 
 /// The width of the trailing trivia, traversing the tree to the bottom right node.
 fn trailing_trivia_width(db: &dyn SyntaxGroup, green_id: GreenId<'_>) -> Option<TextWidth> {
-    let node = green_id.lookup_intern(db);
+    let node = green_id.long(db);
     if node.kind == SyntaxKind::Trivia {
         return Some(node.width());
     }

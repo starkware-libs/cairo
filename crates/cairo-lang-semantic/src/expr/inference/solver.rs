@@ -4,8 +4,8 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_proc_macros::SemanticObject;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::Entry;
-use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::{Itertools, chain, zip_eq};
 
 use super::canonic::{CanonicalImpl, CanonicalTrait, MapperError, ResultNoErrEx};
@@ -174,7 +174,7 @@ pub fn enrich_lookup_context_with_ty<'db>(
     ty: TypeId<'db>,
     lookup_context: &mut ImplLookupContext<'db>,
 ) {
-    match ty.lookup_intern(db) {
+    match ty.long(db) {
         TypeLongId::ImplType(impl_type_id) => {
             lookup_context.insert_impl(impl_type_id.impl_id());
         }
@@ -324,7 +324,7 @@ fn solve_candidate<'db>(
     // If the closure params are not var free, we cannot infer the negative impl.
     // We use the canonical trait concretize the closure params.
     if let UninferredImpl::GeneratedImpl(imp) = candidate {
-        inference.conform_traits(imp.lookup_intern(db).concrete_trait, canonical_trait.id)?;
+        inference.conform_traits(imp.long(db).concrete_trait, canonical_trait.id)?;
     }
 
     // Instantiate the candidate in the inference table.
@@ -550,13 +550,13 @@ impl<'db> LiteInference<'db> {
         if candidate_final && target_final {
             return CanConformResult::Rejected;
         }
-        let target_long_ty = target_ty.lookup_intern(self.db);
+        let target_long_ty = target_ty.long(self.db);
 
         if let TypeLongId::Var(_) = target_long_ty {
             return CanConformResult::InferenceRequired;
         }
 
-        let long_ty_candidate = candidate_ty.lookup_intern(self.db);
+        let long_ty_candidate = candidate_ty.long(self.db);
 
         match (long_ty_candidate, target_long_ty) {
             (TypeLongId::Concrete(candidate), TypeLongId::Concrete(target)) => {
@@ -578,8 +578,8 @@ impl<'db> LiteInference<'db> {
                 CanConformResult::fold(zip_eq(candidate_tys, target_tys).map(
                     |(candidate_subty, target_subty)| {
                         self.can_conform_ty(
-                            (candidate_subty, candidate_final),
-                            (target_subty, target_final),
+                            (*candidate_subty, candidate_final),
+                            (*target_subty, target_final),
                         )
                     },
                 ))
@@ -590,20 +590,21 @@ impl<'db> LiteInference<'db> {
                     return CanConformResult::Rejected;
                 }
 
-                let params_check =
-                    CanConformResult::fold(zip_eq(candidate.param_tys, target.param_tys).map(
+                let params_check = CanConformResult::fold(
+                    zip_eq(candidate.param_tys.clone(), target.param_tys.clone()).map(
                         |(candidate_subty, target_subty)| {
                             self.can_conform_ty(
                                 (candidate_subty, candidate_final),
                                 (target_subty, target_final),
                             )
                         },
-                    ));
+                    ),
+                );
                 if params_check == CanConformResult::Rejected {
                     return CanConformResult::Rejected;
                 }
                 let captured_types_check = CanConformResult::fold(
-                    zip_eq(candidate.captured_types, target.captured_types).map(
+                    zip_eq(candidate.captured_types.clone(), target.captured_types.clone()).map(
                         |(candidate_subty, target_subty)| {
                             self.can_conform_ty(
                                 (candidate_subty, candidate_final),
@@ -636,26 +637,26 @@ impl<'db> LiteInference<'db> {
                 TypeLongId::FixedSizeArray { type_id: target_type_id, size: target_size },
             ) => CanConformResult::fold([
                 self.can_conform_const(
-                    (candidate_size, candidate_final),
-                    (target_size, target_final),
+                    (*candidate_size, candidate_final),
+                    (*target_size, target_final),
                 ),
                 self.can_conform_ty(
-                    (candidate_type_id, candidate_final),
-                    (target_type_id, target_final),
+                    (*candidate_type_id, candidate_final),
+                    (*target_type_id, target_final),
                 ),
             ]),
             (TypeLongId::FixedSizeArray { type_id: _, size: _ }, _) => CanConformResult::Rejected,
             (TypeLongId::Snapshot(candidate_inner_ty), TypeLongId::Snapshot(target_inner_ty)) => {
                 self.can_conform_ty(
-                    (candidate_inner_ty, candidate_final),
-                    (target_inner_ty, target_final),
+                    (*candidate_inner_ty, candidate_final),
+                    (*target_inner_ty, target_final),
                 )
             }
             (TypeLongId::Snapshot(_), _) => CanConformResult::Rejected,
             (TypeLongId::GenericParameter(param), _) => {
                 let mut res = CanConformResult::Accepted;
                 // if param not in substitution add it otherwise make sure it equal target_ty
-                match self.substitution.entry(param) {
+                match self.substitution.entry(*param) {
                     Entry::Occupied(entry) => {
                         if let GenericArgumentId::Type(existing_ty) = entry.get() {
                             if *existing_ty != target_ty {
@@ -696,7 +697,7 @@ impl<'db> LiteInference<'db> {
         (candidate_impl, mut candidate_final): (ImplId<'db>, bool),
         (target_impl, mut target_final): (ImplId<'db>, bool),
     ) -> CanConformResult {
-        let long_impl_trait = target_impl.lookup_intern(self.db);
+        let long_impl_trait = target_impl.long(self.db);
         if candidate_impl == target_impl {
             return CanConformResult::Accepted;
         }
@@ -708,15 +709,15 @@ impl<'db> LiteInference<'db> {
         if let ImplLongId::ImplVar(_) = long_impl_trait {
             return CanConformResult::InferenceRequired;
         }
-        match (candidate_impl.lookup_intern(self.db), long_impl_trait) {
+        match (candidate_impl.long(self.db), long_impl_trait) {
             (ImplLongId::Concrete(candidate), ImplLongId::Concrete(target)) => {
-                let candidate = candidate.lookup_intern(self.db);
-                let target = target.lookup_intern(self.db);
+                let candidate = candidate.long(self.db);
+                let target = target.long(self.db);
                 if candidate.impl_def_id != target.impl_def_id {
                     return CanConformResult::Rejected;
                 }
-                let candidate_args = candidate.generic_args;
-                let target_args = target.generic_args;
+                let candidate_args = candidate.generic_args.clone();
+                let target_args = target.generic_args.clone();
                 self.can_conform_generic_args(
                     (&candidate_args, candidate_final),
                     (&target_args, target_final),
@@ -726,7 +727,7 @@ impl<'db> LiteInference<'db> {
             (ImplLongId::GenericParameter(param), _) => {
                 let mut res = CanConformResult::Accepted;
                 // if param not in substitution add it otherwise make sure it equal target_ty
-                match self.substitution.entry(param) {
+                match self.substitution.entry(*param) {
                     Entry::Occupied(entry) => {
                         if let GenericArgumentId::Impl(existing_impl) = entry.get() {
                             if *existing_impl != target_impl {
@@ -775,11 +776,11 @@ impl<'db> LiteInference<'db> {
         if candidate_final && target_final {
             return CanConformResult::Rejected;
         }
-        let target_long_const = target_id.lookup_intern(self.db);
+        let target_long_const = target_id.long(self.db);
         if let ConstValue::Var(_, _) = target_long_const {
             return CanConformResult::InferenceRequired;
         }
-        match (candidate_id.lookup_intern(self.db), target_long_const) {
+        match (candidate_id.long(self.db), target_long_const) {
             (
                 ConstValue::Int(big_int, type_id),
                 ConstValue::Int(target_big_int, target_type_id),
@@ -787,7 +788,7 @@ impl<'db> LiteInference<'db> {
                 if big_int != target_big_int {
                     return CanConformResult::Rejected;
                 }
-                self.can_conform_ty((type_id, candidate_final), (target_type_id, target_final))
+                self.can_conform_ty((*type_id, candidate_final), (*target_type_id, target_final))
             }
             (ConstValue::Int(_, _), _) => CanConformResult::Rejected,
             (
@@ -799,14 +800,14 @@ impl<'db> LiteInference<'db> {
                 };
                 CanConformResult::fold(chain!(
                     [self.can_conform_ty(
-                        (type_id, candidate_final),
-                        (target_type_id, target_final)
+                        (*type_id, candidate_final),
+                        (*target_type_id, target_final)
                     )],
                     zip_eq(const_values, target_const_values).map(
                         |(const_value, target_const_value)| {
                             self.can_conform_const(
-                                (const_value.intern(self.db), candidate_final),
-                                (target_const_value.intern(self.db), target_final),
+                                (const_value.clone().intern(self.db), candidate_final),
+                                (target_const_value.clone().intern(self.db), target_final),
                             )
                         }
                     )
@@ -823,26 +824,26 @@ impl<'db> LiteInference<'db> {
                     (target_concrete_variant.ty, target_final),
                 ),
                 self.can_conform_const(
-                    (const_value.intern(self.db), candidate_final),
-                    (target_const_value.intern(self.db), target_final),
+                    (const_value.clone().intern(self.db), candidate_final),
+                    (target_const_value.clone().intern(self.db), target_final),
                 ),
             ]),
             (ConstValue::Enum(_, _), _) => CanConformResult::Rejected,
             (ConstValue::NonZero(const_value), ConstValue::NonZero(target_const_value)) => self
                 .can_conform_const(
-                    (const_value.intern(self.db), candidate_final),
-                    (target_const_value.intern(self.db), target_final),
+                    (const_value.clone().intern(self.db), candidate_final),
+                    (target_const_value.clone().intern(self.db), target_final),
                 ),
             (ConstValue::NonZero(_), _) => CanConformResult::Rejected,
             (ConstValue::Boxed(const_value), ConstValue::Boxed(target_const_value)) => self
                 .can_conform_const(
-                    (const_value.intern(self.db), candidate_final),
-                    (target_const_value.intern(self.db), target_final),
+                    (const_value.clone().intern(self.db), candidate_final),
+                    (target_const_value.clone().intern(self.db), target_final),
                 ),
             (ConstValue::Boxed(_), _) => CanConformResult::Rejected,
             (ConstValue::Generic(param), _) => {
                 let mut res = CanConformResult::Accepted;
-                match self.substitution.entry(param) {
+                match self.substitution.entry(*param) {
                     Entry::Occupied(entry) => {
                         if let GenericArgumentId::Constant(existing_const) = entry.get() {
                             if *existing_const != target_id {

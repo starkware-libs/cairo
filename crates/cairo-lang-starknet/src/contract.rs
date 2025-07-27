@@ -21,10 +21,10 @@ use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::{
     OrderedHashMap, deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec,
 };
-use cairo_lang_utils::{LookupIntern, extract_matches};
 use itertools::{Itertools, chain};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
@@ -323,7 +323,7 @@ fn analyze_contract<'db, T: SierraIdReplacer>(
         .unwrap();
     let constant_id = extract_matches!(item, ModuleItemId::Constant);
     let class_hash: Felt252 =
-        db.constant_const_value(constant_id).unwrap().lookup_intern(db).into_int().unwrap().into();
+        db.constant_const_value(constant_id).unwrap().long(db).clone().into_int().unwrap().into();
 
     // Extract functions.
     let SemanticEntryPoints { external, l1_handler, constructor } =
