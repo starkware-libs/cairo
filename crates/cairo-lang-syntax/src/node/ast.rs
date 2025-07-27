@@ -4,7 +4,6 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 use std::ops::Deref;
-use std::sync::Arc;
 
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_utils::{Intern, extract_matches};
@@ -31,13 +30,13 @@ impl<'db> Trivia<'db> {
     pub fn new_green(db: &'db dyn SyntaxGroup, children: &[TriviumGreen<'db>]) -> TriviaGreen<'db> {
         let width = children.iter().map(|id| id.0.long(db).width()).sum();
         TriviaGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::Trivia,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.0).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -66,13 +65,13 @@ impl<'db> TypedSyntaxNode<'db> for Trivia<'db> {
     type Green = TriviaGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TriviaGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::Trivia,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -783,13 +782,13 @@ impl<'db> ExprList<'db> {
     ) -> ExprListGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         ExprListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -841,13 +840,13 @@ impl<'db> TypedSyntaxNode<'db> for ExprList<'db> {
     type Green = ExprListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -883,10 +882,10 @@ impl<'db> Arg<'db> {
         let children = [modifiers.0, arg_clause.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ArgGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::Arg,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -924,13 +923,13 @@ impl<'db> TypedSyntaxNode<'db> for Arg<'db> {
     type Green = ArgGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ArgGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::Arg,
                 details: GreenNodeDetails::Node {
                     children: [ModifierList::missing(db).0, ArgClause::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -1086,10 +1085,10 @@ impl<'db> ArgClauseNamed<'db> {
         let children = [name.0, colon.0, value.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ArgClauseNamedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ArgClauseNamed,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -1130,7 +1129,7 @@ impl<'db> TypedSyntaxNode<'db> for ArgClauseNamed<'db> {
     type Green = ArgClauseNamedGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ArgClauseNamedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ArgClauseNamed,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -1141,7 +1140,7 @@ impl<'db> TypedSyntaxNode<'db> for ArgClauseNamed<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -1184,10 +1183,10 @@ impl<'db> ArgClauseUnnamed<'db> {
         let children = [value.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ArgClauseUnnamedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ArgClauseUnnamed,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -1222,13 +1221,13 @@ impl<'db> TypedSyntaxNode<'db> for ArgClauseUnnamed<'db> {
     type Green = ArgClauseUnnamedGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ArgClauseUnnamedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ArgClauseUnnamed,
                 details: GreenNodeDetails::Node {
                     children: [Expr::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -1273,10 +1272,10 @@ impl<'db> ArgClauseFieldInitShorthand<'db> {
         let children = [colon.0, name.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ArgClauseFieldInitShorthandGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ArgClauseFieldInitShorthand,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -1314,14 +1313,14 @@ impl<'db> TypedSyntaxNode<'db> for ArgClauseFieldInitShorthand<'db> {
     type Green = ArgClauseFieldInitShorthandGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ArgClauseFieldInitShorthandGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ArgClauseFieldInitShorthand,
                 details: GreenNodeDetails::Node {
                     children: [TerminalColon::missing(db).0, ExprFieldInitShorthand::missing(db).0]
                         .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -1364,10 +1363,10 @@ impl<'db> ExprFieldInitShorthand<'db> {
         let children = [name.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprFieldInitShorthandGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprFieldInitShorthand,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -1402,13 +1401,13 @@ impl<'db> TypedSyntaxNode<'db> for ExprFieldInitShorthand<'db> {
     type Green = ExprFieldInitShorthandGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprFieldInitShorthandGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprFieldInitShorthand,
                 details: GreenNodeDetails::Node {
                     children: [TerminalIdentifier::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -1453,13 +1452,13 @@ impl<'db> ArgList<'db> {
     ) -> ArgListGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         ArgListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ArgList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -1511,13 +1510,13 @@ impl<'db> TypedSyntaxNode<'db> for ArgList<'db> {
     type Green = ArgListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ArgListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ArgList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -1543,10 +1542,10 @@ impl<'db> ExprMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprMissing,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -1577,13 +1576,13 @@ impl<'db> TypedSyntaxNode<'db> for ExprMissing<'db> {
     type Green = ExprMissingGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprMissing,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -1735,10 +1734,10 @@ impl<'db> PathSegmentSimple<'db> {
         let children = [ident.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         PathSegmentSimpleGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PathSegmentSimple,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -1773,13 +1772,13 @@ impl<'db> TypedSyntaxNode<'db> for PathSegmentSimple<'db> {
     type Green = PathSegmentSimpleGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         PathSegmentSimpleGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PathSegmentSimple,
                 details: GreenNodeDetails::Node {
                     children: [TerminalIdentifier::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -1911,10 +1910,10 @@ impl<'db> OptionTerminalColonColonEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionTerminalColonColonEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionTerminalColonColonEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -1945,13 +1944,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalColonColonEmpty<'db> {
     type Green = OptionTerminalColonColonEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionTerminalColonColonEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionTerminalColonColonEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -1998,10 +1997,10 @@ impl<'db> PathSegmentWithGenericArgs<'db> {
         let children = [ident.0, separator.0, generic_args.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         PathSegmentWithGenericArgsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PathSegmentWithGenericArgs,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -2042,7 +2041,7 @@ impl<'db> TypedSyntaxNode<'db> for PathSegmentWithGenericArgs<'db> {
     type Green = PathSegmentWithGenericArgsGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         PathSegmentWithGenericArgsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PathSegmentWithGenericArgs,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -2053,7 +2052,7 @@ impl<'db> TypedSyntaxNode<'db> for PathSegmentWithGenericArgs<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -2098,10 +2097,10 @@ impl<'db> ExprPath<'db> {
         let children = [dollar.0, segments.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprPathGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprPath,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -2139,14 +2138,14 @@ impl<'db> TypedSyntaxNode<'db> for ExprPath<'db> {
     type Green = ExprPathGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprPathGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprPath,
                 details: GreenNodeDetails::Node {
                     children: [OptionTerminalDollar::missing(db).0, ExprPathInner::missing(db).0]
                         .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -2274,10 +2273,10 @@ impl<'db> OptionTerminalDollarEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionTerminalDollarEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionTerminalDollarEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -2308,13 +2307,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalDollarEmpty<'db> {
     type Green = OptionTerminalDollarEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionTerminalDollarEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionTerminalDollarEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -2357,10 +2356,10 @@ impl<'db> PathSegmentMissing<'db> {
         let children = [ident.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         PathSegmentMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PathSegmentMissing,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -2395,13 +2394,13 @@ impl<'db> TypedSyntaxNode<'db> for PathSegmentMissing<'db> {
     type Green = PathSegmentMissingGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         PathSegmentMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PathSegmentMissing,
                 details: GreenNodeDetails::Node {
                     children: [TerminalIdentifier::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -2446,13 +2445,13 @@ impl<'db> ExprPathInner<'db> {
     ) -> ExprPathInnerGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         ExprPathInnerGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprPathInner,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -2504,13 +2503,13 @@ impl<'db> TypedSyntaxNode<'db> for ExprPathInner<'db> {
     type Green = ExprPathInnerGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprPathInnerGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprPathInner,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -2548,10 +2547,10 @@ impl<'db> ExprParenthesized<'db> {
         let children = [lparen.0, expr.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprParenthesizedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprParenthesized,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -2592,7 +2591,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprParenthesized<'db> {
     type Green = ExprParenthesizedGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprParenthesizedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprParenthesized,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -2603,7 +2602,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprParenthesized<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -2648,10 +2647,10 @@ impl<'db> ExprUnary<'db> {
         let children = [op.0, expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprUnaryGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprUnary,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -2689,13 +2688,13 @@ impl<'db> TypedSyntaxNode<'db> for ExprUnary<'db> {
     type Green = ExprUnaryGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprUnaryGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprUnary,
                 details: GreenNodeDetails::Node {
                     children: [UnaryOperator::missing(db).0, Expr::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -2885,10 +2884,10 @@ impl<'db> ExprBinary<'db> {
         let children = [lhs.0, op.0, rhs.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprBinaryGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprBinary,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -2929,7 +2928,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprBinary<'db> {
     type Green = ExprBinaryGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprBinaryGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprBinary,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -2940,7 +2939,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprBinary<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -3507,10 +3506,10 @@ impl<'db> ExprListParenthesized<'db> {
         let children = [lparen.0, expressions.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprListParenthesizedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprListParenthesized,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -3551,7 +3550,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprListParenthesized<'db> {
     type Green = ExprListParenthesizedGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprListParenthesizedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprListParenthesized,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -3562,7 +3561,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprListParenthesized<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -3607,10 +3606,10 @@ impl<'db> ExprFunctionCall<'db> {
         let children = [path.0, arguments.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprFunctionCallGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprFunctionCall,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -3648,13 +3647,13 @@ impl<'db> TypedSyntaxNode<'db> for ExprFunctionCall<'db> {
     type Green = ExprFunctionCallGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprFunctionCallGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprFunctionCall,
                 details: GreenNodeDetails::Node {
                     children: [ExprPath::missing(db).0, ArgListParenthesized::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -3701,10 +3700,10 @@ impl<'db> ArgListParenthesized<'db> {
         let children = [lparen.0, arguments.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ArgListParenthesizedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ArgListParenthesized,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -3745,7 +3744,7 @@ impl<'db> TypedSyntaxNode<'db> for ArgListParenthesized<'db> {
     type Green = ArgListParenthesizedGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ArgListParenthesizedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ArgListParenthesized,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -3756,7 +3755,7 @@ impl<'db> TypedSyntaxNode<'db> for ArgListParenthesized<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -3893,10 +3892,10 @@ impl<'db> OptionArgListParenthesizedEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionArgListParenthesizedEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionArgListParenthesizedEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -3927,13 +3926,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionArgListParenthesizedEmpty<'db> {
     type Green = OptionArgListParenthesizedEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionArgListParenthesizedEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionArgListParenthesizedEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -3978,10 +3977,10 @@ impl<'db> ExprStructCtorCall<'db> {
         let children = [path.0, arguments.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprStructCtorCallGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprStructCtorCall,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -4019,13 +4018,13 @@ impl<'db> TypedSyntaxNode<'db> for ExprStructCtorCall<'db> {
     type Green = ExprStructCtorCallGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprStructCtorCallGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprStructCtorCall,
                 details: GreenNodeDetails::Node {
                     children: [ExprPath::missing(db).0, StructArgListBraced::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -4072,10 +4071,10 @@ impl<'db> StructArgListBraced<'db> {
         let children = [lbrace.0, arguments.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         StructArgListBracedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StructArgListBraced,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -4116,7 +4115,7 @@ impl<'db> TypedSyntaxNode<'db> for StructArgListBraced<'db> {
     type Green = StructArgListBracedGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         StructArgListBracedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StructArgListBraced,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -4127,7 +4126,7 @@ impl<'db> TypedSyntaxNode<'db> for StructArgListBraced<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -4174,10 +4173,10 @@ impl<'db> ExprBlock<'db> {
         let children = [lbrace.0, statements.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprBlockGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprBlock,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -4218,7 +4217,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprBlock<'db> {
     type Green = ExprBlockGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprBlockGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprBlock,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -4229,7 +4228,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprBlock<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -4276,10 +4275,10 @@ impl<'db> ExprMatch<'db> {
         let children = [match_kw.0, expr.0, lbrace.0, arms.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprMatchGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprMatch,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -4326,7 +4325,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprMatch<'db> {
     type Green = ExprMatchGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprMatchGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprMatch,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -4339,7 +4338,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprMatch<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -4380,13 +4379,13 @@ impl<'db> MatchArms<'db> {
     ) -> MatchArmsGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         MatchArmsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MatchArms,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -4438,13 +4437,13 @@ impl<'db> TypedSyntaxNode<'db> for MatchArms<'db> {
     type Green = MatchArmsGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         MatchArmsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MatchArms,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -4482,10 +4481,10 @@ impl<'db> MatchArm<'db> {
         let children = [patterns.0, arrow.0, expression.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         MatchArmGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MatchArm,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -4526,7 +4525,7 @@ impl<'db> TypedSyntaxNode<'db> for MatchArm<'db> {
     type Green = MatchArmGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         MatchArmGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MatchArm,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -4537,7 +4536,7 @@ impl<'db> TypedSyntaxNode<'db> for MatchArm<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -4582,10 +4581,10 @@ impl<'db> ExprIf<'db> {
         let children = [if_kw.0, conditions.0, if_block.0, else_clause.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprIfGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprIf,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -4629,7 +4628,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprIf<'db> {
     type Green = ExprIfGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprIfGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprIf,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -4641,7 +4640,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprIf<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -4682,13 +4681,13 @@ impl<'db> ConditionListAnd<'db> {
     ) -> ConditionListAndGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         ConditionListAndGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ConditionListAnd,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -4740,13 +4739,13 @@ impl<'db> TypedSyntaxNode<'db> for ConditionListAnd<'db> {
     type Green = ConditionListAndGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ConditionListAndGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ConditionListAnd,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -4872,10 +4871,10 @@ impl<'db> ConditionLet<'db> {
         let children = [let_kw.0, patterns.0, eq.0, expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ConditionLetGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ConditionLet,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -4919,7 +4918,7 @@ impl<'db> TypedSyntaxNode<'db> for ConditionLet<'db> {
     type Green = ConditionLetGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ConditionLetGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ConditionLet,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -4931,7 +4930,7 @@ impl<'db> TypedSyntaxNode<'db> for ConditionLet<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -4967,10 +4966,10 @@ impl<'db> ConditionExpr<'db> {
         let children = [expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ConditionExprGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ConditionExpr,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -5005,13 +5004,13 @@ impl<'db> TypedSyntaxNode<'db> for ConditionExpr<'db> {
     type Green = ConditionExprGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ConditionExprGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ConditionExpr,
                 details: GreenNodeDetails::Node {
                     children: [Expr::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -5138,10 +5137,10 @@ impl<'db> ExprLoop<'db> {
         let children = [loop_kw.0, body.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprLoopGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprLoop,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -5179,13 +5178,13 @@ impl<'db> TypedSyntaxNode<'db> for ExprLoop<'db> {
     type Green = ExprLoopGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprLoopGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprLoop,
                 details: GreenNodeDetails::Node {
                     children: [TerminalLoop::missing(db).0, ExprBlock::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -5228,10 +5227,10 @@ impl<'db> ExprWhile<'db> {
         let children = [while_kw.0, conditions.0, body.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprWhileGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprWhile,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -5272,7 +5271,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprWhile<'db> {
     type Green = ExprWhileGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprWhileGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprWhile,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -5283,7 +5282,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprWhile<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -5330,10 +5329,10 @@ impl<'db> ExprFor<'db> {
         let children = [for_kw.0, pattern.0, identifier.0, expr.0, body.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprForGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprFor,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -5397,7 +5396,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprFor<'db> {
     type Green = ExprForGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprForGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprFor,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -5410,7 +5409,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprFor<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -5451,10 +5450,10 @@ impl<'db> ElseClause<'db> {
         let children = [else_kw.0, else_block_or_if.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ElseClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ElseClause,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -5492,13 +5491,13 @@ impl<'db> TypedSyntaxNode<'db> for ElseClause<'db> {
     type Green = ElseClauseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ElseClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ElseClause,
                 details: GreenNodeDetails::Node {
                     children: [TerminalElse::missing(db).0, BlockOrIf::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -5626,10 +5625,10 @@ impl<'db> OptionElseClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionElseClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionElseClauseEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -5660,13 +5659,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionElseClauseEmpty<'db> {
     type Green = OptionElseClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionElseClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionElseClauseEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -5711,10 +5710,10 @@ impl<'db> ExprErrorPropagate<'db> {
         let children = [expr.0, op.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprErrorPropagateGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprErrorPropagate,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -5752,13 +5751,13 @@ impl<'db> TypedSyntaxNode<'db> for ExprErrorPropagate<'db> {
     type Green = ExprErrorPropagateGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprErrorPropagateGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprErrorPropagate,
                 details: GreenNodeDetails::Node {
                     children: [Expr::missing(db).0, TerminalQuestionMark::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -5807,10 +5806,10 @@ impl<'db> ExprIndexed<'db> {
         let children = [expr.0, lbrack.0, index_expr.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprIndexedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprIndexed,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -5854,7 +5853,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprIndexed<'db> {
     type Green = ExprIndexedGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprIndexedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprIndexed,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -5866,7 +5865,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprIndexed<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -5911,10 +5910,10 @@ impl<'db> ExprFixedSizeArray<'db> {
         let children = [lbrack.0, exprs.0, size.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprFixedSizeArrayGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprFixedSizeArray,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -5958,7 +5957,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprFixedSizeArray<'db> {
     type Green = ExprFixedSizeArrayGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprFixedSizeArrayGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprFixedSizeArray,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -5970,7 +5969,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprFixedSizeArray<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -6015,10 +6014,10 @@ impl<'db> FixedSizeArraySize<'db> {
         let children = [semicolon.0, size.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         FixedSizeArraySizeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::FixedSizeArraySize,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -6056,13 +6055,13 @@ impl<'db> TypedSyntaxNode<'db> for FixedSizeArraySize<'db> {
     type Green = FixedSizeArraySizeGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         FixedSizeArraySizeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::FixedSizeArraySize,
                 details: GreenNodeDetails::Node {
                     children: [TerminalSemicolon::missing(db).0, Expr::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -6194,10 +6193,10 @@ impl<'db> OptionFixedSizeArraySizeEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionFixedSizeArraySizeEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionFixedSizeArraySizeEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -6228,13 +6227,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionFixedSizeArraySizeEmpty<'db> {
     type Green = OptionFixedSizeArraySizeEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionFixedSizeArraySizeEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionFixedSizeArraySizeEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -6283,10 +6282,10 @@ impl<'db> ExprClosure<'db> {
         let children = [wrapper.0, ret_ty.0, optional_no_panic.0, expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprClosureGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprClosure,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -6330,7 +6329,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprClosure<'db> {
     type Green = ExprClosureGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprClosureGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprClosure,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -6342,7 +6341,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprClosure<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -6478,10 +6477,10 @@ impl<'db> ClosureParamWrapperNAry<'db> {
         let children = [leftor.0, params.0, rightor.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ClosureParamWrapperNAryGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ClosureParamWrapperNAry,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -6522,7 +6521,7 @@ impl<'db> TypedSyntaxNode<'db> for ClosureParamWrapperNAry<'db> {
     type Green = ClosureParamWrapperNAryGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ClosureParamWrapperNAryGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ClosureParamWrapperNAry,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -6533,7 +6532,7 @@ impl<'db> TypedSyntaxNode<'db> for ClosureParamWrapperNAry<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -6578,10 +6577,10 @@ impl<'db> ExprPlaceholder<'db> {
         let children = [dollar.0, path.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprPlaceholderGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprPlaceholder,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -6619,13 +6618,13 @@ impl<'db> TypedSyntaxNode<'db> for ExprPlaceholder<'db> {
     type Green = ExprPlaceholderGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprPlaceholderGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprPlaceholder,
                 details: GreenNodeDetails::Node {
                     children: [TerminalDollar::missing(db).0, ExprPath::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -6670,10 +6669,10 @@ impl<'db> StructArgExpr<'db> {
         let children = [colon.0, expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         StructArgExprGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StructArgExpr,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -6711,13 +6710,13 @@ impl<'db> TypedSyntaxNode<'db> for StructArgExpr<'db> {
     type Green = StructArgExprGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         StructArgExprGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StructArgExpr,
                 details: GreenNodeDetails::Node {
                     children: [TerminalColon::missing(db).0, Expr::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -6849,10 +6848,10 @@ impl<'db> OptionStructArgExprEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionStructArgExprEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionStructArgExprEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -6883,13 +6882,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionStructArgExprEmpty<'db> {
     type Green = OptionStructArgExprEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionStructArgExprEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionStructArgExprEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -6934,10 +6933,10 @@ impl<'db> StructArgSingle<'db> {
         let children = [identifier.0, arg_expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         StructArgSingleGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StructArgSingle,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -6984,7 +6983,7 @@ impl<'db> TypedSyntaxNode<'db> for StructArgSingle<'db> {
     type Green = StructArgSingleGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         StructArgSingleGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StructArgSingle,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -6994,7 +6993,7 @@ impl<'db> TypedSyntaxNode<'db> for StructArgSingle<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -7039,10 +7038,10 @@ impl<'db> StructArgTail<'db> {
         let children = [dotdot.0, expression.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         StructArgTailGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StructArgTail,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -7080,13 +7079,13 @@ impl<'db> TypedSyntaxNode<'db> for StructArgTail<'db> {
     type Green = StructArgTailGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         StructArgTailGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StructArgTail,
                 details: GreenNodeDetails::Node {
                     children: [TerminalDotDot::missing(db).0, Expr::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -7221,13 +7220,13 @@ impl<'db> StructArgList<'db> {
     ) -> StructArgListGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         StructArgListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StructArgList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -7279,13 +7278,13 @@ impl<'db> TypedSyntaxNode<'db> for StructArgList<'db> {
     type Green = StructArgListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         StructArgListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StructArgList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -7323,10 +7322,10 @@ impl<'db> ArgListBraced<'db> {
         let children = [lbrace.0, arguments.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ArgListBracedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ArgListBraced,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -7367,7 +7366,7 @@ impl<'db> TypedSyntaxNode<'db> for ArgListBraced<'db> {
     type Green = ArgListBracedGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ArgListBracedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ArgListBraced,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -7378,7 +7377,7 @@ impl<'db> TypedSyntaxNode<'db> for ArgListBraced<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -7425,10 +7424,10 @@ impl<'db> ArgListBracketed<'db> {
         let children = [lbrack.0, arguments.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ArgListBracketedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ArgListBracketed,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -7469,7 +7468,7 @@ impl<'db> TypedSyntaxNode<'db> for ArgListBracketed<'db> {
     type Green = ArgListBracketedGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ArgListBracketedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ArgListBracketed,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -7480,7 +7479,7 @@ impl<'db> TypedSyntaxNode<'db> for ArgListBracketed<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -7653,10 +7652,10 @@ impl<'db> WrappedArgListMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         WrappedArgListMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::WrappedArgListMissing,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -7687,13 +7686,13 @@ impl<'db> TypedSyntaxNode<'db> for WrappedArgListMissing<'db> {
     type Green = WrappedArgListMissingGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         WrappedArgListMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::WrappedArgListMissing,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -8006,10 +8005,10 @@ impl<'db> PatternIdentifier<'db> {
         let children = [modifiers.0, name.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         PatternIdentifierGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternIdentifier,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -8056,14 +8055,14 @@ impl<'db> TypedSyntaxNode<'db> for PatternIdentifier<'db> {
     type Green = PatternIdentifierGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         PatternIdentifierGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternIdentifier,
                 details: GreenNodeDetails::Node {
                     children: [ModifierList::missing(db).0, TerminalIdentifier::missing(db).0]
                         .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -8112,10 +8111,10 @@ impl<'db> PatternStruct<'db> {
         let children = [path.0, lbrace.0, params.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         PatternStructGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternStruct,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -8159,7 +8158,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternStruct<'db> {
     type Green = PatternStructGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         PatternStructGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternStruct,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -8171,7 +8170,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternStruct<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -8216,13 +8215,13 @@ impl<'db> PatternStructParamList<'db> {
     ) -> PatternStructParamListGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         PatternStructParamListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternStructParamList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -8276,13 +8275,13 @@ impl<'db> TypedSyntaxNode<'db> for PatternStructParamList<'db> {
     type Green = PatternStructParamListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         PatternStructParamListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternStructParamList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -8320,10 +8319,10 @@ impl<'db> PatternTuple<'db> {
         let children = [lparen.0, patterns.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         PatternTupleGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternTuple,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -8364,7 +8363,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternTuple<'db> {
     type Green = PatternTupleGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         PatternTupleGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternTuple,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -8375,7 +8374,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternTuple<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -8418,10 +8417,10 @@ impl<'db> PatternFixedSizeArray<'db> {
         let children = [lbrack.0, patterns.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         PatternFixedSizeArrayGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternFixedSizeArray,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -8462,7 +8461,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternFixedSizeArray<'db> {
     type Green = PatternFixedSizeArrayGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         PatternFixedSizeArrayGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternFixedSizeArray,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -8473,7 +8472,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternFixedSizeArray<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -8518,13 +8517,13 @@ impl<'db> PatternList<'db> {
     ) -> PatternListGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         PatternListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -8576,13 +8575,13 @@ impl<'db> TypedSyntaxNode<'db> for PatternList<'db> {
     type Green = PatternListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         PatternListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -8618,13 +8617,13 @@ impl<'db> PatternListOr<'db> {
     ) -> PatternListOrGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         PatternListOrGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternListOr,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -8676,13 +8675,13 @@ impl<'db> TypedSyntaxNode<'db> for PatternListOr<'db> {
     type Green = PatternListOrGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         PatternListOrGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternListOr,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -8838,10 +8837,10 @@ impl<'db> PatternStructParamWithExpr<'db> {
         let children = [modifiers.0, name.0, colon.0, pattern.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         PatternStructParamWithExprGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternStructParamWithExpr,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -8885,7 +8884,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternStructParamWithExpr<'db> {
     type Green = PatternStructParamWithExprGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         PatternStructParamWithExprGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternStructParamWithExpr,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -8897,7 +8896,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternStructParamWithExpr<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -8942,10 +8941,10 @@ impl<'db> PatternEnum<'db> {
         let children = [path.0, pattern.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         PatternEnumGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternEnum,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -8983,7 +8982,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternEnum<'db> {
     type Green = PatternEnumGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         PatternEnumGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternEnum,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -8993,7 +8992,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternEnum<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -9036,10 +9035,10 @@ impl<'db> PatternEnumInnerPattern<'db> {
         let children = [lparen.0, pattern.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         PatternEnumInnerPatternGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternEnumInnerPattern,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -9080,7 +9079,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternEnumInnerPattern<'db> {
     type Green = PatternEnumInnerPatternGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         PatternEnumInnerPatternGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::PatternEnumInnerPattern,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -9091,7 +9090,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternEnumInnerPattern<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -9236,10 +9235,10 @@ impl<'db> OptionPatternEnumInnerPatternEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionPatternEnumInnerPatternEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionPatternEnumInnerPatternEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -9270,13 +9269,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionPatternEnumInnerPatternEmpty<'db> {
     type Green = OptionPatternEnumInnerPatternEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionPatternEnumInnerPatternEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionPatternEnumInnerPatternEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -9321,10 +9320,10 @@ impl<'db> TypeClause<'db> {
         let children = [colon.0, ty.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TypeClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TypeClause,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -9362,13 +9361,13 @@ impl<'db> TypedSyntaxNode<'db> for TypeClause<'db> {
     type Green = TypeClauseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TypeClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TypeClause,
                 details: GreenNodeDetails::Node {
                     children: [TerminalColon::missing(db).0, Expr::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -9496,10 +9495,10 @@ impl<'db> OptionTypeClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionTypeClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionTypeClauseEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -9530,13 +9529,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionTypeClauseEmpty<'db> {
     type Green = OptionTypeClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionTypeClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionTypeClauseEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -9581,10 +9580,10 @@ impl<'db> ReturnTypeClause<'db> {
         let children = [arrow.0, ty.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ReturnTypeClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ReturnTypeClause,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -9622,13 +9621,13 @@ impl<'db> TypedSyntaxNode<'db> for ReturnTypeClause<'db> {
     type Green = ReturnTypeClauseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ReturnTypeClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ReturnTypeClause,
                 details: GreenNodeDetails::Node {
                     children: [TerminalArrow::missing(db).0, Expr::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -9760,10 +9759,10 @@ impl<'db> OptionReturnTypeClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionReturnTypeClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionReturnTypeClauseEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -9794,13 +9793,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionReturnTypeClauseEmpty<'db> {
     type Green = OptionReturnTypeClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionReturnTypeClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionReturnTypeClauseEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -10028,13 +10027,13 @@ impl<'db> StatementList<'db> {
     ) -> StatementListGreen<'db> {
         let width = children.iter().map(|id| id.0.long(db).width()).sum();
         StatementListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.0).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -10063,13 +10062,13 @@ impl<'db> TypedSyntaxNode<'db> for StatementList<'db> {
     type Green = StatementListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         StatementListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -10099,10 +10098,10 @@ impl<'db> StatementMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         StatementMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementMissing,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -10133,13 +10132,13 @@ impl<'db> TypedSyntaxNode<'db> for StatementMissing<'db> {
     type Green = StatementMissingGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         StatementMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementMissing,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -10205,10 +10204,10 @@ impl<'db> StatementLet<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         StatementLetGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementLet,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -10273,7 +10272,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementLet<'db> {
     type Green = StatementLetGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         StatementLetGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementLet,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -10289,7 +10288,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementLet<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -10330,10 +10329,10 @@ impl<'db> LetElseClause<'db> {
         let children = [else_kw.0, else_block.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         LetElseClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::LetElseClause,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -10371,13 +10370,13 @@ impl<'db> TypedSyntaxNode<'db> for LetElseClause<'db> {
     type Green = LetElseClauseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         LetElseClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::LetElseClause,
                 details: GreenNodeDetails::Node {
                     children: [TerminalElse::missing(db).0, ExprBlock::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -10509,10 +10508,10 @@ impl<'db> OptionLetElseClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionLetElseClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionLetElseClauseEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -10543,13 +10542,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionLetElseClauseEmpty<'db> {
     type Green = OptionLetElseClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionLetElseClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionLetElseClauseEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -10681,10 +10680,10 @@ impl<'db> OptionTerminalSemicolonEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionTerminalSemicolonEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionTerminalSemicolonEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -10715,13 +10714,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalSemicolonEmpty<'db> {
     type Green = OptionTerminalSemicolonEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionTerminalSemicolonEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionTerminalSemicolonEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -10768,10 +10767,10 @@ impl<'db> StatementExpr<'db> {
         let children = [attributes.0, expr.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         StatementExprGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementExpr,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -10812,7 +10811,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementExpr<'db> {
     type Green = StatementExprGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         StatementExprGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementExpr,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -10823,7 +10822,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementExpr<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -10870,10 +10869,10 @@ impl<'db> StatementContinue<'db> {
         let children = [attributes.0, continue_kw.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         StatementContinueGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementContinue,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -10914,7 +10913,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementContinue<'db> {
     type Green = StatementContinueGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         StatementContinueGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementContinue,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -10925,7 +10924,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementContinue<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -10965,10 +10964,10 @@ impl<'db> ExprClause<'db> {
         let children = [expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprClause,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -11003,13 +11002,13 @@ impl<'db> TypedSyntaxNode<'db> for ExprClause<'db> {
     type Green = ExprClauseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprClause,
                 details: GreenNodeDetails::Node {
                     children: [Expr::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -11137,10 +11136,10 @@ impl<'db> OptionExprClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionExprClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionExprClauseEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -11171,13 +11170,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionExprClauseEmpty<'db> {
     type Green = OptionExprClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionExprClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionExprClauseEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -11226,10 +11225,10 @@ impl<'db> StatementReturn<'db> {
         let children = [attributes.0, return_kw.0, expr_clause.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         StatementReturnGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementReturn,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -11273,7 +11272,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementReturn<'db> {
     type Green = StatementReturnGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         StatementReturnGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementReturn,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -11285,7 +11284,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementReturn<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -11334,10 +11333,10 @@ impl<'db> StatementBreak<'db> {
         let children = [attributes.0, break_kw.0, expr_clause.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         StatementBreakGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementBreak,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -11381,7 +11380,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementBreak<'db> {
     type Green = StatementBreakGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         StatementBreakGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementBreak,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -11393,7 +11392,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementBreak<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -11436,10 +11435,10 @@ impl<'db> StatementItem<'db> {
         let children = [item.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         StatementItemGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementItem,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -11474,13 +11473,13 @@ impl<'db> TypedSyntaxNode<'db> for StatementItem<'db> {
     type Green = StatementItemGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         StatementItemGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::StatementItem,
                 details: GreenNodeDetails::Node {
                     children: [ModuleItem::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -11527,10 +11526,10 @@ impl<'db> Param<'db> {
         let children = [modifiers.0, name.0, type_clause.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ParamGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::Param,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -11580,7 +11579,7 @@ impl<'db> TypedSyntaxNode<'db> for Param<'db> {
     type Green = ParamGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ParamGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::Param,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -11591,7 +11590,7 @@ impl<'db> TypedSyntaxNode<'db> for Param<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -11632,13 +11631,13 @@ impl<'db> ModifierList<'db> {
     ) -> ModifierListGreen<'db> {
         let width = children.iter().map(|id| id.0.long(db).width()).sum();
         ModifierListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ModifierList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.0).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -11667,13 +11666,13 @@ impl<'db> TypedSyntaxNode<'db> for ModifierList<'db> {
     type Green = ModifierListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ModifierListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ModifierList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -11791,13 +11790,13 @@ impl<'db> ParamList<'db> {
     ) -> ParamListGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         ParamListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ParamList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -11849,13 +11848,13 @@ impl<'db> TypedSyntaxNode<'db> for ParamList<'db> {
     type Green = ParamListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ParamListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ParamList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -11895,10 +11894,10 @@ impl<'db> ImplicitsClause<'db> {
         let children = [implicits_kw.0, lparen.0, implicits.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ImplicitsClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ImplicitsClause,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -11942,7 +11941,7 @@ impl<'db> TypedSyntaxNode<'db> for ImplicitsClause<'db> {
     type Green = ImplicitsClauseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ImplicitsClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ImplicitsClause,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -11954,7 +11953,7 @@ impl<'db> TypedSyntaxNode<'db> for ImplicitsClause<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -11999,13 +11998,13 @@ impl<'db> ImplicitsList<'db> {
     ) -> ImplicitsListGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         ImplicitsListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ImplicitsList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -12057,13 +12056,13 @@ impl<'db> TypedSyntaxNode<'db> for ImplicitsList<'db> {
     type Green = ImplicitsListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ImplicitsListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ImplicitsList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -12186,10 +12185,10 @@ impl<'db> OptionImplicitsClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionImplicitsClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionImplicitsClauseEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -12220,13 +12219,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionImplicitsClauseEmpty<'db> {
     type Green = OptionImplicitsClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionImplicitsClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionImplicitsClauseEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -12358,10 +12357,10 @@ impl<'db> OptionTerminalNoPanicEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionTerminalNoPanicEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionTerminalNoPanicEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -12392,13 +12391,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalNoPanicEmpty<'db> {
     type Green = OptionTerminalNoPanicEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionTerminalNoPanicEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionTerminalNoPanicEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -12530,10 +12529,10 @@ impl<'db> OptionTerminalConstEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionTerminalConstEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionTerminalConstEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -12564,13 +12563,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalConstEmpty<'db> {
     type Green = OptionTerminalConstEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionTerminalConstEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionTerminalConstEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -12624,10 +12623,10 @@ impl<'db> FunctionSignature<'db> {
             [lparen.0, parameters.0, rparen.0, ret_ty.0, implicits_clause.0, optional_no_panic.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         FunctionSignatureGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::FunctionSignature,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -12677,7 +12676,7 @@ impl<'db> TypedSyntaxNode<'db> for FunctionSignature<'db> {
     type Green = FunctionSignatureGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         FunctionSignatureGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::FunctionSignature,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -12691,7 +12690,7 @@ impl<'db> TypedSyntaxNode<'db> for FunctionSignature<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -12740,10 +12739,10 @@ impl<'db> Member<'db> {
         let children = [attributes.0, visibility.0, name.0, type_clause.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         MemberGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::Member,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -12796,7 +12795,7 @@ impl<'db> TypedSyntaxNode<'db> for Member<'db> {
     type Green = MemberGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         MemberGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::Member,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -12808,7 +12807,7 @@ impl<'db> TypedSyntaxNode<'db> for Member<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -12849,13 +12848,13 @@ impl<'db> MemberList<'db> {
     ) -> MemberListGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         MemberListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MemberList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -12907,13 +12906,13 @@ impl<'db> TypedSyntaxNode<'db> for MemberList<'db> {
     type Green = MemberListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         MemberListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MemberList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -12951,10 +12950,10 @@ impl<'db> Variant<'db> {
         let children = [attributes.0, name.0, type_clause.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         VariantGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::Variant,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -13004,7 +13003,7 @@ impl<'db> TypedSyntaxNode<'db> for Variant<'db> {
     type Green = VariantGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         VariantGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::Variant,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -13015,7 +13014,7 @@ impl<'db> TypedSyntaxNode<'db> for Variant<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -13056,13 +13055,13 @@ impl<'db> VariantList<'db> {
     ) -> VariantListGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         VariantListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::VariantList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -13114,13 +13113,13 @@ impl<'db> TypedSyntaxNode<'db> for VariantList<'db> {
     type Green = VariantListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         VariantListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::VariantList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -13496,13 +13495,13 @@ impl<'db> ModuleItemList<'db> {
     ) -> ModuleItemListGreen<'db> {
         let width = children.iter().map(|id| id.0.long(db).width()).sum();
         ModuleItemListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ModuleItemList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.0).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -13531,13 +13530,13 @@ impl<'db> TypedSyntaxNode<'db> for ModuleItemList<'db> {
     type Green = ModuleItemListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ModuleItemListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ModuleItemList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -13567,10 +13566,10 @@ impl<'db> ModuleItemMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ModuleItemMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ModuleItemMissing,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -13601,13 +13600,13 @@ impl<'db> TypedSyntaxNode<'db> for ModuleItemMissing<'db> {
     type Green = ModuleItemMissingGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ModuleItemMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ModuleItemMissing,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -13658,10 +13657,10 @@ impl<'db> Attribute<'db> {
         let children = [hash.0, lbrack.0, attr.0, arguments.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         AttributeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::Attribute,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -13708,7 +13707,7 @@ impl<'db> TypedSyntaxNode<'db> for Attribute<'db> {
     type Green = AttributeGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         AttributeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::Attribute,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -13721,7 +13720,7 @@ impl<'db> TypedSyntaxNode<'db> for Attribute<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -13762,13 +13761,13 @@ impl<'db> AttributeList<'db> {
     ) -> AttributeListGreen<'db> {
         let width = children.iter().map(|id| id.0.long(db).width()).sum();
         AttributeListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::AttributeList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.0).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -13797,13 +13796,13 @@ impl<'db> TypedSyntaxNode<'db> for AttributeList<'db> {
     type Green = AttributeListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         AttributeListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::AttributeList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -13833,10 +13832,10 @@ impl<'db> VisibilityDefault<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         VisibilityDefaultGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::VisibilityDefault,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -13867,13 +13866,13 @@ impl<'db> TypedSyntaxNode<'db> for VisibilityDefault<'db> {
     type Green = VisibilityDefaultGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         VisibilityDefaultGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::VisibilityDefault,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -13920,10 +13919,10 @@ impl<'db> VisibilityPubArgumentClause<'db> {
         let children = [lparen.0, argument.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         VisibilityPubArgumentClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::VisibilityPubArgumentClause,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -13964,7 +13963,7 @@ impl<'db> TypedSyntaxNode<'db> for VisibilityPubArgumentClause<'db> {
     type Green = VisibilityPubArgumentClauseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         VisibilityPubArgumentClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::VisibilityPubArgumentClause,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -13975,7 +13974,7 @@ impl<'db> TypedSyntaxNode<'db> for VisibilityPubArgumentClause<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -14125,10 +14124,10 @@ impl<'db> OptionVisibilityPubArgumentClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionVisibilityPubArgumentClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionVisibilityPubArgumentClauseEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -14160,13 +14159,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionVisibilityPubArgumentClauseEmpty<'db> {
     type Green = OptionVisibilityPubArgumentClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionVisibilityPubArgumentClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionVisibilityPubArgumentClauseEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -14211,10 +14210,10 @@ impl<'db> VisibilityPub<'db> {
         let children = [pub_kw.0, argument_clause.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         VisibilityPubGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::VisibilityPub,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -14255,7 +14254,7 @@ impl<'db> TypedSyntaxNode<'db> for VisibilityPub<'db> {
     type Green = VisibilityPubGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         VisibilityPubGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::VisibilityPub,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -14265,7 +14264,7 @@ impl<'db> TypedSyntaxNode<'db> for VisibilityPub<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -14404,10 +14403,10 @@ impl<'db> ItemModule<'db> {
         let children = [attributes.0, visibility.0, module_kw.0, name.0, body.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ItemModuleGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemModule,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -14463,7 +14462,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemModule<'db> {
     type Green = ItemModuleGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ItemModuleGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemModule,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -14476,7 +14475,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemModule<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -14609,10 +14608,10 @@ impl<'db> ModuleBody<'db> {
         let children = [lbrace.0, items.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ModuleBodyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ModuleBody,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -14653,7 +14652,7 @@ impl<'db> TypedSyntaxNode<'db> for ModuleBody<'db> {
     type Green = ModuleBodyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ModuleBodyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ModuleBody,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -14664,7 +14663,7 @@ impl<'db> TypedSyntaxNode<'db> for ModuleBody<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -14711,10 +14710,10 @@ impl<'db> FunctionDeclaration<'db> {
         let children = [optional_const.0, function_kw.0, name.0, generic_params.0, signature.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         FunctionDeclarationGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::FunctionDeclaration,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -14770,7 +14769,7 @@ impl<'db> TypedSyntaxNode<'db> for FunctionDeclaration<'db> {
     type Green = FunctionDeclarationGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         FunctionDeclarationGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::FunctionDeclaration,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -14783,7 +14782,7 @@ impl<'db> TypedSyntaxNode<'db> for FunctionDeclaration<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -14849,10 +14848,10 @@ impl<'db> ItemConstant<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ItemConstantGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemConstant,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -14917,7 +14916,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemConstant<'db> {
     type Green = ItemConstantGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ItemConstantGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemConstant,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -14933,7 +14932,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemConstant<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -14978,10 +14977,10 @@ impl<'db> FunctionWithBody<'db> {
         let children = [attributes.0, visibility.0, declaration.0, body.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         FunctionWithBodyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::FunctionWithBody,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -15034,7 +15033,7 @@ impl<'db> TypedSyntaxNode<'db> for FunctionWithBody<'db> {
     type Green = FunctionWithBodyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         FunctionWithBodyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::FunctionWithBody,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -15046,7 +15045,7 @@ impl<'db> TypedSyntaxNode<'db> for FunctionWithBody<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -15097,10 +15096,10 @@ impl<'db> ItemExternFunction<'db> {
         let children = [attributes.0, visibility.0, extern_kw.0, declaration.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ItemExternFunctionGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemExternFunction,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -15156,7 +15155,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemExternFunction<'db> {
     type Green = ItemExternFunctionGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ItemExternFunctionGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemExternFunction,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -15169,7 +15168,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemExternFunction<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -15232,10 +15231,10 @@ impl<'db> ItemExternType<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ItemExternTypeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemExternType,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -15297,7 +15296,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemExternType<'db> {
     type Green = ItemExternTypeGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ItemExternTypeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemExternType,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -15312,7 +15311,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemExternType<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -15365,10 +15364,10 @@ impl<'db> ItemTrait<'db> {
         let children = [attributes.0, visibility.0, trait_kw.0, name.0, generic_params.0, body.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ItemTraitGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemTrait,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -15427,7 +15426,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemTrait<'db> {
     type Green = ItemTraitGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ItemTraitGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemTrait,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -15441,7 +15440,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemTrait<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -15574,10 +15573,10 @@ impl<'db> TraitBody<'db> {
         let children = [lbrace.0, items.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TraitBodyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TraitBody,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -15618,7 +15617,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitBody<'db> {
     type Green = TraitBodyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TraitBodyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TraitBody,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -15629,7 +15628,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitBody<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -15670,13 +15669,13 @@ impl<'db> TraitItemList<'db> {
     ) -> TraitItemListGreen<'db> {
         let width = children.iter().map(|id| id.0.long(db).width()).sum();
         TraitItemListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TraitItemList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.0).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -15705,13 +15704,13 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemList<'db> {
     type Green = TraitItemListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TraitItemListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TraitItemList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -15888,10 +15887,10 @@ impl<'db> TraitItemMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TraitItemMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TraitItemMissing,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -15922,13 +15921,13 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemMissing<'db> {
     type Green = TraitItemMissingGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TraitItemMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TraitItemMissing,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -15975,10 +15974,10 @@ impl<'db> TraitItemFunction<'db> {
         let children = [attributes.0, declaration.0, body.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TraitItemFunctionGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TraitItemFunction,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -16028,7 +16027,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemFunction<'db> {
     type Green = TraitItemFunctionGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TraitItemFunctionGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TraitItemFunction,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -16039,7 +16038,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemFunction<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -16090,10 +16089,10 @@ impl<'db> TraitItemType<'db> {
         let children = [attributes.0, type_kw.0, name.0, generic_params.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TraitItemTypeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TraitItemType,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -16149,7 +16148,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemType<'db> {
     type Green = TraitItemTypeGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TraitItemTypeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TraitItemType,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -16162,7 +16161,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemType<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -16213,10 +16212,10 @@ impl<'db> TraitItemConstant<'db> {
         let children = [attributes.0, const_kw.0, name.0, type_clause.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TraitItemConstantGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TraitItemConstant,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -16272,7 +16271,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemConstant<'db> {
     type Green = TraitItemConstantGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TraitItemConstantGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TraitItemConstant,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -16285,7 +16284,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemConstant<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -16338,10 +16337,10 @@ impl<'db> TraitItemImpl<'db> {
         let children = [attributes.0, impl_kw.0, name.0, colon.0, trait_path.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TraitItemImplGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TraitItemImpl,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -16400,7 +16399,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemImpl<'db> {
     type Green = TraitItemImplGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TraitItemImplGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TraitItemImpl,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -16414,7 +16413,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemImpl<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -16573,10 +16572,10 @@ impl<'db> ItemImpl<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ItemImplGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemImpl,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -16641,7 +16640,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemImpl<'db> {
     type Green = ItemImplGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ItemImplGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemImpl,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -16657,7 +16656,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemImpl<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -16696,10 +16695,10 @@ impl<'db> ItemHeaderDoc<'db> {
         let children = [empty.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ItemHeaderDocGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemHeaderDoc,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -16734,13 +16733,13 @@ impl<'db> TypedSyntaxNode<'db> for ItemHeaderDoc<'db> {
     type Green = ItemHeaderDocGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ItemHeaderDocGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemHeaderDoc,
                 details: GreenNodeDetails::Node {
                     children: [TerminalEmpty::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -16873,10 +16872,10 @@ impl<'db> ImplBody<'db> {
         let children = [lbrace.0, items.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ImplBodyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ImplBody,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -16917,7 +16916,7 @@ impl<'db> TypedSyntaxNode<'db> for ImplBody<'db> {
     type Green = ImplBodyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ImplBodyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ImplBody,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -16928,7 +16927,7 @@ impl<'db> TypedSyntaxNode<'db> for ImplBody<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -16969,13 +16968,13 @@ impl<'db> ImplItemList<'db> {
     ) -> ImplItemListGreen<'db> {
         let width = children.iter().map(|id| id.0.long(db).width()).sum();
         ImplItemListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ImplItemList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.0).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -17004,13 +17003,13 @@ impl<'db> TypedSyntaxNode<'db> for ImplItemList<'db> {
     type Green = ImplItemListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ImplItemListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ImplItemList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -17304,10 +17303,10 @@ impl<'db> ImplItemMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ImplItemMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ImplItemMissing,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -17338,13 +17337,13 @@ impl<'db> TypedSyntaxNode<'db> for ImplItemMissing<'db> {
     type Green = ImplItemMissingGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ImplItemMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ImplItemMissing,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -17410,10 +17409,10 @@ impl<'db> ItemImplAlias<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ItemImplAliasGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemImplAlias,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -17478,7 +17477,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemImplAlias<'db> {
     type Green = ItemImplAliasGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ItemImplAliasGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemImplAlias,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -17494,7 +17493,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemImplAlias<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -17560,10 +17559,10 @@ impl<'db> ItemStruct<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ItemStructGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemStruct,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -17628,7 +17627,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemStruct<'db> {
     type Green = ItemStructGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ItemStructGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemStruct,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -17644,7 +17643,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemStruct<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -17706,10 +17705,10 @@ impl<'db> ItemEnum<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ItemEnumGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemEnum,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -17774,7 +17773,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemEnum<'db> {
     type Green = ItemEnumGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ItemEnumGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemEnum,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -17790,7 +17789,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemEnum<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -17852,10 +17851,10 @@ impl<'db> ItemTypeAlias<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ItemTypeAliasGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemTypeAlias,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -17920,7 +17919,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemTypeAlias<'db> {
     type Green = ItemTypeAliasGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ItemTypeAliasGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemTypeAlias,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -17936,7 +17935,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemTypeAlias<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -17987,10 +17986,10 @@ impl<'db> ItemUse<'db> {
         let children = [attributes.0, visibility.0, use_kw.0, use_path.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ItemUseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemUse,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -18046,7 +18045,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemUse<'db> {
     type Green = ItemUseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ItemUseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemUse,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -18059,7 +18058,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemUse<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -18220,10 +18219,10 @@ impl<'db> UsePathLeaf<'db> {
         let children = [ident.0, alias_clause.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         UsePathLeafGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::UsePathLeaf,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -18278,13 +18277,13 @@ impl<'db> TypedSyntaxNode<'db> for UsePathLeaf<'db> {
     type Green = UsePathLeafGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         UsePathLeafGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::UsePathLeaf,
                 details: GreenNodeDetails::Node {
                     children: [PathSegment::missing(db).0, OptionAliasClause::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -18327,10 +18326,10 @@ impl<'db> UsePathSingle<'db> {
         let children = [ident.0, colon_colon.0, use_path.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         UsePathSingleGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::UsePathSingle,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -18371,7 +18370,7 @@ impl<'db> TypedSyntaxNode<'db> for UsePathSingle<'db> {
     type Green = UsePathSingleGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         UsePathSingleGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::UsePathSingle,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -18382,7 +18381,7 @@ impl<'db> TypedSyntaxNode<'db> for UsePathSingle<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -18429,10 +18428,10 @@ impl<'db> UsePathMulti<'db> {
         let children = [lbrace.0, use_paths.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         UsePathMultiGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::UsePathMulti,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -18473,7 +18472,7 @@ impl<'db> TypedSyntaxNode<'db> for UsePathMulti<'db> {
     type Green = UsePathMultiGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         UsePathMultiGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::UsePathMulti,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -18484,7 +18483,7 @@ impl<'db> TypedSyntaxNode<'db> for UsePathMulti<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -18523,10 +18522,10 @@ impl<'db> UsePathStar<'db> {
         let children = [star.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         UsePathStarGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::UsePathStar,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -18561,13 +18560,13 @@ impl<'db> TypedSyntaxNode<'db> for UsePathStar<'db> {
     type Green = UsePathStarGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         UsePathStarGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::UsePathStar,
                 details: GreenNodeDetails::Node {
                     children: [TerminalMul::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -18608,13 +18607,13 @@ impl<'db> UsePathList<'db> {
     ) -> UsePathListGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         UsePathListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::UsePathList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -18666,13 +18665,13 @@ impl<'db> TypedSyntaxNode<'db> for UsePathList<'db> {
     type Green = UsePathListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         UsePathListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::UsePathList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -18708,10 +18707,10 @@ impl<'db> AliasClause<'db> {
         let children = [as_kw.0, alias.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         AliasClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::AliasClause,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -18758,13 +18757,13 @@ impl<'db> TypedSyntaxNode<'db> for AliasClause<'db> {
     type Green = AliasClauseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         AliasClauseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::AliasClause,
                 details: GreenNodeDetails::Node {
                     children: [TerminalAs::missing(db).0, TerminalIdentifier::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -18892,10 +18891,10 @@ impl<'db> OptionAliasClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionAliasClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionAliasClauseEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -18926,13 +18925,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionAliasClauseEmpty<'db> {
     type Green = OptionAliasClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionAliasClauseEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionAliasClauseEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -19069,10 +19068,10 @@ impl<'db> GenericArgNamed<'db> {
         let children = [name.0, colon.0, value.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         GenericArgNamedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericArgNamed,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -19113,7 +19112,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgNamed<'db> {
     type Green = GenericArgNamedGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         GenericArgNamedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericArgNamed,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -19124,7 +19123,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgNamed<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -19167,10 +19166,10 @@ impl<'db> GenericArgUnnamed<'db> {
         let children = [value.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         GenericArgUnnamedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericArgUnnamed,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -19205,13 +19204,13 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgUnnamed<'db> {
     type Green = GenericArgUnnamedGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         GenericArgUnnamedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericArgUnnamed,
                 details: GreenNodeDetails::Node {
                     children: [GenericArgValue::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -19346,10 +19345,10 @@ impl<'db> GenericArgValueExpr<'db> {
         let children = [expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         GenericArgValueExprGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericArgValueExpr,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -19384,13 +19383,13 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgValueExpr<'db> {
     type Green = GenericArgValueExprGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         GenericArgValueExprGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericArgValueExpr,
                 details: GreenNodeDetails::Node {
                     children: [Expr::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -19437,10 +19436,10 @@ impl<'db> GenericArgs<'db> {
         let children = [langle.0, generic_args.0, rangle.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         GenericArgsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericArgs,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -19481,7 +19480,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgs<'db> {
     type Green = GenericArgsGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         GenericArgsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericArgs,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -19492,7 +19491,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgs<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -19533,13 +19532,13 @@ impl<'db> GenericArgList<'db> {
     ) -> GenericArgListGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         GenericArgListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericArgList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -19591,13 +19590,13 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgList<'db> {
     type Green = GenericArgListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         GenericArgListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericArgList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -19635,10 +19634,10 @@ impl<'db> AssociatedItemConstraint<'db> {
         let children = [item.0, colon.0, value.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         AssociatedItemConstraintGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::AssociatedItemConstraint,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -19679,7 +19678,7 @@ impl<'db> TypedSyntaxNode<'db> for AssociatedItemConstraint<'db> {
     type Green = AssociatedItemConstraintGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         AssociatedItemConstraintGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::AssociatedItemConstraint,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -19690,7 +19689,7 @@ impl<'db> TypedSyntaxNode<'db> for AssociatedItemConstraint<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -19737,10 +19736,10 @@ impl<'db> AssociatedItemConstraints<'db> {
         let children = [lbrack.0, associated_item_constraints.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         AssociatedItemConstraintsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::AssociatedItemConstraints,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -19784,7 +19783,7 @@ impl<'db> TypedSyntaxNode<'db> for AssociatedItemConstraints<'db> {
     type Green = AssociatedItemConstraintsGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         AssociatedItemConstraintsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::AssociatedItemConstraints,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -19795,7 +19794,7 @@ impl<'db> TypedSyntaxNode<'db> for AssociatedItemConstraints<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -19840,13 +19839,13 @@ impl<'db> AssociatedItemConstraintList<'db> {
     ) -> AssociatedItemConstraintListGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         AssociatedItemConstraintListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::AssociatedItemConstraintList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -19902,13 +19901,13 @@ impl<'db> TypedSyntaxNode<'db> for AssociatedItemConstraintList<'db> {
     type Green = AssociatedItemConstraintListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         AssociatedItemConstraintListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::AssociatedItemConstraintList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -20047,10 +20046,10 @@ impl<'db> OptionAssociatedItemConstraintsEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionAssociatedItemConstraintsEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionAssociatedItemConstraintsEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -20082,13 +20081,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionAssociatedItemConstraintsEmpty<'db> {
     type Green = OptionAssociatedItemConstraintsEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionAssociatedItemConstraintsEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionAssociatedItemConstraintsEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -20233,10 +20232,10 @@ impl<'db> OptionWrappedGenericParamListEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionWrappedGenericParamListEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionWrappedGenericParamListEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -20267,13 +20266,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionWrappedGenericParamListEmpty<'db> {
     type Green = OptionWrappedGenericParamListEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionWrappedGenericParamListEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionWrappedGenericParamListEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -20320,10 +20319,10 @@ impl<'db> WrappedGenericParamList<'db> {
         let children = [langle.0, generic_params.0, rangle.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         WrappedGenericParamListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::WrappedGenericParamList,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -20364,7 +20363,7 @@ impl<'db> TypedSyntaxNode<'db> for WrappedGenericParamList<'db> {
     type Green = WrappedGenericParamListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         WrappedGenericParamListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::WrappedGenericParamList,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -20375,7 +20374,7 @@ impl<'db> TypedSyntaxNode<'db> for WrappedGenericParamList<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -20420,13 +20419,13 @@ impl<'db> GenericParamList<'db> {
     ) -> GenericParamListGreen<'db> {
         let width = children.iter().map(|id| id.id().long(db).width()).sum();
         GenericParamListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericParamList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.id()).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -20478,13 +20477,13 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamList<'db> {
     type Green = GenericParamListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         GenericParamListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericParamList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -20669,10 +20668,10 @@ impl<'db> GenericParamType<'db> {
         let children = [name.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         GenericParamTypeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericParamType,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -20716,13 +20715,13 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamType<'db> {
     type Green = GenericParamTypeGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         GenericParamTypeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericParamType,
                 details: GreenNodeDetails::Node {
                     children: [TerminalIdentifier::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -20771,10 +20770,10 @@ impl<'db> GenericParamConst<'db> {
         let children = [const_kw.0, name.0, colon.0, ty.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         GenericParamConstGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericParamConst,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -20827,7 +20826,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamConst<'db> {
     type Green = GenericParamConstGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         GenericParamConstGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericParamConst,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -20839,7 +20838,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamConst<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -20890,10 +20889,10 @@ impl<'db> GenericParamImplNamed<'db> {
         let children = [impl_kw.0, name.0, colon.0, trait_path.0, type_constrains.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         GenericParamImplNamedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericParamImplNamed,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -20952,7 +20951,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamImplNamed<'db> {
     type Green = GenericParamImplNamedGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         GenericParamImplNamedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericParamImplNamed,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -20965,7 +20964,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamImplNamed<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -21012,10 +21011,10 @@ impl<'db> GenericParamImplAnonymous<'db> {
         let children = [plus.0, trait_path.0, type_constrains.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         GenericParamImplAnonymousGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericParamImplAnonymous,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -21059,7 +21058,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamImplAnonymous<'db> {
     type Green = GenericParamImplAnonymousGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         GenericParamImplAnonymousGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericParamImplAnonymous,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -21070,7 +21069,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamImplAnonymous<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -21115,10 +21114,10 @@ impl<'db> GenericParamNegativeImpl<'db> {
         let children = [minus.0, trait_path.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         GenericParamNegativeImplGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericParamNegativeImpl,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -21156,13 +21155,13 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamNegativeImpl<'db> {
     type Green = GenericParamNegativeImplGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         GenericParamNegativeImplGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::GenericParamNegativeImpl,
                 details: GreenNodeDetails::Node {
                     children: [TerminalMinus::missing(db).0, ExprPath::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -21207,13 +21206,13 @@ impl<'db> TokenList<'db> {
     ) -> TokenListGreen<'db> {
         let width = children.iter().map(|id| id.0.long(db).width()).sum();
         TokenListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.0).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -21242,13 +21241,13 @@ impl<'db> TypedSyntaxNode<'db> for TokenList<'db> {
     type Green = TokenListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -21282,10 +21281,10 @@ impl<'db> TokenTreeLeaf<'db> {
         let children = [leaf.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TokenTreeLeafGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenTreeLeaf,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -21320,13 +21319,13 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeLeaf<'db> {
     type Green = TokenTreeLeafGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenTreeLeafGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenTreeLeaf,
                 details: GreenNodeDetails::Node {
                     children: [TokenNode::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -21369,10 +21368,10 @@ impl<'db> TokenTreeNode<'db> {
         let children = [subtree.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TokenTreeNodeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenTreeNode,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -21407,13 +21406,13 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeNode<'db> {
     type Green = TokenTreeNodeGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenTreeNodeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenTreeNode,
                 details: GreenNodeDetails::Node {
                     children: [WrappedTokenTree::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -21466,10 +21465,10 @@ impl<'db> TokenTreeRepetition<'db> {
         let children = [dollar.0, lparen.0, elements.0, rparen.0, separator.0, operator.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TokenTreeRepetitionGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenTreeRepetition,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -21519,7 +21518,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeRepetition<'db> {
     type Green = TokenTreeRepetitionGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenTreeRepetitionGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenTreeRepetition,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -21533,7 +21532,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeRepetition<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -21578,10 +21577,10 @@ impl<'db> TokenTreeParam<'db> {
         let children = [dollar.0, name.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TokenTreeParamGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenTreeParam,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -21619,14 +21618,14 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeParam<'db> {
     type Green = TokenTreeParamGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenTreeParamGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenTreeParam,
                 details: GreenNodeDetails::Node {
                     children: [TerminalDollar::missing(db).0, TerminalIdentifier::missing(db).0]
                         .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -21816,10 +21815,10 @@ impl<'db> TokenTreeMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TokenTreeMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenTreeMissing,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -21850,13 +21849,13 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeMissing<'db> {
     type Green = TokenTreeMissingGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenTreeMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenTreeMissing,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -22030,10 +22029,10 @@ impl<'db> WrappedTokenTreeMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         WrappedTokenTreeMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::WrappedTokenTreeMissing,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -22064,13 +22063,13 @@ impl<'db> TypedSyntaxNode<'db> for WrappedTokenTreeMissing<'db> {
     type Green = WrappedTokenTreeMissingGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         WrappedTokenTreeMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::WrappedTokenTreeMissing,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -22117,10 +22116,10 @@ impl<'db> ParenthesizedTokenTree<'db> {
         let children = [lparen.0, tokens.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ParenthesizedTokenTreeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ParenthesizedTokenTree,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -22161,7 +22160,7 @@ impl<'db> TypedSyntaxNode<'db> for ParenthesizedTokenTree<'db> {
     type Green = ParenthesizedTokenTreeGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ParenthesizedTokenTreeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ParenthesizedTokenTree,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -22172,7 +22171,7 @@ impl<'db> TypedSyntaxNode<'db> for ParenthesizedTokenTree<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -22219,10 +22218,10 @@ impl<'db> BracedTokenTree<'db> {
         let children = [lbrace.0, tokens.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         BracedTokenTreeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::BracedTokenTree,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -22263,7 +22262,7 @@ impl<'db> TypedSyntaxNode<'db> for BracedTokenTree<'db> {
     type Green = BracedTokenTreeGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         BracedTokenTreeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::BracedTokenTree,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -22274,7 +22273,7 @@ impl<'db> TypedSyntaxNode<'db> for BracedTokenTree<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -22321,10 +22320,10 @@ impl<'db> BracketedTokenTree<'db> {
         let children = [lbrack.0, tokens.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         BracketedTokenTreeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::BracketedTokenTree,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -22365,7 +22364,7 @@ impl<'db> TypedSyntaxNode<'db> for BracketedTokenTree<'db> {
     type Green = BracketedTokenTreeGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         BracketedTokenTreeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::BracketedTokenTree,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -22376,7 +22375,7 @@ impl<'db> TypedSyntaxNode<'db> for BracketedTokenTree<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -22423,10 +22422,10 @@ impl<'db> ExprInlineMacro<'db> {
         let children = [path.0, bang.0, arguments.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ExprInlineMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprInlineMacro,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -22467,7 +22466,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprInlineMacro<'db> {
     type Green = ExprInlineMacroGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ExprInlineMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ExprInlineMacro,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -22478,7 +22477,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprInlineMacro<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -22529,10 +22528,10 @@ impl<'db> ItemInlineMacro<'db> {
         let children = [attributes.0, path.0, bang.0, arguments.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ItemInlineMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemInlineMacro,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -22579,7 +22578,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemInlineMacro<'db> {
     type Green = ItemInlineMacroGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ItemInlineMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemInlineMacro,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -22592,7 +22591,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemInlineMacro<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -22648,10 +22647,10 @@ impl<'db> ItemMacroDeclaration<'db> {
             [attributes.0, visibility.0, macro_kw.0, name.0, lbrace.0, rules.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ItemMacroDeclarationGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemMacroDeclaration,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -22713,7 +22712,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemMacroDeclaration<'db> {
     type Green = ItemMacroDeclarationGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ItemMacroDeclarationGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ItemMacroDeclaration,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -22728,7 +22727,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemMacroDeclaration<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -22773,13 +22772,13 @@ impl<'db> MacroRulesList<'db> {
     ) -> MacroRulesListGreen<'db> {
         let width = children.iter().map(|id| id.0.long(db).width()).sum();
         MacroRulesListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroRulesList,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.0).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -22808,13 +22807,13 @@ impl<'db> TypedSyntaxNode<'db> for MacroRulesList<'db> {
     type Green = MacroRulesListGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         MacroRulesListGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroRulesList,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -22854,10 +22853,10 @@ impl<'db> MacroRule<'db> {
         let children = [lhs.0, fat_arrow.0, rhs.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         MacroRuleGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroRule,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -22901,7 +22900,7 @@ impl<'db> TypedSyntaxNode<'db> for MacroRule<'db> {
     type Green = MacroRuleGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         MacroRuleGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroRule,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -22913,7 +22912,7 @@ impl<'db> TypedSyntaxNode<'db> for MacroRule<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -22954,10 +22953,10 @@ impl<'db> ParamKind<'db> {
         let children = [colon.0, kind.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ParamKindGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ParamKind,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -22995,13 +22994,13 @@ impl<'db> TypedSyntaxNode<'db> for ParamKind<'db> {
     type Green = ParamKindGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ParamKindGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ParamKind,
                 details: GreenNodeDetails::Node {
                     children: [TerminalColon::missing(db).0, MacroParamKind::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -23128,10 +23127,10 @@ impl<'db> OptionParamKindEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionParamKindEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionParamKindEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -23162,13 +23161,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionParamKindEmpty<'db> {
     type Green = OptionParamKindEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionParamKindEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionParamKindEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -23215,10 +23214,10 @@ impl<'db> MacroParam<'db> {
         let children = [dollar.0, name.0, kind.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         MacroParamGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroParam,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -23259,7 +23258,7 @@ impl<'db> TypedSyntaxNode<'db> for MacroParam<'db> {
     type Green = MacroParamGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         MacroParamGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroParam,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -23270,7 +23269,7 @@ impl<'db> TypedSyntaxNode<'db> for MacroParam<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -23319,10 +23318,10 @@ impl<'db> MacroRepetition<'db> {
         let children = [dollar.0, lparen.0, elements.0, rparen.0, separator.0, operator.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         MacroRepetitionGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroRepetition,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -23372,7 +23371,7 @@ impl<'db> TypedSyntaxNode<'db> for MacroRepetition<'db> {
     type Green = MacroRepetitionGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         MacroRepetitionGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroRepetition,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -23386,7 +23385,7 @@ impl<'db> TypedSyntaxNode<'db> for MacroRepetition<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -23518,10 +23517,10 @@ impl<'db> OptionTerminalCommaEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         OptionTerminalCommaEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionTerminalCommaEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -23552,13 +23551,13 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalCommaEmpty<'db> {
     type Green = OptionTerminalCommaEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         OptionTerminalCommaEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::OptionTerminalCommaEmpty,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -23732,10 +23731,10 @@ impl<'db> MacroRepetitionOperatorMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         MacroRepetitionOperatorMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroRepetitionOperatorMissing,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -23766,13 +23765,13 @@ impl<'db> TypedSyntaxNode<'db> for MacroRepetitionOperatorMissing<'db> {
     type Green = MacroRepetitionOperatorMissingGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         MacroRepetitionOperatorMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroRepetitionOperatorMissing,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -23815,10 +23814,10 @@ impl<'db> ParamIdent<'db> {
         let children = [ident.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ParamIdentGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ParamIdent,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -23853,13 +23852,13 @@ impl<'db> TypedSyntaxNode<'db> for ParamIdent<'db> {
     type Green = ParamIdentGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ParamIdentGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ParamIdent,
                 details: GreenNodeDetails::Node {
                     children: [TerminalIdentifier::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -23898,10 +23897,10 @@ impl<'db> ParamExpr<'db> {
         let children = [expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ParamExprGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ParamExpr,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -23936,13 +23935,13 @@ impl<'db> TypedSyntaxNode<'db> for ParamExpr<'db> {
     type Green = ParamExprGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ParamExprGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ParamExpr,
                 details: GreenNodeDetails::Node {
                     children: [TerminalIdentifier::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -24088,10 +24087,10 @@ impl<'db> MacroParamKindMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         MacroParamKindMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroParamKindMissing,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -24122,13 +24121,13 @@ impl<'db> TypedSyntaxNode<'db> for MacroParamKindMissing<'db> {
     type Green = MacroParamKindMissingGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         MacroParamKindMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroParamKindMissing,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -24303,13 +24302,13 @@ impl<'db> MacroElements<'db> {
     ) -> MacroElementsGreen<'db> {
         let width = children.iter().map(|id| id.0.long(db).width()).sum();
         MacroElementsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroElements,
                 details: GreenNodeDetails::Node {
                     children: children.iter().map(|x| x.0).collect(),
                     width,
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -24338,13 +24337,13 @@ impl<'db> TypedSyntaxNode<'db> for MacroElements<'db> {
     type Green = MacroElementsGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         MacroElementsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroElements,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -24378,10 +24377,10 @@ impl<'db> MacroWrapper<'db> {
         let children = [subtree.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         MacroWrapperGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroWrapper,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -24416,13 +24415,13 @@ impl<'db> TypedSyntaxNode<'db> for MacroWrapper<'db> {
     type Green = MacroWrapperGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         MacroWrapperGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::MacroWrapper,
                 details: GreenNodeDetails::Node {
                     children: [WrappedMacro::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -24576,10 +24575,10 @@ impl<'db> ParenthesizedMacro<'db> {
         let children = [lparen.0, elements.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ParenthesizedMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ParenthesizedMacro,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -24620,7 +24619,7 @@ impl<'db> TypedSyntaxNode<'db> for ParenthesizedMacro<'db> {
     type Green = ParenthesizedMacroGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         ParenthesizedMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::ParenthesizedMacro,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -24631,7 +24630,7 @@ impl<'db> TypedSyntaxNode<'db> for ParenthesizedMacro<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -24678,10 +24677,10 @@ impl<'db> BracedMacro<'db> {
         let children = [lbrace.0, elements.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         BracedMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::BracedMacro,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -24722,7 +24721,7 @@ impl<'db> TypedSyntaxNode<'db> for BracedMacro<'db> {
     type Green = BracedMacroGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         BracedMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::BracedMacro,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -24733,7 +24732,7 @@ impl<'db> TypedSyntaxNode<'db> for BracedMacro<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -24776,10 +24775,10 @@ impl<'db> BracketedMacro<'db> {
         let children = [lbrack.0, elements.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         BracketedMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::BracketedMacro,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -24820,7 +24819,7 @@ impl<'db> TypedSyntaxNode<'db> for BracketedMacro<'db> {
     type Green = BracketedMacroGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         BracketedMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::BracketedMacro,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -24831,7 +24830,7 @@ impl<'db> TypedSyntaxNode<'db> for BracketedMacro<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -24878,10 +24877,10 @@ impl<'db> LegacyExprInlineMacro<'db> {
         let children = [path.0, bang.0, arguments.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         LegacyExprInlineMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::LegacyExprInlineMacro,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -24922,7 +24921,7 @@ impl<'db> TypedSyntaxNode<'db> for LegacyExprInlineMacro<'db> {
     type Green = LegacyExprInlineMacroGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         LegacyExprInlineMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::LegacyExprInlineMacro,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -24933,7 +24932,7 @@ impl<'db> TypedSyntaxNode<'db> for LegacyExprInlineMacro<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -24984,10 +24983,10 @@ impl<'db> LegacyItemInlineMacro<'db> {
         let children = [attributes.0, path.0, bang.0, arguments.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         LegacyItemInlineMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::LegacyItemInlineMacro,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -25034,7 +25033,7 @@ impl<'db> TypedSyntaxNode<'db> for LegacyItemInlineMacro<'db> {
     type Green = LegacyItemInlineMacroGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         LegacyItemInlineMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::LegacyItemInlineMacro,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -25047,7 +25046,7 @@ impl<'db> TypedSyntaxNode<'db> for LegacyItemInlineMacro<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -25090,10 +25089,10 @@ impl<'db> TriviumSkippedNode<'db> {
         let children = [node.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TriviumSkippedNodeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TriviumSkippedNode,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -25128,13 +25127,13 @@ impl<'db> TypedSyntaxNode<'db> for TriviumSkippedNode<'db> {
     type Green = TriviumSkippedNodeGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TriviumSkippedNodeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TriviumSkippedNode,
                 details: GreenNodeDetails::Node {
                     children: [SkippedNode::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -25277,11 +25276,8 @@ pub struct TokenIdentifier<'db> {
 impl<'db> Token<'db> for TokenIdentifier<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenIdentifierGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenIdentifier,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenIdentifier, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -25318,10 +25314,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenIdentifier<'db> {
     type Green = TokenIdentifierGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenIdentifierGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -25362,10 +25358,10 @@ impl<'db> Terminal<'db> for TerminalIdentifier<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalIdentifierGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalIdentifier,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -25413,7 +25409,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalIdentifier<'db> {
     type Green = TerminalIdentifierGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalIdentifierGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalIdentifier,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -25424,7 +25420,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalIdentifier<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -25461,10 +25457,10 @@ pub struct TokenLiteralNumber<'db> {
 impl<'db> Token<'db> for TokenLiteralNumber<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenLiteralNumberGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenLiteralNumber,
                 details: GreenNodeDetails::Token(text),
-            })
+            }
             .intern(db),
         )
     }
@@ -25502,10 +25498,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenLiteralNumber<'db> {
     type Green = TokenLiteralNumberGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLiteralNumberGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -25547,10 +25543,10 @@ impl<'db> Terminal<'db> for TerminalLiteralNumber<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalLiteralNumberGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLiteralNumber,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -25598,7 +25594,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLiteralNumber<'db> {
     type Green = TerminalLiteralNumberGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalLiteralNumberGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLiteralNumber,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -25609,7 +25605,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLiteralNumber<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -25646,10 +25642,10 @@ pub struct TokenShortString<'db> {
 impl<'db> Token<'db> for TokenShortString<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenShortStringGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenShortString,
                 details: GreenNodeDetails::Token(text),
-            })
+            }
             .intern(db),
         )
     }
@@ -25687,10 +25683,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenShortString<'db> {
     type Green = TokenShortStringGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenShortStringGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -25731,10 +25727,10 @@ impl<'db> Terminal<'db> for TerminalShortString<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalShortStringGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalShortString,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -25782,7 +25778,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalShortString<'db> {
     type Green = TerminalShortStringGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalShortStringGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalShortString,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -25793,7 +25789,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalShortString<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -25830,11 +25826,8 @@ pub struct TokenString<'db> {
 impl<'db> Token<'db> for TokenString<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenStringGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenString,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenString, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -25871,10 +25864,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenString<'db> {
     type Green = TokenStringGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenStringGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -25915,10 +25908,10 @@ impl<'db> Terminal<'db> for TerminalString<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalStringGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalString,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -25966,7 +25959,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalString<'db> {
     type Green = TerminalStringGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalStringGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalString,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -25977,7 +25970,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalString<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -26014,11 +26007,8 @@ pub struct TokenAs<'db> {
 impl<'db> Token<'db> for TokenAs<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenAsGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenAs,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenAs, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -26055,10 +26045,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenAs<'db> {
     type Green = TokenAsGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenAsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -26099,10 +26089,10 @@ impl<'db> Terminal<'db> for TerminalAs<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalAsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalAs,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -26150,7 +26140,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAs<'db> {
     type Green = TerminalAsGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalAsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalAs,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -26161,7 +26151,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAs<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -26194,11 +26184,8 @@ pub struct TokenConst<'db> {
 impl<'db> Token<'db> for TokenConst<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenConstGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenConst,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenConst, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -26235,10 +26222,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenConst<'db> {
     type Green = TokenConstGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenConstGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -26279,10 +26266,10 @@ impl<'db> Terminal<'db> for TerminalConst<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalConstGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalConst,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -26330,7 +26317,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalConst<'db> {
     type Green = TerminalConstGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalConstGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalConst,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -26341,7 +26328,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalConst<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -26378,11 +26365,8 @@ pub struct TokenElse<'db> {
 impl<'db> Token<'db> for TokenElse<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenElseGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenElse,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenElse, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -26419,10 +26403,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenElse<'db> {
     type Green = TokenElseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenElseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -26463,10 +26447,10 @@ impl<'db> Terminal<'db> for TerminalElse<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalElseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalElse,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -26514,7 +26498,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalElse<'db> {
     type Green = TerminalElseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalElseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalElse,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -26525,7 +26509,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalElse<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -26558,11 +26542,8 @@ pub struct TokenEnum<'db> {
 impl<'db> Token<'db> for TokenEnum<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenEnumGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenEnum,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenEnum, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -26599,10 +26580,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenEnum<'db> {
     type Green = TokenEnumGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenEnumGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -26643,10 +26624,10 @@ impl<'db> Terminal<'db> for TerminalEnum<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalEnumGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalEnum,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -26694,7 +26675,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEnum<'db> {
     type Green = TerminalEnumGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalEnumGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalEnum,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -26705,7 +26686,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEnum<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -26738,11 +26719,8 @@ pub struct TokenExtern<'db> {
 impl<'db> Token<'db> for TokenExtern<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenExternGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenExtern,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenExtern, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -26779,10 +26757,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenExtern<'db> {
     type Green = TokenExternGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenExternGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -26823,10 +26801,10 @@ impl<'db> Terminal<'db> for TerminalExtern<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalExternGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalExtern,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -26874,7 +26852,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalExtern<'db> {
     type Green = TerminalExternGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalExternGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalExtern,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -26885,7 +26863,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalExtern<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -26922,11 +26900,8 @@ pub struct TokenFalse<'db> {
 impl<'db> Token<'db> for TokenFalse<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenFalseGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenFalse,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenFalse, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -26963,10 +26938,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenFalse<'db> {
     type Green = TokenFalseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenFalseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -27007,10 +26982,10 @@ impl<'db> Terminal<'db> for TerminalFalse<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalFalseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalFalse,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -27058,7 +27033,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalFalse<'db> {
     type Green = TerminalFalseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalFalseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalFalse,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -27069,7 +27044,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalFalse<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -27106,11 +27081,8 @@ pub struct TokenFunction<'db> {
 impl<'db> Token<'db> for TokenFunction<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenFunctionGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenFunction,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenFunction, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -27147,10 +27119,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenFunction<'db> {
     type Green = TokenFunctionGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenFunctionGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -27191,10 +27163,10 @@ impl<'db> Terminal<'db> for TerminalFunction<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalFunctionGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalFunction,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -27242,7 +27214,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalFunction<'db> {
     type Green = TerminalFunctionGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalFunctionGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalFunction,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -27253,7 +27225,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalFunction<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -27290,11 +27262,8 @@ pub struct TokenIf<'db> {
 impl<'db> Token<'db> for TokenIf<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenIfGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenIf,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenIf, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -27331,10 +27300,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenIf<'db> {
     type Green = TokenIfGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenIfGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -27375,10 +27344,10 @@ impl<'db> Terminal<'db> for TerminalIf<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalIfGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalIf,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -27426,7 +27395,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalIf<'db> {
     type Green = TerminalIfGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalIfGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalIf,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -27437,7 +27406,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalIf<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -27470,11 +27439,8 @@ pub struct TokenWhile<'db> {
 impl<'db> Token<'db> for TokenWhile<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenWhileGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenWhile,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenWhile, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -27511,10 +27477,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhile<'db> {
     type Green = TokenWhileGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenWhileGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -27555,10 +27521,10 @@ impl<'db> Terminal<'db> for TerminalWhile<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalWhileGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalWhile,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -27606,7 +27572,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalWhile<'db> {
     type Green = TerminalWhileGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalWhileGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalWhile,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -27617,7 +27583,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalWhile<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -27654,11 +27620,8 @@ pub struct TokenFor<'db> {
 impl<'db> Token<'db> for TokenFor<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenForGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenFor,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenFor, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -27695,10 +27658,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenFor<'db> {
     type Green = TokenForGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenForGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -27739,10 +27702,10 @@ impl<'db> Terminal<'db> for TerminalFor<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalForGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalFor,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -27790,7 +27753,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalFor<'db> {
     type Green = TerminalForGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalForGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalFor,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -27801,7 +27764,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalFor<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -27834,11 +27797,8 @@ pub struct TokenLoop<'db> {
 impl<'db> Token<'db> for TokenLoop<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenLoopGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenLoop,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenLoop, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -27875,10 +27835,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenLoop<'db> {
     type Green = TokenLoopGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLoopGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -27919,10 +27879,10 @@ impl<'db> Terminal<'db> for TerminalLoop<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalLoopGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLoop,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -27970,7 +27930,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLoop<'db> {
     type Green = TerminalLoopGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalLoopGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLoop,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -27981,7 +27941,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLoop<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -28014,11 +27974,8 @@ pub struct TokenImpl<'db> {
 impl<'db> Token<'db> for TokenImpl<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenImplGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenImpl,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenImpl, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -28055,10 +28012,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenImpl<'db> {
     type Green = TokenImplGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenImplGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -28099,10 +28056,10 @@ impl<'db> Terminal<'db> for TerminalImpl<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalImplGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalImpl,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -28150,7 +28107,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalImpl<'db> {
     type Green = TerminalImplGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalImplGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalImpl,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -28161,7 +28118,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalImpl<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -28194,11 +28151,8 @@ pub struct TokenImplicits<'db> {
 impl<'db> Token<'db> for TokenImplicits<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenImplicitsGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenImplicits,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenImplicits, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -28235,10 +28189,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenImplicits<'db> {
     type Green = TokenImplicitsGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenImplicitsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -28279,10 +28233,10 @@ impl<'db> Terminal<'db> for TerminalImplicits<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalImplicitsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalImplicits,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -28330,7 +28284,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalImplicits<'db> {
     type Green = TerminalImplicitsGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalImplicitsGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalImplicits,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -28341,7 +28295,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalImplicits<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -28378,11 +28332,8 @@ pub struct TokenLet<'db> {
 impl<'db> Token<'db> for TokenLet<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenLetGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenLet,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenLet, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -28419,10 +28370,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenLet<'db> {
     type Green = TokenLetGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLetGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -28463,10 +28414,10 @@ impl<'db> Terminal<'db> for TerminalLet<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalLetGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLet,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -28514,7 +28465,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLet<'db> {
     type Green = TerminalLetGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalLetGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLet,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -28525,7 +28476,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLet<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -28558,11 +28509,8 @@ pub struct TokenMacro<'db> {
 impl<'db> Token<'db> for TokenMacro<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenMacroGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenMacro,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMacro, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -28599,10 +28547,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMacro<'db> {
     type Green = TokenMacroGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -28643,10 +28591,10 @@ impl<'db> Terminal<'db> for TerminalMacro<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMacro,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -28694,7 +28642,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMacro<'db> {
     type Green = TerminalMacroGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalMacroGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMacro,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -28705,7 +28653,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMacro<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -28742,11 +28690,8 @@ pub struct TokenMatch<'db> {
 impl<'db> Token<'db> for TokenMatch<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenMatchGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenMatch,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMatch, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -28783,10 +28728,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatch<'db> {
     type Green = TokenMatchGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMatchGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -28827,10 +28772,10 @@ impl<'db> Terminal<'db> for TerminalMatch<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalMatchGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMatch,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -28878,7 +28823,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMatch<'db> {
     type Green = TerminalMatchGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalMatchGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMatch,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -28889,7 +28834,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMatch<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -28926,11 +28871,8 @@ pub struct TokenModule<'db> {
 impl<'db> Token<'db> for TokenModule<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenModuleGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenModule,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenModule, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -28967,10 +28909,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenModule<'db> {
     type Green = TokenModuleGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenModuleGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -29011,10 +28953,10 @@ impl<'db> Terminal<'db> for TerminalModule<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalModuleGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalModule,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -29062,7 +29004,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalModule<'db> {
     type Green = TerminalModuleGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalModuleGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalModule,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -29073,7 +29015,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalModule<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -29110,11 +29052,8 @@ pub struct TokenMut<'db> {
 impl<'db> Token<'db> for TokenMut<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenMutGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenMut,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMut, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -29151,10 +29090,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMut<'db> {
     type Green = TokenMutGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMutGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -29195,10 +29134,10 @@ impl<'db> Terminal<'db> for TerminalMut<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalMutGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMut,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -29246,7 +29185,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMut<'db> {
     type Green = TerminalMutGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalMutGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMut,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -29257,7 +29196,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMut<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -29290,11 +29229,8 @@ pub struct TokenNoPanic<'db> {
 impl<'db> Token<'db> for TokenNoPanic<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenNoPanicGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenNoPanic,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenNoPanic, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -29331,10 +29267,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenNoPanic<'db> {
     type Green = TokenNoPanicGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenNoPanicGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -29375,10 +29311,10 @@ impl<'db> Terminal<'db> for TerminalNoPanic<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalNoPanicGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalNoPanic,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -29426,7 +29362,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalNoPanic<'db> {
     type Green = TerminalNoPanicGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalNoPanicGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalNoPanic,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -29437,7 +29373,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalNoPanic<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -29474,11 +29410,8 @@ pub struct TokenOf<'db> {
 impl<'db> Token<'db> for TokenOf<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenOfGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenOf,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenOf, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -29515,10 +29448,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenOf<'db> {
     type Green = TokenOfGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenOfGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -29559,10 +29492,10 @@ impl<'db> Terminal<'db> for TerminalOf<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalOfGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalOf,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -29610,7 +29543,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalOf<'db> {
     type Green = TerminalOfGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalOfGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalOf,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -29621,7 +29554,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalOf<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -29654,11 +29587,8 @@ pub struct TokenRef<'db> {
 impl<'db> Token<'db> for TokenRef<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenRefGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenRef,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenRef, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -29695,10 +29625,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenRef<'db> {
     type Green = TokenRefGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenRefGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -29739,10 +29669,10 @@ impl<'db> Terminal<'db> for TerminalRef<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalRefGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalRef,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -29790,7 +29720,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRef<'db> {
     type Green = TerminalRefGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalRefGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalRef,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -29801,7 +29731,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRef<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -29834,11 +29764,8 @@ pub struct TokenContinue<'db> {
 impl<'db> Token<'db> for TokenContinue<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenContinueGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenContinue,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenContinue, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -29875,10 +29802,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenContinue<'db> {
     type Green = TokenContinueGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenContinueGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -29919,10 +29846,10 @@ impl<'db> Terminal<'db> for TerminalContinue<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalContinueGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalContinue,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -29970,7 +29897,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalContinue<'db> {
     type Green = TerminalContinueGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalContinueGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalContinue,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -29981,7 +29908,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalContinue<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -30018,11 +29945,8 @@ pub struct TokenReturn<'db> {
 impl<'db> Token<'db> for TokenReturn<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenReturnGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenReturn,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenReturn, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -30059,10 +29983,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenReturn<'db> {
     type Green = TokenReturnGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenReturnGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -30103,10 +30027,10 @@ impl<'db> Terminal<'db> for TerminalReturn<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalReturnGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalReturn,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -30154,7 +30078,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalReturn<'db> {
     type Green = TerminalReturnGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalReturnGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalReturn,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -30165,7 +30089,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalReturn<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -30202,11 +30126,8 @@ pub struct TokenBreak<'db> {
 impl<'db> Token<'db> for TokenBreak<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenBreakGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenBreak,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenBreak, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -30243,10 +30164,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenBreak<'db> {
     type Green = TokenBreakGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenBreakGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -30287,10 +30208,10 @@ impl<'db> Terminal<'db> for TerminalBreak<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalBreakGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalBreak,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -30338,7 +30259,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalBreak<'db> {
     type Green = TerminalBreakGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalBreakGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalBreak,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -30349,7 +30270,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalBreak<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -30386,11 +30307,8 @@ pub struct TokenStruct<'db> {
 impl<'db> Token<'db> for TokenStruct<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenStructGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenStruct,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenStruct, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -30427,10 +30345,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenStruct<'db> {
     type Green = TokenStructGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenStructGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -30471,10 +30389,10 @@ impl<'db> Terminal<'db> for TerminalStruct<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalStructGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalStruct,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -30522,7 +30440,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalStruct<'db> {
     type Green = TerminalStructGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalStructGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalStruct,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -30533,7 +30451,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalStruct<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -30570,11 +30488,8 @@ pub struct TokenTrait<'db> {
 impl<'db> Token<'db> for TokenTrait<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenTraitGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenTrait,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenTrait, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -30611,10 +30526,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrait<'db> {
     type Green = TokenTraitGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenTraitGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -30655,10 +30570,10 @@ impl<'db> Terminal<'db> for TerminalTrait<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalTraitGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalTrait,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -30706,7 +30621,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalTrait<'db> {
     type Green = TerminalTraitGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalTraitGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalTrait,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -30717,7 +30632,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalTrait<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -30754,11 +30669,8 @@ pub struct TokenTrue<'db> {
 impl<'db> Token<'db> for TokenTrue<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenTrueGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenTrue,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenTrue, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -30795,10 +30707,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrue<'db> {
     type Green = TokenTrueGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenTrueGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -30839,10 +30751,10 @@ impl<'db> Terminal<'db> for TerminalTrue<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalTrueGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalTrue,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -30890,7 +30802,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalTrue<'db> {
     type Green = TerminalTrueGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalTrueGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalTrue,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -30901,7 +30813,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalTrue<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -30934,11 +30846,8 @@ pub struct TokenType<'db> {
 impl<'db> Token<'db> for TokenType<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenTypeGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenType,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenType, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -30975,10 +30884,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenType<'db> {
     type Green = TokenTypeGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenTypeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -31019,10 +30928,10 @@ impl<'db> Terminal<'db> for TerminalType<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalTypeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalType,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -31070,7 +30979,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalType<'db> {
     type Green = TerminalTypeGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalTypeGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalType,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -31081,7 +30990,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalType<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -31114,11 +31023,8 @@ pub struct TokenUse<'db> {
 impl<'db> Token<'db> for TokenUse<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenUseGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenUse,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenUse, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -31155,10 +31061,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenUse<'db> {
     type Green = TokenUseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenUseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -31199,10 +31105,10 @@ impl<'db> Terminal<'db> for TerminalUse<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalUseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalUse,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -31250,7 +31156,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalUse<'db> {
     type Green = TerminalUseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalUseGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalUse,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -31261,7 +31167,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalUse<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -31294,11 +31200,8 @@ pub struct TokenPub<'db> {
 impl<'db> Token<'db> for TokenPub<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenPubGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenPub,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenPub, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -31335,10 +31238,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenPub<'db> {
     type Green = TokenPubGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenPubGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -31379,10 +31282,10 @@ impl<'db> Terminal<'db> for TerminalPub<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalPubGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalPub,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -31430,7 +31333,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalPub<'db> {
     type Green = TerminalPubGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalPubGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalPub,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -31441,7 +31344,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalPub<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -31474,11 +31377,8 @@ pub struct TokenAnd<'db> {
 impl<'db> Token<'db> for TokenAnd<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenAndGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenAnd,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenAnd, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -31515,10 +31415,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenAnd<'db> {
     type Green = TokenAndGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenAndGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -31559,10 +31459,10 @@ impl<'db> Terminal<'db> for TerminalAnd<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalAndGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalAnd,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -31610,7 +31510,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAnd<'db> {
     type Green = TerminalAndGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalAndGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalAnd,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -31621,7 +31521,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAnd<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -31654,11 +31554,8 @@ pub struct TokenAndAnd<'db> {
 impl<'db> Token<'db> for TokenAndAnd<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenAndAndGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenAndAnd,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenAndAnd, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -31695,10 +31592,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenAndAnd<'db> {
     type Green = TokenAndAndGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenAndAndGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -31739,10 +31636,10 @@ impl<'db> Terminal<'db> for TerminalAndAnd<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalAndAndGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalAndAnd,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -31790,7 +31687,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAndAnd<'db> {
     type Green = TerminalAndAndGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalAndAndGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalAndAnd,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -31801,7 +31698,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAndAnd<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -31838,11 +31735,8 @@ pub struct TokenArrow<'db> {
 impl<'db> Token<'db> for TokenArrow<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenArrowGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenArrow,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenArrow, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -31879,10 +31773,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenArrow<'db> {
     type Green = TokenArrowGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenArrowGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -31923,10 +31817,10 @@ impl<'db> Terminal<'db> for TerminalArrow<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalArrowGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalArrow,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -31974,7 +31868,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalArrow<'db> {
     type Green = TerminalArrowGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalArrowGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalArrow,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -31985,7 +31879,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalArrow<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -32022,11 +31916,8 @@ pub struct TokenAt<'db> {
 impl<'db> Token<'db> for TokenAt<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenAtGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenAt,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenAt, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -32063,10 +31954,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenAt<'db> {
     type Green = TokenAtGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenAtGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -32107,10 +31998,10 @@ impl<'db> Terminal<'db> for TerminalAt<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalAtGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalAt,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -32158,7 +32049,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAt<'db> {
     type Green = TerminalAtGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalAtGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalAt,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -32169,7 +32060,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAt<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -32202,10 +32093,10 @@ pub struct TokenBadCharacters<'db> {
 impl<'db> Token<'db> for TokenBadCharacters<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenBadCharactersGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenBadCharacters,
                 details: GreenNodeDetails::Token(text),
-            })
+            }
             .intern(db),
         )
     }
@@ -32243,10 +32134,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenBadCharacters<'db> {
     type Green = TokenBadCharactersGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenBadCharactersGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -32288,10 +32179,10 @@ impl<'db> Terminal<'db> for TerminalBadCharacters<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalBadCharactersGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalBadCharacters,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -32339,7 +32230,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalBadCharacters<'db> {
     type Green = TerminalBadCharactersGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalBadCharactersGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalBadCharacters,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -32350,7 +32241,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalBadCharacters<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -32387,11 +32278,8 @@ pub struct TokenColon<'db> {
 impl<'db> Token<'db> for TokenColon<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenColonGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenColon,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenColon, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -32428,10 +32316,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenColon<'db> {
     type Green = TokenColonGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenColonGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -32472,10 +32360,10 @@ impl<'db> Terminal<'db> for TerminalColon<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalColonGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalColon,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -32523,7 +32411,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalColon<'db> {
     type Green = TerminalColonGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalColonGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalColon,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -32534,7 +32422,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalColon<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -32571,11 +32459,8 @@ pub struct TokenColonColon<'db> {
 impl<'db> Token<'db> for TokenColonColon<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenColonColonGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenColonColon,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenColonColon, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -32612,10 +32497,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenColonColon<'db> {
     type Green = TokenColonColonGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenColonColonGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -32656,10 +32541,10 @@ impl<'db> Terminal<'db> for TerminalColonColon<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalColonColonGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalColonColon,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -32707,7 +32592,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalColonColon<'db> {
     type Green = TerminalColonColonGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalColonColonGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalColonColon,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -32718,7 +32603,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalColonColon<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -32755,11 +32640,8 @@ pub struct TokenComma<'db> {
 impl<'db> Token<'db> for TokenComma<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenCommaGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenComma,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenComma, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -32796,10 +32678,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenComma<'db> {
     type Green = TokenCommaGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenCommaGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -32840,10 +32722,10 @@ impl<'db> Terminal<'db> for TerminalComma<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalCommaGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalComma,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -32891,7 +32773,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalComma<'db> {
     type Green = TerminalCommaGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalCommaGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalComma,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -32902,7 +32784,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalComma<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -32939,11 +32821,8 @@ pub struct TokenDiv<'db> {
 impl<'db> Token<'db> for TokenDiv<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenDivGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenDiv,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenDiv, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -32980,10 +32859,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenDiv<'db> {
     type Green = TokenDivGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenDivGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -33024,10 +32903,10 @@ impl<'db> Terminal<'db> for TerminalDiv<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalDivGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalDiv,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -33075,7 +32954,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDiv<'db> {
     type Green = TerminalDivGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalDivGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalDiv,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -33086,7 +32965,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDiv<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -33119,11 +32998,8 @@ pub struct TokenDivEq<'db> {
 impl<'db> Token<'db> for TokenDivEq<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenDivEqGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenDivEq,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenDivEq, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -33160,10 +33036,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenDivEq<'db> {
     type Green = TokenDivEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenDivEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -33204,10 +33080,10 @@ impl<'db> Terminal<'db> for TerminalDivEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalDivEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalDivEq,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -33255,7 +33131,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDivEq<'db> {
     type Green = TerminalDivEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalDivEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalDivEq,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -33266,7 +33142,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDivEq<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -33303,11 +33179,8 @@ pub struct TokenDollar<'db> {
 impl<'db> Token<'db> for TokenDollar<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenDollarGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenDollar,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenDollar, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -33344,10 +33217,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenDollar<'db> {
     type Green = TokenDollarGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenDollarGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -33388,10 +33261,10 @@ impl<'db> Terminal<'db> for TerminalDollar<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalDollarGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalDollar,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -33439,7 +33312,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDollar<'db> {
     type Green = TerminalDollarGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalDollarGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalDollar,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -33450,7 +33323,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDollar<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -33487,11 +33360,8 @@ pub struct TokenDot<'db> {
 impl<'db> Token<'db> for TokenDot<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenDotGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenDot,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenDot, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -33528,10 +33398,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenDot<'db> {
     type Green = TokenDotGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenDotGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -33572,10 +33442,10 @@ impl<'db> Terminal<'db> for TerminalDot<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalDotGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalDot,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -33623,7 +33493,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDot<'db> {
     type Green = TerminalDotGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalDotGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalDot,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -33634,7 +33504,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDot<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -33667,11 +33537,8 @@ pub struct TokenDotDot<'db> {
 impl<'db> Token<'db> for TokenDotDot<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenDotDotGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenDotDot,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenDotDot, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -33708,10 +33575,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDot<'db> {
     type Green = TokenDotDotGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenDotDotGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -33752,10 +33619,10 @@ impl<'db> Terminal<'db> for TerminalDotDot<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalDotDotGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalDotDot,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -33803,7 +33670,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDotDot<'db> {
     type Green = TerminalDotDotGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalDotDotGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalDotDot,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -33814,7 +33681,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDotDot<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -33851,11 +33718,8 @@ pub struct TokenDotDotEq<'db> {
 impl<'db> Token<'db> for TokenDotDotEq<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenDotDotEqGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenDotDotEq,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenDotDotEq, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -33892,10 +33756,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDotEq<'db> {
     type Green = TokenDotDotEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenDotDotEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -33936,10 +33800,10 @@ impl<'db> Terminal<'db> for TerminalDotDotEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalDotDotEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalDotDotEq,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -33987,7 +33851,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDotDotEq<'db> {
     type Green = TerminalDotDotEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalDotDotEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalDotDotEq,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -33998,7 +33862,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDotDotEq<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -34035,11 +33899,8 @@ pub struct TokenEndOfFile<'db> {
 impl<'db> Token<'db> for TokenEndOfFile<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenEndOfFileGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenEndOfFile,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenEndOfFile, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -34076,10 +33937,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenEndOfFile<'db> {
     type Green = TokenEndOfFileGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenEndOfFileGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -34120,10 +33981,10 @@ impl<'db> Terminal<'db> for TerminalEndOfFile<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalEndOfFileGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalEndOfFile,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -34171,7 +34032,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEndOfFile<'db> {
     type Green = TerminalEndOfFileGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalEndOfFileGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalEndOfFile,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -34182,7 +34043,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEndOfFile<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -34219,11 +34080,8 @@ pub struct TokenEq<'db> {
 impl<'db> Token<'db> for TokenEq<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenEqGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenEq,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenEq, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -34260,10 +34118,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenEq<'db> {
     type Green = TokenEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -34304,10 +34162,10 @@ impl<'db> Terminal<'db> for TerminalEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalEq,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -34355,7 +34213,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEq<'db> {
     type Green = TerminalEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalEq,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -34366,7 +34224,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEq<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -34399,11 +34257,8 @@ pub struct TokenEqEq<'db> {
 impl<'db> Token<'db> for TokenEqEq<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenEqEqGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenEqEq,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenEqEq, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -34440,10 +34295,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenEqEq<'db> {
     type Green = TokenEqEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenEqEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -34484,10 +34339,10 @@ impl<'db> Terminal<'db> for TerminalEqEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalEqEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalEqEq,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -34535,7 +34390,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEqEq<'db> {
     type Green = TerminalEqEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalEqEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalEqEq,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -34546,7 +34401,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEqEq<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -34579,11 +34434,8 @@ pub struct TokenGE<'db> {
 impl<'db> Token<'db> for TokenGE<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenGEGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenGE,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenGE, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -34620,10 +34472,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenGE<'db> {
     type Green = TokenGEGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenGEGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -34664,10 +34516,10 @@ impl<'db> Terminal<'db> for TerminalGE<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalGEGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalGE,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -34715,7 +34567,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalGE<'db> {
     type Green = TerminalGEGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalGEGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalGE,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -34726,7 +34578,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalGE<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -34759,11 +34611,8 @@ pub struct TokenGT<'db> {
 impl<'db> Token<'db> for TokenGT<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenGTGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenGT,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenGT, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -34800,10 +34649,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenGT<'db> {
     type Green = TokenGTGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenGTGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -34844,10 +34693,10 @@ impl<'db> Terminal<'db> for TerminalGT<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalGTGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalGT,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -34895,7 +34744,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalGT<'db> {
     type Green = TerminalGTGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalGTGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalGT,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -34906,7 +34755,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalGT<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -34939,11 +34788,8 @@ pub struct TokenHash<'db> {
 impl<'db> Token<'db> for TokenHash<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenHashGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenHash,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenHash, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -34980,10 +34826,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenHash<'db> {
     type Green = TokenHashGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenHashGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -35024,10 +34870,10 @@ impl<'db> Terminal<'db> for TerminalHash<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalHashGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalHash,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -35075,7 +34921,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalHash<'db> {
     type Green = TerminalHashGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalHashGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalHash,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -35086,7 +34932,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalHash<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -35119,11 +34965,8 @@ pub struct TokenLBrace<'db> {
 impl<'db> Token<'db> for TokenLBrace<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenLBraceGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenLBrace,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenLBrace, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -35160,10 +35003,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrace<'db> {
     type Green = TokenLBraceGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLBraceGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -35204,10 +35047,10 @@ impl<'db> Terminal<'db> for TerminalLBrace<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalLBraceGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLBrace,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -35255,7 +35098,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLBrace<'db> {
     type Green = TerminalLBraceGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalLBraceGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLBrace,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -35266,7 +35109,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLBrace<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -35303,11 +35146,8 @@ pub struct TokenLBrack<'db> {
 impl<'db> Token<'db> for TokenLBrack<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenLBrackGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenLBrack,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenLBrack, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -35344,10 +35184,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrack<'db> {
     type Green = TokenLBrackGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLBrackGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -35388,10 +35228,10 @@ impl<'db> Terminal<'db> for TerminalLBrack<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalLBrackGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLBrack,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -35439,7 +35279,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLBrack<'db> {
     type Green = TerminalLBrackGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalLBrackGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLBrack,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -35450,7 +35290,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLBrack<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -35487,11 +35327,8 @@ pub struct TokenLE<'db> {
 impl<'db> Token<'db> for TokenLE<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenLEGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenLE,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenLE, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -35528,10 +35365,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenLE<'db> {
     type Green = TokenLEGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLEGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -35572,10 +35409,10 @@ impl<'db> Terminal<'db> for TerminalLE<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalLEGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLE,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -35623,7 +35460,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLE<'db> {
     type Green = TerminalLEGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalLEGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLE,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -35634,7 +35471,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLE<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -35667,11 +35504,8 @@ pub struct TokenLParen<'db> {
 impl<'db> Token<'db> for TokenLParen<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenLParenGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenLParen,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenLParen, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -35708,10 +35542,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenLParen<'db> {
     type Green = TokenLParenGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLParenGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -35752,10 +35586,10 @@ impl<'db> Terminal<'db> for TerminalLParen<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalLParenGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLParen,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -35803,7 +35637,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLParen<'db> {
     type Green = TerminalLParenGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalLParenGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLParen,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -35814,7 +35648,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLParen<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -35851,11 +35685,8 @@ pub struct TokenLT<'db> {
 impl<'db> Token<'db> for TokenLT<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenLTGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenLT,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenLT, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -35892,10 +35723,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenLT<'db> {
     type Green = TokenLTGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLTGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -35936,10 +35767,10 @@ impl<'db> Terminal<'db> for TerminalLT<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalLTGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLT,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -35987,7 +35818,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLT<'db> {
     type Green = TerminalLTGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalLTGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalLT,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -35998,7 +35829,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLT<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -36031,11 +35862,8 @@ pub struct TokenMatchArrow<'db> {
 impl<'db> Token<'db> for TokenMatchArrow<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenMatchArrowGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenMatchArrow,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMatchArrow, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -36072,10 +35900,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatchArrow<'db> {
     type Green = TokenMatchArrowGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMatchArrowGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -36116,10 +35944,10 @@ impl<'db> Terminal<'db> for TerminalMatchArrow<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalMatchArrowGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMatchArrow,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -36167,7 +35995,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMatchArrow<'db> {
     type Green = TerminalMatchArrowGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalMatchArrowGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMatchArrow,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -36178,7 +36006,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMatchArrow<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -36215,11 +36043,8 @@ pub struct TokenMinus<'db> {
 impl<'db> Token<'db> for TokenMinus<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenMinusGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenMinus,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMinus, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -36256,10 +36081,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinus<'db> {
     type Green = TokenMinusGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMinusGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -36300,10 +36125,10 @@ impl<'db> Terminal<'db> for TerminalMinus<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalMinusGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMinus,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -36351,7 +36176,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMinus<'db> {
     type Green = TerminalMinusGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalMinusGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMinus,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -36362,7 +36187,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMinus<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -36399,11 +36224,8 @@ pub struct TokenMinusEq<'db> {
 impl<'db> Token<'db> for TokenMinusEq<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenMinusEqGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenMinusEq,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMinusEq, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -36440,10 +36262,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinusEq<'db> {
     type Green = TokenMinusEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMinusEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -36484,10 +36306,10 @@ impl<'db> Terminal<'db> for TerminalMinusEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalMinusEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMinusEq,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -36535,7 +36357,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMinusEq<'db> {
     type Green = TerminalMinusEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalMinusEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMinusEq,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -36546,7 +36368,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMinusEq<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -36583,11 +36405,8 @@ pub struct TokenMod<'db> {
 impl<'db> Token<'db> for TokenMod<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenModGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenMod,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMod, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -36624,10 +36443,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMod<'db> {
     type Green = TokenModGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenModGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -36668,10 +36487,10 @@ impl<'db> Terminal<'db> for TerminalMod<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalModGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMod,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -36719,7 +36538,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMod<'db> {
     type Green = TerminalModGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalModGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMod,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -36730,7 +36549,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMod<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -36763,11 +36582,8 @@ pub struct TokenModEq<'db> {
 impl<'db> Token<'db> for TokenModEq<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenModEqGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenModEq,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenModEq, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -36804,10 +36620,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenModEq<'db> {
     type Green = TokenModEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenModEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -36848,10 +36664,10 @@ impl<'db> Terminal<'db> for TerminalModEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalModEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalModEq,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -36899,7 +36715,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalModEq<'db> {
     type Green = TerminalModEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalModEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalModEq,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -36910,7 +36726,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalModEq<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -36947,11 +36763,8 @@ pub struct TokenMul<'db> {
 impl<'db> Token<'db> for TokenMul<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenMulGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenMul,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMul, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -36988,10 +36801,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMul<'db> {
     type Green = TokenMulGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMulGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -37032,10 +36845,10 @@ impl<'db> Terminal<'db> for TerminalMul<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalMulGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMul,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -37083,7 +36896,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMul<'db> {
     type Green = TerminalMulGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalMulGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMul,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -37094,7 +36907,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMul<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -37127,11 +36940,8 @@ pub struct TokenMulEq<'db> {
 impl<'db> Token<'db> for TokenMulEq<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenMulEqGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenMulEq,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMulEq, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -37168,10 +36978,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMulEq<'db> {
     type Green = TokenMulEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMulEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -37212,10 +37022,10 @@ impl<'db> Terminal<'db> for TerminalMulEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalMulEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMulEq,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -37263,7 +37073,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMulEq<'db> {
     type Green = TerminalMulEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalMulEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalMulEq,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -37274,7 +37084,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMulEq<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -37311,11 +37121,8 @@ pub struct TokenNeq<'db> {
 impl<'db> Token<'db> for TokenNeq<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenNeqGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenNeq,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenNeq, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -37352,10 +37159,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenNeq<'db> {
     type Green = TokenNeqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenNeqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -37396,10 +37203,10 @@ impl<'db> Terminal<'db> for TerminalNeq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalNeqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalNeq,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -37447,7 +37254,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalNeq<'db> {
     type Green = TerminalNeqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalNeqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalNeq,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -37458,7 +37265,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalNeq<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -37491,11 +37298,8 @@ pub struct TokenNot<'db> {
 impl<'db> Token<'db> for TokenNot<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenNotGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenNot,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenNot, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -37532,10 +37336,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenNot<'db> {
     type Green = TokenNotGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenNotGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -37576,10 +37380,10 @@ impl<'db> Terminal<'db> for TerminalNot<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalNotGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalNot,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -37627,7 +37431,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalNot<'db> {
     type Green = TerminalNotGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalNotGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalNot,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -37638,7 +37442,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalNot<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -37671,11 +37475,8 @@ pub struct TokenBitNot<'db> {
 impl<'db> Token<'db> for TokenBitNot<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenBitNotGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenBitNot,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenBitNot, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -37712,10 +37513,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenBitNot<'db> {
     type Green = TokenBitNotGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenBitNotGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -37756,10 +37557,10 @@ impl<'db> Terminal<'db> for TerminalBitNot<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalBitNotGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalBitNot,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -37807,7 +37608,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalBitNot<'db> {
     type Green = TerminalBitNotGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalBitNotGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalBitNot,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -37818,7 +37619,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalBitNot<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -37855,11 +37656,8 @@ pub struct TokenOr<'db> {
 impl<'db> Token<'db> for TokenOr<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenOrGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenOr,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenOr, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -37896,10 +37694,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenOr<'db> {
     type Green = TokenOrGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenOrGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -37940,10 +37738,10 @@ impl<'db> Terminal<'db> for TerminalOr<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalOrGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalOr,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -37991,7 +37789,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalOr<'db> {
     type Green = TerminalOrGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalOrGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalOr,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -38002,7 +37800,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalOr<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -38035,11 +37833,8 @@ pub struct TokenOrOr<'db> {
 impl<'db> Token<'db> for TokenOrOr<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenOrOrGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenOrOr,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenOrOr, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -38076,10 +37871,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenOrOr<'db> {
     type Green = TokenOrOrGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenOrOrGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -38120,10 +37915,10 @@ impl<'db> Terminal<'db> for TerminalOrOr<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalOrOrGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalOrOr,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -38171,7 +37966,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalOrOr<'db> {
     type Green = TerminalOrOrGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalOrOrGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalOrOr,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -38182,7 +37977,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalOrOr<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -38215,11 +38010,8 @@ pub struct TokenPlus<'db> {
 impl<'db> Token<'db> for TokenPlus<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenPlusGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenPlus,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenPlus, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -38256,10 +38048,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlus<'db> {
     type Green = TokenPlusGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenPlusGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -38300,10 +38092,10 @@ impl<'db> Terminal<'db> for TerminalPlus<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalPlusGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalPlus,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -38351,7 +38143,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalPlus<'db> {
     type Green = TerminalPlusGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalPlusGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalPlus,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -38362,7 +38154,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalPlus<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -38395,11 +38187,8 @@ pub struct TokenPlusEq<'db> {
 impl<'db> Token<'db> for TokenPlusEq<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenPlusEqGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenPlusEq,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenPlusEq, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -38436,10 +38225,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlusEq<'db> {
     type Green = TokenPlusEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenPlusEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -38480,10 +38269,10 @@ impl<'db> Terminal<'db> for TerminalPlusEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalPlusEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalPlusEq,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -38531,7 +38320,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalPlusEq<'db> {
     type Green = TerminalPlusEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalPlusEqGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalPlusEq,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -38542,7 +38331,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalPlusEq<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -38579,10 +38368,10 @@ pub struct TokenQuestionMark<'db> {
 impl<'db> Token<'db> for TokenQuestionMark<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenQuestionMarkGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenQuestionMark,
                 details: GreenNodeDetails::Token(text),
-            })
+            }
             .intern(db),
         )
     }
@@ -38620,10 +38409,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenQuestionMark<'db> {
     type Green = TokenQuestionMarkGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenQuestionMarkGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -38664,10 +38453,10 @@ impl<'db> Terminal<'db> for TerminalQuestionMark<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalQuestionMarkGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalQuestionMark,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -38715,7 +38504,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalQuestionMark<'db> {
     type Green = TerminalQuestionMarkGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalQuestionMarkGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalQuestionMark,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -38726,7 +38515,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalQuestionMark<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -38763,11 +38552,8 @@ pub struct TokenRBrace<'db> {
 impl<'db> Token<'db> for TokenRBrace<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenRBraceGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenRBrace,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenRBrace, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -38804,10 +38590,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrace<'db> {
     type Green = TokenRBraceGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenRBraceGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -38848,10 +38634,10 @@ impl<'db> Terminal<'db> for TerminalRBrace<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalRBraceGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalRBrace,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -38899,7 +38685,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRBrace<'db> {
     type Green = TerminalRBraceGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalRBraceGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalRBrace,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -38910,7 +38696,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRBrace<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -38947,11 +38733,8 @@ pub struct TokenRBrack<'db> {
 impl<'db> Token<'db> for TokenRBrack<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenRBrackGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenRBrack,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenRBrack, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -38988,10 +38771,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrack<'db> {
     type Green = TokenRBrackGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenRBrackGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -39032,10 +38815,10 @@ impl<'db> Terminal<'db> for TerminalRBrack<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalRBrackGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalRBrack,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -39083,7 +38866,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRBrack<'db> {
     type Green = TerminalRBrackGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalRBrackGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalRBrack,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -39094,7 +38877,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRBrack<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -39131,11 +38914,8 @@ pub struct TokenRParen<'db> {
 impl<'db> Token<'db> for TokenRParen<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenRParenGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenRParen,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenRParen, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -39172,10 +38952,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenRParen<'db> {
     type Green = TokenRParenGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenRParenGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -39216,10 +38996,10 @@ impl<'db> Terminal<'db> for TerminalRParen<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalRParenGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalRParen,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -39267,7 +39047,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRParen<'db> {
     type Green = TerminalRParenGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalRParenGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalRParen,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -39278,7 +39058,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRParen<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -39315,11 +39095,8 @@ pub struct TokenSemicolon<'db> {
 impl<'db> Token<'db> for TokenSemicolon<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenSemicolonGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenSemicolon,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenSemicolon, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -39356,10 +39133,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenSemicolon<'db> {
     type Green = TokenSemicolonGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenSemicolonGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -39400,10 +39177,10 @@ impl<'db> Terminal<'db> for TerminalSemicolon<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalSemicolonGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalSemicolon,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -39451,7 +39228,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalSemicolon<'db> {
     type Green = TerminalSemicolonGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalSemicolonGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalSemicolon,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -39462,7 +39239,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalSemicolon<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -39499,11 +39276,8 @@ pub struct TokenUnderscore<'db> {
 impl<'db> Token<'db> for TokenUnderscore<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenUnderscoreGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenUnderscore,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenUnderscore, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -39540,10 +39314,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenUnderscore<'db> {
     type Green = TokenUnderscoreGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenUnderscoreGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -39584,10 +39358,10 @@ impl<'db> Terminal<'db> for TerminalUnderscore<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalUnderscoreGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalUnderscore,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -39635,7 +39409,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalUnderscore<'db> {
     type Green = TerminalUnderscoreGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalUnderscoreGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalUnderscore,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -39646,7 +39420,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalUnderscore<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -39683,11 +39457,8 @@ pub struct TokenXor<'db> {
 impl<'db> Token<'db> for TokenXor<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenXorGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenXor,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenXor, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -39724,10 +39495,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenXor<'db> {
     type Green = TokenXorGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenXorGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -39768,10 +39539,10 @@ impl<'db> Terminal<'db> for TerminalXor<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalXorGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalXor,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -39819,7 +39590,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalXor<'db> {
     type Green = TerminalXorGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalXorGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalXor,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -39830,7 +39601,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalXor<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -39871,10 +39642,10 @@ impl<'db> SyntaxFile<'db> {
         let children = [items.0, eof.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         SyntaxFileGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::SyntaxFile,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -39912,14 +39683,14 @@ impl<'db> TypedSyntaxNode<'db> for SyntaxFile<'db> {
     type Green = SyntaxFileGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         SyntaxFileGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::SyntaxFile,
                 details: GreenNodeDetails::Node {
                     children: [ModuleItemList::missing(db).0, TerminalEndOfFile::missing(db).0]
                         .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -39952,11 +39723,8 @@ pub struct TokenEmpty<'db> {
 impl<'db> Token<'db> for TokenEmpty<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenEmptyGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenEmpty,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenEmpty, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -39993,10 +39761,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenEmpty<'db> {
     type Green = TokenEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -40037,10 +39805,10 @@ impl<'db> Terminal<'db> for TerminalEmpty<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         TerminalEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalEmpty,
                 details: GreenNodeDetails::Node { children: children.into(), width },
-            })
+            }
             .intern(db),
         )
     }
@@ -40088,7 +39856,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEmpty<'db> {
     type Green = TerminalEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TerminalEmptyGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TerminalEmpty,
                 details: GreenNodeDetails::Node {
                     children: [
@@ -40099,7 +39867,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEmpty<'db> {
                     .into(),
                     width: TextWidth::default(),
                 },
-            })
+            }
             .intern(db),
         )
     }
@@ -40136,10 +39904,10 @@ pub struct TokenSingleLineComment<'db> {
 impl<'db> Token<'db> for TokenSingleLineComment<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenSingleLineCommentGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenSingleLineComment,
                 details: GreenNodeDetails::Token(text),
-            })
+            }
             .intern(db),
         )
     }
@@ -40177,10 +39945,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineComment<'db> {
     type Green = TokenSingleLineCommentGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenSingleLineCommentGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -40213,10 +39981,10 @@ pub struct TokenSingleLineInnerComment<'db> {
 impl<'db> Token<'db> for TokenSingleLineInnerComment<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenSingleLineInnerCommentGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenSingleLineInnerComment,
                 details: GreenNodeDetails::Token(text),
-            })
+            }
             .intern(db),
         )
     }
@@ -40254,10 +40022,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineInnerComment<'db> {
     type Green = TokenSingleLineInnerCommentGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenSingleLineInnerCommentGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -40290,10 +40058,10 @@ pub struct TokenSingleLineDocComment<'db> {
 impl<'db> Token<'db> for TokenSingleLineDocComment<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenSingleLineDocCommentGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenSingleLineDocComment,
                 details: GreenNodeDetails::Token(text),
-            })
+            }
             .intern(db),
         )
     }
@@ -40331,10 +40099,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineDocComment<'db> {
     type Green = TokenSingleLineDocCommentGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenSingleLineDocCommentGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -40367,11 +40135,8 @@ pub struct TokenWhitespace<'db> {
 impl<'db> Token<'db> for TokenWhitespace<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenWhitespaceGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenWhitespace,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenWhitespace, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -40408,10 +40173,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhitespace<'db> {
     type Green = TokenWhitespaceGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenWhitespaceGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -40443,11 +40208,8 @@ pub struct TokenNewline<'db> {
 impl<'db> Token<'db> for TokenNewline<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenNewlineGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenNewline,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenNewline, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -40484,10 +40246,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenNewline<'db> {
     type Green = TokenNewlineGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenNewlineGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -40519,11 +40281,8 @@ pub struct TokenMissing<'db> {
 impl<'db> Token<'db> for TokenMissing<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenMissingGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -40560,10 +40319,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMissing<'db> {
     type Green = TokenMissingGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMissingGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }
@@ -40595,11 +40354,8 @@ pub struct TokenSkipped<'db> {
 impl<'db> Token<'db> for TokenSkipped<'db> {
     fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
         TokenSkippedGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::TokenSkipped,
-                details: GreenNodeDetails::Token(text),
-            })
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenSkipped, details: GreenNodeDetails::Token(text) }
+                .intern(db),
         )
     }
     fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
@@ -40636,10 +40392,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenSkipped<'db> {
     type Green = TokenSkippedGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenSkippedGreen(
-            Arc::new(GreenNode {
+            GreenNode {
                 kind: SyntaxKind::TokenMissing,
                 details: GreenNodeDetails::Token("".into()),
-            })
+            }
             .intern(db),
         )
     }

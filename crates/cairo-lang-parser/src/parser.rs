@@ -2048,7 +2048,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         let GreenNode {
             kind: SyntaxKind::ExprPath,
             details: GreenNodeDetails::Node { children: children0, .. },
-        } = &*expr.0.long(self.db).clone()
+        } = expr.0.long(self.db)
         else {
             return None;
         };
@@ -2061,7 +2061,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         let GreenNode {
             kind: SyntaxKind::ExprPathInner,
             details: GreenNodeDetails::Node { children: children1, .. },
-        } = &*path_inner.long(self.db).clone()
+        } = path_inner.long(self.db)
         else {
             return None;
         };
@@ -2075,7 +2075,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         let GreenNode {
             kind: SyntaxKind::PathSegmentSimple,
             details: GreenNodeDetails::Node { children: children2, .. },
-        } = &*path_segment.long(self.db).clone()
+        } = path_segment.long(self.db)
         else {
             return None;
         };
@@ -2086,8 +2086,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         };
 
         // Check that it is indeed `TerminalIdentifier`.
-        let GreenNode { kind: SyntaxKind::TerminalIdentifier, .. } = ident.long(self.db).as_ref()
-        else {
+        let GreenNode { kind: SyntaxKind::TerminalIdentifier, .. } = ident.long(self.db) else {
             return None;
         };
 
@@ -2592,7 +2591,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
                         let GreenNode {
                             kind: SyntaxKind::ExprPath,
                             details: GreenNodeDetails::Node { children: path_children, .. },
-                        } = &*path.0.long(self.db).clone()
+                        } = path.0.long(self.db)
                         else {
                             return Err(TryParseFailure::SkipToken);
                         };
@@ -2605,7 +2604,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
                         let GreenNode {
                             kind: SyntaxKind::ExprPathInner,
                             details: GreenNodeDetails::Node { children: inner_path_children, .. },
-                        } = &*path_inner.long(self.db).clone()
+                        } = path_inner.long(self.db)
                         else {
                             return Err(TryParseFailure::SkipToken);
                         };

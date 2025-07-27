@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_utils::define_short_id;
@@ -10,7 +8,7 @@ use super::green::GreenNode;
 use super::kind::SyntaxKind;
 use crate::node::stable_ptr::SyntaxStablePtr;
 
-define_short_id!(GreenId, Arc::<GreenNode<'db>>, SyntaxGroup, lookup_intern_green, intern_green);
+define_short_id!(GreenId, GreenNode<'db>, SyntaxGroup, lookup_intern_green, intern_green);
 impl<'a> GreenId<'a> {
     /// Returns the width of the node of this green id.
     pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
