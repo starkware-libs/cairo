@@ -24,9 +24,9 @@ use crate::{Block, BlockEnd, BlockId, MatchInfo, Statement, VarRemapping, VarUsa
 #[derive(Clone)]
 pub struct BlockBuilder {
     /// A store for semantic variables, owning their OwnedVariable instances.
-    pub semantics: SemanticLoweringMapping,
+    semantics: SemanticLoweringMapping,
     /// The semantic variables that are captured as snapshots in this block.
-    pub snapped_semantics: OrderedHashMap<MemberPath, VariableId>,
+    snapped_semantics: OrderedHashMap<MemberPath, VariableId>,
     /// The semantic variables that are added/changed in this block.
     changed_member_paths: OrderedHashSet<MemberPath>,
     /// Current sequence of lowered statements emitted.
@@ -92,8 +92,6 @@ impl BlockBuilder {
         var: VariableId,
         location: LocationId,
     ) {
-        // Invalidate snapshot to the given memberpath.
-        self.snapped_semantics.swap_remove(&member_path);
         self.semantics.update(
             &mut BlockStructRecomposer { statements: &mut self.statements, ctx, location },
             &member_path,
@@ -125,9 +123,14 @@ impl BlockBuilder {
             .map(|var_id| VarUsage { var_id, location })
     }
 
-    /// Updates the reference of a semantic variable to a snapshot of its lowered variable.
-    pub fn update_snap_ref(&mut self, member_path: &ExprVarMemberPath, var: VariableId) {
-        self.snapped_semantics.insert(member_path.into(), var);
+    /// Introduces a semantic variable as the representation of the given member path.
+    pub fn introduce(&mut self, member_path: MemberPath, var: VariableId) {
+        self.semantics.introduce(member_path, var);
+    }
+
+    /// Introduces a semantic variable as the representation of the given member path as a snapshot.
+    pub fn introduce_snap(&mut self, member_path: MemberPath, var: VariableId) {
+        self.snapped_semantics.insert(member_path, var);
     }
 
     /// Gets the reference of a snapshot of semantic variable, possibly by deconstructing its

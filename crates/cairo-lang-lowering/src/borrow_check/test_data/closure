@@ -341,11 +341,12 @@ Statements:
   (v9: core::integer::u32) <- 2
   (v10: (core::integer::u32,)) <- struct_construct(v9{`2`})
   (v11: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:3:13: 3:16}(v8{`c`}, v10{`c(2)`})
-  (v12: core::integer::u32) <- 0
-  (v13: @core::felt252) <- core::ops::index::DeprecatedIndexViewImpl::<core::array::Array::<core::felt252>, core::integer::u32, @core::felt252, core::array::ArrayIndex::<core::felt252>>::index(v5{`x`}, v12{`0`})
-  (v14: core::felt252) <- desnap(v13{`0`})
+  (v12: core::array::Array::<core::felt252>, v13: @core::array::Array::<core::felt252>) <- snapshot(v4{`x`})
+  (v14: core::integer::u32) <- 0
+  (v15: @core::felt252) <- core::ops::index::DeprecatedIndexViewImpl::<core::array::Array::<core::felt252>, core::integer::u32, @core::felt252, core::array::ArrayIndex::<core::felt252>>::index(v13{`x`}, v14{`0`})
+  (v16: core::felt252) <- desnap(v15{`0`})
 End:
-  Return(v14)
+  Return(v16)
 
 //! > ==========================================================================
 
