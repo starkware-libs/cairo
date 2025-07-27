@@ -1,5 +1,4 @@
 use core::hash::Hash;
-use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
@@ -139,7 +138,7 @@ impl<'a> SyntaxNode<'a> {
     }
 
     /// Gets the children syntax nodes of the current node.
-    pub fn get_children(&self, db: &'a dyn SyntaxGroup) -> Arc<Vec<SyntaxNode<'a>>> {
+    pub fn get_children(&self, db: &'a dyn SyntaxGroup) -> &'a [SyntaxNode<'a>] {
         db.get_children(*self)
     }
 

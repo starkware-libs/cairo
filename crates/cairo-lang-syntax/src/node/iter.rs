@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::node::SyntaxNode;
 use crate::node::db::SyntaxGroup;
 
@@ -33,7 +31,7 @@ pub struct Preorder<'a> {
 
 struct PreorderLayer<'a> {
     start: SyntaxNode<'a>,
-    children: Option<(Arc<Vec<SyntaxNode<'a>>>, usize)>,
+    children: Option<(&'a [SyntaxNode<'a>], usize)>,
 }
 
 impl<'a> Preorder<'a> {
