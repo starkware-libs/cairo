@@ -28,7 +28,7 @@ pub struct BlockBuilder {
     /// A store for semantic variables, owning their OwnedVariable instances.
     pub semantics: SemanticLoweringMapping,
     /// The semantic variables that are captured as snapshots in this block.
-    pub snapped_semantics: OrderedHashMap<MemberPath, VariableId>,
+    snapped_semantics: OrderedHashMap<MemberPath, VariableId>,
     /// The semantic variables that are added/changed in this block.
     changed_member_paths: OrderedHashSet<MemberPath>,
     /// Current sequence of lowered statements emitted.
@@ -128,8 +128,8 @@ impl BlockBuilder {
     }
 
     /// Updates the reference of a semantic variable to a snapshot of its lowered variable.
-    pub fn update_snap_ref(&mut self, member_path: &ExprVarMemberPath, var: VariableId) {
-        self.snapped_semantics.insert(member_path.into(), var);
+    pub fn introduce_snap(&mut self, member_path: MemberPath, var: VariableId) {
+        self.snapped_semantics.insert(member_path, var);
     }
 
     /// Gets the reference of a snapshot of semantic variable, possibly by deconstructing its

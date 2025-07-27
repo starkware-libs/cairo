@@ -283,10 +283,7 @@ impl LoweredExpr {
                 let (original, snapshot) =
                     generators::Snapshot { input, location }.add(ctx, &mut builder.statements);
                 if let LoweredExpr::MemberPath(member_path, _location) = &*expr {
-                    // `update_ref` invalidates snapshots so it must be called before
-                    // `update_snap_ref`.
                     builder.update_ref(ctx, member_path, original);
-                    builder.update_snap_ref(member_path, snapshot);
                 }
 
                 Ok(VarUsage { var_id: snapshot, location })
