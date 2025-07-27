@@ -239,7 +239,7 @@ impl<'a> DiagnosticsReporter<'a> {
             }
             if !entry.is_empty() {
                 self.callback.on_diagnostic(entry);
-                found |= !self.allow_warnings || group.check_error_free().is_err();
+                found |= !self.allow_warnings && group.check_error_free().is_err();
             }
         }
         found
