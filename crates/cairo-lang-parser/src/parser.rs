@@ -339,7 +339,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalMacro => {
                 Ok(self.expect_item_macro_declaration(attributes, visibility).into())
             }
-            SyntaxKind::TerminalIdentifier => {
+            SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalDollar => {
                 // We take the identifier to check if the next token is a `!`. If it is, we assume
                 // that a macro is following and handle it similarly to any other module item. If
                 // not we skip the identifier. 'take_raw' is used here since it is not yet known if
