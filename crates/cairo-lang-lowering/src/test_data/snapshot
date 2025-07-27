@@ -387,3 +387,83 @@ blk0 (root):
 Statements:
 End:
   Return()
+
+//! > ==========================================================================
+
+//! > Test snapshot of overridden member.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo() -> @A {
+    let mut a = A { m: 7 };
+    let _z = @a;
+    a.m = 0;
+    @a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+struct A {
+    m: u8,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 0
+  (v1: test::A) <- struct_construct(v0)
+  (v2: test::A, v3: @test::A) <- snapshot(v1)
+End:
+  Return(v3)
+
+//! > ==========================================================================
+
+//! > Test snapshot of overridden parent.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo() -> @u8 {
+    let mut a = A { m: Member { m: 7 } };
+    let _z = @a.m.m;
+    a.m = Member { m: 0 };
+    @a.m.m
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+struct A {
+    m: Member,
+}
+
+#[derive(Copy, Drop)]
+struct Member {
+    m: u8,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 0
+  (v1: core::integer::u8, v2: @core::integer::u8) <- snapshot(v0)
+End:
+  Return(v2)
