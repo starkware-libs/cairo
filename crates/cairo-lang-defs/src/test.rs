@@ -2,7 +2,7 @@ use std::fmt::Write as _;
 use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
-use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup, FilesGroupEx, init_files_group};
+use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup, init_files_group};
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_parser::db::ParserGroup;

@@ -7,7 +7,9 @@ use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_filesystem::cfg::CfgSet;
-use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup, FilesGroupEx, init_files_group};
+use cairo_lang_filesystem::db::{
+    CrateConfiguration, FilesGroup, files_group_input, init_files_group,
+};
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin, CrateId, Directory, FileLongId};
 use cairo_lang_filesystem::override_file_content;
 use cairo_lang_filesystem::span::TextSpan;
@@ -19,6 +21,7 @@ use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, Upcast};
 use itertools::chain;
+use salsa::{AsDynDatabase, Setter};
 
 use crate::get_base_plugins;
 use crate::test_utils::expand_module_text;
@@ -115,22 +118,23 @@ pub fn test_expand_plugin_inner(
     let cfg_set: Option<CfgSet> =
         inputs.get("cfg").map(|s| serde_json::from_str(s.as_str()).unwrap());
     if let Some(cfg_set) = cfg_set {
-        db.set_cfg_set(Arc::new(cfg_set));
+        files_group_input(db.as_dyn_database()).set_cfg_set(&mut db).to(Some(cfg_set));
     }
 
     let cairo_code = &inputs["cairo_code"];
 
-    let crate_id = CrateId::plain(&db, "test");
+    let db_ref: &mut dyn FilesGroup = &mut db;
+    let crate_id = CrateId::plain(db_ref, "test");
     let root = Directory::Real("test_src".into());
     cairo_lang_filesystem::set_crate_config!(
-        db,
+        db_ref,
         crate_id,
         Some(CrateConfiguration::default_for_root(root))
     );
 
     // Main module file.
-    let file_id = FileLongId::OnDisk("test_src/lib.cairo".into()).intern(&db);
-    override_file_content!(db, file_id, Some(format!("{cairo_code}\n").into()));
+    let file_id = FileLongId::OnDisk("test_src/lib.cairo".into()).intern(db_ref);
+    override_file_content!(db_ref, file_id, Some(format!("{cairo_code}\n").into()));
 
     let crate_id = CrateId::plain(&db, "test");
     let mut diagnostic_items = vec![];

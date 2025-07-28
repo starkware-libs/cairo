@@ -18,6 +18,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPluginMetadata};
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::cfg::CfgSet;
+use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::ids::{
     CodeMapping, CodeOrigin, FileKind, FileLongId, StrRef, VirtualFile,
 };
@@ -232,8 +233,12 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
     ) -> Self {
         let semantic_defs =
             environment.variables.values().by_ref().map(|var| (var.id(), var.clone())).collect();
-        let cfg_set =
-            resolver.settings.cfg_set.clone().map(Arc::new).unwrap_or_else(|| db.cfg_set());
+        let cfg_set = resolver
+            .settings
+            .cfg_set
+            .clone()
+            .map(Arc::new)
+            .unwrap_or_else(|| Arc::new(db.cfg_set().clone()));
         Self {
             db,
             diagnostics,

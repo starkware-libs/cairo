@@ -3,7 +3,7 @@ use std::path::Path;
 
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    CORELIB_CRATE_NAME, CrateConfiguration, CrateIdentifier, CrateSettings, FilesGroupEx,
+    CORELIB_CRATE_NAME, CrateConfiguration, CrateIdentifier, CrateSettings,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, CrateLongId, Directory};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
