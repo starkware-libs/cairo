@@ -26,6 +26,7 @@ use cairo_lang_sierra_to_casm::compiler::{
 use cairo_lang_sierra_to_casm::metadata::{
     MetadataComputationConfig, MetadataError, calc_metadata,
 };
+use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_utils::bigint::{BigUintAsHex, deserialize_big_uint, serialize_big_uint};
 use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -427,10 +428,15 @@ impl CasmContractClass {
             skip_non_linear_solver_comparisons: false,
             compute_runtime_costs: false,
         };
-        let metadata = calc_metadata(&program, metadata_computation_config)?;
-
+        let program_info = ProgramRegistryInfo::new(&program).map_err(|err| {
+            StarknetSierraCompilationError::CompilationError(Box::new(
+                CompilationError::ProgramRegistryError(err),
+            ))
+        })?;
+        let metadata = calc_metadata(&program, &program_info, metadata_computation_config)?;
         let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
             &program,
+            &program_info,
             &metadata,
             SierraToCasmConfig { gas_usage_check: true, max_bytecode_size },
         )?;
