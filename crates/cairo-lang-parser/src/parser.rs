@@ -1955,7 +1955,7 @@ impl<'a> Parser<'a> {
 
     /// Tries to parse parenthesized argument list.
     /// Expected pattern: `\(<ArgList>\)`
-    fn try_parse_parenthesized_argument_list(&mut self) -> OptionArgListParenthesizedGreen {
+    pub fn try_parse_parenthesized_argument_list(&mut self) -> OptionArgListParenthesizedGreen {
         if self.peek().kind == SyntaxKind::TerminalLParen {
             self.expect_parenthesized_argument_list().into()
         } else {
