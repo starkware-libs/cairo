@@ -104,7 +104,7 @@ impl RunnableBuilder {
         let metadata = create_metadata(&sierra_program, metadata_config)?;
         let sierra_program_registry =
             ProgramRegistry::<CoreType, CoreLibfunc>::new(&sierra_program)?;
-        let type_sizes = get_type_size_map(&sierra_program, &sierra_program_registry).unwrap();
+        let type_sizes = get_type_size_map(&sierra_program, &sierra_program_registry)?;
         let casm_program = cairo_lang_sierra_to_casm::compiler::compile(
             &sierra_program,
             &metadata,
