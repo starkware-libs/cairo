@@ -1,6 +1,7 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_diagnostics::DiagnosticsBuilder;
+use cairo_lang_filesystem::db::default_crate_settings;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_syntax::attribute::consts::{
     ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR,
@@ -266,12 +267,14 @@ pub fn extract_feature_config<'db>(
     let mut config = loop {
         match current_module_id {
             ModuleId::CrateRoot(crate_id) => {
-                let settings =
-                    db.crate_config(crate_id).map(|config| config.settings).unwrap_or_default();
+                let settings = db
+                    .crate_config(crate_id)
+                    .map(|config| config.settings.edition.ignore_visibility())
+                    .unwrap_or_else(|| default_crate_settings(db).edition.ignore_visibility());
                 break FeatureConfig {
                     allowed_features: OrderedHashSet::default(),
                     allow_deprecated: false,
-                    allow_unused_imports: settings.edition.ignore_visibility(),
+                    allow_unused_imports: settings,
                 };
             }
             ModuleId::Submodule(id) => {

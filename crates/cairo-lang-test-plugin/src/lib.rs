@@ -61,7 +61,7 @@ pub struct TestsCompilationConfig<'db> {
 
     /// Crates to be searched for contracts.
     /// If not defined, all crates will be searched.
-    pub contract_crate_ids: Option<Vec<CrateId<'db>>>,
+    pub contract_crate_ids: Option<&'db [CrateId<'db>]>,
 
     /// Crates to be searched for executable attributes.
     /// If not defined, test crates will be searched.
@@ -109,7 +109,7 @@ pub fn compile_test_prepared_db<'db>(
     let contracts = tests_compilation_config.contract_declarations.unwrap_or_else(|| {
         find_contracts(
             db,
-            &tests_compilation_config.contract_crate_ids.unwrap_or_else(|| db.crates()),
+            tests_compilation_config.contract_crate_ids.unwrap_or_else(|| db.crates()),
         )
     });
     let all_entry_points = if tests_compilation_config.starknet {

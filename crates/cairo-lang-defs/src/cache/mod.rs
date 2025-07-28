@@ -50,7 +50,7 @@ pub struct CachedCrateMetadata {
 impl CachedCrateMetadata {
     /// Creates a new [CachedCrateMetadata] from the input crate with the current settings.
     pub fn new(crate_id: CrateId<'_>, db: &dyn DefsGroup) -> Self {
-        let settings = db.crate_config(crate_id).map(|config| config.settings).map(|v| {
+        let settings = db.crate_config(crate_id).map(|config| &config.settings).map(|v| {
             let mut hasher = xxhash_rust::xxh3::Xxh3::default();
             v.hash(&mut hasher);
             hasher.finish()
