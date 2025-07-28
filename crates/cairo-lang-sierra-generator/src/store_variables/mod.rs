@@ -170,13 +170,16 @@ impl<'a> AddStoreVariableStatements<'a> {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
                         // A simple invocation.
                         let branch_signature = &signature.branch_signatures[0];
-                        match branch_signature.ap_change {
+                        match &branch_signature.ap_change {
                             SierraApChange::Unknown => {
                                 // If the ap-change is unknown, variables that will be revoked
                                 // otherwise should be stored as locals.
                                 self.store_variables_as_locals(&mut state);
                             }
                             SierraApChange::BranchAlign | SierraApChange::Known { .. } => {}
+                            SierraApChange::FunctionCall(id) => {
+                                unreachable!("Function ap-change for `{id}` missing.")
+                            }
                         }
 
                         state.register_outputs(
