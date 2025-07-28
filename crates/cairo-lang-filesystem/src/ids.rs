@@ -452,10 +452,7 @@ pub enum BlobLongId {
 impl BlobLongId {
     pub fn content(&self) -> Option<Vec<u8>> {
         match self {
-            BlobLongId::OnDisk(path) => match std::fs::read(path) {
-                Ok(content) => Some(content),
-                Err(_) => None,
-            },
+            BlobLongId::OnDisk(path) => std::fs::read(path).ok(),
             BlobLongId::Virtual(content) => Some(content.clone()),
         }
     }
