@@ -1,12 +1,12 @@
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, SpanInFile, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
 use cairo_lang_utils::Intern;
 use indoc::indoc;
 use test_log::test;
 
-use super::{DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder};
+use super::{DiagnosticEntry, DiagnosticsBuilder};
 
 // Test diagnostic.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -20,8 +20,8 @@ impl DiagnosticEntry for SimpleDiag {
         "Simple diagnostic.".into()
     }
 
-    fn location(&self, _db: &dyn cairo_lang_filesystem::db::FilesGroup) -> DiagnosticLocation {
-        DiagnosticLocation {
+    fn location(&self, _db: &dyn cairo_lang_filesystem::db::FilesGroup) -> SpanInFile {
+        SpanInFile {
             file_id: self.file_id,
             span: TextSpan {
                 start: TextOffset::START,

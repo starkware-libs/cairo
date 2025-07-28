@@ -1,4 +1,4 @@
-use cairo_lang_diagnostics::get_location_marks;
+use cairo_lang_filesystem::location_marks::get_location_marks;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::test_utils::setup_test_function;
@@ -47,7 +47,7 @@ pub fn test_sierra_locations(
                 }
                 sierra_code.push_str(&get_location_marks(
                     db,
-                    &location.diagnostic_location(db),
+                    location.diagnostic_location(db),
                     true,
                 ));
                 sierra_code.push('\n');
