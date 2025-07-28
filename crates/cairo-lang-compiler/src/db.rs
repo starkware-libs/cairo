@@ -221,16 +221,16 @@ pub fn validate_corelib(db: &(dyn FilesGroup + 'static)) -> Result<()> {
     let Some(config) = db.crate_config(CrateId::core(db)) else {
         return Ok(());
     };
-    let Some(found) = config.settings.version else {
+    let Some(found) = &config.settings.version else {
         return Ok(());
     };
     let Ok(expected) = semver::Version::parse(CORELIB_VERSION) else {
         return Ok(());
     };
-    if found == expected {
+    if found == &expected {
         return Ok(());
     }
-    let path_part = match config.root {
+    let path_part = match &config.root {
         cairo_lang_filesystem::ids::Directory::Real(path) => {
             format!(" for `{}`", path.to_string_lossy())
         }

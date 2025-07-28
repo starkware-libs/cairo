@@ -604,7 +604,7 @@ fn module_file<'db>(
 fn module_dir<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) -> Maybe<Directory<'db>> {
     match module_id {
         ModuleId::CrateRoot(crate_id) => {
-            db.crate_config(crate_id).to_maybe().map(|config| config.root)
+            db.crate_config(crate_id).to_maybe().map(|config| config.root.clone())
         }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
@@ -640,7 +640,7 @@ fn priv_file_to_module_mapping<'db>(
 ) -> Arc<OrderedHashMap<FileId<'db>, Vec<ModuleId<'db>>>> {
     let mut mapping = OrderedHashMap::<FileId<'db>, Vec<ModuleId<'db>>>::default();
     for crate_id in db.crates() {
-        for module_id in db.crate_modules(crate_id).iter().copied() {
+        for module_id in db.crate_modules(*crate_id).iter().copied() {
             if let Ok(files) = db.module_files(module_id) {
                 for file_id in files.iter().copied() {
                     match mapping.get_mut(&file_id) {
@@ -963,7 +963,7 @@ fn priv_module_sub_files<'db>(
 
     let cfg_set = db
         .crate_config(crate_id)
-        .and_then(|cfg| cfg.settings.cfg_set.map(Arc::new))
+        .and_then(|cfg| cfg.settings.cfg_set.clone().map(Arc::new))
         .unwrap_or(db.cfg_set());
     let edition = db
         .crate_config(module_id.owning_crate(db))

@@ -121,7 +121,7 @@ pub fn load_cached_crate_functions<'db>(
 pub fn generate_crate_cache<'db>(
     db: &'db dyn LoweringGroup,
     crate_id: cairo_lang_filesystem::ids::CrateId<'db>,
-) -> Maybe<Arc<[u8]>> {
+) -> Maybe<Vec<u8>> {
     let modules = db.crate_modules(crate_id);
     let mut function_ids = Vec::new();
     for module_id in modules.iter() {
@@ -182,7 +182,7 @@ pub fn generate_crate_cache<'db>(
         artifact.extend(lowered.len().to_be_bytes());
         artifact.extend(lowered);
     }
-    Ok(Arc::from(artifact.as_slice()))
+    Ok(artifact)
 }
 
 /// Context for loading cache into the database.
