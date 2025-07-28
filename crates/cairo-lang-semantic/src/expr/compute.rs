@@ -212,7 +212,6 @@ pub struct ComputationContext<'ctx, 'mt> {
     /// Definitions of semantic variables.
     pub semantic_defs: UnorderedHashMap<semantic::VarId<'ctx>, semantic::Binding<'ctx>>,
     inner_ctx: Option<InnerContext<'ctx>>,
-    cfg_set: Arc<CfgSet>,
     /// Whether to look for closures when calling variables.
     /// TODO(TomerStarkware): Remove this once we disallow calling shadowed functions.
     are_closures_in_context: bool,
@@ -232,8 +231,6 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
     ) -> Self {
         let semantic_defs =
             environment.variables.values().by_ref().map(|var| (var.id(), var.clone())).collect();
-        let cfg_set =
-            resolver.settings.cfg_set.clone().map(Arc::new).unwrap_or_else(|| db.cfg_set());
         Self {
             db,
             diagnostics,
@@ -244,10 +241,17 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
             function_id,
             semantic_defs,
             inner_ctx: None,
-            cfg_set,
             are_closures_in_context: false,
             macro_defined_var_unhygienic: false,
         }
+    }
+
+    fn cfg_set(&self) -> &CfgSet {
+        self.resolver
+            .settings
+            .cfg_set
+            .as_ref()
+            .unwrap_or_else(|| self.db.files_group_input().cfg_set(self.db).as_ref().unwrap())
     }
 
     /// Creates a new computation context for a global scope.
@@ -659,7 +663,7 @@ fn expand_inline_macro<'db>(
             db,
             syntax,
             &MacroPluginMetadata {
-                cfg_set: &ctx.cfg_set,
+                cfg_set: ctx.cfg_set(),
                 declared_derives: &ctx.db.declared_derives(crate_id),
                 allowed_features: &ctx
                     .resolver
