@@ -271,6 +271,7 @@ Statements:
   (v0: test::MyStruct::<9>) <- test::foo_helper::<9>()
   (v1: test::MyStruct::<9>, v2: @test::MyStruct::<9>) <- snapshot(v0)
   (v3: core::felt252) <- test::MyStructMyTrait::<9>::bar(v2)
-  (v4: core::felt252) <- test::MyStructMyTrait::<9>::bar(v2)
+  (v4: test::MyStruct::<9>, v5: @test::MyStruct::<9>) <- snapshot(v1)
+  (v6: core::felt252) <- test::MyStructMyTrait::<9>::bar(v5)
 End:
-  Return(v1)
+  Return(v4)
