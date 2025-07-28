@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use salsa::Database;
+use salsa::{Database, Setter};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 
@@ -215,6 +215,32 @@ pub trait ExternalFiles: Database {
     }
 }
 
+#[salsa::input]
+pub struct FilesGroupInput {
+    /// Main input of the project. Lists all the crates configurations.
+    #[returns(ref)]
+    pub crate_configs: Option<OrderedHashMap<CrateInput, CrateConfigurationInput>>,
+    /// Overrides for file content. Mostly used by language server and tests.
+    /// TODO(spapini): Currently, when this input changes, all the file_content() queries will
+    /// be invalidated.
+    /// Change this mechanism to hold file_overrides on the db struct outside salsa mechanism,
+    /// and invalidate manually.
+    #[returns(ref)]
+    pub file_overrides: Option<OrderedHashMap<FileInput, Arc<str>>>,
+    // TODO(yuval): consider moving this to a separate crate, or rename this crate.
+    /// The compilation flags.
+    #[returns(ref)]
+    pub flags: Option<OrderedHashMap<FlagLongId, Arc<Flag>>>,
+    /// The `#[cfg(...)]` options.
+    #[returns(ref)]
+    pub cfg_set: Option<CfgSet>,
+}
+
+#[salsa::tracked]
+fn files_group_input<'db>(db: &'db dyn Database) -> FilesGroupInput {
+    FilesGroupInput::new(db, None, None, None, None)
+}
+
 // Salsa database interface.
 #[cairo_lang_proc_macros::query_group]
 pub trait FilesGroup: ExternalFiles {
@@ -227,38 +253,21 @@ pub trait FilesGroup: ExternalFiles {
     #[salsa::interned]
     fn intern_flag<'db>(&'db self, flag: FlagLongId) -> FlagId<'db>;
 
-    /// Main input of the project. Lists all the crates configurations.
-    #[salsa::input]
-    fn crate_configs_input(&self) -> Arc<OrderedHashMap<CrateInput, CrateConfigurationInput>>;
+    /// Returns a reference to the input of the files group.
+    #[salsa::transparent]
+    fn files_group_input(&self) -> FilesGroupInput;
 
     /// Interned version of `crate_configs_input`.
     #[salsa::transparent]
     fn crate_configs<'db>(&'db self) -> &'db OrderedHashMap<CrateId<'db>, CrateConfiguration<'db>>;
 
-    /// Overrides for file content. Mostly used by language server and tests.
-    /// TODO(spapini): Currently, when this input changes, all the file_content() queries will
-    /// be invalidated.
-    /// Change this mechanism to hold file_overrides on the db struct outside salsa mechanism,
-    /// and invalidate manually.
-    #[salsa::input]
-    fn file_overrides_input(&self) -> Arc<OrderedHashMap<FileInput, Arc<str>>>;
-
     /// Interned version of `file_overrides_input`.
     #[salsa::transparent]
     fn file_overrides<'db>(&'db self) -> &'db OrderedHashMap<FileId<'db>, StrId<'db>>;
 
-    // TODO(yuval): consider moving this to a separate crate, or rename this crate.
-    /// The compilation flags.
-    #[salsa::input]
-    fn flags_input(&self) -> Arc<OrderedHashMap<FlagLongId, Arc<Flag>>>;
-
     /// Interned version of `flags_input`.
     #[salsa::transparent]
     fn flags<'db>(&'db self) -> &'db OrderedHashMap<FlagId<'db>, Arc<Flag>>;
-
-    /// The `#[cfg(...)]` options.
-    #[salsa::input]
-    fn cfg_set(&self) -> Arc<CfgSet>;
 
     /// List of crates in the project.
     #[salsa::transparent]
@@ -297,15 +306,16 @@ pub trait FilesGroup: ExternalFiles {
 
 pub fn init_files_group<'db>(db: &mut (dyn FilesGroup + 'db)) {
     // Initialize inputs.
-    db.set_file_overrides_input(Arc::new(OrderedHashMap::default()));
-    db.set_crate_configs_input(Arc::new(OrderedHashMap::default()));
-    db.set_flags_input(Arc::new(OrderedHashMap::default()));
-    db.set_cfg_set(Arc::new(CfgSet::new()));
+    let inp = files_group_input(db);
+    inp.set_file_overrides(db).to(Some(Default::default()));
+    inp.set_crate_configs(db).to(Some(Default::default()));
+    inp.set_flags(db).to(Some(Default::default()));
+    inp.set_cfg_set(db).to(Some(Default::default()));
 }
 
 #[salsa::tracked(returns(ref))]
 pub fn file_overrides<'db>(db: &'db dyn FilesGroup) -> OrderedHashMap<FileId<'db>, StrId<'db>> {
-    let inp = db.file_overrides_input();
+    let inp = files_group_input(db).file_overrides(db).as_ref().expect("file_overrides is not set");
     inp.iter()
         .map(|(file_id, content)| {
             (file_id.clone().into_file_long_id(db).intern(db), content.clone().intern(db))
@@ -317,7 +327,7 @@ pub fn file_overrides<'db>(db: &'db dyn FilesGroup) -> OrderedHashMap<FileId<'db
 pub fn crate_configs<'db>(
     db: &'db dyn FilesGroup,
 ) -> OrderedHashMap<CrateId<'db>, CrateConfiguration<'db>> {
-    let inp = db.crate_configs_input();
+    let inp = files_group_input(db).crate_configs(db).as_ref().expect("crate_configs is not set");
     inp.iter()
         .map(|(crate_input, config)| {
             (
@@ -330,7 +340,7 @@ pub fn crate_configs<'db>(
 
 #[salsa::tracked(returns(ref))]
 pub fn flags<'db>(db: &'db dyn FilesGroup) -> OrderedHashMap<FlagId<'db>, Arc<Flag>> {
-    let inp = db.flags_input();
+    let inp = files_group_input(db).flags(db).as_ref().expect("flags is not set");
     inp.iter().map(|(flag_id, flag)| (flag_id.clone().intern(db), flag.clone())).collect()
 }
 
@@ -369,16 +379,15 @@ pub fn init_dev_corelib(db: &mut dyn FilesGroup, core_lib_dir: PathBuf) {
         cache_file: None,
     };
     let crate_configs = db.update_crate_configuration_input(core, Some(root));
-    db.set_crate_configs_input(Arc::new(crate_configs));
+    files_group_input(db).set_crate_configs(db).to(Some(crate_configs));
 }
 
 /// Sets the root directory of the crate. None value removes the crate.
 #[macro_export]
 macro_rules! set_crate_config {
     ($self:expr, $crt:expr, $root:expr) => {
-        use std::sync::Arc;
         let crate_configs = $self.update_crate_configuration_input($crt, $root);
-        $self.set_crate_configs_input(Arc::new(crate_configs));
+        salsa::Setter::to($self.files_group_input().set_crate_configs($self), Some(crate_configs));
     };
 }
 
@@ -388,7 +397,7 @@ macro_rules! override_file_content {
     ($self:expr, $file:expr, $content:expr) => {
         let file = $self.file_input($file);
         let overrides = $self.update_file_overrides_input(file, $content);
-        $self.set_file_overrides_input(overrides);
+        salsa::Setter::to($self.files_group_input().set_file_overrides($self), Some(overrides));
     };
 }
 
@@ -398,13 +407,13 @@ pub trait FilesGroupEx<'db>: FilesGroup {
         &self,
         file: FileInput,
         content: Option<Arc<str>>,
-    ) -> Arc<OrderedHashMap<FileInput, Arc<str>>> {
-        let mut overrides = self.file_overrides_input().as_ref().clone();
+    ) -> OrderedHashMap<FileInput, Arc<str>> {
+        let mut overrides = self.files_group_input().file_overrides(self).clone().unwrap();
         match content {
             Some(content) => overrides.insert(file.clone(), content),
             None => overrides.swap_remove(&file),
         };
-        Arc::new(overrides)
+        overrides
     }
 
     /// Return an updated crate configuration input with the given crate id and root.
@@ -414,7 +423,7 @@ pub trait FilesGroupEx<'db>: FilesGroup {
         root: Option<CrateConfiguration<'_>>,
     ) -> OrderedHashMap<CrateInput, CrateConfigurationInput> {
         let crt = self.crate_input(crt);
-        let mut crate_configs = self.crate_configs_input().as_ref().clone();
+        let mut crate_configs = self.files_group_input().crate_configs(self).clone().unwrap();
         match root {
             Some(root) => crate_configs.insert(crt, self.crate_configuration_input(root)),
             None => crate_configs.swap_remove(&crt),
@@ -424,18 +433,23 @@ pub trait FilesGroupEx<'db>: FilesGroup {
 
     /// Sets the given flag value. None value removes the flag.
     fn set_flag(&mut self, flag: FlagLongId, value: Option<Arc<Flag>>) {
-        let mut flags = self.flags_input().as_ref().clone();
+        let mut flags = self.files_group_input().flags(self).clone().unwrap();
         match value {
             Some(value) => flags.insert(flag, value),
             None => flags.swap_remove(&flag),
         };
-        self.set_flags_input(Arc::new(flags));
+        self.files_group_input().set_flags(self).to(Some(flags));
     }
     /// Merges specified [`CfgSet`] into one already stored in this db.
     fn use_cfg(&mut self, cfg_set: &CfgSet) {
-        let existing = self.cfg_set();
+        let existing = self.files_group_input().cfg_set(self).clone().unwrap();
         let merged = existing.union(cfg_set);
-        self.set_cfg_set(Arc::new(merged));
+        self.files_group_input().set_cfg_set(self).to(Some(merged));
+    }
+
+    /// Returns the cfg set.
+    fn cfg_set(&'db self) -> &'db CfgSet {
+        self.files_group_input().cfg_set(self).as_ref().expect("cfg_set is not set")
     }
 }
 

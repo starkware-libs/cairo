@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe, PluginFileDiagnosticNotes, ToMaybe};
+use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::ids::{
     CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, VirtualFile,
 };
@@ -949,14 +950,14 @@ fn priv_module_sub_files<'db>(
 
     let cfg_set = db
         .crate_config(crate_id)
-        .and_then(|cfg| cfg.settings.cfg_set.clone().map(Arc::new))
-        .unwrap_or(db.cfg_set());
+        .and_then(|cfg| cfg.settings.cfg_set.as_ref())
+        .unwrap_or(db.upcast().cfg_set());
     let edition = db
         .crate_config(module_id.owning_crate(db))
         .map(|cfg| cfg.settings.edition)
         .unwrap_or_default();
     let metadata = MacroPluginMetadata {
-        cfg_set: &cfg_set,
+        cfg_set,
         declared_derives: &db.declared_derives(crate_id),
         allowed_features: &allowed_features,
         edition,
