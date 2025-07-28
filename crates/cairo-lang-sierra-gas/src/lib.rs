@@ -12,7 +12,7 @@ use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType, GasConcret
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
-use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
+use cairo_lang_sierra_type_size::{ProgramRegistryInfo, TypeSizeMap};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -137,29 +137,27 @@ pub fn calc_gas_precost_info(
 
 /// Info provider used for the computation of libfunc costs.
 struct ComputeCostInfoProvider {
-    pub registry: ProgramRegistry<CoreType, CoreLibfunc>,
-    pub type_sizes: TypeSizeMap,
+    pub program_info: ProgramRegistryInfo,
 }
 
 impl ComputeCostInfoProvider {
     fn new(program: &Program) -> Result<Self, Box<ProgramRegistryError>> {
-        let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-        let type_sizes = get_type_size_map(program, &registry)?;
-        Ok(Self { registry, type_sizes })
+        let program_info = ProgramRegistryInfo::new(program)?;
+        Ok(Self { program_info })
     }
 }
 
 /// Implementation of [CostInfoProvider] for [ComputeCostInfoProvider].
 impl CostInfoProvider for ComputeCostInfoProvider {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
-        self.type_sizes[ty].into_or_panic()
+        self.program_info.type_sizes[ty].into_or_panic()
     }
 
     fn circuit_info(&self, ty: &ConcreteTypeId) -> &CircuitInfo {
         let CoreTypeConcrete::Circuit(CircuitTypeConcrete::Circuit(ConcreteCircuit {
             circuit_info,
             ..
-        })) = self.registry.get_type(ty).unwrap()
+        })) = self.program_info.registry.get_type(ty).unwrap()
         else {
             panic!("Expected a circuit type, got {ty:?}.")
         };
@@ -174,6 +172,7 @@ pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
         program,
         &(|libfunc_id| {
             let core_libfunc = cost_provider
+                .program_info
                 .registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registry creation would have already failed.");
@@ -194,12 +193,12 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
     precost_gas_info: &GasInfo,
     ap_change_var_value: ApChangeVarValue,
 ) -> Result<GasInfo, CostError> {
-    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-    let type_sizes = get_type_size_map(program, &registry)?;
+    let program_info = ProgramRegistryInfo::new(program)?;
     let mut info = calc_gas_info_inner(
         program,
         |statement_future_cost, idx, libfunc_id| {
-            let libfunc = registry
+            let libfunc = program_info
+                .registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registry creation would have already failed.");
             core_libfunc_cost_expr::core_libfunc_postcost_expr(
@@ -207,7 +206,7 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
                 idx,
                 libfunc,
                 &InvocationCostInfoProviderForEqGen {
-                    type_sizes: &type_sizes,
+                    type_sizes: &program_info.type_sizes,
                     token_usages: |token_type| {
                         precost_gas_info.variable_values[&(*idx, token_type)].into_or_panic()
                     },
@@ -216,14 +215,14 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
             )
         },
         function_set_costs,
-        &registry,
+        &program_info.registry,
     )?;
     // Make `refund` libfuncs return 0 valued variables for all tokens.
     for (i, statement) in program.statements.iter().enumerate() {
         let Statement::Invocation(invocation) = statement else {
             continue;
         };
-        let Ok(libfunc) = registry.get_libfunc(&invocation.libfunc_id) else {
+        let Ok(libfunc) = program_info.registry.get_libfunc(&invocation.libfunc_id) else {
             continue;
         };
         let is_refund =
@@ -364,6 +363,7 @@ pub fn compute_postcost_info<CostType: PostCostTypeEx>(
         program,
         &(|libfunc_id| {
             let core_libfunc = cost_provider
+                .program_info
                 .registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registry creation would have already failed.");
@@ -375,6 +375,7 @@ pub fn compute_postcost_info<CostType: PostCostTypeEx>(
             .map(|(func, val)| {
                 (
                     cost_provider
+                        .program_info
                         .registry
                         .get_function(func)
                         .expect("Program registry creation would have already failed.")
