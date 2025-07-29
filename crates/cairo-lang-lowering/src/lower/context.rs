@@ -423,7 +423,11 @@ pub type LoweringResult<'db, T> = Result<T, LoweringFlowError<'db>>;
 pub enum LoweringFlowError<'db> {
     /// Computation failure. A corresponding diagnostic should be emitted.
     Failed(DiagnosticAdded),
+    /// The expression that was being lowered always panics, and does not flow to the parent
+    /// builder.
     Panic(VarUsage<'db>, LocationId<'db>),
+    /// The expression that was being lowered always returns from the function, and does not flow to
+    /// the parent builder.
     Return(VarUsage<'db>, LocationId<'db>),
     /// Every match arm is terminating - does not flow to parent builder
     /// e.g. returns or panics.
