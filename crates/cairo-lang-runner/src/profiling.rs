@@ -664,30 +664,24 @@ impl<'a> ProfilingInfoProcessor<'a> {
         params: &ProfilingInfoProcessorParams,
     ) -> Option<OrderedHashMap<Vec<String>, usize>> {
         if params.process_by_scoped_statement {
-            return Some(
-                raw_profiling_info
-                    .scoped_sierra_statement_weights
-                    .iter()
-                    .map(|((idx_stack_trace, statement_idx), &weight)| {
-                        let statement_name =
-                            match self.statement_idx_to_gen_statement(statement_idx) {
-                                GenStatement::Invocation(invocation) => {
-                                    invocation.libfunc_id.to_string()
-                                }
-                                GenStatement::Return(_) => "return".into(),
-                            };
-                        let key: Vec<String> = chain!(
-                            index_stack_trace_to_name_stack_trace(
-                                self.sierra_program,
-                                idx_stack_trace
-                            ),
-                            [statement_name]
-                        )
-                        .collect();
-                        (key, weight)
-                    })
-                    .collect(),
-            );
+            let mut scoped_sierra_statement_weights: OrderedHashMap<Vec<String>, usize> =
+                Default::default();
+            for ((idx_stack_trace, statement_idx), weight) in
+                raw_profiling_info.scoped_sierra_statement_weights.iter()
+            {
+                let statement_name = match self.statement_idx_to_gen_statement(statement_idx) {
+                    GenStatement::Invocation(invocation) => invocation.libfunc_id.to_string(),
+                    GenStatement::Return(_) => "return".into(),
+                };
+                let key: Vec<String> = chain!(
+                    index_stack_trace_to_name_stack_trace(self.sierra_program, idx_stack_trace),
+                    [statement_name]
+                )
+                .collect();
+                // Accumulating statements with the same name.
+                *scoped_sierra_statement_weights.entry(key).or_default() += *weight;
+            }
+            return Some(scoped_sierra_statement_weights);
         }
         None
     }
