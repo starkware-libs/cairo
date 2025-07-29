@@ -437,6 +437,7 @@ dependencies = [
  "cairo-lang-sierra-generator",
  "cairo-vm",
  "clap",
+ "itertools 0.14.0",
  "num-bigint",
  "serde_json",
 ]
