@@ -70,6 +70,7 @@ pub enum FlowControlNode {
     EvaluateExpr(EvaluateExpr),
     BooleanIf(BooleanIf),
     ArmExpr(ArmExpr),
+    UnitResult,
 }
 
 impl Debug for FlowControlNode {
@@ -78,6 +79,7 @@ impl Debug for FlowControlNode {
             FlowControlNode::EvaluateExpr(node) => node.fmt(f),
             FlowControlNode::BooleanIf(node) => node.fmt(f),
             FlowControlNode::ArmExpr(node) => node.fmt(f),
+            FlowControlNode::UnitResult => write!(f, "UnitResult"),
         }
     }
 }
