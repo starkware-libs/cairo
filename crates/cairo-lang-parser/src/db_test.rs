@@ -80,7 +80,7 @@ fn test_token_stream_parser() {
     assert_eq!(
         print_tree(db, &root_node, false, true),
         print_tree(db, &node_from_token_stream, false, true)
-    )
+    );
 }
 
 #[test]
