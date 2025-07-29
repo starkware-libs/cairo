@@ -819,8 +819,21 @@ fn fetch_event_data(db: &dyn SemanticGroup, event_type_id: TypeId) -> Option<Eve
     }
     .intern(db);
     // The impl of `starknet::event::Event<ThisEvent>`.
-    let event_impl =
-        get_impl_at_context(db, ImplLookupContext::default(), concrete_trait_id, None).ok()?;
+    let event_impl = get_impl_at_context(
+        db.upcast(),
+        ImplLookupContext::default(
+            event_type_id
+                .lookup_intern(db)
+                .module_id(db)
+                .map(|m| m.owning_crate(db))
+                .unwrap_or_else(|| db.core_crate()),
+        )
+        .intern(db),
+        concrete_trait_id,
+        None,
+    )
+    .ok()?;
+
     let concrete_event_impl =
         try_extract_matches!(event_impl.lookup_intern(db), ImplLongId::Concrete)?;
     let impl_def_id = concrete_event_impl.impl_def_id(db);

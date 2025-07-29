@@ -10,7 +10,7 @@ use crate::items::constant::ImplConstantId;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::GenericParamConst;
 use crate::items::imp::{
-    GeneratedImplLongId, ImplId, ImplImplId, ImplLongId, ImplLookupContext, UninferredImpl,
+    GeneratedImplLongId, ImplId, ImplImplId, ImplLongId, ImplLookupContextId, UninferredImpl,
 };
 use crate::items::trt::{
     ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitImplId,
@@ -31,21 +31,21 @@ pub trait InferenceEmbeddings {
         &mut self,
         uninferred_impl: UninferredImpl,
         concrete_trait_id: ConcreteTraitId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<ImplId>;
     fn infer_impl_def(
         &mut self,
         impl_def_id: ImplDefId,
         concrete_trait_id: ConcreteTraitId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<ImplId>;
     fn infer_impl_alias(
         &mut self,
         impl_alias_id: ImplAliasId,
         concrete_trait_id: ConcreteTraitId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<ImplId>;
     fn infer_generic_assignment(
@@ -53,63 +53,63 @@ pub trait InferenceEmbeddings {
         generic_params: &[GenericParam],
         generic_args: &[GenericArgumentId],
         expected_generic_args: &[GenericArgumentId],
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<Vec<GenericArgumentId>>;
     fn infer_generic_args(
         &mut self,
         generic_params: &[GenericParam],
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<Vec<GenericArgumentId>>;
     fn infer_concrete_trait_by_self(
         &mut self,
         trait_function: TraitFunctionId,
         self_ty: TypeId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
         inference_error_cb: impl FnOnce(InferenceError),
     ) -> Option<(ConcreteTraitId, usize)>;
     fn infer_generic_arg(
         &mut self,
         param: &GenericParam,
-        lookup_context: ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<GenericArgumentId>;
     fn infer_trait_function(
         &mut self,
         concrete_trait_function: ConcreteTraitGenericFunctionId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<FunctionId>;
     fn infer_generic_function(
         &mut self,
         generic_function: GenericFunctionId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<FunctionId>;
     fn infer_trait_generic_function(
         &mut self,
         concrete_trait_function: ConcreteTraitGenericFunctionId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> ImplGenericFunctionId;
     fn infer_trait_type(
         &mut self,
         concrete_trait_type: ConcreteTraitTypeId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> TypeId;
     fn infer_trait_constant(
         &mut self,
         concrete_trait_constant: ConcreteTraitConstantId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> ImplConstantId;
     fn infer_trait_impl(
         &mut self,
         concrete_trait_constant: ConcreteTraitImplId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> ImplImplId;
 }
@@ -120,7 +120,7 @@ impl InferenceEmbeddings for Inference<'_> {
         &mut self,
         uninferred_impl: UninferredImpl,
         concrete_trait_id: ConcreteTraitId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<ImplId> {
         let impl_id = match uninferred_impl {
@@ -169,7 +169,7 @@ impl InferenceEmbeddings for Inference<'_> {
         &mut self,
         impl_def_id: ImplDefId,
         concrete_trait_id: ConcreteTraitId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<ImplId> {
         let imp_generic_params = self
@@ -206,7 +206,7 @@ impl InferenceEmbeddings for Inference<'_> {
         &mut self,
         impl_alias_id: ImplAliasId,
         concrete_trait_id: ConcreteTraitId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<ImplId> {
         let impl_alias_generic_params = self
@@ -250,7 +250,7 @@ impl InferenceEmbeddings for Inference<'_> {
         generic_params: &[GenericParam],
         generic_args: &[GenericArgumentId],
         expected_generic_args: &[GenericArgumentId],
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<Vec<GenericArgumentId>> {
         let new_generic_args =
@@ -267,7 +267,7 @@ impl InferenceEmbeddings for Inference<'_> {
     fn infer_generic_args(
         &mut self,
         generic_params: &[GenericParam],
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<Vec<GenericArgumentId>> {
         let mut generic_args = vec![];
@@ -276,8 +276,7 @@ impl InferenceEmbeddings for Inference<'_> {
             let generic_param = substitution
                 .substitute(self.db, generic_param.clone())
                 .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
-            let generic_arg =
-                self.infer_generic_arg(&generic_param, lookup_context.clone(), stable_ptr)?;
+            let generic_arg = self.infer_generic_arg(&generic_param, lookup_context, stable_ptr)?;
             generic_args.push(generic_arg);
             substitution.insert(generic_param.id(), generic_arg);
         }
@@ -295,7 +294,7 @@ impl InferenceEmbeddings for Inference<'_> {
         &mut self,
         trait_function: TraitFunctionId,
         self_ty: TypeId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
         inference_error_cb: impl FnOnce(InferenceError),
     ) -> Option<(ConcreteTraitId, usize)> {
@@ -361,7 +360,7 @@ impl InferenceEmbeddings for Inference<'_> {
     fn infer_generic_arg(
         &mut self,
         param: &GenericParam,
-        lookup_context: ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<GenericArgumentId> {
         match param {
@@ -391,7 +390,7 @@ impl InferenceEmbeddings for Inference<'_> {
     fn infer_trait_function(
         &mut self,
         concrete_trait_function: ConcreteTraitGenericFunctionId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<FunctionId> {
         let generic_function = GenericFunctionId::Impl(self.infer_trait_generic_function(
@@ -407,7 +406,7 @@ impl InferenceEmbeddings for Inference<'_> {
     fn infer_generic_function(
         &mut self,
         generic_function: GenericFunctionId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<FunctionId> {
         let generic_params = generic_function
@@ -423,13 +422,13 @@ impl InferenceEmbeddings for Inference<'_> {
     fn infer_trait_generic_function(
         &mut self,
         concrete_trait_function: ConcreteTraitGenericFunctionId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> ImplGenericFunctionId {
         let impl_id = self.new_impl_var(
             concrete_trait_function.concrete_trait(self.db),
             stable_ptr,
-            lookup_context.clone(),
+            lookup_context,
         );
         ImplGenericFunctionId { impl_id, function: concrete_trait_function.trait_function(self.db) }
     }
@@ -439,13 +438,13 @@ impl InferenceEmbeddings for Inference<'_> {
     fn infer_trait_type(
         &mut self,
         concrete_trait_type: ConcreteTraitTypeId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> TypeId {
         let impl_id = self.new_impl_var(
             concrete_trait_type.concrete_trait(self.db),
             stable_ptr,
-            lookup_context.clone(),
+            lookup_context,
         );
         TypeLongId::ImplType(ImplTypeId::new(
             impl_id,
@@ -460,13 +459,13 @@ impl InferenceEmbeddings for Inference<'_> {
     fn infer_trait_constant(
         &mut self,
         concrete_trait_constant: ConcreteTraitConstantId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> ImplConstantId {
         let impl_id = self.new_impl_var(
             concrete_trait_constant.concrete_trait(self.db),
             stable_ptr,
-            lookup_context.clone(),
+            lookup_context,
         );
 
         ImplConstantId::new(impl_id, concrete_trait_constant.trait_constant(self.db), self.db)
@@ -477,13 +476,13 @@ impl InferenceEmbeddings for Inference<'_> {
     fn infer_trait_impl(
         &mut self,
         concrete_trait_impl: ConcreteTraitImplId,
-        lookup_context: &ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> ImplImplId {
         let impl_id = self.new_impl_var(
             concrete_trait_impl.concrete_trait(self.db),
             stable_ptr,
-            lookup_context.clone(),
+            lookup_context,
         );
 
         ImplImplId::new(impl_id, concrete_trait_impl.trait_impl(self.db), self.db)

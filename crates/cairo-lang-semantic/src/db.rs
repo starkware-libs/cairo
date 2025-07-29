@@ -32,7 +32,7 @@ use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{GenericFunctionId, ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{
-    ImplId, ImplImplId, ImplItemInfo, ImplLookupContext, ImplicitImplImplData, UninferredImpl,
+    ImplId, ImplImplId, ImplItemInfo, ImplLookupContextId, ImplicitImplImplData,
 };
 use crate::items::macro_declaration::{MacroDeclarationData, MacroRuleData};
 use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
@@ -132,6 +132,12 @@ pub trait SemanticGroup:
         &self,
         id: items::imp::UninferredGeneratedImplLongId,
     ) -> items::imp::UninferredGeneratedImplId;
+
+    #[salsa::interned]
+    fn intern_impl_lookup_context(
+        &self,
+        id: items::imp::ImplLookupContext,
+    ) -> items::imp::ImplLookupContextId;
 
     // Const.
     // ====
@@ -696,28 +702,13 @@ pub trait SemanticGroup:
 
     // Trait filter.
     // ==============
-    /// Returns candidate [ImplDefId]s for a specific trait lookup constraint.
-    #[salsa::invoke(items::imp::module_impl_ids_for_trait_filter)]
-    #[salsa::cycle(items::imp::module_impl_ids_for_trait_filter_cycle)]
-    fn module_impl_ids_for_trait_filter(
-        &self,
-        module_id: ModuleId,
-        trait_lookup_constraint: items::imp::TraitFilter,
-    ) -> Maybe<Vec<UninferredImpl>>;
-    #[salsa::invoke(items::imp::impl_impl_ids_for_trait_filter)]
-    #[salsa::cycle(items::imp::impl_impl_ids_for_trait_filter_cycle)]
-    fn impl_impl_ids_for_trait_filter(
-        &self,
-        impl_id: ImplId,
-        trait_lookup_constraint: items::imp::TraitFilter,
-    ) -> Maybe<Vec<UninferredImpl>>;
     // Returns the solution set for a canonical trait.
     #[salsa::invoke(inference::solver::canonic_trait_solutions)]
     #[salsa::cycle(inference::solver::canonic_trait_solutions_cycle)]
     fn canonic_trait_solutions(
         &self,
         canonical_trait: inference::canonic::CanonicalTrait,
-        lookup_context: ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         impl_type_bounds: BTreeMap<ImplTypeById, TypeId>,
     ) -> Result<
         inference::solver::SolutionSet<inference::canonic::CanonicalImpl>,
@@ -936,7 +927,12 @@ pub trait SemanticGroup:
     /// Returns the deref chain and diagnostics for a given type.
     #[salsa::invoke(items::imp::deref_chain)]
     #[salsa::cycle(items::imp::deref_chain_cycle)]
-    fn deref_chain(&self, ty: TypeId, try_deref_mut: bool) -> Maybe<items::imp::DerefChain>;
+    fn deref_chain(
+        &self,
+        ty: TypeId,
+        crate_id: CrateId,
+        try_deref_mut: bool,
+    ) -> Maybe<items::imp::DerefChain>;
 
     // Impl type.
     // ================
@@ -1562,7 +1558,7 @@ pub trait SemanticGroup:
 
     /// Returns the type info for a type in a context.
     #[salsa::invoke(types::type_info)]
-    fn type_info(&self, lookup_context: ImplLookupContext, ty: types::TypeId) -> types::TypeInfo;
+    fn type_info(&self, lookup_context: ImplLookupContextId, ty: types::TypeId) -> types::TypeInfo;
 
     /// Returns the `Copy` impl for a type in general context.
     #[salsa::invoke(types::copyable)]

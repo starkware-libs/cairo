@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-use cairo_lang_defs::ids::{TraitConstantId, TraitTypeId};
+use cairo_lang_defs::ids::{LanguageElementId, TraitConstantId, TraitTypeId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
@@ -602,6 +602,11 @@ impl Inference<'_> {
         id: ImplVarId,
         concrete_trait_impl: ConcreteTraitImplId,
     ) -> ImplId {
+        let trait_crate = concrete_trait_impl
+            .trait_impl(self.db)
+            .trait_id(self.db)
+            .parent_module(self.db)
+            .owning_crate(self.db);
         self.rewritten_impl_item(
             id,
             concrete_trait_impl.trait_impl(self.db),
@@ -610,7 +615,7 @@ impl Inference<'_> {
                 inference.new_impl_var(
                     inference.db.concrete_trait_impl_concrete_trait(concrete_trait_impl).unwrap(),
                     stable_ptr,
-                    ImplLookupContext::default(),
+                    ImplLookupContext::default(trait_crate).intern(self.db),
                 )
             },
         )

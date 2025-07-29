@@ -561,6 +561,11 @@ define_top_level_language_element_id!(
     lookup_intern_impl_def,
     intern_impl_def
 );
+impl UnstableSalsaId for ImplDefId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
+    }
+}
 
 // --- Impl type items ---
 define_named_language_element_id!(
@@ -704,6 +709,11 @@ define_top_level_language_element_id!(
     lookup_intern_impl_alias,
     intern_impl_alias
 );
+impl UnstableSalsaId for ImplAliasId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
+    }
+}
 define_top_level_language_element_id!(
     ExternTypeId,
     ExternTypeLongId,
@@ -789,6 +799,11 @@ impl TraitImplId {
 impl TopLevelLanguageElementId for TraitImplId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.trait_id(db).full_path(db), self.name(db))
+    }
+}
+impl UnstableSalsaId for TraitImplId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
     }
 }
 
@@ -919,6 +934,27 @@ impl GenericParamLongId {
         let item_ptr = self.1.0.nth_parent(db, 3);
         GenericItemId::from_ptr(db, self.0, item_ptr)
     }
+
+    pub fn has_type_constraints_syntax(&self, db: &dyn SyntaxGroup) -> bool {
+        let param = ast::GenericParamPtr(self.1.0).lookup(db);
+        match param {
+            ast::GenericParam::Type(_) => false,
+            ast::GenericParam::Const(_) => false,
+            ast::GenericParam::ImplNamed(imp) => {
+                matches!(
+                    imp.type_constrains(db),
+                    ast::OptionAssociatedItemConstraints::AssociatedItemConstraints(_)
+                )
+            }
+            ast::GenericParam::ImplAnonymous(imp) => {
+                matches!(
+                    imp.type_constrains(db),
+                    ast::OptionAssociatedItemConstraints::AssociatedItemConstraints(_)
+                )
+            }
+            ast::GenericParam::NegativeImpl(_) => false,
+        }
+    }
 }
 impl GenericParamId {
     pub fn name(&self, db: &dyn DefsGroup) -> Option<SmolStr> {
@@ -952,6 +988,13 @@ impl GenericParamId {
         self.lookup_intern(db).generic_item(db)
     }
 }
+
+impl UnstableSalsaId for GenericParamId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
+    }
+}
+
 impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
         write!(

@@ -6,7 +6,7 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::ConcreteVariant;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
-use cairo_lang_semantic::items::imp::ImplLookupContext;
+use cairo_lang_semantic::items::imp::{ImplLookupContext, ImplLookupContextId};
 use cairo_lang_semantic::usage::Usages;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::Intern;
@@ -40,7 +40,7 @@ pub struct VariableAllocator<'db> {
     /// Module and file of the declared function.
     pub module_file_id: ModuleFileId,
     // Lookup context for impls.
-    pub lookup_context: ImplLookupContext,
+    pub lookup_context: ImplLookupContextId,
 }
 impl<'db> VariableAllocator<'db> {
     pub fn new(
@@ -57,18 +57,15 @@ impl<'db> VariableAllocator<'db> {
             lookup_context: ImplLookupContext::new(
                 function_id.parent_module(db),
                 generic_param_ids,
-            ),
+                db,
+            )
+            .intern(db),
         })
     }
 
     /// Allocates a new variable in the context's variable arena according to the context.
     pub fn new_var(&mut self, req: VarRequest) -> VariableId {
-        self.variables.alloc(Variable::new(
-            self.db,
-            self.lookup_context.clone(),
-            req.ty,
-            req.location,
-        ))
+        self.variables.alloc(Variable::new(self.db, self.lookup_context, req.ty, req.location))
     }
 
     /// Retrieves the LocationId of a stable syntax pointer in the current function file.

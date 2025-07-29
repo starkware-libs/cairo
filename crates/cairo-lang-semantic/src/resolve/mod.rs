@@ -49,6 +49,7 @@ use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{
     ConcreteImplId, ConcreteImplLongId, DerefInfo, ImplImplId, ImplLongId, ImplLookupContext,
+    ImplLookupContextId,
 };
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{
@@ -1131,7 +1132,7 @@ impl<'db> Resolver<'db> {
                         let generic_function =
                             GenericFunctionId::Impl(self.inference().infer_trait_generic_function(
                                 concrete_trait_function,
-                                &impl_lookup_context,
+                                impl_lookup_context,
                                 Some(identifier_stable_ptr),
                             ));
 
@@ -1151,7 +1152,7 @@ impl<'db> Resolver<'db> {
                         let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
                         let ty = self.inference().infer_trait_type(
                             concrete_trait_type,
-                            &impl_lookup_context,
+                            impl_lookup_context,
                             Some(identifier_stable_ptr),
                         );
                         Ok(ResolvedConcreteItem::Type(self.inference().rewrite(ty).no_err()))
@@ -1169,7 +1170,7 @@ impl<'db> Resolver<'db> {
                         let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
                         let imp_constant_id = self.inference().infer_trait_constant(
                             concrete_trait_constant,
-                            &impl_lookup_context,
+                            impl_lookup_context,
                             Some(identifier_stable_ptr),
                         );
                         // Make sure the inference is solved for successful impl lookup
@@ -1194,7 +1195,7 @@ impl<'db> Resolver<'db> {
                         let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
                         let impl_impl_id = self.inference().infer_trait_impl(
                             concrete_trait_impl,
-                            &impl_lookup_context,
+                            impl_lookup_context,
                             Some(identifier_stable_ptr),
                         );
                         // Make sure the inference is solved for successful impl lookup
@@ -1754,7 +1755,7 @@ impl<'db> Resolver<'db> {
     }
 
     /// Returns the current impl lookup context.
-    pub fn impl_lookup_context(&self) -> ImplLookupContext {
+    pub fn impl_lookup_context(&self) -> ImplLookupContextId {
         self.impl_lookup_context_ex(MacroContextModifier::None)
     }
 
@@ -1763,22 +1764,23 @@ impl<'db> Resolver<'db> {
     pub fn impl_lookup_context_ex(
         &self,
         macro_context_modifier: MacroContextModifier,
-    ) -> ImplLookupContext {
+    ) -> ImplLookupContextId {
         let mut lookup_context = ImplLookupContext::new(
             self.active_module_file_id(macro_context_modifier).0,
             self.generic_params.clone(),
+            self.db,
         );
 
         if let TraitOrImplContext::Impl(impl_def_id) = &self.trait_or_impl_ctx {
             let Ok(generic_params) = self.db.impl_def_generic_params(*impl_def_id) else {
-                return lookup_context;
+                return lookup_context.intern(self.db);
             };
             let generic_args = generic_params_to_args(generic_params.as_slice(), self.db);
             let impl_id: ConcreteImplId =
                 ConcreteImplLongId { impl_def_id: *impl_def_id, generic_args }.intern(self.db);
-            lookup_context.insert_impl(ImplLongId::Concrete(impl_id).intern(self.db));
+            lookup_context.insert_impl(ImplLongId::Concrete(impl_id).intern(self.db), self.db);
         }
-        lookup_context
+        lookup_context.intern(self.db)
     }
 
     /// Resolves generic arguments.
