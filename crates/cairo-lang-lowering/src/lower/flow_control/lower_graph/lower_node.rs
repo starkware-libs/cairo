@@ -4,6 +4,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::{MatchArmSelector, corelib};
 
 use super::LowerGraphContext;
+use crate::lower::block_builder::BlockBuilder;
 use crate::lower::context::{LoweredExpr, VarRequest};
 use crate::lower::flow_control::graph::{
     ArmExpr, BooleanIf, EvaluateExpr, FlowControlNode, NodeId,
@@ -13,11 +14,15 @@ use crate::{MatchArm, MatchEnumInfo, MatchInfo};
 
 /// Lowers the node with the given [NodeId].
 pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<()> {
+    let Some(builder) = ctx.start_builder(id) else {
+        return Ok(());
+    };
+
     match &ctx.graph.nodes[id.0] {
-        FlowControlNode::EvaluateExpr(node) => lower_evaluate_expr(ctx, id, node),
-        FlowControlNode::BooleanIf(node) => lower_boolean_if(ctx, id, node),
-        FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, id, node),
-        FlowControlNode::UnitResult => lower_unit_result(ctx, id),
+        FlowControlNode::EvaluateExpr(node) => lower_evaluate_expr(ctx, id, node, builder),
+        FlowControlNode::BooleanIf(node) => lower_boolean_if(ctx, id, node, builder),
+        FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, node, builder),
+        FlowControlNode::UnitResult => lower_unit_result(ctx, builder),
     }
 }
 
@@ -26,25 +31,27 @@ fn lower_evaluate_expr<'db>(
     ctx: &mut LowerGraphContext<'db, '_, '_>,
     id: NodeId,
     node: &EvaluateExpr<'db>,
+    mut builder: BlockBuilder<'db>,
 ) -> Maybe<()> {
-    let mut builder = ctx.start_builder(id);
-
-    // TODO(lior): Replace unwrap with a proper error handling.
-    let lowered_var = lower_expr_to_var_usage(ctx.ctx, &mut builder, node.expr).unwrap();
-    ctx.register_var(node.var_id, lowered_var);
-    ctx.pass_builder_to_child(id, node.next, builder);
-    Ok(())
+    let lowered_expr = lower_expr_to_var_usage(ctx.ctx, &mut builder, node.expr);
+    match lowered_expr {
+        Ok(lowered_var) => {
+            ctx.register_var(node.var_id, lowered_var);
+            ctx.pass_builder_to_child(id, node.next, builder);
+            Ok(())
+        }
+        Err(err) => ctx.block_doesnt_continue(id, builder, err),
+    }
 }
 
 /// Lowers a [BooleanIf] node.
-fn lower_boolean_if(
-    ctx: &mut LowerGraphContext<'_, '_, '_>,
+fn lower_boolean_if<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
     id: NodeId,
     node: &BooleanIf,
+    builder: BlockBuilder<'db>,
 ) -> Maybe<()> {
     let db = ctx.ctx.db;
-
-    let builder = ctx.start_builder(id);
 
     // Allocate block ids for the two branches.
     let true_branch_block_id = ctx.assign_child_block_id(node.true_branch, &builder);
@@ -81,19 +88,19 @@ fn lower_boolean_if(
 /// Lowers an [ArmExpr] node.
 fn lower_arm_expr<'db>(
     ctx: &mut LowerGraphContext<'db, '_, '_>,
-    id: NodeId,
     node: &ArmExpr<'db>,
+    builder: BlockBuilder<'db>,
 ) -> Maybe<()> {
-    let builder = ctx.start_builder(id);
     let sealed_block = lower_tail_expr(ctx.ctx, builder, node.expr)?;
     ctx.add_sealed_block(sealed_block);
     Ok(())
 }
 
 /// Lowers a `UnitResult` node.
-fn lower_unit_result(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<()> {
-    let builder = ctx.start_builder(id);
-
+fn lower_unit_result<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    builder: BlockBuilder<'db>,
+) -> Maybe<()> {
     let sealed_block = lowered_expr_to_block_scope_end(
         ctx.ctx,
         builder,
