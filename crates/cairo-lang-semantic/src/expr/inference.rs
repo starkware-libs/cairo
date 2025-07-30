@@ -301,6 +301,12 @@ pub struct ImplVarTraitItemMappings {
     impls: OrderedHashMap<TraitImplId, ImplId>,
 }
 
+impl ImplVarTraitItemMappings {
+    pub fn is_empty(&self) -> bool {
+        self.types.is_empty() && self.constants.is_empty() && self.impls.is_empty()
+    }
+}
+
 /// State of inference.
 #[derive(Debug, DebugWithDb, PartialEq, Eq)]
 #[debug_db(dyn SemanticGroup + 'static)]
