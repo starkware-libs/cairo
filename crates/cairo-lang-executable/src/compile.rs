@@ -230,17 +230,12 @@ pub fn compile_executable_function_in_prepared_db(
     let builder = RunnableBuilder::new(sierra_program, None).map_err(|err| {
         let mut locs = vec![];
         for stmt_idx in err.stmt_indices() {
-            // Note that the `last` is used here as the call site is the most relevant location.
-            if let Some(loc) = debug_info
-                .statements_locations
-                .locations
-                .get(&stmt_idx)
-                .and_then(|stmt_locs| stmt_locs.last())
+            if let Some(loc) =
+                debug_info.statements_locations.statement_diagnostic_location(db, stmt_idx)
             {
-                locs.push(format!("#{stmt_idx} {:?}", loc.diagnostic_location(db).debug(db)))
+                locs.push(format!("#{stmt_idx} {:?}", loc.debug(db)))
             }
         }
-
         anyhow::anyhow!("Failed to create runnable builder: {}\n{}", err, locs.join("\n"))
     })?;
 
