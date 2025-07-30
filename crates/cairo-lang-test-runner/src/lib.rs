@@ -123,11 +123,14 @@ impl CompiledTestRunner {
             for (failure, run_result) in failed.iter().zip_eq(failed_run_results) {
                 print!("   {failure} - ");
                 match run_result {
-                    RunResultValue::Success(_) => {
+                    Ok(RunResultValue::Success(_)) => {
                         println!("expected panic but finished successfully.");
                     }
-                    RunResultValue::Panic(values) => {
+                    Ok(RunResultValue::Panic(values)) => {
                         println!("{}", format_for_panic(values.into_iter()));
+                    }
+                    Err(err) => {
+                        println!("{err}");
                     }
                 }
             }
@@ -284,7 +287,7 @@ pub struct TestsSummary {
     passed: Vec<String>,
     failed: Vec<String>,
     ignored: Vec<String>,
-    failed_run_results: Vec<RunResultValue>,
+    failed_run_results: Vec<anyhow::Result<RunResultValue>>,
 }
 
 /// Auxiliary data that is required when running tests with profiling.
@@ -333,7 +336,8 @@ pub fn run_tests(
     let (tx, rx) = channel::<_>();
     rayon::spawn(move || {
         named_tests.into_par_iter().for_each(|(name, test)| {
-            tx.send(run_single_test(test, name, &runner)).unwrap();
+            let result = run_single_test(test, &name, &runner);
+            tx.send((name, result)).unwrap();
         })
     });
 
@@ -363,8 +367,8 @@ pub fn run_tests(
         ignored: vec![],
         failed_run_results: vec![],
     };
-    while let Ok(test_result) = rx.recv() {
-        update_summary(&mut summary, test_result?, &profiler_data, config.print_resource_usage);
+    while let Ok((name, result)) = rx.recv() {
+        update_summary(&mut summary, name, result, &profiler_data, config.print_resource_usage);
     }
 
     Ok(summary)
@@ -373,63 +377,66 @@ pub fn run_tests(
 /// Runs a single test and returns a tuple of its name and result.
 fn run_single_test(
     test: TestConfig,
-    name: String,
+    name: &str,
     runner: &SierraCasmRunner,
-) -> anyhow::Result<(String, Option<TestResult>)> {
+) -> anyhow::Result<Option<TestResult>> {
     if test.ignored {
-        return Ok((name, None));
+        return Ok(None);
     }
-    let func = runner.find_function(name.as_str())?;
-    let result = runner
-        .run_function_with_starknet_context(func, vec![], test.available_gas, Default::default())
-        .with_context(|| format!("Failed to run the function `{}`.", name.as_str()))?;
-    Ok((
-        name,
-        Some(TestResult {
-            status: match &result.value {
-                RunResultValue::Success(_) => match test.expectation {
-                    TestExpectation::Success => TestStatus::Success,
-                    TestExpectation::Panics(_) => TestStatus::Fail(result.value),
-                },
-                RunResultValue::Panic(value) => match test.expectation {
-                    TestExpectation::Success => TestStatus::Fail(result.value),
-                    TestExpectation::Panics(panic_expectation) => match panic_expectation {
-                        PanicExpectation::Exact(expected) if value != &expected => {
-                            TestStatus::Fail(result.value)
-                        }
-                        _ => TestStatus::Success,
-                    },
+    let func = runner.find_function(name)?;
+    let result = runner.run_function_with_starknet_context(
+        func,
+        vec![],
+        test.available_gas,
+        Default::default(),
+    )?;
+    Ok(Some(TestResult {
+        status: match &result.value {
+            RunResultValue::Success(_) => match test.expectation {
+                TestExpectation::Success => TestStatus::Success,
+                TestExpectation::Panics(_) => TestStatus::Fail(result.value),
+            },
+            RunResultValue::Panic(value) => match test.expectation {
+                TestExpectation::Success => TestStatus::Fail(result.value),
+                TestExpectation::Panics(panic_expectation) => match panic_expectation {
+                    PanicExpectation::Exact(expected) if value != &expected => {
+                        TestStatus::Fail(result.value)
+                    }
+                    _ => TestStatus::Success,
                 },
             },
-            gas_usage: test
-                .available_gas
-                .zip(result.gas_counter)
-                .map(|(before, after)| {
-                    before.into_or_panic::<i64>() - after.to_bigint().to_i64().unwrap()
-                })
-                .or_else(|| {
-                    runner.initial_required_gas(func).map(|gas| gas.into_or_panic::<i64>())
-                }),
-            used_resources: result.used_resources,
-            profiling_info: result.profiling_info,
-        }),
-    ))
+        },
+        gas_usage: test
+            .available_gas
+            .zip(result.gas_counter)
+            .map(|(before, after)| {
+                before.into_or_panic::<i64>() - after.to_bigint().to_i64().unwrap()
+            })
+            .or_else(|| runner.initial_required_gas(func).map(|gas| gas.into_or_panic::<i64>())),
+        used_resources: result.used_resources,
+        profiling_info: result.profiling_info,
+    }))
 }
 
 /// Updates the test summary with the given test result.
 fn update_summary(
     summary: &mut TestsSummary,
-    test_result: (String, Option<TestResult>),
+    name: String,
+    test_result: anyhow::Result<Option<TestResult>>,
     profiler_data: &Option<(ProfilingInfoProcessor<'_>, ProfilingInfoProcessorParams)>,
     print_resource_usage: bool,
 ) {
-    let (name, opt_result) = test_result;
-    let (res_type, status_str, gas_usage, used_resources, profiling_info) =
-        if let Some(result) = opt_result {
+    let (res_type, status_str, gas_usage, used_resources, profiling_info) = match test_result {
+        Ok(None) => (&mut summary.ignored, "ignored".bright_yellow(), None, None, None),
+        Err(err) => {
+            summary.failed_run_results.push(Err(err));
+            (&mut summary.failed, "failed to run".bright_magenta(), None, None, None)
+        }
+        Ok(Some(result)) => {
             let (res_type, status_str) = match result.status {
                 TestStatus::Success => (&mut summary.passed, "ok".bright_green()),
                 TestStatus::Fail(run_result) => {
-                    summary.failed_run_results.push(run_result);
+                    summary.failed_run_results.push(Ok(run_result));
                     (&mut summary.failed, "fail".bright_red())
                 }
             };
@@ -440,9 +447,8 @@ fn update_summary(
                 print_resource_usage.then_some(result.used_resources),
                 result.profiling_info,
             )
-        } else {
-            (&mut summary.ignored, "ignored".bright_yellow(), None, None, None)
-        };
+        }
+    };
     if let Some(gas_usage) = gas_usage {
         println!("test {name} ... {status_str} (gas usage est.: {gas_usage})");
     } else {
