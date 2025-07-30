@@ -93,13 +93,8 @@ pub fn canonic_trait_solutions(
     let impl_type_bounds = Arc::new(impl_type_bounds);
     // If the trait is not fully concrete, we might be able to use the trait's items to find a
     // more concrete trait.
-    if !concrete_trait_id.is_fully_concrete(db) {
-        match solve_canonical_trait(
-            db,
-            canonical_trait,
-            lookup_context.clone(),
-            impl_type_bounds.clone(),
-        ) {
+    if !concrete_trait_id.is_fully_concrete(db) && !canonical_trait.mappings.is_empty() {
+        match solve_canonical_trait(db, canonical_trait, lookup_context.clone(), impl_type_bounds.clone()) {
             SolutionSet::None => {}
             SolutionSet::Unique(imp) => {
                 concrete_trait_id =
