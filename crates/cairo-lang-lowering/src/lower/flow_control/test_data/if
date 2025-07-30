@@ -13,10 +13,11 @@ fn foo(x: bool) -> felt252 {
 }
 
 //! > graph
-Root: 2
+Root: 3
 0 ArmExpr { expr: Id { idx: 2 } }
 1 ArmExpr { expr: Id { idx: 4 } }
-2 BooleanIf { condition: Id { idx: 0 }, true_branch: NodeId(0), false_branch: NodeId(1) }
+2 BooleanIf { condition_var: FlowControlVar { idx: 0 }, true_branch: NodeId(0), false_branch: NodeId(1) }
+3 EvaluateExpr { expr: Id { idx: 0 }, var_id: FlowControlVar { idx: 0 }, next: NodeId(2) }
 
 //! > semantic_diagnostics
 
