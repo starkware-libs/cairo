@@ -34,63 +34,103 @@ fn heavy_op2() -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
   (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
   (v3: core::felt252) <- 0
   (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
   (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
 End:
   Match(match_enum(v6) {
-    bool::False(v9) => blk2,
-    bool::True(v7) => blk1,
+    bool::False(v9) => blk3,
+    bool::True(v7) => blk2,
   })
-
-blk1:
-Statements:
-  (v8: core::felt252) <- test::heavy_op1()
-End:
-  Goto(blk3, {v8 -> v11})
 
 blk2:
 Statements:
-  (v10: core::felt252) <- test::heavy_op2()
+  (v8: core::felt252) <- test::heavy_op1()
 End:
-  Goto(blk3, {v10 -> v11})
+  Goto(blk4, {v8 -> v10})
 
 blk3:
 Statements:
 End:
-  Return(v11)
+  Goto(blk6, {v1 -> v11})
+
+blk4:
+Statements:
+End:
+  Goto(blk7, {v1 -> v14, v10 -> v13})
+
+blk5:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk6:
+Statements:
+  (v12: core::felt252) <- test::heavy_op2()
+End:
+  Goto(blk7, {v11 -> v14, v12 -> v13})
+
+blk7:
+Statements:
+End:
+  Return(v13)
 
 //! > after
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
   (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
   (v3: core::felt252) <- 0
   (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
   (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
 End:
   Match(match_enum(v6) {
-    bool::False(v9) => blk2,
-    bool::True(v7) => blk1,
+    bool::False(v9) => blk3,
+    bool::True(v7) => blk2,
   })
-
-blk1:
-Statements:
-  (v8: core::felt252) <- test::heavy_op1()
-End:
-  Goto(blk3, {v8 -> v11})
 
 blk2:
 Statements:
-  (v10: core::felt252) <- test::heavy_op2()
+  (v8: core::felt252) <- test::heavy_op1()
 End:
-  Goto(blk3, {v10 -> v11})
+  Goto(blk4, {v8 -> v10})
 
 blk3:
 Statements:
 End:
-  Return(v11)
+  Goto(blk6, {v1 -> v11})
+
+blk4:
+Statements:
+End:
+  Goto(blk7, {v1 -> v14, v10 -> v13})
+
+blk5:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk6:
+Statements:
+  (v12: core::felt252) <- test::heavy_op2()
+End:
+  Goto(blk7, {v11 -> v14, v12 -> v13})
+
+blk7:
+Statements:
+End:
+  Return(v13)
 
 //! > ==========================================================================
 
@@ -128,64 +168,104 @@ fn heavy_op2() -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
   (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
   (v3: core::felt252) <- 0
   (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
   (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
 End:
   Match(match_enum(v6) {
-    bool::False(v9) => blk2,
-    bool::True(v7) => blk1,
+    bool::False(v9) => blk3,
+    bool::True(v7) => blk2,
   })
-
-blk1:
-Statements:
-  (v8: core::felt252) <- test::heavy_op1()
-End:
-  Goto(blk3, {v8 -> v11})
 
 blk2:
 Statements:
-  (v10: core::felt252) <- test::heavy_op2()
+  (v8: core::felt252) <- test::heavy_op1()
 End:
-  Goto(blk3, {v10 -> v11})
+  Goto(blk4, {v8 -> v10})
 
 blk3:
 Statements:
 End:
-  Return(v11)
+  Goto(blk6, {v1 -> v11})
+
+blk4:
+Statements:
+End:
+  Goto(blk7, {v1 -> v14, v10 -> v13})
+
+blk5:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk6:
+Statements:
+  (v12: core::felt252) <- test::heavy_op2()
+End:
+  Goto(blk7, {v11 -> v14, v12 -> v13})
+
+blk7:
+Statements:
+End:
+  Return(v13)
 
 //! > after
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
   (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
   (v3: core::felt252) <- 0
   (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
   (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
 End:
   Match(match_enum(v6) {
-    bool::False(v9) => blk2,
-    bool::True(v7) => blk1,
+    bool::False(v9) => blk3,
+    bool::True(v7) => blk2,
   })
-
-blk1:
-Statements:
-  () <- core::gas::redeposit_gas()
-  (v8: core::felt252) <- test::heavy_op1()
-End:
-  Goto(blk3, {v8 -> v11})
 
 blk2:
 Statements:
   () <- core::gas::redeposit_gas()
-  (v10: core::felt252) <- test::heavy_op2()
+  (v8: core::felt252) <- test::heavy_op1()
 End:
-  Goto(blk3, {v10 -> v11})
+  Goto(blk4, {v8 -> v10})
 
 blk3:
 Statements:
+  () <- core::gas::redeposit_gas()
 End:
-  Return(v11)
+  Goto(blk6, {v1 -> v11})
+
+blk4:
+Statements:
+End:
+  Goto(blk7, {v1 -> v14, v10 -> v13})
+
+blk5:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk6:
+Statements:
+  (v12: core::felt252) <- test::heavy_op2()
+End:
+  Goto(blk7, {v11 -> v14, v12 -> v13})
+
+blk7:
+Statements:
+End:
+  Return(v13)
 
 //! > lowering_diagnostics

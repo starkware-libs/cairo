@@ -231,13 +231,32 @@ impl BlockBuilder {
         sealed_blocks: Vec<SealedBlockBuilder>,
         location: LocationId,
     ) -> LoweringResult<LoweredExpr> {
+        self.merge_and_end(
+            ctx,
+            sealed_blocks,
+            location,
+            BlockEnd::Match { info: match_info.clone() },
+            LoweringFlowError::Match(match_info),
+        )
+    }
+
+    /// Merges the sealed blocks and ends the current block with the given block end.
+    /// Replaces `self` with a sibling builder.
+    pub fn merge_and_end(
+        &mut self,
+        ctx: &mut LoweringContext<'_, '_>,
+        sealed_blocks: Vec<SealedBlockBuilder>,
+        location: LocationId,
+        block_end: BlockEnd,
+        err: LoweringFlowError, // TODO
+    ) -> LoweringResult<LoweredExpr> {
         let Some((merged_expr, following_block)) = self.merge_sealed(ctx, sealed_blocks, location)
         else {
-            return Err(LoweringFlowError::Match(match_info));
+            return Err(err);
         };
         let new_scope = self.sibling_block_builder(following_block);
         let prev_scope = std::mem::replace(self, new_scope);
-        prev_scope.finalize(ctx, BlockEnd::Match { info: match_info });
+        prev_scope.finalize(ctx, block_end);
         Ok(merged_expr)
     }
 

@@ -31,7 +31,10 @@ use crate::ids::{
 };
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
-use crate::{Lowered, MatchArm, MatchExternInfo, MatchInfo, VarUsage, VariableId};
+use crate::{
+    BlockEnd, BlockId, Lowered, MatchArm, MatchExternInfo, MatchInfo, VarRemapping, VarUsage,
+    VariableId,
+};
 
 pub struct VariableAllocator<'db> {
     pub db: &'db dyn LoweringGroup,
@@ -428,6 +431,8 @@ pub enum LoweringFlowError {
     /// Every match arm is terminating - does not flow to parent builder
     /// e.g. returns or panics.
     Match(MatchInfo),
+    // TODO
+    Goto(BlockId),
 }
 impl LoweringFlowError {
     pub fn is_unreachable(&self) -> bool {
@@ -435,7 +440,8 @@ impl LoweringFlowError {
             LoweringFlowError::Failed(_) => false,
             LoweringFlowError::Panic(_, _)
             | LoweringFlowError::Return(_, _)
-            | LoweringFlowError::Match(_) => true,
+            | LoweringFlowError::Match(_)
+            | LoweringFlowError::Goto(_) => true,
         }
     }
 }
@@ -473,6 +479,9 @@ pub fn lowering_flow_error_to_sealed_block(
         }
         LoweringFlowError::Match(info) => {
             builder.unreachable_match(ctx, info);
+        }
+        LoweringFlowError::Goto(block_id) => {
+            builder.finalize(ctx, BlockEnd::Goto(block_id, VarRemapping::default()));
         }
     }
     Ok(SealedBlockBuilder::Ends(block_id))

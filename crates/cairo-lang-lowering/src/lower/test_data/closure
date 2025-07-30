@@ -397,6 +397,11 @@ Statements:
   (v3: core::felt252) <- struct_destructure(v2)
   (v4: core::felt252) <- 0
   (v5: core::felt252, v6: @core::felt252) <- snapshot(v4)
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
   (v7: core::felt252) <- 1
   (v8: core::felt252, v9: @core::felt252) <- snapshot(v7)
   (v10: core::felt252) <- 2
@@ -404,27 +409,42 @@ Statements:
   (v13: core::bool) <- core::Felt252PartialEq::eq(v9, v12)
 End:
   Match(match_enum(v13) {
-    bool::False(v17) => blk2,
-    bool::True(v14) => blk1,
+    bool::False(v17) => blk3,
+    bool::True(v14) => blk2,
   })
-
-blk1:
-Statements:
-  (v15: core::felt252, v16: @core::felt252) <- snapshot(v3)
-End:
-  Goto(blk3, {v15 -> v20, v16 -> v21})
 
 blk2:
 Statements:
-  (v18: core::felt252, v19: @core::felt252) <- snapshot(v3)
+  (v15: core::felt252, v16: @core::felt252) <- snapshot(v3)
 End:
-  Goto(blk3, {v18 -> v20, v19 -> v21})
+  Goto(blk4, {v15 -> v18, v16 -> v19})
 
 blk3:
 Statements:
-  (v22: ()) <- struct_construct()
 End:
-  Return(v22)
+  Goto(blk6, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk7, {v18 -> v22, v19 -> v23})
+
+blk5:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk6:
+Statements:
+  (v20: core::felt252, v21: @core::felt252) <- snapshot(v3)
+End:
+  Goto(blk7, {v20 -> v22, v21 -> v23})
+
+blk7:
+Statements:
+  (v24: ()) <- struct_construct()
+End:
+  Return(v24)
 
 
 Final lowering:

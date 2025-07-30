@@ -393,114 +393,154 @@ fn bar(a: felt252) -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
   (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
   (v3: core::felt252) <- 2
   (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
   (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
 End:
   Match(match_enum(v6) {
-    bool::False(v9) => blk2,
-    bool::True(v7) => blk1,
+    bool::False(v9) => blk3,
+    bool::True(v7) => blk2,
   })
-
-blk1:
-Statements:
-  (v8: core::felt252) <- test::bar(v1)
-End:
-  Goto(blk3, {v8 -> v10})
 
 blk2:
 Statements:
+  (v8: core::felt252) <- test::bar(v1)
 End:
-  Goto(blk3, {v1 -> v10})
+  Goto(blk4, {v8 -> v10})
 
 blk3:
 Statements:
 End:
-  Return(v10)
+  Goto(blk6, {v1 -> v11})
+
+blk4:
+Statements:
+End:
+  Goto(blk7, {v1 -> v13, v10 -> v12})
+
+blk5:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk6:
+Statements:
+End:
+  Goto(blk7, {v11 -> v13, v11 -> v12})
+
+blk7:
+Statements:
+End:
+  Return(v12)
 
 //! > after
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
-  (v3: core::felt252) <- 2
-  (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
 End:
-  Goto(blk4, {})
+  Goto(blk1, {})
 
 blk1:
 Statements:
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v3: core::felt252) <- 2
+  (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
 End:
   Goto(blk8, {})
 
 blk2:
 Statements:
 End:
-  Goto(blk3, {v1 -> v10})
+  Goto(blk12, {})
 
 blk3:
 Statements:
 End:
-  Return(v10)
+  Goto(blk6, {v1 -> v11})
 
 blk4:
 Statements:
-  (v11: core::felt252) <- desnap(v2)
-  (v12: core::felt252) <- desnap(v5)
-  (v13: core::felt252) <- core::felt252_sub(v11, v12)
 End:
-  Match(match core::felt252_is_zero(v13) {
-    IsZeroResult::Zero => blk5,
-    IsZeroResult::NonZero(v14) => blk6,
-  })
+  Goto(blk7, {v1 -> v13, v10 -> v12})
 
 blk5:
 Statements:
-  (v15: ()) <- struct_construct()
-  (v16: core::bool) <- bool::True(v15)
 End:
-  Goto(blk7, {v16 -> v6})
+  Goto(blk5, {})
 
 blk6:
 Statements:
-  (v17: ()) <- struct_construct()
-  (v18: core::bool) <- bool::False(v17)
 End:
-  Goto(blk7, {v18 -> v6})
+  Goto(blk7, {v11 -> v13, v11 -> v12})
 
 blk7:
 Statements:
 End:
-  Match(match_enum(v6) {
-    bool::False(v9) => blk2,
-    bool::True(v7) => blk1,
-  })
+  Return(v12)
 
 blk8:
 Statements:
+  (v14: core::felt252) <- desnap(v2)
+  (v15: core::felt252) <- desnap(v5)
+  (v16: core::felt252) <- core::felt252_sub(v14, v15)
 End:
-  Match(match core::felt252_is_zero(v1) {
+  Match(match core::felt252_is_zero(v16) {
     IsZeroResult::Zero => blk9,
-    IsZeroResult::NonZero(v19) => blk10,
+    IsZeroResult::NonZero(v17) => blk10,
   })
 
 blk9:
 Statements:
-  (v20: core::felt252) <- 1
+  (v18: ()) <- struct_construct()
+  (v19: core::bool) <- bool::True(v18)
 End:
-  Goto(blk11, {v20 -> v8})
+  Goto(blk11, {v19 -> v6})
 
 blk10:
 Statements:
-  (v21: core::felt252) <- 0
+  (v20: ()) <- struct_construct()
+  (v21: core::bool) <- bool::False(v20)
 End:
-  Goto(blk11, {v21 -> v8})
+  Goto(blk11, {v21 -> v6})
 
 blk11:
 Statements:
 End:
-  Goto(blk3, {v8 -> v10})
+  Match(match_enum(v6) {
+    bool::False(v9) => blk3,
+    bool::True(v7) => blk2,
+  })
+
+blk12:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v1) {
+    IsZeroResult::Zero => blk13,
+    IsZeroResult::NonZero(v22) => blk14,
+  })
+
+blk13:
+Statements:
+  (v23: core::felt252) <- 1
+End:
+  Goto(blk15, {v23 -> v8})
+
+blk14:
+Statements:
+  (v24: core::felt252) <- 0
+End:
+  Goto(blk15, {v24 -> v8})
+
+blk15:
+Statements:
+End:
+  Goto(blk4, {v8 -> v10})
 
 //! > lowering_diagnostics
 
