@@ -46,7 +46,7 @@ impl Debug for FileDiff {
 
 /// A helper struct for displaying a file diff with colored output.
 ///
-/// This is implements a [`Display`] trait, so it can be used with `format!` and `println!`.
+/// This struct implements a [`Display`] trait, so it can be used with `format!` and `println!`.
 /// If you prefer output without colors, use [`FileDiff`] instead.
 pub struct FileDiffColoredDisplay<'a> {
     diff: &'a FileDiff,
