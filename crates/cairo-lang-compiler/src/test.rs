@@ -34,6 +34,7 @@ impl MacroPlugin for MockExecutablePlugin {
 #[test]
 fn can_collect_executables() {
     let content = indoc! {r#"
+        #[inline(never)]
         fn x() -> felt252 { 12 }
 
         fn main() -> felt252 { x() }
@@ -54,7 +55,8 @@ fn can_collect_executables() {
     assert_eq!(f_ids.len(), 1);
     // Assert executable name
     assert_eq!(f_ids[0].debug_name, Some(SmolStr::new("test::test")));
-    // Assert only executable functions are compiled.
-    assert_eq!(artifact.program.funcs.len(), 1);
+    // Assert only executable functions and their dependencies are compiled.
+    assert_eq!(artifact.program.funcs.len(), 2);
     assert_eq!(artifact.program.funcs[0].id.debug_name, Some(SmolStr::new("test::test")));
+    assert_eq!(artifact.program.funcs[1].id.debug_name, Some(SmolStr::new("test::x")));
 }
