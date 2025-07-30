@@ -2,7 +2,7 @@ use std::ops::Add;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_diagnostics::ToOption;
+use cairo_lang_diagnostics::{DiagnosticLocation, ToOption};
 use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
@@ -256,5 +256,19 @@ impl<'db> StatementsLocations<'db> {
                 })
                 .collect(),
         }
+    }
+
+    /// Returns the diagnostic location matching the user code corresponding to the sierra statement
+    /// index.
+    pub fn statement_diagnostic_location(
+        &self,
+        db: &'db dyn DefsGroup,
+        stmt_idx: StatementIdx,
+    ) -> Option<DiagnosticLocation<'db>> {
+        // Note that the `last` is used here as the call site is the most relevant location.
+        self.locations
+            .get(&stmt_idx)
+            .and_then(|stmt_locs| stmt_locs.last())
+            .map(|loc| loc.diagnostic_location(db).user_location(db))
     }
 }

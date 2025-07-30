@@ -5,6 +5,7 @@ use anyhow::{Context, Result, bail};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
+use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateInput;
 use cairo_lang_runner::casm_run::format_for_panic;
@@ -12,7 +13,8 @@ use cairo_lang_runner::profiling::{
     ProfilerConfig, ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
 };
 use cairo_lang_runner::{
-    ProfilingInfoCollectionConfig, RunResultValue, SierraCasmRunner, StarknetExecutionResources,
+    ProfilingInfoCollectionConfig, RunResultValue, RunnerError, SierraCasmRunner,
+    StarknetExecutionResources,
 };
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -329,6 +331,20 @@ pub fn run_tests(
         contracts_info,
         config.profiler_config.as_ref().map(ProfilingInfoCollectionConfig::from_profiler_config),
     )
+    .map_err(|err| {
+        let (RunnerError::BuildError(err), Some(db), Some(statements_locations)) =
+            (&err, opt_db, &statements_locations)
+        else {
+            return err.into();
+        };
+        let mut locs = vec![];
+        for stmt_idx in err.stmt_indices() {
+            if let Some(loc) = statements_locations.statement_diagnostic_location(db, stmt_idx) {
+                locs.push(format!("#{stmt_idx} {:?}", loc.debug(db.elongate())))
+            }
+        }
+        anyhow::anyhow!("{err}\n{}", locs.join("\n"))
+    })
     .with_context(|| "Failed setting up runner.")?;
     let suffix = if named_tests.len() != 1 { "s" } else { "" };
     println!("running {} test{}", named_tests.len(), suffix);
