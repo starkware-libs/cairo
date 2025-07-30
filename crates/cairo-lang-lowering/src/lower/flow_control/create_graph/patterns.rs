@@ -9,6 +9,7 @@ use super::super::graph::{
     EnumMatch, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
 };
 use super::filtered_patterns::FilteredPatterns;
+use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
 
 /// A callback that gets a [FilteredPatterns] and constructs a node that continues the pattern
@@ -50,6 +51,7 @@ pub fn create_node_for_patterns<'db>(
     input_var: FlowControlVar,
     patterns: &[&semantic::Pattern<'db>],
     build_node_callback: BuildNodeCallback<'db, '_>,
+    location: LocationId<'db>,
 ) -> NodeId {
     let (n_snapshots, long_ty) = peel_snapshots(ctx.db, graph.var_ty(input_var));
     match long_ty {
@@ -61,12 +63,14 @@ pub fn create_node_for_patterns<'db>(
             n_snapshots,
             patterns,
             build_node_callback,
+            location,
         ),
         _ => todo!("Type {:?} is not supported yet.", long_ty),
     }
 }
 
 /// Creates an [EnumMatch] node for the given `input_var` and `patterns`.
+#[allow(clippy::too_many_arguments)]
 fn create_node_for_enum<'db>(
     ctx: &LoweringContext<'db, '_>,
     graph: &mut FlowControlGraphBuilder<'db>,
@@ -75,6 +79,7 @@ fn create_node_for_enum<'db>(
     n_snapshots: usize,
     patterns: &[&semantic::Pattern<'db>],
     build_node_callback: BuildNodeCallback<'db, '_>,
+    location: LocationId<'db>,
 ) -> NodeId {
     let concrete_variants = ctx.db.concrete_enum_variants(concrete_enum_id).unwrap();
 
@@ -94,8 +99,8 @@ fn create_node_for_enum<'db>(
     // Create a node in the graph for each variant.
     let variants = zip_eq(concrete_variants, variant_to_pattern_indices)
         .map(|(concrete_variant, pattern_indices)| {
-            let inner_var =
-                graph.new_var(wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots));
+            let inner_var = graph
+                .new_var(wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots), location);
             // TODO(lior): Handle the inner patterns by calling `create_node_for_patterns`
             //   recursively on the patterns that match the variant.
             let node = build_node_callback(graph, pattern_indices);

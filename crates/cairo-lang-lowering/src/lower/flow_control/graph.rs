@@ -24,6 +24,8 @@ use std::fmt::Debug;
 use cairo_lang_semantic::{self as semantic, ConcreteVariant};
 use itertools::Itertools;
 
+use crate::ids::LocationId;
+
 /// Represents a variable in the flow control graph.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct FlowControlVar {
@@ -31,9 +33,13 @@ pub struct FlowControlVar {
 }
 impl FlowControlVar {
     /// Returns the type of the variable.
-    #[expect(dead_code)]
     pub fn ty<'db>(&self, graph: &FlowControlGraph<'db>) -> semantic::TypeId<'db> {
         graph.var_types[self.idx]
+    }
+
+    /// Returns the location of the variable.
+    pub fn location<'db>(&self, graph: &FlowControlGraph<'db>) -> LocationId<'db> {
+        graph.var_locations[self.idx]
     }
 }
 
@@ -71,7 +77,6 @@ pub struct EnumMatch<'db> {
     /// The input value to match.
     pub matched_var: FlowControlVar,
     /// The concrete enum id.
-    #[expect(dead_code)]
     pub concrete_enum_id: semantic::ConcreteEnumId<'db>,
     /// For each variant, the node to jump to and an output variable for the inner value.
     pub variants: Vec<(ConcreteVariant<'db>, NodeId, FlowControlVar)>,
@@ -130,6 +135,8 @@ pub struct FlowControlGraph<'db> {
     pub nodes: Vec<FlowControlNode<'db>>,
     /// The type of each [FlowControlVar].
     pub var_types: Vec<semantic::TypeId<'db>>,
+    /// The location of each [FlowControlVar].
+    pub var_locations: Vec<LocationId<'db>>,
 }
 impl<'db> FlowControlGraph<'db> {
     /// Returns the root node of the graph.
@@ -155,6 +162,8 @@ pub struct FlowControlGraphBuilder<'db> {
     nodes: Vec<FlowControlNode<'db>>,
     /// The type of each [FlowControlVar].
     pub var_types: Vec<semantic::TypeId<'db>>,
+    /// The location of each [FlowControlVar].
+    pub var_locations: Vec<LocationId<'db>>,
     /// The number of [FlowControlVar]s allocated so far.
     n_vars: usize,
 }
@@ -170,14 +179,19 @@ impl<'db> FlowControlGraphBuilder<'db> {
     /// Finalizes the graph and returns the final [FlowControlGraph].
     pub fn finalize(self, root: NodeId) -> FlowControlGraph<'db> {
         assert_eq!(root.0, self.nodes.len() - 1, "The root must be the last node.");
-        let FlowControlGraphBuilder { nodes, var_types, n_vars: _ } = self;
-        FlowControlGraph { nodes, var_types }
+        let FlowControlGraphBuilder { nodes, var_types, var_locations, n_vars: _ } = self;
+        FlowControlGraph { nodes, var_types, var_locations }
     }
 
     /// Creates a new [FlowControlVar].
-    pub fn new_var(&mut self, ty: semantic::TypeId<'db>) -> FlowControlVar {
+    pub fn new_var(
+        &mut self,
+        ty: semantic::TypeId<'db>,
+        location: LocationId<'db>,
+    ) -> FlowControlVar {
         let var = FlowControlVar { idx: self.n_vars };
         self.var_types.push(ty);
+        self.var_locations.push(location);
         self.n_vars += 1;
         var
     }
