@@ -7,10 +7,10 @@ use super::LowerGraphContext;
 use crate::lower::block_builder::BlockBuilder;
 use crate::lower::context::{LoweredExpr, VarRequest};
 use crate::lower::flow_control::graph::{
-    ArmExpr, BooleanIf, EvaluateExpr, FlowControlNode, NodeId,
+    ArmExpr, BooleanIf, EnumMatch, EvaluateExpr, FlowControlNode, NodeId,
 };
 use crate::lower::{lower_expr_to_var_usage, lower_tail_expr, lowered_expr_to_block_scope_end};
-use crate::{MatchArm, MatchEnumInfo, MatchInfo};
+use crate::{MatchArm, MatchEnumInfo, MatchInfo, VarUsage};
 
 /// Lowers the node with the given [NodeId].
 pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<()> {
@@ -23,7 +23,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::BooleanIf(node) => lower_boolean_if(ctx, id, node, builder),
         FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, node, builder),
         FlowControlNode::UnitResult => lower_unit_result(ctx, builder),
-        _ => todo!(),
+        FlowControlNode::EnumMatch(node) => lower_enum_match(ctx, id, node, builder),
     }
 }
 
@@ -109,5 +109,41 @@ fn lower_unit_result<'db>(
     )?;
     ctx.add_sealed_block(sealed_block);
 
+    Ok(())
+}
+
+/// Lowers an [EnumMatch] node.
+fn lower_enum_match<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &EnumMatch<'db>,
+    builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let match_location = node.matched_var.location();
+
+    let arms: Vec<MatchArm<'db>> = node
+        .variants
+        .iter()
+        .map(|(concrete_variant, variant_node, flow_control_var)| {
+            let location = match_location; // TODO: Fix.
+            let input_var = ctx.ctx.new_var(VarRequest { ty: flow_control_var.ty(), location });
+            let var_usage = VarUsage { var_id: input_var, location };
+            ctx.register_var(*flow_control_var, var_usage);
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(*concrete_variant),
+                block_id: ctx.assign_child_block_id(*variant_node, &builder),
+                var_ids: vec![input_var],
+            }
+        })
+        .collect();
+
+    let match_info = MatchInfo::Enum(MatchEnumInfo {
+        concrete_enum_id: node.concrete_enum_id,
+        input: ctx.vars[&node.matched_var],
+        arms,
+        location: match_location,
+    });
+
+    ctx.finalize_with_match(id, builder, match_info);
     Ok(())
 }

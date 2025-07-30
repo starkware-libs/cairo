@@ -1,4 +1,5 @@
 use cairo_lang_semantic::{self as semantic, Condition};
+use cairo_lang_syntax::node::TypedStablePtr;
 use itertools::Itertools;
 use patterns::create_node_for_patterns;
 
@@ -37,7 +38,10 @@ pub fn create_graph_expr_if<'db>(
             Condition::BoolExpr(condition) => {
                 // Create a variable for the condition.
                 let condition_expr = &ctx.function_body.arenas.exprs[*condition];
-                let condition_var = graph.new_var(condition_expr.ty());
+                let condition_var = graph.new_var(
+                    condition_expr.ty(),
+                    ctx.get_location(condition_expr.stable_ptr().untyped()),
+                );
                 current_node = graph.add_node(FlowControlNode::BooleanIf(BooleanIf {
                     condition_var,
                     true_branch: current_node,
@@ -54,7 +58,8 @@ pub fn create_graph_expr_if<'db>(
                 let expr = &ctx.function_body.arenas.exprs[*expr_id];
 
                 // Create a variable for the expression.
-                let expr_var = graph.new_var(expr.ty());
+                let expr_location = ctx.get_location(expr.stable_ptr().untyped());
+                let expr_var = graph.new_var(expr.ty(), expr_location);
 
                 let match_node_id = create_node_for_patterns(
                     ctx,
@@ -67,6 +72,7 @@ pub fn create_graph_expr_if<'db>(
                     &|_graph, pattern_indices| {
                         if pattern_indices.first().is_some() { current_node } else { false_branch }
                     },
+                    expr_location,
                 );
 
                 // Create a node for lowering `expr` into `expr_var` and continue to the match.

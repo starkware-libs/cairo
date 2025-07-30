@@ -24,15 +24,22 @@ use std::fmt::Debug;
 use cairo_lang_semantic::{self as semantic, ConcreteVariant};
 use itertools::Itertools;
 
+use crate::ids::LocationId;
+
 /// Represents a variable in the flow control graph.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FlowControlVar<'db> {
     idx: usize,
     ty: semantic::TypeId<'db>,
+    location: LocationId<'db>,
 }
 impl<'db> FlowControlVar<'db> {
     pub fn ty(&self) -> semantic::TypeId<'db> {
         self.ty
+    }
+
+    pub fn location(&self) -> LocationId<'db> {
+        self.location
     }
 }
 
@@ -76,7 +83,6 @@ pub struct EnumMatch<'db> {
     /// The input value to match.
     pub matched_var: FlowControlVar<'db>,
     /// The concrete enum id.
-    #[expect(dead_code)]
     pub concrete_enum_id: semantic::ConcreteEnumId<'db>,
     /// For each variant, the node to jump to and an output variable for the inner value.
     pub variants: Vec<(ConcreteVariant<'db>, NodeId, FlowControlVar<'db>)>,
@@ -175,8 +181,12 @@ impl<'db> FlowControlGraphBuilder<'db> {
     }
 
     /// Creates a new [FlowControlVar].
-    pub fn new_var(&mut self, ty: semantic::TypeId<'db>) -> FlowControlVar<'db> {
-        let var = FlowControlVar { idx: self.n_vars, ty };
+    pub fn new_var(
+        &mut self,
+        ty: semantic::TypeId<'db>,
+        location: LocationId<'db>,
+    ) -> FlowControlVar<'db> {
+        let var = FlowControlVar { idx: self.n_vars, ty, location };
         self.n_vars += 1;
         var
     }
