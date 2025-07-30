@@ -715,6 +715,14 @@ impl ModuleIdCached {
             ModuleId::Submodule(submodule_id) => {
                 ModuleIdCached::Submodule(SubmoduleIdCached::new(submodule_id, ctx))
             }
+            ModuleId::MacroCall { .. } => todo!(
+                "Caching for macro-generated modules is not yet supported. It requires \
+                 serializing and deserializing macro invocation context, generated file IDs, and \
+                 potentially plugin state. Supporting this will require extending the cache data \
+                 structures and logic to handle macro expansion details and ensure correct \
+                 reconstruction of macro-generated modules. If you encounter this error, it means \
+                 the crate contains macro-generated modules that cannot currently be cached."
+            ),
         }
     }
     fn embed(&self, ctx: &mut DefCacheLoadingContext<'_>) -> ModuleId {
