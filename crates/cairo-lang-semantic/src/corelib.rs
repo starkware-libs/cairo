@@ -504,7 +504,7 @@ pub fn unwrap_error_propagation_type<'db>(
 pub fn unit_expr<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     stable_ptr: ast::ExprPtr<'db>,
-) -> ExprId<'db> {
+) -> ExprId {
     ctx.arenas.exprs.alloc(Expr::Tuple(ExprTuple {
         items: Vec::new(),
         ty: TypeLongId::Tuple(Vec::new()).intern(ctx.db),

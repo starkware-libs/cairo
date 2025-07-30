@@ -141,8 +141,8 @@ pub fn function_with_body_attributes<'db>(
 #[debug_db(dyn SemanticGroup)]
 pub struct FunctionBodyData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
-    pub expr_lookup: UnorderedHashMap<ast::ExprPtr<'db>, ExprId<'db>>,
-    pub pattern_lookup: UnorderedHashMap<ast::PatternPtr<'db>, PatternId<'db>>,
+    pub expr_lookup: UnorderedHashMap<ast::ExprPtr<'db>, ExprId>,
+    pub pattern_lookup: UnorderedHashMap<ast::PatternPtr<'db>, PatternId>,
     pub resolver_data: Arc<ResolverData<'db>>,
     pub body: Arc<FunctionBody<'db>>,
 }
@@ -169,7 +169,7 @@ unsafe impl<'db> salsa::Update for FunctionBodyData<'db> {
 #[debug_db(dyn SemanticGroup)]
 pub struct FunctionBody<'db> {
     pub arenas: Arenas<'db>,
-    pub body_expr: semantic::ExprId<'db>,
+    pub body_expr: semantic::ExprId,
 }
 
 unsafe impl<'db> salsa::Update for FunctionBody<'db> {
@@ -208,7 +208,7 @@ pub fn function_body_diagnostics<'db>(
 pub fn function_body_expr<'db>(
     db: &'db dyn SemanticGroup,
     function_id: FunctionWithBodyId<'db>,
-) -> Maybe<semantic::ExprId<'db>> {
+) -> Maybe<semantic::ExprId> {
     Ok(db.function_body(function_id)?.body_expr)
 }
 
@@ -232,7 +232,7 @@ pub fn function_body<'db>(
 pub fn expr_semantic<'db>(
     db: &'db dyn SemanticGroup,
     function_id: FunctionWithBodyId<'db>,
-    id: semantic::ExprId<'db>,
+    id: semantic::ExprId,
 ) -> semantic::Expr<'db> {
     db.function_body(function_id).unwrap().arenas.exprs.get(id).unwrap().clone()
 }
@@ -241,7 +241,7 @@ pub fn expr_semantic<'db>(
 pub fn pattern_semantic<'db>(
     db: &'db dyn SemanticGroup,
     function_id: FunctionWithBodyId<'db>,
-    id: semantic::PatternId<'db>,
+    id: semantic::PatternId,
 ) -> semantic::Pattern<'db> {
     db.function_body(function_id).unwrap().arenas.patterns.get(id).unwrap().clone()
 }
@@ -250,7 +250,7 @@ pub fn pattern_semantic<'db>(
 pub fn statement_semantic<'db>(
     db: &'db dyn SemanticGroup,
     function_id: FunctionWithBodyId<'db>,
-    id: semantic::StatementId<'db>,
+    id: semantic::StatementId,
 ) -> semantic::Statement<'db> {
     db.function_body(function_id).unwrap().arenas.statements.get(id).unwrap().clone()
 }
@@ -260,7 +260,7 @@ pub trait SemanticExprLookup<'db>: Upcast<'db, dyn SemanticGroup> {
         &'db self,
         function_id: FunctionWithBodyId<'db>,
         ptr: ast::ExprPtr<'db>,
-    ) -> Maybe<ExprId<'db>> {
+    ) -> Maybe<ExprId> {
         let body_data = match function_id {
             FunctionWithBodyId::Free(id) => self.upcast().priv_free_function_body_data(id)?,
             FunctionWithBodyId::Impl(id) => self.upcast().priv_impl_function_body_data(id)?,
@@ -274,7 +274,7 @@ pub trait SemanticExprLookup<'db>: Upcast<'db, dyn SemanticGroup> {
         &'db self,
         function_id: FunctionWithBodyId<'db>,
         ptr: ast::PatternPtr<'db>,
-    ) -> Maybe<PatternId<'db>> {
+    ) -> Maybe<PatternId> {
         let body_data = match function_id {
             FunctionWithBodyId::Free(id) => self.upcast().priv_free_function_body_data(id)?,
             FunctionWithBodyId::Impl(id) => self.upcast().priv_impl_function_body_data(id)?,
