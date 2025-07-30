@@ -37,7 +37,7 @@ pub struct NodeId(pub usize);
 ///
 /// Used to lower the `if` condition or `match` expression and get a [FlowControlVar] that can be
 /// used in [BooleanIf] or `EnumMatch`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct EvaluateExpr<'db> {
     /// The expression to evaluate.
     pub expr: semantic::ExprId<'db>,
@@ -48,7 +48,7 @@ pub struct EvaluateExpr<'db> {
 }
 
 /// Boolean if condition node.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BooleanIf {
     /// The condition variable.
     pub condition_var: FlowControlVar,
@@ -59,14 +59,13 @@ pub struct BooleanIf {
 }
 
 /// Terminal expression node.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ArmExpr<'db> {
     /// The expression to evaluate.
     pub expr: semantic::ExprId<'db>,
 }
 
 /// A node in the flow control graph for a match or if lowering.
-#[derive(Clone)]
 pub enum FlowControlNode<'db> {
     EvaluateExpr(EvaluateExpr<'db>),
     BooleanIf(BooleanIf),

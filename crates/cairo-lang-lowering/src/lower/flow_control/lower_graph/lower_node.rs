@@ -13,9 +13,7 @@ use crate::{MatchArm, MatchEnumInfo, MatchInfo};
 
 /// Lowers the node with the given [NodeId].
 pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<()> {
-    // TODO(eytan-starkware): Remove clone and retrieve the node from the graph inside each function
-    //      or otherwise separate node's immutable reference to ctx from ctx mutable ref.
-    match ctx.graph.nodes[id.0].clone() {
+    match &ctx.graph.nodes[id.0] {
         FlowControlNode::EvaluateExpr(node) => lower_evaluate_expr(ctx, id, node),
         FlowControlNode::BooleanIf(node) => lower_boolean_if(ctx, id, node),
         FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, id, node),
@@ -26,7 +24,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
 fn lower_evaluate_expr<'db>(
     ctx: &mut LowerGraphContext<'db, '_, '_>,
     id: NodeId,
-    node: EvaluateExpr<'db>,
+    node: &EvaluateExpr<'db>,
 ) -> Maybe<()> {
     let mut builder = ctx.start_builder(id);
 
@@ -41,7 +39,7 @@ fn lower_evaluate_expr<'db>(
 fn lower_boolean_if(
     ctx: &mut LowerGraphContext<'_, '_, '_>,
     id: NodeId,
-    node: BooleanIf,
+    node: &BooleanIf,
 ) -> Maybe<()> {
     let db = ctx.ctx.db;
 
@@ -83,7 +81,7 @@ fn lower_boolean_if(
 fn lower_arm_expr<'db>(
     ctx: &mut LowerGraphContext<'db, '_, '_>,
     id: NodeId,
-    node: ArmExpr<'db>,
+    node: &ArmExpr<'db>,
 ) -> Maybe<()> {
     let builder = ctx.start_builder(id);
     let sealed_block = lower_tail_expr(ctx.ctx, builder, node.expr)?;

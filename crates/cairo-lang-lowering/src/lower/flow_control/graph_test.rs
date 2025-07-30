@@ -75,13 +75,12 @@ fn test_create_graph(
     );
 
     // Lower the graph.
-    let prints = format!("{graph:?}");
-    let lowered = lower_graph_as_function(ctx, expr_id, graph);
+    let lowered = lower_graph_as_function(ctx, expr_id, &graph);
     let lowered_str = formatted_lowered(db, Some(&lowered));
 
     TestRunnerResult {
         outputs: OrderedHashMap::from([
-            ("graph".into(), prints),
+            ("graph".into(), format!("{graph:?}")),
             ("semantic_diagnostics".into(), semantic_diagnostics),
             ("lowered".into(), lowered_str),
         ]),
@@ -94,7 +93,7 @@ fn test_create_graph(
 fn lower_graph_as_function<'db>(
     mut ctx: LoweringContext<'db, '_>,
     expr_id: semantic::ExprId<'db>,
-    graph: FlowControlGraph<'db>,
+    graph: &FlowControlGraph<'db>,
 ) -> Lowered<'db> {
     let ctx_ref: &mut LoweringContext<'db, '_> = &mut ctx;
     let expr = ctx_ref.function_body.arenas.exprs[expr_id].clone();
