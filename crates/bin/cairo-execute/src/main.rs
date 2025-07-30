@@ -8,7 +8,7 @@ use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_executable::compile::{
     CompileExecutableResult, ExecutableConfig, compile_executable_in_prepared_db, prepare_db,
 };
-use cairo_lang_executable::executable::Executable;
+use cairo_lang_executable::executable::{EntryPointKind, Executable, NOT_RETURNING_HEADER_SIZE};
 use cairo_lang_execute_utils::{program_and_hints_from_executable, user_args_from_flags};
 use cairo_lang_filesystem::ids::CrateInput;
 use cairo_lang_runner::casm_run::format_for_panic;
@@ -56,7 +56,7 @@ struct Args {
     /// Whether to run the profiler, and what results to produce. See
     /// [cairo_lang_runner::profiling::ProfilerConfig]
     /// Currently does not work with prebuilt executables as it requires additional debug info.
-    #[arg(short, long, default_value_t, value_enum, conflicts_with_all = ["prebuilt", "standalone"])]
+    #[arg(short, long, default_value_t, value_enum, conflicts_with_all = ["prebuilt"])]
     run_profiler: RunProfilerConfigArg,
 
     #[command(flatten)]
@@ -218,9 +218,9 @@ fn main() -> anyhow::Result<()> {
                 diagnostics_reporter,
                 config,
             )?;
-        let header_len =
+        let wrapper_len =
             compiled_function.wrapper.header.iter().map(|insn| insn.body.op_size()).sum::<usize>();
-
+        let header_len = NOT_RETURNING_HEADER_SIZE + wrapper_len;
         let executable = Executable::new(compiled_function);
         (Some((db, builder, debug_info, header_len)), executable)
     } else {
@@ -237,8 +237,16 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let (program, string_to_hint) =
-        program_and_hints_from_executable(&executable, args.run.standalone)?;
+    let entry_point_kind =
+        if args.run.standalone { EntryPointKind::Standalone } else { EntryPointKind::Bootloader };
+
+    let entrypoint = executable
+        .entrypoints
+        .iter()
+        .find(|e| e.kind == entry_point_kind)
+        .with_context(|| format!("{entry_point_kind:?} entrypoint not found"))?;
+
+    let (program, string_to_hint) = program_and_hints_from_executable(&executable, entrypoint)?;
 
     let user_args = user_args_from_flags(args.run.args.as_file.as_ref(), &args.run.args.as_list)?;
 
@@ -334,9 +342,9 @@ fn main() -> anyhow::Result<()> {
             opt_debug_data.expect("debug data should be available when profiling");
 
         let trace = runner.relocated_trace.as_ref().with_context(|| "Trace not relocated.")?;
-        let entry_point_offset = trace.first().unwrap().pc;
-        // TODO(ilya): Compute the correct load offset for standalone mode.
-        let load_offset = entry_point_offset + header_len;
+        let first_pc = trace.first().unwrap().pc;
+        assert_eq!(first_pc, entrypoint.offset + 1);
+        let load_offset = first_pc - entrypoint.offset + header_len;
         let info = ProfilingInfo::from_trace(
             &builder,
             load_offset,
