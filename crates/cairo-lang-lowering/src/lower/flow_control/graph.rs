@@ -58,7 +58,7 @@ pub struct BooleanIf {
     pub false_branch: NodeId,
 }
 
-/// Terminal expression node.
+/// An arm (final node) that returns an expression.
 #[derive(Debug)]
 pub struct ArmExpr<'db> {
     /// The expression to evaluate.
@@ -67,9 +67,14 @@ pub struct ArmExpr<'db> {
 
 /// A node in the flow control graph for a match or if lowering.
 pub enum FlowControlNode<'db> {
+    /// Evaluates an expression and assigns the result to a [FlowControlVar].
     EvaluateExpr(EvaluateExpr<'db>),
+    /// Boolean if condition node.
     BooleanIf(BooleanIf),
+    /// An arm (final node) that returns an expression.
     ArmExpr(ArmExpr<'db>),
+    /// An arm (final node) that returns a unit value - `()`.
+    UnitResult,
 }
 
 impl Debug for FlowControlNode<'_> {
@@ -78,6 +83,7 @@ impl Debug for FlowControlNode<'_> {
             FlowControlNode::EvaluateExpr(node) => node.fmt(f),
             FlowControlNode::BooleanIf(node) => node.fmt(f),
             FlowControlNode::ArmExpr(node) => node.fmt(f),
+            FlowControlNode::UnitResult => write!(f, "UnitResult"),
         }
     }
 }

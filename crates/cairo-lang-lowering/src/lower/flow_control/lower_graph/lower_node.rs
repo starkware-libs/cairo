@@ -4,11 +4,11 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::{MatchArmSelector, corelib};
 
 use super::LowerGraphContext;
-use crate::lower::context::VarRequest;
+use crate::lower::context::{LoweredExpr, VarRequest};
 use crate::lower::flow_control::graph::{
     ArmExpr, BooleanIf, EvaluateExpr, FlowControlNode, NodeId,
 };
-use crate::lower::{lower_expr_to_var_usage, lower_tail_expr};
+use crate::lower::{lower_expr_to_var_usage, lower_tail_expr, lowered_expr_to_block_scope_end};
 use crate::{MatchArm, MatchEnumInfo, MatchInfo};
 
 /// Lowers the node with the given [NodeId].
@@ -17,6 +17,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::EvaluateExpr(node) => lower_evaluate_expr(ctx, id, node),
         FlowControlNode::BooleanIf(node) => lower_boolean_if(ctx, id, node),
         FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, id, node),
+        FlowControlNode::UnitResult => lower_unit_result(ctx, id),
     }
 }
 
@@ -86,5 +87,19 @@ fn lower_arm_expr<'db>(
     let builder = ctx.start_builder(id);
     let sealed_block = lower_tail_expr(ctx.ctx, builder, node.expr)?;
     ctx.add_sealed_block(sealed_block);
+    Ok(())
+}
+
+/// Lowers a `UnitResult` node.
+fn lower_unit_result(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<()> {
+    let builder = ctx.start_builder(id);
+
+    let sealed_block = lowered_expr_to_block_scope_end(
+        ctx.ctx,
+        builder,
+        Ok(LoweredExpr::Tuple { exprs: vec![], location: ctx.location }),
+    )?;
+    ctx.add_sealed_block(sealed_block);
+
     Ok(())
 }

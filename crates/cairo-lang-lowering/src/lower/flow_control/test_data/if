@@ -47,3 +47,56 @@ blk3:
 Statements:
 End:
   Return(v5)
+
+//! > ==========================================================================
+
+//! > Test boolean if without else
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(x: bool) {
+    if x {
+        bar();
+    }
+}
+
+//! > module_code
+fn bar() {}
+
+//! > graph
+Root: 3
+0 ArmExpr { expr: Id { idx: 2 } }
+1 UnitResult
+2 BooleanIf { condition_var: FlowControlVar { idx: 0 }, true_branch: NodeId(0), false_branch: NodeId(1) }
+3 EvaluateExpr { expr: Id { idx: 0 }, var_id: FlowControlVar { idx: 0 }, next: NodeId(2) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+Parameters: v0: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v2) => blk2,
+    bool::True(v1) => blk1,
+  })
+
+blk1:
+Statements:
+  (v3: ()) <- test::bar()
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v4: ()) <- struct_construct()
+End:
+  Return(v4)

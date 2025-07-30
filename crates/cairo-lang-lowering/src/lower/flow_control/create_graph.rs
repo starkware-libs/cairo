@@ -16,7 +16,7 @@ pub fn create_graph_expr_if<'db>(expr: &semantic::ExprIf<'db>) -> FlowControlGra
     let false_branch = if let Some(else_block) = expr.else_block {
         graph.add_node(FlowControlNode::ArmExpr(ArmExpr { expr: else_block }))
     } else {
-        todo!("Else block is not supported yet.")
+        graph.add_node(FlowControlNode::UnitResult)
     };
 
     // Start with the `true` branch.
