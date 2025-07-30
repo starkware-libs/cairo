@@ -1,12 +1,11 @@
-use cairo_lang_debug::debug::GetIdValue;
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_utils::Upcast;
-use id_arena::Id;
 
 use crate::db::SemanticGroup;
-use crate::{Expr, Pattern, Statement};
+use crate::{ExprId, PatternId, StatementId};
 
 /// Holds all the information needed for formatting expressions.
 /// Acts like a "db" for DebugWithDb.
@@ -32,21 +31,27 @@ impl<'db> Upcast<'db, dyn ParserGroup> for ExprFormatter<'db> {
     }
 }
 
-impl<'db> GetIdValue<'db, ExprFormatter<'db>, Pattern<'db>> for ExprFormatter<'db> {
-    fn get_id_value(&self, id: Id<Pattern<'db>>) -> Pattern<'db> {
-        self.db.pattern_semantic(self.function_id, id)
+impl<'db> DebugWithDb<'db> for ExprId {
+    type Db = ExprFormatter<'db>;
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
+        let expr = db.db.expr_semantic(db.function_id, *self);
+        expr.fmt(f, db)
     }
 }
 
-impl<'db> GetIdValue<'db, ExprFormatter<'db>, Expr<'db>> for ExprFormatter<'db> {
-    fn get_id_value(&self, id: Id<Expr<'db>>) -> Expr<'db> {
-        self.db.expr_semantic(self.function_id, id)
+impl<'db> DebugWithDb<'db> for PatternId {
+    type Db = ExprFormatter<'db>;
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
+        let pattern = db.db.pattern_semantic(db.function_id, *self);
+        pattern.fmt(f, db)
     }
 }
 
-impl<'db> GetIdValue<'db, ExprFormatter<'db>, Statement<'db>> for ExprFormatter<'db> {
-    fn get_id_value(&self, id: Id<Statement<'db>>) -> Statement<'db> {
-        self.db.statement_semantic(self.function_id, id)
+impl<'db> DebugWithDb<'db> for StatementId {
+    type Db = ExprFormatter<'db>;
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
+        let statement = db.db.statement_semantic(db.function_id, *self);
+        statement.fmt(f, db)
     }
 }
 

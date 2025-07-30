@@ -6,13 +6,13 @@ use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use id_arena::Arena;
 
 use crate::expr::fmt::ExprFormatter;
 use crate::expr::objects::Arenas;
 use crate::{
     ConcreteStructId, Condition, Expr, ExprFunctionCallArg, ExprId, ExprVarMemberPath,
-    FixedSizeArrayItems, FunctionBody, Parameter, Pattern, PatternId, Statement, VarId,
+    FixedSizeArrayItems, FunctionBody, Parameter, Pattern, PatternArena, PatternId, Statement,
+    VarId,
 };
 
 #[cfg(test)]
@@ -162,7 +162,7 @@ impl<'db> Usage<'db> {
 #[debug_db(ExprFormatter<'db>)]
 pub struct Usages<'db> {
     /// Mapping from an [ExprId] to its [Usage].
-    pub usages: OrderedHashMap<ExprId<'db>, Usage<'db>>,
+    pub usages: OrderedHashMap<ExprId, Usage<'db>>,
 }
 impl<'db> Usages<'db> {
     pub fn from_function_body(function_body: &FunctionBody<'db>) -> Self {
@@ -176,7 +176,7 @@ impl<'db> Usages<'db> {
         &mut self,
         arenas: &Arenas<'db>,
         param_ids: &[Parameter<'db>],
-        body: ExprId<'db>,
+        body: ExprId,
     ) -> Usage<'db> {
         let mut usage: Usage<'_> = Default::default();
 
@@ -186,12 +186,7 @@ impl<'db> Usages<'db> {
         usage
     }
 
-    fn handle_expr(
-        &mut self,
-        arenas: &Arenas<'db>,
-        expr_id: ExprId<'db>,
-        current: &mut Usage<'db>,
-    ) {
+    fn handle_expr(&mut self, arenas: &Arenas<'db>, expr_id: ExprId, current: &mut Usage<'db>) {
         match &arenas.exprs[expr_id] {
             Expr::Tuple(expr) => {
                 for expr_id in &expr.items {
@@ -392,11 +387,7 @@ impl<'db> Usages<'db> {
         }
     }
 
-    fn handle_pattern(
-        arena: &Arena<Pattern<'db>>,
-        pattern: PatternId<'db>,
-        current: &mut Usage<'db>,
-    ) {
+    fn handle_pattern(arena: &PatternArena<'db>, pattern: PatternId, current: &mut Usage<'db>) {
         let pattern = &arena[pattern];
         match pattern {
             Pattern::Literal(_) | Pattern::StringLiteral(_) => {}

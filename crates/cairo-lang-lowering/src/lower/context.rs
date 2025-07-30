@@ -134,7 +134,7 @@ pub struct LoopEarlyReturnInfo<'db> {
 /// Context for lowering a loop.
 pub struct LoopContext<'db> {
     /// The loop expression
-    pub loop_expr_id: semantic::ExprId<'db>,
+    pub loop_expr_id: semantic::ExprId,
     /// Optional info related to early return from the loop.
     pub early_return_info: Option<LoopEarlyReturnInfo<'db>>,
 }
