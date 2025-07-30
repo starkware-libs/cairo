@@ -9,9 +9,9 @@ pub use enumerate::Enumerate;
 pub(crate) use enumerate::enumerated_iterator;
 
 mod zip;
-pub use zip::Zip;
+pub use {zip::Zip, zip::ZipEq};
 #[allow(unused_imports)]
-pub(crate) use zip::zipped_iterator;
+pub(crate) use zip::{zipped_iterator, zip_eq};
 
 mod peekable;
 #[allow(unused_imports)]
