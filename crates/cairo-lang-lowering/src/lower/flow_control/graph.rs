@@ -21,12 +21,25 @@
 
 use std::fmt::Debug;
 
-use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::{self as semantic, ConcreteVariant};
+use itertools::Itertools;
 
 /// Represents a variable in the flow control graph.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct FlowControlVar {
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FlowControlVar<'db> {
     idx: usize,
+    ty: semantic::TypeId<'db>,
+}
+impl<'db> FlowControlVar<'db> {
+    pub fn ty(&self) -> semantic::TypeId<'db> {
+        self.ty
+    }
+}
+
+impl<'db> std::fmt::Debug for FlowControlVar<'db> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "FlowControlVar({})", self.idx)
+    }
 }
 
 /// Unique identifier for nodes in the flow control graph.
@@ -36,26 +49,48 @@ pub struct NodeId(pub usize);
 /// Instructs to perform `lower_expr` & `as_var_usage`.
 ///
 /// Used to lower the `if` condition or `match` expression and get a [FlowControlVar] that can be
-/// used in [BooleanIf] or `EnumMatch`.
+/// used in [BooleanIf] or [EnumMatch].
 #[derive(Debug)]
 pub struct EvaluateExpr<'db> {
     /// The expression to evaluate.
     pub expr: semantic::ExprId<'db>,
     /// The (output) variable to assign the result to.
-    pub var_id: FlowControlVar,
+    pub var_id: FlowControlVar<'db>,
     /// The next node.
     pub next: NodeId,
 }
 
 /// Boolean if condition node.
 #[derive(Debug)]
-pub struct BooleanIf {
+pub struct BooleanIf<'db> {
     /// The condition variable.
-    pub condition_var: FlowControlVar,
+    pub condition_var: FlowControlVar<'db>,
     /// The node to jump to if the condition is true.
     pub true_branch: NodeId,
     /// The node to jump to if the condition is false.
     pub false_branch: NodeId,
+}
+
+/// Enum match node.
+pub struct EnumMatch<'db> {
+    /// The input value to match.
+    pub matched_var: FlowControlVar<'db>,
+    /// The concrete enum id.
+    #[expect(dead_code)]
+    pub concrete_enum_id: semantic::ConcreteEnumId<'db>,
+    /// For each variant, the node to jump to and an output variable for the inner value.
+    pub variants: Vec<(ConcreteVariant<'db>, NodeId, FlowControlVar<'db>)>,
+}
+
+impl<'db> std::fmt::Debug for EnumMatch<'db> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "EnumMatch {{ matched_var: {:?}, variants: {}}}",
+            self.matched_var,
+            self.variants.iter().map(|(_, node, var)| format!("({node:?}, {var:?})")).join(", ")
+        )
+    }
 }
 
 /// An arm (final node) that returns an expression.
@@ -70,7 +105,9 @@ pub enum FlowControlNode<'db> {
     /// Evaluates an expression and assigns the result to a [FlowControlVar].
     EvaluateExpr(EvaluateExpr<'db>),
     /// Boolean if condition node.
-    BooleanIf(BooleanIf),
+    BooleanIf(BooleanIf<'db>),
+    /// Enum match node.
+    EnumMatch(EnumMatch<'db>),
     /// An arm (final node) that returns an expression.
     ArmExpr(ArmExpr<'db>),
     /// An arm (final node) that returns a unit value - `()`.
@@ -82,6 +119,7 @@ impl Debug for FlowControlNode<'_> {
         match self {
             FlowControlNode::EvaluateExpr(node) => node.fmt(f),
             FlowControlNode::BooleanIf(node) => node.fmt(f),
+            FlowControlNode::EnumMatch(node) => node.fmt(f),
             FlowControlNode::ArmExpr(node) => node.fmt(f),
             FlowControlNode::UnitResult => write!(f, "UnitResult"),
         }
@@ -137,8 +175,8 @@ impl<'db> FlowControlGraphBuilder<'db> {
     }
 
     /// Creates a new [FlowControlVar].
-    pub fn new_var(&mut self) -> FlowControlVar {
-        let var = FlowControlVar { idx: self.n_vars };
+    pub fn new_var(&mut self, ty: semantic::TypeId<'db>) -> FlowControlVar<'db> {
+        let var = FlowControlVar { idx: self.n_vars, ty };
         self.n_vars += 1;
         var
     }
