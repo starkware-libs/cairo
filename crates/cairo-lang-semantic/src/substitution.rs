@@ -325,7 +325,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identity_helper_no_lifetime, LocalConstVarId, $($exclude)*);
         $crate::prune_single!(__identity_helper_no_lifetime, InferenceVar, $($exclude)*);
         $crate::prune_single!(__identity_helper, ImplFunctionBodyId, $($exclude)*);
-        $crate::prune_single!(__identity_helper, ExprId, $($exclude)*);
+        $crate::prune_single!(__identity_helper_no_lifetime, ExprId, $($exclude)*);
 
         $crate::prune_single!(__regular_helper, Signature, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericFunctionId, $($exclude)*);
@@ -394,12 +394,20 @@ macro_rules! add_expr_rewrites {
                  $crate::add_rewrite_identity!(<$($generics),*>, $self_ty, $err_ty, $item<'a>);
             }
         }
+        macro_rules! __identity_helper_no_lifetime {
+            ($item:ident) => {
+                $crate::add_rewrite_identity!(<$($generics),*>, $self_ty, $err_ty, $item);
+            }
+        }
         macro_rules! __regular_helper {
             ($item:ident) => { $crate::add_rewrite!(<$($generics),*>, $self_ty, $err_ty, $item<'a>); }
         }
+        macro_rules! __regular_helper_no_lifetime {
+            ($item:ident) => { $crate::add_rewrite!(<$($generics),*>, $self_ty, $err_ty, $item); }
+        }
 
-        $crate::prune_single!(__identity_helper, PatternId, $($exclude)*);
-        $crate::prune_single!(__identity_helper, StatementId, $($exclude)*);
+        $crate::prune_single!(__identity_helper_no_lifetime, PatternId, $($exclude)*);
+        $crate::prune_single!(__identity_helper_no_lifetime, StatementId, $($exclude)*);
         $crate::prune_single!(__identity_helper, ConstantId, $($exclude)*);
         $crate::prune_single!(__regular_helper, Expr, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprTuple, $($exclude)*);
@@ -411,7 +419,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, ExprFunctionCall, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprMatch, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprIf, $($exclude)*);
-        $crate::prune_single!(__regular_helper, Condition, $($exclude)*);
+        $crate::prune_single!(__regular_helper_no_lifetime, Condition, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprLoop, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprWhile, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprFor, $($exclude)*);
@@ -427,7 +435,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, ExprMissing, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprFunctionCallArg, $($exclude)*);
         $crate::prune_single!(__regular_helper, FixedSizeArrayItems, $($exclude)*);
-        $crate::prune_single!(__regular_helper, MatchArm, $($exclude)*);
+        $crate::prune_single!(__regular_helper_no_lifetime, MatchArm, $($exclude)*);
         $crate::prune_single!(__regular_helper, Statement, $($exclude)*);
         $crate::prune_single!(__regular_helper, StatementExpr, $($exclude)*);
         $crate::prune_single!(__regular_helper, StatementLet, $($exclude)*);

@@ -135,7 +135,7 @@ pub enum MacroKind {
 #[derive(Debug, Clone)]
 pub struct ExprAndId<'db> {
     pub expr: Expr<'db>,
-    pub id: ExprId<'db>,
+    pub id: ExprId,
 }
 impl<'db> Deref for ExprAndId<'db> {
     type Target = Expr<'db>;
@@ -148,7 +148,7 @@ impl<'db> Deref for ExprAndId<'db> {
 #[derive(Debug, Clone)]
 pub struct PatternAndId<'db> {
     pub pattern: Pattern<'db>,
-    pub id: PatternId<'db>,
+    pub id: PatternId,
 }
 impl<'db> Deref for PatternAndId<'db> {
     type Target = Pattern<'db>;
@@ -733,7 +733,7 @@ fn compute_expr_inline_macro_semantic<'db>(
 fn compute_tail_semantic<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     tail: &ast::StatementExpr<'db>,
-    statements_ids: &mut Vec<StatementId<'db>>,
+    statements_ids: &mut Vec<StatementId>,
 ) -> ExprAndId<'db> {
     let expr = tail.expr(ctx.db);
     let ast::Expr::InlineMacro(inline_macro_syntax) = &expr else {
@@ -759,7 +759,7 @@ fn expand_macro_for_statement<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     syntax: &ast::ExprInlineMacro<'db>,
     is_tail: bool,
-    statements_ids: &mut Vec<StatementId<'db>>,
+    statements_ids: &mut Vec<StatementId>,
 ) -> Maybe<Option<ExprAndId<'db>>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
     let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
@@ -1093,7 +1093,7 @@ fn compute_expr_tuple_semantic<'db>(
 ) -> Maybe<Expr<'db>> {
     let db = ctx.db;
 
-    let mut items: Vec<ExprId<'_>> = vec![];
+    let mut items: Vec<ExprId> = vec![];
     let mut types: Vec<TypeId<'_>> = vec![];
     for expr_syntax in syntax.expressions(db).elements(db) {
         let expr_semantic = compute_expr_semantic(ctx, &expr_syntax);
@@ -1141,7 +1141,7 @@ fn compute_expr_fixed_size_array_semantic<'db>(
     } else if let Some((first_expr, tail_exprs)) = exprs.split_first() {
         let size = ConstValue::Int((tail_exprs.len() + 1).into(), size_ty).intern(db);
         let first_expr_semantic = compute_expr_semantic(ctx, first_expr);
-        let mut items: Vec<ExprId<'_>> = vec![first_expr_semantic.id];
+        let mut items: Vec<ExprId> = vec![first_expr_semantic.id];
         // The type of the first expression is the type of the array. All other expressions must
         // have the same type.
         let first_expr_ty = ctx.reduce_ty(first_expr_semantic.ty());
@@ -1427,7 +1427,7 @@ pub fn compute_root_expr<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     syntax: &ast::ExprBlock<'db>,
     return_type: TypeId<'db>,
-) -> Maybe<ExprId<'db>> {
+) -> Maybe<ExprId> {
     // Conform TypeEqual constraints for Associated type bounds.
     let inference = &mut ctx.resolver.data.inference_data.inference(ctx.db);
     for param in &ctx.resolver.data.generic_params {
@@ -1482,7 +1482,7 @@ pub fn compute_root_expr<'db>(
 pub fn compute_statements_semantic_and_extend<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     statements_syntax: impl Iterator<Item = ast::Statement<'db>>,
-    statement_ids: &mut Vec<StatementId<'db>>,
+    statement_ids: &mut Vec<StatementId>,
 ) {
     for statement_syntax in statements_syntax {
         compute_and_append_statement_semantic(ctx, statement_syntax, statement_ids)
@@ -1515,7 +1515,7 @@ pub fn compute_expr_block_semantic<'db>(
 /// The type returned from a block with the given statements and tail.
 fn block_ty<'db>(
     ctx: &ComputationContext<'db, '_>,
-    statements: &[StatementId<'db>],
+    statements: &[StatementId],
     tail: &Option<ExprAndId<'db>>,
 ) -> TypeId<'db> {
     if let Some(tail) = tail {
@@ -1645,7 +1645,7 @@ fn compute_pattern_list_or_semantic<'db>(
                 expr.ty(),
                 &mut arm_patterns_variables,
             );
-            let variables = pattern.variables(&ctx.arenas.patterns);
+            let variables = pattern.variables(&ctx.arenas);
             for variable in variables {
                 match arm_patterns_variables.entry(variable.name.clone()) {
                     std::collections::hash_map::Entry::Occupied(entry) => {
@@ -1685,7 +1685,7 @@ fn compute_pattern_list_or_semantic<'db>(
         .collect();
 
     for (pattern_syntax, pattern) in patterns_syntax.elements(db).zip(patterns.iter()) {
-        let variables = pattern.variables(&ctx.arenas.patterns);
+        let variables = pattern.variables(&ctx.arenas);
 
         if variables.len() != arm_patterns_variables.len() {
             ctx.diagnostics.report(pattern_syntax.stable_ptr(db), MissingVariableInPattern);
@@ -1810,7 +1810,7 @@ fn compute_condition_list_semantic<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     condition_list_syntax: &ConditionListAnd<'db>,
     body_syntax: &ast::Expr<'db>,
-) -> (Vec<Condition<'db>>, ExprAndId<'db>) {
+) -> (Vec<Condition>, ExprAndId<'db>) {
     let mut conditions = Vec::new();
     let conditions_syntax = condition_list_syntax.elements(ctx.db);
     conditions.reserve(conditions_syntax.len());
@@ -1831,7 +1831,7 @@ fn compute_condition_list_semantic<'db>(
 fn compute_condition_list_semantic_helper<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     mut conditions_syntax: impl Iterator<Item = ast::Condition<'db>>,
-    conditions: &mut Vec<Condition<'db>>,
+    conditions: &mut Vec<Condition>,
     body_syntax: &ast::Expr<'db>,
 ) -> ExprAndId<'db> {
     match conditions_syntax.next() {
@@ -2025,7 +2025,7 @@ fn compute_expr_for_semantic<'db>(
             next_success_variant.ty,
             &mut UnorderedHashMap::default(),
         );
-        let variables = inner_pattern.variables(&new_ctx.arenas.patterns);
+        let variables = inner_pattern.variables(&new_ctx.arenas);
         for v in variables {
             let var_def = Binding::LocalVar(v.var.clone());
             new_ctx.environment.variables.insert(v.name.clone().intern(db), var_def.clone());
@@ -2052,7 +2052,7 @@ fn compute_loop_body_semantic<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     syntax: ast::ExprBlock<'db>,
     kind: InnerContextKind<'db>,
-) -> (ExprId<'db>, InnerContext<'db>) {
+) -> (ExprId, InnerContext<'db>) {
     let db: &dyn SemanticGroup = ctx.db;
     ctx.run_in_subscope(|new_ctx| {
         let return_type = new_ctx.get_return_type().unwrap();
@@ -2212,7 +2212,7 @@ fn compute_expr_closure_semantic<'db>(
 fn compute_closure_body_semantic<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     syntax: ast::ExprBlock<'db>,
-) -> ExprId<'db> {
+) -> ExprId {
     let db = ctx.db;
     let (statements, tail) = statements_and_tail(db, syntax.statements(db));
     let mut statements_semantic = vec![];
@@ -3095,8 +3095,7 @@ fn struct_ctor_expr<'db>(
     }
 
     let members = db.concrete_struct_members(concrete_struct_id)?;
-    let mut member_exprs: OrderedHashMap<MemberId<'_>, Option<ExprId<'_>>> =
-        OrderedHashMap::default();
+    let mut member_exprs: OrderedHashMap<MemberId<'_>, Option<ExprId>> = OrderedHashMap::default();
     let mut base_struct = None;
 
     for (index, arg) in ctor_syntax.arguments(db).arguments(db).elements(db).enumerate() {
@@ -4007,8 +4006,8 @@ fn maybe_pop_coupon_argument<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     named_args: &mut Vec<NamedArg<'db>>,
     function_id: FunctionId<'db>,
-) -> Option<id_arena::Id<Expr<'db>>> {
-    let mut coupon_arg: Option<ExprId<'_>> = None;
+) -> Option<ExprId> {
+    let mut coupon_arg: Option<ExprId> = None;
     if let Some(NamedArg(arg, Some(name_terminal), mutability)) = named_args.last() {
         let coupons_enabled = are_coupons_enabled(ctx.db, ctx.resolver.module_file_id);
         if name_terminal.text(ctx.db) == "__coupon__" && coupons_enabled {
@@ -4090,7 +4089,7 @@ fn check_named_arguments<'db>(
 pub fn compute_and_append_statement_semantic<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     syntax: ast::Statement<'db>,
-    statements: &mut Vec<StatementId<'db>>,
+    statements: &mut Vec<StatementId>,
 ) -> Maybe<()> {
     let db = ctx.db;
     let crate_id = ctx.resolver.owning_crate_id;
@@ -4163,7 +4162,7 @@ pub fn compute_and_append_statement_semantic<'db>(
                 ty,
                 &mut UnorderedHashMap::default(),
             );
-            let variables = pattern.variables(&ctx.arenas.patterns);
+            let variables = pattern.variables(&ctx.arenas);
             for v in variables {
                 let var_def = Binding::LocalVar(v.var.clone());
                 let v_name_id = v.name.clone().intern(ctx.db);

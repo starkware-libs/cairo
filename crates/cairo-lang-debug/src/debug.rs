@@ -251,13 +251,6 @@ where
     }
 }
 
-/// Trait for getting the value of an id_arena::Id.
-/// This is used by the impl `DebugWithDb` for `id_arena::Id`.
-/// If the field type implements `DebugWithDb`, uses that, otherwise, uses `Debug`.
-pub trait GetIdValue<'db, Db: ?Sized, T> {
-    fn get_id_value(&self, db: id_arena::Id<T>) -> T;
-}
-
 /// A flexible debug trait that takes the database as a type parameter
 /// instead of an associated type, allowing multiple implementations
 /// for the same type with different database types.
@@ -274,16 +267,6 @@ where
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
         self.fmt_override(f, db)
-    }
-}
-
-impl<'db, T> DebugWithDbOverride<'db, T::Db> for id_arena::Id<T>
-where
-    T: DebugWithDb<'db>,
-    T::Db: GetIdValue<'db, T::Db, T>,
-{
-    fn fmt_override(&self, f: &mut std::fmt::Formatter<'_>, db: &'db T::Db) -> std::fmt::Result {
-        T::fmt(&db.get_id_value(*self), f, db)
     }
 }
 

@@ -222,7 +222,7 @@ pub struct MatchError<'db> {
 pub enum MatchKind<'db> {
     Match,
     IfLet,
-    WhileLet(semantic::ExprId<'db>, SyntaxStablePtrId<'db>),
+    WhileLet(semantic::ExprId, SyntaxStablePtrId<'db>),
 }
 
 unsafe impl<'db> salsa::Update for MatchKind<'db> {

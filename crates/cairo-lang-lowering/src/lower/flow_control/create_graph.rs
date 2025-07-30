@@ -6,7 +6,7 @@ use super::graph::{
 
 /// Creates a graph node for [semantic::ExprIf].
 #[allow(dead_code)]
-pub fn create_graph_expr_if<'db>(expr: &semantic::ExprIf<'db>) -> FlowControlGraph<'db> {
+pub fn create_graph_expr_if<'db>(expr: &semantic::ExprIf<'db>) -> FlowControlGraph {
     let mut graph = FlowControlGraphBuilder::default();
 
     // Add the `true` branch (the `if` block).

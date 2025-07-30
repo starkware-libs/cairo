@@ -6,7 +6,6 @@ use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use id_arena::Arena;
 
 use crate::expr::fmt::ExprFormatter;
 use crate::expr::objects::Arenas;
@@ -162,7 +161,7 @@ impl<'db> Usage<'db> {
 #[debug_db(ExprFormatter<'db>)]
 pub struct Usages<'db> {
     /// Mapping from an [ExprId] to its [Usage].
-    pub usages: OrderedHashMap<ExprId<'db>, Usage<'db>>,
+    pub usages: OrderedHashMap<ExprId, Usage<'db>>,
 }
 impl<'db> Usages<'db> {
     pub fn from_function_body(function_body: &FunctionBody<'db>) -> Self {
@@ -176,7 +175,7 @@ impl<'db> Usages<'db> {
         &mut self,
         arenas: &Arenas<'db>,
         param_ids: &[Parameter<'db>],
-        body: ExprId<'db>,
+        body: ExprId,
     ) -> Usage<'db> {
         let mut usage: Usage<'_> = Default::default();
 
@@ -186,12 +185,7 @@ impl<'db> Usages<'db> {
         usage
     }
 
-    fn handle_expr(
-        &mut self,
-        arenas: &Arenas<'db>,
-        expr_id: ExprId<'db>,
-        current: &mut Usage<'db>,
-    ) {
+    fn handle_expr(&mut self, arenas: &Arenas<'db>, expr_id: ExprId, current: &mut Usage<'db>) {
         match &arenas.exprs[expr_id] {
             Expr::Tuple(expr) => {
                 for expr_id in &expr.items {
@@ -244,7 +238,7 @@ impl<'db> Usages<'db> {
                     match &arenas.statements[*stmt] {
                         Statement::Let(stmt) => {
                             self.handle_expr(arenas, stmt.expr, &mut usage);
-                            Self::handle_pattern(&arenas.patterns, stmt.pattern, &mut usage);
+                            Self::handle_pattern(arenas, stmt.pattern, &mut usage);
                         }
                         Statement::Expr(stmt) => self.handle_expr(arenas, stmt.expr, &mut usage),
                         Statement::Continue(_) => (),
@@ -283,7 +277,7 @@ impl<'db> Usages<'db> {
                     Condition::Let(expr, patterns) => {
                         self.handle_expr(arenas, *expr, &mut usage);
                         for pattern in patterns {
-                            Self::handle_pattern(&arenas.patterns, *pattern, &mut usage);
+                            Self::handle_pattern(arenas, *pattern, &mut usage);
                         }
                     }
                 }
@@ -307,7 +301,7 @@ impl<'db> Usages<'db> {
                     (&expr.into_iter_member_path).into(),
                     expr.into_iter_member_path.clone(),
                 );
-                Self::handle_pattern(&arenas.patterns, expr.pattern, &mut usage);
+                Self::handle_pattern(arenas, expr.pattern, &mut usage);
                 self.handle_expr(arenas, expr.body, &mut usage);
                 usage.finalize_as_scope();
                 current.add_usage_and_changes(&usage);
@@ -336,7 +330,7 @@ impl<'db> Usages<'db> {
                 self.handle_expr(arenas, expr.matched_expr, current);
                 for arm in &expr.arms {
                     for pattern in &arm.patterns {
-                        Self::handle_pattern(&arenas.patterns, *pattern, current);
+                        Self::handle_pattern(arenas, *pattern, current);
                     }
                     self.handle_expr(arenas, arm.expression, current);
                 }
@@ -350,7 +344,7 @@ impl<'db> Usages<'db> {
                         Condition::Let(expr, patterns) => {
                             self.handle_expr(arenas, *expr, current);
                             for pattern in patterns {
-                                Self::handle_pattern(&arenas.patterns, *pattern, current);
+                                Self::handle_pattern(arenas, *pattern, current);
                             }
                         }
                     }
@@ -392,12 +386,8 @@ impl<'db> Usages<'db> {
         }
     }
 
-    fn handle_pattern(
-        arena: &Arena<Pattern<'db>>,
-        pattern: PatternId<'db>,
-        current: &mut Usage<'db>,
-    ) {
-        let pattern = &arena[pattern];
+    fn handle_pattern(arenas: &Arenas<'db>, pattern: PatternId, current: &mut Usage<'db>) {
+        let pattern = &arenas.patterns[pattern];
         match pattern {
             Pattern::Literal(_) | Pattern::StringLiteral(_) => {}
             Pattern::Variable(pattern) => {
@@ -405,22 +395,22 @@ impl<'db> Usages<'db> {
             }
             Pattern::Struct(pattern) => {
                 for (pattern, _) in &pattern.field_patterns {
-                    Self::handle_pattern(arena, *pattern, current);
+                    Self::handle_pattern(arenas, *pattern, current);
                 }
             }
             Pattern::Tuple(pattern) => {
                 for pattern in &pattern.field_patterns {
-                    Self::handle_pattern(arena, *pattern, current);
+                    Self::handle_pattern(arenas, *pattern, current);
                 }
             }
             Pattern::FixedSizeArray(pattern) => {
                 for pattern in &pattern.elements_patterns {
-                    Self::handle_pattern(arena, *pattern, current);
+                    Self::handle_pattern(arenas, *pattern, current);
                 }
             }
             Pattern::EnumVariant(pattern) => {
                 if let Some(inner_pattern) = &pattern.inner_pattern {
-                    Self::handle_pattern(arena, *inner_pattern, current);
+                    Self::handle_pattern(arenas, *inner_pattern, current);
                 }
             }
             Pattern::Otherwise(_) => {}

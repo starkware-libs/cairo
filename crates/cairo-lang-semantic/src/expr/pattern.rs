@@ -4,12 +4,13 @@ use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use id_arena::Arena;
 use smol_str::SmolStr;
 
 use super::fmt::ExprFormatter;
 use crate::db::SemanticGroup;
-use crate::{ConcreteStructId, ExprLiteral, ExprStringLiteral, LocalVariable, PatternId, semantic};
+use crate::{
+    Arenas, ConcreteStructId, ExprLiteral, ExprStringLiteral, LocalVariable, PatternId, semantic,
+};
 
 /// Semantic representation of a Pattern.
 ///
@@ -106,12 +107,12 @@ impl<'db> From<&Pattern<'db>> for SyntaxStablePtrId<'db> {
 /// Polymorphic container of [`Pattern`] objects used for querying pattern variables.
 pub trait PatternVariablesQueryable<'a> {
     /// Lookup the pattern in this container and then get [`Pattern::variables`] from it.
-    fn query(&self, id: PatternId<'a>) -> Vec<PatternVariable<'a>>;
+    fn query(&self, id: PatternId) -> Vec<PatternVariable<'a>>;
 }
 
-impl<'a> PatternVariablesQueryable<'a> for Arena<Pattern<'a>> {
-    fn query(&self, id: PatternId<'a>) -> Vec<PatternVariable<'a>> {
-        self[id].variables(self)
+impl<'a> PatternVariablesQueryable<'a> for Arenas<'a> {
+    fn query(&self, id: PatternId) -> Vec<PatternVariable<'a>> {
+        self.patterns[id].variables(self)
     }
 }
 
@@ -125,7 +126,7 @@ pub struct QueryPatternVariablesFromDb<'a>(
 );
 
 impl<'a> PatternVariablesQueryable<'a> for QueryPatternVariablesFromDb<'a> {
-    fn query(&self, id: PatternId<'a>) -> Vec<PatternVariable<'a>> {
+    fn query(&self, id: PatternId) -> Vec<PatternVariable<'a>> {
         let pattern: Pattern<'a> = self.0.pattern_semantic(self.1, id);
         pattern.variables(self)
     }
@@ -176,7 +177,7 @@ impl<'db> DebugWithDb<'db> for PatternVariable<'db> {
 pub struct PatternStruct<'db> {
     pub concrete_struct_id: ConcreteStructId<'db>,
     // TODO(spapini): This should be ConcreteMember, when available.
-    pub field_patterns: Vec<(PatternId<'db>, semantic::Member<'db>)>,
+    pub field_patterns: Vec<(PatternId, semantic::Member<'db>)>,
     pub ty: semantic::TypeId<'db>,
     #[dont_rewrite]
     pub n_snapshots: usize,
@@ -189,7 +190,7 @@ pub struct PatternStruct<'db> {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'db>)]
 pub struct PatternTuple<'db> {
-    pub field_patterns: Vec<PatternId<'db>>,
+    pub field_patterns: Vec<PatternId>,
     pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
@@ -200,7 +201,7 @@ pub struct PatternTuple<'db> {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'db>)]
 pub struct PatternFixedSizeArray<'db> {
-    pub elements_patterns: Vec<PatternId<'db>>,
+    pub elements_patterns: Vec<PatternId>,
     pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
@@ -212,7 +213,7 @@ pub struct PatternFixedSizeArray<'db> {
 #[debug_db(ExprFormatter<'db>)]
 pub struct PatternEnumVariant<'db> {
     pub variant: semantic::ConcreteVariant<'db>,
-    pub inner_pattern: Option<PatternId<'db>>,
+    pub inner_pattern: Option<PatternId>,
     pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]

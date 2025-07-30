@@ -92,8 +92,8 @@ fn test_create_graph(
 /// object.
 fn lower_graph_as_function<'db>(
     mut ctx: LoweringContext<'db, '_>,
-    expr_id: semantic::ExprId<'db>,
-    graph: &FlowControlGraph<'db>,
+    expr_id: semantic::ExprId,
+    graph: &FlowControlGraph,
 ) -> Lowered<'db> {
     let ctx_ref: &mut LoweringContext<'db, '_> = &mut ctx;
     let expr = ctx_ref.function_body.arenas.exprs[expr_id].clone();

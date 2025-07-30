@@ -53,7 +53,7 @@ use crate::{
 #[debug_db(dyn SemanticGroup)]
 pub struct Constant<'db> {
     /// The actual id of the const expression value.
-    pub value: ExprId<'db>,
+    pub value: ExprId,
     /// The arena of all the expressions for the const calculation.
     pub arenas: Arc<Arenas<'db>>,
 }
@@ -385,7 +385,7 @@ pub fn constant_semantic_data_cycle_helper<'db>(
 }
 
 /// Checks if the given expression only involved constant calculations.
-pub fn validate_const_expr<'db>(ctx: &mut ComputationContext<'db, '_>, expr_id: ExprId<'db>) {
+pub fn validate_const_expr<'db>(ctx: &mut ComputationContext<'db, '_>, expr_id: ExprId) {
     let info = ctx.db.const_calc_info();
     let mut eval_ctx = ConstantEvaluateContext {
         db: ctx.db,
@@ -495,7 +495,7 @@ struct ConstantEvaluateContext<'a, 'r, 'mt> {
 }
 impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
     /// Validate the given expression can be used as constant.
-    fn validate<'m>(&'m mut self, expr_id: ExprId<'a>) {
+    fn validate(&mut self, expr_id: ExprId) {
         match &self.arenas.exprs[expr_id] {
             Expr::Var(_) | Expr::Constant(_) | Expr::Missing(_) => {}
             Expr::Block(ExprBlock { statements, tail: Some(inner), .. }) => {
@@ -638,7 +638,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
     }
 
     /// Evaluate the given const expression value.
-    fn evaluate<'ctx>(&'ctx mut self, expr_id: ExprId<'a>) -> ConstValue<'a> {
+    fn evaluate<'ctx>(&'ctx mut self, expr_id: ExprId) -> ConstValue<'a> {
         let expr = &self.arenas.exprs[expr_id];
         let db = self.db;
         match expr {
@@ -1050,7 +1050,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
     }
 
     /// Destructures the pattern into the const value of the variables in scope.
-    fn destructure_pattern(&mut self, pattern_id: PatternId<'a>, value: ConstValue<'a>) {
+    fn destructure_pattern(&mut self, pattern_id: PatternId, value: ConstValue<'a>) {
         let pattern = &self.arenas.patterns[pattern_id];
         match pattern {
             Pattern::Literal(_)

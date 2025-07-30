@@ -1,10 +1,9 @@
 use cairo_lang_semantic::usage::MemberPath;
-use cairo_lang_semantic::{Binding, Expr, Pattern, TypeLongId, VarId};
+use cairo_lang_semantic::{Binding, ExprId, PatternId, TypeLongId, VarId};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ast::StatementPtr;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::Intern;
-use id_arena::Id;
 use itertools::zip_eq;
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
@@ -33,24 +32,24 @@ use crate::diagnostic::MatchKind;
 pub fn lower_let_else<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     builder: &mut BlockBuilder<'db>,
-    pattern_id: &Id<Pattern<'db>>,
-    expr: &Id<Expr<'db>>,
+    pattern_id: PatternId,
+    expr: ExprId,
     lowered_expr: LoweredExpr<'db>,
-    else_clause: &Id<Expr<'db>>,
+    else_clause: ExprId,
     stable_ptr: &StatementPtr<'db>,
 ) -> Result<(), LoweringFlowError<'db>> {
-    let pattern = ctx.function_body.arenas.patterns[*pattern_id].clone();
-    let variables = pattern.variables(&ctx.function_body.arenas.patterns);
+    let pattern = ctx.function_body.arenas.patterns[pattern_id].clone();
+    let variables = pattern.variables(&ctx.function_body.arenas);
 
     // Create a match expression with two arms.
-    let patterns = &[*pattern_id];
+    let patterns = &[pattern_id];
     let var_ids_and_stable_ptrs = variables
         .iter()
         .map(|pattern_var| (VarId::Local(pattern_var.var.id), pattern_var.stable_ptr.untyped()))
         .collect();
     let arms = vec![
         MatchArmWrapper::LetElseSuccess(patterns, var_ids_and_stable_ptrs, stable_ptr.untyped()),
-        MatchArmWrapper::ElseClause(*else_clause),
+        MatchArmWrapper::ElseClause(else_clause),
     ];
 
     // Lower the match expression.
@@ -58,7 +57,7 @@ pub fn lower_let_else<'db>(
     let match_lowered = lower_match_arms(
         ctx,
         builder,
-        *expr,
+        expr,
         lowered_expr,
         arms,
         ctx.get_location(stable_ptr.untyped()),
