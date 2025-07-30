@@ -23,6 +23,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::BooleanIf(node) => lower_boolean_if(ctx, id, node, builder),
         FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, node, builder),
         FlowControlNode::UnitResult => lower_unit_result(ctx, builder),
+        _ => todo!(),
     }
 }
 
@@ -48,7 +49,7 @@ fn lower_evaluate_expr<'db>(
 fn lower_boolean_if<'db>(
     ctx: &mut LowerGraphContext<'db, '_, '_>,
     id: NodeId,
-    node: &BooleanIf,
+    node: &BooleanIf<'db>,
     builder: BlockBuilder<'db>,
 ) -> Maybe<()> {
     let db = ctx.ctx.db;

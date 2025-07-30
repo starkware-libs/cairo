@@ -55,15 +55,6 @@ fn test_create_graph(
     let expr = semantic_db.expr_semantic(test_function.function_id, expr_id);
     let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
 
-    let graph = match &expr {
-        semantic::Expr::If(expr) => create_graph_expr_if(expr),
-        _ => {
-            panic!("Unsupported expression: {:?}", expr.debug(&expr_formatter));
-        }
-    };
-
-    let error = verify_diagnostics_expectation(args, &semantic_diagnostics);
-
     let mut encapsulating_ctx =
         create_encapsulating_ctx(db, test_function.function_id, &test_function.signature);
 
@@ -74,9 +65,22 @@ fn test_create_graph(
         &mut encapsulating_ctx,
     );
 
+    let graph = match &expr {
+        semantic::Expr::If(expr) => create_graph_expr_if(&ctx, expr),
+        _ => {
+            panic!("Unsupported expression: {:?}", expr.debug(&expr_formatter));
+        }
+    };
+
+    let error = verify_diagnostics_expectation(args, &semantic_diagnostics);
+
     // Lower the graph.
-    let lowered = lower_graph_as_function(ctx, expr_id, &graph);
-    let lowered_str = formatted_lowered(db, Some(&lowered));
+    let lowered_str = if args.get("skip_lowering").unwrap_or(&"false".into()) == "true" {
+        "".into()
+    } else {
+        let lowered = lower_graph_as_function(ctx, expr_id, &graph);
+        formatted_lowered(db, Some(&lowered))
+    };
 
     TestRunnerResult {
         outputs: OrderedHashMap::from([

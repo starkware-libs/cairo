@@ -64,7 +64,7 @@ struct LowerGraphContext<'db, 'mt, 'a> {
     /// callsite).
     sealed_blocks: Vec<SealedGotoCallsite<'db>>,
     /// A map from [FlowControlVar] to [VarUsage].
-    vars: UnorderedHashMap<FlowControlVar, VarUsage<'db>>,
+    vars: UnorderedHashMap<FlowControlVar<'db>, VarUsage<'db>>,
     /// The first node (starting from the root) that does not pass its block builder directly to
     /// the child node (see [Self::pass_builder_to_child]).
     /// The block builder of this node is the original block builder.
@@ -140,7 +140,7 @@ impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
     /// This function is called when lowering the node creating the [FlowControlVar].
     /// Later, when the [FlowControlVar] is used in another node, [Self::vars] is used to get the
     /// [VarUsage].
-    fn register_var(&mut self, var_id: FlowControlVar, lowered_var: VarUsage<'db>) {
+    fn register_var(&mut self, var_id: FlowControlVar<'db>, lowered_var: VarUsage<'db>) {
         assert!(
             self.vars.insert(var_id, lowered_var).is_none(),
             "Variable {var_id:?} was already registered.",
