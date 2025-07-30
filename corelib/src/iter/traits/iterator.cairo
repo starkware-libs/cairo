@@ -1,6 +1,7 @@
 use crate::iter::adapters::{
-    Chain, Enumerate, Filter, Map, Peekable, Take, Zip, chained_iterator, enumerated_iterator,
-    filter_iterator, mapped_iterator, peekable_iterator, take_iterator, zipped_iterator,
+    Chain, Enumerate, Filter, Map, Peekable, Take, Zip, ZipEq, chained_iterator,
+    enumerated_iterator, filter_iterator, mapped_iterator, peekable_iterator, take_iterator,
+    zipped_iterator,
 };
 use crate::iter::traits::{Product, Sum};
 use crate::metaprogramming::TypeEqual;
@@ -589,6 +590,68 @@ pub trait Iterator<T> {
         self: T, other: U,
     ) -> Zip<T, UIntoIter::IntoIter> {
         zipped_iterator(self, other.into_iter())
+    }
+
+    /// 'Zips up' two iterators into a single iterator of pairs, ensuring both have equal length.
+    ///
+    /// `zip_eq()` returns a new iterator that will iterate over two other
+    /// iterators, returning a tuple where the first element comes from the
+    /// first iterator, and the second element comes from the second iterator.
+    ///
+    /// In other words, it zips two iterators together, into a single one.
+    ///
+    /// Unlike [`zip`], if the iterators have different lengths, `zip_eq` will panic.
+    /// This ensures that both iterators are completely consumed and have exactly
+    /// the same number of elements.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the two iterators have different lengths.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter().zip_eq(array![4, 5, 6].into_iter());
+    ///
+    /// assert_eq!(iter.next(), Some((1, 4)));
+    /// assert_eq!(iter.next(), Some((2, 5)));
+    /// assert_eq!(iter.next(), Some((3, 6)));
+    /// assert_eq!(iter.next(), None);
+    /// ```
+    ///
+    /// Since the argument to `zip_eq()` uses [`IntoIterator`], we can pass
+    /// anything that can be converted into an [`Iterator`], not just an
+    /// [`Iterator`] itself. For example:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter().zip_eq(array![4, 5, 6]);
+    ///
+    /// assert_eq!(iter.next(), Some((1, 4)));
+    /// assert_eq!(iter.next(), Some((2, 5)));
+    /// assert_eq!(iter.next(), Some((3, 6)));
+    /// assert_eq!(iter.next(), None);
+    /// ```
+    ///
+    /// Here's an example where the iterators have different lengths, which will panic:
+    ///
+    /// ```should_panic
+    /// let mut iter = array![1, 2, 3].into_iter().zip_eq(array![4, 5]);
+    ///
+    /// assert_eq!(iter.next(), Some((1, 4)));
+    /// assert_eq!(iter.next(), Some((2, 5)));
+    /// // This will panic because the second iterator is exhausted but the first still has elements
+    /// iter.next();
+    /// ```
+    ///
+    /// [`zip`]: Iterator::zip
+    /// [`next`]: Iterator::next
+    #[inline]
+    fn zip_eq<U, impl UIntoIter: IntoIterator<U>, +Destruct<T>>(
+        self: T, other: U,
+    ) -> ZipEq<T, UIntoIter::IntoIter> {
+        crate::iter::adapters::zip_eq(self, other.into_iter())
     }
 
     /// Transforms an iterator into a collection.
