@@ -23,6 +23,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::BooleanIf(node) => lower_boolean_if(ctx, id, node, builder),
         FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, node, builder),
         FlowControlNode::UnitResult => lower_unit_result(ctx, builder),
+        _ => todo!(),
     }
 }
 

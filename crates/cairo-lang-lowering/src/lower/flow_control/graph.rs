@@ -21,12 +21,20 @@
 
 use std::fmt::Debug;
 
-use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::{self as semantic, ConcreteVariant};
+use itertools::Itertools;
 
 /// Represents a variable in the flow control graph.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct FlowControlVar {
     idx: usize,
+}
+impl FlowControlVar {
+    /// Returns the type of the variable.
+    #[expect(dead_code)]
+    pub fn ty<'db>(&self, graph: &FlowControlGraph<'db>) -> semantic::TypeId<'db> {
+        graph.var_types[self.idx]
+    }
 }
 
 /// Unique identifier for nodes in the flow control graph.
@@ -36,7 +44,7 @@ pub struct NodeId(pub usize);
 /// Instructs to perform `lower_expr` & `as_var_usage`.
 ///
 /// Used to lower the `if` condition or `match` expression and get a [FlowControlVar] that can be
-/// used in [BooleanIf] or `EnumMatch`.
+/// used in [BooleanIf] or [EnumMatch].
 #[derive(Debug)]
 pub struct EvaluateExpr<'db> {
     /// The expression to evaluate.
@@ -58,6 +66,28 @@ pub struct BooleanIf {
     pub false_branch: NodeId,
 }
 
+/// Enum match node.
+pub struct EnumMatch<'db> {
+    /// The input value to match.
+    pub matched_var: FlowControlVar,
+    /// The concrete enum id.
+    #[expect(dead_code)]
+    pub concrete_enum_id: semantic::ConcreteEnumId<'db>,
+    /// For each variant, the node to jump to and an output variable for the inner value.
+    pub variants: Vec<(ConcreteVariant<'db>, NodeId, FlowControlVar)>,
+}
+
+impl<'db> std::fmt::Debug for EnumMatch<'db> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "EnumMatch {{ matched_var: {:?}, variants: {}}}",
+            self.matched_var,
+            self.variants.iter().map(|(_, node, var)| format!("({node:?}, {var:?})")).join(", ")
+        )
+    }
+}
+
 /// An arm (final node) that returns an expression.
 #[derive(Debug)]
 pub struct ArmExpr<'db> {
@@ -71,6 +101,8 @@ pub enum FlowControlNode<'db> {
     EvaluateExpr(EvaluateExpr<'db>),
     /// Boolean if condition node.
     BooleanIf(BooleanIf),
+    /// Enum match node.
+    EnumMatch(EnumMatch<'db>),
     /// An arm (final node) that returns an expression.
     ArmExpr(ArmExpr<'db>),
     /// An arm (final node) that returns a unit value - `()`.
@@ -82,6 +114,7 @@ impl Debug for FlowControlNode<'_> {
         match self {
             FlowControlNode::EvaluateExpr(node) => node.fmt(f),
             FlowControlNode::BooleanIf(node) => node.fmt(f),
+            FlowControlNode::EnumMatch(node) => node.fmt(f),
             FlowControlNode::ArmExpr(node) => node.fmt(f),
             FlowControlNode::UnitResult => write!(f, "UnitResult"),
         }
@@ -95,6 +128,8 @@ impl Debug for FlowControlNode<'_> {
 pub struct FlowControlGraph<'db> {
     /// All nodes in the graph.
     pub nodes: Vec<FlowControlNode<'db>>,
+    /// The type of each [FlowControlVar].
+    pub var_types: Vec<semantic::TypeId<'db>>,
 }
 impl<'db> FlowControlGraph<'db> {
     /// Returns the root node of the graph.
@@ -118,6 +153,8 @@ impl Debug for FlowControlGraph<'_> {
 pub struct FlowControlGraphBuilder<'db> {
     /// All nodes in the graph.
     nodes: Vec<FlowControlNode<'db>>,
+    /// The type of each [FlowControlVar].
+    pub var_types: Vec<semantic::TypeId<'db>>,
     /// The number of [FlowControlVar]s allocated so far.
     n_vars: usize,
 }
@@ -133,13 +170,20 @@ impl<'db> FlowControlGraphBuilder<'db> {
     /// Finalizes the graph and returns the final [FlowControlGraph].
     pub fn finalize(self, root: NodeId) -> FlowControlGraph<'db> {
         assert_eq!(root.0, self.nodes.len() - 1, "The root must be the last node.");
-        FlowControlGraph { nodes: self.nodes }
+        let FlowControlGraphBuilder { nodes, var_types, n_vars: _ } = self;
+        FlowControlGraph { nodes, var_types }
     }
 
     /// Creates a new [FlowControlVar].
-    pub fn new_var(&mut self) -> FlowControlVar {
+    pub fn new_var(&mut self, ty: semantic::TypeId<'db>) -> FlowControlVar {
         let var = FlowControlVar { idx: self.n_vars };
+        self.var_types.push(ty);
         self.n_vars += 1;
         var
+    }
+
+    /// Returns the type of the given [FlowControlVar].
+    pub fn var_ty(&self, input_var: FlowControlVar) -> semantic::TypeId<'db> {
+        self.var_types[input_var.idx]
     }
 }

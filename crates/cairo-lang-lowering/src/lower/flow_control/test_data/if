@@ -103,6 +103,35 @@ End:
 
 //! > ==========================================================================
 
+//! > Test let chain
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: true)
+
+//! > function_code
+fn foo(mut x: felt252, mut y: felt252) -> felt252 {
+    if let Some(_) = Some(x) && let Some(_) = Some(y) {
+        x + y
+    } else {
+        x + y
+    }
+}
+
+//! > graph
+Root: 5
+0 ArmExpr { expr: Id { idx: 7 } }
+1 ArmExpr { expr: Id { idx: 11 } }
+2 EnumMatch { matched_var: FlowControlVar { idx: 0 }, variants: (NodeId(0), FlowControlVar { idx: 1 }), (NodeId(1), FlowControlVar { idx: 2 })}
+3 EvaluateExpr { expr: Id { idx: 3 }, var_id: FlowControlVar { idx: 0 }, next: NodeId(2) }
+4 EnumMatch { matched_var: FlowControlVar { idx: 3 }, variants: (NodeId(3), FlowControlVar { idx: 4 }), (NodeId(1), FlowControlVar { idx: 5 })}
+5 EvaluateExpr { expr: Id { idx: 1 }, var_id: FlowControlVar { idx: 3 }, next: NodeId(4) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+
+//! > ==========================================================================
+
 //! > Test if with panic in condition
 
 //! > test_runner_name
