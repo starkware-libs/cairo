@@ -55,15 +55,6 @@ fn test_create_graph(
     let expr = semantic_db.expr_semantic(test_function.function_id, expr_id);
     let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
 
-    let graph = match &expr {
-        semantic::Expr::If(expr) => create_graph_expr_if(expr),
-        _ => {
-            panic!("Unsupported expression: {:?}", expr.debug(&expr_formatter));
-        }
-    };
-
-    let error = verify_diagnostics_expectation(args, &semantic_diagnostics);
-
     let mut encapsulating_ctx =
         create_encapsulating_ctx(db, test_function.function_id, &test_function.signature);
 
@@ -74,9 +65,22 @@ fn test_create_graph(
         &mut encapsulating_ctx,
     );
 
+    let graph = match &expr {
+        semantic::Expr::If(expr) => create_graph_expr_if(&ctx, expr),
+        _ => {
+            panic!("Unsupported expression: {:?}", expr.debug(&expr_formatter));
+        }
+    };
+
+    let error = verify_diagnostics_expectation(args, &semantic_diagnostics);
+
     // Lower the graph.
-    let lowered = lower_graph_as_function(ctx, expr_id, &graph);
-    let lowered_str = formatted_lowered(db, Some(&lowered));
+    let lowered_str = if args.get("skip_lowering").unwrap_or(&"false".into()) == "true" {
+        "".into()
+    } else {
+        let lowered = lower_graph_as_function(ctx, expr_id, &graph);
+        formatted_lowered(db, Some(&lowered))
+    };
 
     TestRunnerResult {
         outputs: OrderedHashMap::from([
@@ -93,24 +97,23 @@ fn test_create_graph(
 fn lower_graph_as_function<'db>(
     mut ctx: LoweringContext<'db, '_>,
     expr_id: semantic::ExprId,
-    graph: &FlowControlGraph,
+    graph: &FlowControlGraph<'db>,
 ) -> Lowered<'db> {
-    let ctx_ref: &mut LoweringContext<'db, '_> = &mut ctx;
-    let expr = ctx_ref.function_body.arenas.exprs[expr_id].clone();
-    let location = ctx_ref.get_location(expr.stable_ptr().untyped());
+    let expr = ctx.function_body.arenas.exprs[expr_id].clone();
+    let location = ctx.get_location(expr.stable_ptr().untyped());
 
     // Create a new block builder.
-    let mut builder = BlockBuilder::root(alloc_empty_block(ctx_ref));
+    let mut builder = BlockBuilder::root(alloc_empty_block(&mut ctx));
 
     // Add the function parameters to the block's semantics.
-    let parameters = ctx_ref
+    let parameters = ctx
         .signature
         .params
         .clone()
         .into_iter()
         .map(|param| {
-            let location = ctx_ref.get_location(param.stable_ptr().untyped());
-            let var = ctx_ref.new_var(VarRequest { ty: param.ty(), location });
+            let location = ctx.get_location(param.stable_ptr().untyped());
+            let var = ctx.new_var(VarRequest { ty: param.ty(), location });
             let param_var = extract_matches!(param, ExprVarMemberPath::Var);
             builder.put_semantic(param_var.var, var);
             var
@@ -118,20 +121,20 @@ fn lower_graph_as_function<'db>(
         .collect_vec();
 
     // Lower the graph into the builder.
-    let block_expr = lower_graph(ctx_ref, &mut builder, graph, location);
+    let block_expr = lower_graph(&mut ctx, &mut builder, graph, location);
 
-    let block_sealed = lowered_expr_to_block_scope_end(ctx_ref, builder, block_expr).unwrap();
+    let block_sealed = lowered_expr_to_block_scope_end(&mut ctx, builder, block_expr).unwrap();
 
-    let expr = ctx_ref.function_body.arenas.exprs[expr_id].clone();
+    let expr = ctx.function_body.arenas.exprs[expr_id].clone();
 
-    wrap_sealed_block_as_function(ctx_ref, block_sealed, expr.stable_ptr().untyped()).unwrap();
+    wrap_sealed_block_as_function(&mut ctx, block_sealed, expr.stable_ptr().untyped()).unwrap();
 
-    let blocks = std::mem::take(&mut ctx_ref.blocks).build().expect("Root block must exist.");
+    let blocks = std::mem::take(&mut ctx.blocks).build().expect("Root block must exist.");
     Lowered {
-        diagnostics: std::mem::take(&mut ctx_ref.diagnostics).build(),
-        variables: std::mem::take(&mut ctx_ref.variables.variables),
+        diagnostics: std::mem::take(&mut ctx.diagnostics).build(),
+        variables: std::mem::take(&mut ctx.variables.variables),
         blocks,
-        signature: ctx_ref.signature.clone(),
+        signature: ctx.signature.clone(),
         parameters,
     }
 }
