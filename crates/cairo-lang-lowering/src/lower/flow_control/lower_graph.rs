@@ -218,7 +218,7 @@ impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
                 }
             }
             Err(err) => {
-                return (Err(err), builder);
+                (Err(err), builder)
             }
         }
     }

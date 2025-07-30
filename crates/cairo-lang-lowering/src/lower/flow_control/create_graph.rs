@@ -1,12 +1,21 @@
 use cairo_lang_semantic::{self as semantic, Condition};
+use itertools::Itertools;
+use patterns::create_node_for_patterns;
 
 use super::graph::{
     ArmExpr, BooleanIf, EvaluateExpr, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode,
 };
+use crate::lower::context::LoweringContext;
+
+mod filtered_patterns;
+mod patterns;
 
 /// Creates a graph node for [semantic::ExprIf].
 #[allow(dead_code)]
-pub fn create_graph_expr_if<'db>(expr: &semantic::ExprIf<'db>) -> FlowControlGraph<'db> {
+pub fn create_graph_expr_if<'db>(
+    ctx: &LoweringContext<'db, '_>,
+    expr: &semantic::ExprIf<'db>,
+) -> FlowControlGraph<'db> {
     let mut graph = FlowControlGraphBuilder::default();
 
     // Add the `true` branch (the `if` block).
@@ -26,7 +35,9 @@ pub fn create_graph_expr_if<'db>(expr: &semantic::ExprIf<'db>) -> FlowControlGra
     for condition in expr.conditions.iter().rev() {
         current_node = match condition {
             Condition::BoolExpr(condition) => {
-                let condition_var = graph.new_var();
+                // Create a variable for the condition.
+                let condition_expr = &ctx.function_body.arenas.exprs[*condition];
+                let condition_var = graph.new_var(condition_expr.ty());
                 current_node = graph.add_node(FlowControlNode::BooleanIf(BooleanIf {
                     condition_var,
                     true_branch: current_node,
@@ -39,8 +50,31 @@ pub fn create_graph_expr_if<'db>(expr: &semantic::ExprIf<'db>) -> FlowControlGra
                     next: current_node,
                 }))
             }
-            Condition::Let(..) => {
-                todo!("'if let' is not supported yet.")
+            Condition::Let(expr_id, patterns) => {
+                let expr = &ctx.function_body.arenas.exprs[*expr_id];
+
+                // Create a variable for the expression.
+                let expr_var = graph.new_var(expr.ty());
+
+                let match_node_id = create_node_for_patterns(
+                    ctx,
+                    &mut graph,
+                    expr_var,
+                    &patterns
+                        .iter()
+                        .map(|pattern| &ctx.function_body.arenas.patterns[*pattern])
+                        .collect_vec(),
+                    &|_graph, pattern_indices| {
+                        if pattern_indices.first().is_some() { current_node } else { false_branch }
+                    },
+                );
+
+                // Create a node for lowering `expr` into `expr_var` and continue to the match.
+                graph.add_node(FlowControlNode::EvaluateExpr(EvaluateExpr {
+                    expr: *expr_id,
+                    var_id: expr_var,
+                    next: match_node_id,
+                }))
             }
         }
     }
