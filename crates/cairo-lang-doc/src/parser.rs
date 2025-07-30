@@ -175,7 +175,9 @@ impl<'db> DocumentationCommentParser<'db> {
                             )));
                         }
                         Tag::List(list_type) => {
-                            tokens.push(DocumentationCommentToken::Content("\n".to_string()));
+                            if !list_nesting.is_empty() {
+                                tokens.push(DocumentationCommentToken::Content("\n".to_string()));
+                            }
                             list_nesting.push(DocCommentListItem {
                                 delimiter: list_type,
                                 is_ordered_list: list_type.is_some(),
@@ -185,16 +187,16 @@ impl<'db> DocumentationCommentParser<'db> {
                             CodeBlockKind::Fenced(language) => {
                                 if language.trim().is_empty() {
                                     tokens.push(DocumentationCommentToken::Content(String::from(
-                                        "\n```cairo\n",
+                                        "```cairo\n",
                                     )));
                                 } else {
                                     tokens.push(DocumentationCommentToken::Content(format!(
-                                        "\n```{language}\n"
+                                        "```{language}\n"
                                     )));
                                 }
                             }
                             CodeBlockKind::Indented => {
-                                tokens.push(DocumentationCommentToken::Content("\n\n".to_string()));
+                                tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                                 is_indented_code_block = true;
                             }
                         },
@@ -236,10 +238,16 @@ impl<'db> DocumentationCommentParser<'db> {
                         }
                         Tag::Table(alignment) => {
                             table_alignment = alignment;
-                            tokens.push(DocumentationCommentToken::Content("\n\n".to_string()));
+                            tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                         }
                         Tag::TableCell => {
                             tokens.push(DocumentationCommentToken::Content("|".to_string()));
+                        }
+                        Tag::Strong => {
+                            tokens.push(DocumentationCommentToken::Content("**".to_string()));
+                        }
+                        Tag::Emphasis => {
+                            tokens.push(DocumentationCommentToken::Content("_".to_string()));
                         }
                         _ => {}
                     }
@@ -285,13 +293,22 @@ impl<'db> DocumentationCommentParser<'db> {
                     TagEnd::TableRow => {
                         tokens.push(DocumentationCommentToken::Content("|".to_string()));
                     }
+                    TagEnd::Strong => {
+                        tokens.push(DocumentationCommentToken::Content("**".to_string()));
+                    }
+                    TagEnd::Emphasis => {
+                        tokens.push(DocumentationCommentToken::Content("_".to_string()));
+                    }
+                    TagEnd::Paragraph => {
+                        tokens.push(DocumentationCommentToken::Content("\n".to_string()));
+                    }
                     _ => {}
                 },
                 Event::SoftBreak => {
                     tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                 }
                 Event::Rule => {
-                    tokens.push(DocumentationCommentToken::Content("\n___\n".to_string()));
+                    tokens.push(DocumentationCommentToken::Content("___\n".to_string()));
                 }
                 _ => {}
             }

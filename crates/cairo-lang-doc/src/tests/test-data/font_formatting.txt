@@ -1,0 +1,172 @@
+//! > Documentation submodules
+
+//! > test_runner_name
+documentation_test_runner
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+//! > cairo_code
+//! Test **bold** inline.
+//!
+//! **Paragraph can be bold.
+//! And this will be a soft break.**
+//!
+//! **Paragraph can be bold.**
+//!
+//! And this will be a new paragraph.
+//!
+//! **Table will be correctly formatted after a bold paragraph.**
+//! |**C1**| C2|
+//! |---:|:---:|
+//! |R1C1|_R1C2_|
+//!
+//! _Can mix italic_ **and bold** inline.
+//! **_Can be_** _**both**_.
+//!
+//! _Paragraph can be italic.
+//! And this will be a soft break._
+//!
+//! _Paragraph can be italic._
+//!
+//! And this will be a new paragraph _**[link can bold italic](URL)**_.
+//!
+//! _Code block will be correctly formatted after an italic paragraph._
+//! ```
+//!   fn new_Point() {
+//!     Point {x: 12, y: 14}
+//!   }
+//! ```
+
+//! > Item signature #1
+
+//! > Item documentation #1
+Test **bold** inline.
+
+**Paragraph can be bold.
+And this will be a soft break.**
+
+**Paragraph can be bold.**
+
+And this will be a new paragraph.
+
+**Table will be correctly formatted after a bold paragraph.**
+
+|**C1**|C2|
+|---:|:---:|
+|R1C1|_R1C2_|
+
+_Can mix italic_ **and bold** inline.
+**_Can be_** _**both**_.
+
+_Paragraph can be italic.
+And this will be a soft break._
+
+_Paragraph can be italic._
+
+And this will be a new paragraph _**[link can bold italic](URL)**_.
+
+_Code block will be correctly formatted after an italic paragraph._
+```cairo
+  fn new_Point() {
+    Point {x: 12, y: 14}
+  }
+```
+
+//! > Item documentation tokens #1
+Content("Test ")
+Content("**")
+Content("bold")
+Content("**")
+Content(" inline.")
+Content("\n")
+Content("\n")
+Content("**")
+Content("Paragraph can be bold.")
+Content("\n")
+Content("And this will be a soft break.")
+Content("**")
+Content("\n")
+Content("\n")
+Content("**")
+Content("Paragraph can be bold.")
+Content("**")
+Content("\n")
+Content("\n")
+Content("And this will be a new paragraph.")
+Content("\n")
+Content("\n")
+Content("**")
+Content("Table will be correctly formatted after a bold paragraph.")
+Content("**")
+Content("\n")
+Content("\n")
+Content("|")
+Content("**")
+Content("C1")
+Content("**")
+Content("|")
+Content("C2")
+Content("|\n|---:|:---:|")
+Content("\n")
+Content("|")
+Content("R1C1")
+Content("|")
+Content("_")
+Content("R1C2")
+Content("_")
+Content("|")
+Content("\n")
+Content("\n")
+Content("_")
+Content("Can mix italic")
+Content("_")
+Content(" ")
+Content("**")
+Content("and bold")
+Content("**")
+Content(" inline.")
+Content("\n")
+Content("**")
+Content("_")
+Content("Can be")
+Content("_")
+Content("**")
+Content(" ")
+Content("_")
+Content("**")
+Content("both")
+Content("**")
+Content("_")
+Content(".")
+Content("\n")
+Content("\n")
+Content("_")
+Content("Paragraph can be italic.")
+Content("\n")
+Content("And this will be a soft break.")
+Content("_")
+Content("\n")
+Content("\n")
+Content("_")
+Content("Paragraph can be italic.")
+Content("_")
+Content("\n")
+Content("\n")
+Content("And this will be a new paragraph ")
+Content("_")
+Content("**")
+CommentLinkToken { label: "link can bold italic", path: Some("URL"), resolved_item_name: None }
+Content("**")
+Content("_")
+Content(".")
+Content("\n")
+Content("\n")
+Content("_")
+Content("Code block will be correctly formatted after an italic paragraph.")
+Content("_")
+Content("\n")
+Content("```cairo\n")
+Content("  fn new_Point() {\n    Point {x: 12, y: 14}\n  }\n")
+Content("```")
