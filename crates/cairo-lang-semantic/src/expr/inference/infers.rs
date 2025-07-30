@@ -26,103 +26,110 @@ use crate::{
 
 /// Functions for embedding generic semantic objects in an existing [Inference] object, by
 /// introducing new variables.
-pub trait InferenceEmbeddings {
+pub trait InferenceEmbeddings<'db> {
     fn infer_impl(
         &mut self,
-        uninferred_impl: UninferredImpl,
-        concrete_trait_id: ConcreteTraitId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<ImplId>;
+        uninferred_impl: UninferredImpl<'db>,
+        concrete_trait_id: ConcreteTraitId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<ImplId<'db>>;
     fn infer_impl_def(
         &mut self,
-        impl_def_id: ImplDefId,
-        concrete_trait_id: ConcreteTraitId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<ImplId>;
+        impl_def_id: ImplDefId<'db>,
+        concrete_trait_id: ConcreteTraitId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<ImplId<'db>>;
     fn infer_impl_alias(
         &mut self,
-        impl_alias_id: ImplAliasId,
-        concrete_trait_id: ConcreteTraitId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<ImplId>;
+        impl_alias_id: ImplAliasId<'db>,
+        concrete_trait_id: ConcreteTraitId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<ImplId<'db>>;
     fn infer_generic_assignment(
         &mut self,
-        generic_params: &[GenericParam],
-        generic_args: &[GenericArgumentId],
-        expected_generic_args: &[GenericArgumentId],
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<Vec<GenericArgumentId>>;
+        generic_params: &[GenericParam<'db>],
+        generic_args: &[GenericArgumentId<'db>],
+        expected_generic_args: &[GenericArgumentId<'db>],
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<Vec<GenericArgumentId<'db>>>;
     fn infer_generic_args(
         &mut self,
-        generic_params: &[GenericParam],
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<Vec<GenericArgumentId>>;
+        generic_params: &[GenericParam<'db>],
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<Vec<GenericArgumentId<'db>>>;
     fn infer_concrete_trait_by_self(
         &mut self,
-        trait_function: TraitFunctionId,
-        self_ty: TypeId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-        inference_error_cb: impl FnOnce(InferenceError),
-    ) -> Option<(ConcreteTraitId, usize)>;
+        trait_function: TraitFunctionId<'db>,
+        self_ty: TypeId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+        inference_errors: &mut Vec<(TraitFunctionId<'db>, InferenceError<'db>)>,
+    ) -> Option<(ConcreteTraitId<'db>, usize)>;
+    fn infer_concrete_trait_by_self_without_errors(
+        &mut self,
+        trait_function: TraitFunctionId<'db>,
+        self_ty: TypeId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> Option<(ConcreteTraitId<'db>, usize)>;
     fn infer_generic_arg(
         &mut self,
-        param: &GenericParam,
-        lookup_context: ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<GenericArgumentId>;
+        param: &GenericParam<'db>,
+        lookup_context: ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<GenericArgumentId<'db>>;
     fn infer_trait_function(
         &mut self,
-        concrete_trait_function: ConcreteTraitGenericFunctionId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<FunctionId>;
+        concrete_trait_function: ConcreteTraitGenericFunctionId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<FunctionId<'db>>;
     fn infer_generic_function(
         &mut self,
-        generic_function: GenericFunctionId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<FunctionId>;
+        generic_function: GenericFunctionId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<FunctionId<'db>>;
     fn infer_trait_generic_function(
         &mut self,
-        concrete_trait_function: ConcreteTraitGenericFunctionId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> ImplGenericFunctionId;
+        concrete_trait_function: ConcreteTraitGenericFunctionId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> ImplGenericFunctionId<'db>;
     fn infer_trait_type(
         &mut self,
-        concrete_trait_type: ConcreteTraitTypeId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> TypeId;
+        concrete_trait_type: ConcreteTraitTypeId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> TypeId<'db>;
     fn infer_trait_constant(
         &mut self,
-        concrete_trait_constant: ConcreteTraitConstantId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> ImplConstantId;
+        concrete_trait_constant: ConcreteTraitConstantId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> ImplConstantId<'db>;
     fn infer_trait_impl(
         &mut self,
-        concrete_trait_constant: ConcreteTraitImplId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> ImplImplId;
+        concrete_trait_constant: ConcreteTraitImplId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> ImplImplId<'db>;
 }
 
-impl InferenceEmbeddings for Inference<'_> {
+impl<'db> InferenceEmbeddings<'db> for Inference<'db, '_> {
     /// Infers all the variables required to make an uninferred impl provide a concrete trait.
     fn infer_impl(
         &mut self,
-        uninferred_impl: UninferredImpl,
-        concrete_trait_id: ConcreteTraitId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<ImplId> {
+        uninferred_impl: UninferredImpl<'db>,
+        concrete_trait_id: ConcreteTraitId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<ImplId<'db>> {
         let impl_id = match uninferred_impl {
             UninferredImpl::Def(impl_def_id) => {
                 self.infer_impl_def(impl_def_id, concrete_trait_id, lookup_context, stable_ptr)?
@@ -167,11 +174,11 @@ impl InferenceEmbeddings for Inference<'_> {
     /// provide a concrete trait.
     fn infer_impl_def(
         &mut self,
-        impl_def_id: ImplDefId,
-        concrete_trait_id: ConcreteTraitId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<ImplId> {
+        impl_def_id: ImplDefId<'db>,
+        concrete_trait_id: ConcreteTraitId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<ImplId<'db>> {
         let imp_generic_params = self
             .db
             .impl_def_generic_params(impl_def_id)
@@ -204,11 +211,11 @@ impl InferenceEmbeddings for Inference<'_> {
     /// provide a concrete trait.
     fn infer_impl_alias(
         &mut self,
-        impl_alias_id: ImplAliasId,
-        concrete_trait_id: ConcreteTraitId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<ImplId> {
+        impl_alias_id: ImplAliasId<'db>,
+        concrete_trait_id: ConcreteTraitId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<ImplId<'db>> {
         let impl_alias_generic_params = self
             .db
             .impl_alias_generic_params(impl_alias_id)
@@ -247,12 +254,12 @@ impl InferenceEmbeddings for Inference<'_> {
     /// Returns the generic_params assignment.
     fn infer_generic_assignment(
         &mut self,
-        generic_params: &[GenericParam],
-        generic_args: &[GenericArgumentId],
-        expected_generic_args: &[GenericArgumentId],
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<Vec<GenericArgumentId>> {
+        generic_params: &[GenericParam<'db>],
+        generic_args: &[GenericArgumentId<'db>],
+        expected_generic_args: &[GenericArgumentId<'db>],
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<Vec<GenericArgumentId<'db>>> {
         let new_generic_args =
             self.infer_generic_args(generic_params, lookup_context, stable_ptr)?;
         let substitution = GenericSubstitution::new(generic_params, &new_generic_args);
@@ -266,10 +273,10 @@ impl InferenceEmbeddings for Inference<'_> {
     /// Infers all generic_arguments given the parameters.
     fn infer_generic_args(
         &mut self,
-        generic_params: &[GenericParam],
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<Vec<GenericArgumentId>> {
+        generic_params: &[GenericParam<'db>],
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<Vec<GenericArgumentId<'db>>> {
         let mut generic_args = vec![];
         let mut substitution = GenericSubstitution::default();
         for generic_param in generic_params {
@@ -289,81 +296,53 @@ impl InferenceEmbeddings for Inference<'_> {
     ///
     /// Returns the deduced type and the number of snapshots that need to be added to it.
     ///
-    /// `inference_error_cb` is called for inference errors, but they are not reported here as
+    /// `inference_errors` collects inference errors, but they are not reported here as
     /// diagnostics. The caller has to make sure the diagnostics are reported appropriately.
     fn infer_concrete_trait_by_self(
         &mut self,
-        trait_function: TraitFunctionId,
-        self_ty: TypeId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-        inference_error_cb: impl FnOnce(InferenceError),
-    ) -> Option<(ConcreteTraitId, usize)> {
-        let trait_id = trait_function.trait_id(self.db);
-        let signature = self.db.trait_function_signature(trait_function).ok()?;
-        let first_param = signature.params.into_iter().next()?;
-        require(first_param.name == SELF_PARAM_KW)?;
+        trait_function: TraitFunctionId<'db>,
+        self_ty: TypeId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+        inference_errors: &mut Vec<(TraitFunctionId<'db>, InferenceError<'db>)>,
+    ) -> Option<(ConcreteTraitId<'db>, usize)> {
+        infer_concrete_trait_by_self(
+            self,
+            trait_function,
+            self_ty,
+            lookup_context,
+            stable_ptr,
+            inference_errors,
+        )
+    }
 
-        let trait_generic_params = self.db.trait_generic_params(trait_id).ok()?;
-        let trait_generic_args =
-            match self.infer_generic_args(&trait_generic_params, lookup_context, stable_ptr) {
-                Ok(generic_args) => generic_args,
-                Err(err_set) => {
-                    if let Some(err) = self.consume_error_without_reporting(err_set) {
-                        inference_error_cb(err);
-                    }
-                    return None;
-                }
-            };
-
-        // TODO(yuval): Try to not temporary clone.
-        let mut tmp_inference_data = self.temporary_clone();
-        let mut tmp_inference = tmp_inference_data.inference(self.db);
-        let function_generic_params =
-            tmp_inference.db.trait_function_generic_params(trait_function).ok()?;
-        let function_generic_args =
-            // TODO(yuval): consider getting the substitution from inside `infer_generic_args`
-            // instead of creating it again here.
-            match tmp_inference.infer_generic_args(&function_generic_params, lookup_context, stable_ptr) {
-                Ok(generic_args) => generic_args,
-                Err(err_set) => {
-                    if let Some(err) = self.consume_error_without_reporting(err_set) {
-                        inference_error_cb(err);
-                    }
-                    return None;
-                }
-            };
-
-        let trait_substitution =
-            GenericSubstitution::new(&trait_generic_params, &trait_generic_args);
-        let function_substitution =
-            GenericSubstitution::new(&function_generic_params, &function_generic_args);
-        let substitution = trait_substitution.concat(function_substitution);
-
-        let fixed_param_ty = substitution.substitute(self.db, first_param.ty).ok()?;
-        let (_, n_snapshots) = match self.conform_ty_ex(self_ty, fixed_param_ty, true) {
-            Ok(conform) => conform,
-            Err(err_set) => {
-                if let Some(err) = self.consume_error_without_reporting(err_set) {
-                    inference_error_cb(err);
-                }
-                return None;
-            }
-        };
-
-        let generic_args = self.rewrite(trait_generic_args).no_err();
-
-        Some((ConcreteTraitLongId { trait_id, generic_args }.intern(self.db), n_snapshots))
+    /// Same as [InferenceEmbeddings::infer_concrete_trait_by_self], but without collecting
+    /// inference errors.
+    fn infer_concrete_trait_by_self_without_errors(
+        &mut self,
+        trait_function: TraitFunctionId<'db>,
+        self_ty: TypeId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> Option<(ConcreteTraitId<'db>, usize)> {
+        infer_concrete_trait_by_self(
+            self,
+            trait_function,
+            self_ty,
+            lookup_context,
+            stable_ptr,
+            &mut vec![],
+        )
     }
 
     /// Infers a generic argument to be passed as a generic parameter.
     /// Allocates a new inference variable of the correct kind, and wraps in a generic argument.
     fn infer_generic_arg(
         &mut self,
-        param: &GenericParam,
-        lookup_context: ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<GenericArgumentId> {
+        param: &GenericParam<'db>,
+        lookup_context: ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<GenericArgumentId<'db>> {
         match param {
             GenericParam::Type(_) => Ok(GenericArgumentId::Type(self.new_type_var(stable_ptr))),
             GenericParam::Impl(param) => {
@@ -390,10 +369,10 @@ impl InferenceEmbeddings for Inference<'_> {
     /// Returns the resulting impl function.
     fn infer_trait_function(
         &mut self,
-        concrete_trait_function: ConcreteTraitGenericFunctionId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<FunctionId> {
+        concrete_trait_function: ConcreteTraitGenericFunctionId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<FunctionId<'db>> {
         let generic_function = GenericFunctionId::Impl(self.infer_trait_generic_function(
             concrete_trait_function,
             lookup_context,
@@ -406,10 +385,10 @@ impl InferenceEmbeddings for Inference<'_> {
     /// Returns the resulting specialized function.
     fn infer_generic_function(
         &mut self,
-        generic_function: GenericFunctionId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<FunctionId> {
+        generic_function: GenericFunctionId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> InferenceResult<FunctionId<'db>> {
         let generic_params = generic_function
             .generic_params(self.db)
             .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
@@ -422,10 +401,10 @@ impl InferenceEmbeddings for Inference<'_> {
     /// Returns the resulting impl generic function.
     fn infer_trait_generic_function(
         &mut self,
-        concrete_trait_function: ConcreteTraitGenericFunctionId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> ImplGenericFunctionId {
+        concrete_trait_function: ConcreteTraitGenericFunctionId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> ImplGenericFunctionId<'db> {
         let impl_id = self.new_impl_var(
             concrete_trait_function.concrete_trait(self.db),
             stable_ptr,
@@ -438,31 +417,27 @@ impl InferenceEmbeddings for Inference<'_> {
     /// Returns the resulting impl type.
     fn infer_trait_type(
         &mut self,
-        concrete_trait_type: ConcreteTraitTypeId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> TypeId {
+        concrete_trait_type: ConcreteTraitTypeId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> TypeId<'db> {
+        let trait_type = concrete_trait_type.trait_type(self.db);
         let impl_id = self.new_impl_var(
             concrete_trait_type.concrete_trait(self.db),
             stable_ptr,
             lookup_context.clone(),
         );
-        TypeLongId::ImplType(ImplTypeId::new(
-            impl_id,
-            concrete_trait_type.trait_type(self.db),
-            self.db,
-        ))
-        .intern(self.db)
+        TypeLongId::ImplType(ImplTypeId::new(impl_id, trait_type, self.db)).intern(self.db)
     }
 
     /// Infers the impl to be substituted instead of a trait for a given trait constant.
     /// Returns the resulting impl constant.
     fn infer_trait_constant(
         &mut self,
-        concrete_trait_constant: ConcreteTraitConstantId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> ImplConstantId {
+        concrete_trait_constant: ConcreteTraitConstantId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> ImplConstantId<'db> {
         let impl_id = self.new_impl_var(
             concrete_trait_constant.concrete_trait(self.db),
             stable_ptr,
@@ -476,16 +451,82 @@ impl InferenceEmbeddings for Inference<'_> {
     /// Returns the resulting impl impl.
     fn infer_trait_impl(
         &mut self,
-        concrete_trait_impl: ConcreteTraitImplId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> ImplImplId {
+        concrete_trait_impl: ConcreteTraitImplId<'db>,
+        lookup_context: &ImplLookupContext<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> ImplImplId<'db> {
         let impl_id = self.new_impl_var(
             concrete_trait_impl.concrete_trait(self.db),
             stable_ptr,
             lookup_context.clone(),
         );
+        let x = self.db;
 
-        ImplImplId::new(impl_id, concrete_trait_impl.trait_impl(self.db), self.db)
+        ImplImplId::new(impl_id, concrete_trait_impl.trait_impl(x), x)
     }
+}
+
+/// Implementation of [InferenceEmbeddings::infer_concrete_trait_by_self].
+fn infer_concrete_trait_by_self<'r, 'db, 'mt>(
+    inference: &'r mut Inference<'db, 'mt>,
+    trait_function: TraitFunctionId<'db>,
+    self_ty: TypeId<'db>,
+    lookup_context: &ImplLookupContext<'db>,
+    stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    inference_errors: &mut Vec<(TraitFunctionId<'db>, InferenceError<'db>)>,
+) -> Option<(ConcreteTraitId<'db>, usize)> {
+    let trait_id = trait_function.trait_id(inference.db);
+    let signature = inference.db.trait_function_signature(trait_function).ok()?;
+    let first_param = signature.params.into_iter().next()?;
+    require(first_param.name.as_str(inference.db) == SELF_PARAM_KW)?;
+
+    let trait_generic_params = inference.db.trait_generic_params(trait_id).ok()?;
+    let trait_generic_args =
+        match inference.infer_generic_args(&trait_generic_params, lookup_context, stable_ptr) {
+            Ok(generic_args) => generic_args,
+            Err(err_set) => {
+                if let Some(err) = inference.consume_error_without_reporting(err_set) {
+                    inference_errors.push((trait_function, err));
+                }
+                return None;
+            }
+        };
+
+    // TODO(yuval): Try to not temporary clone.
+    let mut tmp_inference_data = inference.temporary_clone();
+    let mut tmp_inference = tmp_inference_data.inference(inference.db);
+    let function_generic_params =
+        tmp_inference.db.trait_function_generic_params(trait_function).ok()?;
+    let function_generic_args =
+        // TODO(yuval): consider getting the substitution from inside `infer_generic_args`
+        // instead of creating it again here.
+        match tmp_inference.infer_generic_args(&function_generic_params, lookup_context, stable_ptr) {
+            Ok(generic_args) => generic_args,
+            Err(err_set) => {
+                if let Some(err) = inference.consume_error_without_reporting(err_set) {
+                    inference_errors.push((trait_function, err));
+                }
+                return None;
+            }
+        };
+
+    let trait_substitution = GenericSubstitution::new(&trait_generic_params, &trait_generic_args);
+    let function_substitution =
+        GenericSubstitution::new(&function_generic_params, &function_generic_args);
+    let substitution = trait_substitution.concat(function_substitution);
+
+    let fixed_param_ty = substitution.substitute(inference.db, first_param.ty).ok()?;
+    let (_, n_snapshots) = match inference.conform_ty_ex(self_ty, fixed_param_ty, true) {
+        Ok(conform) => conform,
+        Err(err_set) => {
+            if let Some(err) = inference.consume_error_without_reporting(err_set) {
+                inference_errors.push((trait_function, err));
+            }
+            return None;
+        }
+    };
+
+    let generic_args = inference.rewrite(trait_generic_args).no_err();
+
+    Some((ConcreteTraitLongId { trait_id, generic_args }.intern(inference.db), n_snapshots))
 }

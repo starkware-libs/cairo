@@ -13,6 +13,23 @@ pub struct OrderedHashSet<Key, BH = RandomState>(IndexSet<Key, BH>);
 #[derive(Clone, Debug)]
 pub struct OrderedHashSet<Key, BH = hashbrown::DefaultHashBuilder>(IndexSet<Key, BH>);
 
+// This code was taken from the salsa::Update trait implementation for IndexSet.
+// It is defined privately in macro_rules! maybe_update_set in the db-ext-macro repo.
+#[cfg(feature = "salsa")]
+unsafe impl<Key: Eq + Hash, BH: BuildHasher> salsa::Update for OrderedHashSet<Key, BH> {
+    unsafe fn maybe_update(old_pointer: *mut Self, new_set: Self) -> bool {
+        let old_set: &mut Self = unsafe { &mut *old_pointer };
+
+        if *old_set == new_set {
+            false
+        } else {
+            old_set.clear();
+            old_set.extend(new_set);
+            true
+        }
+    }
+}
+
 pub type Iter<'a, Key> = indexmap::set::Iter<'a, Key>;
 
 impl<Key, BH: Default> Default for OrderedHashSet<Key, BH> {

@@ -10,6 +10,7 @@ use cairo_lang_executable::compile::{
 };
 use cairo_lang_executable::executable::Executable;
 use cairo_lang_execute_utils::{program_and_hints_from_executable, user_args_from_flags};
+use cairo_lang_filesystem::ids::CrateInput;
 use cairo_lang_runner::casm_run::format_for_panic;
 use cairo_lang_runner::clap::RunProfilerConfigArg;
 use cairo_lang_runner::profiling::{
@@ -201,13 +202,14 @@ fn main() -> anyhow::Result<()> {
             };
 
             let mut db = prepare_db(&config)?;
-            let main_crate_ids = setup_project(&mut db, Path::new(&args.input_path))?;
-            (Some(db), Some((main_crate_ids, config)), None)
+            let main_crate_inputs = setup_project(&mut db, Path::new(&args.input_path))?;
+            (Some(db), Some((main_crate_inputs, config)), None)
         }
     };
 
-    let (opt_debug_data, executable) = if let Some((main_crate_ids, config)) = opt_debug_data {
+    let (opt_debug_data, executable) = if let Some((main_crate_inputs, config)) = opt_debug_data {
         let db = db.as_ref().expect("db was just created in compilation path");
+        let main_crate_ids = CrateInput::into_crate_ids(db, main_crate_inputs);
         let CompileExecutableResult { compiled_function, builder, debug_info } =
             compile_executable_in_prepared_db(
                 db,

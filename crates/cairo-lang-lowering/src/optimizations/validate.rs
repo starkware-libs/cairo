@@ -5,15 +5,15 @@ use crate::{BlockId, Lowered, VariableId};
 
 /// Possible failing validations.
 #[derive(Debug)]
-pub enum ValidationError {
+pub enum ValidationError<'db> {
     /// A variable was used in statement before being introduced.
-    UnknownUsageInStatement(VariableId, StatementLocation),
+    UnknownUsageInStatement(VariableId<'db>, StatementLocation),
     /// A variable was used in the end of a block before being introduced.
-    UnknownUsageInEnd(VariableId, BlockId),
+    UnknownUsageInEnd(VariableId<'db>, BlockId),
     /// A variable was introduced twice.
-    DoubleIntroduction(VariableId, Introduction, Introduction),
+    DoubleIntroduction(VariableId<'db>, Introduction, Introduction),
 }
-impl ValidationError {
+impl ValidationError<'_> {
     pub fn to_message(&self) -> String {
         match self {
             ValidationError::UnknownUsageInStatement(var_id, (block_id, idx)) => format!(
@@ -37,11 +37,11 @@ impl ValidationError {
 /// Validates that the lowering structure is valid.
 ///
 /// Currently only does basic SSA validations.
-pub fn validate(lowered: &Lowered) -> Result<(), ValidationError> {
+pub fn validate<'db>(lowered: &Lowered<'db>) -> Result<(), ValidationError<'db>> {
     if lowered.blocks.is_empty() {
         return Ok(());
     }
-    let mut introductions = UnorderedHashMap::<VariableId, Introduction>::default();
+    let mut introductions = UnorderedHashMap::<VariableId<'_>, Introduction>::default();
     for param in &lowered.parameters {
         introductions.insert(*param, Introduction::Parameter);
     }

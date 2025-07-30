@@ -15,20 +15,21 @@ mod lower_node;
 
 /// Lowers a flow control graph.
 #[allow(dead_code)]
-pub fn lower_graph(
-    ctx: &mut LoweringContext<'_, '_>,
-    builder: &mut BlockBuilder,
-    graph: &FlowControlGraph,
-    location: LocationId,
-) -> LoweringResult<LoweredExpr> {
+pub fn lower_graph<'db, 'mt>(
+    ctx: &mut LoweringContext<'db, 'mt>,
+    builder: &mut BlockBuilder<'db>,
+    graph: FlowControlGraph<'db>,
+    location: LocationId<'db>,
+) -> LoweringResult<'db, LoweredExpr<'db>> {
     // Extract the builder from the mutable reference and replace it with a dummy builder.
     let dummy_block_builder = BlockBuilder::root(BlockId(0));
     let builder_ = std::mem::replace(builder, dummy_block_builder);
 
+    let nodes_len = graph.nodes.len();
     let mut context = LowerGraphContext::new(ctx, builder_, graph, location);
     // Go over the nodes in reverse order to make sure parent nodes are handled before their
     // children.
-    for id in (0..graph.nodes.len()).rev() {
+    for id in (0..nodes_len).rev() {
         lower_node::lower_node(&mut context, NodeId(id)).map_err(LoweringFlowError::Failed)?;
     }
 
@@ -39,14 +40,14 @@ pub fn lower_graph(
 }
 
 /// Helper struct for the lowering of a flow control graph.
-struct LowerGraphContext<'a, 'b, 'db> {
+struct LowerGraphContext<'db, 'mt, 'a> {
     /// The lowering context.
-    ctx: &'a mut LoweringContext<'b, 'db>,
+    ctx: &'a mut LoweringContext<'db, 'mt>,
     /// The flow control graph to lower.
-    graph: &'a FlowControlGraph,
+    graph: FlowControlGraph<'db>,
     /// The [BlockBuilder] for the result of the lowering, and the [MatchInfo] for its
     /// finalization.
-    result: Option<(BlockBuilder, MatchInfo)>,
+    result: Option<(BlockBuilder<'db>, MatchInfo<'db>)>,
     /// A map from [NodeId] to all the [BlockBuilder]s that lead to it.
     /// When a node is visited, it creates a [BlockBuilder] for each of its child nodes
     /// (see [Self::assign_child_block_id]) and adds it to the map.
@@ -54,37 +55,38 @@ struct LowerGraphContext<'a, 'b, 'db> {
     /// created for the `true` and `false` arms of the `if`.
     /// Later, when the child node is visited, all the [BlockBuilder]s are merged into a
     /// single [BlockBuilder] (see [Self::start_builder]), on which the node is lowered.
-    parent_builders: UnorderedHashMap<NodeId, Vec<BlockBuilder>>,
+    parent_builders: UnorderedHashMap<NodeId, Vec<BlockBuilder<'db>>>,
     /// A list of sealed blocks for the arms (excluding the arms that do not continue to the
     /// callsite).
-    sealed_blocks: Vec<SealedGotoCallsite>,
+    sealed_blocks: Vec<SealedGotoCallsite<'db>>,
     /// A map from [FlowControlVar] to [VarUsage].
-    vars: UnorderedHashMap<FlowControlVar, VarUsage>,
+    vars: UnorderedHashMap<FlowControlVar, VarUsage<'db>>,
     /// The first node (starting from the root) that does not pass its block builder directly to
     /// the child node (see [Self::pass_builder_to_child]).
     /// The block builder of this node is the original block builder.
     effective_root: NodeId,
     /// The location of the expression being lowered.
     /// This is used for the location of the variables created by block merges during the lowering.
-    location: LocationId,
+    location: LocationId<'db>,
 }
 
-impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
+impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
     /// Constructs a new [LowerGraphContext].
     fn new(
-        ctx: &'a mut LoweringContext<'b, 'db>,
-        root_builder: BlockBuilder,
-        graph: &'a FlowControlGraph,
-        location: LocationId,
+        ctx: &'a mut LoweringContext<'db, 'mt>,
+        root_builder: BlockBuilder<'db>,
+        graph: FlowControlGraph<'db>,
+        location: LocationId<'db>,
     ) -> Self {
+        let root = graph.root();
         Self {
             ctx,
             graph,
             result: None,
-            parent_builders: [(graph.root(), vec![root_builder])].into_iter().collect(),
+            parent_builders: [(root, vec![root_builder])].into_iter().collect(),
             sealed_blocks: vec![],
             vars: UnorderedHashMap::default(),
-            effective_root: graph.root(),
+            effective_root: root,
             location,
         }
     }
@@ -94,7 +96,7 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
     fn assign_child_block_id(
         &mut self,
         child_id: NodeId,
-        parent_block_builder: &BlockBuilder,
+        parent_block_builder: &BlockBuilder<'db>,
     ) -> BlockId {
         let block_id = self.ctx.blocks.alloc_empty();
         let child_builder = parent_block_builder.child_block_builder(block_id);
@@ -108,7 +110,7 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
         &mut self,
         parent_id: NodeId,
         child_id: NodeId,
-        builder: BlockBuilder,
+        builder: BlockBuilder<'db>,
     ) {
         if parent_id == self.effective_root {
             self.effective_root = child_id;
@@ -117,7 +119,7 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
     }
 
     /// Creates a [BlockBuilder] for the given node, based on the parent nodes.
-    fn start_builder(&mut self, id: NodeId) -> BlockBuilder {
+    fn start_builder(&mut self, id: NodeId) -> BlockBuilder<'db> {
         // Extract the builders of the parent nodes (the nodes leading to the current node).
         // TODO(lior): Replace unwrap with handling a non-reachable node.
         let parent_builders = self.parent_builders.remove(&id).unwrap();
@@ -129,7 +131,7 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
     /// This function is called when lowering the node creating the [FlowControlVar].
     /// Later, when the [FlowControlVar] is used in another node, [Self::vars] is used to get the
     /// [VarUsage].
-    fn register_var(&mut self, var_id: FlowControlVar, lowered_var: VarUsage) {
+    fn register_var(&mut self, var_id: FlowControlVar, lowered_var: VarUsage<'db>) {
         assert!(
             self.vars.insert(var_id, lowered_var).is_none(),
             "Variable {var_id:?} was already registered.",
@@ -143,7 +145,12 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
     /// The root block is not finalized immediately, since the API of lowering functions
     /// requires that the block will not be finalized if it does not continue to the
     /// callsite (for example, if all the arms panic or return from the function).
-    fn finalize_with_match(&mut self, id: NodeId, builder: BlockBuilder, info: MatchInfo) {
+    fn finalize_with_match(
+        &mut self,
+        id: NodeId,
+        builder: BlockBuilder<'db>,
+        info: MatchInfo<'db>,
+    ) {
         if id == self.effective_root {
             self.result = Some((builder, info));
         } else {
@@ -155,7 +162,7 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
     ///
     /// The block is an arm's block that was already sealed and should be merged with the other
     /// arms.
-    fn add_sealed_block(&mut self, sealed_block: SealedBlockBuilder) {
+    fn add_sealed_block(&mut self, sealed_block: SealedBlockBuilder<'db>) {
         match sealed_block {
             SealedBlockBuilder::GotoCallsite(sealed_block) => {
                 self.sealed_blocks.push(sealed_block);
@@ -171,7 +178,7 @@ impl<'a, 'b, 'db> LowerGraphContext<'a, 'b, 'db> {
     ///
     /// Returns the [BlockBuilder] with the state at the end of the graph, and the
     /// [LoweredExpr] or [LoweringFlowError] for the resulting expression.
-    fn finalize(mut self) -> (LoweringResult<LoweredExpr>, BlockBuilder) {
+    fn finalize(mut self) -> (LoweringResult<'db, LoweredExpr<'db>>, BlockBuilder<'db>) {
         let (builder, match_info) = self.result.take().unwrap();
         if let Some((new_builder, lowered_expr)) =
             merge_sealed_block_builders(self.ctx, self.sealed_blocks, self.location)

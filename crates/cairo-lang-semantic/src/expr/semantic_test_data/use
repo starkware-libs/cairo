@@ -138,13 +138,13 @@ Block(
                             concrete_struct_id: test::X::R,
                             members: [
                                 (
-                                    MemberId(test::X::a),
                                     Literal(
                                         ExprLiteral {
                                             value: 3,
                                             ty: core::integer::u8,
                                         },
                                     ),
+                                    MemberId(test::X::a),
                                 ),
                             ],
                             base_struct: None,
@@ -163,13 +163,13 @@ Block(
                     concrete_struct_id: test::X::R,
                     members: [
                         (
-                            MemberId(test::X::a),
                             Literal(
                                 ExprLiteral {
                                     value: 4,
                                     ty: core::integer::u8,
                                 },
                             ),
+                            MemberId(test::X::a),
                         ),
                     ],
                     base_struct: None,
@@ -218,13 +218,13 @@ Block(
                             concrete_struct_id: test::X::R::<core::integer::u8>,
                             members: [
                                 (
-                                    MemberId(test::X::a),
                                     Literal(
                                         ExprLiteral {
                                             value: 3,
                                             ty: core::integer::u8,
                                         },
                                     ),
+                                    MemberId(test::X::a),
                                 ),
                             ],
                             base_struct: None,
@@ -243,13 +243,13 @@ Block(
                     concrete_struct_id: test::X::R::<core::integer::u8>,
                     members: [
                         (
-                            MemberId(test::X::a),
                             Literal(
                                 ExprLiteral {
                                     value: 4,
                                     ty: core::integer::u8,
                                 },
                             ),
+                            MemberId(test::X::a),
                         ),
                     ],
                     base_struct: None,

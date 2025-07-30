@@ -9,7 +9,6 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_lowering::{self as lowering, Lowered, LoweringStage};
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
-use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{Itertools, zip_eq};
@@ -27,17 +26,17 @@ use crate::utils::{
     revoke_ap_tracking_libfunc_id, simple_basic_statement,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SierraFunctionWithBodyData {
-    pub function: Maybe<Arc<pre_sierra::Function>>,
+#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+pub struct SierraFunctionWithBodyData<'db> {
+    pub function: Maybe<Arc<pre_sierra::Function<'db>>>,
     pub ap_change: SierraApChange,
 }
 
 /// Query implementation of [SierraGenGroup::priv_function_with_body_sierra_data].
-pub fn priv_function_with_body_sierra_data(
-    db: &dyn SierraGenGroup,
-    function_id: ConcreteFunctionWithBodyId,
-) -> Maybe<SierraFunctionWithBodyData> {
+pub fn priv_function_with_body_sierra_data<'db>(
+    db: &'db dyn SierraGenGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
+) -> Maybe<SierraFunctionWithBodyData<'db>> {
     let lowered_function = &*db.lowered_body(function_id, LoweringStage::Final)?;
     lowered_function.blocks.has_root()?;
 
@@ -59,19 +58,19 @@ pub fn priv_function_with_body_sierra_data(
 }
 
 /// Query implementation of [SierraGenGroup::function_with_body_sierra].
-pub fn function_with_body_sierra(
-    db: &dyn SierraGenGroup,
-    function_id: ConcreteFunctionWithBodyId,
-) -> Maybe<Arc<pre_sierra::Function>> {
+pub fn function_with_body_sierra<'db>(
+    db: &'db dyn SierraGenGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
+) -> Maybe<Arc<pre_sierra::Function<'db>>> {
     db.priv_function_with_body_sierra_data(function_id)?.function
 }
 
-fn get_function_ap_change_and_code(
-    db: &dyn SierraGenGroup,
-    function_id: ConcreteFunctionWithBodyId,
-    lowered_function: &Lowered,
-    analyze_ap_change_result: AnalyzeApChangesResult,
-) -> Maybe<Arc<pre_sierra::Function>> {
+fn get_function_ap_change_and_code<'db>(
+    db: &'db dyn SierraGenGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
+    lowered_function: &Lowered<'db>,
+    analyze_ap_change_result: AnalyzeApChangesResult<'db>,
+) -> Maybe<Arc<pre_sierra::Function<'db>>> {
     let root_block = lowered_function.blocks.root_block()?;
     let AnalyzeApChangesResult { known_ap_change, local_variables, ap_tracking_configuration } =
         analyze_ap_change_result;
@@ -143,7 +142,7 @@ fn get_function_ap_change_and_code(
     // TODO(spapini): Don't intern objects for the semantic model outside the crate. These should
     // be regarded as private.
     Ok(pre_sierra::Function {
-        id: function_id.function_id(db)?.intern(db),
+        id: db.intern_sierra_function(function_id.function_id(db)?),
         body: statements,
         entry_point: label_id,
         parameters,
@@ -152,10 +151,10 @@ fn get_function_ap_change_and_code(
 }
 
 /// Query implementation of [SierraGenGroup::priv_get_dummy_function].
-pub fn priv_get_dummy_function(
-    db: &dyn SierraGenGroup,
-    function_id: ConcreteFunctionWithBodyId,
-) -> Maybe<Arc<pre_sierra::Function>> {
+pub fn priv_get_dummy_function<'db>(
+    db: &'db dyn SierraGenGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
+) -> Maybe<Arc<pre_sierra::Function<'db>>> {
     // TODO(ilya): Remove the following query.
     let lowered_function = &*db.lowered_body(function_id, LoweringStage::PreOptimizations)?;
     let ap_tracking_configuration = Default::default();
@@ -173,7 +172,7 @@ pub fn priv_get_dummy_function(
     let (label, label_id) = context.new_label();
     context.push_statement(label);
 
-    let sierra_id = function_id.function_id(db)?.intern(db);
+    let sierra_id = db.intern_sierra_function(function_id.function_id(db)?);
     let sierra_signature = db.get_function_signature(sierra_id.clone()).unwrap();
 
     let param_vars = (0..sierra_signature.param_types.len() as u64)
@@ -198,7 +197,7 @@ pub fn priv_get_dummy_function(
     context.push_statement(return_statement(ret_vars));
 
     Ok(pre_sierra::Function {
-        id: function_id.function_id(db)?.intern(db),
+        id: db.intern_sierra_function(function_id.function_id(db)?),
         body: context.statements(),
         entry_point: label_id,
         parameters,
@@ -211,9 +210,9 @@ pub fn priv_get_dummy_function(
 /// * A map from a Sierra variable that should be stored as local variable to its allocated space
 ///   (uninitialized local variable).
 /// * A list of Sierra statements.
-fn allocate_local_variables(
-    context: &mut ExprGeneratorContext<'_>,
-    local_variables: &OrderedHashSet<lowering::VariableId>,
+fn allocate_local_variables<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    local_variables: &OrderedHashSet<lowering::VariableId<'db>>,
 ) -> Maybe<LocalVariables> {
     let mut sierra_local_variables =
         OrderedHashMap::<cairo_lang_sierra::ids::VarId, cairo_lang_sierra::ids::VarId>::default();

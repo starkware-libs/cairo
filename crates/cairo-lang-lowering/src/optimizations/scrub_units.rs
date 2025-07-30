@@ -11,7 +11,7 @@ use crate::{
 };
 
 /// Removes unit values from returns and call statements.
-pub fn scrub_units(db: &dyn LoweringGroup, lowered: &mut Lowered) {
+pub fn scrub_units(db: &dyn LoweringGroup, lowered: &mut Lowered<'_>) {
     if lowered.blocks.is_empty() {
         return;
     }

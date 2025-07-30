@@ -13,12 +13,12 @@ use crate::{CompilerConfig, compile_prepared_db_program_artifact};
 pub struct MockExecutablePlugin {}
 
 impl MacroPlugin for MockExecutablePlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        _db: &dyn SyntaxGroup,
-        _item_ast: ModuleItem,
+        _db: &'db dyn SyntaxGroup,
+        _item_ast: ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         PluginResult { code: None, diagnostics: vec![], remove_original_item: false }
     }
 
@@ -44,11 +44,11 @@ fn can_collect_executables() {
     "#};
     let mut suite = PluginSuite::default();
     suite.add_plugin::<MockExecutablePlugin>();
-    let mut db =
+    let db =
         RootDatabase::builder().detect_corelib().with_default_plugin_suite(suite).build().unwrap();
     let crate_id = setup_test_crate(&db, content);
     let config = CompilerConfig { replace_ids: true, ..CompilerConfig::default() };
-    let artifact = compile_prepared_db_program_artifact(&mut db, vec![crate_id], config).unwrap();
+    let artifact = compile_prepared_db_program_artifact(&db, vec![crate_id], config).unwrap();
     let executables = artifact.debug_info.unwrap().executables;
     assert!(!executables.is_empty());
     let f_ids = executables.get("some").unwrap();

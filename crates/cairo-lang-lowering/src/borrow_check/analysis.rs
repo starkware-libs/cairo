@@ -10,14 +10,14 @@ pub type StatementLocation = (BlockId, usize);
 
 /// Analyzer trait to implement for each specific analysis.
 #[allow(unused_variables)]
-pub trait Analyzer<'a> {
+pub trait Analyzer<'db, 'a> {
     type Info: Clone;
-    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, block: &Block) {}
+    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, block: &Block<'db>) {}
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
         statement_location: StatementLocation,
-        stmt: &'a Statement,
+        stmt: &'a Statement<'db>,
     ) {
     }
     fn visit_goto(
@@ -25,19 +25,19 @@ pub trait Analyzer<'a> {
         info: &mut Self::Info,
         statement_location: StatementLocation,
         target_block_id: BlockId,
-        remapping: &'a VarRemapping,
+        remapping: &'a VarRemapping<'db>,
     ) {
     }
     fn merge_match(
         &mut self,
         statement_location: StatementLocation,
-        match_info: &'a MatchInfo,
+        match_info: &'a MatchInfo<'db>,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info;
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
-        vars: &'a [VarUsage],
+        vars: &'a [VarUsage<'db>],
     ) -> Self::Info;
 
     /// Default `info_from_panic` implementation for post 'lower_panics' phases.
@@ -45,21 +45,21 @@ pub trait Analyzer<'a> {
     fn info_from_panic(
         &mut self,
         statement_location: StatementLocation,
-        var: &VarUsage,
+        var: &VarUsage<'db>,
     ) -> Self::Info {
         unreachable!("Panics should have been stripped in the `lower_panics` phase.");
     }
 }
 
 /// Main analysis type that allows traversing the flow backwards.
-pub struct BackAnalysis<'a, TAnalyzer: Analyzer<'a>> {
-    lowered: &'a Lowered,
+pub struct BackAnalysis<'db, 'a, TAnalyzer: Analyzer<'db, 'a>> {
+    lowered: &'a Lowered<'db>,
     pub analyzer: TAnalyzer,
     block_info: HashMap<BlockId, TAnalyzer::Info>,
 }
-impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
+impl<'db, 'a, TAnalyzer: Analyzer<'db, 'a>> BackAnalysis<'db, 'a, TAnalyzer> {
     /// Creates a new BackAnalysis instance.
-    pub fn new(lowered: &'a Lowered, analyzer: TAnalyzer) -> Self {
+    pub fn new(lowered: &'a Lowered<'db>, analyzer: TAnalyzer) -> Self {
         Self { lowered, analyzer, block_info: Default::default() }
     }
     /// Gets the analysis info for the entire function.
@@ -95,7 +95,7 @@ impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
     fn add_missing_dependency_blocks(
         &self,
         dfs_stack: &mut Vec<BlockId>,
-        block_end: &'a BlockEnd,
+        block_end: &'a BlockEnd<'_>,
     ) -> bool {
         match block_end {
             BlockEnd::NotSet => unreachable!(),

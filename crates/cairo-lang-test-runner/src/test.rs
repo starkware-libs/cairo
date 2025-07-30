@@ -29,7 +29,7 @@ fn test_compiled_serialization() {
     .unwrap();
     let compiled = compiler.build().unwrap();
     let serialized = serde_json::to_string_pretty(&compiled).unwrap();
-    let deserialized: TestCompilation = serde_json::from_str(&serialized).unwrap();
+    let deserialized: TestCompilation<'_> = serde_json::from_str(&serialized).unwrap();
 
     assert_eq!(compiled.sierra_program, deserialized.sierra_program);
     assert_eq!(compiled.metadata.function_set_costs, deserialized.metadata.function_set_costs);
@@ -239,7 +239,7 @@ fn to_named_test(test: &(&str, bool)) -> (String, TestConfig) {
 }
 
 /// Return a [TestCompilation] from a list of test names and their ignored status.
-fn to_test_compilation(tests: &[(&str, bool)]) -> TestCompilation {
+fn to_test_compilation<'db>(tests: &[(&str, bool)]) -> TestCompilation<'db> {
     TestCompilation {
         sierra_program: ProgramArtifact::stripped(Program {
             type_declarations: vec![],
