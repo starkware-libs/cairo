@@ -10,17 +10,17 @@ description = "Runner executable for the Cairo programming language"
 anyhow.workspace = true
 clap.workspace = true
 
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.12.0-rc.3" }
-cairo-lang-defs = { path = "../../cairo-lang-defs", version = "~2.12.0-rc.3" }
-cairo-lang-diagnostics = { path = "../../cairo-lang-diagnostics", version = "~2.12.0-rc.3" }
-cairo-lang-executable = { path = "../../cairo-lang-executable", version = "~2.12.0-rc.3" }
-cairo-lang-filesystem = { path = "../../cairo-lang-filesystem", version = "~2.12.0-rc.3" }
-cairo-lang-runnable-utils = { path = "../../cairo-lang-runnable-utils", version = "~2.12.0-rc.3" }
-cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "~2.12.0-rc.3" }
-cairo-lang-runner = { path = "../../cairo-lang-runner", version = "~2.12.0-rc.3" }
-cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "~2.12.0-rc.3" }
-cairo-lang-sierra-generator = { path = "../../cairo-lang-sierra-generator", version = "~2.12.0-rc.3" }
-cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "~2.12.0-rc.3" }
-cairo-lang-syntax = { path = "../../cairo-lang-syntax", version = "~2.12.0-rc.3" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.12.0-rc.3" }
+cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.12.0" }
+cairo-lang-defs = { path = "../../cairo-lang-defs", version = "~2.12.0" }
+cairo-lang-diagnostics = { path = "../../cairo-lang-diagnostics", version = "~2.12.0" }
+cairo-lang-executable = { path = "../../cairo-lang-executable", version = "~2.12.0" }
+cairo-lang-filesystem = { path = "../../cairo-lang-filesystem", version = "~2.12.0" }
+cairo-lang-runnable-utils = { path = "../../cairo-lang-runnable-utils", version = "~2.12.0" }
+cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "~2.12.0" }
+cairo-lang-runner = { path = "../../cairo-lang-runner", version = "~2.12.0" }
+cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "~2.12.0" }
+cairo-lang-sierra-generator = { path = "../../cairo-lang-sierra-generator", version = "~2.12.0" }
+cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "~2.12.0" }
+cairo-lang-syntax = { path = "../../cairo-lang-syntax", version = "~2.12.0" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.12.0" }
 itertools = { workspace = true, default-features = true }
