@@ -18,7 +18,7 @@ mod lower_node;
 pub fn lower_graph<'db, 'mt>(
     ctx: &mut LoweringContext<'db, 'mt>,
     builder: &mut BlockBuilder<'db>,
-    graph: FlowControlGraph<'db>,
+    graph: &FlowControlGraph<'db>,
     location: LocationId<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     // Extract the builder from the mutable reference and replace it with a dummy builder.
@@ -44,7 +44,7 @@ struct LowerGraphContext<'db, 'mt, 'a> {
     /// The lowering context.
     ctx: &'a mut LoweringContext<'db, 'mt>,
     /// The flow control graph to lower.
-    graph: FlowControlGraph<'db>,
+    graph: &'a FlowControlGraph<'db>,
     /// The [BlockBuilder] for the result of the lowering, and the [MatchInfo] for its
     /// finalization.
     result: Option<(BlockBuilder<'db>, MatchInfo<'db>)>,
@@ -75,7 +75,7 @@ impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
     fn new(
         ctx: &'a mut LoweringContext<'db, 'mt>,
         root_builder: BlockBuilder<'db>,
-        graph: FlowControlGraph<'db>,
+        graph: &'a FlowControlGraph<'db>,
         location: LocationId<'db>,
     ) -> Self {
         let root = graph.root();
