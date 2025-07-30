@@ -203,7 +203,7 @@ pub struct TestFunction<'a> {
     pub function_id: FunctionWithBodyId<'a>,
     pub concrete_function_id: ConcreteFunctionWithBodyId<'a>,
     pub signature: semantic::Signature<'a>,
-    pub body: semantic::ExprId<'a>,
+    pub body: semantic::ExprId,
 }
 
 /// Returns the semantic model of a given function.
@@ -262,8 +262,8 @@ pub struct TestExpr<'a> {
     pub module_id: ModuleId<'a>,
     pub function_id: FunctionWithBodyId<'a>,
     pub signature: semantic::Signature<'a>,
-    pub body: semantic::ExprId<'a>,
-    pub expr_id: semantic::ExprId<'a>,
+    pub body: semantic::ExprId,
+    pub expr_id: semantic::ExprId,
 }
 
 /// Returns the semantic model of a given expression.

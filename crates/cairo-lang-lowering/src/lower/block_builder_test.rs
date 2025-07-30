@@ -141,7 +141,7 @@ fn create_block_builders<'db>(
 /// define the semantic mapping.
 fn create_block_builder<'db>(
     ctx: &mut LoweringContext<'db, '_>,
-    statement_id: StatementId<'db>,
+    statement_id: StatementId,
     lowering_vars: &[VariableId<'db>],
 ) -> BlockBuilder<'db> {
     let block_id = ctx.blocks.alloc_empty();
