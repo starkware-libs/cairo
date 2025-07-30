@@ -106,7 +106,7 @@ End:
 //! > Test let chain
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, skip_lowering: true)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo(mut x: felt252, mut y: felt252) -> felt252 {
@@ -129,6 +129,51 @@ Root: 5
 //! > semantic_diagnostics
 
 //! > lowered
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::option::Option::<core::felt252>) <- Option::Some(v0)
+End:
+  Match(match_enum(v2) {
+    Option::Some(v3) => blk1,
+    Option::None(v4) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::option::Option::<core::felt252>) <- Option::Some(v1)
+End:
+  Match(match_enum(v5) {
+    Option::Some(v6) => blk3,
+    Option::None(v7) => blk4,
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk3:
+Statements:
+  (v9: core::felt252) <- core::Felt252Add::add(v0, v1)
+End:
+  Goto(blk6, {v9 -> v10})
+
+blk4:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk5:
+Statements:
+  (v8: core::felt252) <- core::Felt252Add::add(v0, v1)
+End:
+  Goto(blk6, {v8 -> v10})
+
+blk6:
+Statements:
+End:
+  Return(v10)
 
 //! > ==========================================================================
 
