@@ -39,15 +39,18 @@ impl ExternalCodeSizeEstimator for RootDatabase {
         // TODO(ilya): Consider adding set costs to dummy functions.
         let builder = match RunnableBuilder::new(program, Default::default()) {
             Ok(builder) => builder,
-            Err(err) => {
-                if err.is_ap_overflow_error() {
-                    // If the compilation failed due to an AP overflow, we don't want to panic as it
-                    // can happen for valid code. In this case, the function is
-                    // probably too large for inline so we can just return the max size.
+            Err(_) => {
+                if std::env::var("CAIRO_DEBUG_SIERRA_GEN").is_ok() {
+                    // If we are debugging sierra generation, we wan't to finish the compilation
+                    // rather than panic.
                     return Ok(isize::MAX);
                 }
 
-                panic!("Failed to compile program to casm.");
+                panic!(
+                    "Internal compiler error: Failed to compile program to casm. You can set the \
+                     CAIRO_DEBUG_SIERRA_GEN environment if you want to finish the compilation and \
+                     debug the sierra program."
+                );
             }
         };
         let casm = builder.casm_program();
