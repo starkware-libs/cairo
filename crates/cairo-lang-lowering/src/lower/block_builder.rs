@@ -26,9 +26,9 @@ use crate::{Block, BlockEnd, BlockId, MatchInfo, Statement, VarRemapping, VarUsa
 #[derive(Clone)]
 pub struct BlockBuilder<'db> {
     /// A store for semantic variables, owning their OwnedVariable instances.
-    pub semantics: SemanticLoweringMapping<'db>,
+    semantics: SemanticLoweringMapping<'db>,
     /// The semantic variables that are captured as snapshots in this block.
-    pub snapped_semantics: OrderedHashMap<MemberPath<'db>, VariableId<'db>>,
+    snapped_semantics: OrderedHashMap<MemberPath<'db>, VariableId<'db>>,
     /// The semantic variables that are added/changed in this block.
     changed_member_paths: OrderedHashSet<MemberPath<'db>>,
     /// Current sequence of lowered statements emitted.
@@ -94,8 +94,6 @@ impl<'db> BlockBuilder<'db> {
         var: VariableId<'db>,
         location: LocationId<'db>,
     ) {
-        // Invalidate snapshot to the given memberpath.
-        self.snapped_semantics.swap_remove(&member_path);
         self.semantics.update(
             &mut BlockStructRecomposer { statements: &mut self.statements, ctx, location },
             &member_path,
@@ -127,9 +125,14 @@ impl<'db> BlockBuilder<'db> {
             .map(|var_id| VarUsage { var_id, location })
     }
 
-    /// Updates the reference of a semantic variable to a snapshot of its lowered variable.
-    pub fn update_snap_ref(&mut self, member_path: &ExprVarMemberPath<'db>, var: VariableId<'db>) {
-        self.snapped_semantics.insert(member_path.into(), var);
+    /// Introduces a semantic variable as the representation of the given member path.
+    pub fn introduce(&mut self, member_path: MemberPath<'db>, var: VariableId<'db>) {
+        self.semantics.introduce(member_path, var);
+    }
+
+    /// Introduces a semantic variable as the representation of the given member path as a snapshot.
+    pub fn introduce_snap(&mut self, member_path: MemberPath<'db>, var: VariableId<'db>) {
+        self.snapped_semantics.insert(member_path, var);
     }
 
     /// Gets the reference of a snapshot of semantic variable, possibly by deconstructing its

@@ -18,7 +18,9 @@ use cairo_lang_defs::ids::{
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPluginMetadata};
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::cfg::CfgSet;
-use cairo_lang_filesystem::ids::{CodeMapping, FileKind, FileLongId, SmolStrId, VirtualFile};
+use cairo_lang_filesystem::ids::{
+    CodeMapping, CodeOrigin, FileKind, FileLongId, SmolStrId, VirtualFile,
+};
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast::{
@@ -115,7 +117,10 @@ impl ExpansionOffset {
         let mapping = mappings
             .iter()
             .find(|mapping| mapping.span.start <= self.0 && self.0 <= mapping.span.end)?;
-        Some(Self::new(mapping.origin.start()))
+        Some(Self::new(match mapping.origin {
+            CodeOrigin::Start(offset) => offset.add_width(self.0 - mapping.span.start),
+            CodeOrigin::Span(span) | CodeOrigin::CallSite(span) => span.start,
+        }))
     }
 }
 

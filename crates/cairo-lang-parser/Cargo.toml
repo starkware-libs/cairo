@@ -7,13 +7,13 @@ license-file.workspace = true
 description = "Cairo parser."
 
 [dependencies]
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.11.4" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.11.4" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.12.0" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.12.0" }
 cairo-lang-primitive-token.workspace = true
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.11.4" }
-cairo-lang-syntax-codegen = { path = "../cairo-lang-syntax-codegen", version = "~2.11.4" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.11.4" }
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.11.4" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.12.0" }
+cairo-lang-syntax-codegen = { path = "../cairo-lang-syntax-codegen", version = "~2.12.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.0" }
+cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.12.0" }
 colored.workspace = true
 itertools = { workspace = true, default-features = true }
 num-bigint = { workspace = true, default-features = true }

@@ -82,9 +82,9 @@ pub fn priv_should_inline<'db>(
 }
 
 /// Query implementation of [LoweringGroup::priv_never_inline].
-pub fn priv_never_inline(
-    db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId<'_>,
+pub fn priv_never_inline<'db>(
+    db: &'db dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
     Ok(matches!(function_inline_config(db, function_id)?, InlineConfiguration::Never(_)))
 }

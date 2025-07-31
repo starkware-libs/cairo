@@ -418,9 +418,9 @@ pub fn lower_loop_function<'db>(
             let location = ctx.get_location(param.stable_ptr().untyped());
             let var = ctx.new_var(VarRequest { ty: param.ty(), location });
             if snapped_params.contains_key::<MemberPath<'_>>(&(&param).into()) {
-                builder.update_snap_ref(&param, var)
+                builder.introduce_snap((&param).into(), var)
             } else {
-                builder.semantics.introduce((&param).into(), var);
+                builder.introduce((&param).into(), var);
             }
             var
         })
@@ -1901,7 +1901,7 @@ fn get_destruct_lowering<'db>(
         .into_iter()
         .map(|param| {
             let var = ctx.new_var(VarRequest { ty: param.ty(), location: location_id });
-            builder.semantics.introduce((&param).into(), var);
+            builder.introduce((&param).into(), var);
             var
         })
         .collect_vec();
@@ -2012,12 +2012,10 @@ fn add_closure_call_function<'db>(
     }
     .add(&mut ctx, &mut builder.statements);
     for (i, (param, _)) in closure_info.members.iter().enumerate() {
-        builder.semantics.introduce(param.clone(), captured_vars[i]);
+        builder.introduce(param.clone(), captured_vars[i]);
     }
     for (i, (param, _)) in closure_info.snapshots.iter().enumerate() {
-        builder
-            .snapped_semantics
-            .insert(param.clone(), captured_vars[i + closure_info.members.len()]);
+        builder.introduce_snap(param.clone(), captured_vars[i + closure_info.members.len()]);
     }
     let param_vars = generators::StructDestructure {
         input: VarUsage { var_id: parameters[1], location: expr_location },
@@ -2029,7 +2027,7 @@ fn add_closure_call_function<'db>(
     }
     .add(&mut ctx, &mut builder.statements);
     for (param_var, param) in param_vars.into_iter().zip(expr.params.iter()) {
-        builder.semantics.introduce((&parameter_as_member_path(param.clone())).into(), param_var);
+        builder.introduce((&parameter_as_member_path(param.clone())).into(), param_var);
         ctx.semantic_defs
             .insert(semantic::VarId::Param(param.id), semantic::Binding::Param(param.clone()));
     }

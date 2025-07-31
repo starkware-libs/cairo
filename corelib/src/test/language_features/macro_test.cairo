@@ -541,4 +541,17 @@ mod unhygienic_expose_plugin_macro {
         expose_let_var!(1);
         assert_eq!(expose_var, 1);
     }
+
+    macro expose_mappings_shift {
+        ($x:ident) => {
+            expose!(let y = $x + 1;);
+        };
+    }
+
+    #[test]
+    fn test_mappings_shift() {
+        let z = 1;
+        expose_mappings_shift!(z);
+        assert_eq!(y, 2);
+    }
 }
