@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::NamedLanguageElementId;
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
 use cairo_lang_semantic::{
@@ -297,7 +297,7 @@ enum VariantMatchTree<'db> {
     },
     /// No pattern has covered this enum type/variant. A `MissingMatchArm` diagnostic
     /// has been emitted and the error saved.
-    Missing(LoweringFlowError<'db>),
+    Missing(DiagnosticAdded),
 }
 
 impl<'db> std::fmt::Debug for VariantMatchTree<'db> {
@@ -708,7 +708,8 @@ fn lower_tuple_match_arm<'db>(
                 match_type,
                 variants_string,
             )
-        })?;
+        })
+        .map_err(LoweringFlowError::Failed)?;
     let pattern = pattern_path.pattern_index.map(|i| {
         arms[pattern_path.arm_index]
             .pattern(ctx, i)
@@ -1449,7 +1450,8 @@ trait EnumVariantScopeBuilder<'db> {
             .collect::<LoweringResult<'db, Vec<_>>>()?;
 
         // Create the match info and return the result
-        let match_info = create_match_info(ctx, variant_contexts?);
+        let match_info =
+            create_match_info(ctx, variant_contexts.map_err(LoweringFlowError::Failed)?);
         builder_context.builder.merge_and_end_with_match(ctx, match_info, sealed, location)
     }
 
@@ -1473,8 +1475,7 @@ trait EnumVariantScopeBuilder<'db> {
         builder_context: &mut MatchArmsLoweringContext<'db, '_>,
         concrete_variants: Vec<ConcreteVariant<'db>>,
         variant_match_tree: &VariantMatchTree<'db>,
-    ) -> (LoweringResult<'db, Vec<MatchArm<'db>>>, OrderedHashMap<usize, Vec<MatchLeafBuilder<'db>>>)
-    {
+    ) -> (Maybe<Vec<MatchArm<'db>>>, OrderedHashMap<usize, Vec<MatchLeafBuilder<'db>>>) {
         let mut variant_contexts = Vec::new();
         let mut arm_blocks: OrderedHashMap<usize, Vec<_>> = OrderedHashMap::default();
         let mut pattern_lowering_err = None;
@@ -1547,11 +1548,9 @@ trait EnumVariantScopeBuilder<'db> {
                         Err(err) => (block_id, vec![], Err((err, variant_scope))),
                     }
                 }
-                VariantMatchTree::Missing(lowering_flow_error) => (
-                    variant_scope.block_id,
-                    vec![],
-                    Err((lowering_flow_error.clone(), variant_scope)),
-                ),
+                VariantMatchTree::Missing(diag_added) => {
+                    (variant_scope.block_id, vec![], Err((*diag_added, variant_scope)))
+                }
             };
 
             variant_contexts.push(MatchArm {
@@ -1569,9 +1568,7 @@ trait EnumVariantScopeBuilder<'db> {
                     });
                 }
                 Ok(None) => (),
-                Err((e, variant_scope)) => {
-                    // If we have an error, we need to report it and finalize the block.
-                    let _ = lowering_flow_error_to_sealed_block(ctx, variant_scope, e.clone());
+                Err((e, _variant_scope)) => {
                     pattern_lowering_err.get_or_insert(e);
                 }
             }
@@ -2248,14 +2245,14 @@ fn report_missing_arm_error<'db>(
     location: LocationId<'db>,
     match_type: MatchKind<'db>,
     variants_string: String,
-) -> LoweringFlowError<'db> {
-    LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
+) -> DiagnosticAdded {
+    ctx.diagnostics.report_by_location(
         location.long(ctx.db).clone(),
         MatchError(MatchError {
             kind: match_type,
             error: MatchDiagnostic::MissingMatchArm(variants_string),
         }),
-    ))
+    )
 }
 
 /// Reports a missing arm error and returns a [LoweringFlowError].
@@ -2264,7 +2261,7 @@ fn report_missing_variant_error<'db>(
     location: LocationId<'db>,
     match_type: MatchKind<'db>,
     variants_used: &[ConcreteVariant<'db>],
-) -> LoweringFlowError<'db> {
+) -> DiagnosticAdded {
     let variants_string = format!(
         "{}{}",
         variants_used.iter().map(|v| v.id.name(ctx.db)).join("("),
