@@ -3,9 +3,58 @@
 use std::path::PathBuf;
 
 use cairo_lang_compiler::project::check_compiler_path;
+<<<<<<< HEAD
 use cairo_lang_runner::clap::RunProfilerConfigArg;
 use cairo_lang_test_runner::{TestRunConfig, TestRunner};
 use clap::Parser;
+||||||| b34dbfaa1
+use cairo_lang_test_runner::{RunProfilerConfig, TestRunConfig, TestRunner};
+use clap::{Parser, ValueEnum};
+use serde::Serialize;
+
+/// The clap-arg equivalent of [RunProfilerConfig].
+#[derive(ValueEnum, Clone, Default, Debug, Serialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "kebab-case")]
+enum RunProfilerConfigArg {
+    #[default]
+    None,
+    Cairo,
+    Sierra,
+}
+impl From<RunProfilerConfigArg> for RunProfilerConfig {
+    fn from(val: RunProfilerConfigArg) -> Self {
+        match val {
+            RunProfilerConfigArg::None => RunProfilerConfig::None,
+            RunProfilerConfigArg::Cairo => RunProfilerConfig::Cairo,
+            RunProfilerConfigArg::Sierra => RunProfilerConfig::Sierra,
+        }
+    }
+}
+=======
+use cairo_lang_runner::profiling::ProfilerConfig;
+use cairo_lang_test_runner::{TestRunConfig, TestRunner};
+use clap::{Parser, ValueEnum};
+use serde::Serialize;
+
+/// A clap-arg wrapper for Option<[ProfilerConfig]>.
+#[derive(ValueEnum, Clone, Default, Debug, Serialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "kebab-case")]
+enum RunProfilerConfigArg {
+    #[default]
+    None,
+    Cairo,
+    Sierra,
+}
+impl From<RunProfilerConfigArg> for Option<ProfilerConfig> {
+    fn from(val: RunProfilerConfigArg) -> Self {
+        match val {
+            RunProfilerConfigArg::None => None,
+            RunProfilerConfigArg::Cairo => Some(ProfilerConfig::Cairo),
+            RunProfilerConfigArg::Sierra => Some(ProfilerConfig::Sierra),
+        }
+    }
+}
+>>>>>>> origin/dev-v2.12.0
 
 /// Compiles a Cairo project and runs all the functions marked as `#[test]`.
 /// Exits with 1 if the compilation or run fails, otherwise 0.
@@ -54,7 +103,13 @@ fn main() -> anyhow::Result<()> {
         filter: args.filter,
         ignored: args.ignored,
         include_ignored: args.include_ignored,
+<<<<<<< HEAD
         profiler_config: args.run_profiler.try_into().ok(),
+||||||| b34dbfaa1
+        run_profiler: args.run_profiler.into(),
+=======
+        profiler_config: args.run_profiler.into(),
+>>>>>>> origin/dev-v2.12.0
         gas_enabled: !args.gas_disabled,
         print_resource_usage: args.print_resource_usage,
     };

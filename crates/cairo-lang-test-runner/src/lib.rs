@@ -63,10 +63,16 @@ impl<'db> TestRunner<'db> {
             config.gas_enabled,
             TestsCompilationConfig {
                 starknet,
+<<<<<<< HEAD
                 add_statements_functions: config
                     .profiler_config
                     .as_ref()
                     .is_some_and(|c| c.requires_cairo_debug_info()),
+||||||| b34dbfaa1
+                add_statements_functions: config.run_profiler == RunProfilerConfig::Cairo,
+=======
+                add_statements_functions: config.profiler_config == Some(ProfilerConfig::Cairo),
+>>>>>>> origin/dev-v2.12.0
                 add_statements_code_locations: false,
                 contract_declarations: None,
                 contract_crate_ids: None,
@@ -108,8 +114,54 @@ impl<'db> CompiledTestRunner<'db> {
             &self.config.filter,
         );
 
+<<<<<<< HEAD
         let TestsSummary { passed, failed, ignored, failed_run_results } =
             run_tests(opt_db.map(|db| db as &dyn SierraGenGroup), compiled, &self.config)?;
+||||||| b34dbfaa1
+        let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
+            if self.config.run_profiler == RunProfilerConfig::Cairo {
+                let db = db.expect("db must be passed when profiling.");
+                let statements_locations = compiled
+                    .metadata
+                    .statements_locations
+                    .expect("statements locations must be present when profiling.");
+                Some(PorfilingAuxData {
+                    db,
+                    statements_functions: statements_locations
+                        .get_statements_functions_map_for_tests(db),
+                })
+            } else {
+                None
+            },
+            compiled.metadata.named_tests,
+            compiled.sierra_program.program,
+            compiled.metadata.function_set_costs,
+            compiled.metadata.contracts_info,
+            &self.config,
+        )?;
+=======
+        let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
+            if self.config.profiler_config == Some(ProfilerConfig::Cairo) {
+                let db = db.expect("db must be passed when profiling.");
+                let statements_locations = compiled
+                    .metadata
+                    .statements_locations
+                    .expect("statements locations must be present when profiling.");
+                Some(PorfilingAuxData {
+                    db,
+                    statements_functions: statements_locations
+                        .get_statements_functions_map_for_tests(db),
+                })
+            } else {
+                None
+            },
+            compiled.metadata.named_tests,
+            compiled.sierra_program.program,
+            compiled.metadata.function_set_costs,
+            compiled.metadata.contracts_info,
+            &self.config,
+        )?;
+>>>>>>> origin/dev-v2.12.0
 
         if failed.is_empty() {
             println!(
@@ -329,7 +381,23 @@ pub fn run_tests(
             None
         },
         contracts_info,
+<<<<<<< HEAD
         config.profiler_config.as_ref().map(ProfilingInfoCollectionConfig::from_profiler_config),
+||||||| b34dbfaa1
+        match config.run_profiler {
+            RunProfilerConfig::None => None,
+            RunProfilerConfig::Cairo | RunProfilerConfig::Sierra => {
+                Some(ProfilingInfoCollectionConfig::default())
+            }
+        },
+=======
+        match config.profiler_config {
+            None => None,
+            Some(ProfilerConfig::Cairo | ProfilerConfig::Sierra) => {
+                Some(ProfilingInfoCollectionConfig::default())
+            }
+        },
+>>>>>>> origin/dev-v2.12.0
     )
     .map_err(|err| {
         let (RunnerError::BuildError(err), Some(db), Some(statements_locations)) =
@@ -382,9 +450,84 @@ pub fn run_tests(
         failed: vec![],
         ignored: vec![],
         failed_run_results: vec![],
+<<<<<<< HEAD
     };
     while let Ok((name, result)) = rx.recv() {
         update_summary(&mut summary, name, result, &profiler_data, config.print_resource_usage);
+||||||| b34dbfaa1
+    }));
+
+    // Run in parallel if possible. If running with db, parallelism is impossible.
+    if profiler_data.is_none() {
+        named_tests
+            .into_par_iter()
+            .map(|(name, test)| run_single_test(test, name, &runner))
+            .for_each(|res| {
+                update_summary(
+                    &wrapped_summary,
+                    res,
+                    &None,
+                    &sierra_program,
+                    &ProfilingInfoProcessorParams {
+                        process_by_original_user_function: false,
+                        process_by_cairo_function: false,
+                        ..ProfilingInfoProcessorParams::default()
+                    },
+                    config.print_resource_usage,
+                );
+            });
+    } else {
+        eprintln!("Note: Tests don't run in parallel when running with profiling.");
+        named_tests
+            .into_iter()
+            .map(move |(name, test)| run_single_test(test, name, &runner))
+            .for_each(|test_result| {
+                update_summary(
+                    &wrapped_summary,
+                    test_result,
+                    &profiler_data,
+                    &sierra_program,
+                    &ProfilingInfoProcessorParams::default(),
+                    config.print_resource_usage,
+                );
+            });
+=======
+    }));
+
+    let profiling_params =
+        config.profiler_config.as_ref().map(ProfilingInfoProcessorParams::from_profiler_config);
+
+    // Run in parallel if possible. If running with db, parallelism is impossible.
+    if config.profiler_config != Some(ProfilerConfig::Cairo) {
+        named_tests
+            .into_par_iter()
+            .map(|(name, test)| run_single_test(test, name, &runner))
+            .for_each(|res| {
+                update_summary(
+                    &wrapped_summary,
+                    res,
+                    &None,
+                    &sierra_program,
+                    &profiling_params,
+                    config.print_resource_usage,
+                );
+            });
+    } else {
+        eprintln!("Note: Tests don't run in parallel when running with profiling.");
+        named_tests
+            .into_iter()
+            .map(move |(name, test)| run_single_test(test, name, &runner))
+            .for_each(|test_result| {
+                update_summary(
+                    &wrapped_summary,
+                    test_result,
+                    &profiler_data,
+                    &sierra_program,
+                    &profiling_params,
+                    config.print_resource_usage,
+                );
+            });
+>>>>>>> origin/dev-v2.12.0
     }
 
     Ok(summary)
@@ -436,10 +579,24 @@ fn run_single_test(
 
 /// Updates the test summary with the given test result.
 fn update_summary(
+<<<<<<< HEAD
     summary: &mut TestsSummary,
     name: String,
     test_result: anyhow::Result<Option<TestResult>>,
     profiler_data: &Option<(ProfilingInfoProcessor<'_>, ProfilingInfoProcessorParams)>,
+||||||| b34dbfaa1
+    wrapped_summary: &Mutex<std::prelude::v1::Result<TestsSummary, anyhow::Error>>,
+    test_result: std::prelude::v1::Result<(String, Option<TestResult>), anyhow::Error>,
+    profiler_data: &Option<PorfilingAuxData<'_>>,
+    sierra_program: &Program,
+    profiling_params: &ProfilingInfoProcessorParams,
+=======
+    wrapped_summary: &Mutex<std::prelude::v1::Result<TestsSummary, anyhow::Error>>,
+    test_result: std::prelude::v1::Result<(String, Option<TestResult>), anyhow::Error>,
+    profiler_data: &Option<PorfilingAuxData<'_>>,
+    sierra_program: &Program,
+    profiling_params: &Option<ProfilingInfoProcessorParams>,
+>>>>>>> origin/dev-v2.12.0
     print_resource_usage: bool,
 ) {
     let (res_type, status_str, gas_usage, used_resources, profiling_info) = match test_result {
@@ -494,10 +651,36 @@ fn update_summary(
         );
         print_resource_map(used_resources.syscalls.into_iter(), "syscalls");
     }
+<<<<<<< HEAD
     if let Some((profiling_processor, profiling_params)) = profiler_data {
         let processed_profiling_info = profiling_processor.process(
             &profiling_info.expect("profiling_info must be Some when profiler_config is Some"),
             profiling_params,
+||||||| b34dbfaa1
+    if let Some(profiling_info) = profiling_info {
+        let Some(PorfilingAuxData { db, statements_functions }) = profiler_data else {
+            panic!("profiler_data is None");
+        };
+        let profiling_processor = ProfilingInfoProcessor::new(
+            Some(*db),
+            sierra_program.clone(),
+            statements_functions.clone(),
+            Default::default(),
+=======
+    if let Some(profiling_params) = profiling_params {
+        let (opt_db, statements_functions) =
+            if let Some(PorfilingAuxData { db, statements_functions }) = profiler_data {
+                (Some(*db), statements_functions)
+            } else {
+                (None, &UnorderedHashMap::default())
+            };
+
+        let profiling_processor =
+            ProfilingInfoProcessor::new(opt_db, sierra_program, statements_functions);
+        let processed_profiling_info = profiling_processor.process(
+            &profiling_info.expect("profiling_info must be Some when profiler_config is Some"),
+            profiling_params,
+>>>>>>> origin/dev-v2.12.0
         );
         println!("Profiling info:\n{processed_profiling_info}");
     }

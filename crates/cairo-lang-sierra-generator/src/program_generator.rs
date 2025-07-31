@@ -140,6 +140,7 @@ fn collect_used_types(
         all_types.extend(types.iter().cloned());
     }
 
+<<<<<<< HEAD
     // Gather types used in user-defined functions.
     // This is necessary for types that are used as entry point arguments but do not appear in any
     // libfunc. For instance, if an entry point takes and returns an empty struct and no
@@ -154,6 +155,25 @@ fn collect_used_types(
     );
     all_types
 }
+||||||| b34dbfaa1
+    // Collect types that appear in user functions.
+    // This is only relevant for types that are arguments to entry points and are not used in
+    // any libfunc. For example, an empty entry point that gets and returns an empty struct, will
+    // have no libfuncs, but we still need to declare the struct.
+    let types_in_user_functions =
+        functions.iter().flat_map(|func| func.parameters.iter().map(|param| param.ty.clone()));
+=======
+    // Gather types used in user-defined functions.
+    // This is necessary for types that are used as entry point arguments but do not appear in any
+    // libfunc. For instance, if an entry point takes and returns an empty struct and no
+    // libfuncs are involved, we still need to declare that struct.
+    // Additionally, we include the return types of functions, since with unsafe panic enabled,
+    // a function that always panics might declare a return type that does not appear in anywhere
+    // else in the program.
+    let types_in_user_functions = functions
+        .iter()
+        .flat_map(|func| chain!(&func.signature.param_types, &func.signature.ret_types).cloned());
+>>>>>>> origin/dev-v2.12.0
 
 /// Query implementation of [SierraGenGroup::priv_libfunc_dependencies].
 pub fn priv_libfunc_dependencies(
@@ -294,6 +314,7 @@ pub fn get_sierra_program_for_functions<'db>(
 
 /// Given a list of functions and statements, generates a Sierra program.
 /// Returns the program and the locations of the statements in the program.
+<<<<<<< HEAD
 pub fn assemble_program<'db>(
     db: &'db dyn SierraGenGroup,
     functions: Vec<Arc<pre_sierra::Function<'db>>>,
@@ -316,6 +337,44 @@ pub fn assemble_program<'db>(
     let libfunc_declarations = collect_and_generate_libfunc_declarations(db, &statements);
     let type_declarations = generate_type_declarations(db, &libfunc_declarations, &funcs);
     // Resolve labels.
+||||||| b34dbfaa1
+pub fn assemble_program(
+    db: &dyn SierraGenGroup,
+    functions: Vec<Arc<pre_sierra::Function>>,
+    statements: Vec<pre_sierra::StatementWithLocation>,
+) -> (program::Program, Vec<Vec<StableLocation>>) {
+    let libfunc_declarations =
+        generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
+    let type_declarations =
+        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations, &functions));
+    // Resolve labels.
+    let label_replacer = LabelReplacer::from_statements(&statements);
+=======
+pub fn assemble_program(
+    db: &dyn SierraGenGroup,
+    functions: Vec<Arc<pre_sierra::Function>>,
+    statements: Vec<pre_sierra::StatementWithLocation>,
+) -> (program::Program, Vec<Vec<StableLocation>>) {
+    let label_replacer = LabelReplacer::from_statements(&statements);
+    let funcs = functions
+        .into_iter()
+        .map(|function| {
+            let sierra_signature = db.get_function_signature(function.id.clone()).unwrap();
+            program::Function::new(
+                function.id.clone(),
+                function.parameters.clone(),
+                sierra_signature.ret_types.clone(),
+                label_replacer.handle_label_id(function.entry_point),
+            )
+        })
+        .collect_vec();
+
+    let libfunc_declarations =
+        generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
+    let type_declarations =
+        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations, &funcs));
+    // Resolve labels.
+>>>>>>> origin/dev-v2.12.0
     let (resolved_statements, statements_locations) =
         resolve_labels_and_extract_locations(statements, &label_replacer);
     let program = program::Program {

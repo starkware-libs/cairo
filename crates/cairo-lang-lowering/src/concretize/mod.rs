@@ -1,7 +1,14 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::substitution::GenericSubstitution;
+<<<<<<< HEAD
 use cairo_lang_semantic::types::TypeInfo;
 use cairo_lang_utils::Intern;
+||||||| b34dbfaa1
+use cairo_lang_utils::{Intern, LookupIntern};
+=======
+use cairo_lang_semantic::types::TypeInfo;
+use cairo_lang_utils::{Intern, LookupIntern};
+>>>>>>> origin/dev-v2.12.0
 
 use crate::db::LoweringGroup;
 use crate::ids::{FunctionId, FunctionLongId, GeneratedFunction, SemanticFunctionIdEx};

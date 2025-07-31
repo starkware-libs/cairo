@@ -638,9 +638,19 @@ fn impl_generic_param_semantic<'db>(
 
 /// Formats a list of generic arguments.
 pub fn fmt_generic_args(
+<<<<<<< HEAD
     generic_args: &[GenericArgumentId<'_>],
     f: &mut CountingWriter<'_, '_>,
     db: &dyn SemanticGroup,
+||||||| b34dbfaa1
+    generic_args: &[GenericArgumentId],
+    f: &mut std::fmt::Formatter<'_>,
+    db: &(dyn SemanticGroup + 'static),
+=======
+    generic_args: &[GenericArgumentId],
+    f: &mut CountingWriter<'_, '_>,
+    db: &(dyn SemanticGroup + 'static),
+>>>>>>> origin/dev-v2.12.0
 ) -> std::fmt::Result {
     let mut generic_args = generic_args.iter();
     if let Some(first) = generic_args.next() {

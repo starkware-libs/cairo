@@ -108,9 +108,18 @@ impl SimpleParserDatabase {
     pub fn parse_token_stream_expr(
         &self,
         token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
+<<<<<<< HEAD
     ) -> (SyntaxNode<'_>, Diagnostics<'_, ParserDiagnostic<'_>>) {
         let (content, offset) = primitive_token_stream_content_and_offset(token_stream);
         let vfs = VirtualFile {
+||||||| b34dbfaa1
+    ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
+        let file_id = FileLongId::Virtual(VirtualFile {
+=======
+    ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
+        let (content, offset) = primitive_token_stream_content_and_offset(token_stream);
+        let vfs = VirtualFile {
+>>>>>>> origin/dev-v2.12.0
             parent: Default::default(),
             name: "token_stream_expr_parser_input".into(),
             content: content.into(),

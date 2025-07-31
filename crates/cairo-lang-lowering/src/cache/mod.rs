@@ -819,8 +819,15 @@ struct VariableCached {
     location: LocationIdCached,
 }
 impl VariableCached {
+<<<<<<< HEAD
     fn new<'db>(variable: Variable<'db>, ctx: &mut CacheSavingContext<'db>) -> Self {
         let TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl } = variable.info;
+||||||| b34dbfaa1
+    fn new(variable: Variable, ctx: &mut CacheSavingContext<'_>) -> Self {
+=======
+    fn new(variable: Variable, ctx: &mut CacheSavingContext<'_>) -> Self {
+        let TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl } = variable.info;
+>>>>>>> origin/dev-v2.12.0
         Self {
             droppable: droppable
                 .map(|impl_id| ImplIdCached::new(impl_id, &mut ctx.semantic_ctx))

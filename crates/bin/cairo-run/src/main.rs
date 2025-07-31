@@ -103,6 +103,7 @@ fn main() -> anyhow::Result<()> {
     if args.run_profiler {
         match result.profiling_info {
             Some(raw_profiling_info) => {
+<<<<<<< HEAD
                 let statements_functions =
                     debug_info.statements_locations.get_statements_functions_map_for_tests(db);
                 let profiling_info_processor =
@@ -110,6 +111,17 @@ fn main() -> anyhow::Result<()> {
 
                 let profiling_info =
                     profiling_info_processor.process(&raw_profiling_info, &Default::default());
+||||||| b34dbfaa1
+                let profiling_info = profiling_info_processor.process(&raw_profiling_info);
+=======
+                let statements_functions =
+                    debug_info.statements_locations.get_statements_functions_map_for_tests(db);
+                let profiling_info_processor =
+                    ProfilingInfoProcessor::new(Some(db), &sierra_program, &statements_functions);
+
+                let profiling_info =
+                    profiling_info_processor.process(&raw_profiling_info, &Default::default());
+>>>>>>> origin/dev-v2.12.0
                 println!("Profiling info:\n{profiling_info}");
             }
             None => println!("Warning: Profiling info not found."),

@@ -6,7 +6,14 @@ use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+<<<<<<< HEAD
 use id_arena::Arena;
+||||||| b34dbfaa1
+use cairo_lang_utils::{LookupIntern, Upcast};
+=======
+use cairo_lang_utils::{LookupIntern, Upcast};
+use id_arena::Arena;
+>>>>>>> origin/dev-v2.12.0
 use itertools::{Itertools, chain, zip_eq};
 use semantic::TypeId;
 
@@ -18,12 +25,29 @@ use crate::{
     VarUsage, Variable,
 };
 
+<<<<<<< HEAD
 struct Context<'db, 'a> {
     db: &'db dyn LoweringGroup,
     lowered: &'a mut Lowered<'db>,
     implicit_index: UnorderedHashMap<TypeId<'db>, usize>,
     implicits_tys: Vec<TypeId<'db>>,
     implicit_vars_for_block: UnorderedHashMap<BlockId, Vec<VarUsage<'db>>>,
+||||||| b34dbfaa1
+struct Context<'a> {
+    db: &'a dyn LoweringGroup,
+    variables: &'a mut VariableAllocator<'a>,
+    lowered: &'a mut Lowered,
+    implicit_index: UnorderedHashMap<TypeId, usize>,
+    implicits_tys: Vec<TypeId>,
+    implicit_vars_for_block: UnorderedHashMap<BlockId, Vec<VarUsage>>,
+=======
+struct Context<'a> {
+    db: &'a dyn LoweringGroup,
+    lowered: &'a mut Lowered,
+    implicit_index: UnorderedHashMap<TypeId, usize>,
+    implicits_tys: Vec<TypeId>,
+    implicit_vars_for_block: UnorderedHashMap<BlockId, Vec<VarUsage>>,
+>>>>>>> origin/dev-v2.12.0
     visited: UnorderedHashSet<BlockId>,
     location: LocationId<'db>,
 }
@@ -78,12 +102,27 @@ pub fn inner_lower_implicits<'db>(
 
 /// Allocates and returns new variables with usage location for each of the current function's
 /// implicits.
+<<<<<<< HEAD
 fn alloc_implicits<'db>(
     db: &'db dyn LoweringGroup,
     variables: &mut Arena<Variable<'db>>,
     implicits_tys: &[TypeId<'db>],
     location: LocationId<'db>,
 ) -> Vec<VarUsage<'db>> {
+||||||| b34dbfaa1
+fn alloc_implicits(
+    ctx: &mut VariableAllocator<'_>,
+    implicits_tys: &[TypeId],
+    location: LocationId,
+) -> Vec<VarUsage> {
+=======
+fn alloc_implicits(
+    db: &dyn LoweringGroup,
+    variables: &mut Arena<Variable>,
+    implicits_tys: &[TypeId],
+    location: LocationId,
+) -> Vec<VarUsage> {
+>>>>>>> origin/dev-v2.12.0
     implicits_tys
         .iter()
         .copied()

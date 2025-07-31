@@ -1810,6 +1810,7 @@ pub trait SemanticGroup:
 
     /// Returns the type info for a type in a context.
     #[salsa::invoke(types::type_info)]
+<<<<<<< HEAD
     fn type_info<'db>(
         &'db self,
         lookup_context: ImplLookupContext<'db>,
@@ -1827,6 +1828,23 @@ pub trait SemanticGroup:
         &'db self,
         ty: types::TypeId<'db>,
     ) -> Result<ImplId<'db>, InferenceError<'db>>;
+||||||| b34dbfaa1
+    fn type_info(
+        &self,
+        lookup_context: ImplLookupContext,
+        ty: types::TypeId,
+    ) -> Maybe<types::TypeInfo>;
+=======
+    fn type_info(&self, lookup_context: ImplLookupContext, ty: types::TypeId) -> types::TypeInfo;
+
+    /// Returns the `Copy` impl for a type in general context.
+    #[salsa::invoke(types::copyable)]
+    fn copyable(&self, ty: types::TypeId) -> Result<ImplId, InferenceError>;
+
+    /// Returns the `Drop` impl for a type in general context.
+    #[salsa::invoke(types::droppable)]
+    fn droppable(&self, ty: types::TypeId) -> Result<ImplId, InferenceError>;
+>>>>>>> origin/dev-v2.12.0
 
     /// Private query to check if a type is fully concrete.
     #[salsa::invoke(types::priv_type_is_fully_concrete)]

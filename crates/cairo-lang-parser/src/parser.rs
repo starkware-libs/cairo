@@ -223,12 +223,28 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
     /// Parses a token stream expression.
     pub fn parse_token_stream_expr(
         db: &'a dyn SyntaxGroup,
+<<<<<<< HEAD
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         content: &str,
         offset: Option<TextOffset>,
     ) -> Expr<'a> {
         let mut parser = Parser::new(db, file_id, content, diagnostics);
+||||||| b34dbfaa1
+        diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+        file_id: FileId,
+        token_stream: &'a dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
+    ) -> Expr {
+        let (content, offset) = primitive_token_stream_content_and_offset(token_stream);
+        let mut parser = Parser::new(db, file_id, &content, diagnostics);
+=======
+        diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+        file_id: FileId,
+        content: &str,
+        offset: Option<TextOffset>,
+    ) -> Expr {
+        let mut parser = Parser::new(db, file_id, content, diagnostics);
+>>>>>>> origin/dev-v2.12.0
         let green = parser.parse_expr();
         if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
             parser.diagnostics.add(ParserDiagnostic {

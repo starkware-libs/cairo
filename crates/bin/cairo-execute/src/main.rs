@@ -342,6 +342,7 @@ fn main() -> anyhow::Result<()> {
             opt_debug_data.expect("debug data should be available when profiling");
 
         let trace = runner.relocated_trace.as_ref().with_context(|| "Trace not relocated.")?;
+<<<<<<< HEAD
         let first_pc = trace.first().unwrap().pc;
         assert_eq!(first_pc, entrypoint.offset + 1);
         let load_offset = first_pc - entrypoint.offset + header_len;
@@ -359,6 +360,34 @@ fn main() -> anyhow::Result<()> {
         )
         .process(&info, &ProfilingInfoProcessorParams::from_profiler_config(profiler_config));
         print!("{processed_profiling_info}");
+||||||| b34dbfaa1
+        let entry_point_offset = trace.first().unwrap().pc;
+        // TODO(ilya): Compute the correct load offset for standalone mode.
+        let load_offset = entry_point_offset + header_len;
+        let info = ProfilingInfo::from_trace(&builder, load_offset, &Default::default(), trace);
+
+        let profiling_processor = ProfilingInfoProcessor::new(
+            Some(&db),
+            replace_sierra_ids_in_program(&db, builder.sierra_program()),
+            debug_info.statements_locations.get_statements_functions_map_for_tests(&db),
+            Default::default(),
+        );
+        let processed_profiling_info = profiling_processor.process_ex(&info, &Default::default());
+        println!("{processed_profiling_info}");
+=======
+        let entry_point_offset = trace.first().unwrap().pc;
+        // TODO(ilya): Compute the correct load offset for standalone mode.
+        let load_offset = entry_point_offset + header_len;
+        let info = ProfilingInfo::from_trace(&builder, load_offset, &Default::default(), trace);
+
+        let processed_profiling_info = ProfilingInfoProcessor::new(
+            Some(&db),
+            &replace_sierra_ids_in_program(&db, builder.sierra_program()),
+            &debug_info.statements_locations.get_statements_functions_map_for_tests(&db),
+        )
+        .process(&info, &Default::default());
+        println!("{processed_profiling_info}");
+>>>>>>> origin/dev-v2.12.0
     }
 
     Ok(())

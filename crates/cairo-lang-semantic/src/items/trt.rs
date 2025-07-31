@@ -53,6 +53,7 @@ use crate::{
 mod test;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+<<<<<<< HEAD
 pub struct ConcreteTraitLongId<'db> {
     pub trait_id: TraitId<'db>,
     pub generic_args: Vec<GenericArgumentId<'db>>,
@@ -62,6 +63,30 @@ impl<'db> DebugWithDb<'db> for ConcreteTraitLongId<'db> {
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
         let mut f = CountingWriter::new(f);
+||||||| b34dbfaa1
+pub struct ConcreteTraitLongId {
+    pub trait_id: TraitId,
+    pub generic_args: Vec<GenericArgumentId>,
+}
+impl DebugWithDb<dyn SemanticGroup> for ConcreteTraitLongId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+=======
+pub struct ConcreteTraitLongId {
+    pub trait_id: TraitId,
+    pub generic_args: Vec<GenericArgumentId>,
+}
+impl DebugWithDb<dyn SemanticGroup> for ConcreteTraitLongId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        let mut f = CountingWriter::new(f);
+>>>>>>> origin/dev-v2.12.0
         write!(f, "{}", self.trait_id.full_path(db))?;
         fmt_generic_args(&self.generic_args, &mut f, db)
     }
