@@ -94,7 +94,7 @@ pub struct GasRedepositContext<'db> {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub enum RedepositState<'db> {
+pub enum RedepositState {
     /// Gas might be burned if we don't redeposit.
     Required,
     /// Redeposit is not necessary. This may occur if it has already been handled
@@ -102,11 +102,11 @@ pub enum RedepositState<'db> {
     Unnecessary,
     /// The flow returns the given variable, redeposit is required unless the return var is of the
     /// error variant.
-    Return(VariableId<'db>),
+    Return(VariableId),
 }
 
 impl<'db> Analyzer<'db, '_> for GasRedepositContext<'db> {
-    type Info = RedepositState<'db>;
+    type Info = RedepositState;
 
     fn visit_stmt(
         &mut self,

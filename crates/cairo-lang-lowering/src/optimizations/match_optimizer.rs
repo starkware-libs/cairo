@@ -6,7 +6,6 @@ use cairo_lang_semantic::MatchArmSelector;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use id_arena::Arena;
 use itertools::{Itertools, zip_eq};
 
 use super::var_renamer::VarRenamer;
@@ -16,10 +15,10 @@ use crate::borrow_check::demand::EmptyDemandReporter;
 use crate::utils::RebuilderEx;
 use crate::{
     Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
-    StatementEnumConstruct, VarRemapping, VarUsage, Variable, VariableId,
+    StatementEnumConstruct, VarRemapping, VarUsage, VariableArena, VariableId,
 };
 
-pub type MatchOptimizerDemand<'db> = Demand<VariableId<'db>, (), ()>;
+pub type MatchOptimizerDemand<'db> = Demand<VariableId, (), ()>;
 
 impl<'db> MatchOptimizerDemand<'db> {
     fn update(&mut self, statement: &Statement<'db>) {
@@ -87,7 +86,7 @@ pub fn optimize_matches<'db>(lowered: &mut Lowered<'db>) {
     // v2 is at blk1, we must map v1 to a new variable.
     //
     // If there is another fix for the same match arm, the same variable will be used.
-    let mut var_renaming = UnorderedHashMap::<(VariableId<'_>, usize), VariableId<'_>>::default();
+    let mut var_renaming = UnorderedHashMap::<(VariableId, usize), VariableId>::default();
 
     // Fixes were added in reverse order and need to be applied in that order.
     // This is because `additional_remappings` in later blocks may need to be renamed by fixes from
@@ -96,7 +95,7 @@ pub fn optimize_matches<'db>(lowered: &mut Lowered<'db>) {
         // Choose new variables for each destination of the additional remappings (see comment
         // above).
         let mut new_remapping = fix.remapping.clone();
-        let mut renamed_vars = OrderedHashMap::<VariableId<'_>, VariableId<'_>>::default();
+        let mut renamed_vars = OrderedHashMap::<VariableId, VariableId>::default();
         for (var, dst) in fix.additional_remappings.iter() {
             // Allocate a new variable, if it was not allocated before.
             let new_var = *var_renaming
@@ -187,10 +186,10 @@ pub fn optimize_matches<'db>(lowered: &mut Lowered<'db>) {
 ///
 /// Note that since the statements are copied this might increase the code size.
 fn handle_additional_statements<'db>(
-    variables: &mut Arena<Variable<'db>>,
-    var_renaming: &mut UnorderedHashMap<(VariableId<'db>, usize), VariableId<'db>>,
+    variables: &mut VariableArena<'db>,
+    var_renaming: &mut UnorderedHashMap<(VariableId, usize), VariableId>,
     new_remapping: &mut VarRemapping<'db>,
-    renamed_vars: &mut OrderedHashMap<VariableId<'db>, VariableId<'db>>,
+    renamed_vars: &mut OrderedHashMap<VariableId, VariableId>,
     block: &mut Block<'db>,
     fix: &FixInfo<'db>,
 ) {
@@ -201,7 +200,7 @@ fn handle_additional_statements<'db>(
     // Maps input in the original lowering to the inputs after the optimization.
     // Since the statement are copied from after `additional_remappings` to before it,
     // `inputs_remapping` is initialized with `additional_remapping`.
-    let mut inputs_remapping = UnorderedHashMap::<VariableId<'_>, VariableId<'_>>::from_iter(
+    let mut inputs_remapping = UnorderedHashMap::<VariableId, VariableId>::from_iter(
         fix.additional_remappings.iter().map(|(k, v)| (*k, v.var_id)),
     );
     for mut stmt in fix.additional_stmts.iter().cloned() {
@@ -345,7 +344,7 @@ pub struct FixInfo<'db> {
 #[derive(Clone)]
 struct OptimizationCandidate<'db, 'a> {
     /// The variable that is matched.
-    match_variable: VariableId<'db>,
+    match_variable: VariableId,
 
     /// The match arms of the extern match that we are optimizing.
     match_arms: &'a [MatchArm<'db>],

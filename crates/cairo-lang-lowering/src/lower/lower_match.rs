@@ -676,7 +676,7 @@ struct LoweringMatchTupleContext<'db> {
     /// The current variants path.
     current_path: MatchingPath<'db>,
     /// The current variants' variable ids.
-    current_var_ids: Vec<VariableId<'db>>,
+    current_var_ids: Vec<VariableId>,
 }
 
 /// Lowers the arm of a match on a tuple expression.
@@ -1126,7 +1126,7 @@ trait EnumVariantScopeBuilder<'db> {
         subscope: &mut BlockBuilder<'db>,
         ty: semantic::TypeId<'db>,
         inner_pattern: Option<PatternId>,
-    ) -> LoweringResult<'db, Vec<VariableId<'db>>>;
+    ) -> LoweringResult<'db, Vec<VariableId>>;
 
     /// Returns number of snapshots on the matched type.
     fn n_snapshots(&self) -> usize;
@@ -1592,7 +1592,7 @@ impl<'db> EnumVariantScopeBuilder<'db> for ExternEnumVariantPatternBuilder<'db> 
         subscope: &mut BlockBuilder<'db>,
         ty: semantic::TypeId<'db>,
         inner_pattern: Option<PatternId>,
-    ) -> LoweringResult<'db, Vec<VariableId<'db>>> {
+    ) -> LoweringResult<'db, Vec<VariableId>> {
         let location = self.extern_enum.location;
         let input_tys = match_extern_variant_arm_input_types(ctx, ty, &self.extern_enum);
         let mut input_vars =
@@ -1628,7 +1628,7 @@ impl<'db> EnumVariantScopeBuilder<'db> for ConcreteEnumVariantPatternBuilder {
         subscope: &mut BlockBuilder<'db>,
         ty: semantic::TypeId<'db>,
         inner_pattern: Option<PatternId>,
-    ) -> LoweringResult<'db, Vec<VariableId<'db>>> {
+    ) -> LoweringResult<'db, Vec<VariableId>> {
         if let Some(inner_pattern) = inner_pattern {
             let pattern_location = ctx.get_location(
                 ctx.function_body.arenas.patterns[inner_pattern].stable_ptr().untyped(),

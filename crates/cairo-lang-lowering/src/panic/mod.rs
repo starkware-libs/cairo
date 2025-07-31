@@ -263,7 +263,7 @@ impl<'db> PanicBlockLoweringContext<'db> {
         self.ctx.db()
     }
 
-    fn new_var(&mut self, ty: TypeId<'db>, location: LocationId<'db>) -> VariableId<'db> {
+    fn new_var(&mut self, ty: TypeId<'db>, location: LocationId<'db>) -> VariableId {
         self.ctx.variables.new_var(VarRequest { ty, location })
     }
 

@@ -26,7 +26,7 @@ pub enum InliningStrategy {
 
 /// A rebuilder trait for rebuilding lowered representation.
 pub trait Rebuilder<'db> {
-    fn map_var_id(&mut self, var: VariableId<'db>) -> VariableId<'db>;
+    fn map_var_id(&mut self, var: VariableId) -> VariableId;
     fn map_var_usage(&mut self, var_usage: VarUsage<'db>) -> VarUsage<'db> {
         VarUsage {
             var_id: self.map_var_id(var_usage.var_id),

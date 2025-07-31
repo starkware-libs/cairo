@@ -6,7 +6,6 @@ use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use id_arena::Arena;
 use itertools::{Itertools, chain, zip_eq};
 use semantic::TypeId;
 
@@ -15,7 +14,7 @@ use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, LocationId};
 use crate::{
     BlockEnd, BlockId, DependencyType, Lowered, LoweringStage, MatchArm, MatchInfo, Statement,
-    VarUsage, Variable,
+    VarUsage, Variable, VariableArena,
 };
 
 struct Context<'db, 'a> {
@@ -80,7 +79,7 @@ pub fn inner_lower_implicits<'db>(
 /// implicits.
 fn alloc_implicits<'db>(
     db: &'db dyn LoweringGroup,
-    variables: &mut Arena<Variable<'db>>,
+    variables: &mut VariableArena<'db>,
     implicits_tys: &[TypeId<'db>],
     location: LocationId<'db>,
 ) -> Vec<VarUsage<'db>> {

@@ -54,7 +54,7 @@ impl<'a> DebugWithDb<'a> for SpecializationArg<'a> {
 /// currently only structs require an additional build step.
 enum SpecializationArgBuildingState<'db, 'a> {
     Initial(&'a SpecializationArg<'db>),
-    BuildStruct(Vec<VariableId<'db>>),
+    BuildStruct(Vec<VariableId>),
 }
 
 /// Returns the lowering of a specialized function.
@@ -149,7 +149,7 @@ pub fn specialized_function_lowered<'db>(
         }
     }
 
-    let outputs: Vec<VariableId<'_>> =
+    let outputs: Vec<VariableId> =
         chain!(base.signature.extra_rets.iter().map(|ret| ret.ty()), [base.signature.return_type])
             .map(|ty| variables.new_var(VarRequest { ty, location }))
             .collect_vec();

@@ -6,7 +6,6 @@ use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{ConcreteVariant, TypeId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{self, UnorderedHashMap};
-use id_arena::Arena;
 use itertools::{Itertools, zip_eq};
 
 use crate::ids::FunctionId;
@@ -14,7 +13,7 @@ use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
     Block, BlockEnd, BlockId, Lowered, Statement, StatementCall, StatementConst, StatementDesnap,
     StatementEnumConstruct, StatementSnapshot, StatementStructConstruct,
-    StatementStructDestructure, VarRemapping, VarUsage, Variable, VariableId,
+    StatementStructDestructure, VarRemapping, VarUsage, VariableArena, VariableId,
 };
 
 /// A canonic representation of a block (used to find duplicated blocks).
@@ -71,14 +70,14 @@ enum CanonicStatement<'db> {
 }
 
 struct CanonicBlockBuilder<'db, 'a> {
-    variable: &'a Arena<Variable<'db>>,
-    vars: UnorderedHashMap<VariableId<'db>, usize>,
+    variable: &'a VariableArena<'db>,
+    vars: UnorderedHashMap<VariableId, usize>,
     types: Vec<TypeId<'db>>,
     inputs: Vec<VarUsage<'db>>,
 }
 
 impl<'db, 'a> CanonicBlockBuilder<'db, 'a> {
-    fn new(variable: &'a Arena<Variable<'db>>) -> CanonicBlockBuilder<'db, 'a> {
+    fn new(variable: &'a VariableArena<'db>) -> CanonicBlockBuilder<'db, 'a> {
         CanonicBlockBuilder {
             variable,
             vars: Default::default(),
@@ -103,7 +102,7 @@ impl<'db, 'a> CanonicBlockBuilder<'db, 'a> {
     }
 
     /// Converts an output var to a CanonicVar.
-    fn handle_output(&mut self, v: &VariableId<'db>) -> CanonicVar {
+    fn handle_output(&mut self, v: &VariableId) -> CanonicVar {
         CanonicVar(match self.vars.entry(*v) {
             std::collections::hash_map::Entry::Occupied(e) => *e.get(),
             std::collections::hash_map::Entry::Vacant(e) => {
@@ -169,7 +168,7 @@ impl<'db> CanonicBlock<'db> {
     /// Return the canonic representation of the block and the external inputs used in the block.
     /// Blocks that do not end in return do not have a canonic representation.
     fn try_from_block(
-        variable: &Arena<Variable<'db>>,
+        variable: &VariableArena<'db>,
         block: &Block<'db>,
     ) -> Option<(CanonicBlock<'db>, Vec<VarUsage<'db>>)> {
         let BlockEnd::Return(returned_vars, _) = &block.end else {
@@ -196,20 +195,20 @@ impl<'db> CanonicBlock<'db> {
 }
 /// Helper class to reassign variable ids.
 pub struct VarReassigner<'db, 'a> {
-    pub variables: &'a mut Arena<Variable<'db>>,
+    pub variables: &'a mut VariableArena<'db>,
 
     // Maps old var_id to new_var_id
-    pub vars: UnorderedHashMap<VariableId<'db>, VariableId<'db>>,
+    pub vars: UnorderedHashMap<VariableId, VariableId>,
 }
 
 impl<'db, 'a> VarReassigner<'db, 'a> {
-    pub fn new(variables: &'a mut Arena<Variable<'db>>) -> Self {
+    pub fn new(variables: &'a mut VariableArena<'db>) -> Self {
         Self { variables, vars: UnorderedHashMap::default() }
     }
 }
 
 impl<'db, 'a> Rebuilder<'db> for VarReassigner<'db, 'a> {
-    fn map_var_id(&mut self, var: VariableId<'db>) -> VariableId<'db> {
+    fn map_var_id(&mut self, var: VariableId) -> VariableId {
         *self.vars.entry(var).or_insert_with(|| self.variables.alloc(self.variables[var].clone()))
     }
 }
@@ -226,7 +225,7 @@ struct DedupContext<'db> {
 /// Given a block and a set of inputs, assigns new ids to all the variables in the block, returning
 /// the new block and the new inputs.
 fn rebuild_block_and_inputs<'db>(
-    variables: &mut Arena<Variable<'db>>,
+    variables: &mut VariableArena<'db>,
     block: &Block<'db>,
     inputs: &[VarUsage<'db>],
 ) -> (Block<'db>, Vec<VarUsage<'db>>) {

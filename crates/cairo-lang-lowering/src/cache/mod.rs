@@ -188,7 +188,7 @@ pub fn generate_crate_cache<'db>(
 /// Context for loading cache into the database.
 struct CacheLoadingContext<'db> {
     /// The variable ids of the flat lowered that is currently being loaded.
-    lowered_variables_id: Vec<VariableId<'db>>,
+    lowered_variables_id: Vec<VariableId>,
     db: &'db dyn LoweringGroup,
 
     /// data for loading the entire cache into the database.
