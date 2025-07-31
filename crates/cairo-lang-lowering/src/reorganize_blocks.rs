@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use id_arena::Arena;
 use itertools::Itertools;
 
 use crate::blocks::BlocksBuilder;
@@ -9,7 +8,7 @@ use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::optimizations::remappings;
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
-    Block, BlockEnd, BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, Variable,
+    Block, BlockEnd, BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableArena,
     VariableId,
 };
 
@@ -102,7 +101,7 @@ pub fn reorganize_blocks<'db>(lowered: &mut Lowered<'db>) {
     lowered.blocks = new_blocks.build().unwrap();
 }
 
-pub struct TopSortContext<'db> {
+pub struct TopSortContext {
     old_block_rev_order: Vec<BlockId>,
     // The number of incoming gotos, indexed by block_id.
     incoming_gotos: Vec<usize>,
@@ -110,10 +109,10 @@ pub struct TopSortContext<'db> {
     // True if the block can be merged with the block that goes to it.
     can_be_merged: Vec<bool>,
 
-    remappings_ctx: remappings::Context<'db>,
+    remappings_ctx: remappings::Context,
 }
 
-impl<'db> Analyzer<'db, '_> for TopSortContext<'db> {
+impl<'db> Analyzer<'db, '_> for TopSortContext {
     type Info = ();
 
     fn visit_block_start(
@@ -182,16 +181,16 @@ impl<'db> Analyzer<'db, '_> for TopSortContext<'db> {
     }
 }
 
-pub struct RebuildContext<'db> {
+pub struct RebuildContext {
     block_remapping: HashMap<BlockId, BlockId>,
-    remappings_ctx: remappings::Context<'db>,
+    remappings_ctx: remappings::Context,
 }
-impl<'db> Rebuilder<'db> for RebuildContext<'db> {
+impl<'db> Rebuilder<'db> for RebuildContext {
     fn map_block_id(&mut self, block: BlockId) -> BlockId {
         self.block_remapping[&block]
     }
 
-    fn map_var_id(&mut self, var: VariableId<'db>) -> VariableId<'db> {
+    fn map_var_id(&mut self, var: VariableId) -> VariableId {
         self.remappings_ctx.map_var_id(var)
     }
 
@@ -205,21 +204,21 @@ impl<'db> Rebuilder<'db> for RebuildContext<'db> {
 /// Note that it can't be integrated into the RebuildContext above because rebuild_remapping might
 /// call `map_var_id` on variables that are going to be removed.
 pub struct VarReassigner<'db, 'a> {
-    pub old_vars: &'a Arena<Variable<'db>>,
-    pub new_vars: Arena<Variable<'db>>,
+    pub old_vars: &'a VariableArena<'db>,
+    pub new_vars: VariableArena<'db>,
 
     // Maps old var_id to new_var_id
-    pub vars: UnorderedHashMap<VariableId<'db>, VariableId<'db>>,
+    pub vars: UnorderedHashMap<VariableId, VariableId>,
 }
 
 impl<'db, 'a> VarReassigner<'db, 'a> {
-    pub fn new(old_vars: &'a Arena<Variable<'db>>) -> Self {
+    pub fn new(old_vars: &'a VariableArena<'db>) -> Self {
         Self { old_vars, new_vars: Default::default(), vars: UnorderedHashMap::default() }
     }
 }
 
 impl<'db> Rebuilder<'db> for VarReassigner<'db, '_> {
-    fn map_var_id(&mut self, var: VariableId<'db>) -> VariableId<'db> {
+    fn map_var_id(&mut self, var: VariableId) -> VariableId {
         *self.vars.entry(var).or_insert_with(|| self.new_vars.alloc(self.old_vars[var].clone()))
     }
 }

@@ -73,7 +73,7 @@ pub fn generate_block_body_code<'db>(
 /// argument (computed by [find_variable_lifetime](crate::lifetime::find_variable_lifetime)).
 fn add_drop_statements<'db>(
     context: &mut ExprGeneratorContext<'db, '_>,
-    drops: &OrderedHashMap<DropLocation, Vec<SierraGenVar<'db>>>,
+    drops: &OrderedHashMap<DropLocation, Vec<SierraGenVar>>,
     drop_location: &DropLocation,
 ) -> Maybe<()> {
     let Some(vars) = drops.get(drop_location) else { return Ok(()) };

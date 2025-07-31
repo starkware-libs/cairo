@@ -28,7 +28,7 @@ use crate::{
     StatementStructDestructure, VarRemapping, VarUsage, VariableId,
 };
 
-pub type DestructAdderDemand<'db> = Demand<VariableId<'db>, (), PanicState>;
+pub type DestructAdderDemand<'db> = Demand<VariableId, (), PanicState>;
 
 /// The add destruct flow type, used for grouping of destruct calls.
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
@@ -62,12 +62,12 @@ enum DestructionEntry<'db> {
 
 struct PlainDestructionEntry<'db> {
     position: StatementLocation,
-    var_id: VariableId<'db>,
+    var_id: VariableId,
     impl_id: ImplId<'db>,
 }
 struct PanicDeconstructionEntry<'db> {
     panic_location: PanicLocation,
-    var_id: VariableId<'db>,
+    var_id: VariableId,
     impl_id: ImplId<'db>,
 }
 
@@ -75,7 +75,7 @@ impl<'db> DestructAdder<'db, '_> {
     /// Checks if the statement introduces a panic variable and sets the panic state accordingly.
     fn set_post_stmt_destruct(
         &mut self,
-        introductions: &[VariableId<'db>],
+        introductions: &[VariableId],
         info: &mut DestructAdderDemand<'db>,
         block_id: BlockId,
         statement_index: usize,
@@ -94,7 +94,7 @@ impl<'db> DestructAdder<'db, '_> {
     /// accordingly.
     fn set_post_match_state(
         &mut self,
-        introduced_vars: &[VariableId<'db>],
+        introduced_vars: &[VariableId],
         info: &mut DestructAdderDemand<'db>,
         match_block_id: BlockId,
         target_block_id: BlockId,
@@ -121,14 +121,14 @@ impl<'db> DestructAdder<'db, '_> {
     }
 }
 
-impl<'db> DemandReporter<VariableId<'db>, PanicState> for DestructAdder<'db, '_> {
+impl<'db> DemandReporter<VariableId, PanicState> for DestructAdder<'db, '_> {
     type IntroducePosition = StatementLocation;
     type UsePosition = ();
 
     fn drop_aux(
         &mut self,
         position: StatementLocation,
-        var_id: VariableId<'db>,
+        var_id: VariableId,
         panic_state: PanicState,
     ) {
         let var = &self.lowered.variables[var_id];

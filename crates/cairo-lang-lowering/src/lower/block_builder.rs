@@ -28,7 +28,7 @@ pub struct BlockBuilder<'db> {
     /// A store for semantic variables, owning their OwnedVariable instances.
     semantics: SemanticLoweringMapping<'db>,
     /// The semantic variables that are captured as snapshots in this block.
-    snapped_semantics: OrderedHashMap<MemberPath<'db>, VariableId<'db>>,
+    snapped_semantics: OrderedHashMap<MemberPath<'db>, VariableId>,
     /// The semantic variables that are added/changed in this block.
     changed_member_paths: OrderedHashSet<MemberPath<'db>>,
     /// Current sequence of lowered statements emitted.
@@ -72,7 +72,7 @@ impl<'db> BlockBuilder<'db> {
     }
 
     /// Binds a semantic variable to a lowered variable.
-    pub fn put_semantic(&mut self, semantic_var_id: semantic::VarId<'db>, var: VariableId<'db>) {
+    pub fn put_semantic(&mut self, semantic_var_id: semantic::VarId<'db>, var: VariableId) {
         self.semantics.introduce(MemberPath::Var(semantic_var_id), var);
         self.changed_member_paths.insert(MemberPath::Var(semantic_var_id));
     }
@@ -81,7 +81,7 @@ impl<'db> BlockBuilder<'db> {
         &mut self,
         ctx: &mut LoweringContext<'db, '_>,
         member_path: &ExprVarMemberPath<'db>,
-        var: VariableId<'db>,
+        var: VariableId,
     ) {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
         self.update_ref_raw(ctx, member_path.into(), var, location);
@@ -91,7 +91,7 @@ impl<'db> BlockBuilder<'db> {
         &mut self,
         ctx: &mut LoweringContext<'db, '_>,
         member_path: MemberPath<'db>,
-        var: VariableId<'db>,
+        var: VariableId,
         location: LocationId<'db>,
     ) {
         self.semantics.update(
@@ -126,12 +126,12 @@ impl<'db> BlockBuilder<'db> {
     }
 
     /// Introduces a semantic variable as the representation of the given member path.
-    pub fn introduce(&mut self, member_path: MemberPath<'db>, var: VariableId<'db>) {
+    pub fn introduce(&mut self, member_path: MemberPath<'db>, var: VariableId) {
         self.semantics.introduce(member_path, var);
     }
 
     /// Introduces a semantic variable as the representation of the given member path as a snapshot.
-    pub fn introduce_snap(&mut self, member_path: MemberPath<'db>, var: VariableId<'db>) {
+    pub fn introduce_snap(&mut self, member_path: MemberPath<'db>, var: VariableId) {
         self.snapped_semantics.insert(member_path, var);
     }
 
@@ -402,9 +402,9 @@ impl<'db> BlockBuilder<'db> {
         &mut self,
         ctx: &mut LoweringContext<'db, '_>,
         location: LocationId<'db>,
-        closure_var: VariableId<'db>,
+        closure_var: VariableId,
         closure_info: &ClosureInfo<'db>,
-    ) -> Vec<VariableId<'db>> {
+    ) -> Vec<VariableId> {
         self.semantics.destructure_closure(
             &mut BlockStructRecomposer { statements: &mut self.statements, ctx, location },
             closure_var,
@@ -450,8 +450,8 @@ fn get_ty<'db>(
 /// role of the lowered variables.
 #[derive(Debug, Default)]
 pub struct SemanticRemapping<'db> {
-    expr: Option<VariableId<'db>>,
-    member_path_value: OrderedHashMap<MemberPath<'db>, VariableId<'db>>,
+    expr: Option<VariableId>,
+    member_path_value: OrderedHashMap<MemberPath<'db>, VariableId>,
 }
 
 /// Represents a sealed [BlockBuilder] that ends with returning (goto) to the callsite.
@@ -528,8 +528,8 @@ impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
     fn deconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId<'db>,
-        value: VariableId<'db>,
-    ) -> OrderedHashMap<MemberId<'db>, VariableId<'db>> {
+        value: VariableId,
+    ) -> OrderedHashMap<MemberId<'db>, VariableId> {
         let members = self.ctx.db.concrete_struct_members(concrete_struct_id).unwrap();
         let members = members.values().collect_vec();
         let member_ids = members.iter().map(|m| m.id);
@@ -541,9 +541,9 @@ impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
 
     fn deconstruct_by_types(
         &mut self,
-        value: VariableId<'db>,
+        value: VariableId,
         types: impl Iterator<Item = semantic::TypeId<'db>>,
-    ) -> Vec<VariableId<'db>> {
+    ) -> Vec<VariableId> {
         // We use the location of the variable being deconstructed for the members
         // to get a better location for variable not dropped errors.
         let location = self.ctx.variables[value].location;
@@ -559,8 +559,8 @@ impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
     fn reconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId<'db>,
-        members: Vec<VariableId<'db>>,
-    ) -> VariableId<'db> {
+        members: Vec<VariableId>,
+    ) -> VariableId {
         let ty =
             TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)).intern(self.ctx.db);
         // TODO(ilya): Is using the `self.location` correct here?
@@ -576,7 +576,7 @@ impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
         .var_id
     }
 
-    fn var_ty(&self, var: VariableId<'db>) -> semantic::TypeId<'db> {
+    fn var_ty(&self, var: VariableId) -> semantic::TypeId<'db> {
         self.ctx.variables[var].ty
     }
 
@@ -603,7 +603,7 @@ pub fn merge_sealed_block_builders<'db>(
     require(!sealed_blocks.is_empty())?;
 
     // Handle the expression returned by the block (if exists).
-    let mut res_var: Option<VariableId<'db>> = None;
+    let mut res_var: Option<VariableId> = None;
 
     for sealed_block in sealed_blocks.iter() {
         if let Some(var_usage) = sealed_block.expr {
@@ -649,7 +649,7 @@ pub fn merge_block_builders<'db>(
 fn merge_block_builders_inner<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     parent_sealed_blocks: Vec<SealedGotoCallsite<'db>>,
-    res_expr: Option<VariableId<'db>>,
+    res_expr: Option<VariableId>,
     location: LocationId<'db>,
 ) -> BlockBuilder<'db> {
     // TODO(lior): Support snapped semantics.
@@ -664,7 +664,7 @@ fn merge_block_builders_inner<'db>(
 
     // A map from [MemberPath] that requires a new lowered variable (due to remapping) to the
     // corresponding lowered variable.
-    let mut member_path_value = OrderedHashMap::<MemberPath<'_>, VariableId<'_>>::default();
+    let mut member_path_value = OrderedHashMap::<MemberPath<'_>, VariableId>::default();
 
     let semantics = merge_semantics(
         parent_sealed_blocks.iter().map(|sealed_block| &sealed_block.builder.semantics),

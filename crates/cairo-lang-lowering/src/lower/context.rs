@@ -13,7 +13,6 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use defs::diagnostic_utils::StableLocation;
-use id_arena::Arena;
 use itertools::{Itertools, zip_eq};
 use semantic::corelib::{core_module, get_ty_by_name};
 use semantic::types::wrap_in_snapshots;
@@ -31,12 +30,12 @@ use crate::ids::{
 };
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
-use crate::{Lowered, MatchArm, MatchExternInfo, MatchInfo, VarUsage, VariableId};
+use crate::{Lowered, MatchArm, MatchExternInfo, MatchInfo, VarUsage, VariableArena, VariableId};
 
 pub struct VariableAllocator<'db> {
     pub db: &'db dyn LoweringGroup,
     /// Arena of allocated lowered variables.
-    pub variables: Arena<Variable<'db>>,
+    pub variables: VariableArena<'db>,
     /// Module and file of the declared function.
     pub module_file_id: ModuleFileId<'db>,
     // Lookup context for impls.
@@ -46,7 +45,7 @@ impl<'db> VariableAllocator<'db> {
     pub fn new(
         db: &'db dyn LoweringGroup,
         function_id: defs::ids::FunctionWithBodyId<'db>,
-        variables: Arena<Variable<'db>>,
+        variables: VariableArena<'db>,
     ) -> Maybe<Self> {
         let generic_params = db.function_with_body_generic_params(function_id)?;
         let generic_param_ids = generic_params.iter().map(|p| p.id()).collect_vec();
@@ -62,7 +61,7 @@ impl<'db> VariableAllocator<'db> {
     }
 
     /// Allocates a new variable in the context's variable arena according to the context.
-    pub fn new_var(&mut self, req: VarRequest<'db>) -> VariableId<'db> {
+    pub fn new_var(&mut self, req: VarRequest<'db>) -> VariableId {
         self.variables.alloc(Variable::new(
             self.db,
             self.lookup_context.clone(),
@@ -76,10 +75,10 @@ impl<'db> VariableAllocator<'db> {
         LocationId::from_stable_location(self.db, StableLocation::new(stable_ptr))
     }
 }
-impl<'db> Index<VariableId<'db>> for VariableAllocator<'db> {
+impl<'db> Index<VariableId> for VariableAllocator<'db> {
     type Output = Variable<'db>;
 
-    fn index(&self, index: VariableId<'db>) -> &Self::Output {
+    fn index(&self, index: VariableId) -> &Self::Output {
         &self.variables[index]
     }
 }
@@ -199,7 +198,7 @@ impl DerefMut for LoweringContext<'_, '_> {
 }
 impl<'db, 'mt> LoweringContext<'db, 'mt> {
     /// Allocates a new variable in the context's variable arena according to the context.
-    pub fn new_var(&mut self, req: VarRequest<'db>) -> VariableId<'db> {
+    pub fn new_var(&mut self, req: VarRequest<'db>) -> VariableId {
         self.variables.new_var(req)
     }
 

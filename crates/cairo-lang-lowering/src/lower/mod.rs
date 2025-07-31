@@ -1999,7 +1999,7 @@ fn add_closure_call_function<'db>(
         .add(&mut ctx, &mut builder.statements);
         (closure_param_var, closure_var)
     };
-    let parameters: Vec<VariableId<'_>> = [
+    let parameters: Vec<VariableId> = [
         closure_param_var_id,
         ctx.new_var(VarRequest { ty: parameters_ty, location: expr_location }),
     ]
@@ -2177,7 +2177,7 @@ fn lower_optimized_extern_error_propagate<'db>(
     let mut subscope_ok = create_subscope(ctx, builder);
     let block_ok_id = subscope_ok.block_id;
     let input_tys = match_extern_variant_arm_input_types(ctx, ok_variant.ty, &extern_enum);
-    let mut input_vars: Vec<VariableId<'_>> =
+    let mut input_vars: Vec<VariableId> =
         input_tys.into_iter().map(|ty| ctx.new_var(VarRequest { ty, location })).collect();
     let block_ok_input_vars = input_vars.clone();
     match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope_ok);
@@ -2189,7 +2189,7 @@ fn lower_optimized_extern_error_propagate<'db>(
     let mut subscope_err = create_subscope(ctx, builder);
     let block_err_id = subscope_err.block_id;
     let input_tys = match_extern_variant_arm_input_types(ctx, err_variant.ty, &extern_enum);
-    let mut input_vars: Vec<VariableId<'_>> =
+    let mut input_vars: Vec<VariableId> =
         input_tys.into_iter().map(|ty| ctx.new_var(VarRequest { ty, location })).collect();
     let block_err_input_vars = input_vars.clone();
 
@@ -2243,7 +2243,7 @@ fn match_extern_variant_arm_input_types<'db>(
 /// Binds input references and implicits when matching on extern functions.
 fn match_extern_arm_ref_args_bind<'db>(
     ctx: &mut LoweringContext<'db, '_>,
-    arm_inputs: &mut Vec<VariableId<'db>>,
+    arm_inputs: &mut Vec<VariableId>,
     extern_enum: &LoweredExprExternEnum<'db>,
     subscope: &mut BlockBuilder<'db>,
 ) {

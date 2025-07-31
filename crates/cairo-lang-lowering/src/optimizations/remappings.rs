@@ -46,18 +46,18 @@ pub(crate) fn visit_remappings<'db, F: FnMut(&VarRemapping<'db>)>(
 
 /// Context for the optimize remappings optimization.
 #[derive(Default)]
-pub(crate) struct Context<'db> {
+pub(crate) struct Context {
     /// Maps a destination variable to the source variables that are remapped to it.
-    pub dest_to_srcs: HashMap<VariableId<'db>, Vec<VariableId<'db>>>,
+    pub dest_to_srcs: HashMap<VariableId, Vec<VariableId>>,
     /// Cache of a mapping from variable id in the old lowering to variable id in the new lowering.
     /// This mapping is built on demand.
-    var_representatives: HashMap<VariableId<'db>, VariableId<'db>>,
+    var_representatives: HashMap<VariableId, VariableId>,
     /// The set of variables that is used by a reachable blocks.
-    variable_used: HashSet<VariableId<'db>>,
+    variable_used: HashSet<VariableId>,
 }
-impl<'db> Context<'db> {
+impl Context {
     /// Find the `canonical` variable that `var` maps to and mark it as used.
-    pub fn set_used(&mut self, var: VariableId<'db>) {
+    pub fn set_used(&mut self, var: VariableId) {
         let var = self.map_var_id(var);
         if self.variable_used.insert(var) {
             for src in self.dest_to_srcs.get(&var).cloned().unwrap_or_default() {
@@ -67,8 +67,8 @@ impl<'db> Context<'db> {
     }
 }
 
-impl<'db> Rebuilder<'db> for Context<'db> {
-    fn map_var_id(&mut self, var: VariableId<'db>) -> VariableId<'db> {
+impl<'db> Rebuilder<'db> for Context {
+    fn map_var_id(&mut self, var: VariableId) -> VariableId {
         if let Some(res) = self.var_representatives.get(&var) {
             *res
         } else {

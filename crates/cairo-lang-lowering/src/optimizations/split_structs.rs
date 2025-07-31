@@ -6,7 +6,6 @@ use std::vec;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use id_arena::Arena;
 use itertools::{Itertools, zip_eq};
 
 use super::var_renamer::VarRenamer;
@@ -14,7 +13,7 @@ use crate::ids::LocationId;
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
     BlockEnd, BlockId, Lowered, Statement, StatementStructConstruct, StatementStructDestructure,
-    VarRemapping, VarUsage, Variable, VariableId,
+    VarRemapping, VarUsage, VariableArena, VariableId,
 };
 
 /// Splits all the variables that were created by struct_construct and reintroduces the
@@ -31,24 +30,24 @@ pub fn split_structs(lowered: &mut Lowered<'_>) {
 }
 
 /// Information about a split variable.
-struct SplitInfo<'db> {
+struct SplitInfo {
     /// The block_id where the variable was defined.
     block_id: BlockId,
     /// The variables resulting from the split.
-    vars: Vec<VariableId<'db>>,
+    vars: Vec<VariableId>,
 }
 
-type SplitMapping<'db> = UnorderedHashMap<VariableId<'db>, SplitInfo<'db>>;
+type SplitMapping = UnorderedHashMap<VariableId, SplitInfo>;
 
 /// Keeps track of the variables that were reconstructed.
 /// If the value is None the variable was reconstructed at the first usage.
 /// If the value is Some(Block_id) then the variable needs to be reconstructed at the end of
 /// `block_id`
-type ReconstructionMapping<'db> = OrderedHashMap<VariableId<'db>, Option<BlockId>>;
+type ReconstructionMapping = OrderedHashMap<VariableId, Option<BlockId>>;
 
 /// Returns a mapping from variables that should be split to the variables resulting from the split.
-fn get_var_split<'db>(lowered: &mut Lowered<'db>) -> SplitMapping<'db> {
-    let mut split = UnorderedHashMap::<VariableId<'_>, SplitInfo<'_>>::default();
+fn get_var_split(lowered: &mut Lowered<'_>) -> SplitMapping {
+    let mut split = UnorderedHashMap::<VariableId, SplitInfo>::default();
 
     let mut stack = vec![BlockId::root()];
     let mut visited = vec![false; lowered.blocks.len()];
@@ -110,10 +109,10 @@ fn get_var_split<'db>(lowered: &mut Lowered<'db>) -> SplitMapping<'db> {
 ///     split('dst') = (v100, v101) and split(`v101`) = (v102, v103, v104).
 fn split_remapping<'db>(
     target_block_id: BlockId,
-    split: &mut SplitMapping<'db>,
-    variables: &mut Arena<Variable<'db>>,
-    dst: VariableId<'db>,
-    src: VariableId<'db>,
+    split: &mut SplitMapping,
+    variables: &mut VariableArena<'db>,
+    dst: VariableId,
+    src: VariableId,
 ) {
     let mut stack = vec![(dst, src)];
 
@@ -138,15 +137,15 @@ fn split_remapping<'db>(
 // Context for rebuilding the blocks.
 struct SplitStructsContext<'db, 'a> {
     /// The variables that were reconstructed as they were needed.
-    reconstructed: ReconstructionMapping<'db>,
+    reconstructed: ReconstructionMapping,
     // A renamer that keeps track of renamed vars.
-    var_remapper: VarRenamer<'db>,
+    var_remapper: VarRenamer,
     // The variables arena.
-    variables: &'a mut Arena<Variable<'db>>,
+    variables: &'a mut VariableArena<'db>,
 }
 
 /// Rebuilds the blocks, with the splitting.
-fn rebuild_blocks<'db>(lowered: &mut Lowered<'db>, split: SplitMapping<'db>) {
+fn rebuild_blocks(lowered: &mut Lowered<'_>, split: SplitMapping) {
     let mut ctx = SplitStructsContext {
         reconstructed: Default::default(),
         var_remapper: VarRenamer::default(),
@@ -276,12 +275,12 @@ impl<'db> SplitStructsContext<'db, '_> {
     /// returns the reconstructed variable id.
     fn maybe_reconstruct_var(
         &mut self,
-        split: &SplitMapping<'db>,
-        var_id: VariableId<'db>,
+        split: &SplitMapping,
+        var_id: VariableId,
         block_id: BlockId,
         statements: &mut Vec<Statement<'db>>,
         location: LocationId<'db>,
-    ) -> VariableId<'db> {
+    ) -> VariableId {
         let var_id = self.var_remapper.map_var_id(var_id);
         if self.reconstructed.contains_key(&var_id) {
             return var_id;
@@ -344,10 +343,10 @@ impl<'db> SplitStructsContext<'db, '_> {
     /// splitting of variables.
     fn rebuild_remapping(
         &mut self,
-        split: &SplitMapping<'db>,
+        split: &SplitMapping,
         block_id: BlockId,
         statements: &mut Vec<Statement<'db>>,
-        remappings: impl DoubleEndedIterator<Item = (VariableId<'db>, VarUsage<'db>)>,
+        remappings: impl DoubleEndedIterator<Item = (VariableId, VarUsage<'db>)>,
         new_remappings: &mut VarRemapping<'db>,
     ) {
         let mut stack = remappings.rev().collect_vec();

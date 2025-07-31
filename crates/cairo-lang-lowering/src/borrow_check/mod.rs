@@ -22,7 +22,7 @@ use crate::{BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, Vari
 pub mod analysis;
 pub mod demand;
 
-pub type BorrowCheckerDemand<'db> = Demand<VariableId<'db>, LocationId<'db>, PanicState>;
+pub type BorrowCheckerDemand<'db> = Demand<VariableId, LocationId<'db>, PanicState>;
 pub struct BorrowChecker<'db, 'mt, 'r> {
     db: &'db dyn LoweringGroup,
     diagnostics: &'mt mut LoweringDiagnostics<'db>,
@@ -81,7 +81,7 @@ impl<'db> DropPosition<'db> {
     }
 }
 
-impl<'db, 'mt> DemandReporter<VariableId<'db>, PanicState> for BorrowChecker<'db, 'mt, '_> {
+impl<'db, 'mt> DemandReporter<VariableId, PanicState> for BorrowChecker<'db, 'mt, '_> {
     // Note that for in BorrowChecker `IntroducePosition` is used to pass the cause of
     // the drop.
     type IntroducePosition = (Option<DropPosition<'db>>, BlockId);
@@ -90,7 +90,7 @@ impl<'db, 'mt> DemandReporter<VariableId<'db>, PanicState> for BorrowChecker<'db
     fn drop_aux(
         &mut self,
         (opt_drop_position, block_id): (Option<DropPosition<'db>>, BlockId),
-        var_id: VariableId<'db>,
+        var_id: VariableId,
         panic_state: PanicState,
     ) {
         let var = &self.lowered.variables[var_id];
@@ -151,7 +151,7 @@ impl<'db, 'mt> DemandReporter<VariableId<'db>, PanicState> for BorrowChecker<'db
     fn dup(
         &mut self,
         position: LocationId<'db>,
-        var_id: VariableId<'db>,
+        var_id: VariableId,
         next_usage_position: LocationId<'db>,
     ) {
         let var = &self.lowered.variables[var_id];

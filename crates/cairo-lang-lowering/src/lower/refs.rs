@@ -69,9 +69,9 @@ impl<'db> SemanticLoweringMapping<'db> {
     pub fn destructure_closure<TContext: StructRecomposer<'db>>(
         &mut self,
         ctx: &mut TContext,
-        closure_var: VariableId<'db>,
+        closure_var: VariableId,
         closure_info: &ClosureInfo<'db>,
-    ) -> Vec<VariableId<'db>> {
+    ) -> Vec<VariableId> {
         ctx.deconstruct_by_types(
             closure_var,
             chain!(closure_info.members.values(), closure_info.snapshots.values()).cloned(),
@@ -82,12 +82,12 @@ impl<'db> SemanticLoweringMapping<'db> {
         &mut self,
         mut ctx: TContext,
         path: &MemberPath<'db>,
-    ) -> Option<VariableId<'db>> {
+    ) -> Option<VariableId> {
         let value = self.break_into_value(&mut ctx, path)?;
         Self::assemble_value(&mut ctx, value)
     }
 
-    pub fn introduce(&mut self, path: MemberPath<'db>, var: VariableId<'db>) {
+    pub fn introduce(&mut self, path: MemberPath<'db>, var: VariableId) {
         self.scattered.insert(path, Value::Var(var));
     }
 
@@ -95,7 +95,7 @@ impl<'db> SemanticLoweringMapping<'db> {
         &mut self,
         ctx: &mut TContext,
         path: &MemberPath<'db>,
-        var: VariableId<'db>,
+        var: VariableId,
     ) -> Option<()> {
         // TODO(TomerStarkware): check if path is captured by a closure and invalidate the closure.
         // Right now this can only happen if we take a snapshot of the variable (as the
@@ -111,7 +111,7 @@ impl<'db> SemanticLoweringMapping<'db> {
     fn assemble_value<TContext: StructRecomposer<'db>>(
         ctx: &mut TContext,
         value: &mut Value<'db>,
-    ) -> Option<VariableId<'db>> {
+    ) -> Option<VariableId> {
         Some(match value {
             Value::Var(var) => *var,
             Value::Scattered(scattered) => {
@@ -178,7 +178,7 @@ impl<'db> cairo_lang_debug::debug::DebugWithDb<'db> for SemanticLoweringMapping<
 ///   invoking the `remapped_callback` function.
 pub fn merge_semantics<'db, 'a>(
     mappings: impl Iterator<Item = &'a SemanticLoweringMapping<'db>>,
-    remapped_callback: &mut impl FnMut(&MemberPath<'db>) -> VariableId<'db>,
+    remapped_callback: &mut impl FnMut(&MemberPath<'db>) -> VariableId,
 ) -> SemanticLoweringMapping<'db>
 where
     'db: 'a,
@@ -255,7 +255,7 @@ fn compute_remapped_variables<'db>(
     values: &[&Value<'db>],
     require_remapping: bool,
     parent_path: &MemberPath<'db>,
-    remapped_callback: &mut impl FnMut(&MemberPath<'db>) -> VariableId<'db>,
+    remapped_callback: &mut impl FnMut(&MemberPath<'db>) -> VariableId,
 ) -> Value<'db> {
     if !require_remapping {
         // If all values are the same, no remapping is needed.
@@ -313,21 +313,21 @@ pub trait StructRecomposer<'db> {
     fn deconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId<'db>,
-        value: VariableId<'db>,
-    ) -> OrderedHashMap<MemberId<'db>, VariableId<'db>>;
+        value: VariableId,
+    ) -> OrderedHashMap<MemberId<'db>, VariableId>;
 
     fn deconstruct_by_types(
         &mut self,
-        value: VariableId<'db>,
+        value: VariableId,
         types: impl Iterator<Item = semantic::TypeId<'db>>,
-    ) -> Vec<VariableId<'db>>;
+    ) -> Vec<VariableId>;
 
     fn reconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId<'db>,
-        members: Vec<VariableId<'db>>,
-    ) -> VariableId<'db>;
-    fn var_ty(&self, var: VariableId<'db>) -> semantic::TypeId<'db>;
+        members: Vec<VariableId>,
+    ) -> VariableId;
+    fn var_ty(&self, var: VariableId) -> semantic::TypeId<'db>;
     fn db(&self) -> &dyn LoweringGroup;
 }
 
@@ -336,7 +336,7 @@ pub trait StructRecomposer<'db> {
 #[debug_db(ExprFormatter<'db>)]
 enum Value<'db> {
     /// The value of member path is stored in a lowered variable.
-    Var(VariableId<'db>),
+    Var(VariableId),
     /// The value of the member path is not stored. If needed, it should be reconstructed from the
     /// member values.
     Scattered(Box<Scattered<'db>>),
