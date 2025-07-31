@@ -26,7 +26,7 @@ use semantic::{
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::context::{
     LoweredExpr, LoweredExprExternEnum, LoweringContext, LoweringFlowError, LoweringResult,
-    lowering_flow_error_to_sealed_block,
+    handle_lowering_flow_error,
 };
 use super::lower_if::{ConditionedExpr, lower_conditioned_expr_and_seal};
 use super::lower_let_else::lower_success_arm_body;
@@ -1756,7 +1756,7 @@ fn lower_match_arm_expr_and_seal_patterns<'db>(
                 // Lower the arm expression.
                 lower_arm_expr_and_seal(ctx, kind, arm, subscope)
             }
-            Err(err) => lowering_flow_error_to_sealed_block(ctx, subscope, err),
+            Err(err) => handle_lowering_flow_error(ctx, subscope, err).map(|_| None),
         }
         .map_err(LoweringFlowError::Failed);
     }
@@ -1773,7 +1773,7 @@ fn lower_match_arm_expr_and_seal_patterns<'db>(
         .map(|(lowering_inner_pattern_result, subscope)| {
             match lowering_inner_pattern_result {
                 Ok(_) => Ok(subscope.goto_callsite(None)),
-                Err(err) => lowering_flow_error_to_sealed_block(ctx, subscope, err),
+                Err(err) => handle_lowering_flow_error(ctx, subscope, err).map(|_| None),
             }
             .map_err(LoweringFlowError::Failed)
         })
