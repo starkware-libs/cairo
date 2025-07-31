@@ -419,7 +419,7 @@ pub fn lower_loop_function<'db>(
             let location = ctx.get_location(param.stable_ptr().untyped());
             let var = ctx.new_var(VarRequest { ty: param.ty(), location });
             if snapped_params.contains_key::<MemberPath<'_>>(&(&param).into()) {
-                builder.introduce_snap((&param).into(), var)
+                ctx.snapped_semantics.insert((&param).into(), var);
             } else {
                 builder.introduce((&param).into(), var);
             }
@@ -2015,7 +2015,7 @@ fn add_closure_call_function<'db>(
         builder.introduce(param.clone(), captured_vars[i]);
     }
     for (i, (param, _)) in closure_info.snapshots.iter().enumerate() {
-        builder.introduce_snap(param.clone(), captured_vars[i + closure_info.members.len()]);
+        ctx.snapped_semantics.insert(param.clone(), captured_vars[i + closure_info.members.len()]);
     }
     let param_vars = generators::StructDestructure {
         input: VarUsage { var_id: parameters[1], location: expr_location },
