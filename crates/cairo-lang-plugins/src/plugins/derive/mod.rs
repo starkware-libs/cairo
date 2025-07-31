@@ -105,8 +105,8 @@ fn generate_derive_code_for_type<'db>(
             };
 
             let derived = derived_path.as_syntax_node().get_text_without_trivia(db);
-            if let Some(mut code) = match derived.as_str() {
-                "Copy" | "Drop" => Some(get_empty_impl(&derived, &info)),
+            if let Some(mut code) = match derived {
+                "Copy" | "Drop" => Some(get_empty_impl(derived, &info)),
                 "Clone" => Some(clone::handle_clone(&info)),
                 "Debug" => Some(debug::handle_debug(&info)),
                 "Default" => default::handle_default(db, &info, &derived_path, &mut diagnostics),
@@ -116,7 +116,7 @@ fn generate_derive_code_for_type<'db>(
                 "PartialEq" => Some(partial_eq::handle_partial_eq(&info)),
                 "Serde" => Some(serde::handle_serde(&info)),
                 _ => {
-                    if !metadata.declared_derives.contains(&derived) {
+                    if !metadata.declared_derives.contains(derived) {
                         diagnostics.push(PluginDiagnostic::error(
                             derived_path.stable_ptr(db),
                             format!("Unknown derive `{derived}` - a plugin might be missing."),

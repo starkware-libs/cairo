@@ -199,7 +199,7 @@ impl<'db> StorageInterfaceInfo<'db> {
             if let OptionArgListParenthesized::ArgListParenthesized(arguments) = attr.arguments(db)
             {
                 if let Some(arg) = extract_single_unnamed_arg(db, arguments.arguments(db)) {
-                    let target_name = arg.as_syntax_node().get_text_without_trivia(db);
+                    let target_name = arg.as_syntax_node().get_text_without_trivia(db).to_string();
                     return Some(Self {
                         db,
                         node_type: StorageInterfaceType::EnumSubPointers { target_name },
@@ -788,7 +788,7 @@ fn add_node_enum_impl<'db>(
         let field_type = match variant.type_clause(db) {
             ast::OptionTypeClause::Empty(_) => "()".to_string(),
             ast::OptionTypeClause::TypeClause(tc) => {
-                tc.ty(db).as_syntax_node().get_text_without_trivia(db)
+                tc.ty(db).as_syntax_node().get_text_without_trivia(db).to_string()
             }
         };
 

@@ -320,7 +320,7 @@ impl<'db> PatchBuilder<'db> {
             span: TextSpan { start, end: start.add_width(orig_span.width()) },
             origin: CodeOrigin::Start(orig_span.start),
         });
-        self.code += &node.get_text(self.db);
+        self.code += node.get_text(self.db);
     }
 
     fn add_mapped(&mut self, node: RewriteNode<'db>, origin: TextSpan) {
@@ -340,10 +340,10 @@ impl<'db> PatchBuilder<'db> {
         let text = node.get_text_of_span(self.db, origin_span);
         let start = TextOffset::from_str(&self.code);
 
-        self.code += &text;
+        self.code += text;
 
         self.code_mappings.push(CodeMapping {
-            span: TextSpan { start, end: start.add_width(TextWidth::from_str(&text)) },
+            span: TextSpan { start, end: start.add_width(TextWidth::from_str(text)) },
             origin: CodeOrigin::Start(orig_start),
         });
     }

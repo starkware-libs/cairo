@@ -25,7 +25,7 @@ pub fn token_tree_as_wrapped_arg_list<'a>(
         DiagnosticsBuilder::default();
     let node_text = token_tree.as_syntax_node().get_text(db);
     let file_id = token_tree.stable_ptr(db).0.file_id(db);
-    let mut parser = Parser::new(db, file_id, &node_text, &mut diagnostics);
+    let mut parser = Parser::new(db, file_id, node_text, &mut diagnostics);
     let wrapped_arg_list_green: WrappedArgListGreen<'a> = parser.parse_wrapped_arg_list();
     if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
         parser.add_diagnostic(

@@ -198,9 +198,9 @@ fn format_input(
     let original_text = db_ref
         .file_content(file_id)
         .ok_or_else(|| anyhow!("Unable to read from input."))?
-        .long(db_ref);
-    let (syntax_root, diagnostics) =
-        get_syntax_root_and_diagnostics(&db, file_id, original_text.as_ref());
+        .long(db_ref)
+        .as_ref();
+    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id, original_text);
     if diagnostics.check_error_free().is_err() {
         return Err(FormattingError::ParsingError(
             diagnostics.format_with_severity(&db, &Default::default()).into(),
@@ -208,7 +208,7 @@ fn format_input(
     }
     let formatted_text = get_formatted_file(&db, &syntax_root, config.clone());
 
-    if formatted_text == original_text.as_ref() {
+    if formatted_text == original_text {
         Ok(FormatOutcome::Identical(original_text.to_string()))
     } else {
         let diff = FileDiff { original: original_text.to_string(), formatted: formatted_text };

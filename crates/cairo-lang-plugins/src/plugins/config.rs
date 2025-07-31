@@ -227,7 +227,7 @@ fn parse_predicate_item<'a>(
                 .map(|arg| AttributeArg::from_ast(arg, db))
                 .collect_vec();
 
-            match operator.as_str() {
+            match operator {
                 "not" => {
                     if args.len() != 1 {
                         diagnostics.push(PluginDiagnostic::error(

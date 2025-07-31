@@ -149,7 +149,7 @@ impl<'a> AttributeArg<'a> {
     pub fn text(&self, db: &dyn SyntaxGroup) -> String {
         match &self.variant {
             AttributeArgVariant::Unnamed(value) => {
-                value.as_syntax_node().get_text_without_trivia(db)
+                value.as_syntax_node().get_text_without_trivia(db).to_string()
             }
             AttributeArgVariant::Named { value, name } => {
                 format!("{}: {}", name.text, value.as_syntax_node().get_text_without_trivia(db))
