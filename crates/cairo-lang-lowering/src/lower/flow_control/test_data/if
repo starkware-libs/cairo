@@ -180,7 +180,7 @@ End:
 //! > Test if with panic in condition
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, skip_lowering: false)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo() -> felt252 {
@@ -221,7 +221,7 @@ End:
 //! > Test if with panic in body
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, skip_lowering: false)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo() -> felt252 {
@@ -283,7 +283,7 @@ End:
 //! > Test if with panic or return in both body and else
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, skip_lowering: false)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo() -> felt252 {
@@ -340,7 +340,7 @@ End:
 //! > Test if-let with nested enums.
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, skip_lowering: false)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo(x: Option<Option<felt252>>) -> felt252 {

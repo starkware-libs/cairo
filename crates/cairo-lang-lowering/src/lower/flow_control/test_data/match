@@ -1,0 +1,88 @@
+//! > Simple match
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(color: Color) -> felt252 {
+    match color {
+        Color::Red | Color::Green(_) => 1,
+        Color::Red(_) | Color::Blue => 2,
+        _ => 3,
+    }
+}
+
+//! > module_code
+enum Color {
+    Red,
+    Green,
+    Blue,
+    Black,
+    White,
+}
+
+//! > graph
+Root: 4
+0 ArmExpr { expr: ExprId(1) }
+1 ArmExpr { expr: ExprId(2) }
+2 ArmExpr { expr: ExprId(3) }
+3 EnumMatch { matched_var: FlowControlVar { idx: 0 }, variants: (NodeId(0), FlowControlVar { idx: 1 }), (NodeId(0), FlowControlVar { idx: 2 }), (NodeId(1), FlowControlVar { idx: 3 }), (NodeId(2), FlowControlVar { idx: 4 }), (NodeId(2), FlowControlVar { idx: 5 })}
+4 EvaluateExpr { expr: ExprId(0), var_id: FlowControlVar { idx: 0 }, next: NodeId(3) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+Parameters: v0: test::Color
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Color::Red(v1) => blk1,
+    Color::Green(v2) => blk2,
+    Color::Blue(v3) => blk3,
+    Color::Black(v4) => blk4,
+    Color::White(v5) => blk5,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk3:
+Statements:
+  (v7: core::felt252) <- 2
+End:
+  Goto(blk8, {v7 -> v9})
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk6:
+Statements:
+  (v6: core::felt252) <- 3
+End:
+  Goto(blk8, {v6 -> v9})
+
+blk7:
+Statements:
+  (v8: core::felt252) <- 1
+End:
+  Goto(blk8, {v8 -> v9})
+
+blk8:
+Statements:
+End:
+  Return(v9)
