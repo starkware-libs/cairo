@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 /// The pattern-matching function below take a list of patterns, and depending on the item at
 /// question, construct a filtered list of patterns that are relevant to the item.
 /// This struct represents the indices of those filtered patterns.
@@ -27,6 +29,26 @@ impl FilteredPatterns {
 
     pub fn add(&mut self, idx: usize) {
         self.filter.push(idx);
+    }
+
+    /// Returns a [FilteredPatterns] that accepts all patterns (no filtering).
+    pub fn all(n_patterns: usize) -> Self {
+        Self { filter: (0..n_patterns).collect_vec() }
+    }
+
+    /// Assuming `self` is a [FilteredPatterns] that applies to a *subset* of a list of patterns
+    /// (defined by `outer_filter`), this function returns the lifted [FilteredPatterns] -
+    /// the corresponding [FilteredPatterns] that applies to the *original* list of patterns.
+    ///
+    /// For example, assume that `foo` gets 3 patterns: `A`, `B`, `C`, and it calls `bar` with the
+    /// last two patterns (`B` and `C`, at indices `1` and `2`).
+    /// Suppose that `bar` filters this list to only `C`.
+    /// `bar` returns the filter `[1]` since it uses its own indexing.
+    /// `foo` needs to lift it to `[2]` to return to its caller using `foo`'s indexing.
+    pub fn lift(self, outer_filter: &FilteredPatterns) -> Self {
+        Self {
+            filter: self.filter.into_iter().map(|index| outer_filter.filter[index]).collect_vec(),
+        }
     }
 
     /// Returns the first pattern accepted by the filter.

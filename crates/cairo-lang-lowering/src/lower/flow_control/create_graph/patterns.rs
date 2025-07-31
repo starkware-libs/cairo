@@ -3,7 +3,8 @@ use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::{
     self as semantic, ConcreteEnumId, ConcreteTypeId, PatternEnumVariant, TypeLongId,
 };
-use itertools::{Itertools, zip_eq};
+use cairo_lang_utils::iterators::zip_eq3;
+use itertools::Itertools;
 
 use super::super::graph::{
     EnumMatch, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
@@ -53,6 +54,12 @@ pub fn create_node_for_patterns<'db>(
     build_node_callback: BuildNodeCallback<'db, '_>,
     location: LocationId<'db>,
 ) -> NodeId {
+    // If all the patterns are catch-all, we do not need to look into `input_var`.
+    if patterns.iter().all(|pattern| pattern_is_any(pattern)) {
+        // Call the callback with all patterns accepted.
+        return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
+    }
+
     let (n_snapshots, long_ty) = peel_snapshots(ctx.db, graph.var_ty(input_var));
     match long_ty {
         TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) => create_node_for_enum(
@@ -87,26 +94,48 @@ fn create_node_for_enum<'db>(
     let mut variant_to_pattern_indices: Vec<FilteredPatterns> =
         (0..concrete_variants.len()).map(|_| FilteredPatterns::empty()).collect_vec();
 
+    // Maps variant index to the list of the inner patterns.
+    // For example, a pattern `A(B(x))` will add the (inner) pattern `B(x)` to the vector at the
+    // index of the variant `A`.
+    let mut variant_to_inner_patterns: Vec<Vec<&semantic::Pattern<'db>>> =
+        vec![vec![]; concrete_variants.len()];
+
     for (idx, pattern) in patterns.iter().enumerate() {
         match pattern {
-            semantic::Pattern::EnumVariant(PatternEnumVariant { variant, .. }) => {
+            semantic::Pattern::EnumVariant(PatternEnumVariant {
+                variant, inner_pattern, ..
+            }) => {
                 variant_to_pattern_indices[variant.idx].add(idx);
+                // TODO(lior): Fix the unwrap below.
+                variant_to_inner_patterns[variant.idx].push(
+                    inner_pattern
+                        .map(|inner_pattern| &ctx.function_body.arenas.patterns[inner_pattern])
+                        .unwrap(),
+                );
             }
             _ => todo!("Pattern {:?} is not supported yet.", pattern),
         }
     }
 
     // Create a node in the graph for each variant.
-    let variants = zip_eq(concrete_variants, variant_to_pattern_indices)
-        .map(|(concrete_variant, pattern_indices)| {
-            let inner_var = graph
-                .new_var(wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots), location);
-            // TODO(lior): Handle the inner patterns by calling `create_node_for_patterns`
-            //   recursively on the patterns that match the variant.
-            let node = build_node_callback(graph, pattern_indices);
-            (concrete_variant, node, inner_var)
-        })
-        .collect_vec();
+    let variants =
+        zip_eq3(concrete_variants, variant_to_pattern_indices, variant_to_inner_patterns)
+            .map(|(concrete_variant, pattern_indices, inner_patterns)| {
+                let inner_var = graph
+                    .new_var(wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots), location);
+                let node = create_node_for_patterns(
+                    ctx,
+                    graph,
+                    inner_var,
+                    &inner_patterns,
+                    &|graph, pattern_indices_inner| {
+                        build_node_callback(graph, pattern_indices_inner.lift(&pattern_indices))
+                    },
+                    location,
+                );
+                (concrete_variant, node, inner_var)
+            })
+            .collect_vec();
 
     // Create a node for the match.
     graph.add_node(FlowControlNode::EnumMatch(EnumMatch {
@@ -114,4 +143,18 @@ fn create_node_for_enum<'db>(
         concrete_enum_id,
         variants,
     }))
+}
+
+/// Returns `true` if the pattern accepts any value (`_` or a variable name).
+fn pattern_is_any(pattern: &semantic::Pattern<'_>) -> bool {
+    match pattern {
+        semantic::Pattern::Otherwise(..) | semantic::Pattern::Variable(..) => true,
+        semantic::Pattern::Literal(..)
+        | semantic::Pattern::StringLiteral(..)
+        | semantic::Pattern::Struct(..)
+        | semantic::Pattern::Tuple(..)
+        | semantic::Pattern::FixedSizeArray(..)
+        | semantic::Pattern::EnumVariant(..)
+        | semantic::Pattern::Missing(..) => false,
+    }
 }

@@ -334,3 +334,76 @@ Statements:
 End:
   Match(match_enum(v10) {
   })
+
+//! > ==========================================================================
+
+//! > Test if-let with nested enums.
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: false)
+
+//! > function_code
+fn foo(x: Option<Option<felt252>>) -> felt252 {
+    if let Some(Some(_)) = x {
+        0
+    } else {
+        1
+    }
+}
+
+//! > module_code
+
+//! > graph
+Root: 4
+0 ArmExpr { expr: ExprId(2) }
+1 ArmExpr { expr: ExprId(4) }
+2 EnumMatch { matched_var: FlowControlVar { idx: 1 }, variants: (NodeId(0), FlowControlVar { idx: 2 }), (NodeId(1), FlowControlVar { idx: 3 })}
+3 EnumMatch { matched_var: FlowControlVar { idx: 0 }, variants: (NodeId(2), FlowControlVar { idx: 1 }), (NodeId(1), FlowControlVar { idx: 4 })}
+4 EvaluateExpr { expr: ExprId(0), var_id: FlowControlVar { idx: 0 }, next: NodeId(3) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+Parameters: v0: core::option::Option::<core::option::Option::<core::felt252>>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk3,
+    Option::None(v4) => blk4,
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk3:
+Statements:
+  (v6: core::felt252) <- 0
+End:
+  Goto(blk6, {v6 -> v7})
+
+blk4:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk5:
+Statements:
+  (v5: core::felt252) <- 1
+End:
+  Goto(blk6, {v5 -> v7})
+
+blk6:
+Statements:
+End:
+  Return(v7)
