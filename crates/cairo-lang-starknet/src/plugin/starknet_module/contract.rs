@@ -142,28 +142,29 @@ impl<'db> ComponentsGenerationData<'db> {
         let mut is_valid = true;
 
         let storage_name_syntax_node = storage_name.as_syntax_node();
-        if !self.substorage_members.contains(&storage_name_syntax_node.get_text(db)) {
+        let storage_node_text = storage_name_syntax_node.get_text_without_trivia(db);
+        if self.substorage_members.iter().all(|member| member != storage_node_text) {
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
                 component_macro.stable_ptr(db).untyped(),
-                storage_name.as_syntax_node(),
+                storage_name_syntax_node,
                 format!(
-                    "`{0}` is not a substorage member in the contract's \
+                    "`{storage_node_text}` is not a substorage member in the contract's \
                      `{STORAGE_STRUCT_NAME}`.\nConsider adding to \
-                     `{STORAGE_STRUCT_NAME}`:\n```\n#[{SUBSTORAGE_ATTR}(v0)]\n{0}: \
-                     path::to::component::{STORAGE_STRUCT_NAME},\n````",
-                    storage_name_syntax_node.get_text_without_trivia(db)
+                     `{STORAGE_STRUCT_NAME}`:\n```\n#[{SUBSTORAGE_ATTR}(v0)]\n{storage_node_text}: \
+                     path::to::component::{STORAGE_STRUCT_NAME},\n````"
                 ),
             ));
             is_valid = false;
         }
 
-        let event_name_str = event_name.as_syntax_node().get_text_without_trivia(db);
-        if !self.nested_event_variants.contains(&event_name_str.clone().into()) {
+        let event_name_syntax_node = event_name.as_syntax_node();
+        let event_name_str = event_name_syntax_node.get_text_without_trivia(db);
+        if self.nested_event_variants.iter().all(|variant| variant != event_name_str) {
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
                 component_macro.stable_ptr(db).untyped(),
-                event_name.as_syntax_node(),
+                event_name_syntax_node,
                 format!(
                     "`{event_name_str}` is not a nested event in the contract's \
                      `{EVENT_TYPE_NAME}` enum.\nConsider adding to the `{EVENT_TYPE_NAME}` \

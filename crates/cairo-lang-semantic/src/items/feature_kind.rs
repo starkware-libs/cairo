@@ -211,7 +211,7 @@ pub fn extract_item_feature_config<'db>(
         ALLOW_ATTR,
         || SemanticDiagnosticKind::UnsupportedAllowAttrArguments,
         diagnostics,
-        |value| match value.as_syntax_node().get_text_without_trivia(db).as_str() {
+        |value| match value.as_syntax_node().get_text_without_trivia(db) {
             "deprecated" => {
                 config.allow_deprecated = true;
                 true

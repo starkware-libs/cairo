@@ -215,16 +215,17 @@ impl<'a> SyntaxNode<'a> {
     }
 
     /// Returns all the text under the syntax node.
-    pub fn get_text(&self, db: &dyn SyntaxGroup) -> String {
+    pub fn get_text(&self, db: &'a dyn SyntaxGroup) -> &'a str {
         // A `None` return from reading the file content is only expected in the case of an IO
         // error. Since a SyntaxNode exists and is being processed, we should have already
         // successfully accessed this file earlier, therefore it should never fail.
         let file_content = db
             .file_content(self.stable_ptr(db).file_id(db))
             .expect("Failed to read file content")
-            .long(db);
+            .long(db)
+            .as_ref();
 
-        self.span(db).take(file_content).to_string()
+        self.span(db).take(file_content)
     }
 
     /// Returns all the text under the syntax node.
@@ -296,12 +297,13 @@ impl<'a> SyntaxNode<'a> {
     /// of the first token and the trailing trivia of the last token).
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
-    pub fn get_text_without_trivia(self, db: &'a dyn SyntaxGroup) -> String {
+    pub fn get_text_without_trivia(self, db: &'a dyn SyntaxGroup) -> &'a str {
         let file_content = db
             .file_content(self.stable_ptr(db).file_id(db))
             .expect("Failed to read file content")
-            .long(db);
-        self.span_without_trivia(db).take(file_content).to_string()
+            .long(db)
+            .as_ref();
+        self.span_without_trivia(db).take(file_content)
     }
 
     /// Returns the text under the syntax node, according to the given span.
@@ -309,13 +311,13 @@ impl<'a> SyntaxNode<'a> {
     /// `span` is assumed to be contained within the span of self.
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
-    pub fn get_text_of_span(self, db: &dyn SyntaxGroup, span: TextSpan) -> String {
+    pub fn get_text_of_span(self, db: &'a dyn SyntaxGroup, span: TextSpan) -> &'a str {
         assert!(self.span(db).contains(span));
         let file_content = db
             .file_content(self.stable_ptr(db).file_id(db))
             .expect("Failed to read file content")
             .long(db);
-        span.take(file_content).to_string()
+        span.take(file_content)
     }
 
     /// Traverse the subtree rooted at the current node (including the current node) in preorder.

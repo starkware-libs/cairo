@@ -64,7 +64,7 @@ impl GenericParamsInfo {
             .elements(db)
             .map(|param| {
                 let name = param.name(db).map(|n| n.text(db)).unwrap_or_else(|| "_".into());
-                let full_param = param.as_syntax_node().get_text_without_trivia(db);
+                let full_param = param.as_syntax_node().get_text_without_trivia(db).to_string();
                 (name, full_param)
             })
             .unzip();
@@ -171,7 +171,12 @@ fn extract_members<'a>(
         .elements(db)
         .map(|member| MemberInfo {
             name: member.name(db).text(db),
-            ty: member.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db),
+            ty: member
+                .type_clause(db)
+                .ty(db)
+                .as_syntax_node()
+                .get_text_without_trivia(db)
+                .to_string(),
             attributes: member.attributes(db),
             is_generics_dependent: member.type_clause(db).ty(db).is_dependent_type(db, generics),
         })
@@ -191,7 +196,7 @@ fn extract_variants<'a>(
             ty: match variant.type_clause(db) {
                 ast::OptionTypeClause::Empty(_) => "()".to_string(),
                 ast::OptionTypeClause::TypeClause(t) => {
-                    t.ty(db).as_syntax_node().get_text_without_trivia(db)
+                    t.ty(db).as_syntax_node().get_text_without_trivia(db).to_string()
                 }
             },
             attributes: variant.attributes(db),

@@ -43,7 +43,7 @@ pub fn expand_module_text<'db>(
                     submodule_item.module_kw(db).as_syntax_node().get_text(db),
                     submodule_item.name(db).as_syntax_node().get_text(db),
                     body.lbrace(db).as_syntax_node().get_text(db),
-                    expand_module_text(db, ModuleId::Submodule(*item), diagnostics),
+                    &expand_module_text(db, ModuleId::Submodule(*item), diagnostics),
                     body.rbrace(db).as_syntax_node().get_text(db),
                 ]);
                 continue;
@@ -59,13 +59,13 @@ pub fn expand_module_text<'db>(
                 }
             }
             if uses_list.insert(use_item) {
-                output.push_str(&use_item.get_text(db).to_owned());
+                output.push_str(use_item.get_text(db));
             }
             continue;
         }
         let syntax_item = item_id.untyped_stable_ptr(db);
         // Output other items as is.
-        output.push_str(&syntax_item.lookup(db).get_text(db));
+        output.push_str(syntax_item.lookup(db).get_text(db));
     }
     output
 }

@@ -32,7 +32,7 @@ pub struct RepetitionId(usize);
 
 /// The captures collected during macro pattern matching.
 /// Each macro parameter name maps to a flat list of matched strings.
-type Captures<'db> = OrderedHashMap<String, Vec<CapturedValue<'db>>>;
+type Captures<'db> = OrderedHashMap<&'db str, Vec<CapturedValue<'db>>>;
 
 /// Context used during macro pattern matching and expansion.
 /// Tracks captured values, active repetition scopes, and repetition ownership per placeholder.
@@ -44,7 +44,7 @@ pub struct MatcherContext<'db> {
 
     /// Maps each placeholder to the `RepetitionId` of the repetition block
     /// they are part of. This helps the expansion phase know which iterators to advance together.
-    pub placeholder_to_rep_id: OrderedHashMap<String, RepetitionId>,
+    pub placeholder_to_rep_id: OrderedHashMap<&'db str, RepetitionId>,
 
     /// Stack of currently active repetition blocks. Used to assign placeholders
     /// to their correct `RepetitionId` while recursing into nested repetitions.
@@ -188,9 +188,12 @@ fn get_macro_elements<'db>(
 
 /// Helper function to extract a placeholder name from an ExprPath node, if it represents a macro
 /// placeholder. Returns None if the path is not a valid macro placeholder.
-fn extract_placeholder(db: &dyn SyntaxGroup, path_node: &MacroParam<'_>) -> Option<String> {
+fn extract_placeholder<'db>(
+    db: &'db dyn SyntaxGroup,
+    path_node: &MacroParam<'db>,
+) -> Option<&'db str> {
     let placeholder_name = path_node.name(db).as_syntax_node().get_text_without_trivia(db);
-    if ![MACRO_DEF_SITE, MACRO_CALL_SITE].contains(&placeholder_name.as_str()) {
+    if ![MACRO_DEF_SITE, MACRO_CALL_SITE].contains(&placeholder_name) {
         return Some(placeholder_name);
     }
     None
@@ -231,7 +234,7 @@ pub fn is_macro_rule_match<'db>(
     db: &'db dyn SemanticGroup,
     rule: &MacroRuleData<'db>,
     input: &ast::TokenTreeNode<'db>,
-) -> Option<(Captures<'db>, OrderedHashMap<String, RepetitionId>)> {
+) -> Option<(Captures<'db>, OrderedHashMap<&'db str, RepetitionId>)> {
     let mut ctx = MatcherContext::default();
 
     let matcher_elements = get_macro_elements(db, rule.pattern.clone());
@@ -304,14 +307,12 @@ fn is_macro_rule_match_ex<'db>(
                             }
                             _ => return None,
                         };
-                        ctx.captures.entry(placeholder_name.clone()).or_default().push(
-                            CapturedValue {
-                                text: captured_text,
-                                stable_ptr: input_token.stable_ptr(db).untyped(),
-                            },
-                        );
+                        ctx.captures.entry(placeholder_name).or_default().push(CapturedValue {
+                            text: captured_text,
+                            stable_ptr: input_token.stable_ptr(db).untyped(),
+                        });
                         if let Some(rep_id) = ctx.current_repetition_stack.last() {
-                            ctx.placeholder_to_rep_id.insert(placeholder_name.clone(), *rep_id);
+                            ctx.placeholder_to_rep_id.insert(placeholder_name, *rep_id);
                         }
                         continue;
                     }
@@ -329,14 +330,12 @@ fn is_macro_rule_match_ex<'db>(
                             return None;
                         }
 
-                        ctx.captures.entry(placeholder_name.clone()).or_default().push(
-                            CapturedValue {
-                                text: expr_text.to_string(),
-                                stable_ptr: peek_token.stable_ptr(db).untyped(),
-                            },
-                        );
+                        ctx.captures.entry(placeholder_name).or_default().push(CapturedValue {
+                            text: expr_text.to_string(),
+                            stable_ptr: peek_token.stable_ptr(db).untyped(),
+                        });
                         if let Some(rep_id) = ctx.current_repetition_stack.last() {
-                            ctx.placeholder_to_rep_id.insert(placeholder_name.clone(), *rep_id);
+                            ctx.placeholder_to_rep_id.insert(placeholder_name, *rep_id);
                         }
                         let expr_length = expr_text.len();
                         let mut current_length = 0;
@@ -433,8 +432,8 @@ fn is_macro_rule_match_ex<'db>(
                 }
                 ctx.repetition_match_counts.insert(rep_id, match_count);
                 ctx.repetition_operators.insert(rep_id, operator.clone());
-                for (placeholder_name, _) in ctx.captures.clone() {
-                    ctx.placeholder_to_rep_id.insert(placeholder_name.clone(), rep_id);
+                for placeholder_name in ctx.captures.keys() {
+                    ctx.placeholder_to_rep_id.insert(*placeholder_name, rep_id);
                 }
 
                 for i in 0..match_count {
@@ -532,13 +531,13 @@ fn expand_macro_rule_ex(
             let elements = repetition.elements(db).elements_vec(db);
             let repetition_params = get_repetition_params(db, elements.iter().cloned());
             let first_param = repetition_params.first().ok_or_else(skip_diagnostic)?;
-            let placeholder_name = first_param.name(db).text(db).to_string();
+            let placeholder_name = first_param.name(db).text(db);
             let rep_id = *matcher_ctx
                 .placeholder_to_rep_id
-                .get(&placeholder_name)
+                .get(placeholder_name.as_str())
                 .ok_or_else(skip_diagnostic)?;
             let repetition_len =
-                matcher_ctx.captures.get(&placeholder_name).map(|v| v.len()).unwrap_or(0);
+                matcher_ctx.captures.get(placeholder_name.as_str()).map(|v| v.len()).unwrap_or(0);
             for i in 0..repetition_len {
                 matcher_ctx.repetition_indices.insert(rep_id, i);
                 for element in &elements {
@@ -553,7 +552,7 @@ fn expand_macro_rule_ex(
 
                 if i + 1 < repetition_len {
                     if let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db) {
-                        res_buffer.push_str(&sep.as_syntax_node().get_text(db));
+                        res_buffer.push_str(sep.as_syntax_node().get_text(db));
                     }
                 }
             }
@@ -563,7 +562,7 @@ fn expand_macro_rule_ex(
         }
         _ => {
             if node.kind(db).is_terminal() {
-                res_buffer.push_str(&node.get_text(db));
+                res_buffer.push_str(node.get_text(db));
                 return Ok(());
             }
 
@@ -574,7 +573,7 @@ fn expand_macro_rule_ex(
         }
     }
     if node.kind(db).is_terminal() {
-        res_buffer.push_str(&node.get_text(db));
+        res_buffer.push_str(node.get_text(db));
         return Ok(());
     }
     for child in node.get_children(db).iter() {
