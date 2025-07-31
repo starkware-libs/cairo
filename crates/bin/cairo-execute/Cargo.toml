@@ -9,26 +9,12 @@ description = "Executable for creating executables and running them for the Cair
 [dependencies]
 anyhow.workspace = true
 bincode.workspace = true
-<<<<<<< HEAD
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.11.4" }
-cairo-lang-executable = { path = "../../cairo-lang-executable", version = "~2.11.4" }
-cairo-lang-execute-utils = { path = "../../cairo-lang-execute-utils", version = "~2.11.4" }
-cairo-lang-runner = { path = "../../cairo-lang-runner", version = "~2.11.4" }
-cairo-lang-sierra-generator = { path = "../../cairo-lang-sierra-generator", version = "~2.11.4" }
-cairo-lang-filesystem = { path = "../../cairo-lang-filesystem", version = "~2.11.4" }
-||||||| b34dbfaa1
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.11.4" }
-cairo-lang-executable = { path = "../../cairo-lang-executable", version = "~2.11.4" }
-cairo-lang-execute-utils = { path = "../../cairo-lang-execute-utils", version = "~2.11.4" }
-cairo-lang-runner = { path = "../../cairo-lang-runner", version = "~2.11.4" }
-cairo-lang-sierra-generator = { path = "../../cairo-lang-sierra-generator", version = "~2.11.4" }
-=======
 cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.12.0" }
 cairo-lang-executable = { path = "../../cairo-lang-executable", version = "~2.12.0" }
 cairo-lang-execute-utils = { path = "../../cairo-lang-execute-utils", version = "~2.12.0" }
 cairo-lang-runner = { path = "../../cairo-lang-runner", version = "~2.12.0" }
 cairo-lang-sierra-generator = { path = "../../cairo-lang-sierra-generator", version = "~2.12.0" }
->>>>>>> origin/dev-v2.12.0
+cairo-lang-filesystem = { path = "../../cairo-lang-filesystem", version = "~2.12.0" }
 cairo-vm = { workspace = true, features = ["clap"] }
 clap.workspace = true
 num-bigint.workspace = true

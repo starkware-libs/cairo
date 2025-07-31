@@ -5,14 +5,7 @@ use cairo_lang_defs::ids::{
     TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
-<<<<<<< HEAD
 use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
-||||||| b34dbfaa1
-use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_syntax::node::Terminal;
-=======
-use cairo_lang_filesystem::ids::CrateId;
->>>>>>> origin/dev-v2.12.0
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{Intern, OptionFrom, extract_matches, require, try_extract_matches};
@@ -51,7 +44,6 @@ pub fn get_submodule<'db>(
     db: &'db dyn SemanticGroup,
     base_module: ModuleId<'db>,
     submodule_name: &str,
-<<<<<<< HEAD
 ) -> Option<ModuleId<'db>> {
     let module_item_id =
         db.module_item_by_name(base_module, SmolStr::from(submodule_name).intern(db)).ok()??;
@@ -59,21 +51,6 @@ pub fn get_submodule<'db>(
         Some(ModuleId::Submodule(id))
     } else {
         None
-||||||| b34dbfaa1
-) -> Option<ModuleId> {
-    let submodules = db.module_submodules(base_module).ok()?;
-    for (submodule_id, submodule) in submodules.iter() {
-        if submodule.name(db).text(db) == submodule_name {
-            return Some(ModuleId::Submodule(*submodule_id));
-        }
-=======
-) -> Option<ModuleId> {
-    let module_item_id = db.module_item_by_name(base_module, submodule_name.into()).ok()??;
-    if let ModuleItemId::Submodule(id) = module_item_id {
-        Some(ModuleId::Submodule(id))
-    } else {
-        None
->>>>>>> origin/dev-v2.12.0
     }
 }
 

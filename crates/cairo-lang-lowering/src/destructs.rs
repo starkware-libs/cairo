@@ -9,16 +9,8 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteFunction;
 use cairo_lang_semantic::corelib::{core_array_felt252_ty, core_module, get_ty_by_name, unit_ty};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-<<<<<<< HEAD
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_utils::Intern;
-||||||| b34dbfaa1
-use cairo_lang_semantic::items::imp::{ImplId, ImplLookupContext};
-use cairo_lang_utils::{Intern, LookupIntern};
-=======
-use cairo_lang_semantic::items::imp::ImplId;
-use cairo_lang_utils::{Intern, LookupIntern};
->>>>>>> origin/dev-v2.12.0
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{TypeId, TypeLongId};
 
@@ -549,7 +541,6 @@ pub fn add_destructs<'db>(
 
     lowered.variables = variables.variables;
 
-<<<<<<< HEAD
     match function_id.long(db) {
         // If specialized, destructors are already correct.
         ConcreteFunctionWithBodyLongId::Specialized(_) => return,
@@ -562,21 +553,6 @@ pub fn add_destructs<'db>(
         }
     }
 
-||||||| b34dbfaa1
-=======
-    match function_id.lookup_intern(db) {
-        // If specialized, destructors are already correct.
-        ConcreteFunctionWithBodyLongId::Specialized(_) => return,
-        ConcreteFunctionWithBodyLongId::Semantic(id)
-        | ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent: id, .. }) => {
-            // If there is no substitution, destructors are already correct.
-            if id.substitution(db).map(|s| s.is_empty()).unwrap_or_default() {
-                return;
-            }
-        }
-    }
-
->>>>>>> origin/dev-v2.12.0
     for (_, var) in lowered.variables.iter_mut() {
         // After adding destructors, we can infer the concrete `Copyable` and `Droppable` impls.
         if var.info.copyable.is_err() {

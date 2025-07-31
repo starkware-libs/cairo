@@ -178,16 +178,8 @@ pub fn priv_should_specialize<'db>(
     db: &'db dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
-<<<<<<< HEAD
     let ids::ConcreteFunctionWithBodyLongId::Specialized(SpecializedFunction { base, .. }) =
         function_id.long(db)
-||||||| b34dbfaa1
-    let ids::ConcreteFunctionWithBodyLongId::Specialized(specialized_func) =
-        function_id.lookup_intern(db)
-=======
-    let ids::ConcreteFunctionWithBodyLongId::Specialized(SpecializedFunction { base, .. }) =
-        function_id.lookup_intern(db)
->>>>>>> origin/dev-v2.12.0
     else {
         panic!("Expected a specialized function");
     };
@@ -196,27 +188,11 @@ pub fn priv_should_specialize<'db>(
     // We cannot estimate the size of functions in a cycle, since the implicits computation requires
     // the finalized lowering of all the functions in the cycle which requires us to know the
     // answer of the current function.
-<<<<<<< HEAD
     if db.concrete_in_cycle(*base, DependencyType::Call, LoweringStage::Monomorphized)? {
-||||||| b34dbfaa1
-    if db.concrete_in_cycle(
-        specialized_func.base,
-        DependencyType::Call,
-        LoweringStage::Monomorphized,
-    )? {
-=======
-    if db.concrete_in_cycle(base, DependencyType::Call, LoweringStage::Monomorphized)? {
->>>>>>> origin/dev-v2.12.0
         return Ok(false);
     }
 
     // The heuristic is that the size is 8/10*orig_size > specialized_size of the original size.
-<<<<<<< HEAD
     Ok(db.estimate_size(*base)?.saturating_mul(8)
-||||||| b34dbfaa1
-    Ok(db.estimate_size(specialized_func.base)?.saturating_mul(8)
-=======
-    Ok(db.estimate_size(base)?.saturating_mul(8)
->>>>>>> origin/dev-v2.12.0
         > db.estimate_size(function_id)?.saturating_mul(10))
 }

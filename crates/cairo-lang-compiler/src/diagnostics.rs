@@ -42,18 +42,9 @@ pub struct DiagnosticsReporter<'a> {
     /// Adding ids that are not in `crate_ids` has no effect.
     ignore_warnings_crate_ids: Vec<CrateInput>,
     /// Check diagnostics for these crates only.
-<<<<<<< HEAD
     /// If `None`, check all crates in the db.
     /// If empty, do not check any crates at all.
     crates: Option<Vec<CrateInput>>,
-||||||| b34dbfaa1
-    /// If empty, check all crates in the db.
-    crate_ids: Vec<CrateId>,
-=======
-    /// If `None`, check all crates in the db.
-    /// If empty, do not check any crates at all.
-    crate_ids: Option<Vec<CrateId>>,
->>>>>>> origin/dev-v2.12.0
     /// If true, compilation will not fail due to warnings.
     allow_warnings: bool,
     /// If true, will ignore diagnostics from LoweringGroup during the ensure function.
@@ -65,13 +56,7 @@ impl DiagnosticsReporter<'_> {
     pub fn ignoring() -> Self {
         Self {
             callback: None,
-<<<<<<< HEAD
             crates: Default::default(),
-||||||| b34dbfaa1
-            crate_ids: vec![],
-=======
-            crate_ids: Default::default(),
->>>>>>> origin/dev-v2.12.0
             ignore_all_warnings: false,
             ignore_warnings_crate_ids: vec![],
             allow_warnings: false,
@@ -116,13 +101,7 @@ impl<'a> DiagnosticsReporter<'a> {
     fn new(callback: impl DiagnosticCallback + 'a) -> Self {
         Self {
             callback: Some(Box::new(callback)),
-<<<<<<< HEAD
             crates: Default::default(),
-||||||| b34dbfaa1
-            crate_ids: vec![],
-=======
-            crate_ids: Default::default(),
->>>>>>> origin/dev-v2.12.0
             ignore_all_warnings: false,
             ignore_warnings_crate_ids: vec![],
             allow_warnings: false,
@@ -131,16 +110,8 @@ impl<'a> DiagnosticsReporter<'a> {
     }
 
     /// Sets crates to be checked, instead of all crates in the db.
-<<<<<<< HEAD
     pub fn with_crates(mut self, crates: &[CrateInput]) -> Self {
         self.crates = Some(crates.to_vec());
-||||||| b34dbfaa1
-    pub fn with_crates(mut self, crate_ids: &[CrateId]) -> Self {
-        self.crate_ids = crate_ids.to_vec();
-=======
-    pub fn with_crates(mut self, crate_ids: &[CrateId]) -> Self {
-        self.crate_ids = Some(crate_ids.to_vec());
->>>>>>> origin/dev-v2.12.0
         self
     }
 
@@ -166,20 +137,12 @@ impl<'a> DiagnosticsReporter<'a> {
     }
 
     /// Returns the crate ids for which the diagnostics will be checked.
-<<<<<<< HEAD
     fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateInput> {
         if let Some(crates) = self.crates.as_ref() {
             crates.clone()
         } else {
             db.crates().into_iter().map(|id| id.long(db).clone().into_crate_input(db)).collect()
         }
-||||||| b34dbfaa1
-    fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateId> {
-        if self.crate_ids.is_empty() { db.crates() } else { self.crate_ids.clone() }
-=======
-    fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateId> {
-        if let Some(crates) = self.crate_ids.as_ref() { crates.clone() } else { db.crates() }
->>>>>>> origin/dev-v2.12.0
     }
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
@@ -325,7 +288,6 @@ impl Default for DiagnosticsReporter<'_> {
 /// Returns a string with all the diagnostics in the db.
 ///
 /// This is a shortcut for `DiagnosticsReporter::write_to_string(&mut string).check(db)`.
-<<<<<<< HEAD
 ///
 /// If `crates_to_check` is `Some`, only diagnostics for these crates will be checked.
 /// If `crates_to_check` is `None`, diagnostics for all crates in the db will be checked.
@@ -333,19 +295,7 @@ pub fn get_diagnostics_as_string(
     db: &RootDatabase,
     crates_to_check: Option<Vec<CrateId<'_>>>,
 ) -> String {
-||||||| b34dbfaa1
-pub fn get_diagnostics_as_string(db: &RootDatabase, extra_crate_ids: &[CrateId]) -> String {
-=======
-///
-/// If `crates_to_check` is `Some`, only diagnostics for these crates will be checked.
-/// If `crates_to_check` is `None`, diagnostics for all crates in the db will be checked.
-pub fn get_diagnostics_as_string(
-    db: &RootDatabase,
-    crates_to_check: Option<Vec<CrateId>>,
-) -> String {
->>>>>>> origin/dev-v2.12.0
     let mut diagnostics = String::default();
-<<<<<<< HEAD
     let mut reporter = DiagnosticsReporter::write_to_string(&mut diagnostics);
     if let Some(crates) = crates_to_check.as_ref() {
         let crates =
@@ -354,15 +304,5 @@ pub fn get_diagnostics_as_string(
     }
     reporter.check(db);
     drop(reporter);
-||||||| b34dbfaa1
-    DiagnosticsReporter::write_to_string(&mut diagnostics).with_crates(extra_crate_ids).check(db);
-=======
-    let mut reporter = DiagnosticsReporter::write_to_string(&mut diagnostics);
-    if let Some(crates) = crates_to_check.as_ref() {
-        reporter = reporter.with_crates(crates);
-    }
-    reporter.check(db);
-    drop(reporter);
->>>>>>> origin/dev-v2.12.0
     diagnostics
 }

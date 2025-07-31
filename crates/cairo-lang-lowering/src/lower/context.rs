@@ -273,30 +273,17 @@ impl<'db> LoweredExpr<'db> {
                 Ok(builder.get_ref(ctx, &member_path).unwrap())
             }
             LoweredExpr::Snapshot { expr, location } => {
-<<<<<<< HEAD
                 if let LoweredExpr::MemberPath(member_path, _location) = &*expr {
                     if let Some(var_usage) = builder.get_snap_ref(ctx, member_path) {
                         return Ok(VarUsage { var_id: var_usage.var_id, location });
                     }
                 }
 
-||||||| b34dbfaa1
-=======
-                if let LoweredExpr::Member(member_path, _location) = &*expr {
-                    if let Some(var_usage) = builder.get_snap_ref(ctx, member_path) {
-                        return Ok(VarUsage { var_id: var_usage.var_id, location });
-                    }
-                }
-
->>>>>>> origin/dev-v2.12.0
                 let input = expr.clone().as_var_usage(ctx, builder)?;
                 let (original, snapshot) =
                     generators::Snapshot { input, location }.add(ctx, &mut builder.statements);
                 if let LoweredExpr::MemberPath(member_path, _location) = &*expr {
-                    // `update_ref` invalidates snapshots so it must be called before
-                    // `update_snap_ref`.
                     builder.update_ref(ctx, member_path, original);
-                    builder.update_snap_ref(member_path, snapshot);
                 }
 
                 Ok(VarUsage { var_id: snapshot, location })
