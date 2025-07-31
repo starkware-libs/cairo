@@ -74,7 +74,7 @@ pub enum MatchArmWrapper<'db, 'a> {
     ),
     /// Similar to [Self::Arm], except that the expression is a conditioned expression
     /// (see [ConditionedExpr]).
-    ConditionedArm(&'a [PatternId], ConditionedExpr<'a>),
+    ConditionedArm(&'a [PatternId], ConditionedExpr<'db, 'a>),
 }
 
 impl<'db, 'a> From<&'a semantic::MatchArm> for MatchArmWrapper<'db, 'a> {
