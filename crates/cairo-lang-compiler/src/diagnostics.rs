@@ -141,7 +141,7 @@ impl<'a> DiagnosticsReporter<'a> {
         if let Some(crates) = self.crates.as_ref() {
             crates.clone()
         } else {
-            db.crates().into_iter().map(|id| id.long(db).clone().into_crate_input(db)).collect()
+            db.crates().iter().map(|id| id.long(db).clone().into_crate_input(db)).collect()
         }
     }
 
