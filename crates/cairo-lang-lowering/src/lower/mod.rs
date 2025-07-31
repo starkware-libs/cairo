@@ -417,16 +417,8 @@ pub fn lower_loop_function<'db>(
         .map(|param| {
             let location = ctx.get_location(param.stable_ptr().untyped());
             let var = ctx.new_var(VarRequest { ty: param.ty(), location });
-<<<<<<< HEAD
             if snapped_params.contains_key::<MemberPath<'_>>(&(&param).into()) {
-                builder.update_snap_ref(&param, var)
-||||||| b34dbfaa1
-            if snapped_params.contains_key::<MemberPath>(&(&param).into()) {
-                builder.update_snap_ref(&param, var)
-=======
-            if snapped_params.contains_key::<MemberPath>(&(&param).into()) {
                 builder.introduce_snap((&param).into(), var)
->>>>>>> origin/dev-v2.12.0
             } else {
                 builder.introduce((&param).into(), var);
             }
@@ -1736,22 +1728,12 @@ fn lower_expr_member_access<'db>(
     builder: &mut BlockBuilder<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!("Lowering a member-access expression: {:?}", expr.debug(&ctx.expr_formatter));
-<<<<<<< HEAD
     if let Some(member_path) = &expr.member_path {
         return Ok(LoweredExpr::MemberPath(
             member_path.clone(),
             ctx.get_location(expr.stable_ptr.untyped()),
         ));
     }
-||||||| b34dbfaa1
-=======
-    if let Some(member_path) = &expr.member_path {
-        return Ok(LoweredExpr::Member(
-            member_path.clone(),
-            ctx.get_location(expr.stable_ptr.untyped()),
-        ));
-    }
->>>>>>> origin/dev-v2.12.0
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let members = ctx
         .db

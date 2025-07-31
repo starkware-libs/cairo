@@ -226,25 +226,10 @@ pub enum BlockEnd<'db> {
 
 /// Lowered variable representation.
 #[derive(Clone, Debug, PartialEq, Eq)]
-<<<<<<< HEAD
 pub struct Variable<'db> {
-||||||| b34dbfaa1
-pub struct Variable {
-    /// Can the type be (trivially) dropped.
-    pub droppable: Result<ImplId, InferenceError>,
-    /// Can the type be (trivially) copied.
-    pub copyable: Result<ImplId, InferenceError>,
-    /// A Destruct impl for the type, if found.
-    pub destruct_impl: Result<ImplId, InferenceError>,
-    /// A PanicDestruct impl for the type, if found.
-    pub panic_destruct_impl: Result<ImplId, InferenceError>,
-=======
-pub struct Variable {
->>>>>>> origin/dev-v2.12.0
     /// Semantic type of the variable.
     pub ty: semantic::TypeId<'db>,
     /// Location of the variable.
-<<<<<<< HEAD
     pub location: LocationId<'db>,
     /// The semantic type info of the variable.
     pub info: TypeInfo<'db>,
@@ -256,13 +241,6 @@ impl<'db> DebugWithDb<'db> for Variable<'db> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, _ctx: &Self::Db) -> std::fmt::Result {
         write!(f, "Variable({:?})", self.ty)
     }
-||||||| b34dbfaa1
-    pub location: LocationId,
-=======
-    pub location: LocationId,
-    /// The semantic type info of the variable.
-    pub info: TypeInfo,
->>>>>>> origin/dev-v2.12.0
 }
 
 impl<'db> Variable<'db> {
@@ -272,7 +250,6 @@ impl<'db> Variable<'db> {
         ty: semantic::TypeId<'db>,
         location: LocationId<'db>,
     ) -> Self {
-<<<<<<< HEAD
         Self { ty, location, info: db.type_info(ctx, ty) }
     }
 
@@ -296,43 +273,6 @@ impl<'db> Variable<'db> {
                 ))),
             },
         }
-||||||| b34dbfaa1
-        let TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl } =
-            match db.type_info(ctx, ty) {
-                Ok(info) => info,
-                Err(diag_added) => TypeInfo {
-                    droppable: Err(InferenceError::Reported(diag_added)),
-                    copyable: Err(InferenceError::Reported(diag_added)),
-                    destruct_impl: Err(InferenceError::Reported(diag_added)),
-                    panic_destruct_impl: Err(InferenceError::Reported(diag_added)),
-                },
-            };
-        Self { copyable, droppable, destruct_impl, panic_destruct_impl, ty, location }
-=======
-        Self { ty, location, info: db.type_info(ctx, ty) }
-    }
-
-    /// Returns a new variable with the type, with info calculated with the default context.
-    pub fn with_default_context(
-        db: &dyn LoweringGroup,
-        ty: semantic::TypeId,
-        location: LocationId,
-    ) -> Self {
-        Self {
-            ty,
-            location,
-            info: TypeInfo {
-                copyable: db.copyable(ty),
-                droppable: db.droppable(ty),
-                destruct_impl: Err(InferenceError::Ambiguity(Ambiguity::WillNotInfer(
-                    concrete_destruct_trait(db, ty),
-                ))),
-                panic_destruct_impl: Err(InferenceError::Ambiguity(Ambiguity::WillNotInfer(
-                    concrete_panic_destruct_trait(db, ty),
-                ))),
-            },
-        }
->>>>>>> origin/dev-v2.12.0
     }
 }
 

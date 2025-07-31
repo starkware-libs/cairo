@@ -22,17 +22,7 @@ use crate::{
 /// This optimization does backward analysis from return statement and keeps track of
 /// each returned value (see `ValueInfo`), whenever all the returned values are available at a block
 /// end and there were no side effects later, the end is replaced with a return statement.
-<<<<<<< HEAD
 pub fn return_optimization<'db>(db: &'db dyn LoweringGroup, lowered: &mut Lowered<'db>) {
-||||||| b34dbfaa1
-pub fn return_optimization(
-    db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut Lowered,
-) {
-=======
-pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut Lowered) {
->>>>>>> origin/dev-v2.12.0
     if lowered.blocks.is_empty() {
         return;
     }
@@ -58,41 +48,21 @@ pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut Lowered) {
 }
 
 /// Context for applying an early return to a block.
-<<<<<<< HEAD
 struct EarlyReturnContext<'db, 'a> {
     /// The lowering database.
     db: &'db dyn LoweringGroup,
-||||||| b34dbfaa1
-struct EarlyReturnContext<'a, 'b> {
-=======
-struct EarlyReturnContext<'a> {
-    /// The lowering database.
-    db: &'a dyn LoweringGroup,
->>>>>>> origin/dev-v2.12.0
     /// A map from (type, inputs) to the variable_id for Structs/Enums that were created
     /// while processing the early return.
     constructed: UnorderedHashMap<(TypeId<'db>, Vec<VariableId<'db>>), VariableId<'db>>,
     /// A variable allocator.
-<<<<<<< HEAD
     variables: &'a mut Arena<Variable<'db>>,
-||||||| b34dbfaa1
-    variables: &'a mut VariableAllocator<'b>,
-=======
-    variables: &'a mut Arena<Variable>,
->>>>>>> origin/dev-v2.12.0
     /// The statements in the block where the early return is going to happen.
     statements: &'a mut Vec<Statement<'db>>,
     /// The location associated with the early return.
     location: LocationId<'db>,
 }
 
-<<<<<<< HEAD
 impl<'db, 'a> EarlyReturnContext<'db, 'a> {
-||||||| b34dbfaa1
-impl EarlyReturnContext<'_, '_> {
-=======
-impl EarlyReturnContext<'_> {
->>>>>>> origin/dev-v2.12.0
     /// Return a vector of VarUsage's based on the input `ret_infos`.
     /// Adds `StructConstruct` and `EnumConstruct` statements to the block as needed.
     /// Assumes that early return is possible for the given `ret_infos`.
@@ -171,16 +141,8 @@ impl<'db, 'a> ReturnOptimizerContext<'db, 'a> {
     }
 
     /// Returns true if the variable is droppable
-<<<<<<< HEAD
     fn is_droppable(&self, var_id: VariableId<'db>) -> bool {
         self.lowered.variables[var_id].info.droppable.is_ok()
-||||||| b34dbfaa1
-    fn is_droppable(&self, var_id: VariableId) -> bool {
-        self.lowered.variables[var_id].droppable.is_ok()
-=======
-    fn is_droppable(&self, var_id: VariableId) -> bool {
-        self.lowered.variables[var_id].info.droppable.is_ok()
->>>>>>> origin/dev-v2.12.0
     }
 
     /// Helper function for `merge_match`.

@@ -972,19 +972,9 @@ pub struct FunctionDeclarationData<'db> {
 pub enum InlineConfiguration<'db> {
     /// The user did not specify any inlining preferences.
     None,
-<<<<<<< HEAD
     Always(ast::AttributePtr<'db>),
     Should(ast::AttributePtr<'db>),
     Never(ast::AttributePtr<'db>),
-||||||| b34dbfaa1
-    Always(Attribute),
-    Should(Attribute),
-    Never(Attribute),
-=======
-    Always(ast::AttributePtr),
-    Should(ast::AttributePtr),
-    Never(ast::AttributePtr),
->>>>>>> origin/dev-v2.12.0
 }
 
 /// If a function with impl generic parameters is marked as '#[inline(always)]', raise a diagnostic.

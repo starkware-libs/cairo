@@ -85,32 +85,11 @@ fn add_withdraw_gas_to_function<'db>(
 }
 
 /// Creates the panic block for the case `withdraw_gas` failure.
-<<<<<<< HEAD
 fn create_panic_block<'db>(
     db: &'db dyn LoweringGroup,
     lowered: &mut Lowered<'db>,
     location: LocationId<'db>,
 ) -> Maybe<Block<'db>> {
-||||||| b34dbfaa1
-fn create_panic_block(
-    db: &dyn LoweringGroup,
-    function: ConcreteFunctionWithBodyId,
-    lowered: &mut Lowered,
-    location: LocationId,
-) -> Maybe<Block> {
-    let mut variables = VariableAllocator::new(
-        db,
-        function.base_semantic_function(db).function_with_body_id(db),
-        std::mem::take(&mut lowered.variables),
-    )
-    .unwrap();
-=======
-fn create_panic_block(
-    db: &dyn LoweringGroup,
-    lowered: &mut Lowered,
-    location: LocationId,
-) -> Maybe<Block> {
->>>>>>> origin/dev-v2.12.0
     let never_ty = never_ty(db);
     let never_var = lowered.variables.alloc(Variable::with_default_context(db, never_ty, location));
 

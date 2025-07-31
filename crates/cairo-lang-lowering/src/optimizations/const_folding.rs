@@ -619,7 +619,6 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             return None;
         }
 
-<<<<<<< HEAD
         if let ConcreteFunctionWithBodyLongId::Specialized(specialized_function) =
             base.long(self.db)
         {
@@ -632,42 +631,6 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 if arg.is_none() {
                     *arg = new_args_iter.next().unwrap_or_default();
                 }
-||||||| b34dbfaa1
-        let (base, args) = match func_with_body.lookup_intern(self.db) {
-            ConcreteFunctionWithBodyLongId::Semantic(_)
-            | ConcreteFunctionWithBodyLongId::Generated(_) => {
-                (func_with_body, const_arg.into_iter().collect())
-            }
-            ConcreteFunctionWithBodyLongId::Specialized(specialized_function) => {
-                // Canonicalize the specialization rather than adding a specialization of a
-                // specializaed function.
-                let mut new_args_iter = chain!(const_arg.into_iter(), std::iter::once(None));
-                let args = specialized_function
-                    .args
-                    .iter()
-                    .map(|arg| {
-                        if arg.is_none() {
-                            return new_args_iter.next().unwrap();
-                        }
-                        arg.clone()
-                    })
-                    .collect();
-
-                (specialized_function.base, args)
-=======
-        if let ConcreteFunctionWithBodyLongId::Specialized(specialized_function) =
-            base.lookup_intern(self.db)
-        {
-            // Canonicalize the specialization rather than adding a specialization of a specialized
-            // function.
-            base = specialized_function.base;
-            let mut new_args_iter = const_args.into_iter();
-            const_args = specialized_function.args.to_vec();
-            for arg in &mut const_args {
-                if arg.is_none() {
-                    *arg = new_args_iter.next().unwrap_or_default();
-                }
->>>>>>> origin/dev-v2.12.0
             }
         }
 
@@ -1166,19 +1129,11 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
 }
 
 /// Returns a `VarInfo` of a variable only if it is copyable.
-<<<<<<< HEAD
 fn var_info_if_copy<'db>(
     variables: &Arena<Variable<'db>>,
     input: VarUsage<'db>,
 ) -> Option<VarInfo<'db>> {
     variables[input.var_id].info.copyable.is_ok().then_some(VarInfo::Var(input))
-||||||| b34dbfaa1
-fn var_info_if_copy(variables: &Arena<Variable>, input: VarUsage) -> Option<VarInfo> {
-    variables[input.var_id].copyable.is_ok().then_some(VarInfo::Var(input))
-=======
-fn var_info_if_copy(variables: &Arena<Variable>, input: VarUsage) -> Option<VarInfo> {
-    variables[input.var_id].info.copyable.is_ok().then_some(VarInfo::Var(input))
->>>>>>> origin/dev-v2.12.0
 }
 
 /// Query implementation of [LoweringGroup::priv_const_folding_info].

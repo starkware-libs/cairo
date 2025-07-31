@@ -81,7 +81,6 @@ pub fn priv_should_inline<'db>(
     }
 }
 
-<<<<<<< HEAD
 /// Query implementation of [LoweringGroup::priv_never_inline].
 pub fn priv_never_inline(
     db: &dyn LoweringGroup,
@@ -106,33 +105,6 @@ pub fn function_inline_config<'db>(
     }
 }
 
-||||||| b34dbfaa1
-=======
-/// Query implementation of [LoweringGroup::priv_never_inline].
-pub fn priv_never_inline(
-    db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
-) -> Maybe<bool> {
-    Ok(matches!(function_inline_config(db, function_id)?, InlineConfiguration::Never(_)))
-}
-
-/// Query implementation of [LoweringGroup::priv_never_inline].
-pub fn function_inline_config(
-    db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
-) -> Maybe<InlineConfiguration> {
-    match function_id.lookup_intern(db) {
-        ConcreteFunctionWithBodyLongId::Semantic(id) => {
-            db.function_declaration_inline_config(id.function_with_body_id(db))
-        }
-        ConcreteFunctionWithBodyLongId::Generated(_) => Ok(InlineConfiguration::None),
-        ConcreteFunctionWithBodyLongId::Specialized(specialized) => {
-            function_inline_config(db, specialized.base)
-        }
-    }
-}
-
->>>>>>> origin/dev-v2.12.0
 // A heuristic to decide if a function without an inline attribute should be inlined.
 fn should_inline_lowered(
     db: &dyn LoweringGroup,
@@ -364,16 +336,8 @@ where
         }
 
         if let Some(called_func) = stmt.function.body(db)? {
-<<<<<<< HEAD
             if let ConcreteFunctionWithBodyLongId::Specialized(specialized) =
                 calling_function_id.long(db)
-||||||| b34dbfaa1
-            if let crate::ids::ConcreteFunctionWithBodyLongId::Specialized(specialized) =
-                calling_function_id.lookup_intern(db)
-=======
-            if let ConcreteFunctionWithBodyLongId::Specialized(specialized) =
-                calling_function_id.lookup_intern(db)
->>>>>>> origin/dev-v2.12.0
             {
                 if specialized.base == called_func {
                     // A specialized function should always inline its base.

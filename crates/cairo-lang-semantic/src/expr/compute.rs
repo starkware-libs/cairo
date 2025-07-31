@@ -18,14 +18,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPluginMetadata};
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::cfg::CfgSet;
-<<<<<<< HEAD
 use cairo_lang_filesystem::ids::{CodeMapping, FileKind, FileLongId, SmolStrId, VirtualFile};
-||||||| b34dbfaa1
-use cairo_lang_filesystem::ids::{CodeMapping, FileKind, FileLongId, VirtualFile};
-=======
-use cairo_lang_filesystem::ids::CodeOrigin::{CallSite, Span, Start};
-use cairo_lang_filesystem::ids::{CodeMapping, FileKind, FileLongId, VirtualFile};
->>>>>>> origin/dev-v2.12.0
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast::{
