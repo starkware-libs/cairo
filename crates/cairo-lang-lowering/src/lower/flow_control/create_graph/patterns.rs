@@ -39,6 +39,9 @@ use crate::lower::context::LoweringContext;
 type BuildNodeCallback<'db, 'a> =
     &'a dyn Fn(&mut FlowControlGraphBuilder<'db>, FilteredPatterns) -> NodeId;
 
+/// A thin wrapper around [semantic::Pattern], where `None` represents the `_` pattern.
+pub type Pattern<'a, 'db> = Option<&'a semantic::Pattern<'db>>;
+
 /// Given a list of patterns and the nodes to go to if the pattern matches,
 /// returns a new graph node to handle the patterns.
 ///
@@ -50,7 +53,7 @@ pub fn create_node_for_patterns<'db>(
     ctx: &LoweringContext<'db, '_>,
     graph: &mut FlowControlGraphBuilder<'db>,
     input_var: FlowControlVar,
-    patterns: &[&semantic::Pattern<'db>],
+    patterns: &[Pattern<'_, 'db>],
     build_node_callback: BuildNodeCallback<'db, '_>,
     location: LocationId<'db>,
 ) -> NodeId {
@@ -84,7 +87,7 @@ fn create_node_for_enum<'db>(
     input_var: FlowControlVar,
     concrete_enum_id: ConcreteEnumId<'db>,
     n_snapshots: usize,
-    patterns: &[&semantic::Pattern<'db>],
+    patterns: &[Pattern<'_, 'db>],
     build_node_callback: BuildNodeCallback<'db, '_>,
     location: LocationId<'db>,
 ) -> NodeId {
@@ -97,21 +100,29 @@ fn create_node_for_enum<'db>(
     // Maps variant index to the list of the inner patterns.
     // For example, a pattern `A(B(x))` will add the (inner) pattern `B(x)` to the vector at the
     // index of the variant `A`.
-    let mut variant_to_inner_patterns: Vec<Vec<&semantic::Pattern<'db>>> =
+    let mut variant_to_inner_patterns: Vec<Vec<Pattern<'_, 'db>>> =
         vec![vec![]; concrete_variants.len()];
 
     for (idx, pattern) in patterns.iter().enumerate() {
         match pattern {
-            semantic::Pattern::EnumVariant(PatternEnumVariant {
-                variant, inner_pattern, ..
-            }) => {
+            Some(semantic::Pattern::EnumVariant(PatternEnumVariant {
+                variant,
+                inner_pattern,
+                ..
+            })) => {
                 variant_to_pattern_indices[variant.idx].add(idx);
-                // TODO(lior): Fix the unwrap below.
-                variant_to_inner_patterns[variant.idx].push(
-                    inner_pattern
-                        .map(|inner_pattern| &ctx.function_body.arenas.patterns[inner_pattern])
-                        .unwrap(),
-                );
+                variant_to_inner_patterns[variant.idx]
+                    .push(inner_pattern.map(|inner_pattern| get_pattern(ctx, inner_pattern)));
+            }
+            Some(semantic::Pattern::Otherwise(..)) | None => {
+                // Add `idx` to all the variants.
+                for pattern_indices in variant_to_pattern_indices.iter_mut() {
+                    pattern_indices.add(idx);
+                }
+                // Add the `_` pattern (represented by `None`) to all the variants.
+                for inner_patterns in variant_to_inner_patterns.iter_mut() {
+                    inner_patterns.push(None);
+                }
             }
             _ => todo!("Pattern {:?} is not supported yet.", pattern),
         }
@@ -146,15 +157,26 @@ fn create_node_for_enum<'db>(
 }
 
 /// Returns `true` if the pattern accepts any value (`_` or a variable name).
-fn pattern_is_any(pattern: &semantic::Pattern<'_>) -> bool {
+fn pattern_is_any(pattern: &Pattern<'_, '_>) -> bool {
     match pattern {
-        semantic::Pattern::Otherwise(..) | semantic::Pattern::Variable(..) => true,
-        semantic::Pattern::Literal(..)
-        | semantic::Pattern::StringLiteral(..)
-        | semantic::Pattern::Struct(..)
-        | semantic::Pattern::Tuple(..)
-        | semantic::Pattern::FixedSizeArray(..)
-        | semantic::Pattern::EnumVariant(..)
-        | semantic::Pattern::Missing(..) => false,
+        Some(semantic_pattern) => match semantic_pattern {
+            semantic::Pattern::Otherwise(..) | semantic::Pattern::Variable(..) => true,
+            semantic::Pattern::Literal(..)
+            | semantic::Pattern::StringLiteral(..)
+            | semantic::Pattern::Struct(..)
+            | semantic::Pattern::Tuple(..)
+            | semantic::Pattern::FixedSizeArray(..)
+            | semantic::Pattern::EnumVariant(..)
+            | semantic::Pattern::Missing(..) => false,
+        },
+        None => true,
     }
+}
+
+/// Returns a reference to a [semantic::Pattern] from a [semantic::PatternId].
+pub fn get_pattern<'db, 'a>(
+    ctx: &'a LoweringContext<'db, '_>,
+    semantic_pattern: semantic::PatternId,
+) -> &'a semantic::Pattern<'db> {
+    &ctx.function_body.arenas.patterns[semantic_pattern]
 }
