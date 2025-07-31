@@ -1,15 +1,19 @@
+use std::cell::RefCell;
+
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::{
-    self as semantic, ConcreteEnumId, ConcreteTypeId, PatternEnumVariant, TypeLongId,
+    self as semantic, ConcreteEnumId, ConcreteTypeId, PatternEnumVariant, PatternTuple, TypeId,
+    TypeLongId,
 };
 use cairo_lang_utils::iterators::zip_eq3;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 
 use super::super::graph::{
-    EnumMatch, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
+    Deconstruct, EnumMatch, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
 };
-use super::filtered_patterns::FilteredPatterns;
+use super::filtered_patterns::{Bindings, FilteredPatterns};
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
 
@@ -37,7 +41,37 @@ use crate::lower::context::LoweringContext;
 /// Finally, the inner pattern-matching function (for `x`) will construct a [EnumMatch] node
 /// that leads to the two nodes returned by the callback.
 type BuildNodeCallback<'db, 'a> =
-    &'a dyn Fn(&mut FlowControlGraphBuilder<'db>, FilteredPatterns) -> NodeId;
+    &'a dyn Fn(&mut FlowControlGraphBuilder<'db>, FilteredPatterns<'db>) -> NodeId;
+
+/// A thin wrapper around [semantic::Pattern], where `None` represents the `_` pattern.
+pub type Pattern<'a, 'db> = Option<&'a semantic::Pattern<'db>>;
+
+pub struct Cache<Input> {
+    cache: RefCell<UnorderedHashMap<Input, NodeId>>,
+}
+impl<Input: std::hash::Hash + Eq + Clone> Cache<Input> {
+    pub fn get_or_compute<'db>(
+        &self,
+        callback: &dyn Fn(&mut FlowControlGraphBuilder<'db>, Input) -> NodeId,
+        graph: &mut FlowControlGraphBuilder<'db>,
+        input: Input,
+    ) -> NodeId {
+        if let Some(node_id) = self.cache.borrow().get(&input) {
+            return *node_id;
+        }
+
+        let node_id = callback(graph, input.clone());
+        assert!(!self.cache.borrow().contains_key(&input));
+        self.cache.borrow_mut().insert(input, node_id);
+        node_id
+    }
+}
+
+impl<Input: std::hash::Hash + Eq + Clone> std::default::Default for Cache<Input> {
+    fn default() -> Self {
+        Self { cache: Default::default() }
+    }
+}
 
 /// A thin wrapper around [semantic::Pattern], where `None` represents the `_` pattern.
 pub type Pattern<'a, 'db> = Option<&'a semantic::Pattern<'db>>;
@@ -60,8 +94,19 @@ pub fn create_node_for_patterns<'db>(
     // If all the patterns are catch-all, we do not need to look into `input_var`.
     if patterns.iter().all(|pattern| pattern_is_any(pattern)) {
         // Call the callback with all patterns accepted.
-        return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
+        return build_node_callback(
+            graph,
+            FilteredPatterns::all_with_bindings(patterns.iter().map(|pattern| {
+                if let Some(semantic::Pattern::Variable(pattern_variable)) = pattern {
+                    Bindings::single(input_var, pattern_variable.clone())
+                } else {
+                    Bindings::default()
+                }
+            })),
+        );
     }
+
+    let cache = Cache::default();
 
     let (n_snapshots, long_ty) = peel_snapshots(ctx.db, graph.var_ty(input_var));
     match long_ty {
@@ -72,10 +117,24 @@ pub fn create_node_for_patterns<'db>(
             concrete_enum_id,
             n_snapshots,
             patterns,
-            build_node_callback,
+            &|graph, pattern_indices| {
+                cache.get_or_compute(build_node_callback, graph, pattern_indices)
+            },
             location,
         ),
-        _ => todo!("Type {:?} is not supported yet.", long_ty),
+        TypeLongId::Tuple(types) => create_node_for_tuple(
+            ctx,
+            graph,
+            input_var,
+            &types,
+            n_snapshots,
+            patterns,
+            &|graph, pattern_indices| {
+                cache.get_or_compute(build_node_callback, graph, pattern_indices)
+            },
+            location,
+        ),
+        _ => todo!("{:?}", long_ty),
     }
 }
 
@@ -109,7 +168,7 @@ fn create_node_for_enum<'db>(
                 inner_pattern,
                 ..
             })) => {
-                variant_to_pattern_indices[variant.idx].add(idx);
+                variant_to_pattern_indices[variant.idx].add(idx, Bindings::default());
                 variant_to_inner_patterns[variant.idx]
                     .push(inner_pattern.map(|inner_pattern| get_pattern(ctx, inner_pattern)));
             }
@@ -123,7 +182,17 @@ fn create_node_for_enum<'db>(
                     inner_patterns.push(None);
                 }
             }
-            _ => todo!("Pattern {:?} is not supported yet.", pattern),
+            Some(semantic::Pattern::Variable(pattern_variable)) => {
+                // Add `idx` to all the variants.
+                for pattern_indices in variant_to_pattern_indices.iter_mut() {
+                    pattern_indices.add(idx, Bindings::single(input_var, pattern_variable.clone()));
+                }
+                // Add the `_` pattern (represented by `None`) to all the variants.
+                for inner_patterns in variant_to_inner_patterns.iter_mut() {
+                    inner_patterns.push(None);
+                }
+            }
+            Some(_) => todo!(),
         }
     }
 
@@ -147,12 +216,104 @@ fn create_node_for_enum<'db>(
             })
             .collect_vec();
 
+    // TODO: support zero variants.
+    let first_variant_node = variants[0].1;
+    if variants.iter().all(|(_, node_id, _)| *node_id == first_variant_node) {
+        // All the variants lead to the same node. No need to do the match.
+        // TODO: handle the different inner_var that were already allocated.
+        return first_variant_node;
+    }
+
     // Create a node for the match.
     graph.add_node(FlowControlNode::EnumMatch(EnumMatch {
         matched_var: input_var,
         concrete_enum_id,
         variants,
     }))
+}
+
+fn create_node_for_tuple<'db>(
+    ctx: &LoweringContext<'db, '_>,
+    graph: &mut FlowControlGraphBuilder<'db>,
+    input_var: FlowControlVar,
+    types: &Vec<TypeId<'db>>,
+    n_snapshots: usize,
+    patterns: &[Pattern<'_, 'db>],
+    build_node_callback: BuildNodeCallback<'db, '_>,
+    location: LocationId<'db>,
+) -> NodeId {
+    let inner_vars = types
+        .iter()
+        .map(|ty| graph.new_var(wrap_in_snapshots(ctx.db, *ty, n_snapshots), location))
+        .collect_vec();
+
+    let node = create_node_for_tuple_inner(
+        ctx,
+        graph,
+        &inner_vars,
+        types,
+        location,
+        patterns,
+        build_node_callback,
+        0,
+    );
+
+    // Deconstruct the input variable.
+    graph.add_node(FlowControlNode::Deconstruct(Deconstruct {
+        input: input_var,
+        outputs: inner_vars,
+        next: node,
+    }))
+}
+
+// TODO: doc item_idx.
+fn create_node_for_tuple_inner<'db>(
+    ctx: &LoweringContext<'db, '_>,
+    graph: &mut FlowControlGraphBuilder<'db>,
+    inner_vars: &Vec<FlowControlVar>,
+    types: &Vec<TypeId<'db>>,
+    location: LocationId<'db>,
+    patterns: &[Pattern<'_, 'db>],
+    build_node_callback: BuildNodeCallback<'db, '_>,
+    item_idx: usize,
+) -> NodeId {
+    if item_idx == types.len() {
+        return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
+    }
+
+    // TODO: Zero length tuple.
+    let patterns_on_current_item = patterns
+        .iter()
+        .map(|pattern| match pattern {
+            Some(semantic::Pattern::Tuple(PatternTuple { field_patterns, .. })) => {
+                Some(get_pattern(ctx, field_patterns[item_idx]))
+            }
+            Some(semantic::Pattern::Otherwise(..)) | None => None,
+            Some(_) => todo!(),
+        })
+        .collect_vec();
+
+    create_node_for_patterns(
+        ctx,
+        graph,
+        inner_vars[item_idx],
+        &patterns_on_current_item,
+        &|graph, pattern_indices| {
+            create_node_for_tuple_inner(
+                ctx,
+                graph,
+                inner_vars,
+                types,
+                location,
+                &pattern_indices.indices().map(|idx| patterns[idx].clone()).collect_vec(),
+                &|graph, pattern_indices_inner| {
+                    build_node_callback(graph, pattern_indices_inner.lift(&pattern_indices))
+                },
+                item_idx + 1,
+            )
+        },
+        location, // TODO: Check,
+    )
 }
 
 /// Returns `true` if the pattern accepts any value (`_` or a variable name).
