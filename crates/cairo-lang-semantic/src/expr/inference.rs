@@ -9,9 +9,9 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
-    GlobalUseId, ImplAliasId, ImplDefId, ImplFunctionId, ImplImplDefId, LanguageElementId,
-    LocalVarId, LookupItemId, MacroCallId, MemberId, NamedLanguageElementId, ParamId, StructId,
-    TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
+    GlobalUseId, ImplAliasId, ImplDefId, ImplFunctionId, ImplImplDefId, LocalVarId, LookupItemId,
+    MacroCallId, MemberId, NamedLanguageElementId, ParamId, StructId, TraitConstantId,
+    TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -39,7 +39,8 @@ use crate::items::functions::{
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
-    ImplLookupContext, UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
+    ImplLookupContext, ImplLookupContextId, UninferredGeneratedImplId,
+    UninferredGeneratedImplLongId, UninferredImpl,
 };
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
@@ -107,7 +108,7 @@ pub struct ImplVar<'db> {
     pub id: LocalImplVarId,
     pub concrete_trait_id: ConcreteTraitId<'db>,
     #[dont_rewrite]
-    pub lookup_context: ImplLookupContext<'db>,
+    pub lookup_context: ImplLookupContextId<'db>,
 }
 impl<'db> ImplVar<'db> {
     pub fn intern(&self, db: &'db dyn SemanticGroup) -> ImplVarId<'db> {
@@ -131,7 +132,7 @@ impl<'db> ImplVarId<'db> {
     pub fn concrete_trait_id(&self, db: &'db dyn SemanticGroup) -> ConcreteTraitId<'db> {
         self.lookup_intern(db).concrete_trait_id
     }
-    pub fn lookup_context(&self, db: &'db dyn SemanticGroup) -> ImplLookupContext<'db> {
+    pub fn lookup_context(&self, db: &'db dyn SemanticGroup) -> ImplLookupContextId<'db> {
         self.lookup_intern(db).lookup_context
     }
 }
@@ -587,7 +588,7 @@ impl<'db, 'id> Inference<'db, 'id> {
         &mut self,
         concrete_trait_id: ConcreteTraitId<'db>,
         stable_ptr: Option<SyntaxStablePtrId<'db>>,
-        lookup_context: ImplLookupContext<'db>,
+        lookup_context: ImplLookupContextId<'db>,
     ) -> ImplId<'db> {
         let var = self.new_impl_var_raw(lookup_context, concrete_trait_id, stable_ptr);
         ImplLongId::ImplVar(self.impl_var(var).intern(self.db)).intern(self.db)
@@ -597,13 +598,10 @@ impl<'db, 'id> Inference<'db, 'id> {
     /// Returns the variable id.
     fn new_impl_var_raw(
         &mut self,
-        lookup_context: ImplLookupContext<'db>,
+        lookup_context: ImplLookupContextId<'db>,
         concrete_trait_id: ConcreteTraitId<'db>,
         stable_ptr: Option<SyntaxStablePtrId<'db>>,
     ) -> LocalImplVarId {
-        let mut lookup_context = lookup_context;
-        lookup_context.insert_module(concrete_trait_id.trait_id(self.db).module_file_id(self.db).0);
-
         let id = LocalImplVarId(self.impl_vars.len());
         if let Some(stable_ptr) = stable_ptr {
             self.stable_ptrs.insert(InferenceVar::Impl(id), stable_ptr);
@@ -922,7 +920,7 @@ impl<'db, 'id> Inference<'db, 'id> {
         let solution_set = self.trait_solution_set(
             concrete_trait_id,
             impl_var_trait_item_mappings,
-            impl_var.lookup_context,
+            impl_var.lookup_context.lookup_intern(self.db),
         )?;
         Ok(match solution_set {
             SolutionSet::None => SolutionSet::None,
@@ -978,7 +976,7 @@ impl<'db, 'id> Inference<'db, 'id> {
         // is consistent.
         let solution_set = match self.db.canonic_trait_solutions(
             canonical_trait,
-            lookup_context,
+            lookup_context.intern(self.db),
             (*self.data.impl_type_bounds).clone(),
         ) {
             Ok(solution_set) => solution_set,
@@ -998,14 +996,14 @@ impl<'db, 'id> Inference<'db, 'id> {
     /// SolutionSet::Ambiguous(...) otherwise.
     fn validate_neg_impls<'m>(
         &'m mut self,
-        lookup_context: &ImplLookupContext<'db>,
+        lookup_context: ImplLookupContextId<'db>,
         canonical_impl: CanonicalImpl<'db>,
     ) -> InferenceResult<SolutionSet<'db, CanonicalImpl<'db>>> {
         /// Validates that no solution set is found for the negative impls.
         fn validate_no_solution_set<'db, 'mt>(
             inference: &mut Inference<'db, 'mt>,
             canonical_impl: CanonicalImpl<'db>,
-            lookup_context: &ImplLookupContext<'db>,
+            lookup_context: ImplLookupContextId<'db>,
             negative_impls_concrete_traits: impl Iterator<Item = Maybe<ConcreteTraitId<'db>>>,
         ) -> InferenceResult<SolutionSet<'db, CanonicalImpl<'db>>> {
             for concrete_trait_id in negative_impls_concrete_traits {
@@ -1043,7 +1041,7 @@ impl<'db, 'id> Inference<'db, 'id> {
                     inference.trait_solution_set(
                         concrete_trait_id,
                         ImplVarTraitItemMappings::default(),
-                        lookup_context.clone()
+                        lookup_context.lookup_intern(inference.db),
                     )?,
                     SolutionSet::None
                 ) {

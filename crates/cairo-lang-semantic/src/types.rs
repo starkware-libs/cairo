@@ -37,7 +37,7 @@ use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::generics::fmt_generic_args;
-use crate::items::imp::{ImplId, ImplLookupContext};
+use crate::items::imp::{ImplId, ImplLookupContext, ImplLookupContextId};
 use crate::resolve::{ResolutionContext, ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id};
@@ -727,11 +727,12 @@ pub struct TypeInfo<'db> {
 /// Checks if there is at least one impl that can be inferred for a specific concrete trait.
 pub fn get_impl_at_context<'db>(
     db: &'db dyn SemanticGroup,
-    lookup_context: ImplLookupContext<'db>,
+    lookup_context: ImplLookupContextId<'db>,
     concrete_trait_id: ConcreteTraitId<'db>,
     stable_ptr: Option<SyntaxStablePtrId<'db>>,
 ) -> Result<ImplId<'db>, InferenceError<'db>> {
-    let constrains = db.generic_params_type_constraints(lookup_context.generic_params.clone());
+    let constrains =
+        db.generic_params_type_constraints(lookup_context.lookup_intern(db).generic_params);
     if constrains.is_empty() && concrete_trait_id.is_var_free(db) {
         return solve_concrete_trait_no_constraints(db, lookup_context, concrete_trait_id);
     }
@@ -909,16 +910,14 @@ pub fn type_size_info_cycle<'db>(
 /// Query implementation of [crate::db::SemanticGroup::type_info].
 pub fn type_info<'db>(
     db: &'db dyn SemanticGroup,
-    lookup_context: ImplLookupContext<'db>,
+    lookup_context: ImplLookupContextId<'db>,
     ty: TypeId<'db>,
 ) -> TypeInfo<'db> {
     // Dummy stable pointer for type inference variables, since inference is disabled.
-    let droppable =
-        get_impl_at_context(db, lookup_context.clone(), concrete_drop_trait(db, ty), None);
-    let copyable =
-        get_impl_at_context(db, lookup_context.clone(), concrete_copy_trait(db, ty), None);
+    let droppable = get_impl_at_context(db, lookup_context, concrete_drop_trait(db, ty), None);
+    let copyable = get_impl_at_context(db, lookup_context, concrete_copy_trait(db, ty), None);
     let destruct_impl =
-        get_impl_at_context(db, lookup_context.clone(), concrete_destruct_trait(db, ty), None);
+        get_impl_at_context(db, lookup_context, concrete_destruct_trait(db, ty), None);
     let panic_destruct_impl =
         get_impl_at_context(db, lookup_context, concrete_panic_destruct_trait(db, ty), None);
     TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl }
@@ -928,10 +927,12 @@ pub fn type_info<'db>(
 /// Only works when the given trait is var free.
 fn solve_concrete_trait_no_constraints<'db>(
     db: &'db dyn SemanticGroup,
-    mut lookup_context: ImplLookupContext<'db>,
+    lookup_context: ImplLookupContextId<'db>,
     id: ConcreteTraitId<'db>,
 ) -> Result<ImplId<'db>, InferenceError<'db>> {
+    let mut lookup_context = lookup_context.lookup_intern(db);
     enrich_lookup_context(db, id, &mut lookup_context);
+    let lookup_context = lookup_context.intern(db);
     match db.canonic_trait_solutions(
         CanonicalTrait { id, mappings: Default::default() },
         lookup_context,
@@ -948,7 +949,17 @@ pub fn copyable<'db>(
     db: &'db dyn SemanticGroup,
     ty: TypeId<'db>,
 ) -> Result<ImplId<'db>, InferenceError<'db>> {
-    solve_concrete_trait_no_constraints(db, Default::default(), concrete_copy_trait(db, ty))
+    solve_concrete_trait_no_constraints(
+        db,
+        ImplLookupContext::default(
+            ty.lookup_intern(db)
+                .module_id(db)
+                .map(|m| m.owning_crate(db))
+                .unwrap_or_else(|| db.core_crate()),
+        )
+        .intern(db),
+        concrete_copy_trait(db, ty),
+    )
 }
 
 /// Query implementation of [crate::db::SemanticGroup::droppable].
@@ -956,7 +967,17 @@ pub fn droppable<'db>(
     db: &'db dyn SemanticGroup,
     ty: TypeId<'db>,
 ) -> Result<ImplId<'db>, InferenceError<'db>> {
-    solve_concrete_trait_no_constraints(db, Default::default(), concrete_drop_trait(db, ty))
+    solve_concrete_trait_no_constraints(
+        db,
+        ImplLookupContext::default(
+            ty.lookup_intern(db)
+                .module_id(db)
+                .map(|m| m.owning_crate(db))
+                .unwrap_or_else(|| db.core_crate()),
+        )
+        .intern(db),
+        concrete_drop_trait(db, ty),
+    )
 }
 
 pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId<'_>) -> bool {

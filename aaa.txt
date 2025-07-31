@@ -1,0 +1,85 @@
+warning: Usage of deprecated feature `"corelib-internal-use"` with no `#[feature("corelib-internal-use")]` attribute. Note: "Use `starknet` directly"
+ --> /home/tomer/.cache/scarb/registry/src/scarbs.xyz-9djtpev4jug5q/openzeppelin_account-1.0.0/src/eth_account.cairo:12:15
+    use core::starknet::secp256_trait::Secp256PointTrait;
+              ^^^^^^^^
+
+warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#[feature("starknet-storage-deprecation")]` attribute. Note: "Use `starknet::storage::MutableVecTrait::push` or `starknet::storage::MutableVecTrait::allocate` instead."
+ --> /home/tomer/.cache/scarb/registry/src/scarbs.xyz-9djtpev4jug5q/openzeppelin_utils-1.0.0/src/structs/checkpoint.cairo:130:22
+                self.append().write(Checkpoint { key, value });
+                     ^^^^^^
+
+warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#[feature("starknet-storage-deprecation")]` attribute. Note: "Use `starknet::storage::MutableVecTrait::push` or `starknet::storage::MutableVecTrait::allocate` instead."
+ --> /home/tomer/.cache/scarb/registry/src/scarbs.xyz-9djtpev4jug5q/openzeppelin_utils-1.0.0/src/structs/checkpoint.cairo:134:18
+            self.append().write(Checkpoint { key, value });
+                 ^^^^^^
+
+warning: Usage of deprecated feature `"deprecated-starknet-consts"` with no `#[feature("deprecated-starknet-consts")]` attribute. Note: "Use `TryInto::try_into` in const context instead."
+ --> /home/tomer/.cache/scarb/registry/src/scarbs.xyz-9djtpev4jug5q/snforge_std-0.41.0/src/cheatcodes.cairo:1:44
+use starknet::{ContractAddress, ClassHash, contract_address_const};
+                                           ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: Usage of deprecated feature `"corelib-internal-use"` with no `#[feature("corelib-internal-use")]` attribute. Note: "Use `starknet` directly"
+ --> /home/tomer/.cache/scarb/registry/src/scarbs.xyz-9djtpev4jug5q/snforge_std-0.41.0/src/trace.cairo:1:11
+use core::starknet::ContractAddress;
+          ^^^^^^^^
+
+warning: Unused import: `staking::pool::interface_v0::Zero`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/pool/interface_v0.cairo:1:24
+use core::num::traits::Zero;
+                       ^^^^
+
+warning: Unused import: `staking::pool::interface_v0::InternalPoolMemberInfoV1`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/pool/interface_v0.cairo:3:29
+use staking::pool::objects::InternalPoolMemberInfoV1;
+                            ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: Unused import: `staking::pool::interface_v0::PoolMemberCheckpointTrait`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/pool/interface_v0.cairo:4:54
+use staking::pool::pool_member_balance_trace::trace::PoolMemberCheckpointTrait;
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: Unused import: `staking::pool::objects::PoolMemberInfoV1`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/pool/objects.cairo:3:31
+use staking::pool::interface::PoolMemberInfoV1;
+                              ^^^^^^^^^^^^^^^^
+
+warning: Unused import: `staking::pool::objects::InternalPoolMemberInfoLatest`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/pool/objects.cairo:8:49
+use staking::types::{Amount, Commission, Index, InternalPoolMemberInfoLatest, VecIndex};
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: Unused import: `staking::staking::staking::Staking::InternalStakerInfoConvertTrait`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/staking/staking.cairo:28:9
+        InternalStakerInfoConvertTrait, InternalStakerInfoLatestTrait, InternalStakerInfoTrait,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: Unused import: `staking::staking::staking::Staking::InternalStakerInfoTrait`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/staking/staking.cairo:28:72
+        InternalStakerInfoConvertTrait, InternalStakerInfoLatestTrait, InternalStakerInfoTrait,
+                                                                       ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: Unused import: `staking::staking::staking::Staking::MutableStakerBalanceTraceTrait`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/staking/staking.cairo:34:9
+        MutableStakerBalanceTraceTrait, StakerBalance, StakerBalanceTrace, StakerBalanceTraceTrait,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: Unused import: `staking::staking::staking::Staking::StakerBalance`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/staking/staking.cairo:34:41
+        MutableStakerBalanceTraceTrait, StakerBalance, StakerBalanceTrace, StakerBalanceTraceTrait,
+                                        ^^^^^^^^^^^^^
+
+warning: Unused import: `staking::staking::staking::Staking::StakerBalanceTrace`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/staking/staking.cairo:34:56
+        MutableStakerBalanceTraceTrait, StakerBalance, StakerBalanceTrace, StakerBalanceTraceTrait,
+                                                       ^^^^^^^^^^^^^^^^^^
+
+warning: Unused import: `staking::staking::staking::Staking::StakerBalanceTraceTrait`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/staking/staking.cairo:34:76
+        MutableStakerBalanceTraceTrait, StakerBalance, StakerBalanceTrace, StakerBalanceTraceTrait,
+                                                                           ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: Unused import: `staking::staking::staking::Staking::StakerBalanceTrait`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/staking/staking.cairo:35:9
+        StakerBalanceTrait,
+        ^^^^^^^^^^^^^^^^^^
+
