@@ -325,7 +325,7 @@ impl<'a> SyntaxNode<'a> {
     /// This is a shortcut for [`Self::preorder`] paired with filtering for [`WalkEvent::Enter`]
     /// events only.
     pub fn descendants(
-        &'a self,
+        &self,
         db: &'a dyn SyntaxGroup,
     ) -> impl Iterator<Item = SyntaxNode<'a>> + 'a {
         self.preorder(db).filter_map(|event| match event {
