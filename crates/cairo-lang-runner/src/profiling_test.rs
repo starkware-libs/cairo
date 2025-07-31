@@ -75,7 +75,6 @@ pub fn test_profiling(
             Default::default(),
         )
         .unwrap();
-<<<<<<< HEAD
     let profiling_processor =
         ProfilingInfoProcessor::new(Some(&db), &sierra_program, statements_functions);
 
@@ -97,52 +96,6 @@ pub fn test_profiling(
     };
     let processed_profiling_info =
         profiling_processor.process(&result.profiling_info.unwrap(), &profiling_params);
-||||||| b34dbfaa1
-    let profiling_processor = ProfilingInfoProcessor::new(
-        Some(&db),
-        sierra_program,
-        statements_functions,
-        if inputs.contains_key("scoped_mode") {
-            ProfilingInfoProcessorParams {
-                min_weight: 1,
-                process_by_statement: false,
-                process_by_concrete_libfunc: false,
-                process_by_generic_libfunc: false,
-                process_by_user_function: false,
-                process_by_original_user_function: false,
-                process_by_cairo_function: false,
-                process_by_stack_trace: false,
-                process_by_cairo_stack_trace: false,
-                process_by_scoped_statement: true,
-            }
-        } else {
-            Default::default()
-        },
-    );
-    let processed_profiling_info = profiling_processor.process(&result.profiling_info.unwrap());
-=======
-    let profiling_processor =
-        ProfilingInfoProcessor::new(Some(&db), &sierra_program, &statements_functions);
-
-    let profiling_params = if inputs.contains_key("scoped_mode") {
-        ProfilingInfoProcessorParams {
-            min_weight: 1,
-            process_by_statement: false,
-            process_by_concrete_libfunc: false,
-            process_by_generic_libfunc: false,
-            process_by_user_function: false,
-            process_by_original_user_function: false,
-            process_by_cairo_function: false,
-            process_by_stack_trace: false,
-            process_by_cairo_stack_trace: false,
-            process_by_scoped_statement: true,
-        }
-    } else {
-        Default::default()
-    };
-    let processed_profiling_info =
-        profiling_processor.process(&result.profiling_info.unwrap(), &profiling_params);
->>>>>>> origin/dev-v2.12.0
 
     TestRunnerResult {
         outputs: OrderedHashMap::from([(

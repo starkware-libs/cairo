@@ -107,40 +107,19 @@ impl<'a> SyntaxNode<'a> {
             green::GreenNodeDetails::Node { .. } => None,
         }
     }
-<<<<<<< HEAD
 
     /// Returns the green node of the syntax node.
     pub fn green_node(&self, db: &'a dyn SyntaxGroup) -> &'a GreenNode<'a> {
         self.long(db).green.long(db)
-||||||| b34dbfaa1
-    pub fn green_node(&self, db: &dyn SyntaxGroup) -> Arc<GreenNode> {
-        self.lookup_intern(db).green.lookup_intern(db)
-=======
-
-    /// Returns the green node of the syntax node.
-    pub fn green_node(&self, db: &dyn SyntaxGroup) -> Arc<GreenNode> {
-        self.lookup_intern(db).green.lookup_intern(db)
->>>>>>> origin/dev-v2.12.0
     }
 
     /// Returns the span of the syntax node without trivia.
     pub fn span_without_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
-<<<<<<< HEAD
         let node = self.long(db);
         let green_node = node.green.long(db);
         let (leading, trailing) = both_trivia_width(db, green_node);
         let start = node.offset.add_width(leading);
         let end = node.offset.add_width(green_node.width()).sub_width(trailing);
-||||||| b34dbfaa1
-        let start = self.span_start_without_trivia(db);
-        let end = self.span_end_without_trivia(db);
-=======
-        let node = self.lookup_intern(db);
-        let green_node = node.green.lookup_intern(db);
-        let (leading, trailing) = both_trivia_width(db, &green_node);
-        let start = node.offset.add_width(leading);
-        let end = node.offset.add_width(green_node.width()).sub_width(trailing);
->>>>>>> origin/dev-v2.12.0
         TextSpan { start, end }
     }
     pub fn parent(&self, db: &'a dyn SyntaxGroup) -> Option<SyntaxNode<'a>> {
@@ -199,75 +178,18 @@ impl<'a> SyntaxNode<'a> {
 
     /// Returns the start of the span of the syntax node without trivia.
     pub fn span_start_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
-<<<<<<< HEAD
         let node = self.long(db);
         let green_node = node.green.long(db);
         let leading = leading_trivia_width(db, green_node);
         node.offset.add_width(leading)
-||||||| b34dbfaa1
-        let SyntaxNodeLongId { green, offset, .. } = self.lookup_intern(db);
-        let mut green_node = green.lookup_intern(db);
-        loop {
-            match &green_node.details {
-                green::GreenNodeDetails::Token(_) => return offset,
-                green::GreenNodeDetails::Node { children, .. } => {
-                    if green_node.kind.is_terminal() {
-                        return offset.add_width(children[0].lookup_intern(db).width());
-                    }
-                    if let Some(child) = children.iter().find_map(|child| {
-                        let child = child.lookup_intern(db);
-                        (child.width() != TextWidth::default()).then_some(child)
-                    }) {
-                        green_node = child;
-                    } else {
-                        return offset;
-                    }
-                }
-            }
-        }
-=======
-        let node = self.lookup_intern(db);
-        let green_node = node.green.lookup_intern(db);
-        let leading = leading_trivia_width(db, &green_node);
-        node.offset.add_width(leading)
->>>>>>> origin/dev-v2.12.0
     }
 
     /// Returns the end of the span of the syntax node without trivia.
     pub fn span_end_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
-<<<<<<< HEAD
         let node = self.long(db);
         let green_node = node.green.long(db);
         let trailing = trailing_trivia_width(db, green_node);
         node.offset.add_width(green_node.width()).sub_width(trailing)
-||||||| b34dbfaa1
-        let SyntaxNodeLongId { green, offset, .. } = self.lookup_intern(db);
-        let mut green_node = green.lookup_intern(db);
-        let end_offset = offset.add_width(green_node.width());
-        loop {
-            match &green_node.details {
-                green::GreenNodeDetails::Token(_) => return end_offset,
-                green::GreenNodeDetails::Node { children, .. } => {
-                    if green_node.kind.is_terminal() {
-                        return end_offset.sub_width(children[2].lookup_intern(db).width());
-                    }
-                    if let Some(child) = children.iter().rev().find_map(|child| {
-                        let child = child.lookup_intern(db);
-                        (child.width() != TextWidth::default()).then_some(child)
-                    }) {
-                        green_node = child;
-                    } else {
-                        return end_offset;
-                    }
-                }
-            }
-        }
-=======
-        let node = self.lookup_intern(db);
-        let green_node = node.green.lookup_intern(db);
-        let trailing = trailing_trivia_width(db, &green_node);
-        node.offset.add_width(green_node.width()).sub_width(trailing)
->>>>>>> origin/dev-v2.12.0
     }
 
     /// Lookups a syntax node using an offset.
@@ -294,7 +216,6 @@ impl<'a> SyntaxNode<'a> {
 
     /// Returns all the text under the syntax node.
     pub fn get_text(&self, db: &dyn SyntaxGroup) -> String {
-<<<<<<< HEAD
         // A `None` return from reading the file content is only expected in the case of an IO
         // error. Since a SyntaxNode exists and is being processed, we should have already
         // successfully accessed this file earlier, therefore it should never fail.
@@ -304,17 +225,6 @@ impl<'a> SyntaxNode<'a> {
             .long(db);
 
         self.span(db).take(file_content).to_string()
-||||||| b34dbfaa1
-        format!("{}", NodeTextFormatter { node: self, db })
-=======
-        // A `None` return from reading the file content is only expected in the case of an IO
-        // error. Since a SyntaxNode exists and is being processed, we should have already
-        // successfully accessed this file earlier, therefore it should never fail.
-        let file_content =
-            db.file_content(self.stable_ptr(db).file_id(db)).expect("Failed to read file content");
-
-        self.span(db).take(&file_content).to_string()
->>>>>>> origin/dev-v2.12.0
     }
 
     /// Returns all the text under the syntax node.
@@ -386,23 +296,12 @@ impl<'a> SyntaxNode<'a> {
     /// of the first token and the trailing trivia of the last token).
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
-<<<<<<< HEAD
     pub fn get_text_without_trivia(self, db: &'a dyn SyntaxGroup) -> String {
         let file_content = db
             .file_content(self.stable_ptr(db).file_id(db))
             .expect("Failed to read file content")
             .long(db);
         self.span_without_trivia(db).take(file_content).to_string()
-||||||| b34dbfaa1
-    pub fn get_text_without_trivia(self, db: &dyn SyntaxGroup) -> String {
-        let node = self.lookup_intern(db).green.lookup_intern(db);
-        format!("{}", TrimmedGreenFormatter { node, trim_kind: TrimKind::Both, db })
-=======
-    pub fn get_text_without_trivia(self, db: &dyn SyntaxGroup) -> String {
-        let file_content =
-            db.file_content(self.stable_ptr(db).file_id(db)).expect("Failed to read file content");
-        self.span_without_trivia(db).take(&file_content).to_string()
->>>>>>> origin/dev-v2.12.0
     }
 
     /// Returns the text under the syntax node, according to the given span.
@@ -411,29 +310,12 @@ impl<'a> SyntaxNode<'a> {
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
     pub fn get_text_of_span(self, db: &dyn SyntaxGroup, span: TextSpan) -> String {
-<<<<<<< HEAD
         assert!(self.span(db).contains(span));
         let file_content = db
             .file_content(self.stable_ptr(db).file_id(db))
             .expect("Failed to read file content")
             .long(db);
         span.take(file_content).to_string()
-||||||| b34dbfaa1
-        let orig_span = self.span(db);
-        assert!(orig_span.contains(span));
-        let full_text = self.get_text(db);
-
-        let span_in_span = TextSpan {
-            start: (span.start - orig_span.start).as_offset(),
-            end: (span.end - orig_span.start).as_offset(),
-        };
-        span_in_span.take(&full_text).to_string()
-=======
-        assert!(self.span(db).contains(span));
-        let file_content =
-            db.file_content(self.stable_ptr(db).file_id(db)).expect("Failed to read file content");
-        span.take(&file_content).to_string()
->>>>>>> origin/dev-v2.12.0
     }
 
     /// Traverse the subtree rooted at the current node (including the current node) in preorder.
@@ -605,7 +487,6 @@ pub trait TypedStablePtr<'a> {
     fn untyped(self) -> SyntaxStablePtrId<'a>;
 }
 
-<<<<<<< HEAD
 /// Returns the width of the leading trivia of the given green node.
 fn leading_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> TextWidth {
     match &green.details {
@@ -613,51 +494,17 @@ fn leading_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> T
         green::GreenNodeDetails::Node { children, width } => {
             if *width == TextWidth::default() {
                 return TextWidth::default();
-||||||| b34dbfaa1
-/// Wrapper for formatting the text of syntax nodes.
-pub struct NodeTextFormatter<'a> {
-    /// The node to format.
-    pub node: &'a SyntaxNode,
-    /// The syntax db.
-    pub db: &'a dyn SyntaxGroup,
-}
-impl Display for NodeTextFormatter<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self.node.green_node(self.db).as_ref().details {
-            green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
-            green::GreenNodeDetails::Node { children, .. } => {
-                write!(f, "{}", GreenNodesFormatter { nodes: children, db: self.db })?;
-=======
-/// Returns the width of the leading trivia of the given green node.
-fn leading_trivia_width(db: &dyn SyntaxGroup, green: &GreenNode) -> TextWidth {
-    match &green.details {
-        green::GreenNodeDetails::Token(_) => TextWidth::default(),
-        green::GreenNodeDetails::Node { children, width } => {
-            if *width == TextWidth::default() {
-                return TextWidth::default();
             }
-            if green.kind.is_terminal() {
-                return children[0].lookup_intern(db).width();
->>>>>>> origin/dev-v2.12.0
-            }
-<<<<<<< HEAD
             if green.kind.is_terminal() {
                 return children[0].long(db).width();
             }
             let non_empty = find_non_empty_child(db, &mut children.iter())
                 .expect("Parent width non-empty - one of the children should be non-empty");
             leading_trivia_width(db, non_empty)
-||||||| b34dbfaa1
-=======
-            let non_empty = find_non_empty_child(db, &mut children.iter())
-                .expect("Parent width non-empty - one of the children should be non-empty");
-            leading_trivia_width(db, &non_empty)
->>>>>>> origin/dev-v2.12.0
         }
     }
 }
 
-<<<<<<< HEAD
 /// Returns the width of the trailing trivia of the given green node.
 fn trailing_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> TextWidth {
     match &green.details {
@@ -665,107 +512,17 @@ fn trailing_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> 
         green::GreenNodeDetails::Node { children, width } => {
             if *width == TextWidth::default() {
                 return TextWidth::default();
-||||||| b34dbfaa1
-/// Wrapper for formatting the text of a green node while trimming trivia.
-struct TrimmedGreenFormatter<'a> {
-    /// The node to format.
-    pub node: Arc<GreenNode>,
-    /// The kind of trimming to apply.
-    pub trim_kind: TrimKind,
-    /// The syntax db.
-    pub db: &'a dyn SyntaxGroup,
-}
-
-enum TrimKind {
-    /// Trim the leading trivia.
-    Leading,
-    /// Trim the trailing trivia.
-    Trailing,
-    /// Trim both leading and trailing trivia.
-    Both,
-}
-
-impl Display for TrimmedGreenFormatter<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let db = self.db;
-        match &self.node.details {
-            green::GreenNodeDetails::Token(text) => write!(f, "{text}"),
-            green::GreenNodeDetails::Node { children, .. } => {
-                if self.node.kind.is_terminal() {
-                    let children = match self.trim_kind {
-                        TrimKind::Leading => &children[1..],
-                        TrimKind::Trailing => &children[..=1],
-                        TrimKind::Both => &children[1..=1],
-                    };
-                    return write!(f, "{}", GreenNodesFormatter { nodes: children, db });
-                }
-                match self.trim_kind {
-                    TrimKind::Leading => {
-                        let Some((first, rest)) = split_non_empty(db, children, <[_]>::split_first)
-                        else {
-                            return Ok(());
-                        };
-                        let trim_kind = TrimKind::Leading;
-                        write!(f, "{}", TrimmedGreenFormatter { node: first, trim_kind, db })?;
-                        write!(f, "{}", GreenNodesFormatter { nodes: rest, db })
-                    }
-                    TrimKind::Trailing => {
-                        let Some((last, rest)) = split_non_empty(db, children, <[_]>::split_last)
-                        else {
-                            return Ok(());
-                        };
-                        write!(f, "{}", GreenNodesFormatter { nodes: rest, db })?;
-                        let trim_kind = TrimKind::Trailing;
-                        write!(f, "{}", TrimmedGreenFormatter { node: last, trim_kind, db })
-                    }
-                    TrimKind::Both => {
-                        let Some((first, rest)) = split_non_empty(db, children, <[_]>::split_first)
-                        else {
-                            return Ok(());
-                        };
-                        if let Some((last, rest)) = split_non_empty(db, rest, <[_]>::split_last) {
-                            let trim_kind = TrimKind::Leading;
-                            write!(f, "{}", TrimmedGreenFormatter { node: first, trim_kind, db })?;
-                            write!(f, "{}", GreenNodesFormatter { nodes: rest, db })?;
-                            let trim_kind = TrimKind::Trailing;
-                            write!(f, "{}", TrimmedGreenFormatter { node: last, trim_kind, db })
-                        } else {
-                            let trim_kind = TrimKind::Both;
-                            write!(f, "{}", TrimmedGreenFormatter { node: first, trim_kind, db })
-                        }
-                    }
-                }
-=======
-/// Returns the width of the trailing trivia of the given green node.
-fn trailing_trivia_width(db: &dyn SyntaxGroup, green: &GreenNode) -> TextWidth {
-    match &green.details {
-        green::GreenNodeDetails::Token(_) => TextWidth::default(),
-        green::GreenNodeDetails::Node { children, width } => {
-            if *width == TextWidth::default() {
-                return TextWidth::default();
             }
-            if green.kind.is_terminal() {
-                return children[2].lookup_intern(db).width();
->>>>>>> origin/dev-v2.12.0
-            }
-<<<<<<< HEAD
             if green.kind.is_terminal() {
                 return children[2].long(db).width();
             }
             let non_empty = find_non_empty_child(db, &mut children.iter().rev())
                 .expect("Parent width non-empty - one of the children should be non-empty");
             trailing_trivia_width(db, non_empty)
-||||||| b34dbfaa1
-=======
-            let non_empty = find_non_empty_child(db, &mut children.iter().rev())
-                .expect("Parent width non-empty - one of the children should be non-empty");
-            trailing_trivia_width(db, &non_empty)
->>>>>>> origin/dev-v2.12.0
         }
     }
 }
 
-<<<<<<< HEAD
 /// Returns the width of the leading and trailing trivia of the given green node.
 fn both_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> (TextWidth, TextWidth) {
     match &green.details {
@@ -788,50 +545,10 @@ fn both_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> (Tex
             } else {
                 both_trivia_width(db, first_non_empty)
             }
-||||||| b34dbfaa1
-/// Splits the given children slice into a non-empty part and the rest, using the provided split
-/// function.
-fn split_non_empty<'a>(
-    db: &dyn SyntaxGroup,
-    mut children: &'a [GreenId],
-    split: impl Fn(&[GreenId]) -> Option<(&GreenId, &[GreenId])>,
-) -> Option<(Arc<GreenNode>, &'a [GreenId])> {
-    while let Some((taken, rest)) = split(children) {
-        let taken = taken.lookup_intern(db);
-        if taken.width() != TextWidth::default() {
-            return Some((taken, rest));
-=======
-/// Returns the width of the leading and trailing trivia of the given green node.
-fn both_trivia_width(db: &dyn SyntaxGroup, green: &GreenNode) -> (TextWidth, TextWidth) {
-    match &green.details {
-        green::GreenNodeDetails::Token(_) => (TextWidth::default(), TextWidth::default()),
-        green::GreenNodeDetails::Node { children, width } => {
-            if *width == TextWidth::default() {
-                return (TextWidth::default(), TextWidth::default());
-            }
-            if green.kind.is_terminal() {
-                return (
-                    children[0].lookup_intern(db).width(),
-                    children[2].lookup_intern(db).width(),
-                );
-            }
-            let mut iter = children.iter();
-            let first_non_empty = find_non_empty_child(db, &mut iter)
-                .expect("Parent width non-empty - one of the children should be non-empty");
-            if let Some(last_non_empty) = find_non_empty_child(db, &mut iter.rev()) {
-                (
-                    leading_trivia_width(db, &first_non_empty),
-                    trailing_trivia_width(db, &last_non_empty),
-                )
-            } else {
-                both_trivia_width(db, &first_non_empty)
-            }
->>>>>>> origin/dev-v2.12.0
         }
     }
 }
 
-<<<<<<< HEAD
 /// Finds the first non-empty child in the given iterator.
 fn find_non_empty_child<'a>(
     db: &'a dyn SyntaxGroup,
@@ -841,35 +558,4 @@ fn find_non_empty_child<'a>(
         let child = child.long(db);
         (child.width() != TextWidth::default()).then_some(child)
     })
-||||||| b34dbfaa1
-/// Formatter for green nodes, used for formatting the text of syntax nodes.
-struct GreenNodesFormatter<'a> {
-    /// The green nodes to format.
-    nodes: &'a [GreenId],
-    /// The syntax db.
-    db: &'a dyn SyntaxGroup,
-}
-impl Display for GreenNodesFormatter<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for id in self.nodes.iter() {
-            match &id.lookup_intern(self.db).details {
-                green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
-                green::GreenNodeDetails::Node { children, .. } => {
-                    write!(f, "{}", GreenNodesFormatter { nodes: children, db: self.db })?;
-                }
-            }
-        }
-        Ok(())
-    }
-=======
-/// Finds the first non-empty child in the given iterator.
-fn find_non_empty_child<'a>(
-    db: &dyn SyntaxGroup,
-    child_iter: &mut impl Iterator<Item = &'a GreenId>,
-) -> Option<Arc<GreenNode>> {
-    child_iter.find_map(|child| {
-        let child = child.lookup_intern(db);
-        (child.width() != TextWidth::default()).then_some(child)
-    })
->>>>>>> origin/dev-v2.12.0
 }

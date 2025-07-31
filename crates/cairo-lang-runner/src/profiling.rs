@@ -19,7 +19,6 @@ use crate::ProfilingInfoCollectionConfig;
 #[path = "profiling_test.rs"]
 mod test;
 
-<<<<<<< HEAD
 /// Profiler configuration.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ProfilerConfig {
@@ -38,18 +37,6 @@ impl ProfilerConfig {
     }
 }
 
-||||||| b34dbfaa1
-=======
-/// Profiler configuration.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ProfilerConfig {
-    /// Profiler with Cairo level debug information.
-    Cairo,
-    /// Sierra level profiling, no cairo level debug information.
-    Sierra,
-}
-
->>>>>>> origin/dev-v2.12.0
 /// Profiling into of a single run. This is the raw info - went through minimum processing, as this
 /// is done during the run. To enrich it before viewing/printing, use the `ProfilingInfoProcessor`.
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -410,7 +397,6 @@ impl Default for ProfilingInfoProcessorParams {
         }
     }
 }
-<<<<<<< HEAD
 
 impl ProfilingInfoProcessorParams {
     pub fn from_profiler_config(config: &ProfilerConfig) -> Self {
@@ -439,25 +425,6 @@ impl ProfilingInfoProcessorParams {
     }
 }
 
-||||||| b34dbfaa1
-=======
-
-impl ProfilingInfoProcessorParams {
-    pub fn from_profiler_config(config: &ProfilerConfig) -> Self {
-        match config {
-            ProfilerConfig::Cairo => Default::default(),
-            ProfilerConfig::Sierra => Self {
-                process_by_generic_libfunc: false,
-                process_by_cairo_stack_trace: false,
-                process_by_original_user_function: false,
-                process_by_cairo_function: false,
-                ..ProfilingInfoProcessorParams::default()
-            },
-        }
-    }
-}
-
->>>>>>> origin/dev-v2.12.0
 /// A processor for profiling info. Used to process the raw profiling info (basic info collected
 /// during the run) into a more detailed profiling info that can also be formatted.
 pub struct ProfilingInfoProcessor<'a> {
@@ -466,55 +433,19 @@ pub struct ProfilingInfoProcessor<'a> {
     /// A map between sierra statement index and the string representation of the Cairo function
     /// that generated it. The function representation is composed of the function name and the
     /// path (modules and impls) to the function in the file.
-<<<<<<< HEAD
     statements_functions: UnorderedHashMap<StatementIdx, String>,
-||||||| b34dbfaa1
-    statements_functions: UnorderedHashMap<StatementIdx, String>,
-    params: ProfilingInfoProcessorParams,
-=======
-    statements_functions: &'a UnorderedHashMap<StatementIdx, String>,
->>>>>>> origin/dev-v2.12.0
 }
 impl<'a> ProfilingInfoProcessor<'a> {
     pub fn new(
         db: Option<&'a dyn SierraGenGroup>,
-<<<<<<< HEAD
         sierra_program: &'a Program,
         statements_functions: UnorderedHashMap<StatementIdx, String>,
-||||||| b34dbfaa1
-        sierra_program: Program,
-        statements_functions: UnorderedHashMap<StatementIdx, String>,
-        params: ProfilingInfoProcessorParams,
-=======
-        sierra_program: &'a Program,
-        statements_functions: &'a UnorderedHashMap<StatementIdx, String>,
->>>>>>> origin/dev-v2.12.0
     ) -> Self {
-<<<<<<< HEAD
         Self { db, sierra_program, statements_functions }
     }
 
     /// Processes the raw profiling info according to the given params.
     pub fn process(
-||||||| b34dbfaa1
-        Self { db, sierra_program, statements_functions, params }
-    }
-
-    /// Processes the raw profiling info according to the params set in the processor.
-    pub fn process(&self, raw_profiling_info: &ProfilingInfo) -> ProcessedProfilingInfo {
-        self.process_ex(raw_profiling_info, &self.params)
-    }
-
-    /// Processes the raw profiling info according to the given params (can be used to override the
-    /// processor params).
-    pub fn process_ex(
-=======
-        Self { db, sierra_program, statements_functions }
-    }
-
-    /// Processes the raw profiling info according to the given params.
-    pub fn process(
->>>>>>> origin/dev-v2.12.0
         &self,
         raw_profiling_info: &ProfilingInfo,
         params: &ProfilingInfoProcessorParams,

@@ -340,10 +340,6 @@ pub trait LoweringGroup:
         function_id: ids::ConcreteFunctionWithBodyId<'db>,
     ) -> Maybe<bool>;
 
-    // Internal query for if a function is marked as `#[inline(never)]`.
-    #[salsa::invoke(crate::inline::priv_never_inline)]
-    fn priv_never_inline(&self, function_id: ids::ConcreteFunctionWithBodyId) -> Maybe<bool>;
-
     /// Returns whether a function should be specalized.
     #[salsa::invoke(crate::specialization::priv_should_specialize)]
     fn priv_should_specialize<'db>(
