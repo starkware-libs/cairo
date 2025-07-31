@@ -30,7 +30,7 @@ fn test_filesystem() {
     let crt = CrateLongId::plain("my_crate").intern(&db);
     let crt2 = CrateLongId::plain("my_crate2").intern(&db);
 
-    assert_eq!(db.crate_config(crt), Some(config));
+    assert_eq!(db.crate_config(crt), Some(&config));
     assert!(db.crate_config(crt2).is_none());
 
     let file_id = directory.file(&db, child_str.intern(&db));

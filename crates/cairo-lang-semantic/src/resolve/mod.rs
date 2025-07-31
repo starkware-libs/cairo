@@ -8,7 +8,7 @@ use cairo_lang_defs::ids::{
     ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitId, TraitItemId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
-use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
+use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings, default_crate_settings};
 use cairo_lang_filesystem::ids::{CodeMapping, CrateId, CrateLongId, SmolStrId};
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
@@ -342,7 +342,8 @@ impl<'db> Resolver<'db> {
 
     pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData<'db>) -> Self {
         let owning_crate_id = data.module_file_id.0.owning_crate(db);
-        let settings = db.crate_config(owning_crate_id).map(|c| c.settings).unwrap_or_default();
+        let settings =
+            db.crate_config(owning_crate_id).map(|c| c.settings.clone()).unwrap_or_default();
         Self {
             owning_crate_id,
             settings,
@@ -404,11 +405,11 @@ impl<'db> Resolver<'db> {
 
     /// Returns the active settings of the owning crate, with respect to the macro context
     /// modifier, see [`MacroContextModifier`].
-    pub fn active_settings(&self, macro_context_modifier: MacroContextModifier) -> CrateSettings {
+    pub fn active_settings(&self, macro_context_modifier: MacroContextModifier) -> &CrateSettings {
         self.db
             .crate_config(self.active_owning_crate_id(macro_context_modifier))
-            .map(|c| c.settings)
-            .unwrap_or_default()
+            .map(|c| &c.settings)
+            .unwrap_or_else(|| default_crate_settings(self.db))
     }
 
     /// Resolves an item, given a path.

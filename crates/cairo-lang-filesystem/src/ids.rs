@@ -446,14 +446,14 @@ impl<'db> Directory<'db> {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum BlobLongId {
     OnDisk(PathBuf),
-    Virtual(Arc<[u8]>),
+    Virtual(Vec<u8>),
 }
 
 impl BlobLongId {
-    pub fn content(self) -> Option<Arc<[u8]>> {
+    pub fn content(&self) -> Option<Vec<u8>> {
         match self {
             BlobLongId::OnDisk(path) => match std::fs::read(path) {
-                Ok(content) => Some(content.into()),
+                Ok(content) => Some(content),
                 Err(_) => None,
             },
             BlobLongId::Virtual(content) => Some(content.clone()),

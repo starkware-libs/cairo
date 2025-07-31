@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{
     FileIndex, GenericTypeId, ImportableId, LanguageElementId, ModuleFileId, ModuleId,
     NamedLanguageElementId, TraitFunctionId, TraitId,
 };
-use cairo_lang_filesystem::db::CORELIB_CRATE_NAME;
+use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, default_crate_settings};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
@@ -322,7 +322,10 @@ pub fn visible_importables_from_module<'db>(
         &db.visible_importables_in_module(prelude_submodule, prelude_submodule_file_id, false)[..],
     );
     // Collect importables from all dependency crates, including the current crate and corelib.
-    let settings = db.crate_config(current_crate_id).map(|c| c.settings).unwrap_or_default();
+    let settings = db
+        .crate_config(current_crate_id)
+        .map(|c| &c.settings)
+        .unwrap_or_else(|| default_crate_settings(db));
     for crate_id in chain!(
         [current_crate_id],
         (!settings.dependencies.contains_key(CORELIB_CRATE_NAME)).then(|| corelib::core_crate(db)),
