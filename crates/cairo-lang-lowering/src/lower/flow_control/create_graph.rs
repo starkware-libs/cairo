@@ -1,7 +1,8 @@
 use cairo_lang_semantic::{self as semantic, Condition, PatternId};
 use cairo_lang_syntax::node::TypedStablePtr;
+use filtered_patterns::IndexAndBindings;
 use itertools::Itertools;
-use patterns::{create_node_for_patterns, get_pattern};
+use patterns::{Cache, create_node_for_patterns, get_pattern};
 
 use super::graph::{
     ArmExpr, BooleanIf, EvaluateExpr, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode,
@@ -61,13 +62,25 @@ pub fn create_graph_expr_if<'db>(
                 let expr_location = ctx.get_location(expr.stable_ptr().untyped());
                 let expr_var = graph.new_var(expr.ty(), expr_location);
 
+                let cache = Cache::default();
+
                 let match_node_id = create_node_for_patterns(
                     ctx,
                     &mut graph,
                     expr_var,
                     &patterns.iter().map(|pattern| Some(get_pattern(ctx, *pattern))).collect_vec(),
-                    &|_graph, pattern_indices| {
-                        if pattern_indices.first().is_some() { current_node } else { false_branch }
+                    &|graph, pattern_indices| {
+                        if let Some(index_and_bindings) = pattern_indices.first() {
+                            cache.get_or_compute(
+                                &|graph, index_and_bindings: IndexAndBindings| {
+                                    index_and_bindings.wrap_node(graph, current_node)
+                                },
+                                graph,
+                                index_and_bindings,
+                            )
+                        } else {
+                            false_branch
+                        }
                     },
                     expr_location,
                 );
@@ -110,6 +123,8 @@ pub fn create_graph_expr_match<'db>(
         })
         .collect();
 
+    let cache = Cache::default();
+
     // TODO(lior): add diagnostics if there is an unreachable arm.
     let match_node_id = create_node_for_patterns(
         ctx,
@@ -119,10 +134,17 @@ pub fn create_graph_expr_match<'db>(
             .iter()
             .map(|(pattern, _)| Some(get_pattern(ctx, *pattern)))
             .collect_vec(),
-        &|_graph, pattern_indices| {
+        &|graph, pattern_indices| {
             // TODO(lior): add diagnostics if pattern_indices is empty (instead of `unwrap`).
-            let index = pattern_indices.first().unwrap();
-            pattern_and_nodes[index].1
+            let index_and_bindings = pattern_indices.first().unwrap();
+            cache.get_or_compute(
+                &|graph, index_and_bindings: IndexAndBindings| {
+                    let index = index_and_bindings.index();
+                    index_and_bindings.wrap_node(graph, pattern_and_nodes[index].1)
+                },
+                graph,
+                index_and_bindings,
+            )
         },
         matched_expr_location,
     );

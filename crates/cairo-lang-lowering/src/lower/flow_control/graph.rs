@@ -21,7 +21,7 @@
 
 use std::fmt::Debug;
 
-use cairo_lang_semantic::{self as semantic, ConcreteVariant};
+use cairo_lang_semantic::{self as semantic, ConcreteVariant, PatternVariable};
 use itertools::Itertools;
 
 use crate::ids::LocationId;
@@ -100,6 +100,39 @@ pub struct ArmExpr {
     pub expr: semantic::ExprId,
 }
 
+/// Destructure (for structs and tuples).
+#[derive(Debug)]
+pub struct Deconstruct {
+    /// The input value to destructure (a variable of type struct or tuple).
+    pub input: FlowControlVar,
+    /// The (output) variables to assign the result to. The number of variables is equal to the
+    /// number of fields in the struct or tuple.
+    pub outputs: Vec<FlowControlVar>,
+    /// The next node.
+    pub next: NodeId,
+}
+
+/// Assigns a [PatternVariable] to an existing [FlowControlVar] that can be later used
+/// in the expressions.
+pub struct BindVar<'db> {
+    /// The input variable to bind.
+    pub input: FlowControlVar,
+    /// The (output) pattern variable to assign the result to.
+    pub output: PatternVariable<'db>,
+    /// The next node.
+    pub next: NodeId,
+}
+
+impl<'db> std::fmt::Debug for BindVar<'db> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "BindVar {{ input: {:?}, output: {:?}, next: {:?} }}",
+            self.input, self.output.name, self.next
+        )
+    }
+}
+
 /// A node in the flow control graph for a match or if lowering.
 pub enum FlowControlNode<'db> {
     /// Evaluates an expression and assigns the result to a [FlowControlVar].
@@ -110,6 +143,10 @@ pub enum FlowControlNode<'db> {
     EnumMatch(EnumMatch<'db>),
     /// An arm (final node) that returns an expression.
     ArmExpr(ArmExpr),
+    /// Destructure a tuple to its members.
+    Deconstruct(Deconstruct),
+    /// Binds a [FlowControlVar] to a pattern variable.
+    BindVar(BindVar<'db>),
     /// An arm (final node) that returns a unit value - `()`.
     UnitResult,
 }
@@ -121,6 +158,8 @@ impl<'db> Debug for FlowControlNode<'db> {
             FlowControlNode::BooleanIf(node) => node.fmt(f),
             FlowControlNode::EnumMatch(node) => node.fmt(f),
             FlowControlNode::ArmExpr(node) => node.fmt(f),
+            FlowControlNode::Deconstruct(node) => node.fmt(f),
+            FlowControlNode::BindVar(node) => node.fmt(f),
             FlowControlNode::UnitResult => write!(f, "UnitResult"),
         }
     }
