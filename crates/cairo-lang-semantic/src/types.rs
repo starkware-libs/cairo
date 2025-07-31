@@ -717,7 +717,6 @@ pub struct TypeInfo<'db> {
 }
 
 /// Checks if there is at least one impl that can be inferred for a specific concrete trait.
-<<<<<<< HEAD
 pub fn get_impl_at_context<'db>(
     db: &'db dyn SemanticGroup,
     lookup_context: ImplLookupContext<'db>,
@@ -728,25 +727,6 @@ pub fn get_impl_at_context<'db>(
     if constrains.is_empty() && concrete_trait_id.is_var_free(db) {
         return solve_concrete_trait_no_constraints(db, lookup_context, concrete_trait_id);
     }
-||||||| b34dbfaa1
-pub fn get_impl_at_context(
-    db: &dyn SemanticGroup,
-    lookup_context: ImplLookupContext,
-    concrete_trait_id: ConcreteTraitId,
-    stable_ptr: Option<SyntaxStablePtrId>,
-) -> Result<ImplId, InferenceError> {
-=======
-pub fn get_impl_at_context(
-    db: &dyn SemanticGroup,
-    lookup_context: ImplLookupContext,
-    concrete_trait_id: ConcreteTraitId,
-    stable_ptr: Option<SyntaxStablePtrId>,
-) -> Result<ImplId, InferenceError> {
-    let constrains = db.generic_params_type_constraints(lookup_context.generic_params.clone());
-    if constrains.is_empty() && concrete_trait_id.is_var_free(db) {
-        return solve_concrete_trait_no_constraints(db, lookup_context, concrete_trait_id);
-    }
->>>>>>> origin/dev-v2.12.0
     let mut inference_data = InferenceData::new(InferenceId::NoContext);
     let mut inference = inference_data.inference(db);
     inference.conform_generic_params_type_constraints(&constrains);
@@ -849,25 +829,13 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<TypeSizeI
             ConcreteTypeId::Struct(id) => {
                 if check_all_type_are_zero_sized(
                     db,
-<<<<<<< HEAD
                     db.concrete_struct_members(*id)?.iter().map(|(_, member)| &member.ty),
-||||||| b34dbfaa1
-                    db.struct_members(id.struct_id(db))?.iter().map(|(_, member)| &member.ty),
-=======
-                    db.concrete_struct_members(id)?.iter().map(|(_, member)| &member.ty),
->>>>>>> origin/dev-v2.12.0
                 )? {
                     return Ok(TypeSizeInformation::ZeroSized);
                 }
             }
             ConcreteTypeId::Enum(id) => {
-<<<<<<< HEAD
                 for variant in &db.concrete_enum_variants(*id)? {
-||||||| b34dbfaa1
-                for (_, variant) in db.enum_variants(id.enum_id(db))? {
-=======
-                for variant in &db.concrete_enum_variants(id)? {
->>>>>>> origin/dev-v2.12.0
                     // Recursive calling in order to find infinite sized types.
                     db.type_size_info(variant.ty)?;
                 }
@@ -931,25 +899,11 @@ pub fn type_size_info_cycle<'db>(
 // TODO(spapini): type info lookup for non generic types needs to not depend on lookup_context.
 // This is to ensure that sierra generator will see a consistent type info of types.
 /// Query implementation of [crate::db::SemanticGroup::type_info].
-<<<<<<< HEAD
 pub fn type_info<'db>(
     db: &'db dyn SemanticGroup,
     lookup_context: ImplLookupContext<'db>,
     ty: TypeId<'db>,
 ) -> TypeInfo<'db> {
-||||||| b34dbfaa1
-pub fn type_info(
-    db: &dyn SemanticGroup,
-    lookup_context: ImplLookupContext,
-    ty: TypeId,
-) -> Maybe<TypeInfo> {
-=======
-pub fn type_info(
-    db: &dyn SemanticGroup,
-    lookup_context: ImplLookupContext,
-    ty: TypeId,
-) -> TypeInfo {
->>>>>>> origin/dev-v2.12.0
     // Dummy stable pointer for type inference variables, since inference is disabled.
     let droppable =
         get_impl_at_context(db, lookup_context.clone(), concrete_drop_trait(db, ty), None);
@@ -959,7 +913,6 @@ pub fn type_info(
         get_impl_at_context(db, lookup_context.clone(), concrete_destruct_trait(db, ty), None);
     let panic_destruct_impl =
         get_impl_at_context(db, lookup_context, concrete_panic_destruct_trait(db, ty), None);
-<<<<<<< HEAD
     TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl }
 }
 
@@ -980,40 +933,6 @@ fn solve_concrete_trait_no_constraints<'db>(
         SolutionSet::Unique(solution) => Ok(solution.0),
         SolutionSet::Ambiguous(ambiguity) => Err(InferenceError::Ambiguity(ambiguity)),
     }
-||||||| b34dbfaa1
-    Ok(TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl })
-=======
-    TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl }
-}
-
-/// Solves a concrete trait without any constraints.
-/// Only works when the given trait is var free.
-fn solve_concrete_trait_no_constraints(
-    db: &dyn SemanticGroup,
-    mut lookup_context: ImplLookupContext,
-    id: ConcreteTraitId,
-) -> Result<ImplId, InferenceError> {
-    enrich_lookup_context(db, id, &mut lookup_context);
-    match db.canonic_trait_solutions(
-        CanonicalTrait { id, mappings: Default::default() },
-        lookup_context,
-        Default::default(),
-    )? {
-        SolutionSet::None => Err(InferenceError::NoImplsFound(id)),
-        SolutionSet::Unique(solution) => Ok(solution.0),
-        SolutionSet::Ambiguous(ambiguity) => Err(InferenceError::Ambiguity(ambiguity)),
-    }
-}
-
-/// Query implementation of [crate::db::SemanticGroup::copyable].
-pub fn copyable(db: &dyn SemanticGroup, ty: TypeId) -> Result<ImplId, InferenceError> {
-    solve_concrete_trait_no_constraints(db, Default::default(), concrete_copy_trait(db, ty))
-}
-
-/// Query implementation of [crate::db::SemanticGroup::droppable].
-pub fn droppable(db: &dyn SemanticGroup, ty: TypeId) -> Result<ImplId, InferenceError> {
-    solve_concrete_trait_no_constraints(db, Default::default(), concrete_drop_trait(db, ty))
->>>>>>> origin/dev-v2.12.0
 }
 
 /// Query implementation of [crate::db::SemanticGroup::copyable].

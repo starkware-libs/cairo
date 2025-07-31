@@ -580,21 +580,22 @@ End:
 
 blk3:
 Statements:
-  (v13: core::felt252) <- 10
-  (v14: core::felt252, v15: @core::felt252) <- snapshot(v13)
-  (v16: core::bool) <- core::Felt252PartialEq::eq(v4, v15)
+  (v13: core::felt252, v14: @core::felt252) <- snapshot(v3)
+  (v15: core::felt252) <- 10
+  (v16: core::felt252, v17: @core::felt252) <- snapshot(v15)
+  (v18: core::bool) <- core::Felt252PartialEq::eq(v14, v17)
 End:
-  Match(match_enum(v16) {
-    bool::False(v20) => blk5,
-    bool::True(v17) => blk4,
+  Match(match_enum(v18) {
+    bool::False(v22) => blk5,
+    bool::True(v19) => blk4,
   })
 
 blk4:
 Statements:
-  (v18: ()) <- struct_construct()
-  (v19: core::bool) <- bool::True(v18)
+  (v20: ()) <- struct_construct()
+  (v21: core::bool) <- bool::True(v20)
 End:
-  Return(v2, v19)
+  Return(v2, v21)
 
 blk5:
 Statements:
@@ -603,9 +604,9 @@ End:
 
 blk6:
 Statements:
-  (v22: core::felt252, v21: core::bool) <- test::foo[38-201](v2)
+  (v24: core::felt252, v23: core::bool) <- test::foo[38-201](v2)
 End:
-  Return(v22, v21)
+  Return(v24, v23)
 
 
 Final lowering:
@@ -1735,21 +1736,22 @@ End:
 
 blk3:
 Statements:
-  (v14: core::felt252) <- 5
-  (v15: core::felt252, v16: @core::felt252) <- snapshot(v14)
-  (v17: core::bool) <- core::Felt252PartialEq::eq(v4, v16)
+  (v14: core::felt252, v15: @core::felt252) <- snapshot(v3)
+  (v16: core::felt252) <- 5
+  (v17: core::felt252, v18: @core::felt252) <- snapshot(v16)
+  (v19: core::bool) <- core::Felt252PartialEq::eq(v15, v18)
 End:
-  Match(match_enum(v17) {
-    bool::False(v21) => blk5,
-    bool::True(v18) => blk4,
+  Match(match_enum(v19) {
+    bool::False(v23) => blk5,
+    bool::True(v20) => blk4,
   })
 
 blk4:
 Statements:
-  (v19: core::integer::u32) <- 5
-  (v20: core::internal::LoopResult::<core::bool, core::integer::u32>) <- LoopResult::EarlyReturn(v19)
+  (v21: core::integer::u32) <- 5
+  (v22: core::internal::LoopResult::<core::bool, core::integer::u32>) <- LoopResult::EarlyReturn(v21)
 End:
-  Return(v2, v20)
+  Return(v2, v22)
 
 blk5:
 Statements:
@@ -1758,20 +1760,21 @@ End:
 
 blk6:
 Statements:
-  (v22: core::felt252) <- 3
-  (v23: core::felt252, v24: @core::felt252) <- snapshot(v22)
-  (v25: core::bool) <- core::Felt252PartialEq::eq(v4, v24)
+  (v24: core::felt252, v25: @core::felt252) <- snapshot(v14)
+  (v26: core::felt252) <- 3
+  (v27: core::felt252, v28: @core::felt252) <- snapshot(v26)
+  (v29: core::bool) <- core::Felt252PartialEq::eq(v25, v28)
 End:
-  Match(match_enum(v25) {
-    bool::False(v29) => blk8,
-    bool::True(v26) => blk7,
+  Match(match_enum(v29) {
+    bool::False(v33) => blk8,
+    bool::True(v30) => blk7,
   })
 
 blk7:
 Statements:
-  (v28: core::felt252, v27: core::internal::LoopResult::<core::bool, core::integer::u32>) <- test::foo[37-253](v2)
+  (v32: core::felt252, v31: core::internal::LoopResult::<core::bool, core::integer::u32>) <- test::foo[37-253](v2)
 End:
-  Return(v28, v27)
+  Return(v32, v31)
 
 blk8:
 Statements:
@@ -1780,9 +1783,9 @@ End:
 
 blk9:
 Statements:
-  (v31: core::felt252, v30: core::internal::LoopResult::<core::bool, core::integer::u32>) <- test::foo[37-253](v2)
+  (v35: core::felt252, v34: core::internal::LoopResult::<core::bool, core::integer::u32>) <- test::foo[37-253](v2)
 End:
-  Return(v31, v30)
+  Return(v35, v34)
 
 
 Final lowering:
@@ -2242,37 +2245,38 @@ End:
 
 blk5:
 Statements:
-  (v15: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[127-237](v6)
+  (v15: core::integer::u32, v16: @core::integer::u32) <- snapshot(v5)
+  (v17: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[127-237](v16)
 End:
-  Match(match_enum(v15) {
-    LoopResult::Normal(v16) => blk6,
-    LoopResult::EarlyReturn(v17) => blk7,
+  Match(match_enum(v17) {
+    LoopResult::Normal(v18) => blk6,
+    LoopResult::EarlyReturn(v19) => blk7,
   })
 
 blk6:
 Statements:
 End:
-  Goto(blk8, {v16 -> v19})
+  Goto(blk8, {v18 -> v21})
 
 blk7:
 Statements:
-  (v18: core::internal::LoopResult::<(), core::integer::u32>) <- LoopResult::EarlyReturn(v17)
+  (v20: core::internal::LoopResult::<(), core::integer::u32>) <- LoopResult::EarlyReturn(v19)
 End:
-  Return(v2, v18)
+  Return(v2, v20)
 
 blk8:
 Statements:
-  (v20: core::integer::u32) <- 6
-  (v21: core::internal::LoopResult::<(), core::integer::u32>) <- LoopResult::EarlyReturn(v20)
+  (v22: core::integer::u32) <- 6
+  (v23: core::internal::LoopResult::<(), core::integer::u32>) <- LoopResult::EarlyReturn(v22)
 End:
-  Return(v2, v21)
+  Return(v2, v23)
 
 blk9:
 Statements:
-  (v22: ()) <- struct_construct()
-  (v23: core::internal::LoopResult::<(), core::integer::u32>) <- LoopResult::Normal(v22)
+  (v24: ()) <- struct_construct()
+  (v25: core::internal::LoopResult::<(), core::integer::u32>) <- LoopResult::Normal(v24)
 End:
-  Return(v2, v23)
+  Return(v2, v25)
 
 
 Final lowering:
@@ -2578,37 +2582,38 @@ End:
 
 blk5:
 Statements:
-  (v15: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[127-237](v6)
+  (v15: core::integer::u32, v16: @core::integer::u32) <- snapshot(v5)
+  (v17: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[127-237](v16)
 End:
-  Match(match_enum(v15) {
-    LoopResult::Normal(v16) => blk6,
-    LoopResult::EarlyReturn(v17) => blk7,
+  Match(match_enum(v17) {
+    LoopResult::Normal(v18) => blk6,
+    LoopResult::EarlyReturn(v19) => blk7,
   })
 
 blk6:
 Statements:
 End:
-  Goto(blk8, {v16 -> v19})
+  Goto(blk8, {v18 -> v21})
 
 blk7:
 Statements:
-  (v18: core::internal::LoopResult::<(), core::integer::u32>) <- LoopResult::EarlyReturn(v17)
+  (v20: core::internal::LoopResult::<(), core::integer::u32>) <- LoopResult::EarlyReturn(v19)
 End:
-  Return(v2, v18)
+  Return(v2, v20)
 
 blk8:
 Statements:
-  (v20: core::integer::u32) <- 6
-  (v21: core::internal::LoopResult::<(), core::integer::u32>) <- LoopResult::EarlyReturn(v20)
+  (v22: core::integer::u32) <- 6
+  (v23: core::internal::LoopResult::<(), core::integer::u32>) <- LoopResult::EarlyReturn(v22)
 End:
-  Return(v2, v21)
+  Return(v2, v23)
 
 blk9:
 Statements:
-  (v22: ()) <- struct_construct()
-  (v23: core::internal::LoopResult::<(), core::integer::u32>) <- LoopResult::Normal(v22)
+  (v24: ()) <- struct_construct()
+  (v25: core::internal::LoopResult::<(), core::integer::u32>) <- LoopResult::Normal(v24)
 End:
-  Return(v2, v23)
+  Return(v2, v25)
 
 
 Final lowering:

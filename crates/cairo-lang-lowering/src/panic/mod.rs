@@ -263,16 +263,8 @@ impl<'db> PanicBlockLoweringContext<'db> {
         self.ctx.db()
     }
 
-<<<<<<< HEAD
     fn new_var(&mut self, ty: TypeId<'db>, location: LocationId<'db>) -> VariableId<'db> {
         self.ctx.variables.new_var(VarRequest { ty, location })
-||||||| b34dbfaa1
-    fn new_var(&mut self, req: VarRequest) -> VariableId {
-        self.ctx.variables.new_var(req)
-=======
-    fn new_var(&mut self, ty: TypeId, location: LocationId) -> VariableId {
-        self.ctx.variables.new_var(VarRequest { ty, location })
->>>>>>> origin/dev-v2.12.0
     }
 
     /// Handles a statement. If needed, returns the continuation block and the block end for this
