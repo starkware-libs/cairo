@@ -70,7 +70,7 @@ use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate, valida
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
-use crate::items::imp::{ImplLookupContext, filter_candidate_traits, infer_impl_by_self};
+use crate::items::imp::{ImplLookupContextId, filter_candidate_traits, infer_impl_by_self};
 use crate::items::macro_declaration::{MatcherContext, expand_macro_rule, is_macro_rule_match};
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
@@ -907,7 +907,7 @@ fn compute_expr_unary_semantic<'db>(
             let function = inference
                 .infer_trait_function(
                     concrete_trait_function,
-                    &impl_lookup_context,
+                    impl_lookup_context,
                     Some(syntax.stable_ptr(db).untyped()),
                 )
                 .map_err(|err_set| {
@@ -1045,7 +1045,7 @@ fn call_core_binary_op<'db>(
     let function = inference
         .infer_trait_function(
             concrete_trait_function,
-            &impl_lookup_context,
+            impl_lookup_context,
             Some(stable_ptr.untyped()),
         )
         .map_err(|err_set| {
@@ -2475,7 +2475,7 @@ fn get_method_function_candidates<'db>(
         .filter(|var_id| matches!(ctx.semantic_defs.get(var_id), Some(var) if var.is_mut()))
         .is_some();
 
-    let deref_chain = ctx.db.deref_chain(self_ty, is_mut_var)?;
+    let deref_chain = ctx.db.deref_chain(self_ty, ctx.resolver.owning_crate_id, is_mut_var)?;
 
     for deref_info in deref_chain.derefs.iter() {
         let derefed_expr = expr_function_call(
@@ -3472,7 +3472,7 @@ fn method_call_expr<'db>(
                         db,
                         ty,
                         method_name,
-                        lookup_context.clone(),
+                        lookup_context,
                         module_file_id,
                         lexpr_clone.stable_ptr().untyped(),
                     )
@@ -3707,7 +3707,10 @@ fn get_enriched_type_member_access<'db>(
 
             EnrichedMembers {
                 members,
-                deref_chain: ctx.db.deref_chain(ty, is_mut_var)?.derefs,
+                deref_chain: ctx
+                    .db
+                    .deref_chain(ty, ctx.resolver.owning_crate_id, is_mut_var)?
+                    .derefs,
                 explored_derefs: 0,
             }
         }
@@ -4581,7 +4584,7 @@ fn match_method_to_traits<'db>(
     db: &dyn SemanticGroup,
     ty: semantic::TypeId<'db>,
     method_name: SmolStrId<'db>,
-    lookup_context: ImplLookupContext<'db>,
+    lookup_context: ImplLookupContextId<'db>,
     module_file_id: ModuleFileId<'db>,
     stable_ptr: SyntaxStablePtrId<'db>,
 ) -> Vec<String> {
@@ -4598,14 +4601,14 @@ fn match_method_to_traits<'db>(
             let (concrete_trait_id, _) = inference.infer_concrete_trait_by_self_without_errors(
                 trait_function,
                 ty,
-                &lookup_context,
+                lookup_context,
                 Some(stable_ptr),
             )?;
             inference.solve().ok();
             match inference.trait_solution_set(
                 concrete_trait_id,
                 ImplVarTraitItemMappings::default(),
-                lookup_context.clone(),
+                lookup_context.long(db).clone(),
             ) {
                 Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_)) => Some(path.clone()),
                 _ => None,
