@@ -10,8 +10,7 @@ use crate::lower::block_builder::{
     merge_sealed_block_builders,
 };
 use crate::lower::context::{
-    LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult,
-    lowering_flow_error_to_sealed_block,
+    LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, handle_lowering_flow_error,
 };
 use crate::{BlockEnd, BlockId, MatchInfo, VarUsage};
 
@@ -178,7 +177,7 @@ impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
         if id == self.effective_root {
             self.result = Some((builder, Err(err)));
         } else {
-            lowering_flow_error_to_sealed_block(self.ctx, builder, err)?;
+            handle_lowering_flow_error(self.ctx, builder, err)?;
         }
         Ok(())
     }
@@ -188,14 +187,10 @@ impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
     /// The block is an arm's block that was already sealed and should be merged with the other
     /// arms.
     fn add_sealed_block(&mut self, sealed_block: SealedBlockBuilder<'db>) {
-        match sealed_block {
-            SealedBlockBuilder::GotoCallsite(sealed_block) => {
-                self.sealed_blocks.push(sealed_block);
-            }
-            SealedBlockBuilder::Ends(_) => {
-                // If the block ends with `SealedBlockBuilder::Ends`, ignore it as it doesn't
-                // return to the callsite and therefore should not be merged.
-            }
+        // If sealed_block is `None`, ignore it as it doesn't return to the callsite and therefore
+        // should not be merged.
+        if let Some(sealed_block) = sealed_block {
+            self.sealed_blocks.push(sealed_block);
         }
     }
 
