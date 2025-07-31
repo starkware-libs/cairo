@@ -2281,7 +2281,7 @@ impl dyn SemanticGroup {
     pub fn function_body_expr<'db>(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
-    ) -> Maybe<semantic::ExprId<'db>> {
+    ) -> Maybe<semantic::ExprId> {
         items::function_with_body::function_body_expr(self, function_id)
     }
 
@@ -2289,7 +2289,7 @@ impl dyn SemanticGroup {
     pub fn expr_semantic<'db>(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
-        id: semantic::ExprId<'db>,
+        id: semantic::ExprId,
     ) -> semantic::Expr<'db> {
         items::function_with_body::expr_semantic(self, function_id, id)
     }
@@ -2298,7 +2298,7 @@ impl dyn SemanticGroup {
     pub fn statement_semantic<'db>(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
-        id: semantic::StatementId<'db>,
+        id: semantic::StatementId,
     ) -> semantic::Statement<'db> {
         items::function_with_body::statement_semantic(self, function_id, id)
     }
@@ -2307,7 +2307,7 @@ impl dyn SemanticGroup {
     pub fn pattern_semantic<'db>(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
-        id: semantic::PatternId<'db>,
+        id: semantic::PatternId,
     ) -> semantic::Pattern<'db> {
         items::function_with_body::pattern_semantic(self, function_id, id)
     }

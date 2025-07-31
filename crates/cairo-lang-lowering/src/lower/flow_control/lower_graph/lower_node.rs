@@ -30,7 +30,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
 fn lower_evaluate_expr<'db>(
     ctx: &mut LowerGraphContext<'db, '_, '_>,
     id: NodeId,
-    node: &EvaluateExpr<'db>,
+    node: &EvaluateExpr,
     mut builder: BlockBuilder<'db>,
 ) -> Maybe<()> {
     let lowered_expr = lower_expr_to_var_usage(ctx.ctx, &mut builder, node.expr);
@@ -88,7 +88,7 @@ fn lower_boolean_if<'db>(
 /// Lowers an [ArmExpr] node.
 fn lower_arm_expr<'db>(
     ctx: &mut LowerGraphContext<'db, '_, '_>,
-    node: &ArmExpr<'db>,
+    node: &ArmExpr,
     builder: BlockBuilder<'db>,
 ) -> Maybe<()> {
     let sealed_block = lower_tail_expr(ctx.ctx, builder, node.expr)?;

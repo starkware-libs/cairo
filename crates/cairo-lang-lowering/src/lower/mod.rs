@@ -127,7 +127,7 @@ pub fn lower_function<'db>(
     encapsulating_ctx: &mut EncapsulatingLoweringContext<'db>,
     function_id: FunctionWithBodyId<'db>,
     signature: Signature<'db>,
-    block_expr_id: semantic::ExprId<'db>,
+    block_expr_id: semantic::ExprId,
 ) -> Maybe<Lowered<'db>> {
     log::trace!("Lowering a free function.");
     let return_type = signature.return_type;
@@ -185,7 +185,7 @@ pub fn lower_for_loop<'db, 'mt>(
     ctx: &mut LoweringContext<'db, 'mt>,
     builder: &mut BlockBuilder<'db>,
     loop_expr: semantic::ExprFor<'db>,
-    loop_expr_id: semantic::ExprId<'db>,
+    loop_expr_id: semantic::ExprId,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     let db = ctx.db;
     let for_location = ctx.get_location(loop_expr.stable_ptr.untyped());
@@ -277,7 +277,7 @@ pub fn lower_while_loop<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     builder: &mut BlockBuilder<'db>,
     loop_expr: semantic::ExprWhile<'db>,
-    loop_expr_id: semantic::ExprId<'db>,
+    loop_expr_id: semantic::ExprId,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     let while_location = ctx.get_location(loop_expr.stable_ptr.untyped());
     let semantic_condition = match &loop_expr.condition {
@@ -356,8 +356,8 @@ pub fn lower_expr_while_let<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     builder: &mut BlockBuilder<'db>,
     loop_expr: &semantic::ExprWhile<'db>,
-    matched_expr: semantic::ExprId<'db>,
-    patterns: &[semantic::PatternId<'db>],
+    matched_expr: semantic::ExprId,
+    patterns: &[semantic::PatternId],
     match_type: MatchKind<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!("Lowering a match expression: {:?}", loop_expr.debug(&ctx.expr_formatter));
@@ -582,7 +582,7 @@ fn lower_expr_block<'db, 'mt>(
 pub fn lower_tail_expr<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     mut builder: BlockBuilder<'db>,
-    expr: semantic::ExprId<'db>,
+    expr: semantic::ExprId,
 ) -> Maybe<SealedBlockBuilder<'db>> {
     log::trace!("Lowering a tail expression.");
     let lowered_expr = lower_expr(ctx, &mut builder, expr);
@@ -670,10 +670,10 @@ pub fn lower_statement<'db>(
                 lower_let_else::lower_let_else(
                     ctx,
                     builder,
-                    pattern,
-                    expr,
+                    *pattern,
+                    *expr,
                     lowered_expr,
-                    else_clause,
+                    *else_clause,
                     stable_ptr,
                 )?;
             } else {
@@ -724,7 +724,7 @@ pub fn lower_statement<'db>(
 fn lower_single_pattern<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     builder: &mut BlockBuilder<'db>,
-    pattern_id: semantic::PatternId<'db>,
+    pattern_id: semantic::PatternId,
     lowered_expr: LoweredExpr<'db>,
 ) -> LoweringResult<'db, ()> {
     log::trace!("Lowering a single pattern.");
@@ -824,7 +824,7 @@ fn lower_tuple_like_pattern_helper<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     builder: &mut BlockBuilder<'db>,
     lowered_expr: LoweredExpr<'db>,
-    patterns: &[semantic::PatternId<'db>],
+    patterns: &[semantic::PatternId],
     ty: semantic::TypeId<'db>,
 ) -> LoweringResult<'db, ()> {
     let outputs = match lowered_expr {
@@ -887,7 +887,7 @@ fn lower_tuple_like_pattern_helper<'db>(
 fn lower_expr_to_var_usage<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     builder: &mut BlockBuilder<'db>,
-    expr_id: semantic::ExprId<'db>,
+    expr_id: semantic::ExprId,
 ) -> LoweringResult<'db, VarUsage<'db>> {
     lower_expr(ctx, builder, expr_id)?.as_var_usage(ctx, builder)
 }
@@ -896,7 +896,7 @@ fn lower_expr_to_var_usage<'db>(
 fn lower_expr<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     builder: &mut BlockBuilder<'db>,
-    expr_id: semantic::ExprId<'db>,
+    expr_id: semantic::ExprId,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     let expr = ctx.function_body.arenas.exprs[expr_id].clone();
     match expr {
@@ -1368,7 +1368,7 @@ fn perform_function_call<'db>(
 fn lower_expr_loop<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     builder: &mut BlockBuilder<'db>,
-    loop_expr_id: ExprId<'db>,
+    loop_expr_id: ExprId,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     let (stable_ptr, return_type) = match ctx.function_body.arenas.exprs[loop_expr_id].clone() {
         semantic::Expr::Loop(semantic::ExprLoop { stable_ptr, ty, .. }) => (stable_ptr, ty),
@@ -1596,7 +1596,7 @@ fn lower_expr_loop<'db>(
 fn recursively_call_loop_func<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     builder: &mut BlockBuilder<'db>,
-    loop_expr_id: ExprId<'db>,
+    loop_expr_id: ExprId,
     stable_ptr: SyntaxStablePtrId<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     let loop_res = call_loop_func_ex(
@@ -1616,7 +1616,7 @@ fn call_loop_func_ex<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     loop_signature: Signature<'db>,
     builder: &mut BlockBuilder<'db>,
-    loop_expr_id: ExprId<'db>,
+    loop_expr_id: ExprId,
     stable_ptr: SyntaxStablePtrId<'db>,
     handle_snap: impl Fn(
         &mut LoweringContext<'db, '_>,
@@ -2059,7 +2059,7 @@ fn add_closure_call_function<'db>(
 fn lower_expr_closure<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     expr: &semantic::ExprClosure<'db>,
-    expr_id: semantic::ExprId<'db>,
+    expr_id: semantic::ExprId,
     builder: &mut BlockBuilder<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!("Lowering a closure expression: {:?}", expr.debug(&ctx.expr_formatter));

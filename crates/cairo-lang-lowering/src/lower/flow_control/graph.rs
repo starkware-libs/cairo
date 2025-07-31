@@ -38,9 +38,9 @@ pub struct NodeId(pub usize);
 /// Used to lower the `if` condition or `match` expression and get a [FlowControlVar] that can be
 /// used in [BooleanIf] or `EnumMatch`.
 #[derive(Debug)]
-pub struct EvaluateExpr<'db> {
+pub struct EvaluateExpr {
     /// The expression to evaluate.
-    pub expr: semantic::ExprId<'db>,
+    pub expr: semantic::ExprId,
     /// The (output) variable to assign the result to.
     pub var_id: FlowControlVar,
     /// The next node.
@@ -60,24 +60,24 @@ pub struct BooleanIf {
 
 /// An arm (final node) that returns an expression.
 #[derive(Debug)]
-pub struct ArmExpr<'db> {
+pub struct ArmExpr {
     /// The expression to evaluate.
-    pub expr: semantic::ExprId<'db>,
+    pub expr: semantic::ExprId,
 }
 
 /// A node in the flow control graph for a match or if lowering.
-pub enum FlowControlNode<'db> {
+pub enum FlowControlNode {
     /// Evaluates an expression and assigns the result to a [FlowControlVar].
-    EvaluateExpr(EvaluateExpr<'db>),
+    EvaluateExpr(EvaluateExpr),
     /// Boolean if condition node.
     BooleanIf(BooleanIf),
     /// An arm (final node) that returns an expression.
-    ArmExpr(ArmExpr<'db>),
+    ArmExpr(ArmExpr),
     /// An arm (final node) that returns a unit value - `()`.
     UnitResult,
 }
 
-impl Debug for FlowControlNode<'_> {
+impl Debug for FlowControlNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             FlowControlNode::EvaluateExpr(node) => node.fmt(f),
@@ -92,11 +92,11 @@ impl Debug for FlowControlNode<'_> {
 ///
 /// Invariant: The next nodes of a node are always before the node in [Self::nodes] (and therefore
 /// have a smaller node id).
-pub struct FlowControlGraph<'db> {
+pub struct FlowControlGraph {
     /// All nodes in the graph.
-    pub nodes: Vec<FlowControlNode<'db>>,
+    pub nodes: Vec<FlowControlNode>,
 }
-impl<'db> FlowControlGraph<'db> {
+impl FlowControlGraph {
     /// Returns the root node of the graph.
     pub fn root(&self) -> NodeId {
         // The root is always the last node.
@@ -104,7 +104,7 @@ impl<'db> FlowControlGraph<'db> {
     }
 }
 
-impl Debug for FlowControlGraph<'_> {
+impl Debug for FlowControlGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Root: {}", self.root().0)?;
         for (i, node) in self.nodes.iter().enumerate() {
@@ -115,23 +115,23 @@ impl Debug for FlowControlGraph<'_> {
 }
 /// Builder for [FlowControlGraph].
 #[derive(Default)]
-pub struct FlowControlGraphBuilder<'db> {
+pub struct FlowControlGraphBuilder {
     /// All nodes in the graph.
-    nodes: Vec<FlowControlNode<'db>>,
+    nodes: Vec<FlowControlNode>,
     /// The number of [FlowControlVar]s allocated so far.
     n_vars: usize,
 }
 
-impl<'db> FlowControlGraphBuilder<'db> {
+impl FlowControlGraphBuilder {
     /// Adds a new node to the graph. Returns the new node's id.
-    pub fn add_node(&mut self, node: FlowControlNode<'db>) -> NodeId {
+    pub fn add_node(&mut self, node: FlowControlNode) -> NodeId {
         let id = NodeId(self.nodes.len());
         self.nodes.push(node);
         id
     }
 
     /// Finalizes the graph and returns the final [FlowControlGraph].
-    pub fn finalize(self, root: NodeId) -> FlowControlGraph<'db> {
+    pub fn finalize(self, root: NodeId) -> FlowControlGraph {
         assert_eq!(root.0, self.nodes.len() - 1, "The root must be the last node.");
         FlowControlGraph { nodes: self.nodes }
     }
