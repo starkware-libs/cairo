@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use anyhow::Context;
 use cairo_lang_casm::hints::Hint;
-use cairo_lang_executable::executable::{EntryPointKind, Executable};
+use cairo_lang_executable::executable::{EntryPointKind, Executable, ExecutableEntryPoint};
 use cairo_lang_runner::{Arg, build_hints_dict};
 use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_vm::Felt252;
@@ -18,18 +18,13 @@ use num_bigint::BigInt;
 /// This is required for running an executable in the Cairo-VM.
 pub fn program_and_hints_from_executable(
     executable: &Executable,
-    standalone: bool,
+    entrypoint: &ExecutableEntryPoint,
 ) -> anyhow::Result<(Program, HashMap<String, Hint>)> {
     let data: Vec<MaybeRelocatable> =
         executable.program.bytecode.iter().map(Felt252::from).map(MaybeRelocatable::from).collect();
     let (hints, string_to_hint) = build_hints_dict(&executable.program.hints);
-    let program = if standalone {
-        let entrypoint = executable
-            .entrypoints
-            .iter()
-            .find(|e| matches!(e.kind, EntryPointKind::Standalone))
-            .with_context(|| "No `Standalone` entrypoint found.")?;
-        Program::new_for_proof(
+    let program = match entrypoint.kind {
+        EntryPointKind::Standalone => Program::new_for_proof(
             entrypoint.builtins.clone(),
             data,
             entrypoint.offset,
@@ -39,14 +34,8 @@ pub fn program_and_hints_from_executable(
             Default::default(),
             vec![],
             None,
-        )
-    } else {
-        let entrypoint = executable
-            .entrypoints
-            .iter()
-            .find(|e| matches!(e.kind, EntryPointKind::Bootloader))
-            .with_context(|| "No `Bootloader` entrypoint found.")?;
-        Program::new(
+        ),
+        EntryPointKind::Bootloader => Program::new(
             entrypoint.builtins.clone(),
             data,
             Some(entrypoint.offset),
@@ -55,7 +44,7 @@ pub fn program_and_hints_from_executable(
             Default::default(),
             vec![],
             None,
-        )
+        ),
     }
     .with_context(|| "Failed setting up program.")?;
 
