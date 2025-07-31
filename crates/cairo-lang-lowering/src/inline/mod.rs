@@ -10,7 +10,6 @@ use cairo_lang_semantic::items::functions::InlineConfiguration;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use id_arena::Arena;
 use itertools::{Itertools, zip_eq};
 
 use crate::blocks::{Blocks, BlocksBuilder};
@@ -26,7 +25,7 @@ use crate::optimizations::const_folding::ConstFoldingContext;
 use crate::utils::{InliningStrategy, Rebuilder, RebuilderEx};
 use crate::{
     Block, BlockEnd, BlockId, DependencyType, Lowered, LoweringStage, Statement, StatementCall,
-    VarRemapping, Variable, VariableId,
+    VarRemapping, Variable, VariableArena, VariableId,
 };
 
 pub fn get_inline_diagnostics<'db>(
@@ -117,11 +116,11 @@ fn should_inline_lowered(
 /// Context for mapping ids from `lowered` to a new `Lowered` object.
 pub struct Mapper<'db, 'mt, 'l> {
     db: &'db dyn LoweringGroup,
-    variables: &'mt mut Arena<Variable<'db>>,
+    variables: &'mt mut VariableArena<'db>,
     lowered: &'l Lowered<'db>,
-    renamed_vars: UnorderedHashMap<VariableId<'db>, VariableId<'db>>,
+    renamed_vars: UnorderedHashMap<VariableId, VariableId>,
 
-    outputs: Vec<VariableId<'db>>,
+    outputs: Vec<VariableId>,
     inlining_location: StableLocation<'db>,
 
     /// An offset that is added to all the block IDs in order to translate them into the new
@@ -135,13 +134,13 @@ pub struct Mapper<'db, 'mt, 'l> {
 impl<'db, 'mt, 'l> Mapper<'db, 'mt, 'l> {
     pub fn new(
         db: &'db dyn LoweringGroup,
-        variables: &'mt mut Arena<Variable<'db>>,
+        variables: &'mt mut VariableArena<'db>,
         lowered: &'l Lowered<'db>,
         call_stmt: StatementCall<'db>,
         block_id_offset: usize,
     ) -> Self {
         // The input variables need to be renamed to match the inputs to the function call.
-        let renamed_vars = UnorderedHashMap::<VariableId<'_>, VariableId<'_>>::from_iter(zip_eq(
+        let renamed_vars = UnorderedHashMap::<VariableId, VariableId>::from_iter(zip_eq(
             lowered.parameters.iter().cloned(),
             call_stmt.inputs.iter().map(|var_usage| var_usage.var_id),
         ));
@@ -165,7 +164,7 @@ impl<'db, 'mt> Rebuilder<'db> for Mapper<'db, 'mt, '_> {
     /// Maps a var id from the original lowering representation to the equivalent id in the
     /// new lowering representation.
     /// If the variable wasn't assigned an id yet, a new id is assigned.
-    fn map_var_id(&mut self, orig_var_id: VariableId<'db>) -> VariableId<'db> {
+    fn map_var_id(&mut self, orig_var_id: VariableId) -> VariableId {
         *self.renamed_vars.entry(orig_var_id).or_insert_with(|| {
             let orig_var = &self.lowered.variables[orig_var_id];
             self.variables.alloc(Variable {

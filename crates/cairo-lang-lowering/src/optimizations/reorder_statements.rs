@@ -67,11 +67,11 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut Lowered<'_>) {
 }
 
 #[derive(Clone, Default)]
-pub struct ReorderStatementsInfo<'db> {
+pub struct ReorderStatementsInfo {
     // A mapping from var_id to a candidate location that it can be moved to.
     // If the variable is used in multiple match arms we define the next use to be
     // the match.
-    next_use: UnorderedHashMap<VariableId<'db>, StatementLocation>,
+    next_use: UnorderedHashMap<VariableId, StatementLocation>,
 }
 
 pub struct ReorderStatementsContext<'db> {
@@ -91,7 +91,7 @@ impl<'db> ReorderStatementsContext<'db> {
     }
 }
 impl<'db> Analyzer<'db, '_> for ReorderStatementsContext<'db> {
-    type Info = ReorderStatementsInfo<'db>;
+    type Info = ReorderStatementsInfo;
 
     fn visit_stmt(
         &mut self,

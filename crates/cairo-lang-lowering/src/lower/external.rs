@@ -26,7 +26,7 @@ pub fn extern_facade_return_tys<'db>(
 pub fn extern_facade_expr<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     ty: semantic::TypeId<'db>,
-    returns: Vec<VariableId<'db>>,
+    returns: Vec<VariableId>,
     location: LocationId<'db>,
 ) -> LoweredExpr<'db> {
     if let semantic::TypeLongId::Tuple(subtypes) = ty.long(ctx.db) {

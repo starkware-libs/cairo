@@ -5,7 +5,6 @@ mod test;
 use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeId, TypeLongId};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, require};
-use id_arena::Arena;
 use semantic::MatchArmSelector;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
@@ -14,7 +13,7 @@ use crate::ids::LocationId;
 use crate::{
     Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure, VarRemapping,
-    VarUsage, Variable, VariableId,
+    VarUsage, Variable, VariableArena, VariableId,
 };
 
 /// Adds early returns when applicable.
@@ -53,9 +52,9 @@ struct EarlyReturnContext<'db, 'a> {
     db: &'db dyn LoweringGroup,
     /// A map from (type, inputs) to the variable_id for Structs/Enums that were created
     /// while processing the early return.
-    constructed: UnorderedHashMap<(TypeId<'db>, Vec<VariableId<'db>>), VariableId<'db>>,
+    constructed: UnorderedHashMap<(TypeId<'db>, Vec<VariableId>), VariableId>,
     /// A variable allocator.
-    variables: &'a mut Arena<Variable<'db>>,
+    variables: &'a mut VariableArena<'db>,
     /// The statements in the block where the early return is going to happen.
     statements: &'a mut Vec<Statement<'db>>,
     /// The location associated with the early return.
@@ -141,7 +140,7 @@ impl<'db, 'a> ReturnOptimizerContext<'db, 'a> {
     }
 
     /// Returns true if the variable is droppable
-    fn is_droppable(&self, var_id: VariableId<'db>) -> bool {
+    fn is_droppable(&self, var_id: VariableId) -> bool {
         self.lowered.variables[var_id].info.droppable.is_ok()
     }
 
@@ -407,7 +406,7 @@ impl<'db> AnalyzerInfo<'db> {
     }
 
     /// Replaces occurrences of `var_id` with `var_info`.
-    fn replace(&mut self, var_id: VariableId<'db>, var_info: ValueInfo<'db>) {
+    fn replace(&mut self, var_id: VariableId, var_info: ValueInfo<'db>) {
         self.apply(&|var_usage| {
             if var_usage.var_id == var_id { var_info.clone() } else { ValueInfo::Var(*var_usage) }
         });

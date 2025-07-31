@@ -62,7 +62,7 @@ impl<'db> ApproxCasmInlineWeight<'db> {
         tys.into_iter().map(|ty| self.db.type_size(ty)).sum()
     }
     /// Calculate the total size of the given variables.
-    fn vars_size<'b, I: IntoIterator<Item = &'db VariableId<'db>>>(&self, vars: I) -> usize {
+    fn vars_size<'b, I: IntoIterator<Item = &'db VariableId>>(&self, vars: I) -> usize {
         self.tys_total_size(vars.into_iter().map(|v| self.lowered.variables[*v].ty))
     }
     /// Calculate the total size of the given inputs.

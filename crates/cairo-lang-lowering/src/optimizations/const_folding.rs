@@ -18,7 +18,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, extract_matches, try_extract_matches};
-use id_arena::Arena;
 use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
 use num_integer::Integer;
@@ -36,7 +35,7 @@ use crate::{
     Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
     Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
     StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarUsage, Variable,
-    VariableId,
+    VariableArena, VariableId,
 };
 
 /// Keeps track of equivalent values that a variables might be replaced with.
@@ -105,9 +104,9 @@ pub struct ConstFoldingContext<'db, 'mt> {
     /// The used database.
     db: &'db dyn LoweringGroup,
     /// The variables arena, mostly used to get the type of variables.
-    pub variables: &'mt mut Arena<Variable<'db>>,
+    pub variables: &'mt mut VariableArena<'db>,
     /// The accumulated information about the const values of variables.
-    var_info: UnorderedHashMap<VariableId<'db>, VarInfo<'db>>,
+    var_info: UnorderedHashMap<VariableId, VarInfo<'db>>,
     /// The libfunc information.
     libfunc_info: Arc<ConstFoldingLibfuncInfo<'db>>,
     /// The specialization base of the caller function (or the caller if the function is not
@@ -125,7 +124,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     pub fn new(
         db: &'db dyn LoweringGroup,
         function_id: ConcreteFunctionWithBodyId<'db>,
-        variables: &'mt mut Arena<Variable<'db>>,
+        variables: &'mt mut VariableArena<'db>,
     ) -> Self {
         let caller_base = match function_id.long(db) {
             ConcreteFunctionWithBodyLongId::Specialized(specialized_func) => specialized_func.base,
@@ -660,7 +659,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     fn propagate_const_and_get_statement(
         &mut self,
         value: BigInt,
-        output: VariableId<'db>,
+        output: VariableId,
         nz_ty: bool,
     ) -> Statement<'db> {
         let ty = self.variables[output].ty;
@@ -676,7 +675,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     }
 
     /// Adds 0 const to `var_info` and return a const statement for it.
-    fn propagate_zero_and_get_statement(&mut self, output: VariableId<'db>) -> Statement<'db> {
+    fn propagate_zero_and_get_statement(&mut self, output: VariableId) -> Statement<'db> {
         self.propagate_const_and_get_statement(BigInt::zero(), output, false)
     }
 
@@ -684,7 +683,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     fn try_generate_const_statement(
         &self,
         value: &ConstValue<'db>,
-        output: VariableId<'db>,
+        output: VariableId,
     ) -> Option<Statement<'db>> {
         if self.db.type_size_info(self.variables[output].ty) == Ok(TypeSizeInformation::Other) {
             Some(Statement::Const(StatementConst { value: value.clone(), output }))
@@ -1027,13 +1026,13 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     }
 
     /// Returns the const value of a variable if it exists.
-    fn as_const<'me>(&'me self, var_id: VariableId<'db>) -> Option<&'me ConstValue<'db>> {
+    fn as_const<'me>(&'me self, var_id: VariableId) -> Option<&'me ConstValue<'db>> {
         try_extract_matches!(self.var_info.get(&var_id)?, VarInfo::Const)
     }
 
     /// Return the const value as an int if it exists and is an integer, additionally, if it is of a
     /// non-zero type.
-    fn as_int_ex(&self, var_id: VariableId<'db>) -> Option<(&BigInt, bool)> {
+    fn as_int_ex(&self, var_id: VariableId) -> Option<(&BigInt, bool)> {
         match self.as_const(var_id)? {
             ConstValue::Int(value, _) => Some((value, false)),
             ConstValue::NonZero(const_value) => {
@@ -1048,7 +1047,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     }
 
     /// Return the const value as a int if it exists and is an integer.
-    fn as_int(&self, var_id: VariableId<'db>) -> Option<&BigInt> {
+    fn as_int(&self, var_id: VariableId) -> Option<&BigInt> {
         Some(self.as_int_ex(var_id)?.0)
     }
 
@@ -1130,7 +1129,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
 
 /// Returns a `VarInfo` of a variable only if it is copyable.
 fn var_info_if_copy<'db>(
-    variables: &Arena<Variable<'db>>,
+    variables: &VariableArena<'db>,
     input: VarUsage<'db>,
 ) -> Option<VarInfo<'db>> {
     variables[input.var_id].info.copyable.is_ok().then_some(VarInfo::Var(input))

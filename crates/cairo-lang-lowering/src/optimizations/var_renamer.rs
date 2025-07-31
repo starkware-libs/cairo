@@ -7,12 +7,12 @@ use crate::{BlockId, VariableId};
 /// Support recursive renaming, e.g. if A is renamed to B, and B is renamed to C, then A is renamed
 /// to C.
 #[derive(Default)]
-pub struct VarRenamer<'db> {
-    pub renamed_vars: UnorderedHashMap<VariableId<'db>, VariableId<'db>>,
+pub struct VarRenamer {
+    pub renamed_vars: UnorderedHashMap<VariableId, VariableId>,
 }
 
-impl<'db> Rebuilder<'db> for VarRenamer<'db> {
-    fn map_var_id(&mut self, var: VariableId<'db>) -> VariableId<'db> {
+impl<'db> Rebuilder<'db> for VarRenamer {
+    fn map_var_id(&mut self, var: VariableId) -> VariableId {
         let Some(mut new_var_id) = self.renamed_vars.get(&var).cloned() else {
             return var;
         };
