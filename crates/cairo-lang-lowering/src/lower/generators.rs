@@ -142,7 +142,7 @@ impl<'db> Snapshot<'db> {
         self,
         ctx: &mut LoweringContext<'db, '_>,
         builder: &mut StatementsBuilder<'db>,
-    ) -> (VariableId<'db>, VariableId<'db>) {
+    ) -> (VariableId, VariableId) {
         let input_var = &ctx.variables[self.input.var_id];
         let input_ty = input_var.ty;
         let ty = semantic::TypeLongId::Snapshot(input_ty).intern(ctx.db);
@@ -196,7 +196,7 @@ impl<'db> StructDestructure<'db> {
         self,
         ctx: &mut LoweringContext<'db, '_>,
         builder: &mut StatementsBuilder<'db>,
-    ) -> Vec<VariableId<'db>> {
+    ) -> Vec<VariableId> {
         let outputs: Vec<_> = self.var_reqs.into_iter().map(|req| ctx.new_var(req)).collect();
         builder.push_statement(Statement::StructDestructure(StatementStructDestructure {
             input: self.input,

@@ -18,7 +18,7 @@ use cairo_lang_semantic::types::TypeInfo;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use id_arena::{Arena, Id};
+use id_arena::{Arena, DefaultArenaBehavior, Id};
 
 pub mod blocks;
 pub use blocks::BlockId;
@@ -112,7 +112,10 @@ impl<'db> LocationId<'db> {
     }
 }
 
-pub type VariableId<'db> = Id<Variable<'db>>;
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct VariableMarker;
+pub type VariableId = Id<VariableMarker>;
+pub type VariableArena<'db> = Arena<Variable<'db>, DefaultArenaBehavior<VariableMarker>>;
 
 /// Represents a usage of a variable.
 ///
@@ -135,7 +138,7 @@ pub type VariableId<'db> = Id<Variable<'db>>;
 /// in that case, the location of both the variable and the usage will be the same.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct VarUsage<'db> {
-    pub var_id: VariableId<'db>,
+    pub var_id: VariableId,
     pub location: LocationId<'db>,
 }
 
@@ -147,11 +150,11 @@ pub struct Lowered<'db> {
     /// Function signature.
     pub signature: Signature<'db>,
     /// Arena of allocated lowered variables.
-    pub variables: Arena<Variable<'db>>,
+    pub variables: VariableArena<'db>,
     /// Arena of allocated lowered blocks.
     pub blocks: Blocks<'db>,
     /// function parameters, including implicits.
-    pub parameters: Vec<VariableId<'db>>,
+    pub parameters: Vec<VariableId>,
 }
 
 unsafe impl<'db> salsa::Update for Lowered<'db> {
@@ -173,10 +176,10 @@ unsafe impl<'db> salsa::Update for Lowered<'db> {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct VarRemapping<'db> {
     /// Map from new_var to old_var (since new_var cannot appear twice, but old_var can).
-    pub remapping: OrderedHashMap<VariableId<'db>, VarUsage<'db>>,
+    pub remapping: OrderedHashMap<VariableId, VarUsage<'db>>,
 }
 impl<'db> Deref for VarRemapping<'db> {
-    type Target = OrderedHashMap<VariableId<'db>, VarUsage<'db>>;
+    type Target = OrderedHashMap<VariableId, VarUsage<'db>>;
 
     fn deref(&self) -> &Self::Target {
         &self.remapping
@@ -320,7 +323,7 @@ impl<'db> Statement<'db> {
         }
     }
 
-    pub fn outputs(&self) -> &[VariableId<'db>] {
+    pub fn outputs(&self) -> &[VariableId] {
         match self {
             Statement::Const(stmt) => std::slice::from_ref(&stmt.output),
             Statement::Call(stmt) => stmt.outputs.as_slice(),
@@ -332,7 +335,7 @@ impl<'db> Statement<'db> {
         }
     }
 
-    pub fn outputs_mut(&mut self) -> &mut [VariableId<'db>] {
+    pub fn outputs_mut(&mut self) -> &mut [VariableId] {
         match self {
             Statement::Const(stmt) => std::slice::from_mut(&mut stmt.output),
             Statement::Call(stmt) => stmt.outputs.as_mut_slice(),
@@ -374,7 +377,7 @@ pub struct StatementConst<'db> {
     /// The value of the const.
     pub value: ConstValue<'db>,
     /// The variable to bind the value to.
-    pub output: VariableId<'db>,
+    pub output: VariableId,
 }
 
 /// A statement that calls a user function.
@@ -388,7 +391,7 @@ pub struct StatementCall<'db> {
     /// [semantic::ExprFunctionCall::coupon_arg] for more information.
     pub with_coupon: bool,
     /// New variables to be introduced into the current scope from the function outputs.
-    pub outputs: Vec<VariableId<'db>>,
+    pub outputs: Vec<VariableId>,
     /// Location for the call.
     pub location: LocationId<'db>,
 }
@@ -401,7 +404,7 @@ pub struct StatementEnumConstruct<'db> {
     /// A living variable in current scope to wrap with the variant.
     pub input: VarUsage<'db>,
     /// The variable to bind the value to.
-    pub output: VariableId<'db>,
+    pub output: VariableId,
 }
 
 /// A statement that constructs a struct (tuple included) into a new variable.
@@ -409,7 +412,7 @@ pub struct StatementEnumConstruct<'db> {
 pub struct StatementStructConstruct<'db> {
     pub inputs: Vec<VarUsage<'db>>,
     /// The variable to bind the value to.
-    pub output: VariableId<'db>,
+    pub output: VariableId,
 }
 
 /// A statement that destructures a struct (tuple included), introducing its elements as new
@@ -419,27 +422,27 @@ pub struct StatementStructDestructure<'db> {
     /// A living variable in current scope to destructure.
     pub input: VarUsage<'db>,
     /// The variables to bind values to.
-    pub outputs: Vec<VariableId<'db>>,
+    pub outputs: Vec<VariableId>,
 }
 
 /// A statement that takes a snapshot of a variable.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementSnapshot<'db> {
     pub input: VarUsage<'db>,
-    pub outputs: [VariableId<'db>; 2],
+    pub outputs: [VariableId; 2],
 }
 impl<'db> StatementSnapshot<'db> {
     pub fn new(
         input: VarUsage<'db>,
-        output_original: VariableId<'db>,
-        output_snapshot: VariableId<'db>,
+        output_original: VariableId,
+        output_snapshot: VariableId,
     ) -> Self {
         Self { input, outputs: [output_original, output_snapshot] }
     }
-    pub fn original(&self) -> VariableId<'db> {
+    pub fn original(&self) -> VariableId {
         self.outputs[0]
     }
-    pub fn snapshot(&self) -> VariableId<'db> {
+    pub fn snapshot(&self) -> VariableId {
         self.outputs[1]
     }
 }
@@ -449,7 +452,7 @@ impl<'db> StatementSnapshot<'db> {
 pub struct StatementDesnap<'db> {
     pub input: VarUsage<'db>,
     /// The variable to bind the value to.
-    pub output: VariableId<'db>,
+    pub output: VariableId,
 }
 
 /// An arm of a match statement.
@@ -462,7 +465,7 @@ pub struct MatchArm<'db> {
     pub block_id: BlockId,
 
     /// The list of variable ids introduced in this arm.
-    pub var_ids: Vec<VariableId<'db>>,
+    pub var_ids: Vec<VariableId>,
 }
 
 /// A statement that calls an extern function with branches, and "calls" a possibly different block

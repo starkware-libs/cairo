@@ -69,7 +69,7 @@ fn get_function_ap_change_and_code<'db>(
     db: &'db dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId<'db>,
     lowered_function: &Lowered<'db>,
-    analyze_ap_change_result: AnalyzeApChangesResult<'db>,
+    analyze_ap_change_result: AnalyzeApChangesResult,
 ) -> Maybe<Arc<pre_sierra::Function<'db>>> {
     let root_block = lowered_function.blocks.root_block()?;
     let AnalyzeApChangesResult { known_ap_change, local_variables, ap_tracking_configuration } =
@@ -212,7 +212,7 @@ pub fn priv_get_dummy_function<'db>(
 /// * A list of Sierra statements.
 fn allocate_local_variables<'db>(
     context: &mut ExprGeneratorContext<'db, '_>,
-    local_variables: &OrderedHashSet<lowering::VariableId<'db>>,
+    local_variables: &OrderedHashSet<lowering::VariableId>,
 ) -> Maybe<LocalVariables> {
     let mut sierra_local_variables =
         OrderedHashMap::<cairo_lang_sierra::ids::VarId, cairo_lang_sierra::ids::VarId>::default();

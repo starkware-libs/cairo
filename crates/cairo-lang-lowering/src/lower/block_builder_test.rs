@@ -76,7 +76,7 @@ fn test_merge_block_builders(
 
     // Create dummy lowering variables.
     let dummy_location = ctx.get_location(test_function.signature.stable_ptr.untyped());
-    let lowering_vars: Vec<VariableId<'_>> = (0..N_LOWERING_VARS)
+    let lowering_vars: Vec<VariableId> = (0..N_LOWERING_VARS)
         .map(|_| ctx.new_var(VarRequest { ty: unit_ty(ctx.db), location: dummy_location }))
         .collect();
 
@@ -118,7 +118,7 @@ fn test_merge_block_builders(
 fn create_block_builders<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     test_function: &TestFunction<'db>,
-    lowering_vars: &[VariableId<'db>],
+    lowering_vars: &[VariableId],
 ) -> Vec<BlockBuilder<'db>> {
     let expr = ctx.function_body.arenas.exprs[test_function.body].clone();
     let block_expr = extract_matches!(expr, Expr::Block);
@@ -142,7 +142,7 @@ fn create_block_builders<'db>(
 fn create_block_builder<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     statement_id: StatementId,
-    lowering_vars: &[VariableId<'db>],
+    lowering_vars: &[VariableId],
 ) -> BlockBuilder<'db> {
     let block_id = ctx.blocks.alloc_empty();
     let mut block_builder = BlockBuilder::root(block_id);

@@ -29,11 +29,11 @@ use crate::utils::{
 };
 
 /// Information returned by [analyze_ap_changes].
-pub struct AnalyzeApChangesResult<'db> {
+pub struct AnalyzeApChangesResult {
     /// True if the function has a known_ap_change
     pub known_ap_change: bool,
     /// The variables that should be stored in locals as they are revoked during the function.
-    pub local_variables: OrderedHashSet<VariableId<'db>>,
+    pub local_variables: OrderedHashSet<VariableId>,
     /// Information about where ap tracking should be enabled and disabled.
     pub ap_tracking_configuration: ApTrackingConfiguration,
 }
@@ -43,7 +43,7 @@ pub struct AnalyzeApChangesResult<'db> {
 pub fn analyze_ap_changes<'db>(
     db: &'db dyn SierraGenGroup,
     lowered_function: &Lowered<'db>,
-) -> Maybe<AnalyzeApChangesResult<'db>> {
+) -> Maybe<AnalyzeApChangesResult> {
     lowered_function.blocks.has_root()?;
     let ctx = FindLocalsContext {
         db,
@@ -71,7 +71,7 @@ pub fn analyze_ap_changes<'db>(
     let peeled_used_after_revoke: OrderedHashSet<_> =
         ctx.used_after_revoke.iter().map(|var| ctx.peel_aliases(var)).copied().collect();
     // Any used after revoke variable that might be revoked should be a local.
-    let locals: OrderedHashSet<VariableId<'_>> = ctx
+    let locals: OrderedHashSet<VariableId> = ctx
         .used_after_revoke
         .iter()
         .filter(|var| ctx.might_be_revoked(&peeled_used_after_revoke, var))
@@ -108,41 +108,41 @@ pub fn analyze_ap_changes<'db>(
     })
 }
 
-struct CalledBlockInfo<'db> {
+struct CalledBlockInfo {
     caller_count: usize,
-    demand: LoweredDemand<'db>,
-    introduced_vars: Vec<VariableId<'db>>,
+    demand: LoweredDemand,
+    introduced_vars: Vec<VariableId>,
 }
 
 /// Context for the find_local_variables logic.
 struct FindLocalsContext<'db, 'a> {
     db: &'db dyn SierraGenGroup,
     lowered_function: &'a Lowered<'db>,
-    used_after_revoke: OrderedHashSet<VariableId<'db>>,
-    block_callers: OrderedHashMap<BlockId, CalledBlockInfo<'db>>,
+    used_after_revoke: OrderedHashSet<VariableId>,
+    block_callers: OrderedHashMap<BlockId, CalledBlockInfo>,
     /// Variables that are known not to be ap based, excluding constants.
-    non_ap_based: UnorderedHashSet<VariableId<'db>>,
+    non_ap_based: UnorderedHashSet<VariableId>,
     /// Variables that are constants, i.e. created from Statement::Literal.
-    constants: UnorderedHashSet<VariableId<'db>>,
+    constants: UnorderedHashSet<VariableId>,
     /// A mapping of variables which are the same in the context of finding locals.
     /// I.e. if `aliases[var_id]` is local than var_id is also local.
-    aliases: UnorderedHashMap<VariableId<'db>, VariableId<'db>>,
+    aliases: UnorderedHashMap<VariableId, VariableId>,
     /// A mapping from partial param variables to the containing variable.
-    partial_param_parents: UnorderedHashMap<VariableId<'db>, VariableId<'db>>,
+    partial_param_parents: UnorderedHashMap<VariableId, VariableId>,
 }
 
-pub type LoweredDemand<'db> = Demand<VariableId<'db>, ()>;
+pub type LoweredDemand = Demand<VariableId, ()>;
 #[derive(Clone)]
-struct AnalysisInfo<'db> {
-    demand: LoweredDemand<'db>,
+struct AnalysisInfo {
+    demand: LoweredDemand,
     known_ap_change: bool,
 }
-impl<'db> DemandReporter<VariableId<'db>> for FindLocalsContext<'db, '_> {
+impl<'db> DemandReporter<VariableId> for FindLocalsContext<'db, '_> {
     type UsePosition = ();
     type IntroducePosition = ();
 }
 impl<'db> Analyzer<'db, '_> for FindLocalsContext<'db, '_> {
-    type Info = Maybe<AnalysisInfo<'db>>;
+    type Info = Maybe<AnalysisInfo>;
 
     fn visit_stmt(
         &mut self,
@@ -193,7 +193,7 @@ impl<'db> Analyzer<'db, '_> for FindLocalsContext<'db, '_> {
         _statement_location: StatementLocation,
         match_info: &MatchInfo<'db>,
         infos: impl Iterator<Item = Self::Info>,
-    ) -> Maybe<AnalysisInfo<'db>> {
+    ) -> Maybe<AnalysisInfo> {
         let mut arm_demands = vec![];
         let mut known_ap_change = true;
         let inputs = match_info.inputs();
@@ -240,7 +240,7 @@ struct BranchInfo {
 
 impl<'db, 'a> FindLocalsContext<'db, 'a> {
     /// Given a variable that might be an alias follow aliases until we get the original variable.
-    pub fn peel_aliases(&'a self, mut var: &'a VariableId<'db>) -> &'a VariableId<'db> {
+    pub fn peel_aliases(&'a self, mut var: &'a VariableId) -> &'a VariableId {
         while let Some(alias) = self.aliases.get(var) {
             var = alias;
         }
@@ -254,8 +254,8 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
     /// relevant variables local.
     pub fn might_be_revoked(
         &self,
-        peeled_used_after_revoke: &OrderedHashSet<VariableId<'_>>,
-        var: &VariableId<'_>,
+        peeled_used_after_revoke: &OrderedHashSet<VariableId>,
+        var: &VariableId,
     ) -> bool {
         if self.constants.contains(var) {
             return false;
@@ -280,7 +280,7 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
         &mut self,
         concrete_function_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
         input_vars: &[VarUsage<'db>],
-        output_vars: &[VariableId<'db>],
+        output_vars: &[VariableId],
     ) -> BranchInfo {
         let libfunc_signature = get_libfunc_signature(self.db, concrete_function_id.clone());
         assert_eq!(
@@ -302,7 +302,7 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
         _params_signatures: &[ParamSignature],
         branch_signature: &BranchSignature,
         input_vars: &[VarUsage<'db>],
-        output_vars: &[VariableId<'db>],
+        output_vars: &[VariableId],
     ) -> BranchInfo {
         let var_output_infos = &branch_signature.vars;
         for (var, output_info) in zip_eq(output_vars.iter(), var_output_infos.iter()) {
@@ -392,7 +392,7 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
         Ok(branch_info)
     }
 
-    fn revoke_if_needed(&mut self, info: &mut AnalysisInfo<'db>, branch_info: BranchInfo) {
+    fn revoke_if_needed(&mut self, info: &mut AnalysisInfo, branch_info: BranchInfo) {
         // Revoke if needed.
         if !branch_info.known_ap_change {
             info.known_ap_change = false;

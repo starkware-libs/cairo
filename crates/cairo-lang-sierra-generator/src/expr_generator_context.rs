@@ -21,11 +21,11 @@ pub struct ExprGeneratorContext<'db, 'a> {
     db: &'db dyn SierraGenGroup,
     lowered: &'a Lowered<'db>,
     function_id: ConcreteFunctionWithBodyId<'db>,
-    lifetime: &'a VariableLifetimeResult<'db>,
+    lifetime: &'a VariableLifetimeResult,
 
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
-    variables: UnorderedHashMap<SierraGenVar<'db>, cairo_lang_sierra::ids::VarId>,
+    variables: UnorderedHashMap<SierraGenVar, cairo_lang_sierra::ids::VarId>,
     block_labels: OrderedHashMap<BlockId, pre_sierra::LabelId<'db>>,
 
     /// The current ap tracking status.
@@ -44,7 +44,7 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
         db: &'db dyn SierraGenGroup,
         lowered: &'a Lowered<'db>,
         function_id: ConcreteFunctionWithBodyId<'db>,
-        lifetime: &'a VariableLifetimeResult<'db>,
+        lifetime: &'a VariableLifetimeResult,
         ap_tracking_configuration: ApTrackingConfiguration,
     ) -> Self {
         ExprGeneratorContext {
@@ -77,9 +77,9 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
     /// Allocates a new Sierra variable on the first call (for each variable).
     pub fn get_sierra_variable(
         &mut self,
-        var: impl Into<SierraGenVar<'db>>,
+        var: impl Into<SierraGenVar>,
     ) -> cairo_lang_sierra::ids::VarId {
-        let var: SierraGenVar<'_> = var.into();
+        let var: SierraGenVar = var.into();
         if let Some(sierra_var) = self.variables.get(&var) {
             return sierra_var.clone();
         }
@@ -92,7 +92,7 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
     /// Same as [Self::get_sierra_variable] except that it operates of a list of variables.
     pub fn get_sierra_variables(
         &mut self,
-        vars: &[lowering::VariableId<'db>],
+        vars: &[lowering::VariableId],
     ) -> Vec<cairo_lang_sierra::ids::VarId> {
         vars.iter().map(|var| self.get_sierra_variable(*var)).collect()
     }
@@ -120,7 +120,7 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
     /// [lowering::VariableId].
     pub fn get_variable_sierra_type(
         &self,
-        var: impl Into<SierraGenVar<'db>>,
+        var: impl Into<SierraGenVar>,
     ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
         Ok(match var.into() {
             SierraGenVar::LoweringVar(lowering_var) => {
@@ -148,7 +148,7 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
     }
 
     /// Returns the places where variables should be dropped. See [VariableLifetimeResult::drops].
-    pub fn get_drops(&self) -> &'a OrderedHashMap<DropLocation, Vec<SierraGenVar<'db>>> {
+    pub fn get_drops(&self) -> &'a OrderedHashMap<DropLocation, Vec<SierraGenVar>> {
         &self.lifetime.drops
     }
 

@@ -1,7 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_debug::debug::DebugWithDbOverride;
 use cairo_lang_defs::ids::NamedLanguageElementId;
-use id_arena::Arena;
 use itertools::Itertools;
 
 use crate::db::LoweringGroup;
@@ -12,18 +11,18 @@ use crate::objects::{
 use crate::{
     Block, BlockEnd, Lowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchInfo, StatementDesnap,
     StatementEnumConstruct, StatementSnapshot, StatementStructConstruct, VarRemapping, VarUsage,
-    Variable,
+    VariableArena,
 };
 
 /// Holds all the information needed for formatting lowered representations.
 /// Acts like a "db" for DebugWithDb.
 pub struct LoweredFormatter<'db> {
     pub db: &'db dyn LoweringGroup,
-    pub variables: &'db Arena<Variable<'db>>,
+    pub variables: &'db VariableArena<'db>,
     pub include_usage_location: bool,
 }
 impl<'db> LoweredFormatter<'db> {
-    pub fn new(db: &'db dyn LoweringGroup, variables: &'db Arena<Variable<'db>>) -> Self {
+    pub fn new(db: &'db dyn LoweringGroup, variables: &'db VariableArena<'db>) -> Self {
         Self { db, variables, include_usage_location: false }
     }
 }
@@ -31,13 +30,11 @@ impl<'db> LoweredFormatter<'db> {
 impl<'db> DebugWithDb<'db> for VarRemapping<'db> {
     type Db = LoweredFormatter<'db>;
 
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &Self::Db) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, _ctx: &Self::Db) -> std::fmt::Result {
         let mut remapping = self.iter().peekable();
         write!(f, "{{")?;
         while let Some((dst, src)) = remapping.next() {
-            src.var_id.fmt(f, ctx)?;
-            write!(f, " -> ")?;
-            dst.fmt(f, ctx)?;
+            write!(f, "v{:?} -> v{:?}", src.var_id.index(), dst.index())?;
             if remapping.peek().is_some() {
                 write!(f, ", ")?;
             }
@@ -117,7 +114,7 @@ impl<'db> DebugWithDb<'db> for BlockEnd<'db> {
         };
         let mut outputs = outputs.iter().peekable();
         while let Some(var) = outputs.next() {
-            var.fmt(f, ctx)?;
+            write!(f, "v{:?}", var.index())?;
             if outputs.peek().is_some() {
                 write!(f, ", ")?;
             }
@@ -127,11 +124,11 @@ impl<'db> DebugWithDb<'db> for BlockEnd<'db> {
 }
 
 fn format_var_with_ty(
-    var_id: VariableId<'_>,
+    var_id: VariableId,
     f: &mut std::fmt::Formatter<'_>,
     ctx: &LoweredFormatter<'_>,
 ) -> std::fmt::Result {
-    var_id.fmt(f, ctx)?;
+    write!(f, "v{:?}", var_id.index())?;
     let var = &ctx.variables[var_id];
     write!(f, ": {}", var.ty.format(ctx.db))
 }
@@ -171,7 +168,7 @@ impl<'db> DebugWithDb<'db> for VarUsage<'db> {
     }
 }
 
-impl<'db> DebugWithDbOverride<'db, LoweredFormatter<'db>> for VariableId<'db> {
+impl<'db> DebugWithDbOverride<'db, LoweredFormatter<'db>> for VariableId {
     fn fmt_override(
         &self,
         f: &mut std::fmt::Formatter<'_>,
@@ -276,7 +273,7 @@ impl<'db> DebugWithDb<'db> for MatchArm<'db> {
             write!(f, "(")?;
             let mut var_ids = self.var_ids.iter().peekable();
             while let Some(var_id) = var_ids.next() {
-                var_id.fmt(f, ctx)?;
+                write!(f, "v{:?}", var_id.index())?;
                 if var_ids.peek().is_some() {
                     write!(f, ", ")?;
                 }

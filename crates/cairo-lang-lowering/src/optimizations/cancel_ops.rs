@@ -59,22 +59,22 @@ pub struct CancelOpsContext<'db, 'a> {
 
     /// Maps a variable to the use sites of that variable.
     /// Note that a remapping is considered as usage here.
-    use_sites: UnorderedHashMap<VariableId<'db>, Vec<StatementLocation>>,
+    use_sites: UnorderedHashMap<VariableId, Vec<StatementLocation>>,
 
     /// Maps a variable to the variable that it was renamed to.
-    var_remapper: VarRenamer<'db>,
+    var_remapper: VarRenamer,
 
     /// Keeps track of all the aliases created by the renaming.
-    aliases: UnorderedHashMap<VariableId<'db>, Vec<VariableId<'db>>>,
+    aliases: UnorderedHashMap<VariableId, Vec<VariableId>>,
 
     /// Statements that can be removed.
     stmts_to_remove: Vec<StatementLocation>,
 }
 
 /// Similar to `mapping.get(var).or_default()` but works for types that don't implement Default.
-fn get_entry_as_slice<'a, 'db, T>(
-    mapping: &'a UnorderedHashMap<VariableId<'db>, Vec<T>>,
-    var: &VariableId<'db>,
+fn get_entry_as_slice<'a, T>(
+    mapping: &'a UnorderedHashMap<VariableId, Vec<T>>,
+    var: &VariableId,
 ) -> &'a [T] {
     match mapping.get(var) {
         Some(entry) => &entry[..],
@@ -85,10 +85,10 @@ fn get_entry_as_slice<'a, 'db, T>(
 /// Returns the use sites of a variable.
 ///
 /// Takes 'use_sites' map rather than `CancelOpsContext` to avoid borrowing the entire context.
-fn filter_use_sites<'a, 'db, F, T>(
-    use_sites: &'a UnorderedHashMap<VariableId<'db>, Vec<StatementLocation>>,
-    var_aliases: &'a UnorderedHashMap<VariableId<'db>, Vec<VariableId<'db>>>,
-    orig_var_id: &VariableId<'db>,
+fn filter_use_sites<'a, F, T>(
+    use_sites: &'a UnorderedHashMap<VariableId, Vec<StatementLocation>>,
+    var_aliases: &'a UnorderedHashMap<VariableId, Vec<VariableId>>,
+    orig_var_id: &VariableId,
     mut f: F,
 ) -> Vec<T>
 where
@@ -110,7 +110,7 @@ where
 }
 
 impl<'db, 'a> CancelOpsContext<'db, 'a> {
-    fn rename_var(&mut self, from: VariableId<'db>, to: VariableId<'db>) {
+    fn rename_var(&mut self, from: VariableId, to: VariableId) {
         self.var_remapper.renamed_vars.insert(from, to);
 
         let mut aliases = Vec::from_iter(chain(
@@ -129,7 +129,7 @@ impl<'db, 'a> CancelOpsContext<'db, 'a> {
         }
     }
 
-    fn add_use_site(&mut self, var: VariableId<'db>, use_site: StatementLocation) {
+    fn add_use_site(&mut self, var: VariableId, use_site: StatementLocation) {
         self.use_sites.entry(var).or_default().push(use_site);
     }
 
