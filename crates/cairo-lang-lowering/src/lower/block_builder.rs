@@ -498,7 +498,7 @@ pub enum SealedBlockBuilder<'db> {
     /// Block should end by goto callsite.
     GotoCallsite(SealedGotoCallsite<'db>),
     /// Block end is already known.
-    Ends(BlockId),
+    Ends,
 }
 impl<'db> SealedBlockBuilder<'db> {
     /// Finalizes a non-finalized block, given the semantic remapping of variables and the target
