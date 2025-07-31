@@ -1942,7 +1942,7 @@ fn add_closure_call_function<'db>(
     .intern(db);
     let Ok(impl_id) = semantic::types::get_impl_at_context(
         db,
-        encapsulated_ctx.variables.lookup_context.clone(),
+        encapsulated_ctx.variables.lookup_context,
         concrete_trait,
         None,
     ) else {
