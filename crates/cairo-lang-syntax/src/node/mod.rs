@@ -109,8 +109,8 @@ impl<'a> SyntaxNode<'a> {
     }
 
     /// Returns the green node of the syntax node.
-    pub fn green_node(&self, db: &'a dyn SyntaxGroup) -> Arc<GreenNode<'a>> {
-        self.long(db).green.long(db).clone()
+    pub fn green_node(&self, db: &'a dyn SyntaxGroup) -> &'a GreenNode<'a> {
+        self.long(db).green.long(db)
     }
 
     /// Returns the span of the syntax node without trivia.
@@ -234,7 +234,7 @@ impl<'a> SyntaxNode<'a> {
     pub fn get_text_without_inner_commentable_children(&self, db: &dyn SyntaxGroup) -> String {
         let mut buffer = String::new();
 
-        match &self.green_node(db).as_ref().details {
+        match &self.green_node(db).details {
             green::GreenNodeDetails::Token(text) => buffer.push_str(text),
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.get_children(db).iter() {
@@ -263,7 +263,7 @@ impl<'a> SyntaxNode<'a> {
     pub fn get_text_without_all_comment_trivia(&self, db: &dyn SyntaxGroup) -> String {
         let mut buffer = String::new();
 
-        match &self.green_node(db).as_ref().details {
+        match &self.green_node(db).details {
             green::GreenNodeDetails::Token(text) => buffer.push_str(text),
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.get_children(db).iter() {
@@ -500,7 +500,7 @@ fn leading_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> T
             }
             let non_empty = find_non_empty_child(db, &mut children.iter())
                 .expect("Parent width non-empty - one of the children should be non-empty");
-            leading_trivia_width(db, &non_empty)
+            leading_trivia_width(db, non_empty)
         }
     }
 }
@@ -518,7 +518,7 @@ fn trailing_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> 
             }
             let non_empty = find_non_empty_child(db, &mut children.iter().rev())
                 .expect("Parent width non-empty - one of the children should be non-empty");
-            trailing_trivia_width(db, &non_empty)
+            trailing_trivia_width(db, non_empty)
         }
     }
 }
@@ -539,11 +539,11 @@ fn both_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> (Tex
                 .expect("Parent width non-empty - one of the children should be non-empty");
             if let Some(last_non_empty) = find_non_empty_child(db, &mut iter.rev()) {
                 (
-                    leading_trivia_width(db, &first_non_empty),
-                    trailing_trivia_width(db, &last_non_empty),
+                    leading_trivia_width(db, first_non_empty),
+                    trailing_trivia_width(db, last_non_empty),
                 )
             } else {
-                both_trivia_width(db, &first_non_empty)
+                both_trivia_width(db, first_non_empty)
             }
         }
     }
@@ -553,11 +553,9 @@ fn both_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> (Tex
 fn find_non_empty_child<'a>(
     db: &'a dyn SyntaxGroup,
     child_iter: &mut impl Iterator<Item = &'a GreenId<'a>>,
-) -> Option<Arc<GreenNode<'a>>> {
-    child_iter
-        .find_map(|child| {
-            let child = child.long(db);
-            (child.width() != TextWidth::default()).then_some(child)
-        })
-        .cloned()
+) -> Option<&'a GreenNode<'a>> {
+    child_iter.find_map(|child| {
+        let child = child.long(db);
+        (child.width() != TextWidth::default()).then_some(child)
+    })
 }

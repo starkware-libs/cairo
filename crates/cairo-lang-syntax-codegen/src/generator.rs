@@ -173,7 +173,6 @@ fn generate_ast_code() -> rust::Tokens {
         #![allow(dead_code)]
         #![allow(unused_variables)]
         use std::ops::Deref;
-        use std::sync::Arc;
 
         use cairo_lang_filesystem::span::TextWidth;
         use cairo_lang_utils::{extract_matches, Intern};
@@ -239,13 +238,13 @@ fn gen_list_code(name: String, element_type: String) -> rust::Tokens {
             ) -> $(&green_name)<'db> {
                 let width = children.iter().map(|id|
                     id.0.long(db).width()).sum();
-                $(&green_name)(Arc::new(GreenNode {
+                $(&green_name)(GreenNode {
                     kind: SyntaxKind::$(&name),
                     details: GreenNodeDetails::Node {
                         children: children.iter().map(|x| x.0).collect(),
                         width,
                     },
-                }).intern(db))
+                }.intern(db))
             }
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -296,13 +295,13 @@ fn gen_separated_list_code(
             ) -> $(&green_name)<'db> {
                 let width = children.iter().map(|id|
                     id.id().long(db).width()).sum();
-                $(&green_name)(Arc::new(GreenNode {
+                $(&green_name)(GreenNode {
                     kind: SyntaxKind::$(&name),
                     details: GreenNodeDetails::Node {
                         children: children.iter().map(|x| x.id()).collect(),
                         width,
                     },
-                }).intern(db))
+                }.intern(db))
             }
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -357,11 +356,11 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
             type StablePtr = $ptr_name<'db>;
             type Green = $green_name<'db>;
             fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
-                $green_name(Arc::new(
+                $green_name(
                     GreenNode {
                         kind: SyntaxKind::$name,
                         details: GreenNodeDetails::Node { children: [].into(), width: TextWidth::default() },
-                    }).intern(db)
+                    }.intern(db)
                 )
             }
             fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -514,10 +513,10 @@ fn gen_token_code(name: String) -> rust::Tokens {
         }
         impl<'db> Token<'db> for $(&name)<'db> {
             fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
-                $(&green_name)(Arc::new(GreenNode {
+                $(&green_name)(GreenNode {
                     kind: SyntaxKind::$(&name),
                     details: GreenNodeDetails::Token(text),
-                }).intern(db))
+                }.intern(db))
             }
             fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
                 extract_matches!(&self.node.long(db).green.long(db).details,
@@ -553,10 +552,10 @@ fn gen_token_code(name: String) -> rust::Tokens {
             type StablePtr = $(&ptr_name)<'db>;
             type Green = $(&green_name)<'db>;
             fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
-                $(&green_name)(Arc::new(GreenNode {
+                $(&green_name)(GreenNode {
                     kind: SyntaxKind::TokenMissing,
                     details: GreenNodeDetails::Token("".into()),
-                }).intern(db))
+                }.intern(db))
             }
             fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
                 match node.long(db).green.long(db).details {
@@ -641,10 +640,10 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                     let children = [$args];
                     let width =
                         children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
-                    $(&green_name)(Arc::new(GreenNode {
+                    $(&green_name)(GreenNode {
                         kind: SyntaxKind::$(&name),
                         details: GreenNodeDetails::Node { children: children.into(), width },
-                    }).intern(db))
+                    }.intern(db))
                 }
                 fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
                     let GreenNodeDetails::Node{children,..} = &self.node.long(db).green.long(db).details else {
@@ -667,10 +666,10 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                     let children = [$args];
                     let width =
                         children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
-                    $(&green_name)(Arc::new(GreenNode {
+                    $(&green_name)(GreenNode {
                         kind: SyntaxKind::$(&name),
                         details: GreenNodeDetails::Node { children: children.into(), width },
-                    }).intern(db))
+                    }.intern(db))
                 }
             }
         }
@@ -712,13 +711,13 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
             fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
                 // Note: A missing syntax element should result in an internal green node
                 // of width 0, with as much structure as possible.
-                $(&green_name)(Arc::new(GreenNode {
+                $(&green_name)(GreenNode {
                     kind: SyntaxKind::$(&name),
                     details: GreenNodeDetails::Node {
                         children: [$args_for_missing].into(),
                         width: TextWidth::default(),
                     },
-                }).intern(db))
+                }.intern(db))
             }
             fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
                 let kind = node.kind(db);

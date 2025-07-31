@@ -1530,7 +1530,7 @@ struct SyntaxNodeInnerCached {
 impl SyntaxNodeCached {
     fn new<'db>(syntax_node: SyntaxNode<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         let db = ctx.db;
-        let green = GreenIdCached::new(syntax_node.green_node(db).intern(db), ctx);
+        let green = GreenIdCached::new(syntax_node.green_node(db).clone().intern(db), ctx);
         let parent = syntax_node.parent(db).map(|it| Self::new(it, ctx));
         let stable_ptr = SyntaxStablePtrIdCached::new(syntax_node.stable_ptr(db), ctx);
         let offset = syntax_node.offset(db);
@@ -1728,7 +1728,7 @@ impl GreenIdCached {
         if let Some(id) = ctx.green_ids.get(&green_id) {
             return *id;
         }
-        let green_node = GreenNodeCached::new(green_id.long(ctx.db).as_ref(), ctx);
+        let green_node = GreenNodeCached::new(green_id.long(ctx.db), ctx);
         let id = GreenIdCached(ctx.green_ids_lookup.len());
         ctx.green_ids_lookup.push(green_node);
         ctx.green_ids.insert(green_id, id);
@@ -1739,7 +1739,7 @@ impl GreenIdCached {
             return *green_id;
         }
         let green_node = ctx.green_ids_lookup[self.0].clone();
-        let green_node = Arc::new(green_node.embed(ctx));
+        let green_node = green_node.embed(ctx);
         let green_id = green_node.intern(ctx.db);
         ctx.green_ids.insert(self, green_id);
         green_id
