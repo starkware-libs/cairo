@@ -6,8 +6,8 @@ use cairo_lang_diagnostics::{
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{Intern, LookupIntern};
 use salsa::par_map;
 use thiserror::Error;
 
@@ -141,7 +141,7 @@ impl<'a> DiagnosticsReporter<'a> {
         if let Some(crates) = self.crates.as_ref() {
             crates.clone()
         } else {
-            db.crates().into_iter().map(|id| id.lookup_intern(db).into_crate_input(db)).collect()
+            db.crates().into_iter().map(|id| id.long(db).clone().into_crate_input(db)).collect()
         }
     }
 
@@ -164,7 +164,7 @@ impl<'a> DiagnosticsReporter<'a> {
             };
 
             if db.file_content(module_file).is_none() {
-                match module_file.lookup_intern(db) {
+                match module_file.long(db) {
                     FileLongId::OnDisk(path) => {
                         self.callback.on_diagnostic(FormattedDiagnosticEntry::new(
                             Severity::Error,
@@ -299,7 +299,7 @@ pub fn get_diagnostics_as_string(
     let mut reporter = DiagnosticsReporter::write_to_string(&mut diagnostics);
     if let Some(crates) = crates_to_check.as_ref() {
         let crates =
-            crates.iter().map(|id| id.lookup_intern(db).into_crate_input(db)).collect::<Vec<_>>();
+            crates.iter().map(|id| id.long(db).clone().into_crate_input(db)).collect::<Vec<_>>();
         reporter = reporter.with_crates(&crates);
     }
     reporter.check(db);

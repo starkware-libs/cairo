@@ -9,7 +9,7 @@ use cairo_lang_filesystem::ids::{CrateId, CrateInput, CrateLongId, Directory};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
 pub use cairo_lang_project::*;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lang_utils::Intern;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ProjectError {
@@ -51,7 +51,7 @@ pub fn setup_single_file_project(
             Some(CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf())))
         );
         let crate_id = CrateId::plain(db, crate_name);
-        Ok(crate_id.lookup_intern(db).into_crate_input(db))
+        Ok(crate_id.long(db).clone().into_crate_input(db))
     } else {
         // If file_stem is not lib, create a fake lib file.
         let crate_id = CrateId::plain(db, file_stem);
@@ -65,7 +65,7 @@ pub fn setup_single_file_project(
         let file_id = db.module_main_file(module_id).unwrap();
         override_file_content!(db, file_id, Some(format!("mod {file_stem};").into()));
         let crate_id = CrateId::plain(db, file_stem);
-        Ok(crate_id.lookup_intern(db).into_crate_input(db))
+        Ok(crate_id.long(db).clone().into_crate_input(db))
     }
 }
 
@@ -105,7 +105,7 @@ pub fn setup_project(
         let config = ProjectConfig::from_directory(path).map_err(ProjectError::LoadProjectError)?;
         let main_crate_ids: Vec<_> = get_main_crate_ids_from_project(db, &config)
             .into_iter()
-            .map(|id| id.lookup_intern(db).into_crate_input(db))
+            .map(|id| id.long(db).clone().into_crate_input(db))
             .collect();
         update_crate_roots_from_project_config(db, &config);
         Ok(main_crate_ids)

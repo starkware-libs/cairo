@@ -17,9 +17,9 @@ use cairo_lang_sierra_to_casm::metadata::{MetadataComputationConfig, calc_metada
 use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::test_lock;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::Itertools;
 
 /// Salsa databases configured to find the corelib, when reused by different tests should be able to
@@ -232,7 +232,7 @@ fn run_e2e_test(
     // Parse code and create semantic model.
     let db_ref = locked_db.deref_mut();
     let test_module = setup_test_module(db_ref, inputs["cairo_code"].as_str()).unwrap();
-    let crate_input = test_module.crate_id.lookup_intern(db_ref).into_crate_input(db_ref);
+    let crate_input = test_module.crate_id.long(db_ref).clone().into_crate_input(db_ref);
     let db = locked_db.snapshot();
     DiagnosticsReporter::stderr()
         .with_crates(std::slice::from_ref(&crate_input))

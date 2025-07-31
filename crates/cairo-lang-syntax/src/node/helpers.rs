@@ -1,4 +1,3 @@
-use cairo_lang_utils::LookupIntern;
 use smol_str::SmolStr;
 
 use super::ast::{
@@ -33,7 +32,7 @@ impl<'a> ast::UsePathLeafPtr<'a> {
 impl<'a> GetIdentifier for ast::UsePathLeafPtr<'a> {
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
         let alias_clause_green = self.alias_clause_green(db).0;
-        let green_node = alias_clause_green.lookup_intern(db);
+        let green_node = alias_clause_green.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
@@ -63,7 +62,7 @@ impl<'a> GetIdentifier for ast::UsePathLeafPtr<'a> {
 impl<'a> GetIdentifier for ast::PathSegmentGreen<'a> {
     /// Retrieves the text of the last identifier in the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let green_node = self.0.lookup_intern(db);
+        let green_node = self.0.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
@@ -75,7 +74,7 @@ impl<'a> GetIdentifier for ast::PathSegmentGreen<'a> {
 impl<'a> GetIdentifier for ast::ExprPathGreen<'a> {
     /// Retrieves the text of the last identifier in the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let green_node = self.0.lookup_intern(db);
+        let green_node = self.0.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
@@ -88,7 +87,7 @@ impl<'a> GetIdentifier for ast::ExprPathGreen<'a> {
 impl<'a> GetIdentifier for ast::ExprPathInnerGreen<'a> {
     /// Retrieves the text of the last identifier in the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let green_node = self.0.lookup_intern(db);
+        let green_node = self.0.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
@@ -100,7 +99,7 @@ impl<'a> GetIdentifier for ast::ExprPathInnerGreen<'a> {
 }
 impl<'a> GetIdentifier for ast::TerminalIdentifierGreen<'a> {
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        match &self.0.lookup_intern(db).details {
+        match &self.0.long(db).details {
             GreenNodeDetails::Token(_) => "Unexpected token".into(),
             GreenNodeDetails::Node { children, width: _ } => {
                 TokenIdentifierGreen(children[1]).text(db)
@@ -194,9 +193,7 @@ pub trait NameGreen<'a> {
 
 impl<'a> NameGreen<'a> for FunctionDeclarationGreen<'a> {
     fn name_green(self, db: &'a dyn SyntaxGroup) -> TerminalIdentifierGreen<'a> {
-        TerminalIdentifierGreen(
-            self.0.lookup_intern(db).children()[FunctionDeclaration::INDEX_NAME],
-        )
+        TerminalIdentifierGreen(self.0.long(db).children()[FunctionDeclaration::INDEX_NAME])
     }
 }
 

@@ -10,7 +10,7 @@ use cairo_lang_semantic::ConcreteFunction;
 use cairo_lang_semantic::corelib::{core_array_felt252_ty, core_module, get_ty_by_name, unit_ty};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplId;
-use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lang_utils::Intern;
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{TypeId, TypeLongId};
 
@@ -107,7 +107,7 @@ impl<'db> DestructAdder<'db, '_> {
         if let [err_var] = introduced_vars[..] {
             let var = &self.lowered.variables[err_var];
 
-            let long_ty = var.ty.lookup_intern(self.db);
+            let long_ty = var.ty.long(self.db);
             let TypeLongId::Tuple(tys) = long_ty else {
                 return;
             };
@@ -436,7 +436,7 @@ pub fn add_destructs<'db>(
                 let new_tuple_var = variables.new_var(VarRequest { ty: tuple_ty, location });
                 let orig_tuple_var = *tuple_var;
                 *tuple_var = new_tuple_var;
-                let long_ty = tuple_ty.lookup_intern(db);
+                let long_ty = tuple_ty.long(db);
                 let TypeLongId::Tuple(tys) = long_ty else { unreachable!() };
 
                 let vars = tys
@@ -541,7 +541,7 @@ pub fn add_destructs<'db>(
 
     lowered.variables = variables.variables;
 
-    match function_id.lookup_intern(db) {
+    match function_id.long(db) {
         // If specialized, destructors are already correct.
         ConcreteFunctionWithBodyLongId::Specialized(_) => return,
         ConcreteFunctionWithBodyLongId::Semantic(id)

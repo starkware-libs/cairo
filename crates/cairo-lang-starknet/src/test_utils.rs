@@ -11,7 +11,6 @@ use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_starknet_classes::allowed_libfuncs::BUILTIN_ALL_LIBFUNCS_LIST;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
 use cairo_lang_test_utils::test_lock;
-use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 
 use crate::compile::compile_contract_in_prepared_db;
@@ -74,7 +73,7 @@ pub fn get_test_contract(example_file_name: &str) -> ContractClass {
         );
     };
     let main_crate_ids = vec![**contracts_crate_id];
-    let crate_input = contracts_crate_id.lookup_intern(&db).into_crate_input(&db);
+    let crate_input = contracts_crate_id.long(&db).clone().into_crate_input(&db);
     let main_crate_inputs = vec![crate_input];
     let diagnostics_reporter =
         DiagnosticsReporter::default().with_crates(&main_crate_inputs).allow_warnings();

@@ -6,8 +6,8 @@ use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::{FilesGroup, get_originating_location};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{LookupIntern, Upcast};
 use itertools::Itertools;
 
 use crate::error_code::{ErrorCode, OptionErrorCodeExt};
@@ -97,7 +97,7 @@ impl<'a> DiagnosticLocation<'a> {
 
     /// Helper function to format the location of a diagnostic.
     pub fn fmt_location(&self, f: &mut fmt::Formatter<'_>, db: &dyn FilesGroup) -> fmt::Result {
-        let file_path = self.file_id.lookup_intern(db).full_path(db);
+        let file_path = self.file_id.long(db).full_path(db);
         let start = match self.span.start.position_in_file(db, self.file_id) {
             Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
             None => "?".into(),
@@ -114,7 +114,7 @@ impl<'a> DiagnosticLocation<'a> {
 impl<'a> DebugWithDb<'a> for DiagnosticLocation<'a> {
     type Db = dyn FilesGroup;
     fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &'a dyn FilesGroup) -> fmt::Result {
-        let file_path = self.file_id.lookup_intern(db).full_path(db);
+        let file_path = self.file_id.long(db).full_path(db);
         let mut marks = String::new();
         let mut ending_pos = String::new();
         let starting_pos = match self.span.start.position_in_file(db, self.file_id) {

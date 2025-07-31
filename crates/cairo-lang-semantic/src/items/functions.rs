@@ -15,9 +15,7 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{
-    Intern, LookupIntern, OptionFrom, define_short_id, require, try_extract_matches,
-};
+use cairo_lang_utils::{Intern, OptionFrom, define_short_id, require, try_extract_matches};
 use itertools::{Itertools, chain};
 use smol_str::SmolStr;
 use syntax::attribute::consts::MUST_USE_ATTR;
@@ -53,7 +51,7 @@ pub struct ImplGenericFunctionId<'db> {
 impl<'db> ImplGenericFunctionId<'db> {
     /// Gets the impl function language element, if self.impl_id is of a concrete impl.
     pub fn impl_function(&self, db: &'db dyn SemanticGroup) -> Maybe<Option<ImplFunctionId<'db>>> {
-        match self.impl_id.lookup_intern(db) {
+        match self.impl_id.long(db) {
             ImplLongId::Concrete(concrete_impl_id) => {
                 concrete_impl_id.get_impl_function(db, self.function)
             }
@@ -173,7 +171,7 @@ impl<'db> GenericFunctionId<'db> {
             GenericFunctionId::Impl(impl_generic_function_id) => {
                 // Return the module file of the impl containing the function.
                 if let ImplLongId::Concrete(concrete_impl_id) =
-                    impl_generic_function_id.impl_id.lookup_intern(db)
+                    impl_generic_function_id.impl_id.long(db)
                 {
                     Some(concrete_impl_id.impl_def_id(db).module_file_id(db))
                 } else {
@@ -288,7 +286,7 @@ semantic_object_for_id!(
 );
 impl<'db> FunctionId<'db> {
     pub fn get_concrete(&self, db: &'db dyn SemanticGroup) -> ConcreteFunction<'db> {
-        self.lookup_intern(db).function
+        self.long(db).function.clone()
     }
 
     /// Returns the ExternFunctionId if this is an extern function. Otherwise returns none.
@@ -394,11 +392,11 @@ impl<'db> GenericFunctionWithBodyId<'db> {
         Ok(Some(match other {
             GenericFunctionId::Free(id) => GenericFunctionWithBodyId::Free(id),
             GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }) => {
-                let ImplLongId::Concrete(concrete_impl_id) = impl_id.lookup_intern(db) else {
+                let ImplLongId::Concrete(concrete_impl_id) = impl_id.long(db) else {
                     return Ok(None);
                 };
                 GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
-                    concrete_impl_id,
+                    concrete_impl_id: *concrete_impl_id,
                     function_body: if let Some(impl_function) =
                         concrete_impl_id.get_impl_function(db, function)?
                     {
@@ -480,7 +478,7 @@ impl<'db> ConcreteFunctionWithBody<'db> {
             }
             GenericFunctionWithBodyId::Impl(f) => match f.function_body {
                 ImplFunctionBodyId::Impl(body_id) => {
-                    let concrete_impl = f.concrete_impl_id.lookup_intern(db);
+                    let concrete_impl = f.concrete_impl_id.long(db);
                     GenericSubstitution::from_impl(
                         ImplLongId::Concrete(f.concrete_impl_id).intern(db),
                     )
@@ -499,7 +497,7 @@ impl<'db> ConcreteFunctionWithBody<'db> {
                 }
                 ImplFunctionBodyId::Trait(body_id) => {
                     let concrete_impl_id = ImplLongId::Concrete(f.concrete_impl_id).intern(db);
-                    let concrete_trait = concrete_impl_id.concrete_trait(db)?.lookup_intern(db);
+                    let concrete_trait = concrete_impl_id.concrete_trait(db)?.long(db);
                     GenericSubstitution::from_impl(concrete_impl_id).concat(
                         GenericSubstitution::new(
                             &chain!(
@@ -517,7 +515,7 @@ impl<'db> ConcreteFunctionWithBody<'db> {
                 }
             },
             GenericFunctionWithBodyId::Trait(f) => {
-                let concrete_trait = f.concrete_trait(db).lookup_intern(db);
+                let concrete_trait = f.concrete_trait(db).long(db);
                 GenericSubstitution::new(
                     &chain!(
                         db.trait_function_generic_params(f.trait_function(db))?,
@@ -644,10 +642,10 @@ semantic_object_for_id!(
 );
 impl<'db> ConcreteFunctionWithBodyId<'db> {
     pub fn function_with_body_id(&self, db: &'db dyn SemanticGroup) -> FunctionWithBodyId<'db> {
-        self.lookup_intern(db).function_with_body_id(db)
+        self.long(db).function_with_body_id(db)
     }
     pub fn substitution(&self, db: &'db dyn SemanticGroup) -> Maybe<GenericSubstitution<'db>> {
-        self.lookup_intern(db).substitution(db)
+        self.long(db).substitution(db)
     }
     pub fn from_no_generics_free(
         db: &'db dyn SemanticGroup,
@@ -662,23 +660,23 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
         Ok(ConcreteFunctionWithBody::from_generic(db, function_id)?.intern(db))
     }
     pub fn concrete(&self, db: &'db dyn SemanticGroup) -> Maybe<ConcreteFunction<'db>> {
-        self.lookup_intern(db).concrete(db)
+        self.long(db).concrete(db)
     }
     pub fn function_id(&self, db: &'db dyn SemanticGroup) -> Maybe<FunctionId<'db>> {
-        self.lookup_intern(db).function_id(db)
+        self.long(db).function_id(db)
     }
     pub fn generic_function(&self, db: &'db dyn SemanticGroup) -> GenericFunctionWithBodyId<'db> {
-        self.lookup_intern(db).generic_function
+        self.long(db).generic_function
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
-        self.lookup_intern(db).name(db)
+        self.long(db).name(db)
     }
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
-        self.lookup_intern(db).full_path(db)
+        self.long(db).full_path(db)
     }
 
     pub fn stable_location(&self, db: &'db dyn SemanticGroup) -> StableLocation<'db> {
-        self.lookup_intern(db).generic_function.stable_location(db)
+        self.long(db).generic_function.stable_location(db)
     }
 
     pub fn is_panic_destruct_fn(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
@@ -867,7 +865,7 @@ pub fn concrete_function_signature<'db>(
     function_id: FunctionId<'db>,
 ) -> Maybe<Signature<'db>> {
     let ConcreteFunction { generic_function, generic_args, .. } =
-        function_id.lookup_intern(db).function;
+        function_id.long(db).function.clone();
     let generic_params = generic_function.generic_params(db)?;
     let generic_signature = generic_function.generic_signature(db)?;
     // TODO(spapini): When trait generics are supported, they need to be substituted
@@ -882,7 +880,7 @@ pub fn concrete_function_closure_params<'db>(
     function_id: FunctionId<'db>,
 ) -> Maybe<OrderedHashMap<semantic::TypeId<'db>, semantic::TypeId<'db>>> {
     let ConcreteFunction { generic_function, generic_args, .. } =
-        function_id.lookup_intern(db).function;
+        function_id.long(db).function.clone();
     let generic_params = generic_function.generic_params(db)?;
     let mut generic_closure_params = db.get_closure_params(generic_function)?;
     let substitution = GenericSubstitution::new(&generic_params, &generic_args);

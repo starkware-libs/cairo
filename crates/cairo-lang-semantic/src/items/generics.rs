@@ -14,7 +14,7 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{AssociatedItemConstraints, OptionAssociatedItemConstraints};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
-use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
+use cairo_lang_utils::{Intern, extract_matches};
 use syntax::node::TypedStablePtr;
 use syntax::node::db::SyntaxGroup;
 
@@ -390,8 +390,8 @@ pub fn generic_params_type_constraints<'db>(
             .intern(db);
             constraints.push((impl_type, ty1));
         }
-        let ConcreteTraitLongId { trait_id, generic_args } = concrete_trait_id.lookup_intern(db);
-        if trait_id != db.core_info().type_eq_trt {
+        let ConcreteTraitLongId { trait_id, generic_args } = concrete_trait_id.long(db);
+        if trait_id != &db.core_info().type_eq_trt {
             continue;
         }
         let [GenericArgumentId::Type(ty0), GenericArgumentId::Type(ty1)] = generic_args.as_slice()
@@ -410,7 +410,7 @@ fn generic_param_generic_params_list<'db>(
     db: &'db dyn SemanticGroup,
     generic_param_id: GenericParamId<'db>,
 ) -> Maybe<ast::OptionWrappedGenericParamList<'db>> {
-    let generic_param_long_id = generic_param_id.lookup_intern(db);
+    let generic_param_long_id = generic_param_id.long(db);
 
     // The generic params list is 2 level up the tree.
     let syntax_db = db;
@@ -640,7 +640,7 @@ fn impl_generic_param_semantic<'db>(
 pub fn fmt_generic_args(
     generic_args: &[GenericArgumentId<'_>],
     f: &mut CountingWriter<'_, '_>,
-    db: &(dyn SemanticGroup + 'static),
+    db: &dyn SemanticGroup,
 ) -> std::fmt::Result {
     let mut generic_args = generic_args.iter();
     if let Some(first) = generic_args.next() {

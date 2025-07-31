@@ -9,7 +9,7 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use cairo_lang_utils::{Intern, Upcast};
 
 use super::attribute::SemanticQueryAttrs;
 use super::feature_kind::extract_item_feature_config;
@@ -317,7 +317,7 @@ pub trait SemanticEnumEx: for<'a> Upcast<'a, dyn SemanticGroup> {
         //   always have the correct number of generic arguments.
         let db = self.upcast();
         let generic_params = db.enum_generic_params(concrete_enum_id.enum_id(db))?;
-        let generic_args = concrete_enum_id.lookup_intern(db).generic_args;
+        let generic_args = concrete_enum_id.long(db).generic_args.clone();
         GenericSubstitution::new(&generic_params, &generic_args).substitute(
             db,
             ConcreteVariant { concrete_enum_id, id: variant.id, ty: variant.ty, idx: variant.idx },

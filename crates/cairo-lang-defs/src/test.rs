@@ -14,7 +14,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, Upcast, extract_matches, try_extract_matches};
+use cairo_lang_utils::{Intern, Upcast, extract_matches, try_extract_matches};
 use indoc::indoc;
 
 use crate::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
@@ -163,12 +163,12 @@ fn test_module_file() {
 
     let submodule_id = ModuleId::Submodule(item_id);
     assert_eq!(
-        db.module_main_file(module_id).unwrap().lookup_intern(db),
-        FileLongId::OnDisk("src/lib.cairo".into())
+        db.module_main_file(module_id).unwrap().long(db),
+        &FileLongId::OnDisk("src/lib.cairo".into())
     );
     assert_eq!(
-        db.module_main_file(submodule_id).unwrap().lookup_intern(db),
-        FileLongId::OnDisk("src/mysubmodule.cairo".into())
+        db.module_main_file(submodule_id).unwrap().long(db),
+        &FileLongId::OnDisk("src/mysubmodule.cairo".into())
     );
 }
 

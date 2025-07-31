@@ -22,7 +22,6 @@ use cairo_lang_semantic::{ConcreteTypeId, Expr, GenericParam, TypeLongId};
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode, green};
-use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 
 use crate::db::DocGroup;
@@ -160,11 +159,11 @@ impl<'db> HirFormatter<'db> {
         self.write_str(prefix.unwrap_or_default())?;
         let formatted_element_type = element_type.format(self.db);
 
-        if let TypeLongId::Tuple(vec_types) = element_type.lookup_intern(self.db) {
+        if let TypeLongId::Tuple(vec_types) = element_type.long(self.db) {
             self.write_str("(")?;
             let mut count = vec_types.len();
             for t in vec_types {
-                self.write_type(None, t, if count == 1 { None } else { Some(", ") }, full_path)?;
+                self.write_type(None, *t, if count == 1 { None } else { Some(", ") }, full_path)?;
                 count -= 1;
             }
             self.write_str(")")?;
@@ -1085,7 +1084,7 @@ fn resolve_type<'db>(
     db: &'db dyn DocGroup,
     type_id: TypeId<'db>,
 ) -> Option<DocumentableItemId<'db>> {
-    let intern = type_id.lookup_intern(db);
+    let intern = type_id.long(db);
     match intern {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(struct_id) => Some(DocumentableItemId::from(
@@ -1099,7 +1098,7 @@ fn resolve_type<'db>(
             )),
         },
         TypeLongId::Tuple(_) => None,
-        TypeLongId::Snapshot(type_id) => resolve_type(db, type_id),
+        TypeLongId::Snapshot(type_id) => resolve_type(db, *type_id),
         TypeLongId::GenericParameter(generic_param_id) => {
             let item = generic_param_id.generic_item(db);
             resolve_generic_item(item, db)
@@ -1153,7 +1152,7 @@ fn resolve_type<'db>(
                 )),
             }
         }
-        TypeLongId::FixedSizeArray { type_id: _, size: _ } => resolve_type(db, type_id),
+        TypeLongId::FixedSizeArray { type_id, size: _ } => resolve_type(db, *type_id),
         TypeLongId::ImplType(impl_type_id) => match impl_type_id.impl_id().concrete_trait(db) {
             Ok(concrete_trait_id) => Some(DocumentableItemId::from(LookupItemId::ModuleItem(
                 ModuleItemId::Trait(concrete_trait_id.trait_id(db)),

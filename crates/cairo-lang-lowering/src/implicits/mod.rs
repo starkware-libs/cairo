@@ -2,10 +2,10 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
+use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{LookupIntern, Upcast};
 use id_arena::Arena;
 use itertools::{Itertools, chain, zip_eq};
 use semantic::TypeId;
@@ -116,7 +116,7 @@ fn block_body_implicits<'db>(
     for (i, statement) in ctx.lowered.blocks[block_id].statements.iter_mut().enumerate() {
         if let Statement::Call(stmt) = statement {
             if matches!(
-                stmt.function.lookup_intern(ctx.db),
+                stmt.function.long(ctx.db),
                 FunctionLongId::Semantic(func_id)
                     if func_id.get_concrete(ctx.db).generic_function == require_implicits_libfunc_id
             ) {

@@ -5,7 +5,7 @@ use cairo_lang_semantic::corelib::{
 };
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, MatchArmSelector, TypeLongId};
-use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
+use cairo_lang_utils::{Intern, extract_matches};
 use num_bigint::{BigInt, Sign};
 
 use crate::db::LoweringGroup;
@@ -108,7 +108,7 @@ fn create_panic_block<'db>(
     .lowered(db);
 
     let never_enum_id = extract_matches!(
-        extract_matches!(never_ty.lookup_intern(db), TypeLongId::Concrete),
+        extract_matches!(never_ty.long(db), TypeLongId::Concrete),
         ConcreteTypeId::Enum
     );
 
@@ -124,7 +124,7 @@ fn create_panic_block<'db>(
         })],
         end: BlockEnd::Match {
             info: MatchInfo::Enum(MatchEnumInfo {
-                concrete_enum_id: never_enum_id,
+                concrete_enum_id: *never_enum_id,
                 input: VarUsage { var_id: never_var, location },
                 arms: vec![],
                 location,
