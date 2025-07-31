@@ -20,6 +20,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::smol_str::SmolStr;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::{Intern, extract_matches, try_extract_matches};
+use context::handle_lowering_flow_error;
 use defs::ids::TopLevelLanguageElementId;
 use itertools::{Itertools, chain, izip, zip_eq};
 use num_bigint::{BigInt, Sign};
@@ -39,7 +40,7 @@ use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 use self::block_builder::{BlockBuilder, SealedBlockBuilder, SealedGotoCallsite};
 use self::context::{
     EncapsulatingLoweringContext, LoweredExpr, LoweredExprExternEnum, LoweringContext,
-    LoweringFlowError, lowering_flow_error_to_sealed_block,
+    LoweringFlowError,
 };
 use self::external::{extern_facade_expr, extern_facade_return_tys};
 use self::logical_op::lower_logical_op;
@@ -240,7 +241,7 @@ pub fn lower_for_loop<'db, 'mt>(
             })();
             lowered_expr_to_block_scope_end(ctx, some_subscope, block_expr)
         }
-        Err(err) => lowering_flow_error_to_sealed_block(ctx, some_subscope.clone(), err),
+        Err(err) => handle_lowering_flow_error(ctx, some_subscope.clone(), err).map(|_| None),
     }
     .map_err(LoweringFlowError::Failed)?;
 
@@ -494,8 +495,7 @@ fn wrap_sealed_block_as_function<'db>(
     block_sealed: SealedBlockBuilder<'db>,
     stable_ptr: SyntaxStablePtrId<'db>,
 ) -> Maybe<()> {
-    let SealedBlockBuilder::GotoCallsite(SealedGotoCallsite { mut builder, expr }) = block_sealed
-    else {
+    let Some(SealedGotoCallsite { mut builder, expr }) = block_sealed else {
         return Ok(());
     };
     let location = ctx.get_location(stable_ptr);
@@ -599,9 +599,9 @@ pub fn lowered_expr_to_block_scope_end<'db>(
         Ok(LoweredExpr::Tuple { exprs, .. }) if exprs.is_empty() => builder.goto_callsite(None),
         Ok(lowered_expr) => match lowered_expr.as_var_usage(ctx, &mut builder) {
             Ok(var) => builder.goto_callsite(Some(var)),
-            Err(err) => lowering_flow_error_to_sealed_block(ctx, builder, err)?,
+            Err(err) => handle_lowering_flow_error(ctx, builder, err).map(|_| None)?,
         },
-        Err(err) => lowering_flow_error_to_sealed_block(ctx, builder, err)?,
+        Err(err) => handle_lowering_flow_error(ctx, builder, err).map(|_| None)?,
     })
 }
 

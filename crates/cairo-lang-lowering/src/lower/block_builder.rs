@@ -188,7 +188,7 @@ impl<'db> BlockBuilder<'db> {
 
     /// Ends a block with Callsite.
     pub fn goto_callsite(self, expr: Option<VarUsage<'db>>) -> SealedBlockBuilder<'db> {
-        SealedBlockBuilder::GotoCallsite(SealedGotoCallsite { builder: self, expr })
+        Some(SealedGotoCallsite { builder: self, expr })
     }
 
     /// Ends a block with Return.
@@ -319,9 +319,7 @@ impl<'db> BlockBuilder<'db> {
 
         // Remap Variables from all blocks.
         for sealed_block in &sealed_blocks {
-            let SealedBlockBuilder::GotoCallsite(SealedGotoCallsite { builder: subscope, expr }) =
-                sealed_block
-            else {
+            let Some(SealedGotoCallsite { builder: subscope, expr }) = sealed_block else {
                 continue;
             };
             n_reachable_blocks += 1;
@@ -377,8 +375,8 @@ impl<'db> BlockBuilder<'db> {
         // If there are reachable blocks, create a new empty block for the code after this match.
         let following_block = ctx.blocks.alloc_empty();
 
-        for sealed_block in sealed_blocks {
-            sealed_block.finalize(ctx, following_block, &semantic_remapping, location);
+        for sealed_goto_callsite in sealed_blocks.into_iter().flatten() {
+            sealed_goto_callsite.finalize(ctx, following_block, &semantic_remapping, location);
         }
 
         // Apply remapping on builder.
@@ -494,27 +492,7 @@ impl<'db> SealedGotoCallsite<'db> {
 
 /// A sealed [BlockBuilder], ready to be merged with sibling blocks to end the block.
 #[allow(clippy::large_enum_variant)]
-pub enum SealedBlockBuilder<'db> {
-    /// Block should end by goto callsite.
-    GotoCallsite(SealedGotoCallsite<'db>),
-    /// Block end is already known.
-    Ends(BlockId),
-}
-impl<'db> SealedBlockBuilder<'db> {
-    /// Finalizes a non-finalized block, given the semantic remapping of variables and the target
-    /// block to jump to.
-    fn finalize(
-        self,
-        ctx: &mut LoweringContext<'db, '_>,
-        target: BlockId,
-        semantic_remapping: &SemanticRemapping<'db>,
-        location: LocationId<'db>,
-    ) {
-        if let SealedBlockBuilder::GotoCallsite(sealed_goto_callsite) = self {
-            sealed_goto_callsite.finalize(ctx, target, semantic_remapping, location);
-        }
-    }
-}
+pub type SealedBlockBuilder<'db> = Option<SealedGotoCallsite<'db>>;
 
 struct BlockStructRecomposer<'a, 'b, 'db> {
     statements: &'a mut StatementsBuilder<'db>,

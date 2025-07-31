@@ -20,7 +20,7 @@ use semantic::types::wrap_in_snapshots;
 use semantic::{ExprVarMemberPath, MatchArmSelector, TypeLongId};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
-use super::block_builder::{BlockBuilder, SealedBlockBuilder};
+use super::block_builder::BlockBuilder;
 use super::generators;
 use crate::blocks::BlocksBuilder;
 use crate::db::LoweringGroup;
@@ -381,8 +381,8 @@ impl<'db> LoweredExprExternEnum<'db> {
                 let input = match maybe_input {
                     Ok(var_usage) => var_usage,
                     Err(err) => {
-                        return lowering_flow_error_to_sealed_block(ctx, subscope, err)
-                            .map(|sb| (sb, block_id));
+                        return handle_lowering_flow_error(ctx, subscope, err)
+                            .map(|_| (None, block_id));
                     }
                 };
                 let result = generators::EnumConstruct {
@@ -445,17 +445,14 @@ impl<'db> LoweringFlowError<'db> {
 }
 
 /// Converts a lowering flow error to the appropriate block builder end, if possible.
-pub fn lowering_flow_error_to_sealed_block<'db, 'mt>(
+pub fn handle_lowering_flow_error<'db, 'mt>(
     ctx: &mut LoweringContext<'db, 'mt>,
     mut builder: BlockBuilder<'db>,
     err: LoweringFlowError<'db>,
-) -> Maybe<SealedBlockBuilder<'db>> {
-    let block_id = builder.block_id;
+) -> Maybe<()> {
     match err {
-        LoweringFlowError::Failed(diag_added) => return Err(diag_added),
-        LoweringFlowError::Return(return_var, location) => {
-            builder.ret(ctx, return_var, location)?;
-        }
+        LoweringFlowError::Failed(diag_added) => Err(diag_added),
+        LoweringFlowError::Return(return_var, location) => builder.ret(ctx, return_var, location),
         LoweringFlowError::Panic(data_var, location) => {
             let panic_instance = generators::StructConstruct {
                 inputs: vec![],
@@ -473,11 +470,11 @@ pub fn lowering_flow_error_to_sealed_block<'db, 'mt>(
                 location,
             }
             .add(ctx, &mut builder.statements);
-            builder.panic(ctx, err_instance)?;
+            builder.panic(ctx, err_instance)
         }
         LoweringFlowError::Match(info) => {
             builder.unreachable_match(ctx, info);
+            Ok(())
         }
     }
-    Ok(SealedBlockBuilder::Ends(block_id))
 }
