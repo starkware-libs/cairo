@@ -1,10 +1,11 @@
 use cairo_lang_semantic::{self as semantic, Condition, PatternId};
 use cairo_lang_syntax::node::TypedStablePtr;
 use itertools::Itertools;
-use patterns::create_node_for_patterns;
+use patterns::{create_node_for_patterns, get_pattern};
 
 use super::graph::{
-    ArmExpr, BooleanIf, EvaluateExpr, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode, NodeId,
+    ArmExpr, BooleanIf, EvaluateExpr, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode,
+    NodeId,
 };
 use crate::lower::context::LoweringContext;
 
@@ -64,10 +65,7 @@ pub fn create_graph_expr_if<'db>(
                     ctx,
                     &mut graph,
                     expr_var,
-                    &patterns
-                        .iter()
-                        .map(|pattern| &ctx.function_body.arenas.patterns[*pattern])
-                        .collect_vec(),
+                    &patterns.iter().map(|pattern| Some(get_pattern(ctx, *pattern))).collect_vec(),
                     &|_graph, pattern_indices| {
                         if pattern_indices.first().is_some() { current_node } else { false_branch }
                     },
@@ -119,7 +117,7 @@ pub fn create_graph_expr_match<'db>(
         matched_var,
         &pattern_and_nodes
             .iter()
-            .map(|(pattern, _)| &ctx.function_body.arenas.patterns[*pattern])
+            .map(|(pattern, _)| Some(get_pattern(ctx, *pattern)))
             .collect_vec(),
         &|_graph, pattern_indices| {
             // TODO(lior): add diagnostics if pattern_indices is empty (instead of `unwrap`).

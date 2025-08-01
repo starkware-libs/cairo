@@ -6,11 +6,9 @@ test_create_graph(expect_diagnostics: false)
 //! > function_code
 fn foo(color: Color) -> felt252 {
     match color {
-        // TODO(lior): Remove some of the `(_)` once supported.
-        Color::Red(_) | Color::Green(_) => 1,
-        Color::Red(_) | Color::Blue(_) => 2,
-        // TODO(lior): Change to `_` once supported.
-        Color::Black(_) | Color::White(_) => 3,
+        Color::Red | Color::Green(_) => 1,
+        Color::Red(_) | Color::Blue => 2,
+        _ => 3,
     }
 }
 

@@ -47,11 +47,7 @@ impl FilteredPatterns {
     /// `foo` needs to lift it to `[2]` to return to its caller using `foo`'s indexing.
     pub fn lift(self, outer_filter: &FilteredPatterns) -> Self {
         Self {
-            filter: self
-                .filter
-                .into_iter()
-                .map(|index| outer_filter.filter[index])
-                .collect_vec(),
+            filter: self.filter.into_iter().map(|index| outer_filter.filter[index]).collect_vec(),
         }
     }
 
