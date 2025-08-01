@@ -51,6 +51,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── use_kw (kind: TokenUse): 'use'
+    │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
     │   │   ├── use_path (kind: UsePathSingle)
     │   │   │   ├── ident (kind: PathSegmentSimple)
     │   │   │   │   └── ident (kind: TokenIdentifier): 'submod'
@@ -1026,6 +1027,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   │   ├── token (kind: TokenUse): 'use'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
     │   │   ├── use_path (kind: UsePathSingle)
     │   │   │   ├── ident (kind: PathSegmentSimple)
     │   │   │   │   └── ident (kind: TerminalIdentifier)

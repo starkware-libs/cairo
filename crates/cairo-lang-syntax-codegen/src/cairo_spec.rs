@@ -715,6 +715,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("attributes" ,"AttributeList")
         .node("visibility", "Visibility")
         .node("use_kw", "TerminalUse")
+        .node("dollar", "OptionTerminalDollar")
         .key_node("use_path", "UsePath")
         .node("semicolon", "TerminalSemicolon")
     )

@@ -40,7 +40,7 @@ use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemConstantData, TraitItemImplData,
     TraitItemInfo, TraitItemTypeData,
 };
-use crate::items::us::{ImportedModules, SemanticUseEx};
+use crate::items::us::{ImportedModules, SemanticUseEx, UseData};
 use crate::items::visibility::Visibility;
 use crate::plugin::{AnalyzerPlugin, InternedPluginSuite, PluginSuite};
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
@@ -186,8 +186,7 @@ pub trait SemanticGroup:
     /// Private query to compute data about a use.
     #[salsa::invoke(items::us::priv_use_semantic_data)]
     #[salsa::cycle(items::us::priv_use_semantic_data_cycle)]
-    fn priv_use_semantic_data<'db>(&'db self, use_id: UseId<'db>)
-    -> Maybe<items::us::UseData<'db>>;
+    fn priv_use_semantic_data<'db>(&'db self, use_id: UseId<'db>) -> Maybe<Arc<UseData<'db>>>;
     /// Returns the semantic diagnostics of a use.
     #[salsa::invoke(items::us::use_semantic_diagnostics)]
     fn use_semantic_diagnostics<'db>(
