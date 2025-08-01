@@ -7,7 +7,7 @@ use cairo_lang_semantic::ConcreteVariant;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
-use cairo_lang_semantic::usage::Usages;
+use cairo_lang_semantic::usage::{MemberPath, Usages};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -157,6 +157,11 @@ pub struct LoweringContext<'db, 'mt> {
     pub blocks: BlocksBuilder<'db>,
     // The return type in the current context, for loops this differs from signature.return_type.
     pub return_type: semantic::TypeId<'db>,
+    /// The semantic variables that are captured as snapshots.
+    ///
+    /// For example, if we have a loop body that uses `@x.a`, then `x.a` will be added to
+    /// `snapped_semantics`.
+    pub snapped_semantics: OrderedHashMap<MemberPath<'db>, VariableId>,
 }
 impl<'db, 'mt> LoweringContext<'db, 'mt> {
     pub fn new(
@@ -181,6 +186,7 @@ impl<'db, 'mt> LoweringContext<'db, 'mt> {
             diagnostics: LoweringDiagnostics::default(),
             blocks: Default::default(),
             return_type,
+            snapped_semantics: Default::default(),
         })
     }
 }

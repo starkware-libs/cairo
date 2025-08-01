@@ -15,7 +15,9 @@ use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
 use super::generators::StatementsBuilder;
-use super::refs::{SemanticLoweringMapping, StructRecomposer, merge_semantics};
+use super::refs::{
+    SemanticLoweringMapping, StructRecomposer, find_changed_members, merge_semantics,
+};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
@@ -27,8 +29,6 @@ use crate::{Block, BlockEnd, BlockId, MatchInfo, Statement, VarRemapping, VarUsa
 pub struct BlockBuilder<'db> {
     /// A store for semantic variables, owning their OwnedVariable instances.
     semantics: SemanticLoweringMapping<'db>,
-    /// The semantic variables that are captured as snapshots in this block.
-    snapped_semantics: OrderedHashMap<MemberPath<'db>, VariableId>,
     /// The semantic variables that are added/changed in this block.
     changed_member_paths: OrderedHashSet<MemberPath<'db>>,
     /// Current sequence of lowered statements emitted.
@@ -41,7 +41,6 @@ impl<'db> BlockBuilder<'db> {
     pub fn root(block_id: BlockId) -> Self {
         BlockBuilder {
             semantics: Default::default(),
-            snapped_semantics: Default::default(),
             changed_member_paths: Default::default(),
             statements: Default::default(),
             block_id,
@@ -52,7 +51,6 @@ impl<'db> BlockBuilder<'db> {
     pub fn child_block_builder(&self, block_id: BlockId) -> BlockBuilder<'db> {
         BlockBuilder {
             semantics: self.semantics.clone(),
-            snapped_semantics: self.snapped_semantics.clone(),
             changed_member_paths: Default::default(),
             statements: Default::default(),
             block_id,
@@ -64,7 +62,6 @@ impl<'db> BlockBuilder<'db> {
     pub fn sibling_block_builder(&self, block_id: BlockId) -> BlockBuilder<'db> {
         BlockBuilder {
             semantics: self.semantics.clone(),
-            snapped_semantics: self.snapped_semantics.clone(),
             changed_member_paths: self.changed_member_paths.clone(),
             statements: Default::default(),
             block_id,
@@ -130,11 +127,6 @@ impl<'db> BlockBuilder<'db> {
         self.semantics.introduce(member_path, var);
     }
 
-    /// Introduces a semantic variable as the representation of the given member path as a snapshot.
-    pub fn introduce_snap(&mut self, member_path: MemberPath<'db>, var: VariableId) {
-        self.snapped_semantics.insert(member_path, var);
-    }
-
     /// Gets the reference of a snapshot of semantic variable, possibly by deconstructing its
     /// parents.
     pub fn get_snap_ref(
@@ -143,15 +135,13 @@ impl<'db> BlockBuilder<'db> {
         member_path: &ExprVarMemberPath<'db>,
     ) -> Option<VarUsage<'db>> {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
-        if let Some(var_id) = self.snapped_semantics.get::<MemberPath<'_>>(&member_path.into()) {
+        if let Some(var_id) = ctx.snapped_semantics.get::<MemberPath<'_>>(&member_path.into()) {
             return Some(VarUsage { var_id: *var_id, location });
         }
         let ExprVarMemberPath::Member { parent, member_id, concrete_struct_id, .. } = member_path
         else {
             return None;
         };
-        // TODO(TomerStarkware): Consider adding the result to snap_semantics to avoid
-        // recomputation.
         let parent_var = self.get_snap_ref(ctx, parent)?;
         let members = ctx.db.concrete_struct_members(*concrete_struct_id).ok()?;
         let (parent_number_of_snapshots, _) =
@@ -409,6 +399,15 @@ impl<'db> BlockBuilder<'db> {
             closure_info,
         )
     }
+
+    /// Marks the following as changed members:
+    /// (1) the changed members of `parent_builder`,
+    /// (2) the members whose value was changed between `parent_builder` and `self`.
+    pub fn set_changed_member_paths(&mut self, parent_builder: &Self) {
+        self.changed_member_paths.extend(parent_builder.changed_member_paths.iter().cloned());
+        self.changed_member_paths
+            .extend(find_changed_members(&parent_builder.semantics, &self.semantics));
+    }
 }
 
 impl<'db> DebugWithDb<'db> for BlockBuilder<'db> {
@@ -571,8 +570,9 @@ impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
 /// * Variables mapped to the same lowered variable across all input blocks are kept as-is.
 /// * Local variables that appear in only a subset of the blocks are removed.
 /// * Variables with different mappings across blocks are remapped to a new lowered variable.
-// TODO(lior): Remove `allow(dead_code)` once the function is used.
-#[allow(dead_code)]
+///
+/// Note that the returned [BlockBuilder] has an empty [BlockBuilder::changed_member_paths].
+/// Use [BlockBuilder::set_changed_member_paths] to set it if necessary.
 pub fn merge_sealed_block_builders<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     sealed_blocks: Vec<SealedGotoCallsite<'db>>,
@@ -630,14 +630,6 @@ fn merge_block_builders_inner<'db>(
     res_expr: Option<VariableId>,
     location: LocationId<'db>,
 ) -> BlockBuilder<'db> {
-    // TODO(lior): Support snapped semantics.
-    for sealed_block in &parent_sealed_blocks {
-        assert!(
-            sealed_block.builder.snapped_semantics.is_empty(),
-            "Snapped semantics is not supported yet."
-        );
-    }
-
     // Compute the merged semantics.
 
     // A map from [MemberPath] that requires a new lowered variable (due to remapping) to the
@@ -667,7 +659,6 @@ fn merge_block_builders_inner<'db>(
     // Create a new [BlockBuilder] with the merged `semantics`.
     BlockBuilder {
         semantics,
-        snapped_semantics: Default::default(),
         changed_member_paths: Default::default(),
         statements: Default::default(),
         block_id,

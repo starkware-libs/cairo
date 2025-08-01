@@ -1,6 +1,6 @@
-mod create_graph;
+pub mod create_graph;
 mod graph;
-mod lower_graph;
+pub mod lower_graph;
 
 #[cfg(test)]
 mod graph_test;

@@ -7,6 +7,8 @@ use semantic::{Condition, MatchArmSelector};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
+use super::flow_control::create_graph::create_graph_expr_if;
+use super::flow_control::lower_graph::lower_graph;
 use super::lowered_expr_to_block_scope_end;
 use crate::diagnostic::LoweringDiagnosticKind::{self};
 use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
@@ -24,13 +26,15 @@ use crate::{MatchArm, MatchEnumInfo, MatchInfo};
 ///
 /// In particular, note that if `conditions` is empty, there are no conditions and the
 /// expression is simply [Self::expr].
-pub struct ConditionedExpr<'a> {
+pub struct ConditionedExpr<'db, 'a> {
     pub expr: semantic::ExprId,
     pub conditions: &'a [Condition],
     pub else_block: Option<semantic::ExprId>,
+    /// The location of the `if` expression.
+    pub if_expr_location: LocationId<'db>,
 }
 
-impl ConditionedExpr<'_> {
+impl ConditionedExpr<'_, '_> {
     /// Returns a copy of self, without the first condition.
     pub fn remove_first(&self) -> Self {
         Self { conditions: &self.conditions[1..], ..*self }
@@ -43,6 +47,11 @@ pub fn lower_expr_if<'db>(
     builder: &mut BlockBuilder<'db>,
     expr: &semantic::ExprIf<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
+    if expr.conditions.len() == 1 && matches!(expr.conditions[0], Condition::BoolExpr(_)) {
+        let graph = create_graph_expr_if(ctx, expr);
+        return lower_graph(ctx, builder, &graph, ctx.get_location(expr.stable_ptr.untyped()));
+    }
+
     // Else block is not supported yet for multiple conditions.
     if expr.conditions.len() > 1 {
         if let Some(else_block) = expr.else_block {
@@ -59,6 +68,7 @@ pub fn lower_expr_if<'db>(
             expr: expr.if_block,
             conditions: &expr.conditions,
             else_block: expr.else_block,
+            if_expr_location: ctx.get_location(expr.stable_ptr.untyped()),
         },
     )
 }
@@ -68,21 +78,21 @@ pub fn lower_if_bool_condition<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     builder: &mut BlockBuilder<'db>,
     condition: semantic::ExprId,
-    inner_expr: ConditionedExpr<'_>,
+    inner_expr: ConditionedExpr<'db, '_>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     // The condition cannot be unit.
     let condition_var = lower_expr_to_var_usage(ctx, builder, condition)?;
     let db = ctx.db;
     let unit_ty = corelib::unit_ty(db);
 
-    let condition_expr = &ctx.function_body.arenas.exprs[condition];
-    let stable_ptr = condition_expr.stable_ptr().untyped();
-    let condition_location = ctx.get_location(stable_ptr);
+    let if_expr_location = inner_expr.if_expr_location;
 
     // Main block.
     let subscope_main = create_subscope(ctx, builder);
     let block_main_id = subscope_main.block_id;
-    let main_block_var_id = ctx.new_var(VarRequest { ty: unit_ty, location: condition_location });
+    let main_block_var_id = ctx.new_var(VarRequest { ty: unit_ty, location: if_expr_location });
+    let else_block_input_var_id =
+        ctx.new_var(VarRequest { ty: unit_ty, location: if_expr_location });
 
     let block_main = lower_conditioned_expr_and_seal(ctx, subscope_main, &inner_expr)
         .map_err(LoweringFlowError::Failed)?;
@@ -91,10 +101,8 @@ pub fn lower_if_bool_condition<'db>(
     let subscope_else = create_subscope(ctx, builder);
     let block_else_id = subscope_else.block_id;
 
-    let else_block_input_var_id =
-        ctx.new_var(VarRequest { ty: unit_ty, location: condition_location });
     let block_else =
-        lower_optional_else_block(ctx, subscope_else, inner_expr.else_block, condition_location)
+        lower_optional_else_block(ctx, subscope_else, inner_expr.else_block, if_expr_location)
             .map_err(LoweringFlowError::Failed)?;
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
@@ -112,13 +120,13 @@ pub fn lower_if_bool_condition<'db>(
                 var_ids: vec![main_block_var_id],
             },
         ],
-        location: condition_location,
+        location: if_expr_location,
     });
     builder.merge_and_end_with_match(
         ctx,
         match_info,
         vec![block_main, block_else],
-        condition_location,
+        if_expr_location,
     )
 }
 
@@ -128,7 +136,7 @@ pub fn lower_if_let_condition<'db>(
     builder: &mut BlockBuilder<'db>,
     matched_expr_id: semantic::ExprId,
     patterns: &[semantic::PatternId],
-    inner_expr: ConditionedExpr<'_>,
+    inner_expr: ConditionedExpr<'db, '_>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     let matched_expr = &ctx.function_body.arenas.exprs[matched_expr_id];
     let stable_ptr = matched_expr.stable_ptr().untyped();
@@ -169,7 +177,7 @@ pub fn lower_if_let_condition<'db>(
 fn lower_conditioned_expr<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     builder: &mut BlockBuilder<'db>,
-    expr: &ConditionedExpr<'_>,
+    expr: &ConditionedExpr<'db, '_>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!(
         "Lowering a conditioned expression: {:?} (# of conditions: {})",
@@ -196,7 +204,7 @@ fn lower_conditioned_expr<'db>(
 pub fn lower_conditioned_expr_and_seal<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     mut builder: BlockBuilder<'db>,
-    expr: &ConditionedExpr<'_>,
+    expr: &ConditionedExpr<'db, '_>,
 ) -> Maybe<SealedBlockBuilder<'db>> {
     let lowered_expr = lower_conditioned_expr(ctx, &mut builder, expr);
     lowered_expr_to_block_scope_end(ctx, builder, lowered_expr)
