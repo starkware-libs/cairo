@@ -15,7 +15,9 @@ use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
 use super::generators::StatementsBuilder;
-use super::refs::{SemanticLoweringMapping, StructRecomposer, merge_semantics};
+use super::refs::{
+    SemanticLoweringMapping, StructRecomposer, find_changed_members, merge_semantics,
+};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
@@ -397,6 +399,15 @@ impl<'db> BlockBuilder<'db> {
             closure_info,
         )
     }
+
+    /// Marks the following as changed members:
+    /// (1) the changed members of `parent_builder`,
+    /// (2) the members whose value was changed between `parent_builder` and `self`.
+    pub fn set_changed_member_paths(&mut self, parent_builder: &Self) {
+        self.changed_member_paths.extend(parent_builder.changed_member_paths.iter().cloned());
+        self.changed_member_paths
+            .extend(find_changed_members(&parent_builder.semantics, &self.semantics));
+    }
 }
 
 impl<'db> DebugWithDb<'db> for BlockBuilder<'db> {
@@ -559,8 +570,9 @@ impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
 /// * Variables mapped to the same lowered variable across all input blocks are kept as-is.
 /// * Local variables that appear in only a subset of the blocks are removed.
 /// * Variables with different mappings across blocks are remapped to a new lowered variable.
-// TODO(lior): Remove `allow(dead_code)` once the function is used.
-#[allow(dead_code)]
+///
+/// Note that the returned [BlockBuilder] has an empty [BlockBuilder::changed_member_paths].
+/// Use [BlockBuilder::set_changed_member_paths] to set it if necessary.
 pub fn merge_sealed_block_builders<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     sealed_blocks: Vec<SealedGotoCallsite<'db>>,
