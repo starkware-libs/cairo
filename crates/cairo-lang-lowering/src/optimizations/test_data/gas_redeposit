@@ -46,15 +46,15 @@ End:
 
 blk1:
 Statements:
-  (v9: core::felt252) <- test::heavy_op1()
+  (v10: core::felt252) <- test::heavy_op1()
 End:
-  Goto(blk3, {v9 -> v11})
+  Goto(blk3, {v10 -> v11})
 
 blk2:
 Statements:
-  (v10: core::felt252) <- test::heavy_op2()
+  (v9: core::felt252) <- test::heavy_op2()
 End:
-  Goto(blk3, {v10 -> v11})
+  Goto(blk3, {v9 -> v11})
 
 blk3:
 Statements:
@@ -77,15 +77,15 @@ End:
 
 blk1:
 Statements:
-  (v9: core::felt252) <- test::heavy_op1()
+  (v10: core::felt252) <- test::heavy_op1()
 End:
-  Goto(blk3, {v9 -> v11})
+  Goto(blk3, {v10 -> v11})
 
 blk2:
 Statements:
-  (v10: core::felt252) <- test::heavy_op2()
+  (v9: core::felt252) <- test::heavy_op2()
 End:
-  Goto(blk3, {v10 -> v11})
+  Goto(blk3, {v9 -> v11})
 
 blk3:
 Statements:
@@ -140,15 +140,15 @@ End:
 
 blk1:
 Statements:
-  (v9: core::felt252) <- test::heavy_op1()
+  (v10: core::felt252) <- test::heavy_op1()
 End:
-  Goto(blk3, {v9 -> v11})
+  Goto(blk3, {v10 -> v11})
 
 blk2:
 Statements:
-  (v10: core::felt252) <- test::heavy_op2()
+  (v9: core::felt252) <- test::heavy_op2()
 End:
-  Goto(blk3, {v10 -> v11})
+  Goto(blk3, {v9 -> v11})
 
 blk3:
 Statements:
@@ -172,16 +172,16 @@ End:
 blk1:
 Statements:
   () <- core::gas::redeposit_gas()
-  (v9: core::felt252) <- test::heavy_op1()
+  (v10: core::felt252) <- test::heavy_op1()
 End:
-  Goto(blk3, {v9 -> v11})
+  Goto(blk3, {v10 -> v11})
 
 blk2:
 Statements:
   () <- core::gas::redeposit_gas()
-  (v10: core::felt252) <- test::heavy_op2()
+  (v9: core::felt252) <- test::heavy_op2()
 End:
-  Goto(blk3, {v10 -> v11})
+  Goto(blk3, {v9 -> v11})
 
 blk3:
 Statements:

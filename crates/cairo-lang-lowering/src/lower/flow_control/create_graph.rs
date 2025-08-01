@@ -12,7 +12,6 @@ mod filtered_patterns;
 mod patterns;
 
 /// Creates a graph node for [semantic::ExprIf].
-#[allow(dead_code)]
 pub fn create_graph_expr_if<'db>(
     ctx: &LoweringContext<'db, '_>,
     expr: &semantic::ExprIf<'db>,

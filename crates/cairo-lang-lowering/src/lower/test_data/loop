@@ -845,15 +845,15 @@ End:
 
 blk1:
 Statements:
-  (v5: core::integer::u8) <- 0
-End:
-  Goto(blk3, {v5 -> v7})
-
-blk2:
-Statements:
   (v6: core::integer::u8) <- 0
 End:
   Goto(blk3, {v6 -> v7})
+
+blk2:
+Statements:
+  (v5: core::integer::u8) <- 0
+End:
+  Goto(blk3, {v5 -> v7})
 
 blk3:
 Statements:
