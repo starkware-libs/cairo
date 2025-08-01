@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_utils::Upcast;
 
@@ -19,9 +17,11 @@ pub trait SyntaxGroup: FilesGroup + for<'a> Upcast<'a, dyn FilesGroup> {
     fn intern_syntax_node<'a>(&'a self, field: SyntaxNodeLongId<'a>) -> SyntaxNode<'a>;
 
     /// Query for caching [SyntaxNode::get_children].
-    fn get_children<'a>(&'a self, node: SyntaxNode<'a>) -> Arc<Vec<SyntaxNode<'a>>>;
+    #[salsa::transparent]
+    fn get_children<'a>(&'a self, node: SyntaxNode<'a>) -> &'a [SyntaxNode<'a>];
 }
 
-fn get_children<'a>(db: &'a dyn SyntaxGroup, node: SyntaxNode<'a>) -> Arc<Vec<SyntaxNode<'a>>> {
-    node.get_children_impl(db).into()
+#[salsa::tracked(returns(ref))]
+fn get_children<'a>(db: &'a dyn SyntaxGroup, node: SyntaxNode<'a>) -> Vec<SyntaxNode<'a>> {
+    node.get_children_impl(db)
 }

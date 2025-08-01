@@ -1207,7 +1207,7 @@ impl<'a> FormatterImpl<'a> {
     fn format_terminal(&mut self, syntax_node: &SyntaxNode<'a>) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
         let children = syntax_node.get_children(self.db);
-        let [leading, token, trailing] = &children[..] else {
+        let [leading, token, trailing] = children else {
             panic!("Terminal node should have 3 children.");
         };
         // The first newlines is the leading trivia correspond exactly to empty lines.
