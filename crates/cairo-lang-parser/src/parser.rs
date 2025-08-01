@@ -670,9 +670,13 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         visibility: VisibilityGreen<'a>,
     ) -> ItemUseGreen<'a> {
         let use_kw = self.take::<TerminalUse<'_>>();
+        let dollar = match self.peek().kind {
+            SyntaxKind::TerminalDollar => self.take::<TerminalDollar<'_>>().into(),
+            _ => OptionTerminalDollarEmpty::new_green(self.db).into(),
+        };
         let use_path = self.parse_use_path();
         let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
-        ItemUse::new_green(self.db, attributes, visibility, use_kw, use_path, semicolon)
+        ItemUse::new_green(self.db, attributes, visibility, use_kw, dollar, use_path, semicolon)
     }
 
     /// Assumes the current token is Macro.
