@@ -38,21 +38,21 @@ struct Leaf {
 
 impl UseTree {
     /// Inserts a path into the `UseTree`, creating nested entries as needed.
-    fn insert_path(&mut self, db: &dyn SyntaxGroup, use_path: UsePath) {
+    fn insert_path(&mut self, db: &dyn SyntaxGroup, use_path: UsePath, maybe_dollar: String) {
         match use_path {
             UsePath::Leaf(leaf) => {
-                let name = leaf.extract_ident(db);
+                let name = maybe_dollar + &leaf.extract_ident(db);
                 let alias = leaf.extract_alias(db);
                 self.leaves.push(Leaf { name, alias });
             }
             UsePath::Single(single) => {
-                let segment = single.extract_ident(db);
+                let segment = maybe_dollar + &single.extract_ident(db);
                 let subtree = self.children.entry(segment).or_default();
-                subtree.insert_path(db, single.use_path(db));
+                subtree.insert_path(db, single.use_path(db), "".to_string());
             }
             UsePath::Multi(multi) => {
                 for sub_path in multi.use_paths(db).elements(db) {
-                    self.insert_path(db, sub_path);
+                    self.insert_path(db, sub_path, "".to_string());
                 }
             }
             UsePath::Star(_) => {
@@ -1092,6 +1092,7 @@ impl<'a> FormatterImpl<'a> {
                 }
 
                 let use_item = ast::ItemUse::from_syntax_node(self.db, *node);
+                let maybe_dollar = use_item.dollar(self.db);
 
                 let decorations = chain!(
                     use_item
@@ -1103,7 +1104,11 @@ impl<'a> FormatterImpl<'a> {
                 .join("\n");
 
                 let tree = decoration_to_use_tree.entry(decorations).or_default();
-                tree.insert_path(self.db, use_item.use_path(self.db));
+                tree.insert_path(
+                    self.db,
+                    use_item.use_path(self.db),
+                    maybe_dollar.as_syntax_node().get_text(self.db),
+                );
             }
 
             // Generate merged syntax nodes from the `decoration_to_use_tree`.

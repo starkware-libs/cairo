@@ -55,6 +55,7 @@ use crate::items::trt::{
     ConcreteTraitConstantLongId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
     ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId,
 };
+use crate::items::us::UseAsPathSegments;
 use crate::items::{TraitOrImplContext, visibility};
 use crate::keyword::{CRATE_KW, MACRO_CALL_SITE, MACRO_DEF_SITE, SELF_TYPE_KW, SUPER_KW};
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
@@ -216,7 +217,7 @@ impl ResolverData {
 }
 
 /// Resolving data needed for resolving macro expanded code in the correct context.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResolverMacroData {
     /// The module file id of the macro definition site. It is used if the path begins with
     /// `$defsite`.
@@ -328,6 +329,23 @@ impl AsSegments for Vec<ast::PathSegment> {
     }
     fn offset(&self, db: &dyn SyntaxGroup) -> Option<TextOffset> {
         self.first().map(|segment| segment.as_syntax_node().offset(db))
+    }
+}
+impl AsSegments for UseAsPathSegments {
+    fn to_segments(self, _: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
+        self.segments
+    }
+
+    fn placeholder_marker(&self, _: &dyn SyntaxGroup) -> Option<ast::TerminalDollar> {
+        self.is_placeholder.clone()
+    }
+
+    fn offset(&self, db: &dyn SyntaxGroup) -> Option<TextOffset> {
+        if let Some(ref dollar) = self.is_placeholder {
+            Some(dollar.as_syntax_node().offset(db))
+        } else {
+            self.segments.first().map(|segment| segment.as_syntax_node().offset(db))
+        }
     }
 }
 

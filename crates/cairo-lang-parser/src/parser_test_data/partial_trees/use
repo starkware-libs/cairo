@@ -20,6 +20,7 @@ ItemUse
     ├── attributes (kind: AttributeList) []
     ├── visibility (kind: VisibilityDefault) []
     ├── use_kw (kind: TokenUse): 'use'
+    ├── dollar (kind: OptionTerminalDollarEmpty) []
     ├── use_path (kind: UsePathSingle)
     │   ├── ident (kind: PathSegmentSimple)
     │   │   └── ident (kind: TokenIdentifier): 'X'
@@ -65,6 +66,7 @@ ItemUse
     │       └── rbrack (kind: TokenRBrack): ']'
     ├── visibility (kind: VisibilityDefault) []
     ├── use_kw (kind: TokenUse): 'use'
+    ├── dollar (kind: OptionTerminalDollarEmpty) []
     ├── use_path (kind: UsePathSingle)
     │   ├── ident (kind: PathSegmentSimple)
     │   │   └── ident (kind: TokenIdentifier): 'X'
@@ -99,6 +101,7 @@ ItemUse
     ├── attributes (kind: AttributeList) []
     ├── visibility (kind: VisibilityDefault) []
     ├── use_kw (kind: TokenUse): 'use'
+    ├── dollar (kind: OptionTerminalDollarEmpty) []
     ├── use_path (kind: UsePathSingle)
     │   ├── ident (kind: PathSegmentSimple)
     │   │   └── ident (kind: TokenIdentifier): 'X'
@@ -142,6 +145,7 @@ ItemUse
     │       └── rbrack (kind: TokenRBrack): ']'
     ├── visibility (kind: VisibilityDefault) []
     ├── use_kw (kind: TokenUse): 'use'
+    ├── dollar (kind: OptionTerminalDollarEmpty) []
     ├── use_path (kind: UsePathSingle)
     │   ├── ident (kind: PathSegmentSimple)
     │   │   └── ident (kind: TokenIdentifier): 'X'
@@ -174,6 +178,7 @@ ItemUse
     ├── attributes (kind: AttributeList) []
     ├── visibility (kind: VisibilityDefault) []
     ├── use_kw (kind: TokenUse): 'use'
+    ├── dollar (kind: OptionTerminalDollarEmpty) []
     ├── use_path (kind: UsePathSingle)
     │   ├── ident (kind: PathSegmentSimple)
     │   │   └── ident (kind: TokenIdentifier): 'X'

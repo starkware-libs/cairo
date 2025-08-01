@@ -134,7 +134,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Box<[GreenId]> 
         SyntaxKind::ItemStruct => [/* name */ children[3]].into(),
         SyntaxKind::ItemEnum => [/* name */ children[3]].into(),
         SyntaxKind::ItemTypeAlias => [/* name */ children[3]].into(),
-        SyntaxKind::ItemUse => [/* use_path */ children[3]].into(),
+        SyntaxKind::ItemUse => [/* use_path */ children[4]].into(),
         SyntaxKind::UsePathLeaf => {
             [/* ident */ children[0], /* alias_clause */ children[1]].into()
         }
