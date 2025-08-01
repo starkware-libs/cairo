@@ -399,15 +399,15 @@ Statements:
   (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
 End:
   Match(match_enum(v6) {
-    bool::False(v9) => blk2,
+    bool::False(v8) => blk2,
     bool::True(v7) => blk1,
   })
 
 blk1:
 Statements:
-  (v8: core::felt252) <- test::bar(v1)
+  (v9: core::felt252) <- test::bar(v1)
 End:
-  Goto(blk3, {v8 -> v10})
+  Goto(blk3, {v9 -> v10})
 
 blk2:
 Statements:
@@ -473,7 +473,7 @@ blk7:
 Statements:
 End:
   Match(match_enum(v6) {
-    bool::False(v9) => blk2,
+    bool::False(v8) => blk2,
     bool::True(v7) => blk1,
   })
 
@@ -489,18 +489,18 @@ blk9:
 Statements:
   (v20: core::felt252) <- 1
 End:
-  Goto(blk11, {v20 -> v8})
+  Goto(blk11, {v20 -> v9})
 
 blk10:
 Statements:
   (v21: core::felt252) <- 0
 End:
-  Goto(blk11, {v21 -> v8})
+  Goto(blk11, {v21 -> v9})
 
 blk11:
 Statements:
 End:
-  Goto(blk3, {v8 -> v10})
+  Goto(blk3, {v9 -> v10})
 
 //! > lowering_diagnostics
 

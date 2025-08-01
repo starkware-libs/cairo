@@ -121,15 +121,15 @@ Statements:
   (v7: core::bool) <- core::integer::U32PartialEq::eq(v3, v6)
 End:
   Match(match_enum(v7) {
-    bool::False(v12) => blk2,
+    bool::False(v9) => blk2,
     bool::True(v8) => blk1,
   })
 
 blk1:
 Statements:
-  (v9: core::option::Option::<core::integer::u16>) <- core::integer::DowncastableIntTryInto::<core::integer::u32, core::integer::u16, core::integer::DowncastableU32, core::integer::DowncastableU16, _>::try_into(v2)
-  (v10: core::integer::u16) <- 0
-  (v11: core::integer::u16) <- core::option::OptionTraitImpl::<core::integer::u16>::unwrap_or::<core::traits::DestructFromDrop::<core::integer::u16, core::integer::u16Drop>>(v9, v10)
+  (v10: core::option::Option::<core::integer::u16>) <- core::integer::DowncastableIntTryInto::<core::integer::u32, core::integer::u16, core::integer::DowncastableU32, core::integer::DowncastableU16, _>::try_into(v2)
+  (v11: core::integer::u16) <- 0
+  (v12: core::integer::u16) <- core::option::OptionTraitImpl::<core::integer::u16>::unwrap_or::<core::traits::DestructFromDrop::<core::integer::u16, core::integer::u16Drop>>(v10, v11)
 End:
   Goto(blk3, {})
 
@@ -154,9 +154,9 @@ End:
 
 blk1:
 Statements:
-  (v9: core::option::Option::<core::integer::u16>) <- core::integer::DowncastableIntTryInto::<core::integer::u32, core::integer::u16, core::integer::DowncastableU32, core::integer::DowncastableU16, _>::try_into(v2)
-  (v10: core::integer::u16) <- 0
-  (v11: core::integer::u16) <- core::option::OptionTraitImpl::<core::integer::u16>::unwrap_or::<core::traits::DestructFromDrop::<core::integer::u16, core::integer::u16Drop>>(v9, v10)
+  (v10: core::option::Option::<core::integer::u16>) <- core::integer::DowncastableIntTryInto::<core::integer::u32, core::integer::u16, core::integer::DowncastableU32, core::integer::DowncastableU16, _>::try_into(v2)
+  (v11: core::integer::u16) <- 0
+  (v12: core::integer::u16) <- core::option::OptionTraitImpl::<core::integer::u16>::unwrap_or::<core::traits::DestructFromDrop::<core::integer::u16, core::integer::u16Drop>>(v10, v11)
 End:
   Goto(blk3, {})
 

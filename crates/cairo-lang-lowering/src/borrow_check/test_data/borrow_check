@@ -108,9 +108,12 @@ error: Variable not dropped.
 fn foo(x: ACopy, y: ADrop) -> ADrop {
        ^
 note: the variable needs to be dropped due to the divergence here:
-  --> lib.cairo:9:8
-    if true {
-       ^^^^
+  --> lib.cairo:9:5-12:13
+      if true {
+ _____^
+| ...
+|     } else {}
+|_____________^
 note: Trait has no implementation in context: core::traits::Drop::<test::ACopy>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::ACopy>.
 
@@ -646,16 +649,16 @@ Statements:
   (v8: core::bool) <- core::integer::U8PartialEq::eq(v4{`self.b`}, v7{`0`})
 End:
   Match(match_enum(v8{`self.b == 0`}) {
-    bool::False(v11) => blk2,
+    bool::False(v10) => blk2,
     bool::True(v9) => blk1,
   })
 
 blk1:
 Statements:
-  (v10: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
-  () <- test::invalidate(v10{`self.a`})
+  (v11: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
+  () <- test::invalidate(v11{`self.a`})
 End:
-  Goto(blk3, {v3 -> v12, v10 -> v13})
+  Goto(blk3, {v3 -> v12, v11 -> v13})
 
 blk2:
 Statements:
@@ -712,16 +715,16 @@ Statements:
   (v8: core::bool) <- core::integer::U8PartialEq::eq(v4{`v.b`}, v7{`0`})
 End:
   Match(match_enum(v8{`v.b == 0`}) {
-    bool::False(v11) => blk2,
+    bool::False(v10) => blk2,
     bool::True(v9) => blk1,
   })
 
 blk1:
 Statements:
-  (v10: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
-  () <- test::invalidate(v10{`v.a`})
+  (v11: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
+  () <- test::invalidate(v11{`v.a`})
 End:
-  Goto(blk3, {v3 -> v12, v10 -> v13})
+  Goto(blk3, {v3 -> v12, v11 -> v13})
 
 blk2:
 Statements:
@@ -824,16 +827,16 @@ Statements:
   (v2: core::bool) <- bool::True(v1{`true`})
 End:
   Match(match_enum(v2{`true`}) {
-    bool::False(v8) => blk2,
+    bool::False(v4) => blk2,
     bool::True(v3) => blk1,
   })
 
 blk1:
 Statements:
-  (v4: core::integer::u32) <- struct_destructure(v0{`a.x`})
-  (v5: core::integer::u32, v6: @core::integer::u32) <- snapshot(v4{`a.x`})
-  (v7: ()) <- test::bar(v6{`@a.x`})
-  (v10: test::A) <- struct_construct(v5{`true`})
+  (v5: core::integer::u32) <- struct_destructure(v0{`a.x`})
+  (v6: core::integer::u32, v7: @core::integer::u32) <- snapshot(v5{`a.x`})
+  (v8: ()) <- test::bar(v7{`@a.x`})
+  (v10: test::A) <- struct_construct(v6{`if true { bar(@a.x); }`})
 End:
   Goto(blk3, {v10 -> v9})
 
