@@ -38,21 +38,21 @@ struct Leaf {
 
 impl UseTree {
     /// Inserts a path into the `UseTree`, creating nested entries as needed.
-    fn insert_path(&mut self, db: &dyn SyntaxGroup, use_path: UsePath<'_>) {
+    fn insert_path(&mut self, db: &dyn SyntaxGroup, use_path: UsePath<'_>, maybe_dollar: &str) {
         match use_path {
             UsePath::Leaf(leaf) => {
-                let name = leaf.extract_ident(db);
+                let name = format!("{}{}", maybe_dollar, leaf.extract_ident(db));
                 let alias = leaf.extract_alias(db);
                 self.leaves.push(Leaf { name, alias });
             }
             UsePath::Single(single) => {
-                let segment = single.extract_ident(db);
+                let segment = format!("{}{}", maybe_dollar, single.extract_ident(db));
                 let subtree = self.children.entry(segment).or_default();
-                subtree.insert_path(db, single.use_path(db));
+                subtree.insert_path(db, single.use_path(db), "");
             }
             UsePath::Multi(multi) => {
                 for sub_path in multi.use_paths(db).elements(db) {
-                    self.insert_path(db, sub_path);
+                    self.insert_path(db, sub_path, "");
                 }
             }
             UsePath::Star(_) => {
@@ -1092,6 +1092,11 @@ impl<'a> FormatterImpl<'a> {
 
                 let use_item = ast::ItemUse::from_syntax_node(self.db, *node);
 
+                if !matches!(use_item.dollar(self.db), ast::OptionTerminalDollar::Empty(_)) {
+                    new_children.push(*node);
+                    continue;
+                }
+
                 let decorations = chain!(
                     use_item
                         .attributes(self.db)
@@ -1102,7 +1107,7 @@ impl<'a> FormatterImpl<'a> {
                 .join("\n");
 
                 let tree = decoration_to_use_tree.entry(decorations).or_default();
-                tree.insert_path(self.db, use_item.use_path(self.db));
+                tree.insert_path(self.db, use_item.use_path(self.db), "");
             }
 
             // Generate merged syntax nodes from the `decoration_to_use_tree`.
