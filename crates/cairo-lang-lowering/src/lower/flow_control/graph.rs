@@ -132,17 +132,27 @@ impl<'db> Debug for FlowControlNode<'db> {
 /// have a smaller node id).
 pub struct FlowControlGraph<'db> {
     /// All nodes in the graph.
-    pub nodes: Vec<FlowControlNode<'db>>,
+    nodes: Vec<FlowControlNode<'db>>,
     /// The type of each [FlowControlVar].
-    pub var_types: Vec<semantic::TypeId<'db>>,
+    var_types: Vec<semantic::TypeId<'db>>,
     /// The location of each [FlowControlVar].
-    pub var_locations: Vec<LocationId<'db>>,
+    var_locations: Vec<LocationId<'db>>,
 }
 impl<'db> FlowControlGraph<'db> {
     /// Returns the root node of the graph.
     pub fn root(&self) -> NodeId {
         // The root is always the last node.
         NodeId(self.nodes.len() - 1)
+    }
+
+    /// Returns the number of nodes in the graph.
+    pub fn size(&self) -> usize {
+        self.nodes.len()
+    }
+
+    /// Returns the node with the given [NodeId].
+    pub fn node(&self, id: NodeId) -> &FlowControlNode<'db> {
+        &self.nodes[id.0]
     }
 }
 
@@ -156,31 +166,22 @@ impl<'db> Debug for FlowControlGraph<'db> {
     }
 }
 /// Builder for [FlowControlGraph].
-#[derive(Default)]
 pub struct FlowControlGraphBuilder<'db> {
-    /// All nodes in the graph.
-    nodes: Vec<FlowControlNode<'db>>,
-    /// The type of each [FlowControlVar].
-    pub var_types: Vec<semantic::TypeId<'db>>,
-    /// The location of each [FlowControlVar].
-    pub var_locations: Vec<LocationId<'db>>,
-    /// The number of [FlowControlVar]s allocated so far.
-    n_vars: usize,
+    graph: FlowControlGraph<'db>,
 }
 
 impl<'db> FlowControlGraphBuilder<'db> {
     /// Adds a new node to the graph. Returns the new node's id.
     pub fn add_node(&mut self, node: FlowControlNode<'db>) -> NodeId {
-        let id = NodeId(self.nodes.len());
-        self.nodes.push(node);
+        let id = NodeId(self.graph.size());
+        self.graph.nodes.push(node);
         id
     }
 
     /// Finalizes the graph and returns the final [FlowControlGraph].
     pub fn finalize(self, root: NodeId) -> FlowControlGraph<'db> {
-        assert_eq!(root.0, self.nodes.len() - 1, "The root must be the last node.");
-        let FlowControlGraphBuilder { nodes, var_types, var_locations, n_vars: _ } = self;
-        FlowControlGraph { nodes, var_types, var_locations }
+        assert_eq!(root.0, self.graph.size() - 1, "The root must be the last node.");
+        self.graph
     }
 
     /// Creates a new [FlowControlVar].
@@ -189,15 +190,25 @@ impl<'db> FlowControlGraphBuilder<'db> {
         ty: semantic::TypeId<'db>,
         location: LocationId<'db>,
     ) -> FlowControlVar {
-        let var = FlowControlVar { idx: self.n_vars };
-        self.var_types.push(ty);
-        self.var_locations.push(location);
-        self.n_vars += 1;
+        let var = FlowControlVar { idx: self.graph.var_types.len() };
+        self.graph.var_types.push(ty);
+        self.graph.var_locations.push(location);
         var
     }
 
     /// Returns the type of the given [FlowControlVar].
     pub fn var_ty(&self, input_var: FlowControlVar) -> semantic::TypeId<'db> {
-        self.var_types[input_var.idx]
+        self.graph.var_types[input_var.idx]
+    }
+}
+
+impl<'db> Default for FlowControlGraphBuilder<'db> {
+    fn default() -> Self {
+        let graph = FlowControlGraph {
+            nodes: Vec::new(),
+            var_types: Vec::new(),
+            var_locations: Vec::new(),
+        };
+        Self { graph }
     }
 }

@@ -28,7 +28,7 @@ pub fn lower_graph<'db, 'mt>(
     let dummy_block_builder = BlockBuilder::root(BlockId(0));
     let builder_ = std::mem::replace(builder, dummy_block_builder);
 
-    let nodes_len = graph.nodes.len();
+    let nodes_len = graph.size();
     let mut context = LowerGraphContext::new(ctx, builder_, graph, location);
     // Go over the nodes in reverse order to make sure parent nodes are handled before their
     // children.

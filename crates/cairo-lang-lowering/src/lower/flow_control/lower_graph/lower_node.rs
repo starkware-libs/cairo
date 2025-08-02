@@ -18,7 +18,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         return Ok(());
     };
 
-    match &ctx.graph.nodes[id.0] {
+    match ctx.graph.node(id) {
         FlowControlNode::EvaluateExpr(node) => lower_evaluate_expr(ctx, id, node, builder),
         FlowControlNode::BooleanIf(node) => lower_boolean_if(ctx, id, node, builder),
         FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, node, builder),
