@@ -1,8 +1,7 @@
-use cairo_lang_semantic::PatternVariable;
 use itertools::Itertools;
 
 use crate::lower::flow_control::graph::{
-    BindVar, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
+    BindVar, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId, PatternVarId,
 };
 
 /// The pattern-matching function below take a list of patterns, and depending on the item at
@@ -22,13 +21,13 @@ use crate::lower::flow_control::graph::{
 /// For the latter, it is important to return both `0` and `1`, because the arm that will be chosen
 /// depends on the value of `y` (which will be handled by the calling pattern matching function).
 #[derive(Clone, Hash, Eq, PartialEq)]
-pub struct FilteredPatterns<'db> {
+pub struct FilteredPatterns {
     /// The indices of the patterns that are accepted by the filter, together with binding
     /// information.
-    filter: Vec<IndexAndBindings<'db>>,
+    filter: Vec<IndexAndBindings>,
 }
 
-impl<'db> FilteredPatterns<'db> {
+impl FilteredPatterns {
     pub fn empty() -> Self {
         Self { filter: vec![] }
     }
@@ -42,7 +41,8 @@ impl<'db> FilteredPatterns<'db> {
         }
     }
 
-    pub fn all_with_bindings(bindings_vec: impl Iterator<Item = Bindings<'db>>) -> Self {
+    /// Similar to [Self::all], but allows to specify bindings for each pattern.
+    pub fn all_with_bindings(bindings_vec: impl Iterator<Item = Bindings>) -> Self {
         Self {
             filter: bindings_vec
                 .enumerate()
@@ -51,7 +51,8 @@ impl<'db> FilteredPatterns<'db> {
         }
     }
 
-    pub fn add(&mut self, idx: usize, bindings: Bindings<'db>) {
+    /// Adds a new pattern to the filter, with the given bindings.
+    pub fn add(&mut self, idx: usize, bindings: Bindings) {
         self.filter.push(IndexAndBindings { index: idx, bindings });
     }
 
@@ -64,7 +65,7 @@ impl<'db> FilteredPatterns<'db> {
     /// Suppose that `bar` filters this list to only `C`.
     /// `bar` returns the filter `[1]` since it uses its own indexing.
     /// `foo` needs to lift it to `[2]` to return to its caller using `foo`'s indexing.
-    pub fn lift(self, outer_filter: &FilteredPatterns<'db>) -> Self {
+    pub fn lift(self, outer_filter: &FilteredPatterns) -> Self {
         Self {
             filter: self
                 .filter
@@ -76,7 +77,7 @@ impl<'db> FilteredPatterns<'db> {
 
     /// Returns the first index of the filtered patterns.
     // TODO: rename. Fix doc.
-    pub fn first(self) -> Option<IndexAndBindings<'db>> {
+    pub fn first(self) -> Option<IndexAndBindings> {
         self.filter.into_iter().next()
     }
 
@@ -87,20 +88,20 @@ impl<'db> FilteredPatterns<'db> {
 }
 
 #[derive(Clone, Hash, Eq, PartialEq)]
-pub struct IndexAndBindings<'db> {
+pub struct IndexAndBindings {
     /// The index of the pattern in the list of patterns.
     index: usize,
     /// The bindings that should be applied if the pattern is chosen.
-    bindings: Bindings<'db>,
+    bindings: Bindings,
 }
-impl<'db> IndexAndBindings<'db> {
+impl IndexAndBindings {
     pub fn index(&self) -> usize {
         self.index
     }
 
     /// Lifts the index of the pattern to the outer level.
     /// See [FilteredPatterns::lift] for more details.
-    fn lift(self, outer_filter: &FilteredPatterns<'db>) -> IndexAndBindings<'db> {
+    fn lift(self, outer_filter: &FilteredPatterns) -> IndexAndBindings {
         IndexAndBindings {
             index: outer_filter.filter[self.index].index,
             bindings: self.bindings.union(&outer_filter.filter[self.index].bindings),
@@ -109,21 +110,29 @@ impl<'db> IndexAndBindings<'db> {
 
     /// Create a node that binds the [FlowControlVar]s in [Self::bindings] to the [PatternVariable]s
     /// and continues to the given `node`.
-    pub fn wrap_node(self, graph: &mut FlowControlGraphBuilder<'db>, mut node: NodeId) -> NodeId {
+    pub fn wrap_node<'db>(
+        self,
+        graph: &mut FlowControlGraphBuilder<'db>,
+        mut node: NodeId,
+    ) -> NodeId {
         for (input, output) in self.bindings.bindings {
-            node = graph.add_node(FlowControlNode::BindVar(BindVar { input, output, next: node }));
+            node = graph.add_node(FlowControlNode::BindVar(BindVar {
+                input,
+                output: graph.get_pattern_variable(output).clone(),
+                next: node,
+            }));
         }
         node
     }
 }
 
 #[derive(Clone, Default, Hash, Eq, PartialEq)]
-pub struct Bindings<'db> {
+pub struct Bindings {
     /// The bindings that should be applied if the pattern is chosen.
-    bindings: Vec<(FlowControlVar, PatternVariable<'db>)>,
+    bindings: Vec<(FlowControlVar, PatternVarId)>,
 }
-impl<'db> Bindings<'db> {
-    pub fn single(input: FlowControlVar, output: PatternVariable<'db>) -> Self {
+impl Bindings {
+    pub fn single(input: FlowControlVar, output: PatternVarId) -> Self {
         Self { bindings: vec![(input, output)] }
     }
 

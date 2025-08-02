@@ -22,6 +22,7 @@
 use std::fmt::Debug;
 
 use cairo_lang_semantic::{self as semantic, ConcreteVariant, PatternVariable};
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 
 use crate::ids::LocationId;
@@ -42,6 +43,10 @@ impl FlowControlVar {
         graph.var_locations[self.idx]
     }
 }
+
+/// A thin wrapper around [PatternVariable] that is used for fast comparison.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct PatternVarId(usize);
 
 /// Unique identifier for nodes in the flow control graph.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -207,6 +212,9 @@ impl<'db> Debug for FlowControlGraph<'db> {
 /// Builder for [FlowControlGraph].
 pub struct FlowControlGraphBuilder<'db> {
     graph: FlowControlGraph<'db>,
+    /// The pattern variables used by the [BindVar] nodes in the graph.
+    pattern_vars: Vec<PatternVariable<'db>>,
+    pattern_vars_map: UnorderedHashMap<PatternVariable<'db>, PatternVarId>,
 }
 
 impl<'db> FlowControlGraphBuilder<'db> {
@@ -235,6 +243,19 @@ impl<'db> FlowControlGraphBuilder<'db> {
         var
     }
 
+    /// Registers a new [PatternVariable] and returns a corresponding [PatternVarId].
+    pub fn register_pattern_var(&mut self, var: PatternVariable<'db>) -> PatternVarId {
+        *self.pattern_vars_map.entry(var.clone()).or_insert_with(|| {
+            let idx = self.pattern_vars.len();
+            self.pattern_vars.push(var);
+            PatternVarId(idx)
+        })
+    }
+
+    pub fn get_pattern_variable(&self, id: PatternVarId) -> &PatternVariable<'db> {
+        &self.pattern_vars[id.0]
+    }
+
     /// Returns the type of the given [FlowControlVar].
     pub fn var_ty(&self, input_var: FlowControlVar) -> semantic::TypeId<'db> {
         self.graph.var_types[input_var.idx]
@@ -248,6 +269,6 @@ impl<'db> Default for FlowControlGraphBuilder<'db> {
             var_types: Vec::new(),
             var_locations: Vec::new(),
         };
-        Self { graph }
+        Self { graph, pattern_vars: Vec::new(), pattern_vars_map: UnorderedHashMap::default() }
     }
 }

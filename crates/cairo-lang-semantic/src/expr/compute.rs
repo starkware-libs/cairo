@@ -1644,12 +1644,8 @@ fn compute_pattern_list_or_semantic<'db>(
     let patterns: Vec<_> = patterns_syntax
         .elements(db)
         .map(|pattern_syntax| {
-            let pattern: PatternAndId<'_> = compute_pattern_semantic(
-                ctx,
-                &pattern_syntax,
-                expr.ty(),
-                &arm_patterns_variables,
-            );
+            let pattern: PatternAndId<'_> =
+                compute_pattern_semantic(ctx, &pattern_syntax, expr.ty(), &arm_patterns_variables);
             let variables = pattern.variables(&ctx.arenas.patterns);
             for variable in variables {
                 match arm_patterns_variables.entry(variable.name.clone()) {
