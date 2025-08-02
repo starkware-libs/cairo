@@ -1644,12 +1644,8 @@ fn compute_pattern_list_or_semantic<'db>(
     let patterns: Vec<_> = patterns_syntax
         .elements(db)
         .map(|pattern_syntax| {
-            let pattern: PatternAndId<'_> = compute_pattern_semantic(
-                ctx,
-                &pattern_syntax,
-                expr.ty(),
-                &mut arm_patterns_variables,
-            );
+            let pattern: PatternAndId<'_> =
+                compute_pattern_semantic(ctx, &pattern_syntax, expr.ty(), &arm_patterns_variables);
             let variables = pattern.variables(&ctx.arenas.patterns);
             for variable in variables {
                 match arm_patterns_variables.entry(variable.name.clone()) {
@@ -2028,7 +2024,7 @@ fn compute_expr_for_semantic<'db>(
             new_ctx,
             &syntax.pattern(db),
             next_success_variant.ty,
-            &mut UnorderedHashMap::default(),
+            &UnorderedHashMap::default(),
         );
         let variables = inner_pattern.variables(&new_ctx.arenas.patterns);
         for v in variables {
@@ -2513,7 +2509,7 @@ pub fn compute_pattern_semantic<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     syntax: &ast::Pattern<'db>,
     ty: TypeId<'db>,
-    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable<'db>>,
+    or_pattern_variables_map: &UnorderedHashMap<SmolStr, LocalVariable<'db>>,
 ) -> PatternAndId<'db> {
     let pat = maybe_compute_pattern_semantic(ctx, syntax, ty, or_pattern_variables_map);
     let pat = pat.unwrap_or_else(|diag_added| {
@@ -2532,7 +2528,7 @@ fn maybe_compute_pattern_semantic<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     pattern_syntax: &ast::Pattern<'db>,
     ty: TypeId<'db>,
-    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable<'db>>,
+    or_pattern_variables_map: &UnorderedHashMap<SmolStr, LocalVariable<'db>>,
 ) -> Maybe<Pattern<'db>> {
     // TODO(spapini): Check for missing type, and don't reemit an error.
     let db = ctx.db;
@@ -2840,7 +2836,7 @@ fn compute_tuple_like_pattern_semantic<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     pattern_syntax: &ast::Pattern<'db>,
     ty: TypeId<'db>,
-    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable<'db>>,
+    or_pattern_variables_map: &UnorderedHashMap<SmolStr, LocalVariable<'db>>,
     unexpected_pattern: fn(TypeId<'db>) -> SemanticDiagnosticKind<'db>,
     wrong_number_of_elements: fn(usize, usize) -> SemanticDiagnosticKind<'db>,
 ) -> Pattern<'db> {
@@ -3048,7 +3044,7 @@ fn create_variable_pattern<'db>(
     modifier_list: &[ast::Modifier<'db>],
     ty: TypeId<'db>,
     stable_ptr: ast::PatternPtr<'db>,
-    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable<'db>>,
+    or_pattern_variables_map: &UnorderedHashMap<SmolStr, LocalVariable<'db>>,
 ) -> Pattern<'db> {
     let db = ctx.db;
 
@@ -4165,7 +4161,7 @@ pub fn compute_and_append_statement_semantic<'db>(
                 ctx,
                 &let_syntax.pattern(db),
                 ty,
-                &mut UnorderedHashMap::default(),
+                &UnorderedHashMap::default(),
             );
             let variables = pattern.variables(&ctx.arenas.patterns);
             for v in variables {
