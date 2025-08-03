@@ -47,6 +47,13 @@ impl FlowControlVar {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct PatternVarId(usize);
 
+impl PatternVarId {
+    /// Returns the pattern variable.
+    pub fn get<'db, 'a>(&self, graph: &'a FlowControlGraph<'db>) -> &'a PatternVariable<'db> {
+        &graph.pattern_vars[self.0]
+    }
+}
+
 /// Unique identifier for nodes in the flow control graph.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct NodeId(pub usize);
@@ -109,13 +116,10 @@ pub struct ArmExpr {
 #[derive(Debug)]
 pub struct BindVar {
     /// The input variable to bind.
-    #[expect(dead_code)]
     pub input: FlowControlVar,
     /// The (output) pattern variable to assign the result to.
-    #[expect(dead_code)]
     pub output: PatternVarId,
     /// The next node.
-    #[expect(dead_code)]
     pub next: NodeId,
 }
 
