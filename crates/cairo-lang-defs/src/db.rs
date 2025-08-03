@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe, PluginFileDiagnosticNotes, ToMaybe};
 use cairo_lang_filesystem::ids::{
-    CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, SmolStrId, VirtualFile,
+    CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, VirtualFile,
 };
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
@@ -21,7 +21,6 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{Itertools, chain};
-use smol_str::SmolStr;
 
 use crate::cache::{DefCacheLoadingData, load_cached_crate_modules};
 use crate::ids::*;
@@ -568,9 +567,7 @@ fn is_submodule_inline<'db>(db: &dyn DefsGroup, submodule_id: SubmoduleId<'db>) 
 fn module_main_file<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) -> Maybe<FileId<'db>> {
     Ok(match module_id {
         ModuleId::CrateRoot(crate_id) => {
-            let lib_cairo: SmolStr = "lib.cairo".into();
-            let lib_cairo_id: SmolStrId<'db> = lib_cairo.intern(db);
-            db.crate_config(crate_id).to_maybe()?.root.file(db, lib_cairo_id)
+            db.crate_config(crate_id).to_maybe()?.root.file(db, "lib.cairo")
         }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
@@ -580,8 +577,8 @@ fn module_main_file<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) -> Ma
                 // or a plugin-generated virtual file.
                 db.module_file(submodule_id.module_file_id(db))?
             } else {
-                let name: SmolStr = format!("{}.cairo", submodule_id.name(db)).into();
-                db.module_dir(parent)?.file(db, name.intern(db))
+                let name = format!("{}.cairo", submodule_id.name(db));
+                db.module_dir(parent)?.file(db, &name)
             }
         }
         ModuleId::MacroCall { generated_file_id, .. } => {
@@ -612,8 +609,8 @@ fn module_dir<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) -> Maybe<Di
         }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
-            let name = submodule_id.name(db).intern(db);
-            Ok(db.module_dir(parent)?.subdir(db, name))
+            let name = submodule_id.name(db);
+            Ok(db.module_dir(parent)?.subdir(name))
         }
         ModuleId::MacroCall { id: macro_call_id, .. } => {
             // This is a macro call, we return the directory for the file that contained the macro

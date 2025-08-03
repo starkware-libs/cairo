@@ -38,7 +38,7 @@ impl<'a> TerminalLiteralNumber<'a> {
     pub fn numeric_value_and_suffix(
         &self,
         db: &'a dyn SyntaxGroup,
-    ) -> Option<(BigInt, Option<SmolStr>)> {
+    ) -> Option<(BigInt, Option<&'a str>)> {
         let text = self.text(db);
 
         let (text, radix) = if let Some(num_no_prefix) = text.strip_prefix("0x") {
@@ -48,7 +48,7 @@ impl<'a> TerminalLiteralNumber<'a> {
         } else if let Some(num_no_prefix) = text.strip_prefix("0b") {
             (num_no_prefix, 2)
         } else {
-            (text.as_str(), 10)
+            (text, 10)
         };
 
         // Catch an edge case, where literal seems to have a suffix that is valid numeric part
@@ -64,7 +64,7 @@ impl<'a> TerminalLiteralNumber<'a> {
                 }
                 None => (text, None),
             };
-            Some((BigInt::from_str_radix(text, radix).ok()?, suffix.map(SmolStr::new)))
+            Some((BigInt::from_str_radix(text, radix).ok()?, suffix))
         }
     }
 }
@@ -74,7 +74,7 @@ impl<'a> TerminalShortString<'a> {
     pub fn string_value(&self, db: &'a dyn SyntaxGroup) -> Option<String> {
         let text = self.text(db);
 
-        let (text, _suffix) = string_value(&text, '\'')?;
+        let (text, _suffix) = string_value(text, '\'')?;
 
         Some(text)
     }
@@ -100,7 +100,7 @@ impl<'a> TerminalString<'a> {
     /// Interpret this token/terminal as a string.
     pub fn string_value(&self, db: &'a dyn SyntaxGroup) -> Option<String> {
         let text = self.text(db);
-        let (text, suffix) = string_value(&text, '"')?;
+        let (text, suffix) = string_value(text, '"')?;
         if !suffix.is_empty() {
             unreachable!();
         }

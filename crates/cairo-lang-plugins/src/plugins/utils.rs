@@ -2,12 +2,11 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GenericParamEx, IsDependentType};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use itertools::{Itertools, chain};
-use smol_str::SmolStr;
 
 /// Information on struct members or enum variants.
 pub struct MemberInfo<'a> {
-    pub name: SmolStr,
-    pub ty: String,
+    pub name: &'a str,
+    pub ty: &'a str,
     pub attributes: ast::AttributeList<'a>,
     pub is_generics_dependent: bool,
 }
@@ -43,17 +42,17 @@ pub enum TypeVariant {
 }
 
 /// Information on generic params.
-pub struct GenericParamsInfo {
+pub struct GenericParamsInfo<'a> {
     /// All the generic param names, at the original order.
-    pub param_names: Vec<SmolStr>,
+    pub param_names: Vec<&'a str>,
     /// The full generic params, including keywords and definitions.
-    pub full_params: Vec<String>,
+    pub full_params: Vec<&'a str>,
 }
-impl GenericParamsInfo {
+impl<'a> GenericParamsInfo<'a> {
     /// Extracts the information on generic params.
     pub fn new(
-        db: &dyn SyntaxGroup,
-        generic_params: ast::OptionWrappedGenericParamList<'_>,
+        db: &'a dyn SyntaxGroup,
+        generic_params: ast::OptionWrappedGenericParamList<'a>,
     ) -> Self {
         let ast::OptionWrappedGenericParamList::WrappedGenericParamList(gens) = generic_params
         else {
@@ -63,8 +62,8 @@ impl GenericParamsInfo {
             .generic_params(db)
             .elements(db)
             .map(|param| {
-                let name = param.name(db).map(|n| n.text(db)).unwrap_or_else(|| "_".into());
-                let full_param = param.as_syntax_node().get_text_without_trivia(db).to_string();
+                let name = param.name(db).map(|n| n.text(db)).unwrap_or_else(|| "_");
+                let full_param = param.as_syntax_node().get_text_without_trivia(db);
                 (name, full_param)
             })
             .unzip();
@@ -74,9 +73,9 @@ impl GenericParamsInfo {
 
 /// Information for the type being processed by a plugin.
 pub struct PluginTypeInfo<'a> {
-    pub name: SmolStr,
+    pub name: &'a str,
     pub attributes: ast::AttributeList<'a>,
-    pub generics: GenericParamsInfo,
+    pub generics: GenericParamsInfo<'a>,
     pub members_info: Vec<MemberInfo<'a>>,
     pub type_variant: TypeVariant,
 }
@@ -86,11 +85,8 @@ impl<'a> PluginTypeInfo<'a> {
         match item_ast {
             ast::ModuleItem::Struct(struct_ast) => {
                 let generics = GenericParamsInfo::new(db, struct_ast.generic_params(db));
-                let members_info = extract_members(
-                    db,
-                    struct_ast.members(db),
-                    &generics.param_names.iter().map(|p| p.as_str()).collect_vec(),
-                );
+                let members_info =
+                    extract_members(db, struct_ast.members(db), &generics.param_names);
                 Some(Self {
                     name: struct_ast.name(db).text(db),
                     attributes: struct_ast.attributes(db),
@@ -101,11 +97,8 @@ impl<'a> PluginTypeInfo<'a> {
             }
             ast::ModuleItem::Enum(enum_ast) => {
                 let generics = GenericParamsInfo::new(db, enum_ast.generic_params(db));
-                let members_info = extract_variants(
-                    db,
-                    enum_ast.variants(db),
-                    &generics.param_names.iter().map(|p| p.as_str()).collect_vec(),
-                );
+                let members_info =
+                    extract_variants(db, enum_ast.variants(db), &generics.param_names);
                 Some(Self {
                     name: enum_ast.name(db).text(db),
                     attributes: enum_ast.attributes(db),
@@ -140,12 +133,12 @@ impl<'a> PluginTypeInfo<'a> {
         dep_req: fn(&str, &str) -> String,
     ) -> Vec<String> {
         chain!(
-            self.generics.full_params.iter().cloned(),
+            self.generics.full_params.iter().map(ToString::to_string),
             self.members_info.iter().filter(|m| m.is_generics_dependent).flat_map(|m| {
                 dependent_traits
                     .iter()
                     .cloned()
-                    .map(move |trt| format!("impl {}: {}", m.impl_name(trt), dep_req(trt, &m.ty)))
+                    .map(move |trt| format!("impl {}: {}", m.impl_name(trt), dep_req(trt, m.ty)))
             })
         )
         .collect()
@@ -171,12 +164,7 @@ fn extract_members<'a>(
         .elements(db)
         .map(|member| MemberInfo {
             name: member.name(db).text(db),
-            ty: member
-                .type_clause(db)
-                .ty(db)
-                .as_syntax_node()
-                .get_text_without_trivia(db)
-                .to_string(),
+            ty: member.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db),
             attributes: member.attributes(db),
             is_generics_dependent: member.type_clause(db).ty(db).is_dependent_type(db, generics),
         })
@@ -194,9 +182,9 @@ fn extract_variants<'a>(
         .map(|variant| MemberInfo {
             name: variant.name(db).text(db),
             ty: match variant.type_clause(db) {
-                ast::OptionTypeClause::Empty(_) => "()".to_string(),
+                ast::OptionTypeClause::Empty(_) => "()",
                 ast::OptionTypeClause::TypeClause(t) => {
-                    t.ty(db).as_syntax_node().get_text_without_trivia(db).to_string()
+                    t.ty(db).as_syntax_node().get_text_without_trivia(db)
                 }
             },
             attributes: variant.attributes(db),

@@ -747,7 +747,6 @@ dependencies = [
  "itertools 0.14.0",
  "salsa",
  "serde_json",
- "smol_str",
  "test-log",
 ]
 

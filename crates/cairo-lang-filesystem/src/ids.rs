@@ -17,11 +17,11 @@ pub const CAIRO_FILE_EXTENSION: &str = "cairo";
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum CrateInput {
     Real {
-        name: SmolStr,
-        discriminator: Option<SmolStr>,
+        name: String,
+        discriminator: Option<String>,
     },
     Virtual {
-        name: SmolStr,
+        name: String,
         file_long_id: FileInput,
         settings: String,
         cache_file: Option<BlobLongId>,
@@ -55,19 +55,19 @@ impl CrateInput {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
 pub enum CrateLongId<'db> {
     /// A crate that appears in crate_roots(), and on the filesystem.
-    Real { name: SmolStr, discriminator: Option<SmolStr> },
+    Real { name: String, discriminator: Option<String> },
     /// A virtual crate, not a part of the crate_roots(). Used mainly for tests.
     Virtual {
-        name: SmolStr,
+        name: String,
         file_id: FileId<'db>,
         settings: String,
         cache_file: Option<BlobId<'db>>,
     },
 }
 impl<'db> CrateLongId<'db> {
-    pub fn name(&self) -> SmolStr {
+    pub fn name(&self) -> &str {
         match self {
-            CrateLongId::Real { name, .. } | CrateLongId::Virtual { name, .. } => name.clone(),
+            CrateLongId::Real { name, .. } | CrateLongId::Virtual { name, .. } => name.as_str(),
         }
     }
 
@@ -215,7 +215,7 @@ impl CodeOrigin {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct VirtualFileInput {
     pub parent: Option<Arc<FileInput>>,
-    pub name: SmolStr,
+    pub name: String,
     pub content: Arc<str>,
     pub code_mappings: Arc<[CodeMapping]>,
     pub kind: FileKind,
@@ -238,9 +238,7 @@ impl VirtualFileInput {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
 pub struct VirtualFile<'db> {
     pub parent: Option<FileId<'db>>,
-    // TODO(eytan-starkware): Use smol str id instead of SmolStr.
-    pub name: SmolStr,
-    // TODO(eytan-starkware): Use str id instead of Arc<str>.
+    pub name: String,
     pub content: Arc<str>,
     pub code_mappings: Arc<[CodeMapping]>,
     pub kind: FileKind,
@@ -255,7 +253,7 @@ impl<'db> VirtualFile<'db> {
             // TODO(yuval): consider a different path format for virtual files.
             format!("{}[{}]", parent.full_path(db), self.name)
         } else {
-            self.name.clone().into()
+            self.name.clone()
         }
     }
 
@@ -331,7 +329,7 @@ define_short_id!(StrId, Arc<str>, FilesGroup, lookup_intern_str, intern_str);
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum DirectoryInput {
     Real(PathBuf),
-    Virtual { files: BTreeMap<SmolStr, FileInput>, dirs: BTreeMap<SmolStr, Box<DirectoryInput>> },
+    Virtual { files: BTreeMap<String, FileInput>, dirs: BTreeMap<String, Box<DirectoryInput>> },
 }
 
 impl DirectoryInput {
@@ -342,15 +340,11 @@ impl DirectoryInput {
             DirectoryInput::Virtual { files, dirs } => Directory::Virtual {
                 files: files
                     .into_iter()
-                    .map(|(name, file_input)| {
-                        (name.intern(db), file_input.into_file_long_id(db).intern(db))
-                    })
+                    .map(|(name, file_input)| (name, file_input.into_file_long_id(db).intern(db)))
                     .collect(),
                 dirs: dirs
                     .into_iter()
-                    .map(|(name, dir_input)| {
-                        (name.intern(db), Box::new(dir_input.into_directory(db)))
-                    })
+                    .map(|(name, dir_input)| (name, Box::new(dir_input.into_directory(db))))
                     .collect(),
             },
         }
@@ -386,32 +380,29 @@ pub enum Directory<'db> {
     /// A directory on the file system.
     Real(PathBuf),
     /// A virtual directory, not on the file system. Used mainly for virtual crates.
-    Virtual {
-        files: BTreeMap<SmolStrId<'db>, FileId<'db>>,
-        dirs: BTreeMap<SmolStrId<'db>, Box<Directory<'db>>>,
-    },
+    Virtual { files: BTreeMap<String, FileId<'db>>, dirs: BTreeMap<String, Box<Directory<'db>>> },
 }
 
 impl<'db> Directory<'db> {
     /// Returns a file inside this directory. The file and directory don't necessarily exist on
     /// the file system. These are ids/paths to them.
-    pub fn file(&self, db: &'db dyn FilesGroup, name: SmolStrId<'db>) -> FileId<'db> {
+    pub fn file(&self, db: &'db dyn FilesGroup, name: &str) -> FileId<'db> {
         match self {
-            Directory::Real(path) => FileId::new_on_disk(db, path.join(name.long(db).as_str())),
+            Directory::Real(path) => FileId::new_on_disk(db, path.join(name)),
             Directory::Virtual { files, dirs: _ } => files
-                .get(&name)
+                .get(name)
                 .copied()
-                .unwrap_or_else(|| FileId::new_on_disk(db, PathBuf::from(name.long(db).as_str()))),
+                .unwrap_or_else(|| FileId::new_on_disk(db, PathBuf::from(name))),
         }
     }
 
     /// Returns a sub directory inside this directory. These directories don't necessarily exist on
     /// the file system. These are ids/paths to them.
-    pub fn subdir(&self, db: &'db dyn FilesGroup, name: SmolStrId<'db>) -> Directory<'db> {
+    pub fn subdir(&self, name: &'db str) -> Directory<'db> {
         match self {
-            Directory::Real(path) => Directory::Real(path.join(name.long(db).as_str())),
+            Directory::Real(path) => Directory::Real(path.join(name)),
             Directory::Virtual { files: _, dirs } => {
-                if let Some(dir) = dirs.get(&name) {
+                if let Some(dir) = dirs.get(name) {
                     dir.as_ref().clone()
                 } else {
                     Directory::Virtual { files: BTreeMap::new(), dirs: BTreeMap::new() }
@@ -427,15 +418,11 @@ impl<'db> Directory<'db> {
             Directory::Virtual { files, dirs } => DirectoryInput::Virtual {
                 files: files
                     .into_iter()
-                    .map(|(name, file_id)| {
-                        (name.long(db).clone(), file_id.long(db).clone().into_file_input(db))
-                    })
+                    .map(|(name, file_id)| (name, file_id.long(db).clone().into_file_input(db)))
                     .collect(),
                 dirs: dirs
                     .into_iter()
-                    .map(|(name, dir)| {
-                        (name.long(db).clone(), Box::new(dir.into_directory_input(db)))
-                    })
+                    .map(|(name, dir)| (name, Box::new(dir.into_directory_input(db))))
                     .collect(),
             },
         }

@@ -394,9 +394,7 @@ fn validate_l1_handler_first_parameter<'db>(
         }
 
         // Validate name
-        if maybe_strip_underscore(first_param.name(db).text(db).as_str())
-            != L1_HANDLER_FIRST_PARAM_NAME
-        {
+        if maybe_strip_underscore(first_param.name(db).text(db)) != L1_HANDLER_FIRST_PARAM_NAME {
             diagnostics.push(PluginDiagnostic::error(
                 first_param.stable_ptr(db),
                 "The second parameter of an L1 handler must be named 'from_address'.".to_string(),

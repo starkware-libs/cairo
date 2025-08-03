@@ -266,9 +266,7 @@ fn main() -> anyhow::Result<()> {
                 .generated_lowerings
                 .keys()
                 .sorted_by_key(|key| match key {
-                    GeneratedFunctionKey::Loop(id) => {
-                        (id.0.lookup(db).span_without_trivia(db), "".into())
-                    }
+                    GeneratedFunctionKey::Loop(id) => (id.0.lookup(db).span_without_trivia(db), ""),
                     GeneratedFunctionKey::TraitFunc(trait_function, id) => {
                         (id.syntax_node(db).span_without_trivia(db), trait_function.name(db))
                     }

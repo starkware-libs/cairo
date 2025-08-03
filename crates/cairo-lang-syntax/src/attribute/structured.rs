@@ -59,7 +59,7 @@ pub struct NameInfo<'a> {
 }
 impl<'a> NameInfo<'a> {
     fn from_ast(name: &ast::TerminalIdentifier<'a>, db: &'a dyn SyntaxGroup) -> Self {
-        NameInfo { text: name.text(db), stable_ptr: name.stable_ptr(db) }
+        NameInfo { text: name.text(db).into(), stable_ptr: name.stable_ptr(db) }
     }
 }
 

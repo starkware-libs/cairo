@@ -197,10 +197,17 @@ pub fn priv_struct_definition_data<'db>(
         let id = MemberLongId(module_file_id, member.stable_ptr(db)).intern(db);
         let ty = resolve_type(db, &mut diagnostics, &mut resolver, &member.type_clause(db).ty(db));
         let visibility = Visibility::from_ast(db, &mut diagnostics, &member.visibility(db));
-        let member_name = member.name(db).text(db).intern(db);
-        if let Some(_other_member) = members.insert(member_name, Member { id, ty, visibility }) {
-            diagnostics
-                .report(member.stable_ptr(db), StructMemberRedefinition { struct_id, member_name });
+        let member_name = member.name(db).text(db);
+        if let Some(_other_member) =
+            members.insert(SmolStrId::from_str(db, member_name), Member { id, ty, visibility })
+        {
+            diagnostics.report(
+                member.stable_ptr(db),
+                StructMemberRedefinition {
+                    struct_id,
+                    member_name: SmolStrId::from_str(db, member_name),
+                },
+            );
         }
         resolver.data.feature_config.restore(feature_restore);
     }

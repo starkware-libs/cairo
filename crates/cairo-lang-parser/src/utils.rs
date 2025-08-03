@@ -74,7 +74,7 @@ impl SimpleParserDatabase {
             original_item_removed: false,
         })
         .intern(self);
-        get_syntax_root_and_diagnostics(self, file, content.to_string().as_str())
+        get_syntax_root_and_diagnostics(self, file)
     }
 
     /// Parses a token stream (based on whole file) and returns its syntax root.
@@ -84,7 +84,12 @@ impl SimpleParserDatabase {
         &self,
         token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
     ) -> (SyntaxNode<'_>, Diagnostics<'_, ParserDiagnostic<'_>>) {
-        let (content, _offset) = primitive_token_stream_content_and_offset(token_stream);
+        let (content, offset) = primitive_token_stream_content_and_offset(token_stream);
+        assert_eq!(
+            offset.unwrap_or_default(),
+            TextOffset::default(),
+            "The content defines a file, and should not have an offset"
+        );
         let file_id = FileLongId::Virtual(VirtualFile {
             parent: Default::default(),
             name: "token_stream_file_parser_input".into(),
@@ -95,12 +100,8 @@ impl SimpleParserDatabase {
         })
         .intern(self);
         let mut diagnostics = DiagnosticsBuilder::default();
-
-        (
-            Parser::parse_token_stream(self, &mut diagnostics, file_id, token_stream)
-                .as_syntax_node(),
-            diagnostics.build(),
-        )
+        let syntax = Parser::parse_token_stream(self, &mut diagnostics, file_id, token_stream);
+        (syntax.as_syntax_node(), diagnostics.build())
     }
 
     /// Parses a token stream (based on a single expression).
@@ -110,6 +111,11 @@ impl SimpleParserDatabase {
         token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
     ) -> (SyntaxNode<'_>, Diagnostics<'_, ParserDiagnostic<'_>>) {
         let (content, offset) = primitive_token_stream_content_and_offset(token_stream);
+        assert_eq!(
+            offset.unwrap_or_default(),
+            TextOffset::default(),
+            "The content defines a file, and should not have an offset"
+        );
         let vfs = VirtualFile {
             parent: Default::default(),
             name: "token_stream_expr_parser_input".into(),
@@ -118,15 +124,10 @@ impl SimpleParserDatabase {
             kind: FileKind::Module,
             original_item_removed: false,
         };
-        let content = vfs.content.clone();
         let file_id = FileLongId::Virtual(vfs).intern(self);
         let mut diagnostics = DiagnosticsBuilder::default();
-
-        (
-            Parser::parse_token_stream_expr(self, &mut diagnostics, file_id, &content, offset)
-                .as_syntax_node(),
-            diagnostics.build(),
-        )
+        let syntax = Parser::parse_token_stream_expr(self, &mut diagnostics, file_id, offset);
+        (syntax.as_syntax_node(), diagnostics.build())
     }
 }
 
@@ -136,17 +137,15 @@ pub fn get_syntax_root_and_diagnostics_from_file(
     cairo_filepath: PathBuf,
 ) -> (SyntaxNode<'_>, Diagnostics<'_, ParserDiagnostic<'_>>) {
     let file_id = FileId::new_on_disk(db, cairo_filepath);
-    let contents = db.file_content(file_id).unwrap();
-    get_syntax_root_and_diagnostics(db, file_id, contents.long(db).as_ref())
+    get_syntax_root_and_diagnostics(db, file_id)
 }
 
 /// Returns the syntax_root and diagnostic of a file in the db.
 pub fn get_syntax_root_and_diagnostics<'a>(
     db: &'a SimpleParserDatabase,
     file_id: FileId<'a>,
-    contents: &str,
 ) -> (SyntaxNode<'a>, Diagnostics<'a, ParserDiagnostic<'a>>) {
-    let (syntax_file, diagnostics) = get_syntax_file_and_diagnostics(db, file_id, contents);
+    let (syntax_file, diagnostics) = get_syntax_file_and_diagnostics(db, file_id);
     (syntax_file.as_syntax_node(), diagnostics)
 }
 
@@ -154,9 +153,9 @@ pub fn get_syntax_root_and_diagnostics<'a>(
 pub fn get_syntax_file_and_diagnostics<'a>(
     db: &'a SimpleParserDatabase,
     file_id: FileId<'a>,
-    contents: &str,
 ) -> (SyntaxFile<'a>, Diagnostics<'a, ParserDiagnostic<'a>>) {
     let mut diagnostics = DiagnosticsBuilder::default();
+    let contents = db.file_content(file_id).unwrap().long(db).as_ref();
     let syntax_file = Parser::parse_file(db, &mut diagnostics, file_id, contents);
     (syntax_file, diagnostics.build())
 }

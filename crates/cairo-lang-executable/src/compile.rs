@@ -188,7 +188,7 @@ pub fn originating_function_path<'db>(
     let Some(wrapped_name) = wrapper_name.strip_prefix(EXECUTABLE_PREFIX) else {
         return wrapper_full_path;
     };
-    let Some(wrapper_path_to_module) = wrapper_full_path.strip_suffix(wrapper_name.as_str()) else {
+    let Some(wrapper_path_to_module) = wrapper_full_path.strip_suffix(wrapper_name) else {
         return wrapper_full_path;
     };
     format!("{wrapper_path_to_module}{wrapped_name}")

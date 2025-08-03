@@ -4,7 +4,6 @@ use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MemberId, NamedLanguageElementId, VariantId,
 };
 use cairo_lang_filesystem::ids::CrateId;
-use smol_str::SmolStr;
 
 /// Item whose documentation can be fetched from source code.
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, salsa::Update)]
@@ -28,7 +27,7 @@ impl<'db> DocumentableItemId<'db> {
     }
 
     /// Gets the name of the item.
-    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+    pub fn name(&self, db: &'db dyn DefsGroup) -> &'db str {
         match self {
             DocumentableItemId::LookupItem(LookupItemId::ModuleItem(id)) => id.name(db),
             DocumentableItemId::LookupItem(LookupItemId::ImplItem(id)) => id.name(db),

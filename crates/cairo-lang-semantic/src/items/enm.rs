@@ -222,7 +222,7 @@ pub fn priv_enum_definition_data<'db>(
                 resolve_type(db, &mut diagnostics, &mut resolver, &type_clause.ty(db))
             }
         };
-        let variant_name = variant.name(db).text(db).intern(db);
+        let variant_name = SmolStrId::from_str(db, variant.name(db).text(db));
         if let Some(_other_variant) = variants.insert(variant_name, id) {
             diagnostics
                 .report(variant.stable_ptr(db), EnumVariantRedefinition { enum_id, variant_name });

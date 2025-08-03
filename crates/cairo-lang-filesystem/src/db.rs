@@ -8,7 +8,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use salsa::Database;
 use semver::Version;
 use serde::{Deserialize, Serialize};
-use smol_str::{SmolStr, ToSmolStr};
 
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
@@ -30,15 +29,15 @@ pub const CORELIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// This directly translates to [`DependencySettings.discriminator`] except the discriminator
 /// **must** be `None` for the core crate.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct CrateIdentifier(SmolStr);
+pub struct CrateIdentifier(String);
 
-impl<T: ToSmolStr> From<T> for CrateIdentifier {
+impl<T: ToString> From<T> for CrateIdentifier {
     fn from(value: T) -> Self {
-        Self(value.to_smolstr())
+        Self(value.to_string())
     }
 }
 
-impl From<CrateIdentifier> for SmolStr {
+impl From<CrateIdentifier> for String {
     fn from(value: CrateIdentifier) -> Self {
         value.0
     }
@@ -93,7 +92,7 @@ impl<'db> CrateConfiguration<'db> {
 pub struct CrateSettings {
     /// The name reflecting how the crate is referred to in the Cairo code e.g. `use crate_name::`.
     /// If set to [`None`] then [`CrateIdentifier`] key will be used as a name.
-    pub name: Option<SmolStr>,
+    pub name: Option<String>,
     /// The crate's Cairo edition.
     pub edition: Edition,
     /// The crate's version.
@@ -176,7 +175,7 @@ pub struct DependencySettings {
     /// Usually such copies differ by their versions or sources (or both).
     /// It **must** be [`None`] for the core crate, for other crates it should be directly
     /// translated from their [`CrateIdentifier`].
-    pub discriminator: Option<SmolStr>,
+    pub discriminator: Option<String>,
 }
 
 /// Configuration per crate.
@@ -440,10 +439,9 @@ fn crate_config<'db>(
     match crt.long(db) {
         CrateLongId::Real { .. } => db.crate_configs().get(&crt).cloned(),
         CrateLongId::Virtual { name: _, file_id, settings, cache_file } => {
-            let lib_cairo_id = <&str as Into<SmolStr>>::into("lib.cairo").intern(db);
             Some(CrateConfiguration {
                 root: Directory::Virtual {
-                    files: BTreeMap::from([(lib_cairo_id, *file_id)]),
+                    files: BTreeMap::from([("lib.cairo".to_string(), *file_id)]),
                     dirs: Default::default(),
                 },
                 settings: toml::from_str(settings)

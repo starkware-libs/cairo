@@ -128,7 +128,7 @@ impl UseTree {
         let file_id = FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "parser_input".into(),
-            content: formatted_use_items.clone().into(),
+            content: formatted_use_items.into(),
             code_mappings: [].into(),
             kind: FileKind::Module,
             original_item_removed: false,
@@ -136,7 +136,8 @@ impl UseTree {
         .intern(db);
 
         let mut diagnostics = DiagnosticsBuilder::<ParserDiagnostic<'_>>::default();
-        Parser::parse_file(db, &mut diagnostics, file_id, &formatted_use_items).as_syntax_node()
+        let contents = db.file_content(file_id).unwrap().long(db).as_ref();
+        Parser::parse_file(db, &mut diagnostics, file_id, contents).as_syntax_node()
     }
 }
 
@@ -1232,10 +1233,9 @@ impl<'a> FormatterImpl<'a> {
                     if !is_leading {
                         self.line_state.line_buffer.push_space();
                     }
-                    self.line_state.line_buffer.push_comment(
-                        &trivium.as_syntax_node().text(self.db).unwrap(),
-                        !is_leading,
-                    );
+                    self.line_state
+                        .line_buffer
+                        .push_comment(trivium.as_syntax_node().text(self.db).unwrap(), !is_leading);
                     self.is_current_line_whitespaces = false;
                     self.empty_lines_allowance = 1;
                     self.is_last_element_comment = true;
@@ -1270,7 +1270,7 @@ impl<'a> FormatterImpl<'a> {
         }
         let node_break_points = syntax_node.get_wrapping_break_line_point_properties(self.db);
         self.append_break_line_point(node_break_points.leading());
-        self.line_state.line_buffer.push_str(&text);
+        self.line_state.line_buffer.push_str(text);
         self.append_break_line_point(node_break_points.trailing());
         self.is_last_element_comment = false;
     }
