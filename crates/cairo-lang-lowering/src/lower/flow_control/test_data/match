@@ -92,12 +92,12 @@ End:
 //! > Match with pattern binding
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, skip_lowering: true)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo(color: Color) -> felt252 {
     match color {
-        Color::Red(x) | Color::Green(x) => x,
+        Color::Red(x) | Color::Green(x) => 2 * x,
         Color::Blue(x) => x,
         _ => 0,
     }
@@ -113,9 +113,9 @@ enum Color {
 
 //! > graph
 Root: 7
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(2) }
-2 ArmExpr { expr: ExprId(3) }
+0 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(4) }
+2 ArmExpr { expr: ExprId(5) }
 3 BindVar { input: FlowControlVar { idx: 1 }, output: PatternVarId(0), next: NodeId(0) }
 4 BindVar { input: FlowControlVar { idx: 2 }, output: PatternVarId(1), next: NodeId(0) }
 5 BindVar { input: FlowControlVar { idx: 3 }, output: PatternVarId(2), next: NodeId(1) }
@@ -125,3 +125,46 @@ Root: 7
 //! > semantic_diagnostics
 
 //! > lowered
+Parameters: v0: test::Color
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Color::Red(v1) => blk1,
+    Color::Green(v2) => blk2,
+    Color::Blue(v3) => blk3,
+    Color::Black(v4) => blk4,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk5, {v1 -> v6})
+
+blk2:
+Statements:
+End:
+  Goto(blk5, {v2 -> v6})
+
+blk3:
+Statements:
+End:
+  Goto(blk6, {v3 -> v9})
+
+blk4:
+Statements:
+  (v5: core::felt252) <- 0
+End:
+  Goto(blk6, {v5 -> v9})
+
+blk5:
+Statements:
+  (v7: core::felt252) <- 2
+  (v8: core::felt252) <- core::Felt252Mul::mul(v7, v6)
+End:
+  Goto(blk6, {v8 -> v9})
+
+blk6:
+Statements:
+End:
+  Return(v9)
