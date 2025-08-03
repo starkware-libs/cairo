@@ -168,3 +168,121 @@ blk6:
 Statements:
 End:
   Return(v9)
+
+//! > ==========================================================================
+
+//! > Tuple of enums
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: true)
+
+//! > function_code
+fn foo(color: (Color, Color)) -> felt252 {
+    match color {
+        (Color::Red, _) => 1,
+        (_, Color::Red) => 2,
+        _ => 3,
+    }
+}
+
+//! > module_code
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+//! > graph
+Root: 8
+0 ArmExpr { expr: ExprId(1) }
+1 ArmExpr { expr: ExprId(2) }
+2 ArmExpr { expr: ExprId(3) }
+3 EnumMatch { matched_var: FlowControlVar { idx: 2 }, variants: (NodeId(0), FlowControlVar { idx: 4 }), (NodeId(0), FlowControlVar { idx: 5 }), (NodeId(0), FlowControlVar { idx: 6 })}
+4 EnumMatch { matched_var: FlowControlVar { idx: 2 }, variants: (NodeId(1), FlowControlVar { idx: 8 }), (NodeId(2), FlowControlVar { idx: 9 }), (NodeId(2), FlowControlVar { idx: 10 })}
+5 EnumMatch { matched_var: FlowControlVar { idx: 2 }, variants: (NodeId(1), FlowControlVar { idx: 12 }), (NodeId(2), FlowControlVar { idx: 13 }), (NodeId(2), FlowControlVar { idx: 14 })}
+6 EnumMatch { matched_var: FlowControlVar { idx: 1 }, variants: (NodeId(3), FlowControlVar { idx: 3 }), (NodeId(4), FlowControlVar { idx: 7 }), (NodeId(5), FlowControlVar { idx: 11 })}
+7 Deconstruct { input: FlowControlVar { idx: 0 }, outputs: [FlowControlVar { idx: 1 }, FlowControlVar { idx: 2 }], next: NodeId(6) }
+8 EvaluateExpr { expr: ExprId(0), var_id: FlowControlVar { idx: 0 }, next: NodeId(7) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+
+//! > ==========================================================================
+
+//! > Tuple inside enum
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: true)
+
+//! > function_code
+fn foo(color: Option<(Color, Color)>) -> felt252 {
+    match color {
+        Some((Color::Red, _)) | None => 1,
+        Some((_, Color::Red)) => 2,
+        _ => 3,
+    }
+}
+
+//! > module_code
+enum Color {
+    Red,
+    Green,
+}
+
+//! > graph
+Root: 8
+0 ArmExpr { expr: ExprId(1) }
+1 ArmExpr { expr: ExprId(2) }
+2 ArmExpr { expr: ExprId(3) }
+3 EnumMatch { matched_var: FlowControlVar { idx: 3 }, variants: (NodeId(0), FlowControlVar { idx: 5 }), (NodeId(0), FlowControlVar { idx: 6 })}
+4 EnumMatch { matched_var: FlowControlVar { idx: 3 }, variants: (NodeId(1), FlowControlVar { idx: 8 }), (NodeId(2), FlowControlVar { idx: 9 })}
+5 EnumMatch { matched_var: FlowControlVar { idx: 2 }, variants: (NodeId(3), FlowControlVar { idx: 4 }), (NodeId(4), FlowControlVar { idx: 7 })}
+6 Deconstruct { input: FlowControlVar { idx: 1 }, outputs: [FlowControlVar { idx: 2 }, FlowControlVar { idx: 3 }], next: NodeId(5) }
+7 EnumMatch { matched_var: FlowControlVar { idx: 0 }, variants: (NodeId(6), FlowControlVar { idx: 1 }), (NodeId(0), FlowControlVar { idx: 10 })}
+8 EvaluateExpr { expr: ExprId(0), var_id: FlowControlVar { idx: 0 }, next: NodeId(7) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+
+//! > ==========================================================================
+
+//! > Complex enum inside tuple
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: true)
+
+//! > function_code
+fn foo(color: (Option<Color>, Color)) -> felt252 {
+    match color {
+        (Some(Color::Red), Color::Red) | (Some(Color::Green), Color::Red) | (None, Color::Red) => 1,
+        (_, Color::Green) => 2,
+        _ => 3,
+    }
+}
+
+//! > module_code
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+//! > graph
+Root: 10
+0 ArmExpr { expr: ExprId(1) }
+1 ArmExpr { expr: ExprId(2) }
+2 ArmExpr { expr: ExprId(3) }
+3 EnumMatch { matched_var: FlowControlVar { idx: 2 }, variants: (NodeId(0), FlowControlVar { idx: 5 }), (NodeId(1), FlowControlVar { idx: 6 }), (NodeId(2), FlowControlVar { idx: 7 })}
+4 EnumMatch { matched_var: FlowControlVar { idx: 2 }, variants: (NodeId(0), FlowControlVar { idx: 9 }), (NodeId(1), FlowControlVar { idx: 10 }), (NodeId(2), FlowControlVar { idx: 11 })}
+5 EnumMatch { matched_var: FlowControlVar { idx: 2 }, variants: (NodeId(2), FlowControlVar { idx: 13 }), (NodeId(1), FlowControlVar { idx: 14 }), (NodeId(2), FlowControlVar { idx: 15 })}
+6 EnumMatch { matched_var: FlowControlVar { idx: 3 }, variants: (NodeId(3), FlowControlVar { idx: 4 }), (NodeId(4), FlowControlVar { idx: 8 }), (NodeId(5), FlowControlVar { idx: 12 })}
+7 EnumMatch { matched_var: FlowControlVar { idx: 2 }, variants: (NodeId(0), FlowControlVar { idx: 17 }), (NodeId(1), FlowControlVar { idx: 18 }), (NodeId(2), FlowControlVar { idx: 19 })}
+8 EnumMatch { matched_var: FlowControlVar { idx: 1 }, variants: (NodeId(6), FlowControlVar { idx: 3 }), (NodeId(7), FlowControlVar { idx: 16 })}
+9 Deconstruct { input: FlowControlVar { idx: 0 }, outputs: [FlowControlVar { idx: 1 }, FlowControlVar { idx: 2 }], next: NodeId(8) }
+10 EvaluateExpr { expr: ExprId(0), var_id: FlowControlVar { idx: 0 }, next: NodeId(9) }
+
+//! > semantic_diagnostics
+
+//! > lowered

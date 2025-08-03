@@ -87,6 +87,11 @@ impl FilteredPatterns {
                 .collect_vec(),
         }
     }
+
+    /// Returns an iterator over the indices of the patterns accepted by the filter.
+    pub fn indices<'a>(&'a self) -> impl Iterator<Item = usize> + 'a {
+        self.filter.iter().map(|index_and_bindings| index_and_bindings.index)
+    }
 }
 
 /// Represents an item in the filter.
