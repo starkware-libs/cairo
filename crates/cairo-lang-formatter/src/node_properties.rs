@@ -963,7 +963,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             );
             if (!is_expr_or_pattern_list || children.len() > 2)
             // Ensure that this node is the last element in the list.
-            && is_last(self, &children)
+            && is_last(self, children)
             {
                 return true;
             }
@@ -978,7 +978,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             let statements_node = statement_node.parent(db).unwrap();
             // Checking if not the last statement, as `;` may be there to prevent the block from
             // returning the value of the current block.
-            let not_last = !is_last(&statement_node, &statements_node.get_children(db));
+            let not_last = !is_last(&statement_node, statements_node.get_children(db));
             let children = statement_node.get_children(db);
             if not_last
                 && matches!(
@@ -999,7 +999,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
         {
             let path_segment_node = self.parent(db).unwrap();
             let path_node = path_segment_node.parent(db).unwrap();
-            if !is_last(&path_segment_node, &path_node.get_children(db)) {
+            if !is_last(&path_segment_node, path_node.get_children(db)) {
                 false
             } else {
                 matches!(

@@ -210,7 +210,7 @@ impl<'a> Printer<'a> {
             NodeKind::Struct { members: expected_children }
             | NodeKind::Terminal { members: expected_children, .. } => {
                 self.print_internal_struct(
-                    &children,
+                    children,
                     &expected_children,
                     indent.as_str(),
                     under_top_level,
