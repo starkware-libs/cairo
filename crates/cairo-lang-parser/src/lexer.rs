@@ -11,19 +11,18 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::require;
-use smol_str::SmolStr;
 
-pub struct Lexer<'a, 'b> {
+pub struct Lexer<'a> {
     db: &'a dyn SyntaxGroup,
-    text: &'b str,
+    text: &'a str,
     previous_position: TextOffset,
     current_position: TextOffset,
     done: bool,
 }
 
-impl<'a, 'b> Lexer<'a, 'b> {
+impl<'a> Lexer<'a> {
     // Ctors.
-    pub fn from_text(db: &'a dyn SyntaxGroup, text: &'b str) -> Lexer<'a, 'b> {
+    pub fn from_text(db: &'a dyn SyntaxGroup, text: &'a str) -> Lexer<'a> {
         Lexer {
             db,
             text,
@@ -62,12 +61,12 @@ impl<'a, 'b> Lexer<'a, 'b> {
         }
     }
 
-    fn peek_span_text(&self) -> &'b str {
+    fn peek_span_text(&self) -> &'a str {
         let span = TextSpan { start: self.previous_position, end: self.current_position };
         span.take(self.text)
     }
 
-    fn consume_span(&mut self) -> &str {
+    fn consume_span(&mut self) -> &'a str {
         let val = self.peek_span_text();
         self.previous_position = self.current_position;
         val
@@ -94,13 +93,13 @@ impl<'a, 'b> Lexer<'a, 'b> {
     /// Assumes the next character is one of [' ', '\r', '\t'].
     fn match_trivium_whitespace(&mut self) -> TriviumGreen<'a> {
         self.take_while(|s| matches!(s, ' ' | '\r' | '\t'));
-        TokenWhitespace::new_green(self.db, SmolStr::from(self.consume_span())).into()
+        TokenWhitespace::new_green(self.db, self.consume_span()).into()
     }
 
     /// Assumes the next character '\n'.
     fn match_trivium_newline(&mut self) -> TriviumGreen<'a> {
         self.take();
-        TokenNewline::new_green(self.db, SmolStr::from(self.consume_span())).into()
+        TokenNewline::new_green(self.db, self.consume_span()).into()
     }
 
     /// Assumes the next 2 characters are "//".
@@ -108,18 +107,15 @@ impl<'a, 'b> Lexer<'a, 'b> {
         match self.peek_nth(2) {
             Some('/') => {
                 self.take_while(|c| c != '\n');
-                TokenSingleLineDocComment::new_green(self.db, SmolStr::from(self.consume_span()))
-                    .into()
+                TokenSingleLineDocComment::new_green(self.db, self.consume_span()).into()
             }
             Some('!') => {
                 self.take_while(|c| c != '\n');
-                TokenSingleLineInnerComment::new_green(self.db, SmolStr::from(self.consume_span()))
-                    .into()
+                TokenSingleLineInnerComment::new_green(self.db, self.consume_span()).into()
             }
             _ => {
                 self.take_while(|c| c != '\n');
-                TokenSingleLineComment::new_green(self.db, SmolStr::from(self.consume_span()))
-                    .into()
+                TokenSingleLineComment::new_green(self.db, self.consume_span()).into()
             }
         }
     }
@@ -316,7 +312,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
             TokenKind::EndOfFile
         };
 
-        let text = SmolStr::from(self.consume_span());
+        let text = self.consume_span();
         let trailing_trivia = self.match_trivia(false);
         let terminal_kind = token_kind_to_terminal_syntax_kind(kind);
 
@@ -328,7 +324,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
 /// Output terminal emitted by the lexer.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct LexerTerminal<'a> {
-    pub text: SmolStr,
+    pub text: &'a str,
     /// The kind of the inner token of this terminal.
     pub kind: SyntaxKind,
     pub leading_trivia: Vec<TriviumGreen<'a>>,
@@ -337,12 +333,12 @@ pub struct LexerTerminal<'a> {
 impl<'a> LexerTerminal<'a> {
     pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
         self.leading_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()
-            + TextWidth::from_str(&self.text)
+            + TextWidth::from_str(self.text)
             + self.trailing_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()
     }
 }
 
-impl<'a, 'b> Iterator for Lexer<'a, 'b> {
+impl<'a> Iterator for Lexer<'a> {
     type Item = LexerTerminal<'a>;
 
     /// Returns the next token. Once there are no more tokens left, returns token EOF.

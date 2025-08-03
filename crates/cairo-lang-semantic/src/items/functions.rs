@@ -9,7 +9,7 @@ use cairo_lang_defs::ids::{
     TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
-use cairo_lang_filesystem::ids::UnstableSalsaId;
+use cairo_lang_filesystem::ids::{SmolStrId, UnstableSalsaId};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
@@ -17,7 +17,6 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, OptionFrom, define_short_id, require, try_extract_matches};
 use itertools::{Itertools, chain};
-use smol_str::SmolStr;
 use syntax::attribute::consts::MUST_USE_ATTR;
 use syntax::node::TypedStablePtr;
 
@@ -62,8 +61,8 @@ impl<'db> ImplGenericFunctionId<'db> {
             | ImplLongId::GeneratedImpl(_) => Ok(None),
         }
     }
-    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db), self.function.name(db)).into()
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+        format!("{}::{}", self.impl_id.name(db), self.function.name(db))
     }
 }
 impl<'db> DebugWithDb<'db> for ImplGenericFunctionId<'db> {
@@ -156,10 +155,10 @@ impl<'db> GenericFunctionId<'db> {
             }
         }
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn SemanticGroup) -> String {
         match self {
-            GenericFunctionId::Free(free_function) => free_function.name(db),
-            GenericFunctionId::Extern(extern_function) => extern_function.name(db),
+            GenericFunctionId::Free(free_function) => free_function.name(db).into(),
+            GenericFunctionId::Extern(extern_function) => extern_function.name(db).into(),
             GenericFunctionId::Impl(impl_function) => impl_function.format(db),
         }
     }
@@ -297,8 +296,8 @@ impl<'db> FunctionId<'db> {
         try_extract_matches!(self.get_concrete(db).generic_function, GenericFunctionId::Extern)
     }
 
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{:?}", self.get_concrete(db).generic_function.name(db)).into()
+    pub fn name(&self, db: &dyn SemanticGroup) -> String {
+        format!("{:?}", self.get_concrete(db).generic_function.name(db))
     }
 
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
@@ -356,7 +355,7 @@ pub enum ImplFunctionBodyId<'db> {
     Trait(TraitFunctionId<'db>),
 }
 impl<'db> ImplFunctionBodyId<'db> {
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &'db dyn SemanticGroup) -> &'db str {
         match self {
             Self::Impl(body_id) => body_id.name(db),
             Self::Trait(body_id) => body_id.name(db),
@@ -409,15 +408,14 @@ impl<'db> GenericFunctionWithBodyId<'db> {
             _ => return Ok(None),
         }))
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn SemanticGroup) -> String {
         match self {
-            GenericFunctionWithBodyId::Free(free) => free.name(db),
+            GenericFunctionWithBodyId::Free(free) => free.name(db).into(),
             GenericFunctionWithBodyId::Impl(imp) => {
-                format!("{}::{}", imp.concrete_impl_id.name(db), imp.function_body.name(db)).into()
+                format!("{}::{}", imp.concrete_impl_id.name(db), imp.function_body.name(db))
             }
             GenericFunctionWithBodyId::Trait(trt) => {
                 format!("{}::{}", trt.concrete_trait(db).name(db), trt.trait_function(db).name(db))
-                    .into()
             }
         }
     }
@@ -605,7 +603,7 @@ impl<'db> ConcreteFunctionWithBody<'db> {
     pub fn function_id(&self, db: &'db dyn SemanticGroup) -> Maybe<FunctionId<'db>> {
         Ok(FunctionLongId { function: self.concrete(db)? }.intern(db))
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &'db dyn SemanticGroup) -> &'db str {
         self.function_with_body_id(db).name(db)
     }
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
@@ -668,7 +666,7 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
     pub fn generic_function(&self, db: &'db dyn SemanticGroup) -> GenericFunctionWithBodyId<'db> {
         self.long(db).generic_function
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &'db dyn SemanticGroup) -> &'db str {
         self.long(db).name(db)
     }
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
@@ -930,7 +928,7 @@ fn ast_param_to_semantic<'db>(
     resolver: &mut Resolver<'db>,
     ast_param: &ast::Param<'db>,
 ) -> semantic::Parameter<'db> {
-    let name = ast_param.name(db).text(db).intern(db);
+    let name = SmolStrId::from_str(db, ast_param.name(db).text(db));
 
     let id = ParamLongId(resolver.module_file_id, ast_param.stable_ptr(db)).intern(db);
 

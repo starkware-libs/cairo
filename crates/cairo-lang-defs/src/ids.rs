@@ -36,7 +36,6 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, OptionFrom, define_short_id, require};
-use smol_str::SmolStr;
 
 use crate::db::DefsGroup;
 use crate::diagnostic_utils::StableLocation;
@@ -58,11 +57,11 @@ pub trait LanguageElementId<'db> {
 }
 
 pub trait NamedLanguageElementLongId<'db> {
-    fn name(&self, db: &dyn DefsGroup) -> SmolStr;
+    fn name(&self, db: &'db dyn DefsGroup) -> &'db str;
     fn name_identifier(&'db self, db: &'db dyn DefsGroup) -> ast::TerminalIdentifier<'db>;
 }
 pub trait NamedLanguageElementId<'db>: LanguageElementId<'db> {
-    fn name(&self, db: &dyn DefsGroup) -> SmolStr;
+    fn name(&self, db: &'db dyn DefsGroup) -> &'db str;
     fn name_identifier(&'db self, db: &'db dyn DefsGroup) -> ast::TerminalIdentifier<'db>;
 }
 pub trait TopLevelLanguageElementId<'db>: NamedLanguageElementId<'db> {
@@ -113,7 +112,7 @@ macro_rules! define_named_language_element_id {
             }
         }
         impl<'db> NamedLanguageElementLongId<'db> for $long_id<'db> {
-            fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+            fn name(&self, db: &'db dyn DefsGroup) -> &'db str {
                 let terminal_green = self.1.name_green(db);
                 terminal_green.identifier(db)
             }
@@ -123,7 +122,7 @@ macro_rules! define_named_language_element_id {
             }
         }
         impl<'db> NamedLanguageElementId<'db> for $short_id<'db> {
-            fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+            fn name(&self, db: &'db dyn DefsGroup) -> &'db str {
                 db.$lookup(*self).name(db)
             }
             fn name_identifier(&'db self, db: &'db dyn DefsGroup) -> ast::TerminalIdentifier<'db> {
@@ -267,7 +266,7 @@ macro_rules! toplevel_enum {
         }
     ) => {
         impl<'db> NamedLanguageElementId<'db> for $enum_name<'db> {
-            fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+            fn name(&self, db: &'db dyn DefsGroup) -> &'db str {
                 match self {
                     $(
                         $enum_name::$variant(id) => id.name(db),
@@ -312,7 +311,7 @@ impl<'db> ModuleId<'db> {
             }
         }
     }
-    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+    pub fn name(&self, db: &'db dyn DefsGroup) -> &'db str {
         match self {
             ModuleId::CrateRoot(id) => id.long(db).name(),
             ModuleId::Submodule(id) => id.name(db),
@@ -364,7 +363,7 @@ pub struct PluginGeneratedFileLongId<'db> {
     /// The stable pointer the file was generated from being ran on.
     pub stable_ptr: SyntaxStablePtrId<'db>,
     /// The name of the generated file to differentiate between different generated files.
-    pub name: SmolStr,
+    pub name: String,
 }
 define_short_id!(
     PluginGeneratedFileId,
@@ -925,7 +924,7 @@ define_language_element_id_basic!(
     intern_generic_param
 );
 impl<'db> GenericParamLongId<'db> {
-    pub fn name(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
+    pub fn name(&self, db: &'db dyn SyntaxGroup) -> Option<&'db str> {
         let SyntaxStablePtr::Child { key_fields, kind, .. } = self.1.0.long(db) else {
             unreachable!()
         };
@@ -938,8 +937,8 @@ impl<'db> GenericParamLongId<'db> {
         Some(name_green.identifier(db))
     }
 
-    pub fn debug_name(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.name(db).unwrap_or_else(|| "_".into())
+    pub fn debug_name(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        self.name(db).unwrap_or("_")
     }
     pub fn kind(&self, db: &dyn SyntaxGroup) -> GenericKind {
         let SyntaxStablePtr::Child { kind, .. } = self.1.0.long(db) else { unreachable!() };
@@ -960,10 +959,10 @@ impl<'db> GenericParamLongId<'db> {
     }
 }
 impl<'db> GenericParamId<'db> {
-    pub fn name(&self, db: &dyn DefsGroup) -> Option<SmolStr> {
+    pub fn name(&self, db: &'db dyn DefsGroup) -> Option<&'db str> {
         self.long(db).name(db)
     }
-    pub fn debug_name(&self, db: &dyn DefsGroup) -> SmolStr {
+    pub fn debug_name(&self, db: &'db dyn DefsGroup) -> &'db str {
         self.long(db).debug_name(db)
     }
     pub fn format(&self, db: &dyn DefsGroup) -> String {
@@ -1324,7 +1323,7 @@ define_language_element_id_as_enum! {
 }
 
 impl<'db> StatementItemId<'db> {
-    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+    pub fn name(&self, db: &'db dyn DefsGroup) -> &'db str {
         match self {
             StatementItemId::Constant(id) => id.name(db),
             StatementItemId::Use(id) => id.name(db),
@@ -1356,7 +1355,7 @@ define_language_element_id_as_enum! {
     }
 }
 impl<'db> TraitItemId<'db> {
-    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+    pub fn name(&self, db: &'db dyn DefsGroup) -> &'db str {
         match self {
             TraitItemId::Function(id) => id.name(db),
             TraitItemId::Type(id) => id.name(db),
@@ -1385,7 +1384,7 @@ define_language_element_id_as_enum! {
     }
 }
 impl<'db> ImplItemId<'db> {
-    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+    pub fn name(&self, db: &'db dyn DefsGroup) -> &'db str {
         match self {
             ImplItemId::Function(id) => id.name(db),
             ImplItemId::Type(id) => id.name(db),

@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use cairo_lang_utils::Intern;
-use smol_str::SmolStr;
 use test_log::test;
 
 use super::FilesGroup;
@@ -16,8 +15,8 @@ fn test_filesystem() {
     let mut db = FilesDatabaseForTesting::default();
 
     let directory = Directory::Real("src".into());
-    let child_str: SmolStr = "child.cairo".into();
-    let file_id = directory.file(&db, child_str.clone().intern(&db));
+    let child_str = "child.cairo";
+    let file_id = directory.file(&db, child_str);
     let file_input = file_id.long(&db).into_file_input(&db);
     let overrides = db.update_file_overrides_input(file_input, Some("content\n".into()));
     db.set_file_overrides_input(overrides);
@@ -33,7 +32,7 @@ fn test_filesystem() {
     assert_eq!(db.crate_config(crt), Some(config));
     assert!(db.crate_config(crt2).is_none());
 
-    let file_id = directory.file(&db, child_str.intern(&db));
+    let file_id = directory.file(&db, child_str);
     assert_eq!(db.file_content(file_id).unwrap().long(&db).as_ref(), "content\n");
 }
 

@@ -20,7 +20,6 @@ indent.workspace = true
 indoc.workspace = true
 itertools = { workspace = true, default-features = true }
 salsa.workspace = true
-smol_str.workspace = true
 
 [dev-dependencies]
 cairo-lang-debug = { path = "../cairo-lang-debug" }

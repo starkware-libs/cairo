@@ -17,7 +17,6 @@ use itertools::{Itertools, chain};
 use num_bigint::BigInt;
 use num_traits::Zero;
 use sha3::{Digest, Keccak256};
-use smol_str::SmolStr;
 
 use crate::corelib::{
     concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
@@ -236,7 +235,7 @@ impl<'db> DebugWithDb<'db> for TypeLongId<'db> {
             }
             TypeLongId::Snapshot(ty) => write!(f, "@{}", ty.format(db)),
             TypeLongId::GenericParameter(generic_param) => {
-                write!(f, "{}", generic_param.name(db).unwrap_or_else(|| "_".into()))
+                write!(f, "{}", generic_param.name(db).unwrap_or("_"))
             }
             TypeLongId::ImplType(impl_type_id) => {
                 write!(f, "{:?}::{}", impl_type_id.impl_id.debug(db), impl_type_id.ty.name(db))
@@ -494,8 +493,8 @@ impl<'db> ImplTypeId<'db> {
     pub fn ty(&self) -> TraitTypeId<'db> {
         self.ty
     }
-    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db), self.ty.name(db)).into()
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+        format!("{}::{}", self.impl_id.name(db), self.ty.name(db))
     }
 }
 impl<'db> DebugWithDb<'db> for ImplTypeId<'db> {
@@ -800,7 +799,7 @@ pub fn add_type_based_diagnostics<'db>(
     }
     if let TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) = ty.long(db) {
         let long_id = extrn.long(db);
-        if long_id.extern_type_id.name(db).as_str() == "Array" {
+        if long_id.extern_type_id.name(db) == "Array" {
             if let [GenericArgumentId::Type(arg_ty)] = &long_id.generic_args[..] {
                 if db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized) {
                     diagnostics.report(stable_ptr, ArrayOfZeroSizedElements(*arg_ty));

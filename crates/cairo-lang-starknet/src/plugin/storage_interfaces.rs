@@ -442,7 +442,7 @@ impl<'db> StorageInterfaceInfo<'db> {
 fn handle_storage_interface_for_interface_type<'db>(
     db: &'db dyn SyntaxGroup,
     struct_ast: &ast::ItemStruct<'db>,
-    generics: &GenericParamsInfo,
+    generics: &GenericParamsInfo<'db>,
     configs: &[StorageMemberConfig],
     metadata: &MacroPluginMetadata<'_>,
     storage_node_type: StorageInterfaceType,

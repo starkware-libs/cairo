@@ -6,7 +6,6 @@ use cairo_lang_syntax_codegen::cairo_spec::get_spec;
 use cairo_lang_syntax_codegen::spec::{Member, Node, NodeKind};
 use colored::{ColoredString, Colorize};
 use itertools::zip_eq;
-use smol_str::SmolStr;
 
 pub fn print_tree(
     db: &dyn SyntaxGroup,
@@ -98,7 +97,7 @@ impl<'a> Printer<'a> {
                         field_description,
                         indent,
                         extra_head_indent,
-                        text.clone(),
+                        text,
                         green_node.kind,
                     )
                 }
@@ -122,7 +121,7 @@ impl<'a> Printer<'a> {
         field_description: &str,
         indent: &str,
         extra_head_indent: &str,
-        text: SmolStr,
+        text: &str,
         kind: SyntaxKind,
     ) {
         let text = if kind == SyntaxKind::TokenMissing {
@@ -132,7 +131,7 @@ impl<'a> Printer<'a> {
                 SyntaxKind::TokenWhitespace
                 | SyntaxKind::TokenNewline
                 | SyntaxKind::TokenEndOfFile => ".".to_string(),
-                _ => format!(": '{}'", self.green(self.bold(text.as_str().into()))),
+                _ => format!(": '{}'", self.green(self.bold(text.into()))),
             };
             format!("{} (kind: {:?}){token_text}", self.blue(field_description.into()), kind)
         };

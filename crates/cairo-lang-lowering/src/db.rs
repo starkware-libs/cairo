@@ -782,14 +782,12 @@ fn type_size<'db>(db: &'db dyn LoweringGroup, ty: TypeId<'db>) -> usize {
                     .max()
                     .unwrap_or_default()
             }
-            ConcreteTypeId::Extern(extern_id) => {
-                match extern_id.extern_type_id(db).name(db).as_str() {
-                    "Array" | "SquashedFelt252Dict" | "EcPoint" => 2,
-                    "EcState" => 3,
-                    "Uint128MulGuarantee" => 4,
-                    _ => 1,
-                }
-            }
+            ConcreteTypeId::Extern(extern_id) => match extern_id.extern_type_id(db).name(db) {
+                "Array" | "SquashedFelt252Dict" | "EcPoint" => 2,
+                "EcState" => 3,
+                "Uint128MulGuarantee" => 4,
+                _ => 1,
+            },
         },
         TypeLongId::Tuple(types) => types.iter().map(|ty| db.type_size(*ty)).sum::<usize>(),
         TypeLongId::Snapshot(ty) => db.type_size(*ty),

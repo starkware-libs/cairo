@@ -4,7 +4,6 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, define_short_id, require};
-use smol_str::SmolStr;
 
 use self::ast::TriviaGreen;
 use self::db::SyntaxGroup;
@@ -100,9 +99,9 @@ impl<'a> SyntaxNode<'a> {
         TextSpan { start, end }
     }
     /// Returns the text of the token if this node is a token.
-    pub fn text(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
+    pub fn text(&self, db: &'a dyn SyntaxGroup) -> Option<&'a str> {
         match &self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => Some(text.clone()),
+            green::GreenNodeDetails::Token(text) => Some(text),
             green::GreenNodeDetails::Node { .. } => None,
         }
     }
@@ -454,8 +453,8 @@ pub trait TypedSyntaxNode<'a>: Sized {
 }
 
 pub trait Token<'a>: TypedSyntaxNode<'a> {
-    fn new_green(db: &'a dyn SyntaxGroup, text: SmolStr) -> Self::Green;
-    fn text(&self, db: &'a dyn SyntaxGroup) -> SmolStr;
+    fn new_green(db: &'a dyn SyntaxGroup, text: &'a str) -> Self::Green;
+    fn text(&self, db: &'a dyn SyntaxGroup) -> &'a str;
 }
 
 pub trait Terminal<'a>: TypedSyntaxNode<'a> {
@@ -468,7 +467,7 @@ pub trait Terminal<'a>: TypedSyntaxNode<'a> {
         trailing_trivia: TriviaGreen<'a>,
     ) -> <Self as TypedSyntaxNode<'a>>::Green;
     /// Returns the text of the token of this terminal (excluding the trivia).
-    fn text(&self, db: &'a dyn SyntaxGroup) -> SmolStr;
+    fn text(&self, db: &'a dyn SyntaxGroup) -> &'a str;
     /// Casts a syntax node to this terminal type's token and then walks up to return the terminal.
     fn cast_token(db: &'a dyn SyntaxGroup, node: SyntaxNode<'a>) -> Option<Self> {
         if node.kind(db) == Self::TokenType::OPTIONAL_KIND? {
