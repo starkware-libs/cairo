@@ -308,6 +308,22 @@ fn compute_remapped_variables<'db>(
     Value::Scattered(Box::new(Scattered { concrete_struct_id, members }))
 }
 
+/// Returns an iterator to all the [MemberPath]s that appear in both mappings and have different
+/// values.
+pub fn find_changed_members<'db, 'a>(
+    semantics0: &'a SemanticLoweringMapping<'db>,
+    semantics1: &'a SemanticLoweringMapping<'db>,
+) -> impl Iterator<Item = MemberPath<'db>> + 'a {
+    semantics0.scattered.iter().filter_map(|(path, value0)| {
+        if let Some(value1) = semantics1.scattered.get(path) {
+            if value0 != value1 {
+                return Some(path.clone());
+            }
+        }
+        None
+    })
+}
+
 /// A trait for deconstructing and constructing structs.
 pub trait StructRecomposer<'db> {
     fn deconstruct(

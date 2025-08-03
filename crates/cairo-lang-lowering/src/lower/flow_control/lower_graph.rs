@@ -203,9 +203,12 @@ impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
 
         match match_info {
             Ok(match_info) => {
-                if let Some((new_builder, lowered_expr)) =
-                    merge_sealed_block_builders(self.ctx, self.sealed_blocks, self.location)
-                {
+                if let Some((new_builder, lowered_expr)) = merge_sealed_block_builders(
+                    self.ctx,
+                    self.sealed_blocks,
+                    &builder,
+                    self.location,
+                ) {
                     builder.finalize(self.ctx, BlockEnd::Match { info: match_info });
                     (Ok(lowered_expr), new_builder)
                 } else {
