@@ -440,6 +440,7 @@ dependencies = [
  "cairo-lang-executable",
  "cairo-lang-execute-utils",
  "cairo-lang-filesystem",
+ "cairo-lang-runnable-utils",
  "cairo-lang-runner",
  "cairo-lang-sierra-generator",
  "cairo-vm",
