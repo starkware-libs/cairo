@@ -437,6 +437,7 @@ dependencies = [
  "anyhow",
  "bincode",
  "cairo-lang-compiler",
+ "cairo-lang-debug",
  "cairo-lang-executable",
  "cairo-lang-execute-utils",
  "cairo-lang-filesystem",
