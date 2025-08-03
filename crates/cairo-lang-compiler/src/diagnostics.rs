@@ -8,7 +8,6 @@ use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use salsa::par_map;
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -137,7 +136,7 @@ impl<'a> DiagnosticsReporter<'a> {
     }
 
     /// Returns the crate ids for which the diagnostics will be checked.
-    fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateInput> {
+    pub(crate) fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateInput> {
         if let Some(crates) = self.crates.as_ref() {
             crates.clone()
         } else {
@@ -251,26 +250,6 @@ impl<'a> DiagnosticsReporter<'a> {
     /// Returns `Err` if diagnostics were found.
     pub fn ensure(&mut self, db: &dyn LoweringGroup) -> Result<(), DiagnosticsError> {
         if self.check(db) { Err(DiagnosticsError) } else { Ok(()) }
-    }
-
-    /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
-    /// would be faster as the queries were already computed.
-    // TODO(eytan-starkware): This is now blocking and should be made non-blocking.
-    pub(crate) fn warm_up_diagnostics(&self, db: Box<dyn LoweringGroup>) {
-        let crates = self.crates_of_interest(db.as_ref());
-        let _: () = par_map(db.as_ref(), crates, |db, crate_input| {
-            let crate_id = crate_input.clone().into_crate_long_id(db).intern(db);
-            let crate_modules = db.crate_modules(crate_id);
-            let _: () = par_map(db, (*crate_modules).clone(), |db, module_id| {
-                for file_id in db.module_files(module_id).unwrap_or_default().iter().copied() {
-                    db.file_syntax_diagnostics(file_id);
-                }
-
-                let _ = db.module_semantic_diagnostics(module_id);
-
-                let _ = db.module_lowering_diagnostics(module_id);
-            });
-        });
     }
 
     pub fn skip_lowering_diagnostics(mut self) -> Self {

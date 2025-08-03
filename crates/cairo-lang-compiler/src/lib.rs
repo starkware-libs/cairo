@@ -8,6 +8,7 @@ use std::sync::{Arc, Mutex};
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
+use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
@@ -18,10 +19,9 @@ use cairo_lang_sierra_generator::program_generator::{
     SierraProgramWithDebug, try_get_function_with_body_id,
 };
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use rayon::{ThreadPool, ThreadPoolBuilder};
-use salsa::par_map;
+use salsa::{join, par_map};
 
 use crate::db::RootDatabase;
 use crate::diagnostics::{DiagnosticsError, DiagnosticsReporter};
@@ -160,89 +160,40 @@ pub fn compile_prepared_db<'db>(
     Ok(sierra_program_with_debug)
 }
 
-/// Context for database warmup.
+/// Checks if parallelism is available for warmup.
+fn should_warmup() -> bool {
+    rayon::current_num_threads() > 1
+}
+
+/// Performs parallel database warmup (if possible).
+fn warmup_diagnostics_blocking(db: &dyn LoweringGroup, crates: Vec<CrateInput>) {
+    let _: () = par_map(db, crates, |db, crate_input| {
+        let crate_id = crate_input.clone().into_crate_long_id(db).intern(db);
+        let crate_modules = db.crate_modules(crate_id);
+        let _: () = par_map(db, (*crate_modules).clone(), |db, module_id| {
+            for file_id in db.module_files(module_id).unwrap_or_default().iter().copied() {
+                db.file_syntax_diagnostics(file_id);
+            }
+            let _ = db.module_semantic_diagnostics(module_id);
+            let _ = db.module_lowering_diagnostics(module_id);
+        });
+    });
+}
+
+/// Checks if there are diagnostics and reports them to the provided callback as strings.
+/// Returns `Err` if diagnostics were found.
 ///
-/// This struct will spawn a thread pool that can be used for parallel database warmup.
-/// This can be both diagnostics warmup and function compilation warmup.
-/// We encapsulate the thread pool here so that we can reuse it easily for both.
-/// Note: Usually diagnostics should be checked as early as possible to avoid running into
-/// compilation errors that have not been reported to the user yet (which can result in compiler
-/// panic). This requires us to split the diagnostics warmup and function compilation warmup into
-/// two separate steps (note that we don't usually know the `ConcreteFunctionWithBodyId` yet when
-/// calculating diagnostics).
-pub enum DbWarmupContext {
-    Warmup { pool: ThreadPool },
-    NoWarmup,
-}
-
-impl DbWarmupContext {
-    /// Creates a new thread pool.
-    pub fn new() -> Self {
-        if !Self::should_warmup() {
-            return Self::NoWarmup;
-        }
-        const MAX_WARMUP_PARALLELISM: usize = 4;
-        let pool = ThreadPoolBuilder::new()
-            .num_threads(rayon::current_num_threads().min(MAX_WARMUP_PARALLELISM))
-            .build()
-            .expect("failed to build rayon thread pool");
-        Self::Warmup { pool }
-    }
-
-    /// Checks if parallelism is available for warmup.
-    fn should_warmup() -> bool {
-        rayon::current_num_threads() > 1
-    }
-
-    /// Performs parallel database warmup (if possible)
-    fn warmup_diagnostics(
-        &self,
-        db: &RootDatabase,
-        diagnostic_reporter: &mut DiagnosticsReporter<'_>,
-    ) {
-        match self {
-            Self::Warmup { pool } => {
-                let db = Box::new(db.clone());
-                pool.install(|| diagnostic_reporter.warm_up_diagnostics(db));
-            }
-            Self::NoWarmup => {}
-        }
-    }
-
-    /// Checks if there are diagnostics and reports them to the provided callback as strings.
-    /// Returns `Err` if diagnostics were found.
-    ///
-    /// Performs parallel database warmup (if possible) and calls `DiagnosticsReporter::ensure`.
-    pub fn ensure_diagnostics(
-        &self,
-        db: &RootDatabase,
-        diagnostic_reporter: &mut DiagnosticsReporter<'_>,
-    ) -> std::result::Result<(), DiagnosticsError> {
-        self.warmup_diagnostics(db, diagnostic_reporter);
-        diagnostic_reporter.ensure(db)?;
-        Ok(())
-    }
-
-    /// Spawns a task to warm up the db for the requested functions (if possible).
-    // TODO(eytan-starkware): This is now blocking and should be made non-blocking.
-    fn warmup_db<'db>(
-        &self,
-        db: &'db RootDatabase,
-        requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
-    ) {
-        match self {
-            Self::Warmup { pool } => {
-                let db = Box::new(db.clone());
-                pool.install(|| warmup_db_blocking(db, requested_function_ids));
-            }
-            Self::NoWarmup => {}
-        }
-    }
-}
-
-impl Default for DbWarmupContext {
-    fn default() -> Self {
-        Self::new()
+/// Performs parallel database warmup (if possible) and calls `DiagnosticsReporter::ensure`.
+pub fn ensure_diagnostics(
+    db: &dyn LoweringGroup,
+    diagnostic_reporter: &mut DiagnosticsReporter<'_>,
+) -> std::result::Result<(), DiagnosticsError> {
+    if should_warmup() {
+        let crates = diagnostic_reporter.crates_of_interest(db);
+        join(db, |db| diagnostic_reporter.ensure(db), |db| warmup_diagnostics_blocking(db, crates))
+            .0
+    } else {
+        diagnostic_reporter.ensure(db)
     }
 }
 
@@ -250,33 +201,28 @@ impl Default for DbWarmupContext {
 /// the requested functions and their dependencies.
 ///
 /// Note that typically spawn_warmup_db should be used as this function is blocking.
-fn warmup_db_blocking<'db>(
-    db: Box<RootDatabase>,
+fn warmup_functions_blocking<'db>(
+    db: &dyn SierraGenGroup,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
 ) {
-    let sierra_gen_group: &dyn SierraGenGroup = db.as_ref().upcast();
     let processed_function_ids = &Mutex::new(UnorderedHashSet::<salsa::Id>::default());
-    let _: () = par_map(sierra_gen_group, requested_function_ids, move |db, func_id| {
+    let _: () = par_map(db, requested_function_ids, move |db, func_id| {
         fn handle_func_inner<'db>(
             processed_function_ids: &Mutex<UnorderedHashSet<salsa::Id>>,
-            snapshot: &dyn SierraGenGroup,
+            db: &dyn SierraGenGroup,
             func_id: ConcreteFunctionWithBodyId<'db>,
         ) {
-            if processed_function_ids.lock().unwrap().insert(func_id.as_intern_id()) {
-                let Ok(function) = snapshot.function_with_body_sierra(func_id) else {
-                    return;
-                };
-                let _: () = par_map(snapshot, &function.body, move |snapshot, statement| {
-                    let related_function_id: ConcreteFunctionWithBodyId<'_> =
-                        if let Some(r_id) = try_get_function_with_body_id(snapshot, statement) {
-                            r_id
-                        } else {
-                            return;
-                        };
-
-                    handle_func_inner(processed_function_ids, snapshot, related_function_id);
-                });
+            if !processed_function_ids.lock().unwrap().insert(func_id.as_intern_id()) {
+                return;
             }
+            let Ok(function) = db.function_with_body_sierra(func_id) else {
+                return;
+            };
+            let _: () = par_map(db, &function.body, move |db, statement| {
+                if let Some(related_function_id) = try_get_function_with_body_id(db, statement) {
+                    handle_func_inner(processed_function_ids, db, related_function_id);
+                }
+            });
         }
         handle_func_inner(processed_function_ids, db, func_id)
     });
@@ -285,11 +231,12 @@ fn warmup_db_blocking<'db>(
 ///  Checks if there are diagnostics in the database and if there are None, returns
 ///  the [SierraProgramWithDebug] object of the requested functions
 pub fn get_sierra_program_for_functions<'db>(
-    db: &'db RootDatabase,
+    db: &'db dyn SierraGenGroup,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
-    context: DbWarmupContext,
 ) -> Result<Arc<SierraProgramWithDebug<'db>>> {
-    context.warmup_db(db, requested_function_ids.clone());
+    if should_warmup() {
+        warmup_functions_blocking(db, requested_function_ids.clone());
+    }
     db.get_sierra_program_for_functions(requested_function_ids)
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")
