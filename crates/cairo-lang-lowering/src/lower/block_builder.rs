@@ -1,6 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId};
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
@@ -438,7 +439,7 @@ fn get_ty<'db>(
         MemberPath::Var(var) => ctx.semantic_defs[var].ty(),
         MemberPath::Member { member_id, concrete_struct_id, .. } => {
             ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()
-                [&member_id.name(ctx.db).intern(ctx.db)]
+                [&SmolStrId::from_str(ctx.db, member_id.name(ctx.db))]
                 .ty
         }
     }

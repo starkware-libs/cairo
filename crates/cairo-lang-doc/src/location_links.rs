@@ -51,7 +51,7 @@ fn get_virtual_syntax_file_signature<'db>(
     let virtual_file = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "string_to_format".into(),
-        content: signature.clone().into(),
+        content: signature.into(),
         code_mappings: [].into(),
         kind: FileKind::Module,
         original_item_removed: false,
@@ -59,8 +59,9 @@ fn get_virtual_syntax_file_signature<'db>(
     .intern(sig_db);
 
     let mut diagnostics_builder = DiagnosticsBuilder::default();
+    let content = sig_db.file_content(virtual_file).unwrap().long(sig_db).as_ref();
     let syntax_file: SyntaxNode<'_> =
-        Parser::parse_file(sig_db, &mut diagnostics_builder, virtual_file, signature.as_str())
+        Parser::parse_file(sig_db, &mut diagnostics_builder, virtual_file, content)
             .as_syntax_node();
 
     let diagnostics = sig_db.file_syntax_diagnostics(virtual_file);

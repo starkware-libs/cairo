@@ -363,7 +363,7 @@ impl<'db> Resolver<'db> {
     pub fn add_generic_param(&mut self, generic_param_id: GenericParamId<'db>) {
         self.generic_params.push(generic_param_id);
         if let Some(name) = generic_param_id.name(self.db) {
-            let name_id = name.intern(self.db);
+            let name_id = SmolStrId::from_str(self.db, name);
             self.generic_param_by_name.insert(name_id, generic_param_id);
         }
     }
@@ -1032,7 +1032,7 @@ impl<'db> Resolver<'db> {
                 }
                 let inner_item_info = self.resolve_module_inner_item(
                     module_id,
-                    ident,
+                    ident.into(),
                     diagnostics,
                     identifier,
                     item_type,
@@ -1052,7 +1052,7 @@ impl<'db> Resolver<'db> {
                     ty.long(self.db)
                 {
                     let enum_id = concrete_enum_id.enum_id(self.db);
-                    let ident_id = ident.intern(db);
+                    let ident_id = SmolStrId::from_str(db, ident);
                     let variants = self
                         .db
                         .enum_variants(enum_id)
@@ -1072,7 +1072,7 @@ impl<'db> Resolver<'db> {
                 }
             }
             ResolvedConcreteItem::SelfTrait(concrete_trait_id) => {
-                let ident_id = ident.intern(db);
+                let ident_id = SmolStrId::from_str(db, ident);
                 let impl_id = ImplLongId::SelfImpl(*concrete_trait_id).intern(self.db);
                 let Some(trait_item_id) =
                     self.db.trait_item_by_name(concrete_trait_id.trait_id(self.db), ident_id)?
@@ -1115,7 +1115,7 @@ impl<'db> Resolver<'db> {
                 })
             }
             ResolvedConcreteItem::Trait(concrete_trait_id) => {
-                let ident_id = ident.intern(db);
+                let ident_id = SmolStrId::from_str(db, ident);
                 let Some(trait_item_id) =
                     self.db.trait_item_by_name(concrete_trait_id.trait_id(self.db), ident_id)?
                 else {
@@ -1225,7 +1225,7 @@ impl<'db> Resolver<'db> {
             ResolvedConcreteItem::Impl(impl_id) => {
                 let concrete_trait_id = self.db.impl_concrete_trait(*impl_id)?;
                 let trait_id = concrete_trait_id.trait_id(self.db);
-                let ident_id = ident.intern(db);
+                let ident_id = SmolStrId::from_str(db, ident);
                 let Some(trait_item_id) = self.db.trait_item_by_name(trait_id, ident_id)? else {
                     return Err(diagnostics.report(identifier.stable_ptr(db), InvalidPath));
                 };
@@ -1464,8 +1464,10 @@ impl<'db> Resolver<'db> {
         module_id: ModuleId<'db>,
         identifier: &ast::TerminalIdentifier<'db>,
     ) -> Option<ModuleItemInfo<'db>> {
-        let inner_item_info =
-            self.db.module_item_info_by_name(module_id, identifier.text(self.db).intern(self.db));
+        let inner_item_info = self.db.module_item_info_by_name(
+            module_id,
+            SmolStrId::from_str(self.db, identifier.text(self.db)),
+        );
         if let Ok(Some(inner_item_info)) = inner_item_info {
             self.insert_used_use(inner_item_info.item_id);
             return Some(inner_item_info);
@@ -1488,7 +1490,7 @@ impl<'db> Resolver<'db> {
             ResolvedGenericItem::Module(module_id) => {
                 let inner_item_info = self.resolve_module_inner_item(
                     module_id,
-                    ident,
+                    ident.into(),
                     diagnostics,
                     identifier,
                     item_type,
@@ -1505,7 +1507,7 @@ impl<'db> Resolver<'db> {
                 ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
-                let ident = ident.intern(self.db);
+                let ident = SmolStrId::from_str(self.db, ident);
                 let variants = self.db.enum_variants(*enum_id)?;
                 let variant_id = variants.get(&ident).ok_or_else(|| {
                     diagnostics.report(
@@ -1529,7 +1531,8 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(db);
 
         // If a generic param with this name is found, use it.
-        if let Some(generic_param_id) = self.data.generic_param_by_name.get(&ident.intern(self.db))
+        if let Some(generic_param_id) =
+            self.data.generic_param_by_name.get(&SmolStrId::from_str(db, ident))
         {
             let item = match generic_param_id.kind(self.db) {
                 GenericKind::Type => ResolvedConcreteItem::Type(
@@ -1559,7 +1562,7 @@ impl<'db> Resolver<'db> {
         macro_context_modifier: MacroContextModifier,
     ) -> ResolvedBase<'db> {
         let db = self.db;
-        let ident = identifier.text(db).intern(db);
+        let ident = SmolStrId::from_str(db, identifier.text(db));
         let ident_str = ident.as_str(db);
         let module_id = self.active_module_file_id(macro_context_modifier).0;
         if let ResolutionContext::Statement(ref mut env) = ctx {
@@ -1584,7 +1587,7 @@ impl<'db> Resolver<'db> {
         if let Some(dep) = self.active_settings(macro_context_modifier).dependencies.get(ident_str)
         {
             let dep_crate_id = CrateLongId::Real {
-                name: ident.long(db).clone(),
+                name: ident.long(db).to_string(),
                 discriminator: dep.discriminator.clone(),
             }
             .intern(self.db);
@@ -1859,16 +1862,19 @@ impl<'db> Resolver<'db> {
         for (idx, generic_arg_syntax) in generic_args_syntax.iter().enumerate() {
             match generic_arg_syntax {
                 ast::GenericArg::Named(arg_syntax) => {
-                    let name = arg_syntax.name(db).text(db).intern(db);
-                    let Some((index, generic_param_id)) = generic_param_by_name.get(name.long(db))
-                    else {
-                        return Err(diagnostics
-                            .report(arg_syntax.stable_ptr(db), UnknownGenericParam(name)));
+                    let name = arg_syntax.name(db).text(db);
+                    let Some((index, generic_param_id)) = generic_param_by_name.get(name) else {
+                        return Err(diagnostics.report(
+                            arg_syntax.stable_ptr(db),
+                            UnknownGenericParam(SmolStrId::from_str(db, name)),
+                        ));
                     };
                     if let Some(prev_index) = last_named_arg_index {
                         if prev_index > index {
-                            return Err(diagnostics
-                                .report(arg_syntax.stable_ptr(db), GenericArgOutOfOrder(name)));
+                            return Err(diagnostics.report(
+                                arg_syntax.stable_ptr(db),
+                                GenericArgOutOfOrder(SmolStrId::from_str(db, name)),
+                            ));
                         }
                     }
                     last_named_arg_index = Some(index);
@@ -1876,8 +1882,10 @@ impl<'db> Resolver<'db> {
                         .insert(*generic_param_id, arg_syntax.value(db))
                         .is_some()
                     {
-                        return Err(diagnostics
-                            .report(arg_syntax.stable_ptr(db), GenericArgDuplicate(name)));
+                        return Err(diagnostics.report(
+                            arg_syntax.stable_ptr(db),
+                            GenericArgDuplicate(SmolStrId::from_str(db, name)),
+                        ));
                     }
                 }
                 ast::GenericArg::Unnamed(arg_syntax) => {
@@ -2407,10 +2415,10 @@ impl<'db> Resolver<'db> {
             Some(ast::PathSegment::Simple(path_segment_simple)) => {
                 let ident = path_segment_simple.ident(self.db);
                 let ident_text = ident.text(self.db);
-                match ident_text.as_str() {
+                match ident_text {
                     MACRO_DEF_SITE | MACRO_CALL_SITE => {
                         segments.next();
-                        if ident_text.as_str() == MACRO_DEF_SITE {
+                        if ident_text == MACRO_DEF_SITE {
                             Ok(MacroContextModifier::DefSite)
                         } else {
                             Ok(MacroContextModifier::CallSite)
@@ -2418,7 +2426,9 @@ impl<'db> Resolver<'db> {
                     }
                     _ => Err(diagnostics.report(
                         ident.stable_ptr(self.db),
-                        UnknownResolverModifier { modifier: ident_text.intern(self.db) },
+                        UnknownResolverModifier {
+                            modifier: SmolStrId::from_str(self.db, ident_text),
+                        },
                     )),
                 }
             }

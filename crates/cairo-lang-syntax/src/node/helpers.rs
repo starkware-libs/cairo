@@ -1,5 +1,3 @@
-use smol_str::SmolStr;
-
 use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
     ImplItem, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
@@ -21,16 +19,16 @@ use crate::node::green::GreenNodeDetails;
 #[path = "helpers_test.rs"]
 mod test;
 
-pub trait GetIdentifier {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr;
+pub trait GetIdentifier<'a> {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str;
 }
 impl<'a> ast::UsePathLeafPtr<'a> {
     pub fn name_green(&self, _syntax_db: &dyn SyntaxGroup) -> Self {
         *self
     }
 }
-impl<'a> GetIdentifier for ast::UsePathLeafPtr<'a> {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+impl<'a> GetIdentifier<'a> for ast::UsePathLeafPtr<'a> {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
         let alias_clause_green = self.alias_clause_green(db).0;
         let green_node = alias_clause_green.long(db);
         let children = match &green_node.details {
@@ -59,9 +57,9 @@ impl<'a> GetIdentifier for ast::UsePathLeafPtr<'a> {
         }
     }
 }
-impl<'a> GetIdentifier for ast::PathSegmentGreen<'a> {
+impl<'a> GetIdentifier<'a> for ast::PathSegmentGreen<'a> {
     /// Retrieves the text of the last identifier in the path.
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
         let green_node = self.0.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
@@ -71,9 +69,9 @@ impl<'a> GetIdentifier for ast::PathSegmentGreen<'a> {
         identifier.identifier(db)
     }
 }
-impl<'a> GetIdentifier for ast::ExprPathGreen<'a> {
+impl<'a> GetIdentifier<'a> for ast::ExprPathGreen<'a> {
     /// Retrieves the text of the last identifier in the path.
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
         let green_node = self.0.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
@@ -84,9 +82,9 @@ impl<'a> GetIdentifier for ast::ExprPathGreen<'a> {
     }
 }
 
-impl<'a> GetIdentifier for ast::ExprPathInnerGreen<'a> {
+impl<'a> GetIdentifier<'a> for ast::ExprPathInnerGreen<'a> {
     /// Retrieves the text of the last identifier in the path.
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
         let green_node = self.0.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
@@ -97,19 +95,19 @@ impl<'a> GetIdentifier for ast::ExprPathInnerGreen<'a> {
         segment_green.identifier(db)
     }
 }
-impl<'a> GetIdentifier for ast::TerminalIdentifierGreen<'a> {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+impl<'a> GetIdentifier<'a> for ast::TerminalIdentifierGreen<'a> {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
         match &self.0.long(db).details {
-            GreenNodeDetails::Token(_) => "Unexpected token".into(),
+            GreenNodeDetails::Token(_) => "Unexpected token",
             GreenNodeDetails::Node { children, width: _ } => {
                 TokenIdentifierGreen(children[1]).text(db)
             }
         }
     }
 }
-impl<'a> GetIdentifier for ast::ExprPath<'a> {
+impl<'a> GetIdentifier<'a> for ast::ExprPath<'a> {
     /// Retrieves the identifier of the last segment of the path.
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
         self.segments(db).elements(db).next_back().unwrap().identifier(db)
     }
 }
@@ -137,9 +135,9 @@ impl<'a> PathSegmentEx<'a> for ast::PathSegment<'a> {
         }
     }
 }
-impl<'a> GetIdentifier for ast::PathSegment<'a> {
+impl<'a> GetIdentifier<'a> for ast::PathSegment<'a> {
     /// Retrieves the text of the segment (without the generic args).
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
         match self {
             ast::PathSegment::Simple(segment) => segment.identifier(db),
             ast::PathSegment::WithGenericArgs(segment) => segment.identifier(db),
@@ -147,8 +145,8 @@ impl<'a> GetIdentifier for ast::PathSegment<'a> {
         }
     }
 }
-impl GetIdentifier for ast::PathSegmentSimple<'_> {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+impl<'a> GetIdentifier<'a> for ast::PathSegmentSimple<'a> {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
         let green_node = self.as_syntax_node().green_node(db);
         let GreenNodeDetails::Node { children, .. } = &green_node.details else {
             panic!("Unexpected token");
@@ -156,18 +154,8 @@ impl GetIdentifier for ast::PathSegmentSimple<'_> {
         TerminalIdentifierGreen(children[0]).identifier(db)
     }
 }
-impl GetIdentifier for ast::PathSegmentWithGenericArgs<'_> {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let green_node = self.as_syntax_node().green_node(db);
-        let GreenNodeDetails::Node { children, .. } = &green_node.details else {
-            panic!("Unexpected token");
-        };
-        TerminalIdentifierGreen(children[0]).identifier(db)
-    }
-}
-
-impl GetIdentifier for ast::PathSegmentMissing<'_> {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+impl<'a> GetIdentifier<'a> for ast::PathSegmentWithGenericArgs<'a> {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
         let green_node = self.as_syntax_node().green_node(db);
         let GreenNodeDetails::Node { children, .. } = &green_node.details else {
             panic!("Unexpected token");
@@ -176,8 +164,18 @@ impl GetIdentifier for ast::PathSegmentMissing<'_> {
     }
 }
 
-impl<'a> GetIdentifier for ast::Modifier<'a> {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+impl<'a> GetIdentifier<'a> for ast::PathSegmentMissing<'a> {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+        let green_node = self.as_syntax_node().green_node(db);
+        let GreenNodeDetails::Node { children, .. } = &green_node.details else {
+            panic!("Unexpected token");
+        };
+        TerminalIdentifierGreen(children[0]).identifier(db)
+    }
+}
+
+impl<'a> GetIdentifier<'a> for ast::Modifier<'a> {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
         match self {
             Modifier::Ref(r) => r.text(db),
             Modifier::Mut(m) => m.text(db),
@@ -742,7 +740,7 @@ impl<'a> IsDependentType for ast::ExprPath<'a> {
     fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool {
         let segments = self.segments(db).elements_vec(db);
         if let [ast::PathSegment::Simple(arg_segment)] = &segments[..] {
-            identifiers.contains(&arg_segment.identifier(db).as_str())
+            identifiers.contains(&arg_segment.identifier(db))
         } else {
             segments.into_iter().any(|segment| {
                 let ast::PathSegment::WithGenericArgs(with_generics) = segment else {

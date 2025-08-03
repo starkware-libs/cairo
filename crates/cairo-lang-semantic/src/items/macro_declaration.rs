@@ -534,10 +534,10 @@ fn expand_macro_rule_ex(
             let placeholder_name = first_param.name(db).text(db);
             let rep_id = *matcher_ctx
                 .placeholder_to_rep_id
-                .get(placeholder_name.as_str())
+                .get(placeholder_name)
                 .ok_or_else(skip_diagnostic)?;
             let repetition_len =
-                matcher_ctx.captures.get(placeholder_name.as_str()).map(|v| v.len()).unwrap_or(0);
+                matcher_ctx.captures.get(placeholder_name).map(|v| v.len()).unwrap_or(0);
             for i in 0..repetition_len {
                 matcher_ctx.repetition_indices.insert(rep_id, i);
                 for element in &elements {

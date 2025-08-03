@@ -751,8 +751,8 @@ impl ModuleIdCached {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 enum CrateCached {
-    Real { name: SmolStr, discriminator: Option<SmolStr> },
-    Virtual { name: SmolStr, file_id: FileIdCached, settings: String },
+    Real { name: String, discriminator: Option<String> },
+    Virtual { name: String, file_id: FileIdCached, settings: String },
 }
 impl CrateCached {
     fn new<'db>(crate_id: CrateLongId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -1685,7 +1685,7 @@ impl GreenNodeDetailsCached {
         ctx: &mut DefCacheSavingContext<'db>,
     ) -> GreenNodeDetailsCached {
         match green_node_details {
-            GreenNodeDetails::Token(token) => GreenNodeDetailsCached::Token(token.clone()),
+            GreenNodeDetails::Token(token) => GreenNodeDetailsCached::Token((*token).into()),
             GreenNodeDetails::Node { children, width } => GreenNodeDetailsCached::Node {
                 children: children.iter().map(|child| GreenIdCached::new(*child, ctx)).collect(),
                 width: *width,
@@ -1694,7 +1694,9 @@ impl GreenNodeDetailsCached {
     }
     fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> GreenNodeDetails<'db> {
         match self {
-            GreenNodeDetailsCached::Token(token) => GreenNodeDetails::Token(token.clone()),
+            GreenNodeDetailsCached::Token(token) => {
+                GreenNodeDetails::Token(token.clone().intern(ctx.db).long(ctx.db).as_str())
+            }
             GreenNodeDetailsCached::Node { children, width } => GreenNodeDetails::Node {
                 children: children.iter().map(|child| child.embed(ctx)).collect(),
                 width: *width,
@@ -1806,7 +1808,7 @@ impl FileIdCached {
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 struct VirtualFileCached {
     parent: Option<FileIdCached>,
-    name: SmolStr,
+    name: String,
     content: String,
     code_mappings: Vec<CodeMapping>,
     kind: FileKind,
@@ -1840,7 +1842,7 @@ impl VirtualFileCached {
 struct PluginGeneratedFileCached {
     module_id: ModuleIdCached,
     stable_ptr: SyntaxStablePtrIdCached,
-    name: SmolStr,
+    name: String,
 }
 
 impl PluginGeneratedFileCached {

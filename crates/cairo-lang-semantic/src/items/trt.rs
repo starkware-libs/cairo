@@ -87,7 +87,7 @@ impl<'db> ConcreteTraitId<'db> {
     pub fn generic_args(&self, db: &'db dyn SemanticGroup) -> Vec<GenericArgumentId<'db>> {
         self.long(db).generic_args.clone()
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &'db dyn SemanticGroup) -> &'db str {
         self.trait_id(db).name(db)
     }
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
@@ -611,7 +611,7 @@ pub fn trait_functions<'db>(
         .keys()
         .map(|function_id| {
             let function_long_id = function_id.long(db);
-            (function_long_id.name(db).intern(db), *function_id)
+            (SmolStrId::from_str(db, function_long_id.name(db)), *function_id)
         })
         .collect())
 }
@@ -636,7 +636,7 @@ pub fn trait_types<'db>(
         .keys()
         .map(|type_id| {
             let type_long_id = type_id.long(db);
-            (type_long_id.name(db).intern(db), *type_id)
+            (SmolStrId::from_str(db, type_long_id.name(db)), *type_id)
         })
         .collect())
 }
@@ -661,7 +661,7 @@ pub fn trait_constants<'db>(
         .keys()
         .map(|constant_id| {
             let constant_long_id = constant_id.long(db);
-            (constant_long_id.name(db).intern(db), *constant_id)
+            (SmolStrId::from_str(db, constant_long_id.name(db)), *constant_id)
         })
         .collect())
 }
@@ -686,7 +686,7 @@ pub fn trait_impls<'db>(
         .keys()
         .map(|impl_id| {
             let impl_long_id = impl_id.long(db);
-            (impl_long_id.name(db).intern(db), *impl_id)
+            (SmolStrId::from_str(db, impl_long_id.name(db)), *impl_id)
         })
         .collect())
 }
@@ -729,7 +729,7 @@ pub fn priv_trait_definition_data<'db>(
                     let trait_func_id =
                         TraitFunctionLongId(module_file_id, func.stable_ptr(db)).intern(db);
                     let name_node = func.declaration(db).name(db);
-                    let name = name_node.text(db).intern(db);
+                    let name = SmolStrId::from_str(db, name_node.text(db));
                     let attributes = func.attributes(db);
                     let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
                     if item_id_by_name
@@ -753,7 +753,7 @@ pub fn priv_trait_definition_data<'db>(
                     let trait_type_id =
                         TraitTypeLongId(module_file_id, ty.stable_ptr(db)).intern(db);
                     let name_node = ty.name(db);
-                    let name = name_node.text(db).intern(db);
+                    let name = SmolStrId::from_str(db, name_node.text(db));
                     let attributes = ty.attributes(db);
                     let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
                     if item_id_by_name
@@ -775,7 +775,7 @@ pub fn priv_trait_definition_data<'db>(
                         TraitConstantLongId(module_file_id, constant.stable_ptr(db)).intern(db);
 
                     let name_node = constant.name(db);
-                    let name = name_node.text(db).intern(db);
+                    let name = SmolStrId::from_str(db, name_node.text(db));
                     let attributes = constant.attributes(db);
                     let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
                     if item_id_by_name
@@ -799,7 +799,7 @@ pub fn priv_trait_definition_data<'db>(
                     let trait_impl = TraitImplLongId(module_file_id, imp.stable_ptr(db)).intern(db);
 
                     let name_node = imp.name(db);
-                    let name = name_node.text(db).intern(db);
+                    let name = SmolStrId::from_str(db, name_node.text(db));
                     let attributes = imp.attributes(db);
                     let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
                     if item_id_by_name

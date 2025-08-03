@@ -118,9 +118,9 @@ pub fn handle_trait<'db>(
                 let self_param_type_ok = if self_param.is_ref_param(db) {
                     extract_matches!(self_param.type_clause(db), OptionTypeClause::TypeClause)
                         .ty(db)
-                        .is_identifier(db, &single_generic_param)
+                        .is_identifier(db, single_generic_param)
                 } else if let Some(snapped_ty) = self_param.try_extract_snapshot(db) {
-                    snapped_ty.is_identifier(db, &single_generic_param)
+                    snapped_ty.is_identifier(db, single_generic_param)
                 } else {
                     false
                 };
@@ -147,7 +147,7 @@ pub fn handle_trait<'db>(
                     }
                     if extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause)
                         .ty(db)
-                        .is_dependent_type(db, &[&single_generic_param])
+                        .is_dependent_type(db, &[single_generic_param])
                     {
                         skip_generation = true;
 
@@ -374,7 +374,7 @@ pub fn handle_trait<'db>(
     let (content, code_mappings) = builder.build();
     PluginResult {
         code: Some(PluginGeneratedFile {
-            name: dispatcher_trait_name.into(),
+            name: dispatcher_trait_name,
             content,
             code_mappings,
             aux_data: None,

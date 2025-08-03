@@ -134,7 +134,7 @@ fn visible_importables_in_module_ex<'db>(
     let mut modules_to_visit = vec![];
     // Add importables and traverse modules imported into the current module.
     for use_id in db.module_uses_ids(module_id).unwrap_or_default().iter().copied() {
-        if !is_visible(use_id.name(db)).unwrap_or_default() {
+        if !is_visible(use_id.name(db).into()).unwrap_or_default() {
             continue;
         }
         let Ok(resolved_item) = db.use_resolved_item(use_id) else {
@@ -206,7 +206,7 @@ fn visible_importables_in_module_ex<'db>(
     }
 
     for submodule_id in db.module_submodules_ids(module_id).unwrap_or_default().iter().copied() {
-        if !is_visible(submodule_id.name(db)).unwrap_or_default() {
+        if !is_visible(submodule_id.name(db).into()).unwrap_or_default() {
             continue;
         }
         result.push((ImportableId::Submodule(submodule_id), submodule_id.name(db).to_string()));
@@ -216,7 +216,7 @@ fn visible_importables_in_module_ex<'db>(
     // Handle enums separately because we need to include their variants.
     for enum_id in db.module_enums_ids(module_id).unwrap_or_default().iter().copied() {
         let enum_name = enum_id.name(db);
-        if !is_visible(enum_name.clone()).unwrap_or_default() {
+        if !is_visible(enum_name.into()).unwrap_or_default() {
             continue;
         }
 
@@ -229,7 +229,7 @@ fn visible_importables_in_module_ex<'db>(
     macro_rules! module_importables {
         ($query:ident, $map:expr) => {
             for item_id in db.$query(module_id).ok().unwrap_or_default().iter().copied() {
-                if !is_visible(item_id.name(db)).unwrap_or_default() {
+                if !is_visible(item_id.name(db).into()).unwrap_or_default() {
                     continue;
                 }
                 result.push(($map(item_id), item_id.name(db).to_string()));
@@ -292,7 +292,7 @@ pub fn visible_importables_in_crate<'db>(
     user_module_file_id: ModuleFileId<'db>,
 ) -> Arc<Vec<(ImportableId<'db>, String)>> {
     let is_current_crate = user_module_file_id.0.owning_crate(db) == crate_id;
-    let crate_name = if is_current_crate { "crate" } else { &crate_id.long(db).name() };
+    let crate_name = if is_current_crate { "crate" } else { crate_id.long(db).name() };
     let crate_as_module = ModuleId::CrateRoot(crate_id);
     db.visible_importables_in_module(crate_as_module, user_module_file_id, false)
         .iter()
@@ -327,11 +327,8 @@ pub fn visible_importables_from_module<'db>(
         [current_crate_id],
         (!settings.dependencies.contains_key(CORELIB_CRATE_NAME)).then(|| corelib::core_crate(db)),
         settings.dependencies.iter().map(|(name, setting)| {
-            CrateLongId::Real {
-                name: name.clone().into(),
-                discriminator: setting.discriminator.clone(),
-            }
-            .intern(db)
+            CrateLongId::Real { name: name.clone(), discriminator: setting.discriminator.clone() }
+                .intern(db)
         })
     ) {
         module_visible_importables

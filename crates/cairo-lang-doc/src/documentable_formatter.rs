@@ -233,7 +233,7 @@ impl<'db> HirDisplay<'db> for VariantId<'db> {
                 &self.full_path(f.db),
             )
         } else {
-            f.write_str(name.as_str())
+            f.write_str(name)
         }
         .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }

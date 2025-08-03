@@ -15,7 +15,6 @@ use cairo_lang_utils::extract_matches;
 use const_format::formatcp;
 use indoc::formatdoc;
 use itertools::Itertools;
-use smol_str::SmolStr;
 
 use super::generation_data::{ContractGenerationData, StarknetModuleCommonGenerationData};
 use super::{StarknetModuleKind, grand_grand_parent_starknet_module};
@@ -44,9 +43,9 @@ struct ComponentsGenerationData<'db> {
     /// The components defined in the contract using the `component!` inline macro.
     pub components: Vec<NestedComponent<'db>>,
     /// The contract's storage members that are marked with the `substorage` attribute.
-    pub substorage_members: Vec<String>,
+    pub substorage_members: Vec<&'db str>,
     /// The contract's event variants that are defined in the main event enum of the contract.
-    pub nested_event_variants: Vec<SmolStr>,
+    pub nested_event_variants: Vec<&'db str>,
 }
 
 /// A component defined in a contract using the `component!` inline macro.
@@ -143,7 +142,7 @@ impl<'db> ComponentsGenerationData<'db> {
 
         let storage_name_syntax_node = storage_name.as_syntax_node();
         let storage_node_text = storage_name_syntax_node.get_text_without_trivia(db);
-        if self.substorage_members.iter().all(|member| member != storage_node_text) {
+        if !self.substorage_members.contains(&storage_node_text) {
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
                 component_macro.stable_ptr(db).untyped(),
@@ -160,7 +159,7 @@ impl<'db> ComponentsGenerationData<'db> {
 
         let event_name_syntax_node = event_name.as_syntax_node();
         let event_name_str = event_name_syntax_node.get_text_without_trivia(db);
-        if self.nested_event_variants.iter().all(|variant| variant != event_name_str) {
+        if !self.nested_event_variants.contains(&event_name_str) {
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
                 component_macro.stable_ptr(db).untyped(),
@@ -277,10 +276,7 @@ fn handle_contract_item<'db, 'a>(
                 // v0 is not validated here to not create multiple diagnostics. It's already
                 // verified in handle_storage_struct above.
                 if member.has_attr(db, SUBSTORAGE_ATTR) {
-                    data.specific
-                        .components_data
-                        .substorage_members
-                        .push(member.name(db).text(db).to_string());
+                    data.specific.components_data.substorage_members.push(member.name(db).text(db));
                 }
             }
         }
@@ -324,7 +320,7 @@ pub(super) fn generate_contract_specific_code<'db, 'a>(
     body: &ast::ModuleBody<'db>,
     module_ast: &ast::ItemModule<'db>,
     metadata: &'a MacroPluginMetadata<'a>,
-    event_variants: Vec<SmolStr>,
+    event_variants: Vec<&'db str>,
 ) -> RewriteNode<'db> {
     let mut generation_data = ContractGenerationData { common: common_data, ..Default::default() };
     generation_data.specific.components_data.nested_event_variants = event_variants;
@@ -395,7 +391,7 @@ fn generate_constructor_deploy_function<'db>(
 /// Generates the deployment function for a contract.
 fn generate_deploy_function<'db>(
     db: &'db dyn SyntaxGroup,
-    constructor_params: Vec<(SmolStr, ast::Expr<'db>)>,
+    constructor_params: Vec<(&'db str, ast::Expr<'db>)>,
 ) -> RewriteNode<'db> {
     let mut param_declarations = Vec::new();
     let mut calldata_serialization = Vec::new();

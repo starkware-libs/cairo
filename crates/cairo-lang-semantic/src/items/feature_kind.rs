@@ -112,7 +112,7 @@ fn parse_feature_attr<'db, const EXTRA_ALLOWED: usize>(
         if arg_values[i].is_some() {
             add_diag(diagnostics, name.stable_ptr, FeatureMarkerDiagnostic::DuplicatedArgument);
         } else {
-            arg_values[i] = Some(value.text(db));
+            arg_values[i] = Some(value.text(db).into());
         }
     }
     arg_values
@@ -198,7 +198,7 @@ pub fn extract_item_feature_config<'db>(
         diagnostics,
         |value| {
             if let ast::Expr::String(value) = value {
-                config.allowed_features.insert(value.text(db));
+                config.allowed_features.insert(value.text(db).into());
                 true
             } else {
                 false

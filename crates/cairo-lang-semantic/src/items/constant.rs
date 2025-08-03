@@ -20,7 +20,6 @@ use cairo_lang_utils::{Intern, define_short_id, extract_matches, require, try_ex
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::{Num, ToPrimitive, Zero};
-use smol_str::SmolStr;
 
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::{ImplId, ImplLongId};
@@ -232,8 +231,8 @@ impl<'db> ImplConstantId<'db> {
         self.trait_constant_id
     }
 
-    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db), self.trait_constant_id.name(db)).into()
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+        format!("{}::{}", self.impl_id.name(db), self.trait_constant_id.name(db))
     }
 }
 impl<'db> DebugWithDb<'db> for ImplConstantId<'db> {

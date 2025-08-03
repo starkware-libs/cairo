@@ -196,9 +196,9 @@ impl ProfilingInfo {
 #[derive(Default)]
 pub struct LibfuncWeights {
     /// Weight (in steps in the relevant run) of each concrete libfunc.
-    pub concrete_libfunc_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    pub concrete_libfunc_weights: Option<OrderedHashMap<String, usize>>,
     /// Weight (in steps in the relevant run) of each generic libfunc.
-    pub generic_libfunc_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    pub generic_libfunc_weights: Option<OrderedHashMap<String, usize>>,
     /// Weight (in steps in the relevant run) of return statements.
     pub return_weight: Option<usize>,
 }
@@ -560,17 +560,14 @@ impl<'a> ProfilingInfoProcessor<'a> {
                 self.db.expect("DB must be set with `process_by_generic_libfunc=true`.");
             libfunc_weights
                 .aggregate_by(
-                    |k| -> SmolStr {
-                        db.lookup_concrete_lib_func(k.clone()).generic_id.to_string().into()
-                    },
+                    |k| db.lookup_concrete_lib_func(k.clone()).generic_id.to_string(),
                     |v1: &usize, v2| v1 + v2,
                     &0,
                 )
                 .filter(|_, weight| *weight >= params.min_weight)
-                .iter_sorted_by_key(|(generic_name, weight)| {
-                    (usize::MAX - **weight, (*generic_name).clone())
+                .into_iter_sorted_by_key(|(generic_name, weight)| {
+                    (usize::MAX - *weight, (*generic_name).clone())
                 })
-                .map(|(generic_name, weight)| (generic_name.clone(), *weight))
                 .collect()
         });
 
@@ -578,10 +575,10 @@ impl<'a> ProfilingInfoProcessor<'a> {
         let concrete_libfunc_weights = params.process_by_concrete_libfunc.then(|| {
             libfunc_weights
                 .filter(|_, weight| *weight >= params.min_weight)
-                .iter_sorted_by_key(|(libfunc_id, weight)| {
-                    (usize::MAX - **weight, (*libfunc_id).to_string())
+                .into_iter_sorted_by_key(|(libfunc_id, weight)| {
+                    (usize::MAX - *weight, libfunc_id.to_string())
                 })
-                .map(|(libfunc_id, weight)| (SmolStr::from(libfunc_id.to_string()), *weight))
+                .map(|(libfunc_id, weight)| (libfunc_id.to_string(), weight))
                 .collect()
         });
 

@@ -6,11 +6,11 @@ use cairo_lang_defs::ids::{
     NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId,
     TraitId, TraitItemId, TraitTypeId,
 };
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::items::module::ModuleItemInfo;
 use cairo_lang_semantic::items::visibility::Visibility;
 use cairo_lang_semantic::{Expr, GenericArgumentId, GenericParam, Parameter, TypeId};
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_utils::Intern;
 use smol_str::SmolStr;
 
 use crate::db::DocGroup;
@@ -41,7 +41,7 @@ fn get_module_item_info<'db>(
     module_item_id: ModuleItemId<'db>,
 ) -> Result<ModuleItemInfo<'db>, SignatureError> {
     let parent_module = module_item_id.parent_module(db);
-    let item_name = module_item_id.name(db).intern(db);
+    let item_name = SmolStrId::from_str(db, module_item_id.name(db));
     if let Some(module_item_info) = db
         .module_item_info_by_name(parent_module, item_name)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(module_item_id.full_path(db)))?
@@ -74,7 +74,7 @@ pub(crate) fn get_enum_signature_data<'db>(
     }
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Enum(item_id))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: module_item_info.visibility,
         generic_args: None,
         generic_params: None,
@@ -114,7 +114,7 @@ pub(crate) fn get_struct_signature_data<'db>(
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Struct(item_id))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: module_item_info.visibility,
         generic_args: None,
         generic_params: Some(generic_params),
@@ -134,17 +134,17 @@ pub(crate) fn get_member_signature_data<'db>(
     db: &'db dyn DocGroup,
     item_id: MemberId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
-    let name = item_id.name(db).intern(db);
+    let name = item_id.name(db);
     let struct_id = item_id.struct_id(db);
 
     if let Some(member) = db
         .struct_members(struct_id)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?
-        .get(&name)
+        .get(&SmolStrId::from_str(db, name))
     {
         Ok(DocumentableItemSignatureData {
             item_id: Member(item_id),
-            name: name.long(db).clone(),
+            name: name.into(),
             visibility: member.visibility,
             generic_args: None,
             generic_params: None,
@@ -186,7 +186,7 @@ pub(crate) fn get_free_function_signature_data<'db>(
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::FreeFunction(
             item_id,
         ))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: module_item_info.visibility,
         generic_args: None,
         generic_params: Some(generic_params),
@@ -220,7 +220,7 @@ pub(crate) fn get_trait_function_signature_data<'db>(
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::TraitItem(Function(item_id))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: Visibility::Private,
         generic_args: None,
         generic_params: Some(generic_params),
@@ -250,7 +250,7 @@ pub(crate) fn get_impl_function_signature_data<'db>(
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ImplItem(ImplItemId::Function(item_id))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: Visibility::Private,
         generic_args: None,
         generic_params: Some(generic_params),
@@ -281,7 +281,7 @@ pub(crate) fn get_constant_signature_data<'db>(
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Constant(
             item_id,
         ))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: module_item_info.visibility,
         generic_args: None,
         generic_params: None,
@@ -309,7 +309,7 @@ pub(crate) fn get_impl_constant_signature_data<'db>(
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ImplItem(ImplItemId::Constant(item_id))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: Visibility::Private,
         generic_args: None,
         generic_params: None,
@@ -338,7 +338,7 @@ pub(crate) fn get_trait_signature_data<'db>(
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Trait(item_id))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: module_item_info.visibility,
         generic_args: None,
         generic_params: Some(generic_params),
@@ -368,7 +368,7 @@ pub(crate) fn get_trait_const_signature_data<'db>(
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::TraitItem(TraitItemId::Constant(item_id))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: Visibility::Private,
         generic_args: None,
         generic_params: None,
@@ -402,7 +402,7 @@ pub(crate) fn get_impl_def_signature_data<'db>(
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Impl(item_id))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: module_item_info.visibility,
         generic_args: Some(intern.generic_args.clone()),
         generic_params: None,
@@ -429,7 +429,7 @@ pub(crate) fn get_impl_alias_signature_data<'db>(
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
             item_id,
         ))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: module_item_info.visibility,
         generic_args: None,
         generic_params: None,
@@ -464,7 +464,7 @@ pub(crate) fn get_module_type_alias_full_signature<'db>(
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
             item_id,
         ))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: module_item_info.visibility,
         generic_args: None,
         generic_params: Some(generic_params),
@@ -490,7 +490,7 @@ pub(crate) fn get_trait_type_full_signature<'db>(
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::TraitItem(TraitItemId::Type(item_id))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: Visibility::Private,
         generic_args: None,
         generic_params: Some(generic_params),
@@ -520,7 +520,7 @@ pub(crate) fn get_impl_type_def_full_signature<'db>(
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ImplItem(ImplItemId::Type(item_id))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: Visibility::Private,
         generic_args: None,
         generic_params: Some(generic_params),
@@ -551,7 +551,7 @@ pub(crate) fn get_extern_type_full_signature<'db>(
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::ExternType(
             item_id,
         ))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: module_item_info.visibility,
         generic_args: None,
         generic_params: Some(generic_params),
@@ -586,7 +586,7 @@ pub(crate) fn get_extern_function_full_signature<'db>(
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::ExternFunction(
             item_id,
         ))),
-        name: item_id.name(db),
+        name: item_id.name(db).into(),
         visibility: module_item_info.visibility,
         generic_args: None,
         generic_params: Some(generic_params),

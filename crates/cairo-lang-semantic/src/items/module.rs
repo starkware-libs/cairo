@@ -9,7 +9,6 @@ use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::helpers::UsePathEx;
-use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
@@ -103,7 +102,7 @@ pub fn priv_module_semantic_data<'db>(
         };
         let visibility = Visibility::from_ast(db, &mut diagnostics, &visibility);
         let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
-        let name_id = name.intern(db);
+        let name_id = SmolStrId::from_str(db, name);
         if items.insert(name_id, ModuleItemInfo { item_id, visibility, feature_kind }).is_some() {
             // `item` is extracted from `module_items` and thus `module_item_name_stable_ptr` is
             // guaranteed to succeed.
