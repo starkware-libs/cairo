@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use bincode::enc::write::Writer;
+use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_executable::compile::{
@@ -11,12 +12,14 @@ use cairo_lang_executable::compile::{
 use cairo_lang_executable::executable::{EntryPointKind, Executable, NOT_RETURNING_HEADER_SIZE};
 use cairo_lang_execute_utils::{program_and_hints_from_executable, user_args_from_flags};
 use cairo_lang_filesystem::ids::CrateInput;
+use cairo_lang_runnable_utils::builder::RunnableBuilder;
 use cairo_lang_runner::casm_run::format_for_panic;
 use cairo_lang_runner::clap::RunProfilerConfigArg;
 use cairo_lang_runner::profiling::{
     ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
 };
 use cairo_lang_runner::{Arg, CairoHintProcessor, ProfilingInfoCollectionConfig};
+use cairo_lang_sierra_generator::program_generator::SierraProgramDebugInfo;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_vm::cairo_run;
 use cairo_vm::cairo_run::{CairoRunConfig, cairo_run_program};
@@ -222,7 +225,7 @@ fn main() -> anyhow::Result<()> {
             compiled_function.wrapper.header.iter().map(|insn| insn.body.op_size()).sum::<usize>();
         let header_len = NOT_RETURNING_HEADER_SIZE + wrapper_len;
         let executable = Executable::new(compiled_function);
-        (Some((db, builder, debug_info, header_len)), executable)
+        (Some(DebugData { db, builder, debug_info, header_len }), executable)
     } else {
         (None, executable.unwrap())
     };
@@ -338,7 +341,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     if let Ok(profiler_config) = &args.run_profiler.try_into() {
-        let (db, builder, debug_info, header_len) =
+        let DebugData { db, builder, debug_info, header_len } =
             opt_debug_data.expect("debug data should be available when profiling");
 
         let trace = runner.relocated_trace.as_ref().with_context(|| "Trace not relocated.")?;
@@ -362,6 +365,18 @@ fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+/// Data required for profiling and debugging the executable.
+struct DebugData<'a> {
+    /// The salsa database.
+    db: &'a RootDatabase,
+    /// The builder for the runnable program.
+    builder: RunnableBuilder,
+    /// Debug information for the Sierra program.
+    debug_info: SierraProgramDebugInfo<'a>,
+    /// The size of the header that was prepended to the builder's CASM program.
+    header_len: usize,
 }
 
 /// Writer implementation for a file.
