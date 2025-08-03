@@ -40,15 +40,15 @@ Statements:
   (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
 End:
   Match(match_enum(v6) {
-    bool::False(v9) => blk2,
+    bool::False(v8) => blk2,
     bool::True(v7) => blk1,
   })
 
 blk1:
 Statements:
-  (v8: core::felt252) <- test::heavy_op1()
+  (v9: core::felt252) <- test::heavy_op1()
 End:
-  Goto(blk3, {v8 -> v11})
+  Goto(blk3, {v9 -> v11})
 
 blk2:
 Statements:
@@ -71,15 +71,15 @@ Statements:
   (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
 End:
   Match(match_enum(v6) {
-    bool::False(v9) => blk2,
+    bool::False(v8) => blk2,
     bool::True(v7) => blk1,
   })
 
 blk1:
 Statements:
-  (v8: core::felt252) <- test::heavy_op1()
+  (v9: core::felt252) <- test::heavy_op1()
 End:
-  Goto(blk3, {v8 -> v11})
+  Goto(blk3, {v9 -> v11})
 
 blk2:
 Statements:
@@ -134,15 +134,15 @@ Statements:
   (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
 End:
   Match(match_enum(v6) {
-    bool::False(v9) => blk2,
+    bool::False(v8) => blk2,
     bool::True(v7) => blk1,
   })
 
 blk1:
 Statements:
-  (v8: core::felt252) <- test::heavy_op1()
+  (v9: core::felt252) <- test::heavy_op1()
 End:
-  Goto(blk3, {v8 -> v11})
+  Goto(blk3, {v9 -> v11})
 
 blk2:
 Statements:
@@ -165,16 +165,16 @@ Statements:
   (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
 End:
   Match(match_enum(v6) {
-    bool::False(v9) => blk2,
+    bool::False(v8) => blk2,
     bool::True(v7) => blk1,
   })
 
 blk1:
 Statements:
   () <- core::gas::redeposit_gas()
-  (v8: core::felt252) <- test::heavy_op1()
+  (v9: core::felt252) <- test::heavy_op1()
 End:
-  Goto(blk3, {v8 -> v11})
+  Goto(blk3, {v9 -> v11})
 
 blk2:
 Statements:

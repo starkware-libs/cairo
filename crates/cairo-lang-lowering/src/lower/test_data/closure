@@ -404,15 +404,15 @@ Statements:
   (v13: core::bool) <- core::Felt252PartialEq::eq(v9, v12)
 End:
   Match(match_enum(v13) {
-    bool::False(v17) => blk2,
+    bool::False(v15) => blk2,
     bool::True(v14) => blk1,
   })
 
 blk1:
 Statements:
-  (v15: core::felt252, v16: @core::felt252) <- snapshot(v3)
+  (v16: core::felt252, v17: @core::felt252) <- snapshot(v3)
 End:
-  Goto(blk3, {v15 -> v20, v16 -> v21})
+  Goto(blk3, {v16 -> v20, v17 -> v21})
 
 blk2:
 Statements:
