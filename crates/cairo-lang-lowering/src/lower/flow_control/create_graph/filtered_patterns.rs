@@ -1,3 +1,9 @@
+use itertools::Itertools;
+
+use crate::lower::flow_control::graph::{
+    BindVar, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId, PatternVarId,
+};
+
 /// The pattern-matching function below take a list of patterns, and depending on the item at
 /// question, construct a filtered list of patterns that are relevant to the item.
 /// This struct represents the indices of those filtered patterns.
@@ -16,8 +22,9 @@
 /// depends on the value of `y` (which will be handled by the calling pattern matching function).
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct FilteredPatterns {
-    /// The indices of the patterns that are accepted by the filter.
-    filter: Vec<usize>,
+    /// The indices of the patterns that are accepted by the filter, together with binding
+    /// information.
+    filter: Vec<IndexAndBindings>,
 }
 
 impl FilteredPatterns {
@@ -25,12 +32,113 @@ impl FilteredPatterns {
         Self { filter: vec![] }
     }
 
-    pub fn add(&mut self, idx: usize) {
-        self.filter.push(idx);
+    /// Returns a [FilteredPatterns] that accepts all patterns (no filtering).
+    pub fn all(n_patterns: usize) -> Self {
+        Self {
+            filter: (0..n_patterns)
+                .map(|idx| IndexAndBindings { index: idx, bindings: Bindings::default() })
+                .collect_vec(),
+        }
     }
 
-    /// Returns the first pattern accepted by the filter.
-    pub fn first(self) -> Option<usize> {
+    /// Similar to [Self::all], but allows to specify bindings for each pattern.
+    pub fn all_with_bindings(bindings_vec: impl Iterator<Item = Bindings>) -> Self {
+        Self {
+            filter: bindings_vec
+                .enumerate()
+                .map(|(index, bindings)| IndexAndBindings { index, bindings })
+                .collect_vec(),
+        }
+    }
+
+    /// Adds a new pattern to the filter, with the given bindings.
+    pub fn add(&mut self, idx: usize, bindings: Bindings) {
+        self.filter.push(IndexAndBindings { index: idx, bindings });
+    }
+
+    /// Assuming `self` is a [FilteredPatterns] that applies to a *subset* of a list of patterns
+    /// (defined by `outer_filter`), this function returns the lifted [FilteredPatterns] -
+    /// the corresponding [FilteredPatterns] that applies to the *original* list of patterns.
+    ///
+    /// For example, assume that `foo` gets 3 patterns: `A`, `B`, `C`, and it calls `bar` with the
+    /// last two patterns (`B` and `C`, at indices `1` and `2`).
+    /// Suppose that `bar` filters this list to only `C`.
+    /// `bar` returns the filter `[1]` since it uses its own indexing.
+    /// `foo` needs to lift it to `[2]` to return to its caller using `foo`'s indexing.
+    pub fn lift(self, outer_filter: &FilteredPatterns) -> Self {
+        Self {
+            filter: self
+                .filter
+                .into_iter()
+                .map(|index_and_bindings| index_and_bindings.lift(outer_filter))
+                .collect_vec(),
+        }
+    }
+
+    /// Returns the first index of the filtered patterns.
+    // TODO: rename. Fix doc.
+    pub fn first(self) -> Option<IndexAndBindings> {
         self.filter.into_iter().next()
+    }
+
+    /// Returns an iterator over the indices of the patterns accepted by the filter.
+    pub fn indices<'a>(&'a self) -> impl Iterator<Item = usize> + 'a {
+        self.filter.iter().map(|index_and_bindings| index_and_bindings.index)
+    }
+}
+
+#[derive(Clone, Hash, Eq, PartialEq)]
+pub struct IndexAndBindings {
+    /// The index of the pattern in the list of patterns.
+    index: usize,
+    /// The bindings that should be applied if the pattern is chosen.
+    bindings: Bindings,
+}
+impl IndexAndBindings {
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
+    /// Lifts the index of the pattern to the outer level.
+    /// See [FilteredPatterns::lift] for more details.
+    fn lift(self, outer_filter: &FilteredPatterns) -> IndexAndBindings {
+        IndexAndBindings {
+            index: outer_filter.filter[self.index].index,
+            bindings: self.bindings.union(&outer_filter.filter[self.index].bindings),
+        }
+    }
+
+    /// Create a node that binds the [FlowControlVar]s in [Self::bindings] to the [PatternVariable]s
+    /// and continues to the given `node`.
+    pub fn wrap_node<'db>(
+        self,
+        graph: &mut FlowControlGraphBuilder<'db>,
+        mut node: NodeId,
+    ) -> NodeId {
+        for (input, output) in self.bindings.bindings {
+            node = graph.add_node(FlowControlNode::BindVar(BindVar {
+                input,
+                output: graph.get_pattern_variable(output).clone(),
+                next: node,
+            }));
+        }
+        node
+    }
+}
+
+#[derive(Clone, Default, Hash, Eq, PartialEq)]
+pub struct Bindings {
+    /// The bindings that should be applied if the pattern is chosen.
+    bindings: Vec<(FlowControlVar, PatternVarId)>,
+}
+impl Bindings {
+    pub fn single(input: FlowControlVar, output: PatternVarId) -> Self {
+        Self { bindings: vec![(input, output)] }
+    }
+
+    pub fn union(&self, bindings: &Self) -> Self {
+        Self {
+            bindings: self.bindings.iter().chain(bindings.bindings.iter()).cloned().collect_vec(),
+        }
     }
 }

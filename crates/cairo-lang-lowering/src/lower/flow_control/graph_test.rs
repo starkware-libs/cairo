@@ -10,7 +10,7 @@ use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
-use super::create_graph::create_graph_expr_if;
+use super::create_graph::{create_graph_expr_if, create_graph_expr_match};
 use super::graph::FlowControlGraph;
 use super::lower_graph::lower_graph;
 use crate::Lowered;
@@ -27,6 +27,7 @@ cairo_lang_test_utils::test_file_test!(
     "src/lower/flow_control/test_data",
     {
         if_: "if",
+        match_: "match",
     },
     test_create_graph
 );
@@ -67,6 +68,7 @@ fn test_create_graph(
 
     let graph = match &expr {
         semantic::Expr::If(expr) => create_graph_expr_if(&ctx, expr),
+        semantic::Expr::Match(expr) => create_graph_expr_match(&ctx, expr),
         _ => {
             panic!("Unsupported expression: {:?}", expr.debug(&expr_formatter));
         }

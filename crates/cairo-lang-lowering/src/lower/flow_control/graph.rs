@@ -21,7 +21,8 @@
 
 use std::fmt::Debug;
 
-use cairo_lang_semantic::{self as semantic, ConcreteVariant};
+use cairo_lang_semantic::{self as semantic, ConcreteVariant, PatternVariable};
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 
 use crate::ids::LocationId;
@@ -42,6 +43,10 @@ impl FlowControlVar {
         graph.var_locations[self.idx]
     }
 }
+
+/// A thin wrapper around [PatternVariable] that is used for fast comparison.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct PatternVarId(usize);
 
 /// Unique identifier for nodes in the flow control graph.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -100,6 +105,39 @@ pub struct ArmExpr {
     pub expr: semantic::ExprId,
 }
 
+/// Destructure (for structs and tuples).
+#[derive(Debug)]
+pub struct Deconstruct {
+    /// The input value to destructure (a variable of type struct or tuple).
+    pub input: FlowControlVar,
+    /// The (output) variables to assign the result to. The number of variables is equal to the
+    /// number of fields in the struct or tuple.
+    pub outputs: Vec<FlowControlVar>,
+    /// The next node.
+    pub next: NodeId,
+}
+
+/// Assigns a [PatternVariable] to an existing [FlowControlVar] that can be later used
+/// in the expressions.
+pub struct BindVar<'db> {
+    /// The input variable to bind.
+    pub input: FlowControlVar,
+    /// The (output) pattern variable to assign the result to.
+    pub output: PatternVariable<'db>,
+    /// The next node.
+    pub next: NodeId,
+}
+
+impl<'db> std::fmt::Debug for BindVar<'db> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "BindVar {{ input: {:?}, output: {:?}, next: {:?} }}",
+            self.input, self.output.name, self.next
+        )
+    }
+}
+
 /// A node in the flow control graph for a match or if lowering.
 pub enum FlowControlNode<'db> {
     /// Evaluates an expression and assigns the result to a [FlowControlVar].
@@ -110,6 +148,10 @@ pub enum FlowControlNode<'db> {
     EnumMatch(EnumMatch<'db>),
     /// An arm (final node) that returns an expression.
     ArmExpr(ArmExpr),
+    /// Destructure a tuple to its members.
+    Deconstruct(Deconstruct),
+    /// Binds a [FlowControlVar] to a pattern variable.
+    BindVar(BindVar<'db>),
     /// An arm (final node) that returns a unit value - `()`.
     UnitResult,
 }
@@ -121,6 +163,8 @@ impl<'db> Debug for FlowControlNode<'db> {
             FlowControlNode::BooleanIf(node) => node.fmt(f),
             FlowControlNode::EnumMatch(node) => node.fmt(f),
             FlowControlNode::ArmExpr(node) => node.fmt(f),
+            FlowControlNode::Deconstruct(node) => node.fmt(f),
+            FlowControlNode::BindVar(node) => node.fmt(f),
             FlowControlNode::UnitResult => write!(f, "UnitResult"),
         }
     }
@@ -132,17 +176,27 @@ impl<'db> Debug for FlowControlNode<'db> {
 /// have a smaller node id).
 pub struct FlowControlGraph<'db> {
     /// All nodes in the graph.
-    pub nodes: Vec<FlowControlNode<'db>>,
+    nodes: Vec<FlowControlNode<'db>>,
     /// The type of each [FlowControlVar].
-    pub var_types: Vec<semantic::TypeId<'db>>,
+    var_types: Vec<semantic::TypeId<'db>>,
     /// The location of each [FlowControlVar].
-    pub var_locations: Vec<LocationId<'db>>,
+    var_locations: Vec<LocationId<'db>>,
 }
 impl<'db> FlowControlGraph<'db> {
     /// Returns the root node of the graph.
     pub fn root(&self) -> NodeId {
         // The root is always the last node.
         NodeId(self.nodes.len() - 1)
+    }
+
+    /// Returns the number of nodes in the graph.
+    pub fn size(&self) -> usize {
+        self.nodes.len()
+    }
+
+    /// Returns the node with the given [NodeId].
+    pub fn node(&self, id: NodeId) -> &FlowControlNode<'db> {
+        &self.nodes[id.0]
     }
 }
 
@@ -156,31 +210,25 @@ impl<'db> Debug for FlowControlGraph<'db> {
     }
 }
 /// Builder for [FlowControlGraph].
-#[derive(Default)]
 pub struct FlowControlGraphBuilder<'db> {
-    /// All nodes in the graph.
-    nodes: Vec<FlowControlNode<'db>>,
-    /// The type of each [FlowControlVar].
-    pub var_types: Vec<semantic::TypeId<'db>>,
-    /// The location of each [FlowControlVar].
-    pub var_locations: Vec<LocationId<'db>>,
-    /// The number of [FlowControlVar]s allocated so far.
-    n_vars: usize,
+    graph: FlowControlGraph<'db>,
+    /// The pattern variables used by the [BindVar] nodes in the graph.
+    pattern_vars: Vec<PatternVariable<'db>>,
+    pattern_vars_map: UnorderedHashMap<PatternVariable<'db>, PatternVarId>,
 }
 
 impl<'db> FlowControlGraphBuilder<'db> {
     /// Adds a new node to the graph. Returns the new node's id.
     pub fn add_node(&mut self, node: FlowControlNode<'db>) -> NodeId {
-        let id = NodeId(self.nodes.len());
-        self.nodes.push(node);
+        let id = NodeId(self.graph.size());
+        self.graph.nodes.push(node);
         id
     }
 
     /// Finalizes the graph and returns the final [FlowControlGraph].
     pub fn finalize(self, root: NodeId) -> FlowControlGraph<'db> {
-        assert_eq!(root.0, self.nodes.len() - 1, "The root must be the last node.");
-        let FlowControlGraphBuilder { nodes, var_types, var_locations, n_vars: _ } = self;
-        FlowControlGraph { nodes, var_types, var_locations }
+        assert_eq!(root.0, self.graph.size() - 1, "The root must be the last node.");
+        self.graph
     }
 
     /// Creates a new [FlowControlVar].
@@ -189,15 +237,38 @@ impl<'db> FlowControlGraphBuilder<'db> {
         ty: semantic::TypeId<'db>,
         location: LocationId<'db>,
     ) -> FlowControlVar {
-        let var = FlowControlVar { idx: self.n_vars };
-        self.var_types.push(ty);
-        self.var_locations.push(location);
-        self.n_vars += 1;
+        let var = FlowControlVar { idx: self.graph.var_types.len() };
+        self.graph.var_types.push(ty);
+        self.graph.var_locations.push(location);
         var
+    }
+
+    /// Registers a new [PatternVariable] and returns a corresponding [PatternVarId].
+    pub fn register_pattern_var(&mut self, var: PatternVariable<'db>) -> PatternVarId {
+        *self.pattern_vars_map.entry(var.clone()).or_insert_with(|| {
+            let idx = self.pattern_vars.len();
+            self.pattern_vars.push(var);
+            PatternVarId(idx)
+        })
+    }
+
+    pub fn get_pattern_variable(&self, id: PatternVarId) -> &PatternVariable<'db> {
+        &self.pattern_vars[id.0]
     }
 
     /// Returns the type of the given [FlowControlVar].
     pub fn var_ty(&self, input_var: FlowControlVar) -> semantic::TypeId<'db> {
-        self.var_types[input_var.idx]
+        self.graph.var_types[input_var.idx]
+    }
+}
+
+impl<'db> Default for FlowControlGraphBuilder<'db> {
+    fn default() -> Self {
+        let graph = FlowControlGraph {
+            nodes: Vec::new(),
+            var_types: Vec::new(),
+            var_locations: Vec::new(),
+        };
+        Self { graph, pattern_vars: Vec::new(), pattern_vars_map: UnorderedHashMap::default() }
     }
 }

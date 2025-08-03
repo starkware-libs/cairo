@@ -1,15 +1,18 @@
 //! Functions for lowering nodes of a [super::FlowControlGraph].
 
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_semantic::{MatchArmSelector, corelib};
+use cairo_lang_semantic::{self as semantic, MatchArmSelector, corelib};
+use itertools::zip_eq;
 
 use super::LowerGraphContext;
 use crate::lower::block_builder::BlockBuilder;
 use crate::lower::context::{LoweredExpr, VarRequest};
 use crate::lower::flow_control::graph::{
-    ArmExpr, BooleanIf, EnumMatch, EvaluateExpr, FlowControlNode, NodeId,
+    ArmExpr, BindVar, BooleanIf, Deconstruct, EnumMatch, EvaluateExpr, FlowControlNode, NodeId,
 };
-use crate::lower::{lower_expr_to_var_usage, lower_tail_expr, lowered_expr_to_block_scope_end};
+use crate::lower::{
+    generators, lower_expr_to_var_usage, lower_tail_expr, lowered_expr_to_block_scope_end,
+};
 use crate::{MatchArm, MatchEnumInfo, MatchInfo, VarUsage};
 
 /// Lowers the node with the given [NodeId].
@@ -18,12 +21,14 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         return Ok(());
     };
 
-    match &ctx.graph.nodes[id.0] {
+    match ctx.graph.node(id) {
         FlowControlNode::EvaluateExpr(node) => lower_evaluate_expr(ctx, id, node, builder),
         FlowControlNode::BooleanIf(node) => lower_boolean_if(ctx, id, node, builder),
         FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, node, builder),
         FlowControlNode::UnitResult => lower_unit_result(ctx, builder),
         FlowControlNode::EnumMatch(node) => lower_enum_match(ctx, id, node, builder),
+        FlowControlNode::BindVar(node) => lower_bind_var(ctx, id, node, builder),
+        FlowControlNode::Deconstruct(node) => lower_deconstruct(ctx, id, node, builder),
     }
 }
 
@@ -121,7 +126,7 @@ fn lower_enum_match<'db>(
 ) -> Maybe<()> {
     let match_location = node.matched_var.location(ctx.graph);
 
-    let arms: Vec<MatchArm<'db>> = node
+    let arms: Vec<MatchArm> = node
         .variants
         .iter()
         .map(|(concrete_variant, variant_node, flow_control_var)| {
@@ -147,5 +152,60 @@ fn lower_enum_match<'db>(
     });
 
     ctx.finalize_with_match(id, builder, match_info);
+    Ok(())
+}
+
+/// Lowers a [BindVar] node.
+fn lower_bind_var<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &BindVar<'db>,
+    mut builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let sem_var = semantic::Binding::LocalVar(node.output.var.clone());
+    // Deposit the owned variable in the semantic variables store.
+    let var = ctx.vars[&node.input].var_id;
+    // TODO: Check if the following is needed.
+    // Override variable location.
+    // ctx.ctx.variables.variables[var].location =
+    // ctx.ctx.get_location(node.output.stable_ptr.untyped());
+    builder.put_semantic(sem_var.id(), var);
+    ctx.ctx.semantic_defs.insert(sem_var.id(), sem_var);
+
+    ctx.pass_builder_to_child(id, node.next, builder);
+    Ok(())
+}
+
+/// Lowers a [Deconstruct] node.
+fn lower_deconstruct<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &Deconstruct,
+    mut builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let var_requests = node
+        .outputs
+        .iter()
+        .map(|output| VarRequest { ty: output.ty(ctx.graph), location: output.location(ctx.graph) })
+        .collect();
+
+    let variable_ids =
+        generators::StructDestructure { input: ctx.vars[&node.input], var_reqs: var_requests }
+            .add(ctx.ctx, &mut builder.statements);
+
+    for (var_id, output) in zip_eq(variable_ids, &node.outputs) {
+        ctx.register_var(
+            *output,
+            VarUsage {
+                var_id,
+                // TODO: Check location.
+                // The variable is used immediately after the destructure, so the usage
+                // location is the same as the definition location.
+                location: ctx.ctx.variables[var_id].location,
+            },
+        );
+    }
+
+    ctx.pass_builder_to_child(id, node.next, builder);
     Ok(())
 }
