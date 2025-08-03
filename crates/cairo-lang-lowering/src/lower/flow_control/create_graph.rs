@@ -66,8 +66,12 @@ pub fn create_graph_expr_if<'db>(
                     &mut graph,
                     expr_var,
                     &patterns.iter().map(|pattern| Some(get_pattern(ctx, *pattern))).collect_vec(),
-                    &|_graph, pattern_indices| {
-                        if pattern_indices.first().is_some() { current_node } else { false_branch }
+                    &|graph, pattern_indices| {
+                        if let Some(index_and_bindings) = pattern_indices.first() {
+                            index_and_bindings.wrap_node(graph, current_node)
+                        } else {
+                            false_branch
+                        }
                     },
                     expr_location,
                 );
@@ -119,10 +123,11 @@ pub fn create_graph_expr_match<'db>(
             .iter()
             .map(|(pattern, _)| Some(get_pattern(ctx, *pattern)))
             .collect_vec(),
-        &|_graph, pattern_indices| {
+        &|graph, pattern_indices| {
             // TODO(lior): add diagnostics if pattern_indices is empty (instead of `unwrap`).
-            let index = pattern_indices.first().unwrap();
-            pattern_and_nodes[index].1
+            let index_and_bindings = pattern_indices.first().unwrap();
+            let index = index_and_bindings.index();
+            index_and_bindings.wrap_node(graph, pattern_and_nodes[index].1)
         },
         matched_expr_location,
     );

@@ -86,3 +86,42 @@ blk8:
 Statements:
 End:
   Return(v9)
+
+//! > ==========================================================================
+
+//! > Match with pattern binding
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: true)
+
+//! > function_code
+fn foo(color: Color) -> felt252 {
+    match color {
+        Color::Red(x) | Color::Green(x) => x,
+        Color::Blue(x) => x,
+        _ => 0,
+    }
+}
+
+//! > module_code
+enum Color {
+    Red: felt252,
+    Green: felt252,
+    Blue: felt252,
+    Black,
+}
+
+//! > graph
+Root: 7
+0 ArmExpr { expr: ExprId(1) }
+1 ArmExpr { expr: ExprId(2) }
+2 ArmExpr { expr: ExprId(3) }
+3 BindVar { input: FlowControlVar { idx: 1 }, output: PatternVarId(0), next: NodeId(0) }
+4 BindVar { input: FlowControlVar { idx: 2 }, output: PatternVarId(1), next: NodeId(0) }
+5 BindVar { input: FlowControlVar { idx: 3 }, output: PatternVarId(2), next: NodeId(1) }
+6 EnumMatch { matched_var: FlowControlVar { idx: 0 }, variants: (NodeId(3), FlowControlVar { idx: 1 }), (NodeId(4), FlowControlVar { idx: 2 }), (NodeId(5), FlowControlVar { idx: 3 }), (NodeId(2), FlowControlVar { idx: 4 })}
+7 EvaluateExpr { expr: ExprId(0), var_id: FlowControlVar { idx: 0 }, next: NodeId(6) }
+
+//! > semantic_diagnostics
+
+//! > lowered
