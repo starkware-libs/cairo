@@ -1130,11 +1130,12 @@ fn resolve_type<'db>(
                         ModuleId::Submodule(submodule_id) => Some(DocumentableItemId::from(
                             LookupItemId::ModuleItem(ModuleItemId::Submodule(submodule_id)),
                         )),
+                        ModuleId::MacroCall { id: _, generated_file_id: _ } => None,
                     },
                     Err(_) => None,
                 }
             }
-            InferenceId::MacroCall(_) => todo!(),
+            InferenceId::MacroCall(_) => None,
             InferenceId::Canonical => None,
             InferenceId::NoContext => None,
         },

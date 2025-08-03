@@ -642,6 +642,9 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::SuperUsedInRootModule => {
                 "'super' cannot be used for the crate's root module.".into()
             }
+            SemanticDiagnosticKind::SuperNotSupportedInMacroCallModule => {
+                "`super` is not supported in a macro call module.".into()
+            }
             SemanticDiagnosticKind::ItemNotVisible(item_id, containing_modules) => {
                 format!(
                     "Item `{}` is not visible in this context{}.",
@@ -1401,6 +1404,7 @@ pub enum SemanticDiagnosticKind<'db> {
     TraitItemForbiddenInItsImpl,
     ImplItemForbiddenInTheImpl,
     SuperUsedInRootModule,
+    SuperNotSupportedInMacroCallModule,
     ItemNotVisible(ModuleItemId<'db>, Vec<ModuleId<'db>>),
     UnusedImport(UseId<'db>),
     RedundantModifier {
