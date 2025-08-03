@@ -7,6 +7,8 @@ use semantic::{Condition, MatchArmSelector};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
+use super::flow_control::create_graph::create_graph_expr_if;
+use super::flow_control::lower_graph::lower_graph;
 use super::lowered_expr_to_block_scope_end;
 use crate::diagnostic::LoweringDiagnosticKind::{self};
 use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
@@ -45,6 +47,11 @@ pub fn lower_expr_if<'db>(
     builder: &mut BlockBuilder<'db>,
     expr: &semantic::ExprIf<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
+    if expr.conditions.len() == 1 && matches!(expr.conditions[0], Condition::BoolExpr(_)) {
+        let graph = create_graph_expr_if(ctx, expr);
+        return lower_graph(ctx, builder, &graph, ctx.get_location(expr.stable_ptr.untyped()));
+    }
+
     // Else block is not supported yet for multiple conditions.
     if expr.conditions.len() > 1 {
         if let Some(else_block) = expr.else_block {

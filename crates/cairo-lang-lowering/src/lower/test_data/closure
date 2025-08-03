@@ -410,15 +410,15 @@ End:
 
 blk1:
 Statements:
-  (v16: core::felt252, v17: @core::felt252) <- snapshot(v3)
-End:
-  Goto(blk3, {v16 -> v20, v17 -> v21})
-
-blk2:
-Statements:
   (v18: core::felt252, v19: @core::felt252) <- snapshot(v3)
 End:
   Goto(blk3, {v18 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v16: core::felt252, v17: @core::felt252) <- snapshot(v3)
+End:
+  Goto(blk3, {v16 -> v20, v17 -> v21})
 
 blk3:
 Statements:
