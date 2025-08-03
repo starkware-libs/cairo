@@ -6,6 +6,7 @@ use bincode::enc::write::Writer;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
+use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_executable::compile::{
     CompileExecutableResult, ExecutableConfig, compile_executable_in_prepared_db, prepare_db,
 };
@@ -25,6 +26,7 @@ use cairo_vm::cairo_run;
 use cairo_vm::cairo_run::{CairoRunConfig, cairo_run_program};
 use cairo_vm::types::layout::CairoLayoutParams;
 use cairo_vm::types::layout_name::LayoutName;
+use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use clap::Parser;
 use num_bigint::BigInt;
 
@@ -284,14 +286,18 @@ fn main() -> anyhow::Result<()> {
         ..Default::default()
     };
 
-    let mut runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor)
-        .with_context(|| {
+    let mut runner = match cairo_run_program(&program, &cairo_run_config, &mut hint_processor) {
+        Ok(runner) => runner,
+        Err(err) => {
             if let Some(panic_data) = hint_processor.markers.last() {
-                format_for_panic(panic_data.iter().copied())
-            } else {
-                "Failed running program.".into()
+                return Err(err).with_context(|| format_for_panic(panic_data.iter().copied()));
+            };
+            if let Some(err_location) = try_get_error_location(&opt_debug_data, &err) {
+                return Err(err).context(err_location);
             }
-        })?;
+            return Err(err).context("Failed running program.");
+        }
+    };
     if args.run.print_outputs {
         let mut output_buffer = "Program Output:\n".to_string();
         runner.vm.write_output(&mut output_buffer)?;
@@ -346,8 +352,9 @@ fn main() -> anyhow::Result<()> {
 
         let trace = runner.relocated_trace.as_ref().with_context(|| "Trace not relocated.")?;
         let first_pc = trace.first().unwrap().pc;
-        assert_eq!(first_pc, entrypoint.offset + 1);
-        let load_offset = first_pc - entrypoint.offset + header_len;
+        // After relocation, we expect the program to start at offset 1.
+        assert_eq!(first_pc - entrypoint.offset, 1);
+        let load_offset = 1 + header_len;
         let info = ProfilingInfo::from_trace(
             &builder,
             load_offset,
@@ -365,6 +372,27 @@ fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+/// Tries to get the location of the error in the source code.
+///
+/// Returns `None` if `opt_debug_data` is None, the error is not a `VmException` or if the error is
+/// in a different segment than the first one.
+fn try_get_error_location(
+    opt_debug_data: &Option<DebugData<'_>>,
+    err: &CairoRunError,
+) -> Option<String> {
+    let DebugData { db, builder, debug_info, header_len } = opt_debug_data.as_ref()?;
+    let CairoRunError::VmException(err) = err else { return None };
+    if err.pc.segment_index != 0 {
+        return None;
+    }
+
+    // Note that pc wasn't relocated here so pc.offset is zero-based.
+    let pc = err.pc.offset.checked_sub(*header_len)?;
+    let stmt_idx = builder.casm_program().sierra_statement_index_by_pc(pc);
+    let loc = debug_info.statements_locations.statement_diagnostic_location(*db, stmt_idx)?;
+    Some(format!("#{stmt_idx} {:?}", loc.debug(*db)))
 }
 
 /// Data required for profiling and debugging the executable.
