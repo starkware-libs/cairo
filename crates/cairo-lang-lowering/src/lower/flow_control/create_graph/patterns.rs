@@ -9,7 +9,7 @@ use itertools::Itertools;
 use super::super::graph::{
     EnumMatch, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
 };
-use super::filtered_patterns::FilteredPatterns;
+use super::filtered_patterns::{Bindings, FilteredPatterns};
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
 
@@ -57,6 +57,29 @@ pub fn create_node_for_patterns<'db>(
     build_node_callback: BuildNodeCallback<'db, '_>,
     location: LocationId<'db>,
 ) -> NodeId {
+    // Handle `Pattern::Variable` patterns. Replace them with `Pattern::Otherwise` and collect the
+    // bindings.
+    let mut bindings: Vec<Bindings> = vec![];
+    let patterns: Vec<PatternOption<'_, 'db>> = patterns
+        .iter()
+        .map(|pattern| {
+            if let Some(semantic::Pattern::Variable(pattern_variable)) = pattern {
+                let pattern_var = graph.register_pattern_var(pattern_variable.clone());
+                bindings.push(Bindings::single(input_var, pattern_var));
+                None
+            } else {
+                bindings.push(Bindings::default());
+                *pattern
+            }
+        })
+        .collect_vec();
+
+    // Wrap `build_node_callback` to add the bindings to the patterns.
+    let build_node_callback = |graph: &mut FlowControlGraphBuilder<'db>,
+                               pattern_indices: FilteredPatterns| {
+        build_node_callback(graph, pattern_indices.add_bindings(bindings.clone()))
+    };
+
     // If all the patterns are catch-all, we do not need to look into `input_var`.
     if patterns.iter().all(|pattern| pattern_is_any(pattern)) {
         // Call the callback with all patterns accepted.
@@ -71,8 +94,8 @@ pub fn create_node_for_patterns<'db>(
             input_var,
             concrete_enum_id,
             n_snapshots,
-            patterns,
-            build_node_callback,
+            &patterns,
+            &build_node_callback,
             location,
         ),
         _ => todo!("Type {:?} is not supported yet.", long_ty),
@@ -124,6 +147,7 @@ fn create_node_for_enum<'db>(
                     inner_patterns.push(None);
                 }
             }
+            Some(semantic::Pattern::Variable(..)) => unreachable!(),
             _ => todo!("Pattern {:?} is not supported yet.", pattern),
         }
     }
