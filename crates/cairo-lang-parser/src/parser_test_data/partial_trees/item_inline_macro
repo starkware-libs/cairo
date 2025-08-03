@@ -76,6 +76,52 @@ ItemInlineMacro
 
 //! > ==========================================================================
 
+//! > Test item use path with dollar token prefix.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+use $a::b;
+use $dollar;
+
+//! > top_level_kind
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   ├── child #0 (kind: ItemUse)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
+    │   │   ├── use_kw (kind: TokenUse): 'use'
+    │   │   ├── dollar (kind: TokenDollar): '$'
+    │   │   ├── use_path (kind: UsePathSingle)
+    │   │   │   ├── ident (kind: PathSegmentSimple)
+    │   │   │   │   └── ident (kind: TokenIdentifier): 'a'
+    │   │   │   ├── colon_colon (kind: TokenColonColon): '::'
+    │   │   │   └── use_path (kind: UsePathLeaf)
+    │   │   │       ├── ident (kind: PathSegmentSimple)
+    │   │   │       │   └── ident (kind: TokenIdentifier): 'b'
+    │   │   │       └── alias_clause (kind: OptionAliasClauseEmpty) []
+    │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   └── child #1 (kind: ItemUse)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── use_kw (kind: TokenUse): 'use'
+    │       ├── dollar (kind: TokenDollar): '$'
+    │       ├── use_path (kind: UsePathLeaf)
+    │       │   ├── ident (kind: PathSegmentSimple)
+    │       │   │   └── ident (kind: TokenIdentifier): 'dollar'
+    │       │   └── alias_clause (kind: OptionAliasClauseEmpty) []
+    │       └── semicolon (kind: TokenSemicolon): ';'
+    └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
 //! > Test an ItemInlineMacro with brackets syntax tree
 
 //! > test_runner_name

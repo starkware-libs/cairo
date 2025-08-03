@@ -17973,17 +17973,19 @@ impl<'db> ItemUse<'db> {
     pub const INDEX_ATTRIBUTES: usize = 0;
     pub const INDEX_VISIBILITY: usize = 1;
     pub const INDEX_USE_KW: usize = 2;
-    pub const INDEX_USE_PATH: usize = 3;
-    pub const INDEX_SEMICOLON: usize = 4;
+    pub const INDEX_DOLLAR: usize = 3;
+    pub const INDEX_USE_PATH: usize = 4;
+    pub const INDEX_SEMICOLON: usize = 5;
     pub fn new_green(
         db: &'db dyn SyntaxGroup,
         attributes: AttributeListGreen<'db>,
         visibility: VisibilityGreen<'db>,
         use_kw: TerminalUseGreen<'db>,
+        dollar: OptionTerminalDollarGreen<'db>,
         use_path: UsePathGreen<'db>,
         semicolon: TerminalSemicolonGreen<'db>,
     ) -> ItemUseGreen<'db> {
-        let children = [attributes.0, visibility.0, use_kw.0, use_path.0, semicolon.0];
+        let children = [attributes.0, visibility.0, use_kw.0, dollar.0, use_path.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
         ItemUseGreen(
             GreenNode {
@@ -18004,11 +18006,14 @@ impl<'db> ItemUse<'db> {
     pub fn use_kw(&self, db: &'db dyn SyntaxGroup) -> TerminalUse<'db> {
         TerminalUse::from_syntax_node(db, self.node.get_children(db)[2])
     }
+    pub fn dollar(&self, db: &'db dyn SyntaxGroup) -> OptionTerminalDollar<'db> {
+        OptionTerminalDollar::from_syntax_node(db, self.node.get_children(db)[3])
+    }
     pub fn use_path(&self, db: &'db dyn SyntaxGroup) -> UsePath<'db> {
-        UsePath::from_syntax_node(db, self.node.get_children(db)[3])
+        UsePath::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn semicolon(&self, db: &'db dyn SyntaxGroup) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[5])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -18052,6 +18057,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemUse<'db> {
                         AttributeList::missing(db).0,
                         Visibility::missing(db).0,
                         TerminalUse::missing(db).0,
+                        OptionTerminalDollar::missing(db).0,
                         UsePath::missing(db).0,
                         TerminalSemicolon::missing(db).0,
                     ]

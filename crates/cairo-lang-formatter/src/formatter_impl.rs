@@ -1092,6 +1092,11 @@ impl<'a> FormatterImpl<'a> {
 
                 let use_item = ast::ItemUse::from_syntax_node(self.db, *node);
 
+                if !matches!(use_item.dollar(self.db), ast::OptionTerminalDollar::Empty(_)) {
+                    new_children.push(*node);
+                    continue;
+                }
+
                 let decorations = chain!(
                     use_item
                         .attributes(self.db)
