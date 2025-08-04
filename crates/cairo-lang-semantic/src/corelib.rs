@@ -5,13 +5,12 @@ use cairo_lang_defs::ids::{
     TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
-use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
+use cairo_lang_filesystem::ids::{CrateId, StrRef};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{Intern, OptionFrom, extract_matches, require, try_extract_matches};
 use num_bigint::BigInt;
 use num_traits::{Num, Signed, ToPrimitive, Zero};
-use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -43,10 +42,9 @@ pub fn core_module(db: &dyn SemanticGroup) -> ModuleId<'_> {
 pub fn get_submodule<'db>(
     db: &'db dyn SemanticGroup,
     base_module: ModuleId<'db>,
-    submodule_name: &str,
+    submodule_name: &'db str,
 ) -> Option<ModuleId<'db>> {
-    let module_item_id =
-        db.module_item_by_name(base_module, SmolStr::from(submodule_name).intern(db)).ok()??;
+    let module_item_id = db.module_item_by_name(base_module, submodule_name.into()).ok()??;
     if let ModuleItemId::Submodule(id) = module_item_id {
         Some(ModuleId::Submodule(id))
     } else {
@@ -56,7 +54,7 @@ pub fn get_submodule<'db>(
 
 /// Returns a submodule of the corelib named `submodule_name`.
 /// If no such submodule exists, panics.
-pub fn core_submodule<'db>(db: &'db dyn SemanticGroup, submodule_name: &str) -> ModuleId<'db> {
+pub fn core_submodule<'db>(db: &'db dyn SemanticGroup, submodule_name: &'db str) -> ModuleId<'db> {
     get_submodule(db, core_module(db), submodule_name)
         .unwrap_or_else(|| panic!("`{submodule_name}` is not a core submodule."))
 }
@@ -77,7 +75,7 @@ pub fn bounded_int_ty<'db>(db: &'db dyn SemanticGroup, min: BigInt, max: BigInt)
     try_get_ty_by_name(
         db,
         bounded_int,
-        "BoundedInt".into(),
+        "BoundedInt",
         vec![GenericArgumentId::Constant(lower_id), GenericArgumentId::Constant(upper_id)],
     )
     .expect("could not find")
@@ -87,7 +85,7 @@ pub fn core_nonzero_ty<'db>(db: &'db dyn SemanticGroup, inner_type: TypeId<'db>)
     get_ty_by_name(
         db,
         core_submodule(db, "zeroable"),
-        "NonZero".into(),
+        "NonZero",
         vec![GenericArgumentId::Type(inner_type)],
     )
 }
@@ -100,7 +98,7 @@ pub fn core_result_ty<'db>(
     get_ty_by_name(
         db,
         core_submodule(db, "result"),
-        "Result".into(),
+        "Result",
         vec![GenericArgumentId::Type(ok_type), GenericArgumentId::Type(err_type)],
     )
 }
@@ -109,27 +107,22 @@ pub fn core_option_ty<'db>(db: &'db dyn SemanticGroup, some_type: TypeId<'db>) -
     get_ty_by_name(
         db,
         core_submodule(db, "option"),
-        "Option".into(),
+        "Option",
         vec![GenericArgumentId::Type(some_type)],
     )
 }
 
 pub fn core_box_ty<'db>(db: &'db dyn SemanticGroup, inner_type: TypeId<'db>) -> TypeId<'db> {
-    get_ty_by_name(
-        db,
-        core_submodule(db, "box"),
-        "Box".into(),
-        vec![GenericArgumentId::Type(inner_type)],
-    )
+    get_ty_by_name(db, core_submodule(db, "box"), "Box", vec![GenericArgumentId::Type(inner_type)])
 }
 
 pub fn core_array_felt252_ty<'db>(db: &'db dyn SemanticGroup) -> TypeId<'db> {
-    get_core_ty_by_name(db, "Array".into(), vec![GenericArgumentId::Type(db.core_info().felt252)])
+    get_core_ty_by_name(db, "Array", vec![GenericArgumentId::Type(db.core_info().felt252)])
 }
 
 pub fn try_get_core_ty_by_name<'db>(
     db: &'db dyn SemanticGroup,
-    name: SmolStr,
+    name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
 ) -> Result<TypeId<'db>, SemanticDiagnosticKind<'db>> {
     try_get_ty_by_name(db, db.core_module(), name, generic_args)
@@ -138,12 +131,12 @@ pub fn try_get_core_ty_by_name<'db>(
 pub fn try_get_ty_by_name<'db>(
     db: &'db dyn SemanticGroup,
     module: ModuleId<'db>,
-    name: SmolStr,
+    name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
 ) -> Result<TypeId<'db>, SemanticDiagnosticKind<'db>> {
     // This should not fail if the corelib is present.
     let module_item_id = db
-        .module_item_by_name(module, name.clone().intern(db))
+        .module_item_by_name(module, name.into())
         .map_err(|_| SemanticDiagnosticKind::UnknownType)?
         .ok_or(SemanticDiagnosticKind::UnknownType)?;
     let generic_type = match module_item_id {
@@ -176,7 +169,7 @@ pub fn try_get_ty_by_name<'db>(
 
 pub fn get_core_ty_by_name<'db>(
     db: &'db dyn SemanticGroup,
-    name: SmolStr,
+    name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
 ) -> TypeId<'db> {
     try_get_core_ty_by_name(db, name, generic_args).unwrap()
@@ -185,7 +178,7 @@ pub fn get_core_ty_by_name<'db>(
 pub fn get_ty_by_name<'db>(
     db: &'db dyn SemanticGroup,
     module: ModuleId<'db>,
-    name: SmolStr,
+    name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
 ) -> TypeId<'db> {
     try_get_ty_by_name(db, module, name, generic_args).unwrap()
@@ -195,7 +188,7 @@ pub fn core_bool_ty<'db>(db: &'db dyn SemanticGroup) -> TypeId<'db> {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
     let generic_type = db
-        .module_item_by_name(core_module, SmolStr::from("bool").intern(db))
+        .module_item_by_name(core_module, "bool".into())
         .expect("Failed to load core lib.")
         .and_then(GenericTypeId::option_from)
         .expect("Type bool was not found in core lib.");
@@ -209,7 +202,7 @@ pub fn core_bool_enum<'db>(db: &'db dyn SemanticGroup) -> ConcreteEnumId<'db> {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
     let enum_id = db
-        .module_item_by_name(core_module, SmolStr::from("bool").intern(db))
+        .module_item_by_name(core_module, "bool".into())
         .expect("Failed to load core lib.")
         .and_then(EnumId::option_from)
         .expect("Type bool was not found in core lib.");
@@ -374,8 +367,8 @@ pub fn true_literal_expr<'db>(
 /// the returned semantic expression.
 fn get_bool_variant_expr<'db>(
     ctx: &mut ComputationContext<'db, '_>,
-    enum_name: &str,
-    variant_name: &str,
+    enum_name: &'db str,
+    variant_name: &'db str,
     stable_ptr: ast::ExprPtr<'db>,
 ) -> semantic::Expr<'db> {
     let concrete_variant = get_core_enum_concrete_variant(ctx.db, enum_name, vec![], variant_name);
@@ -392,16 +385,15 @@ fn get_bool_variant_expr<'db>(
 pub fn get_enum_concrete_variant<'db>(
     db: &'db dyn SemanticGroup,
     module_id: ModuleId<'db>,
-    enum_name: &str,
+    enum_name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
-    variant_name: &str,
+    variant_name: &'db str,
 ) -> ConcreteVariant<'db> {
-    let ty = get_ty_by_name(db, module_id, enum_name.into(), generic_args);
+    let ty = get_ty_by_name(db, module_id, enum_name, generic_args);
     let concrete_ty = extract_matches!(ty.long(db), TypeLongId::Concrete);
     let concrete_enum_id = extract_matches!(concrete_ty, ConcreteTypeId::Enum);
     let enum_id = concrete_enum_id.enum_id(db);
-    let variant_key_smol: SmolStr = variant_name.into();
-    let variant_id = db.enum_variants(enum_id).unwrap()[&variant_key_smol.intern(db)];
+    let variant_id = db.enum_variants(enum_id).unwrap()[variant_name];
     let variant = db.variant_semantic(enum_id, variant_id).unwrap();
     db.concrete_enum_variant(*concrete_enum_id, &variant).unwrap()
 }
@@ -410,9 +402,9 @@ pub fn get_enum_concrete_variant<'db>(
 /// Assumes the variant exists.
 pub fn get_core_enum_concrete_variant<'db>(
     db: &'db dyn SemanticGroup,
-    enum_name: &str,
+    enum_name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
-    variant_name: &str,
+    variant_name: &'db str,
 ) -> ConcreteVariant<'db> {
     get_enum_concrete_variant(db, core_module(db), enum_name, generic_args, variant_name)
 }
@@ -427,7 +419,7 @@ pub fn never_ty<'db>(db: &'db dyn SemanticGroup) -> TypeId<'db> {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
     let generic_type = db
-        .module_item_by_name(core_module, SmolStr::from("never").intern(db))
+        .module_item_by_name(core_module, "never".into())
         .expect("Failed to load core lib.")
         .and_then(GenericTypeId::option_from)
         .expect("Type bool was not found in core lib.");
@@ -566,18 +558,18 @@ pub fn core_binary_operator<'db>(
 }
 
 pub fn felt252_sub<'db>(db: &'db dyn SemanticGroup) -> FunctionId<'db> {
-    get_core_function_impl_method(db, "Felt252Sub".into(), "sub".into())
+    get_core_function_impl_method(db, "Felt252Sub", "sub")
 }
 
 /// Given a core library impl name and a method name, returns [FunctionId].
 fn get_core_function_impl_method<'db>(
     db: &'db dyn SemanticGroup,
-    impl_name: SmolStr,
-    method_name: SmolStr,
+    impl_name: &'db str,
+    method_name: &'db str,
 ) -> FunctionId<'db> {
     let core_module = db.core_module();
     let module_item_id = db
-        .module_item_by_name(core_module, impl_name.clone().intern(db))
+        .module_item_by_name(core_module, impl_name.into())
         .expect("Failed to load core lib.")
         .unwrap_or_else(|| panic!("Impl '{impl_name}' was not found in core lib."));
     let impl_def_id = match module_item_id {
@@ -593,13 +585,12 @@ fn get_core_function_impl_method<'db>(
         ImplLongId::Concrete(ConcreteImplLongId { impl_def_id, generic_args: vec![] }.intern(db))
             .intern(db);
     let concrete_trait_id = db.impl_concrete_trait(impl_id).unwrap();
-    let method_name_id = SmolStrId::from_str(db, method_name);
     let function = db
         .trait_functions(concrete_trait_id.trait_id(db))
         .ok()
-        .and_then(|functions| functions.get(&method_name_id).cloned())
+        .and_then(|functions| functions.get(&StrRef::from(method_name)).cloned())
         .unwrap_or_else(|| {
-            panic!("no {} in {}.", method_name_id.long(db), concrete_trait_id.trait_id(db).name(db))
+            panic!("no {method_name} in {}.", concrete_trait_id.trait_id(db).name(db))
         });
     FunctionLongId {
         function: ConcreteFunction {
@@ -611,25 +602,25 @@ fn get_core_function_impl_method<'db>(
 }
 
 pub fn core_felt252_is_zero<'db>(db: &'db dyn SemanticGroup) -> FunctionId<'db> {
-    get_core_function_id(db, "felt252_is_zero".into(), vec![])
+    get_core_function_id(db, "felt252_is_zero", vec![])
 }
 
 /// The gas withdrawal functions from the `gas` submodule.
 pub fn core_withdraw_gas_fns<'db>(db: &'db dyn SemanticGroup) -> [FunctionId<'db>; 2] {
     let gas = core_submodule(db, "gas");
     [
-        get_function_id(db, gas, "withdraw_gas".into(), vec![]),
-        get_function_id(db, gas, "withdraw_gas_all".into(), vec![]),
+        get_function_id(db, gas, "withdraw_gas", vec![]),
+        get_function_id(db, gas, "withdraw_gas_all", vec![]),
     ]
 }
 
 pub fn internal_require_implicit(db: &dyn SemanticGroup) -> GenericFunctionId<'_> {
-    get_generic_function_id(db, core_submodule(db, "internal"), "require_implicit".into())
+    get_generic_function_id(db, core_submodule(db, "internal"), "require_implicit")
 }
 /// Given a core library function name and its generic arguments, returns [FunctionId].
 pub fn get_core_function_id<'db>(
     db: &'db dyn SemanticGroup,
-    name: SmolStr,
+    name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
 ) -> FunctionId<'db> {
     get_function_id(db, db.core_module(), name, generic_args)
@@ -639,17 +630,17 @@ pub fn get_core_function_id<'db>(
 pub fn get_function_id<'db>(
     db: &'db dyn SemanticGroup,
     module: ModuleId<'db>,
-    name: SmolStr,
+    name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
 ) -> FunctionId<'db> {
     get_generic_function_id(db, module, name).concretize(db, generic_args)
 }
 
 /// Given a core library function name, returns [GenericFunctionId].
-pub fn get_core_generic_function_id(
-    db: &dyn SemanticGroup,
-    name: SmolStr,
-) -> GenericFunctionId<'_> {
+pub fn get_core_generic_function_id<'db>(
+    db: &'db dyn SemanticGroup,
+    name: &'db str,
+) -> GenericFunctionId<'db> {
     get_generic_function_id(db, db.core_module(), name)
 }
 
@@ -657,10 +648,10 @@ pub fn get_core_generic_function_id(
 pub fn get_generic_function_id<'db>(
     db: &'db dyn SemanticGroup,
     module: ModuleId<'db>,
-    name: SmolStr,
+    name: &'db str,
 ) -> GenericFunctionId<'db> {
     let module_item_id = db
-        .module_item_by_name(module, name.clone().intern(db))
+        .module_item_by_name(module, name.into())
         .expect("Failed to load core lib.")
         .unwrap_or_else(|| panic!("Function '{name}' was not found in core lib."));
     match module_item_id {
@@ -742,11 +733,11 @@ fn get_core_trait_function_infer<'db>(
 }
 
 pub fn get_panic_ty<'db>(db: &'db dyn SemanticGroup, inner_ty: TypeId<'db>) -> TypeId<'db> {
-    get_core_ty_by_name(db, "PanicResult".into(), vec![GenericArgumentId::Type(inner_ty)])
+    get_core_ty_by_name(db, "PanicResult", vec![GenericArgumentId::Type(inner_ty)])
 }
 
 pub fn get_usize_ty<'db>(db: &'db dyn SemanticGroup) -> TypeId<'db> {
-    get_core_ty_by_name(db, "usize".into(), vec![])
+    get_core_ty_by_name(db, "usize", vec![])
 }
 
 /// Returns if `ty` is a numeric type upcastable to felt252.
@@ -1011,9 +1002,8 @@ impl<'db> CoreInfo<'db> {
         let index_module = ops.submodule("index");
         let starknet = core.submodule("starknet");
         let bounded_int = core.submodule("internal").submodule("bounded_int");
-        let trait_fn = |trait_id: TraitId<'db>, name: &str| {
-            let name: SmolStr = name.into();
-            db.trait_function_by_name(trait_id, name.intern(db)).unwrap().unwrap()
+        let trait_fn = |trait_id: TraitId<'db>, name: &'static str| {
+            db.trait_function_by_name(trait_id, name.into()).unwrap().unwrap()
         };
         let tuple_submodule = core.submodule("tuple").id;
         let fixed_size_array_submodule = core.submodule("fixed_size_array").id;

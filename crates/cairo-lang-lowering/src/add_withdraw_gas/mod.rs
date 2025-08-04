@@ -48,13 +48,8 @@ fn add_withdraw_gas_to_function<'db>(
         statements: vec![],
         end: BlockEnd::Match {
             info: MatchInfo::Extern(MatchExternInfo {
-                function: get_function_id(
-                    db,
-                    core_submodule(db, "gas"),
-                    "withdraw_gas".into(),
-                    vec![],
-                )
-                .lowered(db),
+                function: get_function_id(db, core_submodule(db, "gas"), "withdraw_gas", vec![])
+                    .lowered(db),
                 inputs: vec![],
                 arms: vec![
                     MatchArm {
@@ -96,7 +91,7 @@ fn create_panic_block<'db>(
     let gas_panic_fn = get_function_id(
         db,
         core_module(db),
-        "panic_with_const_felt252".into(),
+        "panic_with_const_felt252",
         vec![GenericArgumentId::Constant(
             ConstValue::Int(
                 BigInt::from_bytes_be(Sign::Plus, "Out of gas".as_bytes()),

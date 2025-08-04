@@ -577,7 +577,6 @@ dependencies = [
  "itertools 0.14.0",
  "pulldown-cmark",
  "salsa",
- "smol_str",
  "test-log",
 ]
 
@@ -724,7 +723,6 @@ dependencies = [
  "num-traits",
  "pretty_assertions",
  "salsa",
- "smol_str",
  "test-log",
  "unescaper",
 ]
@@ -828,7 +826,6 @@ dependencies = [
  "rand 0.9.0",
  "serde",
  "sha2",
- "smol_str",
  "starknet-types-core",
  "test-case",
  "test-log",
@@ -859,7 +856,6 @@ dependencies = [
  "pretty_assertions",
  "salsa",
  "sha3",
- "smol_str",
  "test-log",
  "toml",
 ]
@@ -1022,7 +1018,6 @@ dependencies = [
  "pretty_assertions",
  "serde",
  "serde_json",
- "smol_str",
  "starknet-types-core",
  "test-case",
  "test-log",
@@ -1074,7 +1069,6 @@ dependencies = [
  "pretty_assertions",
  "salsa",
  "serde",
- "smol_str",
  "test-log",
  "unescaper",
 ]

@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use smol_str::SmolStr;
 
 use crate::db::FilesGroup;
 use crate::ids::FlagLongId;
@@ -25,6 +24,6 @@ pub enum Flag {
 
 /// Returns the value of the `unsafe_panic` flag, or `false` if the flag is not set.
 pub fn flag_unsafe_panic(db: &dyn FilesGroup) -> bool {
-    let flag = db.intern_flag(FlagLongId(SmolStr::from("unsafe_panic")));
+    let flag = db.intern_flag(FlagLongId("unsafe_panic".into()));
     if let Some(flag) = db.get_flag(flag) { *flag == Flag::UnsafePanic(true) } else { false }
 }

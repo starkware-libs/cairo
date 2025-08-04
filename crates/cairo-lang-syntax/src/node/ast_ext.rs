@@ -5,7 +5,6 @@
 use cairo_lang_utils::require;
 use num_bigint::{BigInt, Sign};
 use num_traits::Num;
-use smol_str::SmolStr;
 use unescaper::unescape;
 
 use super::{
@@ -85,14 +84,14 @@ impl<'a> TerminalShortString<'a> {
     }
 
     /// Get suffix from this literal if it has one.
-    pub fn suffix(&self, db: &'a dyn SyntaxGroup) -> Option<SmolStr> {
+    pub fn suffix(&self, db: &'a dyn SyntaxGroup) -> Option<&'a str> {
         let text = self.text(db);
         let (_literal, mut suffix) = text[1..].rsplit_once('\'')?;
         require(!suffix.is_empty())?;
         if suffix.starts_with('_') {
             suffix = &suffix[1..];
         }
-        Some(suffix.into())
+        Some(suffix)
     }
 }
 

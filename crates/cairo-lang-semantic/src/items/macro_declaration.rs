@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MacroDeclarationId, ModuleFileId, ModuleItemId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe, skip_diagnostic};
-use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin, SmolStrId};
+use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -13,10 +13,8 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use smol_str::SmolStr;
 
 use crate::SemanticDiagnostic;
 use crate::db::SemanticGroup;
@@ -161,10 +159,10 @@ pub fn priv_macro_declaration_data<'db>(
         let used_placeholders = collect_expansion_placeholders(db, expansion.as_syntax_node());
         // Verify all used placeholders are defined
         for (placeholder_ptr, used_placeholder) in used_placeholders {
-            if !defined_placeholders.contains(used_placeholder.as_str(db)) {
+            if !defined_placeholders.contains(used_placeholder) {
                 diagnostics.report(
                     placeholder_ptr,
-                    SemanticDiagnosticKind::UndefinedMacroPlaceholder(used_placeholder),
+                    SemanticDiagnosticKind::UndefinedMacroPlaceholder(used_placeholder.into()),
                 );
             }
         }
@@ -203,13 +201,12 @@ fn extract_placeholder<'db>(
 fn collect_expansion_placeholders<'db>(
     db: &'db dyn SyntaxGroup,
     node: SyntaxNode<'db>,
-) -> Vec<(SyntaxStablePtrId<'db>, SmolStrId<'db>)> {
+) -> Vec<(SyntaxStablePtrId<'db>, &'db str)> {
     let mut placeholders = Vec::new();
     if node.kind(db) == SyntaxKind::MacroParam {
         let path_node = MacroParam::from_syntax_node(db, node);
         if let Some(placeholder_name) = extract_placeholder(db, &path_node) {
-            let placeholder_name_id = SmolStr::from(placeholder_name).intern(db);
-            placeholders.push((path_node.stable_ptr(db).untyped(), placeholder_name_id));
+            placeholders.push((path_node.stable_ptr(db).untyped(), placeholder_name));
             return placeholders;
         }
     }

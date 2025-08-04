@@ -29,7 +29,6 @@ itertools = { workspace = true, default-features = true }
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 typetag.workspace = true 
-smol_str.workspace = true
 starknet-types-core.workspace = true
 thiserror.workspace = true
 indent.workspace = true

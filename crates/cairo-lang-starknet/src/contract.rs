@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{
     NamedLanguageElementId, SubmoduleId,
 };
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
+use cairo_lang_filesystem::ids::{CrateId, db_str};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::inference::InferenceId;
@@ -104,7 +104,7 @@ pub fn find_contracts<'db>(
 pub fn get_contract_abi_functions<'db>(
     db: &'db dyn SemanticGroup,
     contract: &ContractDeclaration<'db>,
-    module_name: &str,
+    module_name: &'db str,
 ) -> anyhow::Result<Vec<Aliased<semantic::ConcreteFunctionWithBodyId<'db>>>> {
     Ok(chain!(
         get_contract_internal_module_abi_functions(db, contract, module_name)?,
@@ -117,7 +117,7 @@ pub fn get_contract_abi_functions<'db>(
 fn get_contract_internal_module_abi_functions<'db>(
     db: &'db dyn SemanticGroup,
     contract: &ContractDeclaration<'db>,
-    module_name: &str,
+    module_name: &'db str,
 ) -> anyhow::Result<Vec<Aliased<SemanticConcreteFunctionWithBodyId<'db>>>> {
     let generated_module_id = get_generated_contract_module(db, contract)?;
     let module_id = get_submodule_id(db, generated_module_id, module_name)?;
@@ -208,7 +208,8 @@ fn get_impl_aliases_abi_functions<'db>(
         else {
             bail!("Internal error: Impl alias pointed to an object with non module parent.");
         };
-        let module_id = get_submodule_id(db, impl_module, &format!("{module_prefix}_{impl_name}"))?;
+        let module_id =
+            get_submodule_id(db, impl_module, db_str(db, format!("{module_prefix}_{impl_name}")))?;
         for abi_function in get_module_aliased_functions(db, module_id)? {
             all_abi_functions.extend(abi_function.try_map(|f| {
                 let concrete_wrapper = resolver
@@ -247,7 +248,7 @@ fn get_generated_contract_module<'db>(
     let contract_name = contract.submodule_id.name(db);
 
     match db
-        .module_item_by_name(parent_module_id, SmolStrId::from_str(db, contract_name))
+        .module_item_by_name(parent_module_id, contract_name.into())
         .to_option()
         .with_context(|| "Failed to initiate a lookup in the root module.")?
     {
@@ -262,10 +263,10 @@ fn get_generated_contract_module<'db>(
 fn get_submodule_id<'db>(
     db: &'db dyn SemanticGroup,
     module_id: ModuleId<'db>,
-    submodule_name: &str,
+    submodule_name: &'db str,
 ) -> anyhow::Result<ModuleId<'db>> {
     match db
-        .module_item_by_name(module_id, SmolStrId::from_str(db, submodule_name))
+        .module_item_by_name(module_id, submodule_name.into())
         .to_option()
         .with_context(|| "Failed to initiate a lookup in the {module_name} module.")?
     {
@@ -317,10 +318,8 @@ fn analyze_contract<'db, T: SierraIdReplacer>(
     replacer: &T,
 ) -> anyhow::Result<(Felt252, ContractInfo)> {
     // Extract class hash.
-    let item = db
-        .module_item_by_name(contract.module_id(), SmolStrId::from_str(db, "TEST_CLASS_HASH"))
-        .unwrap()
-        .unwrap();
+    let item =
+        db.module_item_by_name(contract.module_id(), "TEST_CLASS_HASH".into()).unwrap().unwrap();
     let constant_id = extract_matches!(item, ModuleItemId::Constant);
     let class_hash: Felt252 =
         db.constant_const_value(constant_id).unwrap().long(db).clone().into_int().unwrap().into();

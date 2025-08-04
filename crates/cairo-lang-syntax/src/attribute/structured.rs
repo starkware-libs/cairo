@@ -1,7 +1,7 @@
 use std::fmt;
 
 use cairo_lang_debug::DebugWithDb;
-use smol_str::SmolStr;
+use cairo_lang_filesystem::ids::StrRef;
 
 use crate::node::db::SyntaxGroup;
 use crate::node::{Terminal, TypedSyntaxNode, ast};
@@ -10,7 +10,7 @@ use crate::node::{Terminal, TypedSyntaxNode, ast};
 #[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
 pub struct Attribute<'a> {
     pub stable_ptr: ast::AttributePtr<'a>,
-    pub id: SmolStr,
+    pub id: StrRef<'a>,
     pub id_stable_ptr: ast::ExprPathPtr<'a>,
     pub args: Vec<AttributeArg<'a>>,
     pub args_stable_ptr: ast::OptionArgListParenthesizedPtr<'a>,
@@ -53,7 +53,7 @@ pub enum AttributeArgVariant<'a> {
 /// The data on a name part of an argument.
 pub struct NameInfo<'a> {
     /// The name of the argument.
-    pub text: SmolStr,
+    pub text: StrRef<'a>,
     /// The stable pointer to the name.
     pub stable_ptr: ast::TerminalIdentifierPtr<'a>,
 }
@@ -66,7 +66,7 @@ impl<'a> NameInfo<'a> {
 /// Easier to digest representation of a [`ast::Modifier`] attached to [`AttributeArg`].
 #[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
 pub struct Modifier<'a> {
-    pub text: SmolStr,
+    pub text: StrRef<'a>,
     pub stable_ptr: ast::ModifierPtr<'a>,
 }
 

@@ -2,23 +2,22 @@ use std::collections::BTreeSet;
 use std::fmt;
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use smol_str::SmolStr;
 
 /// Option for the `#[cfg(...)]` language attribute.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Cfg {
-    pub key: SmolStr,
-    pub value: Option<SmolStr>,
+    pub key: String,
+    pub value: Option<String>,
 }
 
 impl Cfg {
     /// Creates a `cfg` option that is matchable as `#[cfg(name)]`.
-    pub fn name(name: impl Into<SmolStr>) -> Self {
+    pub fn name(name: impl Into<String>) -> Self {
         Self { key: name.into(), value: None }
     }
 
     /// Creates a `cfg` option that is matchable as `#[cfg(key: "value")]`.
-    pub fn kv(key: impl Into<SmolStr>, value: impl Into<SmolStr>) -> Self {
+    pub fn kv(key: impl Into<String>, value: impl Into<String>) -> Self {
         Self { key: key.into(), value: Some(value.into()) }
     }
 }
@@ -43,13 +42,12 @@ impl fmt::Debug for Cfg {
 
 mod serde_ext {
     use serde::{Deserialize, Serialize};
-    use smol_str::SmolStr;
 
     #[derive(Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Cfg {
-        KV(SmolStr, SmolStr),
-        Name(SmolStr),
+        KV(String, String),
+        Name(String),
     }
 }
 

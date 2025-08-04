@@ -10,7 +10,6 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::chain;
-use smol_str::SmolStr;
 
 use crate::Variant;
 use crate::corelib::{self, core_submodule, get_submodule};
@@ -49,7 +48,7 @@ pub fn methods_in_module<'db>(
             let Some(first_param) = signature.params.first() else {
                 continue;
             };
-            if first_param.name.as_str(db) != SELF_PARAM_KW {
+            if first_param.name != SELF_PARAM_KW {
                 continue;
             }
             if let TypeFilter::TypeHead(type_head) = &type_filter {
@@ -125,16 +124,15 @@ fn visible_importables_in_module_ex<'db>(
     let resolver = Resolver::new(db, user_module_file_id, InferenceId::NoContext);
 
     // Check if an item in the current module is visible from the user module.
-    let is_visible = |item_name: SmolStr| {
-        let item_name = item_name.intern(db);
-        let item_info = db.module_item_info_by_name(module_id, item_name).ok()??;
+    let is_visible = |item_name: &'db str| {
+        let item_info = db.module_item_info_by_name(module_id, item_name.into()).ok()??;
         Some(resolver.is_item_visible(module_id, &item_info, user_module_file_id.0))
     };
     visited_modules.insert(module_id);
     let mut modules_to_visit = vec![];
     // Add importables and traverse modules imported into the current module.
     for use_id in db.module_uses_ids(module_id).unwrap_or_default().iter().copied() {
-        if !is_visible(use_id.name(db).into()).unwrap_or_default() {
+        if !is_visible(use_id.name(db)).unwrap_or_default() {
             continue;
         }
         let Ok(resolved_item) = db.use_resolved_item(use_id) else {
@@ -175,10 +173,7 @@ fn visible_importables_in_module_ex<'db>(
                 let enum_name = item_id.name(db);
 
                 for (name, id) in db.enum_variants(item_id).unwrap_or_default() {
-                    result.push((
-                        ImportableId::Variant(id),
-                        format!("{enum_name}::{}", name.long(db)),
-                    ));
+                    result.push((ImportableId::Variant(id), format!("{enum_name}::{name}")));
                 }
 
                 (ImportableId::Enum(item_id), enum_name)
@@ -205,27 +200,27 @@ fn visible_importables_in_module_ex<'db>(
             | ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(_)) => continue,
         };
 
-        result.push((resolved_item, name.to_string()));
+        result.push((resolved_item, name.into()));
     }
 
     for submodule_id in db.module_submodules_ids(module_id).unwrap_or_default().iter().copied() {
-        if !is_visible(submodule_id.name(db).into()).unwrap_or_default() {
+        if !is_visible(submodule_id.name(db)).unwrap_or_default() {
             continue;
         }
-        result.push((ImportableId::Submodule(submodule_id), submodule_id.name(db).to_string()));
+        result.push((ImportableId::Submodule(submodule_id), submodule_id.name(db).into()));
         modules_to_visit.push(ModuleId::Submodule(submodule_id));
     }
 
     // Handle enums separately because we need to include their variants.
     for enum_id in db.module_enums_ids(module_id).unwrap_or_default().iter().copied() {
         let enum_name = enum_id.name(db);
-        if !is_visible(enum_name.into()).unwrap_or_default() {
+        if !is_visible(enum_name).unwrap_or_default() {
             continue;
         }
 
-        result.push((ImportableId::Enum(enum_id), enum_name.to_string()));
+        result.push((ImportableId::Enum(enum_id), enum_name.into()));
         for (name, id) in db.enum_variants(enum_id).unwrap_or_default() {
-            result.push((ImportableId::Variant(id), format!("{enum_name}::{}", name.long(db))));
+            result.push((ImportableId::Variant(id), format!("{enum_name}::{name}")));
         }
     }
 
@@ -235,7 +230,7 @@ fn visible_importables_in_module_ex<'db>(
                 if !is_visible(item_id.name(db).into()).unwrap_or_default() {
                     continue;
                 }
-                result.push(($map(item_id), item_id.name(db).to_string()));
+                result.push(($map(item_id), item_id.name(db).into()));
             }
         };
     }
@@ -301,7 +296,7 @@ pub fn visible_importables_in_crate<'db>(
     db.visible_importables_in_module(crate_as_module, user_module_file_id, false)
         .iter()
         .cloned()
-        .map(|(item_id, path)| (item_id, format!("{crate_name}::{path}",)))
+        .map(|(item_id, path)| (item_id, format!("{crate_name}::{path}")))
         .collect::<Vec<_>>()
         .into()
 }
@@ -314,8 +309,8 @@ pub fn visible_importables_from_module<'db>(
     let module_id = module_file_id.0;
 
     let current_crate_id = module_id.owning_crate(db);
-    let edition = db.crate_config(current_crate_id)?.settings.edition;
-    let prelude_submodule_name = edition.prelude_submodule_name();
+    let prelude_submodule_name =
+        db.crate_config(current_crate_id)?.settings.edition.prelude_submodule_name();
     let core_prelude_submodule = core_submodule(db, "prelude");
     let prelude_submodule = get_submodule(db, core_prelude_submodule, prelude_submodule_name)?;
     let prelude_submodule_file_id = ModuleFileId(prelude_submodule, FileIndex(0));
@@ -338,7 +333,7 @@ pub fn visible_importables_from_module<'db>(
         module_visible_importables
             .extend_from_slice(&db.visible_importables_in_crate(crate_id, module_file_id)[..]);
         module_visible_importables
-            .push((ImportableId::Crate(crate_id), crate_id.long(db).name().to_string()));
+            .push((ImportableId::Crate(crate_id), crate_id.long(db).name().into()));
     }
 
     // Collect importables visible in the current module.

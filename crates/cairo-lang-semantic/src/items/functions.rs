@@ -9,7 +9,7 @@ use cairo_lang_defs::ids::{
     TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
-use cairo_lang_filesystem::ids::{SmolStrId, UnstableSalsaId};
+use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
@@ -928,7 +928,7 @@ fn ast_param_to_semantic<'db>(
     resolver: &mut Resolver<'db>,
     ast_param: &ast::Param<'db>,
 ) -> semantic::Parameter<'db> {
-    let name = SmolStrId::from_str(db, ast_param.name(db).text(db));
+    let name = ast_param.name(db);
 
     let id = ParamLongId(resolver.module_file_id, ast_param.stable_ptr(db)).intern(db);
 
@@ -944,7 +944,13 @@ fn ast_param_to_semantic<'db>(
     let mutability =
         modifiers::compute_mutability(diagnostics, db, &ast_param.modifiers(db).elements_vec(db));
 
-    semantic::Parameter { id, name, ty, mutability, stable_ptr: ast_param.name(db).stable_ptr(db) }
+    semantic::Parameter {
+        id,
+        name: name.text(db).into(),
+        ty,
+        mutability,
+        stable_ptr: name.stable_ptr(db),
+    }
 }
 
 // === Function Declaration ===

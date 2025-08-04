@@ -801,18 +801,14 @@ fn write_function_signature<'db>(
             let modifier_postfix = if modifier.is_empty() { "" } else { " " };
             if param.ty.is_fully_concrete(f.db) {
                 f.write_type(
-                    Some(&format!("{modifier}{modifier_postfix}{}: ", param.name.long(f.db))),
+                    Some(&format!("{modifier}{modifier_postfix}{}: ", param.name)),
                     param.ty,
                     Some(&postfix),
                     &documentable_signature.full_path,
                 )?;
             } else {
                 let type_definition = get_type_clause(syntax_node, f.db).unwrap_or_default();
-                write!(
-                    f,
-                    "{modifier}{modifier_postfix}{}{type_definition}{postfix}",
-                    param.name.long(f.db),
-                )?;
+                write!(f, "{modifier}{modifier_postfix}{}{type_definition}{postfix}", param.name,)?;
             }
             count -= 1;
         }

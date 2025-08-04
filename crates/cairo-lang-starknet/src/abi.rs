@@ -5,7 +5,6 @@ use cairo_lang_defs::ids::{
     NamedLanguageElementId, SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
-use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::corelib::core_submodule;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
@@ -481,8 +480,7 @@ impl<'db> AbiBuilder<'db> {
         let Some(first_param) = params.next() else {
             return Err(ABIError::EntrypointMustHaveSelf);
         };
-        require(first_param.name.long(self.db) == SELF_PARAM_KW)
-            .ok_or(ABIError::EntrypointMustHaveSelf)?;
+        require(first_param.name == SELF_PARAM_KW).ok_or(ABIError::EntrypointMustHaveSelf)?;
         let is_ref = first_param.mutability == Mutability::Reference;
         let expected_storage_ty =
             if is_ref { storage_type } else { TypeLongId::Snapshot(storage_type).intern(self.db) };
@@ -563,10 +561,9 @@ impl<'db> AbiBuilder<'db> {
                 let event_fields = members
                     .into_iter()
                     .map(|(name, kind)| {
-                        let name_id = SmolStrId::from_str(self.db, &name);
-                        let concrete_member = &concrete_members[&name_id];
+                        let concrete_member = &concrete_members[name.as_str()];
                         let ty = concrete_member.ty;
-                        self.add_event_field(kind, ty, name_id, Source::Member(concrete_member.id))
+                        self.add_event_field(kind, ty, name, Source::Member(concrete_member.id))
                     })
                     .collect::<Result<_, ABIError<'_>>>()?;
                 self.event_info.insert(type_id, EventInfo::Struct);
@@ -595,12 +592,8 @@ impl<'db> AbiBuilder<'db> {
                         if kind == EventFieldKind::Nested {
                             add_selector(&name, source)?;
                         }
-                        let field = self.add_event_field(
-                            kind,
-                            concrete_variant.ty,
-                            SmolStrId::from_str(self.db, name.clone()),
-                            source,
-                        )?;
+                        let field =
+                            self.add_event_field(kind, concrete_variant.ty, name.clone(), source)?;
                         if kind == EventFieldKind::Flat {
                             if let EventInfo::Enum(inner) = &self.event_info[&concrete_variant.ty] {
                                 for selector in inner {
@@ -643,14 +636,14 @@ impl<'db> AbiBuilder<'db> {
         &mut self,
         kind: EventFieldKind,
         ty: TypeId<'db>,
-        name: SmolStrId<'db>,
+        name: String,
         source: Source<'db>,
     ) -> Result<EventField, ABIError<'db>> {
         match kind {
             EventFieldKind::KeySerde | EventFieldKind::DataSerde => self.add_type(ty)?,
             EventFieldKind::Nested | EventFieldKind::Flat => self.add_event(ty, source)?,
         };
-        Ok(EventField { name: name.long(self.db).to_string(), ty: ty.format(self.db), kind })
+        Ok(EventField { name, ty: ty.format(self.db), kind })
     }
 
     /// Adds a type to the ABI from a TypeId.
@@ -718,10 +711,7 @@ impl<'db> AbiBuilder<'db> {
             .iter()
             .map(|(name, member)| {
                 self.add_type(member.ty)?;
-                Ok(StructMember {
-                    name: name.long(self.db).to_string(),
-                    ty: member.ty.format(self.db),
-                })
+                Ok(StructMember { name: name.to_string(), ty: member.ty.format(self.db) })
             })
             .collect()
     }
@@ -742,10 +732,7 @@ impl<'db> AbiBuilder<'db> {
                     &self.db.variant_semantic(generic_id, *variant_id)?,
                 )?;
                 self.add_type(variant.ty)?;
-                Ok(EnumVariant {
-                    name: name.long(self.db).to_string(),
-                    ty: variant.ty.format(self.db),
-                })
+                Ok(EnumVariant { name: name.to_string(), ty: variant.ty.format(self.db) })
             })
             .collect::<Result<Vec<_>, ABIError<'_>>>()
     }
@@ -834,14 +821,12 @@ fn fetch_event_data<'db>(
     let starknet_module = core_submodule(db, "starknet");
     // `starknet::event`.
     let event_module = try_extract_matches!(
-        db.module_item_by_name(starknet_module, SmolStrId::from_str(db, "event")).unwrap().unwrap(),
+        db.module_item_by_name(starknet_module, "event".into()).unwrap().unwrap(),
         ModuleItemId::Submodule
     )?;
     // `starknet::event::Event`.
     let event_trait_id = try_extract_matches!(
-        db.module_item_by_name(ModuleId::Submodule(event_module), SmolStrId::from_str(db, "Event"))
-            .unwrap()
-            .unwrap(),
+        db.module_item_by_name(ModuleId::Submodule(event_module), "Event".into()).unwrap().unwrap(),
         ModuleItemId::Trait
     )?;
     // `starknet::event::Event<ThisEvent>`.

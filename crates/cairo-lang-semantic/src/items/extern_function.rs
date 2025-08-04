@@ -162,10 +162,8 @@ pub fn priv_extern_function_declaration_data<'db>(
     );
 
     if signature.panicable {
-        let panic_function = extract_matches!(
-            get_core_generic_function_id(db, "panic".into()),
-            GenericFunctionId::Extern
-        );
+        let panic_function =
+            extract_matches!(get_core_generic_function_id(db, "panic"), GenericFunctionId::Extern);
         if extern_function_id != panic_function {
             diagnostics.report(extern_function_syntax.stable_ptr(db), PanicableExternFunction);
         }

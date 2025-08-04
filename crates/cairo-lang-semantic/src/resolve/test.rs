@@ -7,7 +7,6 @@ use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_utils::{Intern, extract_matches};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use smol_str::SmolStr;
 use test_log::test;
 
 use crate::db::SemanticGroup;
@@ -35,7 +34,7 @@ fn test_resolve_path() {
     let module_id = test_module.module_id;
 
     let function_id = FunctionWithBodyId::Free(extract_matches!(
-        db.module_item_by_name(module_id, SmolStr::from("foo").intern(db)).unwrap().unwrap(),
+        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
         ModuleItemId::FreeFunction
     ));
     let expr_formatter = ExprFormatter { db, function_id };
@@ -88,23 +87,21 @@ fn test_resolve_path_super() {
     let crate_id = CrateId::plain(db, "test");
     let test_module = ModuleId::CrateRoot(crate_id);
     let inner2_module_id = ModuleId::Submodule(extract_matches!(
-        db.module_item_by_name(test_module, SmolStr::from("inner2").intern(db)).unwrap().unwrap(),
+        db.module_item_by_name(test_module, "inner2".into()).unwrap().unwrap(),
         ModuleItemId::Submodule
     ));
     let struct_id = extract_matches!(
-        db.module_item_by_name(inner2_module_id, SmolStr::from("InnerStruct2").intern(db))
-            .unwrap()
-            .unwrap(),
+        db.module_item_by_name(inner2_module_id, "InnerStruct2".into()).unwrap().unwrap(),
         ModuleItemId::Struct
     );
     let members = db.struct_members(struct_id).unwrap();
     assert_eq!(
-        format!("{:?}", members[&SmolStr::from("a").intern(db)].debug(db)),
+        format!("{:?}", members["a"].debug(db)),
         "Member { id: MemberId(test::inner2::a), ty: test::inner1::InnerStruct1, visibility: \
          Private }"
     );
     assert_eq!(
-        format!("{:?}", members[&SmolStr::from("b").intern(db)].debug(db)),
+        format!("{:?}", members["b"].debug(db)),
         "Member { id: MemberId(test::inner2::b), ty: test::OuterStruct, visibility: Private }"
     );
 }
@@ -135,7 +132,7 @@ fn test_resolve_path_trait_impl() {
     let module_id = test_module.module_id;
 
     let function_id = FunctionWithBodyId::Free(extract_matches!(
-        db.module_item_by_name(module_id, SmolStr::from("main").intern(db)).unwrap().unwrap(),
+        db.module_item_by_name(module_id, "main".into()).unwrap().unwrap(),
         ModuleItemId::FreeFunction
     ));
     let expr_formatter = ExprFormatter { db, function_id };

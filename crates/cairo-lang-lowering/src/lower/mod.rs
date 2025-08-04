@@ -17,7 +17,6 @@ use cairo_lang_semantic::{
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::smol_str::SmolStr;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::{Intern, extract_matches, try_extract_matches};
 use context::handle_lowering_flow_error;
@@ -969,23 +968,22 @@ fn lower_expr_string_literal<'db>(
     let db = ctx.db;
 
     // Get all the relevant types from the corelib.
-    let bytes31_ty = get_core_ty_by_name(db, "bytes31".into(), vec![]);
-    let data_array_ty =
-        get_core_ty_by_name(db, "Array".into(), vec![GenericArgumentId::Type(bytes31_ty)]);
-    let byte_array_ty = get_core_ty_by_name(db, "ByteArray".into(), vec![]);
+    let bytes31_ty = get_core_ty_by_name(db, "bytes31", vec![]);
+    let data_array_ty = get_core_ty_by_name(db, "Array", vec![GenericArgumentId::Type(bytes31_ty)]);
+    let byte_array_ty = get_core_ty_by_name(db, "ByteArray", vec![]);
 
     let array_submodule = core_submodule(db, "array");
     let data_array_new_function = FunctionLongId::Semantic(get_function_id(
         db,
         array_submodule,
-        "array_new".into(),
+        "array_new",
         vec![GenericArgumentId::Type(bytes31_ty)],
     ))
     .intern(ctx.db);
     let data_array_append_function = FunctionLongId::Semantic(get_function_id(
         db,
         array_submodule,
-        "array_append".into(),
+        "array_append",
         vec![GenericArgumentId::Type(bytes31_ty)],
     ))
     .intern(ctx.db);
@@ -1233,7 +1231,7 @@ fn lower_expr_function_call<'db>(
     };
 
     // If the function is panic(), do something special.
-    if expr.function == get_core_function_id(ctx.db, "panic".into(), vec![]) {
+    if expr.function == get_core_function_id(ctx.db, "panic", vec![]) {
         let [input] = <[_; 1]>::try_from(arg_inputs).ok().unwrap();
         return Err(LoweringFlowError::Panic(input, location));
     }
@@ -1426,13 +1424,9 @@ fn lower_expr_loop<'db>(
             vec![GenericArgumentId::Type(return_type), GenericArgumentId::Type(ctx.return_type)];
 
         let internal_module = core_submodule(semantic_db, "internal");
-        let ret_ty = try_get_ty_by_name(
-            semantic_db,
-            internal_module,
-            "LoopResult".into(),
-            generic_args.clone(),
-        )
-        .unwrap();
+        let ret_ty =
+            try_get_ty_by_name(semantic_db, internal_module, "LoopResult", generic_args.clone())
+                .unwrap();
         (
             ret_ty,
             Some(LoopEarlyReturnInfo {
@@ -1956,7 +1950,7 @@ fn add_closure_call_function<'db>(
     }
 
     let trait_function: cairo_lang_defs::ids::TraitFunctionId<'_> = db
-        .trait_function_by_name(trait_id, SmolStr::from("call").intern(db))
+        .trait_function_by_name(trait_id, "call".into())
         .unwrap()
         .expect("Call function must exist for an Fn trait.");
 

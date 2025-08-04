@@ -1,8 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ModuleItemId;
-use cairo_lang_utils::{Intern, extract_matches};
+use cairo_lang_utils::extract_matches;
 use pretty_assertions::assert_eq;
-use smol_str::SmolStr;
 use test_log::test;
 
 use crate::db::SemanticGroup;
@@ -22,7 +21,7 @@ fn test_extern_function() {
     let module_id = test_module.module_id;
 
     let extern_function_id = extract_matches!(
-        db.module_item_by_name(module_id, SmolStr::from("foo").intern(db)).unwrap().unwrap(),
+        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
         ModuleItemId::ExternFunction
     );
     let signature = db.extern_function_signature(extern_function_id).unwrap();

@@ -361,7 +361,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                         // This case is treated as an item inline macro with a missing bang ('!').
                         self.add_diagnostic(
                             ParserDiagnosticKind::ItemInlineMacroWithoutBang {
-                                identifier: path.identifier(self.db).to_string().into(),
+                                identifier: path.identifier(self.db).to_string(),
                                 bracket_type: self.peek().kind,
                             },
                             TextSpan {
@@ -385,7 +385,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                             self.skip_taken_node_with_offset(
                                 attributes,
                                 ParserDiagnosticKind::SkippedElement {
-                                    element_name: or_an_attribute!(MODULE_ITEM_DESCRIPTION).into(),
+                                    element_name: or_an_attribute!(MODULE_ITEM_DESCRIPTION),
                                 },
                                 post_attributes_offset,
                             );
@@ -394,7 +394,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                             self.skip_taken_node_with_offset(
                                 visibility_pub,
                                 ParserDiagnosticKind::SkippedElement {
-                                    element_name: or_an_attribute!(MODULE_ITEM_DESCRIPTION).into(),
+                                    element_name: or_an_attribute!(MODULE_ITEM_DESCRIPTION),
                                 },
                                 post_visibility_offset,
                             );
@@ -403,7 +403,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                         self.skip_taken_node_with_offset(
                             path,
                             ParserDiagnosticKind::SkippedElement {
-                                element_name: or_an_attribute!(MODULE_ITEM_DESCRIPTION).into(),
+                                element_name: or_an_attribute!(MODULE_ITEM_DESCRIPTION),
                             },
                             post_path_offset,
                         );

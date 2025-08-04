@@ -317,7 +317,7 @@ fn extract_config_predicate_part<'a>(
                 _ => return None,
             };
 
-            Some(ConfigPredicatePart::Cfg(Cfg::kv(name.text.clone(), value_text)))
+            Some(ConfigPredicatePart::Cfg(Cfg::kv(name.text.to_string(), value_text)))
         }
         _ => None,
     }

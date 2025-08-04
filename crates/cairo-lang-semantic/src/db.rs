@@ -13,7 +13,7 @@ use cairo_lang_defs::ids::{
     VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
-use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, SmolStrId};
+use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, StrRef};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
@@ -21,7 +21,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, Upcast, require};
 use itertools::Itertools;
-use smol_str::SmolStr;
 
 use crate::corelib::CoreInfo;
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -241,7 +240,7 @@ pub trait SemanticGroup:
     fn module_item_by_name<'db>(
         &'db self,
         module_id: ModuleId<'db>,
-        name: SmolStrId<'db>,
+        name: StrRef<'db>,
     ) -> Maybe<Option<ModuleItemId<'db>>>;
 
     /// Returns [Maybe::Err] if the module was not properly resolved.
@@ -250,7 +249,7 @@ pub trait SemanticGroup:
     fn module_item_info_by_name<'db>(
         &'db self,
         module_id: ModuleId<'db>,
-        name: SmolStrId<'db>,
+        name: StrRef<'db>,
     ) -> Maybe<Option<ModuleItemInfo<'db>>>;
 
     /// Returns all the items used within the module.
@@ -324,7 +323,7 @@ pub trait SemanticGroup:
     fn struct_members<'db>(
         &'db self,
         struct_id: StructId<'db>,
-    ) -> Maybe<Arc<OrderedHashMap<SmolStrId<'db>, semantic::Member<'db>>>>;
+    ) -> Maybe<Arc<OrderedHashMap<StrRef<'db>, semantic::Member<'db>>>>;
     /// Returns the resolution resolved_items of a struct definition.
     #[salsa::invoke(items::structure::struct_definition_resolver_data)]
     fn struct_definition_resolver_data<'db>(
@@ -336,7 +335,7 @@ pub trait SemanticGroup:
     fn concrete_struct_members<'db>(
         &'db self,
         concrete_struct_id: types::ConcreteStructId<'db>,
-    ) -> Maybe<Arc<OrderedHashMap<SmolStrId<'db>, semantic::Member<'db>>>>;
+    ) -> Maybe<Arc<OrderedHashMap<StrRef<'db>, semantic::Member<'db>>>>;
 
     // Enum.
     // =======
@@ -388,7 +387,7 @@ pub trait SemanticGroup:
     fn enum_variants<'db>(
         &'db self,
         enum_id: EnumId<'db>,
-    ) -> Maybe<OrderedHashMap<SmolStrId<'db>, VariantId<'db>>>;
+    ) -> Maybe<OrderedHashMap<StrRef<'db>, VariantId<'db>>>;
     /// Returns the semantic model of a variant.
     #[salsa::invoke(items::enm::variant_semantic)]
     fn variant_semantic<'db>(
@@ -551,20 +550,20 @@ pub trait SemanticGroup:
     fn trait_required_item_names<'db>(
         &'db self,
         trait_id: TraitId<'db>,
-    ) -> Maybe<OrderedHashSet<SmolStrId<'db>>>;
+    ) -> Maybe<OrderedHashSet<StrRef<'db>>>;
     /// Returns the item of the trait, by the given `name`, if exists.
     #[salsa::invoke(items::trt::trait_item_by_name)]
     fn trait_item_by_name<'db>(
         &'db self,
         trait_id: TraitId<'db>,
-        name: SmolStrId<'db>,
+        name: StrRef<'db>,
     ) -> Maybe<Option<TraitItemId<'db>>>;
     /// Returns the metadata for a trait item, by the given `name`, if exists.
     #[salsa::invoke(items::trt::trait_item_info_by_name)]
     fn trait_item_info_by_name<'db>(
         &'db self,
         trait_id: TraitId<'db>,
-        name: SmolStrId<'db>,
+        name: StrRef<'db>,
     ) -> Maybe<Option<TraitItemInfo<'db>>>;
     /// Returns all the items used within the trait.
     #[salsa::invoke(items::trt::trait_all_used_uses)]
@@ -577,26 +576,26 @@ pub trait SemanticGroup:
     fn trait_functions<'db>(
         &'db self,
         trait_id: TraitId<'db>,
-    ) -> Maybe<OrderedHashMap<SmolStrId<'db>, TraitFunctionId<'db>>>;
+    ) -> Maybe<OrderedHashMap<StrRef<'db>, TraitFunctionId<'db>>>;
     /// Returns the function with the given name of the given trait, if exists.
     #[salsa::invoke(items::trt::trait_function_by_name)]
     fn trait_function_by_name<'db>(
         &'db self,
         trait_id: TraitId<'db>,
-        name: SmolStrId<'db>,
+        name: StrRef<'db>,
     ) -> Maybe<Option<TraitFunctionId<'db>>>;
     /// Returns the types of a trait.
     #[salsa::invoke(items::trt::trait_types)]
     fn trait_types<'db>(
         &'db self,
         trait_id: TraitId<'db>,
-    ) -> Maybe<OrderedHashMap<SmolStrId<'db>, TraitTypeId<'db>>>;
+    ) -> Maybe<OrderedHashMap<StrRef<'db>, TraitTypeId<'db>>>;
     /// Returns the item type with the given name of the given trait, if exists.
     #[salsa::invoke(items::trt::trait_type_by_name)]
     fn trait_type_by_name<'db>(
         &'db self,
         trait_id: TraitId<'db>,
-        name: SmolStrId<'db>,
+        name: StrRef<'db>,
     ) -> Maybe<Option<TraitTypeId<'db>>>;
 
     /// Returns the constants of a trait.
@@ -604,26 +603,26 @@ pub trait SemanticGroup:
     fn trait_constants<'db>(
         &'db self,
         trait_id: TraitId<'db>,
-    ) -> Maybe<OrderedHashMap<SmolStrId<'db>, TraitConstantId<'db>>>;
+    ) -> Maybe<OrderedHashMap<StrRef<'db>, TraitConstantId<'db>>>;
     /// Returns the item constants with the given name of the given trait, if exists.
     #[salsa::invoke(items::trt::trait_constant_by_name)]
     fn trait_constant_by_name<'db>(
         &'db self,
         trait_id: TraitId<'db>,
-        name: SmolStr,
+        name: StrRef<'db>,
     ) -> Maybe<Option<TraitConstantId<'db>>>;
     /// Returns the constants of a trait.
     #[salsa::invoke(items::trt::trait_impls)]
     fn trait_impls<'db>(
         &'db self,
         trait_id: TraitId<'db>,
-    ) -> Maybe<OrderedHashMap<SmolStrId<'db>, TraitImplId<'db>>>;
+    ) -> Maybe<OrderedHashMap<StrRef<'db>, TraitImplId<'db>>>;
     /// Returns the item impls with the given name of the given trait, if exists.
     #[salsa::invoke(items::trt::trait_impl_by_name)]
     fn trait_impl_by_name<'db>(
         &'db self,
         trait_id: TraitId<'db>,
-        name: SmolStr,
+        name: StrRef<'db>,
     ) -> Maybe<Option<TraitImplId<'db>>>;
 
     /// Private query to compute definition data about a trait.
@@ -949,21 +948,21 @@ pub trait SemanticGroup:
     fn impl_item_by_name<'db>(
         &'db self,
         impl_def_id: ImplDefId<'db>,
-        name: SmolStrId<'db>,
+        name: StrRef<'db>,
     ) -> Maybe<Option<ImplItemId<'db>>>;
     /// Returns the metadata for an impl item, by the given `name`, if exists.
     #[salsa::invoke(items::imp::impl_item_info_by_name)]
     fn impl_item_info_by_name<'db>(
         &'db self,
         impl_def_id: ImplDefId<'db>,
-        name: SmolStrId<'db>,
+        name: StrRef<'db>,
     ) -> Maybe<Option<ImplItemInfo<'db>>>;
     /// Returns the trait impl of an implicit impl if `name` exists in trait and not in the impl.
     #[salsa::invoke(items::imp::impl_implicit_impl_by_name)]
     fn impl_implicit_impl_by_name<'db>(
         &'db self,
         impl_def_id: ImplDefId<'db>,
-        name: SmolStrId<'db>,
+        name: StrRef<'db>,
     ) -> Maybe<Option<TraitImplId<'db>>>;
     /// Returns all the items used within the impl.
     #[salsa::invoke(items::imp::impl_all_used_uses)]
@@ -1050,7 +1049,7 @@ pub trait SemanticGroup:
     fn impl_functions<'db>(
         &'db self,
         impl_def_id: ImplDefId<'db>,
-    ) -> Maybe<OrderedHashMap<SmolStrId<'db>, ImplFunctionId<'db>>>;
+    ) -> Maybe<OrderedHashMap<StrRef<'db>, ImplFunctionId<'db>>>;
     /// Returns the impl function that matches the given trait function, if exists.
     /// Note that a function that doesn't exist in the impl doesn't necessarily indicate an error,
     /// as, e.g., a trait function that has a default implementation doesn't have to be

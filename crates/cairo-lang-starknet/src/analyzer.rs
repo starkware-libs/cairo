@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{EnumId, LanguageElementId, ModuleId, ModuleItemId, StructId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_filesystem::ids::SmolStrId;
+use cairo_lang_filesystem::ids::{StrRef, db_str};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
@@ -17,7 +17,6 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use smol_str::SmolStr;
 
 use crate::abi::{ABIError, AbiBuilder, BuilderConfig};
 use crate::contract::module_contract;
@@ -218,7 +217,7 @@ fn analyze_storage_struct<'db>(
         member_analyze(
             db,
             member,
-            member_name.long(db).clone(),
+            *member_name,
             paths_data,
             &mut vec![],
             member_ast.name(db).stable_ptr(db).untyped(),
@@ -228,16 +227,16 @@ fn analyze_storage_struct<'db>(
 }
 
 /// Helper for the storage analyzer.
-pub struct StorageStructMembers {
+struct StorageStructMembers<'db> {
     /// Maps the name in actual storage to the path in actual user code.
-    pub name_to_paths: OrderedHashMap<SmolStr, Vec<SmolStr>>,
+    name_to_paths: OrderedHashMap<StrRef<'db>, Vec<StrRef<'db>>>,
 }
 
-impl StorageStructMembers {
-    fn handle<'db>(
+impl<'db> StorageStructMembers<'db> {
+    fn handle(
         &mut self,
-        member_name: SmolStr,
-        path_to_member: Vec<SmolStr>,
+        member_name: StrRef<'db>,
+        path_to_member: Vec<StrRef<'db>>,
         pointer_to_code: SyntaxStablePtrId<'db>,
         diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     ) {
@@ -252,7 +251,7 @@ impl StorageStructMembers {
                 ),
             ));
         } else {
-            self.name_to_paths.insert(member_name.clone(), path_to_member);
+            self.name_to_paths.insert(member_name, path_to_member);
         }
     }
 }
@@ -269,18 +268,18 @@ impl StorageStructMembers {
 fn member_analyze<'db>(
     db: &'db dyn SemanticGroup,
     member: &Member<'db>,
-    member_name: SmolStr,
-    paths_data: &mut StorageStructMembers,
-    user_data_path: &mut Vec<SmolStr>,
+    member_name: StrRef<'db>,
+    paths_data: &mut StorageStructMembers<'db>,
+    user_data_path: &mut Vec<StrRef<'db>>,
     pointer_to_code: SyntaxStablePtrId<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
-    user_data_path.push(member_name.clone());
+    user_data_path.push(member_name);
     let member_ast = member.id.stable_ptr(db).lookup(db);
     // Ignoring diagnostics as these would have been reported previously.
     let config = get_member_storage_config(db, &member_ast, &mut vec![]);
     if config.kind == StorageMemberKind::Basic {
-        let name = config.rename.map(Into::into).unwrap_or(member_name);
+        let name = config.rename.map(|rename| db_str(db, rename).into()).unwrap_or(member_name);
         paths_data.handle(name, user_data_path.clone(), pointer_to_code, diagnostics);
         user_data_path.pop();
         return;
@@ -296,7 +295,7 @@ fn member_analyze<'db>(
         member_analyze(
             db,
             inner_member,
-            inner_member_name.long(db).clone(),
+            *inner_member_name,
             paths_data,
             user_data_path,
             pointer_to_code,
@@ -336,10 +335,9 @@ fn concrete_valid_storage_trait<'db>(
 ) -> ConcreteTraitId<'db> {
     let module_id = ModuleHelper::core(db).submodule("starknet").submodule("storage").id;
     let name = "ValidStorageTypeTrait";
-    let Ok(Some(ModuleItemId::Trait(trait_id))) =
-        db.module_item_by_name(module_id, SmolStrId::from_str(db, name))
+    let Ok(Some(ModuleItemId::Trait(trait_id))) = db.module_item_by_name(module_id, name.into())
     else {
-        panic!("`{}` not found in `{}`.", name, module_id.full_path(db));
+        panic!("`{name}` not found in `{}`.", module_id.full_path(db));
     };
     ConcreteTraitLongId { trait_id, generic_args: vec![GenericArgumentId::Type(ty)] }.intern(db)
 }

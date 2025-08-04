@@ -6,7 +6,7 @@ use std::sync::Arc;
 use cairo_lang_diagnostics::{DiagnosticLocation, DiagnosticNote, Maybe, Severity};
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{
-    CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, VirtualFile,
+    CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, VirtualFile, db_str,
 };
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
@@ -44,7 +44,7 @@ pub struct CachedCrateMetadata {
     /// The version of the compiler that compiled the crate.
     pub compiler_version: String,
     /// The global flags the crate was compiled with.
-    pub global_flags: OrderedHashMap<SmolStr, Flag>,
+    pub global_flags: OrderedHashMap<String, Flag>,
 }
 
 impl CachedCrateMetadata {
@@ -1700,7 +1700,7 @@ impl GreenNodeDetailsCached {
     fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> GreenNodeDetails<'db> {
         match self {
             GreenNodeDetailsCached::Token(token) => {
-                GreenNodeDetails::Token(token.clone().intern(ctx.db).long(ctx.db).as_str())
+                GreenNodeDetails::Token(db_str(ctx.db, token.clone()))
             }
             GreenNodeDetailsCached::Node { children, width } => GreenNodeDetails::Node {
                 children: children.iter().map(|child| child.embed(ctx)).collect(),

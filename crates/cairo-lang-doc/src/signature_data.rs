@@ -6,12 +6,11 @@ use cairo_lang_defs::ids::{
     NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId,
     TraitId, TraitItemId, TraitTypeId,
 };
-use cairo_lang_filesystem::ids::SmolStrId;
+use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_semantic::items::module::ModuleItemInfo;
 use cairo_lang_semantic::items::visibility::Visibility;
 use cairo_lang_semantic::{Expr, GenericArgumentId, GenericParam, Parameter, TypeId};
 use cairo_lang_syntax::attribute::structured::Attribute;
-use smol_str::SmolStr;
 
 use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
@@ -21,12 +20,12 @@ use crate::signature_errors::SignatureError;
 /// A helper struct gathering documentable item's signature data.
 pub(crate) struct DocumentableItemSignatureData<'db> {
     pub(crate) item_id: DocumentableItemId<'db>,
-    pub(crate) name: SmolStr,
+    pub(crate) name: StrRef<'db>,
     pub(crate) visibility: Visibility,
     pub(crate) generic_args: Option<Vec<GenericArgumentId<'db>>>,
     pub(crate) generic_params: Option<Vec<GenericParam<'db>>>,
-    pub(crate) variants: Option<Vec<(SmolStr, TypeId<'db>)>>,
-    pub(crate) members: Option<Vec<(SmolStr, TypeId<'db>, Visibility)>>,
+    pub(crate) variants: Option<Vec<(StrRef<'db>, TypeId<'db>)>>,
+    pub(crate) members: Option<Vec<(StrRef<'db>, TypeId<'db>, Visibility)>>,
     pub(crate) return_type: Option<TypeId<'db>>,
     pub(crate) attributes: Option<Vec<Attribute<'db>>>,
     pub(crate) params: Option<Vec<Parameter<'db>>>,
@@ -41,9 +40,9 @@ fn get_module_item_info<'db>(
     module_item_id: ModuleItemId<'db>,
 ) -> Result<ModuleItemInfo<'db>, SignatureError> {
     let parent_module = module_item_id.parent_module(db);
-    let item_name = SmolStrId::from_str(db, module_item_id.name(db));
+    let item_name = module_item_id.name(db);
     if let Some(module_item_info) = db
-        .module_item_info_by_name(parent_module, item_name)
+        .module_item_info_by_name(parent_module, item_name.into())
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(module_item_id.full_path(db)))?
     {
         Ok(module_item_info)
@@ -65,12 +64,12 @@ pub(crate) fn get_enum_signature_data<'db>(
         .enum_variants(item_id)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(module_item_id.full_path(db)))?;
 
-    let mut variants: Vec<(SmolStr, TypeId<'_>)> = Vec::new();
+    let mut variants = Vec::new();
     for (name, variant_id) in enum_variants {
         let variant_semantic = db.variant_semantic(item_id, variant_id).map_err(|_| {
             SignatureError::FailedRetrievingSemanticData(module_item_id.full_path(db))
         })?;
-        variants.push((name.long(db).clone(), variant_semantic.ty));
+        variants.push((name, variant_semantic.ty));
     }
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Enum(item_id))),
@@ -105,7 +104,7 @@ pub(crate) fn get_struct_signature_data<'db>(
         .struct_members(item_id)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?
         .iter()
-        .map(|(name, member)| (name.long(db).clone(), member.ty, member.visibility))
+        .map(|(name, member)| (*name, member.ty, member.visibility))
         .collect();
 
     let generic_params = db
@@ -140,7 +139,7 @@ pub(crate) fn get_member_signature_data<'db>(
     if let Some(member) = db
         .struct_members(struct_id)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?
-        .get(&SmolStrId::from_str(db, name))
+        .get(name)
     {
         Ok(DocumentableItemSignatureData {
             item_id: Member(item_id),

@@ -7,10 +7,9 @@ use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
-use cairo_lang_utils::{Intern, extract_matches};
+use cairo_lang_utils::extract_matches;
 use indoc::indoc;
 use itertools::Itertools;
-use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
 use crate::inline_macros::get_default_plugin_suite;
@@ -30,26 +29,17 @@ fn test_resolve() {
 
     let module_id = test_module.module_id;
     let db: &dyn SemanticGroup = &db_val;
-    assert!(
-        db.module_item_by_name(module_id, SmolStr::from("doesnt_exist").intern(db))
-            .unwrap()
-            .is_none()
-    );
-    let felt252_add =
-        db.module_item_by_name(module_id, SmolStr::from("felt252_add").intern(db)).unwrap();
+    assert!(db.module_item_by_name(module_id, "doesnt_exist".into()).unwrap().is_none());
+    let felt252_add = db.module_item_by_name(module_id, "felt252_add".into()).unwrap();
     assert_eq!(
         format!("{:?}", felt252_add.debug(db.upcast())),
         "Some(ExternFunctionId(test::felt252_add))"
     );
-    match db
-        .module_item_by_name(module_id, SmolStr::from("felt252_add").intern(db))
-        .unwrap()
-        .unwrap()
-    {
+    match db.module_item_by_name(module_id, "felt252_add".into()).unwrap().unwrap() {
         ModuleItemId::ExternFunction(_) => {}
         _ => panic!("Expected an extern function"),
     };
-    match db.module_item_by_name(module_id, SmolStr::from("foo").intern(db)).unwrap().unwrap() {
+    match db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap() {
         ModuleItemId::FreeFunction(_) => {}
         _ => panic!("Expected a free function"),
     };
@@ -76,7 +66,7 @@ fn test_resolve_data_full() {
     let module_id = test_module.module_id;
     let db = &db_val;
     let foo = extract_matches!(
-        db.module_item_by_name(module_id, SmolStr::from("foo").intern(db)).unwrap().unwrap(),
+        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
         ModuleItemId::FreeFunction
     );
     let resolver_data = db.free_function_body_resolver_data(foo).unwrap();
