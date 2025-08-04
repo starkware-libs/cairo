@@ -1,13 +1,14 @@
 //! Functions for lowering nodes of a [super::FlowControlGraph].
 
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_semantic::{MatchArmSelector, corelib};
+use cairo_lang_semantic::{self as semantic, MatchArmSelector, corelib};
+use cairo_lang_syntax::node::TypedStablePtr;
 
 use super::LowerGraphContext;
 use crate::lower::block_builder::BlockBuilder;
 use crate::lower::context::{LoweredExpr, VarRequest};
 use crate::lower::flow_control::graph::{
-    ArmExpr, BooleanIf, EnumMatch, EvaluateExpr, FlowControlNode, NodeId,
+    ArmExpr, BindVar, BooleanIf, EnumMatch, EvaluateExpr, FlowControlNode, NodeId,
 };
 use crate::lower::{lower_expr_to_var_usage, lower_tail_expr, lowered_expr_to_block_scope_end};
 use crate::{MatchArm, MatchEnumInfo, MatchInfo, VarUsage};
@@ -24,7 +25,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, node, builder),
         FlowControlNode::UnitResult => lower_unit_result(ctx, builder),
         FlowControlNode::EnumMatch(node) => lower_enum_match(ctx, id, node, builder),
-        _ => todo!(),
+        FlowControlNode::BindVar(node) => lower_bind_var(ctx, id, node, builder),
     }
 }
 
@@ -148,5 +149,31 @@ fn lower_enum_match<'db>(
     });
 
     ctx.finalize_with_match(id, builder, match_info);
+    Ok(())
+}
+
+/// Lowers a [BindVar] node.
+fn lower_bind_var<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &BindVar,
+    mut builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let pattern_variable = node.output.get(ctx.graph);
+    let var_id = ctx.vars[&node.input].var_id;
+
+    // Override variable location to with the location of the variable in the pattern.
+    // TODO(lior): Consider using the location of the first instance of the pattern binding instead
+    //   of overriding each time `BindVar` is visited.
+    ctx.ctx.variables.variables[var_id].location =
+        ctx.ctx.get_location(pattern_variable.stable_ptr.untyped());
+
+    // Bind the semantic variable to the lowered variable, and update `semantic_defs` in the
+    // `EncapsulatingLoweringContext`.
+    let sem_var = semantic::Binding::LocalVar(pattern_variable.var.clone());
+    builder.put_semantic(sem_var.id(), var_id);
+    ctx.ctx.semantic_defs.insert(sem_var.id(), sem_var);
+
+    ctx.pass_builder_to_child(id, node.next, builder);
     Ok(())
 }
