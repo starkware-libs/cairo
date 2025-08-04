@@ -26,8 +26,8 @@ Root: 4
 0 ArmExpr { expr: ExprId(1) }
 1 ArmExpr { expr: ExprId(2) }
 2 ArmExpr { expr: ExprId(3) }
-3 EnumMatch { matched_var: FlowControlVar { idx: 0 }, variants: (NodeId(0), FlowControlVar { idx: 1 }), (NodeId(0), FlowControlVar { idx: 2 }), (NodeId(1), FlowControlVar { idx: 3 }), (NodeId(2), FlowControlVar { idx: 4 }), (NodeId(2), FlowControlVar { idx: 5 })}
-4 EvaluateExpr { expr: ExprId(0), var_id: FlowControlVar { idx: 0 }, next: NodeId(3) }
+3 EnumMatch { matched_var: v0, variants: (NodeId(0), v1), (NodeId(0), v2), (NodeId(1), v3), (NodeId(2), v4), (NodeId(2), v5)}
+4 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(3) }
 
 //! > semantic_diagnostics
 
@@ -116,11 +116,11 @@ Root: 7
 0 ArmExpr { expr: ExprId(3) }
 1 ArmExpr { expr: ExprId(4) }
 2 ArmExpr { expr: ExprId(5) }
-3 BindVar { input: FlowControlVar { idx: 1 }, output: PatternVarId(0), next: NodeId(0) }
-4 BindVar { input: FlowControlVar { idx: 2 }, output: PatternVarId(1), next: NodeId(0) }
-5 BindVar { input: FlowControlVar { idx: 3 }, output: PatternVarId(2), next: NodeId(1) }
-6 EnumMatch { matched_var: FlowControlVar { idx: 0 }, variants: (NodeId(3), FlowControlVar { idx: 1 }), (NodeId(4), FlowControlVar { idx: 2 }), (NodeId(5), FlowControlVar { idx: 3 }), (NodeId(2), FlowControlVar { idx: 4 })}
-7 EvaluateExpr { expr: ExprId(0), var_id: FlowControlVar { idx: 0 }, next: NodeId(6) }
+3 BindVar { input: v1, output: PatternVarId(0), next: NodeId(0) }
+4 BindVar { input: v2, output: PatternVarId(1), next: NodeId(0) }
+5 BindVar { input: v3, output: PatternVarId(2), next: NodeId(1) }
+6 EnumMatch { matched_var: v0, variants: (NodeId(3), v1), (NodeId(4), v2), (NodeId(5), v3), (NodeId(2), v4)}
+7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
 
 //! > semantic_diagnostics
 

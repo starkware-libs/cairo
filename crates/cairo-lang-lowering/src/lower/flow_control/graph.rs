@@ -27,19 +27,22 @@ use itertools::Itertools;
 use crate::ids::LocationId;
 
 /// Represents a variable in the flow control graph.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct FlowControlVar {
-    idx: usize,
-}
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FlowControlVar(usize);
 impl FlowControlVar {
     /// Returns the type of the variable.
     pub fn ty<'db>(&self, graph: &FlowControlGraph<'db>) -> semantic::TypeId<'db> {
-        graph.var_types[self.idx]
+        graph.var_types[self.0]
     }
 
     /// Returns the location of the variable.
     pub fn location<'db>(&self, graph: &FlowControlGraph<'db>) -> LocationId<'db> {
-        graph.var_locations[self.idx]
+        graph.var_locations[self.0]
+    }
+}
+impl Debug for FlowControlVar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "v{}", self.0)
     }
 }
 
@@ -218,7 +221,7 @@ impl<'db> FlowControlGraphBuilder<'db> {
         ty: semantic::TypeId<'db>,
         location: LocationId<'db>,
     ) -> FlowControlVar {
-        let var = FlowControlVar { idx: self.graph.var_types.len() };
+        let var = FlowControlVar(self.graph.var_types.len());
         self.graph.var_types.push(ty);
         self.graph.var_locations.push(location);
         var
@@ -233,7 +236,7 @@ impl<'db> FlowControlGraphBuilder<'db> {
 
     /// Returns the type of the given [FlowControlVar].
     pub fn var_ty(&self, input_var: FlowControlVar) -> semantic::TypeId<'db> {
-        self.graph.var_types[input_var.idx]
+        self.graph.var_types[input_var.0]
     }
 }
 
