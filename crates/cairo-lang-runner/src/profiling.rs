@@ -11,7 +11,6 @@ use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use itertools::{Itertools, chain};
-use smol_str::SmolStr;
 
 use crate::ProfilingInfoCollectionConfig;
 
@@ -239,7 +238,7 @@ impl Display for LibfuncWeights {
 pub struct UserFunctionWeights {
     /// Weight (in steps in the relevant run) of each user function (including generated
     /// functions).
-    pub user_function_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    pub user_function_weights: Option<OrderedHashMap<String, usize>>,
     /// Weight (in steps in the relevant run) of each original user function.
     pub original_user_function_weights: Option<OrderedHashMap<String, usize>>,
 }
@@ -637,7 +636,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
                 .map(|(idx, weight)| {
                     let func: &cairo_lang_sierra::program::GenFunction<StatementIdx> =
                         &self.sierra_program.funcs[*idx];
-                    (func.id.to_string().into(), *weight)
+                    (func.id.to_string(), *weight)
                 })
                 .collect()
         });

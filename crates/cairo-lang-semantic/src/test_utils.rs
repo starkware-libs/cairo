@@ -15,7 +15,6 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, OptionFrom, Upcast, extract_matches};
-use smol_str::SmolStr;
 
 use crate::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
 use crate::inline_macros::get_default_plugin_suite;
@@ -171,7 +170,7 @@ pub fn setup_test_crate<'a>(db: &'a dyn SemanticGroup, content: &str) -> CrateId
 
 /// Sets up a module with given content, and returns its module id.
 pub fn setup_test_module_ex<'a>(
-    db: &'a (dyn SemanticGroup + 'static),
+    db: &'a dyn SemanticGroup,
     content: &str,
     crate_settings: Option<&str>,
     cached_crate: Option<BlobId<'a>>,
@@ -210,9 +209,9 @@ pub struct TestFunction<'a> {
 /// function_name - name of the function.
 /// module_code - extra setup code in the module context.
 pub fn setup_test_function_ex<'a>(
-    db: &'a (dyn SemanticGroup + 'static),
+    db: &'a dyn SemanticGroup,
     function_code: &str,
-    function_name: &str,
+    function_name: &'a str,
     module_code: &str,
     crate_settings: Option<&str>,
     cache_crate: Option<BlobId<'a>>,
@@ -225,7 +224,7 @@ pub fn setup_test_function_ex<'a>(
     let (test_module, diagnostics) =
         setup_test_module_ex(db, &content, crate_settings, cache_crate).split();
     let generic_function_id = db
-        .module_item_by_name(test_module.module_id, SmolStr::from(function_name).intern(db))
+        .module_item_by_name(test_module.module_id, function_name.into())
         .expect("Failed to load module")
         .and_then(GenericFunctionId::option_from)
         .unwrap_or_else(|| panic!("Function '{function_name}' was not found."));
@@ -249,9 +248,9 @@ pub fn setup_test_function_ex<'a>(
 
 /// See [setup_test_function_ex].
 pub fn setup_test_function<'a>(
-    db: &'a (dyn SemanticGroup + 'static),
+    db: &'a dyn SemanticGroup,
     function_code: &str,
-    function_name: &str,
+    function_name: &'a str,
     module_code: &str,
 ) -> WithStringDiagnostics<TestFunction<'a>> {
     setup_test_function_ex(db, function_code, function_name, module_code, None, None)

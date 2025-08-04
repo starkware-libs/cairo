@@ -41,7 +41,7 @@ pub fn gas_redeposit<'db>(
     {
         return;
     }
-    let gb_ty = corelib::get_core_ty_by_name(db, "GasBuiltin".into(), vec![]);
+    let gb_ty = corelib::get_core_ty_by_name(db, "GasBuiltin", vec![]);
     // Checking if the implicits of this function past lowering includes `GasBuiltin`.
     if let Ok(implicits) = db.function_with_body_implicits(function_id) {
         if !implicits.into_iter().contains(&gb_ty) {
@@ -61,13 +61,9 @@ pub fn gas_redeposit<'db>(
     let mut analysis = BackAnalysis::new(lowered, ctx);
     analysis.get_root_info();
 
-    let redeposit_gas = corelib::get_function_id(
-        db,
-        corelib::core_submodule(db, "gas"),
-        "redeposit_gas".into(),
-        vec![],
-    )
-    .lowered(db);
+    let redeposit_gas =
+        corelib::get_function_id(db, corelib::core_submodule(db, "gas"), "redeposit_gas", vec![])
+            .lowered(db);
     for (block_id, location) in analysis.analyzer.fixes {
         let block = &mut lowered.blocks[block_id];
 

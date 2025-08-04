@@ -29,7 +29,6 @@ num-traits = { workspace = true, default-features = true }
 rand.workspace = true
 serde.workspace = true
 sha2.workspace = true
-smol_str.workspace = true
 starknet-types-core.workspace = true
 thiserror.workspace = true
 

@@ -1,10 +1,10 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::DiagnosticAdded;
+use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use smol_str::SmolStr;
 
 use super::fmt::ExprFormatter;
 use crate::db::SemanticGroup;
@@ -155,7 +155,7 @@ pub struct PatternStringLiteral<'db> {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct PatternVariable<'db> {
     #[dont_rewrite]
-    pub name: SmolStr,
+    pub name: StrRef<'db>,
     pub var: LocalVariable<'db>,
     #[dont_rewrite]
     pub stable_ptr: ast::PatternPtr<'db>,

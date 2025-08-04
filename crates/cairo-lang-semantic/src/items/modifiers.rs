@@ -1,4 +1,3 @@
-use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::node::ast::Modifier;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
@@ -28,11 +27,8 @@ pub fn compute_mutability<'db>(
                     diagnostics.report(
                         terminal.stable_ptr(db),
                         RedundantModifier {
-                            current_modifier: SmolStrId::from_str(db, terminal.text(db)),
-                            previous_modifier: SmolStrId::from_str(
-                                db,
-                                get_relevant_modifier(&mutability),
-                            ),
+                            current_modifier: terminal.text(db).into(),
+                            previous_modifier: get_relevant_modifier(&mutability).into(),
                         },
                     );
                 }
@@ -40,11 +36,8 @@ pub fn compute_mutability<'db>(
                     diagnostics.report(
                         terminal.stable_ptr(db),
                         RedundantModifier {
-                            current_modifier: SmolStrId::from_str(db, terminal.text(db)),
-                            previous_modifier: SmolStrId::from_str(
-                                db,
-                                get_relevant_modifier(&mutability),
-                            ),
+                            current_modifier: terminal.text(db).into(),
+                            previous_modifier: get_relevant_modifier(&mutability).into(),
                         },
                     );
                 }

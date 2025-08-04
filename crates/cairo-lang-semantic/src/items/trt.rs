@@ -9,7 +9,7 @@ use cairo_lang_defs::ids::{
     TraitTypeId, TraitTypeLongId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
-use cairo_lang_filesystem::ids::SmolStrId;
+use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::helpers::OptionWrappedGenericParamListHelper;
@@ -18,7 +18,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, define_short_id};
-use smol_str::SmolStr;
 
 use super::TraitOrImplContext;
 use super::feature_kind::FeatureKind;
@@ -487,13 +486,13 @@ pub struct TraitDefinitionData<'db> {
     item_impl_asts: OrderedHashMap<TraitImplId<'db>, ast::TraitItemImpl<'db>>,
 
     /// Mapping of item names to their IDs. All the IDs should appear in one of the AST maps above.
-    item_id_by_name: Arc<OrderedHashMap<SmolStrId<'db>, TraitItemInfo<'db>>>,
+    item_id_by_name: Arc<OrderedHashMap<StrRef<'db>, TraitItemInfo<'db>>>,
 }
 
 impl<'db> TraitDefinitionData<'db> {
     /// Retrieves trait item information by its name.
-    pub fn get_trait_item_info(&self, item_name: SmolStrId<'db>) -> Option<TraitItemInfo<'db>> {
-        self.item_id_by_name.get(&item_name).cloned()
+    pub fn get_trait_item_info(&self, item_name: StrRef<'db>) -> Option<TraitItemInfo<'db>> {
+        self.item_id_by_name.get(&*item_name).cloned()
     }
 }
 /// Stores metadata for a trait item, including its ID and feature kind.
@@ -502,12 +501,12 @@ pub struct TraitItemInfo<'db> {
     /// The unique identifier of the trait item.
     pub id: TraitItemId<'db>,
     /// The feature kind associated with this trait item.
-    pub feature_kind: FeatureKind,
+    pub feature_kind: FeatureKind<'db>,
 }
 
-impl<'db> HasFeatureKind for TraitItemInfo<'db> {
+impl<'db> HasFeatureKind<'db> for TraitItemInfo<'db> {
     /// Returns the feature kind of this trait item.
-    fn feature_kind(&self) -> &FeatureKind {
+    fn feature_kind(&self) -> &FeatureKind<'db> {
         &self.feature_kind
     }
 }
@@ -549,7 +548,7 @@ pub fn trait_semantic_definition_diagnostics<'db>(
 pub fn trait_required_item_names<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
-) -> Maybe<OrderedHashSet<SmolStrId<'db>>> {
+) -> Maybe<OrderedHashSet<StrRef<'db>>> {
     let mut required_items = OrderedHashSet::<_>::default();
     for (item_name, item_id) in db.priv_trait_definition_data(trait_id)?.item_id_by_name.iter() {
         if match item_id.id {
@@ -570,7 +569,7 @@ pub fn trait_required_item_names<'db>(
 pub fn trait_item_by_name<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
-    name: SmolStrId<'db>,
+    name: StrRef<'db>,
 ) -> Maybe<Option<TraitItemId<'db>>> {
     Ok(db.priv_trait_definition_data(trait_id)?.item_id_by_name.get(&name).map(|info| info.id))
 }
@@ -579,7 +578,7 @@ pub fn trait_item_by_name<'db>(
 pub fn trait_item_info_by_name<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
-    name: SmolStrId<'db>,
+    name: StrRef<'db>,
 ) -> Maybe<Option<TraitItemInfo<'db>>> {
     let trait_definition_data = db.priv_trait_definition_data(trait_id)?;
     Ok(trait_definition_data.get_trait_item_info(name))
@@ -604,14 +603,14 @@ pub fn trait_all_used_uses<'db>(
 pub fn trait_functions<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
-) -> Maybe<OrderedHashMap<SmolStrId<'db>, TraitFunctionId<'db>>> {
+) -> Maybe<OrderedHashMap<StrRef<'db>, TraitFunctionId<'db>>> {
     Ok(db
         .priv_trait_definition_data(trait_id)?
         .function_asts
         .keys()
         .map(|function_id| {
             let function_long_id = function_id.long(db);
-            (SmolStrId::from_str(db, function_long_id.name(db)), *function_id)
+            (function_long_id.name(db).into(), *function_id)
         })
         .collect())
 }
@@ -620,7 +619,7 @@ pub fn trait_functions<'db>(
 pub fn trait_function_by_name<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
-    name: SmolStrId<'db>,
+    name: StrRef<'db>,
 ) -> Maybe<Option<TraitFunctionId<'db>>> {
     Ok(db.trait_functions(trait_id)?.get(&name).copied())
 }
@@ -629,14 +628,14 @@ pub fn trait_function_by_name<'db>(
 pub fn trait_types<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
-) -> Maybe<OrderedHashMap<SmolStrId<'db>, TraitTypeId<'db>>> {
+) -> Maybe<OrderedHashMap<StrRef<'db>, TraitTypeId<'db>>> {
     Ok(db
         .priv_trait_definition_data(trait_id)?
         .item_type_asts
         .keys()
         .map(|type_id| {
             let type_long_id = type_id.long(db);
-            (SmolStrId::from_str(db, type_long_id.name(db)), *type_id)
+            (type_long_id.name(db).into(), *type_id)
         })
         .collect())
 }
@@ -645,7 +644,7 @@ pub fn trait_types<'db>(
 pub fn trait_type_by_name<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
-    name: SmolStrId<'db>,
+    name: StrRef<'db>,
 ) -> Maybe<Option<TraitTypeId<'db>>> {
     Ok(db.trait_types(trait_id)?.get(&name).copied())
 }
@@ -654,14 +653,14 @@ pub fn trait_type_by_name<'db>(
 pub fn trait_constants<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
-) -> Maybe<OrderedHashMap<SmolStrId<'db>, TraitConstantId<'db>>> {
+) -> Maybe<OrderedHashMap<StrRef<'db>, TraitConstantId<'db>>> {
     Ok(db
         .priv_trait_definition_data(trait_id)?
         .item_constant_asts
         .keys()
         .map(|constant_id| {
             let constant_long_id = constant_id.long(db);
-            (SmolStrId::from_str(db, constant_long_id.name(db)), *constant_id)
+            (constant_long_id.name(db).into(), *constant_id)
         })
         .collect())
 }
@@ -670,23 +669,23 @@ pub fn trait_constants<'db>(
 pub fn trait_constant_by_name<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
-    name: SmolStr,
+    name: StrRef<'db>,
 ) -> Maybe<Option<TraitConstantId<'db>>> {
-    Ok(db.trait_constants(trait_id)?.get(&name.intern(db)).copied())
+    Ok(db.trait_constants(trait_id)?.get(&name).copied())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_impls].
 pub fn trait_impls<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
-) -> Maybe<OrderedHashMap<SmolStrId<'db>, TraitImplId<'db>>> {
+) -> Maybe<OrderedHashMap<StrRef<'db>, TraitImplId<'db>>> {
     Ok(db
         .priv_trait_definition_data(trait_id)?
         .item_impl_asts
         .keys()
         .map(|impl_id| {
             let impl_long_id = impl_id.long(db);
-            (SmolStrId::from_str(db, impl_long_id.name(db)), *impl_id)
+            (impl_long_id.name(db).into(), *impl_id)
         })
         .collect())
 }
@@ -695,9 +694,9 @@ pub fn trait_impls<'db>(
 pub fn trait_impl_by_name<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
-    name: SmolStr,
+    name: StrRef<'db>,
 ) -> Maybe<Option<TraitImplId<'db>>> {
-    Ok(db.trait_impls(trait_id)?.get(&name.intern(db)).copied())
+    Ok(db.trait_impls(trait_id)?.get(&name).copied())
 }
 
 // --- Computation ---
@@ -719,7 +718,7 @@ pub fn priv_trait_definition_data<'db>(
     let mut item_type_asts = OrderedHashMap::default();
     let mut item_constant_asts = OrderedHashMap::default();
     let mut item_impl_asts = OrderedHashMap::default();
-    let mut item_id_by_name: OrderedHashMap<SmolStrId<'db>, TraitItemInfo<'db>> =
+    let mut item_id_by_name: OrderedHashMap<StrRef<'db>, TraitItemInfo<'db>> =
         OrderedHashMap::default();
 
     if let ast::MaybeTraitBody::Some(body) = trait_ast.body(db) {
@@ -729,7 +728,7 @@ pub fn priv_trait_definition_data<'db>(
                     let trait_func_id =
                         TraitFunctionLongId(module_file_id, func.stable_ptr(db)).intern(db);
                     let name_node = func.declaration(db).name(db);
-                    let name = SmolStrId::from_str(db, name_node.text(db));
+                    let name = name_node.text(db).into();
                     let attributes = func.attributes(db);
                     let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
                     if item_id_by_name
@@ -753,7 +752,7 @@ pub fn priv_trait_definition_data<'db>(
                     let trait_type_id =
                         TraitTypeLongId(module_file_id, ty.stable_ptr(db)).intern(db);
                     let name_node = ty.name(db);
-                    let name = SmolStrId::from_str(db, name_node.text(db));
+                    let name = name_node.text(db).into();
                     let attributes = ty.attributes(db);
                     let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
                     if item_id_by_name
@@ -775,7 +774,7 @@ pub fn priv_trait_definition_data<'db>(
                         TraitConstantLongId(module_file_id, constant.stable_ptr(db)).intern(db);
 
                     let name_node = constant.name(db);
-                    let name = SmolStrId::from_str(db, name_node.text(db));
+                    let name = name_node.text(db).into();
                     let attributes = constant.attributes(db);
                     let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
                     if item_id_by_name
@@ -799,7 +798,7 @@ pub fn priv_trait_definition_data<'db>(
                     let trait_impl = TraitImplLongId(module_file_id, imp.stable_ptr(db)).intern(db);
 
                     let name_node = imp.name(db);
-                    let name = SmolStrId::from_str(db, name_node.text(db));
+                    let name = name_node.text(db).into();
                     let attributes = imp.attributes(db);
                     let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
                     if item_id_by_name

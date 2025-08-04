@@ -26,7 +26,7 @@ pub fn branch_inversion(db: &dyn LoweringGroup, lowered: &mut Lowered<'_>) {
         return;
     }
     let bool_not_func_id =
-        FunctionLongId::Semantic(corelib::get_core_function_id(db, "bool_not_impl".into(), vec![]))
+        FunctionLongId::Semantic(corelib::get_core_function_id(db, "bool_not_impl", vec![]))
             .intern(db);
 
     for block in lowered.blocks.iter_mut() {

@@ -10,7 +10,6 @@ use cairo_lang_semantic::corelib::{
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{self as semantic, GenericArgumentId};
-use cairo_lang_utils::smol_str::SmolStr;
 use cairo_lang_utils::{Intern, Upcast};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
@@ -44,7 +43,7 @@ pub fn lower_panics<'db>(
     }
 
     let opt_trace_fn = if matches!(
-        db.get_flag(FlagId::new(db, FlagLongId(SmolStr::from("panic_backtrace")))),
+        db.get_flag(FlagId::new(db, FlagLongId("panic_backtrace".into()))),
         Some(flag) if matches!(*flag, Flag::PanicBacktrace(true)),
     ) {
         Some(
@@ -121,8 +120,7 @@ fn lower_unsafe_panic<'db>(
 ) {
     let panics = core_submodule(db, "panics");
     let panic_func_id =
-        FunctionLongId::Semantic(get_function_id(db, panics, "unsafe_panic".into(), vec![]))
-            .intern(db);
+        FunctionLongId::Semantic(get_function_id(db, panics, "unsafe_panic", vec![])).intern(db);
 
     for block in lowered.blocks.iter_mut() {
         let BlockEnd::Panic(err_data) = &mut block.end else {

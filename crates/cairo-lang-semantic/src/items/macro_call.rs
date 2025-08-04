@@ -1,7 +1,6 @@
 use cairo_lang_defs::ids::{LanguageElementId, MacroCallId, MacroDeclarationId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::Intern;
 
 use crate::SemanticDiagnostic;
 use crate::db::SemanticGroup;
@@ -44,10 +43,7 @@ pub fn priv_macro_call_data<'db>(
             diagnostics.report(
                 macro_call_path.stable_ptr(db).untyped(),
                 SemanticDiagnosticKind::MacroCallToNotAMacro(
-                    smol_str::SmolStr::from(
-                        macro_call_path.as_syntax_node().get_text_without_trivia(db),
-                    )
-                    .intern(db),
+                    macro_call_path.as_syntax_node().get_text_without_trivia(db).into(),
                 ),
             );
             None

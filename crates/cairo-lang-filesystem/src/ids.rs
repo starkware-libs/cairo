@@ -119,7 +119,7 @@ impl UnstableSalsaId for CrateId<'_> {
 
 /// The long ID for a compilation flag.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct FlagLongId(pub SmolStr);
+pub struct FlagLongId(pub String);
 define_short_id!(FlagId, FlagLongId, FilesGroup, lookup_intern_flag, intern_flag);
 
 /// Same as `FileLongId`, but without the interning inside virtual files.
@@ -353,25 +353,55 @@ impl DirectoryInput {
 
 define_short_id!(SmolStrId, SmolStr, FilesGroup, lookup_intern_smol_str, intern_smol_str);
 
-impl<'db> SmolStrId<'db> {
-    pub fn as_str(&self, db: &'db dyn FilesGroup) -> &str {
-        self.long(db).as_str()
-    }
-
-    pub fn from_str(db: &'db dyn FilesGroup, s: impl Into<SmolStr>) -> Self {
-        SmolStrId::new(db, s.into())
-    }
+/// Returns a string with a lifetime that is valid on the database's lifetime.
+pub fn db_str(db: &dyn FilesGroup, str: impl Into<SmolStr>) -> &str {
+    str.into().intern(db).long(db)
 }
 
-impl<'db> Ord for SmolStrId<'db> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.0.cmp(&other.0)
+#[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
+pub struct StrRef<'db>(&'db str);
+impl<'db> core::ops::Deref for StrRef<'db> {
+    type Target = str;
+    fn deref(&self) -> &Self::Target {
+        self.0
     }
 }
-
-impl<'db> PartialOrd for SmolStrId<'db> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
+impl<'db> From<&'db str> for StrRef<'db> {
+    fn from(s: &'db str) -> Self {
+        StrRef(s)
+    }
+}
+impl<'db> core::borrow::Borrow<str> for StrRef<'db> {
+    fn borrow(&self) -> &str {
+        self.0
+    }
+}
+impl<'db> PartialEq<&'db str> for StrRef<'db> {
+    fn eq(&self, other: &&'db str) -> bool {
+        &self.0 == other
+    }
+}
+impl<'db> PartialEq<StrRef<'db>> for &'db str {
+    fn eq(&self, other: &StrRef<'db>) -> bool {
+        self == &other.0
+    }
+}
+impl<'db> core::fmt::Display for StrRef<'db> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+impl<'db> core::fmt::Debug for StrRef<'db> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.0)
+    }
+}
+unsafe impl<'db> salsa::Update for StrRef<'db> {
+    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
+        let old_value = &mut *old_pointer;
+        let changed = old_value != &new_value;
+        *old_value = new_value;
+        changed
     }
 }
 

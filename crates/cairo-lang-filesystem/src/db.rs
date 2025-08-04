@@ -149,7 +149,7 @@ impl Edition {
     }
 
     /// The name of the prelude submodule of `core::prelude` for this compatibility version.
-    pub fn prelude_submodule_name(&self) -> &str {
+    pub fn prelude_submodule_name(&self) -> &'static str {
         match self {
             Self::V2023_01 => "v2023_01",
             Self::V2023_10 | Self::V2023_11 => "v2023_10",

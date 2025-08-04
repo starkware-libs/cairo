@@ -3,10 +3,9 @@ use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId, NamedLanguageElemen
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, Upcast, extract_matches};
+use cairo_lang_utils::{Upcast, extract_matches};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
@@ -271,9 +270,7 @@ fn test_function_body() {
     )
     .unwrap();
     let db = &db_val;
-    let smol_str = SmolStr::from("foo");
-    let item_id =
-        db.module_item_by_name(test_function.module_id, smol_str.intern(db)).unwrap().unwrap();
+    let item_id = db.module_item_by_name(test_function.module_id, "foo".into()).unwrap().unwrap();
 
     let function_id =
         FunctionWithBodyId::Free(extract_matches!(item_id, ModuleItemId::FreeFunction));

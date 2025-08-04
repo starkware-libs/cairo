@@ -8,11 +8,10 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, try_extract_matches};
+use cairo_lang_utils::try_extract_matches;
 use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
-use smol_str::SmolStr;
 use test_case::test_case;
 
 use super::get_dummy_program_for_size_estimation;
@@ -114,9 +113,7 @@ fn test_only_include_dependencies(func_name: &str, sierra_used_funcs: &[&str]) {
             .iter()
             .find_map(|module_id| {
                 try_extract_matches!(
-                    db.module_item_by_name(*module_id, SmolStr::from(func_name).intern(&db))
-                        .unwrap()
-                        .unwrap(),
+                    db.module_item_by_name(*module_id, func_name.into()).unwrap().unwrap(),
                     ModuleItemId::FreeFunction
                 )
             })

@@ -5,6 +5,7 @@ mod test;
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId};
+use cairo_lang_filesystem::ids::db_str;
 use cairo_lang_semantic::corelib::try_extract_nz_wrapped_type;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::{ConstCalcInfo, ConstValue};
@@ -439,7 +440,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 ));
                 arr = new_arr;
             }
-            let panic_ty = corelib::get_core_ty_by_name(db, "Panic".into(), vec![]);
+            let panic_ty = corelib::get_core_ty_by_name(db, "Panic", vec![]);
             let panic_var = self.variables.alloc(new_var(panic_ty));
             self.additional_stmts.push(Statement::StructConstruct(StatementStructConstruct {
                 inputs: vec![],
@@ -1223,38 +1224,39 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
                 bounded_int_module.extern_function_id("bounded_int_is_zero")
             ],
             ["u8", "u16", "u32", "u64", "u128", "u256"]
-                .map(|ty| integer_module.extern_function_id(format!("{ty}_is_zero")))
+                .map(|ty| integer_module.extern_function_id(db_str(db, format!("{ty}_is_zero"))))
         ));
         let utypes = ["u8", "u16", "u32", "u64", "u128"];
         let itypes = ["i8", "i16", "i32", "i64", "i128"];
         let eq_fns = OrderedHashSet::<_>::from_iter(
-            chain!(utypes, itypes).map(|ty| integer_module.extern_function_id(format!("{ty}_eq"))),
+            chain!(utypes, itypes)
+                .map(|ty| integer_module.extern_function_id(db_str(db, format!("{ty}_eq")))),
         );
-        let uadd_fns = OrderedHashSet::<_>::from_iter(
-            utypes.map(|ty| integer_module.extern_function_id(format!("{ty}_overflowing_add"))),
-        );
-        let usub_fns = OrderedHashSet::<_>::from_iter(
-            utypes.map(|ty| integer_module.extern_function_id(format!("{ty}_overflowing_sub"))),
-        );
+        let uadd_fns = OrderedHashSet::<_>::from_iter(utypes.map(|ty| {
+            integer_module.extern_function_id(db_str(db, format!("{ty}_overflowing_add")))
+        }));
+        let usub_fns = OrderedHashSet::<_>::from_iter(utypes.map(|ty| {
+            integer_module.extern_function_id(db_str(db, format!("{ty}_overflowing_sub")))
+        }));
         let diff_fns = OrderedHashSet::<_>::from_iter(
-            itypes.map(|ty| integer_module.extern_function_id(format!("{ty}_diff"))),
+            itypes.map(|ty| integer_module.extern_function_id(db_str(db, format!("{ty}_diff")))),
         );
-        let iadd_fns = OrderedHashSet::<_>::from_iter(
-            itypes
-                .map(|ty| integer_module.extern_function_id(format!("{ty}_overflowing_add_impl"))),
-        );
-        let isub_fns = OrderedHashSet::<_>::from_iter(
-            itypes
-                .map(|ty| integer_module.extern_function_id(format!("{ty}_overflowing_sub_impl"))),
-        );
+        let iadd_fns = OrderedHashSet::<_>::from_iter(itypes.map(|ty| {
+            integer_module.extern_function_id(db_str(db, format!("{ty}_overflowing_add_impl")))
+        }));
+        let isub_fns = OrderedHashSet::<_>::from_iter(itypes.map(|ty| {
+            integer_module.extern_function_id(db_str(db, format!("{ty}_overflowing_sub_impl")))
+        }));
         let wide_mul_fns = OrderedHashSet::<_>::from_iter(chain!(
             [bounded_int_module.extern_function_id("bounded_int_mul")],
             ["u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64"]
-                .map(|ty| integer_module.extern_function_id(format!("{ty}_wide_mul"))),
+                .map(|ty| integer_module.extern_function_id(db_str(db, format!("{ty}_wide_mul")))),
         ));
         let div_rem_fns = OrderedHashSet::<_>::from_iter(chain!(
             [bounded_int_module.extern_function_id("bounded_int_div_rem")],
-            utypes.map(|ty| integer_module.extern_function_id(format!("{ty}_safe_divmod"))),
+            utypes.map(
+                |ty| integer_module.extern_function_id(db_str(db, format!("{ty}_safe_divmod")))
+            ),
         ));
         let type_value_ranges = OrderedHashMap::from_iter(
             [
@@ -1272,30 +1274,30 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
             ]
             .map(
                 |(ty_name, min, max, as_bounded_int, inc_dec): (
-                    &str,
+                    &'static str,
                     BigInt,
                     BigInt,
                     bool,
                     bool,
                 )| {
-                    let ty = corelib::get_core_ty_by_name(db, ty_name.into(), vec![]);
+                    let ty = corelib::get_core_ty_by_name(db, ty_name, vec![]);
                     let is_zero = if as_bounded_int {
                         bounded_int_module
                             .function_id("bounded_int_is_zero", vec![GenericArgumentId::Type(ty)])
                     } else {
-                        integer_module.function_id(format!("{ty_name}_is_zero"), vec![])
+                        integer_module.function_id(db_str(db, format!("{ty_name}_is_zero")), vec![])
                     }
                     .lowered(db);
                     let (inc, dec) = if inc_dec {
                         (
                             Some(
                                 num_module
-                                    .function_id(format!("{ty_name}_inc"), vec![])
+                                    .function_id(db_str(db, format!("{ty_name}_inc")), vec![])
                                     .lowered(db),
                             ),
                             Some(
                                 num_module
-                                    .function_id(format!("{ty_name}_dec"), vec![])
+                                    .function_id(db_str(db, format!("{ty_name}_dec")), vec![])
                                     .lowered(db),
                             ),
                         )

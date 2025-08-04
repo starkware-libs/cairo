@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MemberId, MemberLongId, ModuleItemId, StructId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
-use cairo_lang_filesystem::ids::SmolStrId;
+use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
@@ -150,7 +150,7 @@ pub fn struct_declaration_resolver_data<'db>(
 #[debug_db(dyn SemanticGroup)]
 pub struct StructDefinitionData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
-    members: Arc<OrderedHashMap<SmolStrId<'db>, Member<'db>>>,
+    members: Arc<OrderedHashMap<StrRef<'db>, Member<'db>>>,
     resolver_data: Arc<ResolverData<'db>>,
 }
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
@@ -197,17 +197,10 @@ pub fn priv_struct_definition_data<'db>(
         let id = MemberLongId(module_file_id, member.stable_ptr(db)).intern(db);
         let ty = resolve_type(db, &mut diagnostics, &mut resolver, &member.type_clause(db).ty(db));
         let visibility = Visibility::from_ast(db, &mut diagnostics, &member.visibility(db));
-        let member_name = member.name(db).text(db);
-        if let Some(_other_member) =
-            members.insert(SmolStrId::from_str(db, member_name), Member { id, ty, visibility })
-        {
-            diagnostics.report(
-                member.stable_ptr(db),
-                StructMemberRedefinition {
-                    struct_id,
-                    member_name: SmolStrId::from_str(db, member_name),
-                },
-            );
+        let member_name = member.name(db).text(db).into();
+        if let Some(_other_member) = members.insert(member_name, Member { id, ty, visibility }) {
+            diagnostics
+                .report(member.stable_ptr(db), StructMemberRedefinition { struct_id, member_name });
         }
         resolver.data.feature_config.restore(feature_restore);
     }
@@ -263,7 +256,7 @@ pub fn struct_definition_diagnostics<'db>(
 pub fn struct_members<'db>(
     db: &'db dyn SemanticGroup,
     struct_id: StructId<'db>,
-) -> Maybe<Arc<OrderedHashMap<SmolStrId<'db>, Member<'db>>>> {
+) -> Maybe<Arc<OrderedHashMap<StrRef<'db>, Member<'db>>>> {
     Ok(db.priv_struct_definition_data(struct_id)?.members)
 }
 
@@ -279,7 +272,7 @@ pub fn struct_definition_resolver_data<'db>(
 pub fn concrete_struct_members<'db>(
     db: &'db dyn SemanticGroup,
     concrete_struct_id: ConcreteStructId<'db>,
-) -> Maybe<Arc<OrderedHashMap<SmolStrId<'db>, semantic::Member<'db>>>> {
+) -> Maybe<Arc<OrderedHashMap<StrRef<'db>, semantic::Member<'db>>>> {
     // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
     //   always have the correct number of generic arguments.
     let generic_params = db.struct_generic_params(concrete_struct_id.struct_id(db))?;

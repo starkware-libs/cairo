@@ -276,7 +276,7 @@ impl<'db> Analyzer<'db, '_> for DestructAdder<'db, '_> {
 }
 
 fn panic_ty<'db>(db: &'db dyn LoweringGroup) -> semantic::TypeId<'db> {
-    get_ty_by_name(db, core_module(db), "Panic".into(), vec![])
+    get_ty_by_name(db, core_module(db), "Panic", vec![])
 }
 
 /// Inserts destructor calls into the lowered function.

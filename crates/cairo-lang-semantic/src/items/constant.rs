@@ -457,12 +457,12 @@ pub fn value_as_const_value<'db>(
 ) -> Result<ConstValue<'db>, LiteralError<'db>> {
     validate_literal(db, ty, value)?;
     let get_basic_const_value = |ty| {
-        let u256_ty = get_core_ty_by_name(db, "u256".into(), vec![]);
+        let u256_ty = get_core_ty_by_name(db, "u256", vec![]);
 
         if ty != u256_ty {
             ConstValue::Int(value.clone(), ty)
         } else {
-            let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
+            let u128_ty = get_core_ty_by_name(db, "u128", vec![]);
             let mask128 = BigInt::from(u128::MAX);
             let low = value & mask128;
             let high = value >> 128;

@@ -47,10 +47,10 @@ pub fn try_extract_test_config<'db>(
     db: &'db dyn SyntaxGroup,
     attrs: Vec<Attribute<'db>>,
 ) -> Result<Option<TestConfig>, Vec<PluginDiagnostic<'db>>> {
-    let test_attr = attrs.iter().find(|attr| attr.id.as_str() == TEST_ATTR);
-    let ignore_attr = attrs.iter().find(|attr| attr.id.as_str() == IGNORE_ATTR);
-    let available_gas_attr = attrs.iter().find(|attr| attr.id.as_str() == AVAILABLE_GAS_ATTR);
-    let should_panic_attr = attrs.iter().find(|attr| attr.id.as_str() == SHOULD_PANIC_ATTR);
+    let test_attr = attrs.iter().find(|attr| attr.id == TEST_ATTR);
+    let ignore_attr = attrs.iter().find(|attr| attr.id == IGNORE_ATTR);
+    let available_gas_attr = attrs.iter().find(|attr| attr.id == AVAILABLE_GAS_ATTR);
+    let should_panic_attr = attrs.iter().find(|attr| attr.id == SHOULD_PANIC_ATTR);
     let mut diagnostics = vec![];
     if let Some(attr) = test_attr {
         if !attr.args.is_empty() {

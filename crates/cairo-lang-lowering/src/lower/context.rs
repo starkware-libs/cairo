@@ -458,7 +458,7 @@ pub fn handle_lowering_flow_error<'db, 'mt>(
         LoweringFlowError::Panic(data_var, location) => {
             let panic_instance = generators::StructConstruct {
                 inputs: vec![],
-                ty: get_ty_by_name(ctx.db, core_module(ctx.db), "Panic".into(), vec![]),
+                ty: get_ty_by_name(ctx.db, core_module(ctx.db), "Panic", vec![]),
                 location,
             }
             .add(ctx, &mut builder.statements);
