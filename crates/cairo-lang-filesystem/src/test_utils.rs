@@ -1,4 +1,6 @@
-use crate::db::{ExternalFiles, init_files_group};
+use cairo_lang_utils::Upcast;
+
+use crate::db::{ExternalFiles, FilesGroup, init_files_group};
 
 // Test salsa database.
 #[salsa::db]
@@ -16,5 +18,10 @@ impl Default for FilesDatabaseForTesting {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         res
+    }
+}
+impl<'db> Upcast<'db, dyn FilesGroup> for FilesDatabaseForTesting {
+    fn upcast(&'db self) -> &'db dyn FilesGroup {
+        self
     }
 }
