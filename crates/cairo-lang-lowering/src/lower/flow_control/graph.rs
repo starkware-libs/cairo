@@ -21,7 +21,7 @@
 
 use std::fmt::Debug;
 
-use cairo_lang_semantic::{self as semantic, ConcreteVariant};
+use cairo_lang_semantic::{self as semantic, ConcreteVariant, PatternVariable};
 use itertools::Itertools;
 
 use crate::ids::LocationId;
@@ -42,6 +42,10 @@ impl FlowControlVar {
         graph.var_locations[self.idx]
     }
 }
+
+/// Identifier that represents a [PatternVariable].
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct PatternVarId(usize);
 
 /// Unique identifier for nodes in the flow control graph.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -100,6 +104,21 @@ pub struct ArmExpr {
     pub expr: semantic::ExprId,
 }
 
+/// Assigns a [PatternVariable] to an existing [FlowControlVar] that can be later used
+/// in the expressions.
+#[derive(Debug)]
+pub struct BindVar {
+    /// The input variable to bind.
+    #[expect(dead_code)]
+    pub input: FlowControlVar,
+    /// The (output) pattern variable to assign the result to.
+    #[expect(dead_code)]
+    pub output: PatternVarId,
+    /// The next node.
+    #[expect(dead_code)]
+    pub next: NodeId,
+}
+
 /// A node in the flow control graph for a match or if lowering.
 pub enum FlowControlNode<'db> {
     /// Evaluates an expression and assigns the result to a [FlowControlVar].
@@ -110,6 +129,8 @@ pub enum FlowControlNode<'db> {
     EnumMatch(EnumMatch<'db>),
     /// An arm (final node) that returns an expression.
     ArmExpr(ArmExpr),
+    /// Binds a [FlowControlVar] to a pattern variable.
+    BindVar(BindVar),
     /// An arm (final node) that returns a unit value - `()`.
     UnitResult,
 }
@@ -121,6 +142,7 @@ impl<'db> Debug for FlowControlNode<'db> {
             FlowControlNode::BooleanIf(node) => node.fmt(f),
             FlowControlNode::EnumMatch(node) => node.fmt(f),
             FlowControlNode::ArmExpr(node) => node.fmt(f),
+            FlowControlNode::BindVar(node) => node.fmt(f),
             FlowControlNode::UnitResult => write!(f, "UnitResult"),
         }
     }
@@ -137,6 +159,8 @@ pub struct FlowControlGraph<'db> {
     var_types: Vec<semantic::TypeId<'db>>,
     /// The location of each [FlowControlVar].
     var_locations: Vec<LocationId<'db>>,
+    /// The pattern variables used by the [BindVar] nodes in the graph.
+    pattern_vars: Vec<PatternVariable<'db>>,
 }
 impl<'db> FlowControlGraph<'db> {
     /// Returns the root node of the graph.
@@ -196,6 +220,13 @@ impl<'db> FlowControlGraphBuilder<'db> {
         var
     }
 
+    /// Registers a new [PatternVariable] and returns a corresponding [PatternVarId].
+    pub fn register_pattern_var(&mut self, var: PatternVariable<'db>) -> PatternVarId {
+        let idx = self.graph.pattern_vars.len();
+        self.graph.pattern_vars.push(var);
+        PatternVarId(idx)
+    }
+
     /// Returns the type of the given [FlowControlVar].
     pub fn var_ty(&self, input_var: FlowControlVar) -> semantic::TypeId<'db> {
         self.graph.var_types[input_var.idx]
@@ -208,6 +239,7 @@ impl<'db> Default for FlowControlGraphBuilder<'db> {
             nodes: Vec::new(),
             var_types: Vec::new(),
             var_locations: Vec::new(),
+            pattern_vars: Vec::new(),
         };
         Self { graph }
     }
