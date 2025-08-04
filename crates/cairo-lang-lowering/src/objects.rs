@@ -13,7 +13,7 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{concrete_destruct_trait, concrete_panic_destruct_trait};
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_semantic::expr::inference::solver::Ambiguity;
-use cairo_lang_semantic::items::imp::ImplLookupContext;
+use cairo_lang_semantic::items::imp::ImplLookupContextId;
 use cairo_lang_semantic::types::TypeInfo;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::Intern;
@@ -249,7 +249,7 @@ impl<'db> DebugWithDb<'db> for Variable<'db> {
 impl<'db> Variable<'db> {
     pub fn new(
         db: &'db dyn LoweringGroup,
-        ctx: ImplLookupContext<'db>,
+        ctx: ImplLookupContextId<'db>,
         ty: semantic::TypeId<'db>,
         location: LocationId<'db>,
     ) -> Self {
