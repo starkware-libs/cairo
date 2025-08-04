@@ -193,16 +193,15 @@ enum Color {
 }
 
 //! > graph
-Root: 8
+Root: 7
 0 ArmExpr { expr: ExprId(1) }
 1 ArmExpr { expr: ExprId(2) }
 2 ArmExpr { expr: ExprId(3) }
-3 EnumMatch { matched_var: v2, variants: (NodeId(0), v4), (NodeId(0), v5), (NodeId(0), v6)}
-4 EnumMatch { matched_var: v2, variants: (NodeId(1), v8), (NodeId(2), v9), (NodeId(2), v10)}
-5 EnumMatch { matched_var: v2, variants: (NodeId(1), v12), (NodeId(2), v13), (NodeId(2), v14)}
-6 EnumMatch { matched_var: v1, variants: (NodeId(3), v3), (NodeId(4), v7), (NodeId(5), v11)}
-7 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(6) }
-8 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(7) }
+3 EnumMatch { matched_var: v2, variants: (NodeId(1), v8), (NodeId(2), v9), (NodeId(2), v10)}
+4 EnumMatch { matched_var: v2, variants: (NodeId(1), v12), (NodeId(2), v13), (NodeId(2), v14)}
+5 EnumMatch { matched_var: v1, variants: (NodeId(0), v3), (NodeId(3), v7), (NodeId(4), v11)}
+6 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(5) }
+7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
 
 //! > semantic_diagnostics
 
@@ -231,16 +230,15 @@ enum Color {
 }
 
 //! > graph
-Root: 8
+Root: 7
 0 ArmExpr { expr: ExprId(1) }
 1 ArmExpr { expr: ExprId(2) }
 2 ArmExpr { expr: ExprId(3) }
-3 EnumMatch { matched_var: v3, variants: (NodeId(0), v5), (NodeId(0), v6)}
-4 EnumMatch { matched_var: v3, variants: (NodeId(1), v8), (NodeId(2), v9)}
-5 EnumMatch { matched_var: v2, variants: (NodeId(3), v4), (NodeId(4), v7)}
-6 Deconstruct { input: v1, outputs: [v2, v3], next: NodeId(5) }
-7 EnumMatch { matched_var: v0, variants: (NodeId(6), v1), (NodeId(0), v10)}
-8 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(7) }
+3 EnumMatch { matched_var: v3, variants: (NodeId(1), v8), (NodeId(2), v9)}
+4 EnumMatch { matched_var: v2, variants: (NodeId(0), v4), (NodeId(3), v7)}
+5 Deconstruct { input: v1, outputs: [v2, v3], next: NodeId(4) }
+6 EnumMatch { matched_var: v0, variants: (NodeId(5), v1), (NodeId(0), v10)}
+7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
 
 //! > semantic_diagnostics
 
@@ -282,6 +280,44 @@ Root: 10
 8 EnumMatch { matched_var: v1, variants: (NodeId(6), v3), (NodeId(7), v16)}
 9 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(8) }
 10 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(9) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+
+//! > ==========================================================================
+
+//! > Single variant enum
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: true)
+
+//! > function_code
+
+// Tests that the same-node optimization is not applied when the inner value is used (for
+// future match or pattern binding).
+fn foo(x: Enum1) -> felt252 {
+    match x {
+        Enum1::A(Enum2::B(x)) => x,
+    }
+}
+
+//! > module_code
+enum Enum1 {
+    A: Enum2,
+}
+
+enum Enum2 {
+    B: felt252,
+}
+
+//! > graph
+Root: 4
+0 ArmExpr { expr: ExprId(1) }
+1 BindVar { input: v2, output: PatternVarId(0), next: NodeId(0) }
+2 EnumMatch { matched_var: v1, variants: (NodeId(1), v2)}
+3 EnumMatch { matched_var: v0, variants: (NodeId(2), v1)}
+4 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(3) }
 
 //! > semantic_diagnostics
 

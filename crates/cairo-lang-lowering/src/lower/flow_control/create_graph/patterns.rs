@@ -158,6 +158,9 @@ fn create_node_for_enum<'db>(
         }
     }
 
+    // Whether any of the inner variables are used.
+    let mut inner_var_used = false;
+
     // Create a node in the graph for each variant.
     let variants =
         zip_eq3(concrete_variants, variant_to_pattern_indices, variant_to_inner_patterns)
@@ -176,9 +179,23 @@ fn create_node_for_enum<'db>(
                     },
                     inner_var,
                 );
+                if graph.is_var_used(inner_var) {
+                    inner_var_used = true;
+                }
                 (concrete_variant, node, inner_var)
             })
             .collect_vec();
+
+    // Optimization: If all the variants lead to the same node, and the inner variables are not
+    // used, there is no need to do the match.
+    if !inner_var_used {
+        if let Some(first_variant) = variants.first() {
+            let first_variant_node = first_variant.1;
+            if variants.iter().all(|(_, node_id, _)| *node_id == first_variant_node) {
+                return first_variant_node;
+            }
+        }
+    }
 
     // Create a node for the match.
     graph.add_node(FlowControlNode::EnumMatch(EnumMatch {
