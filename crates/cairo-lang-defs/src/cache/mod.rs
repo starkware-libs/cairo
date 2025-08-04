@@ -39,7 +39,7 @@ use crate::plugin::{DynGeneratedFileAuxData, PluginDiagnostic};
 /// Metadata for a cached crate.
 #[derive(Serialize, Deserialize)]
 pub struct CachedCrateMetadata {
-    /// Hash of the settings the crate was compiles with.
+    /// Hash of the settings the crate was compiled with.
     pub settings: Option<u64>,
     /// The version of the compiler that compiled the crate.
     pub compiler_version: String,
