@@ -264,7 +264,7 @@ impl TextPositionSpan {
     /// Convert this span to a [`TextSpan`] in the file.
     pub fn offset_in_file<'db>(
         self,
-        db: &'db (dyn FilesGroup + 'db),
+        db: &'db dyn FilesGroup,
         file: FileId<'db>,
     ) -> Option<TextSpan> {
         let start = self.start.offset_in_file(db, file)?;
