@@ -16,8 +16,8 @@ fn foo(x: bool) -> felt252 {
 Root: 3
 0 ArmExpr { expr: ExprId(2) }
 1 ArmExpr { expr: ExprId(4) }
-2 BooleanIf { condition_var: FlowControlVar { idx: 0 }, true_branch: NodeId(0), false_branch: NodeId(1) }
-3 EvaluateExpr { expr: ExprId(0), var_id: FlowControlVar { idx: 0 }, next: NodeId(2) }
+2 BooleanIf { condition_var: v0, true_branch: NodeId(0), false_branch: NodeId(1) }
+3 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(2) }
 
 //! > semantic_diagnostics
 
@@ -69,8 +69,8 @@ fn bar() {}
 Root: 3
 0 ArmExpr { expr: ExprId(2) }
 1 UnitResult
-2 BooleanIf { condition_var: FlowControlVar { idx: 0 }, true_branch: NodeId(0), false_branch: NodeId(1) }
-3 EvaluateExpr { expr: ExprId(0), var_id: FlowControlVar { idx: 0 }, next: NodeId(2) }
+2 BooleanIf { condition_var: v0, true_branch: NodeId(0), false_branch: NodeId(1) }
+3 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(2) }
 
 //! > semantic_diagnostics
 
@@ -121,10 +121,10 @@ fn foo(mut x: felt252, mut y: felt252) -> felt252 {
 Root: 5
 0 ArmExpr { expr: ExprId(7) }
 1 ArmExpr { expr: ExprId(11) }
-2 EnumMatch { matched_var: FlowControlVar { idx: 0 }, variants: (NodeId(0), FlowControlVar { idx: 1 }), (NodeId(1), FlowControlVar { idx: 2 })}
-3 EvaluateExpr { expr: ExprId(3), var_id: FlowControlVar { idx: 0 }, next: NodeId(2) }
-4 EnumMatch { matched_var: FlowControlVar { idx: 3 }, variants: (NodeId(3), FlowControlVar { idx: 4 }), (NodeId(1), FlowControlVar { idx: 5 })}
-5 EvaluateExpr { expr: ExprId(1), var_id: FlowControlVar { idx: 3 }, next: NodeId(4) }
+2 EnumMatch { matched_var: v0, variants: (NodeId(0), v1), (NodeId(1), v2)}
+3 EvaluateExpr { expr: ExprId(3), var_id: v0, next: NodeId(2) }
+4 EnumMatch { matched_var: v3, variants: (NodeId(3), v4), (NodeId(1), v5)}
+5 EvaluateExpr { expr: ExprId(1), var_id: v3, next: NodeId(4) }
 
 //! > semantic_diagnostics
 
@@ -197,8 +197,8 @@ fn foo() -> felt252 {
 Root: 3
 0 ArmExpr { expr: ExprId(5) }
 1 ArmExpr { expr: ExprId(7) }
-2 BooleanIf { condition_var: FlowControlVar { idx: 0 }, true_branch: NodeId(0), false_branch: NodeId(1) }
-3 EvaluateExpr { expr: ExprId(3), var_id: FlowControlVar { idx: 0 }, next: NodeId(2) }
+2 BooleanIf { condition_var: v0, true_branch: NodeId(0), false_branch: NodeId(1) }
+3 EvaluateExpr { expr: ExprId(3), var_id: v0, next: NodeId(2) }
 
 //! > semantic_diagnostics
 
@@ -238,8 +238,8 @@ fn foo() -> felt252 {
 Root: 3
 0 ArmExpr { expr: ExprId(5) }
 1 ArmExpr { expr: ExprId(7) }
-2 BooleanIf { condition_var: FlowControlVar { idx: 0 }, true_branch: NodeId(0), false_branch: NodeId(1) }
-3 EvaluateExpr { expr: ExprId(1), var_id: FlowControlVar { idx: 0 }, next: NodeId(2) }
+2 BooleanIf { condition_var: v0, true_branch: NodeId(0), false_branch: NodeId(1) }
+3 EvaluateExpr { expr: ExprId(1), var_id: v0, next: NodeId(2) }
 
 //! > semantic_diagnostics
 
@@ -300,8 +300,8 @@ fn foo() -> felt252 {
 Root: 3
 0 ArmExpr { expr: ExprId(3) }
 1 ArmExpr { expr: ExprId(7) }
-2 BooleanIf { condition_var: FlowControlVar { idx: 0 }, true_branch: NodeId(0), false_branch: NodeId(1) }
-3 EvaluateExpr { expr: ExprId(1), var_id: FlowControlVar { idx: 0 }, next: NodeId(2) }
+2 BooleanIf { condition_var: v0, true_branch: NodeId(0), false_branch: NodeId(1) }
+3 EvaluateExpr { expr: ExprId(1), var_id: v0, next: NodeId(2) }
 
 //! > semantic_diagnostics
 
@@ -357,9 +357,9 @@ fn foo(x: Option<Option<felt252>>) -> felt252 {
 Root: 4
 0 ArmExpr { expr: ExprId(2) }
 1 ArmExpr { expr: ExprId(4) }
-2 EnumMatch { matched_var: FlowControlVar { idx: 1 }, variants: (NodeId(0), FlowControlVar { idx: 2 }), (NodeId(1), FlowControlVar { idx: 3 })}
-3 EnumMatch { matched_var: FlowControlVar { idx: 0 }, variants: (NodeId(2), FlowControlVar { idx: 1 }), (NodeId(1), FlowControlVar { idx: 4 })}
-4 EvaluateExpr { expr: ExprId(0), var_id: FlowControlVar { idx: 0 }, next: NodeId(3) }
+2 EnumMatch { matched_var: v1, variants: (NodeId(0), v2), (NodeId(1), v3)}
+3 EnumMatch { matched_var: v0, variants: (NodeId(2), v1), (NodeId(1), v4)}
+4 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(3) }
 
 //! > semantic_diagnostics
 
