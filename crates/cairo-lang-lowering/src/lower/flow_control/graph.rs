@@ -114,6 +114,21 @@ pub struct ArmExpr {
     pub expr: semantic::ExprId,
 }
 
+/// Destructure (for structs and tuples).
+#[derive(Debug)]
+pub struct Deconstruct {
+    /// The input value to destructure (a variable of type struct or tuple).
+    #[expect(dead_code)]
+    pub input: FlowControlVar,
+    /// The (output) variables to assign the result to. The number of variables is equal to the
+    /// number of fields in the struct or tuple.
+    #[expect(dead_code)]
+    pub outputs: Vec<FlowControlVar>,
+    /// The next node.
+    #[expect(dead_code)]
+    pub next: NodeId,
+}
+
 /// Assigns a [PatternVariable] to an existing [FlowControlVar] that can be later used
 /// in the expressions.
 #[derive(Debug)]
@@ -136,6 +151,8 @@ pub enum FlowControlNode<'db> {
     EnumMatch(EnumMatch<'db>),
     /// An arm (final node) that returns an expression.
     ArmExpr(ArmExpr),
+    /// Destructure a tuple to its members.
+    Deconstruct(Deconstruct),
     /// Binds a [FlowControlVar] to a pattern variable.
     BindVar(BindVar),
     /// An arm (final node) that returns a unit value - `()`.
@@ -149,6 +166,7 @@ impl<'db> Debug for FlowControlNode<'db> {
             FlowControlNode::BooleanIf(node) => node.fmt(f),
             FlowControlNode::EnumMatch(node) => node.fmt(f),
             FlowControlNode::ArmExpr(node) => node.fmt(f),
+            FlowControlNode::Deconstruct(node) => node.fmt(f),
             FlowControlNode::BindVar(node) => node.fmt(f),
             FlowControlNode::UnitResult => write!(f, "UnitResult"),
         }

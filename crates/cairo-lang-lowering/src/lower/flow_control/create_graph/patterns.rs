@@ -1,7 +1,8 @@
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::{
-    self as semantic, ConcreteEnumId, ConcreteTypeId, PatternEnumVariant, TypeLongId,
+    self as semantic, ConcreteEnumId, ConcreteTypeId, PatternEnumVariant, PatternTuple, TypeId,
+    TypeLongId,
 };
 use cairo_lang_utils::iterators::zip_eq3;
 use itertools::Itertools;
@@ -12,6 +13,7 @@ use super::super::graph::{
 use super::filtered_patterns::{Bindings, FilteredPatterns};
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
+use crate::lower::flow_control::graph::Deconstruct;
 
 /// A callback that gets a [FilteredPatterns] and constructs a node that continues the pattern
 /// matching restricted to the filtered patterns.
@@ -98,6 +100,16 @@ pub fn create_node_for_patterns<'db>(
             &build_node_callback,
             location,
         ),
+        TypeLongId::Tuple(types) => create_node_for_tuple(
+            ctx,
+            graph,
+            input_var,
+            &types,
+            n_snapshots,
+            &patterns,
+            &build_node_callback,
+            location,
+        ),
         _ => todo!("Type {:?} is not supported yet.", long_ty),
     }
 }
@@ -178,6 +190,97 @@ fn create_node_for_enum<'db>(
         concrete_enum_id,
         variants,
     }))
+}
+
+/// Creates a [Deconstruct] node for the given `input_var` and `patterns`.
+#[allow(clippy::too_many_arguments)]
+fn create_node_for_tuple<'db>(
+    ctx: &LoweringContext<'db, '_>,
+    graph: &mut FlowControlGraphBuilder<'db>,
+    input_var: FlowControlVar,
+    types: &Vec<TypeId<'db>>,
+    n_snapshots: usize,
+    patterns: &[PatternOption<'_, 'db>],
+    build_node_callback: BuildNodeCallback<'db, '_>,
+    location: LocationId<'db>,
+) -> NodeId {
+    let inner_vars = types
+        .iter()
+        .map(|ty| graph.new_var(wrap_in_snapshots(ctx.db, *ty, n_snapshots), location))
+        .collect_vec();
+
+    let node = create_node_for_tuple_inner(
+        ctx,
+        graph,
+        &inner_vars,
+        types,
+        location,
+        patterns,
+        build_node_callback,
+        0,
+    );
+
+    // Deconstruct the input variable.
+    graph.add_node(FlowControlNode::Deconstruct(Deconstruct {
+        input: input_var,
+        outputs: inner_vars,
+        next: node,
+    }))
+}
+
+/// Helper function for [create_node_for_tuple].
+///
+/// `item_idx` is the index of the current member that is being processed in the tuple.
+#[allow(clippy::too_many_arguments)]
+fn create_node_for_tuple_inner<'db>(
+    ctx: &LoweringContext<'db, '_>,
+    graph: &mut FlowControlGraphBuilder<'db>,
+    inner_vars: &Vec<FlowControlVar>,
+    types: &Vec<TypeId<'db>>,
+    location: LocationId<'db>,
+    patterns: &[PatternOption<'_, 'db>],
+    build_node_callback: BuildNodeCallback<'db, '_>,
+    item_idx: usize,
+) -> NodeId {
+    if item_idx == types.len() {
+        return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
+    }
+
+    // Collect the patterns on the current item.
+    let patterns_on_current_item = patterns
+        .iter()
+        .map(|pattern| match pattern {
+            Some(semantic::Pattern::Tuple(PatternTuple { field_patterns, .. })) => {
+                Some(get_pattern(ctx, field_patterns[item_idx]))
+            }
+            Some(semantic::Pattern::Otherwise(..)) | None => None,
+            Some(_) => todo!(),
+        })
+        .collect_vec();
+
+    // Create a node to handle the current item. The callback will handle the rest of the tuple.
+    create_node_for_patterns(
+        ctx,
+        graph,
+        inner_vars[item_idx],
+        &patterns_on_current_item,
+        &|graph, pattern_indices| {
+            // Call `create_node_for_tuple_inner` recursively to handle the rest of the tuple.
+            create_node_for_tuple_inner(
+                ctx,
+                graph,
+                inner_vars,
+                types,
+                location,
+                &pattern_indices.indices().map(|idx| patterns[idx]).collect_vec(),
+                &|graph, pattern_indices_inner| {
+                    build_node_callback(graph, pattern_indices_inner.lift(&pattern_indices))
+                },
+                item_idx + 1,
+            )
+        },
+        location,
+    )
 }
 
 /// Returns `true` if the pattern accepts any value (`_` or a variable name).
