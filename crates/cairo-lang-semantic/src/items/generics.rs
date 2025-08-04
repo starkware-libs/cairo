@@ -9,6 +9,7 @@ use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, ModuleFileId, TraitId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{AssociatedItemConstraints, OptionAssociatedItemConstraints};
@@ -593,7 +594,7 @@ fn impl_generic_param_semantic<'db>(
             for constraint in constraints.associated_item_constraints(syntax_db).elements(db) {
                 let Ok(trait_type_id_opt) = db.trait_type_by_name(
                     concrete_trait_id.trait_id(db),
-                    constraint.item(syntax_db).text(syntax_db).intern(db),
+                    SmolStrId::from_str(db, constraint.item(syntax_db).text(syntax_db)),
                 ) else {
                     continue;
                 };
@@ -601,7 +602,7 @@ fn impl_generic_param_semantic<'db>(
                     diagnostics.report(
                         constraint.stable_ptr(syntax_db),
                         SemanticDiagnosticKind::NonTraitTypeConstrained {
-                            identifier: constraint.item(db).text(db).intern(db),
+                            identifier: SmolStrId::from_str(db, constraint.item(db).text(db)),
                             concrete_trait_id,
                         },
                     );

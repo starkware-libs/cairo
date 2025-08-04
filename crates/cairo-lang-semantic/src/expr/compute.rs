@@ -623,7 +623,7 @@ fn expand_inline_macro<'db>(
         }) else {
             return Err(ctx.diagnostics.report(
                 syntax.stable_ptr(ctx.db),
-                InlineMacroNoMatchingRule(macro_name.intern(ctx.db)),
+                InlineMacroNoMatchingRule(SmolStrId::from_str(ctx.db, macro_name)),
             ));
         };
         let mut matcher_ctx =
@@ -657,7 +657,14 @@ fn expand_inline_macro<'db>(
             &MacroPluginMetadata {
                 cfg_set: &ctx.cfg_set,
                 declared_derives: &ctx.db.declared_derives(crate_id),
-                allowed_features: &ctx.resolver.data.feature_config.allowed_features,
+                allowed_features: &ctx
+                    .resolver
+                    .data
+                    .feature_config
+                    .allowed_features
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect::<OrderedHashSet<_>>(),
                 edition: ctx.resolver.settings.edition,
             },
         );
@@ -678,7 +685,7 @@ fn expand_inline_macro<'db>(
             return Err(diag_added.unwrap_or_else(|| {
                 ctx.diagnostics.report(
                     syntax.stable_ptr(ctx.db),
-                    InlineMacroNotFound(macro_name.intern(ctx.db)),
+                    InlineMacroNotFound(SmolStrId::from_str(ctx.db, macro_name)),
                 )
             }));
         };
@@ -709,7 +716,7 @@ fn compute_expr_inline_macro_semantic<'db>(
     let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
-        name: name.into(),
+        name,
         content,
         code_mappings: info.mappings.clone(),
         kind: FileKind::Expr,
@@ -769,7 +776,7 @@ fn expand_macro_for_statement<'db>(
     let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
-        name: name.into(),
+        name,
         content,
         code_mappings: info.mappings.clone(),
         kind: FileKind::StatementList,
@@ -827,7 +834,6 @@ fn compute_expr_unary_semantic<'db>(
         // If this is not an actual function call, but actually a minus literal (e.g. -1).
         (UnaryOperator::Minus(_), ast::Expr::Literal(literal)) => {
             let (value, ty) = literal.numeric_value_and_suffix(db).unwrap_or_default();
-            let ty = ty.as_ref().map(SmolStr::as_str);
 
             Ok(Expr::Literal(new_literal_expr(ctx, ty, -value, syntax.stable_ptr(db).into())?))
         }
@@ -1188,7 +1194,7 @@ fn compute_expr_function_call_semantic<'db>(
     // Check if this is a variable.
     let mut is_shadowed_by_variable = false;
     if let Some((identifier, is_callsite_prefixed)) = try_extract_identifier_from_path(db, &path) {
-        let variable_name = identifier.text(ctx.db).intern(ctx.db);
+        let variable_name = SmolStrId::from_str(ctx.db, identifier.text(ctx.db));
         if let Some(var) = get_binded_expr_by_name(
             ctx,
             variable_name,
@@ -1330,13 +1336,10 @@ fn compute_expr_function_call_semantic<'db>(
                 return Err(ctx.diagnostics.report(
                     path.stable_ptr(ctx.db),
                     CallingShadowedFunction {
-                        shadowed_function_name: path
-                            .segments(db)
-                            .elements(db)
-                            .next()
-                            .unwrap()
-                            .identifier(db)
-                            .intern(db),
+                        shadowed_function_name: SmolStrId::from_str(
+                            db,
+                            path.segments(db).elements(db).next().unwrap().identifier(db),
+                        ),
                     },
                 ));
             }
@@ -2716,7 +2719,7 @@ fn maybe_compute_pattern_semantic<'db>(
                 match pattern_param_ast {
                     PatternStructParam::Single(single) => {
                         let name = single.name(db);
-                        let name_id = name.text(ctx.db).intern(ctx.db);
+                        let name_id = SmolStrId::from_str(ctx.db, name.text(ctx.db));
                         let Some(member) = get_member(ctx, name_id, name.stable_ptr(db).untyped())
                         else {
                             continue;
@@ -2734,7 +2737,7 @@ fn maybe_compute_pattern_semantic<'db>(
                     }
                     PatternStructParam::WithExpr(with_expr) => {
                         let name = with_expr.name(db);
-                        let name_id = name.text(ctx.db).intern(ctx.db);
+                        let name_id = SmolStrId::from_str(ctx.db, name.text(ctx.db));
                         let Some(member) = get_member(ctx, name_id, name.stable_ptr(db).untyped())
                         else {
                             continue;
@@ -3048,7 +3051,7 @@ fn create_variable_pattern<'db>(
 ) -> Pattern<'db> {
     let db = ctx.db;
 
-    let var_id = match or_pattern_variables_map.get(&identifier.text(db)) {
+    let var_id = match or_pattern_variables_map.get(identifier.text(db)) {
         Some(var) => var.id,
         None => {
             LocalVarLongId(ctx.resolver.module_file_id, identifier.stable_ptr(db)).intern(ctx.db)
@@ -3063,7 +3066,7 @@ fn create_variable_pattern<'db>(
         }
     };
     Pattern::Variable(PatternVariable {
-        name: identifier.text(db),
+        name: identifier.text(db).into(),
         var: LocalVariable { id: var_id, ty, is_mut },
         stable_ptr,
     })
@@ -3104,7 +3107,7 @@ fn struct_ctor_expr<'db>(
         match arg {
             ast::StructArg::StructArgSingle(arg) => {
                 let arg_identifier = arg.identifier(db);
-                let arg_name = arg_identifier.text(db).intern(ctx.db);
+                let arg_name = SmolStrId::from_str(ctx.db, arg_identifier.text(db));
 
                 // Find struct member by name.
                 let Some(member) = members.get(&arg_name) else {
@@ -3285,7 +3288,6 @@ fn literal_to_semantic<'db>(
     let db = ctx.db;
 
     let (value, ty) = literal_syntax.numeric_value_and_suffix(db).unwrap_or_default();
-    let ty = ty.as_ref().map(SmolStr::as_str);
 
     new_literal_expr(ctx, ty, value, literal_syntax.stable_ptr(db).into())
 }
@@ -3370,7 +3372,7 @@ fn expr_as_identifier<'db>(
     let segments_var = path.segments(db);
     let mut segments = segments_var.elements(db);
     if segments.len() == 1 {
-        Ok(segments.next().unwrap().identifier(db))
+        Ok(segments.next().unwrap().identifier(db).into())
     } else {
         Err(ctx.diagnostics.report(path.stable_ptr(db), InvalidMemberExpression))
     }
@@ -3455,7 +3457,7 @@ fn method_call_expr<'db>(
         compute_method_function_call_data(
             ctx,
             candidate_traits.keys().copied().collect_vec().as_slice(),
-            func_name.clone(),
+            func_name.into(),
             lexpr,
             path.stable_ptr(db).untyped(),
             generic_args_syntax,
@@ -3488,7 +3490,7 @@ fn method_call_expr<'db>(
 
     if let Ok(trait_definition_data) = ctx.db.priv_trait_definition_data(actual_trait_id) {
         if let Some(trait_item_info) =
-            trait_definition_data.get_trait_item_info(func_name.intern(ctx.db))
+            trait_definition_data.get_trait_item_info(SmolStrId::from_str(ctx.db, func_name))
         {
             ctx.resolver.validate_feature_constraints(
                 ctx.diagnostics,
@@ -3783,7 +3785,7 @@ fn resolve_expr_path<'db>(
 
     // Check if this is a variable.
     if let Some((identifier, is_callsite_prefixed)) = try_extract_identifier_from_path(db, path) {
-        let variable_name = identifier.text(ctx.db).intern(ctx.db);
+        let variable_name = SmolStrId::from_str(ctx.db, identifier.text(ctx.db));
         if let Some(res) = get_binded_expr_by_name(
             ctx,
             variable_name,
@@ -3859,7 +3861,7 @@ pub fn resolve_variable_by_name<'db>(
     identifier: &ast::TerminalIdentifier<'db>,
     stable_ptr: ast::ExprPtr<'db>,
 ) -> Maybe<Expr<'db>> {
-    let variable_name = identifier.text(ctx.db).intern(ctx.db);
+    let variable_name = SmolStrId::from_str(ctx.db, identifier.text(ctx.db));
     let res = get_binded_expr_by_name(ctx, variable_name, false, stable_ptr).ok_or_else(|| {
         ctx.diagnostics.report(identifier.stable_ptr(ctx.db), VariableNotFound(variable_name))
     })?;
@@ -4070,7 +4072,7 @@ fn check_named_arguments<'db>(
         // Check name.
         if let Some(name_terminal) = name_opt {
             seen_named_arguments = true;
-            let name = name_terminal.text(ctx.db).intern(ctx.db);
+            let name = SmolStrId::from_str(ctx.db, name_terminal.text(ctx.db));
             if param.name != name {
                 res = Err(ctx.diagnostics.report(
                     name_terminal.stable_ptr(ctx.db),
@@ -4361,7 +4363,7 @@ pub fn compute_and_append_statement_semantic<'db>(
                         false,
                     );
                     let name_syntax = const_syntax.name(db);
-                    let name = name_syntax.text(db).intern(ctx.db);
+                    let name = SmolStrId::from_str(ctx.db, name_syntax.text(db));
                     let rhs_id = StatementConstLongId(
                         ctx.resolver.module_file_id,
                         const_syntax.stable_ptr(db),
@@ -4393,7 +4395,7 @@ pub fn compute_and_append_statement_semantic<'db>(
                         let var_def_id = StatementItemId::Use(
                             StatementUseLongId(ctx.resolver.module_file_id, stable_ptr).intern(db),
                         );
-                        let name = var_def_id.name(db).intern(ctx.db);
+                        let name = SmolStrId::from_str(ctx.db, var_def_id.name(db));
                         match resolved_item {
                             ResolvedGenericItem::GenericConstant(const_id) => {
                                 let var_def = Binding::LocalItem(LocalItem {

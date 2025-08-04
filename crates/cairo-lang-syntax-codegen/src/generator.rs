@@ -176,7 +176,6 @@ fn generate_ast_code() -> rust::Tokens {
 
         use cairo_lang_filesystem::span::TextWidth;
         use cairo_lang_utils::{extract_matches, Intern};
-        use smol_str::SmolStr;
 
         use super::element_list::ElementList;
         use super::green::GreenNodeDetails;
@@ -512,15 +511,15 @@ fn gen_token_code(name: String) -> rust::Tokens {
             node: SyntaxNode<'db>,
         }
         impl<'db> Token<'db> for $(&name)<'db> {
-            fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+            fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
                 $(&green_name)(GreenNode {
                     kind: SyntaxKind::$(&name),
                     details: GreenNodeDetails::Token(text),
                 }.intern(db))
             }
-            fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+            fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
                 extract_matches!(&self.node.long(db).green.long(db).details,
-                    GreenNodeDetails::Token).clone()
+                    GreenNodeDetails::Token)
             }
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -542,9 +541,8 @@ fn gen_token_code(name: String) -> rust::Tokens {
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
         pub struct $(&green_name)<'db>(pub GreenId<'db>);
         impl<'db> $(&green_name)<'db> {
-            pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-                extract_matches!(
-                    &self.0.long(db).details, GreenNodeDetails::Token).clone()
+            pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+                extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
             }
         }
         impl<'db> TypedSyntaxNode<'db> for $(&name)<'db>{
@@ -554,7 +552,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
             fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
                 $(&green_name)(GreenNode {
                     kind: SyntaxKind::TokenMissing,
-                    details: GreenNodeDetails::Token("".into()),
+                    details: GreenNodeDetails::Token(""),
                 }.intern(db))
             }
             fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -645,16 +643,12 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                         details: GreenNodeDetails::Node { children: children.into(), width },
                     }.intern(db))
                 }
-                fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+                fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
                     let GreenNodeDetails::Node{children,..} = &self.node.long(db).green.long(db).details else {
                         unreachable!("Expected a node, not a token");
                     };
 
-                    extract_matches!(
-                        &children[1].long(db).details,
-                        GreenNodeDetails::Token
-                    )
-                    .clone()
+                    extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
                 }
             }
         }

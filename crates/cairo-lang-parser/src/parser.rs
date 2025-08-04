@@ -41,10 +41,10 @@ enum MacroParsingContext {
     None,
 }
 
-pub struct Parser<'a, 'mt, 'str> {
+pub struct Parser<'a, 'mt> {
     db: &'a dyn SyntaxGroup,
     file_id: FileId<'a>,
-    lexer: Lexer<'a, 'str>,
+    lexer: Lexer<'a>,
     /// The next terminal to handle.
     next_terminal: LexerTerminal<'a>,
     /// The terminal following [Self::next_terminal], if known.
@@ -121,12 +121,12 @@ macro_rules! or_an_attribute {
     };
 }
 
-impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
+impl<'a, 'mt> Parser<'a, 'mt> {
     /// Creates a new parser.
     pub fn new(
         db: &'a dyn SyntaxGroup,
         file_id: FileId<'a>,
-        text: &'str str,
+        text: &'a str,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
     ) -> Self {
         let mut lexer = Lexer::from_text(db, text);
@@ -157,7 +157,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         db: &'a dyn SyntaxGroup,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
-        text: &'str str,
+        text: &'a str,
     ) -> SyntaxFile<'a> {
         let parser = Parser::new(db, file_id, text, diagnostics);
         let green = parser.parse_syntax_file();
@@ -169,7 +169,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         db: &'a dyn SyntaxGroup,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
-        text: &'str str,
+        text: &'a str,
     ) -> Expr<'a> {
         let mut parser = Parser::new(db, file_id, text, diagnostics);
         parser.macro_parsing_context = MacroParsingContext::ExpandedMacro;
@@ -188,7 +188,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         db: &'a dyn SyntaxGroup,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
-        text: &'str str,
+        text: &'a str,
     ) -> StatementList<'a> {
         let mut parser = Parser::new(db, file_id, text, diagnostics);
         parser.macro_parsing_context = MacroParsingContext::ExpandedMacro;
@@ -209,10 +209,18 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         db: &'a dyn SyntaxGroup,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
-        token_stream: &'str dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
+        token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
     ) -> SyntaxFile<'a> {
         let (content, offset) = primitive_token_stream_content_and_offset(token_stream);
-        let parser = Parser::new(db, file_id, &content, diagnostics);
+        let file_content = db.file_content(file_id).unwrap().long(db).as_ref();
+        let file_content_at_offset = offset.unwrap_or_default().take_from(file_content);
+        assert!(
+            file_content_at_offset.starts_with(&content),
+            "The content of the file at the offset is not the same as the content of the token \
+             stream"
+        );
+        let content = &file_content_at_offset[..content.len()];
+        let parser = Parser::new(db, file_id, content, diagnostics);
         let green = parser.parse_syntax_file();
         SyntaxFile::from_syntax_node(
             db,
@@ -225,9 +233,9 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         db: &'a dyn SyntaxGroup,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
-        content: &str,
         offset: Option<TextOffset>,
     ) -> Expr<'a> {
+        let content = db.file_content(file_id).unwrap().long(db).as_ref();
         let mut parser = Parser::new(db, file_id, content, diagnostics);
         let green = parser.parse_expr();
         if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
@@ -877,7 +885,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
     /// Returns a GreenId of a node with a MacroRuleParamKind kind.
     fn parse_macro_rule_param_kind(&mut self) -> MacroParamKindGreen<'a> {
         let peeked = self.peek();
-        match (peeked.kind, peeked.text.as_str()) {
+        match (peeked.kind, peeked.text) {
             (SyntaxKind::TerminalIdentifier, "ident") => {
                 ParamIdent::new_green(self.db, self.parse_token::<TerminalIdentifier<'_>>()).into()
             }
@@ -966,7 +974,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         if peeked.kind.is_keyword_terminal() {
             // TODO(spapini): don't skip every keyword. Instead, pass a recovery set.
             Ok(self.skip_token_and_return_missing::<TerminalIdentifier<'_>>(
-                ParserDiagnosticKind::ReservedIdentifier { identifier: peeked.text.clone() },
+                ParserDiagnosticKind::ReservedIdentifier { identifier: peeked.text.into() },
             ))
         } else if peeked.kind == SyntaxKind::TerminalUnderscore {
             Ok(self.skip_token_and_return_missing::<TerminalIdentifier<'_>>(
@@ -2443,7 +2451,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         let for_kw = self.take::<TerminalFor<'a>>();
         let pattern = self.parse_pattern();
         let ident = self.take_raw();
-        let in_identifier: TerminalIdentifierGreen<'_> = match ident.text.as_str() {
+        let in_identifier: TerminalIdentifierGreen<'_> = match ident.text {
             "in" => self.add_trivia_to_terminal::<TerminalIdentifier<'_>>(ident),
             _ => {
                 self.append_skipped_token_to_pending_trivia(
@@ -3151,7 +3159,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
 
     /// Takes and validates a TerminalLiteralNumber token.
     fn take_terminal_literal_number(&mut self) -> TerminalLiteralNumberGreen<'a> {
-        let diag = validate_literal_number(&self.peek().text);
+        let diag = validate_literal_number(self.peek().text);
         let green = self.take::<TerminalLiteralNumber<'_>>();
         self.add_optional_diagnostic(diag);
         green
@@ -3159,7 +3167,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
 
     /// Takes and validates a TerminalShortString token.
     fn take_terminal_short_string(&mut self) -> TerminalShortStringGreen<'a> {
-        let diag = validate_short_string(&self.peek().text);
+        let diag = validate_short_string(self.peek().text);
         let green = self.take::<TerminalShortString<'_>>();
         self.add_optional_diagnostic(diag);
         green
@@ -3167,7 +3175,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
 
     /// Takes and validates a TerminalString token.
     fn take_terminal_string(&mut self) -> TerminalStringGreen<'a> {
-        let diag = validate_string(&self.peek().text);
+        let diag = validate_string(self.peek().text);
         let green = self.take::<TerminalString<'_>>();
         self.add_optional_diagnostic(diag);
         green
@@ -3407,7 +3415,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         &mut self,
         try_parse_list_element: fn(&mut Self) -> TryParseResult<ElementGreen>,
         should_stop: fn(SyntaxKind) -> bool,
-        expected_element: &'str str,
+        expected_element: &'a str,
     ) -> Vec<ElementGreen> {
         self.parse_list::<ElementGreen>(
             try_parse_list_element,
@@ -3550,7 +3558,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         let orig_offset = self.offset;
         let diag_start =
             self.offset.add_width(trivia_total_width(self.db, &terminal.leading_trivia));
-        let diag_end = diag_start.add_width(TextWidth::from_str(&terminal.text));
+        let diag_end = diag_start.add_width(TextWidth::from_str(terminal.text));
 
         // Add to pending trivia.
         self.pending_trivia.extend(terminal.leading_trivia);
@@ -3640,7 +3648,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         while !should_stop(self.peek().kind) {
             let terminal = self.take_raw();
             diag_start.get_or_insert(self.offset);
-            diag_end = Some(self.offset.add_width(TextWidth::from_str(&terminal.text)));
+            diag_end = Some(self.offset.add_width(TextWidth::from_str(terminal.text)));
 
             self.pending_trivia.extend(terminal.leading_trivia);
             self.pending_trivia.push(TokenSkipped::new_green(self.db, terminal.text).into());
@@ -3746,7 +3754,7 @@ impl<'a, 'mt, 'str> Parser<'a, 'mt, 'str> {
         let leading_trivia = self.next_terminal.leading_trivia.split_off(split_index);
         let header_doc = std::mem::replace(&mut self.next_terminal.leading_trivia, leading_trivia);
         let empty_lexer_terminal = LexerTerminal {
-            text: "".into(),
+            text: "",
             kind: SyntaxKind::TerminalEmpty,
             leading_trivia: header_doc,
             trailing_trivia: vec![],

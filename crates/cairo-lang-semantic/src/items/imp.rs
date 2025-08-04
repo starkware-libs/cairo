@@ -133,7 +133,7 @@ impl<'db> ConcreteImplId<'db> {
     ) -> Maybe<Option<ImplFunctionId<'db>>> {
         db.impl_function_by_trait_function(self.impl_def_id(db), function)
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &'db dyn SemanticGroup) -> &'db str {
         self.impl_def_id(db).name(db)
     }
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
@@ -188,14 +188,14 @@ impl<'db> ImplLongId<'db> {
             }
         })
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn SemanticGroup) -> String {
         match self {
-            ImplLongId::Concrete(concrete_impl) => concrete_impl.name(db),
+            ImplLongId::Concrete(concrete_impl) => concrete_impl.name(db).to_string(),
             ImplLongId::GenericParameter(generic_param_impl) => {
-                generic_param_impl.name(db).unwrap_or_else(|| "_".into())
+                generic_param_impl.name(db).unwrap_or("_").into()
             }
             ImplLongId::ImplVar(var) => {
-                format!("ImplVar({})", var.concrete_trait_id(db).full_path(db)).into()
+                format!("ImplVar({})", var.concrete_trait_id(db).full_path(db))
             }
             ImplLongId::ImplImpl(impl_impl) => format!(
                 "{}::{}",
@@ -203,11 +203,10 @@ impl<'db> ImplLongId<'db> {
                 db.impl_impl_concrete_trait(*impl_impl)
                     .map(|trait_impl| trait_impl.full_path(db))
                     .unwrap_or_else(|_| "_".into())
-            )
-            .into(),
-            ImplLongId::SelfImpl(trait_impl) => trait_impl.name(db),
+            ),
+            ImplLongId::SelfImpl(trait_impl) => trait_impl.name(db).into(),
             ImplLongId::GeneratedImpl(generated_impl) => {
-                format!("{:?}", generated_impl.debug(db.elongate())).into()
+                format!("{:?}", generated_impl.debug(db.elongate()))
             }
         }
     }
@@ -313,7 +312,7 @@ impl<'db> ImplId<'db> {
     }
 
     /// Returns the name of the impl.
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn SemanticGroup) -> String {
         self.long(db).name(db)
     }
 
@@ -1034,7 +1033,7 @@ pub fn impl_functions<'db>(
         .keys()
         .map(|function_id| {
             let function_long_id = function_id.long(db);
-            (function_long_id.name(db).intern(db), *function_id)
+            (SmolStrId::from_str(db, function_long_id.name(db)), *function_id)
         })
         .collect())
 }
@@ -1135,7 +1134,7 @@ pub fn impl_type_by_trait_type<'db>(
         )
     }
 
-    let name = trait_type_id.name(db).intern(db);
+    let name = SmolStrId::from_str(db, trait_type_id.name(db));
     // If the trait type's name is not found, then a missing item diagnostic is reported.
     db.impl_item_by_name(impl_def_id, name).and_then(|maybe_item_id| match maybe_item_id {
         Some(item_id) => Ok(extract_matches!(item_id, ImplItemId::Type)),
@@ -1166,10 +1165,11 @@ pub fn impl_constant_by_trait_constant<'db>(
 
     let name = trait_constant_id.name(db);
     // If the trait constant's name is not found, then a missing item diagnostic is reported.
-    db.impl_item_by_name(impl_def_id, name.intern(db)).and_then(|maybe_item_id| match maybe_item_id
-    {
-        Some(item_id) => Ok(extract_matches!(item_id, ImplItemId::Constant)),
-        None => Err(skip_diagnostic()),
+    db.impl_item_by_name(impl_def_id, SmolStrId::from_str(db, name)).and_then(|maybe_item_id| {
+        match maybe_item_id {
+            Some(item_id) => Ok(extract_matches!(item_id, ImplItemId::Constant)),
+            None => Err(skip_diagnostic()),
+        }
     })
 }
 
@@ -1211,7 +1211,7 @@ pub fn impl_impl_by_trait_impl<'db>(
         )
     }
 
-    let name = trait_impl_id.name(db).intern(db);
+    let name = SmolStrId::from_str(db, trait_impl_id.name(db));
     // If the trait impl's name is not found, then a missing item diagnostic is reported.
     db.impl_item_by_name(impl_def_id, name).and_then(|maybe_item_id| match maybe_item_id {
         Some(item_id) => Ok(extract_matches!(item_id, ImplItemId::Impl)),
@@ -1232,7 +1232,7 @@ pub fn is_implicit_impl_impl<'db>(
         )
     }
 
-    let name = trait_impl_id.name(db).intern(db);
+    let name = SmolStrId::from_str(db, trait_impl_id.name(db));
     // If the trait impl's name is not found, then a missing item diagnostic is reported.
     Ok(db.impl_implicit_impl_by_name(impl_def_id, name)?.is_some())
 }
@@ -1300,7 +1300,7 @@ pub fn priv_impl_definition_data<'db>(
                     let impl_function_id =
                         ImplFunctionLongId(module_file_id, func.stable_ptr(db)).intern(db);
                     let name_node = func.declaration(db).name(db);
-                    let name = name_node.text(db).intern(db);
+                    let name = SmolStrId::from_str(db, name_node.text(db));
                     let feature_kind =
                         FeatureKind::from_ast(db, &mut diagnostics, &func.attributes(db));
                     if item_id_by_name
@@ -1322,7 +1322,7 @@ pub fn priv_impl_definition_data<'db>(
                     let impl_type_id =
                         ImplTypeDefLongId(module_file_id, ty.stable_ptr(db)).intern(db);
                     let name_node = ty.name(db);
-                    let name = name_node.text(db).intern(db);
+                    let name = SmolStrId::from_str(db, name_node.text(db));
                     let feature_kind =
                         FeatureKind::from_ast(db, &mut diagnostics, &ty.attributes(db));
                     if item_id_by_name
@@ -1341,7 +1341,7 @@ pub fn priv_impl_definition_data<'db>(
                     let impl_constant_id =
                         ImplConstantDefLongId(module_file_id, constant.stable_ptr(db)).intern(db);
                     let name_node = constant.name(db);
-                    let name = name_node.text(db).intern(db);
+                    let name = SmolStrId::from_str(db, name_node.text(db));
                     let feature_kind =
                         FeatureKind::from_ast(db, &mut diagnostics, &constant.attributes(db));
                     if item_id_by_name
@@ -1365,7 +1365,7 @@ pub fn priv_impl_definition_data<'db>(
                     let impl_impl_id =
                         ImplImplDefLongId(module_file_id, imp.stable_ptr(db)).intern(db);
                     let name_node = imp.name(db);
-                    let name = name_node.text(db).intern(db);
+                    let name = SmolStrId::from_str(db, name_node.text(db));
                     let feature_kind =
                         FeatureKind::from_ast(db, &mut diagnostics, &imp.attributes(db));
                     if item_id_by_name
@@ -1437,7 +1437,7 @@ fn report_invalid_impl_item<'db, Terminal: syntax::node::Terminal<'db>>(
 ) {
     diagnostics.report(
         kw_terminal.as_syntax_node().stable_ptr(db),
-        InvalidImplItem(kw_terminal.text(db).intern(db)),
+        InvalidImplItem(SmolStrId::from_str(db, kw_terminal.text(db))),
     );
 }
 
@@ -1861,7 +1861,7 @@ impl<'db> DebugWithDb<'db> for UninferredImpl<'db> {
                 write!(f, "{:?}", impl_alias.full_path(db))
             }
             UninferredImpl::GenericParam(param) => {
-                write!(f, "generic param {}", param.name(db).unwrap_or_else(|| "_".into()))
+                write!(f, "generic param {}", param.name(db).unwrap_or("_"))
             }
             UninferredImpl::ImplImpl(impl_impl) => impl_impl.fmt(f, db.elongate()),
             UninferredImpl::GeneratedImpl(generated_impl) => generated_impl.fmt(f, db.elongate()),
@@ -2384,7 +2384,7 @@ fn validate_impl_item_type<'db>(
     let impl_def_id = impl_type_def_id.impl_def_id(db);
     let concrete_trait_id = db.impl_def_concrete_trait(impl_def_id)?;
     let trait_id = concrete_trait_id.trait_id(db);
-    let type_name = impl_type_def_id.name(db).intern(db);
+    let type_name = SmolStrId::from_str(db, impl_type_def_id.name(db));
     let trait_type_id = db.trait_type_by_name(trait_id, type_name)?.ok_or_else(|| {
         diagnostics.report(
             impl_type_ast.stable_ptr(db),
@@ -2586,12 +2586,12 @@ fn validate_impl_item_constant<'db>(
     let constant_name = impl_constant_def_id.name(db);
 
     let trait_constant_id =
-        db.trait_constant_by_name(trait_id, constant_name.clone())?.ok_or_else(|| {
+        db.trait_constant_by_name(trait_id, constant_name.into())?.ok_or_else(|| {
             diagnostics.report(
                 impl_constant_ast.stable_ptr(db),
                 ImplItemNotInTrait {
                     impl_def_id,
-                    impl_item_name: constant_name.intern(db),
+                    impl_item_name: SmolStrId::from_str(db, constant_name),
                     trait_id,
                     item_kind: "const".into(),
                 },
@@ -2857,12 +2857,12 @@ fn validate_impl_item_impl<'db>(
     let concrete_trait_id = db.impl_def_concrete_trait(impl_def_id)?;
     let trait_id = concrete_trait_id.trait_id(db);
     let impl_name = impl_impl_def_id.name(db);
-    let trait_impl_id = db.trait_impl_by_name(trait_id, impl_name.clone())?.ok_or_else(|| {
+    let trait_impl_id = db.trait_impl_by_name(trait_id, impl_name.into())?.ok_or_else(|| {
         diagnostics.report(
             impl_impl_ast.stable_ptr(db),
             ImplItemNotInTrait {
                 impl_def_id,
-                impl_item_name: impl_name.intern(db),
+                impl_item_name: SmolStrId::from_str(db, impl_name),
                 trait_id,
                 item_kind: "impl".into(),
             },
@@ -3337,7 +3337,7 @@ fn validate_impl_function_signature<'db>(
     let impl_def_id = impl_function_id.impl_def_id(db);
     let concrete_trait_id = db.impl_def_concrete_trait(impl_def_id)?;
     let trait_id = concrete_trait_id.trait_id(db);
-    let function_name = impl_function_id.name(db).intern(db);
+    let function_name = SmolStrId::from_str(db, impl_function_id.name(db));
     let trait_function_id =
         db.trait_function_by_name(trait_id, function_name)?.ok_or_else(|| {
             diagnostics.report(
@@ -3377,14 +3377,14 @@ fn validate_impl_function_signature<'db>(
 
     for (trait_generic_param, generic_param) in izip!(func_generics, impl_func_generics.iter()) {
         if let Some(name) = trait_generic_param.id().name(db) {
-            if Some(name.clone()) != generic_param.id().name(db) {
+            if Some(name) != generic_param.id().name(db) {
                 diagnostics.report(
                     generic_param.stable_ptr(db),
                     WrongParameterName {
                         impl_def_id,
                         impl_function_id,
                         trait_id,
-                        expected_name: name.intern(db),
+                        expected_name: SmolStrId::from_str(db, name),
                     },
                 );
             }

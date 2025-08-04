@@ -515,7 +515,7 @@ fn test_unknown_item_macro() {
     assert_eq!(
         format!("{:?}", db.module_plugin_diagnostics(module_id).unwrap()),
         "[(ModuleFileId(CrateRoot(CrateId(1000)), FileIndex(0)), PluginDiagnostic { stable_ptr: \
-         SyntaxStablePtrId(6003), message: \"Unknown inline item macro: 'unknown_item_macro'.\", \
+         SyntaxStablePtrId(5c03), message: \"Unknown inline item macro: 'unknown_item_macro'.\", \
          severity: Error, inner_span: None })]"
     )
 }

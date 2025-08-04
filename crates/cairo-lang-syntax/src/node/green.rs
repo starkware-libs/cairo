@@ -1,12 +1,11 @@
 use cairo_lang_filesystem::span::TextWidth;
-use smol_str::SmolStr;
 
 use super::ids::GreenId;
 use super::kind::SyntaxKind;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum GreenNodeDetails<'a> {
-    Token(SmolStr),
+    Token(&'a str),
     Node { children: Vec<GreenId<'a>>, width: TextWidth },
 }
 /// Green node. Underlying untyped representation of the syntax tree.

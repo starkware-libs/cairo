@@ -7,7 +7,6 @@ use std::ops::Deref;
 
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_utils::{Intern, extract_matches};
-use smol_str::SmolStr;
 
 use super::element_list::ElementList;
 use super::green::GreenNodeDetails;
@@ -25280,15 +25279,14 @@ pub struct TokenIdentifier<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenIdentifier<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenIdentifierGreen(
             GreenNode { kind: SyntaxKind::TokenIdentifier, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -25310,8 +25308,8 @@ impl<'db> From<TokenIdentifierPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenIdentifierGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenIdentifierGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenIdentifier<'db> {
@@ -25320,11 +25318,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenIdentifier<'db> {
     type Green = TokenIdentifierGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenIdentifierGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -25371,12 +25366,12 @@ impl<'db> Terminal<'db> for TerminalIdentifier<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalIdentifier<'db> {
@@ -25461,7 +25456,7 @@ pub struct TokenLiteralNumber<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenLiteralNumber<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenLiteralNumberGreen(
             GreenNode {
                 kind: SyntaxKind::TokenLiteralNumber,
@@ -25470,9 +25465,8 @@ impl<'db> Token<'db> for TokenLiteralNumber<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -25494,8 +25488,8 @@ impl<'db> From<TokenLiteralNumberPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenLiteralNumberGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLiteralNumberGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLiteralNumber<'db> {
@@ -25504,11 +25498,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenLiteralNumber<'db> {
     type Green = TokenLiteralNumberGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLiteralNumberGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -25556,12 +25547,12 @@ impl<'db> Terminal<'db> for TerminalLiteralNumber<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalLiteralNumber<'db> {
@@ -25646,7 +25637,7 @@ pub struct TokenShortString<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenShortString<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenShortStringGreen(
             GreenNode {
                 kind: SyntaxKind::TokenShortString,
@@ -25655,9 +25646,8 @@ impl<'db> Token<'db> for TokenShortString<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -25679,8 +25669,8 @@ impl<'db> From<TokenShortStringPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenShortStringGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenShortStringGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenShortString<'db> {
@@ -25689,11 +25679,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenShortString<'db> {
     type Green = TokenShortStringGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenShortStringGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -25740,12 +25727,12 @@ impl<'db> Terminal<'db> for TerminalShortString<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalShortString<'db> {
@@ -25830,15 +25817,14 @@ pub struct TokenString<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenString<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenStringGreen(
             GreenNode { kind: SyntaxKind::TokenString, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -25860,8 +25846,8 @@ impl<'db> From<TokenStringPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenStringGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenStringGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenString<'db> {
@@ -25870,11 +25856,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenString<'db> {
     type Green = TokenStringGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenStringGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -25921,12 +25904,12 @@ impl<'db> Terminal<'db> for TerminalString<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalString<'db> {
@@ -26011,15 +25994,14 @@ pub struct TokenAs<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenAs<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenAsGreen(
             GreenNode { kind: SyntaxKind::TokenAs, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26041,8 +26023,8 @@ impl<'db> From<TokenAsPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenAsGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenAsGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenAs<'db> {
@@ -26051,11 +26033,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenAs<'db> {
     type Green = TokenAsGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenAsGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -26102,12 +26081,12 @@ impl<'db> Terminal<'db> for TerminalAs<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalAs<'db> {
@@ -26188,15 +26167,14 @@ pub struct TokenConst<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenConst<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenConstGreen(
             GreenNode { kind: SyntaxKind::TokenConst, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26218,8 +26196,8 @@ impl<'db> From<TokenConstPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenConstGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenConstGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenConst<'db> {
@@ -26228,11 +26206,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenConst<'db> {
     type Green = TokenConstGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenConstGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -26279,12 +26254,12 @@ impl<'db> Terminal<'db> for TerminalConst<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalConst<'db> {
@@ -26369,15 +26344,14 @@ pub struct TokenElse<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenElse<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenElseGreen(
             GreenNode { kind: SyntaxKind::TokenElse, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26399,8 +26373,8 @@ impl<'db> From<TokenElsePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenElseGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenElseGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenElse<'db> {
@@ -26409,11 +26383,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenElse<'db> {
     type Green = TokenElseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenElseGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -26460,12 +26431,12 @@ impl<'db> Terminal<'db> for TerminalElse<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalElse<'db> {
@@ -26546,15 +26517,14 @@ pub struct TokenEnum<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenEnum<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenEnumGreen(
             GreenNode { kind: SyntaxKind::TokenEnum, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26576,8 +26546,8 @@ impl<'db> From<TokenEnumPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenEnumGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenEnumGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenEnum<'db> {
@@ -26586,11 +26556,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenEnum<'db> {
     type Green = TokenEnumGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenEnumGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -26637,12 +26604,12 @@ impl<'db> Terminal<'db> for TerminalEnum<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalEnum<'db> {
@@ -26723,15 +26690,14 @@ pub struct TokenExtern<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenExtern<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenExternGreen(
             GreenNode { kind: SyntaxKind::TokenExtern, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26753,8 +26719,8 @@ impl<'db> From<TokenExternPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenExternGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenExternGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenExtern<'db> {
@@ -26763,11 +26729,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenExtern<'db> {
     type Green = TokenExternGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenExternGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -26814,12 +26777,12 @@ impl<'db> Terminal<'db> for TerminalExtern<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalExtern<'db> {
@@ -26904,15 +26867,14 @@ pub struct TokenFalse<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenFalse<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenFalseGreen(
             GreenNode { kind: SyntaxKind::TokenFalse, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26934,8 +26896,8 @@ impl<'db> From<TokenFalsePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenFalseGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenFalseGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenFalse<'db> {
@@ -26944,11 +26906,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenFalse<'db> {
     type Green = TokenFalseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenFalseGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -26995,12 +26954,12 @@ impl<'db> Terminal<'db> for TerminalFalse<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalFalse<'db> {
@@ -27085,15 +27044,14 @@ pub struct TokenFunction<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenFunction<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenFunctionGreen(
             GreenNode { kind: SyntaxKind::TokenFunction, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27115,8 +27073,8 @@ impl<'db> From<TokenFunctionPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenFunctionGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenFunctionGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenFunction<'db> {
@@ -27125,11 +27083,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenFunction<'db> {
     type Green = TokenFunctionGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenFunctionGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -27176,12 +27131,12 @@ impl<'db> Terminal<'db> for TerminalFunction<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalFunction<'db> {
@@ -27266,15 +27221,14 @@ pub struct TokenIf<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenIf<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenIfGreen(
             GreenNode { kind: SyntaxKind::TokenIf, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27296,8 +27250,8 @@ impl<'db> From<TokenIfPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenIfGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenIfGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenIf<'db> {
@@ -27306,11 +27260,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenIf<'db> {
     type Green = TokenIfGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenIfGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -27357,12 +27308,12 @@ impl<'db> Terminal<'db> for TerminalIf<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalIf<'db> {
@@ -27443,15 +27394,14 @@ pub struct TokenWhile<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenWhile<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenWhileGreen(
             GreenNode { kind: SyntaxKind::TokenWhile, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27473,8 +27423,8 @@ impl<'db> From<TokenWhilePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenWhileGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenWhileGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenWhile<'db> {
@@ -27483,11 +27433,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhile<'db> {
     type Green = TokenWhileGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenWhileGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -27534,12 +27481,12 @@ impl<'db> Terminal<'db> for TerminalWhile<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalWhile<'db> {
@@ -27624,15 +27571,14 @@ pub struct TokenFor<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenFor<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenForGreen(
             GreenNode { kind: SyntaxKind::TokenFor, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27654,8 +27600,8 @@ impl<'db> From<TokenForPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenForGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenForGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenFor<'db> {
@@ -27664,11 +27610,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenFor<'db> {
     type Green = TokenForGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenForGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -27715,12 +27658,12 @@ impl<'db> Terminal<'db> for TerminalFor<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalFor<'db> {
@@ -27801,15 +27744,14 @@ pub struct TokenLoop<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenLoop<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenLoopGreen(
             GreenNode { kind: SyntaxKind::TokenLoop, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27831,8 +27773,8 @@ impl<'db> From<TokenLoopPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenLoopGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLoopGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLoop<'db> {
@@ -27841,11 +27783,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenLoop<'db> {
     type Green = TokenLoopGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLoopGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -27892,12 +27831,12 @@ impl<'db> Terminal<'db> for TerminalLoop<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalLoop<'db> {
@@ -27978,15 +27917,14 @@ pub struct TokenImpl<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenImpl<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenImplGreen(
             GreenNode { kind: SyntaxKind::TokenImpl, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28008,8 +27946,8 @@ impl<'db> From<TokenImplPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenImplGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenImplGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenImpl<'db> {
@@ -28018,11 +27956,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenImpl<'db> {
     type Green = TokenImplGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenImplGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -28069,12 +28004,12 @@ impl<'db> Terminal<'db> for TerminalImpl<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalImpl<'db> {
@@ -28155,15 +28090,14 @@ pub struct TokenImplicits<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenImplicits<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenImplicitsGreen(
             GreenNode { kind: SyntaxKind::TokenImplicits, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28185,8 +28119,8 @@ impl<'db> From<TokenImplicitsPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenImplicitsGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenImplicitsGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenImplicits<'db> {
@@ -28195,11 +28129,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenImplicits<'db> {
     type Green = TokenImplicitsGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenImplicitsGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -28246,12 +28177,12 @@ impl<'db> Terminal<'db> for TerminalImplicits<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalImplicits<'db> {
@@ -28336,15 +28267,14 @@ pub struct TokenLet<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenLet<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenLetGreen(
             GreenNode { kind: SyntaxKind::TokenLet, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28366,8 +28296,8 @@ impl<'db> From<TokenLetPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenLetGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLetGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLet<'db> {
@@ -28376,11 +28306,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenLet<'db> {
     type Green = TokenLetGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLetGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -28427,12 +28354,12 @@ impl<'db> Terminal<'db> for TerminalLet<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalLet<'db> {
@@ -28513,15 +28440,14 @@ pub struct TokenMacro<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenMacro<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenMacroGreen(
             GreenNode { kind: SyntaxKind::TokenMacro, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28543,8 +28469,8 @@ impl<'db> From<TokenMacroPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenMacroGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMacroGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMacro<'db> {
@@ -28553,11 +28479,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenMacro<'db> {
     type Green = TokenMacroGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMacroGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -28604,12 +28527,12 @@ impl<'db> Terminal<'db> for TerminalMacro<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalMacro<'db> {
@@ -28694,15 +28617,14 @@ pub struct TokenMatch<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenMatch<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenMatchGreen(
             GreenNode { kind: SyntaxKind::TokenMatch, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28724,8 +28646,8 @@ impl<'db> From<TokenMatchPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenMatchGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMatchGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMatch<'db> {
@@ -28734,11 +28656,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatch<'db> {
     type Green = TokenMatchGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMatchGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -28785,12 +28704,12 @@ impl<'db> Terminal<'db> for TerminalMatch<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalMatch<'db> {
@@ -28875,15 +28794,14 @@ pub struct TokenModule<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenModule<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenModuleGreen(
             GreenNode { kind: SyntaxKind::TokenModule, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28905,8 +28823,8 @@ impl<'db> From<TokenModulePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenModuleGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenModuleGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenModule<'db> {
@@ -28915,11 +28833,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenModule<'db> {
     type Green = TokenModuleGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenModuleGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -28966,12 +28881,12 @@ impl<'db> Terminal<'db> for TerminalModule<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalModule<'db> {
@@ -29056,15 +28971,14 @@ pub struct TokenMut<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenMut<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenMutGreen(
             GreenNode { kind: SyntaxKind::TokenMut, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29086,8 +29000,8 @@ impl<'db> From<TokenMutPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenMutGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMutGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMut<'db> {
@@ -29096,11 +29010,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenMut<'db> {
     type Green = TokenMutGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMutGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -29147,12 +29058,12 @@ impl<'db> Terminal<'db> for TerminalMut<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalMut<'db> {
@@ -29233,15 +29144,14 @@ pub struct TokenNoPanic<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenNoPanic<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenNoPanicGreen(
             GreenNode { kind: SyntaxKind::TokenNoPanic, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29263,8 +29173,8 @@ impl<'db> From<TokenNoPanicPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenNoPanicGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenNoPanicGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenNoPanic<'db> {
@@ -29273,11 +29183,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenNoPanic<'db> {
     type Green = TokenNoPanicGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenNoPanicGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -29324,12 +29231,12 @@ impl<'db> Terminal<'db> for TerminalNoPanic<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalNoPanic<'db> {
@@ -29414,15 +29321,14 @@ pub struct TokenOf<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenOf<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenOfGreen(
             GreenNode { kind: SyntaxKind::TokenOf, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29444,8 +29350,8 @@ impl<'db> From<TokenOfPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenOfGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenOfGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenOf<'db> {
@@ -29454,11 +29360,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenOf<'db> {
     type Green = TokenOfGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenOfGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -29505,12 +29408,12 @@ impl<'db> Terminal<'db> for TerminalOf<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalOf<'db> {
@@ -29591,15 +29494,14 @@ pub struct TokenRef<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenRef<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenRefGreen(
             GreenNode { kind: SyntaxKind::TokenRef, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29621,8 +29523,8 @@ impl<'db> From<TokenRefPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenRefGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenRefGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenRef<'db> {
@@ -29631,11 +29533,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenRef<'db> {
     type Green = TokenRefGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenRefGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -29682,12 +29581,12 @@ impl<'db> Terminal<'db> for TerminalRef<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalRef<'db> {
@@ -29768,15 +29667,14 @@ pub struct TokenContinue<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenContinue<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenContinueGreen(
             GreenNode { kind: SyntaxKind::TokenContinue, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29798,8 +29696,8 @@ impl<'db> From<TokenContinuePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenContinueGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenContinueGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenContinue<'db> {
@@ -29808,11 +29706,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenContinue<'db> {
     type Green = TokenContinueGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenContinueGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -29859,12 +29754,12 @@ impl<'db> Terminal<'db> for TerminalContinue<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalContinue<'db> {
@@ -29949,15 +29844,14 @@ pub struct TokenReturn<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenReturn<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenReturnGreen(
             GreenNode { kind: SyntaxKind::TokenReturn, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29979,8 +29873,8 @@ impl<'db> From<TokenReturnPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenReturnGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenReturnGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenReturn<'db> {
@@ -29989,11 +29883,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenReturn<'db> {
     type Green = TokenReturnGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenReturnGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -30040,12 +29931,12 @@ impl<'db> Terminal<'db> for TerminalReturn<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalReturn<'db> {
@@ -30130,15 +30021,14 @@ pub struct TokenBreak<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenBreak<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenBreakGreen(
             GreenNode { kind: SyntaxKind::TokenBreak, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30160,8 +30050,8 @@ impl<'db> From<TokenBreakPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenBreakGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenBreakGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenBreak<'db> {
@@ -30170,11 +30060,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenBreak<'db> {
     type Green = TokenBreakGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenBreakGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -30221,12 +30108,12 @@ impl<'db> Terminal<'db> for TerminalBreak<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalBreak<'db> {
@@ -30311,15 +30198,14 @@ pub struct TokenStruct<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenStruct<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenStructGreen(
             GreenNode { kind: SyntaxKind::TokenStruct, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30341,8 +30227,8 @@ impl<'db> From<TokenStructPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenStructGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenStructGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenStruct<'db> {
@@ -30351,11 +30237,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenStruct<'db> {
     type Green = TokenStructGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenStructGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -30402,12 +30285,12 @@ impl<'db> Terminal<'db> for TerminalStruct<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalStruct<'db> {
@@ -30492,15 +30375,14 @@ pub struct TokenTrait<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenTrait<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenTraitGreen(
             GreenNode { kind: SyntaxKind::TokenTrait, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30522,8 +30404,8 @@ impl<'db> From<TokenTraitPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenTraitGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenTraitGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenTrait<'db> {
@@ -30532,11 +30414,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrait<'db> {
     type Green = TokenTraitGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenTraitGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -30583,12 +30462,12 @@ impl<'db> Terminal<'db> for TerminalTrait<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalTrait<'db> {
@@ -30673,15 +30552,14 @@ pub struct TokenTrue<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenTrue<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenTrueGreen(
             GreenNode { kind: SyntaxKind::TokenTrue, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30703,8 +30581,8 @@ impl<'db> From<TokenTruePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenTrueGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenTrueGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenTrue<'db> {
@@ -30713,11 +30591,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrue<'db> {
     type Green = TokenTrueGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenTrueGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -30764,12 +30639,12 @@ impl<'db> Terminal<'db> for TerminalTrue<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalTrue<'db> {
@@ -30850,15 +30725,14 @@ pub struct TokenType<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenType<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenTypeGreen(
             GreenNode { kind: SyntaxKind::TokenType, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30880,8 +30754,8 @@ impl<'db> From<TokenTypePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenTypeGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenTypeGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenType<'db> {
@@ -30890,11 +30764,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenType<'db> {
     type Green = TokenTypeGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenTypeGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -30941,12 +30812,12 @@ impl<'db> Terminal<'db> for TerminalType<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalType<'db> {
@@ -31027,15 +30898,14 @@ pub struct TokenUse<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenUse<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenUseGreen(
             GreenNode { kind: SyntaxKind::TokenUse, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31057,8 +30927,8 @@ impl<'db> From<TokenUsePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenUseGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenUseGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenUse<'db> {
@@ -31067,11 +30937,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenUse<'db> {
     type Green = TokenUseGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenUseGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -31118,12 +30985,12 @@ impl<'db> Terminal<'db> for TerminalUse<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalUse<'db> {
@@ -31204,15 +31071,14 @@ pub struct TokenPub<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenPub<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenPubGreen(
             GreenNode { kind: SyntaxKind::TokenPub, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31234,8 +31100,8 @@ impl<'db> From<TokenPubPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenPubGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenPubGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenPub<'db> {
@@ -31244,11 +31110,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenPub<'db> {
     type Green = TokenPubGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenPubGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -31295,12 +31158,12 @@ impl<'db> Terminal<'db> for TerminalPub<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalPub<'db> {
@@ -31381,15 +31244,14 @@ pub struct TokenAnd<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenAnd<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenAndGreen(
             GreenNode { kind: SyntaxKind::TokenAnd, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31411,8 +31273,8 @@ impl<'db> From<TokenAndPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenAndGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenAndGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenAnd<'db> {
@@ -31421,11 +31283,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenAnd<'db> {
     type Green = TokenAndGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenAndGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -31472,12 +31331,12 @@ impl<'db> Terminal<'db> for TerminalAnd<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalAnd<'db> {
@@ -31558,15 +31417,14 @@ pub struct TokenAndAnd<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenAndAnd<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenAndAndGreen(
             GreenNode { kind: SyntaxKind::TokenAndAnd, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31588,8 +31446,8 @@ impl<'db> From<TokenAndAndPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenAndAndGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenAndAndGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenAndAnd<'db> {
@@ -31598,11 +31456,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenAndAnd<'db> {
     type Green = TokenAndAndGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenAndAndGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -31649,12 +31504,12 @@ impl<'db> Terminal<'db> for TerminalAndAnd<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalAndAnd<'db> {
@@ -31739,15 +31594,14 @@ pub struct TokenArrow<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenArrow<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenArrowGreen(
             GreenNode { kind: SyntaxKind::TokenArrow, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31769,8 +31623,8 @@ impl<'db> From<TokenArrowPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenArrowGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenArrowGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenArrow<'db> {
@@ -31779,11 +31633,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenArrow<'db> {
     type Green = TokenArrowGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenArrowGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -31830,12 +31681,12 @@ impl<'db> Terminal<'db> for TerminalArrow<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalArrow<'db> {
@@ -31920,15 +31771,14 @@ pub struct TokenAt<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenAt<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenAtGreen(
             GreenNode { kind: SyntaxKind::TokenAt, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31950,8 +31800,8 @@ impl<'db> From<TokenAtPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenAtGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenAtGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenAt<'db> {
@@ -31960,11 +31810,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenAt<'db> {
     type Green = TokenAtGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenAtGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -32011,12 +31858,12 @@ impl<'db> Terminal<'db> for TerminalAt<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalAt<'db> {
@@ -32097,7 +31944,7 @@ pub struct TokenBadCharacters<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenBadCharacters<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenBadCharactersGreen(
             GreenNode {
                 kind: SyntaxKind::TokenBadCharacters,
@@ -32106,9 +31953,8 @@ impl<'db> Token<'db> for TokenBadCharacters<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32130,8 +31976,8 @@ impl<'db> From<TokenBadCharactersPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenBadCharactersGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenBadCharactersGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenBadCharacters<'db> {
@@ -32140,11 +31986,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenBadCharacters<'db> {
     type Green = TokenBadCharactersGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenBadCharactersGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -32192,12 +32035,12 @@ impl<'db> Terminal<'db> for TerminalBadCharacters<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalBadCharacters<'db> {
@@ -32282,15 +32125,14 @@ pub struct TokenColon<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenColon<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenColonGreen(
             GreenNode { kind: SyntaxKind::TokenColon, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32312,8 +32154,8 @@ impl<'db> From<TokenColonPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenColonGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenColonGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenColon<'db> {
@@ -32322,11 +32164,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenColon<'db> {
     type Green = TokenColonGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenColonGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -32373,12 +32212,12 @@ impl<'db> Terminal<'db> for TerminalColon<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalColon<'db> {
@@ -32463,15 +32302,14 @@ pub struct TokenColonColon<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenColonColon<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenColonColonGreen(
             GreenNode { kind: SyntaxKind::TokenColonColon, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32493,8 +32331,8 @@ impl<'db> From<TokenColonColonPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenColonColonGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenColonColonGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenColonColon<'db> {
@@ -32503,11 +32341,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenColonColon<'db> {
     type Green = TokenColonColonGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenColonColonGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -32554,12 +32389,12 @@ impl<'db> Terminal<'db> for TerminalColonColon<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalColonColon<'db> {
@@ -32644,15 +32479,14 @@ pub struct TokenComma<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenComma<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenCommaGreen(
             GreenNode { kind: SyntaxKind::TokenComma, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32674,8 +32508,8 @@ impl<'db> From<TokenCommaPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenCommaGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenCommaGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenComma<'db> {
@@ -32684,11 +32518,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenComma<'db> {
     type Green = TokenCommaGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenCommaGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -32735,12 +32566,12 @@ impl<'db> Terminal<'db> for TerminalComma<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalComma<'db> {
@@ -32825,15 +32656,14 @@ pub struct TokenDiv<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenDiv<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenDivGreen(
             GreenNode { kind: SyntaxKind::TokenDiv, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32855,8 +32685,8 @@ impl<'db> From<TokenDivPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenDivGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDivGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDiv<'db> {
@@ -32865,11 +32695,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenDiv<'db> {
     type Green = TokenDivGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenDivGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -32916,12 +32743,12 @@ impl<'db> Terminal<'db> for TerminalDiv<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalDiv<'db> {
@@ -33002,15 +32829,14 @@ pub struct TokenDivEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenDivEq<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenDivEqGreen(
             GreenNode { kind: SyntaxKind::TokenDivEq, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33032,8 +32858,8 @@ impl<'db> From<TokenDivEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenDivEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDivEqGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDivEq<'db> {
@@ -33042,11 +32868,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenDivEq<'db> {
     type Green = TokenDivEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenDivEqGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -33093,12 +32916,12 @@ impl<'db> Terminal<'db> for TerminalDivEq<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalDivEq<'db> {
@@ -33183,15 +33006,14 @@ pub struct TokenDollar<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenDollar<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenDollarGreen(
             GreenNode { kind: SyntaxKind::TokenDollar, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33213,8 +33035,8 @@ impl<'db> From<TokenDollarPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenDollarGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDollarGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDollar<'db> {
@@ -33223,11 +33045,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenDollar<'db> {
     type Green = TokenDollarGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenDollarGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -33274,12 +33093,12 @@ impl<'db> Terminal<'db> for TerminalDollar<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalDollar<'db> {
@@ -33364,15 +33183,14 @@ pub struct TokenDot<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenDot<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenDotGreen(
             GreenNode { kind: SyntaxKind::TokenDot, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33394,8 +33212,8 @@ impl<'db> From<TokenDotPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenDotGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDotGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDot<'db> {
@@ -33404,11 +33222,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenDot<'db> {
     type Green = TokenDotGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenDotGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -33455,12 +33270,12 @@ impl<'db> Terminal<'db> for TerminalDot<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalDot<'db> {
@@ -33541,15 +33356,14 @@ pub struct TokenDotDot<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenDotDot<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenDotDotGreen(
             GreenNode { kind: SyntaxKind::TokenDotDot, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33571,8 +33385,8 @@ impl<'db> From<TokenDotDotPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenDotDotGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDotDotGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDotDot<'db> {
@@ -33581,11 +33395,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDot<'db> {
     type Green = TokenDotDotGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenDotDotGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -33632,12 +33443,12 @@ impl<'db> Terminal<'db> for TerminalDotDot<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalDotDot<'db> {
@@ -33722,15 +33533,14 @@ pub struct TokenDotDotEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenDotDotEq<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenDotDotEqGreen(
             GreenNode { kind: SyntaxKind::TokenDotDotEq, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33752,8 +33562,8 @@ impl<'db> From<TokenDotDotEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenDotDotEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDotDotEqGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDotDotEq<'db> {
@@ -33762,11 +33572,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDotEq<'db> {
     type Green = TokenDotDotEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenDotDotEqGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -33813,12 +33620,12 @@ impl<'db> Terminal<'db> for TerminalDotDotEq<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalDotDotEq<'db> {
@@ -33903,15 +33710,14 @@ pub struct TokenEndOfFile<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenEndOfFile<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenEndOfFileGreen(
             GreenNode { kind: SyntaxKind::TokenEndOfFile, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33933,8 +33739,8 @@ impl<'db> From<TokenEndOfFilePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenEndOfFileGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenEndOfFileGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenEndOfFile<'db> {
@@ -33943,11 +33749,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenEndOfFile<'db> {
     type Green = TokenEndOfFileGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenEndOfFileGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -33994,12 +33797,12 @@ impl<'db> Terminal<'db> for TerminalEndOfFile<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalEndOfFile<'db> {
@@ -34084,15 +33887,14 @@ pub struct TokenEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenEq<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenEqGreen(
             GreenNode { kind: SyntaxKind::TokenEq, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34114,8 +33916,8 @@ impl<'db> From<TokenEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenEqGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenEq<'db> {
@@ -34124,11 +33926,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenEq<'db> {
     type Green = TokenEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenEqGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -34175,12 +33974,12 @@ impl<'db> Terminal<'db> for TerminalEq<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalEq<'db> {
@@ -34261,15 +34060,14 @@ pub struct TokenEqEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenEqEq<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenEqEqGreen(
             GreenNode { kind: SyntaxKind::TokenEqEq, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34291,8 +34089,8 @@ impl<'db> From<TokenEqEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenEqEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenEqEqGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenEqEq<'db> {
@@ -34301,11 +34099,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenEqEq<'db> {
     type Green = TokenEqEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenEqEqGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -34352,12 +34147,12 @@ impl<'db> Terminal<'db> for TerminalEqEq<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalEqEq<'db> {
@@ -34438,15 +34233,14 @@ pub struct TokenGE<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenGE<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenGEGreen(
             GreenNode { kind: SyntaxKind::TokenGE, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34468,8 +34262,8 @@ impl<'db> From<TokenGEPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenGEGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenGEGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenGE<'db> {
@@ -34478,11 +34272,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenGE<'db> {
     type Green = TokenGEGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenGEGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -34529,12 +34320,12 @@ impl<'db> Terminal<'db> for TerminalGE<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalGE<'db> {
@@ -34615,15 +34406,14 @@ pub struct TokenGT<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenGT<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenGTGreen(
             GreenNode { kind: SyntaxKind::TokenGT, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34645,8 +34435,8 @@ impl<'db> From<TokenGTPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenGTGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenGTGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenGT<'db> {
@@ -34655,11 +34445,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenGT<'db> {
     type Green = TokenGTGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenGTGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -34706,12 +34493,12 @@ impl<'db> Terminal<'db> for TerminalGT<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalGT<'db> {
@@ -34792,15 +34579,14 @@ pub struct TokenHash<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenHash<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenHashGreen(
             GreenNode { kind: SyntaxKind::TokenHash, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34822,8 +34608,8 @@ impl<'db> From<TokenHashPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenHashGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenHashGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenHash<'db> {
@@ -34832,11 +34618,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenHash<'db> {
     type Green = TokenHashGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenHashGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -34883,12 +34666,12 @@ impl<'db> Terminal<'db> for TerminalHash<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalHash<'db> {
@@ -34969,15 +34752,14 @@ pub struct TokenLBrace<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenLBrace<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenLBraceGreen(
             GreenNode { kind: SyntaxKind::TokenLBrace, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34999,8 +34781,8 @@ impl<'db> From<TokenLBracePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenLBraceGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLBraceGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLBrace<'db> {
@@ -35009,11 +34791,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrace<'db> {
     type Green = TokenLBraceGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLBraceGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -35060,12 +34839,12 @@ impl<'db> Terminal<'db> for TerminalLBrace<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalLBrace<'db> {
@@ -35150,15 +34929,14 @@ pub struct TokenLBrack<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenLBrack<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenLBrackGreen(
             GreenNode { kind: SyntaxKind::TokenLBrack, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35180,8 +34958,8 @@ impl<'db> From<TokenLBrackPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenLBrackGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLBrackGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLBrack<'db> {
@@ -35190,11 +34968,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrack<'db> {
     type Green = TokenLBrackGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLBrackGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -35241,12 +35016,12 @@ impl<'db> Terminal<'db> for TerminalLBrack<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalLBrack<'db> {
@@ -35331,15 +35106,14 @@ pub struct TokenLE<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenLE<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenLEGreen(
             GreenNode { kind: SyntaxKind::TokenLE, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35361,8 +35135,8 @@ impl<'db> From<TokenLEPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenLEGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLEGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLE<'db> {
@@ -35371,11 +35145,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenLE<'db> {
     type Green = TokenLEGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLEGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -35422,12 +35193,12 @@ impl<'db> Terminal<'db> for TerminalLE<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalLE<'db> {
@@ -35508,15 +35279,14 @@ pub struct TokenLParen<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenLParen<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenLParenGreen(
             GreenNode { kind: SyntaxKind::TokenLParen, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35538,8 +35308,8 @@ impl<'db> From<TokenLParenPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenLParenGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLParenGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLParen<'db> {
@@ -35548,11 +35318,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenLParen<'db> {
     type Green = TokenLParenGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLParenGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -35599,12 +35366,12 @@ impl<'db> Terminal<'db> for TerminalLParen<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalLParen<'db> {
@@ -35689,15 +35456,14 @@ pub struct TokenLT<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenLT<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenLTGreen(
             GreenNode { kind: SyntaxKind::TokenLT, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35719,8 +35485,8 @@ impl<'db> From<TokenLTPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenLTGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLTGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLT<'db> {
@@ -35729,11 +35495,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenLT<'db> {
     type Green = TokenLTGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenLTGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -35780,12 +35543,12 @@ impl<'db> Terminal<'db> for TerminalLT<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalLT<'db> {
@@ -35866,15 +35629,14 @@ pub struct TokenMatchArrow<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenMatchArrow<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenMatchArrowGreen(
             GreenNode { kind: SyntaxKind::TokenMatchArrow, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35896,8 +35658,8 @@ impl<'db> From<TokenMatchArrowPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenMatchArrowGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMatchArrowGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMatchArrow<'db> {
@@ -35906,11 +35668,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatchArrow<'db> {
     type Green = TokenMatchArrowGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMatchArrowGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -35957,12 +35716,12 @@ impl<'db> Terminal<'db> for TerminalMatchArrow<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalMatchArrow<'db> {
@@ -36047,15 +35806,14 @@ pub struct TokenMinus<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenMinus<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenMinusGreen(
             GreenNode { kind: SyntaxKind::TokenMinus, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36077,8 +35835,8 @@ impl<'db> From<TokenMinusPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenMinusGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMinusGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMinus<'db> {
@@ -36087,11 +35845,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinus<'db> {
     type Green = TokenMinusGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMinusGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -36138,12 +35893,12 @@ impl<'db> Terminal<'db> for TerminalMinus<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalMinus<'db> {
@@ -36228,15 +35983,14 @@ pub struct TokenMinusEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenMinusEq<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenMinusEqGreen(
             GreenNode { kind: SyntaxKind::TokenMinusEq, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36258,8 +36012,8 @@ impl<'db> From<TokenMinusEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenMinusEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMinusEqGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMinusEq<'db> {
@@ -36268,11 +36022,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinusEq<'db> {
     type Green = TokenMinusEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMinusEqGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -36319,12 +36070,12 @@ impl<'db> Terminal<'db> for TerminalMinusEq<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalMinusEq<'db> {
@@ -36409,15 +36160,14 @@ pub struct TokenMod<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenMod<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenModGreen(
             GreenNode { kind: SyntaxKind::TokenMod, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36439,8 +36189,8 @@ impl<'db> From<TokenModPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenModGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenModGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMod<'db> {
@@ -36449,11 +36199,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenMod<'db> {
     type Green = TokenModGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenModGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -36500,12 +36247,12 @@ impl<'db> Terminal<'db> for TerminalMod<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalMod<'db> {
@@ -36586,15 +36333,14 @@ pub struct TokenModEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenModEq<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenModEqGreen(
             GreenNode { kind: SyntaxKind::TokenModEq, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36616,8 +36362,8 @@ impl<'db> From<TokenModEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenModEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenModEqGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenModEq<'db> {
@@ -36626,11 +36372,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenModEq<'db> {
     type Green = TokenModEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenModEqGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -36677,12 +36420,12 @@ impl<'db> Terminal<'db> for TerminalModEq<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalModEq<'db> {
@@ -36767,15 +36510,14 @@ pub struct TokenMul<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenMul<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenMulGreen(
             GreenNode { kind: SyntaxKind::TokenMul, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36797,8 +36539,8 @@ impl<'db> From<TokenMulPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenMulGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMulGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMul<'db> {
@@ -36807,11 +36549,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenMul<'db> {
     type Green = TokenMulGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMulGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -36858,12 +36597,12 @@ impl<'db> Terminal<'db> for TerminalMul<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalMul<'db> {
@@ -36944,15 +36683,14 @@ pub struct TokenMulEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenMulEq<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenMulEqGreen(
             GreenNode { kind: SyntaxKind::TokenMulEq, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36974,8 +36712,8 @@ impl<'db> From<TokenMulEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenMulEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMulEqGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMulEq<'db> {
@@ -36984,11 +36722,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenMulEq<'db> {
     type Green = TokenMulEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMulEqGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -37035,12 +36770,12 @@ impl<'db> Terminal<'db> for TerminalMulEq<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalMulEq<'db> {
@@ -37125,15 +36860,14 @@ pub struct TokenNeq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenNeq<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenNeqGreen(
             GreenNode { kind: SyntaxKind::TokenNeq, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37155,8 +36889,8 @@ impl<'db> From<TokenNeqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenNeqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenNeqGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenNeq<'db> {
@@ -37165,11 +36899,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenNeq<'db> {
     type Green = TokenNeqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenNeqGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -37216,12 +36947,12 @@ impl<'db> Terminal<'db> for TerminalNeq<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalNeq<'db> {
@@ -37302,15 +37033,14 @@ pub struct TokenNot<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenNot<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenNotGreen(
             GreenNode { kind: SyntaxKind::TokenNot, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37332,8 +37062,8 @@ impl<'db> From<TokenNotPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenNotGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenNotGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenNot<'db> {
@@ -37342,11 +37072,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenNot<'db> {
     type Green = TokenNotGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenNotGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -37393,12 +37120,12 @@ impl<'db> Terminal<'db> for TerminalNot<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalNot<'db> {
@@ -37479,15 +37206,14 @@ pub struct TokenBitNot<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenBitNot<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenBitNotGreen(
             GreenNode { kind: SyntaxKind::TokenBitNot, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37509,8 +37235,8 @@ impl<'db> From<TokenBitNotPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenBitNotGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenBitNotGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenBitNot<'db> {
@@ -37519,11 +37245,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenBitNot<'db> {
     type Green = TokenBitNotGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenBitNotGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -37570,12 +37293,12 @@ impl<'db> Terminal<'db> for TerminalBitNot<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalBitNot<'db> {
@@ -37660,15 +37383,14 @@ pub struct TokenOr<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenOr<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenOrGreen(
             GreenNode { kind: SyntaxKind::TokenOr, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37690,8 +37412,8 @@ impl<'db> From<TokenOrPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenOrGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenOrGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenOr<'db> {
@@ -37700,11 +37422,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenOr<'db> {
     type Green = TokenOrGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenOrGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -37751,12 +37470,12 @@ impl<'db> Terminal<'db> for TerminalOr<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalOr<'db> {
@@ -37837,15 +37556,14 @@ pub struct TokenOrOr<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenOrOr<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenOrOrGreen(
             GreenNode { kind: SyntaxKind::TokenOrOr, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37867,8 +37585,8 @@ impl<'db> From<TokenOrOrPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenOrOrGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenOrOrGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenOrOr<'db> {
@@ -37877,11 +37595,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenOrOr<'db> {
     type Green = TokenOrOrGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenOrOrGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -37928,12 +37643,12 @@ impl<'db> Terminal<'db> for TerminalOrOr<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalOrOr<'db> {
@@ -38014,15 +37729,14 @@ pub struct TokenPlus<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenPlus<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenPlusGreen(
             GreenNode { kind: SyntaxKind::TokenPlus, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38044,8 +37758,8 @@ impl<'db> From<TokenPlusPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenPlusGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenPlusGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenPlus<'db> {
@@ -38054,11 +37768,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlus<'db> {
     type Green = TokenPlusGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenPlusGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -38105,12 +37816,12 @@ impl<'db> Terminal<'db> for TerminalPlus<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalPlus<'db> {
@@ -38191,15 +37902,14 @@ pub struct TokenPlusEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenPlusEq<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenPlusEqGreen(
             GreenNode { kind: SyntaxKind::TokenPlusEq, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38221,8 +37931,8 @@ impl<'db> From<TokenPlusEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenPlusEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenPlusEqGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenPlusEq<'db> {
@@ -38231,11 +37941,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlusEq<'db> {
     type Green = TokenPlusEqGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenPlusEqGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -38282,12 +37989,12 @@ impl<'db> Terminal<'db> for TerminalPlusEq<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalPlusEq<'db> {
@@ -38372,7 +38079,7 @@ pub struct TokenQuestionMark<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenQuestionMark<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenQuestionMarkGreen(
             GreenNode {
                 kind: SyntaxKind::TokenQuestionMark,
@@ -38381,9 +38088,8 @@ impl<'db> Token<'db> for TokenQuestionMark<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38405,8 +38111,8 @@ impl<'db> From<TokenQuestionMarkPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenQuestionMarkGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenQuestionMarkGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenQuestionMark<'db> {
@@ -38415,11 +38121,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenQuestionMark<'db> {
     type Green = TokenQuestionMarkGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenQuestionMarkGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -38466,12 +38169,12 @@ impl<'db> Terminal<'db> for TerminalQuestionMark<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalQuestionMark<'db> {
@@ -38556,15 +38259,14 @@ pub struct TokenRBrace<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenRBrace<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenRBraceGreen(
             GreenNode { kind: SyntaxKind::TokenRBrace, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38586,8 +38288,8 @@ impl<'db> From<TokenRBracePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenRBraceGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenRBraceGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenRBrace<'db> {
@@ -38596,11 +38298,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrace<'db> {
     type Green = TokenRBraceGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenRBraceGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -38647,12 +38346,12 @@ impl<'db> Terminal<'db> for TerminalRBrace<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalRBrace<'db> {
@@ -38737,15 +38436,14 @@ pub struct TokenRBrack<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenRBrack<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenRBrackGreen(
             GreenNode { kind: SyntaxKind::TokenRBrack, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38767,8 +38465,8 @@ impl<'db> From<TokenRBrackPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenRBrackGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenRBrackGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenRBrack<'db> {
@@ -38777,11 +38475,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrack<'db> {
     type Green = TokenRBrackGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenRBrackGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -38828,12 +38523,12 @@ impl<'db> Terminal<'db> for TerminalRBrack<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalRBrack<'db> {
@@ -38918,15 +38613,14 @@ pub struct TokenRParen<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenRParen<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenRParenGreen(
             GreenNode { kind: SyntaxKind::TokenRParen, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38948,8 +38642,8 @@ impl<'db> From<TokenRParenPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenRParenGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenRParenGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenRParen<'db> {
@@ -38958,11 +38652,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenRParen<'db> {
     type Green = TokenRParenGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenRParenGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -39009,12 +38700,12 @@ impl<'db> Terminal<'db> for TerminalRParen<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalRParen<'db> {
@@ -39099,15 +38790,14 @@ pub struct TokenSemicolon<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenSemicolon<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenSemicolonGreen(
             GreenNode { kind: SyntaxKind::TokenSemicolon, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -39129,8 +38819,8 @@ impl<'db> From<TokenSemicolonPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenSemicolonGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenSemicolonGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenSemicolon<'db> {
@@ -39139,11 +38829,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenSemicolon<'db> {
     type Green = TokenSemicolonGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenSemicolonGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -39190,12 +38877,12 @@ impl<'db> Terminal<'db> for TerminalSemicolon<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalSemicolon<'db> {
@@ -39280,15 +38967,14 @@ pub struct TokenUnderscore<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenUnderscore<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenUnderscoreGreen(
             GreenNode { kind: SyntaxKind::TokenUnderscore, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -39310,8 +38996,8 @@ impl<'db> From<TokenUnderscorePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenUnderscoreGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenUnderscoreGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenUnderscore<'db> {
@@ -39320,11 +39006,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenUnderscore<'db> {
     type Green = TokenUnderscoreGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenUnderscoreGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -39371,12 +39054,12 @@ impl<'db> Terminal<'db> for TerminalUnderscore<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalUnderscore<'db> {
@@ -39461,15 +39144,14 @@ pub struct TokenXor<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenXor<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenXorGreen(
             GreenNode { kind: SyntaxKind::TokenXor, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -39491,8 +39173,8 @@ impl<'db> From<TokenXorPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenXorGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenXorGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenXor<'db> {
@@ -39501,11 +39183,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenXor<'db> {
     type Green = TokenXorGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenXorGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -39552,12 +39231,12 @@ impl<'db> Terminal<'db> for TerminalXor<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalXor<'db> {
@@ -39727,15 +39406,14 @@ pub struct TokenEmpty<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenEmpty<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenEmptyGreen(
             GreenNode { kind: SyntaxKind::TokenEmpty, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -39757,8 +39435,8 @@ impl<'db> From<TokenEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenEmptyGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenEmpty<'db> {
@@ -39767,11 +39445,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenEmpty<'db> {
     type Green = TokenEmptyGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenEmptyGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -39818,12 +39493,12 @@ impl<'db> Terminal<'db> for TerminalEmpty<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         let GreenNodeDetails::Node { children, .. } = &self.node.long(db).green.long(db).details
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).clone()
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TerminalEmpty<'db> {
@@ -39908,7 +39583,7 @@ pub struct TokenSingleLineComment<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenSingleLineComment<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenSingleLineCommentGreen(
             GreenNode {
                 kind: SyntaxKind::TokenSingleLineComment,
@@ -39917,9 +39592,8 @@ impl<'db> Token<'db> for TokenSingleLineComment<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -39941,8 +39615,8 @@ impl<'db> From<TokenSingleLineCommentPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenSingleLineCommentGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenSingleLineCommentGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenSingleLineComment<'db> {
@@ -39951,11 +39625,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineComment<'db> {
     type Green = TokenSingleLineCommentGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenSingleLineCommentGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -39985,7 +39656,7 @@ pub struct TokenSingleLineInnerComment<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenSingleLineInnerComment<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenSingleLineInnerCommentGreen(
             GreenNode {
                 kind: SyntaxKind::TokenSingleLineInnerComment,
@@ -39994,9 +39665,8 @@ impl<'db> Token<'db> for TokenSingleLineInnerComment<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -40018,8 +39688,8 @@ impl<'db> From<TokenSingleLineInnerCommentPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenSingleLineInnerCommentGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenSingleLineInnerCommentGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenSingleLineInnerComment<'db> {
@@ -40028,11 +39698,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineInnerComment<'db> {
     type Green = TokenSingleLineInnerCommentGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenSingleLineInnerCommentGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -40062,7 +39729,7 @@ pub struct TokenSingleLineDocComment<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenSingleLineDocComment<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenSingleLineDocCommentGreen(
             GreenNode {
                 kind: SyntaxKind::TokenSingleLineDocComment,
@@ -40071,9 +39738,8 @@ impl<'db> Token<'db> for TokenSingleLineDocComment<'db> {
             .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -40095,8 +39761,8 @@ impl<'db> From<TokenSingleLineDocCommentPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenSingleLineDocCommentGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenSingleLineDocCommentGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenSingleLineDocComment<'db> {
@@ -40105,11 +39771,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineDocComment<'db> {
     type Green = TokenSingleLineDocCommentGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenSingleLineDocCommentGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -40139,15 +39802,14 @@ pub struct TokenWhitespace<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenWhitespace<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenWhitespaceGreen(
             GreenNode { kind: SyntaxKind::TokenWhitespace, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -40169,8 +39831,8 @@ impl<'db> From<TokenWhitespacePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenWhitespaceGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenWhitespaceGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenWhitespace<'db> {
@@ -40179,11 +39841,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhitespace<'db> {
     type Green = TokenWhitespaceGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenWhitespaceGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -40212,15 +39871,14 @@ pub struct TokenNewline<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenNewline<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenNewlineGreen(
             GreenNode { kind: SyntaxKind::TokenNewline, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -40242,8 +39900,8 @@ impl<'db> From<TokenNewlinePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenNewlineGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenNewlineGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenNewline<'db> {
@@ -40252,11 +39910,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenNewline<'db> {
     type Green = TokenNewlineGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenNewlineGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -40285,15 +39940,14 @@ pub struct TokenMissing<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenMissing<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenMissingGreen(
             GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -40315,8 +39969,8 @@ impl<'db> From<TokenMissingPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenMissingGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMissingGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMissing<'db> {
@@ -40325,11 +39979,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenMissing<'db> {
     type Green = TokenMissingGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
@@ -40358,15 +40009,14 @@ pub struct TokenSkipped<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Token<'db> for TokenSkipped<'db> {
-    fn new_green(db: &'db dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+    fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
         TokenSkippedGreen(
             GreenNode { kind: SyntaxKind::TokenSkipped, details: GreenNodeDetails::Token(text) }
                 .intern(db),
         )
     }
-    fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
+    fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
-            .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -40388,8 +40038,8 @@ impl<'db> From<TokenSkippedPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenSkippedGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenSkippedGreen<'db> {
-    pub fn text(&self, db: &'db dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).clone()
+    pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenSkipped<'db> {
@@ -40398,11 +40048,8 @@ impl<'db> TypedSyntaxNode<'db> for TokenSkipped<'db> {
     type Green = TokenSkippedGreen<'db>;
     fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
         TokenSkippedGreen(
-            GreenNode {
-                kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
-            }
-            .intern(db),
+            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
+                .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {

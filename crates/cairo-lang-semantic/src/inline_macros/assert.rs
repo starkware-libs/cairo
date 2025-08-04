@@ -111,7 +111,7 @@ impl InlineMacroExprPlugin for AssertMacro {
         let (content, code_mappings) = builder.build();
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
-                name: format!("{}_macro", Self::NAME).into(),
+                name: format!("{}_macro", Self::NAME),
                 content,
                 code_mappings,
                 aux_data: None,

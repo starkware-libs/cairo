@@ -118,7 +118,7 @@ fn get_syntax_root_and_diagnostics_from_inputs<'a>(
 ) -> (SyntaxNode<'a>, String) {
     let (file_path, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
     let file_id = create_virtual_file(db, file_path, &cairo_code);
-    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(db, file_id, &cairo_code);
+    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(db, file_id);
     (syntax_root, diagnostics.format(db))
 }
 

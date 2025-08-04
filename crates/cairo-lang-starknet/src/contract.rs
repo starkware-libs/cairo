@@ -247,7 +247,7 @@ fn get_generated_contract_module<'db>(
     let contract_name = contract.submodule_id.name(db);
 
     match db
-        .module_item_by_name(parent_module_id, SmolStrId::from_str(db, contract_name.clone()))
+        .module_item_by_name(parent_module_id, SmolStrId::from_str(db, contract_name))
         .to_option()
         .with_context(|| "Failed to initiate a lookup in the root module.")?
     {

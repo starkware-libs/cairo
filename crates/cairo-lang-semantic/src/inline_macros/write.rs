@@ -126,7 +126,7 @@ fn generate_code_inner<'db>(
     let (content, code_mappings) = builder.build();
     InlinePluginResult {
         code: Some(PluginGeneratedFile {
-            name: format!("{}_macro", get_macro_name(with_newline)).into(),
+            name: format!("{}_macro", get_macro_name(with_newline)),
             content,
             code_mappings,
             aux_data: None,

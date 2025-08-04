@@ -45,7 +45,7 @@ pub fn handle_default<'db>(
             let header = format!(
                 "impl {ty}Default<{generics}> of {DEFAULT_TRAIT}::<{full_typename}>",
                 generics = chain!(
-                    info.generics.full_params.iter().cloned(),
+                    info.generics.full_params.iter().map(ToString::to_string),
                     default_variant
                         .is_generics_dependent
                         .then(|| format!("impl {imp}: {DEFAULT_TRAIT}<{}>", default_variant.ty))

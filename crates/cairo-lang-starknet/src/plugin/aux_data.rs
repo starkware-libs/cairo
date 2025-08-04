@@ -7,7 +7,7 @@ use super::events::EventData;
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StarknetContractAuxData {
     /// A list of contracts that were processed by the plugin.
-    pub contract_name: smol_str::SmolStr,
+    pub contract_name: String,
 }
 
 #[typetag::serde]
