@@ -193,15 +193,14 @@ enum Color {
 }
 
 //! > graph
-Root: 7
+Root: 6
 0 ArmExpr { expr: ExprId(1) }
 1 ArmExpr { expr: ExprId(2) }
 2 ArmExpr { expr: ExprId(3) }
 3 EnumMatch { matched_var: v2, variants: (NodeId(1), v8), (NodeId(2), v9), (NodeId(2), v10)}
-4 EnumMatch { matched_var: v2, variants: (NodeId(1), v12), (NodeId(2), v13), (NodeId(2), v14)}
-5 EnumMatch { matched_var: v1, variants: (NodeId(0), v3), (NodeId(3), v7), (NodeId(4), v11)}
-6 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(5) }
-7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+4 EnumMatch { matched_var: v1, variants: (NodeId(0), v3), (NodeId(3), v7), (NodeId(3), v11)}
+5 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(4) }
+6 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(5) }
 
 //! > semantic_diagnostics
 
