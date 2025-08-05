@@ -10,6 +10,7 @@ use itertools::Itertools;
 use super::super::graph::{
     EnumMatch, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
 };
+use super::cache::Cache;
 use super::filtered_patterns::{Bindings, FilteredPatterns};
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
@@ -39,7 +40,7 @@ use crate::lower::flow_control::graph::Deconstruct;
 /// Finally, the inner pattern-matching function (for `x`) will construct a [EnumMatch] node
 /// that leads to the two nodes returned by the callback.
 type BuildNodeCallback<'db, 'a> =
-    &'a dyn Fn(&mut FlowControlGraphBuilder<'db>, FilteredPatterns) -> NodeId;
+    &'a mut dyn FnMut(&mut FlowControlGraphBuilder<'db>, FilteredPatterns) -> NodeId;
 
 /// A thin wrapper around [semantic::Pattern], where `None` represents the `_` pattern.
 type PatternOption<'a, 'db> = Option<&'a semantic::Pattern<'db>>;
@@ -82,11 +83,17 @@ pub fn create_node_for_patterns<'db>(
         })
         .collect_vec();
 
-    // Wrap `build_node_callback` to add the bindings to the patterns.
-    let build_node_callback = |graph: &mut FlowControlGraphBuilder<'db>,
-                               pattern_indices: FilteredPatterns| {
-        build_node_callback(graph, pattern_indices.add_bindings(bindings.clone()))
-    };
+    let mut cache = Cache::default();
+
+    // Wrap `build_node_callback` to add the bindings to the patterns and cache the result.
+    let mut build_node_callback =
+        |graph: &mut FlowControlGraphBuilder<'db>, pattern_indices: FilteredPatterns| {
+            cache.get_or_compute(
+                build_node_callback,
+                graph,
+                pattern_indices.add_bindings(bindings.clone()),
+            )
+        };
 
     // If all the patterns are catch-all, we do not need to look into `input_var`.
     if patterns.iter().all(|pattern| pattern_is_any(pattern)) {
@@ -99,7 +106,7 @@ pub fn create_node_for_patterns<'db>(
         ctx,
         graph,
         patterns: &patterns,
-        build_node_callback: &build_node_callback,
+        build_node_callback: &mut build_node_callback,
         location,
     };
     match long_ty {
@@ -169,7 +176,7 @@ fn create_node_for_enum<'db>(
                         ctx,
                         graph,
                         patterns: &inner_patterns,
-                        build_node_callback: &|graph, pattern_indices_inner| {
+                        build_node_callback: &mut |graph, pattern_indices_inner| {
                             build_node_callback(graph, pattern_indices_inner.lift(&pattern_indices))
                         },
                         location,
@@ -262,14 +269,14 @@ fn create_node_for_tuple_inner<'db>(
             ctx,
             graph,
             patterns: &patterns_on_current_item,
-            build_node_callback: &|graph, pattern_indices| {
+            build_node_callback: &mut |graph, pattern_indices| {
                 // Call `create_node_for_tuple_inner` recursively to handle the rest of the tuple.
                 create_node_for_tuple_inner(
                     CreateNodeParams {
                         ctx,
                         graph,
                         patterns: &pattern_indices.indices().map(|idx| patterns[idx]).collect_vec(),
-                        build_node_callback: &|graph, pattern_indices_inner| {
+                        build_node_callback: &mut |graph, pattern_indices_inner| {
                             build_node_callback(graph, pattern_indices_inner.lift(&pattern_indices))
                         },
                         location,
