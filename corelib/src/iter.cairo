@@ -232,4 +232,5 @@
 mod adapters;
 mod traits;
 pub use adapters::PeekableTrait;
+pub use adapters::zip_adapters::zip;
 pub use traits::{Extend, FromIterator, IntoIterator, Iterator};
