@@ -122,10 +122,8 @@ pub struct Deconstruct {
     pub input: FlowControlVar,
     /// The (output) variables to assign the result to. The number of variables is equal to the
     /// number of fields in the struct or tuple.
-    #[expect(dead_code)]
     pub outputs: Vec<FlowControlVar>,
     /// The next node.
-    #[expect(dead_code)]
     pub next: NodeId,
 }
 
