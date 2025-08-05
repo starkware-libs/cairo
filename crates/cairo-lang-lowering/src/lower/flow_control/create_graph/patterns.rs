@@ -8,13 +8,12 @@ use cairo_lang_utils::iterators::zip_eq3;
 use itertools::Itertools;
 
 use super::super::graph::{
-    EnumMatch, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
+    Deconstruct, EnumMatch, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
 };
 use super::cache::Cache;
 use super::filtered_patterns::{Bindings, FilteredPatterns};
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
-use crate::lower::flow_control::graph::Deconstruct;
 
 /// A callback that gets a [FilteredPatterns] and constructs a node that continues the pattern
 /// matching restricted to the filtered patterns.
