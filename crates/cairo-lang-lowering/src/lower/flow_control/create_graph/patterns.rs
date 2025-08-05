@@ -44,21 +44,27 @@ type BuildNodeCallback<'db, 'a> =
 /// A thin wrapper around [semantic::Pattern], where `None` represents the `_` pattern.
 type PatternOption<'a, 'db> = Option<&'a semantic::Pattern<'db>>;
 
-/// Given a list of patterns and the nodes to go to if the pattern matches,
-/// returns a new graph node to handle the patterns.
-///
-/// `location` is the location of the expression initiating the match.
-///
-/// If `default` is provided, the patterns do not need to be exhaustive, and the default node
-/// will be used if no pattern matches.
+/// Common parameters for the `create_node_*` functions.
+pub struct CreateNodeParams<'db, 'mt, 'a> {
+    /// The lowering context.
+    pub ctx: &'a LoweringContext<'db, 'mt>,
+    /// The graph builder.
+    pub graph: &'a mut FlowControlGraphBuilder<'db>,
+    /// The patterns to match.
+    pub patterns: &'a [PatternOption<'a, 'db>],
+    /// A callback that gets a [FilteredPatterns] and constructs a node that continues the pattern
+    /// matching.
+    pub build_node_callback: BuildNodeCallback<'db, 'a>,
+    /// The location of the expression initiating the match.
+    pub location: LocationId<'db>,
+}
+
+/// Given `input_var` and a list of patterns, returns a new graph node to handle the patterns.
 pub fn create_node_for_patterns<'db>(
-    ctx: &LoweringContext<'db, '_>,
-    graph: &mut FlowControlGraphBuilder<'db>,
+    params: CreateNodeParams<'db, '_, '_>,
     input_var: FlowControlVar,
-    patterns: &[PatternOption<'_, 'db>],
-    build_node_callback: BuildNodeCallback<'db, '_>,
-    location: LocationId<'db>,
 ) -> NodeId {
+    let CreateNodeParams { ctx, graph, patterns, build_node_callback, location } = params;
     // Handle `Pattern::Variable` patterns. Replace them with `Pattern::Otherwise` and collect the
     // bindings.
     let mut bindings: Vec<Bindings> = vec![];
@@ -89,27 +95,18 @@ pub fn create_node_for_patterns<'db>(
     }
 
     let (n_snapshots, long_ty) = peel_snapshots(ctx.db, graph.var_ty(input_var));
+    let params = CreateNodeParams {
+        ctx,
+        graph,
+        patterns: &patterns,
+        build_node_callback: &build_node_callback,
+        location,
+    };
     match long_ty {
-        TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) => create_node_for_enum(
-            ctx,
-            graph,
-            input_var,
-            concrete_enum_id,
-            n_snapshots,
-            &patterns,
-            &build_node_callback,
-            location,
-        ),
-        TypeLongId::Tuple(types) => create_node_for_tuple(
-            ctx,
-            graph,
-            input_var,
-            &types,
-            n_snapshots,
-            &patterns,
-            &build_node_callback,
-            location,
-        ),
+        TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) => {
+            create_node_for_enum(params, input_var, concrete_enum_id, n_snapshots)
+        }
+        TypeLongId::Tuple(types) => create_node_for_tuple(params, input_var, &types, n_snapshots),
         _ => todo!("Type {:?} is not supported yet.", long_ty),
     }
 }
@@ -117,15 +114,12 @@ pub fn create_node_for_patterns<'db>(
 /// Creates an [EnumMatch] node for the given `input_var` and `patterns`.
 #[allow(clippy::too_many_arguments)]
 fn create_node_for_enum<'db>(
-    ctx: &LoweringContext<'db, '_>,
-    graph: &mut FlowControlGraphBuilder<'db>,
+    params: CreateNodeParams<'db, '_, '_>,
     input_var: FlowControlVar,
     concrete_enum_id: ConcreteEnumId<'db>,
     n_snapshots: usize,
-    patterns: &[PatternOption<'_, 'db>],
-    build_node_callback: BuildNodeCallback<'db, '_>,
-    location: LocationId<'db>,
 ) -> NodeId {
+    let CreateNodeParams { ctx, graph, patterns, build_node_callback, location } = params;
     let concrete_variants = ctx.db.concrete_enum_variants(concrete_enum_id).unwrap();
 
     // Maps variant index to the list of the indices of the patterns that match it.
@@ -171,14 +165,16 @@ fn create_node_for_enum<'db>(
                 let inner_var = graph
                     .new_var(wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots), location);
                 let node = create_node_for_patterns(
-                    ctx,
-                    graph,
-                    inner_var,
-                    &inner_patterns,
-                    &|graph, pattern_indices_inner| {
-                        build_node_callback(graph, pattern_indices_inner.lift(&pattern_indices))
+                    CreateNodeParams {
+                        ctx,
+                        graph,
+                        patterns: &inner_patterns,
+                        build_node_callback: &|graph, pattern_indices_inner| {
+                            build_node_callback(graph, pattern_indices_inner.lift(&pattern_indices))
+                        },
+                        location,
                     },
-                    location,
+                    inner_var,
                 );
                 (concrete_variant, node, inner_var)
             })
@@ -195,28 +191,21 @@ fn create_node_for_enum<'db>(
 /// Creates a [Deconstruct] node for the given `input_var` and `patterns`.
 #[allow(clippy::too_many_arguments)]
 fn create_node_for_tuple<'db>(
-    ctx: &LoweringContext<'db, '_>,
-    graph: &mut FlowControlGraphBuilder<'db>,
+    params: CreateNodeParams<'db, '_, '_>,
     input_var: FlowControlVar,
     types: &Vec<TypeId<'db>>,
     n_snapshots: usize,
-    patterns: &[PatternOption<'_, 'db>],
-    build_node_callback: BuildNodeCallback<'db, '_>,
-    location: LocationId<'db>,
 ) -> NodeId {
+    let CreateNodeParams { ctx, graph, patterns, build_node_callback, location } = params;
     let inner_vars = types
         .iter()
         .map(|ty| graph.new_var(wrap_in_snapshots(ctx.db, *ty, n_snapshots), location))
         .collect_vec();
 
     let node = create_node_for_tuple_inner(
-        ctx,
-        graph,
+        CreateNodeParams { ctx, graph, patterns, build_node_callback, location },
         &inner_vars,
         types,
-        location,
-        patterns,
-        build_node_callback,
         0,
     );
 
@@ -233,15 +222,13 @@ fn create_node_for_tuple<'db>(
 /// `item_idx` is the index of the current member that is being processed in the tuple.
 #[allow(clippy::too_many_arguments)]
 fn create_node_for_tuple_inner<'db>(
-    ctx: &LoweringContext<'db, '_>,
-    graph: &mut FlowControlGraphBuilder<'db>,
+    params: CreateNodeParams<'db, '_, '_>,
     inner_vars: &Vec<FlowControlVar>,
     types: &Vec<TypeId<'db>>,
-    location: LocationId<'db>,
-    patterns: &[PatternOption<'_, 'db>],
-    build_node_callback: BuildNodeCallback<'db, '_>,
     item_idx: usize,
 ) -> NodeId {
+    let CreateNodeParams { ctx, graph, patterns, build_node_callback, location } = params;
+
     if item_idx == types.len() {
         return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
     }
@@ -260,26 +247,30 @@ fn create_node_for_tuple_inner<'db>(
 
     // Create a node to handle the current item. The callback will handle the rest of the tuple.
     create_node_for_patterns(
-        ctx,
-        graph,
-        inner_vars[item_idx],
-        &patterns_on_current_item,
-        &|graph, pattern_indices| {
-            // Call `create_node_for_tuple_inner` recursively to handle the rest of the tuple.
-            create_node_for_tuple_inner(
-                ctx,
-                graph,
-                inner_vars,
-                types,
-                location,
-                &pattern_indices.indices().map(|idx| patterns[idx]).collect_vec(),
-                &|graph, pattern_indices_inner| {
-                    build_node_callback(graph, pattern_indices_inner.lift(&pattern_indices))
-                },
-                item_idx + 1,
-            )
+        CreateNodeParams {
+            ctx,
+            graph,
+            patterns: &patterns_on_current_item,
+            build_node_callback: &|graph, pattern_indices| {
+                // Call `create_node_for_tuple_inner` recursively to handle the rest of the tuple.
+                create_node_for_tuple_inner(
+                    CreateNodeParams {
+                        ctx,
+                        graph,
+                        patterns: &pattern_indices.indices().map(|idx| patterns[idx]).collect_vec(),
+                        build_node_callback: &|graph, pattern_indices_inner| {
+                            build_node_callback(graph, pattern_indices_inner.lift(&pattern_indices))
+                        },
+                        location,
+                    },
+                    inner_vars,
+                    types,
+                    item_idx + 1,
+                )
+            },
+            location,
         },
-        location,
+        inner_vars[item_idx],
     )
 }
 

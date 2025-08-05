@@ -1,7 +1,7 @@
 use cairo_lang_semantic::{self as semantic, Condition, PatternId};
 use cairo_lang_syntax::node::TypedStablePtr;
 use itertools::Itertools;
-use patterns::{create_node_for_patterns, get_pattern};
+use patterns::{CreateNodeParams, create_node_for_patterns, get_pattern};
 
 use super::graph::{
     ArmExpr, BooleanIf, EvaluateExpr, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode,
@@ -62,18 +62,23 @@ pub fn create_graph_expr_if<'db>(
                 let expr_var = graph.new_var(expr.ty(), expr_location);
 
                 let match_node_id = create_node_for_patterns(
-                    ctx,
-                    &mut graph,
-                    expr_var,
-                    &patterns.iter().map(|pattern| Some(get_pattern(ctx, *pattern))).collect_vec(),
-                    &|graph, pattern_indices| {
-                        if let Some(index_and_bindings) = pattern_indices.first() {
-                            index_and_bindings.wrap_node(graph, current_node)
-                        } else {
-                            false_branch
-                        }
+                    CreateNodeParams {
+                        ctx,
+                        graph: &mut graph,
+                        patterns: &patterns
+                            .iter()
+                            .map(|pattern| Some(get_pattern(ctx, *pattern)))
+                            .collect_vec(),
+                        build_node_callback: &|graph, pattern_indices| {
+                            if let Some(index_and_bindings) = pattern_indices.first() {
+                                index_and_bindings.wrap_node(graph, current_node)
+                            } else {
+                                false_branch
+                            }
+                        },
+                        location: expr_location,
                     },
-                    expr_location,
+                    expr_var,
                 );
 
                 // Create a node for lowering `expr` into `expr_var` and continue to the match.
@@ -116,20 +121,22 @@ pub fn create_graph_expr_match<'db>(
 
     // TODO(lior): add diagnostics if there is an unreachable arm.
     let match_node_id = create_node_for_patterns(
-        ctx,
-        &mut graph,
-        matched_var,
-        &pattern_and_nodes
-            .iter()
-            .map(|(pattern, _)| Some(get_pattern(ctx, *pattern)))
-            .collect_vec(),
-        &|graph, pattern_indices| {
-            // TODO(lior): add diagnostics if pattern_indices is empty (instead of `unwrap`).
-            let index_and_bindings = pattern_indices.first().unwrap();
-            let index = index_and_bindings.index();
-            index_and_bindings.wrap_node(graph, pattern_and_nodes[index].1)
+        CreateNodeParams {
+            ctx,
+            graph: &mut graph,
+            patterns: &pattern_and_nodes
+                .iter()
+                .map(|(pattern, _)| Some(get_pattern(ctx, *pattern)))
+                .collect_vec(),
+            build_node_callback: &|graph, pattern_indices| {
+                // TODO(lior): add diagnostics if pattern_indices is empty (instead of `unwrap`).
+                let index_and_bindings = pattern_indices.first().unwrap();
+                let index = index_and_bindings.index();
+                index_and_bindings.wrap_node(graph, pattern_and_nodes[index].1)
+            },
+            location: matched_expr_location,
         },
-        matched_expr_location,
+        matched_var,
     );
 
     let root = graph.add_node(FlowControlNode::EvaluateExpr(EvaluateExpr {
