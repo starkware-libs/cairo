@@ -113,7 +113,7 @@ macro_rules! define_short_id {
 
         impl<'db> std::fmt::Debug for $short_id<'db> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(f, "{}({:x})", stringify!($short_id), self.as_intern_id().as_u32())
+                write!(f, "{}({:x})", stringify!($short_id), self.as_intern_id().index())
             }
         }
 

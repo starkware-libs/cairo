@@ -10,7 +10,6 @@ use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::Upcast;
 use lowering::ids::ConcreteFunctionWithBodyId;
-use num_traits::ToPrimitive;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::program_generator::{self, SierraProgramWithDebug};
@@ -52,7 +51,7 @@ fn intern_concrete_lib_func(
     id: cairo_lang_sierra::program::ConcreteLibfuncLongId,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
     let interned = ConcreteLibfuncIdLongWrapper::new(db, id);
-    cairo_lang_sierra::ids::ConcreteLibfuncId::from(interned.0.as_u32().to_u64().unwrap())
+    cairo_lang_sierra::ids::ConcreteLibfuncId::from(interned.0.as_bits())
 }
 
 use salsa::Id;
@@ -62,8 +61,7 @@ fn lookup_concrete_lib_func(
     db: &dyn SierraGenGroup,
     id: cairo_lang_sierra::ids::ConcreteLibfuncId,
 ) -> cairo_lang_sierra::program::ConcreteLibfuncLongId {
-    let interned =
-        ConcreteLibfuncIdLongWrapper::from_id(unsafe { Id::from_u32(id.id.to_u32().unwrap()) });
+    let interned = ConcreteLibfuncIdLongWrapper::from_id(unsafe { Id::from_bits(id.id) });
     interned.id(db)
 }
 
@@ -72,15 +70,14 @@ fn intern_concrete_type<'db>(
     id: SierraGeneratorTypeLongId<'db>,
 ) -> cairo_lang_sierra::ids::ConcreteTypeId {
     let interned = SierraGeneratorTypeLongIdWrapper::new(db, id);
-    cairo_lang_sierra::ids::ConcreteTypeId::from(interned.0.as_u32().to_u64().unwrap())
+    cairo_lang_sierra::ids::ConcreteTypeId::from(interned.0.as_bits())
 }
 
 fn lookup_concrete_type<'db>(
     db: &'db dyn SierraGenGroup,
     id: cairo_lang_sierra::ids::ConcreteTypeId,
 ) -> SierraGeneratorTypeLongId<'db> {
-    let interned =
-        SierraGeneratorTypeLongIdWrapper::from_id(unsafe { Id::from_u32(id.id.to_u32().unwrap()) });
+    let interned = SierraGeneratorTypeLongIdWrapper::from_id(unsafe { Id::from_bits(id.id) });
     interned.id(db)
 }
 fn intern_sierra_function<'db>(
@@ -88,15 +85,14 @@ fn intern_sierra_function<'db>(
     id: lowering::ids::FunctionId<'db>,
 ) -> cairo_lang_sierra::ids::FunctionId {
     let interned = LoweringFunctionIdWrapper::new(db, id);
-    cairo_lang_sierra::ids::FunctionId::from(interned.0.as_u32().to_u64().unwrap())
+    cairo_lang_sierra::ids::FunctionId::from(interned.0.as_bits())
 }
 
 fn lookup_sierra_function<'db>(
     db: &'db dyn SierraGenGroup,
     id: cairo_lang_sierra::ids::FunctionId,
 ) -> lowering::ids::FunctionId<'db> {
-    let interned =
-        LoweringFunctionIdWrapper::from_id(unsafe { Id::from_u32(id.id.to_u32().unwrap()) });
+    let interned = LoweringFunctionIdWrapper::from_id(unsafe { Id::from_bits(id.id) });
     interned.id(db)
 }
 
