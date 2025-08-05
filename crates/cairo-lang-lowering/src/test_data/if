@@ -453,7 +453,7 @@ End:
   Match(match test::a() {
     MyEnum::A(v10) => blk4,
     MyEnum::B => blk7,
-    MyEnum::C => blk10,
+    MyEnum::C => blk8,
   })
 
 blk4:
@@ -467,68 +467,42 @@ End:
 blk5:
 Statements:
 End:
-  Goto(blk13, {})
+  Goto(blk9, {})
 
 blk6:
 Statements:
   (v13: core::felt252) <- core::felt252_add(v0, v10)
 End:
-  Goto(blk14, {v13 -> v14})
+  Goto(blk10, {v13 -> v14})
 
 blk7:
 Statements:
 End:
-  Match(match_enum(v7) {
-    bool::False(v15) => blk8,
-    bool::True(v16) => blk9,
-  })
+  Goto(blk9, {})
 
 blk8:
 Statements:
 End:
-  Goto(blk13, {})
+  Goto(blk9, {})
 
 blk9:
 Statements:
 End:
-  Goto(blk13, {})
+  Goto(blk10, {v0 -> v14})
 
 blk10:
 Statements:
+  (v15: core::felt252) <- 1
+  (v16: core::felt252) <- core::felt252_add(v14, v15)
 End:
-  Match(match_enum(v7) {
-    bool::False(v17) => blk11,
-    bool::True(v18) => blk12,
-  })
-
-blk11:
-Statements:
-End:
-  Goto(blk13, {})
-
-blk12:
-Statements:
-End:
-  Goto(blk13, {})
-
-blk13:
-Statements:
-End:
-  Goto(blk14, {v0 -> v14})
-
-blk14:
-Statements:
-  (v19: core::felt252) <- 1
-  (v20: core::felt252) <- core::felt252_add(v14, v19)
-End:
-  Return(v20)
+  Return(v16)
 
 //! > ==========================================================================
 
-//! > Test if let unsupported tuple
+//! > Test if let enum and numeric tuple
 
 //! > test_runner_name
-test_function_lowering(expect_diagnostics: true)
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
@@ -554,20 +528,69 @@ extern fn a() -> MyEnum nopanic;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported value in if-let. Currently, if-let on tuples only supports enums as tuple members.
- --> lib.cairo:9:32
-    if let (MyEnum::A(x), 3) = (a(), 3) {
-                               ^^^^^^^^
 
 //! > lowering_flat
-<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 0
+End:
+  Match(match test::a() {
+    MyEnum::A(v1) => blk1,
+    MyEnum::B => blk4,
+    MyEnum::C => blk5,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 3
+  (v3: core::felt252) <- 3
+  (v4: core::felt252) <- core::felt252_sub(v2, v3)
+End:
+  Match(match core::felt252_is_zero(v4) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero(v5) => blk3,
+  })
+
+blk2:
+Statements:
+  (v6: core::felt252) <- core::felt252_add(v0, v1)
+End:
+  Goto(blk7, {v6 -> v7})
+
+blk3:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk6:
+Statements:
+End:
+  Goto(blk7, {v0 -> v7})
+
+blk7:
+Statements:
+  (v8: core::felt252) <- 1
+  (v9: core::felt252) <- core::felt252_add(v7, v8)
+End:
+  Return(v9)
 
 //! > ==========================================================================
 
 //! > Test if let numeric
 
 //! > test_runner_name
-test_function_lowering(expect_diagnostics: true)
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
@@ -587,13 +610,17 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Numeric values are not supported in if-let conditions.
- --> lib.cairo:3:16
-    if let x = y {
-               ^
 
 //! > lowering_flat
-<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 0
+  (v1: core::felt252) <- core::felt252_add(v0, v0)
+  (v2: core::felt252) <- 1
+  (v3: core::felt252) <- core::felt252_add(v1, v2)
+End:
+  Return(v3)
 
 //! > ==========================================================================
 
@@ -883,30 +910,12 @@ Parameters: v0: core::option::Option::<core::felt252>
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 0
+  (v2: core::felt252) <- 5
+  (v3: core::felt252) <- core::felt252_add(v1, v2)
+  (v4: core::felt252) <- 1
+  (v5: core::felt252) <- core::felt252_add(v3, v4)
 End:
-  Match(match_enum(v0) {
-    Option::Some(v2) => blk1,
-    Option::None(v3) => blk2,
-  })
-
-blk1:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk2:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
-  (v4: core::felt252) <- 5
-  (v5: core::felt252) <- core::felt252_add(v1, v4)
-  (v6: core::felt252) <- 1
-  (v7: core::felt252) <- core::felt252_add(v5, v6)
-End:
-  Return(v7)
+  Return(v5)
 
 //! > ==========================================================================
 
