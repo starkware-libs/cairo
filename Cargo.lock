@@ -1818,9 +1818,9 @@ dependencies = [
 
 [[package]]
 name = "genco"
-version = "0.17.10"
+version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a35958104272e516c2a5f66a9d82fba4784d2b585fc1e2358b8f96e15d342995"
+checksum = "570dadf83763691775bb002b0b44bc35302002787442201b40c572d9df1928f9"
 dependencies = [
  "genco-macros",
  "relative-path",
@@ -1829,9 +1829,9 @@ dependencies = [
 
 [[package]]
 name = "genco-macros"
-version = "0.17.10"
+version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43eaff6bbc0b3a878361aced5ec6a2818ee7c541c5b33b5880dfa9a86c23e9e7"
+checksum = "34070d9eb03425d4e09b75fd9bd7e414e42d5c12bae2ddd97afb83953cc61e1e"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -103,7 +103,7 @@ convert_case = "0.8.0"
 derivative = "2.2.0"
 diffy = "0.4.2"
 env_logger = "0.11.6"
-genco = "0.17.10"
+genco = "0.18.0"
 good_lp = { version = "1.11.0", features = [
     "minilp",
 ], default-features = false }
