@@ -11,7 +11,7 @@ publish = false
 anyhow.workspace = true
 async-channel = "2.3.1"
 clap.workspace = true
-indicatif = "0.17.11"
+indicatif = "0.18.0"
 reqwest = { version = "0.12", features = ["json"] }
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true

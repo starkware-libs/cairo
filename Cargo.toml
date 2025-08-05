@@ -129,7 +129,7 @@ proc-macro2 = "1.0.93"
 quote = "1.0.38"
 rand = "0.9.0"
 rayon = "1.10.0"
-rstest = "0.25.0"
+rstest = "0.26.1"
 salsa = "0.22.0"
 schemars = { version = "0.8.21", features = ["preserve_order"] }
 semver = { version = "1.0.25", features = ["serde"] }
@@ -158,7 +158,7 @@ time = { version = "0.3.37", features = [
     "local-offset",
 ] }
 tokio = { version = "1.43.0", features = ["full", "sync"] }
-toml = "0.8.20"
+toml = "0.9.5"
 unescaper = "0.1.5"
 vector-map = { version = "1.0.2", features = ["serde_impl"] }
 xshell = "0.2.7"
