@@ -9,7 +9,7 @@ publish = false
 
 [dependencies]
 anyhow.workspace = true
-async-channel = "2.3.1"
+async-channel = "2.5.0"
 clap.workspace = true
 indicatif = "0.18.0"
 reqwest = { version = "0.12", features = ["json"] }
