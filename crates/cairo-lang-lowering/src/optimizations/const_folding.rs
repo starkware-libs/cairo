@@ -35,8 +35,8 @@ use crate::utils::InliningStrategy;
 use crate::{
     Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
     Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
-    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarUsage, Variable,
-    VariableId,
+    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
+    VarUsage, Variable, VariableId,
 };
 
 /// Keeps track of equivalent values that a variables might be replaced with.
@@ -1000,7 +1000,13 @@ impl<'a> ConstFoldingContext<'a> {
             } else {
                 let arm = &info.arms[1];
                 self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]));
-                Some((vec![], BlockEnd::Goto(arm.block_id, Default::default())))
+                Some((
+                    vec![],
+                    BlockEnd::Goto(
+                        arm.block_id,
+                        VarRemapping { remapping: [(arm.var_ids[0], info.inputs[0])].into() },
+                    ),
+                ))
             }
         } else if id == self.array_snapshot_pop_back || id == self.array_snapshot_pop_front {
             let var_info = self.var_info.get(&info.inputs[0].var_id)?;
@@ -1010,7 +1016,13 @@ impl<'a> ConstFoldingContext<'a> {
             if element_var_infos.is_empty() {
                 let arm = &info.arms[1];
                 self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]));
-                Some((vec![], BlockEnd::Goto(arm.block_id, Default::default())))
+                Some((
+                    vec![],
+                    BlockEnd::Goto(
+                        arm.block_id,
+                        VarRemapping { remapping: [(arm.var_ids[0], info.inputs[0])].into() },
+                    ),
+                ))
             } else {
                 None
             }

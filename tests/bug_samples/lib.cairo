@@ -66,6 +66,7 @@ mod issue7234;
 mod issue7544;
 mod issue7640;
 mod issue7961;
+mod issue8105;
 mod loop_break_in_match;
 mod loop_only_change;
 mod merge_const_member;

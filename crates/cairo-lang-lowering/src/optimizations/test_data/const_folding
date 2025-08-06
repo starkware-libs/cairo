@@ -5574,7 +5574,7 @@ blk0 (root):
 Statements:
   (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
-  Goto(blk2, {})
+  Goto(blk2, {v0 -> v3})
 
 blk1:
 Statements:
@@ -5741,7 +5741,7 @@ Statements:
   (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v1: core::array::Array::<core::felt252>, v2: @core::array::Array::<core::felt252>) <- snapshot(v0)
 End:
-  Goto(blk2, {})
+  Goto(blk2, {v2 -> v5})
 
 blk1:
 Statements:
@@ -5822,7 +5822,7 @@ Statements:
   (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v1: core::array::Array::<core::felt252>, v2: @core::array::Array::<core::felt252>) <- snapshot(v0)
 End:
-  Goto(blk2, {})
+  Goto(blk2, {v2 -> v5})
 
 blk1:
 Statements:
