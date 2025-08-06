@@ -282,7 +282,7 @@ macro my_array {
 
     [$first:expr, $($rest:expr),*] => {
         {
-            let mut arr = my_array![$($rest), *];
+            let mut arr = $defsite::my_array![$($rest), *];
             arr.append($first);
             arr
         }
@@ -397,7 +397,7 @@ macro tail_only {
 
 macro wrapped_tail_only {
     () => {
-        tail_only!()
+        $defsite::tail_only!()
     };
 }
 
@@ -481,7 +481,7 @@ mod unhygienic_expose_plugin_macro {
     macro outer {
         () => {
             expose!(let outer_var = 11;);
-            middle!();
+            $defsite::middle!();
         };
     }
 
@@ -491,7 +491,7 @@ mod unhygienic_expose_plugin_macro {
             assert_eq!($callsite::outer_var, 11);
             expose!(let outer_var = 1;);
             assert_eq!(outer_var, 1);
-            inner_most!();
+            $defsite::inner_most!();
         };
     }
 
@@ -520,7 +520,7 @@ mod unhygienic_expose_plugin_macro {
 
     macro wrap_expose_macro {
         () => {
-            expose!(set_var_macro!(123););
+            expose!($defsite::set_var_macro!(123););
         };
     }
 
