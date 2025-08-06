@@ -16,6 +16,7 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -54,9 +55,11 @@ use crate::items::trt::{
     ConcreteTraitConstantLongId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
     ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId,
 };
-use crate::items::us::UseAsPathSegments;
+use crate::items::us::{UseAsPathSegments, get_use_path_segments};
 use crate::items::{TraitOrImplContext, visibility};
-use crate::keyword::{CRATE_KW, MACRO_CALL_SITE, MACRO_DEF_SITE, SELF_TYPE_KW, SUPER_KW};
+use crate::keyword::{
+    CRATE_KW, MACRO_CALL_SITE, MACRO_DEF_SITE, SELF_PARAM_KW, SELF_TYPE_KW, SUPER_KW,
+};
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ConcreteEnumLongId, ImplTypeId, are_coupons_enabled, resolve_type};
 use crate::{
@@ -778,6 +781,34 @@ impl<'db> Resolver<'db> {
     ) -> Maybe<ResolvedGenericItem<'db>> {
         self.resolve_generic_path_inner(diagnostics, path, item_type, false, ctx)
     }
+
+    /// Resolves a generic item, given a path.
+    /// Guaranteed to result in at most one diagnostic.
+    pub fn resolve_use_path(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        use_path: ast::UsePath<'db>,
+        ctx: ResolutionContext<'db, '_>,
+    ) -> Maybe<ResolvedGenericItem<'db>> {
+        let mut segments = get_use_path_segments(self.db, use_path.clone())?;
+        // Remove the last segment if it's `self`.
+        if let Some(last) = segments.segments.last() {
+            if last.identifier(self.db) == SELF_PARAM_KW {
+                // If the `self` keyword is used in a non-multi-use path, report an error.
+                if use_path.as_syntax_node().parent(self.db).unwrap().kind(self.db)
+                    != SyntaxKind::UsePathList
+                {
+                    diagnostics.report(use_path.stable_ptr(self.db), UseSelfNonMulti);
+                }
+                segments.segments.pop();
+            }
+        }
+        if segments.segments.is_empty() {
+            return Err(diagnostics.report(use_path.stable_ptr(self.db), UseSelfEmptyPath));
+        }
+        self.resolve_generic_path(diagnostics, segments, NotFoundItemType::Identifier, ctx)
+    }
+
     /// Resolves a generic item, given a concrete item path, while ignoring the generic args.
     /// Guaranteed to result in at most one diagnostic.
     pub fn resolve_generic_path_with_args(
@@ -1582,8 +1613,8 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(db);
         let module_id = self.active_module_file_id(macro_context_modifier).0;
         if let ResolutionContext::Statement(ref mut env) = ctx {
-            if let Some(inner_generic_arg) = get_statement_item_by_name(env, ident) {
-                return ResolvedBase::StatementEnvironment(inner_generic_arg);
+            if let Some(item) = get_statement_item_by_name(env, ident) {
+                return ResolvedBase::StatementEnvironment(item);
             }
         }
 
