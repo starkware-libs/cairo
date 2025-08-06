@@ -76,7 +76,7 @@ pub struct BigIntAsHex {
 
 // BigInt doesn't implement JsonSchema, so we need to manually define it.
 #[cfg(feature = "schemars")]
-fn big_int_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+fn big_int_schema(gen: &mut schemars::SchemaGenerator) -> schemars::Schema {
     use schemars::JsonSchema;
 
     #[allow(dead_code)]
