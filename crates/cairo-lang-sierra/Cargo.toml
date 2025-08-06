@@ -8,7 +8,7 @@ description = "Sierra representation."
 build = "src/build.rs"                 # LALRPOP preprocessing
 
 [build-dependencies]
-lalrpop = "0.22.1"
+lalrpop = "0.22.2"
 regex = "1"
 
 [dependencies]
