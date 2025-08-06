@@ -46,7 +46,7 @@ In the example above, the function name is `inc_n`.
 
 === Parameters
 
-Parameters define the types of the values that are passed to the function when it is called
+Parameters define the types of values that are passed to the function when it is called
 and define xref:variables.adoc[variables] to the function's body.
 Each such variable can be referred to using the parameter name to be used in the function body.
 

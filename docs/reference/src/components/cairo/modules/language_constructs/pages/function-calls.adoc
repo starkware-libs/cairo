@@ -56,7 +56,7 @@ fn main() {
 
 The arguments are evaluated from left to right, starting with all the expression arguments, and
 then the reference arguments. This is important, since the value of a reference argument may change
-during evaluation of the expression arguments.
+during the evaluation of the expression arguments.
 
 == Named arguments
 
