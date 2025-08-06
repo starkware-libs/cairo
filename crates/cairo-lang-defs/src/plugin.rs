@@ -36,7 +36,7 @@ impl Deref for DynGeneratedFileAuxData {
 }
 impl PartialEq for DynGeneratedFileAuxData {
     fn eq(&self, that: &DynGeneratedFileAuxData) -> bool {
-        GeneratedFileAuxData::eq(&*self.0, &*that.0)
+        self.0.eq(&*that.0)
     }
 }
 impl Eq for DynGeneratedFileAuxData {}
@@ -147,8 +147,7 @@ pub struct MacroPluginMetadata<'a> {
 /// A trait for a macro plugin: external plugin that generates additional code for items.
 pub trait MacroPlugin: std::fmt::Debug + Sync + Send + Any {
     /// Generates code for an item. If no code should be generated returns None.
-    /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
-    /// with that name and content should be created.
+    /// Otherwise, returns `PluginResult` with the generated virtual submodule.
     fn generate_code<'db>(
         &self,
         db: &'db dyn SyntaxGroup,
