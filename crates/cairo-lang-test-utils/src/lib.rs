@@ -104,7 +104,7 @@ fn expect_diagnostics_input_input(input: &str) -> ExpectDiagnostics {
         "false" => ExpectDiagnostics::None,
         "true" => ExpectDiagnostics::Any,
         "warnings_only" => ExpectDiagnostics::Warnings,
-        _ => panic!("Expected 'true', 'false' or 'warnings', actual: {input}"),
+        _ => panic!("Expected `true`, `false` or `warnings_only`, actual: `{input}`"),
     }
 }
 
