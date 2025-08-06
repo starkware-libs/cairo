@@ -63,29 +63,16 @@ pub fn priv_use_semantic_data<'db>(
     let use_ast = ast::UsePath::Leaf(db.module_use_by_id(use_id)?.to_maybe()?);
     let item = use_ast.get_item(db);
     resolver.set_feature_config(&use_id, &item, &mut diagnostics);
-    let segments = get_use_path_segments(db, use_ast.clone())?;
-    let resolved_item = if segments.is_placeholder.is_some() {
-        let use_segments = UseAsPathSegments {
-            segments: segments.segments.clone(),
-            is_placeholder: segments.is_placeholder.clone(),
-        };
-        resolver.resolve_generic_path(
-            &mut diagnostics,
-            use_segments,
-            NotFoundItemType::Identifier,
-            ResolutionContext::ModuleItem(module_item_id),
-        )
-    } else {
-        match handle_self_path(db, &mut diagnostics, segments.segments, use_ast) {
-            Err(diag_added) => Err(diag_added),
-            Ok(segments) => resolver.resolve_generic_path(
+    let mut segments = get_use_path_segments(db, use_ast.clone())?;
+    let resolved_item = handle_self_path(db, &mut diagnostics, &mut segments.segments, use_ast)
+        .and_then(|_| {
+            resolver.resolve_generic_path(
                 &mut diagnostics,
                 segments,
                 NotFoundItemType::Identifier,
                 ResolutionContext::ModuleItem(module_item_id),
-            ),
-        }
-    };
+            )
+        });
     let resolver_data: Arc<ResolverData<'_>> = Arc::new(resolver.data);
 
     Ok(Arc::new(UseData { diagnostics: diagnostics.build(), resolved_item, resolver_data }))
@@ -99,9 +86,9 @@ pub fn priv_use_semantic_data<'db>(
 fn handle_self_path<'db>(
     db: &'db dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics<'db>,
-    mut segments: Vec<ast::PathSegment<'db>>,
+    segments: &mut Vec<ast::PathSegment<'db>>,
     use_path: ast::UsePath<'db>,
-) -> Maybe<Vec<ast::PathSegment<'db>>> {
+) -> Maybe<()> {
     if let Some(last) = segments.last() {
         if last.identifier(db) == SELF_PARAM_KW {
             if use_path.as_syntax_node().parent(db).unwrap().kind(db) != SyntaxKind::UsePathList {
@@ -113,7 +100,7 @@ fn handle_self_path<'db>(
     if segments.is_empty() {
         Err(diagnostics.report(use_path.stable_ptr(db), UseSelfEmptyPath))
     } else {
-        Ok(segments)
+        Ok(())
     }
 }
 
@@ -291,27 +278,23 @@ pub fn priv_global_use_semantic_data<'db>(
 
     let item = star_ast.get_item(db);
     let segments = get_use_path_segments(db, star_ast.clone())?;
-    if segments.segments.is_empty() {
+    let Some(last_segment) = segments.segments.last() else {
         let imported_module = Err(diagnostics.report(star_ast.stable_ptr(db), UseStarEmptyPath));
         return Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module });
-    }
+    };
+    let last_element_ptr = last_segment.stable_ptr(db);
     resolver.set_feature_config(&global_use_id, &item, &mut diagnostics);
     let resolved_item = resolver.resolve_generic_path(
         &mut diagnostics,
-        segments.segments.clone(),
+        segments,
         NotFoundItemType::Identifier,
         ResolutionContext::Default,
     )?;
-    // unwrap always safe as the resolver already resolved the entire path.
-    let last_segment = segments.segments.last().unwrap();
-    let imported_module = match resolved_item {
-        ResolvedGenericItem::Module(module_id) => Ok(module_id),
-        _ => Err(diagnostics.report(
-            last_segment.stable_ptr(db),
-            UnexpectedElement {
-                expected: vec![ElementKind::Module],
-                actual: (&resolved_item).into(),
-            },
+    let imported_module = match &resolved_item {
+        ResolvedGenericItem::Module(module_id) => Ok(*module_id),
+        other => Err(diagnostics.report(
+            last_element_ptr,
+            UnexpectedElement { expected: vec![ElementKind::Module], actual: other.into() },
         )),
     };
     Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module })
