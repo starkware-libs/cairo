@@ -246,7 +246,7 @@ pub struct Resolver<'db> {
     pub macro_call_data: Option<ResolverMacroData<'db>>,
     /// If true, suppresses diagnostics for missing resolver modifiers (`$defsite` or `$callsite`).
     /// Should be true only within plugin macros generated code.
-    pub suppress_modifiers_diagnostics: bool,
+    pub default_module_allowed: bool,
     pub owning_crate_id: CrateId<'db>,
     pub settings: CrateSettings,
 }
@@ -369,7 +369,7 @@ impl<'db> Resolver<'db> {
             db,
             data,
             macro_call_data: None,
-            suppress_modifiers_diagnostics: false,
+            default_module_allowed: false,
         }
     }
 
@@ -387,8 +387,8 @@ impl<'db> Resolver<'db> {
         }
     }
 
-    pub fn set_suppress_modifiers_diagnostics(&mut self, suppress_modifiers_diagnostics: bool) {
-        self.suppress_modifiers_diagnostics = suppress_modifiers_diagnostics;
+    pub fn set_default_module_allowed(&mut self, default_module_allowed: bool) {
+        self.default_module_allowed = default_module_allowed;
     }
 
     /// Return the module_file_id, with respect to the macro context modifier, see
@@ -409,6 +409,25 @@ impl<'db> Resolver<'db> {
                 .map(|data| &data.callsite_module_file_id)
                 .expect("Non-default macro context is set only when macro_call_data is Some."),
             MacroContextModifier::None => self.data.module_file_id,
+        }
+    }
+
+    /// Return the module_file_id, with respect to the macro context modifier, see
+    /// [`MacroContextModifier`].
+    pub fn try_get_active_module_id(
+        &self,
+        macro_context_modifier: MacroContextModifier,
+    ) -> Option<ModuleId<'db>> {
+        match macro_context_modifier {
+            MacroContextModifier::DefSite => {
+                self.macro_call_data.as_ref().map(|data| data.defsite_module_file_id.0)
+            }
+            MacroContextModifier::CallSite => {
+                self.macro_call_data.as_ref().map(|data| data.callsite_module_file_id.0)
+            }
+            MacroContextModifier::None => (self.default_module_allowed
+                || self.macro_call_data.is_none())
+            .then_some(self.data.module_file_id.0),
         }
     }
 
@@ -473,8 +492,6 @@ impl<'db> Resolver<'db> {
             ExpansionOffset::new(path.offset(db).expect("Trying to resolve an empty path."));
         let elements_vec = path.to_segments(db);
         let mut segments = elements_vec.iter().peekable();
-        let segments_stable_ptr =
-            segments.peek().expect("Trying to resolve an empty path.").stable_ptr(db);
         let mut cur_macro_call_data = self.macro_call_data.as_ref();
         // Climb up the macro call data while the current resolved path is being mapped to an
         // argument of a macro call.
@@ -497,9 +514,6 @@ impl<'db> Resolver<'db> {
                 );
             }
         } else {
-            if cur_macro_call_data.is_some() && !self.suppress_modifiers_diagnostics {
-                diagnostics.report(segments_stable_ptr, PathInMacroWithoutModifier);
-            }
             MacroContextModifier::None
         };
         // Find where the first segment lies in.
@@ -999,12 +1013,25 @@ impl<'db> Resolver<'db> {
         macro_context_modifier: MacroContextModifier,
     ) -> Option<Maybe<ModuleId<'db>>> {
         let db = self.db;
-        let mut module_id = self.active_module_file_id(macro_context_modifier).0;
+        let mut curr = None;
         for segment in segments.peeking_take_while(|segment| match segment {
             ast::PathSegment::WithGenericArgs(_) | ast::PathSegment::Missing(_) => false,
             ast::PathSegment::Simple(simple) => simple.identifier(db) == SUPER_KW,
         }) {
-            module_id = match module_id {
+            let module_id = match curr {
+                Some(module_id) => module_id,
+                None => {
+                    if let Some(module_id) = self.try_get_active_module_id(macro_context_modifier) {
+                        module_id
+                    } else {
+                        return Some(Err(diagnostics.report(
+                            segment.stable_ptr(db),
+                            SuperNotSupportedInMacroCallTopLevel,
+                        )));
+                    }
+                }
+            };
+            match module_id {
                 ModuleId::CrateRoot(_) => {
                     return Some(Err(
                         diagnostics.report(segment.stable_ptr(db), SuperUsedInRootModule)
@@ -1014,15 +1041,15 @@ impl<'db> Resolver<'db> {
                     let db = self.db;
                     let parent = submodule_id.parent_module(self.db);
                     mark(&mut self.resolved_items, db, segment, parent);
-                    parent
+                    curr = Some(parent);
                 }
                 ModuleId::MacroCall { id: _, generated_file_id: _ } => {
                     return Some(Err(diagnostics
-                        .report(segment.stable_ptr(db), SuperNotSupportedInMacroCallModule)));
+                        .report(segment.stable_ptr(db), SuperNotSupportedInMacroCallTopLevel)));
                 }
-            };
+            }
         }
-        (module_id != self.active_module_file_id(macro_context_modifier).0).then_some(Ok(module_id))
+        curr.map(Ok)
     }
 
     /// Resolves the inner item of a module, given the current segment of the path.
@@ -1037,7 +1064,7 @@ impl<'db> Resolver<'db> {
         let db = self.db;
         match self.db.module_item_info_by_name(*module_id, ident.into())? {
             Some(info) => Ok(info),
-            None => match self.resolve_path_using_use_star(*module_id, identifier) {
+            None => match self.resolve_path_using_use_star(*module_id, ident) {
                 UseStarResult::UniquePathFound(item_info) => Ok(item_info),
                 UseStarResult::AmbiguousPath(module_items) => {
                     Err(diagnostics.report(identifier.stable_ptr(db), AmbiguousPath(module_items)))
@@ -1465,14 +1492,14 @@ impl<'db> Resolver<'db> {
     fn resolve_path_using_use_star(
         &mut self,
         module_id: ModuleId<'db>,
-        identifier: &ast::TerminalIdentifier<'db>,
+        ident: &'db str,
     ) -> UseStarResult<'db> {
         let mut item_info = None;
         let mut module_items_found: OrderedHashSet<ModuleItemId<'_>> = OrderedHashSet::default();
         let imported_modules = self.db.priv_module_use_star_modules(module_id);
         for (star_module_id, item_module_id) in &imported_modules.accessible {
             if let Some(inner_item_info) =
-                self.resolve_item_in_imported_module(*item_module_id, identifier)
+                self.resolve_item_in_imported_module(*item_module_id, ident)
             {
                 if self.is_item_visible(*item_module_id, &inner_item_info, *star_module_id)
                     && self.is_item_feature_usable(&inner_item_info)
@@ -1491,7 +1518,7 @@ impl<'db> Resolver<'db> {
                 let mut containing_modules = vec![];
                 for star_module_id in &imported_modules.all {
                     if let Some(inner_item_info) =
-                        self.resolve_item_in_imported_module(*star_module_id, identifier)
+                        self.resolve_item_in_imported_module(*star_module_id, ident)
                     {
                         item_info = Some(inner_item_info.clone());
                         module_items_found.insert(inner_item_info.item_id);
@@ -1515,10 +1542,9 @@ impl<'db> Resolver<'db> {
     fn resolve_item_in_imported_module(
         &mut self,
         module_id: ModuleId<'db>,
-        identifier: &ast::TerminalIdentifier<'db>,
+        ident: &'db str,
     ) -> Option<ModuleItemInfo<'db>> {
-        let inner_item_info =
-            self.db.module_item_info_by_name(module_id, identifier.text(self.db).into());
+        let inner_item_info = self.db.module_item_info_by_name(module_id, ident.into());
         if let Ok(Some(inner_item_info)) = inner_item_info {
             self.insert_used_use(inner_item_info.item_id);
             return Some(inner_item_info);
@@ -1609,33 +1635,46 @@ impl<'db> Resolver<'db> {
         mut ctx: ResolutionContext<'db, '_>,
         macro_context_modifier: MacroContextModifier,
     ) -> ResolvedBase<'db> {
-        let db = self.db;
-        let ident = identifier.text(db);
-        let module_id = self.active_module_file_id(macro_context_modifier).0;
+        let ident: &'db str = identifier.text(self.db);
         if let ResolutionContext::Statement(ref mut env) = ctx {
             if let Some(item) = get_statement_item_by_name(env, ident) {
                 return ResolvedBase::StatementEnvironment(item);
             }
         }
 
-        // If an item with this name is found inside the current module, use the current module.
-        if let Ok(Some(item_id)) = self.db.module_item_by_name(module_id, ident.into()) {
-            if !matches!(ctx, ResolutionContext::ModuleItem(id) if id == item_id) {
-                return ResolvedBase::Module(module_id);
+        if let Some(module_id) = self.try_get_active_module_id(macro_context_modifier) {
+            if let Some(base) =
+                self.determine_base_given_module(ident, ctx, macro_context_modifier, module_id)
+            {
+                return base;
             }
         }
+        ResolvedBase::Module(self.prelude_submodule_ex(macro_context_modifier))
+    }
 
-        // If the first element is `crate`, use the crate's root module as the base module.
-        if ident == CRATE_KW {
-            return ResolvedBase::Crate(self.active_owning_crate_id(macro_context_modifier));
+    /// Determines the base module or crate for the path resolving. Looks only in non-local scope
+    /// (i.e. current module, or crates), given the current module being looked at.
+    fn determine_base_given_module(
+        &mut self,
+        ident: &'db str,
+        ctx: ResolutionContext<'db, '_>,
+        macro_context_modifier: MacroContextModifier,
+        module_id: ModuleId<'db>,
+    ) -> Option<ResolvedBase<'db>> {
+        let db = self.db;
+        if let Ok(Some(item_id)) = db.module_item_by_name(module_id, ident.into()) {
+            if !matches!(ctx, ResolutionContext::ModuleItem(id) if id == item_id) {
+                return Some(ResolvedBase::Module(module_id));
+            }
         }
-        // If the first segment is a name of a crate, use the crate's root module as the base
-        // module.
+        if ident == CRATE_KW {
+            return Some(ResolvedBase::Crate(self.active_owning_crate_id(macro_context_modifier)));
+        }
         if let Some(dep) = self.active_settings(macro_context_modifier).dependencies.get(ident) {
             let dep_crate_id =
                 CrateLongId::Real { name: ident.into(), discriminator: dep.discriminator.clone() }
-                    .intern(self.db);
-            let configs = self.db.crate_configs();
+                    .intern(db);
+            let configs = db.crate_configs();
             if !configs.contains_key(&dep_crate_id) {
                 let get_long_id = |crate_id: CrateId<'db>| crate_id.long(self.db);
                 panic!(
@@ -1645,38 +1684,44 @@ impl<'db> Resolver<'db> {
                 );
             }
 
-            return ResolvedBase::Crate(dep_crate_id);
+            return Some(ResolvedBase::Crate(dep_crate_id));
         }
-        // If the first segment is `core` - and it was not overridden by a dependency - using it.
         if ident == CORELIB_CRATE_NAME {
-            return ResolvedBase::Crate(CrateId::core(self.db));
+            return Some(ResolvedBase::Crate(CrateId::core(self.db)));
         }
-        // TODO(orizi): Remove when `starknet` becomes a proper crate.
         if ident == STARKNET_CRATE_NAME {
             // Making sure we don't look for it in `*` modules, to prevent cycles.
-            return ResolvedBase::Module(self.prelude_submodule_ex(macro_context_modifier));
+            return Some(ResolvedBase::Module(self.prelude_submodule_ex(macro_context_modifier)));
         }
+        // If an item with this name is found inside the current module, use the current module.
+
+        // If the first element is `crate`, use the crate's root module as the base module.
+        // If the first segment is a name of a crate, use the crate's root module as the base
+        // module.
+        // If the first segment is `core` - and it was not overridden by a dependency - using
+        // it.
+        // TODO(orizi): Remove when `starknet` becomes a proper crate.
         // If an item with this name is found in one of the 'use *' imports, use the module that
-        match self.resolve_path_using_use_star(module_id, identifier) {
+        match self.resolve_path_using_use_star(module_id, ident) {
             UseStarResult::UniquePathFound(inner_module_item) => {
-                return ResolvedBase::FoundThroughGlobalUse {
+                return Some(ResolvedBase::FoundThroughGlobalUse {
                     item_info: inner_module_item,
                     containing_module: module_id,
-                };
+                });
             }
             UseStarResult::AmbiguousPath(module_items) => {
-                return ResolvedBase::Ambiguous(module_items);
+                return Some(ResolvedBase::Ambiguous(module_items));
             }
             UseStarResult::PathNotFound => {}
             UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
                 let prelude = self.prelude_submodule_ex(macro_context_modifier);
                 if let Ok(Some(_)) = self.db.module_item_by_name(prelude, ident.into()) {
-                    return ResolvedBase::Module(prelude);
+                    return Some(ResolvedBase::Module(prelude));
                 }
-                return ResolvedBase::ItemNotVisible(module_item_id, containing_modules);
+                return Some(ResolvedBase::ItemNotVisible(module_item_id, containing_modules));
             }
         }
-        ResolvedBase::Module(self.prelude_submodule_ex(macro_context_modifier))
+        None
     }
 
     pub fn prelude_submodule(&self) -> ModuleId<'db> {

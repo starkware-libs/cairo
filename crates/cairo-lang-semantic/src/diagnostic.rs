@@ -614,8 +614,8 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::SuperUsedInRootModule => {
                 "'super' cannot be used for the crate's root module.".into()
             }
-            SemanticDiagnosticKind::SuperNotSupportedInMacroCallModule => {
-                "`super` is not supported in a macro call module.".into()
+            SemanticDiagnosticKind::SuperNotSupportedInMacroCallTopLevel => {
+                "`super` is not supported in a macro call top level.".into()
             }
             SemanticDiagnosticKind::ItemNotVisible(item_id, containing_modules) => {
                 format!(
@@ -965,11 +965,6 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::EmptyPathAfterResolverModifier => {
                 "Expected path after modifier.".into()
             }
-            SemanticDiagnosticKind::PathInMacroWithoutModifier => {
-                "Path in a macro without a resolver modifier ($callsite or $defsite) - currently \
-                 resolving as $callsite but this will not be supported in future versions."
-                    .into()
-            }
             SemanticDiagnosticKind::CannotCreateInstancesOfPhantomTypes => {
                 "Can not create instances of phantom types.".into()
             }
@@ -1111,8 +1106,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             | SemanticDiagnosticKind::UnusedConstant
             | SemanticDiagnosticKind::UnusedUse
             | SemanticDiagnosticKind::PatternMissingArgs(_)
-            | SemanticDiagnosticKind::UnsupportedAllowAttrArguments
-            | SemanticDiagnosticKind::PathInMacroWithoutModifier => Severity::Warning,
+            | SemanticDiagnosticKind::UnsupportedAllowAttrArguments => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -1363,7 +1357,7 @@ pub enum SemanticDiagnosticKind<'db> {
     TraitItemForbiddenInItsImpl,
     ImplItemForbiddenInTheImpl,
     SuperUsedInRootModule,
-    SuperNotSupportedInMacroCallModule,
+    SuperNotSupportedInMacroCallTopLevel,
     ItemNotVisible(ModuleItemId<'db>, Vec<ModuleId<'db>>),
     UnusedImport(UseId<'db>),
     RedundantModifier {
@@ -1485,7 +1479,6 @@ pub enum SemanticDiagnosticKind<'db> {
         modifier: StrRef<'db>,
     },
     EmptyPathAfterResolverModifier,
-    PathInMacroWithoutModifier,
     DerefCycle {
         deref_chain: String,
     },

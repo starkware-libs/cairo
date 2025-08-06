@@ -1146,11 +1146,6 @@ macro bas_use_z_from_callsite {
 fn consume_z(_z: felt252) {}
 
 //! > expected_diagnostics
-warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
- --> lib.cairo[bas_use_z_from_callsite]:1:9
-        z
-        ^
-
 error[E0006]: Identifier not found.
  --> lib.cairo[bas_use_z_from_callsite]:1:9
         z
@@ -1220,7 +1215,7 @@ macro call_bar {
 fn bar() {}
 
 //! > expected_diagnostics
-warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
+error[E0006]: Function not found.
  --> lib.cairo[call_bar]:1:9
         bar()
         ^^^
@@ -1664,12 +1659,7 @@ macro super_path {
 }
 
 //! > expected_diagnostics
-warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
- --> lib.cairo[super_path]:1:9
-        super::some::path();
-        ^^^^^
-
-error: 'super' cannot be used for the crate's root module.
+error: `super` is not supported in a macro call top level.
  --> lib.cairo[super_path]:1:9
         super::some::path();
         ^^^^^
@@ -1679,7 +1669,7 @@ error: 'super' cannot be used for the crate's root module.
 //! > Test usage of module in statement macro scope.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: warnings_only)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> u8 {
@@ -1705,17 +1695,13 @@ mod a {
 }
 
 //! > expected_diagnostics
-warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
- --> lib.cairo[use_module_path]:3:9
-        b::C
-        ^
 
 //! > ==========================================================================
 
 //! > Test usage of self in macro scope.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: warnings_only)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> u8 {
@@ -1742,10 +1728,6 @@ mod a {
 }
 
 //! > expected_diagnostics
-warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
- --> lib.cairo[use_self_path]:3:14
-        C1 + b::C2
-             ^
 
 //! > ==========================================================================
 

@@ -273,19 +273,19 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
         F: FnOnce(&mut Self) -> T,
     {
         let prev_macro_hygiene_kind = self.macro_defined_var_unhygienic;
-        let prev_suppress_modifiers_diagnostics = self.resolver.suppress_modifiers_diagnostics;
+        let prev_default_module_allowed = self.resolver.default_module_allowed;
         match macro_info.kind {
             MacroKind::Unhygienic => {
                 self.macro_defined_var_unhygienic = true;
             }
             MacroKind::Plugin => {
-                self.resolver.set_suppress_modifiers_diagnostics(true);
+                self.resolver.set_default_module_allowed(true);
             }
             MacroKind::UserDefined => {}
         }
         let result = self.run_in_subscope_ex(operation, Some(macro_info));
         self.macro_defined_var_unhygienic = prev_macro_hygiene_kind;
-        self.resolver.set_suppress_modifiers_diagnostics(prev_suppress_modifiers_diagnostics);
+        self.resolver.set_default_module_allowed(prev_default_module_allowed);
         result
     }
     /// Runs a function with a modified context, with a new environment for a subscope.
