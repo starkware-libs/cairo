@@ -72,7 +72,6 @@ use crate::items::functions::{concrete_function_closure_params, function_signatu
 use crate::items::imp::{ImplLookupContext, filter_candidate_traits, infer_impl_by_self};
 use crate::items::macro_declaration::{MatcherContext, expand_macro_rule, is_macro_rule_match};
 use crate::items::modifiers::compute_mutability;
-use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
 use crate::keyword::MACRO_CALL_SITE;
 use crate::resolve::{
@@ -4384,11 +4383,9 @@ pub fn compute_and_append_statement_semantic<'db>(
                 ast::ModuleItem::Use(use_syntax) => {
                     for leaf in get_all_path_leaves(db, use_syntax) {
                         let stable_ptr = leaf.stable_ptr(db);
-                        let segments = get_use_path_segments(db, ast::UsePath::Leaf(leaf))?;
-                        let resolved_item = ctx.resolver.resolve_generic_path(
+                        let resolved_item = ctx.resolver.resolve_use_path(
                             ctx.diagnostics,
-                            segments,
-                            NotFoundItemType::Identifier,
+                            ast::UsePath::Leaf(leaf),
                             ResolutionContext::Statement(&mut ctx.environment),
                         )?;
                         let var_def_id = StatementItemId::Use(
