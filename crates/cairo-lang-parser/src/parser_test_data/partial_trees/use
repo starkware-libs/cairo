@@ -20,6 +20,7 @@ ItemUse
     ├── attributes (kind: AttributeList) []
     ├── visibility (kind: VisibilityDefault) []
     ├── use_kw (kind: TokenUse): 'use'
+    ├── dollar (kind: OptionTerminalDollarEmpty) []
     ├── use_path (kind: UsePathSingle)
     │   ├── ident (kind: PathSegmentSimple)
     │   │   └── ident (kind: TokenIdentifier): 'X'
@@ -57,12 +58,15 @@ ItemUse
     │       ├── hash (kind: TokenHash): '#'
     │       ├── lbrack (kind: TokenLBrack): '['
     │       ├── attr (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentSimple)
-    │       │       └── ident (kind: TokenIdentifier): 'attribute'
+    │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   └── segments (kind: ExprPathInner)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'attribute'
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TokenRBrack): ']'
     ├── visibility (kind: VisibilityDefault) []
     ├── use_kw (kind: TokenUse): 'use'
+    ├── dollar (kind: OptionTerminalDollarEmpty) []
     ├── use_path (kind: UsePathSingle)
     │   ├── ident (kind: PathSegmentSimple)
     │   │   └── ident (kind: TokenIdentifier): 'X'
@@ -97,6 +101,7 @@ ItemUse
     ├── attributes (kind: AttributeList) []
     ├── visibility (kind: VisibilityDefault) []
     ├── use_kw (kind: TokenUse): 'use'
+    ├── dollar (kind: OptionTerminalDollarEmpty) []
     ├── use_path (kind: UsePathSingle)
     │   ├── ident (kind: PathSegmentSimple)
     │   │   └── ident (kind: TokenIdentifier): 'X'
@@ -132,12 +137,15 @@ ItemUse
     │       ├── hash (kind: TokenHash): '#'
     │       ├── lbrack (kind: TokenLBrack): '['
     │       ├── attr (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentSimple)
-    │       │       └── ident (kind: TokenIdentifier): 'attribute'
+    │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   └── segments (kind: ExprPathInner)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'attribute'
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TokenRBrack): ']'
     ├── visibility (kind: VisibilityDefault) []
     ├── use_kw (kind: TokenUse): 'use'
+    ├── dollar (kind: OptionTerminalDollarEmpty) []
     ├── use_path (kind: UsePathSingle)
     │   ├── ident (kind: PathSegmentSimple)
     │   │   └── ident (kind: TokenIdentifier): 'X'
@@ -170,6 +178,7 @@ ItemUse
     ├── attributes (kind: AttributeList) []
     ├── visibility (kind: VisibilityDefault) []
     ├── use_kw (kind: TokenUse): 'use'
+    ├── dollar (kind: OptionTerminalDollarEmpty) []
     ├── use_path (kind: UsePathSingle)
     │   ├── ident (kind: PathSegmentSimple)
     │   │   └── ident (kind: TokenIdentifier): 'X'

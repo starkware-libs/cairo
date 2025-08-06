@@ -22,6 +22,7 @@ fn bar() nopanic {}
 Parameters: v0: test::bar::Coupon
 blk0 (root):
 Statements:
+  () <- test::bar(__coupon__: v0)
 End:
   Return()
 
@@ -56,6 +57,8 @@ impl MyImpl of MyTrait<felt252> {
 Parameters: v0: test::MyImpl::bar::Coupon
 blk0 (root):
 Statements:
+  (v1: core::felt252) <- 5
+  () <- test::MyImpl::bar(v1, __coupon__: v0)
 End:
   Return()
 
@@ -90,6 +93,8 @@ impl MyImpl of MyTrait<felt252> {
 Parameters: v0: test::MyImpl::bar::Coupon
 blk0 (root):
 Statements:
+  (v1: core::felt252) <- 5
+  () <- test::MyImpl::bar(v1, __coupon__: v0)
 End:
   Return()
 
@@ -126,7 +131,7 @@ note: variable was previously used here:
 note: Trait has no implementation in context: core::traits::Copy::<test::bar::Coupon>.
 
 //! > lowering_flat
-Parameters: v0: test::bar::Coupon
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -156,12 +161,9 @@ fn bar() {
 Parameters: v0: test::bar::Coupon
 blk0 (root):
 Statements:
-  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v2: core::panics::Panic) <- struct_construct()
-  (v3: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v2, v1)
-  (v4: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v3)
+  (v1: core::panics::PanicResult::<((),)>) <- test::bar(__coupon__: v0)
 End:
-  Return(v4)
+  Return(v1)
 
 //! > ==========================================================================
 
@@ -190,5 +192,6 @@ fn bar() {}
 Parameters: v0: test::bar::Coupon
 blk0 (root):
 Statements:
+  () <- test::bar(__coupon__: v0)
 End:
   Return()

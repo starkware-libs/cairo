@@ -1,13 +1,15 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{ImplDefId, TraitId};
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::ExprPath;
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::try_extract_matches;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::NotATrait;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::resolve::{ResolvedGenericItem, Resolver};
+use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver};
 
 pub mod attribute;
 pub mod constant;
@@ -23,6 +25,8 @@ pub mod generics;
 pub mod imp;
 pub mod impl_alias;
 pub mod implization;
+pub mod macro_call;
+pub mod macro_declaration;
 pub mod modifiers;
 pub mod module;
 pub mod module_type_alias;
@@ -36,44 +40,45 @@ pub mod visibility;
 mod test;
 
 /// Tries to resolve a trait path. Reports a diagnostic if the path doesn't point to a trait.
-fn resolve_trait_path(
-    diagnostics: &mut SemanticDiagnostics,
-    resolver: &mut Resolver<'_>,
-    trait_path_syntax: &ExprPath,
-) -> Maybe<TraitId> {
+fn resolve_trait_path<'db>(
+    syntax_db: &'db dyn SyntaxGroup,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    resolver: &mut Resolver<'db>,
+    trait_path_syntax: &ExprPath<'db>,
+) -> Maybe<TraitId<'db>> {
     try_extract_matches!(
         resolver.resolve_generic_path_with_args(
             diagnostics,
             trait_path_syntax,
             NotFoundItemType::Trait,
-            None,
+            ResolutionContext::Default,
         )?,
         ResolvedGenericItem::Trait
     )
-    .ok_or_else(|| diagnostics.report(trait_path_syntax, NotATrait))
+    .ok_or_else(|| diagnostics.report(trait_path_syntax.stable_ptr(syntax_db), NotATrait))
 }
 
 /// A context of a trait or an impl, if in any of those. This is used in the resolver to resolve
 /// "Self::" paths.
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-pub enum TraitOrImplContext {
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, salsa::Update)]
+pub enum TraitOrImplContext<'db> {
     /// No trait/impl context.
     None,
     /// The context is of a trait.
-    Trait(TraitId),
+    Trait(TraitId<'db>),
     /// The context is of an impl.
-    Impl(ImplDefId),
+    Impl(ImplDefId<'db>),
 }
 
-impl DebugWithDb<dyn SemanticGroup> for TraitOrImplContext {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &(dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+impl<'db> DebugWithDb<'db> for TraitOrImplContext<'db> {
+    type Db = dyn SemanticGroup;
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
         match self {
             TraitOrImplContext::None => write!(f, "None"),
-            TraitOrImplContext::Trait(trait_ctx) => write!(f, "{:?}", trait_ctx.debug(db)),
+            TraitOrImplContext::Trait(trait_ctx) => {
+                write!(f, "{:?}", trait_ctx.debug(db))
+            }
             TraitOrImplContext::Impl(impl_ctx) => write!(f, "{:?}", impl_ctx.debug(db)),
         }
     }

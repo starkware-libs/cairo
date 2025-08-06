@@ -35,7 +35,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11300})
+test::foo: CostTokenMap({Const: 11300})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
@@ -116,7 +116,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11400})
+test::foo: CostTokenMap({Const: 11400})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
@@ -199,7 +199,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11400})
+test::foo: CostTokenMap({Const: 11400})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
@@ -284,7 +284,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11500})
+test::foo: CostTokenMap({Const: 11500})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
@@ -369,7 +369,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11400})
+test::foo: CostTokenMap({Const: 11400})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];

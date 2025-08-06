@@ -27,7 +27,8 @@ use cairo_lang_sierra::extensions::function_call::SignatureAndFunctionConcreteLi
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, GetUnspentGas, RedepositGas, WithdrawGas,
 };
-use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType};
+use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenMap, CostTokenType};
+use cairo_lang_sierra::extensions::gas_reserve::GasReserveConcreteLibfunc;
 use cairo_lang_sierra::extensions::int::signed::{SintConcrete, SintTraits};
 use cairo_lang_sierra::extensions::int::signed128::Sint128Concrete;
 use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
@@ -48,7 +49,6 @@ use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 use cairo_lang_utils::casts::IntoOrPanic;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{Itertools, chain};
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
@@ -265,6 +265,13 @@ pub fn core_libfunc_cost(
                 ]
             }
             GetBuiltinCosts(_) => vec![ConstCost::steps(3).into()],
+        },
+        GasReserve(libfunc) => match libfunc {
+            GasReserveConcreteLibfunc::Create(_) => vec![
+                (ConstCost::steps(3) + ConstCost::range_checks(1)).into(),
+                (ConstCost::steps(5) + ConstCost::range_checks(1)).into(),
+            ],
+            GasReserveConcreteLibfunc::Utilize(_) => vec![ConstCost::steps(0).into()],
         },
         BranchAlign(_) => vec![BranchCost::BranchAlign],
         Array(libfunc) => match libfunc {
@@ -544,7 +551,7 @@ pub fn core_libfunc_cost(
                     // Failure.
                     BranchCost::Regular {
                         const_cost: ConstCost::steps(steps),
-                        pre_cost: PreCost(OrderedHashMap::from_iter([
+                        pre_cost: PreCost(CostTokenMap::from_iter([
                             (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
                             (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
                         ])),
@@ -552,7 +559,7 @@ pub fn core_libfunc_cost(
                     // Success.
                     BranchCost::Regular {
                         const_cost: ConstCost::steps(steps),
-                        pre_cost: PreCost(OrderedHashMap::from_iter([
+                        pre_cost: PreCost(CostTokenMap::from_iter([
                             (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
                             (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
                         ])),
@@ -624,6 +631,8 @@ pub fn core_libfunc_cost(
             }
             QM31Concrete::FromM31(_) => vec![ConstCost::default().into()],
         },
+        UnsafePanic(_) => vec![],
+        DummyFunctionCall(_) => vec![ConstCost::steps(2).into()],
     }
 }
 
@@ -855,7 +864,7 @@ fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<BranchCost> {
         }
         Uint128Concrete::ByteReverse(_) => vec![BranchCost::Regular {
             const_cost: ConstCost::steps(24),
-            pre_cost: PreCost(OrderedHashMap::from_iter([(CostTokenType::Bitwise, 4)])),
+            pre_cost: PreCost(CostTokenMap::from_iter([(CostTokenType::Bitwise, 4)])),
         }],
     }
 }

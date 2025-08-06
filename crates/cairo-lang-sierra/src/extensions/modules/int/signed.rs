@@ -129,7 +129,7 @@ impl<TSintTraits: SintTraits> GenericLibfunc for SintOperationLibfunc<TSintTrait
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(IntOperationConcreteLibfunc {
             operator: self.operator,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }

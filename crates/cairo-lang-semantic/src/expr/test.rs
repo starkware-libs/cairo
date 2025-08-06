@@ -44,6 +44,7 @@ cairo_lang_test_utils::test_file_test!(
         if_: "if",
         inference: "inference",
         inline_macros: "inline_macros",
+        let_else: "let_else",
         let_statement: "let_statement",
         literal: "literal",
         logical_operator: "logical_operator",
@@ -77,6 +78,7 @@ cairo_lang_test_utils::test_file_test!(
         literals: "literals",
         match_: "match",
         if_: "if",
+        let_else: "let_else",
         loop_: "loop",
         operator: "operator",
         structure: "structure",
@@ -105,11 +107,12 @@ fn test_expand_expr(
         inputs.get("crate_settings").map(|x| x.as_str()),
     )
     .split();
-    let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
+    let sdb: &dyn SemanticGroup = db.upcast();
+    let expr = sdb.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
     let error = verify_diagnostics_expectation(args, &diagnostics);
 
-    let expanded_code = expr.stable_ptr().0.lookup(db).get_text(db.upcast());
+    let expanded_code = expr.stable_ptr().0.lookup(db).get_text(db);
     let expanded_code = expanded_code.replace("\n        ", "\n");
     TestRunnerResult {
         outputs: OrderedHashMap::from([
@@ -134,7 +137,8 @@ fn test_expr_semantics(
         inputs.get("crate_settings").map(|x| x.as_str()),
     )
     .split();
-    let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
+    let sdb: &dyn SemanticGroup = db.upcast();
+    let expr = sdb.expr_semantic(test_expr.function_id, test_expr.expr_id);
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
     let error = verify_diagnostics_expectation(args, &diagnostics);
@@ -206,14 +210,15 @@ fn test_expr_var() {
     .unwrap();
     let db = &db_val;
 
+    let sdb: &dyn SemanticGroup = db.upcast();
     let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } = extract_matches!(
-        db.expr_semantic(test_function.function_id, test_function.body),
+        sdb.expr_semantic(test_function.function_id, test_function.body),
         crate::Expr::Block
     );
 
     // Check expr.
     let semantic::ExprVar { var: _, ty: _, stable_ptr: _ } = extract_matches!(
-        db.expr_semantic(test_function.function_id, tail.unwrap()),
+        sdb.expr_semantic(test_function.function_id, tail.unwrap()),
         crate::Expr::Var,
         "Expected a variable."
     );
@@ -239,11 +244,12 @@ fn test_expr_call_failures() {
 
         "}
     );
+    let sdb: &dyn SemanticGroup = db.upcast();
     assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test)");
     assert_eq!(
         format!(
             "{:?}",
-            db.expr_semantic(test_expr.function_id, test_expr.expr_id).debug(&expr_formatter)
+            sdb.expr_semantic(test_expr.function_id, test_expr.expr_id).debug(&expr_formatter)
         ),
         "Missing(ExprMissing { ty: <missing> })"
     );
@@ -268,19 +274,20 @@ fn test_function_body() {
 
     let function_id =
         FunctionWithBodyId::Free(extract_matches!(item_id, ModuleItemId::FreeFunction));
-    let body = db.function_body_expr(function_id).unwrap();
+    let sdb: &dyn SemanticGroup = db.upcast();
+    let body = sdb.function_body_expr(function_id).unwrap();
 
     // Test the resulting semantic function body.
     let semantic::ExprBlock { statements, .. } = extract_matches!(
-        db.expr_semantic(test_function.function_id, body),
+        sdb.expr_semantic(test_function.function_id, body),
         crate::Expr::Block,
         "Expected a block."
     );
     assert_eq!(statements.len(), 1);
-    let expr = db.expr_semantic(
+    let expr = sdb.expr_semantic(
         test_function.function_id,
         extract_matches!(
-            db.statement_semantic(test_function.function_id, statements[0]),
+            sdb.statement_semantic(test_function.function_id, statements[0]),
             crate::Statement::Expr
         )
         .expr,

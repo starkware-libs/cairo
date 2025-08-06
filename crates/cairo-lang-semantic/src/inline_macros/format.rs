@@ -3,9 +3,11 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
     PluginGeneratedFile,
 };
-use cairo_lang_syntax::node::ast;
+use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::{formatdoc, indoc};
 
 /// Macro for formatting.
@@ -15,14 +17,19 @@ impl NamedPlugin for FormatMacro {
     const NAME: &'static str = "format";
 }
 impl InlineMacroExprPlugin for FormatMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
+        let Some(syntax) = syntax.as_legacy_inline_macro(db) else {
+            return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
+                syntax.as_syntax_node().stable_ptr(db),
+            ));
+        };
         let arguments = syntax.arguments(db);
-        let mut builder = PatchBuilder::new(db, syntax);
+        let mut builder = PatchBuilder::new(db, &syntax);
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
                 "
@@ -58,11 +65,12 @@ impl InlineMacroExprPlugin for FormatMacro {
         let (content, code_mappings) = builder.build();
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
-                name: format!("{}_macro", Self::NAME).into(),
+                name: format!("{}_macro", Self::NAME),
                 content,
                 code_mappings,
                 aux_data: None,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             }),
             diagnostics: vec![],
         }

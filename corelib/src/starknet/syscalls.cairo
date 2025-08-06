@@ -6,7 +6,7 @@
 //!
 //! System calls enable a contract to require services from the Starknet OS. You can use system
 //! calls in a function to get information that depends on the broader state of Starknet, such as
-//! the current timestamp of the address of the caller, but also to modify the state of Starknet by,
+//! the current timestamp or the address of the caller, but also to modify the state of Starknet by,
 //! for example, storing values in a contract's storage or deploying new contracts.
 
 use core::gas::GasBuiltin;
@@ -223,7 +223,7 @@ pub extern fn sha256_process_block_syscall(
 ///
 /// NOTE: This syscall should only be used to allow support for old version-0 bound accounts,
 /// and should not be used for other purposes.
-extern fn meta_tx_v0_syscall(
+pub extern fn meta_tx_v0_syscall(
     address: ContractAddress,
     entry_point_selector: felt252,
     calldata: Span<felt252>,

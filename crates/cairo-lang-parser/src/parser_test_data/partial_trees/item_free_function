@@ -27,16 +27,20 @@ FunctionSignature
     │   │   ├── hash (kind: TokenHash): '#'
     │   │   ├── lbrack (kind: TokenLBrack): '['
     │   │   ├── attr (kind: ExprPath)
-    │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │       └── ident (kind: TokenIdentifier): 'attr1'
+    │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │   └── segments (kind: ExprPathInner)
+    │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │           └── ident (kind: TokenIdentifier): 'attr1'
     │   │   ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │   │   └── rbrack (kind: TokenRBrack): ']'
     │   ├── child #1 (kind: Attribute)
     │   │   ├── hash (kind: TokenHash): '#'
     │   │   ├── lbrack (kind: TokenLBrack): '['
     │   │   ├── attr (kind: ExprPath)
-    │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │       └── ident (kind: TokenIdentifier): 'with_args'
+    │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │   └── segments (kind: ExprPathInner)
+    │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │           └── ident (kind: TokenIdentifier): 'with_args'
     │   │   ├── arguments (kind: ArgListParenthesized)
     │   │   │   ├── lparen (kind: TokenLParen): '('
     │   │   │   ├── arguments (kind: ArgList)
@@ -44,23 +48,29 @@ FunctionSignature
     │   │   │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
     │   │   │   │   │       └── value (kind: ExprPath)
-    │   │   │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │   │               └── ident (kind: TokenIdentifier): 'arg1'
+    │   │   │   │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │   │   │           └── segments (kind: ExprPathInner)
+    │   │   │   │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │   │   │   │                   └── ident (kind: TokenIdentifier): 'arg1'
     │   │   │   │   ├── separator #0 (kind: TokenComma): ','
     │   │   │   │   └── item #1 (kind: Arg)
     │   │   │   │       ├── modifiers (kind: ModifierList) []
     │   │   │   │       └── arg_clause (kind: ArgClauseUnnamed)
     │   │   │   │           └── value (kind: ExprPath)
-    │   │   │   │               └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │                   └── ident (kind: TokenIdentifier): 'arg2'
+    │   │   │   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │   │               └── segments (kind: ExprPathInner)
+    │   │   │   │                   └── item #0 (kind: PathSegmentSimple)
+    │   │   │   │                       └── ident (kind: TokenIdentifier): 'arg2'
     │   │   │   └── rparen (kind: TokenRParen): ')'
     │   │   └── rbrack (kind: TokenRBrack): ']'
     │   └── child #2 (kind: Attribute)
     │       ├── hash (kind: TokenHash): '#'
     │       ├── lbrack (kind: TokenLBrack): '['
     │       ├── attr (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentSimple)
-    │       │       └── ident (kind: TokenIdentifier): 'attr2'
+    │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   └── segments (kind: ExprPathInner)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'attr2'
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TokenRBrack): ']'
     ├── visibility (kind: VisibilityDefault) []
@@ -110,8 +120,10 @@ fn foo() -> Aaaaa  Bbb + Cc  {
     │       ├── ret_ty (kind: ReturnTypeClause)
     │       │   ├── arrow (kind: TokenArrow): '->'
     │       │   └── ty (kind: ExprPath)
-    │       │       └── item #0 (kind: PathSegmentSimple)
-    │       │           └── ident (kind: TokenIdentifier): 'Aaaaa'
+    │       │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       └── segments (kind: ExprPathInner)
+    │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │               └── ident (kind: TokenIdentifier): 'Aaaaa'
     │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
     │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     └── body (kind: ExprBlock)
@@ -153,10 +165,13 @@ fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
         │       ├── attributes (kind: AttributeList) []
         │       ├── let_kw (kind: TokenLet): 'let'
         │       ├── pattern (kind: ExprPath)
-        │       │   └── item #0 (kind: PathSegmentSimple)
-        │       │       └── ident (kind: TokenIdentifier): 'x'
+        │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │       │   └── segments (kind: ExprPathInner)
+        │       │       └── item #0 (kind: PathSegmentSimple)
+        │       │           └── ident (kind: TokenIdentifier): 'x'
         │       ├── type_clause (kind: OptionTypeClauseEmpty) []
         │       ├── eq (kind: TokenEq): '='
         │       ├── rhs (kind: TokenLiteralNumber): '0'
+        │       ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
         │       └── semicolon (kind: TokenSemicolon): ';'
         └── rbrace (kind: TokenRBrace): '}'

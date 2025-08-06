@@ -10,7 +10,7 @@ use cairo_lang_semantic::ConcreteFunction;
 use cairo_lang_semantic::corelib::{core_array_felt252_ty, core_module, get_ty_by_name, unit_ty};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplId;
-use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lang_utils::Intern;
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{TypeId, TypeLongId};
 
@@ -18,11 +18,14 @@ use crate::borrow_check::Demand;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::demand::{AuxCombine, DemandReporter};
 use crate::db::LoweringGroup;
-use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
+use crate::ids::{
+    ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, GeneratedFunction,
+    SemanticFunctionIdEx,
+};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchInfo, Statement, StatementCall,
-    StatementStructConstruct, StatementStructDestructure, VarRemapping, VarUsage, VariableId,
+    BlockEnd, BlockId, Lowered, MatchInfo, Statement, StatementCall, StatementStructConstruct,
+    StatementStructDestructure, VarRemapping, VarUsage, VariableId,
 };
 
 pub type DestructAdderDemand = Demand<VariableId, (), PanicState>;
@@ -39,36 +42,36 @@ enum AddDestructFlowType {
 }
 
 /// Context for the destructor call addition phase,
-pub struct DestructAdder<'a> {
-    db: &'a dyn LoweringGroup,
-    lowered: &'a FlatLowered,
-    destructions: Vec<DestructionEntry>,
-    panic_ty: TypeId,
+pub struct DestructAdder<'db, 'a> {
+    db: &'db dyn LoweringGroup,
+    lowered: &'a Lowered<'db>,
+    destructions: Vec<DestructionEntry<'db>>,
+    panic_ty: TypeId<'db>,
     /// The actual return type of a never function after adding panics.
-    never_fn_actual_return_ty: TypeId,
+    never_fn_actual_return_ty: TypeId<'db>,
     is_panic_destruct_fn: bool,
 }
 
 /// A destructor call that needs to be added.
-enum DestructionEntry {
+enum DestructionEntry<'db> {
     /// A normal destructor call.
-    Plain(PlainDestructionEntry),
+    Plain(PlainDestructionEntry<'db>),
     /// A panic destructor call.
-    Panic(PanicDeconstructionEntry),
+    Panic(PanicDeconstructionEntry<'db>),
 }
 
-struct PlainDestructionEntry {
+struct PlainDestructionEntry<'db> {
     position: StatementLocation,
     var_id: VariableId,
-    impl_id: ImplId,
+    impl_id: ImplId<'db>,
 }
-struct PanicDeconstructionEntry {
+struct PanicDeconstructionEntry<'db> {
     panic_location: PanicLocation,
     var_id: VariableId,
-    impl_id: ImplId,
+    impl_id: ImplId<'db>,
 }
 
-impl DestructAdder<'_> {
+impl<'db> DestructAdder<'db, '_> {
     /// Checks if the statement introduces a panic variable and sets the panic state accordingly.
     fn set_post_stmt_destruct(
         &mut self,
@@ -104,7 +107,7 @@ impl DestructAdder<'_> {
         if let [err_var] = introduced_vars[..] {
             let var = &self.lowered.variables[err_var];
 
-            let long_ty = var.ty.lookup_intern(self.db);
+            let long_ty = var.ty.long(self.db);
             let TypeLongId::Tuple(tys) = long_ty else {
                 return;
             };
@@ -118,7 +121,7 @@ impl DestructAdder<'_> {
     }
 }
 
-impl DemandReporter<VariableId, PanicState> for DestructAdder<'_> {
+impl<'db> DemandReporter<VariableId, PanicState> for DestructAdder<'db, '_> {
     type IntroducePosition = StatementLocation;
     type UsePosition = ();
 
@@ -132,11 +135,11 @@ impl DemandReporter<VariableId, PanicState> for DestructAdder<'_> {
         // Note that droppable here means droppable before monomorphization.
         // I.e. it is possible that T was substituted with a unit type, but T was not droppable
         // and therefore the unit type var is not droppable here.
-        if var.droppable.is_ok() {
+        if var.info.droppable.is_ok() {
             return;
         };
         // If a non droppable variable gets out of scope, add a destruct call for it.
-        if let Ok(impl_id) = var.destruct_impl.clone() {
+        if let Ok(impl_id) = var.info.destruct_impl.clone() {
             self.destructions.push(DestructionEntry::Plain(PlainDestructionEntry {
                 position,
                 var_id,
@@ -145,7 +148,7 @@ impl DemandReporter<VariableId, PanicState> for DestructAdder<'_> {
             return;
         }
         // If a non destructible variable gets out of scope, add a panic_destruct call for it.
-        if let Ok(impl_id) = var.panic_destruct_impl.clone() {
+        if let Ok(impl_id) = var.info.panic_destruct_impl.clone() {
             if let PanicState::EndsWithPanic(panic_locations) = panic_state {
                 for panic_location in panic_locations {
                     self.destructions.push(DestructionEntry::Panic(PanicDeconstructionEntry {
@@ -201,14 +204,14 @@ pub enum PanicLocation {
     PanicMatch { match_block_id: BlockId, target_block_id: BlockId },
 }
 
-impl Analyzer<'_> for DestructAdder<'_> {
+impl<'db> Analyzer<'db, '_> for DestructAdder<'db, '_> {
     type Info = DestructAdderDemand;
 
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
         (block_id, statement_index): StatementLocation,
-        stmt: &Statement,
+        stmt: &Statement<'db>,
     ) {
         self.set_post_stmt_destruct(stmt.outputs(), info, block_id, statement_index);
         // Since we need to insert destructor call right after the statement.
@@ -221,7 +224,7 @@ impl Analyzer<'_> for DestructAdder<'_> {
         info: &mut Self::Info,
         _statement_location: StatementLocation,
         _target_block_id: BlockId,
-        remapping: &VarRemapping,
+        remapping: &VarRemapping<'db>,
     ) {
         info.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
     }
@@ -229,7 +232,7 @@ impl Analyzer<'_> for DestructAdder<'_> {
     fn merge_match(
         &mut self,
         (block_id, _statement_index): StatementLocation,
-        match_info: &MatchInfo,
+        match_info: &MatchInfo<'db>,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         let arm_demands = zip_eq(match_info.arms(), infos)
@@ -258,7 +261,7 @@ impl Analyzer<'_> for DestructAdder<'_> {
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
-        vars: &[VarUsage],
+        vars: &[VarUsage<'db>],
     ) -> Self::Info {
         let mut info = DestructAdderDemand::default();
         // Allow panic destructors to be called inside panic destruct functions.
@@ -272,15 +275,19 @@ impl Analyzer<'_> for DestructAdder<'_> {
     }
 }
 
-fn panic_ty(db: &dyn LoweringGroup) -> semantic::TypeId {
-    get_ty_by_name(db.upcast(), core_module(db.upcast()), "Panic".into(), vec![])
+fn panic_ty<'db>(db: &'db dyn LoweringGroup) -> semantic::TypeId<'db> {
+    get_ty_by_name(db, core_module(db), "Panic", vec![])
 }
 
-/// Report borrow checking diagnostics.
-pub fn add_destructs(
-    db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut FlatLowered,
+/// Inserts destructor calls into the lowered function.
+///
+/// Additionally overrides the inferred impls for the `Copyable` and `Droppable` traits according to
+/// the concrete type. This is performed here instead of in `concretize_lowered` to support custom
+/// destructors for droppable types.
+pub fn add_destructs<'db>(
+    db: &'db dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
+    lowered: &mut Lowered<'db>,
 ) {
     if lowered.blocks.is_empty() {
         return;
@@ -290,8 +297,8 @@ pub fn add_destructs(
         return;
     };
 
-    let panic_ty = panic_ty(db.upcast());
-    let felt_arr_ty = core_array_felt252_ty(db.upcast());
+    let panic_ty = panic_ty(db);
+    let felt_arr_ty = core_array_felt252_ty(db);
     let never_fn_actual_return_ty = TypeLongId::Tuple(vec![panic_ty, felt_arr_ty]).intern(db);
     let checker = DestructAdder {
         db,
@@ -309,11 +316,12 @@ pub fn add_destructs(
         (BlockId::root(), 0),
     );
     assert!(root_demand.finalize(), "Undefined variable should not happen at this stage");
+    let DestructAdder { destructions, .. } = analysis.analyzer;
 
     let mut variables = VariableAllocator::new(
         db,
-        function_id.function_with_body_id(db).base_semantic_function(db),
-        lowered.variables.clone(),
+        function_id.base_semantic_function(db).function_with_body_id(db),
+        std::mem::take(&mut lowered.variables),
     )
     .unwrap();
 
@@ -322,22 +330,18 @@ pub fn add_destructs(
     let panic_trait_function = info.panic_destruct_fn;
 
     // Add destructions.
-    let stable_ptr = function_id
-        .function_with_body_id(db.upcast())
-        .base_semantic_function(db)
-        .untyped_stable_ptr(db.upcast());
+    let stable_ptr =
+        function_id.base_semantic_function(db).function_with_body_id(db).untyped_stable_ptr(db);
 
     let location = variables.get_location(stable_ptr);
 
-    let destructions = analysis.analyzer.destructions;
-
     // We need to add the destructions in reverse order, so that they won't interfere with each
     // other.
-    // For panic desturction, we need to group them by type and create chains of destruct calls
+    // For panic destruction, we need to group them by type and create chains of destruct calls
     // where each one consumes a panic variable and creates a new one.
     // To facilitate this, we convert each entry to a tuple we the relevant information for
     // ordering and grouping.
-    let as_tuple = |entry: &DestructionEntry| match entry {
+    let as_tuple = |entry: &DestructionEntry<'_>| match entry {
         DestructionEntry::Plain(plain_destruct) => {
             (plain_destruct.position.0.0, plain_destruct.position.1, AddDestructFlowType::Plain, 0)
         }
@@ -352,7 +356,7 @@ pub fn add_destructs(
     };
 
     for ((block_id, statement_idx, destruct_type, match_block_id), destructions) in
-        destructions.into_iter().sorted_by_key(as_tuple).rev().chunk_by(as_tuple).into_iter()
+        &destructions.into_iter().sorted_by_key(as_tuple).rev().chunk_by(as_tuple)
     {
         let mut stmts = vec![];
 
@@ -360,7 +364,7 @@ pub fn add_destructs(
         let mut last_panic_var = first_panic_var;
 
         for destruction in destructions {
-            let output_var = variables.new_var(VarRequest { ty: unit_ty(db.upcast()), location });
+            let output_var = variables.new_var(VarRequest { ty: unit_ty(db), location });
 
             match destruction {
                 DestructionEntry::Plain(plain_destruct) => {
@@ -380,7 +384,7 @@ pub fn add_destructs(
                         inputs: vec![VarUsage { var_id: plain_destruct.var_id, location }],
                         with_coupon: false,
                         outputs: vec![output_var],
-                        location: lowered.variables[plain_destruct.var_id].location,
+                        location: variables.variables[plain_destruct.var_id].location,
                     })
                 }
 
@@ -422,17 +426,17 @@ pub fn add_destructs(
             }
             AddDestructFlowType::PanicPostMatch => {
                 let block = &mut lowered.blocks[BlockId(match_block_id)];
-                let FlatBlockEnd::Match { info: MatchInfo::Enum(info) } = &mut block.end else {
+                let BlockEnd::Match { info: MatchInfo::Enum(info) } = &mut block.end else {
                     unreachable!();
                 };
 
                 let arm = &mut info.arms[1];
                 let tuple_var = &mut arm.var_ids[0];
-                let tuple_ty = lowered.variables[*tuple_var].ty;
+                let tuple_ty = variables.variables[*tuple_var].ty;
                 let new_tuple_var = variables.new_var(VarRequest { ty: tuple_ty, location });
                 let orig_tuple_var = *tuple_var;
                 *tuple_var = new_tuple_var;
-                let long_ty = tuple_ty.lookup_intern(db);
+                let long_ty = tuple_ty.long(db);
                 let TypeLongId::Tuple(tys) = long_ty else { unreachable!() };
 
                 let vars = tys
@@ -520,7 +524,7 @@ pub fn add_destructs(
                     None => {
                         assert_eq!(statement_idx, block.statements.len());
                         let panic_var = match &mut block.end {
-                            FlatBlockEnd::Return(vars, _) => &mut vars[0].var_id,
+                            BlockEnd::Return(vars, _) => &mut vars[0].var_id,
                             _ => unreachable!("Expected a return statement."),
                         };
 
@@ -536,4 +540,26 @@ pub fn add_destructs(
     }
 
     lowered.variables = variables.variables;
+
+    match function_id.long(db) {
+        // If specialized, destructors are already correct.
+        ConcreteFunctionWithBodyLongId::Specialized(_) => return,
+        ConcreteFunctionWithBodyLongId::Semantic(id)
+        | ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent: id, .. }) => {
+            // If there is no substitution, destructors are already correct.
+            if id.substitution(db).map(|s| s.is_empty()).unwrap_or_default() {
+                return;
+            }
+        }
+    }
+
+    for (_, var) in lowered.variables.iter_mut() {
+        // After adding destructors, we can infer the concrete `Copyable` and `Droppable` impls.
+        if var.info.copyable.is_err() {
+            var.info.copyable = db.copyable(var.ty);
+        }
+        if var.info.droppable.is_err() {
+            var.info.droppable = db.droppable(var.ty);
+        }
+    }
 }

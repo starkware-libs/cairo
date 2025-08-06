@@ -24,7 +24,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test unreachable code.
+//! > Test unreachable code by return.
 
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
@@ -46,11 +46,12 @@ foo
 
 //! > lowering_diagnostics
 warning: Unreachable code
- --> lib.cairo:3:5-4:6
+ --> lib.cairo:3:5-5:5
       5;
  _____^
 |     6;
-|______^
+|     7
+|_____^
 
 //! > lowering_flat
 Parameters: v0: core::felt252
@@ -66,7 +67,7 @@ End:
 //! > Test unreachable code by match.
 
 //! > test_runner_name
-test_function_lowering(expect_diagnostics: false)
+test_function_lowering(expect_diagnostics: warnings_only)
 
 //! > function
 fn foo(a: never) -> felt252 {
@@ -82,6 +83,10 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+warning: Unreachable code
+ --> lib.cairo:3:5
+    1 + 2
+    ^^^^^
 
 //! > lowering_flat
 Parameters: v0: core::never
@@ -90,6 +95,40 @@ Statements:
 End:
   Match(match_enum(v0) {
   })
+
+//! > ==========================================================================
+
+//! > Test unreachable code by loop.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: warnings_only)
+
+//! > function
+fn foo() -> felt252 {
+    loop {}
+    1
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+warning: Unreachable code
+ --> lib.cairo:3:5
+    1
+    ^
+
+//! > lowering_flat
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252,)>) <- test::foo[22-34](v0, v1)
+End:
+  Return(v2, v3, v4)
 
 //! > ==========================================================================
 
@@ -168,66 +207,63 @@ End:
 
 blk1:
 Statements:
-  (v7: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v7: core::felt252) <- 1
   (v8: core::felt252) <- 1
-  (v9: core::felt252) <- 1
-  (v10: core::felt252) <- core::felt252_sub(v8, v9)
+  (v9: core::felt252) <- core::felt252_sub(v7, v8)
 End:
-  Match(match core::felt252_is_zero(v10) {
+  Match(match core::felt252_is_zero(v9) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v11) => blk3,
+    IsZeroResult::NonZero(v10) => blk3,
   })
 
 blk2:
 Statements:
-  (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
+  (v11: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
 End:
-  Goto(blk4, {v12 -> v13})
+  Goto(blk4, {v11 -> v12})
 
 blk3:
 Statements:
-  (v14: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
+  (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
 End:
-  Goto(blk4, {v14 -> v13})
+  Goto(blk4, {v13 -> v12})
 
 blk4:
 Statements:
-  (v15: core::felt252) <- 3
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v3, v13, v15)
+  (v14: core::felt252) <- 3
+  (v15: core::RangeCheck, v16: core::gas::GasBuiltin, v17: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v3, v12, v14)
 End:
-  Match(match_enum(v18) {
-    PanicResult::Ok(v19) => blk5,
-    PanicResult::Err(v20) => blk6,
+  Match(match_enum(v17) {
+    PanicResult::Ok(v18) => blk5,
+    PanicResult::Err(v19) => blk6,
   })
 
 blk5:
 Statements:
-  (v21: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v17)
-  (v22: core::felt252) <- struct_destructure(v19)
-  (v23: core::felt252) <- 5
-  (v24: core::felt252) <- 0
-  (v25: core::felt252) <- core::felt252_add(v2, v24)
-  (v26: core::felt252) <- core::felt252_mul(v23, v25)
-  (v27: core::felt252) <- core::felt252_add(v22, v26)
-  (v28: (core::felt252,)) <- struct_construct(v27)
-  (v29: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v28)
+  (v20: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v16)
+  (v21: core::felt252) <- struct_destructure(v18)
+  (v22: core::felt252) <- 5
+  (v23: core::felt252) <- 0
+  (v24: core::felt252) <- core::felt252_add(v2, v23)
+  (v25: core::felt252) <- core::felt252_mul(v22, v24)
+  (v26: core::felt252) <- core::felt252_add(v21, v25)
+  (v27: (core::felt252,)) <- struct_construct(v26)
+  (v28: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v27)
 End:
-  Return(v16, v21, v29)
+  Return(v15, v20, v28)
 
 blk6:
 Statements:
-  (v30: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v17)
-  (v31: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v20)
+  (v29: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v19)
 End:
-  Return(v16, v30, v31)
+  Return(v15, v16, v29)
 
 blk7:
 Statements:
-  (v32: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v33: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v34: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v33)
+  (v30: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v31: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v30)
 End:
-  Return(v5, v32, v34)
+  Return(v5, v6, v31)
 
 //! > ==========================================================================
 
@@ -287,10 +323,9 @@ End:
 
 blk3:
 Statements:
-  (v5: ((), core::felt252)) <- core::box::unbox::<((), core::felt252)>(v3)
-  (v6: core::felt252) <- 7
+  (v5: core::felt252) <- 7
 End:
-  Return(v6)
+  Return(v5)
 
 //! > ==========================================================================
 

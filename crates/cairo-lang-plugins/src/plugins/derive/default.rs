@@ -1,7 +1,7 @@
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
 use itertools::{Itertools, chain};
 
@@ -11,11 +11,11 @@ use crate::plugins::utils::TypeVariant;
 pub const DEFAULT_ATTR: &str = "default";
 
 /// Adds derive result for the `Default` trait.
-pub fn handle_default(
-    db: &dyn SyntaxGroup,
-    info: &PluginTypeInfo,
-    derived: &ast::ExprPath,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+pub fn handle_default<'db>(
+    db: &'db dyn SyntaxGroup,
+    info: &PluginTypeInfo<'db>,
+    derived: &ast::ExprPath<'db>,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) -> Option<String> {
     const DEFAULT_TRAIT: &str = "core::traits::Default";
     const DESTRUCT_TRAIT: &str = "core::traits::Destruct";
@@ -28,14 +28,14 @@ pub fn handle_default(
             });
             let Some((default_variant, _)) = default_variants.next() else {
                 diagnostics.push(PluginDiagnostic::error(
-                    derived,
+                    derived.stable_ptr(db),
                     "derive `Default` for enum only supported with a default variant.".into(),
                 ));
                 return None;
             };
             for (_, extra_default_attr) in default_variants {
                 diagnostics.push(PluginDiagnostic::error(
-                    &extra_default_attr,
+                    extra_default_attr.stable_ptr(db),
                     "Multiple variants annotated with `#[default]`".into(),
                 ));
             }
@@ -45,7 +45,7 @@ pub fn handle_default(
             let header = format!(
                 "impl {ty}Default<{generics}> of {DEFAULT_TRAIT}::<{full_typename}>",
                 generics = chain!(
-                    info.generics.full_params.iter().cloned(),
+                    info.generics.full_params.iter().map(ToString::to_string),
                     default_variant
                         .is_generics_dependent
                         .then(|| format!("impl {imp}: {DEFAULT_TRAIT}<{}>", default_variant.ty))

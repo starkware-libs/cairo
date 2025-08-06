@@ -192,7 +192,7 @@ error: Cannot desnap a non copyable type.
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
 
 //! > lowering_flat
-Parameters: v0: @core::array::Array::<core::felt252>
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -278,38 +278,34 @@ End:
 
 blk1:
 Statements:
-  (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v9)
 End:
   Match(match core::array::array_pop_front::<core::integer::u32>(v5) {
-    Option::Some(v14, v15) => blk2,
-    Option::None(v16) => blk3,
+    Option::Some(v13, v14) => blk2,
+    Option::None(v15) => blk3,
   })
 
 blk2:
 Statements:
-  (v17: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v13)
-  (v18: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v15)
-  (v19: core::array::Array::<core::integer::u32>, v20: @core::array::Array::<core::integer::u32>) <- snapshot(v14)
-  (v21: core::integer::u32) <- core::array::array_len::<core::integer::u32>(v20)
-  (v22: (core::integer::u32,)) <- struct_construct(v21)
-  (v23: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v22)
+  (v16: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v9)
+  (v17: core::array::Array::<core::integer::u32>, v18: @core::array::Array::<core::integer::u32>) <- snapshot(v13)
+  (v19: core::integer::u32) <- core::array::array_len::<core::integer::u32>(v18)
+  (v20: (core::integer::u32,)) <- struct_construct(v19)
+  (v21: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v20)
 End:
-  Return(v8, v17, v23)
+  Return(v8, v16, v21)
 
 blk3:
 Statements:
-  (v24: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v13)
-  (v25: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
-  (v26: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v25)
+  (v22: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
+  (v23: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v22)
 End:
-  Return(v8, v24, v26)
+  Return(v8, v9, v23)
 
 blk4:
 Statements:
-  (v27: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v9)
-  (v28: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v12)
+  (v24: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v12)
 End:
-  Return(v8, v27, v28)
+  Return(v8, v9, v24)
 
 //! > ==========================================================================
 
@@ -391,3 +387,83 @@ blk0 (root):
 Statements:
 End:
   Return()
+
+//! > ==========================================================================
+
+//! > Test snapshot of overridden member.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo() -> @A {
+    let mut a = A { m: 7 };
+    let _z = @a;
+    a.m = 0;
+    @a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+struct A {
+    m: u8,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 0
+  (v1: test::A) <- struct_construct(v0)
+  (v2: test::A, v3: @test::A) <- snapshot(v1)
+End:
+  Return(v3)
+
+//! > ==========================================================================
+
+//! > Test snapshot of overridden parent.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo() -> @u8 {
+    let mut a = A { m: Member { m: 7 } };
+    let _z = @a.m.m;
+    a.m = Member { m: 0 };
+    @a.m.m
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+struct A {
+    m: Member,
+}
+
+#[derive(Copy, Drop)]
+struct Member {
+    m: u8,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 0
+  (v1: core::integer::u8, v2: @core::integer::u8) <- snapshot(v0)
+End:
+  Return(v2)

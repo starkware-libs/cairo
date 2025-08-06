@@ -5,7 +5,7 @@ use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::hints::ExternalHint;
 use cairo_lang_casm::instructions::Instruction;
-use cairo_lang_casm::{casm, casm_build_extend, deref};
+use cairo_lang_casm::{ap_change, casm, casm_build_extend, deref};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
@@ -24,11 +24,12 @@ use cairo_lang_sierra::program::{
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::ApChangeError;
 use cairo_lang_sierra_gas::CostError;
+use cairo_lang_sierra_to_casm::annotations::AnnotationError;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError, SierraToCasmConfig};
 use cairo_lang_sierra_to_casm::metadata::{
     Metadata, MetadataComputationConfig, MetadataError, calc_metadata, calc_metadata_ap_change_only,
 };
-use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
+use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -61,6 +62,20 @@ impl BuildError {
             _ => vec![],
         }
     }
+
+    pub fn is_ap_overflow_error(&self) -> bool {
+        let BuildError::SierraCompilationError(err) = self else {
+            return false;
+        };
+
+        let CompilationError::AnnotationError(AnnotationError::ApChangeError { ref error, .. }) =
+            **err
+        else {
+            return false;
+        };
+
+        *error == ap_change::ApChangeError::OffsetOverflow
+    }
 }
 
 /// Builder for creating a runnable CASM program from Sierra code.
@@ -69,10 +84,8 @@ pub struct RunnableBuilder {
     sierra_program: SierraProgram,
     /// Metadata for the Sierra program.
     metadata: Metadata,
-    /// Program registry for the Sierra program.
-    sierra_program_registry: ProgramRegistry<CoreType, CoreLibfunc>,
-    /// Type sizes for the Sierra program.
-    type_sizes: TypeSizeMap,
+    /// Program registry and type sizes for the Sierra program.
+    program_info: ProgramRegistryInfo,
     /// The CASM program matching the Sierra code.
     casm_program: CairoProgram,
     /// The types of the non-user argument variables.
@@ -85,13 +98,12 @@ impl RunnableBuilder {
         sierra_program: SierraProgram,
         metadata_config: Option<MetadataComputationConfig>,
     ) -> Result<Self, BuildError> {
+        let program_info = ProgramRegistryInfo::new(&sierra_program)?;
         let gas_usage_check = metadata_config.is_some();
-        let metadata = create_metadata(&sierra_program, metadata_config)?;
-        let sierra_program_registry =
-            ProgramRegistry::<CoreType, CoreLibfunc>::new(&sierra_program)?;
-        let type_sizes = get_type_size_map(&sierra_program, &sierra_program_registry).unwrap();
+        let metadata = create_metadata(&sierra_program, &program_info, metadata_config)?;
         let casm_program = cairo_lang_sierra_to_casm::compiler::compile(
             &sierra_program,
+            &program_info,
             &metadata,
             SierraToCasmConfig { gas_usage_check, max_bytecode_size: usize::MAX },
         )?;
@@ -99,8 +111,7 @@ impl RunnableBuilder {
         Ok(Self {
             sierra_program,
             metadata,
-            sierra_program_registry,
-            type_sizes,
+            program_info,
             casm_program,
             non_args_types: UnorderedHashSet::from_iter([
                 AddModType::ID,
@@ -135,7 +146,7 @@ impl RunnableBuilder {
 
     /// Returns the program registry of the Sierra program.
     pub fn registry(&self) -> &ProgramRegistry<CoreType, CoreLibfunc> {
-        &self.sierra_program_registry
+        &self.program_info.registry
     }
 
     /// Finds the first function ending with `name_suffix`.
@@ -151,7 +162,7 @@ impl RunnableBuilder {
 
     /// Returns the type info of a given `ConcreteTypeId`.
     fn type_info(&self, ty: &ConcreteTypeId) -> &cairo_lang_sierra::extensions::types::TypeInfo {
-        self.sierra_program_registry.get_type(ty).unwrap().info()
+        self.program_info.registry.get_type(ty).unwrap().info()
     }
 
     /// Returns the long id of a given `ConcreteTypeId`.
@@ -161,7 +172,7 @@ impl RunnableBuilder {
 
     /// Returns the size of a given `ConcreteTypeId`.
     pub fn type_size(&self, ty: &ConcreteTypeId) -> i16 {
-        self.type_sizes[ty]
+        self.program_info.type_sizes[ty]
     }
 
     /// Returns whether `ty` is a user argument type (e.g., not a builtin).
@@ -227,7 +238,7 @@ impl RunnableBuilder {
             .map(|pt| {
                 let info = self.type_info(pt);
                 let generic_id = &info.long_id.generic_id;
-                let size = self.type_sizes[pt];
+                let size = self.type_size(pt);
                 (generic_id.clone(), size)
             })
             .collect()
@@ -330,6 +341,7 @@ struct EntryCodeHelper {
     has_post_calculation_loop: bool,
     local_exprs: Vec<CellExpression>,
     output_builtin_vars: OrderedHashMap<BuiltinName, Var>,
+    emulated_builtins: UnorderedHashSet<GenericTypeId>,
 }
 
 impl EntryCodeHelper {
@@ -345,6 +357,7 @@ impl EntryCodeHelper {
             has_post_calculation_loop: false,
             local_exprs: vec![],
             output_builtin_vars: OrderedHashMap::default(),
+            emulated_builtins: UnorderedHashSet::<_>::from_iter([SystemType::ID]),
         }
     }
 
@@ -382,8 +395,6 @@ impl EntryCodeHelper {
 
     /// Processes the function parameters in preparation for the function call.
     fn process_params(&mut self, param_types: &[(GenericTypeId, i16)]) {
-        let emulated_builtins = UnorderedHashSet::<_>::from_iter([SystemType::ID]);
-
         self.got_segment_arena = param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID);
         self.has_post_calculation_loop = self.got_segment_arena && !self.config.testing;
 
@@ -426,7 +437,7 @@ impl EntryCodeHelper {
             if let Some(name) = self.builtin_ty_to_vm_name.get(generic_ty).cloned() {
                 let var = self.input_builtin_vars[&name];
                 casm_build_extend!(self.ctx, tempvar _builtin = var;);
-            } else if emulated_builtins.contains(generic_ty) {
+            } else if self.emulated_builtins.contains(generic_ty) {
                 assert!(
                     self.config.allow_unsound,
                     "Cannot support emulated builtins if not configured to `allow_unsound`."
@@ -498,6 +509,12 @@ impl EntryCodeHelper {
                 for _ in 0..*size {
                     next_unprocessed_deref();
                 }
+            } else if self.emulated_builtins.contains(ret_ty) {
+                assert!(
+                    self.config.allow_unsound,
+                    "Cannot support emulated builtins if not configured to `allow_unsound`."
+                );
+                let _ = next_unprocessed_deref();
             } else {
                 assert_eq!(ret_ty, &GasBuiltinType::ID);
                 let _ = next_unprocessed_deref();
@@ -616,12 +633,13 @@ pub fn create_code_footer() -> Vec<Instruction> {
 /// Creates the metadata required for a Sierra program lowering to casm.
 fn create_metadata(
     sierra_program: &SierraProgram,
+    program_info: &ProgramRegistryInfo,
     metadata_config: Option<MetadataComputationConfig>,
 ) -> Result<Metadata, BuildError> {
     if let Some(metadata_config) = metadata_config {
-        calc_metadata(sierra_program, metadata_config)
+        calc_metadata(sierra_program, program_info, metadata_config)
     } else {
-        calc_metadata_ap_change_only(sierra_program)
+        calc_metadata_ap_change_only(sierra_program, program_info)
     }
     .map_err(|err| match err {
         MetadataError::ApChangeError(err) => BuildError::ApChangeError(err),

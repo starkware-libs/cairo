@@ -254,3 +254,314 @@ error: Unexpected argument type. Expected: "test::MyEnum::<core::integer::u32>",
  --> lib.cairo:11:9
     bar(a);
         ^
+
+//! > ==========================================================================
+
+//! > Test match on variant without args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(a: A, b: A) -> felt252 {
+    match (a, b) {
+        (A::One, _) => 2,
+        (_, _) => 6,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+}
+
+//! > expected_diagnostics
+warning: Pattern missing subpattern for the payload of variant. Consider using `A::One(_)`
+ --> lib.cairo:7:10
+        (A::One, _) => 2,
+         ^^^^^^
+
+//! > ==========================================================================
+
+//! > Test match on unit variant without args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo(a: A, b: A) -> felt252 {
+    match (a, b) {
+        (A::One(_), _) => 2,
+        (A::Two, _) => 6,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+    Two: (),
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test match on unit variant with args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo(a: A, b: A) -> felt252 {
+    match (a, b) {
+        (A::One(_), _) => 2,
+        (A::Two(_), _) => 6,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+    Two: (),
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test match on Some without args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo<T>(a: Option<T>) -> felt252 {
+    match a {
+        Some => 2,
+        None => 6,
+    }
+}
+fn bar() -> felt252 {
+    let a = Some(());
+    foo(a)
+}
+
+//! > function_name
+bar
+
+//! > module_code
+
+//! > expected_diagnostics
+warning: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
+ --> lib.cairo:3:9
+        Some => 2,
+        ^^^^
+
+//! > ==========================================================================
+
+//! > Test match on Path no args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo(a: A, b: A) -> felt252 {
+    match (a, b) {
+        (A::One(_), _) => 2,
+        (Two, _) => 6,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+    Two: (),
+}
+use A::Two;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test match on inferred unit Some without args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn fb() -> Option<()> {
+    let x = None;
+    match x {
+        Some => 2,
+        None => 6,
+    }
+    return x;
+}
+
+//! > function_name
+fb
+
+//! > module_code
+
+//! > expected_diagnostics
+warning: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
+ --> lib.cairo:4:9
+        Some => 2,
+        ^^^^
+
+//! > ==========================================================================
+
+//! > Test match on inferred unit Option::Some without args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn fb() -> Option<()> {
+    let x = None;
+    match x {
+        Option::Some => 2,
+        Option::None => 6,
+    }
+    return x;
+}
+
+//! > function_name
+fb
+
+//! > module_code
+
+//! > expected_diagnostics
+warning: Pattern missing subpattern for the payload of variant. Consider using `Option::Some(_)`
+ --> lib.cairo:4:9
+        Option::Some => 2,
+        ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Conform enum generic args in match patterns.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> u32 {
+    let x = Some(3);
+    match x {
+        Some::<u32>(y) => y,
+        None::<u8> => 6,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Type mismatch: `core::option::Option::<core::integer::u32>` and `core::option::Option::<core::integer::u8>`.
+ --> lib.cairo:5:9
+        None::<u8> => 6,
+        ^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test bad type in multi level enum pattern variable binding.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(x: Result<Option<u8>, felt252>) {
+    let _y = match x {
+        Ok(Some(x)) | Err(x) => x,
+        _ => 3,
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Expected type "core::integer::u8", found: "core::felt252".
+ --> lib.cairo:3:27
+        Ok(Some(x)) | Err(x) => x,
+                          ^
+
+//! > ==========================================================================
+
+//! > Test bad inner pattern type in multi level enum pattern.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(x: Result<Option<u8>, felt252>) {
+    let _y = match x {
+        Ok(Ok(x)) | Err(x) => x,
+        _ => 3,
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Wrong enum in pattern. Expected: "core::option::Option". Got: "core::result::Result".
+ --> lib.cairo:3:12
+        Ok(Ok(x)) | Err(x) => x,
+           ^^^^^
+
+error: Missing variable in pattern.
+ --> lib.cairo:3:9
+        Ok(Ok(x)) | Err(x) => x,
+        ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test value match after enum match.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar(x: felt252) {
+    foo(Ok(Some(x)));
+}
+
+//! > function_name
+bar
+
+//! > module_code
+fn foo<T>(x: Result<Option<T>, felt252>) {
+    let _y = match x {
+        Ok(Some(x)) | Err(x) => x,
+        _ => 3,
+    };
+}
+
+//! > expected_diagnostics
+error: Expected type "T", found: "core::felt252".
+ --> lib.cairo:3:27
+        Ok(Some(x)) | Err(x) => x,
+                          ^

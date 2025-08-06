@@ -46,13 +46,14 @@ trait T
 //! > Item documentation tokens #2
 
 //! > Item signature #3
-fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(self: Option<T>, f: F) -> Option<U>
+fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+    self: Option<T>, f: F,
+) -> Option<U>
 
 //! > Item documentation #3
-Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`) or returns `None` (if `None`).
-
+Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`)
+or returns `None` (if `None`).
 # Examples
-
 ```cairo
 let maybe_some_string: Option<ByteArray> = Some("Hello, World!");
 // `Option::map` takes self *by value*, consuming `maybe_some_string`
@@ -70,15 +71,17 @@ Content(" to ")
 Content("`Option<U>`")
 Content(" by applying a function to a contained value (if ")
 Content("`Some`")
-Content(") or returns ")
+Content(")")
+Content("\n")
+Content("or returns ")
 Content("`None`")
 Content(" (if ")
 Content("`None`")
 Content(").")
 Content("\n")
-Content("  # ")
+Content("# ")
 Content("Examples")
 Content("\n")
-Content("\n```cairo\n")
+Content("```cairo\n")
 Content("let maybe_some_string: Option<ByteArray> = Some(\"Hello, World!\");\n// `Option::map` takes self *by value*, consuming `maybe_some_string`\nlet maybe_some_len = maybe_some_string.map(|s: ByteArray| s.len());\nassert!(maybe_some_len == Some(13));\n\nlet x: Option<ByteArray> = None;\nassert!(x.map(|s: ByteArray| s.len()) == None);\n")
 Content("```")

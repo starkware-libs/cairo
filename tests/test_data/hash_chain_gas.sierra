@@ -1,8 +1,7 @@
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
-type core::never = Enum<ut@core::never> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
-type Const<felt252, 375233589013918064796019> = Const<felt252, 375233589013918064796019> [storable: false, drop: false, dup: false, zero_sized: false];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 375233589013918064796019> = Const<felt252, 375233589013918064796019> [storable: false, drop: false, dup: false, zero_sized: false];
 type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
@@ -39,8 +38,9 @@ libfunc struct_deconstruct<Tuple<felt252>> = struct_deconstruct<Tuple<felt252>>;
 libfunc pedersen = pedersen;
 libfunc enum_init<core::panics::PanicResult::<(core::felt252,)>, 1> = enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>;
 libfunc function_call<user@core::panic_with_const_felt252::<375233589013918064796019>> = function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>;
-libfunc array_new<felt252> = array_new<felt252>;
 libfunc const_as_immediate<Const<felt252, 375233589013918064796019>> = const_as_immediate<Const<felt252, 375233589013918064796019>>;
+libfunc function_call<user@core::panic_with_felt252> = function_call<user@core::panic_with_felt252>;
+libfunc array_new<felt252> = array_new<felt252>;
 libfunc array_append<felt252> = array_append<felt252>;
 libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
 libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
@@ -106,10 +106,13 @@ store_temp<Pedersen>([2]) -> ([2]);
 store_temp<core::panics::PanicResult::<(core::felt252,)>>([30]) -> ([30]);
 return([12], [13], [2], [30]);
 F1:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
+F2:
+array_new<felt252>() -> ([1]);
+array_append<felt252>([1], [0]) -> ([2]);
 struct_construct<core::panics::Panic>() -> ([3]);
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
 store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
@@ -117,3 +120,4 @@ return([4]);
 
 examples::hash_chain_gas::hash_chain@F0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: felt252) -> (RangeCheck, GasBuiltin, Pedersen, core::panics::PanicResult::<(core::felt252,)>);
 core::panic_with_const_felt252::<375233589013918064796019>@F1() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::panic_with_felt252@F2([0]: felt252) -> (Tuple<core::panics::Panic, Array<felt252>>);

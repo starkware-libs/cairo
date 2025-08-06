@@ -1,13 +1,16 @@
 use cairo_lang_defs::plugin::GeneratedFileAuxData;
+use serde::{Deserialize, Serialize};
 
 use super::events::EventData;
 
 /// Contract related auxiliary data of the Starknet plugin.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StarknetContractAuxData {
     /// A list of contracts that were processed by the plugin.
-    pub contract_name: smol_str::SmolStr,
+    pub contract_name: String,
 }
+
+#[typetag::serde]
 impl GeneratedFileAuxData for StarknetContractAuxData {
     fn as_any(&self) -> &dyn std::any::Any {
         self
@@ -17,10 +20,11 @@ impl GeneratedFileAuxData for StarknetContractAuxData {
     }
 }
 /// Contract related auxiliary data of the Starknet plugin.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StarknetEventAuxData {
     pub event_data: EventData,
 }
+#[typetag::serde]
 impl GeneratedFileAuxData for StarknetEventAuxData {
     fn as_any(&self) -> &dyn std::any::Any {
         self

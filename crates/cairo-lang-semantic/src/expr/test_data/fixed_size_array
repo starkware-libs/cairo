@@ -267,3 +267,24 @@ error: Wrong number of fixed size array elements in pattern. Expected: 3. Got: 2
  --> lib.cairo:3:9
     let [_a, _b] = bar::<3>();
         ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test fixed size array, has core traits implementation.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Default, Clone, Debug, Drop, PartialEq, Serde)]
+pub struct StructWithByteArray {
+    pub features: [felt252; 2],
+}
+
+//! > expected_diagnostics

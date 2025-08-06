@@ -16,22 +16,109 @@ ItemInlineMacro
 //! > expected_tree
 └── Top level kind: ItemInlineMacro
     ├── attributes (kind: AttributeList) []
-    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
     ├── bang (kind: TokenNot): '!'
-    ├── arguments (kind: ArgListParenthesized)
-    │   ├── lparen (kind: TokenLParen): '('
-    │   ├── arguments (kind: ArgList)
-    │   │   ├── item #0 (kind: Arg)
-    │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │       └── value (kind: TokenLiteralNumber): '1'
-    │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   └── item #1 (kind: Arg)
-    │   │       ├── modifiers (kind: ModifierList) []
-    │   │       └── arg_clause (kind: ArgClauseUnnamed)
-    │   │           └── value (kind: TokenLiteralNumber): '2'
-    │   └── rparen (kind: TokenRParen): ')'
+    ├── arguments (kind: TokenTreeNode)
+    │   └── subtree (kind: ParenthesizedTokenTree)
+    │       ├── lparen (kind: TokenLParen): '('
+    │       ├── tokens (kind: TokenList)
+    │       │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenLiteralNumber): '1'
+    │       │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenComma): ','
+    │       │   └── child #2 (kind: TokenTreeLeaf)
+    │       │       └── leaf (kind: TokenLiteralNumber): '2'
+    │       └── rparen (kind: TokenRParen): ')'
     └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test an ItemInlineMacro path starting with a placeholder ($) token
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+$inline_macro!(1, 2);
+
+//! > top_level_kind
+ItemInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemInlineMacro
+    ├── attributes (kind: AttributeList) []
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: TokenDollar): '$'
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
+    ├── bang (kind: TokenNot): '!'
+    ├── arguments (kind: TokenTreeNode)
+    │   └── subtree (kind: ParenthesizedTokenTree)
+    │       ├── lparen (kind: TokenLParen): '('
+    │       ├── tokens (kind: TokenList)
+    │       │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenLiteralNumber): '1'
+    │       │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenComma): ','
+    │       │   └── child #2 (kind: TokenTreeLeaf)
+    │       │       └── leaf (kind: TokenLiteralNumber): '2'
+    │       └── rparen (kind: TokenRParen): ')'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test item use path with dollar token prefix.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+use $a::b;
+use $dollar;
+
+//! > top_level_kind
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   ├── child #0 (kind: ItemUse)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
+    │   │   ├── use_kw (kind: TokenUse): 'use'
+    │   │   ├── dollar (kind: TokenDollar): '$'
+    │   │   ├── use_path (kind: UsePathSingle)
+    │   │   │   ├── ident (kind: PathSegmentSimple)
+    │   │   │   │   └── ident (kind: TokenIdentifier): 'a'
+    │   │   │   ├── colon_colon (kind: TokenColonColon): '::'
+    │   │   │   └── use_path (kind: UsePathLeaf)
+    │   │   │       ├── ident (kind: PathSegmentSimple)
+    │   │   │       │   └── ident (kind: TokenIdentifier): 'b'
+    │   │   │       └── alias_clause (kind: OptionAliasClauseEmpty) []
+    │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   └── child #1 (kind: ItemUse)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── use_kw (kind: TokenUse): 'use'
+    │       ├── dollar (kind: TokenDollar): '$'
+    │       ├── use_path (kind: UsePathLeaf)
+    │       │   ├── ident (kind: PathSegmentSimple)
+    │       │   │   └── ident (kind: TokenIdentifier): 'dollar'
+    │       │   └── alias_clause (kind: OptionAliasClauseEmpty) []
+    │       └── semicolon (kind: TokenSemicolon): ';'
+    └── eof (kind: TokenEndOfFile).
 
 //! > ==========================================================================
 
@@ -53,21 +140,23 @@ ItemInlineMacro
 //! > expected_tree
 └── Top level kind: ItemInlineMacro
     ├── attributes (kind: AttributeList) []
-    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
     ├── bang (kind: TokenNot): '!'
-    ├── arguments (kind: ArgListBracketed)
-    │   ├── lbrack (kind: TokenLBrack): '['
-    │   ├── arguments (kind: ArgList)
-    │   │   ├── item #0 (kind: Arg)
-    │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │       └── value (kind: TokenLiteralNumber): '1'
-    │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   └── item #1 (kind: Arg)
-    │   │       ├── modifiers (kind: ModifierList) []
-    │   │       └── arg_clause (kind: ArgClauseUnnamed)
-    │   │           └── value (kind: TokenLiteralNumber): '2'
-    │   └── rbrack (kind: TokenRBrack): ']'
+    ├── arguments (kind: TokenTreeNode)
+    │   └── subtree (kind: BracketedTokenTree)
+    │       ├── lbrack (kind: TokenLBrack): '['
+    │       ├── tokens (kind: TokenList)
+    │       │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenLiteralNumber): '1'
+    │       │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenComma): ','
+    │       │   └── child #2 (kind: TokenTreeLeaf)
+    │       │       └── leaf (kind: TokenLiteralNumber): '2'
+    │       └── rbrack (kind: TokenRBrack): ']'
     └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -90,21 +179,23 @@ ItemInlineMacro
 //! > expected_tree
 └── Top level kind: ItemInlineMacro
     ├── attributes (kind: AttributeList) []
-    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
     ├── bang (kind: TokenNot): '!'
-    ├── arguments (kind: ArgListBraced)
-    │   ├── lbrace (kind: TokenLBrace): '{'
-    │   ├── arguments (kind: ArgList)
-    │   │   ├── item #0 (kind: Arg)
-    │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │       └── value (kind: TokenLiteralNumber): '1'
-    │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   └── item #1 (kind: Arg)
-    │   │       ├── modifiers (kind: ModifierList) []
-    │   │       └── arg_clause (kind: ArgClauseUnnamed)
-    │   │           └── value (kind: TokenLiteralNumber): '2'
-    │   └── rbrace (kind: TokenRBrace): '}'
+    ├── arguments (kind: TokenTreeNode)
+    │   └── subtree (kind: BracedTokenTree)
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── tokens (kind: TokenList)
+    │       │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenLiteralNumber): '1'
+    │       │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenComma): ','
+    │       │   └── child #2 (kind: TokenTreeLeaf)
+    │       │       └── leaf (kind: TokenLiteralNumber): '2'
+    │       └── rbrace (kind: TokenRBrace): '}'
     └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -132,25 +223,29 @@ ItemInlineMacro
     │       ├── hash (kind: TokenHash): '#'
     │       ├── lbrack (kind: TokenLBrack): '['
     │       ├── attr (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentSimple)
-    │       │       └── ident (kind: TokenIdentifier): 'an_attr'
+    │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   └── segments (kind: ExprPathInner)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'an_attr'
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TokenRBrack): ']'
-    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
     ├── bang (kind: TokenNot): '!'
-    ├── arguments (kind: ArgListParenthesized)
-    │   ├── lparen (kind: TokenLParen): '('
-    │   ├── arguments (kind: ArgList)
-    │   │   ├── item #0 (kind: Arg)
-    │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │       └── value (kind: TokenLiteralNumber): '1'
-    │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   └── item #1 (kind: Arg)
-    │   │       ├── modifiers (kind: ModifierList) []
-    │   │       └── arg_clause (kind: ArgClauseUnnamed)
-    │   │           └── value (kind: TokenLiteralNumber): '2'
-    │   └── rparen (kind: TokenRParen): ')'
+    ├── arguments (kind: TokenTreeNode)
+    │   └── subtree (kind: ParenthesizedTokenTree)
+    │       ├── lparen (kind: TokenLParen): '('
+    │       ├── tokens (kind: TokenList)
+    │       │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenLiteralNumber): '1'
+    │       │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenComma): ','
+    │       │   └── child #2 (kind: TokenTreeLeaf)
+    │       │       └── leaf (kind: TokenLiteralNumber): '2'
+    │       └── rparen (kind: TokenRParen): ')'
     └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -178,21 +273,23 @@ inline_macro(1,2);
 //! > expected_tree
 └── Top level kind: ItemInlineMacro
     ├── attributes (kind: AttributeList) []
-    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
     ├── bang: Missing
-    ├── arguments (kind: ArgListParenthesized)
-    │   ├── lparen (kind: TokenLParen): '('
-    │   ├── arguments (kind: ArgList)
-    │   │   ├── item #0 (kind: Arg)
-    │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │       └── value (kind: TokenLiteralNumber): '1'
-    │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   └── item #1 (kind: Arg)
-    │   │       ├── modifiers (kind: ModifierList) []
-    │   │       └── arg_clause (kind: ArgClauseUnnamed)
-    │   │           └── value (kind: TokenLiteralNumber): '2'
-    │   └── rparen (kind: TokenRParen): ')'
+    ├── arguments (kind: TokenTreeNode)
+    │   └── subtree (kind: ParenthesizedTokenTree)
+    │       ├── lparen (kind: TokenLParen): '('
+    │       ├── tokens (kind: TokenList)
+    │       │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenLiteralNumber): '1'
+    │       │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenComma): ','
+    │       │   └── child #2 (kind: TokenTreeLeaf)
+    │       │       └── leaf (kind: TokenLiteralNumber): '2'
+    │       └── rparen (kind: TokenRParen): ')'
     └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -220,21 +317,23 @@ inline_macro{1,2};
 //! > expected_tree
 └── Top level kind: ItemInlineMacro
     ├── attributes (kind: AttributeList) []
-    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
     ├── bang: Missing
-    ├── arguments (kind: ArgListBraced)
-    │   ├── lbrace (kind: TokenLBrace): '{'
-    │   ├── arguments (kind: ArgList)
-    │   │   ├── item #0 (kind: Arg)
-    │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │       └── value (kind: TokenLiteralNumber): '1'
-    │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   └── item #1 (kind: Arg)
-    │   │       ├── modifiers (kind: ModifierList) []
-    │   │       └── arg_clause (kind: ArgClauseUnnamed)
-    │   │           └── value (kind: TokenLiteralNumber): '2'
-    │   └── rbrace (kind: TokenRBrace): '}'
+    ├── arguments (kind: TokenTreeNode)
+    │   └── subtree (kind: BracedTokenTree)
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── tokens (kind: TokenList)
+    │       │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenLiteralNumber): '1'
+    │       │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenComma): ','
+    │       │   └── child #2 (kind: TokenTreeLeaf)
+    │       │       └── leaf (kind: TokenLiteralNumber): '2'
+    │       └── rbrace (kind: TokenRBrace): '}'
     └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -262,21 +361,23 @@ inline_macro[1,2];
 //! > expected_tree
 └── Top level kind: ItemInlineMacro
     ├── attributes (kind: AttributeList) []
-    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
     ├── bang: Missing
-    ├── arguments (kind: ArgListBracketed)
-    │   ├── lbrack (kind: TokenLBrack): '['
-    │   ├── arguments (kind: ArgList)
-    │   │   ├── item #0 (kind: Arg)
-    │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │       └── value (kind: TokenLiteralNumber): '1'
-    │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   └── item #1 (kind: Arg)
-    │   │       ├── modifiers (kind: ModifierList) []
-    │   │       └── arg_clause (kind: ArgClauseUnnamed)
-    │   │           └── value (kind: TokenLiteralNumber): '2'
-    │   └── rbrack (kind: TokenRBrack): ']'
+    ├── arguments (kind: TokenTreeNode)
+    │   └── subtree (kind: BracketedTokenTree)
+    │       ├── lbrack (kind: TokenLBrack): '['
+    │       ├── tokens (kind: TokenList)
+    │       │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenLiteralNumber): '1'
+    │       │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenComma): ','
+    │       │   └── child #2 (kind: TokenTreeLeaf)
+    │       │       └── leaf (kind: TokenLiteralNumber): '2'
+    │       └── rbrack (kind: TokenRBrack): ']'
     └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -296,9 +397,9 @@ fn foo() {}
 
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
- --> dummy_file.cairo:1:1
+ --> dummy_file.cairo:1:11
 identifier
-^^^^^^^^^^
+          ^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -332,7 +433,7 @@ identifier
 test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
-macro!
+a_macro!
 fn foo() {}
 
 //! > top_level_kind
@@ -343,22 +444,27 @@ FunctionWithBody
 
 //! > expected_diagnostics
 error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
- --> dummy_file.cairo:1:7
-macro!
-      ^
+ --> dummy_file.cairo:1:9
+a_macro!
+        ^
 
 error: Missing token ';'.
- --> dummy_file.cairo:1:7
-macro!
-      ^
+ --> dummy_file.cairo:1:9
+a_macro!
+        ^
 
 //! > expected_tree
 └── Top level kind: ModuleItemList
     ├── child #0 (kind: ItemInlineMacro)
     │   ├── attributes (kind: AttributeList) []
-    │   ├── name (kind: TokenIdentifier): 'macro'
+    │   ├── path (kind: ExprPath)
+    │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   └── segments (kind: ExprPathInner)
+    │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │           └── ident (kind: TokenIdentifier): 'a_macro'
     │   ├── bang (kind: TokenNot): '!'
-    │   ├── arguments: Missing []
+    │   ├── arguments (kind: TokenTreeNode)
+    │   │   └── subtree (kind: WrappedTokenTreeMissing) []
     │   └── semicolon: Missing
     └── child #1 (kind: FunctionWithBody) <ignored>
 
@@ -381,36 +487,51 @@ FunctionWithBody
 
 //! > expected_diagnostics
 error: Missing token ')'.
- --> dummy_file.cairo:1:16
-identifier!(1,2
-               ^
+ --> dummy_file.cairo:2:12
+fn foo() {}
+           ^
 
 error: Missing token ';'.
- --> dummy_file.cairo:1:16
-identifier!(1,2
-               ^
+ --> dummy_file.cairo:2:12
+fn foo() {}
+           ^
 
 //! > expected_tree
 └── Top level kind: ModuleItemList
-    ├── child #0 (kind: ItemInlineMacro)
-    │   ├── attributes (kind: AttributeList) []
-    │   ├── name (kind: TokenIdentifier): 'identifier'
-    │   ├── bang (kind: TokenNot): '!'
-    │   ├── arguments (kind: ArgListParenthesized)
-    │   │   ├── lparen (kind: TokenLParen): '('
-    │   │   ├── arguments (kind: ArgList)
-    │   │   │   ├── item #0 (kind: Arg)
-    │   │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │   │       └── value (kind: TokenLiteralNumber): '1'
-    │   │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │   └── item #1 (kind: Arg)
-    │   │   │       ├── modifiers (kind: ModifierList) []
-    │   │   │       └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │           └── value (kind: TokenLiteralNumber): '2'
-    │   │   └── rparen: Missing
-    │   └── semicolon: Missing
-    └── child #1 (kind: FunctionWithBody) <ignored>
+    └── child #0 (kind: ItemInlineMacro)
+        ├── attributes (kind: AttributeList) []
+        ├── path (kind: ExprPath)
+        │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │   └── segments (kind: ExprPathInner)
+        │       └── item #0 (kind: PathSegmentSimple)
+        │           └── ident (kind: TokenIdentifier): 'identifier'
+        ├── bang (kind: TokenNot): '!'
+        ├── arguments (kind: TokenTreeNode)
+        │   └── subtree (kind: ParenthesizedTokenTree)
+        │       ├── lparen (kind: TokenLParen): '('
+        │       ├── tokens (kind: TokenList)
+        │       │   ├── child #0 (kind: TokenTreeLeaf)
+        │       │   │   └── leaf (kind: TokenLiteralNumber): '1'
+        │       │   ├── child #1 (kind: TokenTreeLeaf)
+        │       │   │   └── leaf (kind: TokenComma): ','
+        │       │   ├── child #2 (kind: TokenTreeLeaf)
+        │       │   │   └── leaf (kind: TokenLiteralNumber): '2'
+        │       │   ├── child #3 (kind: TokenTreeLeaf)
+        │       │   │   └── leaf (kind: TokenFunction): 'fn'
+        │       │   ├── child #4 (kind: TokenTreeLeaf)
+        │       │   │   └── leaf (kind: TokenIdentifier): 'foo'
+        │       │   ├── child #5 (kind: TokenTreeNode)
+        │       │   │   └── subtree (kind: ParenthesizedTokenTree)
+        │       │   │       ├── lparen (kind: TokenLParen): '('
+        │       │   │       ├── tokens (kind: TokenList) []
+        │       │   │       └── rparen (kind: TokenRParen): ')'
+        │       │   └── child #6 (kind: TokenTreeNode)
+        │       │       └── subtree (kind: BracedTokenTree)
+        │       │           ├── lbrace (kind: TokenLBrace): '{'
+        │       │           ├── tokens (kind: TokenList) []
+        │       │           └── rbrace (kind: TokenRBrace): '}'
+        │       └── rparen: Missing
+        └── semicolon: Missing
 
 //! > ==========================================================================
 
@@ -439,21 +560,23 @@ identifier!(1,2)
 └── Top level kind: ModuleItemList
     ├── child #0 (kind: ItemInlineMacro)
     │   ├── attributes (kind: AttributeList) []
-    │   ├── name (kind: TokenIdentifier): 'identifier'
+    │   ├── path (kind: ExprPath)
+    │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   └── segments (kind: ExprPathInner)
+    │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │           └── ident (kind: TokenIdentifier): 'identifier'
     │   ├── bang (kind: TokenNot): '!'
-    │   ├── arguments (kind: ArgListParenthesized)
-    │   │   ├── lparen (kind: TokenLParen): '('
-    │   │   ├── arguments (kind: ArgList)
-    │   │   │   ├── item #0 (kind: Arg)
-    │   │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │   │       └── value (kind: TokenLiteralNumber): '1'
-    │   │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │   └── item #1 (kind: Arg)
-    │   │   │       ├── modifiers (kind: ModifierList) []
-    │   │   │       └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │           └── value (kind: TokenLiteralNumber): '2'
-    │   │   └── rparen (kind: TokenRParen): ')'
+    │   ├── arguments (kind: TokenTreeNode)
+    │   │   └── subtree (kind: ParenthesizedTokenTree)
+    │   │       ├── lparen (kind: TokenLParen): '('
+    │   │       ├── tokens (kind: TokenList)
+    │   │       │   ├── child #0 (kind: TokenTreeLeaf)
+    │   │       │   │   └── leaf (kind: TokenLiteralNumber): '1'
+    │   │       │   ├── child #1 (kind: TokenTreeLeaf)
+    │   │       │   │   └── leaf (kind: TokenComma): ','
+    │   │       │   └── child #2 (kind: TokenTreeLeaf)
+    │   │       │       └── leaf (kind: TokenLiteralNumber): '2'
+    │   │       └── rparen (kind: TokenRParen): ')'
     │   └── semicolon: Missing
     └── child #1 (kind: FunctionWithBody) <ignored>
 
@@ -490,17 +613,18 @@ identifier(x)
 └── Top level kind: ModuleItemList
     ├── child #0 (kind: ItemInlineMacro)
     │   ├── attributes (kind: AttributeList) []
-    │   ├── name (kind: TokenIdentifier): 'identifier'
+    │   ├── path (kind: ExprPath)
+    │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   └── segments (kind: ExprPathInner)
+    │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │           └── ident (kind: TokenIdentifier): 'identifier'
     │   ├── bang: Missing
-    │   ├── arguments (kind: ArgListParenthesized)
-    │   │   ├── lparen (kind: TokenLParen): '('
-    │   │   ├── arguments (kind: ArgList)
-    │   │   │   └── item #0 (kind: Arg)
-    │   │   │       ├── modifiers (kind: ModifierList) []
-    │   │   │       └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │           └── value (kind: ExprPath)
-    │   │   │               └── item #0 (kind: PathSegmentSimple)
-    │   │   │                   └── ident (kind: TokenIdentifier): 'x'
-    │   │   └── rparen (kind: TokenRParen): ')'
+    │   ├── arguments (kind: TokenTreeNode)
+    │   │   └── subtree (kind: ParenthesizedTokenTree)
+    │   │       ├── lparen (kind: TokenLParen): '('
+    │   │       ├── tokens (kind: TokenList)
+    │   │       │   └── child #0 (kind: TokenTreeLeaf)
+    │   │       │       └── leaf (kind: TokenIdentifier): 'x'
+    │   │       └── rparen (kind: TokenRParen): ')'
     │   └── semicolon: Missing
     └── child #1 (kind: FunctionWithBody) <ignored>

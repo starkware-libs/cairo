@@ -411,7 +411,7 @@ impl NamedType for CircuitDescriptor {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let circ_ty = args_as_single_type(args)?;
-        validate_is_circuit(context, circ_ty.clone())?;
+        validate_is_circuit(context, circ_ty)?;
         Ok(Self::Concrete {
             info: TypeInfo {
                 long_id: ConcreteTypeLongId { generic_id: Self::ID, generic_args: args.to_vec() },
@@ -480,7 +480,7 @@ fn validate_is_circuit(
     context: &dyn TypeSpecializationContext,
     circ_ty: ConcreteTypeId,
 ) -> Result<(), SpecializationError> {
-    if context.get_type_info(circ_ty.clone())?.long_id.generic_id != Circuit::ID {
+    if context.get_type_info(circ_ty)?.long_id.generic_id != Circuit::ID {
         return Err(SpecializationError::UnsupportedGenericArg);
     }
     Ok(())
@@ -519,13 +519,13 @@ impl SignatureAndTypeGenericLibfunc for InitCircuitDataLibFuncWrapped {
             vec![ParamSignature::new(range_check96_type.clone()).with_allow_add_const()],
             vec![
                 OutputVarInfo {
-                    ty: range_check96_type.clone(),
+                    ty: range_check96_type,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
                         param_idx: 0,
                     }),
                 },
                 OutputVarInfo {
-                    ty: circuit_input_accumulator_ty.clone(),
+                    ty: circuit_input_accumulator_ty,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],
@@ -607,7 +607,7 @@ impl SignatureAndTypeGenericLibfunc for GetCircuitDescriptorLibFuncWrapped {
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let circuit_descriptor_ty =
-            context.get_concrete_type(CircuitDescriptor::id(), &[GenericArg::Type(ty.clone())])?;
+            context.get_concrete_type(CircuitDescriptor::id(), &[GenericArg::Type(ty)])?;
 
         Ok(LibfuncSignature::new_non_branch(
             vec![],
@@ -680,7 +680,7 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
                 one,
             ]
             .into_iter()
-            .map(|ty| ParamSignature::new(ty.clone()))
+            .map(ParamSignature::new)
             .collect(),
             branch_signatures: vec![
                 // Success.
@@ -822,7 +822,7 @@ impl NamedLibfunc for GetOutputLibFunc {
 
         // TODO(ilya): Fail if `circuit_ty` does not contain output_ty.
         Ok(ConcreteGetOutputLibFunc {
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
             circuit_ty,
             output_ty,
         })
@@ -925,10 +925,7 @@ impl NamedLibfunc for U96LimbsLessThanGuaranteeVerifyLibfunc {
         let limb_count = args_as_single_value(args)?
             .to_usize()
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
-        Ok(Self::Concrete {
-            signature: self.specialize_signature(context.upcast(), args)?,
-            limb_count,
-        })
+        Ok(Self::Concrete { signature: self.specialize_signature(context, args)?, limb_count })
     }
 }
 pub struct ConcreteU96LimbsLessThanGuaranteeVerifyLibfunc {

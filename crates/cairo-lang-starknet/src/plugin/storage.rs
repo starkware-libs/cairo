@@ -1,8 +1,8 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
 use itertools::zip_eq;
 
@@ -16,13 +16,13 @@ use super::{CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, FLAT_ATTR, STORA
 use crate::plugin::SUBSTORAGE_ATTR;
 
 /// Generate getters and setters for the members of the storage struct.
-pub fn handle_storage_struct(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    struct_ast: ast::ItemStruct,
+pub fn handle_storage_struct<'db, 'a>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    struct_ast: ast::ItemStruct<'db>,
     starknet_module_kind: StarknetModuleKind,
-    data: &mut StarknetModuleCommonGenerationData,
-    metadata: &MacroPluginMetadata<'_>,
+    data: &mut StarknetModuleCommonGenerationData<'db>,
+    metadata: &'a MacroPluginMetadata<'a>,
 ) {
     let state_struct_name = starknet_module_kind.get_state_struct_name();
     let generic_arg_str = starknet_module_kind.get_generic_arg_str();
@@ -45,7 +45,7 @@ pub fn handle_storage_struct(
                 substorage_members_init_code.push(init_code);
             } else {
                 diagnostics.push(PluginDiagnostic::error(
-                    member.stable_ptr(),
+                    member.stable_ptr(db),
                     format!(
                         "`{SUBSTORAGE_ATTR}` attribute is only allowed for members of type \
                          [some_path::]{STORAGE_STRUCT_NAME}`"
@@ -142,11 +142,11 @@ pub fn handle_storage_struct(
 }
 
 /// Returns the relevant code for a substorage storage member.
-fn get_substorage_member_code(
-    db: &dyn SyntaxGroup,
-    member: &ast::Member,
+fn get_substorage_member_code<'db>(
+    db: &'db dyn SyntaxGroup,
+    member: &ast::Member<'db>,
     metadata: &MacroPluginMetadata<'_>,
-) -> Option<(RewriteNode, RewriteNode)> {
+) -> Option<(RewriteNode<'db>, RewriteNode<'db>)> {
     let member_visibility = if backwards_compatible_storage(metadata.edition) {
         RewriteNode::text("pub")
     } else {
@@ -154,15 +154,16 @@ fn get_substorage_member_code(
     };
     match member.type_clause(db).ty(db) {
         ast::Expr::Path(type_path) => {
-            let elements = &type_path.elements(db);
+            let segments = type_path.segments(db);
+            let mut elements = segments.elements(db);
             // The path has at least one element.
-            let (last, path_prefix) = elements.split_last().unwrap();
+            let last = elements.next_back().unwrap();
             match last {
                 ast::PathSegment::Simple(segment)
-                    if segment.ident(db).text(db) == STORAGE_STRUCT_NAME =>
+                    if segment.identifier(db) == STORAGE_STRUCT_NAME =>
                 {
                     let component_path = RewriteNode::interspersed(
-                        path_prefix.iter().map(RewriteNode::from_ast_trimmed),
+                        elements.map(|e| RewriteNode::from_ast_trimmed(&e)),
                         RewriteNode::text("::"),
                     );
 
@@ -205,20 +206,20 @@ fn get_substorage_member_code(
     }
 }
 
-struct SimpleMemberGeneratedCode {
-    struct_code: RewriteNode,
-    struct_code_mut: RewriteNode,
-    init_code: RewriteNode,
-    storage_member: RewriteNode,
+struct SimpleMemberGeneratedCode<'db> {
+    struct_code: RewriteNode<'db>,
+    struct_code_mut: RewriteNode<'db>,
+    init_code: RewriteNode<'db>,
+    storage_member: RewriteNode<'db>,
 }
 
 /// Returns the relevant code for a substorage storage member.
-fn get_simple_member_code(
-    db: &dyn SyntaxGroup,
-    member: &ast::Member,
+fn get_simple_member_code<'db>(
+    db: &'db dyn SyntaxGroup,
+    member: &ast::Member<'db>,
     config: &StorageMemberConfig,
     metadata: &MacroPluginMetadata<'_>,
-) -> SimpleMemberGeneratedCode {
+) -> SimpleMemberGeneratedCode<'db> {
     let member_wrapper_type = RewriteNode::text(
         if matches!(config.kind, StorageMemberKind::SubStorage | StorageMemberKind::Flat) {
             "FlattenedStorage"
@@ -236,8 +237,8 @@ fn get_simple_member_code(
         config.rename.as_deref().map_or_else(|| member_name.clone(), RewriteNode::text);
     let patches = [
         ("attributes".to_string(), RewriteNode::from_ast(&member.attributes(db))),
-        ("member_visibility".to_string(), member_visibility.clone()),
-        ("member_wrapper_type".to_string(), member_wrapper_type.clone()),
+        ("member_visibility".to_string(), member_visibility),
+        ("member_wrapper_type".to_string(), member_wrapper_type),
         ("member_name".to_string(), member_name),
         ("member_selector_name".to_string(), member_selector_name),
         ("member_type".to_string(), RewriteNode::from_ast_trimmed(&member.type_clause(db).ty(db))),

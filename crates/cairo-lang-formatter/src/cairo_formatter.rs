@@ -46,7 +46,7 @@ impl Debug for FileDiff {
 
 /// A helper struct for displaying a file diff with colored output.
 ///
-/// This is implements a [`Display`] trait, so it can be used with `format!` and `println!`.
+/// This struct implements a [`Display`] trait, so it can be used with `format!` and `println!`.
 /// If you prefer output without colors, use [`FileDiff`] instead.
 pub struct FileDiffColoredDisplay<'a> {
     diff: &'a FileDiff,
@@ -135,14 +135,14 @@ pub struct StdinFmt;
 /// A trait for types that can be used as input for the cairo formatter.
 pub trait FormattableInput {
     /// Converts the input to a [`FileId`] that can be used by the formatter.
-    fn to_file_id(&self, db: &dyn FilesGroup) -> Result<FileId>;
+    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn FilesGroup) -> Result<FileId<'a>>;
     /// Overwrites the content of the input with the given string.
     fn overwrite_content(&self, _content: String) -> Result<()>;
 }
 
 impl FormattableInput for &Path {
-    fn to_file_id(&self, db: &dyn FilesGroup) -> Result<FileId> {
-        Ok(FileId::new(db, PathBuf::from(self)))
+    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn FilesGroup) -> Result<FileId<'a>> {
+        Ok(FileId::new_on_disk(db, PathBuf::from(self)))
     }
     fn overwrite_content(&self, content: String) -> Result<()> {
         fs::write(self, content)?;
@@ -151,13 +151,14 @@ impl FormattableInput for &Path {
 }
 
 impl FormattableInput for String {
-    fn to_file_id(&self, db: &dyn FilesGroup) -> Result<FileId> {
+    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn FilesGroup) -> Result<FileId<'a>> {
         Ok(FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "string_to_format".into(),
             content: self.clone().into(),
             code_mappings: [].into(),
             kind: FileKind::Module,
+            original_item_removed: false,
         })
         .intern(db))
     }
@@ -168,7 +169,7 @@ impl FormattableInput for String {
 }
 
 impl FormattableInput for StdinFmt {
-    fn to_file_id(&self, db: &dyn FilesGroup) -> Result<FileId> {
+    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn FilesGroup) -> Result<FileId<'a>> {
         let mut buffer = String::new();
         stdin().read_to_string(&mut buffer)?;
         Ok(FileLongId::Virtual(VirtualFile {
@@ -177,6 +178,7 @@ impl FormattableInput for StdinFmt {
             content: buffer.into(),
             code_mappings: [].into(),
             kind: FileKind::Module,
+            original_item_removed: false,
         })
         .intern(db))
     }
@@ -191,10 +193,14 @@ fn format_input(
     config: &FormatterConfig,
 ) -> Result<FormatOutcome, FormattingError> {
     let db = SimpleParserDatabase::default();
-    let file_id = input.to_file_id(&db).context("Unable to create virtual file.")?;
-    let original_text =
-        db.file_content(file_id).ok_or_else(|| anyhow!("Unable to read from input."))?;
-    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id, &original_text);
+    let db_ref = &db;
+    let file_id = input.to_file_id(db_ref).context("Unable to create virtual file.")?;
+    let original_text = db_ref
+        .file_content(file_id)
+        .ok_or_else(|| anyhow!("Unable to read from input."))?
+        .long(db_ref)
+        .as_ref();
+    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id);
     if diagnostics.check_error_free().is_err() {
         return Err(FormattingError::ParsingError(
             diagnostics.format_with_severity(&db, &Default::default()).into(),
@@ -202,7 +208,7 @@ fn format_input(
     }
     let formatted_text = get_formatted_file(&db, &syntax_root, config.clone());
 
-    if formatted_text == original_text.as_ref() {
+    if formatted_text == original_text {
         Ok(FormatOutcome::Identical(original_text.to_string()))
     } else {
         let diff = FileDiff { original: original_text.to_string(), formatted: formatted_text };

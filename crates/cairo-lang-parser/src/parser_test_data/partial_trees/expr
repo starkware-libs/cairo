@@ -52,8 +52,10 @@ StatementExpr
     │   ├── lhs (kind: ExprUnary)
     │   │   ├── op (kind: TokenMinus): '-'
     │   │   └── expr (kind: ExprPath)
-    │   │       └── item #0 (kind: PathSegmentSimple)
-    │   │           └── ident (kind: TokenIdentifier): 'a'
+    │   │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       └── segments (kind: ExprPathInner)
+    │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │               └── ident (kind: TokenIdentifier): 'a'
     │   ├── op (kind: TokenMul): '*'
     │   └── rhs (kind: TokenLiteralNumber): '5'
     └── semicolon (kind: OptionTerminalSemicolonEmpty) []
@@ -67,7 +69,7 @@ test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 fn f() -> bool {
-    3 < 1 > 5
+    3 < 1    > 5
 }
 
 //! > top_level_kind
@@ -77,9 +79,9 @@ StatementExpr
 
 //! > expected_diagnostics
 error: Consecutive comparison operators are not allowed: '<' followed by '>'
- --> dummy_file.cairo:2:9
-    3 < 1 > 5
-        ^
+ --> dummy_file.cairo:2:14
+    3 < 1    > 5
+             ^
 
 //! > expected_tree
 └── Top level kind: StatementExpr

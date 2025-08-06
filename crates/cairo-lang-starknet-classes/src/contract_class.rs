@@ -90,7 +90,7 @@ impl ContractClass {
         let allowed_libfuncs = lookup_allowed_libfuncs_list(list_selector)?;
         let (_, _, sierra_program) = sierra_from_felt252s(&self.sierra_program)
             .map_err(|_| AllowedLibfuncsError::SierraProgramError)?;
-        for libfunc in sierra_program.libfunc_declarations.iter() {
+        for libfunc in &sierra_program.libfunc_declarations {
             if !allowed_libfuncs.allowed_libfuncs.contains(&libfunc.long_id.generic_id) {
                 return Err(AllowedLibfuncsError::UnsupportedLibfunc {
                     invalid_libfunc: libfunc.long_id.generic_id.to_string(),

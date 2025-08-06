@@ -68,6 +68,8 @@
 use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
+#[feature("bounded-int-utils")]
+use crate::internal::bounded_int::{downcast, upcast};
 use crate::option::OptionTrait;
 use crate::result::ResultTrait;
 use crate::traits::{BitAnd, BitNot, BitOr, BitXor, Default, Felt252DictValue, Into, TryInto};
@@ -1183,6 +1185,7 @@ fn u128_add_with_carry(a: u128, b: u128) -> (u128, u128) nopanic {
 }
 
 #[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
+#[feature("bounded-int-utils")]
 pub fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
     let (limb1, limb0) = u128_wide_mul(a.low, b.low);
     let (limb2, limb1_part) = u128_wide_mul(a.low, b.high);
@@ -1205,6 +1208,7 @@ pub fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
 
 /// Helper function for implementation of `u256_wide_mul`.
 /// Used for adding two u128s and receiving a BoundedInt for the carry result.
+#[feature("bounded-int-utils")]
 pub(crate) fn u128_add_with_bounded_int_carry(
     a: u128, b: u128,
 ) -> (u128, crate::internal::bounded_int::BoundedInt<0, 1>) nopanic {
@@ -1428,16 +1432,6 @@ pub(crate) impl I128IntoFelt252 of Into<i128, felt252> {
         i128_to_felt252(self)
     }
 }
-
-// TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
-//   will not lead to Sierra errors.
-pub(crate) extern const fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
-
-// TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
-//   will not lead to Sierra errors.
-pub(crate) extern const fn downcast<FromType, ToType>(
-    x: FromType,
-) -> Option<ToType> implicits(RangeCheck) nopanic;
 
 // Marks `FromType` as upcastable to `ToType`.
 // Do not add user code implementing this trait.
@@ -1707,7 +1701,7 @@ impl U256TryIntoU128 of TryInto<u256, u128> {
     }
 }
 
-enum SignedIntegerResult<T> {
+pub(crate) enum SignedIntegerResult<T> {
     InRange: T,
     Underflow: T,
     Overflow: T,
@@ -2345,6 +2339,7 @@ impl I128Neg of Neg<i128> {
 impl I128Mul of Mul<i128> {
     fn mul(lhs: i128, rhs: i128) -> i128 {
         let (lhs_u127, lhs_neg) = lhs.abs_and_sign();
+        #[feature("bounded-int-utils")]
         let (rhs_u127, res_neg) = match core::internal::bounded_int::constrain::<i128, 0>(rhs) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), !lhs_neg),
             Err(ge0) => (upcast(ge0), lhs_neg),
@@ -2375,11 +2370,11 @@ impl I128PartialOrd of PartialOrd<i128> {
 }
 
 mod signed_div_rem {
+    #[feature("bounded-int-utils")]
     use crate::internal::bounded_int::{
         BoundedInt, ConstrainHelper, DivRemHelper, MulHelper, NegateHelper, UnitInt, constrain,
-        div_rem, is_zero,
+        div_rem, downcast, is_zero, upcast,
     };
-    use super::{downcast, upcast};
 
     impl DivRemImpl<
         T,
@@ -3142,37 +3137,29 @@ impl U256OverflowingSub of crate::num::traits::OverflowingSub<u256> {
 // OverflowingMul implementations
 impl U8OverflowingMul of crate::num::traits::OverflowingMul<u8> {
     fn overflowing_mul(self: u8, v: u8) -> (u8, bool) {
-        let wide_result = u8_wide_mul(self, v);
-        let MASK: u16 = crate::num::traits::Bounded::<u8>::MAX.into();
-        let (v_low, _, v_with_low_masked) = u16_bitwise(wide_result, MASK);
-        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+        let (high, low) = crate::num::traits::Split::split(u8_wide_mul(self, v));
+        (low, high != 0)
     }
 }
 
 impl U16OverflowingMul of crate::num::traits::OverflowingMul<u16> {
     fn overflowing_mul(self: u16, v: u16) -> (u16, bool) {
-        let wide_result = u16_wide_mul(self, v);
-        let MASK: u32 = crate::num::traits::Bounded::<u16>::MAX.into();
-        let (v_low, _, v_with_low_masked) = u32_bitwise(wide_result, MASK);
-        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+        let (high, low) = crate::num::traits::Split::split(u16_wide_mul(self, v));
+        (low, high != 0)
     }
 }
 
 impl U32OverflowingMul of crate::num::traits::OverflowingMul<u32> {
     fn overflowing_mul(self: u32, v: u32) -> (u32, bool) {
-        let wide_result = u32_wide_mul(self, v);
-        let MASK: u64 = crate::num::traits::Bounded::<u32>::MAX.into();
-        let (v_low, _, v_with_low_masked) = u64_bitwise(wide_result, MASK);
-        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+        let (high, low) = crate::num::traits::Split::split(u32_wide_mul(self, v));
+        (low, high != 0)
     }
 }
 
 impl U64OverflowingMul of crate::num::traits::OverflowingMul<u64> {
     fn overflowing_mul(self: u64, v: u64) -> (u64, bool) {
-        let wide_result = u64_wide_mul(self, v);
-        let MASK: u128 = crate::num::traits::Bounded::<u64>::MAX.into();
-        let (v_low, _, v_with_low_masked) = bitwise(wide_result, MASK);
-        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+        let (high, low) = crate::num::traits::Split::split(u64_wide_mul(self, v));
+        (low, high != 0)
     }
 }
 
@@ -3320,8 +3307,8 @@ impl U128SaturatingMul = crate::num::traits::ops::saturating::overflow_based::TS
 impl U256SaturatingMul = crate::num::traits::ops::saturating::overflow_based::TSaturatingMul<u256>;
 
 mod bitnot_impls {
-    use core::internal::bounded_int::{BoundedInt, SubHelper, UnitInt};
-    use super::upcast;
+    #[feature("bounded-int-utils")]
+    use core::internal::bounded_int::{BoundedInt, SubHelper, UnitInt, sub, upcast};
 
     impl SubHelperImpl<T, const MAX: felt252> of SubHelper<UnitInt<MAX>, T> {
         type Result = BoundedInt<0, MAX>;
@@ -3329,7 +3316,7 @@ mod bitnot_impls {
 
     pub impl Impl<T, const MAX: felt252, const MAX_TYPED: UnitInt<MAX>> of core::traits::BitNot<T> {
         fn bitnot(a: T) -> T {
-            upcast::<BoundedInt<0, MAX>, T>(core::internal::bounded_int::sub(MAX_TYPED, a))
+            upcast::<BoundedInt<0, MAX>, T>(sub(MAX_TYPED, a))
         }
     }
 }
@@ -3351,6 +3338,7 @@ pub(crate) trait AbsAndSign<Signed, Unsigned> {
 }
 
 impl I8ToU8 of AbsAndSign<i8, u8> {
+    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i8) -> (u8, bool) {
         match core::internal::bounded_int::constrain::<i8, 0>(self) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
@@ -3360,6 +3348,7 @@ impl I8ToU8 of AbsAndSign<i8, u8> {
 }
 
 impl I16ToU16 of AbsAndSign<i16, u16> {
+    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i16) -> (u16, bool) {
         match core::internal::bounded_int::constrain::<i16, 0>(self) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
@@ -3369,6 +3358,7 @@ impl I16ToU16 of AbsAndSign<i16, u16> {
 }
 
 impl I32ToU32 of AbsAndSign<i32, u32> {
+    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i32) -> (u32, bool) {
         match core::internal::bounded_int::constrain::<i32, 0>(self) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
@@ -3378,6 +3368,7 @@ impl I32ToU32 of AbsAndSign<i32, u32> {
 }
 
 impl I64ToU64 of AbsAndSign<i64, u64> {
+    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i64) -> (u64, bool) {
         match core::internal::bounded_int::constrain::<i64, 0>(self) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
@@ -3387,6 +3378,7 @@ impl I64ToU64 of AbsAndSign<i64, u64> {
 }
 
 impl I128ToU128 of AbsAndSign<i128, u128> {
+    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i128) -> (u128, bool) {
         match core::internal::bounded_int::constrain::<i128, 0>(self) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),

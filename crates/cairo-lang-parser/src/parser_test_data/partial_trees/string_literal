@@ -26,6 +26,7 @@ ExprPath
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
     │   ├── rhs (kind: TokenString): '""'
+    │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     │   └── semicolon (kind: TokenSemicolon): ';'
     └── child #1 (kind: StatementLet)
         ├── attributes (kind: AttributeList) []
@@ -34,4 +35,5 @@ ExprPath
         ├── type_clause (kind: OptionTypeClauseEmpty) []
         ├── eq (kind: TokenEq): '='
         ├── rhs (kind: TokenString): '"abc"'
+        ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
         └── semicolon (kind: TokenSemicolon): ';'

@@ -44,3 +44,137 @@ error[E0006]: Identifier not found.
  --> lib.cairo:4:5
 use NonExisting;
     ^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Single segment usage of prelude.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+use Array;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Single segment usage of dependency crate.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+use core;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Self referential use.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    use super::a::b;
+}
+
+//! > expected_diagnostics
+error: Cycle detected while resolving 'use' items.
+ --> lib.cairo:2:19
+    use super::a::b;
+                  ^
+
+//! > ==========================================================================
+
+//! > `self` use as leaf.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    mod b {
+        mod c {}
+    }
+}
+use a::b::{self, c};
+use b::c as again;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > `self` use not in a multi leaf.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    mod b {
+        mod c {}
+    }
+}
+#[cairofmt::skip]
+use a::b::self;
+
+//! > expected_diagnostics
+error: `self` in `use` items is not allowed not in multi.
+ --> lib.cairo:7:11
+use a::b::self;
+          ^^^^
+
+//! > ==========================================================================
+
+//! > `self` use as full path.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+use {self, u8};
+
+//! > expected_diagnostics
+error: `self` in `use` items is not allowed for empty path.
+ --> lib.cairo:1:6
+use {self, u8};
+     ^^^^

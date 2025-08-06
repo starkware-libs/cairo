@@ -13,12 +13,12 @@ use std::collections::{HashMap, HashSet};
 use itertools::Itertools;
 
 use crate::utils::{Rebuilder, RebuilderEx};
-use crate::{BlockId, FlatBlockEnd, FlatLowered, VarRemapping, VariableId};
+use crate::{BlockEnd, BlockId, Lowered, VarRemapping, VariableId};
 
 /// Visits all the reachable remappings in the function, calls `f` on each one and returns a vector
 /// indicating which blocks are reachable.
-pub(crate) fn visit_remappings<F: FnMut(&VarRemapping)>(
-    lowered: &mut FlatLowered,
+pub(crate) fn visit_remappings<'db, F: FnMut(&VarRemapping<'db>)>(
+    lowered: &mut Lowered<'db>,
     mut f: F,
 ) -> Vec<bool> {
     let mut stack = vec![BlockId::root()];
@@ -29,15 +29,15 @@ pub(crate) fn visit_remappings<F: FnMut(&VarRemapping)>(
         }
         visited[block_id.0] = true;
         match &lowered.blocks[block_id].end {
-            FlatBlockEnd::Goto(target_block_id, remapping) => {
+            BlockEnd::Goto(target_block_id, remapping) => {
                 stack.push(*target_block_id);
                 f(remapping)
             }
-            FlatBlockEnd::Match { info } => {
+            BlockEnd::Match { info } => {
                 stack.extend(info.arms().iter().map(|arm| arm.block_id));
             }
-            FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(_) => {}
-            FlatBlockEnd::NotSet => unreachable!(),
+            BlockEnd::Return(..) | BlockEnd::Panic(_) => {}
+            BlockEnd::NotSet => unreachable!(),
         }
     }
 
@@ -67,7 +67,7 @@ impl Context {
     }
 }
 
-impl Rebuilder for Context {
+impl<'db> Rebuilder<'db> for Context {
     fn map_var_id(&mut self, var: VariableId) -> VariableId {
         if let Some(res) = self.var_representatives.get(&var) {
             *res
@@ -83,7 +83,7 @@ impl Rebuilder for Context {
         }
     }
 
-    fn transform_remapping(&mut self, remapping: &mut VarRemapping) {
+    fn transform_remapping(&mut self, remapping: &mut VarRemapping<'db>) {
         let mut new_remapping = VarRemapping::default();
         for (dst, src) in remapping.iter() {
             if dst != &src.var_id && self.variable_used.contains(dst) {
@@ -94,7 +94,7 @@ impl Rebuilder for Context {
     }
 }
 
-pub fn optimize_remappings(lowered: &mut FlatLowered) {
+pub fn optimize_remappings<'db>(lowered: &mut Lowered<'db>) {
     if lowered.blocks.has_root().is_err() {
         return;
     }
@@ -119,21 +119,21 @@ pub fn optimize_remappings(lowered: &mut FlatLowered) {
             }
         }
         match &block.end {
-            FlatBlockEnd::Return(returns, _location) => {
+            BlockEnd::Return(returns, _location) => {
                 for var_usage in returns {
                     ctx.set_used(var_usage.var_id);
                 }
             }
-            FlatBlockEnd::Panic(data) => {
+            BlockEnd::Panic(data) => {
                 ctx.set_used(data.var_id);
             }
-            FlatBlockEnd::Goto(_, _) => {}
-            FlatBlockEnd::Match { info } => {
+            BlockEnd::Goto(_, _) => {}
+            BlockEnd::Match { info } => {
                 for var_usage in info.inputs() {
                     ctx.set_used(var_usage.var_id);
                 }
             }
-            FlatBlockEnd::NotSet => unreachable!(),
+            BlockEnd::NotSet => unreachable!(),
         }
     }
 

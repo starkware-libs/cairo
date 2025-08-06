@@ -45,51 +45,24 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 10: 4 (store_temp<test::MyEnum>([10]) -> ([10]))
-  statement 11: 4 (store_temp<test::MyEnum>([5]) -> ([5]))
-  statement 31: 4 (u8_overflowing_add([0], [19], [20]) { fallthrough([24], [25]) 69([26], [27]) })
-  statement 55: 4 (u8_overflowing_add([15], [37], [38]) { fallthrough([42], [43]) 65([44], [45]) })
-  statement 63: 3 (store_temp<core::panics::PanicResult::<((),)>>([49]) -> ([49]))
-  statement 12: 2 (enum_match<test::MyEnum>([10]) { fallthrough([11]) 16([12]) 20([13]) 26([14]) })
-  statement 36: 2 (enum_match<test::MyEnum>([5]) { fallthrough([29]) 40([30]) 44([31]) 50([32]) })
-  statement 23: 1 (store_temp<u8>([16]) -> ([19]))
-  statement 24: 1 (store_temp<u8>([18]) -> ([20]))
-  statement 25: 1 (jump() { 31() })
-  statement 35: 1 (store_temp<RangeCheck>([24]) -> ([15]))
-  statement 53: 1 (store_temp<u8>([39]) -> ([37]))
-  statement 54: 1 (store_temp<u8>([41]) -> ([38]))
-  statement 56: 1 (branch_align() -> ())
-  statement 59: 1 (store_temp<RangeCheck>([42]) -> ([33]))
-  statement 64: 1 (return([33], [49]))
+  statement 3: 3 (store_temp<core::panics::PanicResult::<((),)>>([2]) -> ([2]))
+  statement 4: 1 (return([2]))
 Weight by concrete libfunc:
-  libfunc store_temp<test::MyEnum>: 8
-  libfunc u8_overflowing_add: 8
-  libfunc enum_match<test::MyEnum>: 4
-  libfunc store_temp<u8>: 4
   libfunc store_temp<core::panics::PanicResult::<((),)>>: 3
-  libfunc store_temp<RangeCheck>: 2
-  libfunc branch_align: 1
-  libfunc jump: 1
   return: 1
 Weight by generic libfunc:
-  libfunc store_temp: 17
-  libfunc u8_overflowing_add: 8
-  libfunc enum_match: 4
-  libfunc branch_align: 1
-  libfunc jump: 1
+  libfunc store_temp: 3
   return: 1
 Weight by user function (inc. generated):
-  function test::main: 32
+  function test::main: 4
 Weight by original user function (exc. generated):
-  function test::main: 32
+  function test::main: 4
 Weight by Cairo function:
-  function lib.cairo::foo: 17
-  function core::integer::U8Add::add: 11
   function lib.cairo::main: 4
 Weight by Sierra stack trace:
-  test::main: 32
+  test::main: 4
 Weight by Cairo stack trace:
-  test::main: 32
+  test::main: 4
 
 //! > ==========================================================================
 
@@ -161,17 +134,15 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 25: 18 (withdraw_gas([0], [1]) { fallthrough([3], [4]) 51([5], [6]) })
-  statement 29: 6 (store_temp<RangeCheck>([3]) -> ([3]))
-  statement 30: 6 (store_temp<GasBuiltin>([7]) -> ([7]))
-  statement 31: 6 (felt252_is_zero([8]) { fallthrough() 41([9]) })
-  statement 46: 5 (store_temp<RangeCheck>([3]) -> ([3]))
-  statement 47: 5 (store_temp<GasBuiltin>([14]) -> ([14]))
-  statement 48: 5 (store_temp<felt252>([16]) -> ([16]))
-  statement 49: 5 (function_call<user@test::main[31-113]>([3], [14], [16]) -> ([17], [18], [19]))
-  statement 50: 5 (return([17], [18], [19]))
+  statement 24: 18 (withdraw_gas([0], [1]) { fallthrough([3], [4]) 47([5], [6]) })
+  statement 27: 6 (felt252_is_zero([7]) { fallthrough() 37([8]) })
+  statement 42: 5 (store_temp<RangeCheck>([3]) -> ([3]))
+  statement 43: 5 (store_temp<GasBuiltin>([13]) -> ([13]))
+  statement 44: 5 (store_temp<felt252>([15]) -> ([15]))
+  statement 45: 5 (function_call<user@test::main[31-113]>([3], [13], [15]) -> ([16], [17], [18]))
+  statement 46: 5 (return([16], [17], [18]))
   statement 15: 3 (store_temp<core::panics::PanicResult::<((),)>>([12]) -> ([12]))
-  statement 39: 3 (store_temp<core::panics::PanicResult::<(core::felt252, ())>>([13]) -> ([13]))
+  statement 35: 3 (store_temp<core::panics::PanicResult::<(core::felt252, ())>>([12]) -> ([12]))
   statement 2: 1 (store_temp<RangeCheck>([0]) -> ([0]))
   statement 3: 1 (store_temp<GasBuiltin>([1]) -> ([1]))
   statement 4: 1 (store_temp<felt252>([2]) -> ([2]))
@@ -180,13 +151,13 @@ Weight by sierra statement:
   statement 13: 1 (store_temp<RangeCheck>([3]) -> ([3]))
   statement 14: 1 (store_temp<GasBuiltin>([8]) -> ([8]))
   statement 16: 1 (return([3], [8], [12]))
-  statement 37: 1 (store_temp<RangeCheck>([3]) -> ([3]))
-  statement 38: 1 (store_temp<GasBuiltin>([10]) -> ([10]))
-  statement 40: 1 (return([3], [10], [13]))
+  statement 33: 1 (store_temp<RangeCheck>([3]) -> ([3]))
+  statement 34: 1 (store_temp<GasBuiltin>([9]) -> ([9]))
+  statement 36: 1 (return([3], [9], [12]))
 Weight by concrete libfunc:
   libfunc withdraw_gas: 18
-  libfunc store_temp<GasBuiltin>: 14
-  libfunc store_temp<RangeCheck>: 14
+  libfunc store_temp<GasBuiltin>: 8
+  libfunc store_temp<RangeCheck>: 8
   libfunc felt252_is_zero: 6
   libfunc function_call<user@test::main[31-113]>: 6
   libfunc store_temp<felt252>: 6
@@ -195,30 +166,30 @@ Weight by concrete libfunc:
   libfunc enum_match<core::panics::PanicResult::<(core::felt252, ())>>: 1
   return: 7
 Weight by generic libfunc:
-  libfunc store_temp: 40
+  libfunc store_temp: 28
   libfunc withdraw_gas: 18
   libfunc felt252_is_zero: 6
   libfunc function_call: 6
   libfunc enum_match: 1
   return: 7
 Weight by user function (inc. generated):
-  function test::main[31-113]: 67
+  function test::main[31-113]: 55
   function test::main: 11
 Weight by original user function (exc. generated):
-  function test::main: 78
+  function test::main: 66
 Weight by Cairo function:
   function lib.cairo::main: 60
-  function core::Felt252PartialEq::eq: 18
+  function core::Felt252PartialEq::eq: 6
 Weight by Sierra stack trace:
-  test::main: 78
-  test::main -> test::main[31-113]: 67
-  test::main -> test::main[31-113] -> test::main[31-113]: 56
-  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 45
-  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 34
-  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 23
-  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 12
+  test::main: 66
+  test::main -> test::main[31-113]: 55
+  test::main -> test::main[31-113] -> test::main[31-113]: 46
+  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 37
+  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 28
+  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 19
+  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 10
 Weight by Cairo stack trace:
-  test::main: 78
+  test::main: 66
 
 //! > ==========================================================================
 

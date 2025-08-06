@@ -1,0 +1,172 @@
+//! > Test match with never
+
+//! > test_runner_name
+test_trim_unreachable
+
+//! > function
+fn foo(x: Option<NeverWithDrop>, a: u32) {
+    match x {
+        Some(i_am_never) => {
+            let _b: u16 = a.try_into().unwrap_or(0);
+            match i_am_never {}
+        },
+        None => {},
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+enum NeverWithDrop {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::option::Option::<test::NeverWithDrop>, v1: core::integer::u32
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: core::option::Option::<core::integer::u16>) <- core::integer::DowncastableIntTryInto::<core::integer::u32, core::integer::u16, core::integer::DowncastableU32, core::integer::DowncastableU16, _>::try_into(v1)
+  (v5: core::integer::u16) <- 0
+  (v6: core::integer::u16) <- core::option::OptionTraitImpl::<core::integer::u16>::unwrap_or::<core::traits::DestructFromDrop::<core::integer::u16, core::integer::u16Drop>>(v4, v5)
+End:
+  Match(match_enum(v2) {
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v7: ()) <- struct_construct()
+  () <- struct_destructure(v7)
+End:
+  Return()
+
+//! > after
+Parameters: v0: core::option::Option::<test::NeverWithDrop>, v1: core::integer::u32
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v2) {
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v7: ()) <- struct_construct()
+  () <- struct_destructure(v7)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test a function with a never argument
+
+//! > test_runner_name
+test_trim_unreachable
+
+//! > function
+fn foo(never_ty: NeverWithDrop, a: u32) {
+    if a == 0 {
+        let _b: u16 = a.try_into().unwrap_or(0);
+    }
+
+    match never_ty {}
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+enum NeverWithDrop {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: test::NeverWithDrop, v1: core::integer::u32
+blk0 (root):
+Statements:
+  (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
+  (v4: core::integer::u32) <- 0
+  (v5: core::integer::u32, v6: @core::integer::u32) <- snapshot(v4)
+  (v7: core::bool) <- core::integer::U32PartialEq::eq(v3, v6)
+End:
+  Match(match_enum(v7) {
+    bool::False(v9) => blk2,
+    bool::True(v8) => blk1,
+  })
+
+blk1:
+Statements:
+  (v10: core::option::Option::<core::integer::u16>) <- core::integer::DowncastableIntTryInto::<core::integer::u32, core::integer::u16, core::integer::DowncastableU32, core::integer::DowncastableU16, _>::try_into(v2)
+  (v11: core::integer::u16) <- 0
+  (v12: core::integer::u16) <- core::option::OptionTraitImpl::<core::integer::u16>::unwrap_or::<core::traits::DestructFromDrop::<core::integer::u16, core::integer::u16Drop>>(v10, v11)
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v0) {
+  })
+
+//! > after
+Parameters: v0: test::NeverWithDrop, v1: core::integer::u32
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+  })
+
+blk1:
+Statements:
+  (v10: core::option::Option::<core::integer::u16>) <- core::integer::DowncastableIntTryInto::<core::integer::u32, core::integer::u16, core::integer::DowncastableU32, core::integer::DowncastableU16, _>::try_into(v2)
+  (v11: core::integer::u16) <- 0
+  (v12: core::integer::u16) <- core::option::OptionTraitImpl::<core::integer::u16>::unwrap_or::<core::traits::DestructFromDrop::<core::integer::u16, core::integer::u16Drop>>(v10, v11)
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v0) {
+  })

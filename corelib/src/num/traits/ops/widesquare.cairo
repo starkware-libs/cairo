@@ -84,8 +84,9 @@ impl WideSquareU256 of WideSquare<u256> {
     }
 }
 
+#[feature("bounded-int-utils")]
 mod inner {
-    use crate::integer::{u128_add_with_bounded_int_carry, u512, upcast};
+    use crate::integer::{u128_add_with_bounded_int_carry, u512};
     use crate::internal::bounded_int;
     use crate::num::traits::{WideMul, WideSquare, WrappingAdd};
 
@@ -100,13 +101,13 @@ mod inner {
         // Packing together the overflow bits, making a cheaper addition into limb2.
         let limb1_overflow = bounded_int::add(limb1_overflow0, limb1_overflow1);
         let (limb2, limb2_overflow2) = u128_add_with_bounded_int_carry(
-            limb2, upcast(limb1_overflow),
+            limb2, bounded_int::upcast(limb1_overflow),
         );
         // Packing together the overflow bits, making a cheaper addition into limb3.
         let limb2_overflow = bounded_int::add(limb2_overflow0, limb2_overflow1);
         let limb2_overflow = bounded_int::add(limb2_overflow, limb2_overflow2);
         // No overflow since no limb4.
-        let limb3 = limb3.wrapping_add(upcast(limb2_overflow));
+        let limb3 = limb3.wrapping_add(bounded_int::upcast(limb2_overflow));
         u512 { limb0, limb1, limb2, limb3 }
     }
 }

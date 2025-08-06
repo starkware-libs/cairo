@@ -6,7 +6,7 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program;
-use cairo_lang_utils::{LookupIntern, define_short_id, write_comma_separated};
+use cairo_lang_utils::{define_short_id, write_comma_separated};
 
 use crate::db::SierraGenGroup;
 
@@ -14,54 +14,69 @@ use crate::db::SierraGenGroup;
 /// The long id consists of the parent function and a unique identifier inside the function.
 // TODO(lior): Make sure this struct can only be constructed by expr_generator_context.
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-pub struct LabelLongId {
-    pub parent: ConcreteFunctionWithBodyId,
+pub struct LabelLongId<'db> {
+    pub parent: ConcreteFunctionWithBodyId<'db>,
     // A unique identifier inside the function
     pub id: usize,
 }
-define_short_id!(LabelId, LabelLongId, SierraGenGroup, lookup_intern_label_id, intern_label_id);
+define_short_id!(
+    LabelId,
+    LabelLongId<'db>,
+    SierraGenGroup,
+    lookup_intern_label_id,
+    intern_label_id
+);
 
 pub struct LabelIdWithDb<'db> {
     db: &'db dyn SierraGenGroup,
-    label_id: LabelId,
+    label_id: LabelId<'db>,
 }
 impl std::fmt::Display for LabelIdWithDb<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let LabelLongId { parent, id } = self.label_id.lookup_intern(self.db);
-        let parent = parent.function_id(self.db.upcast()).unwrap();
+        let LabelLongId { parent, id } = self.label_id.long(self.db);
+        let parent = parent.function_id(self.db).unwrap();
         let dbg = format!("{:?}", parent.debug(self.db));
-        write!(f, "label_{}::{}", dbg, id)
+        write!(f, "label_{dbg}::{id}")
     }
 }
 
-impl LabelId {
-    pub fn with_db<'db>(&self, db: &'db dyn SierraGenGroup) -> LabelIdWithDb<'db> {
+impl<'db> LabelId<'db> {
+    pub fn with_db(&self, db: &'db dyn SierraGenGroup) -> LabelIdWithDb<'db> {
         LabelIdWithDb { db, label_id: *self }
     }
 }
 
 /// Represents a compiled function before the label-resolution phase (pre-sierra).
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Function {
+pub struct Function<'db> {
     /// The source function which was compiled.
     pub id: sierra::ids::FunctionId,
     /// The body of the function.
-    pub body: Vec<StatementWithLocation>,
+    pub body: Vec<StatementWithLocation<'db>>,
     /// A label pointing to the first instruction of the function.
-    pub entry_point: LabelId,
+    pub entry_point: LabelId<'db>,
     /// The parameters for the function.
     pub parameters: Vec<program::Param>,
-    /// The return types from the function.
-    pub ret_types: Vec<sierra::ids::ConcreteTypeId>,
+}
+
+unsafe impl<'db> salsa::Update for Function<'db> {
+    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
+        let old_value = &mut *old_pointer;
+        if old_value == &new_value {
+            return false;
+        }
+        *old_value = new_value;
+        true
+    }
 }
 
 /// Represents a pre-sierra statement - a statement before label-resolution.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Statement {
+pub enum Statement<'db> {
     /// A compiled Sierra statement (before label resolution).
-    Sierra(program::GenStatement<LabelId>),
+    Sierra(program::GenStatement<LabelId<'db>>),
     /// A label.
-    Label(Label),
+    Label(Label<'db>),
     /// An instruction to push variables onto the stack. For example, used before calling functions
     /// and returning.
     ///
@@ -69,8 +84,8 @@ pub enum Statement {
     /// If a prefix of the values is already on the stack, they will not be re-pushed.
     PushValues(Vec<PushValue>),
 }
-impl Statement {
-    pub fn into_statement_without_location(self) -> StatementWithLocation {
+impl<'db> Statement<'db> {
+    pub fn into_statement_without_location(self) -> StatementWithLocation<'db> {
         StatementWithLocation { statement: self, location: vec![] }
     }
     pub fn to_string(&self, db: &dyn SierraGenGroup) -> String {
@@ -80,22 +95,22 @@ impl Statement {
 
 /// Represents a pre-sierra statement, with its location in the source code.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct StatementWithLocation {
-    pub statement: Statement,
-    pub location: Vec<StableLocation>,
+pub struct StatementWithLocation<'db> {
+    pub statement: Statement<'db>,
+    pub location: Vec<StableLocation<'db>>,
 }
 
-impl StatementWithLocation {
-    pub fn set_location(&mut self, location: Vec<StableLocation>) {
+impl<'db> StatementWithLocation<'db> {
+    pub fn set_location(&mut self, location: Vec<StableLocation<'db>>) {
         self.location = location;
     }
 }
 
 struct StatementWithDb<'db> {
     db: &'db dyn SierraGenGroup,
-    statement: Statement,
+    statement: Statement<'db>,
 }
-impl std::fmt::Display for StatementWithDb<'_> {
+impl<'db> std::fmt::Display for StatementWithDb<'db> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.statement {
             Statement::Sierra(value) => {
@@ -125,7 +140,7 @@ impl std::fmt::Display for StatementWithDb<'_> {
 
 /// Represents a single element that should be pushed onto the stack as part of
 /// [Statement::PushValues].
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, salsa::Update)]
 pub struct PushValue {
     /// The variable id to push.
     pub var: sierra::ids::VarId,
@@ -139,7 +154,7 @@ pub struct PushValue {
 }
 
 /// Represents a pre-sierra label.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Label {
-    pub id: LabelId,
+#[derive(Clone, Debug, Eq, PartialEq, salsa::Update)]
+pub struct Label<'db> {
+    pub id: LabelId<'db>,
 }

@@ -29,6 +29,7 @@ pub mod felt252;
 pub mod felt252_dict;
 pub mod function_call;
 pub mod gas;
+pub mod gas_reserve;
 pub mod int;
 pub mod is_zero;
 pub mod mem;
@@ -49,6 +50,7 @@ pub mod trace;
 pub mod try_from_felt252;
 pub mod unconditional_jump;
 pub mod uninitialized;
+pub mod unsafe_panic;
 pub mod utils;
 
 /// Helper for Unit type def.

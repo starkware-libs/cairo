@@ -112,11 +112,7 @@ impl<TIntTraits: IntTraits> NamedLibfunc for IntConstLibfunc<TIntTraits> {
             [GenericArg::Value(c)] => Ok(Self::Concrete {
                 c: TIntTraits::IntType::try_from(c.clone())
                     .map_err(|_| SpecializationError::UnsupportedGenericArg)?,
-                signature: <Self as NamedLibfunc>::specialize_signature(
-                    self,
-                    context.upcast(),
-                    args,
-                )?,
+                signature: <Self as NamedLibfunc>::specialize_signature(self, context, args)?,
             }),
             _ => Err(SpecializationError::UnsupportedGenericArg),
         }
@@ -133,7 +129,7 @@ impl<TIntTraits: IntTraits> SignatureBasedConcreteLibfunc for IntConstConcreteLi
     }
 }
 
-/// Libfunc for comparing integers` equality.
+/// Libfunc for comparing integers equality.
 #[derive(Default)]
 pub struct IntEqualLibfunc<TIntTraits: IntTraits> {
     _phantom: PhantomData<TIntTraits>,

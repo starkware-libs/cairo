@@ -8,8 +8,7 @@ fn foo(ref x: felt252, a: bool) -> felt252 {
     x = 7;
     let mut data = array![];
     data.append(1);
-    let _y = panic(data);
-    5
+    panic(data)
 }
 
 //! > function_name
@@ -59,8 +58,7 @@ foo
 fn bar(ref a: bool) -> felt252 {
     let mut data = array![];
     data.append(1);
-    let _y = panic(data);
-    5
+    panic(data)
 }
 
 //! > semantic_diagnostics

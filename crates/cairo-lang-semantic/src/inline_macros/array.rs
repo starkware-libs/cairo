@@ -3,7 +3,10 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
     PluginGeneratedFile,
 };
-use cairo_lang_defs::plugin_utils::unsupported_bracket_diagnostic;
+use cairo_lang_defs::plugin_utils::{
+    PluginResultTrait, not_legacy_macro_diagnostic, unsupported_bracket_diagnostic,
+};
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::indoc;
@@ -14,14 +17,19 @@ impl NamedPlugin for ArrayMacro {
     const NAME: &'static str = "array";
 }
 impl InlineMacroExprPlugin for ArrayMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
-        let ast::WrappedArgList::BracketedArgList(args) = syntax.arguments(db) else {
-            return unsupported_bracket_diagnostic(db, syntax);
+    ) -> InlinePluginResult<'db> {
+        let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
+            return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
+                syntax.as_syntax_node().stable_ptr(db),
+            ));
+        };
+        let ast::WrappedArgList::BracketedArgList(args) = legacy_inline_macro.arguments(db) else {
+            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax.stable_ptr(db));
         };
         let mut builder = PatchBuilder::new(db, syntax);
         builder.add_str(
@@ -47,6 +55,7 @@ impl InlineMacroExprPlugin for ArrayMacro {
                 code_mappings,
                 aux_data: None,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             }),
             diagnostics: vec![],
         }

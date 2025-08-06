@@ -103,7 +103,7 @@ impl SignatureOnlyGenericLibfunc for IntRangeTryNewLibfunc {
             param_signatures: vec![
                 ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(ty.clone()),
-                ParamSignature::new(ty.clone()),
+                ParamSignature::new(ty),
             ],
             branch_signatures: vec![
                 // Success.

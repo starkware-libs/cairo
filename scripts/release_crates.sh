@@ -35,20 +35,22 @@ CRATES_TO_PUBLISH=(
     cairo-lang-semantic
     cairo-lang-lowering
     cairo-lang-sierra-generator
+    cairo-lang-runnable-utils
     cairo-lang-compiler
     cairo-lang-starknet-classes
     cairo-lang-starknet
-    cairo-lang-runnable-utils
     cairo-lang-executable
     cairo-lang-runner
     cairo-lang-test-plugin
     cairo-lang-test-runner
+    cairo-lang-execute-utils
     cairo-lang-doc
     cairo-compile
     cairo-format
     cairo-run
     cairo-execute
     cairo-test
+    cairo-size-profiler
     sierra-compile
     starknet-compile
     starknet-sierra-compile

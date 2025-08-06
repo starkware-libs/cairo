@@ -9,18 +9,21 @@ use test_log::test;
 use super::{DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder};
 
 // Test diagnostic.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-struct SimpleDiag {
-    file_id: FileId,
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+struct SimpleDiag<'db> {
+    file_id: FileId<'db>,
 }
-impl DiagnosticEntry for SimpleDiag {
+impl<'db> DiagnosticEntry<'db> for SimpleDiag<'db> {
     type DbType = dyn FilesGroup;
 
     fn format(&self, _db: &dyn cairo_lang_filesystem::db::FilesGroup) -> String {
         "Simple diagnostic.".into()
     }
 
-    fn location(&self, _db: &dyn cairo_lang_filesystem::db::FilesGroup) -> DiagnosticLocation {
+    fn location(
+        &self,
+        _db: &'db dyn cairo_lang_filesystem::db::FilesGroup,
+    ) -> DiagnosticLocation<'db> {
         DiagnosticLocation {
             file_id: self.file_id,
             span: TextSpan {
@@ -35,24 +38,25 @@ impl DiagnosticEntry for SimpleDiag {
     }
 }
 
-fn setup() -> (FilesDatabaseForTesting, FileId) {
-    let db_val = FilesDatabaseForTesting::default();
+fn setup<'db>(db: &'db FilesDatabaseForTesting) -> FileId<'db> {
     let file_id = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "dummy_file.sierra".into(),
         content: "abcd\nefg.\n".into(),
         code_mappings: [].into(),
         kind: FileKind::Module,
+        original_item_removed: false,
     })
-    .intern(&db_val);
-    (db_val, file_id)
+    .intern(db);
+    file_id
 }
 
 #[test]
 fn test_diagnostics() {
-    let (db_val, file_id) = setup();
+    let db_val = FilesDatabaseForTesting::default();
+    let file_id = setup(&db_val);
 
-    let mut diagnostics: DiagnosticsBuilder<SimpleDiag> = DiagnosticsBuilder::default();
+    let mut diagnostics: DiagnosticsBuilder<'_, SimpleDiag<'_>> = DiagnosticsBuilder::default();
     let diagnostic = SimpleDiag { file_id };
     diagnostics.add(diagnostic);
 

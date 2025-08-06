@@ -151,7 +151,7 @@ error: Fixed size array inner type must implement the `Copy` trait when the arra
     ^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > lowering_flat
-Parameters:
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -196,12 +196,7 @@ error: Fixed size array inner type must implement the `Copy` trait when the arra
     ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > lowering_flat
-Parameters:
-blk0 (root):
-Statements:
-  (v0: [test::MyStruct; 3]) <- test::foo_ex::<test::MyStruct, core::traits::FixedSizedArrayDrop::<test::MyStruct, test::MyStructDrop, 3>, test::CtorMyStruct>()
-End:
-  Return(v0)
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -264,4 +259,4 @@ error: Fixed size array repeated element size must be greater than 0.
     ^^^^^^^^^^
 
 //! > lowering_flat
-Parameters:
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>

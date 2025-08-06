@@ -5,14 +5,11 @@ use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use super::cancel_ops;
+use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
-use crate::inline::apply_inlining;
-use crate::optimizations::remappings::optimize_remappings;
-use crate::optimizations::reorder_statements::reorder_statements;
-use crate::reorganize_blocks::reorganize_blocks;
+use crate::optimizations::strategy::OptimizationPhase;
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
@@ -47,16 +44,16 @@ fn test_cancel_ops(
     }
 
     let mut before =
-        db.concrete_function_with_body_postpanic_lowered(function_id).unwrap().deref().clone();
+        db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().deref().clone();
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
-
-    apply_inlining(db, function_id, &mut before).unwrap();
-    optimize_remappings(&mut before);
-    reorganize_blocks(&mut before);
-    reorder_statements(db, &mut before);
+    OptimizationPhase::ApplyInlining { enable_const_folding: true }
+        .apply(db, function_id, &mut before)
+        .unwrap();
+    OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();
+    OptimizationPhase::ReorderStatements.apply(db, function_id, &mut before).unwrap();
 
     let mut after = before.clone();
-    cancel_ops(&mut after);
+    OptimizationPhase::CancelOps.apply(db, function_id, &mut after).unwrap();
 
     TestRunnerResult::success(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),

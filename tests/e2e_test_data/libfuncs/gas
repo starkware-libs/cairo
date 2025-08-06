@@ -36,12 +36,11 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 900})
-test::bar: OrderedHashMap({})
+test::foo: CostTokenMap({Const: 900})
+test::bar: CostTokenMap({})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
 type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
@@ -136,11 +135,10 @@ call rel 16;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Bitwise: 2, Pedersen: 1, Const: 1830})
+test::foo: CostTokenMap({Bitwise: 2, Pedersen: 1, Const: 1830})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
 type Pedersen = Pedersen [storable: true, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
@@ -244,7 +242,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 770})
+test::foo: CostTokenMap({Const: 770})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -325,7 +323,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1570})
+test::foo: CostTokenMap({Const: 1570})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -437,7 +435,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1970})
+test::foo: CostTokenMap({Const: 1970})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -549,7 +547,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 870})
+test::foo: CostTokenMap({Const: 870})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
@@ -635,7 +633,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1170})
+test::foo: CostTokenMap({Const: 1170})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
@@ -737,7 +735,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1170})
+test::foo: CostTokenMap({Const: 1170})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
@@ -850,7 +848,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1470})
+test::foo: CostTokenMap({Const: 1470})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];

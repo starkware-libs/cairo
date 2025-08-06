@@ -1,16 +1,15 @@
 use std::collections::HashMap;
 
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use id_arena::Arena;
 use itertools::Itertools;
 
-use crate::blocks::FlatBlocksBuilder;
+use crate::blocks::BlocksBuilder;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::optimizations::remappings;
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage,
-    Variable, VariableId,
+    Block, BlockEnd, BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableArena,
+    VariableId,
 };
 
 /// Reorganizes the blocks in lowered function and removes unnecessary remappings.
@@ -18,7 +17,7 @@ use crate::{
 /// Removes unreachable blocks.
 /// Blocks that are reachable only through goto are combined with the block that does the goto.
 /// The order of the blocks is changed to be a topologically sorted.
-pub fn reorganize_blocks(lowered: &mut FlatLowered) {
+pub fn reorganize_blocks<'db>(lowered: &mut Lowered<'db>) {
     if lowered.blocks.is_empty() {
         return;
     }
@@ -40,7 +39,7 @@ pub fn reorganize_blocks(lowered: &mut FlatLowered) {
     let ctx = analysis.analyzer;
 
     // Rebuild the blocks in the correct order.
-    let mut new_blocks = FlatBlocksBuilder::default();
+    let mut new_blocks = BlocksBuilder::default();
 
     // Keep only blocks that can't be merged or have more than 1 incoming
     // goto.
@@ -81,7 +80,7 @@ pub fn reorganize_blocks(lowered: &mut FlatLowered) {
                 statements
                     .push(var_reassigner.rebuild_statement(&rebuilder.rebuild_statement(stmt)));
             }
-            if let FlatBlockEnd::Goto(target_block_id, remappings) = &block.end {
+            if let BlockEnd::Goto(target_block_id, remappings) = &block.end {
                 if !rebuilder.block_remapping.contains_key(target_block_id) {
                     assert!(
                         rebuilder.rebuild_remapping(remappings).is_empty(),
@@ -95,7 +94,7 @@ pub fn reorganize_blocks(lowered: &mut FlatLowered) {
         }
 
         let end = var_reassigner.rebuild_end(&rebuilder.rebuild_end(&block.end));
-        new_blocks.alloc(FlatBlock { statements, end });
+        new_blocks.alloc(Block { statements, end });
     }
 
     lowered.variables = var_reassigner.new_vars;
@@ -113,10 +112,15 @@ pub struct TopSortContext {
     remappings_ctx: remappings::Context,
 }
 
-impl Analyzer<'_> for TopSortContext {
+impl<'db> Analyzer<'db, '_> for TopSortContext {
     type Info = ();
 
-    fn visit_block_start(&mut self, _info: &mut Self::Info, block_id: BlockId, _block: &FlatBlock) {
+    fn visit_block_start(
+        &mut self,
+        _info: &mut Self::Info,
+        block_id: BlockId,
+        _block: &Block<'db>,
+    ) {
         self.old_block_rev_order.push(block_id);
     }
 
@@ -124,7 +128,7 @@ impl Analyzer<'_> for TopSortContext {
         &mut self,
         _info: &mut Self::Info,
         _statement_location: StatementLocation,
-        stmt: &Statement,
+        stmt: &Statement<'db>,
     ) {
         for var_usage in stmt.inputs() {
             self.remappings_ctx.set_used(var_usage.var_id);
@@ -138,7 +142,7 @@ impl Analyzer<'_> for TopSortContext {
         target_block_id: BlockId,
         // Note that the remappings of a goto are not considered a usage, Later usages (such as a
         // merge) would catch them if used.
-        _remapping: &VarRemapping,
+        _remapping: &VarRemapping<'db>,
     ) {
         self.incoming_gotos[target_block_id.0] += 1;
     }
@@ -146,7 +150,7 @@ impl Analyzer<'_> for TopSortContext {
     fn merge_match(
         &mut self,
         _statement_location: StatementLocation,
-        match_info: &MatchInfo,
+        match_info: &MatchInfo<'db>,
         _infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         for var_usage in match_info.inputs() {
@@ -161,7 +165,7 @@ impl Analyzer<'_> for TopSortContext {
     fn info_from_return(
         &mut self,
         _statement_location: StatementLocation,
-        vars: &[VarUsage],
+        vars: &[VarUsage<'db>],
     ) -> Self::Info {
         for var_usage in vars {
             self.remappings_ctx.set_used(var_usage.var_id);
@@ -171,7 +175,7 @@ impl Analyzer<'_> for TopSortContext {
     fn info_from_panic(
         &mut self,
         _statement_location: StatementLocation,
-        data: &VarUsage,
+        data: &VarUsage<'db>,
     ) -> Self::Info {
         self.remappings_ctx.set_used(data.var_id);
     }
@@ -181,7 +185,7 @@ pub struct RebuildContext {
     block_remapping: HashMap<BlockId, BlockId>,
     remappings_ctx: remappings::Context,
 }
-impl Rebuilder for RebuildContext {
+impl<'db> Rebuilder<'db> for RebuildContext {
     fn map_block_id(&mut self, block: BlockId) -> BlockId {
         self.block_remapping[&block]
     }
@@ -190,7 +194,7 @@ impl Rebuilder for RebuildContext {
         self.remappings_ctx.map_var_id(var)
     }
 
-    fn transform_remapping(&mut self, remapping: &mut VarRemapping) {
+    fn transform_remapping(&mut self, remapping: &mut VarRemapping<'db>) {
         self.remappings_ctx.transform_remapping(remapping)
     }
 }
@@ -199,21 +203,21 @@ impl Rebuilder for RebuildContext {
 ///
 /// Note that it can't be integrated into the RebuildContext above because rebuild_remapping might
 /// call `map_var_id` on variables that are going to be removed.
-pub struct VarReassigner<'a> {
-    pub old_vars: &'a Arena<Variable>,
-    pub new_vars: Arena<Variable>,
+pub struct VarReassigner<'db, 'a> {
+    pub old_vars: &'a VariableArena<'db>,
+    pub new_vars: VariableArena<'db>,
 
     // Maps old var_id to new_var_id
     pub vars: UnorderedHashMap<VariableId, VariableId>,
 }
 
-impl<'a> VarReassigner<'a> {
-    pub fn new(old_vars: &'a Arena<Variable>) -> Self {
+impl<'db, 'a> VarReassigner<'db, 'a> {
+    pub fn new(old_vars: &'a VariableArena<'db>) -> Self {
         Self { old_vars, new_vars: Default::default(), vars: UnorderedHashMap::default() }
     }
 }
 
-impl Rebuilder for VarReassigner<'_> {
+impl<'db> Rebuilder<'db> for VarReassigner<'db, '_> {
     fn map_var_id(&mut self, var: VariableId) -> VariableId {
         *self.vars.entry(var).or_insert_with(|| self.new_vars.alloc(self.old_vars[var].clone()))
     }

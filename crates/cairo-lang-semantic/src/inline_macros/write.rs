@@ -5,10 +5,13 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin, PluginDiagnostic,
     PluginGeneratedFile,
 };
-use cairo_lang_defs::plugin_utils::{try_extract_unnamed_arg, unsupported_bracket_diagnostic};
+use cairo_lang_defs::plugin_utils::{
+    not_legacy_macro_diagnostic, try_extract_unnamed_arg, unsupported_bracket_diagnostic,
+};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::{OptionHelper, try_extract_matches};
 use indoc::indoc;
 use num_bigint::{BigInt, Sign};
@@ -22,12 +25,12 @@ impl NamedPlugin for WriteMacro {
     const NAME: &'static str = "write";
 }
 impl InlineMacroExprPlugin for WriteMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
         generate_code_inner(syntax, db, false)
     }
 
@@ -67,12 +70,12 @@ impl NamedPlugin for WritelnMacro {
     const NAME: &'static str = "writeln";
 }
 impl InlineMacroExprPlugin for WritelnMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
         generate_code_inner(syntax, db, true)
     }
 
@@ -105,11 +108,11 @@ impl InlineMacroExprPlugin for WritelnMacro {
     }
 }
 
-fn generate_code_inner(
-    syntax: &ast::ExprInlineMacro,
-    db: &dyn SyntaxGroup,
+fn generate_code_inner<'db>(
+    syntax: &ast::ExprInlineMacro<'db>,
+    db: &'db dyn SyntaxGroup,
     with_newline: bool,
-) -> InlinePluginResult {
+) -> InlinePluginResult<'db> {
     let info = match FormattingInfo::extract(db, syntax) {
         Ok(info) => info,
         Err(diagnostics) => return InlinePluginResult { code: None, diagnostics },
@@ -123,11 +126,12 @@ fn generate_code_inner(
     let (content, code_mappings) = builder.build();
     InlinePluginResult {
         code: Some(PluginGeneratedFile {
-            name: format!("{}_macro", get_macro_name(with_newline)).into(),
+            name: format!("{}_macro", get_macro_name(with_newline)),
             content,
             code_mappings,
             aux_data: None,
             diagnostics_note: Default::default(),
+            is_unhygienic: false,
         }),
         diagnostics: vec![],
     }
@@ -139,72 +143,91 @@ fn get_macro_name(with_newline: bool) -> &'static str {
 }
 
 /// Information about a formatting a string for the write macros.
-struct FormattingInfo {
+struct FormattingInfo<'db> {
     /// The syntax rewrite node for the formatter input for the macro.
-    formatter_arg_node: RewriteNode,
+    formatter_arg_node: RewriteNode<'db>,
     /// The format string argument.
-    format_string_arg: ast::Arg,
+    format_string_arg: ast::Arg<'db>,
     /// The format string content.
     format_string: String,
     /// The positional arguments for the format string.
-    args: Vec<ast::Expr>,
+    args: Vec<ast::Expr<'db>>,
+    macro_ast: ast::ExprInlineMacro<'db>,
 }
-impl FormattingInfo {
+impl<'db> FormattingInfo<'db> {
     /// Extracts the arguments from a formatted string macro.
     fn extract(
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
-    ) -> Result<FormattingInfo, Vec<PluginDiagnostic>> {
-        let ast::WrappedArgList::ParenthesizedArgList(arguments) = syntax.arguments(db) else {
-            return Err(unsupported_bracket_diagnostic(db, syntax).diagnostics);
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
+    ) -> Result<FormattingInfo<'db>, Vec<PluginDiagnostic<'db>>> {
+        let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
+            return Err(vec![not_legacy_macro_diagnostic(syntax.as_syntax_node().stable_ptr(db))]);
         };
-        let argument_list_elements = arguments.arguments(db).elements(db);
-        let mut args_iter = argument_list_elements.iter();
+        let ast::WrappedArgList::ParenthesizedArgList(arguments) =
+            legacy_inline_macro.arguments(db)
+        else {
+            return Err(unsupported_bracket_diagnostic(
+                db,
+                &legacy_inline_macro,
+                syntax.stable_ptr(db),
+            )
+            .diagnostics);
+        };
+        let arguments_var = arguments.arguments(db);
+        let mut args_iter = arguments_var.elements(db);
+        let error_with_inner_span = |inner_span: SyntaxNode<'_>, message: &str| {
+            PluginDiagnostic::error_with_inner_span(
+                db,
+                syntax.stable_ptr(db),
+                inner_span,
+                message.to_string(),
+            )
+        };
         let Some(formatter_arg) = args_iter.next() else {
-            return Err(vec![PluginDiagnostic::error(
-                arguments.lparen(db).stable_ptr().untyped(),
-                "Macro expected formatter argument.".to_string(),
+            return Err(vec![error_with_inner_span(
+                arguments.lparen(db).as_syntax_node(),
+                "Macro expected formatter argument.",
             )]);
         };
-        let Some(formatter_expr) = try_extract_unnamed_arg(db, formatter_arg) else {
-            return Err(vec![PluginDiagnostic::error(
-                formatter_arg.stable_ptr().untyped(),
-                "Formatter argument must unnamed.".to_string(),
+        let Some(formatter_expr) = try_extract_unnamed_arg(db, &formatter_arg) else {
+            return Err(vec![error_with_inner_span(
+                formatter_arg.as_syntax_node(),
+                "Formatter argument must be unnamed.",
             )]);
         };
         if matches!(formatter_expr, ast::Expr::String(_)) {
-            return Err(vec![PluginDiagnostic::error(
-                formatter_arg.stable_ptr().untyped(),
-                "Formatter argument must not be a string literal.".to_string(),
+            return Err(vec![error_with_inner_span(
+                formatter_arg.as_syntax_node(),
+                "Formatter argument must not be a string literal.",
             )]);
         }
         let Some(format_string_arg) = args_iter.next() else {
-            return Err(vec![PluginDiagnostic::error(
-                arguments.lparen(db).stable_ptr().untyped(),
-                "Macro expected format string argument.".to_string(),
+            return Err(vec![error_with_inner_span(
+                arguments.lparen(db).as_syntax_node(),
+                "Macro expected format string argument.",
             )]);
         };
-        let Some(format_string_expr) = try_extract_unnamed_arg(db, format_string_arg) else {
-            return Err(vec![PluginDiagnostic::error(
-                format_string_arg.stable_ptr().untyped(),
-                "Format string argument must be unnamed.".to_string(),
+        let Some(format_string_expr) = try_extract_unnamed_arg(db, &format_string_arg) else {
+            return Err(vec![error_with_inner_span(
+                format_string_arg.as_syntax_node(),
+                "Format string argument must be unnamed.",
             )]);
         };
         let Some(format_string) = try_extract_matches!(format_string_expr, ast::Expr::String)
             .and_then(|arg| arg.string_value(db))
         else {
-            return Err(vec![PluginDiagnostic::error(
-                format_string_arg.stable_ptr().untyped(),
-                "Format string argument must be a string literal.".to_string(),
+            return Err(vec![error_with_inner_span(
+                format_string_arg.as_syntax_node(),
+                "Format string argument must be a string literal.",
             )]);
         };
         let mut diagnostics = vec![];
         let args: Vec<_> = args_iter
             .filter_map(|arg| {
-                try_extract_unnamed_arg(db, arg).on_none(|| {
-                    diagnostics.push(PluginDiagnostic::error(
-                        arg.stable_ptr().untyped(),
-                        "Expected unnamed argument.".to_string(),
+                try_extract_unnamed_arg(db, &arg).on_none(|| {
+                    diagnostics.push(error_with_inner_span(
+                        arg.as_syntax_node(),
+                        "Argument must be unnamed.",
                     ))
                 })
             })
@@ -213,19 +236,20 @@ impl FormattingInfo {
             return Err(diagnostics);
         }
         Ok(FormattingInfo {
-            formatter_arg_node: RewriteNode::from_ast_trimmed(formatter_arg),
+            formatter_arg_node: RewriteNode::from_ast_trimmed(&formatter_arg),
             format_string_arg: format_string_arg.clone(),
             // `unwrap` is ok because the above `on_none` ensures it's not None.
             format_string,
             args,
+            macro_ast: syntax.clone(),
         })
     }
 
     /// Adds the formatted string from macro to the formatter.
     fn add_to_formatter(
         &self,
-        builder: &mut PatchBuilder<'_>,
-        diagnostics: &mut Vec<PluginDiagnostic>,
+        builder: &mut PatchBuilder<'db>,
+        diagnostics: &mut Vec<PluginDiagnostic<'db>>,
         with_newline: bool,
     ) {
         let mut next_arg_index = 0..self.args.len();
@@ -257,8 +281,10 @@ impl FormattingInfo {
                 let argument_info = match extract_placeholder_argument(&mut format_iter) {
                     Ok(argument_info) => argument_info,
                     Err(error_message) => {
-                        diagnostics.push(PluginDiagnostic::error(
-                            self.format_string_arg.as_syntax_node().stable_ptr(),
+                        diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                            builder.db,
+                            self.macro_ast.stable_ptr(builder.db),
+                            self.format_string_arg.as_syntax_node(),
                             format!("Invalid format string: {error_message}."),
                         ));
                         return;
@@ -267,8 +293,10 @@ impl FormattingInfo {
                 match argument_info.source {
                     PlaceholderArgumentSource::Positional(positional) => {
                         let Some(arg) = self.args.get(positional) else {
-                            diagnostics.push(PluginDiagnostic::error(
-                                self.format_string_arg.as_syntax_node().stable_ptr(),
+                            diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                                builder.db,
+                                self.macro_ast.stable_ptr(builder.db),
+                                self.format_string_arg.as_syntax_node(),
                                 format!(
                                     "Invalid reference to positional argument {positional} (there \
                                      are {} arguments).",
@@ -332,8 +360,10 @@ impl FormattingInfo {
                     pending_chars.push('}');
                     format_iter.next();
                 } else {
-                    diagnostics.push(PluginDiagnostic::error(
-                        self.format_string_arg.as_syntax_node().stable_ptr(),
+                    diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                        builder.db,
+                        self.macro_ast.stable_ptr(builder.db),
+                        self.format_string_arg.as_syntax_node(),
                         "Closing `}` without a matching `{`.".to_string(),
                     ));
                 }
@@ -342,8 +372,10 @@ impl FormattingInfo {
             }
         }
         if missing_args > 0 {
-            diagnostics.push(PluginDiagnostic::error(
-                self.format_string_arg.as_syntax_node().stable_ptr(),
+            diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                builder.db,
+                self.macro_ast.stable_ptr(builder.db),
+                self.format_string_arg.as_syntax_node(),
                 format!(
                     "{} positional arguments in format string, but only {} arguments.",
                     self.args.len() + missing_args,
@@ -372,8 +404,10 @@ impl FormattingInfo {
         builder.add_str("}\n");
         for (position, used) in arg_used.into_iter().enumerate() {
             if !used {
-                diagnostics.push(PluginDiagnostic::error(
-                    self.args[position].as_syntax_node().stable_ptr(),
+                diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                    builder.db,
+                    self.macro_ast.stable_ptr(builder.db),
+                    self.args[position].as_syntax_node(),
                     "Unused argument.".to_string(),
                 ));
             }
@@ -390,10 +424,10 @@ impl FormattingInfo {
     /// This includes opening a new match, which is only closed at the end of the macro handling.
     fn append_formatted_arg(
         &self,
-        builder: &mut PatchBuilder<'_>,
+        builder: &mut PatchBuilder<'db>,
         ident_count: &mut usize,
         pending_chars: &mut String,
-        arg: RewriteNode,
+        arg: RewriteNode<'db>,
         fmt_type: FormattingTrait,
     ) {
         self.flush_pending_chars(builder, pending_chars, *ident_count);
@@ -411,7 +445,7 @@ impl FormattingInfo {
     /// Flushes the pending bytes to the formatter.
     fn flush_pending_chars(
         &self,
-        builder: &mut PatchBuilder<'_>,
+        builder: &mut PatchBuilder<'db>,
         pending_chars: &mut String,
         ident_count: usize,
     ) {

@@ -120,7 +120,7 @@ pub fn dump_to_test_file(
 impl TestBuilder {
     /// Closes a tag if one is open, otherwise does nothing.
     fn close_open_tag(&mut self) {
-        if let Some(tag) = &mut self.current_tag {
+        if let Some(tag) = self.current_tag.take() {
             let attributes = &mut self.current_test.as_mut().unwrap().attributes;
             assert!(
                 !attributes.contains_key(&tag.name),
@@ -128,7 +128,7 @@ impl TestBuilder {
                 tag.name,
                 self.current_test_name.as_ref().unwrap_or(&"<unknown>".into())
             );
-            attributes.insert(std::mem::take(&mut tag.name), tag.content.trim().to_string());
+            attributes.insert(tag.name, tag.content.trim().to_string());
             self.current_tag = None;
         }
     }
@@ -158,8 +158,7 @@ impl TestBuilder {
     fn new_test(&mut self) {
         self.close_open_tag();
         let name = self.current_test_name.as_ref().expect("No name found for test.");
-        let old_test =
-            self.tests.insert(name.clone(), std::mem::take(&mut self.current_test).unwrap());
+        let old_test = self.tests.insert(name.clone(), self.current_test.take().unwrap());
         assert!(old_test.is_none(), "Found two tests named {name}.");
         self.current_test_name = None;
         self.current_tag = None;
@@ -475,7 +474,7 @@ pub fn run_test_file(
 }
 
 fn summary(passed_tests: usize, failed_tests: &[String]) -> String {
-    let passed = format!("{} passed", passed_tests).green();
+    let passed = format!("{passed_tests} passed").green();
     let failed = format!("{} failed", failed_tests.len()).red();
     format!("Summary: {passed}, {failed}:\n{}", failed_tests.join("\n"))
 }

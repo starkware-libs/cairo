@@ -2,7 +2,7 @@
 use core::fmt;
 
 use serde::{Deserialize, Serialize};
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, salsa::Update)]
 pub enum SyntaxKind {
     Trivia,
     ExprList,
@@ -16,8 +16,10 @@ pub enum SyntaxKind {
     PathSegmentSimple,
     OptionTerminalColonColonEmpty,
     PathSegmentWithGenericArgs,
-    PathSegmentMissing,
     ExprPath,
+    OptionTerminalDollarEmpty,
+    PathSegmentMissing,
+    ExprPathInner,
     ExprParenthesized,
     ExprUnary,
     ExprBinary,
@@ -32,6 +34,7 @@ pub enum SyntaxKind {
     MatchArms,
     MatchArm,
     ExprIf,
+    ConditionListAnd,
     ConditionLet,
     ConditionExpr,
     ExprLoop,
@@ -41,12 +44,12 @@ pub enum SyntaxKind {
     OptionElseClauseEmpty,
     ExprErrorPropagate,
     ExprIndexed,
-    ExprInlineMacro,
     ExprFixedSizeArray,
     FixedSizeArraySize,
     OptionFixedSizeArraySizeEmpty,
     ExprClosure,
     ClosureParamWrapperNAry,
+    ExprPlaceholder,
     StructArgExpr,
     OptionStructArgExprEmpty,
     StructArgSingle,
@@ -73,6 +76,8 @@ pub enum SyntaxKind {
     StatementList,
     StatementMissing,
     StatementLet,
+    LetElseClause,
+    OptionLetElseClauseEmpty,
     OptionTerminalSemicolonEmpty,
     StatementExpr,
     StatementContinue,
@@ -118,7 +123,6 @@ pub enum SyntaxKind {
     TraitItemConstant,
     TraitItemImpl,
     ItemImpl,
-    ItemInlineMacro,
     ItemHeaderDoc,
     ImplBody,
     ImplItemList,
@@ -152,6 +156,37 @@ pub enum SyntaxKind {
     GenericParamImplNamed,
     GenericParamImplAnonymous,
     GenericParamNegativeImpl,
+    TokenList,
+    TokenTreeLeaf,
+    TokenTreeNode,
+    TokenTreeRepetition,
+    TokenTreeParam,
+    TokenTreeMissing,
+    WrappedTokenTreeMissing,
+    ParenthesizedTokenTree,
+    BracedTokenTree,
+    BracketedTokenTree,
+    ExprInlineMacro,
+    ItemInlineMacro,
+    ItemMacroDeclaration,
+    MacroRulesList,
+    MacroRule,
+    ParamKind,
+    OptionParamKindEmpty,
+    MacroParam,
+    MacroRepetition,
+    OptionTerminalCommaEmpty,
+    MacroRepetitionOperatorMissing,
+    ParamIdent,
+    ParamExpr,
+    MacroParamKindMissing,
+    MacroElements,
+    MacroWrapper,
+    ParenthesizedMacro,
+    BracedMacro,
+    BracketedMacro,
+    LegacyExprInlineMacro,
+    LegacyItemInlineMacro,
     TriviumSkippedNode,
     TokenIdentifier,
     TerminalIdentifier,
@@ -189,6 +224,8 @@ pub enum SyntaxKind {
     TerminalImplicits,
     TokenLet,
     TerminalLet,
+    TokenMacro,
+    TerminalMacro,
     TokenMatch,
     TerminalMatch,
     TokenModule,
@@ -239,6 +276,8 @@ pub enum SyntaxKind {
     TerminalDiv,
     TokenDivEq,
     TerminalDivEq,
+    TokenDollar,
+    TerminalDollar,
     TokenDot,
     TerminalDot,
     TokenDotDot,
@@ -342,6 +381,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenImpl
                 | SyntaxKind::TokenImplicits
                 | SyntaxKind::TokenLet
+                | SyntaxKind::TokenMacro
                 | SyntaxKind::TokenMatch
                 | SyntaxKind::TokenModule
                 | SyntaxKind::TokenMut
@@ -367,6 +407,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenComma
                 | SyntaxKind::TokenDiv
                 | SyntaxKind::TokenDivEq
+                | SyntaxKind::TokenDollar
                 | SyntaxKind::TokenDot
                 | SyntaxKind::TokenDotDot
                 | SyntaxKind::TokenDotDotEq
@@ -433,6 +474,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalImpl
                 | SyntaxKind::TerminalImplicits
                 | SyntaxKind::TerminalLet
+                | SyntaxKind::TerminalMacro
                 | SyntaxKind::TerminalMatch
                 | SyntaxKind::TerminalModule
                 | SyntaxKind::TerminalMut
@@ -458,6 +500,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalComma
                 | SyntaxKind::TerminalDiv
                 | SyntaxKind::TerminalDivEq
+                | SyntaxKind::TerminalDollar
                 | SyntaxKind::TerminalDot
                 | SyntaxKind::TerminalDotDot
                 | SyntaxKind::TerminalDotDotEq
@@ -513,6 +556,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenImpl
                 | SyntaxKind::TokenImplicits
                 | SyntaxKind::TokenLet
+                | SyntaxKind::TokenMacro
                 | SyntaxKind::TokenMatch
                 | SyntaxKind::TokenModule
                 | SyntaxKind::TokenMut
@@ -547,6 +591,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalImpl
                 | SyntaxKind::TerminalImplicits
                 | SyntaxKind::TerminalLet
+                | SyntaxKind::TerminalMacro
                 | SyntaxKind::TerminalMatch
                 | SyntaxKind::TerminalModule
                 | SyntaxKind::TerminalMut

@@ -33,7 +33,7 @@ struct Cli {
     /// The input files with declared classes info.
     #[arg(
         required_unless_present = "fullnode_url",
-        conflicts_with_all = ["fullnode_url", "fullnode_args"]
+        conflicts_with_all = ["fullnode_url", "FullnodeArgs"]
     )]
     input_files: Vec<String>,
     /// The allowed libfuncs list to use (default: most recent audited list).
@@ -52,7 +52,7 @@ struct Cli {
     /// files should be provided.
     #[arg(
         long,
-        requires_all = ["fullnode_args"], 
+        requires_ifs = [("fullnode_url", "FullnodeArgs")], 
         required_unless_present = "input_files", 
         conflicts_with = "input_files"
     )]
@@ -312,7 +312,7 @@ fn spawn_class_processors(
         tokio::spawn(async move {
             while let Ok(sierra_class) = classes_rx.recv().await {
                 if let Err(err) = results_tx.send(run_single(sierra_class, config.as_ref())).await {
-                    eprintln!("Failed to send result: {:#?}", err);
+                    eprintln!("Failed to send result: {err:#?}");
                 }
                 // Additional yield to prevent starvation of the inputs handling stage.
                 tokio::task::yield_now().await;
@@ -436,7 +436,7 @@ fn analyze_report(
         && compilation_failures.is_empty()
         && compilation_mismatch.is_empty()
     {
-        println!("All {} classes passed validation and compilation.", num_of_classes);
+        println!("All {num_of_classes} classes passed validation and compilation.");
         Ok(())
     } else {
         Err(anyhow::anyhow!("Failed."))

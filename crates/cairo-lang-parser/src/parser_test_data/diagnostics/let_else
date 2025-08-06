@@ -1,0 +1,48 @@
+//! > Test let-else
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+    { let Some(x) = 5 }
+    { let Some(x) = 5 else }
+    { let Some(x) = 5 else { } }
+    { let Some(x) = 5 else 0; }
+}
+
+//! > expected_diagnostics
+error: Missing token ';'.
+ --> dummy_file.cairo:2:22
+    { let Some(x) = 5 }
+                     ^
+
+error: Missing token '{'.
+ --> dummy_file.cairo:3:27
+    { let Some(x) = 5 else }
+                          ^
+
+error: Missing token ';'.
+ --> dummy_file.cairo:3:27
+    { let Some(x) = 5 else }
+                          ^
+
+error: Missing token ';'.
+ --> dummy_file.cairo:4:31
+    { let Some(x) = 5 else { } }
+                              ^
+
+error: Skipped tokens. Expected: '{'.
+ --> dummy_file.cairo:5:28
+    { let Some(x) = 5 else 0; }
+                           ^^
+
+error: Missing token '{'.
+ --> dummy_file.cairo:5:30
+    { let Some(x) = 5 else 0; }
+                             ^
+
+error: Missing token ';'.
+ --> dummy_file.cairo:5:30
+    { let Some(x) = 5 else 0; }
+                             ^

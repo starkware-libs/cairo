@@ -1,0 +1,254 @@
+//! > Test simple macro definition
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+macro macro_name {
+    () => {
+        2 + $placeholder
+    };
+}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   └── child #0 (kind: ItemMacroDeclaration)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── macro_kw (kind: TokenMacro): 'macro'
+    │       ├── name (kind: TokenIdentifier): 'macro_name'
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── rules (kind: MacroRulesList)
+    │       │   └── child #0 (kind: MacroRule)
+    │       │       ├── lhs (kind: ParenthesizedMacro)
+    │       │       │   ├── lparen (kind: TokenLParen): '('
+    │       │       │   ├── elements (kind: MacroElements) []
+    │       │       │   └── rparen (kind: TokenRParen): ')'
+    │       │       ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │       │       ├── rhs (kind: BracedMacro)
+    │       │       │   ├── lbrace (kind: TokenLBrace): '{'
+    │       │       │   ├── elements (kind: MacroElements)
+    │       │       │   │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │       │   │   │   └── leaf (kind: TokenLiteralNumber): '2'
+    │       │       │   │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │       │   │   │   └── leaf (kind: TokenPlus): '+'
+    │       │       │   │   └── child #2 (kind: MacroParam)
+    │       │       │   │       ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │       ├── name (kind: TokenIdentifier): 'placeholder'
+    │       │       │   │       └── kind (kind: OptionParamKindEmpty) []
+    │       │       │   └── rbrace (kind: TokenRBrace): '}'
+    │       │       └── semicolon (kind: TokenSemicolon): ';'
+    │       └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test macro definition with several rules
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+macro macro_name {
+    () => {
+        2 + $placeholder
+    };
+
+    ($x:ident x + y) => {
+        2 + $x
+    };
+}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   └── child #0 (kind: ItemMacroDeclaration)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── macro_kw (kind: TokenMacro): 'macro'
+    │       ├── name (kind: TokenIdentifier): 'macro_name'
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── rules (kind: MacroRulesList)
+    │       │   ├── child #0 (kind: MacroRule)
+    │       │   │   ├── lhs (kind: ParenthesizedMacro)
+    │       │   │   │   ├── lparen (kind: TokenLParen): '('
+    │       │   │   │   ├── elements (kind: MacroElements) []
+    │       │   │   │   └── rparen (kind: TokenRParen): ')'
+    │       │   │   ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │       │   │   ├── rhs (kind: BracedMacro)
+    │       │   │   │   ├── lbrace (kind: TokenLBrace): '{'
+    │       │   │   │   ├── elements (kind: MacroElements)
+    │       │   │   │   │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │   │   │   │   │   └── leaf (kind: TokenLiteralNumber): '2'
+    │       │   │   │   │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │   │   │   │   │   └── leaf (kind: TokenPlus): '+'
+    │       │   │   │   │   └── child #2 (kind: MacroParam)
+    │       │   │   │   │       ├── dollar (kind: TokenDollar): '$'
+    │       │   │   │   │       ├── name (kind: TokenIdentifier): 'placeholder'
+    │       │   │   │   │       └── kind (kind: OptionParamKindEmpty) []
+    │       │   │   │   └── rbrace (kind: TokenRBrace): '}'
+    │       │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │       │   └── child #1 (kind: MacroRule)
+    │       │       ├── lhs (kind: ParenthesizedMacro)
+    │       │       │   ├── lparen (kind: TokenLParen): '('
+    │       │       │   ├── elements (kind: MacroElements)
+    │       │       │   │   ├── child #0 (kind: MacroParam)
+    │       │       │   │   │   ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │   │   ├── name (kind: TokenIdentifier): 'x'
+    │       │       │   │   │   └── kind (kind: ParamKind)
+    │       │       │   │   │       ├── colon (kind: TokenColon): ':'
+    │       │       │   │   │       └── kind (kind: ParamIdent)
+    │       │       │   │   │           └── ident (kind: TokenIdentifier): 'ident'
+    │       │       │   │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │       │   │   │   └── leaf (kind: TokenIdentifier): 'x'
+    │       │       │   │   ├── child #2 (kind: TokenTreeLeaf)
+    │       │       │   │   │   └── leaf (kind: TokenPlus): '+'
+    │       │       │   │   └── child #3 (kind: TokenTreeLeaf)
+    │       │       │   │       └── leaf (kind: TokenIdentifier): 'y'
+    │       │       │   └── rparen (kind: TokenRParen): ')'
+    │       │       ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │       │       ├── rhs (kind: BracedMacro)
+    │       │       │   ├── lbrace (kind: TokenLBrace): '{'
+    │       │       │   ├── elements (kind: MacroElements)
+    │       │       │   │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │       │   │   │   └── leaf (kind: TokenLiteralNumber): '2'
+    │       │       │   │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │       │   │   │   └── leaf (kind: TokenPlus): '+'
+    │       │       │   │   └── child #2 (kind: MacroParam)
+    │       │       │   │       ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │       ├── name (kind: TokenIdentifier): 'x'
+    │       │       │   │       └── kind (kind: OptionParamKindEmpty) []
+    │       │       │   └── rbrace (kind: TokenRBrace): '}'
+    │       │       └── semicolon (kind: TokenSemicolon): ';'
+    │       └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test expr placeholder outside of macro definition
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    2 + $placeholder
+}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   └── child #0 (kind: FunctionWithBody)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── optional_const (kind: OptionTerminalConstEmpty) []
+    │       │   ├── function_kw (kind: TokenFunction): 'fn'
+    │       │   ├── name (kind: TokenIdentifier): 'foo'
+    │       │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │       │   └── signature (kind: FunctionSignature)
+    │       │       ├── lparen (kind: TokenLParen): '('
+    │       │       ├── parameters (kind: ParamList) []
+    │       │       ├── rparen (kind: TokenRParen): ')'
+    │       │       ├── ret_ty (kind: OptionReturnTypeClauseEmpty) []
+    │       │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │       │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    │       └── body (kind: ExprBlock)
+    │           ├── lbrace (kind: TokenLBrace): '{'
+    │           ├── statements (kind: StatementList)
+    │           │   └── child #0 (kind: StatementExpr)
+    │           │       ├── attributes (kind: AttributeList) []
+    │           │       ├── expr (kind: ExprBinary)
+    │           │       │   ├── lhs (kind: TokenLiteralNumber): '2'
+    │           │       │   ├── op (kind: TokenPlus): '+'
+    │           │       │   └── rhs (kind: ExprPath)
+    │           │       │       ├── dollar (kind: TokenDollar): '$'
+    │           │       │       └── segments (kind: ExprPathInner)
+    │           │       │           └── item #0 (kind: PathSegmentSimple)
+    │           │       │               └── ident (kind: TokenIdentifier): 'placeholder'
+    │           │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │           └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test macro definition with unknown param kind.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+macro macro_name {
+    ($x:unknown) => {
+        2 + $x
+    };
+}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Missing tokens. Expected a macro rule parameter kind.
+ --> dummy_file.cairo:2:9
+    ($x:unknown) => {
+        ^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   └── child #0 (kind: ItemMacroDeclaration)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── macro_kw (kind: TokenMacro): 'macro'
+    │       ├── name (kind: TokenIdentifier): 'macro_name'
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── rules (kind: MacroRulesList)
+    │       │   └── child #0 (kind: MacroRule)
+    │       │       ├── lhs (kind: ParenthesizedMacro)
+    │       │       │   ├── lparen (kind: TokenLParen): '('
+    │       │       │   ├── elements (kind: MacroElements)
+    │       │       │   │   ├── child #0 (kind: MacroParam)
+    │       │       │   │   │   ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │   │   ├── name (kind: TokenIdentifier): 'x'
+    │       │       │   │   │   └── kind (kind: ParamKind)
+    │       │       │   │   │       ├── colon (kind: TokenColon): ':'
+    │       │       │   │   │       └── kind (kind: MacroParamKindMissing) []
+    │       │       │   │   └── child #1 (kind: TokenTreeLeaf)
+    │       │       │   │       └── leaf (kind: TokenIdentifier): 'unknown'
+    │       │       │   └── rparen (kind: TokenRParen): ')'
+    │       │       ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │       │       ├── rhs (kind: BracedMacro)
+    │       │       │   ├── lbrace (kind: TokenLBrace): '{'
+    │       │       │   ├── elements (kind: MacroElements)
+    │       │       │   │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │       │   │   │   └── leaf (kind: TokenLiteralNumber): '2'
+    │       │       │   │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │       │   │   │   └── leaf (kind: TokenPlus): '+'
+    │       │       │   │   └── child #2 (kind: MacroParam)
+    │       │       │   │       ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │       ├── name (kind: TokenIdentifier): 'x'
+    │       │       │   │       └── kind (kind: OptionParamKindEmpty) []
+    │       │       │   └── rbrace (kind: TokenRBrace): '}'
+    │       │       └── semicolon (kind: TokenSemicolon): ';'
+    │       └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).

@@ -1,5 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_plugins::plugins::HIDDEN_ATTR_SYNTAX;
 use cairo_lang_semantic::keyword::SELF_PARAM_KW;
 use cairo_lang_syntax::attribute::consts::IMPLICIT_PRECEDENCE_ATTR;
 use cairo_lang_syntax::node::ast::{
@@ -28,10 +29,10 @@ pub enum EntryPointKind {
 }
 impl EntryPointKind {
     /// Returns the entry point kind if the given function is indeed marked as an entry point.
-    pub fn try_from_function_with_body(
-        db: &dyn SyntaxGroup,
-        diagnostics: &mut Vec<PluginDiagnostic>,
-        item_function: &FunctionWithBody,
+    pub fn try_from_function_with_body<'db>(
+        db: &'db dyn SyntaxGroup,
+        diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+        item_function: &FunctionWithBody<'db>,
     ) -> Option<Self> {
         if has_v0_attribute(
             db,
@@ -50,10 +51,10 @@ impl EntryPointKind {
     }
 
     /// Returns the entry point kind if the attributes mark it as an entry point.
-    pub fn try_from_attrs(
-        db: &dyn SyntaxGroup,
-        diagnostics: &mut Vec<PluginDiagnostic>,
-        attrs: &impl QueryAttrs,
+    pub fn try_from_attrs<'db>(
+        db: &'db dyn SyntaxGroup,
+        diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+        attrs: &impl QueryAttrs<'db>,
     ) -> Option<Self> {
         if has_v0_attribute(db, diagnostics, attrs, EXTERNAL_ATTR) {
             Some(EntryPointKind::External)
@@ -69,14 +70,14 @@ impl EntryPointKind {
 
 // Accumulated data for generation of contract entry points.
 #[derive(Default)]
-pub struct EntryPointsGenerationData {
-    pub generated_wrapper_functions: Vec<RewriteNode>,
-    pub external_functions: Vec<RewriteNode>,
-    pub constructor_functions: Vec<RewriteNode>,
-    pub l1_handler_functions: Vec<RewriteNode>,
+pub struct EntryPointsGenerationData<'db> {
+    pub generated_wrapper_functions: Vec<RewriteNode<'db>>,
+    pub external_functions: Vec<RewriteNode<'db>>,
+    pub constructor_functions: Vec<RewriteNode<'db>>,
+    pub l1_handler_functions: Vec<RewriteNode<'db>>,
 }
-impl EntryPointsGenerationData {
-    pub fn into_rewrite_node(self) -> RewriteNode {
+impl<'db> EntryPointsGenerationData<'db> {
+    pub fn into_rewrite_node(self) -> RewriteNode<'db> {
         let generated_external_module =
             generate_submodule(EXTERNAL_MODULE, RewriteNode::new_modified(self.external_functions));
         let generated_l1_handler_module = generate_submodule(
@@ -108,9 +109,13 @@ impl EntryPointsGenerationData {
 }
 
 /// Generates a submodule with the given name, uses and functions.
-fn generate_submodule(module_name: &str, generated_functions_node: RewriteNode) -> RewriteNode {
+fn generate_submodule<'db>(
+    module_name: &str,
+    generated_functions_node: RewriteNode<'db>,
+) -> RewriteNode<'db> {
     RewriteNode::interpolate_patched(
         &formatdoc! {"
+            {HIDDEN_ATTR_SYNTAX}
             pub mod {module_name} {{$generated_functions_node$
             }}"
         },
@@ -119,18 +124,18 @@ fn generate_submodule(module_name: &str, generated_functions_node: RewriteNode) 
 }
 
 /// Parameters for generating an entry point, used when calling `handle_entry_point`.
-pub struct EntryPointGenerationParams<'a> {
+pub struct EntryPointGenerationParams<'db, 'a> {
     pub entry_point_kind: EntryPointKind,
-    pub item_function: &'a FunctionWithBody,
-    pub wrapped_function_path: RewriteNode,
+    pub item_function: &'a FunctionWithBody<'db>,
+    pub wrapped_function_path: RewriteNode<'db>,
     pub wrapper_identifier: String,
     pub unsafe_new_contract_state_prefix: &'a str,
-    pub generic_params: RewriteNode,
+    pub generic_params: RewriteNode<'db>,
 }
 
 /// Handles a contract entrypoint function.
-pub fn handle_entry_point(
-    db: &dyn SyntaxGroup,
+pub fn handle_entry_point<'db, 'a>(
+    db: &'db dyn SyntaxGroup,
     EntryPointGenerationParams {
         entry_point_kind,
         item_function,
@@ -138,15 +143,15 @@ pub fn handle_entry_point(
         wrapper_identifier,
         unsafe_new_contract_state_prefix,
         generic_params,
-    }: EntryPointGenerationParams<'_>,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    data: &mut EntryPointsGenerationData,
+    }: EntryPointGenerationParams<'db, 'a>,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    data: &mut EntryPointsGenerationData<'db>,
 ) {
     let declaration = item_function.declaration(db);
     let name_node = declaration.name(db);
     if entry_point_kind == EntryPointKind::Constructor && name_node.text(db) != CONSTRUCTOR_NAME {
         diagnostics.push(PluginDiagnostic::error(
-            name_node.stable_ptr().untyped(),
+            name_node.stable_ptr(db),
             format!("The constructor function must be called `{CONSTRUCTOR_NAME}`."),
         ));
     }
@@ -155,7 +160,7 @@ pub fn handle_entry_point(
         declaration.generic_params(db)
     {
         diagnostics.push(PluginDiagnostic::error(
-            generic_params.stable_ptr().untyped(),
+            generic_params.stable_ptr(db),
             "Contract entry points cannot have generic arguments".to_string(),
         ))
     }
@@ -165,7 +170,7 @@ pub fn handle_entry_point(
         .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
         .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS);
     let params = declaration.signature(db).parameters(db);
-    for (param_idx, param) in params.elements(db).iter().enumerate() {
+    for (param_idx, param) in params.elements(db).enumerate() {
         // This assumes `mut` can only appear alone.
         if param.is_mut_param(db) {
             original_parameters
@@ -214,17 +219,18 @@ pub fn handle_entry_point(
 }
 
 /// Generates Cairo code for an entry point wrapper.
-fn generate_entry_point_wrapper(
-    db: &dyn SyntaxGroup,
-    function: &FunctionWithBody,
-    wrapped_function_path: RewriteNode,
-    wrapper_function_name: RewriteNode,
-    generic_params: RewriteNode,
+fn generate_entry_point_wrapper<'db>(
+    db: &'db dyn SyntaxGroup,
+    function: &FunctionWithBody<'db>,
+    wrapped_function_path: RewriteNode<'db>,
+    wrapper_function_name: RewriteNode<'db>,
+    generic_params: RewriteNode<'db>,
     unsafe_new_contract_state_prefix: &str,
-) -> Result<RewriteNode, Vec<PluginDiagnostic>> {
+) -> Result<RewriteNode<'db>, Vec<PluginDiagnostic<'db>>> {
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);
-    let mut params = sig.parameters(db).elements(db).into_iter().enumerate();
+    let sig_params = sig.parameters(db);
+    let mut params = sig_params.elements(db).enumerate();
     let mut diagnostics = vec![];
     let mut arg_names = Vec::new();
     let mut arg_definitions = Vec::new();
@@ -232,13 +238,13 @@ fn generate_entry_point_wrapper(
 
     let Some((0, first_param)) = params.next() else {
         return Err(vec![PluginDiagnostic::error(
-            sig.stable_ptr().untyped(),
+            sig.stable_ptr(db),
             "The first parameter of an entry point must be `self`.".into(),
         )]);
     };
     if first_param.name(db).text(db) != SELF_PARAM_KW {
         return Err(vec![PluginDiagnostic::error(
-            first_param.stable_ptr().untyped(),
+            first_param.stable_ptr(db),
             "The first parameter of an entry point must be `self`.".into(),
         )]);
     };
@@ -258,7 +264,7 @@ fn generate_entry_point_wrapper(
         let is_ref = param.is_ref_param(db);
         if raw_output && is_ref {
             diagnostics.push(PluginDiagnostic::error(
-                param.modifiers(db).stable_ptr().untyped(),
+                param.modifiers(db).stable_ptr(db),
                 format!("`{RAW_OUTPUT_ATTR}` functions cannot have `ref` parameters."),
             ));
         }
@@ -285,7 +291,7 @@ fn generate_entry_point_wrapper(
     let ret_ty = sig.ret_ty(db);
     let (let_res, append_res, return_ty_is_felt252_span, ret_type_ptr) = match &ret_ty {
         OptionReturnTypeClause::Empty(type_clause_ast) => {
-            ("", "".to_string(), false, type_clause_ast.stable_ptr().untyped())
+            ("", "".to_string(), false, type_clause_ast.stable_ptr(db).untyped())
         }
         OptionReturnTypeClause::ReturnTypeClause(ty) => {
             let ret_type_ast = ty.ty(db);
@@ -296,7 +302,7 @@ fn generate_entry_point_wrapper(
                 "let res = ",
                 format!("\n    core::serde::Serde::<{ret_type_name}>::serialize(@res, ref arr);"),
                 return_ty_is_felt252_span,
-                ret_type_ast.stable_ptr().untyped(),
+                ret_type_ast.stable_ptr(db).untyped(),
             )
         }
     };
@@ -369,12 +375,12 @@ fn generate_entry_point_wrapper(
 
 /// Validates the first parameter of an L1 handler is `from_address: felt252` or `_from_address:
 /// felt252`.
-fn validate_l1_handler_first_parameter(
-    db: &dyn SyntaxGroup,
-    params: &ast::ParamList,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+fn validate_l1_handler_first_parameter<'db>(
+    db: &'db dyn SyntaxGroup,
+    params: &ast::ParamList<'db>,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
-    if let Some(first_param) = params.elements(db).get(1) {
+    if let Some(first_param) = params.elements(db).nth(1) {
         // Validate type
 
         if !extract_matches!(first_param.type_clause(db), OptionTypeClause::TypeClause)
@@ -382,23 +388,21 @@ fn validate_l1_handler_first_parameter(
             .is_felt252(db)
         {
             diagnostics.push(PluginDiagnostic::error(
-                first_param.stable_ptr().untyped(),
+                first_param.stable_ptr(db),
                 "The second parameter of an L1 handler must be of type `felt252`.".to_string(),
             ));
         }
 
         // Validate name
-        if maybe_strip_underscore(first_param.name(db).text(db).as_str())
-            != L1_HANDLER_FIRST_PARAM_NAME
-        {
+        if maybe_strip_underscore(first_param.name(db).text(db)) != L1_HANDLER_FIRST_PARAM_NAME {
             diagnostics.push(PluginDiagnostic::error(
-                first_param.stable_ptr().untyped(),
+                first_param.stable_ptr(db),
                 "The second parameter of an L1 handler must be named 'from_address'.".to_string(),
             ));
         }
     } else {
         diagnostics.push(PluginDiagnostic::error(
-            params.stable_ptr().untyped(),
+            params.stable_ptr(db),
             "An L1 handler must have the 'from_address' as its second parameter.".to_string(),
         ));
     };

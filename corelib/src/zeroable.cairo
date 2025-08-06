@@ -100,10 +100,10 @@ pub(crate) enum IsZeroResult<T> {
 }
 
 /// Unwraps a `NonZero<T>` to retrieve the underlying value of type `T`.
-extern fn unwrap_non_zero<T>(a: NonZero<T>) -> T nopanic;
+extern const fn unwrap_non_zero<T>(a: NonZero<T>) -> T nopanic;
 
 pub(crate) impl NonZeroIntoImpl<T> of Into<NonZero<T>, T> {
-    fn into(self: NonZero<T>) -> T nopanic {
+    const fn into(self: NonZero<T>) -> T nopanic {
         unwrap_non_zero(self)
     }
 }

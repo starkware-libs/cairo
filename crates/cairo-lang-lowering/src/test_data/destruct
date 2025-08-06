@@ -173,23 +173,23 @@ End:
 
 blk3:
 Statements:
-  (v15: core::panics::Panic, v16: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v17: core::panics::Panic) <- test::BPanicDestruct::panic_destruct(v1, v15)
-  (v18: core::panics::Panic) <- test::APanicDestruct::panic_destruct(v0, v17)
-  (v19: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v18, v16)
-  (v20: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v19)
 End:
-  Return(v20)
+  Goto(blk5, {v7 -> v15})
 
 blk4:
 Statements:
-  (v21: core::panics::Panic, v22: core::array::Array::<core::felt252>) <- struct_destructure(v4)
-  (v23: core::panics::Panic) <- test::BPanicDestruct::panic_destruct(v1, v21)
-  (v24: core::panics::Panic) <- test::APanicDestruct::panic_destruct(v0, v23)
-  (v25: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v24, v22)
-  (v26: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v25)
 End:
-  Return(v26)
+  Goto(blk5, {v4 -> v15})
+
+blk5:
+Statements:
+  (v16: core::panics::Panic, v17: core::array::Array::<core::felt252>) <- struct_destructure(v15)
+  (v18: core::panics::Panic) <- test::BPanicDestruct::panic_destruct(v1, v16)
+  (v19: core::panics::Panic) <- test::APanicDestruct::panic_destruct(v0, v18)
+  (v20: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v19, v17)
+  (v21: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
+End:
+  Return(v21)
 
 //! > ==========================================================================
 
@@ -239,38 +239,35 @@ End:
 
 blk1:
 Statements:
+  (v4: (test::A,)) <- struct_construct(v1)
+  (v5: core::panics::PanicResult::<(test::A,)>) <- PanicResult::Ok(v4)
 End:
-  Goto(blk4, {})
+  Return(v5)
 
 blk2:
 Statements:
-  (v4: core::panics::PanicResult::<((),)>) <- test::may_panic()
+  (v6: core::panics::PanicResult::<((),)>) <- test::may_panic()
 End:
-  Match(match_enum(v4) {
-    PanicResult::Ok(v5) => blk3,
-    PanicResult::Err(v6) => blk5,
+  Match(match_enum(v6) {
+    PanicResult::Ok(v7) => blk3,
+    PanicResult::Err(v8) => blk4,
   })
 
 blk3:
 Statements:
+  (v9: (test::A,)) <- struct_construct(v1)
+  (v10: core::panics::PanicResult::<(test::A,)>) <- PanicResult::Ok(v9)
 End:
-  Goto(blk4, {})
+  Return(v10)
 
 blk4:
 Statements:
-  (v7: (test::A,)) <- struct_construct(v1)
-  (v8: core::panics::PanicResult::<(test::A,)>) <- PanicResult::Ok(v7)
+  (v11: core::panics::Panic, v12: core::array::Array::<core::felt252>) <- struct_destructure(v8)
+  (v13: core::panics::Panic) <- test::APanicDestruct::panic_destruct(v1, v11)
+  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v12)
+  (v15: core::panics::PanicResult::<(test::A,)>) <- PanicResult::Err(v14)
 End:
-  Return(v8)
-
-blk5:
-Statements:
-  (v9: core::panics::Panic, v10: core::array::Array::<core::felt252>) <- struct_destructure(v6)
-  (v11: core::panics::Panic) <- test::APanicDestruct::panic_destruct(v1, v9)
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
-  (v13: core::panics::PanicResult::<(test::A,)>) <- PanicResult::Err(v12)
-End:
-  Return(v13)
+  Return(v15)
 
 //! > ==========================================================================
 
@@ -371,9 +368,3 @@ error: Cannot inline a function that might call itself.
 
 //! > lowering_flat
 Parameters:
-blk0 (root):
-Statements:
-  (v0: test::A) <- struct_construct()
-  () <- test::ADestruct::destruct(v0)
-End:
-  Return()

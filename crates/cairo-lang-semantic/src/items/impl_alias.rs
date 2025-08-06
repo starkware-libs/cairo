@@ -11,31 +11,33 @@ use cairo_lang_utils::try_extract_matches;
 
 use super::generics::{GenericParamsData, semantic_generic_params};
 use super::imp::ImplId;
-use crate::db::SemanticGroup;
+use crate::db::{SemanticGroup, SemanticGroupData};
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
-use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
+use crate::resolve::{
+    ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData,
+};
 use crate::substitution::SemanticRewriter;
 use crate::{GenericParam, SemanticDiagnostic};
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ImplAliasData {
-    pub diagnostics: Diagnostics<SemanticDiagnostic>,
-    pub resolved_impl: Maybe<ImplId>,
-    generic_params: Vec<GenericParam>,
-    attributes: Vec<Attribute>,
-    pub resolver_data: Arc<ResolverData>,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct ImplAliasData<'db> {
+    pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    pub resolved_impl: Maybe<ImplId<'db>>,
+    generic_params: Vec<GenericParam<'db>>,
+    attributes: Vec<Attribute<'db>>,
+    pub resolver_data: Arc<ResolverData<'db>>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_alias_semantic_data].
-pub fn priv_impl_alias_semantic_data(
-    db: &(dyn SemanticGroup),
-    impl_alias_id: ImplAliasId,
+pub fn priv_impl_alias_semantic_data<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_alias_id: ImplAliasId<'db>,
     in_cycle: bool,
-) -> Maybe<ImplAliasData> {
+) -> Maybe<ImplAliasData<'db>> {
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::ImplAlias(impl_alias_id));
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?.to_maybe()?;
 
@@ -54,18 +56,17 @@ pub fn priv_impl_alias_semantic_data(
 }
 
 /// A helper function to compute the semantic data of an impl-alias item.
-pub fn impl_alias_semantic_data_helper(
-    db: &(dyn SemanticGroup),
-    impl_alias_ast: &ast::ItemImplAlias,
-    lookup_item_id: LookupItemId,
-    generic_params_data: GenericParamsData,
-) -> Maybe<ImplAliasData> {
+pub fn impl_alias_semantic_data_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_alias_ast: &ast::ItemImplAlias<'db>,
+    lookup_item_id: LookupItemId<'db>,
+    generic_params_data: GenericParamsData<'db>,
+) -> Maybe<ImplAliasData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
-    let syntax_db = db.upcast();
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let mut resolver = Resolver::with_data(
         db,
@@ -75,22 +76,23 @@ pub fn impl_alias_semantic_data_helper(
 
     let item = resolver.resolve_concrete_path(
         &mut diagnostics,
-        &impl_alias_ast.impl_path(syntax_db),
+        &impl_alias_ast.impl_path(db),
         NotFoundItemType::Impl,
     );
     let resolved_impl = item.and_then(|item| {
-        try_extract_matches!(item, ResolvedConcreteItem::Impl)
-            .ok_or_else(|| diagnostics.report(&impl_alias_ast.impl_path(syntax_db), UnknownImpl))
+        try_extract_matches!(item, ResolvedConcreteItem::Impl).ok_or_else(|| {
+            diagnostics.report(impl_alias_ast.impl_path(db).stable_ptr(db), UnknownImpl)
+        })
     });
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr(db).untyped());
 
     let resolved_impl = inference.rewrite(resolved_impl).no_err();
-    let generic_params = inference.rewrite(generic_params_data.generic_params.clone()).no_err();
+    let generic_params = inference.rewrite(generic_params_data.generic_params).no_err();
 
-    let attributes = impl_alias_ast.attributes(syntax_db).structurize(syntax_db);
+    let attributes = impl_alias_ast.attributes(db).structurize(db);
     let resolver_data = Arc::new(resolver.data);
     Ok(ImplAliasData {
         diagnostics: diagnostics.build(),
@@ -102,33 +104,32 @@ pub fn impl_alias_semantic_data_helper(
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_alias_semantic_data].
-pub fn priv_impl_alias_semantic_data_cycle(
-    db: &dyn SemanticGroup,
-    _cycle: &salsa::Cycle,
-    impl_alias_id: &ImplAliasId,
-    _in_cycle: &bool,
-) -> Maybe<ImplAliasData> {
-    priv_impl_alias_semantic_data(db, *impl_alias_id, true)
+pub fn priv_impl_alias_semantic_data_cycle<'db>(
+    db: &'db dyn SemanticGroup,
+    _input: SemanticGroupData,
+    impl_alias_id: ImplAliasId<'db>,
+    _in_cycle: bool,
+) -> Maybe<ImplAliasData<'db>> {
+    priv_impl_alias_semantic_data(db, impl_alias_id, true)
 }
 
 /// A helper function to compute the semantic data of an impl-alias item when a cycle is detected.
-pub fn impl_alias_semantic_data_cycle_helper(
-    db: &(dyn SemanticGroup),
-    impl_alias_ast: &ast::ItemImplAlias,
-    lookup_item_id: LookupItemId,
-    generic_params_data: GenericParamsData,
-) -> Maybe<ImplAliasData> {
+pub fn impl_alias_semantic_data_cycle_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_alias_ast: &ast::ItemImplAlias<'db>,
+    lookup_item_id: LookupItemId<'db>,
+    generic_params_data: GenericParamsData<'db>,
+) -> Maybe<ImplAliasData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
-    let syntax_db = db.upcast();
-    let err = Err(diagnostics.report(&impl_alias_ast.name(syntax_db), ImplAliasCycle));
+    let err = Err(diagnostics.report(impl_alias_ast.name(db).stable_ptr(db), ImplAliasCycle));
     let generic_params = generic_params_data.generic_params.clone();
     diagnostics.extend(generic_params_data.diagnostics);
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
-    let attributes = impl_alias_ast.attributes(syntax_db).structurize(syntax_db);
+    let attributes = impl_alias_ast.attributes(db).structurize(db);
     Ok(ImplAliasData {
         diagnostics: diagnostics.build(),
         resolved_impl: err,
@@ -141,47 +142,47 @@ pub fn impl_alias_semantic_data_cycle_helper(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_semantic_diagnostics].
-pub fn impl_alias_semantic_diagnostics(
-    db: &dyn SemanticGroup,
-    impl_alias_id: ImplAliasId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn impl_alias_semantic_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_alias_id: ImplAliasId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_impl_alias_semantic_data(impl_alias_id, false)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_resolved_impl].
-pub fn impl_alias_resolved_impl(
-    db: &dyn SemanticGroup,
-    impl_alias_id: ImplAliasId,
-) -> Maybe<ImplId> {
+pub fn impl_alias_resolved_impl<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_alias_id: ImplAliasId<'db>,
+) -> Maybe<ImplId<'db>> {
     db.priv_impl_alias_semantic_data(impl_alias_id, false)?.resolved_impl
 }
 
 /// Trivial cycle handling for [crate::db::SemanticGroup::impl_alias_resolved_impl].
-pub fn impl_alias_resolved_impl_cycle(
-    db: &dyn SemanticGroup,
-    _cycle: &salsa::Cycle,
-    impl_alias_id: &ImplAliasId,
-) -> Maybe<ImplId> {
+pub fn impl_alias_resolved_impl_cycle<'db>(
+    db: &'db dyn SemanticGroup,
+    _input: SemanticGroupData,
+    impl_alias_id: ImplAliasId<'db>,
+) -> Maybe<ImplId<'db>> {
     // Forwarding (not as a query) cycle handling to `priv_impl_alias_semantic_data` cycle handler.
-    db.priv_impl_alias_semantic_data(*impl_alias_id, true)?.resolved_impl
+    db.priv_impl_alias_semantic_data(impl_alias_id, true)?.resolved_impl
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_generic_params].
-pub fn impl_alias_generic_params(
-    db: &dyn SemanticGroup,
-    impl_alias_id: ImplAliasId,
-) -> Maybe<Vec<GenericParam>> {
+pub fn impl_alias_generic_params<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_alias_id: ImplAliasId<'db>,
+) -> Maybe<Vec<GenericParam<'db>>> {
     Ok(db.impl_alias_generic_params_data(impl_alias_id)?.generic_params)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_generic_params_data].
-pub fn impl_alias_generic_params_data(
-    db: &dyn SemanticGroup,
-    impl_alias_id: ImplAliasId,
-) -> Maybe<GenericParamsData> {
-    let module_file_id = impl_alias_id.module_file_id(db.upcast());
+pub fn impl_alias_generic_params_data<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_alias_id: ImplAliasId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
+    let module_file_id = impl_alias_id.module_file_id(db);
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?.to_maybe()?;
     impl_alias_generic_params_data_helper(
         db,
@@ -193,13 +194,13 @@ pub fn impl_alias_generic_params_data(
 }
 
 /// Computes data about the generic parameters of an impl-alias item.
-pub fn impl_alias_generic_params_data_helper(
-    db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId,
-    impl_alias_ast: &ast::ItemImplAlias,
-    lookup_item_id: LookupItemId,
-    parent_resolver_data: Option<Arc<ResolverData>>,
-) -> Maybe<GenericParamsData> {
+pub fn impl_alias_generic_params_data_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    module_file_id: ModuleFileId<'db>,
+    impl_alias_ast: &ast::ItemImplAlias<'db>,
+    lookup_item_id: LookupItemId<'db>,
+    parent_resolver_data: Option<Arc<ResolverData<'db>>>,
+) -> Maybe<GenericParamsData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
     let inference_id = InferenceId::LookupItemGenerics(lookup_item_id);
 
@@ -215,11 +216,11 @@ pub fn impl_alias_generic_params_data_helper(
         &mut diagnostics,
         &mut resolver,
         module_file_id,
-        &impl_alias_ast.generic_params(db.upcast()),
+        &impl_alias_ast.generic_params(db),
     );
 
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr(db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -227,34 +228,37 @@ pub fn impl_alias_generic_params_data_helper(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_resolver_data].
-pub fn impl_alias_resolver_data(
-    db: &dyn SemanticGroup,
-    impl_alias_id: ImplAliasId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn impl_alias_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_alias_id: ImplAliasId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_impl_alias_semantic_data(impl_alias_id, false)?.resolver_data)
 }
 
 /// Trivial cycle handling for [crate::db::SemanticGroup::impl_alias_resolver_data].
-pub fn impl_alias_resolver_data_cycle(
-    db: &dyn SemanticGroup,
-    _cycle: &salsa::Cycle,
-    impl_alias_id: &ImplAliasId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn impl_alias_resolver_data_cycle<'db>(
+    db: &'db dyn SemanticGroup,
+    _input: SemanticGroupData,
+    impl_alias_id: ImplAliasId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     // Forwarding (not as a query) cycle handling to `priv_impl_alias_semantic_data` cycle handler.
-    impl_alias_resolver_data(db, *impl_alias_id)
+    impl_alias_resolver_data(db, impl_alias_id)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_attributes].
-pub fn impl_alias_attributes(
-    db: &dyn SemanticGroup,
-    impl_alias_id: ImplAliasId,
-) -> Maybe<Vec<Attribute>> {
+pub fn impl_alias_attributes<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_alias_id: ImplAliasId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_impl_alias_semantic_data(impl_alias_id, false)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_impl_def].
-pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -> Maybe<ImplDefId> {
-    let module_file_id = impl_alias_id.module_file_id(db.upcast());
+pub fn impl_alias_impl_def<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_alias_id: ImplAliasId<'db>,
+) -> Maybe<ImplDefId<'db>> {
+    let module_file_id = impl_alias_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?.to_maybe()?;
     let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
@@ -262,13 +266,13 @@ pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
     resolver.set_feature_config(&impl_alias_id, &impl_alias_ast, &mut diagnostics);
 
-    let impl_path_syntax = impl_alias_ast.impl_path(db.upcast());
+    let impl_path_syntax = impl_alias_ast.impl_path(db);
 
     match resolver.resolve_generic_path_with_args(
         &mut diagnostics,
         &impl_path_syntax,
         NotFoundItemType::Impl,
-        None,
+        ResolutionContext::Default,
     ) {
         Ok(ResolvedGenericItem::Impl(imp)) => Ok(imp),
         Ok(ResolvedGenericItem::GenericImplAlias(impl_alias)) => db.impl_alias_impl_def(impl_alias),
@@ -279,11 +283,11 @@ pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::impl_alias_impl_def].
-pub fn impl_alias_impl_def_cycle(
+pub fn impl_alias_impl_def_cycle<'db>(
     _db: &dyn SemanticGroup,
-    _cycle: &salsa::Cycle,
-    _impl_alias_id: &ImplAliasId,
-) -> Maybe<ImplDefId> {
+    _input: SemanticGroupData,
+    _impl_alias_id: ImplAliasId<'db>,
+) -> Maybe<ImplDefId<'db>> {
     // Skipping diagnostics since we will get these through when resolving in the
     // `priv_impl_alias_semantic_data` query.
     Err(skip_diagnostic())

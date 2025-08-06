@@ -23,39 +23,39 @@ use crate::{GenericParam, SemanticDiagnostic};
 mod test;
 
 // Declaration.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ExternTypeDeclarationData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    generic_params: Vec<GenericParam>,
-    attributes: Vec<Attribute>,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct ExternTypeDeclarationData<'db> {
+    diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    generic_params: Vec<GenericParam<'db>>,
+    attributes: Vec<Attribute<'db>>,
 }
 
 // Selectors.
 /// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_diagnostics].
-pub fn extern_type_declaration_diagnostics(
-    db: &dyn SemanticGroup,
-    extern_type_id: ExternTypeId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn extern_type_declaration_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_type_id: ExternTypeId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_extern_type_declaration_data(extern_type_id)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
 /// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params].
-pub fn extern_type_declaration_generic_params(
-    db: &dyn SemanticGroup,
-    extern_type_id: ExternTypeId,
-) -> Maybe<Vec<GenericParam>> {
+pub fn extern_type_declaration_generic_params<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_type_id: ExternTypeId<'db>,
+) -> Maybe<Vec<GenericParam<'db>>> {
     Ok(db.extern_type_declaration_generic_params_data(extern_type_id)?.generic_params)
 }
 
 // Computation.
 /// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params_data].
-pub fn extern_type_declaration_generic_params_data(
-    db: &dyn SemanticGroup,
-    extern_type_id: ExternTypeId,
-) -> Maybe<GenericParamsData> {
-    let module_file_id = extern_type_id.module_file_id(db.upcast());
+pub fn extern_type_declaration_generic_params_data<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_type_id: ExternTypeId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
+    let module_file_id = extern_type_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?.to_maybe()?;
 
@@ -69,16 +69,13 @@ pub fn extern_type_declaration_generic_params_data(
         &mut diagnostics,
         &mut resolver,
         module_file_id,
-        &extern_type_syntax.generic_params(db.upcast()),
+        &extern_type_syntax.generic_params(db),
     );
     if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
-        diagnostics.report(
-            param.stable_ptr(db.upcast()).untyped(),
-            ExternTypeWithImplGenericsNotSupported,
-        );
+        diagnostics.report(param.stable_ptr(db).untyped(), ExternTypeWithImplGenericsNotSupported);
     }
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr(db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -86,10 +83,10 @@ pub fn extern_type_declaration_generic_params_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_extern_type_declaration_data].
-pub fn priv_extern_type_declaration_data(
-    db: &dyn SemanticGroup,
-    extern_type_id: ExternTypeId,
-) -> Maybe<ExternTypeDeclarationData> {
+pub fn priv_extern_type_declaration_data<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_type_id: ExternTypeId<'db>,
+) -> Maybe<ExternTypeDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
     let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?.to_maybe()?;
 
@@ -104,12 +101,11 @@ pub fn priv_extern_type_declaration_data(
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
     diagnostics.extend(generic_params_data.diagnostics);
-    let syntax_db = db.upcast();
-    let attributes = extern_type_syntax.attributes(syntax_db).structurize(syntax_db);
+    let attributes = extern_type_syntax.attributes(db).structurize(db);
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr(db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
 
@@ -117,9 +113,9 @@ pub fn priv_extern_type_declaration_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::extern_type_attributes].
-pub fn extern_type_attributes(
-    db: &dyn SemanticGroup,
-    extern_type_id: ExternTypeId,
-) -> Maybe<Vec<Attribute>> {
+pub fn extern_type_attributes<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_type_id: ExternTypeId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_extern_type_declaration_data(extern_type_id)?.attributes)
 }

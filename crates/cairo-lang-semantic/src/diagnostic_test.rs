@@ -75,12 +75,12 @@ fn test_missing_module_file() {
 struct AddInlineModuleDummyPlugin;
 
 impl MacroPlugin for AddInlineModuleDummyPlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         match item_ast {
             ast::ModuleItem::FreeFunction(func) if func.has_attr(db, "test_change_return_type") => {
                 let mut builder = PatchBuilder::new(db, &func);
@@ -125,6 +125,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                         code_mappings,
                         aux_data: None,
                         diagnostics_note: Default::default(),
+                        is_unhygienic: false,
                     }),
                     diagnostics: vec![],
                     remove_original_item: false,
@@ -143,9 +144,9 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
 fn test_inline_module_diagnostics() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
-    db.set_default_macro_plugins(Arc::new([
-        db.intern_macro_plugin(MacroPluginLongId(Arc::new(AddInlineModuleDummyPlugin)))
-    ]));
+    db.set_default_macro_plugins_input(Arc::new([MacroPluginLongId(Arc::new(
+        AddInlineModuleDummyPlugin,
+    ))]));
     let crate_id = setup_test_crate(
         db,
         indoc! {"
@@ -224,7 +225,11 @@ fn test_inline_inline_module_diagnostics() {
 #[derive(Debug)]
 struct NoU128RenameAnalyzerPlugin;
 impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
-    fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic> {
+    fn diagnostics<'db>(
+        &self,
+        db: &'db dyn SemanticGroup,
+        module_id: ModuleId<'db>,
+    ) -> Vec<PluginDiagnostic<'db>> {
         let mut diagnostics = vec![];
         let Ok(uses) = db.module_uses_ids(module_id) else {
             return diagnostics;
@@ -235,9 +240,9 @@ impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
             else {
                 continue;
             };
-            if ty.full_path(db.upcast()) == "core::integer::u128" {
+            if ty.full_path(db) == "core::integer::u128" {
                 diagnostics.push(PluginDiagnostic::error(
-                    use_id.stable_ptr(db.upcast()).untyped(),
+                    use_id.stable_ptr(db).untyped(),
                     "Use items for u128 disallowed.".to_string(),
                 ));
             }
@@ -254,9 +259,9 @@ impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
 fn test_analyzer_diagnostics() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
-    db.set_default_analyzer_plugins(Arc::new([
-        db.intern_analyzer_plugin(AnalyzerPluginLongId(Arc::new(NoU128RenameAnalyzerPlugin)))
-    ]));
+    db.set_default_analyzer_plugins_input(Arc::new([AnalyzerPluginLongId(Arc::new(
+        NoU128RenameAnalyzerPlugin,
+    ))]));
     let crate_id = setup_test_crate(
         db,
         indoc! {"

@@ -9,7 +9,6 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use smol_str::SmolStr;
 
 use crate::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics};
 
@@ -21,7 +20,7 @@ pub fn get_diagnostics(
     let code = &inputs["cairo_code"];
 
     let file_id = create_virtual_file(db, "dummy_file.cairo", code);
-    let (_, diagnostics) = get_syntax_root_and_diagnostics(db, file_id, code);
+    let (_, diagnostics) = get_syntax_root_and_diagnostics(db, file_id);
     TestRunnerResult::success(OrderedHashMap::from([(
         "expected_diagnostics".into(),
         diagnostics.format(db),
@@ -30,17 +29,18 @@ pub fn get_diagnostics(
 
 // TODO(yuval): stop virtual files for tests anymore. See semantic tests.
 /// Creates a virtual file with the given content and returns its ID.
-pub fn create_virtual_file(
-    db: &SimpleParserDatabase,
-    file_name: impl Into<SmolStr>,
+pub fn create_virtual_file<'a>(
+    db: &'a SimpleParserDatabase,
+    file_name: impl Into<String>,
     content: &str,
-) -> FileId {
+) -> FileId<'a> {
     FileLongId::Virtual(VirtualFile {
         parent: None,
         name: file_name.into(),
         content: content.into(),
         code_mappings: [].into(),
         kind: FileKind::Module,
+        original_item_removed: false,
     })
     .intern(db)
 }
@@ -68,8 +68,8 @@ impl MockToken {
     }
 
     /// Create a token based on [SyntaxNode]
-    pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> MockToken {
-        MockToken::new(node.get_text(db), node.span(db))
+    pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode<'_>) -> MockToken {
+        MockToken::new(node.get_text(db).to_string(), node.span(db))
     }
 }
 
@@ -80,9 +80,9 @@ impl MockTokenStream {
     }
 
     /// Create whole [MockTokenStream] based upon the [SyntaxNode].
-    pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+    pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode<'_>) -> Self {
         let leaves = node.tokens(db);
-        let tokens = leaves.map(|node| MockToken::from_syntax_node(db, node.clone())).collect();
+        let tokens = leaves.map(|node| MockToken::from_syntax_node(db, node)).collect();
         Self::new(tokens)
     }
 }

@@ -3,6 +3,8 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin, PluginDiagnostic,
     PluginGeneratedFile,
 };
+use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
@@ -14,21 +16,27 @@ impl NamedPlugin for SelectorMacro {
     const NAME: &'static str = "selector";
 }
 impl InlineMacroExprPlugin for SelectorMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
+        let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
+            return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
+                syntax.as_syntax_node().stable_ptr(db),
+            ));
+        };
         let arg = extract_macro_single_unnamed_arg!(
             db,
-            syntax,
-            ast::WrappedArgList::ParenthesizedArgList(_)
+            &legacy_inline_macro,
+            ast::WrappedArgList::ParenthesizedArgList(_),
+            syntax.stable_ptr(db)
         );
 
         let ast::Expr::String(input_string) = arg else {
             let diagnostics = vec![PluginDiagnostic::error(
-                syntax.stable_ptr().untyped(),
+                syntax.stable_ptr(db).untyped(),
                 format!("`{}` macro argument must be a string", SelectorMacro::NAME),
             )];
             return InlinePluginResult { code: None, diagnostics };
@@ -43,6 +51,7 @@ impl InlineMacroExprPlugin for SelectorMacro {
                 code_mappings: vec![],
                 aux_data: None,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             }),
             diagnostics: vec![],
         }

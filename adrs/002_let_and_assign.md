@@ -19,7 +19,7 @@ This is opposed to "let"/"var" in other languages, that are effectively, shadowi
 - May change type.
 - Do not affect outer scopes.
 
-The rebinding in Cairo0 acts more like assignment in other languages.
+The rebinding in Cairo0 acts more like an assignment in other languages.
 
 ### Proposal
 
@@ -30,7 +30,7 @@ Two syntaxes: "let", and "assign".
 - _Assign_ - `<ident> = <expr>`. Does not change the definition of `<ident>`. Inner and outer scopes
   still see the previous definition, but with a new value.
 
-This behavior is in line with Rust.
+This behavior aligns with Rust.
 
 _Shadowing_ - although the language will permit this, a specific warning will be emitted in such
 cases. Whether the compilation will pass is up to configuration.

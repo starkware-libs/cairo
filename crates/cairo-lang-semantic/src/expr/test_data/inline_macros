@@ -954,3 +954,722 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test user defined macro
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    add_one!(xyz);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro add_one {
+    ($x:ident) => {
+        1
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test user defined macro overwriting plugin macro.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let x = 1;
+    let y = 1;
+    assert_eq!(x, y);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro assert_eq {
+    ($x:ident, $y:ident) => {
+        if $x != $y {
+            $defsite::panic!("Panic!");
+        }
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test existing user defined macro with no matching rule.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    add_one!(x z);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro add_one {
+    ($x:ident) => {
+        1
+    };
+}
+
+//! > expected_diagnostics
+error: No matching rule found in inline macro `add_one`.
+ --> lib.cairo:7:5
+    add_one!(x z);
+    ^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test $defsite only path.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    a_macro!(x);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro a_macro {
+    ($x:ident) => {
+        $defsite
+    };
+}
+
+//! > expected_diagnostics
+error: Expected path after modifier.
+ --> lib.cairo[a_macro]:1:17
+        $defsite
+                ^
+
+//! > ==========================================================================
+
+//! > Test undefined macro placeholder
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    test_macro!(x);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($x:ident) => {
+        let y = $undefined;
+    };
+}
+
+//! > expected_diagnostics
+error: Undefined macro placeholder: 'undefined'.
+ --> lib.cairo:3:17
+        let y = $undefined;
+                ^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test error propagation from inside a macro.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    add_nums!(1_u8, 2_u16);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro add_nums {
+    ($x:expr, $y:expr) => {
+        $x + $y
+    };
+}
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::integer::u8", found: "core::integer::u16".
+ --> lib.cairo:7:21
+    add_nums!(1_u8, 2_u16);
+                    ^^^^^
+
+//! > ==========================================================================
+
+//! > Test usage of a variable defined in the macro callsite.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let z = 1;
+    bas_use_z_from_callsite!();
+    consume_z(z);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro bas_use_z_from_callsite {
+    () => {
+        z
+    };
+}
+
+fn consume_z(_z: felt252) {}
+
+//! > expected_diagnostics
+warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
+ --> lib.cairo[bas_use_z_from_callsite]:1:9
+        z
+        ^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo[bas_use_z_from_callsite]:1:9
+        z
+        ^
+
+//! > ==========================================================================
+
+//! > Test usage of a callsite variable defined in the macro callsite-callsite.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let z = 1;
+    wrap_bas_use_z_from_callsite!();
+    consume_z(z);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro bas_use_z_from_callsite {
+    () => {
+        $callsite::z
+    };
+}
+
+fn consume_z(_z: felt252) {}
+
+
+macro wrap_bas_use_z_from_callsite {
+    () => {
+        $defsite::bas_use_z_from_callsite!()
+    };
+}
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo[wrap_bas_use_z_from_callsite][bas_use_z_from_callsite]:1:20
+        $callsite::z
+                   ^
+
+//! > ==========================================================================
+
+//! > Test usage of a callsite function with no callsite.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: warnings_only)
+
+//! > function
+fn foo() {
+    call_bar!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro call_bar {
+    () => {
+        bar()
+    };
+}
+
+fn bar() {}
+
+//! > expected_diagnostics
+warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
+ --> lib.cairo[call_bar]:1:9
+        bar()
+        ^^^
+
+//! > ==========================================================================
+
+//! > Test empty expr in macro call.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    test_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($x:expr) => {
+        1
+    };
+}
+
+//! > expected_diagnostics
+error: No matching rule found in inline macro `test_macro`.
+ --> lib.cairo:7:5
+    test_macro!();
+    ^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test optional repetition operator.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    test_macro!(1 2);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($($x:expr)?) => {
+        1
+    };
+}
+
+//! > expected_diagnostics
+error: No matching rule found in inline macro `test_macro`.
+ --> lib.cairo:7:5
+    test_macro!(1 2);
+    ^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test plus repetition operator.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    test_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($($x:expr), +) => {
+        1
+    };
+}
+
+//! > expected_diagnostics
+error: No matching rule found in inline macro `test_macro`.
+ --> lib.cairo:7:5
+    test_macro!();
+    ^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test repetition operator - star
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    test_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($($x:expr), *) => {
+        1
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro with parser error in the expanded code.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    test_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($($x:expr), *) => {
+        1 +
+    };
+}
+
+//! > expected_diagnostics
+error: Parser error in macro-expanded code: Missing tokens. Expected an expression.
+ --> lib.cairo[test_macro]:1:12
+        1 +
+           ^
+
+//! > ==========================================================================
+
+//! > Test macro declaration with the feature flag disabled.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    test_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($x:expr) => {
+        1
+    };
+}
+
+//! > crate_settings
+edition = "2024_07"
+
+[experimental_features]
+negative_impls = true
+associated_item_constraints = true
+coupons = true
+user_defined_inline_macros = false
+
+//! > expected_diagnostics
+error: User defined inline macros are disabled in the current crate.
+ --> lib.cairo:1:1-5:1
+  macro test_macro {
+ _^
+| ...
+| }
+|_^
+
+error: No matching rule found in inline macro `test_macro`.
+ --> lib.cairo:7:5
+    test_macro!();
+    ^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test item macro call to non existing macro.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+unknown_item_macro!();
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Unknown inline item macro: 'unknown_item_macro'.
+ --> lib.cairo:1:1
+unknown_item_macro!();
+^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0006]: Macro not found.
+ --> lib.cairo:1:1
+unknown_item_macro!();
+^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test item macro call to a function that is not a macro.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+foo!();
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Unknown inline item macro: 'foo'.
+ --> lib.cairo:1:1
+foo!();
+^^^^^^^
+
+error: Call to `foo` which is not a macro.
+ --> lib.cairo:1:1
+foo!();
+^^^
+
+//! > ==========================================================================
+
+//! > Test: Using a statement-list macro in statement position should work.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    statement_list_returning_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro statement_list_returning_macro {
+    () => {
+        let _a = 1;
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test: Using a statement-list macro in expression position should fail.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _x = statement_list_returning_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro statement_list_returning_macro {
+    () => {
+        let a = 1;
+        let b = 2;
+    };
+}
+
+//! > expected_diagnostics
+error: Parser error in macro-expanded code: Missing tokens. Expected an expression.
+ --> lib.cairo[statement_list_returning_macro]:1:1
+        let a = 1;
+^
+
+error: Parser error in macro-expanded code: Skipped tokens. Expected: end of expr.
+ --> lib.cairo[statement_list_returning_macro]:1:1-2:18
+          let a = 1;
+ _^
+|         let b = 2;
+|__________________^
+
+//! > ==========================================================================
+
+//! > Test: Macro in tail position with no tail expression should report MissingSemicolon.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    only_statements!()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro only_statements {
+    () => {
+        let _a = 1;
+    };
+}
+
+//! > expected_diagnostics
+error: Missing semicolon
+ --> lib.cairo:7:23
+    only_statements!()
+                      ^
+
+//! > ==========================================================================
+
+//! > Test usage of $ in plugin macros.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    assert_eq3!(1 + 2);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro assert_eq3 {
+    ($x:expr) => {
+        assert!($x == 3);
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test bad usage of $ in plugin macros.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    empty_path!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro empty_path {
+    () => {
+        $defsite;
+        $callsite;
+    };
+}
+
+//! > expected_diagnostics
+error: Expected path after modifier.
+ --> lib.cairo[empty_path]:1:17
+        $defsite;
+                ^
+
+error: Expected path after modifier.
+ --> lib.cairo[empty_path]:2:18
+        $callsite;
+                 ^
+
+//! > ==========================================================================
+
+//! > Test usage of $ in non-plugin scope.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    $path();
+    $defsite::some::path();
+    $callsite::other::path();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: `$` is not supported in this context.
+ --> lib.cairo:2:5
+    $path();
+    ^
+
+error: `$` is not supported in this context.
+ --> lib.cairo:3:5
+    $defsite::some::path();
+    ^
+
+error: `$` is not supported in this context.
+ --> lib.cairo:4:5
+    $callsite::other::path();
+    ^
+
+//! > ==========================================================================
+
+//! > Test usage of super in macro scope.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    super_path!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro super_path {
+    () => {
+        super::some::path();
+    };
+}
+
+//! > expected_diagnostics
+warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
+ --> lib.cairo[super_path]:1:9
+        super::some::path();
+        ^^^^^
+
+error: 'super' cannot be used for the crate's root module.
+ --> lib.cairo[super_path]:1:9
+        super::some::path();
+        ^^^^^

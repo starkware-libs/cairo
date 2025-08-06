@@ -13,7 +13,7 @@ fn foo(v: i8) -> felt252 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > sierra_code
 type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -76,7 +76,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1510})
+test::foo: CostTokenMap({Const: 1510})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -132,7 +132,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 400})
+test::foo: CostTokenMap({Const: 400})
 
 //! > sierra_code
 type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -185,7 +185,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 500})
+test::foo: CostTokenMap({Const: 500})
 
 //! > sierra_code
 type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -265,7 +265,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1040})
+test::foo: CostTokenMap({Const: 1040})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -344,7 +344,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1040})
+test::foo: CostTokenMap({Const: 1040})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -412,7 +412,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 870})
+test::foo: CostTokenMap({Const: 870})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -461,7 +461,7 @@ fn foo(a: i8, b: i8) -> i16 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > sierra_code
 type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];

@@ -55,8 +55,8 @@ impl<T: ConstGenLibfunc> NamedLibfunc for WrapConstGenLibfunc<T> {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         Ok(SignatureAndConstConcreteLibfunc {
-            c: c.clone(),
-            signature: <Self as NamedLibfunc>::specialize_signature(self, context.upcast(), args)?,
+            c,
+            signature: <Self as NamedLibfunc>::specialize_signature(self, context, args)?,
         })
     }
 }

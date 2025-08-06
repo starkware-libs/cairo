@@ -7,7 +7,7 @@ use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::extensions::circuit::CircuitInfo;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
-use cairo_lang_sierra::extensions::gas::CostTokenType;
+use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::extensions::lib_func::{BranchSignature, OutputVarInfo, SierraApChange};
 use cairo_lang_sierra::extensions::{ConcreteLibfunc, OutputVarReferenceInfo};
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -18,7 +18,6 @@ use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
 use cairo_lang_sierra_gas::core_libfunc_cost::{InvocationCostInfoProvider, core_libfunc_cost};
 use cairo_lang_sierra_gas::objects::ConstCost;
 use cairo_lang_sierra_type_size::TypeSizeMap;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
@@ -50,6 +49,7 @@ mod felt252;
 mod felt252_dict;
 mod function_call;
 mod gas;
+mod gas_reserve;
 mod int;
 mod mem;
 mod misc;
@@ -63,6 +63,7 @@ mod squashed_felt252_dict;
 mod starknet;
 mod structure;
 mod trace;
+mod unsafe_panic;
 
 #[cfg(test)]
 mod test_utils;
@@ -121,7 +122,7 @@ pub struct BranchChanges {
     /// A change to the ap tracking status.
     pub ap_tracking_change: ApTrackingChange,
     /// The change to the remaining gas value in the wallet.
-    pub gas_change: OrderedHashMap<CostTokenType, i64>,
+    pub gas_change: CostTokenMap<i64>,
     /// Should the stack be cleared due to a gap between stack items.
     pub clear_old_stack: bool,
     /// The expected size of the known stack after the change.
@@ -133,7 +134,7 @@ impl BranchChanges {
     fn new<'a, ParamRef: Fn(usize) -> &'a ReferenceValue>(
         ap_change: ApChange,
         ap_tracking_change: ApTrackingChange,
-        gas_change: OrderedHashMap<CostTokenType, i64>,
+        gas_change: CostTokenMap<i64>,
         expressions: impl ExactSizeIterator<Item = ReferenceExpression>,
         branch_signature: &BranchSignature,
         prev_env: &Environment,
@@ -688,13 +689,15 @@ pub fn compile_invocation(
         }
         Sint128(libfunc) => int::signed128::build(libfunc, builder),
         Gas(libfunc) => gas::build(libfunc, builder),
+        GasReserve(libfunc) => gas_reserve::build(libfunc, builder),
         BranchAlign(_) => misc::build_branch_align(builder),
         Array(libfunc) => array::build(libfunc, builder),
         Drop(_) => misc::build_drop(builder),
         Dup(_) => misc::build_dup(builder),
         Mem(libfunc) => mem::build(libfunc, builder),
         UnwrapNonZero(_) => misc::build_identity(builder),
-        FunctionCall(libfunc) | CouponCall(libfunc) => function_call::build(libfunc, builder),
+        FunctionCall(libfunc) | CouponCall(libfunc) => function_call::build(libfunc, builder, true),
+        DummyFunctionCall(libfunc) => function_call::build(libfunc, builder, false),
         UnconditionalJump(_) => misc::build_jump(builder),
         ApTracking(_) => misc::build_update_ap_tracking(builder),
         Box(libfunc) => boxing::build(libfunc, builder),
@@ -723,6 +726,7 @@ pub fn compile_invocation(
         Blake(libfunc) => blake::build(libfunc, builder),
         Trace(libfunc) => trace::build(libfunc, builder),
         QM31(libfunc) => qm31::build(libfunc, builder),
+        UnsafePanic(_) => unsafe_panic::build(builder),
     }
 }
 

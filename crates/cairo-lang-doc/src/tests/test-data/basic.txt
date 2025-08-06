@@ -119,10 +119,13 @@ Content("This comment refers to the crate.")
 fn main()
 
 //! > Item documentation #2
-Main function comment outside. Below there is a [`TraitTest`] Main function comment inside.
+Main function comment outside.
+Below there is a [`TraitTest`] Main function comment inside.
 
 //! > Item documentation tokens #2
-Content("Main function comment outside. Below there is a ")
+Content("Main function comment outside.")
+Content("\n")
+Content("Below there is a ")
 CommentLinkToken { label: "`TraitTest`", path: None, resolved_item_name: Some("TraitTest") }
 Content(" ")
 Content("Main function comment inside.")
@@ -142,10 +145,13 @@ Content(" function")
 fn abc() -> u32
 
 //! > Item documentation #4
-abc function returning u32. Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
+abc function returning u32.
+Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
 
 //! > Item documentation tokens #4
-Content("abc function returning u32. Default impl of abc TraitTest function.")
+Content("abc function returning u32.")
+Content("\n")
+Content("Default impl of abc TraitTest function.")
 Content(" ")
 Content("Default impl of abc TraitTest function inner comment.")
 
@@ -174,10 +180,13 @@ Content("Default impl of abc TraitTest function inner comment.")
 //! > Item signature #7
 
 //! > Item documentation #7
-Test module used to check if the documentation is being attached to the nodes correctly. Inside there is [this](test_module::inner_test_module_function) function. Test module used to check if the documentation is being attached to the nodes correctly.
+Test module used to check if the documentation is being attached to the nodes correctly. Inside
+there is [this](test_module::inner_test_module_function) function. Test module used to check if the documentation is being attached to the nodes correctly.
 
 //! > Item documentation tokens #7
-Content("Test module used to check if the documentation is being attached to the nodes correctly. Inside there is ")
+Content("Test module used to check if the documentation is being attached to the nodes correctly. Inside")
+Content("\n")
+Content("there is ")
 CommentLinkToken { label: "this", path: Some("test_module::inner_test_module_function"), resolved_item_name: Some("inner_test_module_function") }
 Content(" function.")
 Content(" ")
@@ -187,10 +196,13 @@ Content("Test module used to check if the documentation is being attached to the
 pub fn inner_test_module_function()
 
 //! > Item documentation #8
-Just a function outside the test_module. Above that module there is a [trait](super::TraitTest). Just a function inside the test_module.
+Just a function outside the test_module.
+Above that module there is a [trait](super::TraitTest). Just a function inside the test_module.
 
 //! > Item documentation tokens #8
-Content("Just a function outside the test_module. Above that module there is a ")
+Content("Just a function outside the test_module.")
+Content("\n")
+Content("Above that module there is a ")
 CommentLinkToken { label: "trait", path: Some("super::TraitTest"), resolved_item_name: Some("TraitTest") }
 Content(".")
 Content(" ")
@@ -205,19 +217,25 @@ struct Point {
 }
 
 //! > Item documentation #9
-Point struct representing a point in a 2d space. Example usage:
+Point struct representing a point in a 2d space.
+Example usage:
 ```cairo
   fn new_Point() {
     Point {x: 12, y: 14}
   }
 ```
+
 [Point::bang]
 
 //! > Item documentation tokens #9
-Content("Point struct representing a point in a 2d space. Example usage:")
-Content("\n```cairo\n")
+Content("Point struct representing a point in a 2d space.")
+Content("\n")
+Content("Example usage:")
+Content("\n")
+Content("```cairo\n")
 Content("  fn new_Point() {\n    Point {x: 12, y: 14}\n  }\n")
 Content("```\n")
+Content("\n")
 CommentLinkToken { label: "Point::bang", path: None, resolved_item_name: None }
 
 //! > Item signature #10
@@ -245,14 +263,22 @@ enum Answer {
 }
 
 //! > Item documentation #12
-Answer Enum representing an answer to a yes/no question. It will just refer in the docs to some wrong [item_that_does_not_exist] and also to [this](another_not_existing_path). But [this](Answer::Yes) is an existing variant of Answer
+Answer Enum representing an answer to a yes/no question.
+It will just refer in the docs to some wrong [item_that_does_not_exist] and also to
+[this](another_not_existing_path).
+But [this](Answer::Yes) is an existing variant of Answer
 
 //! > Item documentation tokens #12
-Content("Answer Enum representing an answer to a yes/no question. It will just refer in the docs to some wrong ")
+Content("Answer Enum representing an answer to a yes/no question.")
+Content("\n")
+Content("It will just refer in the docs to some wrong ")
 CommentLinkToken { label: "item_that_does_not_exist", path: None, resolved_item_name: None }
-Content(" and also to ")
+Content(" and also to")
+Content("\n")
 CommentLinkToken { label: "this", path: Some("another_not_existing_path"), resolved_item_name: None }
-Content(". But ")
+Content(".")
+Content("\n")
+Content("But ")
 CommentLinkToken { label: "this", path: Some("Answer::Yes"), resolved_item_name: Some("Yes") }
 Content(" is an existing variant of Answer")
 
@@ -288,7 +314,8 @@ Example usage:
 
 //! > Item documentation tokens #15
 Content("Example usage:")
-Content("\n```cairo\n")
+Content("\n")
+Content("```cairo\n")
 Content("  fn new_circle() {\n    // [Circle] <- this should not tokenize as a link (neither be resolved), we're inside code\n    block.\n  }\n")
 Content("```")
 
@@ -305,27 +332,35 @@ Below there is a code example
 
 //! > Item documentation tokens #16
 Content("Below there is a code example")
-Content("First line of code\n")
-Content("// Comment inside the code block, that should be ignored. [Square] <- it will be ignored as\n")
-Content("well.\n")
-Content("Second line of code")
+Content("\n")
+Content("\n")
+Content("    First line of code\n")
+Content("    // Comment inside the code block, that should be ignored. [Square] <- it will be ignored as\n")
+Content("    well.\n")
+Content("    Second line of code")
 
 //! > Item signature #17
 #[derive(Drop)]
 struct Glass {}
 
 //! > Item documentation #17
-This glass is droppable. When it's dropped, it shatters.
+This glass is droppable.
+When it's dropped, it shatters.
 
 //! > Item documentation tokens #17
-Content("This glass is droppable. When it's dropped, it shatters.")
+Content("This glass is droppable.")
+Content("\n")
+Content("When it's dropped, it shatters.")
 
 //! > Item signature #18
 #[derive(Drop)]
 struct Cup {}
 
 //! > Item documentation #18
-This cup is droppable. When it's dropped, it shatters.
+This cup is droppable.
+When it's dropped, it shatters.
 
 //! > Item documentation tokens #18
-Content("This cup is droppable. When it's dropped, it shatters.")
+Content("This cup is droppable.")
+Content("\n")
+Content("When it's dropped, it shatters.")

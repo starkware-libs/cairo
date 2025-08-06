@@ -334,6 +334,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 HelloStarknetTraitDispatcherTrait:
 
+#[doc(group: "dispatchers")]
 trait HelloStarknetTraitDispatcherTrait<T> {
     // Increases the balance by the given amount.
     fn increase_balance(self: T, amount: usize);
@@ -359,11 +360,13 @@ self: T, user_id: usize, subbalance_id: usize,
     fn get_queryable_enum(self: T) -> u128;
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<HelloStarknetTraitDispatcher> {
     // Increases the balance by the given amount.
     fn increase_balance(self: HelloStarknetTraitDispatcher, amount: usize) {
@@ -593,11 +596,13 @@ self: HelloStarknetTraitDispatcher, user_id: usize, subbalance_id: usize,
 
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitLibraryDispatcherImpl of HelloStarknetTraitDispatcherTrait<HelloStarknetTraitLibraryDispatcher> {
     // Increases the balance by the given amount.
     fn increase_balance(self: HelloStarknetTraitLibraryDispatcher, amount: usize) {
@@ -827,6 +832,7 @@ self: HelloStarknetTraitLibraryDispatcher, user_id: usize, subbalance_id: usize,
 
 }
 
+#[doc(group: "dispatchers")]
 trait HelloStarknetTraitSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     // Increases the balance by the given amount.
@@ -868,11 +874,13 @@ self: T, user_id: usize, subbalance_id: usize,
     fn get_queryable_enum(self: T) -> starknet::SyscallResult<u128>;
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitSafeLibraryDispatcherImpl of HelloStarknetTraitSafeDispatcherTrait<HelloStarknetTraitSafeLibraryDispatcher> {
     // Increases the balance by the given amount.
     fn increase_balance(self: HelloStarknetTraitSafeLibraryDispatcher, amount: usize) -> starknet::SyscallResult<()> {
@@ -1123,11 +1131,13 @@ self: HelloStarknetTraitSafeLibraryDispatcher, user_id: usize, subbalance_id: us
 }
 
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitSafeDispatcherImpl of HelloStarknetTraitSafeDispatcherTrait<HelloStarknetTraitSafeDispatcher> {
     // Increases the balance by the given amount.
     fn increase_balance(self: HelloStarknetTraitSafeDispatcher, amount: usize) -> starknet::SyscallResult<()> {
@@ -2360,8 +2370,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitDispatcherCopy<> of core::traits::Copy::<HelloStarknetTraitDispatcher>;
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitDispatcherDrop<> of core::traits::Drop::<HelloStarknetTraitDispatcher>;
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitDispatcherSerde<> of core::serde::Serde::<HelloStarknetTraitDispatcher> {
     fn serialize(self: @HelloStarknetTraitDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -2477,8 +2490,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitLibraryDispatcherCopy<> of core::traits::Copy::<HelloStarknetTraitLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitLibraryDispatcherDrop<> of core::traits::Drop::<HelloStarknetTraitLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitLibraryDispatcherSerde<> of core::serde::Serde::<HelloStarknetTraitLibraryDispatcher> {
     fn serialize(self: @HelloStarknetTraitLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -2594,8 +2610,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitSafeLibraryDispatcherCopy<> of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitSafeLibraryDispatcherDrop<> of core::traits::Drop::<HelloStarknetTraitSafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<HelloStarknetTraitSafeLibraryDispatcher> {
     fn serialize(self: @HelloStarknetTraitSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -2711,8 +2730,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitSafeDispatcherCopy<> of core::traits::Copy::<HelloStarknetTraitSafeDispatcher>;
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitSafeDispatcherDrop<> of core::traits::Drop::<HelloStarknetTraitSafeDispatcher>;
+#[doc(group: "dispatchers")]
 impl HelloStarknetTraitSafeDispatcherSerde<> of core::serde::Serde::<HelloStarknetTraitSafeDispatcher> {
     fn serialize(self: @HelloStarknetTraitSafeDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -2828,7 +2850,9 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl BalancePairStorageBaseDrop<> of core::traits::Drop::<BalancePairStorageBase>;
+#[doc(hidden)]
 impl BalancePairStorageBaseCopy<> of core::traits::Copy::<BalancePairStorageBase>;
 
 
@@ -2837,7 +2861,9 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl BalancePairStorageBaseMutDrop<> of core::traits::Drop::<BalancePairStorageBaseMut>;
+#[doc(hidden)]
 impl BalancePairStorageBaseMutCopy<> of core::traits::Copy::<BalancePairStorageBaseMut>;
 
 
@@ -2846,7 +2872,9 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl BalancePairStorageNodeDrop<> of core::traits::Drop::<BalancePairStorageNode>;
+#[doc(hidden)]
 impl BalancePairStorageNodeCopy<> of core::traits::Copy::<BalancePairStorageNode>;
 
 
@@ -2855,7 +2883,9 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl BalancePairStorageNodeMutDrop<> of core::traits::Drop::<BalancePairStorageNodeMut>;
+#[doc(hidden)]
 impl BalancePairStorageNodeMutCopy<> of core::traits::Copy::<BalancePairStorageNodeMut>;
 
 
@@ -2864,7 +2894,9 @@ lib.cairo:34:16
                ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl SlicedBalanceTrioSubPointersDrop<> of core::traits::Drop::<SlicedBalanceTrioSubPointers>;
+#[doc(hidden)]
 impl SlicedBalanceTrioSubPointersCopy<> of core::traits::Copy::<SlicedBalanceTrioSubPointers>;
 
 
@@ -2873,7 +2905,9 @@ lib.cairo:34:16
                ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl SlicedBalanceTrioSubPointersMutDrop<> of core::traits::Drop::<SlicedBalanceTrioSubPointersMut>;
+#[doc(hidden)]
 impl SlicedBalanceTrioSubPointersMutCopy<> of core::traits::Copy::<SlicedBalanceTrioSubPointersMut>;
 
 
@@ -2882,7 +2916,9 @@ lib.cairo:40:16
                ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl SlicedBalancePairSubPointersDrop<> of core::traits::Drop::<SlicedBalancePairSubPointers>;
+#[doc(hidden)]
 impl SlicedBalancePairSubPointersCopy<> of core::traits::Copy::<SlicedBalancePairSubPointers>;
 
 
@@ -2891,7 +2927,9 @@ lib.cairo:40:16
                ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl SlicedBalancePairSubPointersMutDrop<> of core::traits::Drop::<SlicedBalancePairSubPointersMut>;
+#[doc(hidden)]
 impl SlicedBalancePairSubPointersMutCopy<> of core::traits::Copy::<SlicedBalancePairSubPointersMut>;
 
 
@@ -2900,7 +2938,9 @@ lib.cairo:46:1
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl LinkedListStorageBaseDrop<> of core::traits::Drop::<LinkedListStorageBase>;
+#[doc(hidden)]
 impl LinkedListStorageBaseCopy<> of core::traits::Copy::<LinkedListStorageBase>;
 
 
@@ -2909,7 +2949,9 @@ lib.cairo:46:1
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl LinkedListStorageBaseMutDrop<> of core::traits::Drop::<LinkedListStorageBaseMut>;
+#[doc(hidden)]
 impl LinkedListStorageBaseMutCopy<> of core::traits::Copy::<LinkedListStorageBaseMut>;
 
 
@@ -2918,7 +2960,9 @@ lib.cairo:46:1
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl LinkedListStorageNodeDrop<> of core::traits::Drop::<LinkedListStorageNode>;
+#[doc(hidden)]
 impl LinkedListStorageNodeCopy<> of core::traits::Copy::<LinkedListStorageNode>;
 
 
@@ -2927,7 +2971,9 @@ lib.cairo:46:1
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl LinkedListStorageNodeMutDrop<> of core::traits::Drop::<LinkedListStorageNodeMut>;
+#[doc(hidden)]
 impl LinkedListStorageNodeMutCopy<> of core::traits::Copy::<LinkedListStorageNodeMut>;
 
 
@@ -2960,7 +3006,9 @@ lib.cairo:59:1
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl GenericLinkedListStorageBaseDrop<T, impl __MEMBER_IMPL_value_Drop: core::traits::Drop<starknet::storage::StorageBase<T>>, impl __MEMBER_IMPL_next_Drop: core::traits::Drop<starknet::storage::StorageBase<GenericLinkedList<T>>>> of core::traits::Drop::<GenericLinkedListStorageBase<T>>;
+#[doc(hidden)]
 impl GenericLinkedListStorageBaseCopy<T, impl __MEMBER_IMPL_value_Copy: core::traits::Copy<starknet::storage::StorageBase<T>>, impl __MEMBER_IMPL_next_Copy: core::traits::Copy<starknet::storage::StorageBase<GenericLinkedList<T>>>> of core::traits::Copy::<GenericLinkedListStorageBase<T>>;
 
 
@@ -2969,7 +3017,9 @@ lib.cairo:59:1
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl GenericLinkedListStorageBaseMutDrop<T, impl __MEMBER_IMPL_value_Drop: core::traits::Drop<starknet::storage::StorageBase<starknet::storage::Mutable::<T>>>, impl __MEMBER_IMPL_next_Drop: core::traits::Drop<starknet::storage::StorageBase<starknet::storage::Mutable::<GenericLinkedList<T>>>>> of core::traits::Drop::<GenericLinkedListStorageBaseMut<T>>;
+#[doc(hidden)]
 impl GenericLinkedListStorageBaseMutCopy<T, impl __MEMBER_IMPL_value_Copy: core::traits::Copy<starknet::storage::StorageBase<starknet::storage::Mutable::<T>>>, impl __MEMBER_IMPL_next_Copy: core::traits::Copy<starknet::storage::StorageBase<starknet::storage::Mutable::<GenericLinkedList<T>>>>> of core::traits::Copy::<GenericLinkedListStorageBaseMut<T>>;
 
 
@@ -2978,7 +3028,9 @@ lib.cairo:59:1
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl GenericLinkedListStorageNodeDrop<T, impl __MEMBER_IMPL_value_Drop: core::traits::Drop<starknet::storage::PendingStoragePath<T>>, impl __MEMBER_IMPL_next_Drop: core::traits::Drop<starknet::storage::PendingStoragePath<GenericLinkedList<T>>>> of core::traits::Drop::<GenericLinkedListStorageNode<T>>;
+#[doc(hidden)]
 impl GenericLinkedListStorageNodeCopy<T, impl __MEMBER_IMPL_value_Copy: core::traits::Copy<starknet::storage::PendingStoragePath<T>>, impl __MEMBER_IMPL_next_Copy: core::traits::Copy<starknet::storage::PendingStoragePath<GenericLinkedList<T>>>> of core::traits::Copy::<GenericLinkedListStorageNode<T>>;
 
 
@@ -2987,7 +3039,9 @@ lib.cairo:59:1
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl GenericLinkedListStorageNodeMutDrop<T, impl __MEMBER_IMPL_value_Drop: core::traits::Drop<starknet::storage::PendingStoragePath<starknet::storage::Mutable::<T>>>, impl __MEMBER_IMPL_next_Drop: core::traits::Drop<starknet::storage::PendingStoragePath<starknet::storage::Mutable::<GenericLinkedList<T>>>>> of core::traits::Drop::<GenericLinkedListStorageNodeMut<T>>;
+#[doc(hidden)]
 impl GenericLinkedListStorageNodeMutCopy<T, impl __MEMBER_IMPL_value_Copy: core::traits::Copy<starknet::storage::PendingStoragePath<starknet::storage::Mutable::<T>>>, impl __MEMBER_IMPL_next_Copy: core::traits::Copy<starknet::storage::PendingStoragePath<starknet::storage::Mutable::<GenericLinkedList<T>>>>> of core::traits::Copy::<GenericLinkedListStorageNodeMut<T>>;
 
 
@@ -3020,7 +3074,9 @@ lib.cairo:72:10
          ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl GenericPairSubPointersDrop<T, S, impl TStore: starknet::Store<T>, impl __MEMBER_IMPL_t_Drop: core::traits::Drop<starknet::storage::StoragePointer<T>>, impl __MEMBER_IMPL_s_Drop: core::traits::Drop<starknet::storage::StoragePointer<S>>> of core::traits::Drop::<GenericPairSubPointers<T, S, TStore>>;
+#[doc(hidden)]
 impl GenericPairSubPointersCopy<T, S, impl TStore: starknet::Store<T>, impl __MEMBER_IMPL_t_Copy: core::traits::Copy<starknet::storage::StoragePointer<T>>, impl __MEMBER_IMPL_s_Copy: core::traits::Copy<starknet::storage::StoragePointer<S>>> of core::traits::Copy::<GenericPairSubPointers<T, S, TStore>>;
 
 
@@ -3029,7 +3085,9 @@ lib.cairo:72:10
          ^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl GenericPairSubPointersMutDrop<T, S, impl TStore: starknet::Store<T>, impl __MEMBER_IMPL_t_Drop: core::traits::Drop<starknet::storage::StoragePointer<starknet::storage::Mutable::<T>>>, impl __MEMBER_IMPL_s_Drop: core::traits::Drop<starknet::storage::StoragePointer<starknet::storage::Mutable::<S>>>> of core::traits::Drop::<GenericPairSubPointersMut<T, S, TStore>>;
+#[doc(hidden)]
 impl GenericPairSubPointersMutCopy<T, S, impl TStore: starknet::Store<T>, impl __MEMBER_IMPL_t_Copy: core::traits::Copy<starknet::storage::StoragePointer<starknet::storage::Mutable::<T>>>, impl __MEMBER_IMPL_s_Copy: core::traits::Copy<starknet::storage::StoragePointer<starknet::storage::Mutable::<S>>>> of core::traits::Copy::<GenericPairSubPointersMut<T, S, TStore>>;
 
 
@@ -3038,7 +3096,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl HelloStarknetTraitDispatcherSubPointersDrop<> of core::traits::Drop::<HelloStarknetTraitDispatcherSubPointers>;
+#[doc(hidden)]
 impl HelloStarknetTraitDispatcherSubPointersCopy<> of core::traits::Copy::<HelloStarknetTraitDispatcherSubPointers>;
 
 
@@ -3047,7 +3107,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl HelloStarknetTraitDispatcherSubPointersMutDrop<> of core::traits::Drop::<HelloStarknetTraitDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl HelloStarknetTraitDispatcherSubPointersMutCopy<> of core::traits::Copy::<HelloStarknetTraitDispatcherSubPointersMut>;
 
 
@@ -3056,7 +3118,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl HelloStarknetTraitLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<HelloStarknetTraitLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl HelloStarknetTraitLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<HelloStarknetTraitLibraryDispatcherSubPointers>;
 
 
@@ -3065,7 +3129,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl HelloStarknetTraitLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<HelloStarknetTraitLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl HelloStarknetTraitLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<HelloStarknetTraitLibraryDispatcherSubPointersMut>;
 
 
@@ -3074,7 +3140,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl HelloStarknetTraitSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<HelloStarknetTraitSafeLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl HelloStarknetTraitSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcherSubPointers>;
 
 
@@ -3083,7 +3151,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl HelloStarknetTraitSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<HelloStarknetTraitSafeLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl HelloStarknetTraitSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcherSubPointersMut>;
 
 
@@ -3092,7 +3162,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl HelloStarknetTraitSafeDispatcherSubPointersDrop<> of core::traits::Drop::<HelloStarknetTraitSafeDispatcherSubPointers>;
+#[doc(hidden)]
 impl HelloStarknetTraitSafeDispatcherSubPointersCopy<> of core::traits::Copy::<HelloStarknetTraitSafeDispatcherSubPointers>;
 
 
@@ -3101,7 +3173,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl HelloStarknetTraitSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<HelloStarknetTraitSafeDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl HelloStarknetTraitSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<HelloStarknetTraitSafeDispatcherSubPointersMut>;
 
 
@@ -3601,6 +3675,7 @@ fn __wrapper__HelloStarknetImpl__get_queryable_enum(mut data: Span::<felt252>) -
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
     pub use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
@@ -3619,8 +3694,10 @@ pub mod __external {
     pub use super::__wrapper__HelloStarknetImpl__append_to_arr as append_to_arr;
     pub use super::__wrapper__HelloStarknetImpl__get_queryable_enum as get_queryable_enum;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -3679,7 +3756,9 @@ lib.cairo:89:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
@@ -3688,7 +3767,9 @@ lib.cairo:89:5
     ^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
@@ -3713,7 +3794,7 @@ warning: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default
 | }
 |_^
 
-warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#[feature("starknet-storage-deprecation")]` attribute. Note: "Use `starknet::storage::MutableVecTrait::push` instead."
+warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#[feature("starknet-storage-deprecation")]` attribute. Note: "Use `starknet::storage::MutableVecTrait::push` or `starknet::storage::MutableVecTrait::allocate` instead."
  --> lib.cairo:151:22
             self.arr.append().write(value);
                      ^^^^^^

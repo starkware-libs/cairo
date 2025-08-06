@@ -42,7 +42,7 @@ impl CircuitInstance<'_> {
         write_circuit_value(self.vm, addr, value);
     }
 
-    /// Reads a values from the location specified by `index` in the `add_mod_offsets` buffer.
+    /// Reads a value from the location specified by `index` in the `add_mod_offsets` buffer.
     fn read_addmod_value(&mut self, index: usize) -> Option<BigUint> {
         self.read_circuit_value((self.add_mod_offsets + index).unwrap())
     }
@@ -52,7 +52,7 @@ impl CircuitInstance<'_> {
         self.write_circuit_value((self.add_mod_offsets + index).unwrap(), value)
     }
 
-    /// Reads a values from the location specified by `index` in the `mul_mod_offsets` buffer.
+    /// Reads a value from the location specified by `index` in the `mul_mod_offsets` buffer.
     fn get_mulmod_value(&mut self, index: usize) -> Option<BigUint> {
         self.read_circuit_value((self.mul_mod_offsets + index).unwrap())
     }

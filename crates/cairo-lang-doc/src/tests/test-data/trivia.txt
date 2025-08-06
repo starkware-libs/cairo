@@ -96,18 +96,21 @@ second field
 Content("second field")
 
 //! > Item signature #6
-#[derive(Clone)] 
-#[derive(Drop)] 
+#[derive(Clone)]
+#[derive(Drop)]
 struct Pair2<T, U> {
     pub first: T,
     second: U,
 }
 
 //! > Item documentation #6
-A second struct defining a pair. As above.
+A second struct defining a pair.
+As above.
 
 //! > Item documentation tokens #6
-Content("A second struct defining a pair. As above.")
+Content("A second struct defining a pair.")
+Content("\n")
+Content("As above.")
 
 //! > Item signature #7
 pub first: T

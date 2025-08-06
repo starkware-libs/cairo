@@ -164,7 +164,7 @@ use vec::{
     MutableVecIndexView, MutableVecIntoIterRange, PathableMutableVecIntoIterRange,
     PathableVecIntoIterRange, VecIndexView, VecIntoIterRange,
 };
-pub use vec::{MutableVecTrait, Vec, VecTrait};
+pub use vec::{MutableVecTrait, Vec, VecIter, VecTrait};
 
 /// A pointer to an address in storage, can be used to read and write values, if the generic type
 /// supports it (e.g. basic types like `felt252`).
@@ -567,6 +567,20 @@ trait MutableTrait<T> {
 impl MutableImpl<T> of MutableTrait<Mutable<T>> {
     type InnerType = T;
 }
+
+pub trait StoragePathMutableConversion<T> {
+    /// Converts a `StoragePath<Mutable<T>>` to a `StoragePath<T>`. This is useful to expose
+    /// functions implemented for `StoragePath<T>` on a `StoragePath<Mutable<T>>`.
+    fn as_non_mut(self: StoragePath<Mutable<T>>) -> StoragePath<T>;
+}
+
+
+impl StoragePathAsNonMutImpl<T> of StoragePathMutableConversion<T> {
+    fn as_non_mut(self: StoragePath<Mutable<T>>) -> StoragePath<T> {
+        StoragePath { __hash_state__: self.__hash_state__ }
+    }
+}
+
 
 /// Trait for turning collection of values into an iterator over a specific range.
 pub trait IntoIterRange<T> {

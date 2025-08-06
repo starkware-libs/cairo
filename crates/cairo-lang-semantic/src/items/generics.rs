@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use std::hash::Hash;
 use std::sync::Arc;
 
@@ -13,7 +14,7 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{AssociatedItemConstraints, OptionAssociatedItemConstraints};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
-use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
+use cairo_lang_utils::{Intern, extract_matches};
 use syntax::node::TypedStablePtr;
 use syntax::node::db::SyntaxGroup;
 
@@ -21,10 +22,11 @@ use super::constant::{ConstValue, ConstValueId};
 use super::imp::{ImplHead, ImplId, ImplLongId};
 use super::resolve_trait_path;
 use super::trt::ConcreteTraitTypeId;
-use crate::db::SemanticGroup;
+use crate::db::{SemanticGroup, SemanticGroupData};
 use crate::diagnostic::{
     NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
+use crate::expr::fmt::CountingWriter;
 use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::lookup_item::LookupItemEx;
@@ -36,14 +38,14 @@ use crate::{ConcreteTraitId, ConcreteTraitLongId, SemanticDiagnostic, TypeId, Ty
 /// Generic argument.
 /// A value assigned to a generic parameter.
 /// May be a type, impl, constant, etc..
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
-pub enum GenericArgumentId {
-    Type(TypeId),
-    Constant(ConstValueId),
-    Impl(ImplId),
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update)]
+pub enum GenericArgumentId<'db> {
+    Type(TypeId<'db>),
+    Constant(ConstValueId<'db>),
+    Impl(ImplId<'db>),
     NegImpl,
 }
-impl GenericArgumentId {
+impl<'db> GenericArgumentId<'db> {
     pub fn kind(&self) -> GenericKind {
         match self {
             GenericArgumentId::Type(_) => GenericKind::Type,
@@ -61,7 +63,7 @@ impl GenericArgumentId {
         }
     }
     /// Returns the [GenericArgumentHead] for a generic argument if available.
-    pub fn head(&self, db: &dyn SemanticGroup) -> Option<GenericArgumentHead> {
+    pub fn head(&self, db: &'db dyn SemanticGroup) -> Option<GenericArgumentHead<'db>> {
         Some(match self {
             GenericArgumentId::Type(ty) => GenericArgumentHead::Type(ty.head(db)?),
             GenericArgumentId::Constant(_) => GenericArgumentHead::Const,
@@ -92,12 +94,10 @@ impl GenericArgumentId {
         if let GenericArgumentId::Type(ty) = self { ty.short_name(db) } else { self.format(db) }
     }
 }
-impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &(dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+impl<'db> DebugWithDb<'db> for GenericArgumentId<'db> {
+    type Db = dyn SemanticGroup;
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
         match self {
             GenericArgumentId::Type(id) => write!(f, "{:?}", id.debug(db)),
             GenericArgumentId::Constant(id) => write!(f, "{:?}", id.debug(db)),
@@ -113,24 +113,24 @@ impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
 /// in its tree. This is used for caching queries for fast lookups when the generic argument is not
 /// completely inferred yet.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum GenericArgumentHead {
-    Type(TypeHead),
-    Impl(ImplHead),
+pub enum GenericArgumentHead<'db> {
+    Type(TypeHead<'db>),
+    Impl(ImplHead<'db>),
     Const,
     NegImpl,
 }
 
 /// Generic parameter.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
-pub enum GenericParam {
-    Type(GenericParamType),
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update)]
+pub enum GenericParam<'db> {
+    Type(GenericParamType<'db>),
     // TODO(spapini): Add expression.
-    Const(GenericParamConst),
-    Impl(GenericParamImpl),
-    NegImpl(GenericParamImpl),
+    Const(GenericParamConst<'db>),
+    Impl(GenericParamImpl<'db>),
+    NegImpl(GenericParamImpl<'db>),
 }
-impl GenericParam {
-    pub fn id(&self) -> GenericParamId {
+impl<'db> GenericParam<'db> {
+    pub fn id(&self) -> GenericParamId<'db> {
         match self {
             GenericParam::Type(param) => param.id,
             GenericParam::Const(param) => param.id,
@@ -146,11 +146,11 @@ impl GenericParam {
             GenericParam::NegImpl(_) => GenericKind::NegImpl,
         }
     }
-    pub fn stable_ptr(&self, db: &dyn DefsGroup) -> ast::GenericParamPtr {
+    pub fn stable_ptr(&self, db: &'db dyn DefsGroup) -> ast::GenericParamPtr<'db> {
         self.id().stable_ptr(db)
     }
     /// Returns the generic param as a generic argument.
-    pub fn as_arg(&self, db: &dyn SemanticGroup) -> GenericArgumentId {
+    pub fn as_arg(&self, db: &'db dyn SemanticGroup) -> GenericArgumentId<'db> {
         match self {
             GenericParam::Type(param_type) => {
                 GenericArgumentId::Type(TypeLongId::GenericParameter(param_type.id).intern(db))
@@ -165,106 +165,94 @@ impl GenericParam {
         }
     }
 }
-impl DebugWithDb<dyn SemanticGroup> for GenericParam {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &(dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+impl<'db> DebugWithDb<'db> for GenericParam<'db> {
+    type Db = dyn SemanticGroup;
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
         write!(f, "{:?}", self.id().debug(db))
     }
 }
 
 /// Converts each generic param to a generic argument that passes the same generic param.
-pub fn generic_params_to_args(
-    params: &[GenericParam],
-    db: &dyn SemanticGroup,
-) -> Vec<GenericArgumentId> {
+pub fn generic_params_to_args<'db>(
+    params: &[GenericParam<'db>],
+    db: &'db dyn SemanticGroup,
+) -> Vec<GenericArgumentId<'db>> {
     params.iter().map(|param| param.as_arg(db)).collect()
 }
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct GenericParamType {
-    pub id: GenericParamId,
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct GenericParamType<'db> {
+    pub id: GenericParamId<'db>,
 }
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct GenericParamConst {
-    pub id: GenericParamId,
-    pub ty: TypeId,
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct GenericParamConst<'db> {
+    pub id: GenericParamId<'db>,
+    pub ty: TypeId<'db>,
 }
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct GenericParamImpl {
-    pub id: GenericParamId,
-    pub concrete_trait: Maybe<ConcreteTraitId>,
-    pub type_constraints: OrderedHashMap<TraitTypeId, TypeId>,
-}
-impl Hash for GenericParamImpl {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
-        self.concrete_trait.hash(state);
-        self.type_constraints.iter().for_each(|(trait_type_id, type_id)| {
-            trait_type_id.hash(state);
-            type_id.hash(state);
-        });
-    }
+#[derive(Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct GenericParamImpl<'db> {
+    pub id: GenericParamId<'db>,
+    pub concrete_trait: Maybe<ConcreteTraitId<'db>>,
+    pub type_constraints: OrderedHashMap<TraitTypeId<'db>, TypeId<'db>>,
 }
 
 /// The result of the computation of the semantic model of a generic parameter.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct GenericParamData {
-    pub generic_param: Maybe<GenericParam>,
-    pub diagnostics: Diagnostics<SemanticDiagnostic>,
-    pub resolver_data: Arc<ResolverData>,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct GenericParamData<'db> {
+    pub generic_param: Maybe<GenericParam<'db>>,
+    pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    pub resolver_data: Arc<ResolverData<'db>>,
 }
 
 /// The result of the computation of the semantic model of a generic parameters list.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct GenericParamsData {
-    pub generic_params: Vec<GenericParam>,
-    pub diagnostics: Diagnostics<SemanticDiagnostic>,
-    pub resolver_data: Arc<ResolverData>,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct GenericParamsData<'db> {
+    pub generic_params: Vec<GenericParam<'db>>,
+    pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    pub resolver_data: Arc<ResolverData<'db>>,
 }
 
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::generic_param_semantic].
-pub fn generic_param_semantic(
-    db: &dyn SemanticGroup,
-    generic_param_id: GenericParamId,
-) -> Maybe<GenericParam> {
+pub fn generic_param_semantic<'db>(
+    db: &'db dyn SemanticGroup,
+    generic_param_id: GenericParamId<'db>,
+) -> Maybe<GenericParam<'db>> {
     db.priv_generic_param_data(generic_param_id, false)?.generic_param
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_param_diagnostics].
-pub fn generic_param_diagnostics(
-    db: &dyn SemanticGroup,
-    generic_param_id: GenericParamId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn generic_param_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    generic_param_id: GenericParamId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_generic_param_data(generic_param_id, false)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_param_resolver_data].
-pub fn generic_param_resolver_data(
-    db: &dyn SemanticGroup,
-    generic_param_id: GenericParamId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn generic_param_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    generic_param_id: GenericParamId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_generic_param_data(generic_param_id, false)?.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_impl_param_trait].
-pub fn generic_impl_param_trait(
-    db: &dyn SemanticGroup,
-    generic_param_id: GenericParamId,
-) -> Maybe<TraitId> {
-    let syntax_db = db.upcast();
-    let module_file_id = generic_param_id.module_file_id(db.upcast());
+pub fn generic_impl_param_trait<'db>(
+    db: &'db dyn SemanticGroup,
+    generic_param_id: GenericParamId<'db>,
+) -> Maybe<TraitId<'db>> {
+    let syntax_db = db;
+    let module_file_id = generic_param_id.module_file_id(db);
     let option_generic_params_syntax = generic_param_generic_params_list(db, generic_param_id)?;
     let generic_params_syntax = extract_matches!(
         option_generic_params_syntax,
@@ -273,9 +261,8 @@ pub fn generic_impl_param_trait(
     let generic_param_syntax = generic_params_syntax
         .generic_params(syntax_db)
         .elements(syntax_db)
-        .into_iter()
         .find(|param_syntax| {
-            GenericParamLongId(module_file_id, param_syntax.stable_ptr()).intern(db)
+            GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db)).intern(db)
                 == generic_param_id
         })
         .unwrap();
@@ -295,43 +282,43 @@ pub fn generic_impl_param_trait(
     // Remove also GenericImplParamTrait.
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
 
-    resolve_trait_path(&mut diagnostics, &mut resolver, &trait_path_syntax)
+    resolve_trait_path(syntax_db, &mut diagnostics, &mut resolver, &trait_path_syntax)
 }
 
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_generic_param_data].
-pub fn priv_generic_param_data(
-    db: &dyn SemanticGroup,
-    generic_param_id: GenericParamId,
+pub fn priv_generic_param_data<'db>(
+    db: &'db dyn SemanticGroup,
+    generic_param_id: GenericParamId<'db>,
     in_cycle: bool,
-) -> Maybe<GenericParamData> {
+) -> Maybe<GenericParamData<'db>> {
     if in_cycle {
         let mut diagnostics = SemanticDiagnostics::default();
         return Ok(GenericParamData {
             generic_param: Err(diagnostics.report(
-                generic_param_id.stable_ptr(db.upcast()).untyped(),
+                generic_param_id.stable_ptr(db).untyped(),
                 SemanticDiagnosticKind::ImplRequirementCycle,
             )),
             diagnostics: diagnostics.build(),
             resolver_data: Arc::new(ResolverData::new(
-                generic_param_id.module_file_id(db.upcast()),
+                generic_param_id.module_file_id(db),
                 InferenceId::GenericParam(generic_param_id),
             )),
         });
     }
-    let syntax_db: &dyn SyntaxGroup = db.upcast();
-    let module_file_id = generic_param_id.module_file_id(db.upcast());
+    let syntax_db: &dyn SyntaxGroup = db;
+    let module_file_id = generic_param_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
-    let parent_item_id = generic_param_id.generic_item(db.upcast());
-    let lookup_item: LookupItemId = parent_item_id.into();
+    let parent_item_id = generic_param_id.generic_item(db);
+    let lookup_item: LookupItemId<'_> = parent_item_id.into();
     let context_resolver_data = lookup_item.resolver_context(db)?;
     let inference_id = InferenceId::GenericParam(generic_param_id);
     let mut resolver =
         Resolver::with_data(db, (*context_resolver_data).clone_with_inference_id(db, inference_id));
     resolver.set_feature_config(
         &lookup_item,
-        &lookup_item.untyped_stable_ptr(db.upcast()).lookup(db.upcast()),
+        &lookup_item.untyped_stable_ptr(db).lookup(db),
         &mut diagnostics,
     );
     let generic_params_syntax = extract_matches!(
@@ -340,11 +327,9 @@ pub fn priv_generic_param_data(
     );
 
     let mut opt_generic_param_syntax = None;
-    for param_syntax in
-        generic_params_syntax.generic_params(syntax_db).elements(syntax_db).into_iter()
-    {
+    for param_syntax in generic_params_syntax.generic_params(syntax_db).elements(syntax_db) {
         let cur_generic_param_id =
-            GenericParamLongId(module_file_id, param_syntax.stable_ptr()).intern(db);
+            GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db)).intern(db);
         resolver.add_generic_param(cur_generic_param_id);
 
         if cur_generic_param_id == generic_param_id {
@@ -362,7 +347,7 @@ pub fn priv_generic_param_data(
         parent_item_id,
     );
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, generic_param_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, generic_param_syntax.stable_ptr(syntax_db).untyped());
 
     let param_semantic = inference.rewrite(param_semantic).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -374,20 +359,20 @@ pub fn priv_generic_param_data(
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::priv_generic_param_data].
-pub fn priv_generic_param_data_cycle(
-    db: &dyn SemanticGroup,
-    _cycle: &salsa::Cycle,
-    generic_param_id: &GenericParamId,
-    _in_cycle: &bool,
-) -> Maybe<GenericParamData> {
-    priv_generic_param_data(db, *generic_param_id, true)
+pub fn priv_generic_param_data_cycle<'db>(
+    db: &'db dyn SemanticGroup,
+    _input: SemanticGroupData,
+    generic_param_id: GenericParamId<'db>,
+    _in_cycle: bool,
+) -> Maybe<GenericParamData<'db>> {
+    priv_generic_param_data(db, generic_param_id, true)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_params_type_constraints].
-pub fn generic_params_type_constraints(
-    db: &dyn SemanticGroup,
-    generic_params: Vec<GenericParamId>,
-) -> Vec<(TypeId, TypeId)> {
+pub fn generic_params_type_constraints<'db>(
+    db: &'db dyn SemanticGroup,
+    generic_params: Vec<GenericParamId<'db>>,
+) -> Vec<(TypeId<'db>, TypeId<'db>)> {
     let mut constraints = vec![];
     for param in &generic_params {
         let Ok(GenericParam::Impl(imp)) = db.generic_param_semantic(*param) else {
@@ -405,8 +390,8 @@ pub fn generic_params_type_constraints(
             .intern(db);
             constraints.push((impl_type, ty1));
         }
-        let ConcreteTraitLongId { trait_id, generic_args } = concrete_trait_id.lookup_intern(db);
-        if trait_id != db.core_info().type_eq_trt {
+        let ConcreteTraitLongId { trait_id, generic_args } = concrete_trait_id.long(db);
+        if trait_id != &db.core_info().type_eq_trt {
             continue;
         }
         let [GenericArgumentId::Type(ty0), GenericArgumentId::Type(ty1)] = generic_args.as_slice()
@@ -421,14 +406,14 @@ pub fn generic_params_type_constraints(
 // --- Helpers ---
 
 /// Returns the generic parameters list AST node of a generic parameter.
-fn generic_param_generic_params_list(
-    db: &dyn SemanticGroup,
-    generic_param_id: GenericParamId,
-) -> Maybe<ast::OptionWrappedGenericParamList> {
-    let generic_param_long_id = generic_param_id.lookup_intern(db);
+fn generic_param_generic_params_list<'db>(
+    db: &'db dyn SemanticGroup,
+    generic_param_id: GenericParamId<'db>,
+) -> Maybe<ast::OptionWrappedGenericParamList<'db>> {
+    let generic_param_long_id = generic_param_id.long(db);
 
     // The generic params list is 2 level up the tree.
-    let syntax_db = db.upcast();
+    let syntax_db = db;
     let wrapped_generic_param_list = generic_param_long_id.1.0.nth_parent(syntax_db, 2);
 
     Ok(ast::OptionWrappedGenericParamListPtr(wrapped_generic_param_list).lookup(syntax_db))
@@ -436,34 +421,34 @@ fn generic_param_generic_params_list(
 
 /// Returns the semantic model of a generic parameters list given the list AST, and updates the
 /// diagnostics and resolver accordingly.
-pub fn semantic_generic_params(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    resolver: &mut Resolver<'_>,
-    module_file_id: ModuleFileId,
-    generic_params: &ast::OptionWrappedGenericParamList,
-) -> Vec<GenericParam> {
+pub fn semantic_generic_params<'db>(
+    db: &'db dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    resolver: &mut Resolver<'db>,
+    module_file_id: ModuleFileId<'db>,
+    generic_params: &ast::OptionWrappedGenericParamList<'db>,
+) -> Vec<GenericParam<'db>> {
     semantic_generic_params_ex(db, diagnostics, resolver, module_file_id, generic_params, false)
 }
 
-pub fn semantic_generic_params_ex(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    resolver: &mut Resolver<'_>,
-    module_file_id: ModuleFileId,
-    generic_params: &ast::OptionWrappedGenericParamList,
+pub fn semantic_generic_params_ex<'db>(
+    db: &'db dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    resolver: &mut Resolver<'db>,
+    module_file_id: ModuleFileId<'db>,
+    generic_params: &ast::OptionWrappedGenericParamList<'db>,
     in_cycle: bool,
-) -> Vec<GenericParam> {
-    let syntax_db = db.upcast();
+) -> Vec<GenericParam<'db>> {
+    let syntax_db = db;
     match generic_params {
         syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
         syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
             .generic_params(syntax_db)
             .elements(syntax_db)
-            .iter()
             .filter_map(|param_syntax| {
                 let generic_param_id =
-                    GenericParamLongId(module_file_id, param_syntax.stable_ptr()).intern(db);
+                    GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db))
+                        .intern(db);
                 let generic_param_data =
                     db.priv_generic_param_data(generic_param_id, in_cycle).ok()?;
                 let generic_param = generic_param_data.generic_param;
@@ -471,8 +456,8 @@ pub fn semantic_generic_params_ex(
                 resolver.add_generic_param(generic_param_id);
                 resolver
                     .data
-                    .used_items
-                    .extend(generic_param_data.resolver_data.used_items.iter().copied());
+                    .used_uses
+                    .extend(generic_param_data.resolver_data.used_uses.iter().copied());
                 generic_param.ok()
             })
             .collect(),
@@ -480,8 +465,11 @@ pub fn semantic_generic_params_ex(
 }
 
 /// Returns true if negative impls are enabled in the module.
-fn are_negative_impls_enabled(db: &dyn SemanticGroup, module_file_id: ModuleFileId) -> bool {
-    let owning_crate = module_file_id.0.owning_crate(db.upcast());
+fn are_negative_impls_enabled<'db>(
+    db: &dyn SemanticGroup,
+    module_file_id: ModuleFileId<'db>,
+) -> bool {
+    let owning_crate = module_file_id.0.owning_crate(db);
     let Some(config) = db.crate_config(owning_crate) else { return false };
     config.settings.experimental_features.negative_impls
 }
@@ -489,29 +477,30 @@ fn are_negative_impls_enabled(db: &dyn SemanticGroup, module_file_id: ModuleFile
 /// Returns true if associated_item_constraints is enabled in the module.
 fn is_associated_item_constraints_enabled(
     db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId,
+    module_file_id: ModuleFileId<'_>,
 ) -> bool {
-    let owning_crate = module_file_id.0.owning_crate(db.upcast());
+    let owning_crate = module_file_id.0.owning_crate(db);
     db.crate_config(owning_crate)
         .is_some_and(|c| c.settings.experimental_features.associated_item_constraints)
 }
 
 /// Computes the semantic model of a generic parameter give its ast.
-fn semantic_from_generic_param_ast(
-    db: &dyn SemanticGroup,
-    resolver: &mut Resolver<'_>,
-    diagnostics: &mut SemanticDiagnostics,
-    module_file_id: ModuleFileId,
-    param_syntax: &ast::GenericParam,
-    parent_item_id: GenericItemId,
-) -> GenericParam {
-    let id = GenericParamLongId(module_file_id, param_syntax.stable_ptr()).intern(db);
+fn semantic_from_generic_param_ast<'db>(
+    db: &'db dyn SemanticGroup,
+    resolver: &mut Resolver<'db>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    module_file_id: ModuleFileId<'db>,
+    param_syntax: &ast::GenericParam<'db>,
+    parent_item_id: GenericItemId<'db>,
+) -> GenericParam<'db> {
+    let syntax_db = db;
+    let id = GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db)).intern(db);
     let mut item_constraints_into_option = |constraint| match constraint {
         OptionAssociatedItemConstraints::Empty(_) => None,
         OptionAssociatedItemConstraints::AssociatedItemConstraints(associated_type_args) => {
             if !is_associated_item_constraints_enabled(db, module_file_id) {
                 diagnostics.report(
-                    associated_type_args.stable_ptr(),
+                    associated_type_args.stable_ptr(syntax_db),
                     SemanticDiagnosticKind::TypeConstraintsSyntaxNotEnabled,
                 );
             }
@@ -521,12 +510,12 @@ fn semantic_from_generic_param_ast(
     match param_syntax {
         ast::GenericParam::Type(_) => GenericParam::Type(GenericParamType { id }),
         ast::GenericParam::Const(syntax) => {
-            let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db.upcast()));
+            let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db));
             GenericParam::Const(GenericParamConst { id, ty })
         }
         ast::GenericParam::ImplNamed(syntax) => {
-            let path_syntax = syntax.trait_path(db.upcast());
-            let item_constrains = item_constraints_into_option(syntax.type_constrains(db.upcast()));
+            let path_syntax = syntax.trait_path(db);
+            let item_constrains = item_constraints_into_option(syntax.type_constrains(db));
             GenericParam::Impl(impl_generic_param_semantic(
                 db,
                 resolver,
@@ -537,8 +526,8 @@ fn semantic_from_generic_param_ast(
             ))
         }
         ast::GenericParam::ImplAnonymous(syntax) => {
-            let path_syntax = syntax.trait_path(db.upcast());
-            let item_constrains = item_constraints_into_option(syntax.type_constrains(db.upcast()));
+            let path_syntax = syntax.trait_path(db);
+            let item_constrains = item_constraints_into_option(syntax.type_constrains(db));
             GenericParam::Impl(impl_generic_param_semantic(
                 db,
                 resolver,
@@ -550,14 +539,20 @@ fn semantic_from_generic_param_ast(
         }
         ast::GenericParam::NegativeImpl(syntax) => {
             if !are_negative_impls_enabled(db, module_file_id) {
-                diagnostics.report(param_syntax, SemanticDiagnosticKind::NegativeImplsNotEnabled);
+                diagnostics.report(
+                    param_syntax.stable_ptr(syntax_db),
+                    SemanticDiagnosticKind::NegativeImplsNotEnabled,
+                );
             }
 
             if !matches!(parent_item_id, GenericItemId::ModuleItem(GenericModuleItemId::Impl(_))) {
-                diagnostics.report(param_syntax, SemanticDiagnosticKind::NegativeImplsOnlyOnImpls);
+                diagnostics.report(
+                    param_syntax.stable_ptr(syntax_db),
+                    SemanticDiagnosticKind::NegativeImplsOnlyOnImpls,
+                );
             }
 
-            let path_syntax = syntax.trait_path(db.upcast());
+            let path_syntax = syntax.trait_path(db);
             GenericParam::NegImpl(impl_generic_param_semantic(
                 db,
                 resolver,
@@ -571,19 +566,21 @@ fn semantic_from_generic_param_ast(
 }
 
 /// Computes the semantic model of an impl generic parameter given its trait path.
-fn impl_generic_param_semantic(
-    db: &dyn SemanticGroup,
-    resolver: &mut Resolver<'_>,
-    diagnostics: &mut SemanticDiagnostics,
-    path_syntax: &ast::ExprPath,
-    item_constraints: Option<AssociatedItemConstraints>,
-    id: GenericParamId,
-) -> GenericParamImpl {
+fn impl_generic_param_semantic<'db>(
+    db: &'db dyn SemanticGroup,
+    resolver: &mut Resolver<'db>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    path_syntax: &ast::ExprPath<'db>,
+    item_constraints: Option<AssociatedItemConstraints<'db>>,
+    id: GenericParamId<'db>,
+) -> GenericParamImpl<'db> {
+    let syntax_db = db;
     let concrete_trait = resolver
         .resolve_concrete_path(diagnostics, path_syntax, NotFoundItemType::Trait)
         .and_then(|resolved_item| match resolved_item {
             ResolvedConcreteItem::Trait(id) | ResolvedConcreteItem::SelfTrait(id) => Ok(id),
-            _ => Err(diagnostics.report(path_syntax, SemanticDiagnosticKind::UnknownTrait)),
+            _ => Err(diagnostics
+                .report(path_syntax.stable_ptr(syntax_db), SemanticDiagnosticKind::UnknownTrait)),
         });
     let type_constraints = concrete_trait
         .ok()
@@ -593,20 +590,18 @@ fn impl_generic_param_semantic(
         .map(|(concrete_trait_id, constraints)| {
             let mut map = OrderedHashMap::default();
 
-            for constraint in
-                constraints.associated_item_constraints(db.upcast()).elements(db.upcast())
-            {
+            for constraint in constraints.associated_item_constraints(syntax_db).elements(db) {
                 let Ok(trait_type_id_opt) = db.trait_type_by_name(
                     concrete_trait_id.trait_id(db),
-                    constraint.item(db.upcast()).text(db.upcast()),
+                    constraint.item(syntax_db).text(syntax_db).into(),
                 ) else {
                     continue;
                 };
                 let Some(trait_type_id) = trait_type_id_opt else {
                     diagnostics.report(
-                        constraint.stable_ptr(),
+                        constraint.stable_ptr(syntax_db),
                         SemanticDiagnosticKind::NonTraitTypeConstrained {
-                            identifier: constraint.item(db.upcast()).text(db.upcast()),
+                            identifier: constraint.item(db).text(db).into(),
                             concrete_trait_id,
                         },
                     );
@@ -614,19 +609,19 @@ fn impl_generic_param_semantic(
                 };
 
                 let concrete_trait_type_id =
-                    ConcreteTraitTypeId::new(db, concrete_trait_id, trait_type_id);
+                    ConcreteTraitTypeId::new_from_data(db, concrete_trait_id, trait_type_id);
                 match map.entry(trait_type_id) {
                     Entry::Vacant(entry) => {
                         entry.insert(resolve_type(
                             db,
                             diagnostics,
                             resolver,
-                            &constraint.value(db.upcast()),
+                            &constraint.value(syntax_db),
                         ));
                     }
                     Entry::Occupied(_) => {
                         diagnostics.report(
-                            path_syntax,
+                            path_syntax.stable_ptr(syntax_db),
                             SemanticDiagnosticKind::DuplicateTypeConstraint {
                                 concrete_trait_type_id,
                             },
@@ -643,17 +638,25 @@ fn impl_generic_param_semantic(
 
 /// Formats a list of generic arguments.
 pub fn fmt_generic_args(
-    generic_args: &[GenericArgumentId],
-    f: &mut std::fmt::Formatter<'_>,
-    db: &(dyn SemanticGroup + 'static),
+    generic_args: &[GenericArgumentId<'_>],
+    f: &mut CountingWriter<'_, '_>,
+    db: &dyn SemanticGroup,
 ) -> std::fmt::Result {
-    if !generic_args.is_empty() {
+    let mut generic_args = generic_args.iter();
+    if let Some(first) = generic_args.next() {
+        // Soft limit for the number of chars in the formatted type.
+        const CHARS_BOUND: usize = 500;
         write!(f, "::<")?;
-        for (i, arg) in generic_args.iter().enumerate() {
-            if i > 0 {
-                write!(f, ", ")?;
+        write!(f, "{}", &first.format(db))?;
+
+        for arg in generic_args {
+            write!(f, ", ")?;
+            if f.count() > CHARS_BOUND {
+                // If the formatted type is becoming too long, add short version of arguments.
+                write!(f, "{}", &arg.short_name(db))?;
+            } else {
+                write!(f, "{}", &arg.format(db))?;
             }
-            write!(f, "{}", arg.format(db))?;
         }
         write!(f, ">")?;
     }

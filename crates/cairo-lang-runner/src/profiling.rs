@@ -1,18 +1,40 @@
 use std::fmt::{Debug, Display};
 
 use cairo_lang_lowering::ids::FunctionLongId;
+use cairo_lang_runnable_utils::builder::RunnableBuilder;
+use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{LookupIntern, require};
+use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use itertools::{Itertools, chain};
-use smol_str::SmolStr;
+
+use crate::ProfilingInfoCollectionConfig;
 
 #[cfg(test)]
 #[path = "profiling_test.rs"]
 mod test;
+
+/// Profiler configuration.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ProfilerConfig {
+    /// Profiler with Cairo level debug information.
+    Cairo,
+    /// Similar to Cairo, but stack frames are deduplicated, and the output format is more compact.
+    Scoped,
+    /// Sierra level profiling, no cairo level debug information.
+    Sierra,
+}
+
+impl ProfilerConfig {
+    /// Returns true if the profiling config requires cairo level debug information.
+    pub fn requires_cairo_debug_info(&self) -> bool {
+        matches!(self, ProfilerConfig::Cairo | ProfilerConfig::Scoped)
+    }
+}
 
 /// Profiling into of a single run. This is the raw info - went through minimum processing, as this
 /// is done during the run. To enrich it before viewing/printing, use the `ProfilingInfoProcessor`.
@@ -37,13 +59,145 @@ pub struct ProfilingInfo {
     pub scoped_sierra_statement_weights: OrderedHashMap<(Vec<usize>, StatementIdx), usize>,
 }
 
+impl ProfilingInfo {
+    pub fn from_trace(
+        builder: &RunnableBuilder,
+        // The offset in memory where builder.casm_program() was loaded.
+        load_offset: usize,
+        profiling_config: &ProfilingInfoCollectionConfig,
+        trace: &[RelocatedTraceEntry],
+    ) -> Self {
+        let sierra_statement_info = &builder.casm_program().debug_info.sierra_statement_info;
+        let sierra_len = sierra_statement_info.len();
+        let bytecode_len = sierra_statement_info.last().unwrap().end_offset;
+
+        // The function stack trace of the current function, excluding the current function (that
+        // is, the stack of the caller). Represented as a vector of indices of the functions
+        // in the stack (indices of the functions according to the list in the sierra program).
+        // Limited to depth `max_stack_trace_depth`. Note `function_stack_depth` tracks the real
+        // depth, even if >= `max_stack_trace_depth`.
+        let mut function_stack = Vec::new();
+        // Tracks the depth of the function stack, without limit. This is usually equal to
+        // `function_stack.len()`, but if the actual stack is deeper than `max_stack_trace_depth`,
+        // this remains reliable while `function_stack` does not.
+        let mut function_stack_depth = 0;
+        let mut cur_weight = 0;
+        // The key is a function stack trace (see `function_stack`, but including the current
+        // function).
+        // The value is the weight of the stack trace so far, not including the pending weight being
+        // tracked at the time.
+        let mut stack_trace_weights = OrderedHashMap::default();
+        let mut end_of_program_reached = false;
+        // The total weight of each Sierra statement.
+        // Note the header and footer (CASM instructions added for running the program by the
+        // runner). The header is not counted, and the footer is, but then the relevant
+        // entry is removed.
+        let mut sierra_statement_weights = UnorderedHashMap::default();
+        // Total weight of Sierra statements grouped by the respective (collapsed) user function
+        // call stack.
+        let mut scoped_sierra_statement_weights = OrderedHashMap::default();
+        for step in trace {
+            // Skip the header.
+            let Some(real_pc) = step.pc.checked_sub(load_offset) else {
+                continue;
+            };
+
+            // Skip the footer.
+            // Also if pc is greater or equal the bytecode length it means that it is the outside
+            // ret used for e.g. getting pointer to builtins costs table, const segments
+            // etc.
+            if real_pc >= bytecode_len {
+                continue;
+            }
+
+            if end_of_program_reached {
+                unreachable!("End of program reached, but trace continues.");
+            }
+
+            cur_weight += 1;
+
+            // TODO(yuval): Maintain a map of pc to sierra statement index (only for PCs we saw), to
+            // save lookups.
+            let sierra_statement_idx = builder.casm_program().sierra_statement_index_by_pc(real_pc);
+            let user_function_idx = user_function_idx_by_sierra_statement_idx(
+                builder.sierra_program(),
+                sierra_statement_idx,
+            );
+
+            *sierra_statement_weights.entry(sierra_statement_idx).or_insert(0) += 1;
+
+            if profiling_config.collect_scoped_sierra_statement_weights {
+                // The current stack trace, including the current function (recursive calls
+                // collapsed).
+                let cur_stack: Vec<usize> =
+                    chain!(function_stack.iter().map(|&(idx, _)| idx), [user_function_idx])
+                        .dedup()
+                        .collect();
+
+                *scoped_sierra_statement_weights
+                    .entry((cur_stack, sierra_statement_idx))
+                    .or_insert(0) += 1;
+            }
+
+            let Some(gen_statement) =
+                builder.sierra_program().statements.get(sierra_statement_idx.0)
+            else {
+                panic!("Failed fetching statement index {}", sierra_statement_idx.0);
+            };
+
+            match gen_statement {
+                GenStatement::Invocation(invocation) => {
+                    if matches!(
+                        builder.registry().get_libfunc(&invocation.libfunc_id),
+                        Ok(CoreConcreteLibfunc::FunctionCall(_))
+                    ) {
+                        // Push to the stack.
+                        if function_stack_depth < profiling_config.max_stack_trace_depth {
+                            function_stack.push((user_function_idx, cur_weight));
+                            cur_weight = 0;
+                        }
+                        function_stack_depth += 1;
+                    }
+                }
+                GenStatement::Return(_) => {
+                    // Pop from the stack.
+                    if function_stack_depth <= profiling_config.max_stack_trace_depth {
+                        // The current stack trace, including the current function.
+                        let cur_stack: Vec<_> =
+                            chain!(function_stack.iter().map(|f| f.0), [user_function_idx])
+                                .collect();
+                        *stack_trace_weights.entry(cur_stack).or_insert(0) += cur_weight;
+
+                        let Some(popped) = function_stack.pop() else {
+                            // End of the program.
+                            end_of_program_reached = true;
+                            continue;
+                        };
+                        cur_weight += popped.1;
+                    }
+                    function_stack_depth -= 1;
+                }
+            }
+        }
+
+        // Remove the footer.
+        sierra_statement_weights.remove(&StatementIdx(sierra_len));
+
+        ProfilingInfo {
+            sierra_statement_weights,
+            stack_trace_weights,
+            scoped_sierra_statement_weights,
+        }
+    }
+}
+
 /// Weights per libfunc.
 #[derive(Default)]
 pub struct LibfuncWeights {
     /// Weight (in steps in the relevant run) of each concrete libfunc.
-    pub concrete_libfunc_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    pub concrete_libfunc_weights: Option<OrderedHashMap<String, usize>>,
     /// Weight (in steps in the relevant run) of each generic libfunc.
-    pub generic_libfunc_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    pub generic_libfunc_weights: Option<OrderedHashMap<String, usize>>,
     /// Weight (in steps in the relevant run) of return statements.
     pub return_weight: Option<usize>,
 }
@@ -84,7 +238,7 @@ impl Display for LibfuncWeights {
 pub struct UserFunctionWeights {
     /// Weight (in steps in the relevant run) of each user function (including generated
     /// functions).
-    pub user_function_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    pub user_function_weights: Option<OrderedHashMap<String, usize>>,
     /// Weight (in steps in the relevant run) of each original user function.
     pub original_user_function_weights: Option<OrderedHashMap<String, usize>>,
 }
@@ -242,35 +396,55 @@ impl Default for ProfilingInfoProcessorParams {
         }
     }
 }
+
+impl ProfilingInfoProcessorParams {
+    pub fn from_profiler_config(config: &ProfilerConfig) -> Self {
+        match config {
+            ProfilerConfig::Cairo => Default::default(),
+            ProfilerConfig::Scoped => Self {
+                min_weight: 1,
+                process_by_statement: false,
+                process_by_concrete_libfunc: false,
+                process_by_generic_libfunc: false,
+                process_by_user_function: false,
+                process_by_original_user_function: false,
+                process_by_cairo_function: false,
+                process_by_stack_trace: false,
+                process_by_cairo_stack_trace: false,
+                process_by_scoped_statement: true,
+            },
+            ProfilerConfig::Sierra => Self {
+                process_by_generic_libfunc: false,
+                process_by_cairo_stack_trace: false,
+                process_by_original_user_function: false,
+                process_by_cairo_function: false,
+                ..ProfilingInfoProcessorParams::default()
+            },
+        }
+    }
+}
+
 /// A processor for profiling info. Used to process the raw profiling info (basic info collected
 /// during the run) into a more detailed profiling info that can also be formatted.
 pub struct ProfilingInfoProcessor<'a> {
     db: Option<&'a dyn SierraGenGroup>,
-    sierra_program: Program,
+    sierra_program: &'a Program,
     /// A map between sierra statement index and the string representation of the Cairo function
     /// that generated it. The function representation is composed of the function name and the
     /// path (modules and impls) to the function in the file.
     statements_functions: UnorderedHashMap<StatementIdx, String>,
-    params: ProfilingInfoProcessorParams,
 }
 impl<'a> ProfilingInfoProcessor<'a> {
     pub fn new(
         db: Option<&'a dyn SierraGenGroup>,
-        sierra_program: Program,
+        sierra_program: &'a Program,
         statements_functions: UnorderedHashMap<StatementIdx, String>,
-        params: ProfilingInfoProcessorParams,
     ) -> Self {
-        Self { db, sierra_program, statements_functions, params }
+        Self { db, sierra_program, statements_functions }
     }
 
-    /// Processes the raw profiling info according to the params set in the processor.
-    pub fn process(&self, raw_profiling_info: &ProfilingInfo) -> ProcessedProfilingInfo {
-        self.process_ex(raw_profiling_info, &self.params)
-    }
-
-    /// Processes the raw profiling info according to the given params (can be used to override the
-    /// processor params).
-    pub fn process_ex(
+    /// Processes the raw profiling info according to the given params.
+    pub fn process(
         &self,
         raw_profiling_info: &ProfilingInfo,
         params: &ProfilingInfoProcessorParams,
@@ -316,7 +490,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
 
         Some(
             sierra_statement_weights_iter
-                .filter(|&(_, weight)| (*weight >= params.min_weight))
+                .filter(|&(_, weight)| *weight >= params.min_weight)
                 .map(|(statement_idx, weight)| {
                     (*statement_idx, (*weight, self.statement_idx_to_gen_statement(statement_idx)))
                 })
@@ -331,7 +505,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
         params: &ProfilingInfoProcessorParams,
     ) -> StackTraceWeights {
         let resolve_names = |(idx_stack_trace, weight): (&Vec<usize>, &usize)| {
-            (index_stack_trace_to_name_stack_trace(&self.sierra_program, idx_stack_trace), *weight)
+            (index_stack_trace_to_name_stack_trace(self.sierra_program, idx_stack_trace), *weight)
         };
 
         let sierra_stack_trace_weights = params.process_by_stack_trace.then(|| {
@@ -348,7 +522,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
             raw_profiling_info
                 .stack_trace_weights
                 .iter()
-                .filter(|(trace, _)| is_cairo_trace(db, &self.sierra_program, trace))
+                .filter(|(trace, _)| is_cairo_trace(db, self.sierra_program, trace))
                 .sorted_by_key(|&(trace, weight)| (usize::MAX - *weight, trace.clone()))
                 .map(resolve_names)
                 .collect()
@@ -385,17 +559,14 @@ impl<'a> ProfilingInfoProcessor<'a> {
                 self.db.expect("DB must be set with `process_by_generic_libfunc=true`.");
             libfunc_weights
                 .aggregate_by(
-                    |k| -> SmolStr {
-                        db.lookup_intern_concrete_lib_func(k.clone()).generic_id.to_string().into()
-                    },
+                    |k| db.lookup_concrete_lib_func(k.clone()).generic_id.to_string(),
                     |v1: &usize, v2| v1 + v2,
                     &0,
                 )
                 .filter(|_, weight| *weight >= params.min_weight)
-                .iter_sorted_by_key(|(generic_name, weight)| {
-                    (usize::MAX - **weight, (*generic_name).clone())
+                .into_iter_sorted_by_key(|(generic_name, weight)| {
+                    (usize::MAX - *weight, (*generic_name).clone())
                 })
-                .map(|(generic_name, weight)| (generic_name.clone(), *weight))
                 .collect()
         });
 
@@ -403,10 +574,10 @@ impl<'a> ProfilingInfoProcessor<'a> {
         let concrete_libfunc_weights = params.process_by_concrete_libfunc.then(|| {
             libfunc_weights
                 .filter(|_, weight| *weight >= params.min_weight)
-                .iter_sorted_by_key(|(libfunc_id, weight)| {
-                    (usize::MAX - **weight, (*libfunc_id).to_string())
+                .into_iter_sorted_by_key(|(libfunc_id, weight)| {
+                    (usize::MAX - *weight, libfunc_id.to_string())
                 })
-                .map(|(libfunc_id, weight)| (SmolStr::from(libfunc_id.to_string()), *weight))
+                .map(|(libfunc_id, weight)| (libfunc_id.to_string(), weight))
                 .collect()
         });
 
@@ -430,7 +601,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
         let mut user_functions = UnorderedHashMap::<usize, usize>::default();
         for (statement_idx, weight) in sierra_statement_weights {
             let function_idx: usize =
-                user_function_idx_by_sierra_statement_idx(&self.sierra_program, *statement_idx);
+                user_function_idx_by_sierra_statement_idx(self.sierra_program, *statement_idx);
             *(user_functions.entry(function_idx).or_insert(0)) += weight;
         }
 
@@ -441,7 +612,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
                 .aggregate_by(
                     |idx| {
                         let lowering_function_id =
-                            self.sierra_program.funcs[*idx].id.clone().lookup_intern(db);
+                            db.lookup_sierra_function(self.sierra_program.funcs[*idx].id.clone());
                         lowering_function_id.semantic_full_path(db.upcast())
                     },
                     |x, y| x + y,
@@ -465,7 +636,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
                 .map(|(idx, weight)| {
                     let func: &cairo_lang_sierra::program::GenFunction<StatementIdx> =
                         &self.sierra_program.funcs[*idx];
-                    (func.id.to_string().into(), *weight)
+                    (func.id.to_string(), *weight)
                 })
                 .collect()
         });
@@ -510,30 +681,24 @@ impl<'a> ProfilingInfoProcessor<'a> {
         params: &ProfilingInfoProcessorParams,
     ) -> Option<OrderedHashMap<Vec<String>, usize>> {
         if params.process_by_scoped_statement {
-            return Some(
-                raw_profiling_info
-                    .scoped_sierra_statement_weights
-                    .iter()
-                    .map(|((idx_stack_trace, statement_idx), &weight)| {
-                        let statement_name =
-                            match self.statement_idx_to_gen_statement(statement_idx) {
-                                GenStatement::Invocation(invocation) => {
-                                    invocation.libfunc_id.to_string()
-                                }
-                                GenStatement::Return(_) => "return".into(),
-                            };
-                        let key: Vec<String> = chain!(
-                            index_stack_trace_to_name_stack_trace(
-                                &self.sierra_program,
-                                idx_stack_trace
-                            ),
-                            [statement_name]
-                        )
-                        .collect();
-                        (key, weight)
-                    })
-                    .collect(),
-            );
+            let mut scoped_sierra_statement_weights: OrderedHashMap<Vec<String>, usize> =
+                Default::default();
+            for ((idx_stack_trace, statement_idx), weight) in
+                raw_profiling_info.scoped_sierra_statement_weights.iter()
+            {
+                let statement_name = match self.statement_idx_to_gen_statement(statement_idx) {
+                    GenStatement::Invocation(invocation) => invocation.libfunc_id.to_string(),
+                    GenStatement::Return(_) => "return".into(),
+                };
+                let key: Vec<String> = chain!(
+                    index_stack_trace_to_name_stack_trace(self.sierra_program, idx_stack_trace),
+                    [statement_name]
+                )
+                .collect();
+                // Accumulating statements with the same name.
+                *scoped_sierra_statement_weights.entry(key).or_default() += *weight;
+            }
+            return Some(scoped_sierra_statement_weights);
         }
         None
     }
@@ -560,8 +725,8 @@ fn is_cairo_trace(
 ) -> bool {
     sierra_trace.iter().all(|sierra_function_idx| {
         let sierra_function = &sierra_program.funcs[*sierra_function_idx];
-        let lowering_function_id = sierra_function.id.lookup_intern(db);
-        matches!(lowering_function_id.lookup_intern(db), FunctionLongId::Semantic(_))
+        let lowering_function_id = db.lookup_sierra_function(sierra_function.id.clone());
+        matches!(lowering_function_id.long(db), FunctionLongId::Semantic(_))
     })
 }
 

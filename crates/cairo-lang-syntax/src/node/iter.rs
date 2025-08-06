@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::node::SyntaxNode;
 use crate::node::db::SyntaxGroup;
 
@@ -28,16 +26,16 @@ pub struct Preorder<'a> {
     // FIXME(mkaput): Is it possible to avoid allocating iterators in layers here?
     //   This code does it because without fast parent & prev/next sibling operations it has to
     //   maintain DFS trace.
-    layers: Vec<PreorderLayer>,
+    layers: Vec<PreorderLayer<'a>>,
 }
 
-struct PreorderLayer {
-    start: SyntaxNode,
-    children: Option<(Arc<[SyntaxNode]>, usize)>,
+struct PreorderLayer<'a> {
+    start: SyntaxNode<'a>,
+    children: Option<(&'a [SyntaxNode<'a>], usize)>,
 }
 
 impl<'a> Preorder<'a> {
-    pub(super) fn new(start: SyntaxNode, db: &'a dyn SyntaxGroup) -> Self {
+    pub(super) fn new(start: SyntaxNode<'a>, db: &'a dyn SyntaxGroup) -> Self {
         let initial_layer = PreorderLayer { start, children: None };
 
         // NOTE(mkaput): Reserving some capacity should help amortization and thus make this
@@ -50,8 +48,8 @@ impl<'a> Preorder<'a> {
     }
 }
 
-impl Iterator for Preorder<'_> {
-    type Item = WalkEvent<SyntaxNode>;
+impl<'a> Iterator for Preorder<'a> {
+    type Item = WalkEvent<SyntaxNode<'a>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         // Lack of layers to traverse means end of iteration, so early return here.
@@ -63,8 +61,8 @@ impl Iterator for Preorder<'_> {
             None => {
                 // #1: If children iterator is not initialized, this means entire iteration just
                 // started, and the enter event for start node has to be emitted.
-                let event = WalkEvent::Enter(layer.start.clone());
-                layer.children = Some((self.db.get_children(layer.start.clone()), 0));
+                let event = WalkEvent::Enter(layer.start);
+                layer.children = Some((layer.start.get_children(self.db), 0));
                 self.layers.push(layer);
                 Some(event)
             }
@@ -75,17 +73,17 @@ impl Iterator for Preorder<'_> {
                         // just finished, and the layer needs to be popped (i.e. not pushed back)
                         // and leave event for this node needs to be
                         // emitted.
-                        Some(WalkEvent::Leave(layer.start.clone()))
+                        Some(WalkEvent::Leave(layer.start))
                     }
                     Some(start) => {
                         // #3: Otherwise the iterator is just in the middle of visiting a child, so
                         // push a new layer to iterate it. To avoid
                         // recursion, step #1 is duplicated and
                         // inlined here.
-                        let event = WalkEvent::Enter(start.clone());
+                        let event = WalkEvent::Enter(*start);
                         let new_layer = PreorderLayer {
-                            children: Some((self.db.get_children(start.clone()), 0)),
-                            start: start.clone(),
+                            children: Some((start.get_children(self.db), 0)),
+                            start: *start,
                         };
                         layer.children = Some((nodes, index + 1));
                         self.layers.extend([layer, new_layer]);

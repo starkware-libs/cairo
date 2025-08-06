@@ -1,9 +1,9 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
 use cairo_lang_plugins::plugins::utils::{PluginTypeInfo, TypeVariant};
-use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::extract_matches;
 use indent::indent_by;
 use indoc::formatdoc;
@@ -14,12 +14,12 @@ use crate::plugin::storage_interfaces::{
 };
 
 /// Returns the rewrite node for the `#[derive(starknet::Store)]` attribute.
-pub fn handle_store_derive(
-    db: &dyn SyntaxGroup,
-    item_ast: &ast::ModuleItem,
-    diagnostics: &mut Vec<PluginDiagnostic>,
+pub fn handle_store_derive<'db>(
+    db: &'db dyn SyntaxGroup,
+    item_ast: &ast::ModuleItem<'db>,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     metadata: &MacroPluginMetadata<'_>,
-) -> Option<RewriteNode> {
+) -> Option<RewriteNode<'db>> {
     let info = PluginTypeInfo::new(db, item_ast)?;
     match &info.type_variant {
         TypeVariant::Struct => {
@@ -48,7 +48,7 @@ pub fn handle_store_derive(
 }
 
 /// Derive the `Store` trait for structs annotated with `derive(starknet::Store)`.
-fn handle_struct_store(info: &PluginTypeInfo) -> Option<RewriteNode> {
+fn handle_struct_store<'db>(info: &PluginTypeInfo<'db>) -> Option<RewriteNode<'db>> {
     let full_name = &info.full_typename();
     let name = &info.name;
     let mut fields_write_start = Vec::new();
@@ -210,11 +210,11 @@ fn handle_struct_store(info: &PluginTypeInfo) -> Option<RewriteNode> {
 }
 
 /// Derive the `starknet::Store` trait for enums annotated with `derive(starknet::Store)`.
-fn handle_enum(
-    db: &dyn SyntaxGroup,
-    info: &PluginTypeInfo,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-) -> Option<RewriteNode> {
+fn handle_enum<'db>(
+    db: &'db dyn SyntaxGroup,
+    info: &PluginTypeInfo<'db>,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+) -> Option<RewriteNode<'db>> {
     let enum_name = &info.name;
     let full_name = &info.full_typename();
     let mut match_idx = Vec::new();
@@ -230,7 +230,7 @@ fn handle_enum(
         let indicator = if variant.attributes.has_attr(db, "default") {
             if default_index.is_some() {
                 diagnostics.push(PluginDiagnostic::error(
-                    &variant.attributes,
+                    variant.attributes.stable_ptr(db),
                     "Multiple variants annotated with `#[default]`".to_string(),
                 ));
                 return None;

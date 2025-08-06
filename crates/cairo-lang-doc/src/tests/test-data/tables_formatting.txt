@@ -1,0 +1,142 @@
+//! > Documentation submodules
+
+//! > test_runner_name
+documentation_test_runner
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+//! > cairo_code
+//! simple table with alignment
+//! |C1| C2|
+//! |---:|:---:|
+//! |R1C1|R1C2|
+//! |R2C1|R2C2|
+//!
+//! A more complicated real case study from corelib.
+//! | method  | self     | input     | output   |
+//! |---------|----------|-----------|----------|
+//! | [`and`] | `Err(e)` | (ignored) | `Err(e)` |
+//! | [`and`] | `Ok(x)`  | `Err(d)`  | `Err(d)` |
+//! | [`and`] | `Ok(x)`  | `Ok(y)`   | `Ok(y)`  |
+//! | [`or`]  | `Err(e)` | `Err(d)`  | `Err(d)` |
+//! | [`or`]  | `Err(e)` | `Ok(y)`   | `Ok(y)`  |
+//! | [`or`]  | `Ok(x)`  | (ignored) | `Ok(x)`  |
+
+//! > Item signature #1
+
+//! > Item documentation #1
+simple table with alignment
+
+|C1|C2|
+|---:|:---:|
+|R1C1|R1C2|
+|R2C1|R2C2|
+
+A more complicated real case study from corelib.
+
+|method|self|input|output|
+|---|---|---|---|
+|[`and`]|`Err(e)`|(ignored)|`Err(e)`|
+|[`and`]|`Ok(x)`|`Err(d)`|`Err(d)`|
+|[`and`]|`Ok(x)`|`Ok(y)`|`Ok(y)`|
+|[`or`]|`Err(e)`|`Err(d)`|`Err(d)`|
+|[`or`]|`Err(e)`|`Ok(y)`|`Ok(y)`|
+|[`or`]|`Ok(x)`|(ignored)|`Ok(x)`|
+
+//! > Item documentation tokens #1
+Content("simple table with alignment")
+Content("\n")
+Content("\n")
+Content("|")
+Content("C1")
+Content("|")
+Content("C2")
+Content("|\n|---:|:---:|")
+Content("\n")
+Content("|")
+Content("R1C1")
+Content("|")
+Content("R1C2")
+Content("|")
+Content("\n")
+Content("|")
+Content("R2C1")
+Content("|")
+Content("R2C2")
+Content("|")
+Content("\n")
+Content("\n")
+Content("A more complicated real case study from corelib.")
+Content("\n")
+Content("\n")
+Content("|")
+Content("method")
+Content("|")
+Content("self")
+Content("|")
+Content("input")
+Content("|")
+Content("output")
+Content("|\n|---|---|---|---|")
+Content("\n")
+Content("|")
+CommentLinkToken { label: "`and`", path: None, resolved_item_name: None }
+Content("|")
+Content("`Err(e)`")
+Content("|")
+Content("(ignored)")
+Content("|")
+Content("`Err(e)`")
+Content("|")
+Content("\n")
+Content("|")
+CommentLinkToken { label: "`and`", path: None, resolved_item_name: None }
+Content("|")
+Content("`Ok(x)`")
+Content("|")
+Content("`Err(d)`")
+Content("|")
+Content("`Err(d)`")
+Content("|")
+Content("\n")
+Content("|")
+CommentLinkToken { label: "`and`", path: None, resolved_item_name: None }
+Content("|")
+Content("`Ok(x)`")
+Content("|")
+Content("`Ok(y)`")
+Content("|")
+Content("`Ok(y)`")
+Content("|")
+Content("\n")
+Content("|")
+CommentLinkToken { label: "`or`", path: None, resolved_item_name: None }
+Content("|")
+Content("`Err(e)`")
+Content("|")
+Content("`Err(d)`")
+Content("|")
+Content("`Err(d)`")
+Content("|")
+Content("\n")
+Content("|")
+CommentLinkToken { label: "`or`", path: None, resolved_item_name: None }
+Content("|")
+Content("`Err(e)`")
+Content("|")
+Content("`Ok(y)`")
+Content("|")
+Content("`Ok(y)`")
+Content("|")
+Content("\n")
+Content("|")
+CommentLinkToken { label: "`or`", path: None, resolved_item_name: None }
+Content("|")
+Content("`Ok(x)`")
+Content("|")
+Content("(ignored)")
+Content("|")
+Content("`Ok(x)`")
+Content("|")

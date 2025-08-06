@@ -20,6 +20,24 @@ pub struct UnorderedHashSet<Key, BH = RandomState>(HashSet<Key, BH>);
 #[derive(Clone, Debug)]
 pub struct UnorderedHashSet<Key, BH = hashbrown::DefaultHashBuilder>(HashSet<Key, BH>);
 
+// This code was taken from the salsa::Update trait implementation for IndexSet.
+// It is defined privately in macro_rules! maybe_update_set in the db-ext-macro repo (with a small
+// change of using `extend_unordered` instead of `extend`).
+#[cfg(feature = "salsa")]
+unsafe impl<Key: Eq + Hash, BH: BuildHasher> salsa::Update for UnorderedHashSet<Key, BH> {
+    unsafe fn maybe_update(old_pointer: *mut Self, new_set: Self) -> bool {
+        let old_set: &mut Self = unsafe { &mut *old_pointer };
+
+        if *old_set == new_set {
+            false
+        } else {
+            old_set.clear();
+            old_set.extend_unordered(new_set);
+            true
+        }
+    }
+}
+
 impl<K, BH: Default> Default for UnorderedHashSet<K, BH> {
     #[cfg(feature = "std")]
     fn default() -> Self {

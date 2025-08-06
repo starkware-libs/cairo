@@ -112,34 +112,31 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         }
         let total_pending_bytes = self.pending_word_len + len;
 
-        if total_pending_bytes < BYTES_IN_BYTES31 {
-            self.append_word_fits_into_pending(word, len);
+        // The split index is the number of bytes left for the next word (new pending_word of the
+        // modified ByteArray).
+        let Some(split_index) = crate::num::traits::CheckedSub::checked_sub(
+            total_pending_bytes, BYTES_IN_BYTES31,
+        ) else {
+            self.pending_word = word + self.pending_word * one_shift_left_bytes_felt252(len);
+            self.pending_word_len = total_pending_bytes;
             return;
-        }
+        };
 
-        if total_pending_bytes == BYTES_IN_BYTES31 {
-            self
-                .data
-                .append(
-                    (word + self.pending_word * one_shift_left_bytes_felt252(len))
-                        .try_into()
-                        .unwrap(),
-                );
-            self.pending_word = 0;
+        let shift_value = self.shift_value();
+
+        if split_index == 0 {
+            self.append_shifted(SplitToAddResult { to_add: word, remainder: 0 }, shift_value);
             self.pending_word_len = 0;
             return;
         }
-
-        // The split index is the number of bytes left for the next word (new pending_word of the
-        // modified ByteArray).
-        let split_index = total_pending_bytes - BYTES_IN_BYTES31;
-        if split_index == BYTES_IN_U128 {
-            self.append_split_index_16(word);
-        } else if split_index < BYTES_IN_U128 {
-            self.append_split_index_lt_16(word, split_index);
-        } else { // split_index > BYTES_IN_U128
-            self.append_split_index_gt_16(word, split_index);
-        }
+        let word_as_u256 = word.into();
+        let to_append = match split_info(split_index) {
+            SplitInfo::Eq16(v) => v.split_u256(word_as_u256),
+            SplitInfo::Lt16(v) => v.split_u256(word_as_u256),
+            SplitInfo::Gt16(v) => v.split_u256(word_as_u256),
+            SplitInfo::BadUserData => crate::panic_with_felt252('bad append len'),
+        };
+        self.append_shifted(to_append, shift_value);
         self.pending_word_len = split_index;
     }
 
@@ -162,42 +159,27 @@ pub impl ByteArrayImpl of ByteArrayTrait {
             return;
         }
 
+        let shift_value = self.shift_value();
         // self.pending_word_len is in [1, 30]. This is the split index for all the full words of
         // `other`, as for each word, this is the number of bytes left for the next word.
-        if self.pending_word_len == BYTES_IN_U128 {
-            loop {
-                match other_data.pop_front() {
-                    Some(current_word) => { self.append_split_index_16((*current_word).into()); },
-                    None => { break; },
+        match split_info(self.pending_word_len) {
+            SplitInfo::Eq16(v) => {
+                while let Some(word) = other_data.pop_front() {
+                    self.append_shifted(v.split_u256((*word).into()), shift_value);
                 }
-            }
-        } else if self.pending_word_len < BYTES_IN_U128 {
-            loop {
-                match other_data.pop_front() {
-                    Some(current_word) => {
-                        self
-                            .append_split_index_lt_16(
-                                (*current_word).into(), self.pending_word_len,
-                            );
-                    },
-                    None => { break; },
+            },
+            SplitInfo::Lt16(v) => {
+                while let Some(word) = other_data.pop_front() {
+                    self.append_shifted(v.split_u256((*word).into()), shift_value);
                 }
-            }
-        } else {
-            // self.pending_word_len > BYTES_IN_U128
-            loop {
-                match other_data.pop_front() {
-                    Some(current_word) => {
-                        self
-                            .append_split_index_gt_16(
-                                (*current_word).into(), self.pending_word_len,
-                            );
-                    },
-                    None => { break; },
+            },
+            SplitInfo::Gt16(v) => {
+                while let Some(word) = other_data.pop_front() {
+                    self.append_shifted(v.split_u256((*word).into()), shift_value);
                 }
-            }
+            },
+            SplitInfo::BadUserData => crate::panic_with_felt252('bad append len'),
         }
-
         // Add the pending word of `other`.
         self.append_word(*other.pending_word, *other.pending_word_len);
     }
@@ -244,7 +226,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         }
 
         // self.pending_word_len == 30
-        self.data.append(new_pending.try_into().unwrap());
+        self.append_bytes31(new_pending);
         self.pending_word = 0;
         self.pending_word_len = 0;
     }
@@ -306,13 +288,8 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         result.append_word_rev(*self.pending_word, *self.pending_word_len);
 
         let mut data = self.data.span();
-        loop {
-            match data.pop_back() {
-                Some(current_word) => {
-                    result.append_word_rev((*current_word).into(), BYTES_IN_BYTES31);
-                },
-                None => { break; },
-            }
+        while let Some(current_word) = data.pop_back() {
+            result.append_word_rev((*current_word).into(), BYTES_IN_BYTES31);
         }
         result
     }
@@ -357,92 +334,172 @@ pub impl ByteArrayImpl of ByteArrayTrait {
             }
         }
     }
-
-    // === Helpers ===
-
-    /// Appends a single word of `len` bytes to the end of the `ByteArray`, assuming there
-    /// is enough space in the pending word (`self.pending_word_len + len < BYTES_IN_BYTES31`).
+}
+/// Internal functions associated with the `ByteArray` type.
+#[generate_trait]
+impl InternalImpl of InternalTrait {
+    /// Appends a split word to the end of `self`.
     ///
-    /// `word` is of type `felt252` but actually represents a `bytes31`.
-    /// It is represented as a `felt252` to improve performance of building the `ByteArray`.
+    /// `value` is the value to add to the byte array, including `to_add` and `remainder`.
+    /// `shift_value` is the shift for `self.pending word`, before it is joined by the `to_add` part
+    /// of `value`.
+    ///
+    /// Note: this function doesn't update the new pending length of `self`. It's the caller's
+    /// responsibility.
     #[inline]
-    fn append_word_fits_into_pending(ref self: ByteArray, word: felt252, len: usize) {
-        if self.pending_word_len == 0 {
-            // len < BYTES_IN_BYTES31
-            self.pending_word = word;
-            self.pending_word_len = len;
-            return;
+    fn append_shifted(ref self: ByteArray, value: SplitToAddResult, shift_value: felt252) {
+        self.append_bytes31(value.to_add + self.pending_word * shift_value);
+        self.pending_word = value.remainder;
+    }
+
+    /// The value to shift the current pending word to add the remaining bytes to it.
+    #[inline]
+    fn shift_value(ref self: ByteArray) -> felt252 {
+        one_shift_left_bytes_felt252(BYTES_IN_BYTES31 - self.pending_word_len)
+    }
+
+    /// Appends a `felt252` value assumed to be `bytes31`.
+    ///
+    /// Will append an error value in cases of invalid usage in order to avoid panic code.
+    fn append_bytes31(ref self: ByteArray, value: felt252) {
+        const ON_ERR: bytes31 = 'BA_ILLEGAL_USAGE'_u128.into();
+        self.data.append(value.try_into().unwrap_or(ON_ERR));
+    }
+}
+
+/// The value for adding up to 31 bytes to the byte array.
+struct SplitToAddResult {
+    /// The value to complete the current word.
+    to_add: felt252,
+    /// The value to update the pending word to, as it does not fit in the current word.
+    remainder: felt252,
+}
+
+/// Information for splitting a felt252 into 2 parts at an index.
+enum SplitInfo {
+    /// The index is 16.
+    Eq16: Eq16SplitInfo,
+    /// The index is less than 16.
+    Lt16: Lt16SplitInfo,
+    /// The index is more than 16.
+    Gt16: Gt16SplitInfo,
+    /// Should never happen.
+    BadUserData,
+}
+
+/// Helper struct for splitting a number at the 16 byte.
+#[derive(Copy, Drop)]
+struct Eq16SplitInfo {}
+
+/// Helper struct for splitting a number at an index lower than the 16 byte.
+#[derive(Copy, Drop)]
+struct Lt16SplitInfo {
+    /// The division value to extract the low word parts.
+    low_div: NonZero<u128>,
+    /// The shift value to mix the high word and the low word high part.
+    high_shift: felt252,
+}
+
+/// Helper struct for splitting a number at an index greater than the 16 byte.
+#[derive(Copy, Drop)]
+struct Gt16SplitInfo {
+    /// The division value to extract the high word parts.
+    high_div: NonZero<u128>,
+}
+
+trait SplitValue<T> {
+    /// Splits a u256 into a `SplitToAddResult` according to the info on the split index.
+    fn split_u256(self: T, v: u256) -> SplitToAddResult;
+}
+
+impl Lt16SplitInfoSplitValue of SplitValue<Lt16SplitInfo> {
+    fn split_u256(self: Lt16SplitInfo, v: u256) -> SplitToAddResult {
+        let (low_high, low_low) = DivRem::div_rem(v.low, self.low_div);
+        SplitToAddResult {
+            to_add: v.high.into() * self.high_shift + low_high.into(), remainder: low_low.into(),
         }
-
-        self.pending_word = word + self.pending_word * one_shift_left_bytes_felt252(len);
-        self.pending_word_len += len;
     }
+}
 
-    /// Appends a single word to the end of `self`, given that `0 < split_index < 16`.
-    ///
-    /// `split_index` is the number of bytes left in `self.pending_word` after this function.
-    /// This is the index of the split (LSB's index is 0).
-    ///
-    /// Note: this function doesn't update the new pending length of `self`. It's the caller's
-    /// responsibility.
-    #[inline]
-    fn append_split_index_lt_16(ref self: ByteArray, word: felt252, split_index: usize) {
-        let u256 { low, high } = word.into();
-
-        let low_result = split_u128(low, split_index);
-        let left = high.into() * one_shift_left_bytes_u128(BYTES_IN_U128 - split_index).into()
-            + low_result.high.into();
-
-        self.append_split(left, low_result.low.into());
+impl Eq16SplitInfoSplitValue of SplitValue<Eq16SplitInfo> {
+    fn split_u256(self: Eq16SplitInfo, v: u256) -> SplitToAddResult {
+        SplitToAddResult { to_add: v.high.into(), remainder: v.low.into() }
     }
+}
 
-    /// Appends a single word to the end of `self`, given that the index of splitting `word` is
-    /// exactly 16.
-    ///
-    /// `split_index` is the number of bytes left in `self.pending_word` after this function.
-    /// This is the index of the split (LSB's index is 0).
-    ///
-    /// Note: this function doesn't update the new pending length of `self`. It's the caller's
-    /// responsibility.
-    #[inline]
-    fn append_split_index_16(ref self: ByteArray, word: felt252) {
-        let u256 { low, high } = word.into();
-        self.append_split(high.into(), low.into());
+impl Gt16SplitInfoSplitValue of SplitValue<Gt16SplitInfo> {
+    fn split_u256(self: Gt16SplitInfo, v: u256) -> SplitToAddResult {
+        let (high_high, high_low) = DivRem::div_rem(v.high, self.high_div);
+        SplitToAddResult {
+            to_add: high_high.into(), remainder: high_low.into() * POW_2_128 + v.low.into(),
+        }
     }
+}
 
-    /// Appends a single word to the end of `self`, given that the index of splitting `word` is >
-    /// 16.
-    ///
-    /// `split_index` is the number of bytes left in `self.pending_word` after this function.
-    /// This is the index of the split (LSB's index is 0).
-    ///
-    /// Note: this function doesn't update the new pending length of `self`. It's the caller's
-    /// responsibility.
-    #[inline]
-    fn append_split_index_gt_16(ref self: ByteArray, word: felt252, split_index: usize) {
-        let u256 { low, high } = word.into();
-
-        let high_result = split_u128(high, split_index - BYTES_IN_U128);
-        let right = high_result.low.into() * POW_2_128 + low.into();
-
-        self.append_split(high_result.high.into(), right);
-    }
-
-    /// A helper function to append a remainder to `self`, by:
-    /// 1. completing `self.pending_word` to a full word using `complete_full_word`, assuming it's
-    ///    validly convertible to a `bytes31` of length exactly `BYTES_IN_BYTES31 -
-    ///    self.pending_word_len`.
-    /// 2. Setting `self.pending_word` to `new_pending`.
-    ///
-    /// Note: this function doesn't update the new pending length of `self`. It's the caller's
-    /// responsibility.
-    #[inline]
-    fn append_split(ref self: ByteArray, complete_full_word: felt252, new_pending: felt252) {
-        let to_append = complete_full_word
-            + self.pending_word
-                * one_shift_left_bytes_felt252(BYTES_IN_BYTES31 - self.pending_word_len);
-        self.data.append(to_append.try_into().unwrap());
-        self.pending_word = new_pending;
+/// Extracts the split info from the given index.
+fn split_info(split_index: usize) -> SplitInfo {
+    match split_index {
+        1 => SplitInfo::Lt16(
+            Lt16SplitInfo { low_div: 0x100, high_shift: 0x1000000000000000000000000000000 },
+        ),
+        2 => SplitInfo::Lt16(
+            Lt16SplitInfo { low_div: 0x10000, high_shift: 0x10000000000000000000000000000 },
+        ),
+        3 => SplitInfo::Lt16(
+            Lt16SplitInfo { low_div: 0x1000000, high_shift: 0x100000000000000000000000000 },
+        ),
+        4 => SplitInfo::Lt16(
+            Lt16SplitInfo { low_div: 0x100000000, high_shift: 0x1000000000000000000000000 },
+        ),
+        5 => SplitInfo::Lt16(
+            Lt16SplitInfo { low_div: 0x10000000000, high_shift: 0x10000000000000000000000 },
+        ),
+        6 => SplitInfo::Lt16(
+            Lt16SplitInfo { low_div: 0x1000000000000, high_shift: 0x100000000000000000000 },
+        ),
+        7 => SplitInfo::Lt16(
+            Lt16SplitInfo { low_div: 0x100000000000000, high_shift: 0x1000000000000000000 },
+        ),
+        8 => SplitInfo::Lt16(
+            Lt16SplitInfo { low_div: 0x10000000000000000, high_shift: 0x10000000000000000 },
+        ),
+        9 => SplitInfo::Lt16(
+            Lt16SplitInfo { low_div: 0x1000000000000000000, high_shift: 0x100000000000000 },
+        ),
+        10 => SplitInfo::Lt16(
+            Lt16SplitInfo { low_div: 0x100000000000000000000, high_shift: 0x1000000000000 },
+        ),
+        11 => SplitInfo::Lt16(
+            Lt16SplitInfo { low_div: 0x10000000000000000000000, high_shift: 0x10000000000 },
+        ),
+        12 => SplitInfo::Lt16(
+            Lt16SplitInfo { low_div: 0x1000000000000000000000000, high_shift: 0x100000000 },
+        ),
+        13 => SplitInfo::Lt16(
+            Lt16SplitInfo { low_div: 0x100000000000000000000000000, high_shift: 0x1000000 },
+        ),
+        14 => SplitInfo::Lt16(
+            Lt16SplitInfo { low_div: 0x10000000000000000000000000000, high_shift: 0x10000 },
+        ),
+        15 => SplitInfo::Lt16(
+            Lt16SplitInfo { low_div: 0x1000000000000000000000000000000, high_shift: 0x100 },
+        ),
+        16 => SplitInfo::Eq16(Eq16SplitInfo {}),
+        17 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x100 }),
+        18 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000 }),
+        19 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x1000000 }),
+        20 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x100000000 }),
+        21 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000000000 }),
+        22 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x1000000000000 }),
+        23 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x100000000000000 }),
+        24 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000000000000000 }),
+        25 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x1000000000000000000 }),
+        26 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x100000000000000000000 }),
+        27 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000000000000000000000 }),
+        28 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x1000000000000000000000000 }),
+        29 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x100000000000000000000000000 }),
+        30 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000000000000000000000000000 }),
+        0 | _ => SplitInfo::BadUserData,
     }
 }
 
@@ -493,7 +550,7 @@ pub(crate) impl ByteArrayIndexView of crate::traits::IndexView<ByteArray, usize,
 #[derive(Drop, Clone)]
 pub struct ByteArrayIter {
     ba: ByteArray,
-    current_index: crate::ops::RangeIterator<usize>,
+    current_index: IntoIterator::<crate::ops::Range<usize>>::IntoIter,
 }
 
 impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {

@@ -872,10 +872,9 @@ fn inner_byte_array_pointer(address: StorageAddress, chunk: felt252) -> StorageB
 /// The length of the byte array is read from `address` at domain `address_domain`.
 /// For more info read the documentation of `ByteArrayStore`.
 fn inner_read_byte_array(address_domain: u32, address: StorageAddress) -> SyscallResult<ByteArray> {
-    let len: usize =
-        match starknet::syscalls::storage_read_syscall(address_domain, address)?.try_into() {
-        Some(x) => x,
-        None => { return SyscallResult::Err(array!['Invalid ByteArray length']); },
+    let Some::<usize>(len) = starknet::syscalls::storage_read_syscall(address_domain, address)?
+        .try_into() else {
+        return Err(array!['Invalid ByteArray length']);
     };
     let (mut remaining_full_words, pending_word_len) = core::DivRem::div_rem(
         len, BYTES_IN_BYTES31.try_into().unwrap(),
@@ -886,18 +885,13 @@ fn inner_read_byte_array(address_domain: u32, address: StorageAddress) -> Syscal
     let mut result: ByteArray = Default::default();
     loop {
         if remaining_full_words == 0 {
-            break Ok(());
+            break;
         }
-        let value =
-            match starknet::syscalls::storage_read_syscall(
-                address_domain, storage_address_from_base_and_offset(chunk_base, index_in_chunk),
-            ) {
-            Ok(value) => value,
-            Err(err) => { break Err(err); },
-        };
-        let value: bytes31 = match value.try_into() {
-            Some(x) => x,
-            None => { break Err(array!['Invalid value']); },
+        let value = starknet::syscalls::storage_read_syscall(
+            address_domain, storage_address_from_base_and_offset(chunk_base, index_in_chunk),
+        )?;
+        let Some::<bytes31>(value) = value.try_into() else {
+            return Err(array!['Invalid value']);
         };
         result.data.append(value);
         remaining_full_words -= 1;
@@ -911,7 +905,7 @@ fn inner_read_byte_array(address_domain: u32, address: StorageAddress) -> Syscal
                 0
             },
         };
-    }?;
+    }
     if pending_word_len != 0 {
         let pending_word = starknet::syscalls::storage_read_syscall(
             address_domain, storage_address_from_base_and_offset(chunk_base, index_in_chunk),

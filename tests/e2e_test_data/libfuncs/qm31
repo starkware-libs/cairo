@@ -15,7 +15,7 @@ fn foo(a: qm31, b: qm31) -> qm31 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > sierra_code
 type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -47,7 +47,7 @@ fn foo(a: qm31, b: qm31) -> qm31 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > sierra_code
 type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -79,7 +79,7 @@ fn foo(a: qm31, b: qm31) -> qm31 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > sierra_code
 type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -112,7 +112,7 @@ fn foo(a: qm31, b: NonZero<qm31>) -> qm31 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > sierra_code
 type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -157,7 +157,7 @@ return([0]);
 test::foo@F0() -> (qm31);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > ==========================================================================
 
@@ -213,7 +213,7 @@ return([4]);
 test::foo@F0([0]: qm31) -> (core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: CostTokenMap({Const: 300})
 
 //! > ==========================================================================
 
@@ -254,7 +254,7 @@ return([4]);
 test::foo@F0([0]: BoundedInt<0, 2147483646>, [1]: BoundedInt<0, 2147483646>, [2]: BoundedInt<0, 2147483646>, [3]: BoundedInt<0, 2147483646>) -> (qm31);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 700})
+test::foo: CostTokenMap({Const: 700})
 
 //! > ==========================================================================
 
@@ -317,7 +317,7 @@ return([2], [7]);
 test::foo@F0([0]: RangeCheck, [1]: qm31) -> (RangeCheck, Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 2350})
+test::foo: CostTokenMap({Const: 2350})
 
 //! > ==========================================================================
 
@@ -352,7 +352,7 @@ return([1]);
 test::foo@F0([0]: BoundedInt<0, 2147483646>) -> (qm31);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > ==========================================================================
 
@@ -373,7 +373,7 @@ fn foo(a: m31, b: m31) -> m31 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > sierra_code
 type BoundedInt<0, 2147483646> = BoundedInt<0, 2147483646> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -405,7 +405,7 @@ fn foo(a: m31, b: m31) -> m31 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > sierra_code
 type BoundedInt<0, 2147483646> = BoundedInt<0, 2147483646> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -437,7 +437,7 @@ fn foo(a: m31, b: m31) -> m31 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > sierra_code
 type BoundedInt<0, 2147483646> = BoundedInt<0, 2147483646> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -469,7 +469,7 @@ fn foo(a: m31, b: NonZero<m31>) -> m31 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > sierra_code
 type BoundedInt<0, 2147483646> = BoundedInt<0, 2147483646> [storable: true, drop: true, dup: true, zero_sized: false];

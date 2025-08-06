@@ -4,26 +4,26 @@
     "0x7",
     "0x0",
     "0x2",
-    "0xb",
-    "0x2",
+    "0xc",
+    "0x0",
     "0xbd",
     "0x43",
-    "0x48",
+    "0x47",
     "0x52616e6765436865636b",
     "0x800000000000000100000000000000000000000000000000",
-    "0x456e756d",
-    "0x800000000000000700000000000000000000000000000001",
-    "0x0",
-    "0x1e7cc030b6a62e51219c7055ff773a8dff8fb71637d893064207dc67ba74304",
     "0x436f6e7374",
     "0x800000000000000000000000000000000000000000000002",
     "0x1",
-    "0x45",
+    "0x44",
     "0x2",
     "0x4f7074696f6e3a3a756e77726170206661696c65642e",
     "0x4e6f7420616c6c20696e707574732068617665206265656e2066696c6c6564",
     "0x416c6c20696e707574732068617665206265656e2066696c6c6564",
     "0x4f7574206f6620676173",
+    "0x537472756374",
+    "0x800000000000000f00000000000000000000000000000001",
+    "0x0",
+    "0x16a4c8d7c05909052238a862d8cc3e7975bf05a07b3a69c6b28951083a6d672",
     "0x10",
     "0x45787065637465642073756363657373",
     "0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3",
@@ -31,14 +31,13 @@
     "0x800000000000000100000000000000000000000000000001",
     "0x3",
     "0x4",
-    "0x537472756374",
-    "0x800000000000000f00000000000000000000000000000001",
     "0x2ee1e2b1b89f8c495f200e4956278a4d47395fe262f27b52e5865c9524c08c3",
     "0x436972637569744661696c75726547756172616e746565",
     "0x436972637569745061727469616c4f757470757473",
     "0x800000000000000300000000000000000000000000000001",
     "0x1c",
     "0x436972637569744f757470757473",
+    "0x800000000000000700000000000000000000000000000001",
     "0x13",
     "0x426f756e646564496e74",
     "0x800000000000000700000000000000000000000000000002",
@@ -70,73 +69,72 @@
     "0x7",
     "0x2a",
     "0x2c",
-    "0x16a4c8d7c05909052238a862d8cc3e7975bf05a07b3a69c6b28951083a6d672",
-    "0x2e",
     "0x496e70757420746f6f206c6f6e6720666f7220617267756d656e7473",
-    "0x33",
+    "0x31",
     "0x4172726179",
     "0x536e617073686f74",
-    "0x2f",
+    "0x2d",
     "0x1baeba72e79e9db2587cf44fedb2f3700b2075a5e8e39a562584862c4b71f62",
-    "0x30",
-    "0x31",
-    "0x34",
-    "0x37",
+    "0x2e",
+    "0x2f",
+    "0x32",
+    "0x35",
     "0x3345d4a655498609e0ae6c5766459fddeceafea89ff722792be37d477930647",
     "0x800000000000000f00000000000000000000000000000003",
-    "0x35",
+    "0x33",
     "0xe",
-    "0x3a",
-    "0x800000000000000300000000000000000000000000000003",
-    "0x2b",
-    "0x310e4ccd84d9bbb200c3c6e1bd9059d41b7231c2d22114d28eefee7b6933760",
-    "0x36",
     "0x38",
+    "0x800000000000000300000000000000000000000000000003",
+    "0x5",
+    "0x456e756d",
+    "0x310e4ccd84d9bbb200c3c6e1bd9059d41b7231c2d22114d28eefee7b6933760",
+    "0x34",
+    "0x36",
+    "0x39",
     "0x3b",
-    "0x3d",
     "0x4275696c74696e436f737473",
+    "0x3d",
+    "0x53797374656d",
     "0x40",
     "0x3f",
-    "0x53797374656d",
-    "0x43697263756974496e707574",
     "0x4d756c4d6f64",
+    "0x43697263756974496e707574",
     "0x4164644d6f64",
     "0x52616e6765436865636b3936",
     "0x9931c641b913035ae674b400b61a51476d506bbe8bba2ff8a6272790aba9e6",
-    "0x32",
+    "0x30",
     "0x66656c74323532",
     "0x426f78",
     "0x4761734275696c74696e",
-    "0x57",
+    "0x58",
     "0x7265766f6b655f61705f747261636b696e67",
     "0x77697468647261775f676173",
     "0x6272616e63685f616c69676e",
-    "0x72656465706f7369745f676173",
     "0x7374727563745f6465636f6e737472756374",
-    "0x73746f72655f74656d70",
-    "0x47",
     "0x61727261795f736e617073686f745f706f705f66726f6e74",
     "0x64726f70",
-    "0x46",
+    "0x45",
     "0x66756e6374696f6e5f63616c6c",
     "0x656e756d5f696e6974",
-    "0x44",
     "0x43",
+    "0x73746f72655f74656d70",
     "0x42",
     "0x41",
     "0x3e",
-    "0x6765745f6275696c74696e5f636f737473",
+    "0x46",
     "0x3c",
+    "0x6765745f6275696c74696e5f636f737473",
+    "0x3a",
     "0x77697468647261775f6761735f616c6c",
     "0x7374727563745f636f6e737472756374",
     "0x656e756d5f6d61746368",
-    "0x39",
+    "0x37",
+    "0x72656465706f7369745f676173",
     "0x61727261795f6e6577",
     "0x736e617073686f745f74616b65",
     "0x6a756d70",
     "0x636f6e73745f61735f696d6d656469617465",
-    "0x2d",
-    "0x61727261795f617070656e64",
+    "0x2b",
     "0x28",
     "0x26",
     "0x24",
@@ -160,29 +158,30 @@
     "0x1d1238f44227bdf67f367571e4dec83368c54054d98ccf71a67381f7c51f1c4",
     "0x7539365f67756172616e7465655f766572696679",
     "0x9",
+    "0x61727261795f617070656e64",
     "0x8",
-    "0x5",
-    "0x104",
+    "0xe9",
     "0xffffffffffffffff",
     "0xa",
     "0xb",
     "0xc",
     "0xd",
-    "0x16",
     "0xf",
-    "0x4d",
-    "0xdb",
-    "0x80",
-    "0xd0",
-    "0x9d",
-    "0xb8",
-    "0xb5",
-    "0xb2",
+    "0x16",
+    "0xca",
+    "0x71",
+    "0xbf",
+    "0x8e",
+    "0xa7",
+    "0xa4",
+    "0xa1",
+    "0xa9",
+    "0x48",
     "0x49",
     "0x4a",
-    "0xba",
     "0x4b",
     "0x4c",
+    "0x4d",
     "0x4e",
     "0x4f",
     "0x50",
@@ -192,102 +191,97 @@
     "0x54",
     "0x55",
     "0x56",
-    "0x5f",
-    "0xe4",
-    "0xec",
-    "0xf4",
-    "0xfc",
-    "0xae6",
-    "0xf0b0a0908070e0b0a0908070d0b0a0908070c0b0a09080706050403020100",
-    "0xb1413090b1413120b0a090807050b0a090807110b0a090807100b0a090807",
-    "0x2120090b1f0908071d09041e1d091c1b021a19051817160b1413150b14130b",
-    "0x271d091c26250b240908071d090423050b050b2120050b22090807090b090b",
-    "0x2f092b2e1d091c2d2c092b2a150b2409080729092909290929091905281702",
-    "0x919053817370b050b21203609360930323534330933093032310919053017",
-    "0x3b0b240908073a093a093032050b2409080739093909303224092409240924",
-    "0x93032400b0a0908073f093f0930323e0518173d093d0930323c093c093032",
-    "0x3032480948093032470919052117460945052117440904430a091c42410941",
-    "0x34409500919054f174e094e0930324d094c0919054b174a05181749094909",
-    "0x2b5a025958095709303235565509550930325409540930325309520951054f",
-    "0x5646302620a090461356053095f095e054f03025d025c025b050b2b5a090b",
-    "0x6e6d09096c4609096c0a09096b6a0909690509096947090968056705660565",
-    "0x5757009096974090969730909697209096971090969090b70090b6f091509",
-    "0x6c4409097c0a09097b5209096c7a0909790b15096e4c090978057776090969",
-    "0x7f09097e1515096e4709096c057d050b70090b6f5f09097847090978440909",
-    "0x909788209097e8109097e5309096953090978500909780a0909800a090969",
-    "0x880909698909096988090978240909878609097e1d09098505848309096983",
-    "0x7e7a090969090b7a090b6f1615096e8c09096c4c09096c8b09096c1d09098a",
-    "0x9209096c1d0909911f090969220909699009097e8f09097e1d09098e8d0909",
-    "0xb0994150b0994160b099405931009096c050b7a090b6f520909784d090978",
-    "0x96e8909096c2509097e3b09097e9809097e9709097e05962909096905950b",
-    "0x905059b090505059a0b09097e1509097e1609097e9909097e2515096e9915",
-    "0x9250916059d099b0998091505059b09050b059c970b00983b0b9b0b16050b",
-    "0xa109a04d9f0b9b0b9e093b059d099b099d0925053b099b093b0999059e099b",
-    "0x59c0510099b099d091505059b094d099705059b099f099805059b09050b05",
-    "0x99f0509099b0909099e053b099b093b09990590099b0992099d0592099b09",
-    "0x100599099b099909a10510099b091009250515099b0915094d050b099b090b",
-    "0x91505059b09a1099805059b09050b05909910150b093b3b0990099b099009",
-    "0x151f058f099b098f0990051f099b091f0925058f099b090592051f099b099d",
-    "0x9b09058f0529099b09a0091505059b09050b058b8d0b71a0220b9b0b8f1f3b",
-    "0x150b16220509099b0909099e0515099b0915094d050b099b090b099f058809",
-    "0x9b0b3109a00529099b092909250522099b092209990531891d86169b098809",
-    "0x9b09058b058c099b0929091505059b092c098d05059b09050b052f09532c09",
-    "0x936091d0536099b0983098605059b092409880583240b9b09330929053309",
-    "0x86099f0589099b0989099e0522099b092209990539099b098209890582099b",
-    "0x9100599099b099909a1058c099b098c0925051d099b091d094d0586099b09",
-    "0x99d0581099b0929091505059b09050b0539998c1d8689223b0939099b0939",
-    "0x4d0586099b0986099f0589099b0989099e0522099b09220999053a099b092f",
-    "0x93a099b093a09100599099b099909a10581099b09810925051d099b091d09",
-    "0x550099b098d0999053c099b098b091505059b09050b053a99811d8689223b",
-    "0x99c091505059b0925092c05059b09050b0505a2090531053d099b093c0925",
-    "0x93f099d053f099b09052f053d099b097f09250550099b09970999057f099b",
-    "0x15094d050b099b090b099f0509099b0909099e0550099b095009990544099b",
-    "0x503b0944099b094409100599099b099909a1053d099b093d09250515099b09",
-    "0xb240509099b090909330509099b09058c0505099b09058b0544993d150b09",
-    "0x916099b091609820516099b090b150b360515099b090583050b099b090905",
-    "0x53b099b0905810525099b0905810599099b0905810516099b090539051609",
-    "0x50b0505a397099b0b9809500598099b0998093c0598099b093b259916163a",
-    "0x90581059f099b099e093f059e099b09057f059d9c0b9b090b093d05059b09",
-    "0x9b0905810592099b0910093f0510099b09058105a1099b094d093f054d099b",
-    "0x47059d099b099d0946058f099b091f92a19f1644051f099b0990093f059009",
-    "0x9b09050b05a009a422099b0b8f9d0b5f059c099b099c099e058f099b098f09",
-    "0x49058d099b09055205059b0997094c05059b0915094805059b092209410505",
-    "0x59c099b099c099e0509099b0909094d0505099b0905099f058b099b098d09",
-    "0x929093f0529099b09057a05059b09050b058b9c090516098b099b098b0953",
-    "0x9b0989093f0589099b090581051d099b0986093f0586099b0905810588099b",
-    "0x947058c099b092f311d881644052f099b092c093f052c099b090581053109",
-    "0x583099b09054e05059b09050b052409a533099b0b8ca00b5f058c099b098c",
-    "0x580582099b098209740536099b093609550582099b0905760536099b090554",
-    "0x93a095705059b09050b057f3d503c16a63a8139159b0b823697338309053b",
-    "0x939099f0546099b094409710544099b093f150b72053f099b09057305059b",
-    "0x8139160946099b09460953059c099b099c099e0581099b0981094d0539099b",
-    "0x760547099b09055405059b0915094805059b093d097005059b09050b05469c",
-    "0xa055f099b095f09740547099b094709550550099b0950094d055f099b0905",
-    "0x94d0541099b0941099e053c099b093c099f054c4841159b095f477f509c99",
-    "0xa853099b0b52096a05059b09050b054909a752099b0b4c096d0548099b0948",
-    "0x9b094e09aa05059b09050b055409a94e099b0b53090005059b09050b057a09",
-    "0x555099b095409ab05059b09050b0505ac0905310555099b097609ab057609",
-    "0x59b09050b0505ac0905310555099b097a09ab05059b09050b0505ac090531",
-    "0x57099b0905ae0558099b09058b0574099b0955410bad0555099b094909ab05",
-    "0x99b097209330572099b0905a20573099b0957580b240557099b0957093305",
-    "0x970710b240570099b097009330570099b0905af0571099b0972730b240572",
-    "0x90583056a099b096d0a0b24056d099b096d0933056d099b0905b0050a099b",
-    "0x94d053c099b093c099f05ab099b09aa094905aa099b096a000b360500099b",
-    "0x9050b05ab74483c1609ab099b09ab09530574099b0974099e0548099b0948",
-    "0x5ad099b0905b205059b0997094c05059b0915094805059b092409b105059b",
-    "0x9c099b099c099e0509099b0909094d0505099b0905099f05ae099b09ad0949",
-    "0x905b305059b0915094805059b09050b05ae9c09051609ae099b09ae095305",
-    "0xb099e0509099b0909094d0505099b0905099f05af099b09a2094905a2099b",
-    "0x99b0905b40505099b09058b05af0b09051609af099b09af0953050b099b09",
-    "0x90b150b360515099b090583050b099b0909050b240509099b090909330509",
-    "0x9330509099b0905b50505099b09058b0516090916099b091609820516099b",
-    "0x516099b090b150b360515099b090583050b099b0909050b240509099b0909",
-    "0x99b090909330509099b0905b60505099b09058b0516090916099b09160982",
-    "0x91609820516099b090b150b360515099b090583050b099b0909050b240509",
-    "0xb240509099b090909330509099b0905b70505099b09058b0516090916099b",
-    "0x916099b091609820516099b090b150b360515099b090583050b099b090905",
-    "0x6353090505259916150b090570746a737271053b47746a737271053b3b1609",
-    "0xbc530905bb530905ba530905b9530905b8150b09057a717372164c71737216"
+    "0x57",
+    "0xd3",
+    "0xd7",
+    "0xdd",
+    "0xe1",
+    "0xe5",
+    "0xa0f",
+    "0xf0e0d0c0b07060504030a0706050403090706050403080706050403020100",
+    "0x71413050714131207060504030e0706050403110706050403100706050403",
+    "0x201f05071e0504031b051d1c1b051a190218170e0d0c160714131507141307",
+    "0x261b051a252407230504031b051d220e070e07201f0e072105040305070507",
+    "0x2e052a2d1b051a2c2b052a291507230504032805280528052805170e270c02",
+    "0x5170e370c36070e07201f350535052f313433320532052f313005170e2f0c",
+    "0x3a0723050403390539052f310e0723050403380538052f3123052305230523",
+    "0x51d4006051a3f3e053e052f313d07060504033c053c052f313b053b052f31",
+    "0x480c470e0d0c460546052f31450545052f314405170e200c4305420e200c41",
+    "0x52f31510550054f0e4c4e41054d05170e4c0c4b054b052f314a054905170e",
+    "0x5072a5a0259580557052f310256550555052f313454530553052f31520552",
+    "0xe650e640e6362026106051d60345f51055e055d0e4c4e025c025b0e072a5a",
+    "0x6d0e05056d05076c05076b0515056a69050568430505680605056744050566",
+    "0xe757405056d0e736c05056d7205056d7105056d7005056d6f05056d6e0505",
+    "0x76410505684105057b0605057a0e7950050568780505770715056a49050576",
+    "0x605056d7e05057d1515056a440505680e7c0e076c05076b5e050576440505",
+    "0x858405057d1b0505830e828105056d810505768005057d7f05057d1615056a",
+    "0x8a05056849050568890505681b0505888605056d8705056d86050576230505",
+    "0x6d8e05057d8d05057d1b05058c8b05057d7805056d05077805076b4d15056a",
+    "0x5680e077805076b500505764a050576900505681b05058f1e05056d210505",
+    "0x505969505057d0e942805056d0e930707059215070592160705920e911005",
+    "0x56a2415056a87050568510505764d0505762405057d3a05057d9705057d06",
+    "0x50e0e99050e0e0e980505057d0705057d1505057d5105056d1605057d3a15",
+    "0x79b05160e9b0599052405150e0e99050e070e9a950770973a079907160e07",
+    "0x50e3a0e0e99059d05240e0e99059c054d0e0e99050e070e4a058e9d9c0799",
+    "0x7059b0e0505990505059a0e3a0599053a05950e100599059e05970e9e0599",
+    "0x59e0e4d0599054d054a0e9705990597059d0e1505990515059c0e07059905",
+    "0x50e100e0e99054a054d0e0e99050e070e104d971507053a3a051005990510",
+    "0x99050e070e218d07521e8e07990790973a158e0e900599059005900e900599",
+    "0x5990505059a0e1505990515059c0e0705990507059b0e9f0599050e1e0e0e",
+    "0x99050e070e1b0544840599078605210e8628898b1699059f051507168d0e05",
+    "0x2b0799053005280e300599050e890e870599051e058b0e0e990584059f0e0e",
+    "0x599053205870e320599058a051b0e8a0599052e05840e0e99052b05860e2e",
+    "0x990589059c0e8b0599058b059b0e2805990528059a0e8e0599058e05950e23",
+    "0x8b288e3a052305990523059e0e4d0599054d054a0e8705990587059d0e8905",
+    "0x528059a0e8e0599058e05950e810599051b05970e0e99050e070e234d8789",
+    "0x4d054a0e1e0599051e059d0e8905990589059c0e8b0599058b059b0e280599",
+    "0x21058b0e0e99050e070e814d1e898b288e3a058105990581059e0e4d059905",
+    "0x99050e070e0e6c050e300e3805990535059d0e800599058d05950e35059905",
+    "0x599057f059d0e800599059505950e7f0599059a058b0e0e990524052b0e0e",
+    "0x5990505059a0e800599058005950e3b0599053905970e390599050e2e0e38",
+    "0x99054d054a0e3805990538059d0e1505990515059c0e0705990507059b0e05",
+    "0x50e05320e0e0599050e8a0e3b4d38150705803a053b0599053b059e0e4d05",
+    "0xe350e4d0599050e350e160599050e810e050505050599050e05230e0e0599",
+    "0xe970599059705380e970599053a244d1616800e3a0599050e350e24059905",
+    "0x9c0599050e3b0e9b9a0799050705390e0e99050e070e0ea09505990797057f",
+    "0xe100599050e350e9e0599054a057e0e4a0599050e350e9d0599059c057e0e",
+    "0x99051e909e9d163c0e1e0599058e057e0e8e0599050e350e9005990510057e",
+    "0xe9f05a1210599078d9b07440e8d0599058d05430e9b0599059b05410e8d05",
+    "0x99050e490e0e99059505450e0e990515053e0e0e990521055e0e0e99050e07",
+    "0x59a059a0e0505990505059c0e0e0599050e059b0e890599058b05500e8b05",
+    "0xe280599050e510e0e99050e070e899a050e1605890599058905460e9a0599",
+    "0x7e0e870599050e350e1b05990584057e0e840599050e350e8605990528057e",
+    "0x599052e301b86163c0e2e0599052b057e0e2b0599050e350e300599058705",
+    "0x50e780e0e99050e070e2305a2320599078a9f07440e8a0599058a05430e8a",
+    "0x99058005530e350599053505740e800599050e520e350599050e4b0e810599",
+    "0xe0e99050e070e413c7e3b16a3397f381599078035953281050e3a720e8005",
+    "0xe5e0599054405570e44059905431507580e430599050e700e0e9905390555",
+    "0x5e0599055e05460e9a0599059a059a0e7f0599057f059c0e3805990538059b",
+    "0x99050e4b0e0e990515053e0e0e99053c056f0e0e99050e070e5e9a7f381605",
+    "0x99053e05740e7e0599057e059c0e9a0599059a059a0e450599050e520e3e05",
+    "0x5990746056c0e465049159905453e417e9a4d6e0e450599054505530e3e05",
+    "0x4b05690e0e99050e070e5205a54b0599075105060e0e99050e070e7805a451",
+    "0x300e550599057205000e720599057405710e0e99050e070e5305a674059907",
+    "0xe0e99050e070e0ea7050e300e550599055305000e0e99050e070e0ea7050e",
+    "0x4907a80e550599057805000e0e99050e070e0ea7050e300e55059905520500",
+    "0x5807aa0e570599055705320e570599050ea90e580599050e890e7005990555",
+    "0xac0e6c0599056e6f07aa0e6e0599056e05320e6e0599050eab0e6f05990557",
+    "0x320e710599050ead0e69059905066c07aa0e060599050605320e060599050e",
+    "0xa905990500a807af0ea80599050eae0e00059905716907aa0e710599057105",
+    "0x5990570059a0e5005990550059c0e3b0599053b059b0eaa059905a905500e",
+    "0x53e0e0e99052305b00e0e99050e070eaa70503b1605aa059905aa05460e70",
+    "0x50e059b0eac059905ab05500eab0599050eb10e0e99059505450e0e990515",
+    "0x50e1605ac059905ac05460e9a0599059a059a0e0505990505059c0e0e0599",
+    "0xeae059905ad05500ead0599050eb20e0e990515053e0e0e99050e070eac9a",
+    "0xae059905ae05460e0705990507059a0e0505990505059c0e0e0599050e059b",
+    "0x505050599050e05230e0e0599050e05320e0e0599050eb30eae07050e1605",
+    "0x9905071507af0e150599050eae0e070599050e0507aa0e050599050e890e05",
+    "0x5230e0e0599050e05320e0e0599050eb50e160505160599051605b40e1605",
+    "0x50599050e05230e0e0599050e05320e0e0599050eb60e050505050599050e",
+    "0x3a97050505050599050e05230e0e0599050e05320e0e0599050eb70e050505",
+    "0x6e706f16ad51050e0e244d161507050e6c7271706f6e0e3a447271706f6e0e",
+    "0x50ebb51050eba51050eb90e51050605b851050eb11507050e786e706f1649",
+    "0xbc51"
   ],
   "sierra_program_debug_info": {
     "type_names": [
@@ -297,23 +291,23 @@
       ],
       [
         1,
-        "core::never"
-      ],
-      [
-        2,
         "Const<felt252, 29721761890975875353235833581453094220424382983267374>"
       ],
       [
-        3,
+        2,
         "Const<felt252, 138583295661092166701491297054433349032460315956105119041111996301516236132>"
       ],
       [
-        4,
+        3,
         "Const<felt252, 26913677086973030051406221357623718750637972950955665348321109348>"
       ],
       [
-        5,
+        4,
         "Const<felt252, 375233589013918064796019>"
+      ],
+      [
+        5,
+        "core::panics::Panic"
       ],
       [
         6,
@@ -465,7 +459,7 @@
       ],
       [
         43,
-        "core::panics::Panic"
+        "Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>"
       ],
       [
         44,
@@ -473,59 +467,59 @@
       ],
       [
         45,
-        "Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>"
-      ],
-      [
-        46,
-        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>"
-      ],
-      [
-        47,
         "Array<felt252>"
       ],
       [
-        48,
+        46,
         "Snapshot<Array<felt252>>"
       ],
       [
-        49,
+        47,
         "core::array::Span::<core::felt252>"
       ],
       [
-        50,
+        48,
         "Tuple<core::array::Span::<core::felt252>>"
       ],
       [
-        51,
+        49,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>"
+      ],
+      [
+        50,
         "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>"
       ],
       [
-        52,
-        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>"
-      ],
-      [
-        53,
+        51,
         "cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState"
       ],
       [
-        54,
+        52,
         "Tuple<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, Unit>"
       ],
       [
-        55,
-        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>"
+        53,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>"
       ],
       [
-        56,
+        54,
         "Tuple<core::panics::Panic, Array<felt252>>"
       ],
       [
-        57,
+        55,
         "core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>"
       ],
       [
-        58,
+        56,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>"
+      ],
+      [
+        57,
         "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>"
+      ],
+      [
+        58,
+        "BuiltinCosts"
       ],
       [
         59,
@@ -533,7 +527,7 @@
       ],
       [
         60,
-        "BuiltinCosts"
+        "System"
       ],
       [
         61,
@@ -541,7 +535,7 @@
       ],
       [
         62,
-        "System"
+        "MulMod"
       ],
       [
         63,
@@ -553,30 +547,26 @@
       ],
       [
         65,
-        "MulMod"
-      ],
-      [
-        66,
         "AddMod"
       ],
       [
-        67,
+        66,
         "RangeCheck96"
       ],
       [
-        68,
+        67,
         "core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>"
       ],
       [
-        69,
+        68,
         "felt252"
       ],
       [
-        70,
+        69,
         "Box<felt252>"
       ],
       [
-        71,
+        70,
         "GasBuiltin"
       ]
     ],
@@ -595,87 +585,87 @@
       ],
       [
         3,
-        "redeposit_gas"
-      ],
-      [
-        4,
         "struct_deconstruct<core::array::Span::<core::felt252>>"
       ],
       [
-        5,
-        "store_temp<RangeCheck>"
-      ],
-      [
-        6,
-        "store_temp<GasBuiltin>"
-      ],
-      [
-        7,
+        4,
         "array_snapshot_pop_front<felt252>"
       ],
       [
-        8,
+        5,
         "drop<Snapshot<Array<felt252>>>"
       ],
       [
-        9,
+        6,
         "drop<Box<felt252>>"
       ],
       [
-        10,
+        7,
         "function_call<user@core::panic_with_const_felt252::<7733229381460288120802334208475838166080759535023995805565484692595>>"
       ],
       [
-        11,
+        8,
         "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
       ],
       [
-        12,
+        9,
+        "store_temp<RangeCheck>"
+      ],
+      [
+        10,
         "store_temp<RangeCheck96>"
       ],
       [
-        13,
+        11,
         "store_temp<AddMod>"
       ],
       [
-        14,
+        12,
         "store_temp<MulMod>"
       ],
       [
-        15,
+        13,
+        "store_temp<GasBuiltin>"
+      ],
+      [
+        14,
         "store_temp<System>"
       ],
       [
-        16,
+        15,
         "store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>"
       ],
       [
-        17,
+        16,
         "get_builtin_costs"
       ],
       [
-        18,
+        17,
         "store_temp<BuiltinCosts>"
       ],
       [
-        19,
+        18,
         "withdraw_gas_all"
       ],
       [
-        20,
+        19,
         "struct_construct<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>"
       ],
       [
-        21,
+        20,
         "function_call<user@cairo_level_tests::contracts::circuit_contract::circuit_contract::circuit_builtins>"
       ],
       [
-        22,
+        21,
         "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>"
       ],
       [
-        23,
+        22,
         "drop<Tuple<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, Unit>>"
+      ],
+      [
+        23,
+        "redeposit_gas"
       ],
       [
         24,
@@ -723,183 +713,183 @@
       ],
       [
         35,
-        "array_append<felt252>"
+        "function_call<user@core::panic_with_felt252>"
       ],
       [
         36,
-        "struct_construct<core::panics::Panic>"
-      ],
-      [
-        37,
-        "struct_construct<Tuple<core::panics::Panic, Array<felt252>>>"
-      ],
-      [
-        38,
-        "store_temp<Tuple<core::panics::Panic, Array<felt252>>>"
-      ],
-      [
-        39,
         "const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 7>>"
       ],
       [
-        40,
+        37,
         "const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>"
       ],
       [
-        41,
+        38,
         "struct_construct<Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>>"
       ],
       [
-        42,
+        39,
         "store_temp<Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>>"
       ],
       [
-        43,
+        40,
         "try_into_circuit_modulus"
       ],
       [
-        44,
+        41,
         "init_circuit_data<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>"
       ],
       [
-        45,
+        42,
         "const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 3>>"
       ],
       [
-        46,
+        43,
         "into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>"
       ],
       [
-        47,
+        44,
         "struct_construct<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>"
       ],
       [
-        48,
+        45,
         "store_temp<CircuitInputAccumulator<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>>"
       ],
       [
-        49,
+        46,
         "store_temp<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>"
       ],
       [
-        50,
+        47,
         "add_circuit_input<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>"
       ],
       [
-        51,
+        48,
         "drop<CircuitData<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>>"
       ],
       [
-        52,
+        49,
         "drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>"
       ],
       [
-        53,
+        50,
         "drop<CircuitModulus>"
       ],
       [
-        54,
+        51,
         "function_call<user@core::panic_with_const_felt252::<26913677086973030051406221357623718750637972950955665348321109348>>"
       ],
       [
-        55,
+        52,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>"
       ],
       [
-        56,
+        53,
         "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>"
       ],
       [
-        57,
+        54,
         "const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 6>>"
       ],
       [
-        58,
+        55,
         "get_circuit_descriptor<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>"
       ],
       [
-        59,
+        56,
         "const_as_immediate<Const<BoundedInt<0, 0>, 0>>"
       ],
       [
-        60,
+        57,
         "const_as_immediate<Const<BoundedInt<1, 1>, 1>>"
       ],
       [
-        61,
+        58,
         "store_temp<BoundedInt<0, 0>>"
       ],
       [
-        62,
+        59,
         "store_temp<BoundedInt<1, 1>>"
       ],
       [
-        63,
+        60,
         "eval_circuit<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>"
       ],
       [
-        64,
+        61,
         "drop<CircuitOutputs<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>>"
       ],
       [
-        65,
+        62,
         "struct_construct<Unit>"
       ],
       [
-        66,
+        63,
         "struct_construct<Tuple<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, Unit>>"
       ],
       [
-        67,
+        64,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 0>"
       ],
       [
-        68,
+        65,
         "drop<CircuitPartialOutputs<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>>"
       ],
       [
-        69,
+        66,
         "circuit_failure_guarantee_verify"
       ],
       [
-        70,
+        67,
         "u96_limbs_less_than_guarantee_verify<4>"
       ],
       [
-        71,
+        68,
         "u96_limbs_less_than_guarantee_verify<3>"
       ],
       [
-        72,
+        69,
         "u96_limbs_less_than_guarantee_verify<2>"
       ],
       [
-        73,
+        70,
         "u96_single_limb_less_than_guarantee_verify"
       ],
       [
-        74,
+        71,
         "store_temp<U96Guarantee>"
       ],
       [
-        75,
+        72,
         "u96_guarantee_verify"
       ],
       [
-        76,
+        73,
         "const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>"
       ],
       [
-        77,
+        74,
+        "array_append<felt252>"
+      ],
+      [
+        75,
         "const_as_immediate<Const<felt252, 0>>"
       ],
       [
-        78,
+        76,
         "const_as_immediate<Const<felt252, 92342086994883127646987903453339415411>>"
       ],
       [
-        79,
+        77,
         "const_as_immediate<Const<felt252, 16>>"
+      ],
+      [
+        78,
+        "struct_construct<core::panics::Panic>"
+      ],
+      [
+        79,
+        "struct_construct<Tuple<core::panics::Panic, Array<felt252>>>"
       ],
       [
         80,
@@ -919,14 +909,18 @@
       ],
       [
         84,
-        "const_as_immediate<Const<felt252, 26913677086973030051406221357623718750637972950955665348321109348>>"
+        "store_temp<Tuple<core::panics::Panic, Array<felt252>>>"
       ],
       [
         85,
-        "const_as_immediate<Const<felt252, 138583295661092166701491297054433349032460315956105119041111996301516236132>>"
+        "const_as_immediate<Const<felt252, 26913677086973030051406221357623718750637972950955665348321109348>>"
       ],
       [
         86,
+        "const_as_immediate<Const<felt252, 138583295661092166701491297054433349032460315956105119041111996301516236132>>"
+      ],
+      [
+        87,
         "const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>"
       ]
     ],
@@ -949,14 +943,18 @@
       ],
       [
         4,
-        "core::panic_with_const_felt252::<26913677086973030051406221357623718750637972950955665348321109348>"
+        "core::panic_with_felt252"
       ],
       [
         5,
-        "core::panic_with_const_felt252::<138583295661092166701491297054433349032460315956105119041111996301516236132>"
+        "core::panic_with_const_felt252::<26913677086973030051406221357623718750637972950955665348321109348>"
       ],
       [
         6,
+        "core::panic_with_const_felt252::<138583295661092166701491297054433349032460315956105119041111996301516236132>"
+      ],
+      [
+        7,
         "core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>"
       ]
     ]

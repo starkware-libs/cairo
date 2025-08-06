@@ -29,8 +29,10 @@ StatementLet
     │   ├── attributes (kind: AttributeList) []
     │   ├── expr (kind: ExprBinary)
     │   │   ├── lhs (kind: ExprPath)
-    │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │       └── ident (kind: TokenIdentifier): 'x'
+    │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │   └── segments (kind: ExprPathInner)
+    │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │           └── ident (kind: TokenIdentifier): 'x'
     │   │   ├── op (kind: TokenPlusEq): '+='
     │   │   └── rhs (kind: TokenLiteralNumber): '5'
     │   └── semicolon (kind: TokenSemicolon): ';'
@@ -38,8 +40,10 @@ StatementLet
     │   ├── attributes (kind: AttributeList) []
     │   ├── expr (kind: ExprBinary)
     │   │   ├── lhs (kind: ExprPath)
-    │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │       └── ident (kind: TokenIdentifier): 'x'
+    │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │   └── segments (kind: ExprPathInner)
+    │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │           └── ident (kind: TokenIdentifier): 'x'
     │   │   ├── op (kind: TokenMinusEq): '-='
     │   │   └── rhs (kind: TokenLiteralNumber): '5'
     │   └── semicolon (kind: TokenSemicolon): ';'
@@ -47,8 +51,10 @@ StatementLet
     │   ├── attributes (kind: AttributeList) []
     │   ├── expr (kind: ExprBinary)
     │   │   ├── lhs (kind: ExprPath)
-    │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │       └── ident (kind: TokenIdentifier): 'x'
+    │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │   └── segments (kind: ExprPathInner)
+    │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │           └── ident (kind: TokenIdentifier): 'x'
     │   │   ├── op (kind: TokenMulEq): '*='
     │   │   └── rhs (kind: TokenLiteralNumber): '5'
     │   └── semicolon (kind: TokenSemicolon): ';'
@@ -56,8 +62,10 @@ StatementLet
     │   ├── attributes (kind: AttributeList) []
     │   ├── expr (kind: ExprBinary)
     │   │   ├── lhs (kind: ExprPath)
-    │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │       └── ident (kind: TokenIdentifier): 'x'
+    │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │   └── segments (kind: ExprPathInner)
+    │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │           └── ident (kind: TokenIdentifier): 'x'
     │   │   ├── op (kind: TokenDivEq): '/='
     │   │   └── rhs (kind: TokenLiteralNumber): '5'
     │   └── semicolon (kind: TokenSemicolon): ';'
@@ -65,8 +73,10 @@ StatementLet
     │   ├── attributes (kind: AttributeList) []
     │   ├── expr (kind: ExprBinary)
     │   │   ├── lhs (kind: ExprPath)
-    │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │       └── ident (kind: TokenIdentifier): 'x'
+    │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │   └── segments (kind: ExprPathInner)
+    │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │           └── ident (kind: TokenIdentifier): 'x'
     │   │   ├── op (kind: TokenModEq): '%='
     │   │   └── rhs (kind: TokenLiteralNumber): '5'
     │   └── semicolon (kind: TokenSemicolon): ';'
@@ -74,8 +84,10 @@ StatementLet
         ├── attributes (kind: AttributeList) []
         ├── expr (kind: ExprBinary)
         │   ├── lhs (kind: ExprPath)
-        │   │   └── item #0 (kind: PathSegmentSimple)
-        │   │       └── ident (kind: TokenIdentifier): 'x'
+        │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │   │   └── segments (kind: ExprPathInner)
+        │   │       └── item #0 (kind: PathSegmentSimple)
+        │   │           └── ident (kind: TokenIdentifier): 'x'
         │   ├── op (kind: TokenEq): '='
         │   └── rhs (kind: TokenLiteralNumber): '5'
         └── semicolon (kind: TokenSemicolon): ';'
@@ -124,11 +136,14 @@ error: Skipped tokens. Expected: statement.
     │   ├── attributes (kind: AttributeList) []
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath)
-    │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │       └── ident (kind: TokenIdentifier): 'x'
+    │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   └── segments (kind: ExprPathInner)
+    │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │           └── ident (kind: TokenIdentifier): 'x'
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq: Missing
     │   ├── rhs: Missing []
+    │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     │   └── semicolon: Missing
     └── child #1 (kind: StatementExpr)
         ├── attributes (kind: AttributeList) []

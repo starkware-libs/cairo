@@ -63,6 +63,21 @@ pub extern type Pedersen;
 
 pub extern fn pedersen(a: felt252, b: felt252) -> felt252 implicits(Pedersen) nopanic;
 
+fn this_function_has_a_very_long_signature(
+    and_contains_a_linked_parameter: Circle,
+    lorem: felt252,
+    ipsum: felt252,
+    and_another_linked_parameter_in_the_middle: Circle,
+    dolor: felt252,
+    sit: felt252,
+    amet: felt252,
+    yet_another_linked_parameter_at_the_end: Circle,
+) -> Circle {}
+
+fn test_fixed_size_array(param: [u32; 8]) -> [u32; 8] {
+    return param;
+}
+
 //! > Item signature #1
 
 //! > Item documentation #1
@@ -77,7 +92,9 @@ fn main()
 //! > Item documentation tokens #2
 
 //! > Item signature #3
-fn free_function<T, TPartialEq, +Drop<T>, +Copy<T>>(ref self: Array<T>, item: T) -> bool
+fn free_function<T, impl TPartialEq: PartialEq<T>, +Drop<T>, +Copy<T>>(
+    ref self: Array<T>, item: T,
+) -> bool
 
 //! > Item documentation #3
 
@@ -236,7 +253,7 @@ g: G
 //! > Item documentation tokens #23
 
 //! > Item signature #24
-impl BCopy<T, G, +ATrait, +Copy<T>, +Copy<G>> of Copy<B<T, G, +ATrait>>;
+impl BCopy<T, G, +ATrait, +Copy<T>, +Copy<G>> of Copy<B<T, G, + ATrait>>;
 
 //! > Item documentation #24
 
@@ -262,3 +279,26 @@ pub extern fn pedersen(a: felt252, b: felt252) -> felt252 implicits(Pedersen) no
 //! > Item documentation #27
 
 //! > Item documentation tokens #27
+
+//! > Item signature #28
+fn this_function_has_a_very_long_signature(
+    and_contains_a_linked_parameter: Circle,
+    lorem: felt252,
+    ipsum: felt252,
+    and_another_linked_parameter_in_the_middle: Circle,
+    dolor: felt252,
+    sit: felt252,
+    amet: felt252,
+    yet_another_linked_parameter_at_the_end: Circle,
+) -> Circle
+
+//! > Item documentation #28
+
+//! > Item documentation tokens #28
+
+//! > Item signature #29
+fn test_fixed_size_array(param: [u32; 8]) -> [u32; 8]
+
+//! > Item documentation #29
+
+//! > Item documentation tokens #29

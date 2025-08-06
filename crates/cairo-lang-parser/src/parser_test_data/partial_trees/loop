@@ -22,8 +22,10 @@ StatementLet
     ├── attributes (kind: AttributeList) []
     ├── let_kw (kind: TokenLet): 'let'
     ├── pattern (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentSimple)
-    │       └── ident (kind: TokenIdentifier): 'x'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'x'
     ├── type_clause (kind: OptionTypeClauseEmpty) []
     ├── eq (kind: TokenEq): '='
     ├── rhs (kind: ExprLoop)
@@ -38,4 +40,5 @@ StatementLet
     │       │       │   └── expr (kind: TokenLiteralNumber): '5'
     │       │       └── semicolon (kind: TokenSemicolon): ';'
     │       └── rbrace (kind: TokenRBrace): '}'
+    ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     └── semicolon (kind: TokenSemicolon): ';'

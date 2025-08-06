@@ -11,7 +11,13 @@ extern type index_enum_type<const NUM_VARIANTS: felt252>;
 /// Useful for debugging and panic tracking.
 extern fn trace<const FLAG: felt252>() nopanic;
 
-pub(crate) mod bounded_int;
+#[unstable(
+    feature: "bounded-int-utils",
+    note: "Improper usage of the functionalities in this module is likely to cause compiler crashes, use with caution.",
+)]
+pub mod bounded_int;
+
+mod num;
 
 /// Same as `Option`, except that the order of the variants is reversed.
 /// This is used as the return type of some libfuncs for efficiency reasons.

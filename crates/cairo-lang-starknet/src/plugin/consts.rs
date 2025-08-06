@@ -46,6 +46,7 @@ pub const NESTED_ATTR: &str = "nested";
 pub const FLAT_ATTR: &str = "flat";
 pub const KEY_ATTR: &str = "key";
 pub const SERDE_ATTR: &str = "serde";
+pub const DISPATCHER_DOC_GROUP_ATTR: &str = "#[doc(group: \"dispatchers\")]";
 
 pub const VALIDATE_ENTRY_POINT_SELECTOR: &str = "__validate__";
 pub const EXECUTE_ENTRY_POINT_SELECTOR: &str = "__execute__";

@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::helpers::{PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{extract_matches, require, try_extract_matches};
 use indoc::{formatdoc, indoc};
-use itertools::chain;
+use itertools::{Itertools, chain};
 
 use super::StarknetModuleKind;
 use super::generation_data::{ComponentGenerationData, StarknetModuleCommonGenerationData};
@@ -22,16 +22,16 @@ use crate::plugin::utils::{AstPathExtract, GenericParamExtract, ParamEx};
 
 /// Accumulated data specific for component generation.
 #[derive(Default)]
-pub struct ComponentSpecificGenerationData {
-    has_component_trait: RewriteNode,
-    generated_impls: Vec<RewriteNode>,
+pub struct ComponentSpecificGenerationData<'db> {
+    has_component_trait: RewriteNode<'db>,
+    generated_impls: Vec<RewriteNode<'db>>,
 }
-impl ComponentSpecificGenerationData {
+impl<'db> ComponentSpecificGenerationData<'db> {
     pub fn into_rewrite_node(
         self,
-        _db: &dyn SyntaxGroup,
-        _diagnostics: &mut [PluginDiagnostic],
-    ) -> RewriteNode {
+        _db: &'db dyn SyntaxGroup,
+        _diagnostics: &mut [PluginDiagnostic<'db>],
+    ) -> RewriteNode<'db> {
         RewriteNode::interpolate_patched(
             indoc! {"
             // TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
@@ -54,13 +54,13 @@ impl ComponentSpecificGenerationData {
 }
 
 /// Generates the specific code for a component.
-pub(super) fn generate_component_specific_code(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    common_data: StarknetModuleCommonGenerationData,
-    body: &ast::ModuleBody,
+pub(super) fn generate_component_specific_code<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    common_data: StarknetModuleCommonGenerationData<'db>,
+    body: &ast::ModuleBody<'db>,
     metadata: &MacroPluginMetadata<'_>,
-) -> RewriteNode {
+) -> RewriteNode<'db> {
     let mut generation_data = ComponentGenerationData { common: common_data, ..Default::default() };
     generate_has_component_trait_code(&mut generation_data.specific);
     for item in body.iter_items_in_cfg(db, metadata.cfg_set) {
@@ -70,12 +70,12 @@ pub(super) fn generate_component_specific_code(
 }
 
 /// Handles a single item inside a component module.
-fn handle_component_item(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    item: &ast::ModuleItem,
+fn handle_component_item<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    item: &ast::ModuleItem<'db>,
     metadata: &MacroPluginMetadata<'_>,
-    data: &mut ComponentGenerationData,
+    data: &mut ComponentGenerationData<'db>,
 ) {
     match &item {
         ast::ModuleItem::Impl(item_impl) => {
@@ -98,15 +98,16 @@ fn handle_component_item(
 }
 
 /// Validates the `embeddable_as` attribute and returns the value of its unnamed argument.
-fn get_embeddable_as_attr_value(db: &dyn SyntaxGroup, attr: &ast::Attribute) -> Option<ast::Expr> {
+fn get_embeddable_as_attr_value<'db>(
+    db: &'db dyn SyntaxGroup,
+    attr: &ast::Attribute<'db>,
+) -> Option<ast::Expr<'db>> {
     let ast::OptionArgListParenthesized::ArgListParenthesized(attribute_args) = attr.arguments(db)
     else {
         return None;
     };
 
-    let [arg] = &attribute_args.arguments(db).elements(db)[..] else {
-        return None;
-    };
+    let [arg] = attribute_args.arguments(db).elements(db).collect_array()?;
     let AttributeArgVariant::Unnamed(attr_arg_value) =
         AttributeArg::from_ast(arg.clone(), db).variant
     else {
@@ -118,12 +119,12 @@ fn get_embeddable_as_attr_value(db: &dyn SyntaxGroup, attr: &ast::Attribute) -> 
 
 /// Validates the generic parameters of the impl marked with `embeddable_as` attribute and returns
 /// them if valid.
-fn get_embeddable_as_impl_generic_params(
-    db: &dyn SyntaxGroup,
-    item_impl: &ast::ItemImpl,
-) -> Result<ast::GenericParamList, PluginDiagnostic> {
+fn get_embeddable_as_impl_generic_params<'db>(
+    db: &'db dyn SyntaxGroup,
+    item_impl: &ast::ItemImpl<'db>,
+) -> Result<ast::GenericParamList<'db>, PluginDiagnostic<'db>> {
     let generic_params = item_impl.generic_params(db);
-    let generic_params_ptr = generic_params.stable_ptr().untyped();
+    let generic_params_ptr = generic_params.stable_ptr(db).untyped();
     let first_generic_param_diagnostic = |stable_ptr| {
         PluginDiagnostic::error(
             stable_ptr,
@@ -135,10 +136,10 @@ fn get_embeddable_as_impl_generic_params(
     };
 
     let ast::OptionWrappedGenericParamList::WrappedGenericParamList(params) = generic_params else {
-        return Err(first_generic_param_diagnostic(item_impl.name(db).stable_ptr().untyped()));
+        return Err(first_generic_param_diagnostic(item_impl.name(db).stable_ptr(db).untyped()));
     };
     let generic_params_node = params.generic_params(db);
-    let mut generic_param_elements = generic_params_node.elements(db).into_iter();
+    let mut generic_param_elements = generic_params_node.elements(db);
 
     // Verify the first generic param is `TContractState`.
     let Some(first_generic_param) = generic_param_elements.next() else {
@@ -167,27 +168,27 @@ fn get_embeddable_as_impl_generic_params(
 }
 
 /// The parameters relevant for handling an `#[embeddable_as]` impl.
-struct EmbeddableAsImplParams {
+struct EmbeddableAsImplParams<'db> {
     /// The value of the unnamed argument of the `embeddable_as` attribute.
-    attr_arg_value: ast::Expr,
+    attr_arg_value: ast::Expr<'db>,
     /// The generic parameters of the impl.
-    generic_params_node: ast::GenericParamList,
+    generic_params_node: ast::GenericParamList<'db>,
     /// The trait the impl implements.
-    trait_path: ast::ExprPath,
+    trait_path: ast::ExprPath<'db>,
     /// The body of the impl.
-    impl_body: ast::ImplBody,
+    impl_body: ast::ImplBody<'db>,
 }
-impl EmbeddableAsImplParams {
+impl<'db> EmbeddableAsImplParams<'db> {
     /// Extracts the parameters for an `#[embeddable_as]` impl, and validates them.
     fn from_impl(
-        db: &dyn SyntaxGroup,
-        diagnostics: &mut Vec<PluginDiagnostic>,
-        item_impl: &ast::ItemImpl,
-        attr: ast::Attribute,
-    ) -> Option<EmbeddableAsImplParams> {
+        db: &'db dyn SyntaxGroup,
+        diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+        item_impl: &ast::ItemImpl<'db>,
+        attr: ast::Attribute<'db>,
+    ) -> Option<EmbeddableAsImplParams<'db>> {
         let Some(attr_arg_value) = get_embeddable_as_attr_value(db, &attr) else {
             diagnostics.push(PluginDiagnostic::error(
-                attr.stable_ptr().untyped(),
+                attr.stable_ptr(db),
                 format!(
                     "`{EMBEDDABLE_AS_ATTR}` attribute must have a single unnamed argument for the \
                      generated impl name, e.g.: #[{EMBEDDABLE_AS_ATTR}(MyImpl)]."
@@ -210,7 +211,7 @@ impl EmbeddableAsImplParams {
             ast::MaybeImplBody::Some(impl_body) => impl_body,
             ast::MaybeImplBody::None(semicolon) => {
                 diagnostics.push(PluginDiagnostic::error(
-                    semicolon.stable_ptr().untyped(),
+                    semicolon.stable_ptr(db),
                     format!("`{EMBEDDABLE_AS_ATTR}` attribute is not supported for empty impls."),
                 ));
                 return None;
@@ -222,12 +223,12 @@ impl EmbeddableAsImplParams {
 }
 
 /// Handles an impl inside a component module.
-fn handle_component_impl(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    item_impl: &ast::ItemImpl,
+fn handle_component_impl<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    item_impl: &ast::ItemImpl<'db>,
     metadata: &MacroPluginMetadata<'_>,
-    data: &mut ComponentGenerationData,
+    data: &mut ComponentGenerationData<'db>,
 ) {
     let Some(attr) = item_impl.find_attr(db, EMBEDDABLE_AS_ATTR) else {
         return;
@@ -237,12 +238,12 @@ fn handle_component_impl(
     else {
         return;
     };
-    for param in &params.generic_params_node.elements(db) {
+    for param in params.generic_params_node.elements(db) {
         if param.is_impl_of(db, "Destruct", GENERIC_CONTRACT_STATE_NAME)
             || param.is_impl_of(db, "PanicDestruct", GENERIC_CONTRACT_STATE_NAME)
         {
             diagnostics.push(PluginDiagnostic::error(
-                param.stable_ptr().untyped(),
+                param.stable_ptr(db),
                 format!(
                     "`embeddable_as` impls can't have impl generic parameters of \
                      `Destruct<{GENERIC_CONTRACT_STATE_NAME}>` or \
@@ -270,7 +271,6 @@ fn handle_component_impl(
     let has_drop_impl = params
         .generic_params_node
         .elements(db)
-        .iter()
         .any(|param| param.is_impl_of(db, "Drop", GENERIC_CONTRACT_STATE_NAME));
     let maybe_drop_impl = if has_drop_impl {
         "".to_string()
@@ -310,24 +310,28 @@ fn handle_component_impl(
 }
 
 /// Returns a RewriteNode of a path similar to the given path, but without generic params.
-fn remove_generics_from_path(db: &dyn SyntaxGroup, trait_path: &ast::ExprPath) -> RewriteNode {
-    let elements = trait_path.elements(db);
-    let (last, prefix) = elements.split_last().unwrap();
+fn remove_generics_from_path<'db>(
+    db: &'db dyn SyntaxGroup,
+    trait_path: &ast::ExprPath<'db>,
+) -> RewriteNode<'db> {
+    let segments = trait_path.segments(db);
+    let mut elements = segments.elements(db);
+    let last = elements.next_back().unwrap();
     let last_without_generics = RewriteNode::from_ast_trimmed(&last.identifier_ast(db));
 
     RewriteNode::interspersed(
-        chain!(prefix.iter().map(RewriteNode::from_ast_trimmed), [last_without_generics]),
+        chain!(elements.map(|e| RewriteNode::from_ast_trimmed(&e)), [last_without_generics]),
         RewriteNode::text("::"),
     )
 }
 
 /// Handles an item of an `#[embeddable_as]` impl inside a component module.
-fn handle_component_embeddable_as_impl_item(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    impl_path: RewriteNode,
-    item: ast::ImplItem,
-) -> Option<RewriteNode> {
+fn handle_component_embeddable_as_impl_item<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    impl_path: RewriteNode<'db>,
+    item: ast::ImplItem<'db>,
+) -> Option<RewriteNode<'db>> {
     let ast::ImplItem::Function(item_function) = item else {
         return None;
     };
@@ -338,10 +342,10 @@ fn handle_component_embeddable_as_impl_item(
     let parameters = signature.parameters(db);
 
     let function_name = RewriteNode::from_ast_trimmed(&declaration.name(db));
-    let parameters_elements = parameters.elements(db);
+    let parameters_elements = parameters.elements_vec(db);
     let Some((first_param, rest_params)) = parameters_elements.split_first() else {
         diagnostics.push(PluginDiagnostic::error(
-            parameters.stable_ptr().untyped(),
+            parameters.stable_ptr(db),
             format!(
                 "A function in an #[{EMBEDDABLE_AS_ATTR}] impl in a component must have a first \
                  `self` parameter."
@@ -353,7 +357,7 @@ fn handle_component_embeddable_as_impl_item(
         handle_first_param_for_embeddable_as(db, first_param)
     else {
         diagnostics.push(PluginDiagnostic::error(
-            parameters.stable_ptr().untyped(),
+            parameters.stable_ptr(db),
             format!(
                 "The first parameter of a function in an #[{EMBEDDABLE_AS_ATTR}] impl in a \
                  component must be either `self: @{GENERIC_COMPONENT_STATE_NAME}` (for view \
@@ -418,9 +422,9 @@ fn handle_component_embeddable_as_impl_item(
 /// Checks if the first parameter of a function in an impl is a valid value of an impl marked with
 /// `#[embeddable_as]`, and returns the matching (wrapping function contract state param, code for
 /// fetching the matching component state from it, callsite_modifier).
-fn handle_first_param_for_embeddable_as(
-    db: &dyn SyntaxGroup,
-    param: &ast::Param,
+fn handle_first_param_for_embeddable_as<'db>(
+    db: &'db dyn SyntaxGroup,
+    param: &ast::Param<'db>,
 ) -> Option<(String, String, String)> {
     require(param.name(db).text(db) == SELF_PARAM_KW)?;
     if param.is_ref_param(db) {
@@ -453,7 +457,7 @@ fn handle_first_param_for_embeddable_as(
 }
 
 /// Generates the code of the `HasComponent` trait inside a Starknet component.
-fn generate_has_component_trait_code(data: &mut ComponentSpecificGenerationData) {
+fn generate_has_component_trait_code<'db>(data: &mut ComponentSpecificGenerationData<'db>) {
     data.has_component_trait = RewriteNode::Text(formatdoc!(
         "
         pub trait {HAS_COMPONENT_TRAIT}<{GENERIC_CONTRACT_STATE_NAME}> {{

@@ -32,6 +32,7 @@ FunctionCall(
                                                     ty: core::array::Array::<core::felt252>,
                                                 },
                                             ),
+                                            else_clause: None,
                                         },
                                     ),
                                     Expr(

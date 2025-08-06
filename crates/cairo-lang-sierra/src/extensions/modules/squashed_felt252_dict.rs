@@ -68,9 +68,9 @@ impl SignatureAndTypeGenericLibfunc for SquashedDictAsEntriesLibfuncWrapped {
             StructType::id(),
             &[
                 GenericArg::UserType(UserTypeId::from_string("Tuple")),
-                GenericArg::Type(felt252_ty.clone()),
+                GenericArg::Type(felt252_ty),
                 GenericArg::Type(ty.clone()),
-                GenericArg::Type(ty.clone()),
+                GenericArg::Type(ty),
             ],
         )?;
         let array_ty = context.get_wrapped_concrete_type(ArrayType::id(), tuple_ty)?;

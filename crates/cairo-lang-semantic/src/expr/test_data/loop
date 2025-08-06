@@ -357,3 +357,32 @@ foo
 use option::Option;
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Loop break with never type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(a: u32) -> Option<bool> {
+    loop {
+        if a == 0 {
+            break panic_with_felt252('no return');
+        }
+        break;
+    }
+    None
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Loop has incompatible return types: "core::never" and "()"
+ --> lib.cairo:6:14
+        break;
+             ^

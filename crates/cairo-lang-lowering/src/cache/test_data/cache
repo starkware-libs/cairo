@@ -39,3 +39,195 @@ Statements:
   () <- test::use_a_copy(v0)
 End:
   Return()
+
+//! > ==========================================================================
+
+//! > Cache Generated Impl 
+
+//! > test_runner_name
+test_cache_check
+
+//! > function
+fn foo() -> u32 {
+    let x = |a| {
+        a + 5
+    };
+    x(5)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u32) <- 10
+  (v1: (core::integer::u32,)) <- struct_construct(v0)
+  (v2: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v1)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Cache Impl Impl
+
+//! > test_runner_name
+test_cache_check
+
+//! > function
+fn foo() {
+    bar::<MyOuter>();
+}
+
+fn bar<impl I: Outer>() {
+    I::Impl::foo();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Inner {
+    fn foo();
+}
+
+trait Outer {
+    impl Impl: Inner;
+}
+
+impl MyInner of Inner {
+    fn foo() {}
+}
+
+impl MyOuter of Outer {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Cache Trait Function with Self Impl
+
+//! > test_runner_name
+test_cache_check
+
+//! > function
+fn foo() -> i32 {
+    MyTrait::foo()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    fn foo() -> i32 {
+        let y = |x| x;
+        y(3)
+    }
+}
+
+impl MyImpl of MyTrait {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i32) <- 3
+End:
+  Return(v0)
+
+//! > ==========================================================================
+
+//! > Cache Trait Function with Loop
+
+//! > test_runner_name
+test_cache_check
+
+//! > function
+fn foo() -> i32 {
+    MyTrait::foo()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    fn foo() -> i32 {
+        loop {
+            if 6_i32 > 7 {
+                break 5;
+            }
+        }
+    }
+}
+
+impl MyImpl of MyTrait {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::integer::i32,)>) <- test::MyImpl::foo[22-113](v0, v1)
+End:
+  Return(v2, v3, v4)
+
+//! > ==========================================================================
+
+//! > Cache Macro Expansion
+
+//! > test_runner_name
+test_cache_check
+
+//! > function
+fn foo() -> i32 {
+    my_macro!(3)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro my_macro {
+    ($x:expr) => {
+        $x + 1
+    };
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i32) <- 4
+  (v1: (core::integer::i32,)) <- struct_construct(v0)
+  (v2: core::panics::PanicResult::<(core::integer::i32,)>) <- PanicResult::Ok(v1)
+End:
+  Return(v2)

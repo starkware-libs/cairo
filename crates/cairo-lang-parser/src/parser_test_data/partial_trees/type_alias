@@ -24,8 +24,10 @@ ItemTypeAlias
     ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     ├── eq (kind: TokenEq): '='
     ├── ty (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentSimple)
-    │       └── ident (kind: TokenIdentifier): 'u8'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'u8'
     └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -55,8 +57,10 @@ ItemTypeAlias
     │       ├── hash (kind: TokenHash): '#'
     │       ├── lbrack (kind: TokenLBrack): '['
     │       ├── attr (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentSimple)
-    │       │       └── ident (kind: TokenIdentifier): 'attribute'
+    │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   └── segments (kind: ExprPathInner)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'attribute'
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TokenRBrack): ']'
     ├── visibility (kind: VisibilityDefault) []
@@ -65,6 +69,8 @@ ItemTypeAlias
     ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     ├── eq (kind: TokenEq): '='
     ├── ty (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentSimple)
-    │       └── ident (kind: TokenIdentifier): 'u8'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'u8'
     └── semicolon (kind: TokenSemicolon): ';'

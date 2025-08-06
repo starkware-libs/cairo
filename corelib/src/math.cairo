@@ -47,9 +47,7 @@ pub fn egcd<
 ) -> (T, T, T, bool) {
     let (q, r) = DivRem::<T>::div_rem(a.into(), b);
 
-    let r = if let Some(r) = r.try_into() {
-        r
-    } else {
+    let Some(r) = r.try_into() else {
         return (b.into(), core::num::traits::Zero::zero(), core::num::traits::One::one(), false);
     };
 

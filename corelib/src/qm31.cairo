@@ -7,7 +7,9 @@
 pub extern type qm31;
 
 /// The field for the Mersenne prime with `n` 31.
-pub type m31 = core::internal::bounded_int::BoundedInt<0, 0x7ffffffe>;
+#[feature("bounded-int-utils")]
+pub type m31 =
+    core::internal::bounded_int::BoundedInt<0, 0x7ffffffe>;
 
 pub trait QM31Trait {
     /// Returns a new `qm31` composed of the given parts.

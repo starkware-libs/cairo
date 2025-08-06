@@ -8,6 +8,7 @@ use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStr
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, GenericParamEx, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
+use itertools::Itertools;
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -16,12 +17,12 @@ pub struct GenerateTraitPlugin;
 const GENERATE_TRAIT_ATTR: &str = "generate_trait";
 
 impl MacroPlugin for GenerateTraitPlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         match item_ast {
             ast::ModuleItem::Impl(impl_ast) => generate_trait_for_impl(db, impl_ast),
             module_item => {
@@ -29,7 +30,7 @@ impl MacroPlugin for GenerateTraitPlugin {
 
                 if let Some(attr) = module_item.find_attr(db, GENERATE_TRAIT_ATTR) {
                     diagnostics.push(PluginDiagnostic::warning(
-                        attr.as_syntax_node().stable_ptr(),
+                        attr.stable_ptr(db),
                         "`generate_trait` may only be applied to `impl`s".to_string(),
                     ));
                 }
@@ -44,16 +45,19 @@ impl MacroPlugin for GenerateTraitPlugin {
     }
 }
 
-fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> PluginResult {
+fn generate_trait_for_impl<'db>(
+    db: &'db dyn SyntaxGroup,
+    impl_ast: ast::ItemImpl<'db>,
+) -> PluginResult<'db> {
     let Some(attr) = impl_ast.attributes(db).find_attr(db, GENERATE_TRAIT_ATTR) else {
         return PluginResult::default();
     };
     let trait_ast = impl_ast.trait_path(db);
-    let [trait_ast_segment] = &trait_ast.elements(db)[..] else {
+    let Some([trait_ast_segment]) = trait_ast.segments(db).elements(db).collect_array() else {
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                &trait_ast,
+                trait_ast.stable_ptr(db),
                 "Generated trait must have a single element path.".to_string(),
             )],
             remove_original_item: false,
@@ -65,7 +69,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
     let leading_trivia = impl_ast
         .attributes(db)
         .elements(db)
-        .first()
+        .next()
         .unwrap()
         .hash(db)
         .leading_trivia(db)
@@ -87,7 +91,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
             }
             _ => {
                 diagnostics.push(PluginDiagnostic::error(
-                    &attr_arg.arg,
+                    attr_arg.arg.stable_ptr(db),
                     "Expected an argument with the name `trait_attrs`.".to_string(),
                 ));
             }
@@ -99,15 +103,18 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
     let impl_generic_params = impl_ast.generic_params(db);
     let generic_params_match = match trait_ast_segment {
         ast::PathSegment::WithGenericArgs(segment) => {
+            let generic_args = segment.generic_args(db).generic_args(db);
             builder.add_node(segment.ident(db).as_syntax_node());
             if let ast::OptionWrappedGenericParamList::WrappedGenericParamList(
                 impl_generic_params,
             ) = impl_generic_params.clone()
             {
                 // TODO(orizi): Support generic args that do not directly match the generic params.
-                let trait_generic_args = segment.generic_args(db).generic_args(db).elements(db);
-                let impl_generic_params = impl_generic_params.generic_params(db).elements(db);
-                zip(trait_generic_args, impl_generic_params).all(
+                let trait_generic_args = generic_args.elements(db);
+                let longer_lived = impl_generic_params.generic_params(db);
+                let impl_generic_params = longer_lived.elements(db);
+                // Temporary result is used to avoid the borrow checker error.
+                let temporary_result = zip(trait_generic_args, impl_generic_params).all(
                     |(trait_generic_arg, impl_generic_param)| {
                         let ast::GenericArg::Unnamed(trait_generic_arg) = trait_generic_arg else {
                             return false;
@@ -120,8 +127,8 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                         let ast::Expr::Path(trait_generic_arg) = trait_generic_arg.expr(db) else {
                             return false;
                         };
-                        let [ast::PathSegment::Simple(trait_generic_arg)] =
-                            &trait_generic_arg.elements(db)[..]
+                        let Some([ast::PathSegment::Simple(trait_generic_arg)]) =
+                            trait_generic_arg.segments(db).elements(db).collect_array()
                         else {
                             return false;
                         };
@@ -131,7 +138,8 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                         };
                         trait_generic_arg_name.text(db) == impl_generic_param_name.text(db)
                     },
-                )
+                );
+                temporary_result
             } else {
                 false
             }
@@ -144,7 +152,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
             return PluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    &trait_ast,
+                    trait_ast.stable_ptr(db),
                     "Generated trait can not have a missing path segment.".to_string(),
                 )],
                 remove_original_item: false,
@@ -153,7 +161,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
     };
     if !generic_params_match {
         diagnostics.push(PluginDiagnostic::error(
-            &trait_ast,
+            trait_ast.stable_ptr(db),
             "Generated trait must have generic args matching the impl's generic params."
                 .to_string(),
         ));
@@ -166,7 +174,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         ast::MaybeImplBody::Some(body) => {
             builder.add_node(impl_generic_params.as_syntax_node());
             builder.add_node(body.lbrace(db).as_syntax_node());
-            for item in body.items_vec(db) {
+            for item in body.iter_items(db) {
                 match item {
                     ast::ImplItem::Function(function_item) => {
                         let decl = function_item.declaration(db);
@@ -177,10 +185,8 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                         builder.add_node(decl.name(db).as_syntax_node());
                         builder.add_node(decl.generic_params(db).as_syntax_node());
                         builder.add_node(signature.lparen(db).as_syntax_node());
-                        for node in
-                            db.get_children(signature.parameters(db).node.clone()).iter().cloned()
-                        {
-                            if let Some(param) = ast::Param::cast(db, node.clone()) {
+                        for node in signature.parameters(db).node.get_children(db).iter() {
+                            if let Some(param) = ast::Param::cast(db, *node) {
                                 for modifier in param.modifiers(db).elements(db) {
                                     // `mut` modifiers are only relevant for impls, not traits.
                                     if !matches!(modifier, ast::Modifier::Mut(_)) {
@@ -190,7 +196,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                                 builder.add_node(param.name(db).as_syntax_node());
                                 builder.add_node(param.type_clause(db).as_syntax_node());
                             } else {
-                                builder.add_node(node);
+                                builder.add_node(*node);
                             }
                         }
                         let rparen = signature.rparen(db);
@@ -248,7 +254,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                         builder.add_str(";\n");
                     }
                     _ => diagnostics.push(PluginDiagnostic::error(
-                        &item,
+                        item.stable_ptr(db),
                         "Only functions, types, and constants are supported in #[generate_trait]."
                             .to_string(),
                     )),
@@ -265,6 +271,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
             code_mappings,
             aux_data: None,
             diagnostics_note: Default::default(),
+            is_unhygienic: false,
         }),
         diagnostics,
         remove_original_item: false,

@@ -13,6 +13,7 @@ use super::test_utils::{TestDatabase, set_file_content, setup_test_module};
 use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
 use crate::parser::DocumentationCommentToken;
+use crate::tests::test_utils::test_crate_id;
 
 cairo_lang_test_utils::test_file_test!(
   item_documentation,
@@ -23,6 +24,10 @@ cairo_lang_test_utils::test_file_test!(
     trivia: "trivia.txt",
     comment_markers: "comment_markers.txt",
     signature: "signature.txt",
+    lists_formatting: "lists_formatting.txt",
+    tables_formatting: "tables_formatting.txt",
+    rules_formatting: "rules_formatting.txt",
+    font_formatting: "font_formatting.txt",
   },
   documentation_test_runner
 );
@@ -32,7 +37,7 @@ fn documentation_test_runner(
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let mut db_val = TestDatabase::new().unwrap();
-    let crate_id = setup_test_module(&mut db_val, inputs["cairo_code"].as_str());
+    setup_test_module(&mut db_val, inputs["cairo_code"].as_str());
     let submodule_code = inputs.get("cairo_submodule_code");
 
     if let Some(submodule_code) = submodule_code {
@@ -42,7 +47,7 @@ fn documentation_test_runner(
     let db = &db_val;
 
     let mut result_doc_builder = ResultDocBuilder::new(db);
-
+    let crate_id = test_crate_id(db);
     result_doc_builder.document_module(ModuleId::CrateRoot(crate_id));
 
     TestRunnerResult::success(result_doc_builder.get_output())
@@ -63,7 +68,7 @@ impl<'a> ResultDocBuilder<'a> {
         self.output
     }
 
-    fn document_module(&mut self, module_id: ModuleId) {
+    fn document_module(&mut self, module_id: ModuleId<'_>) {
         let module_doc = match module_id {
             ModuleId::CrateRoot(crate_id) => {
                 self.db.get_item_documentation(DocumentableItemId::Crate(crate_id))
@@ -73,6 +78,7 @@ impl<'a> ResultDocBuilder<'a> {
                     ModuleItemId::Submodule(submodule_id),
                 )))
             }
+            ModuleId::MacroCall { id: _, generated_file_id: _ } => None,
         };
 
         let doc_tokens = match module_id {
@@ -84,6 +90,7 @@ impl<'a> ResultDocBuilder<'a> {
                     LookupItemId::ModuleItem(ModuleItemId::Submodule(submodule_id)),
                 ))
             }
+            ModuleId::MacroCall { id: _, generated_file_id: _ } => None,
         };
 
         self.insert_doc_to_test_output(module_doc, Some("".to_owned()), doc_tokens);
@@ -118,7 +125,7 @@ impl<'a> ResultDocBuilder<'a> {
         }
     }
 
-    fn document_struct_with_members(&mut self, struct_id: &StructId) {
+    fn document_struct_with_members(&mut self, struct_id: &StructId<'_>) {
         let id =
             DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Struct(*struct_id)));
         let struct_doc = self.db.get_item_documentation(id);
@@ -136,7 +143,7 @@ impl<'a> ResultDocBuilder<'a> {
         });
     }
 
-    fn document_enum_with_variants(&mut self, enum_id: &EnumId) {
+    fn document_enum_with_variants(&mut self, enum_id: &EnumId<'_>) {
         let id = DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Enum(*enum_id)));
         let enum_doc = self.db.get_item_documentation(id);
         let enum_signature = self.db.get_item_signature(id);
@@ -153,7 +160,7 @@ impl<'a> ResultDocBuilder<'a> {
         })
     }
 
-    fn document_trait_with_items(&mut self, trait_id: &TraitId) {
+    fn document_trait_with_items(&mut self, trait_id: &TraitId<'_>) {
         let id = DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Trait(*trait_id)));
         let trait_doc = self.db.get_item_documentation(id);
         let trait_signature = self.db.get_item_signature(id);
@@ -206,7 +213,7 @@ impl<'a> ResultDocBuilder<'a> {
         });
     }
 
-    fn document_impl_with_items(&mut self, impl_id: &ImplDefId) {
+    fn document_impl_with_items(&mut self, impl_id: &ImplDefId<'_>) {
         let id = DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Impl(*impl_id)));
         let impl_doc = self.db.get_item_documentation(id);
         let impl_signature = self.db.get_item_signature(id);
@@ -262,7 +269,7 @@ impl<'a> ResultDocBuilder<'a> {
         &mut self,
         documentation: Option<String>,
         signature: Option<String>,
-        documentation_as_tokens: Option<Vec<DocumentationCommentToken>>,
+        documentation_as_tokens: Option<Vec<DocumentationCommentToken<'_>>>,
     ) {
         if let Some(signature) = signature {
             self.output
@@ -278,7 +285,7 @@ impl<'a> ResultDocBuilder<'a> {
                 .unwrap_or_default()
                 .iter()
                 .map(|token| match token {
-                    DocumentationCommentToken::Content(_) => format!("{:?}", token),
+                    DocumentationCommentToken::Content(_) => format!("{token:?}"),
                     DocumentationCommentToken::Link(link_token) => {
                         format!("{:?}", link_token.debug(self.db))
                     }

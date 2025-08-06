@@ -423,7 +423,7 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
         hint_data: &Box<dyn Any>,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        let hint = hint_data.downcast_ref::<Hint>().unwrap();
+        let hint = hint_data.downcast_ref::<Hint>().ok_or(HintError::WrongHintData)?;
         let hint = match hint {
             Hint::Starknet(hint) => hint,
             Hint::Core(core_hint_base) => {
@@ -1177,7 +1177,7 @@ impl CairoHintProcessor<'_> {
             .registry()
             .get_function(entry_point)
             .expect("Entrypoint exists, but not found.");
-        let mut res = runner
+        let res = runner
             .run_function_with_starknet_context(
                 function,
                 vec![Arg::Array(calldata.into_iter().map(Arg::Value).collect())],
@@ -1191,7 +1191,7 @@ impl CairoHintProcessor<'_> {
         *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
         match res.value {
             RunResultValue::Success(value) => {
-                self.starknet_state = std::mem::take(&mut res.starknet_state);
+                self.starknet_state = res.starknet_state;
                 Ok(segment_with_data(vm, read_array_result_as_vec(&res.memory, &value).into_iter())
                     .expect("failed to allocate segment"))
             }
@@ -1320,7 +1320,12 @@ impl CairoHintProcessor<'_> {
         match core_hint {
             ExternalHint::AddRelocationRule { src, dst } => vm.add_relocation_rule(
                 extract_relocatable(vm, src)?,
-                extract_relocatable(vm, dst)?,
+                // The following is needed for when the `extensive_hints` feature is used in the
+                // VM, in which case `dst_ptr` is a `MaybeRelocatable` type.
+                #[allow(clippy::useless_conversion)]
+                {
+                    extract_relocatable(vm, dst)?.into()
+                },
             )?,
             ExternalHint::WriteRunParam { index, dst } => {
                 let index = get_val(vm, index)?.to_usize().expect("Got a bad index.");
@@ -1407,7 +1412,7 @@ fn vec_as_array<const COUNT: usize>(
 /// Executes the `keccak_syscall` syscall.
 fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, KECCAK);
-    if data.len() % 17 != 0 {
+    if !data.len().is_multiple_of(17) {
         fail_syscall!(b"Invalid keccak input size");
     }
     let mut state = [0u64; 25];
@@ -2331,7 +2336,7 @@ pub fn build_cairo_runner(
     let dynamic_layout_params = None;
     let proof_mode = false;
     let trace_enabled = true;
-    let disable_trace_padding = true;
+    let disable_trace_padding = false;
     CairoRunner::new(
         &program,
         LayoutName::all_cairo,

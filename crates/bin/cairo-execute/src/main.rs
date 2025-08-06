@@ -1,21 +1,32 @@
 use std::io::{self, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use bincode::enc::write::Writer;
+use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
-use cairo_lang_compiler::project::check_compiler_path;
-use cairo_lang_executable::compile::{ExecutableConfig, compile_executable};
-use cairo_lang_executable::executable::{EntryPointKind, Executable};
+use cairo_lang_compiler::project::{check_compiler_path, setup_project};
+use cairo_lang_debug::debug::DebugWithDb;
+use cairo_lang_executable::compile::{
+    CompileExecutableResult, ExecutableConfig, compile_executable_in_prepared_db, prepare_db,
+};
+use cairo_lang_executable::executable::{EntryPointKind, Executable, NOT_RETURNING_HEADER_SIZE};
+use cairo_lang_execute_utils::{program_and_hints_from_executable, user_args_from_flags};
+use cairo_lang_filesystem::ids::CrateInput;
+use cairo_lang_runnable_utils::builder::RunnableBuilder;
 use cairo_lang_runner::casm_run::format_for_panic;
-use cairo_lang_runner::{Arg, CairoHintProcessor, build_hints_dict};
-use cairo_lang_utils::bigint::BigUintAsHex;
+use cairo_lang_runner::clap::RunProfilerConfigArg;
+use cairo_lang_runner::profiling::{
+    ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
+};
+use cairo_lang_runner::{Arg, CairoHintProcessor, ProfilingInfoCollectionConfig};
+use cairo_lang_sierra_generator::program_generator::SierraProgramDebugInfo;
+use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_vm::cairo_run;
 use cairo_vm::cairo_run::{CairoRunConfig, cairo_run_program};
 use cairo_vm::types::layout::CairoLayoutParams;
 use cairo_vm::types::layout_name::LayoutName;
-use cairo_vm::types::program::Program;
-use cairo_vm::types::relocatable::MaybeRelocatable;
-use cairo_vm::{Felt252, cairo_run};
+use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use clap::Parser;
 use num_bigint::BigInt;
 
@@ -40,12 +51,18 @@ struct Args {
     /// In `--build-only` this would be the executable artifact.
     /// In bootloader mode it will be the resulting cairo PIE file.
     /// In standalone mode this parameter is disallowed.
-    #[arg(long, required_unless_present("standalone"))]
+    #[arg(long, required_unless_present_any(["standalone", "profile"]))]
     output_path: Option<PathBuf>,
 
     /// Whether to only run a prebuilt executable.
     #[arg(long, default_value_t = false, conflicts_with = "build_only")]
     prebuilt: bool,
+
+    /// Whether to run the profiler, and what results to produce. See
+    /// [cairo_lang_runner::profiling::ProfilerConfig]
+    /// Currently does not work with prebuilt executables as it requires additional debug info.
+    #[arg(short, long, default_value_t, value_enum, conflicts_with_all = ["prebuilt"])]
+    run_profiler: RunProfilerConfigArg,
 
     #[command(flatten)]
     build: BuildArgs,
@@ -72,6 +89,10 @@ struct BuildArgs {
     /// Allow syscalls in the program.
     #[arg(long, conflicts_with = "prebuilt")]
     allow_syscalls: bool,
+    /// Replace the panic flow with an unprovable opcode, this reduces code size but might make it
+    /// more difficult to debug.
+    #[arg(long, conflicts_with = "prebuilt")]
+    unsafe_panic: bool,
     /// The path to the executable function.
     ///
     /// Not required if there is only a single executable function in the project.
@@ -101,7 +122,7 @@ struct RunArgs {
         long,
         default_value_t = false,
         conflicts_with_all = ["build_only", "output_path"],
-        requires_all=["air_public_input", "air_private_input"],
+        requires_ifs = [("standalone", "air_public_input"), ("standalone", "air_private_input")],
     )]
     standalone: bool,
     /// If set, the program will be run in secure mode.
@@ -152,35 +173,63 @@ struct ProofOutputArgs {
     #[arg(long, conflicts_with = "build_only")]
     air_public_input: Option<PathBuf>,
     /// The resulting AIR private input file.
-    #[arg(long, conflicts_with = "build_only", requires_all=["trace_file", "memory_file"])]
+    #[arg(
+        long,
+        conflicts_with = "build_only",
+        requires_ifs = [("standalone", "trace_file"), ("standalone", "memory_file")]
+    )]
     air_private_input: Option<PathBuf>,
 }
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
+    let mut diagnostics_reporter = DiagnosticsReporter::stderr();
 
-    let executable = {
+    let (db, opt_debug_data, executable) = {
         if args.prebuilt {
-            serde_json::from_reader(std::fs::File::open(&args.input_path)?)
-                .with_context(|| "Failed reading prebuilt executable.")?
+            let executable: Executable =
+                serde_json::from_reader(std::fs::File::open(&args.input_path)?)
+                    .with_context(|| "Failed reading prebuilt executable.")?;
+            (None, None, Some(executable))
         } else {
             // Check if args.path is a file or a directory.
             check_compiler_path(args.build.single_file, &args.input_path)?;
-            let mut reporter = DiagnosticsReporter::stderr();
+
             if args.build.allow_warnings {
-                reporter = reporter.allow_warnings();
+                diagnostics_reporter = diagnostics_reporter.allow_warnings();
             }
             if args.build.ignore_warnings {
-                reporter = reporter.ignore_all_warnings();
+                diagnostics_reporter = diagnostics_reporter.ignore_all_warnings();
             }
+            let config = ExecutableConfig {
+                allow_syscalls: args.build.allow_syscalls,
+                unsafe_panic: args.build.unsafe_panic,
+            };
 
-            Executable::new(compile_executable(
-                &args.input_path,
-                args.build.executable.as_deref(),
-                reporter,
-                ExecutableConfig { allow_syscalls: args.build.allow_syscalls },
-            )?)
+            let mut db = prepare_db(&config)?;
+            let main_crate_inputs = setup_project(&mut db, Path::new(&args.input_path))?;
+            (Some(db), Some((main_crate_inputs, config)), None)
         }
+    };
+
+    let (opt_debug_data, executable) = if let Some((main_crate_inputs, config)) = opt_debug_data {
+        let db = db.as_ref().expect("db was just created in compilation path");
+        let main_crate_ids = CrateInput::into_crate_ids(db, main_crate_inputs);
+        let CompileExecutableResult { compiled_function, builder, debug_info } =
+            compile_executable_in_prepared_db(
+                db,
+                args.build.executable.as_deref(),
+                main_crate_ids,
+                diagnostics_reporter,
+                config,
+            )?;
+        let wrapper_len =
+            compiled_function.wrapper.header.iter().map(|insn| insn.body.op_size()).sum::<usize>();
+        let header_len = NOT_RETURNING_HEADER_SIZE + wrapper_len;
+        let executable = Executable::new(compiled_function);
+        (Some(DebugData { db, builder, debug_info, header_len }), executable)
+    } else {
+        (None, executable.unwrap())
     };
 
     if args.print_bytecode_size {
@@ -193,52 +242,18 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let data =
-        executable.program.bytecode.iter().map(Felt252::from).map(MaybeRelocatable::from).collect();
-    let (hints, string_to_hint) = build_hints_dict(&executable.program.hints);
-    let program = if args.run.standalone {
-        let entrypoint = executable
-            .entrypoints
-            .iter()
-            .find(|e| matches!(e.kind, EntryPointKind::Standalone))
-            .with_context(|| "No `Standalone` entrypoint found.")?;
-        Program::new_for_proof(
-            entrypoint.builtins.clone(),
-            data,
-            entrypoint.offset,
-            entrypoint.offset + 4,
-            hints,
-            Default::default(),
-            Default::default(),
-            vec![],
-            None,
-        )
-    } else {
-        let entrypoint = executable
-            .entrypoints
-            .iter()
-            .find(|e| matches!(e.kind, EntryPointKind::Bootloader))
-            .with_context(|| "No `Bootloader` entrypoint found.")?;
-        Program::new(
-            entrypoint.builtins.clone(),
-            data,
-            Some(entrypoint.offset),
-            hints,
-            Default::default(),
-            Default::default(),
-            vec![],
-            None,
-        )
-    }
-    .with_context(|| "Failed setting up program.")?;
+    let entry_point_kind =
+        if args.run.standalone { EntryPointKind::Standalone } else { EntryPointKind::Bootloader };
 
-    let user_args = if let Some(path) = args.run.args.as_file {
-        let as_vec: Vec<BigUintAsHex> = serde_json::from_reader(std::fs::File::open(&path)?)
-            .with_context(|| "Failed reading args file.")?;
-        as_vec.into_iter().map(|v| Arg::Value(v.value.into())).collect()
-    } else {
-        args.run.args.as_list.iter().map(|v| Arg::Value(v.into())).collect()
-    };
+    let entrypoint = executable
+        .entrypoints
+        .iter()
+        .find(|e| e.kind == entry_point_kind)
+        .with_context(|| format!("{entry_point_kind:?} entrypoint not found"))?;
+
+    let (program, string_to_hint) = program_and_hints_from_executable(&executable, entrypoint)?;
+
+    let user_args = user_args_from_flags(args.run.args.as_file.as_ref(), &args.run.args.as_list)?;
 
     let mut hint_processor = CairoHintProcessor {
         runner: None,
@@ -256,8 +271,11 @@ fn main() -> anyhow::Result<()> {
         None => None,
     };
 
+    let trace_enabled = args.run_profiler != RunProfilerConfigArg::None
+        || args.run.proof_outputs.trace_file.is_some();
+
     let cairo_run_config = CairoRunConfig {
-        trace_enabled: args.run.proof_outputs.trace_file.is_some(),
+        trace_enabled,
         relocate_mem: args.run.proof_outputs.memory_file.is_some(),
         layout: args.run.layout,
         dynamic_layout_params,
@@ -268,14 +286,18 @@ fn main() -> anyhow::Result<()> {
         ..Default::default()
     };
 
-    let mut runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor)
-        .with_context(|| {
+    let mut runner = match cairo_run_program(&program, &cairo_run_config, &mut hint_processor) {
+        Ok(runner) => runner,
+        Err(err) => {
             if let Some(panic_data) = hint_processor.markers.last() {
-                format_for_panic(panic_data.iter().copied())
-            } else {
-                "Failed running program.".into()
+                return Err(err).with_context(|| format_for_panic(panic_data.iter().copied()));
+            };
+            if let Some(err_location) = try_get_error_location(&opt_debug_data, &err) {
+                return Err(err).context(err_location);
             }
-        })?;
+            return Err(err).context("Failed running program.");
+        }
+    };
     if args.run.print_outputs {
         let mut output_buffer = "Program Output:\n".to_string();
         runner.vm.write_output(&mut output_buffer)?;
@@ -324,7 +346,65 @@ fn main() -> anyhow::Result<()> {
             .write_zip_file(&file_name, true)?
     }
 
+    if let Ok(profiler_config) = &args.run_profiler.try_into() {
+        let DebugData { db, builder, debug_info, header_len } =
+            opt_debug_data.expect("debug data should be available when profiling");
+
+        let trace = runner.relocated_trace.as_ref().with_context(|| "Trace not relocated.")?;
+        let first_pc = trace.first().unwrap().pc;
+        // After relocation, we expect the program to start at offset 1.
+        assert_eq!(first_pc - entrypoint.offset, 1);
+        let load_offset = 1 + header_len;
+        let info = ProfilingInfo::from_trace(
+            &builder,
+            load_offset,
+            &ProfilingInfoCollectionConfig::from_profiler_config(profiler_config),
+            trace,
+        );
+
+        let processed_profiling_info = ProfilingInfoProcessor::new(
+            Some(db),
+            &replace_sierra_ids_in_program(db, builder.sierra_program()),
+            debug_info.statements_locations.get_statements_functions_map_for_tests(db),
+        )
+        .process(&info, &ProfilingInfoProcessorParams::from_profiler_config(profiler_config));
+        print!("{processed_profiling_info}");
+    }
+
     Ok(())
+}
+
+/// Tries to get the location of the error in the source code.
+///
+/// Returns `None` if `opt_debug_data` is None, the error is not a `VmException` or if the error is
+/// in a different segment than the first one.
+fn try_get_error_location(
+    opt_debug_data: &Option<DebugData<'_>>,
+    err: &CairoRunError,
+) -> Option<String> {
+    let DebugData { db, builder, debug_info, header_len } = opt_debug_data.as_ref()?;
+    let CairoRunError::VmException(err) = err else { return None };
+    if err.pc.segment_index != 0 {
+        return None;
+    }
+
+    // Note that pc wasn't relocated here so pc.offset is zero-based.
+    let pc = err.pc.offset.checked_sub(*header_len)?;
+    let stmt_idx = builder.casm_program().sierra_statement_index_by_pc(pc);
+    let loc = debug_info.statements_locations.statement_diagnostic_location(*db, stmt_idx)?;
+    Some(format!("#{stmt_idx} {:?}", loc.debug(*db)))
+}
+
+/// Data required for profiling and debugging the executable.
+struct DebugData<'a> {
+    /// The salsa database.
+    db: &'a RootDatabase,
+    /// The builder for the runnable program.
+    builder: RunnableBuilder,
+    /// Debug information for the Sierra program.
+    debug_info: SierraProgramDebugInfo<'a>,
+    /// The size of the header that was prepended to the builder's CASM program.
+    header_len: usize,
 }
 
 /// Writer implementation for a file.

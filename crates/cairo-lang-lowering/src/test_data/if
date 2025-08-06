@@ -560,7 +560,7 @@ error: Unsupported value in if-let. Currently, if-let on tuples only supports en
                                ^^^^^^^^
 
 //! > lowering_flat
-Parameters:
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -588,15 +588,12 @@ foo
 
 //! > lowering_diagnostics
 error: Numeric values are not supported in if-let conditions.
- --> lib.cairo:3:5-5:5
-      if let x = y {
- _____^
-|         y = y + x
-|     }
-|_____^
+ --> lib.cairo:3:16
+    if let x = y {
+               ^
 
 //! > lowering_flat
-Parameters:
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -697,7 +694,7 @@ enum MyEnum {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unreachable else clause.
+warning: Unreachable else clause.
  --> lib.cairo:10:12-12:5
       } else {
  ____________^
@@ -778,7 +775,7 @@ error: Unsupported type in if-let. Type: `test::MyStruct`.
                ^
 
 //! > lowering_flat
-Parameters: v0: test::MyStruct
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -845,3 +842,281 @@ Statements:
   (v3: core::felt252) <- 2
 End:
   Return(v3)
+
+//! > ==========================================================================
+
+//! > Test if let unreachable-else by multipattern
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function
+fn foo(a: Option<felt252>) -> felt252 {
+    let mut y = 0;
+    if let None | Some(_) = a {
+        y = y + 5;
+    } else {
+        y = y + 8;
+    }
+    y = y + 1;
+    return y;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+warning: Unreachable else clause.
+ --> lib.cairo:5:12-7:5
+      } else {
+ ____________^
+|         y = y + 8;
+|     }
+|_____^
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0
+End:
+  Match(match_enum(v0) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v4: core::felt252) <- 5
+  (v5: core::felt252) <- core::felt252_add(v1, v4)
+  (v6: core::felt252) <- 1
+  (v7: core::felt252) <- core::felt252_add(v5, v6)
+End:
+  Return(v7)
+
+//! > ==========================================================================
+
+//! > Test if let multipattern multilevel enum
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo(a: Option<Result<felt252, felt252>>) -> felt252 {
+    let mut y = 0;
+    if let Some(Err(v)) | Some(Ok(v)) = a {
+        y = y + v;
+    } else {
+        y = y + 8;
+    }
+    y = y + 1;
+    return y;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<core::result::Result::<core::felt252, core::felt252>>
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0
+End:
+  Match(match_enum(v0) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk5,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v2) {
+    Result::Ok(v4) => blk2,
+    Result::Err(v5) => blk3,
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk4, {v4 -> v6})
+
+blk3:
+Statements:
+End:
+  Goto(blk4, {v5 -> v6})
+
+blk4:
+Statements:
+  (v7: core::felt252) <- core::felt252_add(v1, v6)
+End:
+  Goto(blk6, {v7 -> v8})
+
+blk5:
+Statements:
+  (v9: core::felt252) <- 8
+  (v10: core::felt252) <- core::felt252_add(v1, v9)
+End:
+  Goto(blk6, {v10 -> v8})
+
+blk6:
+Statements:
+  (v11: core::felt252) <- 1
+  (v12: core::felt252) <- core::felt252_add(v8, v11)
+End:
+  Return(v12)
+
+//! > ==========================================================================
+
+//! > Test if let with multiple conditions
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo(a: Option<Option<Option<felt252>>>, x: felt252) -> felt252 {
+    if let Some(b) = a && let Some(c) = b && x == 3 && let Some(d) = c {
+        return d;
+    }
+    return 0;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<core::option::Option::<core::option::Option::<core::felt252>>>, v1: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk10,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v2) {
+    Option::Some(v4) => blk2,
+    Option::None(v5) => blk8,
+  })
+
+blk2:
+Statements:
+  (v6: core::felt252) <- 3
+  (v7: core::felt252) <- core::felt252_sub(v1, v6)
+End:
+  Match(match core::felt252_is_zero(v7) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero(v8) => blk6,
+  })
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v4) {
+    Option::Some(v9) => blk4,
+    Option::None(v10) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Return(v9)
+
+blk5:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk6:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk9, {})
+
+blk8:
+Statements:
+End:
+  Goto(blk9, {})
+
+blk9:
+Statements:
+End:
+  Goto(blk11, {})
+
+blk10:
+Statements:
+End:
+  Goto(blk11, {})
+
+blk11:
+Statements:
+  (v11: core::felt252) <- 0
+End:
+  Return(v11)
+
+//! > ==========================================================================
+
+//! > Test if let with multiple conditions - with else block
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function
+fn foo(a: Option<Option<felt252>>) -> felt252 {
+    if let Some(b) = a && let Some(c) = b {
+        c
+    } else {
+        0
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:4:12-6:5
+      } else {
+ ____________^
+|         0
+|     }
+|_____^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>

@@ -288,6 +288,37 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 
 //! > ==========================================================================
 
+//! > Test unused variable not reported.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+  let x = 1;
+  let y = 2;
+  let z = 3;
+  func_call(x);
+  z.member_call(y);
+}
+
+//! > module_code
+
+//! > function_body
+
+//! > expected_diagnostics
+error[E0006]: Function not found.
+ --> lib.cairo:6:3
+  func_call(x);
+  ^^^^^^^^^
+
+error[E0002]: Method `member_call` not found on type `?2`. Did you import the correct trait and impl?
+ --> lib.cairo:7:5
+  z.member_call(y);
+    ^^^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Test unhandled Option.
 
 //! > test_runner_name
@@ -856,9 +887,9 @@ fn bar<T>(_a: T) {}
 
 //! > expected_diagnostics
 error: Consecutive comparison operators are not allowed: '<' followed by '>'
- --> lib.cairo:4:19
+ --> lib.cairo:4:26
   let _fail = bar<felt252>(1);
-                  ^
+                         ^
 
 error: Expected variable or constant, found function.
  --> lib.cairo:4:15

@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::UsePathEx;
+use cairo_lang_syntax::node::helpers::{GetIdentifier, UsePathEx};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
@@ -16,45 +16,105 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use super::module::get_module_global_uses;
 use super::visibility::peek_visible_in;
 use crate::SemanticDiagnostic;
-use crate::db::SemanticGroup;
+use crate::db::{SemanticGroup, SemanticGroupData};
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
 use crate::expr::inference::InferenceId;
-use crate::resolve::{ResolvedGenericItem, Resolver, ResolverData};
+use crate::keyword::SELF_PARAM_KW;
+use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverData};
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn SemanticGroup + 'static)]
-pub struct UseData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    resolved_item: Maybe<ResolvedGenericItem>,
-    resolver_data: Arc<ResolverData>,
+pub struct UseData<'db> {
+    diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    resolved_item: Maybe<ResolvedGenericItem<'db>>,
+    resolver_data: Arc<ResolverData<'db>>,
+}
+
+/// Represents path segments in a use statement, with support for a leading dollar token ($).
+pub struct UseAsPathSegments<'db> {
+    pub segments: Vec<ast::PathSegment<'db>>,
+    pub is_placeholder: Option<ast::TerminalDollar<'db>>,
+}
+
+/// Indicates whether we found a UsePathSingle node, a leading dollar token ($), or hit ItemUse
+/// without a dollar when traversing the AST.
+pub enum UsePathOrDollar<'db> {
+    UsePathSingle(ast::UsePathSingle<'db>),
+    Dollar(ast::TerminalDollar<'db>),
+    None,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_use_semantic_data].
-pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<UseData> {
-    let module_file_id = use_id.module_file_id(db.upcast());
+pub fn priv_use_semantic_data<'db>(
+    db: &'db dyn SemanticGroup,
+    use_id: UseId<'db>,
+) -> Maybe<Arc<UseData<'db>>> {
+    let module_file_id = use_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
-    let inference_id =
-        InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Use(use_id)));
+    let module_item_id = ModuleItemId::Use(use_id);
+    let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(module_item_id));
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     let use_ast = ast::UsePath::Leaf(db.module_use_by_id(use_id)?.to_maybe()?);
-    let item = use_ast.get_item(db.upcast());
+    let item = use_ast.get_item(db);
     resolver.set_feature_config(&use_id, &item, &mut diagnostics);
-    let segments = get_use_path_segments(db.upcast(), use_ast)?;
-    let resolved_item = resolver.resolve_generic_path(
-        &mut diagnostics,
-        segments,
-        NotFoundItemType::Identifier,
-        None,
-    );
-    let resolver_data: Arc<ResolverData> = Arc::new(resolver.data);
+    let segments = get_use_path_segments(db, use_ast.clone())?;
+    let resolved_item = if segments.is_placeholder.is_some() {
+        let use_segments = UseAsPathSegments {
+            segments: segments.segments.clone(),
+            is_placeholder: segments.is_placeholder.clone(),
+        };
+        resolver.resolve_generic_path(
+            &mut diagnostics,
+            use_segments,
+            NotFoundItemType::Identifier,
+            ResolutionContext::ModuleItem(module_item_id),
+        )
+    } else {
+        match handle_self_path(db, &mut diagnostics, segments.segments, use_ast) {
+            Err(diag_added) => Err(diag_added),
+            Ok(segments) => resolver.resolve_generic_path(
+                &mut diagnostics,
+                segments,
+                NotFoundItemType::Identifier,
+                ResolutionContext::ModuleItem(module_item_id),
+            ),
+        }
+    };
+    let resolver_data: Arc<ResolverData<'_>> = Arc::new(resolver.data);
 
-    Ok(UseData { diagnostics: diagnostics.build(), resolved_item, resolver_data })
+    Ok(Arc::new(UseData { diagnostics: diagnostics.build(), resolved_item, resolver_data }))
+}
+
+/// Processes a `self` path in a `use` statement.
+///
+/// This function checks if the `self` keyword is used correctly in a `use`
+/// statement and modifies the path segments accordingly. It also reports
+/// diagnostics for invalid usage of `self`.
+fn handle_self_path<'db>(
+    db: &'db dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    mut segments: Vec<ast::PathSegment<'db>>,
+    use_path: ast::UsePath<'db>,
+) -> Maybe<Vec<ast::PathSegment<'db>>> {
+    if let Some(last) = segments.last() {
+        if last.identifier(db) == SELF_PARAM_KW {
+            if use_path.as_syntax_node().parent(db).unwrap().kind(db) != SyntaxKind::UsePathList {
+                diagnostics.report(use_path.stable_ptr(db), UseSelfNonMulti);
+            }
+            segments.pop();
+        }
+    }
+    if segments.is_empty() {
+        Err(diagnostics.report(use_path.stable_ptr(db), UseSelfEmptyPath))
+    } else {
+        Ok(segments)
+    }
 }
 
 /// Returns the segments that are the parts of the use path.
@@ -65,10 +125,10 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
 /// For example:
 /// Given the `c` of `use a::b::{c, d};` will return `[a, b, c]`.
 /// Given the `b` of `use a::b::{c, d};` will return `[a, b]`.
-pub fn get_use_path_segments(
-    db: &dyn SyntaxGroup,
-    use_path: ast::UsePath,
-) -> Maybe<Vec<ast::PathSegment>> {
+pub fn get_use_path_segments<'db>(
+    db: &'db dyn SyntaxGroup,
+    use_path: ast::UsePath<'db>,
+) -> Maybe<UseAsPathSegments<'db>> {
     let mut rev_segments = vec![];
     match &use_path {
         ast::UsePath::Leaf(use_ast) => rev_segments.push(use_ast.ident(db)),
@@ -78,108 +138,147 @@ pub fn get_use_path_segments(
             panic!("Only `UsePathLeaf` and `UsePathSingle` are supported.")
         }
     }
-    let mut current_use_path = use_path;
-    while let Some(parent_use_path) = get_parent_single_use_path(db, &current_use_path) {
-        rev_segments.push(parent_use_path.ident(db));
-        current_use_path = ast::UsePath::Single(parent_use_path);
+    let mut current_path = use_path;
+    let mut dollar = None;
+    loop {
+        match get_parent_single_use_path(db, &current_path)? {
+            UsePathOrDollar::UsePathSingle(parent_use_path) => {
+                let ident = parent_use_path.ident(db);
+                rev_segments.push(ident);
+                current_path = ast::UsePath::Single(parent_use_path);
+            }
+            UsePathOrDollar::Dollar(d) => {
+                dollar = Some(d);
+                break;
+            }
+            UsePathOrDollar::None => break,
+        }
     }
-    Ok(rev_segments.into_iter().rev().collect())
+    Ok(UseAsPathSegments {
+        segments: rev_segments.into_iter().rev().collect(),
+        is_placeholder: dollar,
+    })
 }
 
 /// Returns the parent `UsePathSingle` of a use path if it exists.
-fn get_parent_single_use_path(
-    db: &dyn SyntaxGroup,
-    use_path: &ast::UsePath,
-) -> Option<ast::UsePathSingle> {
-    use SyntaxKind::*;
-    let mut node = use_path.as_syntax_node();
-    loop {
-        node = node.parent().expect("`UsePath` is not under an `ItemUse`.");
-        match node.kind(db) {
-            ItemUse => return None,
-            UsePathSingle => return Some(ast::UsePathSingle::from_syntax_node(db, node)),
-            UsePathList | UsePathMulti => continue,
-            UsePathLeaf => unreachable!("`UsePathLeaf` can't be a parent of another `UsePath`."),
-            other => unreachable!("`{other:?}` can't be a parent of `UsePath`."),
-        };
+fn get_parent_single_use_path<'db>(
+    db: &'db dyn SyntaxGroup,
+    use_path: &ast::UsePath<'db>,
+) -> Maybe<UsePathOrDollar<'db>> {
+    let node = use_path.as_syntax_node();
+    let parent = node.parent(db).expect("`UsePath` is not under an `ItemUse`.");
+    match parent.kind(db) {
+        SyntaxKind::UsePathSingle => {
+            Ok(UsePathOrDollar::UsePathSingle(ast::UsePathSingle::from_syntax_node(db, parent)))
+        }
+        SyntaxKind::ItemUse => {
+            let typed_use_node = ast::ItemUse::from_syntax_node(db, parent);
+            Ok(match typed_use_node.dollar(db) {
+                ast::OptionTerminalDollar::TerminalDollar(dollar) => {
+                    UsePathOrDollar::Dollar(dollar)
+                }
+                ast::OptionTerminalDollar::Empty(_) => UsePathOrDollar::None,
+            })
+        }
+        SyntaxKind::UsePathList | SyntaxKind::UsePathMulti => {
+            let mut current = parent;
+            while let Some(parent) = current.parent(db) {
+                match parent.kind(db) {
+                    SyntaxKind::UsePathSingle => {
+                        return Ok(UsePathOrDollar::UsePathSingle(
+                            ast::UsePathSingle::from_syntax_node(db, parent),
+                        ));
+                    }
+                    SyntaxKind::ItemUse => {
+                        let item_use = ast::ItemUse::from_syntax_node(db, parent);
+                        if let ast::OptionTerminalDollar::TerminalDollar(d) = item_use.dollar(db) {
+                            return Ok(UsePathOrDollar::Dollar(d));
+                        }
+                        return Ok(UsePathOrDollar::None);
+                    }
+                    SyntaxKind::UsePathList | SyntaxKind::UsePathMulti => {
+                        current = parent;
+                        continue;
+                    }
+                    _ => return Ok(UsePathOrDollar::None),
+                }
+            }
+            Ok(UsePathOrDollar::None)
+        }
+        _ => Ok(UsePathOrDollar::None),
     }
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::priv_use_semantic_data].
-pub fn priv_use_semantic_data_cycle(
-    db: &dyn SemanticGroup,
-    cycle: &salsa::Cycle,
-    use_id: &UseId,
-) -> Maybe<UseData> {
-    let module_file_id = use_id.module_file_id(db.upcast());
+pub fn priv_use_semantic_data_cycle<'db>(
+    db: &'db dyn SemanticGroup,
+    _input: SemanticGroupData,
+    use_id: UseId<'db>,
+) -> Maybe<Arc<UseData<'db>>> {
+    let module_file_id = use_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
-    let use_ast = db.module_use_by_id(*use_id)?.to_maybe()?;
-    let err = Err(diagnostics.report(
-        &use_ast,
-        if cycle.participant_keys().count() == 1 {
-            // `use bad_name`, finds itself but we don't want to report a cycle in that case.
-            PathNotFound(NotFoundItemType::Identifier)
-        } else {
-            UseCycle
-        },
-    ));
+    let use_ast = db.module_use_by_id(use_id)?.to_maybe()?;
+    let err = Err(diagnostics.report(use_ast.stable_ptr(db), UseCycle));
     let inference_id =
-        InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Use(*use_id)));
-    Ok(UseData {
+        InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Use(use_id)));
+    Ok(Arc::new(UseData {
         diagnostics: diagnostics.build(),
         resolved_item: err,
         resolver_data: Arc::new(ResolverData::new(module_file_id, inference_id)),
-    })
+    }))
 }
 
 /// Query implementation of [crate::db::SemanticGroup::use_semantic_diagnostics].
-pub fn use_semantic_diagnostics(
-    db: &dyn SemanticGroup,
-    use_id: UseId,
-) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_use_semantic_data(use_id).map(|data| data.diagnostics).unwrap_or_default()
+pub fn use_semantic_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    use_id: UseId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    db.priv_use_semantic_data(use_id).map(|data| data.diagnostics.clone()).unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::use_resolver_data].
-pub fn use_resolver_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Arc<ResolverData>> {
-    Ok(db.priv_use_semantic_data(use_id)?.resolver_data)
+pub fn use_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    use_id: UseId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    Ok(db.priv_use_semantic_data(use_id)?.resolver_data.clone())
 }
 
 /// Trivial cycle handler for [crate::db::SemanticGroup::use_resolver_data].
-pub fn use_resolver_data_cycle(
-    db: &dyn SemanticGroup,
-    _cycle: &salsa::Cycle,
-    use_id: &UseId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn use_resolver_data_cycle<'db>(
+    db: &'db dyn SemanticGroup,
+    _input: SemanticGroupData,
+    use_id: UseId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     // Forwarding (not as a query) cycle handling to `priv_use_semantic_data` cycle handler.
-    use_resolver_data(db, *use_id)
+    use_resolver_data(db, use_id)
 }
 
-pub trait SemanticUseEx<'a>: Upcast<dyn SemanticGroup + 'a> {
+pub trait SemanticUseEx<'a>: Upcast<'a, dyn SemanticGroup> {
     /// Returns the resolved item or an error if it can't be resolved.
     ///
     /// This is not a query as the cycle handling is done in priv_use_semantic_data.
-    fn use_resolved_item(&self, use_id: UseId) -> Maybe<ResolvedGenericItem> {
+    fn use_resolved_item(&'a self, use_id: UseId<'a>) -> Maybe<ResolvedGenericItem<'a>> {
         let db = self.upcast();
-        db.priv_use_semantic_data(use_id)?.resolved_item
+        db.priv_use_semantic_data(use_id)?.resolved_item.clone()
     }
 }
 
-impl<'a, T: Upcast<dyn SemanticGroup + 'a> + ?Sized> SemanticUseEx<'a> for T {}
+impl<'a, T: Upcast<'a, dyn SemanticGroup> + ?Sized> SemanticUseEx<'a> for T {}
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct UseGlobalData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    imported_module: Maybe<ModuleId>,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct UseGlobalData<'db> {
+    diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    imported_module: Maybe<ModuleId<'db>>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_global_use_semantic_data].
-pub fn priv_global_use_semantic_data(
-    db: &dyn SemanticGroup,
-    global_use_id: GlobalUseId,
-) -> Maybe<UseGlobalData> {
-    let module_file_id = global_use_id.module_file_id(db.upcast());
+pub fn priv_global_use_semantic_data<'db>(
+    db: &'db dyn SemanticGroup,
+    global_use_id: GlobalUseId<'db>,
+) -> Maybe<UseGlobalData<'db>> {
+    let module_file_id = global_use_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let inference_id = InferenceId::GlobalUseStar(global_use_id);
     let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?.to_maybe()?);
@@ -187,28 +286,28 @@ pub fn priv_global_use_semantic_data(
     let edition = resolver.settings.edition;
     if edition.ignore_visibility() {
         // We block support for global use where visibility is ignored.
-        diagnostics.report(&star_ast, GlobalUsesNotSupportedInEdition(edition));
+        diagnostics.report(star_ast.stable_ptr(db), GlobalUsesNotSupportedInEdition(edition));
     }
 
-    let item = star_ast.get_item(db.upcast());
-    let segments = get_use_path_segments(db.upcast(), star_ast.clone())?;
-    if segments.is_empty() {
-        let imported_module = Err(diagnostics.report(star_ast.stable_ptr(), UseStarEmptyPath));
+    let item = star_ast.get_item(db);
+    let segments = get_use_path_segments(db, star_ast.clone())?;
+    if segments.segments.is_empty() {
+        let imported_module = Err(diagnostics.report(star_ast.stable_ptr(db), UseStarEmptyPath));
         return Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module });
     }
     resolver.set_feature_config(&global_use_id, &item, &mut diagnostics);
     let resolved_item = resolver.resolve_generic_path(
         &mut diagnostics,
-        segments.clone(),
+        segments.segments.clone(),
         NotFoundItemType::Identifier,
-        None,
+        ResolutionContext::Default,
     )?;
     // unwrap always safe as the resolver already resolved the entire path.
-    let last_segment = segments.last().unwrap();
+    let last_segment = segments.segments.last().unwrap();
     let imported_module = match resolved_item {
         ResolvedGenericItem::Module(module_id) => Ok(module_id),
         _ => Err(diagnostics.report(
-            last_segment.stable_ptr(),
+            last_segment.stable_ptr(db),
             UnexpectedElement {
                 expected: vec![ElementKind::Module],
                 actual: (&resolved_item).into(),
@@ -219,59 +318,59 @@ pub fn priv_global_use_semantic_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_global_use_imported_module].
-pub fn priv_global_use_imported_module(
-    db: &dyn SemanticGroup,
-    global_use_id: GlobalUseId,
-) -> Maybe<ModuleId> {
+pub fn priv_global_use_imported_module<'db>(
+    db: &'db dyn SemanticGroup,
+    global_use_id: GlobalUseId<'db>,
+) -> Maybe<ModuleId<'db>> {
     db.priv_global_use_semantic_data(global_use_id)?.imported_module
 }
 
 /// Query implementation of [crate::db::SemanticGroup::global_use_semantic_diagnostics].
-pub fn global_use_semantic_diagnostics(
-    db: &dyn SemanticGroup,
-    global_use_id: GlobalUseId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn global_use_semantic_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    global_use_id: GlobalUseId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_global_use_semantic_data(global_use_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::priv_global_use_semantic_data].
-pub fn priv_global_use_semantic_data_cycle(
-    db: &dyn SemanticGroup,
-    cycle: &salsa::Cycle,
-    global_use_id: &GlobalUseId,
-) -> Maybe<UseGlobalData> {
+pub fn priv_global_use_semantic_data_cycle<'db>(
+    db: &'db dyn SemanticGroup,
+    _input: SemanticGroupData,
+    global_use_id: GlobalUseId<'db>,
+) -> Maybe<UseGlobalData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
-    let global_use_ast = db.module_global_use_by_id(*global_use_id)?.to_maybe()?;
-    let star_ast = ast::UsePath::Star(db.module_global_use_by_id(*global_use_id)?.to_maybe()?);
-    let segments = get_use_path_segments(db.upcast(), star_ast)?;
-    let err = if cycle.participant_keys().count() <= 3 && segments.len() == 1 {
+    let global_use_ast = db.module_global_use_by_id(global_use_id)?.to_maybe()?;
+    let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?.to_maybe()?);
+    let segments = get_use_path_segments(db, star_ast)?;
+    let err = if segments.segments.len() == 1 {
         // `use bad_name::*`, will attempt to find `bad_name` in the current module's global
         // uses, but which includes itself - but we don't want to report a cycle in this case.
         diagnostics.report(
-            segments.last().unwrap().stable_ptr(),
+            segments.segments.last().unwrap().stable_ptr(db),
             PathNotFound(NotFoundItemType::Identifier),
         )
     } else {
-        diagnostics.report(&global_use_ast, UseCycle)
+        diagnostics.report(global_use_ast.stable_ptr(db), UseCycle)
     };
     Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module: Err(err) })
 }
 
 /// The modules that are imported by a module, using global uses.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ImportedModules {
+#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+pub struct ImportedModules<'db> {
     /// The imported modules that have a path where each step is visible by the previous module.
-    pub accessible: OrderedHashSet<(ModuleId, ModuleId)>,
+    pub accessible: OrderedHashSet<(ModuleId<'db>, ModuleId<'db>)>,
     // TODO(Tomer-StarkWare): consider changing from all_modules to inaccessible_modules
     /// All the imported modules.
-    pub all: OrderedHashSet<ModuleId>,
+    pub all: OrderedHashSet<ModuleId<'db>>,
 }
 /// Returns the modules that are imported with `use *` in the current module.
 /// Query implementation of [crate::db::SemanticGroup::priv_module_use_star_modules].
-pub fn priv_module_use_star_modules(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-) -> Arc<ImportedModules> {
+pub fn priv_module_use_star_modules<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Arc<ImportedModules<'db>> {
     let mut visited = UnorderedHashSet::<_>::default();
     let mut stack = vec![(module_id, module_id)];
     let mut accessible_modules = OrderedHashSet::default();
@@ -288,7 +387,7 @@ pub fn priv_module_use_star_modules(
             let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use) else {
                 continue;
             };
-            if peek_visible_in(db.upcast(), *item_visibility, containing_module, user_module) {
+            if peek_visible_in(db, *item_visibility, containing_module, user_module) {
                 stack.push((containing_module, module_id_found));
                 accessible_modules.insert((containing_module, module_id_found));
             }
@@ -311,5 +410,8 @@ pub fn priv_module_use_star_modules(
             stack.push(module_id_found);
         }
     }
+    // Remove the current module from the list of all modules, as if items in the module not found
+    // previously, it was explicitly ignored.
+    all_modules.swap_remove(&module_id);
     Arc::new(ImportedModules { accessible: accessible_modules, all: all_modules })
 }

@@ -41,7 +41,6 @@ impl NoGenericArgsGenericLibfunc for Blake2sCompressLibFunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let u32_ty = context.get_concrete_type(Uint32Type::id(), &[])?;
         let state = box_ty(context, fixed_size_array_ty(context, u32_ty.clone(), 8)?)?;
-        let u32_ty = context.get_concrete_type(Uint32Type::id(), &[])?;
         let msg_ty = box_ty(context, fixed_size_array_ty(context, u32_ty.clone(), 16)?)?;
         Ok(LibfuncSignature::new_non_branch(
             vec![state.clone(), u32_ty, msg_ty],
@@ -66,7 +65,6 @@ impl NoGenericArgsGenericLibfunc for Blake2sFinalizeLibFunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let u32_ty = context.get_concrete_type(Uint32Type::id(), &[])?;
         let state = box_ty(context, fixed_size_array_ty(context, u32_ty.clone(), 8)?)?;
-        let u32_ty = context.get_concrete_type(Uint32Type::id(), &[])?;
         let msg_ty = box_ty(context, fixed_size_array_ty(context, u32_ty.clone(), 16)?)?;
         Ok(LibfuncSignature::new_non_branch(
             vec![state.clone(), u32_ty, msg_ty],

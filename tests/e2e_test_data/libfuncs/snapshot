@@ -23,14 +23,13 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 600})
-test::bar: OrderedHashMap({})
+test::foo: CostTokenMap({Const: 600})
+test::bar: CostTokenMap({})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc snapshot_take<Array<felt252>> = snapshot_take<Array<felt252>>;
 libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
@@ -90,15 +89,14 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1300})
-test::bar: OrderedHashMap({})
+test::foo: CostTokenMap({Const: 1300})
+test::bar: CostTokenMap({})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type test::A = Struct<ut@test::A, Array<felt252>, felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<test::A> = Snapshot<test::A> [storable: true, drop: true, dup: true, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc dup<Snapshot<test::A>> = dup<Snapshot<test::A>>;
@@ -181,14 +179,13 @@ call rel -14;
 ret;
 
 //! > function_costs
-test::bar0: OrderedHashMap({})
-test::bar1: OrderedHashMap({})
-test::foo: OrderedHashMap({Const: 810})
+test::bar0: CostTokenMap({})
+test::bar1: CostTokenMap({})
+test::foo: CostTokenMap({Const: 810})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type test::A = Enum<ut@test::A, Array<felt252>, felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<test::A> = Snapshot<test::A> [storable: true, drop: true, dup: true, zero_sized: false];

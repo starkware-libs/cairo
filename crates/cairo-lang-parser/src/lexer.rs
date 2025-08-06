@@ -11,7 +11,6 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::require;
-use smol_str::SmolStr;
 
 pub struct Lexer<'a> {
     db: &'a dyn SyntaxGroup,
@@ -67,15 +66,15 @@ impl<'a> Lexer<'a> {
         span.take(self.text)
     }
 
-    fn consume_span(&mut self) -> &str {
+    fn consume_span(&mut self) -> &'a str {
         let val = self.peek_span_text();
         self.previous_position = self.current_position;
         val
     }
 
     // Trivia matchers.
-    fn match_trivia(&mut self, leading: bool) -> Vec<TriviumGreen> {
-        let mut res: Vec<TriviumGreen> = Vec::new();
+    fn match_trivia(&mut self, leading: bool) -> Vec<TriviumGreen<'a>> {
+        let mut res: Vec<TriviumGreen<'a>> = Vec::new();
         while let Some(current) = self.peek() {
             let trivium = match current {
                 ' ' | '\r' | '\t' => self.match_trivium_whitespace(),
@@ -92,34 +91,31 @@ impl<'a> Lexer<'a> {
     }
 
     /// Assumes the next character is one of [' ', '\r', '\t'].
-    fn match_trivium_whitespace(&mut self) -> TriviumGreen {
+    fn match_trivium_whitespace(&mut self) -> TriviumGreen<'a> {
         self.take_while(|s| matches!(s, ' ' | '\r' | '\t'));
-        TokenWhitespace::new_green(self.db, SmolStr::from(self.consume_span())).into()
+        TokenWhitespace::new_green(self.db, self.consume_span()).into()
     }
 
     /// Assumes the next character '\n'.
-    fn match_trivium_newline(&mut self) -> TriviumGreen {
+    fn match_trivium_newline(&mut self) -> TriviumGreen<'a> {
         self.take();
-        TokenNewline::new_green(self.db, SmolStr::from(self.consume_span())).into()
+        TokenNewline::new_green(self.db, self.consume_span()).into()
     }
 
     /// Assumes the next 2 characters are "//".
-    fn match_trivium_single_line_comment(&mut self) -> TriviumGreen {
+    fn match_trivium_single_line_comment(&mut self) -> TriviumGreen<'a> {
         match self.peek_nth(2) {
             Some('/') => {
                 self.take_while(|c| c != '\n');
-                TokenSingleLineDocComment::new_green(self.db, SmolStr::from(self.consume_span()))
-                    .into()
+                TokenSingleLineDocComment::new_green(self.db, self.consume_span()).into()
             }
             Some('!') => {
                 self.take_while(|c| c != '\n');
-                TokenSingleLineInnerComment::new_green(self.db, SmolStr::from(self.consume_span()))
-                    .into()
+                TokenSingleLineInnerComment::new_green(self.db, self.consume_span()).into()
             }
             _ => {
                 self.take_while(|c| c != '\n');
-                TokenSingleLineComment::new_green(self.db, SmolStr::from(self.consume_span()))
-                    .into()
+                TokenSingleLineComment::new_green(self.db, self.consume_span()).into()
             }
         }
     }
@@ -213,6 +209,7 @@ impl<'a> Lexer<'a> {
             "let" => TokenKind::Let,
             "return" => TokenKind::Return,
             "match" => TokenKind::Match,
+            "macro" => TokenKind::Macro,
             "if" => TokenKind::If,
             "loop" => TokenKind::Loop,
             "continue" => TokenKind::Continue,
@@ -253,7 +250,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn match_terminal(&mut self) -> LexerTerminal {
+    fn match_terminal(&mut self) -> LexerTerminal<'a> {
         let leading_trivia = self.match_trivia(true);
 
         let kind = if let Some(current) = self.peek() {
@@ -282,6 +279,7 @@ impl<'a> Lexer<'a> {
                 '%' => self.pick_kind('=', TokenKind::ModEq, TokenKind::Mod),
                 '+' => self.pick_kind('=', TokenKind::PlusEq, TokenKind::Plus),
                 '#' => self.take_token_of_kind(TokenKind::Hash),
+                '$' => self.take_token_of_kind(TokenKind::Dollar),
                 '-' => {
                     self.take();
                     match self.peek() {
@@ -314,7 +312,7 @@ impl<'a> Lexer<'a> {
             TokenKind::EndOfFile
         };
 
-        let text = SmolStr::from(self.consume_span());
+        let text = self.consume_span();
         let trailing_trivia = self.match_trivia(false);
         let terminal_kind = token_kind_to_terminal_syntax_kind(kind);
 
@@ -325,23 +323,23 @@ impl<'a> Lexer<'a> {
 
 /// Output terminal emitted by the lexer.
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct LexerTerminal {
-    pub text: SmolStr,
+pub struct LexerTerminal<'a> {
+    pub text: &'a str,
     /// The kind of the inner token of this terminal.
     pub kind: SyntaxKind,
-    pub leading_trivia: Vec<TriviumGreen>,
-    pub trailing_trivia: Vec<TriviumGreen>,
+    pub leading_trivia: Vec<TriviumGreen<'a>>,
+    pub trailing_trivia: Vec<TriviumGreen<'a>>,
 }
-impl LexerTerminal {
+impl<'a> LexerTerminal<'a> {
     pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
         self.leading_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()
-            + TextWidth::from_str(&self.text)
+            + TextWidth::from_str(self.text)
             + self.trailing_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()
     }
 }
 
-impl Iterator for Lexer<'_> {
-    type Item = LexerTerminal;
+impl<'a> Iterator for Lexer<'a> {
+    type Item = LexerTerminal<'a>;
 
     /// Returns the next token. Once there are no more tokens left, returns token EOF.
     /// One should not call this after EOF was returned. If one does, None is returned.
@@ -381,6 +379,7 @@ enum TokenKind {
     Let,
     Return,
     Match,
+    Macro,
     If,
     While,
     For,
@@ -426,6 +425,7 @@ enum TokenKind {
     Colon,
     ColonColon,
     Comma,
+    Dollar,
     Dot,
     DotDot,
     DotDotEq,
@@ -481,6 +481,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Implicits => SyntaxKind::TerminalImplicits,
         TokenKind::NoPanic => SyntaxKind::TerminalNoPanic,
         TokenKind::Pub => SyntaxKind::TerminalPub,
+        TokenKind::Macro => SyntaxKind::TerminalMacro,
         TokenKind::And => SyntaxKind::TerminalAnd,
         TokenKind::AndAnd => SyntaxKind::TerminalAndAnd,
         TokenKind::At => SyntaxKind::TerminalAt,
@@ -508,6 +509,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Colon => SyntaxKind::TerminalColon,
         TokenKind::ColonColon => SyntaxKind::TerminalColonColon,
         TokenKind::Comma => SyntaxKind::TerminalComma,
+        TokenKind::Dollar => SyntaxKind::TerminalDollar,
         TokenKind::Dot => SyntaxKind::TerminalDot,
         TokenKind::DotDot => SyntaxKind::TerminalDotDot,
         TokenKind::DotDotEq => SyntaxKind::TerminalDotDotEq,

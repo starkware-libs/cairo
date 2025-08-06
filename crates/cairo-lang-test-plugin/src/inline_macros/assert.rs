@@ -4,9 +4,11 @@ use cairo_lang_defs::plugin::{
     PluginGeneratedFile,
 };
 use cairo_lang_defs::plugin_utils::{
-    escape_node, try_extract_unnamed_arg, unsupported_bracket_diagnostic,
+    PluginResultTrait, escape_node, not_legacy_macro_diagnostic, try_extract_unnamed_arg,
+    unsupported_bracket_diagnostic,
 };
 use cairo_lang_filesystem::cfg::Cfg;
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
@@ -29,21 +31,28 @@ trait CompareAssertionPlugin: NamedPlugin {
     /// The argument type for the comparison function.
     const ARG_TYPE: ArgType;
 
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
-        let WrappedArgList::ParenthesizedArgList(arguments_syntax) = syntax.arguments(db) else {
-            return unsupported_bracket_diagnostic(db, syntax);
+    ) -> InlinePluginResult<'db> {
+        let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
+            return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
+                syntax.as_syntax_node().stable_ptr(db),
+            ));
         };
-        let arguments = arguments_syntax.arguments(db).elements(db);
+        let WrappedArgList::ParenthesizedArgList(arguments_syntax) =
+            legacy_inline_macro.arguments(db)
+        else {
+            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax.stable_ptr(db));
+        };
+        let arguments = arguments_syntax.arguments(db).elements_vec(db);
         if arguments.len() < 2 {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    &arguments_syntax.lparen(db),
+                    arguments_syntax.lparen(db).stable_ptr(db),
                     format!("Macro `{}` requires at least 2 arguments.", Self::NAME),
                 )],
             };
@@ -53,8 +62,10 @@ trait CompareAssertionPlugin: NamedPlugin {
         let Some(lhs) = try_extract_unnamed_arg(db, lhs) else {
             return InlinePluginResult {
                 code: None,
-                diagnostics: vec![PluginDiagnostic::error(
-                    lhs,
+                diagnostics: vec![PluginDiagnostic::error_with_inner_span(
+                    db,
+                    syntax.stable_ptr(db),
+                    lhs.as_syntax_node(),
                     format!("Macro `{}` requires the first argument to be unnamed.", Self::NAME),
                 )],
             };
@@ -62,8 +73,10 @@ trait CompareAssertionPlugin: NamedPlugin {
         let Some(rhs) = try_extract_unnamed_arg(db, rhs) else {
             return InlinePluginResult {
                 code: None,
-                diagnostics: vec![PluginDiagnostic::error(
-                    rhs,
+                diagnostics: vec![PluginDiagnostic::error_with_inner_span(
+                    db,
+                    syntax.stable_ptr(db),
+                    rhs.as_syntax_node(),
                     format!("Macro `{}` requires the second argument to be unnamed.", Self::NAME),
                 )],
             };
@@ -177,17 +190,18 @@ trait CompareAssertionPlugin: NamedPlugin {
             && !metadata.cfg_set.contains(&Cfg::name("test"))
         {
             diagnostics.push(PluginDiagnostic::error(
-                syntax,
+                syntax.stable_ptr(db),
                 format!("`{}` macro is only available in test mode.", Self::NAME),
             ));
         }
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
-                name: format!("{}_macro", Self::NAME).into(),
+                name: format!("{}_macro", Self::NAME),
                 content,
                 code_mappings,
                 aux_data: None,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             }),
             diagnostics,
         }
@@ -210,12 +224,12 @@ macro_rules! define_compare_assert_macro {
         }
 
         impl InlineMacroExprPlugin for $ident {
-            fn generate_code(
+            fn generate_code<'db>(
                 &self,
-                db: &dyn SyntaxGroup,
-                syntax: &ast::ExprInlineMacro,
+                db: &'db dyn SyntaxGroup,
+                syntax: &ast::ExprInlineMacro<'db>,
                 metadata: &MacroPluginMetadata<'_>,
-            ) -> InlinePluginResult {
+            ) -> InlinePluginResult<'db> {
                 CompareAssertionPlugin::generate_code(self, db, syntax, metadata)
             }
         }

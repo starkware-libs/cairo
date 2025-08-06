@@ -2,11 +2,10 @@ use std::ops::Add;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_diagnostics::ToOption;
+use cairo_lang_diagnostics::{DiagnosticLocation, ToOption};
 use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
-use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 
@@ -25,9 +24,9 @@ mod test;
 /// - relative path to the function in the file module.
 pub fn maybe_containing_function_identifier(
     db: &dyn DefsGroup,
-    location: StableLocation,
+    location: StableLocation<'_>,
 ) -> Option<String> {
-    let file_id = location.file_id(db.upcast());
+    let file_id = location.file_id(db);
     let absolute_semantic_path_to_file_module = file_module_absolute_identifier(db, file_id)?;
 
     let relative_semantic_path = function_identifier_relative_to_file_module(db, location);
@@ -50,11 +49,11 @@ pub fn maybe_containing_function_identifier(
 /// it is replaced in the fully qualified function path by the file name.
 pub fn maybe_containing_function_identifier_for_tests(
     db: &dyn DefsGroup,
-    location: StableLocation,
+    location: StableLocation<'_>,
 ) -> Option<String> {
-    let file_id = location.file_id(db.upcast());
-    let absolute_semantic_path_to_file_module = file_module_absolute_identifier(db, file_id)
-        .unwrap_or_else(|| file_id.file_name(db.upcast()));
+    let file_id = location.file_id(db);
+    let absolute_semantic_path_to_file_module =
+        file_module_absolute_identifier(db, file_id).unwrap_or_else(|| file_id.file_name(db));
 
     let relative_semantic_path = function_identifier_relative_to_file_module(db, location);
     if relative_semantic_path.is_empty() {
@@ -72,25 +71,24 @@ pub fn maybe_containing_function_identifier_for_tests(
 /// The path is relative to the file module.
 pub fn function_identifier_relative_to_file_module(
     db: &dyn DefsGroup,
-    location: StableLocation,
+    location: StableLocation<'_>,
 ) -> String {
-    let syntax_db = db.upcast();
     let mut relative_semantic_path_segments: Vec<String> = vec![];
     let mut syntax_node = location.syntax_node(db);
     let mut statement_located_in_function = false;
     loop {
         // TODO(Gil): Extract this function into a trait of syntax kind to support future
         // function containing items (specifically trait functions).
-        match syntax_node.kind(syntax_db) {
+        match syntax_node.kind(db) {
             cairo_lang_syntax::node::kind::SyntaxKind::FunctionWithBody => {
                 let function_name =
                     cairo_lang_syntax::node::ast::FunctionWithBody::from_syntax_node(
-                        syntax_db,
-                        syntax_node.clone(),
+                        db,
+                        syntax_node,
                     )
-                    .declaration(syntax_db)
-                    .name(syntax_db)
-                    .text(syntax_db);
+                    .declaration(db)
+                    .name(db)
+                    .text(db);
 
                 if relative_semantic_path_segments.is_empty() {
                     statement_located_in_function = true;
@@ -99,26 +97,22 @@ pub fn function_identifier_relative_to_file_module(
                 relative_semantic_path_segments.push(function_name.to_string());
             }
             cairo_lang_syntax::node::kind::SyntaxKind::ItemImpl => {
-                let impl_name = cairo_lang_syntax::node::ast::ItemImpl::from_syntax_node(
-                    syntax_db,
-                    syntax_node.clone(),
-                )
-                .name(syntax_db)
-                .text(syntax_db);
+                let impl_name =
+                    cairo_lang_syntax::node::ast::ItemImpl::from_syntax_node(db, syntax_node)
+                        .name(db)
+                        .text(db);
                 relative_semantic_path_segments.push(impl_name.to_string());
             }
             cairo_lang_syntax::node::kind::SyntaxKind::ItemModule => {
-                let module_name = cairo_lang_syntax::node::ast::ItemModule::from_syntax_node(
-                    syntax_db,
-                    syntax_node.clone(),
-                )
-                .name(syntax_db)
-                .text(syntax_db);
+                let module_name =
+                    cairo_lang_syntax::node::ast::ItemModule::from_syntax_node(db, syntax_node)
+                        .name(db)
+                        .text(db);
                 relative_semantic_path_segments.push(module_name.to_string());
             }
             _ => {}
         }
-        if let Some(parent) = syntax_node.parent() {
+        if let Some(parent) = syntax_node.parent(db) {
             syntax_node = parent;
         } else {
             break;
@@ -127,14 +121,11 @@ pub fn function_identifier_relative_to_file_module(
 
     // If the statement is not located in a function, and it is located a generated file it is
     // probably located in a code block generated by an inline macro such as `array` or `panic`.
-    let file_id = location.file_id(db.upcast());
+    let file_id = location.file_id(db);
     if !statement_located_in_function
-        && matches!(
-            file_id.lookup_intern(db),
-            FileLongId::Virtual(VirtualFile { parent: Some(_), .. })
-        )
+        && matches!(file_id.long(db), FileLongId::Virtual(VirtualFile { parent: Some(_), .. }))
     {
-        relative_semantic_path_segments.insert(0, file_id.file_name(db.upcast()));
+        relative_semantic_path_segments.insert(0, file_id.file_name(db));
     }
 
     relative_semantic_path_segments.into_iter().rev().join("::")
@@ -143,17 +134,15 @@ pub fn function_identifier_relative_to_file_module(
 /// Returns a location in the user file corresponding to the given [StableLocation].
 /// It consists of a full path to the file, a text span in the file and a boolean indicating
 /// if the location is a part of a macro expansion.
-pub fn maybe_code_location(
-    db: &dyn DefsGroup,
-    location: StableLocation,
+pub fn maybe_code_location<'db>(
+    db: &'db dyn DefsGroup,
+    location: StableLocation<'db>,
 ) -> Option<(SourceFileFullPath, SourceCodeSpan, bool)> {
-    let is_macro = matches!(
-        location.file_id(db).lookup_intern(db),
-        FileLongId::Virtual(_) | FileLongId::External(_)
-    );
-    let location = location.diagnostic_location(db).user_location(db.upcast());
-    let file_full_path = location.file_id.full_path(db.upcast());
-    let position = location.span.position_in_file(db.upcast(), location.file_id)?;
+    let is_macro =
+        matches!(location.file_id(db).long(db), FileLongId::Virtual(_) | FileLongId::External(_));
+    let location = location.diagnostic_location(db).user_location(db);
+    let file_full_path = location.file_id.full_path(db);
+    let position = location.span.position_in_file(db, location.file_id)?;
     let source_location = SourceCodeSpan {
         start: SourceCodeLocation { col: position.start.col, line: position.start.line },
         end: SourceCodeLocation { col: position.end.col, line: position.end.line },
@@ -165,31 +154,32 @@ pub fn maybe_code_location(
 /// This function returns a fully qualified path to the file module.
 /// `None` should be returned only for compiler tests where files of type `VirtualFile` may be non
 /// generated files.
-pub fn file_module_absolute_identifier(db: &dyn DefsGroup, mut file_id: FileId) -> Option<String> {
+pub fn file_module_absolute_identifier<'db>(
+    db: &'db dyn DefsGroup,
+    mut file_id: FileId<'db>,
+) -> Option<String> {
     // `VirtualFile` is a generated file (e.g., by macros like `#[starknet::contract]`)
     // that won't have a matching file module in the db. Instead, we find its non generated parent
     // which is in the same module and have a matching file module in the db.
-    while let FileLongId::Virtual(VirtualFile { parent: Some(parent), .. }) =
-        file_id.lookup_intern(db)
-    {
-        file_id = parent;
+    while let FileLongId::Virtual(VirtualFile { parent: Some(parent), .. }) = file_id.long(db) {
+        file_id = *parent;
     }
 
     let file_modules = db.file_modules(file_id).to_option()?;
-    let full_path = file_modules.first().unwrap().full_path(db.upcast());
+    let full_path = file_modules.first().unwrap().full_path(db);
 
     Some(full_path)
 }
 
 /// The locations in the Cairo source code which caused a statement to be generated.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct StatementsLocations {
-    pub locations: UnorderedHashMap<StatementIdx, Vec<StableLocation>>,
+pub struct StatementsLocations<'db> {
+    pub locations: UnorderedHashMap<StatementIdx, Vec<StableLocation<'db>>>,
 }
 
-impl StatementsLocations {
+impl<'db> StatementsLocations<'db> {
     /// Creates a new [StatementsLocations] object from a list of [`Option<StableLocation>`].
-    pub fn from_locations_vec(locations_vec: &[Vec<StableLocation>]) -> Self {
+    pub fn from_locations_vec(locations_vec: &[Vec<StableLocation<'db>>]) -> Self {
         let mut locations = UnorderedHashMap::default();
         for (idx, stmt_locations) in locations_vec.iter().enumerate() {
             if !stmt_locations.is_empty() {
@@ -258,5 +248,19 @@ impl StatementsLocations {
                 })
                 .collect(),
         }
+    }
+
+    /// Returns the diagnostic location matching the user code corresponding to the sierra statement
+    /// index.
+    pub fn statement_diagnostic_location(
+        &self,
+        db: &'db dyn DefsGroup,
+        stmt_idx: StatementIdx,
+    ) -> Option<DiagnosticLocation<'db>> {
+        // Note that the `last` is used here as the call site is the most relevant location.
+        self.locations
+            .get(&stmt_idx)
+            .and_then(|stmt_locs| stmt_locs.last())
+            .map(|loc| loc.diagnostic_location(db).user_location(db))
     }
 }

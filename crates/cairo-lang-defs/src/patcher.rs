@@ -8,29 +8,29 @@ use itertools::Itertools;
 
 /// Interface for modifying syntax nodes.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum RewriteNode {
+pub enum RewriteNode<'db> {
     /// A rewrite node that represents a trimmed copy of a syntax node:
     /// one with the leading and trailing trivia excluded.
     Trimmed {
-        node: SyntaxNode,
+        node: SyntaxNode<'db>,
         trim_left: bool,
         trim_right: bool,
     },
-    Copied(SyntaxNode),
-    Modified(ModifiedNode),
+    Copied(SyntaxNode<'db>),
+    Modified(ModifiedNode<'db>),
     Mapped {
         origin: TextSpan,
-        node: Box<RewriteNode>,
+        node: Box<RewriteNode<'db>>,
     },
     Text(String),
     TextAndMapping(String, Vec<CodeMapping>),
 }
-impl RewriteNode {
-    pub fn new_trimmed(syntax_node: SyntaxNode) -> Self {
+impl<'db> RewriteNode<'db> {
+    pub fn new_trimmed(syntax_node: SyntaxNode<'db>) -> Self {
         Self::Trimmed { node: syntax_node, trim_left: true, trim_right: true }
     }
 
-    pub fn new_modified(children: Vec<RewriteNode>) -> Self {
+    pub fn new_modified(children: Vec<RewriteNode<'db>>) -> Self {
         Self::Modified(ModifiedNode { children: Some(children) })
     }
 
@@ -41,7 +41,7 @@ impl RewriteNode {
     pub fn mapped_text(
         text: impl Into<String>,
         db: &dyn SyntaxGroup,
-        origin: &impl TypedSyntaxNode,
+        origin: &impl TypedSyntaxNode<'db>,
     ) -> Self {
         RewriteNode::Text(text.into()).mapped(db, origin)
     }
@@ -51,30 +51,26 @@ impl RewriteNode {
     }
 
     /// Creates a rewrite node from an AST object.
-    pub fn from_ast(node: &impl TypedSyntaxNode) -> Self {
+    pub fn from_ast(node: &impl TypedSyntaxNode<'db>) -> Self {
         RewriteNode::Copied(node.as_syntax_node())
     }
 
     /// Creates a rewrite node from an AST object with trimming.
-    pub fn from_ast_trimmed(node: &impl TypedSyntaxNode) -> Self {
+    pub fn from_ast_trimmed(node: &impl TypedSyntaxNode<'db>) -> Self {
         Self::new_trimmed(node.as_syntax_node())
     }
 
     /// Prepares a node for modification.
-    pub fn modify(&mut self, db: &dyn SyntaxGroup) -> &mut ModifiedNode {
+    pub fn modify(&mut self, db: &'db dyn SyntaxGroup) -> &mut ModifiedNode<'db> {
         match self {
             RewriteNode::Copied(syntax_node) => {
                 *self = RewriteNode::new_modified(
-                    db.get_children(syntax_node.clone())
-                        .iter()
-                        .cloned()
-                        .map(RewriteNode::Copied)
-                        .collect(),
+                    syntax_node.get_children(db).iter().copied().map(RewriteNode::Copied).collect(),
                 );
                 extract_matches!(self, RewriteNode::Modified)
             }
             RewriteNode::Trimmed { node, trim_left, trim_right } => {
-                let children = db.get_children(node.clone());
+                let children = node.get_children(db);
                 let num_children = children.len();
                 let mut new_children = Vec::new();
 
@@ -97,28 +93,27 @@ impl RewriteNode {
 
                 // The number of children between the first and last nonempty nodes.
                 let num_middle = right_idx - left_idx + 1;
-                let children = db.get_children(node.clone());
                 let mut children_iter = children.iter().skip(left_idx);
                 match num_middle {
                     1 => {
                         new_children.push(RewriteNode::Trimmed {
-                            node: children_iter.next().unwrap().clone(),
+                            node: *children_iter.next().unwrap(),
                             trim_left: *trim_left,
                             trim_right: *trim_right,
                         });
                     }
                     _ => {
                         new_children.push(RewriteNode::Trimmed {
-                            node: children_iter.next().unwrap().clone(),
+                            node: *children_iter.next().unwrap(),
                             trim_left: *trim_left,
                             trim_right: false,
                         });
                         for _ in 0..(num_middle - 2) {
-                            let child = children_iter.next().unwrap().clone();
+                            let child = *children_iter.next().unwrap();
                             new_children.push(RewriteNode::Copied(child));
                         }
                         new_children.push(RewriteNode::Trimmed {
-                            node: children_iter.next().unwrap().clone(),
+                            node: *children_iter.next().unwrap(),
                             trim_left: false,
                             trim_right: *trim_right,
                         });
@@ -141,7 +136,11 @@ impl RewriteNode {
     }
 
     /// Prepares a node for modification and returns a specific child.
-    pub fn modify_child(&mut self, db: &dyn SyntaxGroup, index: usize) -> &mut RewriteNode {
+    pub fn modify_child(
+        &mut self,
+        db: &'db dyn SyntaxGroup,
+        index: usize,
+    ) -> &mut RewriteNode<'db> {
         if matches!(self, RewriteNode::Modified(ModifiedNode { children: None })) {
             // Modification of an empty node is idempotent.
             return self;
@@ -158,8 +157,8 @@ impl RewriteNode {
     /// A `$$` substring is replaced with `$`.
     pub fn interpolate_patched(
         code: &str,
-        patches: &UnorderedHashMap<String, RewriteNode>,
-    ) -> RewriteNode {
+        patches: &UnorderedHashMap<String, RewriteNode<'db>>,
+    ) -> RewriteNode<'db> {
         let mut chars = code.chars().peekable();
         let mut pending_text = String::new();
         let mut children = Vec::new();
@@ -195,7 +194,7 @@ impl RewriteNode {
             // Replace the substring with the relevant rewrite node.
             // TODO(yuval): this currently panics. Fix it.
             children.push(
-                patches.get(&name).cloned().unwrap_or_else(|| panic!("No patch named {}.", name)),
+                patches.get(&name).cloned().unwrap_or_else(|| panic!("No patch named {name}.")),
             );
         }
         // Flush the remaining text as a text child.
@@ -208,39 +207,39 @@ impl RewriteNode {
 
     /// Creates a new Rewrite node by inserting a `separator` between each two given children.
     pub fn interspersed(
-        children: impl IntoIterator<Item = RewriteNode>,
-        separator: RewriteNode,
-    ) -> RewriteNode {
+        children: impl IntoIterator<Item = RewriteNode<'db>>,
+        separator: RewriteNode<'db>,
+    ) -> RewriteNode<'db> {
         RewriteNode::new_modified(itertools::intersperse(children, separator).collect_vec())
     }
 
     /// Creates a new rewrite node wrapped in a mapping to the original code.
-    pub fn mapped(self, db: &dyn SyntaxGroup, origin: &impl TypedSyntaxNode) -> Self {
+    pub fn mapped(self, db: &dyn SyntaxGroup, origin: &impl TypedSyntaxNode<'db>) -> Self {
         RewriteNode::Mapped {
             origin: origin.as_syntax_node().span_without_trivia(db),
             node: Box::new(self),
         }
     }
 }
-impl Default for RewriteNode {
+impl<'db> Default for RewriteNode<'db> {
     fn default() -> Self {
         Self::empty()
     }
 }
-impl From<SyntaxNode> for RewriteNode {
-    fn from(node: SyntaxNode) -> Self {
+impl<'db> From<SyntaxNode<'db>> for RewriteNode<'db> {
+    fn from(node: SyntaxNode<'db>) -> Self {
         RewriteNode::Copied(node)
     }
 }
 
 /// A modified rewrite node.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ModifiedNode {
+pub struct ModifiedNode<'db> {
     /// Children of the node.
     /// Can be None, in which case this is an empty node (of width 0). It's not the same as
     /// Some(vec![]) - A child can be (idempotently) modified for None, whereas modifying a child
     /// for Some(vec![]) would panic.
-    pub children: Option<Vec<RewriteNode>>,
+    pub children: Option<Vec<RewriteNode<'db>>>,
 }
 
 pub struct PatchBuilder<'a> {
@@ -249,14 +248,14 @@ pub struct PatchBuilder<'a> {
     code_mappings: Vec<CodeMapping>,
     origin: CodeOrigin,
 }
-impl<'a> PatchBuilder<'a> {
+impl<'db> PatchBuilder<'db> {
     /// Creates a new patch builder, originating from `origin` typed node.
-    pub fn new(db: &'a dyn SyntaxGroup, origin: &impl TypedSyntaxNode) -> Self {
+    pub fn new(db: &'db dyn SyntaxGroup, origin: &impl TypedSyntaxNode<'db>) -> Self {
         Self::new_ex(db, &origin.as_syntax_node())
     }
 
     /// Creates a new patch builder, originating from `origin` node.
-    pub fn new_ex(db: &'a dyn SyntaxGroup, origin: &SyntaxNode) -> Self {
+    pub fn new_ex(db: &'db dyn SyntaxGroup, origin: &SyntaxNode<'db>) -> Self {
         Self {
             db,
             code: String::default(),
@@ -274,7 +273,7 @@ impl<'a> PatchBuilder<'a> {
     }
 
     /// Builds the patcher into a rewrite node enabling adding it to other patchers.
-    pub fn into_rewrite_node(self) -> RewriteNode {
+    pub fn into_rewrite_node(self) -> RewriteNode<'db> {
         let (code, mappings) = self.build();
         RewriteNode::TextAndMapping(code, mappings)
     }
@@ -287,7 +286,7 @@ impl<'a> PatchBuilder<'a> {
         self.code += s;
     }
 
-    pub fn add_modified(&mut self, node: RewriteNode) {
+    pub fn add_modified(&mut self, node: RewriteNode<'db>) {
         match node {
             RewriteNode::Copied(node) => self.add_node(node),
             RewriteNode::Mapped { origin, node } => self.add_mapped(*node, origin),
@@ -314,17 +313,17 @@ impl<'a> PatchBuilder<'a> {
         }
     }
 
-    pub fn add_node(&mut self, node: SyntaxNode) {
+    pub fn add_node(&mut self, node: SyntaxNode<'db>) {
         let start = TextOffset::from_str(&self.code);
         let orig_span = node.span(self.db);
         self.code_mappings.push(CodeMapping {
             span: TextSpan { start, end: start.add_width(orig_span.width()) },
             origin: CodeOrigin::Start(orig_span.start),
         });
-        self.code += &node.get_text(self.db);
+        self.code += node.get_text(self.db);
     }
 
-    fn add_mapped(&mut self, node: RewriteNode, origin: TextSpan) {
+    fn add_mapped(&mut self, node: RewriteNode<'db>, origin: TextSpan) {
         let start = TextOffset::from_str(&self.code);
         self.add_modified(node);
         let end = TextOffset::from_str(&self.code);
@@ -332,7 +331,7 @@ impl<'a> PatchBuilder<'a> {
             .push(CodeMapping { span: TextSpan { start, end }, origin: CodeOrigin::Span(origin) });
     }
 
-    fn add_trimmed_node(&mut self, node: SyntaxNode, trim_left: bool, trim_right: bool) {
+    fn add_trimmed_node(&mut self, node: SyntaxNode<'db>, trim_left: bool, trim_right: bool) {
         let TextSpan { start: trimmed_start, end: trimmed_end } = node.span_without_trivia(self.db);
         let orig_start = if trim_left { trimmed_start } else { node.span(self.db).start };
         let orig_end = if trim_right { trimmed_end } else { node.span(self.db).end };
@@ -341,10 +340,10 @@ impl<'a> PatchBuilder<'a> {
         let text = node.get_text_of_span(self.db, origin_span);
         let start = TextOffset::from_str(&self.code);
 
-        self.code += &text;
+        self.code += text;
 
         self.code_mappings.push(CodeMapping {
-            span: TextSpan { start, end: start.add_width(TextWidth::from_str(&text)) },
+            span: TextSpan { start, end: start.add_width(TextWidth::from_str(text)) },
             origin: CodeOrigin::Start(orig_start),
         });
     }

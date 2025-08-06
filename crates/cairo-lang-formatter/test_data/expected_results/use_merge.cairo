@@ -43,3 +43,7 @@ use a::{b, c};
 use b;
 use crate::{a, b, bl};
 use super::v;
+// Testing handling of `self`.
+mod zz;
+use a::b;
+use a::x::{self, d};

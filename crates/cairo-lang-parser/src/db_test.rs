@@ -7,31 +7,28 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, Token as SyntaxToken, TypedSyntaxNode};
-use cairo_lang_utils::Upcast;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use smol_str::SmolStr;
-use test_log::test;
 
 use crate::db::ParserGroup;
 use crate::printer::print_tree;
 use crate::test_utils::{MockToken, MockTokenStream, create_virtual_file};
 use crate::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics_from_file};
 
-fn build_empty_file_green_tree(db: &dyn SyntaxGroup, file_id: FileId) -> SyntaxFile {
-    let eof_token = TokenEndOfFile::new_green(db, SmolStr::from(""));
+fn build_empty_file_green_tree<'a>(db: &'a dyn SyntaxGroup, file_id: FileId<'a>) -> SyntaxFile<'a> {
+    let eof_token = TokenEndOfFile::new_green(db, "");
     let eof_terminal = TerminalEndOfFile::new_green(
         db,
-        Trivia::new_green(db, vec![]),
+        Trivia::new_green(db, &[]),
         eof_token,
-        Trivia::new_green(db, vec![]),
+        Trivia::new_green(db, &[]),
     );
     SyntaxFile::from_syntax_node(
         db,
         SyntaxNode::new_root(
             db,
             file_id,
-            SyntaxFile::new_green(db, ModuleItemList::new_green(db, vec![]), eof_terminal).0,
+            SyntaxFile::new_green(db, ModuleItemList::new_green(db, &[]), eof_terminal).0,
         ),
     )
 }
@@ -46,7 +43,7 @@ fn test_parser() {
     let diagnostics = db.file_syntax_diagnostics(file_id);
     assert_eq!(diagnostics.format(&db), "");
 
-    let expected_syntax_file = build_empty_file_green_tree(db.upcast(), file_id);
+    let expected_syntax_file = build_empty_file_green_tree(&db, file_id);
 
     assert_eq!(syntax_file, expected_syntax_file);
 }
@@ -70,19 +67,19 @@ fn test_token_stream_parser() {
 
     let (root_node, _) = get_syntax_root_and_diagnostics_from_file(db, filepath);
 
-    let token_stream = MockTokenStream::from_syntax_node(db, root_node.clone());
+    let token_stream = MockTokenStream::from_syntax_node(db, root_node);
     let (node_from_token_stream, _) = db.parse_token_stream(&token_stream);
 
-    let original_leaves: Vec<SyntaxNode> = root_node.tokens(db.upcast()).collect();
+    let original_leaves: Vec<SyntaxNode<'_>> = root_node.tokens(db).collect();
 
-    let token_stream_origin_leaves: Vec<SyntaxNode> =
-        node_from_token_stream.tokens(db.upcast()).collect();
+    let token_stream_origin_leaves: Vec<SyntaxNode<'_>> =
+        node_from_token_stream.tokens(db).collect();
 
     assert_eq!(original_leaves.len(), token_stream_origin_leaves.len());
     assert_eq!(
         print_tree(db, &root_node, false, true),
         print_tree(db, &node_from_token_stream, false, true)
-    )
+    );
 }
 
 #[test]
@@ -101,7 +98,7 @@ fn test_token_stream_expr_parser() {
 
     let (node_from_token_stream, _) = db.parse_token_stream_expr(&token_stream);
 
-    let node_text = node_from_token_stream.get_text(db.upcast());
+    let node_text = node_from_token_stream.get_text(&db);
 
     assert_eq!(node_text, expr_code);
 }

@@ -1,5 +1,4 @@
-use crate::integer;
-use crate::integer::{u512, u512_safe_div_rem_by_u256};
+use crate::integer::{self, u512, u512_safe_div_rem_by_u256};
 use crate::num::traits::{Bounded, Pow, Sqrt, WideMul, WideSquare, WrappingSub};
 use crate::test::test_utils::{assert_eq, assert_ge, assert_gt, assert_le, assert_lt, assert_ne};
 
@@ -1872,15 +1871,12 @@ fn test_signed_int_diff() {
     assert_eq(@integer::i128_diff(3, 5).unwrap_err(), @~(2 - 1), 'i128: 3 - 5 == -2');
 }
 
+#[feature("bounded-int-utils")]
 mod bounded_int {
-    use crate::RangeCheck;
-    use crate::internal::bounded_int;
     use crate::internal::bounded_int::{
-        AddHelper, BoundedInt, ConstrainHelper, DivRemHelper, MulHelper, SubHelper, UnitInt,
+        self, AddHelper, BoundedInt, ConstrainHelper, DivRemHelper, MulHelper, SubHelper, UnitInt,
+        downcast, upcast,
     };
-
-    extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
-    extern fn upcast<T, S>(index: T) -> S nopanic;
 
     const U128_UPPER: felt252 = 0x100000000000000000000000000000000;
     const U128_MAX: felt252 = U128_UPPER - 1;

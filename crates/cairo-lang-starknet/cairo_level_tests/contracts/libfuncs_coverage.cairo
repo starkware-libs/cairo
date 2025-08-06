@@ -1,4 +1,5 @@
 use core::dict::{Felt252Dict, Felt252DictEntryTrait};
+use core::num::traits::One;
 use starknet::storage::{StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess};
 
 #[starknet::contract]
@@ -49,6 +50,7 @@ enum Libfuncs {
     Starknet: StarknetLibfuncs,
     Consts: ConstsLibfuncs,
     Snapshot: SnapshotLibfuncs,
+    RangeIter: (u8, u8),
 }
 
 enum NumericLibfuncs<T> {
@@ -62,6 +64,8 @@ enum IntLibfuncs<T> {
     Div: (T, T),
     Mod: (T, T),
     Lt: (T, T),
+    Inc: T,
+    Dec: T,
     Numeric: NumericLibfuncs<T>,
 }
 
@@ -164,6 +168,7 @@ enum StarknetLibfuncs {
     ReplaceClass: starknet::ClassHash,
     SendMessageToL1: (felt252, Span<felt252>),
     GetClassHashAt: starknet::ContractAddress,
+    MetaTxV0: (starknet::ContractAddress, felt252, Span<felt252>, Span<felt252>),
 }
 
 enum ConstsLibfuncs {
@@ -230,6 +235,7 @@ fn all_libfuncs(libfuncs: Libfuncs) {
         Libfuncs::Starknet(libfuncs) => starknet_libfuncs(libfuncs),
         Libfuncs::Consts(libfuncs) => consts_libfuncs(libfuncs),
         Libfuncs::Snapshot(libfuncs) => snapshot_libfuncs(libfuncs),
+        Libfuncs::RangeIter((s, e)) => { for _ in s..e {} },
     }
 }
 use core::num::traits::Sqrt;
@@ -251,6 +257,7 @@ fn unsigned_int_libfuncs<
     +PartialEq<T>,
     +Copy<T>,
     +Drop<T>,
+    impl One: One<T>,
 >(
     libfuncs: UnsignedIntLibfuncs<T>,
 ) {
@@ -262,7 +269,16 @@ fn unsigned_int_libfuncs<
 }
 
 fn int_libfuncs<
-    T, +Div<T>, +Rem<T>, +PartialOrd<T>, +Add<T>, +Sub<T>, +Mul<T>, +PartialEq<T>, +Drop<T>,
+    T,
+    +Div<T>,
+    +Rem<T>,
+    +PartialOrd<T>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +PartialEq<T>,
+    +Drop<T>,
+    impl One: One<T>,
 >(
     libfuncs: IntLibfuncs<T>,
 ) {
@@ -270,6 +286,8 @@ fn int_libfuncs<
         IntLibfuncs::Div((a, b)) => use_and_panic(a / b),
         IntLibfuncs::Mod((a, b)) => use_and_panic(a % b),
         IntLibfuncs::Lt((a, b)) => use_and_panic(a < b),
+        IntLibfuncs::Inc(a) => use_and_panic(a + One::one()),
+        IntLibfuncs::Dec(a) => use_and_panic(a - One::one()),
         IntLibfuncs::Numeric(libfuncs) => numeric_libfuncs(libfuncs),
     }
 }
@@ -477,6 +495,11 @@ fn starknet_libfuncs(libfuncs: StarknetLibfuncs) {
         )) => use_and_panic(syscalls::send_message_to_l1_syscall(address, data)),
         StarknetLibfuncs::GetClassHashAt(address) => use_and_panic(
             syscalls::get_class_hash_at_syscall(address),
+        ),
+        StarknetLibfuncs::MetaTxV0((
+            address, entry_point_selector, calldata, signature,
+        )) => use_and_panic(
+            syscalls::meta_tx_v0_syscall(address, entry_point_selector, calldata, signature),
         ),
     }
 }

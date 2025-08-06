@@ -26,17 +26,20 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 IContractDispatcherTrait:
 
+#[doc(group: "dispatchers")]
 trait IContractDispatcherTrait<T> {
     fn get_something(self: T, arg: felt252, num: felt252) -> felt252;
 
     fn empty(self: T);
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
     fn get_something(self: IContractDispatcher, arg: felt252, num: felt252) -> felt252 {
         let mut __calldata__ = core::traits::Default::default();
@@ -69,11 +72,13 @@ impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
 
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibraryDispatcher> {
     fn get_something(self: IContractLibraryDispatcher, arg: felt252, num: felt252) -> felt252 {
         let mut __calldata__ = core::traits::Default::default();
@@ -106,6 +111,7 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibrary
 
 }
 
+#[doc(group: "dispatchers")]
 trait IContractSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn get_something(self: T, arg: felt252, num: felt252) -> starknet::SyscallResult<felt252>;
@@ -114,11 +120,13 @@ trait IContractSafeDispatcherTrait<T> {
     fn empty(self: T) -> starknet::SyscallResult<()>;
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeLibraryDispatcher> {
     fn get_something(self: IContractSafeLibraryDispatcher, arg: felt252, num: felt252) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = core::traits::Default::default();
@@ -154,11 +162,13 @@ impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContrac
 }
 
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDispatcher> {
     fn get_something(self: IContractSafeDispatcher, arg: felt252, num: felt252) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = core::traits::Default::default();
@@ -199,8 +209,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl IContractDispatcherCopy<> of core::traits::Copy::<IContractDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractDispatcherDrop<> of core::traits::Drop::<IContractDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
     fn serialize(self: @IContractDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -316,8 +329,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl IContractLibraryDispatcherCopy<> of core::traits::Copy::<IContractLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractLibraryDispatcherDrop<> of core::traits::Drop::<IContractLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryDispatcher> {
     fn serialize(self: @IContractLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -433,8 +449,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl IContractSafeLibraryDispatcherCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractSafeLibraryDispatcherDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafeLibraryDispatcher> {
     fn serialize(self: @IContractSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -550,8 +569,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl IContractSafeDispatcherCopy<> of core::traits::Copy::<IContractSafeDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractSafeDispatcherDrop<> of core::traits::Drop::<IContractSafeDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatcher> {
     fn serialize(self: @IContractSafeDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -667,7 +689,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractDispatcherSubPointersDrop<> of core::traits::Drop::<IContractDispatcherSubPointers>;
+#[doc(hidden)]
 impl IContractDispatcherSubPointersCopy<> of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
@@ -676,7 +700,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IContractDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractDispatcherSubPointersMut>;
 
 
@@ -685,7 +711,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
@@ -694,7 +722,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
 
 
@@ -703,7 +733,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
@@ -712,7 +744,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
 
 
@@ -721,7 +755,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
@@ -730,7 +766,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
 
 //! > expected_diagnostics
@@ -765,45 +803,55 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 IContractDispatcherTrait:
 
+#[doc(group: "dispatchers")]
 trait IContractDispatcherTrait<T> {
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
 
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibraryDispatcher> {
 
 }
 
+#[doc(group: "dispatchers")]
 trait IContractSafeDispatcherTrait<T> {
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeLibraryDispatcher> {
 
 }
 
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDispatcher> {
 
 }
@@ -814,8 +862,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl IContractDispatcherCopy<> of core::traits::Copy::<IContractDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractDispatcherDrop<> of core::traits::Drop::<IContractDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
     fn serialize(self: @IContractDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -931,8 +982,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl IContractLibraryDispatcherCopy<> of core::traits::Copy::<IContractLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractLibraryDispatcherDrop<> of core::traits::Drop::<IContractLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryDispatcher> {
     fn serialize(self: @IContractLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -1048,8 +1102,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl IContractSafeLibraryDispatcherCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractSafeLibraryDispatcherDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafeLibraryDispatcher> {
     fn serialize(self: @IContractSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -1165,8 +1222,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl IContractSafeDispatcherCopy<> of core::traits::Copy::<IContractSafeDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractSafeDispatcherDrop<> of core::traits::Drop::<IContractSafeDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatcher> {
     fn serialize(self: @IContractSafeDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -1282,7 +1342,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractDispatcherSubPointersDrop<> of core::traits::Drop::<IContractDispatcherSubPointers>;
+#[doc(hidden)]
 impl IContractDispatcherSubPointersCopy<> of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
@@ -1291,7 +1353,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IContractDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractDispatcherSubPointersMut>;
 
 
@@ -1300,7 +1364,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
@@ -1309,7 +1375,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
 
 
@@ -1318,7 +1386,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
@@ -1327,7 +1397,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
 
 
@@ -1336,7 +1408,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
@@ -1345,7 +1419,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
 
 //! > expected_diagnostics
@@ -1407,16 +1483,19 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 IContractDispatcherTrait:
 
+#[doc(group: "dispatchers")]
 trait IContractDispatcherTrait<T> {
 
     fn empty(self: T);
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
 
     fn empty(self: IContractDispatcher) {
@@ -1433,11 +1512,13 @@ impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
 
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibraryDispatcher> {
 
     fn empty(self: IContractLibraryDispatcher) {
@@ -1454,17 +1535,20 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibrary
 
 }
 
+#[doc(group: "dispatchers")]
 trait IContractSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
 
     fn empty(self: T) -> starknet::SyscallResult<()>;
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeLibraryDispatcher> {
 
     fn empty(self: IContractSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
@@ -1482,11 +1566,13 @@ impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContrac
 }
 
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDispatcher> {
 
     fn empty(self: IContractSafeDispatcher) -> starknet::SyscallResult<()> {
@@ -1509,8 +1595,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl IContractDispatcherCopy<> of core::traits::Copy::<IContractDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractDispatcherDrop<> of core::traits::Drop::<IContractDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
     fn serialize(self: @IContractDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -1626,8 +1715,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl IContractLibraryDispatcherCopy<> of core::traits::Copy::<IContractLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractLibraryDispatcherDrop<> of core::traits::Drop::<IContractLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryDispatcher> {
     fn serialize(self: @IContractLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -1743,8 +1835,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl IContractSafeLibraryDispatcherCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractSafeLibraryDispatcherDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafeLibraryDispatcher> {
     fn serialize(self: @IContractSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -1860,8 +1955,11 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
 impl IContractSafeDispatcherCopy<> of core::traits::Copy::<IContractSafeDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractSafeDispatcherDrop<> of core::traits::Drop::<IContractSafeDispatcher>;
+#[doc(group: "dispatchers")]
 impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatcher> {
     fn serialize(self: @IContractSafeDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -1977,7 +2075,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractDispatcherSubPointersDrop<> of core::traits::Drop::<IContractDispatcherSubPointers>;
+#[doc(hidden)]
 impl IContractDispatcherSubPointersCopy<> of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
@@ -1986,7 +2086,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IContractDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractDispatcherSubPointersMut>;
 
 
@@ -1995,7 +2097,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
@@ -2004,7 +2108,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
 
 
@@ -2013,7 +2119,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
@@ -2022,7 +2130,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
 
 
@@ -2031,7 +2141,9 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
@@ -2040,5 +2152,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;

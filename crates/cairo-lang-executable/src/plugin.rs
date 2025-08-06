@@ -9,7 +9,7 @@ use cairo_lang_semantic::{GenericArgumentId, Mutability, corelib};
 use cairo_lang_syntax::attribute::consts::IMPLICIT_PRECEDENCE_ATTR;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{OptionWrappedGenericParamListHelper, QueryAttrs};
-use cairo_lang_syntax::node::{TypedStablePtr, ast};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use indoc::formatdoc;
 use itertools::Itertools;
 
@@ -42,12 +42,12 @@ const IMPLICIT_PRECEDENCE: &[&str] = &[
 struct ExecutablePlugin;
 
 impl MacroPlugin for ExecutablePlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         let ast::ModuleItem::FreeFunction(item) = item_ast else {
             return PluginResult::default();
         };
@@ -60,7 +60,7 @@ impl MacroPlugin for ExecutablePlugin {
         let generics = declaration.generic_params(db);
         if !generics.is_empty(db) {
             diagnostics.push(PluginDiagnostic::error(
-                &generics,
+                generics.stable_ptr(db),
                 "Executable functions cannot have generic params.".to_string(),
             ));
         }
@@ -80,12 +80,12 @@ impl MacroPlugin for ExecutablePlugin {
                 ("function_name".into(), RewriteNode::from_ast(&name))
             ].into()
         ));
-        let params = declaration.signature(db).parameters(db).elements(db);
+        let params = declaration.signature(db).parameters(db).elements_vec(db);
         for (param_idx, param) in params.iter().enumerate() {
             for modifier in param.modifiers(db).elements(db) {
                 if let ast::Modifier::Ref(terminal_ref) = modifier {
                     diagnostics.push(PluginDiagnostic::error(
-                        &terminal_ref,
+                        terminal_ref.stable_ptr(db),
                         "Parameters of an `#[executable]` function can't be `ref`.".into(),
                     ));
                 }
@@ -131,6 +131,7 @@ impl MacroPlugin for ExecutablePlugin {
                 code_mappings,
                 aux_data: None,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             }),
             diagnostics,
             remove_original_item: false,
@@ -151,14 +152,17 @@ impl MacroPlugin for ExecutablePlugin {
 struct RawExecutableAnalyzer;
 
 impl AnalyzerPlugin for RawExecutableAnalyzer {
-    fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic> {
-        let syntax_db = db.upcast();
+    fn diagnostics<'db>(
+        &self,
+        db: &'db dyn SemanticGroup,
+        module_id: ModuleId<'db>,
+    ) -> Vec<PluginDiagnostic<'db>> {
         let mut diagnostics = vec![];
         let Ok(free_functions) = db.module_free_functions(module_id) else {
             return diagnostics;
         };
         for (id, item) in free_functions.iter() {
-            if !item.has_attr(syntax_db, EXECUTABLE_RAW_ATTR) {
+            if !item.has_attr(db, EXECUTABLE_RAW_ATTR) {
                 continue;
             }
             let Ok(signature) = db.free_function_signature(*id) else {
@@ -166,14 +170,14 @@ impl AnalyzerPlugin for RawExecutableAnalyzer {
             };
             if signature.return_type != corelib::unit_ty(db) {
                 diagnostics.push(PluginDiagnostic::error(
-                    &signature.stable_ptr.lookup(syntax_db).ret_ty(syntax_db),
+                    signature.stable_ptr.lookup(db).ret_ty(db).stable_ptr(db),
                     "Invalid return type for `#[executable_raw]` function, expected `()`."
                         .to_string(),
                 ));
             }
             let [input, output] = &signature.params[..] else {
                 diagnostics.push(PluginDiagnostic::error(
-                    &signature.stable_ptr.lookup(syntax_db).parameters(syntax_db),
+                    signature.stable_ptr.lookup(db).parameters(db).stable_ptr(db),
                     "Invalid number of params for `#[executable_raw]` function, expected 2."
                         .to_string(),
                 ));
@@ -182,7 +186,7 @@ impl AnalyzerPlugin for RawExecutableAnalyzer {
             if input.ty
                 != corelib::get_core_ty_by_name(
                     db,
-                    "Span".into(),
+                    "Span",
                     vec![GenericArgumentId::Type(db.core_info().felt252)],
                 )
             {

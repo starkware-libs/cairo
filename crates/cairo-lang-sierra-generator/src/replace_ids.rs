@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_sierra::program;
-use cairo_lang_utils::{LookupIntern, extract_matches};
+use cairo_lang_utils::extract_matches;
 
 use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId};
 use crate::pre_sierra::{self, PushValue};
@@ -93,7 +93,7 @@ impl SierraIdReplacer for DebugReplacer<'_> {
         &self,
         id: &cairo_lang_sierra::ids::ConcreteLibfuncId,
     ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-        let mut long_id = id.lookup_intern(self.db);
+        let mut long_id = self.db.lookup_concrete_lib_func(id.clone());
         self.replace_generic_args(&mut long_id.generic_args);
         cairo_lang_sierra::ids::ConcreteLibfuncId {
             id: id.id,
@@ -105,9 +105,9 @@ impl SierraIdReplacer for DebugReplacer<'_> {
         &self,
         id: &cairo_lang_sierra::ids::ConcreteTypeId,
     ) -> cairo_lang_sierra::ids::ConcreteTypeId {
-        match id.lookup_intern(self.db) {
+        match self.db.lookup_concrete_type(id.clone()) {
             SierraGeneratorTypeLongId::Phantom(ty)
-            | SierraGeneratorTypeLongId::CycleBreaker(ty) => ty.format(self.db.upcast()).into(),
+            | SierraGeneratorTypeLongId::CycleBreaker(ty) => ty.format(self.db).into(),
             SierraGeneratorTypeLongId::Regular(long_id) => {
                 let mut long_id = long_id.as_ref().clone();
                 self.replace_generic_args(&mut long_id.generic_args);
@@ -138,12 +138,10 @@ impl SierraIdReplacer for DebugReplacer<'_> {
         &self,
         sierra_id: &cairo_lang_sierra::ids::FunctionId,
     ) -> cairo_lang_sierra::ids::FunctionId {
-        let semantic_id = sierra_id.lookup_intern(self.db);
+        let lowering_id = self.db.lookup_sierra_function(sierra_id.clone());
         cairo_lang_sierra::ids::FunctionId {
             id: sierra_id.id,
-            debug_name: Some(
-                format!("{:?}", semantic_id.lookup_intern(self.db).debug(self.db.upcast())).into(),
-            ),
+            debug_name: Some(format!("{:?}", lowering_id.long(self.db).debug(self.db)).into()),
         }
     }
 }
@@ -158,10 +156,10 @@ impl DebugReplacer<'_> {
     }
 }
 
-pub fn replace_sierra_ids(
-    db: &dyn SierraGenGroup,
-    statement: &pre_sierra::StatementWithLocation,
-) -> pre_sierra::StatementWithLocation {
+pub fn replace_sierra_ids<'db>(
+    db: &'db dyn SierraGenGroup,
+    statement: &pre_sierra::StatementWithLocation<'db>,
+) -> pre_sierra::StatementWithLocation<'db> {
     let replacer = DebugReplacer { db };
     match &statement.statement {
         pre_sierra::Statement::Sierra(cairo_lang_sierra::program::GenStatement::Invocation(p)) => {

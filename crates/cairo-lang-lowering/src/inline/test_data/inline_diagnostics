@@ -27,94 +27,10 @@ error: Cannot inline a function that might call itself.
 |_^
 
 //! > before
-Parameters: v0: core::felt252, v1: core::felt252
-blk0 (root):
-Statements:
-End:
-  Match(match core::gas::withdraw_gas() {
-    Option::Some => blk1,
-    Option::None => blk2,
-  })
-
-blk1:
-Statements:
-  (v5: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo(v0, v1)
-End:
-  Match(match_enum(v5) {
-    PanicResult::Ok(v6) => blk4,
-    PanicResult::Err(v9) => blk5,
-  })
-
-blk2:
-Statements:
-  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v11: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v10)
-End:
-  Return(v11)
-
-blk3:
-Statements:
-  (v12: (core::felt252, core::felt252)) <- struct_construct(v3, v1)
-  (v13: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Ok(v12)
-End:
-  Return(v13)
-
-blk4:
-Statements:
-  (v7: core::felt252, v8: core::felt252) <- struct_destructure(v6)
-End:
-  Goto(blk3, {v7 -> v3, v8 -> v2})
-
-blk5:
-Statements:
-  (v14: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v9)
-End:
-  Return(v14)
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > after
-Parameters: v0: core::felt252, v1: core::felt252
-blk0 (root):
-Statements:
-End:
-  Match(match core::gas::withdraw_gas() {
-    Option::Some => blk1,
-    Option::None => blk2,
-  })
-
-blk1:
-Statements:
-  (v5: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo(v0, v1)
-End:
-  Match(match_enum(v5) {
-    PanicResult::Ok(v6) => blk4,
-    PanicResult::Err(v9) => blk5,
-  })
-
-blk2:
-Statements:
-  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v11: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v10)
-End:
-  Return(v11)
-
-blk3:
-Statements:
-  (v12: (core::felt252, core::felt252)) <- struct_construct(v3, v1)
-  (v13: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Ok(v12)
-End:
-  Return(v13)
-
-blk4:
-Statements:
-  (v7: core::felt252, v8: core::felt252) <- struct_destructure(v6)
-End:
-  Goto(blk3, {v7 -> v3, v8 -> v2})
-
-blk5:
-Statements:
-  (v14: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v9)
-End:
-  Return(v14)
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -156,35 +72,35 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
-  Goto(blk2, {})
+  Goto(blk1, {})
 
 blk1:
 Statements:
 End:
-  Return(v1)
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero(v2) => blk3,
+  })
 
 blk2:
 Statements:
 End:
-  Match(match core::felt252_is_zero(v0) {
-    IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero(v2) => blk4,
-  })
+  Goto(blk4, {})
 
 blk3:
 Statements:
 End:
-  Goto(blk5, {})
+  Goto(blk4, {})
 
 blk4:
 Statements:
+  (v3: core::felt252) <- 1
 End:
-  Goto(blk5, {})
+  Goto(blk5, {v3 -> v1})
 
 blk5:
 Statements:
-  (v3: core::felt252) <- 1
 End:
-  Goto(blk1, {v3 -> v1})
+  Return(v1)
 
 //! > lowering_diagnostics

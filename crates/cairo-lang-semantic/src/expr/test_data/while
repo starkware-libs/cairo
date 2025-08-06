@@ -45,27 +45,59 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Expected type "core::bool", found: "core::option::Option::<?0>".
- --> lib.cairo:2:25
+error: Unsupported feature.
+ --> lib.cairo:2:11
     while let Some(x) = Some(5) && 4 == 7 {
-                        ^^^^^^^
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Logical operator not allowed in while-let.
- --> lib.cairo:2:25
-    while let Some(x) = Some(5) && 4 == 7 {
-                        ^^^^^^^^^^^^^^^^^
+//! > ==========================================================================
 
-error: Wrong enum in pattern. Expected: "core::bool". Got: "core::option::Option".
+//! > While let Some no args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    while let Some = Some(5) {
+        1;
+        break;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+warning: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
  --> lib.cairo:2:15
-    while let Some(x) = Some(5) && 4 == 7 {
-              ^^^^^^^
+    while let Some = Some(5) {
+              ^^^^
 
-error[E0006]: Identifier not found.
- --> lib.cairo:4:15
-        break x;
-              ^
+//! > ==========================================================================
 
-error: Can only break with a value inside a `loop`.
- --> lib.cairo:4:9
-        break x;
-        ^^^^^^^^
+//! > While let Some no args with unit.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let a = A::B(());
+    while let A::B = a {
+        1;
+        break;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+    B: (),
+}
+
+//! > expected_diagnostics

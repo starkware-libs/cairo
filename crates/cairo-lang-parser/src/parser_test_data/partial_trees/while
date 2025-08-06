@@ -20,8 +20,9 @@ ExprWhile
 //! > expected_tree
 └── Top level kind: ExprWhile
     ├── while_kw (kind: TokenWhile): 'while'
-    ├── condition (kind: ConditionExpr)
-    │   └── expr (kind: TokenTrue): 'true'
+    ├── conditions (kind: ConditionListAnd)
+    │   └── item #0 (kind: ConditionExpr)
+    │       └── expr (kind: TokenTrue): 'true'
     └── body (kind: ExprBlock)
         ├── lbrace (kind: TokenLBrace): '{'
         ├── statements (kind: StatementList)
@@ -33,7 +34,7 @@ ExprWhile
 
 //! > ==========================================================================
 
-//! > Test while-let 
+//! > Test while-let
 
 //! > test_runner_name
 test_partial_parser_tree(expect_diagnostics: false)
@@ -56,19 +57,74 @@ ExprBlock
 //! > expected_tree
 └── Top level kind: ExprWhile
     ├── while_kw (kind: TokenWhile): 'while'
-    ├── condition (kind: ConditionLet)
-    │   ├── let_kw (kind: TokenLet): 'let'
-    │   ├── patterns (kind: PatternListOr)
-    │   │   └── item #0 (kind: PatternEnum)
-    │   │       ├── path (kind: ExprPath)
-    │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │       └── ident (kind: TokenIdentifier): 'Some'
-    │   │       └── pattern (kind: PatternEnumInnerPattern)
-    │   │           ├── lparen (kind: TokenLParen): '('
-    │   │           ├── pattern (kind: ExprPath)
-    │   │           │   └── item #0 (kind: PathSegmentSimple)
-    │   │           │       └── ident (kind: TokenIdentifier): 'x'
-    │   │           └── rparen (kind: TokenRParen): ')'
-    │   ├── eq (kind: TokenEq): '='
-    │   └── expr (kind: TokenLiteralNumber): '2'
+    ├── conditions (kind: ConditionListAnd)
+    │   └── item #0 (kind: ConditionLet)
+    │       ├── let_kw (kind: TokenLet): 'let'
+    │       ├── patterns (kind: PatternListOr)
+    │       │   └── item #0 (kind: PatternEnum)
+    │       │       ├── path (kind: ExprPath)
+    │       │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       │   └── segments (kind: ExprPathInner)
+    │       │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │       │           └── ident (kind: TokenIdentifier): 'Some'
+    │       │       └── pattern (kind: PatternEnumInnerPattern)
+    │       │           ├── lparen (kind: TokenLParen): '('
+    │       │           ├── pattern (kind: ExprPath)
+    │       │           │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │           │   └── segments (kind: ExprPathInner)
+    │       │           │       └── item #0 (kind: PathSegmentSimple)
+    │       │           │           └── ident (kind: TokenIdentifier): 'x'
+    │       │           └── rparen (kind: TokenRParen): ')'
+    │       ├── eq (kind: TokenEq): '='
+    │       └── expr (kind: TokenLiteralNumber): '2'
+    └── body (kind: ExprBlock) <ignored>
+
+//! > ==========================================================================
+
+//! > Test while-let with multiple conditions
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    while let Some(x) = 2 && false {
+        break 5;
+    }
+}
+
+//! > top_level_kind
+ExprWhile
+
+//! > ignored_kinds
+ExprBlock
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprWhile
+    ├── while_kw (kind: TokenWhile): 'while'
+    ├── conditions (kind: ConditionListAnd)
+    │   ├── item #0 (kind: ConditionLet)
+    │   │   ├── let_kw (kind: TokenLet): 'let'
+    │   │   ├── patterns (kind: PatternListOr)
+    │   │   │   └── item #0 (kind: PatternEnum)
+    │   │   │       ├── path (kind: ExprPath)
+    │   │   │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │       │   └── segments (kind: ExprPathInner)
+    │   │   │       │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │           └── ident (kind: TokenIdentifier): 'Some'
+    │   │   │       └── pattern (kind: PatternEnumInnerPattern)
+    │   │   │           ├── lparen (kind: TokenLParen): '('
+    │   │   │           ├── pattern (kind: ExprPath)
+    │   │   │           │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │           │   └── segments (kind: ExprPathInner)
+    │   │   │           │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │           │           └── ident (kind: TokenIdentifier): 'x'
+    │   │   │           └── rparen (kind: TokenRParen): ')'
+    │   │   ├── eq (kind: TokenEq): '='
+    │   │   └── expr (kind: TokenLiteralNumber): '2'
+    │   ├── separator #0 (kind: TokenAndAnd): '&&'
+    │   └── item #1 (kind: ConditionExpr)
+    │       └── expr (kind: TokenFalse): 'false'
     └── body (kind: ExprBlock) <ignored>

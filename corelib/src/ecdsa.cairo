@@ -13,14 +13,14 @@
 //! * x = 0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca
 //! * y = 0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f
 
-use crate::ec::{EcPoint, EcPointTrait, EcStateTrait};
+use crate::ec::{self, EcPoint, EcPointTrait, EcStateTrait};
+use crate::math;
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
 #[allow(unused_imports)]
 use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use crate::zeroable::IsZeroResult;
-use crate::{ec, math};
 
 /// Verifies an ECDSA signature against a message hash and public key.
 ///
@@ -112,10 +112,9 @@ pub fn check_ecdsa_signature(
     // Calculate the point `r * Q`.
     let mut rQ_state = init_ec;
     rQ_state.add_mul(signature_r, public_key_point);
-    let rQ = match rQ_state.finalize_nz() {
-        Some(pt) => pt,
+    let Some(rQ) = rQ_state.finalize_nz() else {
         // The zero case is not actually possible, as `signature_r` isn't 0.
-        None => { return false; },
+        return false;
     };
 
     // Check the `(zG + rQ).x = sR.x` case.

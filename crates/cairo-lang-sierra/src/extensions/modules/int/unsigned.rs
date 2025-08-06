@@ -83,9 +83,8 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
             (IntOperator::OverflowingSub, true) => {
                 OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
             }
-            (IntOperator::OverflowingAdd, false)
-            | (IntOperator::OverflowingAdd, true)
-            | (IntOperator::OverflowingSub, false) => OutputVarReferenceInfo::NewTempVar { idx: 0 },
+            (IntOperator::OverflowingAdd | IntOperator::OverflowingSub, false)
+            | (IntOperator::OverflowingAdd, true) => OutputVarReferenceInfo::NewTempVar { idx: 0 },
         };
 
         let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
@@ -126,7 +125,7 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(IntOperationConcreteLibfunc {
             operator: self.operator,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }
