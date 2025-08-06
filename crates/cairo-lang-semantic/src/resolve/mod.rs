@@ -2053,7 +2053,7 @@ impl<'db> Resolver<'db> {
         self.ignore_visibility_checks_ex(module_id, MacroContextModifier::None)
     }
 
-    /// Same as [`self.ignore_visibility_checks`], but takes into account the current macro context
+    /// Same as [Self::ignore_visibility_checks], but takes into account the current macro context
     /// modifier.
     pub fn ignore_visibility_checks_ex(
         &self,
@@ -2146,8 +2146,7 @@ impl<'db> Resolver<'db> {
         )
     }
 
-    /// Same as [`self.is_item_visible`], but takes into account the current macro context
-    /// modifier.
+    /// Same as [Self::is_item_visible], but takes into account the current macro context modifier.
     pub fn is_item_visible_ex(
         &self,
         containing_module_id: ModuleId<'db>,

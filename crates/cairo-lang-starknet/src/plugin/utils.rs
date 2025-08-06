@@ -183,7 +183,7 @@ pub fn has_v0_attribute_ex<'db>(
     true
 }
 
-/// Assuming the attribute is `name`, validates it's #[`name`(v0)].
+/// Assuming the attribute is `name`, validates it's in the form "#[name(v0)]".
 pub fn validate_v0<'db>(
     db: &'db dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
