@@ -30,6 +30,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::EnumMatch(node) => lower_enum_match(ctx, id, node, builder),
         FlowControlNode::BindVar(node) => lower_bind_var(ctx, id, node, builder),
         FlowControlNode::Deconstruct(node) => lower_deconstruct(ctx, id, node, builder),
+        FlowControlNode::EqualsLiteral(..) => todo!(),
     }
 }
 
