@@ -20,7 +20,7 @@ use crate::lower::flow_control::graph::{
 /// If `x=B`, then the filtered list is `[0, 1]` (both patterns are accepted).
 /// For the latter, it is important to return both `0` and `1`, because the arm that will be chosen
 /// depends on the value of `y` (which will be handled by the calling pattern matching function).
-#[derive(Clone, Hash, Eq, PartialEq)]
+#[derive(Clone, Default, Hash, Eq, PartialEq)]
 pub struct FilteredPatterns {
     /// The indices of the patterns that are accepted by the filter, together with binding
     /// information.
@@ -28,10 +28,6 @@ pub struct FilteredPatterns {
 }
 
 impl FilteredPatterns {
-    pub fn empty() -> Self {
-        Self { filter: vec![] }
-    }
-
     /// Adds a new pattern to the filter.
     pub fn add(&mut self, idx: usize) {
         self.filter.push(IndexAndBindings { index: idx, bindings: Bindings::default() });
