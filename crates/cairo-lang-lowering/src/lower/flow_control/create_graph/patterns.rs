@@ -2,10 +2,12 @@ use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::{
     self as semantic, ConcreteEnumId, ConcreteTypeId, PatternEnumVariant, PatternTuple, TypeId,
-    TypeLongId,
+    TypeLongId, corelib,
 };
 use cairo_lang_utils::iterators::zip_eq3;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
+use num_traits::ToPrimitive;
 
 use super::super::graph::{
     Deconstruct, EnumMatch, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
@@ -14,6 +16,7 @@ use super::cache::Cache;
 use super::filtered_patterns::{Bindings, FilteredPatterns};
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
+use crate::lower::flow_control::graph::EqualsLiteral;
 
 /// A callback that gets a [FilteredPatterns] and constructs a node that continues the pattern
 /// matching restricted to the filtered patterns.
@@ -100,7 +103,8 @@ pub fn create_node_for_patterns<'db>(
         return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
     }
 
-    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, graph.var_ty(input_var));
+    let var_ty = graph.var_ty(input_var);
+
     let params = CreateNodeParams {
         ctx,
         graph,
@@ -108,6 +112,13 @@ pub fn create_node_for_patterns<'db>(
         build_node_callback: &mut build_node_callback,
         location,
     };
+
+    // Check if this is a numeric type that should use value matching.
+    if corelib::numeric_upcastable_to_felt252(ctx.db, var_ty) {
+        return create_node_for_value(params, input_var);
+    }
+
+    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, var_ty);
     match long_ty {
         TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) => {
             create_node_for_enum(params, input_var, concrete_enum_id, n_snapshots)
@@ -288,6 +299,64 @@ fn create_node_for_tuple_inner<'db>(
         },
         inner_vars[item_idx],
     )
+}
+
+/// Creates a node for matching over numeric values, using [EqualsLiteral] nodes.
+fn create_node_for_value<'db>(
+    params: CreateNodeParams<'db, '_, '_>,
+    input_var: FlowControlVar,
+) -> NodeId {
+    let CreateNodeParams { ctx: _, graph, patterns, build_node_callback, location: _ } = params;
+
+    // A map from literals to their corresponding filter.
+    let mut literals_map = OrderedHashMap::<usize, FilteredPatterns>::default();
+
+    // The filter of patterns that correspond to the otherwise patterns.
+    let mut otherwise_filter = FilteredPatterns::default();
+
+    // Go over the patterns, and update the maps.
+    for (pattern_index, pattern) in patterns.iter().enumerate() {
+        match pattern {
+            Some(semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. })) => {
+                // Extract the literal value as `usize`.
+                let Some(literal) = literal.value.to_usize() else {
+                    todo!();
+                };
+
+                literals_map.entry(literal).or_insert(otherwise_filter.clone()).add(pattern_index);
+            }
+            Some(semantic::Pattern::Otherwise(_)) | None => {
+                otherwise_filter.add(pattern_index);
+                for (_, filter) in literals_map.iter_mut() {
+                    filter.add(pattern_index);
+                }
+            }
+            _ => todo!(),
+        }
+    }
+
+    // First, construct a node that handles the otherwise patterns.
+    let mut current_node = build_node_callback(graph, otherwise_filter.clone());
+
+    // Go over the literals (in reverse order), and construct a chain of [BooleanIf] nodes that
+    // handle each literal.
+    for (literal, filter) in literals_map.into_iter().rev() {
+        let node_if_literal = build_node_callback(graph, filter);
+
+        // Don't add an [EqualsLiteral] node if both branches lead to the same node.
+        if node_if_literal == current_node {
+            continue;
+        }
+
+        current_node = graph.add_node(FlowControlNode::EqualsLiteral(EqualsLiteral {
+            input: input_var,
+            literal,
+            true_branch: node_if_literal,
+            false_branch: current_node,
+        }));
+    }
+
+    current_node
 }
 
 /// Returns `true` if the pattern accepts any value (`_` or a variable name).
