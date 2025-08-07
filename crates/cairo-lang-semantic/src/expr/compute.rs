@@ -4373,7 +4373,7 @@ pub fn compute_and_append_statement_semantic<'db>(
                             rhs_resolved_expr.ty(db)?,
                         ),
                     });
-                    add_item_to_statement_environment(
+                    add_value_to_statement_environment(
                         ctx,
                         name,
                         var_def,
@@ -4401,18 +4401,13 @@ pub fn compute_and_append_statement_semantic<'db>(
                                         db.constant_const_type(const_id)?,
                                     ),
                                 });
-                                add_item_to_statement_environment(ctx, name, var_def, stable_ptr);
+                                add_value_to_statement_environment(ctx, name, var_def, stable_ptr);
                             }
-                            ResolvedGenericItem::GenericType(generic_type_id) => {
-                                add_type_to_statement_environment(
-                                    ctx,
-                                    name,
-                                    ResolvedGenericItem::GenericType(generic_type_id),
-                                    stable_ptr,
-                                );
+                            item @ (ResolvedGenericItem::GenericType(_)
+                            | ResolvedGenericItem::Module(_)) => {
+                                add_item_to_statement_environment(ctx, name, item, stable_ptr);
                             }
-                            ResolvedGenericItem::Module(_)
-                            | ResolvedGenericItem::GenericFunction(_)
+                            ResolvedGenericItem::GenericFunction(_)
                             | ResolvedGenericItem::GenericTypeAlias(_)
                             | ResolvedGenericItem::GenericImplAlias(_)
                             | ResolvedGenericItem::Variant(_)
@@ -4461,7 +4456,7 @@ pub fn compute_and_append_statement_semantic<'db>(
 }
 /// Adds an item to the statement environment and reports a diagnostic if the item is already
 /// defined.
-fn add_item_to_statement_environment<'db>(
+fn add_value_to_statement_environment<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     name: &'db str,
     var_def: Binding<'db>,
@@ -4481,9 +4476,9 @@ fn add_item_to_statement_environment<'db>(
     ctx.semantic_defs.insert(var_def.id(), var_def);
 }
 
-/// Adds a type to the statement environment and reports a diagnostic if the type is already
+/// Adds an item to the statement environment and reports a diagnostic if the type is already
 /// defined.
-fn add_type_to_statement_environment<'db>(
+fn add_item_to_statement_environment<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     name: &'db str,
     resolved_generic_item: ResolvedGenericItem<'db>,
