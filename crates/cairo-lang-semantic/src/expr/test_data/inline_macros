@@ -1673,3 +1673,103 @@ error: 'super' cannot be used for the crate's root module.
  --> lib.cairo[super_path]:1:9
         super::some::path();
         ^^^^^
+
+//! > ==========================================================================
+
+//! > Test usage of module in statement macro scope.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: warnings_only)
+
+//! > function
+fn foo() -> u8 {
+    use_module_path!()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro use_module_path {
+    () => {
+        use $defsite::a::b;
+        // TODO(orizi): Prevent warning pointing at `b` here.
+        b::C
+    };
+}
+
+mod a {
+    mod b {
+        const C: u8 = 1;
+    }
+}
+
+//! > expected_diagnostics
+warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
+ --> lib.cairo[use_module_path]:3:9
+        b::C
+        ^
+
+//! > ==========================================================================
+
+//! > Test usage of self in macro scope.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: warnings_only)
+
+//! > function
+fn foo() -> u8 {
+    use_self_path!()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro use_self_path {
+    () => {
+        use $defsite::a::b::{self, C1};
+        // TODO(orizi): Prevent warning pointing at `b` here.
+        C1 + b::C2
+    };
+}
+
+mod a {
+    mod b {
+        const C1: u8 = 1;
+        const C2: u8 = 2;
+    }
+}
+
+//! > expected_diagnostics
+warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
+ --> lib.cairo[use_self_path]:3:14
+        C1 + b::C2
+             ^
+
+//! > ==========================================================================
+
+//! > Test usage of used consts in macro scope.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> u8 {
+    use_self_path!()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro use_self_path {
+    () => {
+        use $defsite::C;
+        C
+    };
+}
+
+const C: u8 = 1;
+
+//! > expected_diagnostics
