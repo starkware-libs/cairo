@@ -130,7 +130,7 @@ fn create_node_for_enum<'db>(
 
     // Maps variant index to the list of the indices of the patterns that match it.
     let mut variant_to_pattern_indices: Vec<FilteredPatterns> =
-        (0..concrete_variants.len()).map(|_| FilteredPatterns::empty()).collect_vec();
+        (0..concrete_variants.len()).map(|_| FilteredPatterns::default()).collect_vec();
 
     // Maps variant index to the list of the inner patterns.
     // For example, a pattern `A(B(x))` will add the (inner) pattern `B(x)` to the vector at the
