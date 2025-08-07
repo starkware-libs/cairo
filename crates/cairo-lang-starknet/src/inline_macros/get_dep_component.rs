@@ -45,8 +45,8 @@ impl InlineMacroExprPlugin for GetDepComponentMutMacro {
     }
 }
 
-/// A helper function for the code generation of both `GetDepComponentMacro` and
-/// `GetDepComponentMutMacro`. `is_mut` selects between the two.
+/// A helper function for the code generation of both [GetDepComponentMacro] and
+/// [GetDepComponentMutMacro]. `is_mut` selects between the two.
 fn get_dep_component_generate_code_helper<'db>(
     db: &'db dyn SyntaxGroup,
     syntax: &ast::ExprInlineMacro<'db>,
