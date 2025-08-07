@@ -180,6 +180,17 @@ fn create_node_for_enum<'db>(
             })
             .collect_vec();
 
+    // Optimization: If all the variants lead to the same node, and the inner variables are not
+    // used, there is no need to do the match.
+    if let Some(first_variant) = variants.first() {
+        let first_variant_node = first_variant.1;
+        if variants.iter().all(|(_, node_id, inner_var)| {
+            *node_id == first_variant_node && !graph.is_var_used(*inner_var)
+        }) {
+            return first_variant_node;
+        }
+    }
+
     // Create a node for the match.
     graph.add_node(FlowControlNode::EnumMatch(EnumMatch {
         matched_var: input_var,

@@ -22,6 +22,7 @@
 use std::fmt::Debug;
 
 use cairo_lang_semantic::{self as semantic, ConcreteVariant, PatternVariable};
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::Itertools;
 
 use crate::ids::LocationId;
@@ -118,7 +119,6 @@ pub struct ArmExpr {
 #[derive(Debug)]
 pub struct Deconstruct {
     /// The input value to destructure (a variable of type struct or tuple).
-    #[expect(dead_code)]
     pub input: FlowControlVar,
     /// The (output) variables to assign the result to. The number of variables is equal to the
     /// number of fields in the struct or tuple.
@@ -157,6 +157,21 @@ pub enum FlowControlNode<'db> {
     BindVar(BindVar),
     /// An arm (final node) that returns a unit value - `()`.
     UnitResult,
+}
+
+impl<'db> FlowControlNode<'db> {
+    /// Returns the input [FlowControlVar] of the node, if exists.
+    pub fn input_var(&self) -> Option<FlowControlVar> {
+        match self {
+            FlowControlNode::EvaluateExpr(..) => None,
+            FlowControlNode::BooleanIf(node) => Some(node.condition_var),
+            FlowControlNode::EnumMatch(node) => Some(node.matched_var),
+            FlowControlNode::ArmExpr(..) => None,
+            FlowControlNode::Deconstruct(node) => Some(node.input),
+            FlowControlNode::BindVar(node) => Some(node.input),
+            FlowControlNode::UnitResult => None,
+        }
+    }
 }
 
 impl<'db> Debug for FlowControlNode<'db> {
@@ -217,14 +232,24 @@ impl<'db> Debug for FlowControlGraph<'db> {
 /// Builder for [FlowControlGraph].
 pub struct FlowControlGraphBuilder<'db> {
     graph: FlowControlGraph<'db>,
+    used_vars: UnorderedHashSet<FlowControlVar>,
 }
 
 impl<'db> FlowControlGraphBuilder<'db> {
     /// Adds a new node to the graph. Returns the new node's id.
     pub fn add_node(&mut self, node: FlowControlNode<'db>) -> NodeId {
+        // Mark the input variable (if exists) as used.
+        if let Some(input_var) = node.input_var() {
+            self.used_vars.insert(input_var);
+        }
         let id = NodeId(self.graph.size());
         self.graph.nodes.push(node);
         id
+    }
+
+    /// Returns `true` if the given [FlowControlVar] is used in the graph.
+    pub fn is_var_used(&self, var: FlowControlVar) -> bool {
+        self.used_vars.contains(&var)
     }
 
     /// Finalizes the graph and returns the final [FlowControlGraph].
@@ -266,6 +291,6 @@ impl<'db> Default for FlowControlGraphBuilder<'db> {
             var_locations: Vec::new(),
             pattern_vars: Vec::new(),
         };
-        Self { graph }
+        Self { graph, used_vars: UnorderedHashSet::default() }
     }
 }
