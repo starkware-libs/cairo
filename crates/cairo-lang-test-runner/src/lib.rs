@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::Arc;
 use std::sync::mpsc::channel;
 
 use anyhow::{Context, Result, bail};
@@ -13,8 +14,8 @@ use cairo_lang_runner::profiling::{
     ProfilerConfig, ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
 };
 use cairo_lang_runner::{
-    ProfilingInfoCollectionConfig, RunResultValue, RunnerError, SierraCasmRunner,
-    StarknetExecutionResources,
+    CairoHintProcessor, ProfilingInfoCollectionConfig, RunResultStarknet, RunResultValue,
+    RunnerError, SierraCasmRunner, StarknetExecutionResources,
 };
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -27,6 +28,7 @@ use cairo_lang_test_plugin::{
 };
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use colored::Colorize;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
@@ -39,6 +41,7 @@ mod test;
 pub struct TestRunner<'db> {
     compiler: TestCompiler<'db>,
     config: TestRunConfig,
+    custom_hint_processor_factory: Option<Arc<dyn CustomHintProcessorFactory>>,
 }
 
 impl<'db> TestRunner<'db> {
@@ -73,19 +76,33 @@ impl<'db> TestRunner<'db> {
                 executable_crate_ids: None,
             },
         )?;
-        Ok(Self { compiler, config })
+        Ok(Self { compiler, config, custom_hint_processor_factory: None })
+    }
+
+    /// Make this runner run tests using a custom hint processor.
+    pub fn with_custom_hint_processor(
+        &mut self,
+        factory: impl CustomHintProcessorFactory + 'static,
+    ) -> &mut Self {
+        self.custom_hint_processor_factory = Some(Arc::new(factory));
+        self
     }
 
     /// Runs the tests and process the results for a summary.
     pub fn run(&self) -> Result<Option<TestsSummary>> {
-        let runner = CompiledTestRunner::new(self.compiler.build()?, self.config.clone());
+        let runner = CompiledTestRunner {
+            compiled: self.compiler.build()?,
+            config: self.config.clone(),
+            custom_hint_processor_factory: self.custom_hint_processor_factory.clone(),
+        };
         runner.run(Some(&self.compiler.db))
     }
 }
 
 pub struct CompiledTestRunner<'db> {
-    pub compiled: TestCompilation<'db>,
-    pub config: TestRunConfig,
+    compiled: TestCompilation<'db>,
+    config: TestRunConfig,
+    custom_hint_processor_factory: Option<Arc<dyn CustomHintProcessorFactory>>,
 }
 
 impl<'db> CompiledTestRunner<'db> {
@@ -96,7 +113,16 @@ impl<'db> CompiledTestRunner<'db> {
     /// * `compiled` - The compiled tests to run
     /// * `config` - Test run configuration
     pub fn new(compiled: TestCompilation<'db>, config: TestRunConfig) -> Self {
-        Self { compiled, config }
+        Self { compiled, config, custom_hint_processor_factory: None }
+    }
+
+    /// Make this runner run tests using a custom hint processor.
+    pub fn with_custom_hint_processor(
+        &mut self,
+        factory: impl CustomHintProcessorFactory + 'static,
+    ) -> &mut Self {
+        self.custom_hint_processor_factory = Some(Arc::new(factory));
+        self
     }
 
     /// Execute preconfigured test execution.
@@ -108,8 +134,12 @@ impl<'db> CompiledTestRunner<'db> {
             &self.config.filter,
         );
 
-        let TestsSummary { passed, failed, ignored, failed_run_results } =
-            run_tests(opt_db.map(|db| db as &dyn SierraGenGroup), compiled, &self.config)?;
+        let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
+            opt_db.map(|db| db as &dyn SierraGenGroup),
+            compiled,
+            &self.config,
+            self.custom_hint_processor_factory,
+        )?;
 
         if failed.is_empty() {
             println!(
@@ -160,6 +190,28 @@ pub struct TestRunConfig {
     pub gas_enabled: bool,
     /// Whether to print used resources after each test.
     pub print_resource_usage: bool,
+}
+
+/// A wrapper over [`CairoHintProcessor`] that behaves like it and can always become upcasted to it.
+pub trait CustomHintProcessor<'a>: HintProcessor {
+    fn upcast(&self) -> &CairoHintProcessor<'a>;
+}
+
+impl<'a> CustomHintProcessor<'a> for CairoHintProcessor<'a> {
+    fn upcast(&self) -> &CairoHintProcessor<'a> {
+        self
+    }
+}
+
+/// A function that builds a custom hint processor on top of a [`CairoHintProcessor`].
+pub trait CustomHintProcessorFactory:
+    (for<'a> Fn(CairoHintProcessor<'a>) -> Box<dyn CustomHintProcessor<'a> + 'a>) + Send + Sync
+{
+}
+
+impl<F> CustomHintProcessorFactory for F where
+    F: (for<'a> Fn(CairoHintProcessor<'a>) -> Box<dyn CustomHintProcessor<'a> + 'a>) + Send + Sync
+{
 }
 
 /// The test cases compiler.
@@ -261,7 +313,7 @@ pub fn filter_test_cases<'db>(
     let filtered_out = total_tests_count - named_tests.len();
     let tests = TestCompilation {
         sierra_program: compiled.sierra_program,
-        metadata: TestCompilationMetadata { named_tests, ..(compiled.metadata) },
+        metadata: TestCompilationMetadata { named_tests, ..compiled.metadata },
     };
     (tests, filtered_out)
 }
@@ -289,7 +341,7 @@ pub struct TestsSummary {
     passed: Vec<String>,
     failed: Vec<String>,
     ignored: Vec<String>,
-    failed_run_results: Vec<anyhow::Result<RunResultValue>>,
+    failed_run_results: Vec<Result<RunResultValue>>,
 }
 
 /// Auxiliary data that is required when running tests with profiling.
@@ -303,6 +355,7 @@ pub fn run_tests(
     opt_db: Option<&dyn SierraGenGroup>,
     compiled: TestCompilation<'_>,
     config: &TestRunConfig,
+    custom_hint_processor_factory: Option<Arc<dyn CustomHintProcessorFactory>>,
 ) -> Result<TestsSummary> {
     let TestCompilation {
         sierra_program: sierra_program_with_debug_info,
@@ -352,7 +405,8 @@ pub fn run_tests(
     let (tx, rx) = channel::<_>();
     rayon::spawn(move || {
         named_tests.into_par_iter().for_each(|(name, test)| {
-            let result = run_single_test(test, &name, &runner);
+            let result =
+                run_single_test(test, &name, &runner, custom_hint_processor_factory.clone());
             tx.send((name, result)).unwrap();
         })
     });
@@ -395,17 +449,31 @@ fn run_single_test(
     test: TestConfig,
     name: &str,
     runner: &SierraCasmRunner,
-) -> anyhow::Result<Option<TestResult>> {
+    custom_hint_processor_factory: Option<Arc<dyn CustomHintProcessorFactory>>,
+) -> Result<Option<TestResult>> {
     if test.ignored {
         return Ok(None);
     }
     let func = runner.find_function(name)?;
-    let result = runner.run_function_with_starknet_context(
+
+    let ctx =
+        runner.prepare_starknet_context(func, vec![], test.available_gas, Default::default())?;
+
+    let mut hint_processor = match custom_hint_processor_factory {
+        Some(f) => f(ctx.hint_processor),
+        None => Box::new(ctx.hint_processor),
+    };
+
+    let run_result = runner.run_function(
         func,
-        vec![],
-        test.available_gas,
-        Default::default(),
+        &mut *hint_processor,
+        ctx.hints_dict,
+        ctx.bytecode.iter(),
+        ctx.builtins,
     )?;
+
+    let result = RunResultStarknet::compose(run_result, (*hint_processor).upcast());
+
     Ok(Some(TestResult {
         status: match &result.value {
             RunResultValue::Success(_) => match test.expectation {
@@ -438,7 +506,7 @@ fn run_single_test(
 fn update_summary(
     summary: &mut TestsSummary,
     name: String,
-    test_result: anyhow::Result<Option<TestResult>>,
+    test_result: Result<Option<TestResult>>,
     profiler_data: &Option<(ProfilingInfoProcessor<'_>, ProfilingInfoProcessorParams)>,
     print_resource_usage: bool,
 ) {
