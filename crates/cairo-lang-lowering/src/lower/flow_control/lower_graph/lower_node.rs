@@ -14,8 +14,7 @@ use crate::lower::flow_control::graph::{
     FlowControlNode, NodeId,
 };
 use crate::lower::{
-    generators, lower_expr_literal_to_var_usage, lower_expr_to_var_usage, lower_tail_expr,
-    lowered_expr_to_block_scope_end,
+    generators, lower_expr, lower_expr_literal_to_var_usage, lower_expr_to_var_usage
 };
 use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage};
 
@@ -28,8 +27,8 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
     match ctx.graph.node(id) {
         FlowControlNode::EvaluateExpr(node) => lower_evaluate_expr(ctx, id, node, builder),
         FlowControlNode::BooleanIf(node) => lower_boolean_if(ctx, id, node, builder),
-        FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, node, builder),
-        FlowControlNode::UnitResult => lower_unit_result(ctx, builder),
+        FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, id, node, builder),
+        FlowControlNode::UnitResult => lower_unit_result(ctx, id, builder),
         FlowControlNode::EnumMatch(node) => lower_enum_match(ctx, id, node, builder),
         FlowControlNode::EqualsLiteral(node) => lower_equals_literal(ctx, id, node, builder),
         FlowControlNode::BindVar(node) => lower_bind_var(ctx, id, node, builder),
@@ -99,26 +98,26 @@ fn lower_boolean_if<'db>(
 /// Lowers an [ArmExpr] node.
 fn lower_arm_expr<'db>(
     ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
     node: &ArmExpr,
-    builder: BlockBuilder<'db>,
+    mut builder: BlockBuilder<'db>,
 ) -> Maybe<()> {
-    let sealed_block = lower_tail_expr(ctx.ctx, builder, node.expr)?;
-    ctx.add_sealed_block(sealed_block);
+    let lowered_expr = lower_expr(ctx.ctx, &mut builder, node.expr);
+    ctx.finalize_with_arm(id, builder, lowered_expr)?;
     Ok(())
 }
 
 /// Lowers a `UnitResult` node.
 fn lower_unit_result<'db>(
     ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
     builder: BlockBuilder<'db>,
 ) -> Maybe<()> {
-    let sealed_block = lowered_expr_to_block_scope_end(
-        ctx.ctx,
+    ctx.finalize_with_arm(
+        id,
         builder,
         Ok(LoweredExpr::Tuple { exprs: vec![], location: ctx.location }),
     )?;
-    ctx.add_sealed_block(sealed_block);
-
     Ok(())
 }
 
