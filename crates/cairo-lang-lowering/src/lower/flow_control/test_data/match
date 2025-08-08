@@ -693,3 +693,34 @@ blk24:
 Statements:
 End:
   Return(v34)
+
+//! > ==========================================================================
+
+//! > Test a non-branching graph
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(x: Option<felt252>) -> felt252 {
+    match x {
+        _ => 0,
+    }
+}
+
+//! > module_code
+
+//! > graph
+Root: 1
+0 ArmExpr { expr: ExprId(1) }
+1 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(0) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+Parameters: v0: core::option::Option::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0
+End:
+  Return(v1)
