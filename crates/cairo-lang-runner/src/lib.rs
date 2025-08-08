@@ -70,7 +70,7 @@ impl RunResultStarknet {
     /// system calls tracked by the `CairoHintProcessor`. Specifically, the `used_resources`
     /// value in the resulting `RunResultStarknet` is aggregated as a combination of
     /// `run_result.used_resources` and `hint_processor.syscalls_used_resources`.
-    pub fn compose(run_result: RunResult, hint_processor: &CairoHintProcessor) -> Self {
+    pub fn compose(run_result: RunResult, hint_processor: &CairoHintProcessor<'_>) -> Self {
         let mut all_used_resources = hint_processor.syscalls_used_resources.clone();
         all_used_resources.basic_resources += &run_result.used_resources;
         RunResultStarknet {
