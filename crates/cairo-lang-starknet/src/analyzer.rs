@@ -176,7 +176,9 @@ fn analyze_storage_struct<'db>(
             Ok(params) => params.into_iter().map(|p| p.id()).collect(),
             Err(_) => return,
         },
-    );
+        db,
+    )
+    .intern(db);
     let paths_data = &mut StorageStructMembers { name_to_paths: OrderedHashMap::default() };
 
     for (member_name, member) in members.iter() {
@@ -188,8 +190,7 @@ fn analyze_storage_struct<'db>(
             member_ast.has_attr_with_arg(db, ALLOW_ATTR, ALLOW_INVALID_STORAGE_MEMBERS_ATTR);
 
         if !(allow_invalid_members || member_allows_invalid) {
-            let inference_result =
-                get_impl_at_context(db, lookup_context.clone(), concrete_trait_id, None);
+            let inference_result = get_impl_at_context(db, lookup_context, concrete_trait_id, None);
 
             if let Err(inference_error) = inference_result {
                 let type_pointer = member_ast.type_clause(db).ty(db);
