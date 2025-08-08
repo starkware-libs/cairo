@@ -6,15 +6,18 @@ use cairo_lang_syntax::node::TypedStablePtr;
 use itertools::zip_eq;
 
 use super::LowerGraphContext;
+use crate::ids::SemanticFunctionIdEx;
 use crate::lower::block_builder::BlockBuilder;
 use crate::lower::context::{LoweredExpr, VarRequest};
 use crate::lower::flow_control::graph::{
-    ArmExpr, BindVar, BooleanIf, Deconstruct, EnumMatch, EvaluateExpr, FlowControlNode, NodeId,
+    ArmExpr, BindVar, BooleanIf, Deconstruct, EnumMatch, EqualsLiteral, EvaluateExpr,
+    FlowControlNode, NodeId,
 };
 use crate::lower::{
-    generators, lower_expr_to_var_usage, lower_tail_expr, lowered_expr_to_block_scope_end,
+    generators, lower_expr_literal_helper, lower_expr_to_var_usage, lower_tail_expr,
+    lowered_expr_to_block_scope_end,
 };
-use crate::{MatchArm, MatchEnumInfo, MatchInfo, VarUsage};
+use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage};
 
 /// Lowers the node with the given [NodeId].
 pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<()> {
@@ -28,9 +31,9 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, node, builder),
         FlowControlNode::UnitResult => lower_unit_result(ctx, builder),
         FlowControlNode::EnumMatch(node) => lower_enum_match(ctx, id, node, builder),
+        FlowControlNode::EqualsLiteral(node) => lower_equals_literal(ctx, id, node, builder),
         FlowControlNode::BindVar(node) => lower_bind_var(ctx, id, node, builder),
         FlowControlNode::Deconstruct(node) => lower_deconstruct(ctx, id, node, builder),
-        FlowControlNode::EqualsLiteral(..) => todo!(),
     }
 }
 
@@ -151,6 +154,85 @@ fn lower_enum_match<'db>(
         input: ctx.vars[&node.matched_var],
         arms,
         location: match_location,
+    });
+
+    ctx.finalize_with_match(id, builder, match_info);
+    Ok(())
+}
+
+/// Lowers an [EqualsLiteral] node.
+fn lower_equals_literal<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &EqualsLiteral<'db>,
+    mut builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let db = ctx.ctx.db;
+    let felt252_ty = db.core_info().felt252;
+
+    // TODO(TomerStarkware): Use the same type of literal as the input, without the cast to
+    //   felt252.
+    let literal_stable_ptr = node.stable_ptr.untyped();
+    let literal_location = ctx.ctx.get_location(literal_stable_ptr);
+    let input_var = ctx.vars[&node.input];
+
+    // Lower the expression `input_var - literal`.
+    let is_equal: VarUsage<'db> = if node.literal == 0 {
+        // If the literal is 0, simply use the input variable.
+        input_var
+    } else {
+        // Lower the literal to a [VarUsage].
+        let literal_var_usage: VarUsage<'db> = lower_expr_literal_helper(
+            ctx.ctx,
+            literal_stable_ptr,
+            felt252_ty,
+            &node.literal.into(),
+            &mut builder,
+        );
+
+        let call_result = generators::Call {
+            function: corelib::felt252_sub(db).lowered(db),
+            inputs: vec![input_var, literal_var_usage],
+            coupon_input: None,
+            extra_ret_tys: vec![],
+            ret_tys: vec![felt252_ty],
+            location: literal_location,
+        }
+        .add(ctx.ctx, &mut builder.statements);
+
+        call_result.returns.into_iter().next().unwrap()
+    };
+
+    // Allocate block ids for the two branches.
+    let true_branch_block_id = ctx.assign_child_block_id(node.true_branch, &builder);
+    let false_branch_block_id = ctx.assign_child_block_id(node.false_branch, &builder);
+
+    // Create dummy variable for the non-zero return value of `core_felt252_is_zero`.
+    let non_zero_type = corelib::core_nonzero_ty(db, felt252_ty);
+    let false_branch_nonzero_var_id =
+        ctx.ctx.new_var(VarRequest { ty: non_zero_type, location: literal_location });
+
+    // Finalize the block.
+    let match_info = MatchInfo::Extern(MatchExternInfo {
+        function: corelib::core_felt252_is_zero(db).lowered(db),
+        inputs: vec![is_equal],
+        arms: vec![
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_zero_variant(
+                    db, felt252_ty,
+                )),
+                block_id: true_branch_block_id,
+                var_ids: vec![],
+            },
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_nonzero_variant(
+                    db, felt252_ty,
+                )),
+                block_id: false_branch_block_id,
+                var_ids: vec![false_branch_nonzero_var_id],
+            },
+        ],
+        location: literal_location,
     });
 
     ctx.finalize_with_match(id, builder, match_info);

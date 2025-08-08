@@ -4,6 +4,7 @@ use cairo_lang_semantic::{
     self as semantic, ConcreteEnumId, ConcreteTypeId, PatternEnumVariant, PatternTuple, TypeId,
     TypeLongId, corelib,
 };
+use cairo_lang_syntax::node::ast::ExprPtr;
 use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
@@ -308,8 +309,9 @@ fn create_node_for_value<'db>(
 ) -> NodeId {
     let CreateNodeParams { ctx: _, graph, patterns, build_node_callback, location: _ } = params;
 
-    // A map from literals to their corresponding filter.
-    let mut literals_map = OrderedHashMap::<usize, FilteredPatterns>::default();
+    // A map from literals to their corresponding filter and the location of the first pattern with
+    // this literal.
+    let mut literals_map = OrderedHashMap::<usize, (FilteredPatterns, ExprPtr<'db>)>::default();
 
     // The filter of patterns that correspond to the otherwise patterns.
     let mut otherwise_filter = FilteredPatterns::default();
@@ -319,15 +321,19 @@ fn create_node_for_value<'db>(
         match pattern {
             Some(semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. })) => {
                 // Extract the literal value as `usize`.
-                let Some(literal) = literal.value.to_usize() else {
+                let Some(literal_value) = literal.value.to_usize() else {
                     todo!();
                 };
 
-                literals_map.entry(literal).or_insert(otherwise_filter.clone()).add(pattern_index);
+                literals_map
+                    .entry(literal_value)
+                    .or_insert((otherwise_filter.clone(), literal.stable_ptr))
+                    .0
+                    .add(pattern_index);
             }
             Some(semantic::Pattern::Otherwise(_)) | None => {
                 otherwise_filter.add(pattern_index);
-                for (_, filter) in literals_map.iter_mut() {
+                for (_, (filter, _)) in literals_map.iter_mut() {
                     filter.add(pattern_index);
                 }
             }
@@ -340,7 +346,7 @@ fn create_node_for_value<'db>(
 
     // Go over the literals (in reverse order), and construct a chain of [BooleanIf] nodes that
     // handle each literal.
-    for (literal, filter) in literals_map.into_iter().rev() {
+    for (literal, (filter, stable_ptr)) in literals_map.into_iter().rev() {
         let node_if_literal = build_node_callback(graph, filter);
 
         // Don't add an [EqualsLiteral] node if both branches lead to the same node.
@@ -351,6 +357,7 @@ fn create_node_for_value<'db>(
         current_node = graph.add_node(FlowControlNode::EqualsLiteral(EqualsLiteral {
             input: input_var,
             literal,
+            stable_ptr,
             true_branch: node_if_literal,
             false_branch: current_node,
         }));
