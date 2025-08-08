@@ -49,5 +49,5 @@ check_scarb_version_sync() {
 check_scarb_version_sync
 
 sed -i "s/$CURRENT_VERSION/$NEW_VERSION/g" \
-    $(find . -type f -iname "*.toml"  -o -iname "Scarb.lock") \
+    $(find . -type f \( -iname "*.toml" -o -name "Scarb.lock" \)) \
     ./scripts/bump_version.sh
