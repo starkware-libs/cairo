@@ -1,5 +1,7 @@
+use cache::Cache;
 use cairo_lang_semantic::{self as semantic, Condition, PatternId};
 use cairo_lang_syntax::node::TypedStablePtr;
+use filtered_patterns::IndexAndBindings;
 use itertools::Itertools;
 use patterns::{CreateNodeParams, create_node_for_patterns, get_pattern};
 
@@ -9,6 +11,7 @@ use super::graph::{
 };
 use crate::lower::context::LoweringContext;
 
+mod cache;
 mod filtered_patterns;
 mod patterns;
 
@@ -61,6 +64,8 @@ pub fn create_graph_expr_if<'db>(
                 let expr_location = ctx.get_location(expr.stable_ptr().untyped());
                 let expr_var = graph.new_var(expr.ty(), expr_location);
 
+                let cache = Cache::default();
+
                 let match_node_id = create_node_for_patterns(
                     CreateNodeParams {
                         ctx,
@@ -71,7 +76,13 @@ pub fn create_graph_expr_if<'db>(
                             .collect_vec(),
                         build_node_callback: &|graph, pattern_indices| {
                             if let Some(index_and_bindings) = pattern_indices.first() {
-                                index_and_bindings.wrap_node(graph, current_node)
+                                cache.get_or_compute(
+                                    &|graph, index_and_bindings: IndexAndBindings| {
+                                        index_and_bindings.wrap_node(graph, current_node)
+                                    },
+                                    graph,
+                                    index_and_bindings,
+                                )
                             } else {
                                 false_branch
                             }
@@ -119,6 +130,8 @@ pub fn create_graph_expr_match<'db>(
         })
         .collect();
 
+    let cache = Cache::default();
+
     // TODO(lior): add diagnostics if there is an unreachable arm.
     let match_node_id = create_node_for_patterns(
         CreateNodeParams {
@@ -131,8 +144,14 @@ pub fn create_graph_expr_match<'db>(
             build_node_callback: &|graph, pattern_indices| {
                 // TODO(lior): add diagnostics if pattern_indices is empty (instead of `unwrap`).
                 let index_and_bindings = pattern_indices.first().unwrap();
-                let index = index_and_bindings.index();
-                index_and_bindings.wrap_node(graph, pattern_and_nodes[index].1)
+                cache.get_or_compute(
+                    &|graph, index_and_bindings: IndexAndBindings| {
+                        let index = index_and_bindings.index();
+                        index_and_bindings.wrap_node(graph, pattern_and_nodes[index].1)
+                    },
+                    graph,
+                    index_and_bindings,
+                )
             },
             location: matched_expr_location,
         },

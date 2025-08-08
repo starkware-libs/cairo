@@ -10,6 +10,7 @@ use itertools::Itertools;
 use super::super::graph::{
     EnumMatch, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
 };
+use super::cache::Cache;
 use super::filtered_patterns::{Bindings, FilteredPatterns};
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
@@ -82,10 +83,16 @@ pub fn create_node_for_patterns<'db>(
         })
         .collect_vec();
 
-    // Wrap `build_node_callback` to add the bindings to the patterns.
+    let cache = Cache::default();
+
+    // Wrap `build_node_callback` to add the bindings to the patterns and cache the result.
     let build_node_callback = |graph: &mut FlowControlGraphBuilder<'db>,
                                pattern_indices: FilteredPatterns| {
-        build_node_callback(graph, pattern_indices.add_bindings(bindings.clone()))
+        cache.get_or_compute(
+            &build_node_callback,
+            graph,
+            pattern_indices.add_bindings(bindings.clone()),
+        )
     };
 
     // If all the patterns are catch-all, we do not need to look into `input_var`.
