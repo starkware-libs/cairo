@@ -1124,6 +1124,7 @@ dependencies = [
  "cairo-lang-starknet",
  "cairo-lang-test-plugin",
  "cairo-lang-utils",
+ "cairo-vm",
  "colored",
  "itertools 0.14.0",
  "num-traits",
