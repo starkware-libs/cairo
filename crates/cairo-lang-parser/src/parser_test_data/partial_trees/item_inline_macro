@@ -628,3 +628,42 @@ identifier(x)
     │   │       └── rparen (kind: TokenRParen): ')'
     │   └── semicolon: Missing
     └── child #1 (kind: FunctionWithBody) <ignored>
+
+//! > ==========================================================================
+
+//! > Test an ItemInlineMacro path starting with a placeholder ($) token.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+$inline_macro!(1, 2);
+
+//! > top_level_kind
+ItemInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemInlineMacro
+    ├── attributes (kind: AttributeList) []
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: TokenDollar): '$'
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
+    ├── bang (kind: TokenNot): '!'
+    ├── arguments (kind: TokenTreeNode)
+    │   └── subtree (kind: ParenthesizedTokenTree)
+    │       ├── lparen (kind: TokenLParen): '('
+    │       ├── tokens (kind: TokenList)
+    │       │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenLiteralNumber): '1'
+    │       │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenComma): ','
+    │       │   └── child #2 (kind: TokenTreeLeaf)
+    │       │       └── leaf (kind: TokenLiteralNumber): '2'
+    │       └── rparen (kind: TokenRParen): ')'
+    └── semicolon (kind: TokenSemicolon): ';'

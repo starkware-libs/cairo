@@ -1,0 +1,44 @@
+//! > Test lowering diagnostics propagation from item macro
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+    unreachable_code();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro generate_unreachable {
+    () => {
+        fn unreachable_code() {
+            return ();
+            let _x = 5; 
+        }
+    };
+}
+generate_unreachable!();
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+warning: Unreachable code
+ --> lib.cairo[generate_unreachable]:3:13
+            let _x = 5; 
+            ^^^^^^^^^^^
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+End:
+  Return()
+
+//! > lowering
+fn unreachable_code() {
+    return ();
+    let x = 5;
+}
