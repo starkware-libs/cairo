@@ -388,7 +388,7 @@ Root: 4
 //! > Numeric match
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, skip_lowering: true)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo(x: felt252) -> felt252 {
@@ -412,3 +412,63 @@ Root: 6
 //! > semantic_diagnostics
 
 //! > lowered
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 2
+  (v2: core::felt252) <- core::Felt252Sub::sub(v0, v1)
+End:
+  Match(match core::felt252_is_zero(v2) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v3) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk2:
+Statements:
+  (v4: core::felt252) <- 4
+  (v5: core::felt252) <- core::Felt252Sub::sub(v0, v4)
+End:
+  Match(match core::felt252_is_zero(v5) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero(v6) => blk4,
+  })
+
+blk3:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk4:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero(v7) => blk6,
+  })
+
+blk5:
+Statements:
+  (v9: core::felt252) <- 0
+End:
+  Goto(blk8, {v9 -> v10})
+
+blk6:
+Statements:
+  (v8: core::felt252) <- 1
+End:
+  Goto(blk8, {v8 -> v10})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {v0 -> v10})
+
+blk8:
+Statements:
+End:
+  Return(v10)

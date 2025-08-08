@@ -22,6 +22,7 @@
 use std::fmt::Debug;
 
 use cairo_lang_semantic::{self as semantic, ConcreteVariant, PatternVariable};
+use cairo_lang_syntax::node::ast::ExprPtr;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::Itertools;
 
@@ -109,19 +110,27 @@ impl<'db> std::fmt::Debug for EnumMatch<'db> {
 }
 
 /// Checks whether a value is equal to a literal.
-#[derive(Debug)]
-pub struct EqualsLiteral {
+pub struct EqualsLiteral<'db> {
     /// The input value to check.
     pub input: FlowControlVar,
     /// The literal to check against.
-    #[expect(dead_code)]
     pub literal: usize,
+    /// A stable pointer to the first instance of the literal in the patterns.
+    pub stable_ptr: ExprPtr<'db>,
     /// The node to jump to if the value is equal to the literal.
-    #[expect(dead_code)]
     pub true_branch: NodeId,
     /// The node to jump to if the value is not equal to the literal.
-    #[expect(dead_code)]
     pub false_branch: NodeId,
+}
+
+impl<'db> std::fmt::Debug for EqualsLiteral<'db> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "EqualsLiteral {{ input: {:?}, literal: {}, true_branch: {:?}, false_branch: {:?} }}",
+            self.input, self.literal, self.true_branch, self.false_branch,
+        )
+    }
 }
 
 /// An arm (final node) that returns an expression.
@@ -164,7 +173,7 @@ pub enum FlowControlNode<'db> {
     /// Enum match node.
     EnumMatch(EnumMatch<'db>),
     /// Checks whether a value is equal to a literal.
-    EqualsLiteral(EqualsLiteral),
+    EqualsLiteral(EqualsLiteral<'db>),
     /// An arm (final node) that returns an expression.
     ArmExpr(ArmExpr),
     /// Destructure a tuple to its members.
