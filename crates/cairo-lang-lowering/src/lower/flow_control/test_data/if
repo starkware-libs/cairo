@@ -306,7 +306,7 @@ End:
 //! > Test if with panic in condition
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false)
+test_create_graph(expect_diagnostics: true)
 
 //! > function_code
 fn foo() -> felt252 {
@@ -329,6 +329,21 @@ Root: 3
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+warning: Unreachable clause.
+ --> lib.cairo:4:12-6:5
+      } else {
+ ____________^
+|         1
+|     }
+|_____^
+
+warning: Unreachable clause.
+ --> lib.cairo:2:17-4:5
+      if panic!() {
+ _________________^
+|         0
+|     } else {
+|_____^
 
 //! > lowered
 Parameters:
@@ -547,7 +562,7 @@ End:
 //! > Test if let-chain with panic in condition
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false)
+test_create_graph(expect_diagnostics: true)
 
 //! > function_code
 fn foo() -> felt252 {
@@ -572,6 +587,13 @@ Root: 5
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+warning: Unreachable clause.
+ --> lib.cairo:2:42-4:5
+      if let Some(_) = Some(0) && panic!() {
+ __________________________________________^
+|         0
+|     } else {
+|_____^
 
 //! > lowered
 Parameters:
@@ -607,3 +629,46 @@ blk3:
 Statements:
 End:
   Return(v12)
+
+//! > ==========================================================================
+
+//! > Unreachable else clause.
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: Option<felt252>) -> felt252 {
+    if let Some(_) | None = x {
+        0
+    } else {
+        1
+    }
+}
+
+//! > module_code
+
+//! > graph
+Root: 2
+0 ArmExpr { expr: ExprId(2) }
+1 ArmExpr { expr: ExprId(4) }
+2 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(0) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+warning: Unreachable clause.
+ --> lib.cairo:4:12-6:5
+      } else {
+ ____________^
+|         1
+|     }
+|_____^
+
+//! > lowered
+Parameters: v0: core::option::Option::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0
+End:
+  Return(v1)
