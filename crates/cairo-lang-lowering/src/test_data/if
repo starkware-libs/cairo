@@ -643,6 +643,7 @@ fn foo(a: MyEnum) -> felt252 {
 foo
 
 //! > module_code
+#[derive(Drop)]
 enum MyEnum {
     A: felt252,
     B,
@@ -658,36 +659,12 @@ Parameters: v0: test::MyEnum
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 0
+  (v2: core::felt252) <- 5
+  (v3: core::felt252) <- core::felt252_add(v1, v2)
+  (v4: core::felt252) <- 1
+  (v5: core::felt252) <- core::felt252_add(v3, v4)
 End:
-  Match(match_enum(v0) {
-    MyEnum::A(v2) => blk1,
-    MyEnum::B(v3) => blk2,
-    MyEnum::C(v4) => blk3,
-  })
-
-blk1:
-Statements:
-End:
-  Goto(blk4, {})
-
-blk2:
-Statements:
-End:
-  Goto(blk4, {})
-
-blk3:
-Statements:
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
-  (v5: core::felt252) <- 5
-  (v6: core::felt252) <- core::felt252_add(v1, v5)
-  (v7: core::felt252) <- 1
-  (v8: core::felt252) <- core::felt252_add(v6, v7)
-End:
-  Return(v8)
+  Return(v5)
 
 //! > ==========================================================================
 
@@ -712,6 +689,7 @@ fn foo(a: MyEnum) -> felt252 {
 foo
 
 //! > module_code
+#[derive(Drop)]
 enum MyEnum {
     A: felt252,
     B,
@@ -721,8 +699,8 @@ enum MyEnum {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-warning: Unreachable else clause.
- --> lib.cairo:10:12-12:5
+warning: Unreachable clause.
+ --> lib.cairo:11:12-13:5
       } else {
  ____________^
 |         y = y + 8;
@@ -734,36 +712,12 @@ Parameters: v0: test::MyEnum
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 0
+  (v2: core::felt252) <- 5
+  (v3: core::felt252) <- core::felt252_add(v1, v2)
+  (v4: core::felt252) <- 1
+  (v5: core::felt252) <- core::felt252_add(v3, v4)
 End:
-  Match(match_enum(v0) {
-    MyEnum::A(v2) => blk1,
-    MyEnum::B(v3) => blk2,
-    MyEnum::C(v4) => blk3,
-  })
-
-blk1:
-Statements:
-End:
-  Goto(blk4, {})
-
-blk2:
-Statements:
-End:
-  Goto(blk4, {})
-
-blk3:
-Statements:
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
-  (v5: core::felt252) <- 5
-  (v6: core::felt252) <- core::felt252_add(v1, v5)
-  (v7: core::felt252) <- 1
-  (v8: core::felt252) <- core::felt252_add(v6, v7)
-End:
-  Return(v8)
+  Return(v5)
 
 //! > ==========================================================================
 
@@ -788,6 +742,7 @@ fn foo(a: MyStruct) -> felt252 {
 foo
 
 //! > module_code
+#[derive(Drop)]
 struct MyStruct {
     A: felt252,
     B: felt252,
@@ -848,27 +803,9 @@ enum MyEnum {
 Parameters: v0: test::MyEnum
 blk0 (root):
 Statements:
+  (v1: core::felt252) <- 2
 End:
-  Match(match_enum(v0) {
-    MyEnum::A(v1) => blk1,
-    MyEnum::B(v2) => blk2,
-  })
-
-blk1:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk2:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
-  (v3: core::felt252) <- 2
-End:
-  Return(v3)
+  Return(v1)
 
 //! > ==========================================================================
 
@@ -897,7 +834,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-warning: Unreachable else clause.
+warning: Unreachable clause.
  --> lib.cairo:5:12-7:5
       } else {
  ____________^
