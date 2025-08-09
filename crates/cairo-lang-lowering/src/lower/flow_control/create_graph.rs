@@ -9,7 +9,7 @@ use super::graph::{
     ArmExpr, BooleanIf, EvaluateExpr, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode,
     NodeId,
 };
-use crate::lower::context::LoweringContext;
+use crate::{diagnostic::MatchKind, lower::context::LoweringContext};
 
 mod cache;
 mod filtered_patterns;
@@ -20,7 +20,7 @@ pub fn create_graph_expr_if<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     expr: &semantic::ExprIf<'db>,
 ) -> FlowControlGraph<'db> {
-    let mut graph = FlowControlGraphBuilder::default();
+    let mut graph = FlowControlGraphBuilder::new(MatchKind::IfLet);
 
     // Add the `true` branch (the `if` block).
     let true_branch = graph.add_node(FlowControlNode::ArmExpr(ArmExpr { expr: expr.if_block }));
@@ -111,7 +111,7 @@ pub fn create_graph_expr_match<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     expr: &semantic::ExprMatch<'db>,
 ) -> FlowControlGraph<'db> {
-    let mut graph = FlowControlGraphBuilder::default();
+    let mut graph = FlowControlGraphBuilder::new(MatchKind::Match);
 
     let matched_expr = &ctx.function_body.arenas.exprs[expr.matched_expr];
     let matched_expr_location = ctx.get_location(matched_expr.stable_ptr().untyped());

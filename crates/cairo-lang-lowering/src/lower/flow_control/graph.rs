@@ -29,7 +29,7 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::Itertools;
 
 use crate::diagnostic::{
-    LoweringDiagnosticKind, LoweringDiagnostics, LoweringDiagnosticsBuilder,
+    LoweringDiagnosticKind, LoweringDiagnostics, LoweringDiagnosticsBuilder, MatchKind,
 };
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
@@ -234,6 +234,9 @@ pub struct FlowControlGraph<'db> {
     var_locations: Vec<LocationId<'db>>,
     /// The pattern variables used by the [BindVar] nodes in the graph.
     pattern_vars: Vec<PatternVariable<'db>>,
+    /// The kind of the expression being lowered.
+    /// This is used for diagnostic reporting.
+    kind: MatchKind<'db>,
 }
 impl<'db> FlowControlGraph<'db> {
     /// Returns the root node of the graph.
@@ -250,6 +253,11 @@ impl<'db> FlowControlGraph<'db> {
     /// Returns the node with the given [NodeId].
     pub fn node(&self, id: NodeId) -> &FlowControlNode<'db> {
         &self.nodes[id.0]
+    }
+
+    /// Returns the kind of the expression being lowered.
+    pub fn kind(&self) -> MatchKind<'db> {
+        self.kind
     }
 }
 
@@ -271,6 +279,22 @@ pub struct FlowControlGraphBuilder<'db> {
 }
 
 impl<'db> FlowControlGraphBuilder<'db> {
+    /// Constructs a new [FlowControlGraphBuilder].
+    pub fn new(kind: MatchKind<'db>) -> Self {
+        let graph = FlowControlGraph {
+            nodes: Vec::new(),
+            var_types: Vec::new(),
+            var_locations: Vec::new(),
+            pattern_vars: Vec::new(),
+            kind,
+        };
+        Self {
+            graph,
+            used_vars: UnorderedHashSet::default(),
+            diagnostics: LoweringDiagnostics::default(),
+        }
+    }
+
     /// Adds a new node to the graph. Returns the new node's id.
     pub fn add_node(&mut self, node: FlowControlNode<'db>) -> NodeId {
         // Mark the input variable (if exists) as used.
@@ -332,21 +356,5 @@ impl<'db> FlowControlGraphBuilder<'db> {
         kind: LoweringDiagnosticKind<'db>,
     ) -> DiagnosticAdded {
         self.diagnostics.report(stable_ptr, kind)
-    }
-}
-
-impl<'db> Default for FlowControlGraphBuilder<'db> {
-    fn default() -> Self {
-        let graph = FlowControlGraph {
-            nodes: Vec::new(),
-            var_types: Vec::new(),
-            var_locations: Vec::new(),
-            pattern_vars: Vec::new(),
-        };
-        Self {
-            graph,
-            used_vars: UnorderedHashSet::default(),
-            diagnostics: LoweringDiagnostics::default(),
-        }
     }
 }
