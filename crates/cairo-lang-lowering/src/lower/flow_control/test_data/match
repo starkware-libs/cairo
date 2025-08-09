@@ -31,6 +31,8 @@ Root: 4
 
 //! > semantic_diagnostics
 
+//! > lowering_diagnostics
+
 //! > lowered
 Parameters: v0: test::Color
 blk0 (root):
@@ -124,6 +126,8 @@ Root: 7
 
 //! > semantic_diagnostics
 
+//! > lowering_diagnostics
+
 //! > lowered
 Parameters: v0: test::Color
 blk0 (root):
@@ -203,6 +207,8 @@ Root: 6
 6 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(5) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: (test::Color, test::Color)
@@ -303,6 +309,8 @@ Root: 7
 
 //! > semantic_diagnostics
 
+//! > lowering_diagnostics
+
 //! > lowered
 Parameters: v0: core::option::Option::<(test::Color, test::Color)>
 blk0 (root):
@@ -402,6 +410,8 @@ Root: 10
 
 //! > semantic_diagnostics
 
+//! > lowering_diagnostics
+
 //! > lowered
 
 //! > ==========================================================================
@@ -439,6 +449,8 @@ Root: 4
 
 //! > semantic_diagnostics
 
+//! > lowering_diagnostics
+
 //! > lowered
 
 //! > ==========================================================================
@@ -468,6 +480,8 @@ Root: 6
 6 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(5) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: core::felt252
@@ -573,6 +587,8 @@ Root: 18
 18 EvaluateExpr { expr: ExprId(2), var_id: v0, next: NodeId(17) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: core::felt252, v1: core::felt252
@@ -788,6 +804,8 @@ Root: 7
 
 //! > semantic_diagnostics
 
+//! > lowering_diagnostics
+
 //! > lowered
 Parameters: v0: @(test::Color, test::Color)
 blk0 (root):
@@ -891,6 +909,8 @@ Root: 7
 7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: (test::Color, test::Color)
