@@ -59,7 +59,7 @@ fn test_create_graph(
     let mut encapsulating_ctx =
         create_encapsulating_ctx(db, test_function.function_id, &test_function.signature);
 
-    let ctx = create_lowering_context(
+    let mut ctx = create_lowering_context(
         db,
         test_function.function_id,
         &test_function.signature,
@@ -67,27 +67,31 @@ fn test_create_graph(
     );
 
     let graph = match &expr {
-        semantic::Expr::If(expr) => create_graph_expr_if(&ctx, expr),
-        semantic::Expr::Match(expr) => create_graph_expr_match(&ctx, expr),
+        semantic::Expr::If(expr) => create_graph_expr_if(&mut ctx, expr),
+        semantic::Expr::Match(expr) => create_graph_expr_match(&mut ctx, expr),
         _ => {
             panic!("Unsupported expression: {:?}", expr.debug(&expr_formatter));
         }
     };
 
-    let error = verify_diagnostics_expectation(args, &semantic_diagnostics);
-
     // Lower the graph.
-    let lowered_str = if args.get("skip_lowering").unwrap_or(&"false".into()) == "true" {
-        "".into()
+    let (lowered_str, lowering_diagnostics) = if args.get("skip_lowering").unwrap_or(&"false".into()) == "true" {
+        ("".into(), ctx.diagnostics.build().format(db))
     } else {
         let lowered = lower_graph_as_function(ctx, expr_id, &graph);
-        formatted_lowered(db, Some(&lowered))
+        (formatted_lowered(db, Some(&lowered)), lowered.diagnostics.format(db))
     };
+
+    let error = verify_diagnostics_expectation(
+        args,
+        &format!("{semantic_diagnostics}{lowering_diagnostics}"),
+    );
 
     TestRunnerResult {
         outputs: OrderedHashMap::from([
             ("graph".into(), format!("{graph:?}")),
             ("semantic_diagnostics".into(), semantic_diagnostics),
+            ("lowering_diagnostics".into(), lowering_diagnostics),
             ("lowered".into(), lowered_str),
         ]),
         error,

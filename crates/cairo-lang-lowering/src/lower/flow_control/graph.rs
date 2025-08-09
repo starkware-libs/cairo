@@ -21,12 +21,18 @@
 
 use std::fmt::Debug;
 
+use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_semantic::{self as semantic, ConcreteVariant, PatternVariable};
 use cairo_lang_syntax::node::ast::ExprPtr;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::Itertools;
 
+use crate::diagnostic::{
+    LoweringDiagnosticKind, LoweringDiagnostics, LoweringDiagnosticsBuilder,
+};
 use crate::ids::LocationId;
+use crate::lower::context::LoweringContext;
 
 /// Represents a variable in the flow control graph.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -260,6 +266,8 @@ impl<'db> Debug for FlowControlGraph<'db> {
 pub struct FlowControlGraphBuilder<'db> {
     graph: FlowControlGraph<'db>,
     used_vars: UnorderedHashSet<FlowControlVar>,
+    /// Current emitted diagnostics.
+    diagnostics: LoweringDiagnostics<'db>,
 }
 
 impl<'db> FlowControlGraphBuilder<'db> {
@@ -280,8 +288,15 @@ impl<'db> FlowControlGraphBuilder<'db> {
     }
 
     /// Finalizes the graph and returns the final [FlowControlGraph].
-    pub fn finalize(self, root: NodeId) -> FlowControlGraph<'db> {
+    ///
+    /// Adds the reported diagnostics to the context.
+    pub fn finalize(
+        self,
+        root: NodeId,
+        ctx: &mut LoweringContext<'db, '_>,
+    ) -> FlowControlGraph<'db> {
         assert_eq!(root.0, self.graph.size() - 1, "The root must be the last node.");
+        ctx.diagnostics.extend(self.diagnostics.build());
         self.graph
     }
 
@@ -308,6 +323,16 @@ impl<'db> FlowControlGraphBuilder<'db> {
     pub fn var_ty(&self, input_var: FlowControlVar) -> semantic::TypeId<'db> {
         self.graph.var_types[input_var.0]
     }
+
+    /// Reports a diagnostic.
+    #[expect(dead_code)]
+    pub fn report(
+        &mut self,
+        stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
+        kind: LoweringDiagnosticKind<'db>,
+    ) -> DiagnosticAdded {
+        self.diagnostics.report(stable_ptr, kind)
+    }
 }
 
 impl<'db> Default for FlowControlGraphBuilder<'db> {
@@ -318,6 +343,10 @@ impl<'db> Default for FlowControlGraphBuilder<'db> {
             var_locations: Vec::new(),
             pattern_vars: Vec::new(),
         };
-        Self { graph, used_vars: UnorderedHashSet::default() }
+        Self {
+            graph,
+            used_vars: UnorderedHashSet::default(),
+            diagnostics: LoweringDiagnostics::default(),
+        }
     }
 }
