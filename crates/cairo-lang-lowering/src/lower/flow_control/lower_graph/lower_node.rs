@@ -6,6 +6,9 @@ use cairo_lang_syntax::node::TypedStablePtr;
 use itertools::zip_eq;
 
 use super::LowerGraphContext;
+use crate::diagnostic::{
+    LoweringDiagnosticKind, LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError,
+};
 use crate::ids::SemanticFunctionIdEx;
 use crate::lower::block_builder::BlockBuilder;
 use crate::lower::context::{LoweredExpr, VarRequest};
@@ -21,6 +24,18 @@ use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage};
 /// Lowers the node with the given [NodeId].
 pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<()> {
     let Some(builder) = ctx.get_builder_if_reachable(id) else {
+        // If an [ArmExpr] node is unreachable, report an error.
+        // TODO(lior): If the main branch is unreachable, report an proper error.
+        if let FlowControlNode::ArmExpr(node) = ctx.graph.node(id) {
+            let stable_ptr = ctx.ctx.function_body.arenas.exprs[node.expr].stable_ptr();
+
+            let match_error = LoweringDiagnosticKind::MatchError(MatchError {
+                kind: ctx.graph.kind(),
+                error: MatchDiagnostic::UnreachableMatchArm,
+            });
+            ctx.ctx.diagnostics.report(stable_ptr, match_error);
+        }
+
         return Ok(());
     };
 
