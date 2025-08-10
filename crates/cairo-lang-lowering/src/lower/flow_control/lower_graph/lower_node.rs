@@ -3,14 +3,17 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::{self as semantic, MatchArmSelector, corelib};
 use cairo_lang_syntax::node::TypedStablePtr;
+use itertools::zip_eq;
 
 use super::LowerGraphContext;
 use crate::lower::block_builder::BlockBuilder;
 use crate::lower::context::{LoweredExpr, VarRequest};
 use crate::lower::flow_control::graph::{
-    ArmExpr, BindVar, BooleanIf, EnumMatch, EvaluateExpr, FlowControlNode, NodeId,
+    ArmExpr, BindVar, BooleanIf, Deconstruct, EnumMatch, EvaluateExpr, FlowControlNode, NodeId,
 };
-use crate::lower::{lower_expr_to_var_usage, lower_tail_expr, lowered_expr_to_block_scope_end};
+use crate::lower::{
+    generators, lower_expr_to_var_usage, lower_tail_expr, lowered_expr_to_block_scope_end,
+};
 use crate::{MatchArm, MatchEnumInfo, MatchInfo, VarUsage};
 
 /// Lowers the node with the given [NodeId].
@@ -26,7 +29,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::UnitResult => lower_unit_result(ctx, builder),
         FlowControlNode::EnumMatch(node) => lower_enum_match(ctx, id, node, builder),
         FlowControlNode::BindVar(node) => lower_bind_var(ctx, id, node, builder),
-        _ => todo!(),
+        FlowControlNode::Deconstruct(node) => lower_deconstruct(ctx, id, node, builder),
     }
 }
 
@@ -174,6 +177,34 @@ fn lower_bind_var<'db>(
     let sem_var = semantic::Binding::LocalVar(pattern_variable.var.clone());
     builder.put_semantic(sem_var.id(), var_id);
     ctx.ctx.semantic_defs.insert(sem_var.id(), sem_var);
+
+    ctx.pass_builder_to_child(id, node.next, builder);
+    Ok(())
+}
+
+/// Lowers a [Deconstruct] node.
+///
+/// Deconstructs the input [super::FlowControlVar] into its members (tuple or struct), and binds the
+/// members to the output [super::FlowControlVar]s.
+fn lower_deconstruct<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &Deconstruct,
+    mut builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let var_requests = node
+        .outputs
+        .iter()
+        .map(|output| VarRequest { ty: output.ty(ctx.graph), location: output.location(ctx.graph) })
+        .collect();
+
+    let variable_ids =
+        generators::StructDestructure { input: ctx.vars[&node.input], var_reqs: var_requests }
+            .add(ctx.ctx, &mut builder.statements);
+
+    for (var_id, output) in zip_eq(variable_ids, &node.outputs) {
+        ctx.register_var(*output, VarUsage { var_id, location: output.location(ctx.graph) });
+    }
 
     ctx.pass_builder_to_child(id, node.next, builder);
     Ok(())
