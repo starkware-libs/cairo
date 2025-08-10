@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MacroDeclarationId, ModuleFileId, ModuleItemId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe, skip_diagnostic};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
@@ -111,8 +111,7 @@ pub fn priv_macro_declaration_data<'db>(
     let mut diagnostics = SemanticDiagnostics::default();
 
     let module_file_id = macro_declaration_id.module_file_id(db);
-    let macro_declaration_syntax =
-        db.module_macro_declaration_by_id(macro_declaration_id)?.to_maybe()?;
+    let macro_declaration_syntax = db.module_macro_declaration_by_id(macro_declaration_id)?;
     if !are_user_defined_inline_macros_enabled(db, module_file_id) {
         diagnostics.report(
             macro_declaration_syntax.stable_ptr(db).untyped(),

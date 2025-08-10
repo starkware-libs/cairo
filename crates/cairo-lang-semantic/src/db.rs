@@ -987,7 +987,7 @@ pub trait SemanticGroup:
     fn impl_type_by_id<'db>(
         &'db self,
         impl_type_id: ImplTypeDefId<'db>,
-    ) -> Maybe<Option<ast::ItemTypeAlias<'db>>>;
+    ) -> Maybe<ast::ItemTypeAlias<'db>>;
     /// Returns the impl type item that matches the given trait type item, if exists.
     #[salsa::invoke(items::imp::impl_type_by_trait_type)]
     fn impl_type_by_trait_type<'db>(
@@ -1020,7 +1020,7 @@ pub trait SemanticGroup:
     fn impl_impl_by_id<'db>(
         &'db self,
         impl_impl_id: ImplImplDefId<'db>,
-    ) -> Maybe<Option<ast::ItemImplAlias<'db>>>;
+    ) -> Maybe<ast::ItemImplAlias<'db>>;
     /// Returns the impl impl item that matches the given trait impl item, if exists.
     #[salsa::invoke(items::imp::impl_impl_by_trait_impl)]
     fn impl_impl_by_trait_impl<'db>(
@@ -1732,7 +1732,7 @@ pub trait SemanticGroup:
     fn macro_call_declaration_id<'db>(
         &'db self,
         macro_call_id: MacroCallId<'db>,
-    ) -> Maybe<Option<MacroDeclarationId<'db>>>;
+    ) -> Maybe<MacroDeclarationId<'db>>;
     /// Returns the semantic diagnostics of a macro call.
     #[salsa::invoke(items::macro_call::macro_call_diagnostics)]
     fn macro_call_diagnostics<'db>(

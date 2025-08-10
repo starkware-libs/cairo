@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     ImplAliasId, ImplDefId, LanguageElementId, LookupItemId, ModuleFileId, ModuleItemId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe, skip_diagnostic};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
@@ -39,7 +39,7 @@ pub fn priv_impl_alias_semantic_data<'db>(
     in_cycle: bool,
 ) -> Maybe<ImplAliasData<'db>> {
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::ImplAlias(impl_alias_id));
-    let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?.to_maybe()?;
+    let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
 
     let generic_params_data = db.impl_alias_generic_params_data(impl_alias_id)?;
 
@@ -183,7 +183,7 @@ pub fn impl_alias_generic_params_data<'db>(
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = impl_alias_id.module_file_id(db);
-    let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?.to_maybe()?;
+    let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
     impl_alias_generic_params_data_helper(
         db,
         module_file_id,
@@ -260,7 +260,7 @@ pub fn impl_alias_impl_def<'db>(
 ) -> Maybe<ImplDefId<'db>> {
     let module_file_id = impl_alias_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
-    let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?.to_maybe()?;
+    let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
     let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
 
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
