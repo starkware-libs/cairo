@@ -541,10 +541,7 @@ impl<'db> ModuleDataCached<'db> {
                 .diagnostics_notes
                 .iter()
                 .map(|(file_id, note)| {
-                    (
-                        FileIdCached::new(*file_id, ctx),
-                        DiagnosticNoteCached::new(note.clone(), ctx),
-                    )
+                    (FileIdCached::new(*file_id, ctx), DiagnosticNoteCached::new(note.clone(), ctx))
                 })
                 .collect(),
         }
