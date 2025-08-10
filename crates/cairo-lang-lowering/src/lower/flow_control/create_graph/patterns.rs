@@ -129,8 +129,7 @@ fn create_node_for_enum<'db>(
     let concrete_variants = ctx.db.concrete_enum_variants(concrete_enum_id).unwrap();
 
     // Maps variant index to the list of the indices of the patterns that match it.
-    let mut variant_to_pattern_indices: Vec<FilteredPatterns> =
-        (0..concrete_variants.len()).map(|_| FilteredPatterns::empty()).collect_vec();
+    let mut variant_to_pattern_indices = vec![FilteredPatterns::default(); concrete_variants.len()];
 
     // Maps variant index to the list of the inner patterns.
     // For example, a pattern `A(B(x))` will add the (inner) pattern `B(x)` to the vector at the
