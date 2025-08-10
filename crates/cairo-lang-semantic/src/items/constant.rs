@@ -7,7 +7,7 @@ use cairo_lang_defs::ids::{
     NamedLanguageElementId, TopLevelLanguageElementId, TraitConstantId, TraitId, VarId,
 };
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, ToMaybe, skip_diagnostic,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, skip_diagnostic,
 };
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast::ItemConstant;
@@ -257,7 +257,7 @@ pub fn priv_constant_semantic_data<'db>(
     if in_cycle {
         constant_semantic_data_cycle_helper(
             db,
-            &db.module_constant_by_id(const_id)?.to_maybe()?,
+            &db.module_constant_by_id(const_id)?,
             lookup_item_id,
             None,
             &const_id,
@@ -265,7 +265,7 @@ pub fn priv_constant_semantic_data<'db>(
     } else {
         constant_semantic_data_helper(
             db,
-            &db.module_constant_by_id(const_id)?.to_maybe()?,
+            &db.module_constant_by_id(const_id)?,
             lookup_item_id,
             None,
             &const_id,

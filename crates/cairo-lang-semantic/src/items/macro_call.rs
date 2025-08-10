@@ -1,5 +1,5 @@
 use cairo_lang_defs::ids::{LanguageElementId, MacroCallId, MacroDeclarationId};
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 
 use crate::SemanticDiagnostic;
@@ -27,7 +27,7 @@ pub fn priv_macro_call_data<'db>(
     let module_file_id = macro_call_id.module_file_id(db);
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
     let mut diagnostics = SemanticDiagnostics::default();
-    let macro_call_syntax = db.module_macro_call_by_id(macro_call_id)?.to_maybe()?;
+    let macro_call_syntax = db.module_macro_call_by_id(macro_call_id)?;
     // Resolve the macro call path, and report diagnostics if it finds no match or
     // the resolved item is not a macro declaration.
     let macro_call_path = macro_call_syntax.path(db);

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     FreeFunctionId, FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
@@ -83,7 +83,7 @@ pub fn free_function_generic_params_data<'db>(
 ) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = free_function_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
-    let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
+    let free_function_syntax = db.module_free_function_by_id(free_function_id)?;
     let declaration = free_function_syntax.declaration(db);
 
     // Generic params.
@@ -132,7 +132,7 @@ pub fn priv_free_function_declaration_data<'db>(
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<FunctionDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
-    let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
+    let free_function_syntax = db.module_free_function_by_id(free_function_id)?;
     let declaration = free_function_syntax.declaration(db);
 
     // Generic params.
@@ -215,7 +215,7 @@ pub fn priv_free_function_body_data<'db>(
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<FunctionBodyData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
-    let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
+    let free_function_syntax = db.module_free_function_by_id(free_function_id)?;
     // Compute declaration semantic.
     let declaration = db.priv_free_function_declaration_data(free_function_id)?;
 

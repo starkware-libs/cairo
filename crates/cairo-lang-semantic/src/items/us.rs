@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     GlobalUseId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, UseId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::UsePathEx;
@@ -59,7 +59,7 @@ pub fn priv_use_semantic_data<'db>(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let use_ast = ast::UsePath::Leaf(db.module_use_by_id(use_id)?.to_maybe()?);
+    let use_ast = ast::UsePath::Leaf(db.module_use_by_id(use_id)?);
     let item = use_ast.get_item(db);
     resolver.set_feature_config(&use_id, &item, &mut diagnostics);
     let resolved_item = resolver.resolve_use_path(
@@ -172,7 +172,7 @@ pub fn priv_use_semantic_data_cycle<'db>(
 ) -> Maybe<Arc<UseData<'db>>> {
     let module_file_id = use_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
-    let use_ast = db.module_use_by_id(use_id)?.to_maybe()?;
+    let use_ast = db.module_use_by_id(use_id)?;
     let err = Err(diagnostics.report(use_ast.stable_ptr(db), UseCycle));
     let inference_id =
         InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Use(use_id)));
@@ -236,7 +236,7 @@ pub fn priv_global_use_semantic_data<'db>(
     let module_file_id = global_use_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let inference_id = InferenceId::GlobalUseStar(global_use_id);
-    let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?.to_maybe()?);
+    let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?);
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
     let edition = resolver.settings.edition;
     if edition.ignore_visibility() {
@@ -292,8 +292,8 @@ pub fn priv_global_use_semantic_data_cycle<'db>(
     global_use_id: GlobalUseId<'db>,
 ) -> Maybe<UseGlobalData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
-    let global_use_ast = db.module_global_use_by_id(global_use_id)?.to_maybe()?;
-    let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?.to_maybe()?);
+    let global_use_ast = db.module_global_use_by_id(global_use_id)?;
+    let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?);
     let segments = get_use_path_segments(db, star_ast)?;
     let err = if segments.segments.len() == 1 {
         // `use bad_name::*`, will attempt to find `bad_name` in the current module's global

@@ -482,7 +482,7 @@ pub fn impl_def_generic_params_data<'db>(
     let module_file_id = impl_def_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
 
-    let impl_ast = db.module_impl_by_id(impl_def_id)?.to_maybe()?;
+    let impl_ast = db.module_impl_by_id(impl_def_id)?;
     let inference_id =
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Impl(impl_def_id)));
 
@@ -572,7 +572,7 @@ pub fn impl_def_trait<'db>(
     let module_file_id = impl_def_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
 
-    let impl_ast = db.module_impl_by_id(impl_def_id)?.to_maybe()?;
+    let impl_ast = db.module_impl_by_id(impl_def_id)?;
     let inference_id = InferenceId::ImplDefTrait(impl_def_id);
 
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
@@ -642,7 +642,7 @@ pub fn priv_impl_declaration_data_inner<'db>(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let impl_ast = db.module_impl_by_id(impl_def_id)?.to_maybe()?;
+    let impl_ast = db.module_impl_by_id(impl_def_id)?;
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
         ModuleItemId::Impl(impl_def_id),
     ));
@@ -1190,9 +1190,9 @@ pub fn impl_impl_ids<'db>(
 pub fn impl_impl_by_id<'db>(
     db: &'db dyn SemanticGroup,
     impl_impl_id: ImplImplDefId<'db>,
-) -> Maybe<Option<ast::ItemImplAlias<'db>>> {
+) -> Maybe<ast::ItemImplAlias<'db>> {
     let impl_impls = db.impl_impls(impl_impl_id.impl_def_id(db))?;
-    Ok(impl_impls.get(&impl_impl_id).cloned())
+    Ok(impl_impls[&impl_impl_id].clone())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_impl_by_trait_impl].
@@ -1247,7 +1247,7 @@ pub fn priv_impl_definition_data<'db>(
     let generic_params = db.impl_def_generic_params(impl_def_id)?;
     let concrete_trait = db.priv_impl_declaration_data(impl_def_id)?.concrete_trait?;
 
-    let impl_ast = db.module_impl_by_id(impl_def_id)?.to_maybe()?;
+    let impl_ast = db.module_impl_by_id(impl_def_id)?;
 
     let generic_params_ids =
         generic_params.iter().map(|generic_param| generic_param.id()).collect();
@@ -2822,7 +2822,7 @@ pub fn priv_impl_impl_def_generic_params_data<'db>(
     impl_impl_def_id: ImplImplDefId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = impl_impl_def_id.module_file_id(db);
-    let impl_impl_def_ast = db.impl_impl_by_id(impl_impl_def_id)?.to_maybe()?;
+    let impl_impl_def_ast = db.impl_impl_by_id(impl_impl_def_id)?;
     let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Impl(impl_impl_def_id));
 
     let impl_resolver_data = db.impl_def_resolver_data(impl_impl_def_id.impl_def_id(db))?;

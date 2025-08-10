@@ -1020,7 +1020,7 @@ pub trait SemanticGroup:
     fn impl_impl_by_id<'db>(
         &'db self,
         impl_impl_id: ImplImplDefId<'db>,
-    ) -> Maybe<Option<ast::ItemImplAlias<'db>>>;
+    ) -> Maybe<ast::ItemImplAlias<'db>>;
     /// Returns the impl impl item that matches the given trait impl item, if exists.
     #[salsa::invoke(items::imp::impl_impl_by_trait_impl)]
     fn impl_impl_by_trait_impl<'db>(
