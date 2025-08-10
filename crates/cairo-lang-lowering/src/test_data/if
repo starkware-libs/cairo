@@ -694,7 +694,7 @@ enum MyEnum {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-warning: Unreachable else clause.
+warning: Unreachable clause.
  --> lib.cairo:10:12-12:5
       } else {
  ____________^
@@ -870,7 +870,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-warning: Unreachable else clause.
+warning: Unreachable clause.
  --> lib.cairo:5:12-7:5
       } else {
  ____________^
