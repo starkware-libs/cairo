@@ -2039,18 +2039,22 @@ impl<'db> Resolver<'db> {
                 // when we support constant expressions, which need inference.
                 let environment = Environment::empty();
 
-                // Using the resolver's data in the constant computation context, so impl vars are
-                // added to the correct inference.
-                let mut resolver_data = ResolverData::new(
+                let dummy_resolver_data = ResolverData::new(
                     self.active_module_file_id(MacroContextModifier::None),
                     self.inference_data.inference_id,
                 );
-                std::mem::swap(&mut self.data, &mut resolver_data);
+
+                // We want to pass `self.data` to the computation context, so we temporarily replace
+                // it with a dummy resolver data.
+                let resolver = Resolver::with_data(
+                    self.db,
+                    std::mem::replace(&mut self.data, dummy_resolver_data),
+                );
 
                 let mut ctx = ComputationContext::new(
                     self.db,
                     diagnostics,
-                    Resolver::with_data(self.db, resolver_data),
+                    resolver,
                     None,
                     environment,
                     ContextFunction::Global,
@@ -2066,8 +2070,8 @@ impl<'db> Resolver<'db> {
                     false,
                 );
 
-                // Update `self` data with const_eval_resolver's data.
-                std::mem::swap(&mut ctx.resolver.data, &mut self.data);
+                // Put the resolver data back into `self`.
+                self.data = ctx.resolver.data;
 
                 GenericArgumentId::Constant(const_value.intern(self.db))
             }
