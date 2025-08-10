@@ -1114,7 +1114,7 @@ fn compute_expr_fixed_size_array_semantic<'db>(
     let exprs = syntax.exprs(db).elements_vec(db);
     let size_ty = get_usize_ty(db);
     let (items, type_id, size) = if let Some(size_const_id) =
-        extract_fixed_size_array_size(db, ctx.diagnostics, syntax, &ctx.resolver)?
+        extract_fixed_size_array_size(db, ctx.diagnostics, syntax, &mut ctx.resolver)?
     {
         // Fixed size array with a defined size must have exactly one element.
         let [expr] = exprs.as_slice() else {

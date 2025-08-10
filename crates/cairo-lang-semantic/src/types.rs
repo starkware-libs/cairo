@@ -645,19 +645,19 @@ pub fn extract_fixed_size_array_size<'db>(
     db: &'db dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics<'db>,
     syntax: &ast::ExprFixedSizeArray<'db>,
-    resolver: &Resolver<'db>,
+    resolver: &mut Resolver<'db>,
 ) -> Maybe<Option<ConstValueId<'db>>> {
     match syntax.size(db) {
         ast::OptionFixedSizeArraySize::FixedSizeArraySize(size_clause) => {
             let environment = Environment::empty();
-            let resolver = Resolver::with_data(
+            let new_resolver = Resolver::with_data(
                 db,
                 (resolver.data).clone_with_inference_id(db, resolver.inference_data.inference_id),
             );
             let mut ctx = ComputationContext::new(
                 db,
                 diagnostics,
-                resolver,
+                new_resolver,
                 None,
                 environment,
                 ContextFunction::Global,
@@ -673,6 +673,7 @@ pub fn extract_fixed_size_array_size<'db>(
                 false,
             );
             if matches!(const_value, ConstValue::Int(_, _) | ConstValue::Generic(_)) {
+                resolver.data.used_uses.extend(ctx.resolver.data.used_uses);
                 Ok(Some(const_value.intern(db)))
             } else {
                 Err(diagnostics.report(syntax.stable_ptr(db), FixedSizeArrayNonNumericSize))

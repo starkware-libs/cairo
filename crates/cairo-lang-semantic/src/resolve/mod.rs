@@ -2069,6 +2069,9 @@ impl<'db> Resolver<'db> {
                 // Update `self` data with const_eval_resolver's data.
                 std::mem::swap(&mut ctx.resolver.data, &mut self.data);
 
+                // Extend self.data with the used_uses from the resolver.
+                self.data.used_uses.extend(ctx.resolver.data.used_uses);
+
                 GenericArgumentId::Constant(const_value.intern(self.db))
             }
 
