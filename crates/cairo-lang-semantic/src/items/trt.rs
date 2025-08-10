@@ -1428,7 +1428,7 @@ pub fn priv_trait_function_body_data<'db>(
     let mut ctx: ComputationContext<'db, '_> = ComputationContext::new(
         db,
         &mut diagnostics,
-        resolver,
+        &mut resolver,
         Some(&trait_function_declaration_data.signature),
         environment,
         ContextFunction::Function(function_id),
@@ -1439,7 +1439,7 @@ pub fn priv_trait_function_body_data<'db>(
     };
     let return_type = trait_function_declaration_data.signature.return_type;
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
-    let ComputationContext { arenas: Arenas { exprs, patterns, statements }, resolver, .. } = ctx;
+    let ComputationContext { arenas: Arenas { exprs, patterns, statements }, .. } = ctx;
 
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();

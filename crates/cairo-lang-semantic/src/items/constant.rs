@@ -318,7 +318,7 @@ pub fn constant_semantic_data_helper<'db>(
     let mut ctx = ComputationContext::new(
         db,
         &mut diagnostics,
-        resolver,
+        &mut resolver,
         None,
         environment,
         ContextFunction::Global,
@@ -340,8 +340,8 @@ pub fn constant_semantic_data_helper<'db>(
         .inference()
         .rewrite(const_value)
         .unwrap_or_else(|_| ConstValue::Missing(skip_diagnostic()).intern(db));
-    let resolver_data = Arc::new(ctx.resolver.data);
     let constant = Constant { value: value.id, arenas: Arc::new(ctx.arenas) };
+    let resolver_data = Arc::new(resolver.data);
     Ok(ConstantData {
         diagnostics: diagnostics.build(),
         const_value,
