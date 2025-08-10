@@ -751,13 +751,25 @@ struct MyStruct {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported type in if-let. Type: `test::MyStruct`.
- --> lib.cairo:7:16
-    if let _ = a {
-               ^
+warning: Unreachable clause.
+ --> lib.cairo:10:12-12:5
+      } else {
+ ____________^
+|         y = y + 8;
+|     }
+|_____^
 
 //! > lowering_flat
-<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+Parameters: v0: test::MyStruct
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0
+  (v2: core::felt252) <- 5
+  (v3: core::felt252) <- core::felt252_add(v1, v2)
+  (v4: core::felt252) <- 1
+  (v5: core::felt252) <- core::felt252_add(v3, v4)
+End:
+  Return(v5)
 
 //! > ==========================================================================
 
