@@ -302,7 +302,9 @@ fn create_node_for_tuple_inner<'db>(
     )
 }
 
-/// Creates a node for matching over numeric values, using [EqualsLiteral] nodes.
+/// Creates a node for matching over numeric values using a combination of [EnumMatch] and
+/// [BooleanIf] nodes.
+// TODO(lior): Fix doc if needed.
 fn create_node_for_value<'db>(
     params: CreateNodeParams<'db, '_, '_>,
     input_var: FlowControlVar,

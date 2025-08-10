@@ -47,7 +47,7 @@ pub fn lower_expr_if<'db>(
     builder: &mut BlockBuilder<'db>,
     expr: &semantic::ExprIf<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
-    if expr.conditions.len() == 1 && matches!(expr.conditions[0], Condition::BoolExpr(_)) {
+    if expr.conditions.len() == 1 {
         let graph = create_graph_expr_if(ctx, expr);
         return lower_graph(ctx, builder, &graph, ctx.get_location(expr.stable_ptr.untyped()));
     }
