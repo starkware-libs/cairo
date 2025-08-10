@@ -21,12 +21,16 @@
 
 use std::fmt::Debug;
 
+use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_semantic::{self as semantic, ConcreteVariant, PatternVariable};
 use cairo_lang_syntax::node::ast::ExprPtr;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::Itertools;
 
-use crate::diagnostic::{LoweringDiagnostics, MatchKind};
+use crate::diagnostic::{
+    LoweringDiagnosticKind, LoweringDiagnostics, LoweringDiagnosticsBuilder, MatchKind,
+};
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
 
@@ -184,6 +188,13 @@ pub enum FlowControlNode<'db> {
     BindVar(BindVar),
     /// An arm (final node) that returns a unit value - `()`.
     UnitResult,
+    /// Represents a node that could not be properly constructed due to an error in the code.
+    ///
+    /// This variant allows the functions that create the graph to remain infallible by
+    /// postponing the failure to lowering the graph.
+    ///
+    /// It carries a [DiagnosticAdded] to ensure an error was reported.
+    Missing(DiagnosticAdded),
 }
 
 impl<'db> FlowControlNode<'db> {
@@ -198,6 +209,7 @@ impl<'db> FlowControlNode<'db> {
             FlowControlNode::Deconstruct(node) => Some(node.input),
             FlowControlNode::BindVar(node) => Some(node.input),
             FlowControlNode::UnitResult => None,
+            FlowControlNode::Missing(_) => None,
         }
     }
 }
@@ -213,6 +225,7 @@ impl<'db> Debug for FlowControlNode<'db> {
             FlowControlNode::Deconstruct(node) => node.fmt(f),
             FlowControlNode::BindVar(node) => node.fmt(f),
             FlowControlNode::UnitResult => write!(f, "UnitResult"),
+            FlowControlNode::Missing(_) => write!(f, "Missing"),
         }
     }
 }
@@ -342,5 +355,20 @@ impl<'db> FlowControlGraphBuilder<'db> {
     /// Returns the type of the given [FlowControlVar].
     pub fn var_ty(&self, input_var: FlowControlVar) -> semantic::TypeId<'db> {
         self.graph.var_types[input_var.0]
+    }
+
+    /// Reports a diagnostic, and returns a new [FlowControlNode::Missing] node.
+    pub fn report_with_missing_node(
+        &mut self,
+        stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
+        kind: LoweringDiagnosticKind<'db>,
+    ) -> NodeId {
+        let diag_added = self.diagnostics.report(stable_ptr, kind);
+        self.add_node(FlowControlNode::Missing(diag_added))
+    }
+
+    /// Returns the kind of the expression being lowered.
+    pub fn kind(&self) -> MatchKind<'db> {
+        self.graph.kind
     }
 }

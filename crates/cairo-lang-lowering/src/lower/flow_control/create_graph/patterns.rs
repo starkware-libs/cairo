@@ -15,6 +15,7 @@ use super::super::graph::{
 };
 use super::cache::Cache;
 use super::filtered_patterns::{Bindings, FilteredPatterns};
+use crate::diagnostic::{LoweringDiagnosticKind, MatchDiagnostic, MatchError};
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
 use crate::lower::flow_control::graph::EqualsLiteral;
@@ -98,11 +99,14 @@ pub fn create_node_for_patterns<'db>(
             )
         };
 
-    // If all the patterns are catch-all, we do not need to look into `input_var`.
-    if patterns.iter().all(|pattern| pattern_is_any(pattern)) {
+    // Find the first non-any pattern, if exists.
+    let Some(first_non_any_pattern) =
+        patterns.iter().flatten().find(|pattern| !pattern_is_any(pattern))
+    else {
+        // If all the patterns are catch-all, we do not need to look into `input_var`.
         // Call the callback with all patterns accepted.
         return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
-    }
+    };
 
     let var_ty = graph.var_ty(input_var);
 
@@ -125,12 +129,17 @@ pub fn create_node_for_patterns<'db>(
             create_node_for_enum(params, input_var, concrete_enum_id, n_snapshots)
         }
         TypeLongId::Tuple(types) => create_node_for_tuple(params, input_var, &types, n_snapshots),
-        _ => todo!("Type {:?} is not supported yet.", long_ty),
+        _ => graph.report_with_missing_node(
+            first_non_any_pattern.stable_ptr(),
+            LoweringDiagnosticKind::MatchError(MatchError {
+                kind: graph.kind(),
+                error: MatchDiagnostic::UnsupportedMatchedType(long_ty.format(ctx.db)),
+            }),
+        ),
     }
 }
 
 /// Creates an [EnumMatch] node for the given `input_var` and `patterns`.
-#[allow(clippy::too_many_arguments)]
 fn create_node_for_enum<'db>(
     params: CreateNodeParams<'db, '_, '_>,
     input_var: FlowControlVar,
@@ -372,19 +381,16 @@ fn create_node_for_value<'db>(
 }
 
 /// Returns `true` if the pattern accepts any value (`_` or a variable name).
-fn pattern_is_any(pattern: &PatternOption<'_, '_>) -> bool {
+fn pattern_is_any<'a, 'db>(pattern: &'a semantic::Pattern<'db>) -> bool {
     match pattern {
-        Some(semantic_pattern) => match semantic_pattern {
-            semantic::Pattern::Otherwise(..) | semantic::Pattern::Variable(..) => true,
-            semantic::Pattern::Literal(..)
-            | semantic::Pattern::StringLiteral(..)
-            | semantic::Pattern::Struct(..)
-            | semantic::Pattern::Tuple(..)
-            | semantic::Pattern::FixedSizeArray(..)
-            | semantic::Pattern::EnumVariant(..)
-            | semantic::Pattern::Missing(..) => false,
-        },
-        None => true,
+        semantic::Pattern::Otherwise(..) | semantic::Pattern::Variable(..) => true,
+        semantic::Pattern::Literal(..)
+        | semantic::Pattern::StringLiteral(..)
+        | semantic::Pattern::Struct(..)
+        | semantic::Pattern::Tuple(..)
+        | semantic::Pattern::FixedSizeArray(..)
+        | semantic::Pattern::EnumVariant(..)
+        | semantic::Pattern::Missing(..) => false,
     }
 }
 
