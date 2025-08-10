@@ -108,6 +108,22 @@ impl<'db> std::fmt::Debug for EnumMatch<'db> {
     }
 }
 
+/// Checks whether a value is equal to a literal.
+#[derive(Debug)]
+pub struct EqualsLiteral {
+    /// The input value to check.
+    pub input: FlowControlVar,
+    /// The literal to check against.
+    #[expect(dead_code)]
+    pub literal: usize,
+    /// The node to jump to if the value is equal to the literal.
+    #[expect(dead_code)]
+    pub true_branch: NodeId,
+    /// The node to jump to if the value is not equal to the literal.
+    #[expect(dead_code)]
+    pub false_branch: NodeId,
+}
+
 /// An arm (final node) that returns an expression.
 #[derive(Debug)]
 pub struct ArmExpr {
@@ -147,6 +163,8 @@ pub enum FlowControlNode<'db> {
     BooleanIf(BooleanIf),
     /// Enum match node.
     EnumMatch(EnumMatch<'db>),
+    /// Checks whether a value is equal to a literal.
+    EqualsLiteral(EqualsLiteral),
     /// An arm (final node) that returns an expression.
     ArmExpr(ArmExpr),
     /// Destructure a tuple to its members.
@@ -164,6 +182,7 @@ impl<'db> FlowControlNode<'db> {
             FlowControlNode::EvaluateExpr(..) => None,
             FlowControlNode::BooleanIf(node) => Some(node.condition_var),
             FlowControlNode::EnumMatch(node) => Some(node.matched_var),
+            FlowControlNode::EqualsLiteral(node) => Some(node.input),
             FlowControlNode::ArmExpr(..) => None,
             FlowControlNode::Deconstruct(node) => Some(node.input),
             FlowControlNode::BindVar(node) => Some(node.input),
@@ -178,6 +197,7 @@ impl<'db> Debug for FlowControlNode<'db> {
             FlowControlNode::EvaluateExpr(node) => node.fmt(f),
             FlowControlNode::BooleanIf(node) => node.fmt(f),
             FlowControlNode::EnumMatch(node) => node.fmt(f),
+            FlowControlNode::EqualsLiteral(node) => node.fmt(f),
             FlowControlNode::ArmExpr(node) => node.fmt(f),
             FlowControlNode::Deconstruct(node) => node.fmt(f),
             FlowControlNode::BindVar(node) => node.fmt(f),
