@@ -7,6 +7,7 @@ use cairo_lang_semantic::{
 use cairo_lang_syntax::node::ast::ExprPtr;
 use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::try_extract_matches;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 
@@ -15,6 +16,7 @@ use super::super::graph::{
 };
 use super::cache::Cache;
 use super::filtered_patterns::{Bindings, FilteredPatterns};
+use crate::diagnostic::{LoweringDiagnosticKind, MatchDiagnostic, MatchError};
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
 use crate::lower::flow_control::graph::EqualsLiteral;
@@ -98,11 +100,15 @@ pub fn create_node_for_patterns<'db>(
             )
         };
 
-    // If all the patterns are catch-all, we do not need to look into `input_var`.
-    if patterns.iter().all(|pattern| pattern_is_any(pattern)) {
+    // Find the first non-any pattern, if exists.
+    let Some(first_non_any_pattern_stable_ptr) = patterns.iter().find_map(|pattern| {
+        try_extract_matches!(pattern_is_any(pattern), IsAny::Concrete)
+            .map(|pattern| pattern.stable_ptr())
+    }) else {
+        // If all the patterns are catch-all, we do not need to look into `input_var`.
         // Call the callback with all patterns accepted.
         return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
-    }
+    };
 
     let var_ty = graph.var_ty(input_var);
 
@@ -125,12 +131,17 @@ pub fn create_node_for_patterns<'db>(
             create_node_for_enum(params, input_var, concrete_enum_id, n_snapshots)
         }
         TypeLongId::Tuple(types) => create_node_for_tuple(params, input_var, &types, n_snapshots),
-        _ => todo!("Type {:?} is not supported yet.", long_ty),
+        _ => graph.report_with_missing_node(
+            first_non_any_pattern_stable_ptr,
+            LoweringDiagnosticKind::MatchError(MatchError {
+                kind: graph.kind(),
+                error: MatchDiagnostic::UnsupportedMatchedType(long_ty.format(ctx.db)),
+            }),
+        ),
     }
 }
 
 /// Creates an [EnumMatch] node for the given `input_var` and `patterns`.
-#[allow(clippy::too_many_arguments)]
 fn create_node_for_enum<'db>(
     params: CreateNodeParams<'db, '_, '_>,
     input_var: FlowControlVar,
@@ -371,20 +382,28 @@ fn create_node_for_value<'db>(
     current_node
 }
 
-/// Returns `true` if the pattern accepts any value (`_` or a variable name).
-fn pattern_is_any(pattern: &PatternOption<'_, '_>) -> bool {
+/// Whether a pattern accepts any value.
+enum IsAny<'a, 'db> {
+    /// The pattern accepts any value (`_` or a variable name).
+    Any,
+    /// Otherwise.
+    Concrete(&'a semantic::Pattern<'db>),
+}
+
+/// Returns [IsAny::Any] if the pattern accepts any value (`_` or a variable name).
+fn pattern_is_any<'a, 'db>(pattern: &PatternOption<'a, 'db>) -> IsAny<'a, 'db> {
     match pattern {
         Some(semantic_pattern) => match semantic_pattern {
-            semantic::Pattern::Otherwise(..) | semantic::Pattern::Variable(..) => true,
+            semantic::Pattern::Otherwise(..) | semantic::Pattern::Variable(..) => IsAny::Any,
             semantic::Pattern::Literal(..)
             | semantic::Pattern::StringLiteral(..)
             | semantic::Pattern::Struct(..)
             | semantic::Pattern::Tuple(..)
             | semantic::Pattern::FixedSizeArray(..)
             | semantic::Pattern::EnumVariant(..)
-            | semantic::Pattern::Missing(..) => false,
+            | semantic::Pattern::Missing(..) => IsAny::Concrete(semantic_pattern),
         },
-        None => true,
+        None => IsAny::Any,
     }
 }
 
