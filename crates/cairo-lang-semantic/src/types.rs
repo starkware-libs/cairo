@@ -37,7 +37,7 @@ use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_ev
 use crate::items::enm::SemanticEnumEx;
 use crate::items::generics::fmt_generic_args;
 use crate::items::imp::{ImplId, ImplLookupContext};
-use crate::resolve::{ResolutionContext, ResolvedConcreteItem, Resolver};
+use crate::resolve::{ResolutionContext, ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id};
 
@@ -645,19 +645,25 @@ pub fn extract_fixed_size_array_size<'db>(
     db: &'db dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics<'db>,
     syntax: &ast::ExprFixedSizeArray<'db>,
-    resolver: &Resolver<'db>,
+    resolver: &mut Resolver<'db>,
 ) -> Maybe<Option<ConstValueId<'db>>> {
     match syntax.size(db) {
         ast::OptionFixedSizeArraySize::FixedSizeArraySize(size_clause) => {
             let environment = Environment::empty();
-            let resolver = Resolver::with_data(
-                db,
-                (resolver.data).clone_with_inference_id(db, resolver.inference_data.inference_id),
+
+            let dummy_resolver_data = ResolverData::new(
+                resolver.data.module_file_id,
+                resolver.data.inference_data.inference_id,
             );
+
+            // We want to pass `resolver.data` to the computation context, so we temporarily replace
+            // it with a dummy resolver data.
+            let new_resolver =
+                Resolver::with_data(db, std::mem::replace(&mut resolver.data, dummy_resolver_data));
             let mut ctx = ComputationContext::new(
                 db,
                 diagnostics,
-                resolver,
+                new_resolver,
                 None,
                 environment,
                 ContextFunction::Global,
@@ -672,6 +678,8 @@ pub fn extract_fixed_size_array_size<'db>(
                 get_usize_ty(db),
                 false,
             );
+            // Put the resolver data back into `resolver`.
+            resolver.data = ctx.resolver.data;
             if matches!(const_value, ConstValue::Int(_, _) | ConstValue::Generic(_)) {
                 Ok(Some(const_value.intern(db)))
             } else {

@@ -258,7 +258,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: If blocks have incompatible types: "()" and "(core::array::Array::<(?2, ?3, ?4)>,)"
+error: If blocks have incompatible types: "()" and "(core::array::Array::<(?3, ?4, ?5)>,)"
  --> lib.cairo:2:25-4:5
       let (unresolved,) = if true {} else {
  _________________________^
