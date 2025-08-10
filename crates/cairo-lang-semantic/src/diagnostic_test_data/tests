@@ -932,6 +932,34 @@ error: Expected module, found constant.
 
 //! > ==========================================================================
 
+//! > Testing use star with non-existent path.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    use super::b::c::*;
+}
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:2:16
+    use super::b::c::*;
+               ^
+
+//! > ==========================================================================
+
 //! > Testing use star ambiguous path
 
 //! > test_runner_name

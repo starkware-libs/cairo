@@ -252,19 +252,20 @@ pub fn priv_global_use_semantic_data<'db>(
     };
     let last_element_ptr = last_segment.stable_ptr(db);
     resolver.set_feature_config(&global_use_id, &item, &mut diagnostics);
-    let resolved_item = resolver.resolve_generic_path(
-        &mut diagnostics,
-        segments,
-        NotFoundItemType::Identifier,
-        ResolutionContext::Default,
-    )?;
-    let imported_module = match &resolved_item {
-        ResolvedGenericItem::Module(module_id) => Ok(*module_id),
-        other => Err(diagnostics.report(
-            last_element_ptr,
-            UnexpectedElement { expected: vec![ElementKind::Module], actual: other.into() },
-        )),
-    };
+    let imported_module = resolver
+        .resolve_generic_path(
+            &mut diagnostics,
+            segments,
+            NotFoundItemType::Identifier,
+            ResolutionContext::Default,
+        )
+        .and_then(|resolved_item| match &resolved_item {
+            ResolvedGenericItem::Module(module_id) => Ok(*module_id),
+            other => Err(diagnostics.report(
+                last_element_ptr,
+                UnexpectedElement { expected: vec![ElementKind::Module], actual: other.into() },
+            )),
+        });
     Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module })
 }
 
