@@ -672,3 +672,42 @@ Statements:
   (v1: core::felt252) <- 0
 End:
   Return(v1)
+
+//! > ==========================================================================
+
+//! > Test unsupported struct pattern
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true, skip_lowering: true)
+
+//! > function_code
+fn foo(x: MyStruct) -> felt252 {
+    if let MyStruct { .. } = x {
+        0
+    } else {
+        1
+    }
+}
+
+//! > module_code
+struct MyStruct {
+    a: felt252,
+    b: felt252,
+}
+
+//! > graph
+Root: 3
+0 ArmExpr { expr: ExprId(2) }
+1 ArmExpr { expr: ExprId(4) }
+2 Missing
+3 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(2) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported type in if-let. Type: `test::MyStruct`.
+ --> lib.cairo:6:12
+    if let MyStruct { .. } = x {
+           ^^^^^^^^^^^^^^^
+
+//! > lowered
