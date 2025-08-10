@@ -6,7 +6,9 @@ use cairo_lang_syntax::node::TypedStablePtr;
 use itertools::zip_eq;
 
 use super::LowerGraphContext;
-use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError};
+use crate::diagnostic::{
+    LoweringDiagnosticKind, LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError,
+};
 use crate::ids::SemanticFunctionIdEx;
 use crate::lower::block_builder::BlockBuilder;
 use crate::lower::context::{LoweredExpr, VarRequest};
@@ -15,7 +17,7 @@ use crate::lower::flow_control::graph::{
     FlowControlNode, NodeId,
 };
 use crate::lower::{
-    generators, lower_expr, lower_expr_literal_to_var_usage, lower_expr_to_var_usage
+    generators, lower_expr, lower_expr_literal_to_var_usage, lower_expr_to_var_usage,
 };
 use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage};
 
@@ -27,10 +29,10 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         if let FlowControlNode::ArmExpr(node) = ctx.graph.node(id) {
             let stable_ptr = ctx.ctx.function_body.arenas.exprs[node.expr].stable_ptr();
 
-            let match_error = LoweringDiagnosticKind::MatchError(MatchError{
-                        kind: ctx.graph.kind(),
-                        error: MatchDiagnostic::UnreachableMatchArm,
-                    });
+            let match_error = LoweringDiagnosticKind::MatchError(MatchError {
+                kind: ctx.graph.kind(),
+                error: MatchDiagnostic::UnreachableMatchArm,
+            });
             ctx.ctx.diagnostics.report(stable_ptr, match_error);
         }
 

@@ -75,12 +75,13 @@ fn test_create_graph(
     };
 
     // Lower the graph.
-    let (lowered_str, lowering_diagnostics) = if args.get("skip_lowering").unwrap_or(&"false".into()) == "true" {
-        ("".into(), ctx.diagnostics.build().format(db))
-    } else {
-        let lowered = lower_graph_as_function(ctx, expr_id, &graph);
-        (formatted_lowered(db, Some(&lowered)), lowered.diagnostics.format(db))
-    };
+    let (lowered_str, lowering_diagnostics) =
+        if args.get("skip_lowering").unwrap_or(&"false".into()) == "true" {
+            ("".into(), ctx.diagnostics.build().format(db))
+        } else {
+            let lowered = lower_graph_as_function(ctx, expr_id, &graph);
+            (formatted_lowered(db, Some(&lowered)), lowered.diagnostics.format(db))
+        };
 
     let error = verify_diagnostics_expectation(
         args,

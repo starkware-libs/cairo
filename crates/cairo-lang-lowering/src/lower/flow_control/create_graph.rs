@@ -9,7 +9,8 @@ use super::graph::{
     ArmExpr, BooleanIf, EvaluateExpr, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode,
     NodeId,
 };
-use crate::{diagnostic::MatchKind, lower::context::LoweringContext};
+use crate::diagnostic::MatchKind;
+use crate::lower::context::LoweringContext;
 
 mod cache;
 mod filtered_patterns;
