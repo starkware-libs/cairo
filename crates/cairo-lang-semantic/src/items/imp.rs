@@ -3594,7 +3594,7 @@ pub fn priv_impl_function_body_data<'db>(
     let inference_id = InferenceId::LookupItemDefinition(LookupItemId::ImplItem(
         ImplItemId::Function(impl_function_id),
     ));
-    let resolver =
+    let mut resolver =
         Resolver::with_data(db, (*parent_resolver_data).clone_with_inference_id(db, inference_id));
     let environment: Environment<'_> = declaration.function_declaration_data.environment;
 
@@ -3620,7 +3620,7 @@ pub fn priv_impl_function_body_data<'db>(
     let mut ctx = ComputationContext::new(
         db,
         &mut diagnostics,
-        resolver,
+        &mut resolver,
         Some(&declaration.function_declaration_data.signature),
         environment,
         ContextFunction::Function(function_id),
@@ -3628,7 +3628,7 @@ pub fn priv_impl_function_body_data<'db>(
     let function_body = function_syntax.body(db);
     let return_type = declaration.function_declaration_data.signature.return_type;
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
-    let ComputationContext { arenas: Arenas { exprs, patterns, statements }, resolver, .. } = ctx;
+    let ComputationContext { arenas: Arenas { exprs, patterns, statements }, .. } = ctx;
 
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
