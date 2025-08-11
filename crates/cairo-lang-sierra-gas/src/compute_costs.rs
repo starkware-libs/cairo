@@ -428,7 +428,7 @@ impl<CostType: CostTypeTrait, GetCostFn: Fn(&ConcreteLibfuncId) -> Vec<BranchCos
     /// Assumes that [Self::prepare_wallet] was called before.
     ///
     /// For `branch_align` the function returns the result as if the alignment is zero (since the
-    /// alignment is not know at this point).
+    /// alignment is not known at this point).
     fn wallet_at(&self, idx: &StatementIdx) -> WalletInfo<CostType> {
         self.wallet_at_ex(idx, true)
     }
