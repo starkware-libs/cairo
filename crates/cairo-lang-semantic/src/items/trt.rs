@@ -8,7 +8,7 @@ use cairo_lang_defs::ids::{
     TraitFunctionId, TraitFunctionLongId, TraitId, TraitImplId, TraitImplLongId, TraitItemId,
     TraitTypeId, TraitTypeLongId, UseId,
 };
-use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -377,7 +377,7 @@ pub fn trait_generic_params_data<'db>(
 ) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = trait_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
-    let trait_ast = db.module_trait_by_id(trait_id)?.to_maybe()?;
+    let trait_ast = db.module_trait_by_id(trait_id)?;
 
     // Generic params.
     let inference_id =
@@ -437,7 +437,7 @@ pub fn priv_trait_declaration_data<'db>(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let trait_ast = db.module_trait_by_id(trait_id)?.to_maybe()?;
+    let trait_ast = db.module_trait_by_id(trait_id)?;
 
     // Generic params.
     let generic_params_data = db.trait_generic_params_data(trait_id, false)?;
@@ -712,7 +712,7 @@ pub fn priv_trait_definition_data<'db>(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let trait_ast = db.module_trait_by_id(trait_id)?.to_maybe()?;
+    let trait_ast = db.module_trait_by_id(trait_id)?;
 
     let mut function_asts = OrderedHashMap::default();
     let mut item_type_asts = OrderedHashMap::default();

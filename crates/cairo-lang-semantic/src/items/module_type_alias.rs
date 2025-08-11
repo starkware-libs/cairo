@@ -146,7 +146,7 @@ pub fn priv_module_type_alias_generic_params_data<'db>(
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = module_type_alias_id.module_file_id(db);
-    let type_alias_ast = db.module_type_alias_by_id(module_type_alias_id)?.to_maybe()?;
+    let type_alias_ast = db.module_type_alias_by_id(module_type_alias_id)?;
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::TypeAlias(module_type_alias_id));
 
     type_alias_generic_params_data_helper(db, module_file_id, &type_alias_ast, lookup_item_id, None)

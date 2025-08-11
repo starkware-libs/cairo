@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MemberId, MemberLongId, ModuleItemId, StructId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -51,7 +51,7 @@ pub fn priv_struct_declaration_data<'db>(
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
-    let struct_ast = db.module_struct_by_id(struct_id)?.to_maybe()?;
+    let struct_ast = db.module_struct_by_id(struct_id)?;
 
     // Generic params.
     let generic_params_data = db.struct_generic_params_data(struct_id)?;
@@ -108,7 +108,7 @@ pub fn struct_generic_params_data<'db>(
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
-    let struct_ast = db.module_struct_by_id(struct_id)?.to_maybe()?;
+    let struct_ast = db.module_struct_by_id(struct_id)?;
     // Generic params.
     let inference_id =
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Struct(struct_id)));
@@ -174,7 +174,7 @@ pub fn priv_struct_definition_data<'db>(
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
-    let struct_ast = db.module_struct_by_id(struct_id)?.to_maybe()?;
+    let struct_ast = db.module_struct_by_id(struct_id)?;
 
     // Generic params.
     let generic_params_data = db.struct_generic_params_data(struct_id)?;
