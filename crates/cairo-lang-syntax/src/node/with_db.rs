@@ -19,13 +19,14 @@ impl<'a, Db: SyntaxGroup> ToPrimitiveTokenStream for SyntaxNodeWithDb<'a, Db> {
     type Iter = SyntaxNodeWithDbIterator<'a, Db>;
 
     fn to_primitive_token_stream(&self) -> Self::Iter {
+        let mut result: Vec<PrimitiveToken> = Default::default();
+
+        self.node.for_each_terminal(self.db, |terminal| {
+            token_from_syntax_node(terminal, self.db, &mut result)
+        });
+
         // The lifetime of the iterator should extend 'a because it derives from both node and db
-        SyntaxNodeWithDbIterator::new(
-            Box::new(
-                self.node.tokens(self.db).flat_map(|node| token_from_syntax_node(node, self.db)),
-            ),
-            self.db,
-        )
+        SyntaxNodeWithDbIterator::new(Box::new(result.into_iter()), self.db)
     }
 }
 
@@ -56,11 +57,14 @@ impl<Db: SyntaxGroup> Iterator for SyntaxNodeWithDbIterator<'_, Db> {
 /// We split the content of the `SyntaxNode` into three parts: the prefix trivia, the main content
 /// of the node, and the suffix trivia. Each part is represented as a separate `PrimitiveToken`
 /// with its corresponding span.
-fn token_from_syntax_node(node: SyntaxNode<'_>, db: &dyn SyntaxGroup) -> Vec<PrimitiveToken> {
+fn token_from_syntax_node(
+    node: &SyntaxNode<'_>,
+    db: &dyn SyntaxGroup,
+    result: &mut Vec<PrimitiveToken>,
+) {
     let span_without_trivia = node.span_without_trivia(db);
     let span_with_trivia = node.span(db);
     let text = node.get_text(db);
-    let mut result = Vec::new();
     let prefix_len = span_without_trivia.start - span_with_trivia.start;
     let (prefix, rest) = text.split_at(prefix_len.as_u32() as usize);
     if prefix_len > TextWidth::ZERO {
@@ -92,5 +96,4 @@ fn token_from_syntax_node(node: SyntaxNode<'_>, db: &dyn SyntaxGroup) -> Vec<Pri
             }),
         });
     }
-    result
 }

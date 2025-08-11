@@ -346,6 +346,17 @@ impl<'a> SyntaxNode<'a> {
         })
     }
 
+    /// Faster than [`SyntaxNode::tokens`] because we don't travel each leaf, and does not allocate.
+    pub fn for_each_terminal<'db>(
+        &self,
+        db: &'db dyn SyntaxGroup,
+        mut callback: impl FnMut(&SyntaxNode<'db>),
+    ) where
+        Self: 'db,
+    {
+        for_each_terminals_ex(self, db, &mut callback)
+    }
+
     /// Mirror of [`TypedSyntaxNode::cast`].
     pub fn cast<T: TypedSyntaxNode<'a>>(self, db: &'a dyn SyntaxGroup) -> Option<T> {
         T::cast(db, self)
@@ -485,6 +496,21 @@ pub trait TypedStablePtr<'a> {
     fn lookup(&self, db: &'a dyn SyntaxGroup) -> Self::SyntaxNode;
     /// Returns the untyped stable pointer.
     fn untyped(self) -> SyntaxStablePtrId<'a>;
+}
+
+fn for_each_terminals_ex<'db>(
+    node: &SyntaxNode<'db>,
+    db: &'db dyn SyntaxGroup,
+    callback: &mut impl FnMut(&SyntaxNode<'db>),
+) {
+    if node.green_node(db).kind.is_terminal() {
+        callback(node);
+        return;
+    }
+
+    for child in node.get_children(db) {
+        for_each_terminals_ex(child, db, callback);
+    }
 }
 
 /// Returns the width of the leading trivia of the given green node.
