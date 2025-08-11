@@ -1065,3 +1065,69 @@ error: Unsupported feature.
 
 //! > lowering_flat
 <Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+
+//! > ==========================================================================
+
+//! > Non-droppable enum
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function
+fn foo(a: MyEnum, b: MyEnum, c: MyEnum2, d: MyEnum2) {
+    // TODO(lior): Fix the locations in this test.
+    if let MyEnum::A(_x) = a {}
+    // If the variable is not bound, the match is skipped, which leads to an error.
+    if let MyEnum::A(_) = b {}
+    // If there are two variants, the match is forced. In this case, the error is due to the inner
+    // value not being dropped. Test with and without binding.
+    if let MyEnum2::B(_x) = c {}
+    if let MyEnum2::B(_) = d {}
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    A: felt252,
+}
+
+enum MyEnum2 {
+    B: MyEnum,
+    C: MyEnum,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable not dropped.
+ --> lib.cairo:17:28
+    if let MyEnum2::B(_) = d {}
+                           ^
+note: Trait has no implementation in context: core::traits::Drop::<test::MyEnum>.
+note: Trait has no implementation in context: core::traits::Destruct::<test::MyEnum>.
+
+error: Variable not dropped.
+ --> lib.cairo:16:23
+    if let MyEnum2::B(_x) = c {}
+                      ^^
+note: Trait has no implementation in context: core::traits::Drop::<test::MyEnum>.
+note: Trait has no implementation in context: core::traits::Destruct::<test::MyEnum>.
+
+error: Variable not dropped.
+ --> lib.cairo:16:29
+    if let MyEnum2::B(_x) = c {}
+                            ^
+note: Trait has no implementation in context: core::traits::Drop::<test::MyEnum>.
+note: Trait has no implementation in context: core::traits::Destruct::<test::MyEnum>.
+
+error: Variable not dropped.
+ --> lib.cairo:9:19
+fn foo(a: MyEnum, b: MyEnum, c: MyEnum2, d: MyEnum2) {
+                  ^
+note: Trait has no implementation in context: core::traits::Drop::<test::MyEnum>.
+note: Trait has no implementation in context: core::traits::Destruct::<test::MyEnum>.
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
