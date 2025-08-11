@@ -103,28 +103,32 @@ End:
 
 //! > ==========================================================================
 
-//! > Test let chain
+//! > Test let chain with modified variables
 
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo(mut x: felt252, mut y: felt252) -> felt252 {
-    if let Some(_) = Some(x) && let Some(_) = Some(y) {
-        x + y
+    if let Some(z) = Some(modify(ref x)) && let Some(_) = Some(modify(ref y)) {
+        x + y + z
     } else {
         x + y
     }
 }
 
+//! > module_code
+extern fn modify(ref x: felt252) -> felt252 nopanic;
+
 //! > graph
-Root: 5
-0 ArmExpr { expr: ExprId(7) }
-1 ArmExpr { expr: ExprId(11) }
+Root: 6
+0 ArmExpr { expr: ExprId(11) }
+1 ArmExpr { expr: ExprId(15) }
 2 EnumMatch { matched_var: v0, variants: (NodeId(0), v1), (NodeId(1), v2)}
-3 EvaluateExpr { expr: ExprId(3), var_id: v0, next: NodeId(2) }
-4 EnumMatch { matched_var: v3, variants: (NodeId(3), v4), (NodeId(1), v5)}
-5 EvaluateExpr { expr: ExprId(1), var_id: v3, next: NodeId(4) }
+3 EvaluateExpr { expr: ExprId(5), var_id: v0, next: NodeId(2) }
+4 BindVar { input: v4, output: PatternVarId(0), next: NodeId(3) }
+5 EnumMatch { matched_var: v3, variants: (NodeId(4), v4), (NodeId(1), v5)}
+6 EvaluateExpr { expr: ExprId(2), var_id: v3, next: NodeId(5) }
 
 //! > semantic_diagnostics
 
@@ -132,48 +136,162 @@ Root: 5
 Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
-  (v2: core::option::Option::<core::felt252>) <- Option::Some(v0)
+  (v3: core::felt252, v2: core::felt252) <- test::modify(v0)
+  (v4: core::option::Option::<core::felt252>) <- Option::Some(v2)
 End:
-  Match(match_enum(v2) {
-    Option::Some(v3) => blk1,
-    Option::None(v4) => blk2,
+  Match(match_enum(v4) {
+    Option::Some(v5) => blk1,
+    Option::None(v6) => blk2,
   })
 
 blk1:
 Statements:
-  (v5: core::option::Option::<core::felt252>) <- Option::Some(v1)
+  (v8: core::felt252, v7: core::felt252) <- test::modify(v1)
+  (v9: core::option::Option::<core::felt252>) <- Option::Some(v7)
 End:
-  Match(match_enum(v5) {
-    Option::Some(v6) => blk3,
-    Option::None(v7) => blk4,
+  Match(match_enum(v9) {
+    Option::Some(v10) => blk3,
+    Option::None(v11) => blk4,
   })
 
 blk2:
 Statements:
 End:
-  Goto(blk5, {})
+  Goto(blk5, {v1 -> v12})
 
 blk3:
 Statements:
-  (v9: core::felt252) <- core::Felt252Add::add(v0, v1)
+  (v14: core::felt252) <- core::Felt252Add::add(v3, v8)
+  (v15: core::felt252) <- core::Felt252Add::add(v14, v5)
 End:
-  Goto(blk6, {v9 -> v10})
+  Goto(blk6, {v8 -> v17, v15 -> v16})
 
 blk4:
 Statements:
 End:
-  Goto(blk5, {})
+  Goto(blk5, {v8 -> v12})
 
 blk5:
 Statements:
-  (v8: core::felt252) <- core::Felt252Add::add(v0, v1)
+  (v13: core::felt252) <- core::Felt252Add::add(v3, v12)
 End:
-  Goto(blk6, {v8 -> v10})
+  Goto(blk6, {v12 -> v17, v13 -> v16})
 
 blk6:
 Statements:
 End:
-  Return(v10)
+  Return(v16)
+
+//! > ==========================================================================
+
+//! > Test let chain with struct deconstruction
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(mut x: felt252, mut y: MyStruct) -> (MyStruct, bool) {
+    if let Some(_) = Some(modify(ref x))
+        && let Some(_) = Some(modify(ref y.a))
+        && let Some(_) = Some(modify(ref y.b)) {
+        (y, true)
+    } else {
+        (y, false)
+    }
+}
+
+//! > module_code
+struct MyStruct {
+    a: felt252,
+    b: felt252,
+}
+
+extern fn modify(ref x: felt252) -> felt252 nopanic;
+
+//! > graph
+Root: 7
+0 ArmExpr { expr: ExprId(15) }
+1 ArmExpr { expr: ExprId(20) }
+2 EnumMatch { matched_var: v0, variants: (NodeId(0), v1), (NodeId(1), v2)}
+3 EvaluateExpr { expr: ExprId(10), var_id: v0, next: NodeId(2) }
+4 EnumMatch { matched_var: v3, variants: (NodeId(3), v4), (NodeId(1), v5)}
+5 EvaluateExpr { expr: ExprId(6), var_id: v3, next: NodeId(4) }
+6 EnumMatch { matched_var: v6, variants: (NodeId(5), v7), (NodeId(1), v8)}
+7 EvaluateExpr { expr: ExprId(2), var_id: v6, next: NodeId(6) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+Parameters: v0: core::felt252, v1: test::MyStruct
+blk0 (root):
+Statements:
+  (v3: core::felt252, v2: core::felt252) <- test::modify(v0)
+  (v4: core::option::Option::<core::felt252>) <- Option::Some(v2)
+End:
+  Match(match_enum(v4) {
+    Option::Some(v5) => blk1,
+    Option::None(v6) => blk2,
+  })
+
+blk1:
+Statements:
+  (v7: core::felt252, v8: core::felt252) <- struct_destructure(v1)
+  (v10: core::felt252, v9: core::felt252) <- test::modify(v7)
+  (v11: core::option::Option::<core::felt252>) <- Option::Some(v9)
+End:
+  Match(match_enum(v11) {
+    Option::Some(v12) => blk3,
+    Option::None(v13) => blk4,
+  })
+
+blk2:
+Statements:
+  (v21: core::felt252, v22: core::felt252) <- struct_destructure(v1)
+End:
+  Goto(blk7, {v21 -> v19, v22 -> v20})
+
+blk3:
+Statements:
+  (v15: core::felt252, v14: core::felt252) <- test::modify(v8)
+  (v16: core::option::Option::<core::felt252>) <- Option::Some(v14)
+End:
+  Match(match_enum(v16) {
+    Option::Some(v17) => blk5,
+    Option::None(v18) => blk6,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk7, {v10 -> v19, v8 -> v20})
+
+blk5:
+Statements:
+  (v27: ()) <- struct_construct()
+  (v28: core::bool) <- bool::True(v27)
+  (v29: test::MyStruct) <- struct_construct(v10, v15)
+  (v30: (test::MyStruct, core::bool)) <- struct_construct(v29, v28)
+End:
+  Goto(blk8, {v29 -> v32, v30 -> v31})
+
+blk6:
+Statements:
+End:
+  Goto(blk7, {v10 -> v19, v15 -> v20})
+
+blk7:
+Statements:
+  (v23: ()) <- struct_construct()
+  (v24: core::bool) <- bool::False(v23)
+  (v25: test::MyStruct) <- struct_construct(v19, v20)
+  (v26: (test::MyStruct, core::bool)) <- struct_construct(v25, v24)
+End:
+  Goto(blk8, {v25 -> v32, v26 -> v31})
+
+blk8:
+Statements:
+End:
+  Return(v31)
 
 //! > ==========================================================================
 
@@ -407,3 +525,67 @@ blk6:
 Statements:
 End:
   Return(v7)
+
+//! > ==========================================================================
+
+//! > Test if let-chain with panic in condition
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo() -> felt252 {
+    if let Some(_) = Some(0) && panic!() {
+        0
+    } else {
+        1
+    }
+}
+
+//! > module_code
+
+//! > graph
+Root: 5
+0 ArmExpr { expr: ExprId(7) }
+1 ArmExpr { expr: ExprId(9) }
+2 BooleanIf { condition_var: v0, true_branch: NodeId(0), false_branch: NodeId(1) }
+3 EvaluateExpr { expr: ExprId(5), var_id: v0, next: NodeId(2) }
+4 EnumMatch { matched_var: v1, variants: (NodeId(3), v2), (NodeId(1), v3)}
+5 EvaluateExpr { expr: ExprId(1), var_id: v1, next: NodeId(4) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 0
+  (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
+End:
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
+  (v5: core::felt252) <- 0
+  (v6: core::integer::u32) <- 0
+  (v7: core::byte_array::ByteArray) <- struct_construct(v4, v5, v6)
+  (v8: core::byte_array::ByteArray, v9: @core::byte_array::ByteArray) <- snapshot(v7)
+  (v10: core::never) <- core::panics::panic_with_byte_array(v9)
+End:
+  Match(match_enum(v10) {
+  })
+
+blk2:
+Statements:
+  (v11: core::felt252) <- 1
+End:
+  Goto(blk3, {v11 -> v12})
+
+blk3:
+Statements:
+End:
+  Return(v12)
