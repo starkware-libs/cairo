@@ -221,6 +221,7 @@ pub struct ComputationContext<'ctx, 'mt> {
     macro_defined_var_unhygienic: bool,
 }
 impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
+    /// Creates a new computation context.
     pub fn new(
         db: &'ctx dyn SemanticGroup,
         diagnostics: &'mt mut SemanticDiagnostics<'ctx>,
@@ -247,6 +248,15 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
             are_closures_in_context: false,
             macro_defined_var_unhygienic: false,
         }
+    }
+
+    /// Creates a new computation context for a global scope.
+    pub fn new_global(
+        db: &'ctx dyn SemanticGroup,
+        diagnostics: &'mt mut SemanticDiagnostics<'ctx>,
+        resolver: &'mt mut Resolver<'ctx>,
+    ) -> Self {
+        Self::new(db, diagnostics, resolver, None, Environment::empty(), ContextFunction::Global)
     }
 
     /// Runs a function with a modified context, with a new environment for a subscope.
