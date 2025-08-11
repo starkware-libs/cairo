@@ -11,7 +11,7 @@ jobs:
   ensure-no_std:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly-2025-08-05
@@ -63,7 +63,7 @@ jobs:
           - test --profile=ci-dev -p cairo-lang-utils --no-default-features --features=serde,parity-scale-codec
           - test --profile=ci-dev -p tests
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@master
         with:
           components: rustfmt
@@ -97,7 +97,7 @@ jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@master
         with:
           components: rustfmt
@@ -109,7 +109,7 @@ jobs:
   cairofmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: scripts/cairo_fmt.sh --check
@@ -118,7 +118,7 @@ jobs:
   cairotest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: scripts/cairo_test.sh
@@ -129,14 +129,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Machete
         uses: bnjbvr/cargo-machete@v0.8.0
 
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@master
         with:
           components: clippy
@@ -148,13 +148,13 @@ jobs:
   typos:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: crate-ci/typos@v1.30.1
 
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly-2025-08-05
@@ -165,7 +165,7 @@ jobs:
   sierra-updated-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: '0'
       - run: >
