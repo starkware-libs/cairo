@@ -33,7 +33,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{
-    ComputationContext, ContextFunction, Environment, ExpansionOffset, compute_expr_semantic,
+    ComputationContext, Environment, ExpansionOffset, compute_expr_semantic,
     get_statement_item_by_name,
 };
 use crate::expr::inference::canonic::ResultNoErrEx;
@@ -2030,22 +2030,13 @@ impl<'db> Resolver<'db> {
         let db = self.db;
         Ok(match generic_param {
             GenericParam::Type(_) => {
-                let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
-                GenericArgumentId::Type(ty)
+                GenericArgumentId::Type(resolve_type(db, diagnostics, self, generic_arg_syntax))
             }
             GenericParam::Const(const_param) => {
                 // TODO(spapini): Currently no bound checks are performed. Move literal validation
                 // to inference finalization and use inference here. This will become more relevant
                 // when we support constant expressions, which need inference.
-                let environment = Environment::empty();
-                let mut ctx = ComputationContext::new(
-                    db,
-                    diagnostics,
-                    self,
-                    None,
-                    environment,
-                    ContextFunction::Global,
-                );
+                let mut ctx = ComputationContext::new_global(db, diagnostics, self);
                 let value = compute_expr_semantic(&mut ctx, generic_arg_syntax);
                 let const_value = resolve_const_expr_and_evaluate(
                     db,

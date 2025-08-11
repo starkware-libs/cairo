@@ -43,8 +43,8 @@ use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::resolve_type;
 use crate::{
-    Arenas, FunctionBody, FunctionLongId, GenericArgumentId, GenericParam, Mutability,
-    SemanticDiagnostic, TypeId, semantic, semantic_object_for_id,
+    FunctionBody, FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic,
+    TypeId, semantic, semantic_object_for_id,
 };
 
 #[cfg(test)]
@@ -1439,18 +1439,18 @@ pub fn priv_trait_function_body_data<'db>(
     };
     let return_type = trait_function_declaration_data.signature.return_type;
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
-    let ComputationContext { arenas: Arenas { exprs, patterns, statements }, .. } = ctx;
+    let ComputationContext { arenas, .. } = ctx;
 
     let expr_lookup: UnorderedHashMap<_, _> =
-        exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
+        arenas.exprs.iter().map(|(id, expr)| (expr.stable_ptr(), id)).collect();
     let pattern_lookup: UnorderedHashMap<_, _> =
-        patterns.iter().map(|(pattern_id, pattern)| (pattern.stable_ptr(), pattern_id)).collect();
+        arenas.patterns.iter().map(|(id, pattern)| (pattern.stable_ptr(), id)).collect();
     let resolver_data = Arc::new(resolver.data);
     Ok(Some(FunctionBodyData {
         diagnostics: diagnostics.build(),
         expr_lookup,
         pattern_lookup,
         resolver_data,
-        body: Arc::new(FunctionBody { arenas: Arenas { exprs, patterns, statements }, body_expr }),
+        body: Arc::new(FunctionBody { arenas, body_expr }),
     }))
 }
