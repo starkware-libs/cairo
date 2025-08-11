@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::compile::CompiledFunction;
 
+pub const NOT_RETURNING_HEADER_SIZE: usize = 6;
+
 /// Structure to hold the executable representation of a program.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Executable {
@@ -23,6 +25,7 @@ impl Executable {
             call rel 4;
             jmp rel 0;
         };
+        assert_eq!(non_returning_header.current_code_offset, NOT_RETURNING_HEADER_SIZE);
         Self {
             program: compiled.program.assemble_ex(
                 chain!(&non_returning_header.instructions, &compiled.wrapper.header),
@@ -36,7 +39,7 @@ impl Executable {
                 },
                 ExecutableEntryPoint {
                     builtins: compiled.wrapper.builtins,
-                    offset: non_returning_header.current_code_offset,
+                    offset: NOT_RETURNING_HEADER_SIZE,
                     kind: EntryPointKind::Bootloader,
                 },
             ],
@@ -56,7 +59,7 @@ pub struct ExecutableEntryPoint {
 }
 
 /// The kind of an entrypoint.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Deserialize)]
 pub enum EntryPointKind {
     /// Entrypoint is for running it using a bootloader.
     ///
@@ -64,7 +67,7 @@ pub enum EntryPointKind {
     Bootloader,
     /// Entrypoint is for running this executable as a standalone program.
     ///
-    /// The entrypoint starts with `ap += <builtins.len()>` and expected the builtins to be injected
+    /// The entrypoint starts with `ap += <builtins.len()>` and expects the builtins to be injected
     /// there, and ends with an infinite loop.
     Standalone,
 }

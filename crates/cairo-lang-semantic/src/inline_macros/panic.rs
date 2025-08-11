@@ -19,7 +19,7 @@ use indoc::{formatdoc, indoc};
 fn try_handle_simple_panic(
     db: &dyn SyntaxGroup,
     builder: &mut PatchBuilder<'_>,
-    arguments: &[Arg],
+    arguments: &[Arg<'_>],
 ) -> Option<()> {
     let panic_str = match arguments {
         [] => {
@@ -48,12 +48,12 @@ impl NamedPlugin for PanicMacro {
     const NAME: &'static str = "panic";
 }
 impl InlineMacroExprPlugin for PanicMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
         let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
             return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
                 syntax.as_syntax_node().stable_ptr(db),
@@ -66,7 +66,7 @@ impl InlineMacroExprPlugin for PanicMacro {
         };
 
         let mut builder = PatchBuilder::new(db, syntax);
-        let arguments = arguments_syntax.arguments(db).elements(db);
+        let arguments = arguments_syntax.arguments(db).elements_vec(db);
         if try_handle_simple_panic(db, &mut builder, &arguments).is_none() {
             builder.add_modified(RewriteNode::interpolate_patched(
                 &formatdoc! {
@@ -104,11 +104,12 @@ impl InlineMacroExprPlugin for PanicMacro {
         let (content, code_mappings) = builder.build();
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
-                name: format!("{}_macro", Self::NAME).into(),
+                name: format!("{}_macro", Self::NAME),
                 content,
                 code_mappings,
                 aux_data: None,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             }),
             diagnostics: vec![],
         }

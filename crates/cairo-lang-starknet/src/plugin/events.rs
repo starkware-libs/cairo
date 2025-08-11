@@ -6,7 +6,6 @@ use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use const_format::formatcp;
 use serde::{Deserialize, Serialize};
-use smol_str::SmolStr;
 
 use super::consts::{EVENT_ATTR, EVENT_TRAIT, EVENT_TYPE_NAME};
 use super::starknet_module::StarknetModuleKind;
@@ -14,8 +13,8 @@ use super::starknet_module::StarknetModuleKind;
 /// Generated auxiliary data for the `#[derive(starknet::Event)]` attribute.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EventData {
-    Struct { members: Vec<(SmolStr, EventFieldKind)> },
-    Enum { variants: Vec<(SmolStr, EventFieldKind)> },
+    Struct { members: Vec<(String, EventFieldKind)> },
+    Enum { variants: Vec<(String, EventFieldKind)> },
 }
 
 /// The code for an empty event.
@@ -27,12 +26,12 @@ pub enum {EVENT_TYPE_NAME} {{}}
 
 /// Checks whether the given item is a starknet event, and if so - makes sure it's valid and returns
 /// its variants. Returns None if it's not a starknet event.
-pub fn get_starknet_event_variants(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    item: &ast::ModuleItem,
+pub fn get_starknet_event_variants<'db>(
+    db: &'db dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    item: &ast::ModuleItem<'db>,
     module_kind: StarknetModuleKind,
-) -> Option<Vec<SmolStr>> {
+) -> Option<Vec<&'db str>> {
     let (has_event_name, stable_ptr, variants) = match item {
         ast::ModuleItem::Struct(strct) => {
             (strct.name(db).text(db) == EVENT_TYPE_NAME, strct.name(db).stable_ptr(db), vec![])
@@ -40,7 +39,7 @@ pub fn get_starknet_event_variants(
         ast::ModuleItem::Enum(enm) => {
             let has_event_name = enm.name(db).text(db) == EVENT_TYPE_NAME;
             let variants = if has_event_name {
-                enm.variants(db).elements(db).into_iter().map(|v| v.name(db).text(db)).collect()
+                enm.variants(db).elements(db).map(|v| v.name(db).text(db)).collect()
             } else {
                 vec![]
             };

@@ -1,12 +1,9 @@
 use core::hash::Hash;
-use std::fmt::Display;
-use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, define_short_id, require};
-use smol_str::SmolStr;
+use cairo_lang_utils::{Intern, define_short_id, require};
 
 use self::ast::TriviaGreen;
 use self::db::SyntaxGroup;
@@ -36,23 +33,23 @@ mod test_utils;
 /// SyntaxNode. Untyped view of the syntax tree. Adds parent() and offset() capabilities.
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct SyntaxNodeLongId {
-    green: GreenId,
+pub struct SyntaxNodeLongId<'a> {
+    green: GreenId<'a>,
     /// Number of characters from the beginning of the file to the start of the span of this
     /// syntax subtree.
     offset: TextOffset,
-    parent: Option<SyntaxNode>,
-    stable_ptr: SyntaxStablePtrId,
+    parent: Option<SyntaxNode<'a>>,
+    stable_ptr: SyntaxStablePtrId<'a>,
 }
 define_short_id!(
     SyntaxNode,
-    SyntaxNodeLongId,
+    SyntaxNodeLongId<'db>,
     SyntaxGroup,
     lookup_intern_syntax_node,
     intern_syntax_node
 );
-impl SyntaxNode {
-    pub fn new_root(db: &dyn SyntaxGroup, file_id: FileId, green: GreenId) -> Self {
+impl<'a> SyntaxNode<'a> {
+    pub fn new_root(db: &'a dyn SyntaxGroup, file_id: FileId<'a>, green: GreenId<'a>) -> Self {
         Self::new_with_inner(
             db,
             green,
@@ -63,9 +60,9 @@ impl SyntaxNode {
     }
 
     pub fn new_root_with_offset(
-        db: &dyn SyntaxGroup,
-        file_id: FileId,
-        green: GreenId,
+        db: &'a dyn SyntaxGroup,
+        file_id: FileId<'a>,
+        green: GreenId<'a>,
         initial_offset: Option<TextOffset>,
     ) -> Self {
         Self::new_with_inner(
@@ -78,17 +75,17 @@ impl SyntaxNode {
     }
 
     pub fn new_with_inner(
-        db: &dyn SyntaxGroup,
-        green: GreenId,
+        db: &'a dyn SyntaxGroup,
+        green: GreenId<'a>,
         offset: TextOffset,
-        parent: Option<SyntaxNode>,
-        stable_ptr: SyntaxStablePtrId,
+        parent: Option<SyntaxNode<'a>>,
+        stable_ptr: SyntaxStablePtrId<'a>,
     ) -> Self {
         SyntaxNodeLongId { green, offset, parent, stable_ptr }.intern(db)
     }
 
     pub fn offset(&self, db: &dyn SyntaxGroup) -> TextOffset {
-        self.lookup_intern(db).offset
+        self.long(db).offset
     }
     pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
         self.green_node(db).width()
@@ -102,30 +99,37 @@ impl SyntaxNode {
         TextSpan { start, end }
     }
     /// Returns the text of the token if this node is a token.
-    pub fn text(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
+    pub fn text(&self, db: &'a dyn SyntaxGroup) -> Option<&'a str> {
         match &self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => Some(text.clone()),
+            green::GreenNodeDetails::Token(text) => Some(text),
             green::GreenNodeDetails::Node { .. } => None,
         }
     }
-    pub fn green_node(&self, db: &dyn SyntaxGroup) -> Arc<GreenNode> {
-        self.lookup_intern(db).green.lookup_intern(db)
+
+    /// Returns the green node of the syntax node.
+    pub fn green_node(&self, db: &'a dyn SyntaxGroup) -> &'a GreenNode<'a> {
+        self.long(db).green.long(db)
     }
+
+    /// Returns the span of the syntax node without trivia.
     pub fn span_without_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
-        let start = self.span_start_without_trivia(db);
-        let end = self.span_end_without_trivia(db);
+        let node = self.long(db);
+        let green_node = node.green.long(db);
+        let (leading, trailing) = both_trivia_width(db, green_node);
+        let start = node.offset.add_width(leading);
+        let end = node.offset.add_width(green_node.width()).sub_width(trailing);
         TextSpan { start, end }
     }
-    pub fn parent(&self, db: &dyn SyntaxGroup) -> Option<SyntaxNode> {
-        self.lookup_intern(db).parent.as_ref().cloned()
+    pub fn parent(&self, db: &'a dyn SyntaxGroup) -> Option<SyntaxNode<'a>> {
+        self.long(db).parent
     }
-    pub fn stable_ptr(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
-        self.lookup_intern(db).stable_ptr
+    pub fn stable_ptr(&self, db: &'a dyn SyntaxGroup) -> SyntaxStablePtrId<'a> {
+        self.long(db).stable_ptr
     }
 
     /// Gets the inner token from a terminal SyntaxNode. If the given node is not a terminal,
     /// returns None.
-    pub fn get_terminal_token(&self, db: &dyn SyntaxGroup) -> Option<SyntaxNode> {
+    pub fn get_terminal_token(&'a self, db: &'a dyn SyntaxGroup) -> Option<SyntaxNode<'a>> {
         let green_node = self.green_node(db);
         require(green_node.kind.is_terminal())?;
         // At this point we know we should have a second child which is the token.
@@ -133,25 +137,26 @@ impl SyntaxNode {
     }
 
     /// Gets the children syntax nodes of the current node.
-    pub fn get_children(&self, db: &dyn SyntaxGroup) -> Arc<[SyntaxNode]> {
+    pub fn get_children(&self, db: &'a dyn SyntaxGroup) -> &'a [SyntaxNode<'a>] {
         db.get_children(*self)
     }
 
     /// Implementation of [SyntaxNode::get_children].
-    fn get_children_impl(&self, db: &dyn SyntaxGroup) -> Vec<SyntaxNode> {
-        let mut res: Vec<SyntaxNode> = Vec::new();
-
-        let long_id = self.lookup_intern(db);
-        let mut offset = long_id.offset;
+    fn get_children_impl(&self, db: &'a dyn SyntaxGroup) -> Vec<SyntaxNode<'a>> {
+        let self_long_id = self.long(db);
+        let mut offset = self_long_id.offset;
+        let self_green = self_long_id.green.long(db);
+        let children = self_green.children();
+        let mut res: Vec<SyntaxNode<'_>> = Vec::with_capacity(children.len());
         let mut key_map = UnorderedHashMap::<_, usize>::default();
-        for green_id in long_id.green.lookup_intern(db).children() {
-            let green = green_id.lookup_intern(db);
+        for green_id in children {
+            let green = green_id.long(db);
             let width = green.width();
             let kind = green.kind;
             let key_fields = key_fields::get_key_fields(kind, green.children());
             let key_count = key_map.entry((kind, key_fields.clone())).or_default();
             let stable_ptr = SyntaxStablePtr::Child {
-                parent: long_id.stable_ptr,
+                parent: self_long_id.stable_ptr,
                 kind,
                 key_fields,
                 index: *key_count,
@@ -169,49 +174,24 @@ impl SyntaxNode {
         res
     }
 
+    /// Returns the start of the span of the syntax node without trivia.
     pub fn span_start_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
-        let green_node = self.green_node(db);
-        match green_node.details {
-            green::GreenNodeDetails::Node { .. } => {
-                if let Some(token_node) = self.get_terminal_token(db) {
-                    return token_node.offset(db);
-                }
-                let children = self.get_children(db);
-                if let Some(child) =
-                    children.iter().find(|child| child.width(db) != TextWidth::default())
-                {
-                    child.span_start_without_trivia(db)
-                } else {
-                    self.offset(db)
-                }
-            }
-            green::GreenNodeDetails::Token(_) => self.offset(db),
-        }
+        let node = self.long(db);
+        let green_node = node.green.long(db);
+        let leading = leading_trivia_width(db, green_node);
+        node.offset.add_width(leading)
     }
+
+    /// Returns the end of the span of the syntax node without trivia.
     pub fn span_end_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
-        let green_node = self.green_node(db);
-        match green_node.details {
-            green::GreenNodeDetails::Node { .. } => {
-                if let Some(token_node) = self.get_terminal_token(db) {
-                    return token_node.span(db).end;
-                }
-                if let Some(child) = self
-                    .get_children(db)
-                    .iter()
-                    .filter(|child| child.width(db) != TextWidth::default())
-                    .next_back()
-                {
-                    child.span_end_without_trivia(db)
-                } else {
-                    self.span(db).end
-                }
-            }
-            green::GreenNodeDetails::Token(_) => self.span(db).end,
-        }
+        let node = self.long(db);
+        let green_node = node.green.long(db);
+        let trailing = trailing_trivia_width(db, green_node);
+        node.offset.add_width(green_node.width()).sub_width(trailing)
     }
 
     /// Lookups a syntax node using an offset.
-    pub fn lookup_offset(&self, db: &dyn SyntaxGroup, offset: TextOffset) -> SyntaxNode {
+    pub fn lookup_offset(&self, db: &'a dyn SyntaxGroup, offset: TextOffset) -> SyntaxNode<'a> {
         for child in self.get_children(db).iter() {
             if child.offset(db).add_width(child.width(db)) > offset {
                 return child.lookup_offset(db, offset);
@@ -221,7 +201,11 @@ impl SyntaxNode {
     }
 
     /// Lookups a syntax node using a position.
-    pub fn lookup_position(&self, db: &dyn SyntaxGroup, position: TextPosition) -> SyntaxNode {
+    pub fn lookup_position(
+        &self,
+        db: &'a dyn SyntaxGroup,
+        position: TextPosition,
+    ) -> SyntaxNode<'a> {
         match position.offset_in_file(db, self.stable_ptr(db).file_id(db)) {
             Some(offset) => self.lookup_offset(db, offset),
             None => *self,
@@ -229,9 +213,17 @@ impl SyntaxNode {
     }
 
     /// Returns all the text under the syntax node.
-    /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
-    pub fn get_text(&self, db: &dyn SyntaxGroup) -> String {
-        format!("{}", NodeTextFormatter { node: self, db })
+    pub fn get_text(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+        // A `None` return from reading the file content is only expected in the case of an IO
+        // error. Since a SyntaxNode exists and is being processed, we should have already
+        // successfully accessed this file earlier, therefore it should never fail.
+        let file_content = db
+            .file_content(self.stable_ptr(db).file_id(db))
+            .expect("Failed to read file content")
+            .long(db)
+            .as_ref();
+
+        self.span(db).take(file_content)
     }
 
     /// Returns all the text under the syntax node.
@@ -241,7 +233,7 @@ impl SyntaxNode {
     pub fn get_text_without_inner_commentable_children(&self, db: &dyn SyntaxGroup) -> String {
         let mut buffer = String::new();
 
-        match &self.green_node(db).as_ref().details {
+        match &self.green_node(db).details {
             green::GreenNodeDetails::Token(text) => buffer.push_str(text),
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.get_children(db).iter() {
@@ -270,12 +262,12 @@ impl SyntaxNode {
     pub fn get_text_without_all_comment_trivia(&self, db: &dyn SyntaxGroup) -> String {
         let mut buffer = String::new();
 
-        match &self.green_node(db).as_ref().details {
+        match &self.green_node(db).details {
             green::GreenNodeDetails::Token(text) => buffer.push_str(text),
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.get_children(db).iter() {
                     if let Some(trivia) = ast::Trivia::cast(db, *child) {
-                        trivia.elements(db).iter().for_each(|element| {
+                        trivia.elements(db).for_each(|element| {
                             if !matches!(
                                 element,
                                 ast::Trivium::SingleLineComment(_)
@@ -303,10 +295,13 @@ impl SyntaxNode {
     /// of the first token and the trailing trivia of the last token).
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
-    pub fn get_text_without_trivia(self, db: &dyn SyntaxGroup) -> String {
-        let trimmed_span = self.span_without_trivia(db);
-
-        self.get_text_of_span(db, trimmed_span)
+    pub fn get_text_without_trivia(self, db: &'a dyn SyntaxGroup) -> &'a str {
+        let file_content = db
+            .file_content(self.stable_ptr(db).file_id(db))
+            .expect("Failed to read file content")
+            .long(db)
+            .as_ref();
+        self.span_without_trivia(db).take(file_content)
     }
 
     /// Returns the text under the syntax node, according to the given span.
@@ -314,26 +309,23 @@ impl SyntaxNode {
     /// `span` is assumed to be contained within the span of self.
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
-    pub fn get_text_of_span(self, db: &dyn SyntaxGroup, span: TextSpan) -> String {
-        let orig_span = self.span(db);
-        assert!(orig_span.contains(span));
-        let full_text = self.get_text(db);
-
-        let span_in_span = TextSpan {
-            start: (span.start - orig_span.start).as_offset(),
-            end: (span.end - orig_span.start).as_offset(),
-        };
-        span_in_span.take(&full_text).to_string()
+    pub fn get_text_of_span(self, db: &'a dyn SyntaxGroup, span: TextSpan) -> &'a str {
+        assert!(self.span(db).contains(span));
+        let file_content = db
+            .file_content(self.stable_ptr(db).file_id(db))
+            .expect("Failed to read file content")
+            .long(db);
+        span.take(file_content)
     }
 
     /// Traverse the subtree rooted at the current node (including the current node) in preorder.
     ///
     /// This is a shortcut for [`Self::preorder`] paired with filtering for [`WalkEvent::Enter`]
     /// events only.
-    pub fn descendants<'db>(
+    pub fn descendants(
         &self,
-        db: &'db dyn SyntaxGroup,
-    ) -> impl Iterator<Item = SyntaxNode> + 'db {
+        db: &'a dyn SyntaxGroup,
+    ) -> impl Iterator<Item = SyntaxNode<'a>> + 'a {
         self.preorder(db).filter_map(|event| match event {
             WalkEvent::Enter(node) => Some(node),
             WalkEvent::Leave(_) => None,
@@ -342,12 +334,12 @@ impl SyntaxNode {
 
     /// Traverse the subtree rooted at the current node (including the current node) in preorder,
     /// excluding tokens.
-    pub fn preorder<'db>(&self, db: &'db dyn SyntaxGroup) -> Preorder<'db> {
+    pub fn preorder(&self, db: &'a dyn SyntaxGroup) -> Preorder<'a> {
         Preorder::new(*self, db)
     }
 
     /// Gets all the leaves of the SyntaxTree, where the self node is the root of a tree.
-    pub fn tokens<'a>(&'a self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self> + 'a {
+    pub fn tokens(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self> + 'a {
         self.preorder(db).filter_map(|event| match event {
             WalkEvent::Enter(node) if node.green_node(db).kind.is_terminal() => Some(node),
             _ => None,
@@ -355,70 +347,78 @@ impl SyntaxNode {
     }
 
     /// Mirror of [`TypedSyntaxNode::cast`].
-    pub fn cast<T: TypedSyntaxNode>(self, db: &dyn SyntaxGroup) -> Option<T> {
+    pub fn cast<T: TypedSyntaxNode<'a>>(self, db: &'a dyn SyntaxGroup) -> Option<T> {
         T::cast(db, self)
     }
 
     /// Creates an iterator that yields ancestors of this syntax node.
-    pub fn ancestors<'a>(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = SyntaxNode> + 'a {
+    pub fn ancestors(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = SyntaxNode<'a>> + 'a {
         // We aren't reusing `ancestors_with_self` here to avoid cloning this node.
         std::iter::successors(self.parent(db), |n| n.parent(db))
     }
 
     /// Creates an iterator that yields this syntax node and walks up its ancestors.
-    pub fn ancestors_with_self<'a>(
+    pub fn ancestors_with_self(
         &self,
         db: &'a dyn SyntaxGroup,
-    ) -> impl Iterator<Item = SyntaxNode> + 'a {
+    ) -> impl Iterator<Item = SyntaxNode<'a>> + 'a {
         std::iter::successors(Some(*self), |n| n.parent(db))
     }
 
     /// Checks whether this syntax node is strictly above the given syntax node in the syntax tree.
-    pub fn is_ancestor(&self, db: &dyn SyntaxGroup, node: &SyntaxNode) -> bool {
+    pub fn is_ancestor(&self, db: &dyn SyntaxGroup, node: &SyntaxNode<'_>) -> bool {
         node.ancestors(db).any(|n| n == *self)
     }
 
     /// Checks whether this syntax node is strictly under the given syntax node in the syntax tree.
-    pub fn is_descendant(&self, db: &dyn SyntaxGroup, node: &SyntaxNode) -> bool {
+    pub fn is_descendant(&self, db: &dyn SyntaxGroup, node: &SyntaxNode<'_>) -> bool {
         node.is_ancestor(db, self)
     }
 
     /// Checks whether this syntax node is or is above the given syntax node in the syntax tree.
-    pub fn is_ancestor_or_self(&self, db: &dyn SyntaxGroup, node: &SyntaxNode) -> bool {
+    pub fn is_ancestor_or_self(&self, db: &dyn SyntaxGroup, node: &SyntaxNode<'_>) -> bool {
         node.ancestors_with_self(db).any(|n| n == *self)
     }
 
     /// Checks whether this syntax node is or is under the given syntax node in the syntax tree.
-    pub fn is_descendant_or_self(&self, db: &dyn SyntaxGroup, node: &SyntaxNode) -> bool {
+    pub fn is_descendant_or_self(&self, db: &dyn SyntaxGroup, node: &SyntaxNode<'_>) -> bool {
         node.is_ancestor_or_self(db, self)
     }
 
     /// Finds the first ancestor of a given kind.
-    pub fn ancestor_of_kind(&self, db: &dyn SyntaxGroup, kind: SyntaxKind) -> Option<SyntaxNode> {
+    pub fn ancestor_of_kind(
+        &self,
+        db: &'a dyn SyntaxGroup,
+        kind: SyntaxKind,
+    ) -> Option<SyntaxNode<'a>> {
         self.ancestors(db).find(|node| node.kind(db) == kind)
     }
 
     /// Finds the first ancestor of a given kind and returns it in typed form.
-    pub fn ancestor_of_type<T: TypedSyntaxNode>(&self, db: &dyn SyntaxGroup) -> Option<T> {
+    pub fn ancestor_of_type<T: TypedSyntaxNode<'a>>(&self, db: &'a dyn SyntaxGroup) -> Option<T> {
         self.ancestors(db).find_map(|node| T::cast(db, node))
     }
 
     /// Finds the parent of a given kind.
-    pub fn parent_of_kind(&self, db: &dyn SyntaxGroup, kind: SyntaxKind) -> Option<SyntaxNode> {
+    pub fn parent_of_kind(
+        &self,
+        db: &'a dyn SyntaxGroup,
+        kind: SyntaxKind,
+    ) -> Option<SyntaxNode<'a>> {
         self.parent(db).filter(|node| node.kind(db) == kind)
     }
 
     /// Finds the parent of a given kind and returns it in typed form.
-    pub fn parent_of_type<T: TypedSyntaxNode>(&self, db: &dyn SyntaxGroup) -> Option<T> {
+    pub fn parent_of_type<T: TypedSyntaxNode<'a>>(&self, db: &'a dyn SyntaxGroup) -> Option<T> {
         self.parent(db).and_then(|node| T::cast(db, node))
     }
 
     /// Finds the first parent of one of the kinds.
     pub fn ancestor_of_kinds(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &'a dyn SyntaxGroup,
         kinds: &[SyntaxKind],
-    ) -> Option<SyntaxNode> {
+    ) -> Option<SyntaxNode<'a>> {
         self.ancestors(db).find(|node| kinds.contains(&node.kind(db)))
     }
 
@@ -440,36 +440,36 @@ impl SyntaxNode {
 
 /// Trait for the typed view of the syntax tree. All the internal node implementations are under
 /// the ast module.
-pub trait TypedSyntaxNode: Sized {
+pub trait TypedSyntaxNode<'a>: Sized {
     /// The relevant SyntaxKind. None for enums.
     const OPTIONAL_KIND: Option<SyntaxKind>;
-    type StablePtr: TypedStablePtr;
+    type StablePtr: TypedStablePtr<'a>;
     type Green;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green;
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self;
-    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self>;
-    fn as_syntax_node(&self) -> SyntaxNode;
-    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr;
+    fn missing(db: &'a dyn SyntaxGroup) -> Self::Green;
+    fn from_syntax_node(db: &'a dyn SyntaxGroup, node: SyntaxNode<'a>) -> Self;
+    fn cast(db: &'a dyn SyntaxGroup, node: SyntaxNode<'a>) -> Option<Self>;
+    fn as_syntax_node(&self) -> SyntaxNode<'a>;
+    fn stable_ptr(&self, db: &'a dyn SyntaxGroup) -> Self::StablePtr;
 }
 
-pub trait Token: TypedSyntaxNode {
-    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green;
-    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr;
+pub trait Token<'a>: TypedSyntaxNode<'a> {
+    fn new_green(db: &'a dyn SyntaxGroup, text: &'a str) -> Self::Green;
+    fn text(&self, db: &'a dyn SyntaxGroup) -> &'a str;
 }
 
-pub trait Terminal: TypedSyntaxNode {
+pub trait Terminal<'a>: TypedSyntaxNode<'a> {
     const KIND: SyntaxKind;
-    type TokenType: Token;
+    type TokenType: Token<'a>;
     fn new_green(
-        db: &dyn SyntaxGroup,
-        leading_trivia: TriviaGreen,
-        token: <<Self as Terminal>::TokenType as TypedSyntaxNode>::Green,
-        trailing_trivia: TriviaGreen,
-    ) -> <Self as TypedSyntaxNode>::Green;
+        db: &'a dyn SyntaxGroup,
+        leading_trivia: TriviaGreen<'a>,
+        token: <<Self as Terminal<'a>>::TokenType as TypedSyntaxNode<'a>>::Green,
+        trailing_trivia: TriviaGreen<'a>,
+    ) -> <Self as TypedSyntaxNode<'a>>::Green;
     /// Returns the text of the token of this terminal (excluding the trivia).
-    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr;
+    fn text(&self, db: &'a dyn SyntaxGroup) -> &'a str;
     /// Casts a syntax node to this terminal type's token and then walks up to return the terminal.
-    fn cast_token(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+    fn cast_token(db: &'a dyn SyntaxGroup, node: SyntaxNode<'a>) -> Option<Self> {
         if node.kind(db) == Self::TokenType::OPTIONAL_KIND? {
             Some(Self::from_syntax_node(db, node.parent(db)?))
         } else {
@@ -479,31 +479,83 @@ pub trait Terminal: TypedSyntaxNode {
 }
 
 /// Trait for stable pointers to syntax nodes.
-pub trait TypedStablePtr {
-    type SyntaxNode: TypedSyntaxNode;
+pub trait TypedStablePtr<'a> {
+    type SyntaxNode: TypedSyntaxNode<'a>;
     /// Returns the syntax node pointed to by this stable pointer.
-    fn lookup(&self, db: &dyn SyntaxGroup) -> Self::SyntaxNode;
+    fn lookup(&self, db: &'a dyn SyntaxGroup) -> Self::SyntaxNode;
     /// Returns the untyped stable pointer.
-    fn untyped(&self) -> SyntaxStablePtrId;
+    fn untyped(self) -> SyntaxStablePtrId<'a>;
 }
 
-/// Wrapper for formatting the text of syntax nodes.
-pub struct NodeTextFormatter<'a> {
-    /// The node to format.
-    pub node: &'a SyntaxNode,
-    /// The syntax db.
-    pub db: &'a dyn SyntaxGroup,
+/// Returns the width of the leading trivia of the given green node.
+fn leading_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> TextWidth {
+    match &green.details {
+        green::GreenNodeDetails::Token(_) => TextWidth::default(),
+        green::GreenNodeDetails::Node { children, width } => {
+            if *width == TextWidth::default() {
+                return TextWidth::default();
+            }
+            if green.kind.is_terminal() {
+                return children[0].long(db).width();
+            }
+            let non_empty = find_non_empty_child(db, &mut children.iter())
+                .expect("Parent width non-empty - one of the children should be non-empty");
+            leading_trivia_width(db, non_empty)
+        }
+    }
 }
-impl Display for NodeTextFormatter<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self.node.green_node(self.db).as_ref().details {
-            green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
-            green::GreenNodeDetails::Node { .. } => {
-                for child in self.node.get_children(self.db).iter() {
-                    write!(f, "{}", NodeTextFormatter { node: child, db: self.db })?;
-                }
+
+/// Returns the width of the trailing trivia of the given green node.
+fn trailing_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> TextWidth {
+    match &green.details {
+        green::GreenNodeDetails::Token(_) => TextWidth::default(),
+        green::GreenNodeDetails::Node { children, width } => {
+            if *width == TextWidth::default() {
+                return TextWidth::default();
+            }
+            if green.kind.is_terminal() {
+                return children[2].long(db).width();
+            }
+            let non_empty = find_non_empty_child(db, &mut children.iter().rev())
+                .expect("Parent width non-empty - one of the children should be non-empty");
+            trailing_trivia_width(db, non_empty)
+        }
+    }
+}
+
+/// Returns the width of the leading and trailing trivia of the given green node.
+fn both_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> (TextWidth, TextWidth) {
+    match &green.details {
+        green::GreenNodeDetails::Token(_) => (TextWidth::default(), TextWidth::default()),
+        green::GreenNodeDetails::Node { children, width } => {
+            if *width == TextWidth::default() {
+                return (TextWidth::default(), TextWidth::default());
+            }
+            if green.kind.is_terminal() {
+                return (children[0].long(db).width(), children[2].long(db).width());
+            }
+            let mut iter = children.iter();
+            let first_non_empty = find_non_empty_child(db, &mut iter)
+                .expect("Parent width non-empty - one of the children should be non-empty");
+            if let Some(last_non_empty) = find_non_empty_child(db, &mut iter.rev()) {
+                (
+                    leading_trivia_width(db, first_non_empty),
+                    trailing_trivia_width(db, last_non_empty),
+                )
+            } else {
+                both_trivia_width(db, first_non_empty)
             }
         }
-        Ok(())
     }
+}
+
+/// Finds the first non-empty child in the given iterator.
+fn find_non_empty_child<'a>(
+    db: &'a dyn SyntaxGroup,
+    child_iter: &mut impl Iterator<Item = &'a GreenId<'a>>,
+) -> Option<&'a GreenNode<'a>> {
+    child_iter.find_map(|child| {
+        let child = child.long(db);
+        (child.width() != TextWidth::default()).then_some(child)
+    })
 }

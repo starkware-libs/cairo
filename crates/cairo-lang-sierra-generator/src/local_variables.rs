@@ -40,9 +40,9 @@ pub struct AnalyzeApChangesResult {
 
 /// Does ap change related analysis for a given function.
 /// See [AnalyzeApChangesResult].
-pub fn analyze_ap_changes(
-    db: &dyn SierraGenGroup,
-    lowered_function: &Lowered,
+pub fn analyze_ap_changes<'db>(
+    db: &'db dyn SierraGenGroup,
+    lowered_function: &Lowered<'db>,
 ) -> Maybe<AnalyzeApChangesResult> {
     lowered_function.blocks.has_root()?;
     let ctx = FindLocalsContext {
@@ -61,7 +61,6 @@ pub fn analyze_ap_changes(
         )),
         constants: Default::default(),
         aliases: Default::default(),
-        const_aliases: Default::default(),
         partial_param_parents: Default::default(),
     };
     let mut analysis = BackAnalysis::new(lowered_function, ctx);
@@ -116,9 +115,9 @@ struct CalledBlockInfo {
 }
 
 /// Context for the find_local_variables logic.
-struct FindLocalsContext<'a> {
-    db: &'a dyn SierraGenGroup,
-    lowered_function: &'a Lowered,
+struct FindLocalsContext<'db, 'a> {
+    db: &'db dyn SierraGenGroup,
+    lowered_function: &'a Lowered<'db>,
     used_after_revoke: OrderedHashSet<VariableId>,
     block_callers: OrderedHashMap<BlockId, CalledBlockInfo>,
     /// Variables that are known not to be ap based, excluding constants.
@@ -126,10 +125,8 @@ struct FindLocalsContext<'a> {
     /// Variables that are constants, i.e. created from Statement::Literal.
     constants: UnorderedHashSet<VariableId>,
     /// A mapping of variables which are the same in the context of finding locals.
+    /// I.e. if `aliases[var_id]` is local than var_id is also local.
     aliases: UnorderedHashMap<VariableId, VariableId>,
-    /// Same as `aliases`, but for constants. This is excluding aliases which are created by
-    /// libfuncs with SameAsParam output, but do not accept constants as input.
-    const_aliases: UnorderedHashMap<VariableId, VariableId>,
     /// A mapping from partial param variables to the containing variable.
     partial_param_parents: UnorderedHashMap<VariableId, VariableId>,
 }
@@ -140,18 +137,18 @@ struct AnalysisInfo {
     demand: LoweredDemand,
     known_ap_change: bool,
 }
-impl DemandReporter<VariableId> for FindLocalsContext<'_> {
+impl<'db> DemandReporter<VariableId> for FindLocalsContext<'db, '_> {
     type UsePosition = ();
     type IntroducePosition = ();
 }
-impl Analyzer<'_> for FindLocalsContext<'_> {
+impl<'db> Analyzer<'db, '_> for FindLocalsContext<'db, '_> {
     type Info = Maybe<AnalysisInfo>;
 
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
         _statement_location: StatementLocation,
-        stmt: &Statement,
+        stmt: &Statement<'db>,
     ) {
         let Ok(info) = info else {
             return;
@@ -170,7 +167,7 @@ impl Analyzer<'_> for FindLocalsContext<'_> {
         info: &mut Self::Info,
         _statement_location: StatementLocation,
         target_block_id: BlockId,
-        remapping: &VarRemapping,
+        remapping: &VarRemapping<'db>,
     ) {
         let Ok(info) = info else {
             return;
@@ -194,7 +191,7 @@ impl Analyzer<'_> for FindLocalsContext<'_> {
     fn merge_match(
         &mut self,
         _statement_location: StatementLocation,
-        match_info: &MatchInfo,
+        match_info: &MatchInfo<'db>,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Maybe<AnalysisInfo> {
         let mut arm_demands = vec![];
@@ -229,7 +226,7 @@ impl Analyzer<'_> for FindLocalsContext<'_> {
     fn info_from_return(
         &mut self,
         _statement_location: StatementLocation,
-        vars: &[VarUsage],
+        vars: &[VarUsage<'db>],
     ) -> Self::Info {
         let mut demand = LoweredDemand::default();
         demand.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())));
@@ -241,7 +238,7 @@ struct BranchInfo {
     known_ap_change: bool,
 }
 
-impl<'a> FindLocalsContext<'a> {
+impl<'db, 'a> FindLocalsContext<'db, 'a> {
     /// Given a variable that might be an alias follow aliases until we get the original variable.
     pub fn peel_aliases(&'a self, mut var: &'a VariableId) -> &'a VariableId {
         while let Some(alias) = self.aliases.get(var) {
@@ -249,18 +246,9 @@ impl<'a> FindLocalsContext<'a> {
         }
         var
     }
-    /// Given a variable, that might be an alias of a const, follow  the const aliases until we get
-    /// the root variable.
-    pub fn peel_const_aliases(&'a self, mut var: &'a VariableId) -> &'a VariableId {
-        while let Some(alias) = self.const_aliases.get(var) {
-            var = alias;
-        }
-        var
-    }
 
-    /// Return true if the alias peeled variable might be revoked by ap changes.
-    /// If a variable is not ap-based or one of its ancestors is not ap-based, then it can't be
-    /// revoked.
+    /// Return true if the variable might be revoked by ap changes.
+    /// Checks if the variable is a constant or is contained in a local variable.
     ///
     /// Note that vars in `peeled_used_after_revoke` are going to be non-ap based once we make the
     /// relevant variables local.
@@ -269,29 +257,19 @@ impl<'a> FindLocalsContext<'a> {
         peeled_used_after_revoke: &OrderedHashSet<VariableId>,
         var: &VariableId,
     ) -> bool {
-        if self.non_ap_based.contains(self.peel_aliases(var)) {
+        if self.constants.contains(var) {
             return false;
         }
-        if self.constants.contains(self.peel_const_aliases(var)) {
+        let mut peeled = self.peel_aliases(var);
+        if self.non_ap_based.contains(peeled) {
             return false;
         }
         // In the case of partial params, we check if one of its ancestors is a local variable, or
         // will be used after the revoke, and thus will be used as a local variable. If that
         // is the case, then 'var' can not be revoked.
-        let mut parent_var = self.peel_aliases(var);
-        while let Some(grandparent) = self.partial_param_parents.get(parent_var) {
-            parent_var = self.peel_aliases(grandparent);
-            if self.non_ap_based.contains(parent_var)
-                || peeled_used_after_revoke.contains(parent_var)
-            {
-                return false;
-            }
-        }
-        let mut parent_var = self.peel_const_aliases(var);
-        while let Some(grandparent) = self.partial_param_parents.get(parent_var) {
-            parent_var = self.peel_const_aliases(grandparent);
-            if self.constants.contains(parent_var) || peeled_used_after_revoke.contains(parent_var)
-            {
+        while let Some(parent) = self.partial_param_parents.get(peeled) {
+            peeled = self.peel_aliases(parent);
+            if self.non_ap_based.contains(peeled) || peeled_used_after_revoke.contains(peeled) {
                 return false;
             }
         }
@@ -301,7 +279,7 @@ impl<'a> FindLocalsContext<'a> {
     fn analyze_call(
         &mut self,
         concrete_function_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
-        input_vars: &[VarUsage],
+        input_vars: &[VarUsage<'db>],
         output_vars: &[VariableId],
     ) -> BranchInfo {
         let libfunc_signature = get_libfunc_signature(self.db, concrete_function_id.clone());
@@ -321,30 +299,18 @@ impl<'a> FindLocalsContext<'a> {
 
     fn analyze_branch(
         &mut self,
-        params_signatures: &[ParamSignature],
+        _params_signatures: &[ParamSignature],
         branch_signature: &BranchSignature,
-        input_vars: &[VarUsage],
+        input_vars: &[VarUsage<'db>],
         output_vars: &[VariableId],
     ) -> BranchInfo {
         let var_output_infos = &branch_signature.vars;
         for (var, output_info) in zip_eq(output_vars.iter(), var_output_infos.iter()) {
             match output_info.ref_info {
                 OutputVarReferenceInfo::SameAsParam { param_idx } => {
-                    // SameAsParam variables are aliased only if the libfunc accepts all the input
-                    // variable states, as if the input variable state is not allowed it will be
-                    // stored before the call and will then be ap-based.
-                    // TODO(Gil): Maintain the input variable state (const, add const, deferred or
-                    // stored, similar to the `store_variables` algorithm) and don't alias only if
-                    // the libfunc does not accept the specific state of the input variable.
-                    if params_signatures[param_idx].allow_const {
-                        self.const_aliases.insert(*var, input_vars[param_idx].var_id);
-                    }
                     self.aliases.insert(*var, input_vars[param_idx].var_id);
                 }
                 OutputVarReferenceInfo::PartialParam { param_idx } => {
-                    if params_signatures[param_idx].allow_const {
-                        self.const_aliases.insert(*var, input_vars[param_idx].var_id);
-                    }
                     self.partial_param_parents.insert(*var, input_vars[param_idx].var_id);
                 }
                 OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const)
@@ -366,7 +332,7 @@ impl<'a> FindLocalsContext<'a> {
         BranchInfo { known_ap_change }
     }
 
-    fn analyze_statement(&mut self, statement: &Statement) -> Maybe<BranchInfo> {
+    fn analyze_statement(&mut self, statement: &Statement<'db>) -> Maybe<BranchInfo> {
         let inputs = statement.inputs();
         let outputs = statement.outputs();
         let branch_info = match statement {
@@ -416,15 +382,10 @@ impl<'a> FindLocalsContext<'a> {
             lowering::Statement::Snapshot(statement_snapshot) => {
                 self.aliases.insert(statement_snapshot.original(), statement_snapshot.input.var_id);
                 self.aliases.insert(statement_snapshot.snapshot(), statement_snapshot.input.var_id);
-                self.const_aliases
-                    .insert(statement_snapshot.original(), statement_snapshot.input.var_id);
-                self.const_aliases
-                    .insert(statement_snapshot.snapshot(), statement_snapshot.input.var_id);
                 BranchInfo { known_ap_change: true }
             }
             lowering::Statement::Desnap(statement_desnap) => {
                 self.aliases.insert(statement_desnap.output, statement_desnap.input.var_id);
-                self.const_aliases.insert(statement_desnap.output, statement_desnap.input.var_id);
                 BranchInfo { known_ap_change: true }
             }
         };
@@ -442,7 +403,7 @@ impl<'a> FindLocalsContext<'a> {
         }
     }
 
-    fn get_match_libfunc_signature(&self, match_info: &MatchInfo) -> Maybe<LibfuncSignature> {
+    fn get_match_libfunc_signature(&self, match_info: &MatchInfo<'db>) -> Maybe<LibfuncSignature> {
         Ok(match match_info {
             MatchInfo::Extern(s) => {
                 let (_, concrete_function_id) = get_concrete_libfunc_id(self.db, s.function, false);

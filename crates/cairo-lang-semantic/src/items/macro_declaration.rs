@@ -3,9 +3,9 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MacroDeclarationId, ModuleFileId, ModuleItemId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe, skip_diagnostic};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast::{MacroElement, MacroParam};
@@ -30,19 +30,19 @@ pub struct RepetitionId(usize);
 
 /// The captures collected during macro pattern matching.
 /// Each macro parameter name maps to a flat list of matched strings.
-type Captures = OrderedHashMap<String, Vec<CapturedValue>>;
+type Captures<'db> = OrderedHashMap<&'db str, Vec<CapturedValue<'db>>>;
 
 /// Context used during macro pattern matching and expansion.
 /// Tracks captured values, active repetition scopes, and repetition ownership per placeholder.
 #[derive(Default, Clone, Debug)]
-pub struct MatcherContext {
+pub struct MatcherContext<'db> {
     /// The captured values per macro parameter name.
     /// These are flat lists, even for repeated placeholders.
-    pub captures: Captures,
+    pub captures: Captures<'db>,
 
     /// Maps each placeholder to the `RepetitionId` of the repetition block
     /// they are part of. This helps the expansion phase know which iterators to advance together.
-    pub placeholder_to_rep_id: OrderedHashMap<String, RepetitionId>,
+    pub placeholder_to_rep_id: OrderedHashMap<&'db str, RepetitionId>,
 
     /// Stack of currently active repetition blocks. Used to assign placeholders
     /// to their correct `RepetitionId` while recursing into nested repetitions.
@@ -58,23 +58,23 @@ pub struct MatcherContext {
     pub repetition_match_counts: OrderedHashMap<RepetitionId, usize>,
 
     /// Store the repetition operator for each repetition.
-    pub repetition_operators: OrderedHashMap<RepetitionId, ast::MacroRepetitionOperator>,
+    pub repetition_operators: OrderedHashMap<RepetitionId, ast::MacroRepetitionOperator<'db>>,
 }
 
 /// The semantic data for a macro declaration.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MacroDeclarationData {
-    rules: Vec<MacroRuleData>,
-    attributes: Vec<Attribute>,
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    resolver_data: Arc<ResolverData>,
+#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+pub struct MacroDeclarationData<'db> {
+    rules: Vec<MacroRuleData<'db>>,
+    attributes: Vec<Attribute<'db>>,
+    diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    resolver_data: Arc<ResolverData<'db>>,
 }
 
 /// The semantic data for a single macro rule in a macro declaration.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MacroRuleData {
-    pub pattern: ast::WrappedMacro,
-    pub expansion: ast::WrappedMacro,
+#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+pub struct MacroRuleData<'db> {
+    pub pattern: ast::WrappedMacro<'db>,
+    pub expansion: ast::MacroElements<'db>,
 }
 
 /// The possible kinds of placeholders in a macro rule.
@@ -84,8 +84,8 @@ enum PlaceholderKind {
     Expr,
 }
 
-impl From<ast::MacroParamKind> for PlaceholderKind {
-    fn from(kind: ast::MacroParamKind) -> Self {
+impl<'db> From<ast::MacroParamKind<'db>> for PlaceholderKind {
+    fn from(kind: ast::MacroParamKind<'db>) -> Self {
         match kind {
             ast::MacroParamKind::Identifier(_) => PlaceholderKind::Identifier,
             ast::MacroParamKind::Expr(_) => PlaceholderKind::Expr,
@@ -98,22 +98,20 @@ impl From<ast::MacroParamKind> for PlaceholderKind {
 
 /// Information about a captured value in a macro.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CapturedValue {
+pub struct CapturedValue<'db> {
     pub text: String,
-    pub stable_ptr: SyntaxStablePtrId,
+    pub stable_ptr: SyntaxStablePtrId<'db>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_macro_declaration_data].
-pub fn priv_macro_declaration_data(
-    db: &dyn SemanticGroup,
-    macro_declaration_id: MacroDeclarationId,
-) -> Maybe<MacroDeclarationData> {
-    let syntax_db: &dyn SyntaxGroup = db;
+pub fn priv_macro_declaration_data<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<MacroDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
 
     let module_file_id = macro_declaration_id.module_file_id(db);
-    let macro_declaration_syntax =
-        db.module_macro_declaration_by_id(macro_declaration_id)?.to_maybe()?;
+    let macro_declaration_syntax = db.module_macro_declaration_by_id(macro_declaration_id)?;
     if !are_user_defined_inline_macros_enabled(db, module_file_id) {
         diagnostics.report(
             macro_declaration_syntax.stable_ptr(db).untyped(),
@@ -121,7 +119,7 @@ pub fn priv_macro_declaration_data(
         );
     }
 
-    let attributes = macro_declaration_syntax.attributes(syntax_db).structurize(syntax_db);
+    let attributes = macro_declaration_syntax.attributes(db).structurize(db);
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
         ModuleItemId::MacroDeclaration(macro_declaration_id),
     ));
@@ -130,44 +128,40 @@ pub fn priv_macro_declaration_data(
     // TODO(Dean): Verify uniqueness of param names.
     // TODO(Dean): Verify consistency bracket terminals.
     let mut rules = vec![];
-    for rule_syntax in macro_declaration_syntax.rules(syntax_db).elements(syntax_db) {
+    for rule_syntax in macro_declaration_syntax.rules(db).elements(db) {
         let pattern = rule_syntax.lhs(db);
-        let expansion = rule_syntax.rhs(db);
+        let expansion = rule_syntax.rhs(db).elements(db);
         let pattern_elements = get_macro_elements(db, pattern.clone());
         // Collect defined placeholders from pattern
-        let defined_placeholders = OrderedHashSet::<_>::from_iter(
-            pattern_elements.elements(syntax_db).into_iter().filter_map(|element| match element {
-                ast::MacroElement::Param(param) => {
-                    Some(param.name(syntax_db).as_syntax_node().get_text_without_trivia(syntax_db))
+        let defined_placeholders =
+            OrderedHashSet::<_>::from_iter(pattern_elements.elements(db).filter_map(|element| {
+                match element {
+                    ast::MacroElement::Param(param) => {
+                        Some(param.name(db).as_syntax_node().get_text_without_trivia(db))
+                    }
+                    ast::MacroElement::Repetition(repetition) => repetition
+                        .elements(db)
+                        .elements(db)
+                        .filter_map(|inner_element| match inner_element {
+                            ast::MacroElement::Param(inner_param) => Some(
+                                inner_param.name(db).as_syntax_node().get_text_without_trivia(db),
+                            ),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>()
+                        .into_iter()
+                        .next(),
+                    _ => None,
                 }
-                ast::MacroElement::Repetition(repetition) => repetition
-                    .elements(syntax_db)
-                    .elements(syntax_db)
-                    .into_iter()
-                    .filter_map(|inner_element| match inner_element {
-                        ast::MacroElement::Param(inner_param) => Some(
-                            inner_param
-                                .name(syntax_db)
-                                .as_syntax_node()
-                                .get_text_without_trivia(syntax_db),
-                        ),
-                        _ => None,
-                    })
-                    .collect::<Vec<_>>()
-                    .into_iter()
-                    .next(),
-                _ => None,
-            }),
-        );
+            }));
 
-        let used_placeholders =
-            collect_expansion_placeholders(syntax_db, expansion.as_syntax_node());
+        let used_placeholders = collect_expansion_placeholders(db, expansion.as_syntax_node());
         // Verify all used placeholders are defined
         for (placeholder_ptr, used_placeholder) in used_placeholders {
-            if !defined_placeholders.contains(&used_placeholder) {
+            if !defined_placeholders.contains(used_placeholder) {
                 diagnostics.report(
                     placeholder_ptr,
-                    SemanticDiagnosticKind::UndefinedMacroPlaceholder(used_placeholder),
+                    SemanticDiagnosticKind::UndefinedMacroPlaceholder(used_placeholder.into()),
                 );
             }
         }
@@ -178,7 +172,10 @@ pub fn priv_macro_declaration_data(
 }
 
 /// Helper function to extract pattern elements from a WrappedMacro.
-fn get_macro_elements(db: &dyn SyntaxGroup, pattern: ast::WrappedMacro) -> ast::MacroElements {
+fn get_macro_elements<'db>(
+    db: &'db dyn SyntaxGroup,
+    pattern: ast::WrappedMacro<'db>,
+) -> ast::MacroElements<'db> {
     match pattern {
         ast::WrappedMacro::Parenthesized(inner) => inner.elements(db),
         ast::WrappedMacro::Braced(inner) => inner.elements(db),
@@ -188,19 +185,22 @@ fn get_macro_elements(db: &dyn SyntaxGroup, pattern: ast::WrappedMacro) -> ast::
 
 /// Helper function to extract a placeholder name from an ExprPath node, if it represents a macro
 /// placeholder. Returns None if the path is not a valid macro placeholder.
-fn extract_placeholder(db: &dyn SyntaxGroup, path_node: &MacroParam) -> Option<String> {
+fn extract_placeholder<'db>(
+    db: &'db dyn SyntaxGroup,
+    path_node: &MacroParam<'db>,
+) -> Option<&'db str> {
     let placeholder_name = path_node.name(db).as_syntax_node().get_text_without_trivia(db);
-    if ![MACRO_DEF_SITE, MACRO_CALL_SITE].contains(&placeholder_name.as_str()) {
+    if ![MACRO_DEF_SITE, MACRO_CALL_SITE].contains(&placeholder_name) {
         return Some(placeholder_name);
     }
     None
 }
 
 /// Helper function to collect all placeholder names used in a macro expansion.
-fn collect_expansion_placeholders(
-    db: &dyn SyntaxGroup,
-    node: SyntaxNode,
-) -> Vec<(SyntaxStablePtrId, String)> {
+fn collect_expansion_placeholders<'db>(
+    db: &'db dyn SyntaxGroup,
+    node: SyntaxNode<'db>,
+) -> Vec<(SyntaxStablePtrId<'db>, &'db str)> {
     let mut placeholders = Vec::new();
     if node.kind(db) == SyntaxKind::MacroParam {
         let path_node = MacroParam::from_syntax_node(db, node);
@@ -226,11 +226,11 @@ fn collect_expansion_placeholders(
 
 /// Given a macro declaration and an input token tree, checks if the input the given rule, and
 /// returns the captured params if it does.
-pub fn is_macro_rule_match(
-    db: &dyn SemanticGroup,
-    rule: &MacroRuleData,
-    input: &ast::TokenTreeNode,
-) -> Option<(Captures, OrderedHashMap<String, RepetitionId>)> {
+pub fn is_macro_rule_match<'db>(
+    db: &'db dyn SemanticGroup,
+    rule: &MacroRuleData<'db>,
+    input: &ast::TokenTreeNode<'db>,
+) -> Option<(Captures<'db>, OrderedHashMap<&'db str, RepetitionId>)> {
     let mut ctx = MatcherContext::default();
 
     let matcher_elements = get_macro_elements(db, rule.pattern.clone());
@@ -240,7 +240,7 @@ pub fn is_macro_rule_match(
         ast::WrappedTokenTree::Bracketed(tt) => tt.tokens(db),
         ast::WrappedTokenTree::Missing(_) => unreachable!(),
     }
-    .elements(db);
+    .elements_vec(db);
     let mut input_iter = input_elements.iter().peekable();
     is_macro_rule_match_ex(db, matcher_elements, &mut input_iter, &mut ctx, true)?;
     if !validate_repetition_operator_constraints(&ctx) {
@@ -252,11 +252,11 @@ pub fn is_macro_rule_match(
 /// Helper function for [expand_macro_rule].
 /// Traverses the macro expansion and replaces the placeholders with the provided values,
 /// while collecting the result in `res_buffer`.
-fn is_macro_rule_match_ex(
-    db: &dyn SemanticGroup,
-    matcher_elements: ast::MacroElements,
-    input_iter: &mut std::iter::Peekable<std::slice::Iter<'_, ast::TokenTree>>,
-    ctx: &mut MatcherContext,
+fn is_macro_rule_match_ex<'db>(
+    db: &'db dyn SemanticGroup,
+    matcher_elements: ast::MacroElements<'db>,
+    input_iter: &mut std::iter::Peekable<std::slice::Iter<'_, ast::TokenTree<'db>>>,
+    ctx: &mut MatcherContext<'db>,
     consume_all_input: bool,
 ) -> Option<()> {
     for matcher_element in matcher_elements.elements(db) {
@@ -303,14 +303,12 @@ fn is_macro_rule_match_ex(
                             }
                             _ => return None,
                         };
-                        ctx.captures.entry(placeholder_name.clone()).or_default().push(
-                            CapturedValue {
-                                text: captured_text,
-                                stable_ptr: input_token.stable_ptr(db).untyped(),
-                            },
-                        );
+                        ctx.captures.entry(placeholder_name).or_default().push(CapturedValue {
+                            text: captured_text,
+                            stable_ptr: input_token.stable_ptr(db).untyped(),
+                        });
                         if let Some(rep_id) = ctx.current_repetition_stack.last() {
-                            ctx.placeholder_to_rep_id.insert(placeholder_name.clone(), *rep_id);
+                            ctx.placeholder_to_rep_id.insert(placeholder_name, *rep_id);
                         }
                         continue;
                     }
@@ -328,14 +326,12 @@ fn is_macro_rule_match_ex(
                             return None;
                         }
 
-                        ctx.captures.entry(placeholder_name.clone()).or_default().push(
-                            CapturedValue {
-                                text: expr_text.to_string(),
-                                stable_ptr: peek_token.stable_ptr(db).untyped(),
-                            },
-                        );
+                        ctx.captures.entry(placeholder_name).or_default().push(CapturedValue {
+                            text: expr_text.to_string(),
+                            stable_ptr: peek_token.stable_ptr(db).untyped(),
+                        });
                         if let Some(rep_id) = ctx.current_repetition_stack.last() {
-                            ctx.placeholder_to_rep_id.insert(placeholder_name.clone(), *rep_id);
+                            ctx.placeholder_to_rep_id.insert(placeholder_name, *rep_id);
                         }
                         let expr_length = expr_text.len();
                         let mut current_length = 0;
@@ -378,7 +374,7 @@ fn is_macro_rule_match_ex(
                         ast::WrappedTokenTree::Bracketed(tt) => tt.tokens(db),
                         ast::WrappedTokenTree::Missing(_) => unreachable!(),
                     }
-                    .elements(db);
+                    .elements_vec(db);
                     let mut inner_input_iter = inner_input_elements.iter().peekable();
                     is_macro_rule_match_ex(db, inner_elements, &mut inner_input_iter, ctx, true)?;
                     continue;
@@ -432,8 +428,8 @@ fn is_macro_rule_match_ex(
                 }
                 ctx.repetition_match_counts.insert(rep_id, match_count);
                 ctx.repetition_operators.insert(rep_id, operator.clone());
-                for (placeholder_name, _) in ctx.captures.clone() {
-                    ctx.placeholder_to_rep_id.insert(placeholder_name.clone(), rep_id);
+                for placeholder_name in ctx.captures.keys() {
+                    ctx.placeholder_to_rep_id.insert(*placeholder_name, rep_id);
                 }
 
                 for i in 0..match_count {
@@ -451,7 +447,7 @@ fn is_macro_rule_match_ex(
     Some(())
 }
 
-fn validate_repetition_operator_constraints(ctx: &MatcherContext) -> bool {
+fn validate_repetition_operator_constraints(ctx: &MatcherContext<'_>) -> bool {
     for (rep_id, count) in ctx.repetition_match_counts.clone() {
         match ctx.repetition_operators.get(&rep_id) {
             Some(ast::MacroRepetitionOperator::ZeroOrOne(_)) if count > 1 => return false,
@@ -467,18 +463,9 @@ fn validate_repetition_operator_constraints(ctx: &MatcherContext) -> bool {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MacroExpansionResult {
     /// The expanded text.
-    pub text: String,
+    pub text: Arc<str>,
     /// Information about placeholder expansions in this macro expansion.
-    pub code_mappings: Vec<CodeMapping>,
-}
-
-impl MacroExpansionResult {
-    /// Returns the placeholder that was expanded at the given offset, if any.
-    pub fn get_placeholder_at(&self, offset: TextOffset) -> Option<&CodeMapping> {
-        self.code_mappings
-            .iter()
-            .find(|mapping| mapping.span.start <= offset && offset <= mapping.span.end)
-    }
+    pub code_mappings: Arc<[CodeMapping]>,
 }
 
 /// Traverse the macro expansion and replace the placeholders with the provided values, creates a
@@ -488,14 +475,14 @@ impl MacroExpansionResult {
 /// When an error is returned, appropriate diagnostics will already have been reported.
 pub fn expand_macro_rule(
     db: &dyn SyntaxGroup,
-    rule: &MacroRuleData,
-    matcher_ctx: &mut MatcherContext,
+    rule: &MacroRuleData<'_>,
+    matcher_ctx: &mut MatcherContext<'_>,
 ) -> Maybe<MacroExpansionResult> {
     let node = rule.expansion.as_syntax_node();
     let mut res_buffer = String::new();
     let mut code_mappings = Vec::new();
     expand_macro_rule_ex(db, node, matcher_ctx, &mut res_buffer, &mut code_mappings)?;
-    Ok(MacroExpansionResult { text: res_buffer, code_mappings })
+    Ok(MacroExpansionResult { text: res_buffer.into(), code_mappings: code_mappings.into() })
 }
 
 /// Helper function for [expand_macro_rule]. Traverses the macro expansion and replaces the
@@ -505,8 +492,8 @@ pub fn expand_macro_rule(
 /// When an error is returned, appropriate diagnostics will already have been reported.
 fn expand_macro_rule_ex(
     db: &dyn SyntaxGroup,
-    node: SyntaxNode,
-    matcher_ctx: &mut MatcherContext,
+    node: SyntaxNode<'_>,
+    matcher_ctx: &mut MatcherContext<'_>,
     res_buffer: &mut String,
     code_mappings: &mut Vec<CodeMapping>,
 ) -> Maybe<()> {
@@ -524,32 +511,29 @@ fn expand_macro_rule_ex(
                     .get(&name)
                     .and_then(|v| rep_index.map_or_else(|| v.first(), |i| v.get(i)))
                     .ok_or_else(skip_diagnostic)?;
-                let start_offset = TextWidth::from_str(res_buffer).as_offset();
+                let start = TextWidth::from_str(res_buffer).as_offset();
+                let span =
+                    TextSpan { start, end: start.add_width(TextWidth::from_str(&value.text)) };
                 res_buffer.push_str(&value.text);
-                let end_offset = TextWidth::from_str(res_buffer).as_offset();
-                let value_stable_ptr = value.stable_ptr.lookup(db);
                 code_mappings.push(CodeMapping {
-                    span: TextSpan { start: start_offset, end: end_offset },
-                    origin: CodeOrigin::Span(TextSpan {
-                        start: value_stable_ptr.span_start_without_trivia(db),
-                        end: value_stable_ptr.span_end_without_trivia(db),
-                    }),
+                    span,
+                    origin: CodeOrigin::Span(value.stable_ptr.lookup(db).span_without_trivia(db)),
                 });
                 return Ok(());
             }
         }
         SyntaxKind::MacroRepetition => {
             let repetition = ast::MacroRepetition::from_syntax_node(db, node);
-            let elements = repetition.elements(db).elements(db);
-            let repetition_params = get_repetition_params(db, elements.clone());
+            let elements = repetition.elements(db).elements_vec(db);
+            let repetition_params = get_repetition_params(db, elements.iter().cloned());
             let first_param = repetition_params.first().ok_or_else(skip_diagnostic)?;
-            let placeholder_name = first_param.name(db).text(db).to_string();
+            let placeholder_name = first_param.name(db).text(db);
             let rep_id = *matcher_ctx
                 .placeholder_to_rep_id
-                .get(&placeholder_name)
+                .get(placeholder_name)
                 .ok_or_else(skip_diagnostic)?;
             let repetition_len =
-                matcher_ctx.captures.get(&placeholder_name).map(|v| v.len()).unwrap_or(0);
+                matcher_ctx.captures.get(placeholder_name).map(|v| v.len()).unwrap_or(0);
             for i in 0..repetition_len {
                 matcher_ctx.repetition_indices.insert(rep_id, i);
                 for element in &elements {
@@ -564,7 +548,7 @@ fn expand_macro_rule_ex(
 
                 if i + 1 < repetition_len {
                     if let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db) {
-                        res_buffer.push_str(&sep.as_syntax_node().get_text(db));
+                        res_buffer.push_str(sep.as_syntax_node().get_text(db));
                     }
                 }
             }
@@ -574,7 +558,7 @@ fn expand_macro_rule_ex(
         }
         _ => {
             if node.kind(db).is_terminal() {
-                res_buffer.push_str(&node.get_text(db));
+                res_buffer.push_str(node.get_text(db));
                 return Ok(());
             }
 
@@ -585,7 +569,7 @@ fn expand_macro_rule_ex(
         }
     }
     if node.kind(db).is_terminal() {
-        res_buffer.push_str(&node.get_text(db));
+        res_buffer.push_str(node.get_text(db));
         return Ok(());
     }
     for child in node.get_children(db).iter() {
@@ -595,8 +579,21 @@ fn expand_macro_rule_ex(
 }
 
 /// Gets a Vec of MacroElement, and returns a vec of the params within it.
-fn get_repetition_params(db: &dyn SyntaxGroup, elements: Vec<MacroElement>) -> Vec<MacroParam> {
+fn get_repetition_params<'db>(
+    db: &'db dyn SyntaxGroup,
+    elements: impl IntoIterator<Item = MacroElement<'db>>,
+) -> Vec<MacroParam<'db>> {
     let mut params = vec![];
+    repetition_params_extend(db, elements, &mut params);
+    params
+}
+
+/// Recursively extends the provided params vector with all params within the given macro elements.
+fn repetition_params_extend<'db>(
+    db: &'db dyn SyntaxGroup,
+    elements: impl IntoIterator<Item = MacroElement<'db>>,
+    params: &mut Vec<MacroParam<'db>>,
+) {
     for element in elements {
         match element {
             ast::MacroElement::Param(param) => {
@@ -604,55 +601,55 @@ fn get_repetition_params(db: &dyn SyntaxGroup, elements: Vec<MacroElement>) -> V
             }
             ast::MacroElement::Subtree(subtree) => {
                 let inner_elements = get_macro_elements(db, subtree.subtree(db)).elements(db);
-                params.extend(get_repetition_params(db, inner_elements));
+                repetition_params_extend(db, inner_elements, params);
             }
             ast::MacroElement::Repetition(repetition) => {
                 let inner_elements = repetition.elements(db).elements(db);
-                params.extend(get_repetition_params(db, inner_elements));
+                repetition_params_extend(db, inner_elements, params);
             }
             ast::MacroElement::Token(_) => {}
         }
     }
-    params
 }
+
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_diagnostics].
-pub fn macro_declaration_diagnostics(
-    db: &dyn SemanticGroup,
-    macro_declaration_id: MacroDeclarationId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn macro_declaration_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     priv_macro_declaration_data(db, macro_declaration_id)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_attributes].
-pub fn macro_declaration_attributes(
-    db: &dyn SemanticGroup,
-    macro_declaration_id: MacroDeclarationId,
-) -> Maybe<Vec<Attribute>> {
+pub fn macro_declaration_attributes<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_resolver_data].
-pub fn macro_declaration_resolver_data(
-    db: &dyn SemanticGroup,
-    macro_declaration_id: MacroDeclarationId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn macro_declaration_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_rules].
-pub fn macro_declaration_rules(
-    db: &dyn SemanticGroup,
-    macro_declaration_id: MacroDeclarationId,
-) -> Maybe<Vec<MacroRuleData>> {
+pub fn macro_declaration_rules<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<Vec<MacroRuleData<'db>>> {
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.rules)
 }
 
 /// Returns true if user defined user macros are enabled for the given module.
-fn are_user_defined_inline_macros_enabled(
+fn are_user_defined_inline_macros_enabled<'db>(
     db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId,
+    module_file_id: ModuleFileId<'db>,
 ) -> bool {
     let owning_crate = module_file_id.0.owning_crate(db);
     let Some(config) = db.crate_config(owning_crate) else { return false };

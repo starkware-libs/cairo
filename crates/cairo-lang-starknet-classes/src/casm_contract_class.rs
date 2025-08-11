@@ -10,7 +10,7 @@ use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
 use cairo_lang_sierra::extensions::ec::EcOpType;
 use cairo_lang_sierra::extensions::enm::EnumType;
 use cairo_lang_sierra::extensions::felt252::Felt252Type;
-use cairo_lang_sierra::extensions::gas::{CostTokenType, GasBuiltinType};
+use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType, GasBuiltinType};
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::poseidon::PoseidonType;
 use cairo_lang_sierra::extensions::range_check::{RangeCheck96Type, RangeCheckType};
@@ -26,8 +26,8 @@ use cairo_lang_sierra_to_casm::compiler::{
 use cairo_lang_sierra_to_casm::metadata::{
     MetadataComputationConfig, MetadataError, calc_metadata,
 };
+use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_utils::bigint::{BigUintAsHex, deserialize_big_uint, serialize_big_uint};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -123,22 +123,9 @@ pub struct CasmContractClass {
     pub entry_points_by_type: CasmContractEntryPoints,
 }
 impl CasmContractClass {
-    /// Returns the hash value for the compiled contract class.
+    /// Returns the Poseidon hash value for the compiled contract class.
     pub fn compiled_class_hash(&self) -> Felt252 {
-        // Compute hashes on each component separately.
-        let external_funcs_hash = self.entry_points_hash(&self.entry_points_by_type.external);
-        let l1_handlers_hash = self.entry_points_hash(&self.entry_points_by_type.l1_handler);
-        let constructors_hash = self.entry_points_hash(&self.entry_points_by_type.constructor);
-        let bytecode_hash = self.compute_bytecode_hash();
-
-        // Compute total hash by hashing each component on top of the previous one.
-        Poseidon::hash_array(&[
-            Felt252::from_bytes_be_slice(b"COMPILED_CLASS_V1"),
-            external_funcs_hash,
-            l1_handlers_hash,
-            constructors_hash,
-            bytecode_hash,
-        ])
+        self.compiled_class_hash_inner::<Poseidon>()
     }
 
     /// Returns the lengths of the bytecode segments.
@@ -149,12 +136,12 @@ impl CasmContractClass {
     }
 
     /// Returns the hash for a set of entry points.
-    fn entry_points_hash(&self, entry_points: &[CasmContractEntryPoint]) -> Felt252 {
+    fn entry_points_hash<H: StarkHash>(&self, entry_points: &[CasmContractEntryPoint]) -> Felt252 {
         let mut entry_point_hash_elements = vec![];
         for entry_point in entry_points {
             entry_point_hash_elements.push(Felt252::from(&entry_point.selector));
             entry_point_hash_elements.push(Felt252::from(entry_point.offset));
-            entry_point_hash_elements.push(Poseidon::hash_array(
+            entry_point_hash_elements.push(H::hash_array(
                 &entry_point
                     .builtins
                     .iter()
@@ -162,18 +149,38 @@ impl CasmContractClass {
                     .collect_vec(),
             ));
         }
-        Poseidon::hash_array(&entry_point_hash_elements)
+        H::hash_array(&entry_point_hash_elements)
     }
 
     /// Returns the bytecode hash.
-    fn compute_bytecode_hash(&self) -> Felt252 {
+    fn compute_bytecode_hash<H: StarkHash>(&self) -> Felt252 {
         let mut bytecode_iter = self.bytecode.iter().map(|big_uint| Felt252::from(&big_uint.value));
 
         let (len, bytecode_hash) =
-            bytecode_hash_node(&mut bytecode_iter, &self.get_bytecode_segment_lengths());
+            bytecode_hash_node::<H>(&mut bytecode_iter, &self.get_bytecode_segment_lengths());
         assert_eq!(len, self.bytecode.len());
 
         bytecode_hash
+    }
+
+    /// Generic over `H: StarkHash`; computes the combined Felt252 hash of all class components.
+    /// Uses entry point hashes (external, L1 handler, constructor) and bytecode to produce a single
+    /// hash.
+    fn compiled_class_hash_inner<H: StarkHash>(&self) -> Felt252 {
+        // Compute hashes on each component separately.
+        let external_funcs_hash = self.entry_points_hash::<H>(&self.entry_points_by_type.external);
+        let l1_handlers_hash = self.entry_points_hash::<H>(&self.entry_points_by_type.l1_handler);
+        let constructors_hash = self.entry_points_hash::<H>(&self.entry_points_by_type.constructor);
+        let bytecode_hash = self.compute_bytecode_hash::<H>();
+
+        // Compute total hash by hashing each component on top of the previous one.
+        H::hash_array(&[
+            Felt252::from_bytes_be_slice(b"COMPILED_CLASS_V1"),
+            external_funcs_hash,
+            l1_handlers_hash,
+            constructors_hash,
+            bytecode_hash,
+        ])
     }
 }
 
@@ -181,7 +188,7 @@ impl CasmContractClass {
 /// the Starknet OS.
 ///
 /// Returns the length of the processed segment and its hash.
-fn bytecode_hash_node(
+fn bytecode_hash_node<H: StarkHash>(
     iter: &mut impl Iterator<Item = Felt252>,
     node: &NestedIntList,
 ) -> (usize, Felt252) {
@@ -189,12 +196,13 @@ fn bytecode_hash_node(
         NestedIntList::Leaf(len) => {
             let data = &iter.take(*len).collect_vec();
             assert_eq!(data.len(), *len);
-            (*len, Poseidon::hash_array(data))
+            (*len, H::hash_array(data))
         }
         NestedIntList::Node(nodes) => {
             // Compute `1 + poseidon(len0, hash0, len1, hash1, ...)`.
-            let inner_nodes = nodes.iter().map(|node| bytecode_hash_node(iter, node)).collect_vec();
-            let hash = Poseidon::hash_array(
+            let inner_nodes =
+                nodes.iter().map(|node| bytecode_hash_node::<H>(iter, node)).collect_vec();
+            let hash = H::hash_array(
                 &inner_nodes.iter().flat_map(|(len, hash)| [(*len).into(), *hash]).collect_vec(),
             ) + 1;
             (inner_nodes.iter().map(|(len, _)| len).sum(), hash)
@@ -413,17 +421,22 @@ impl CasmContractClass {
         let no_eq_solver = sierra_version.minor >= 4;
         let metadata_computation_config = MetadataComputationConfig {
             function_set_costs: entrypoint_ids
-                .map(|id| (id, [(CostTokenType::Const, ENTRY_POINT_COST)].into()))
+                .map(|id| (id, CostTokenMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST)])))
                 .collect(),
             linear_gas_solver: no_eq_solver,
             linear_ap_change_solver: no_eq_solver,
             skip_non_linear_solver_comparisons: false,
             compute_runtime_costs: false,
         };
-        let metadata = calc_metadata(&program, metadata_computation_config)?;
-
+        let program_info = ProgramRegistryInfo::new(&program).map_err(|err| {
+            StarknetSierraCompilationError::CompilationError(Box::new(
+                CompilationError::ProgramRegistryError(err),
+            ))
+        })?;
+        let metadata = calc_metadata(&program, &program_info, metadata_computation_config)?;
         let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
             &program,
+            &program_info,
             &metadata,
             SierraToCasmConfig { gas_usage_check: true, max_bytecode_size },
         )?;
@@ -523,7 +536,7 @@ impl CasmContractClass {
                 .start_offset;
             assert_eq!(
                 metadata.gas_info.function_costs[&function.id],
-                OrderedHashMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST as i64)]),
+                CostTokenMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST as i64)]),
                 "Unexpected entry point cost."
             );
             Ok::<CasmContractEntryPoint, StarknetSierraCompilationError>(CasmContractEntryPoint {

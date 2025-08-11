@@ -10,7 +10,6 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::chain;
-use smol_str::SmolStr;
 
 use crate::Variant;
 use crate::corelib::{self, core_submodule, get_submodule};
@@ -24,19 +23,19 @@ use crate::types::TypeHead;
 
 /// A filter for types.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum TypeFilter {
+pub enum TypeFilter<'db> {
     /// No filter is applied.
     NoFilter,
     /// Only methods with the given type head are returned.
-    TypeHead(TypeHead),
+    TypeHead(TypeHead<'db>),
 }
 
 /// Query implementation of [crate::db::SemanticGroup::methods_in_module].
-pub fn methods_in_module(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    type_filter: TypeFilter,
-) -> Arc<[TraitFunctionId]> {
+pub fn methods_in_module<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+    type_filter: TypeFilter<'db>,
+) -> Arc<Vec<TraitFunctionId<'db>>> {
     let mut result = Vec::new();
     let Ok(module_traits_ids) = db.module_traits_ids(module_id) else {
         return result.into();
@@ -63,11 +62,11 @@ pub fn methods_in_module(
             result.push(trait_function)
         }
     }
-    result.into()
+    Arc::new(result)
 }
 
 /// Checks if a type head can fit for a method.
-fn fit_for_method(head: &TypeHead, type_head: &TypeHead) -> bool {
+fn fit_for_method(head: &TypeHead<'_>, type_head: &TypeHead<'_>) -> bool {
     if head == type_head {
         return true;
     }
@@ -78,25 +77,25 @@ fn fit_for_method(head: &TypeHead, type_head: &TypeHead) -> bool {
 }
 
 /// Query implementation of [crate::db::SemanticGroup::methods_in_crate].
-pub fn methods_in_crate(
-    db: &dyn SemanticGroup,
-    crate_id: CrateId,
-    type_filter: TypeFilter,
-) -> Arc<[TraitFunctionId]> {
+pub fn methods_in_crate<'db>(
+    db: &'db dyn SemanticGroup,
+    crate_id: CrateId<'db>,
+    type_filter: TypeFilter<'db>,
+) -> Arc<Vec<TraitFunctionId<'db>>> {
     let mut result = Vec::new();
     for module_id in db.crate_modules(crate_id).iter() {
         result.extend_from_slice(&db.methods_in_module(*module_id, type_filter.clone())[..])
     }
-    result.into()
+    Arc::new(result)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::visible_importables_in_module].
-pub fn visible_importables_in_module(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    user_module_file_id: ModuleFileId,
+pub fn visible_importables_in_module<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+    user_module_file_id: ModuleFileId<'db>,
     include_parent: bool,
-) -> Arc<[(ImportableId, String)]> {
+) -> Arc<Vec<(ImportableId<'db>, String)>> {
     let mut visited_modules = UnorderedHashSet::default();
     visible_importables_in_module_ex(
         db,
@@ -105,18 +104,18 @@ pub fn visible_importables_in_module(
         include_parent,
         &mut visited_modules,
     )
-    .unwrap_or_else(|| Vec::new().into())
+    .unwrap_or_else(|| Arc::new(Vec::new()))
 }
 
 /// Returns the visible importables in a module, including the importables in the parent module if
 /// needed. The visibility is relative to the module `user_module_id`.
-fn visible_importables_in_module_ex(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    user_module_file_id: ModuleFileId,
+fn visible_importables_in_module_ex<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+    user_module_file_id: ModuleFileId<'db>,
     include_parent: bool,
-    visited_modules: &mut UnorderedHashSet<ModuleId>,
-) -> Option<Arc<[(ImportableId, String)]>> {
+    visited_modules: &mut UnorderedHashSet<ModuleId<'db>>,
+) -> Option<Arc<Vec<(ImportableId<'db>, String)>>> {
     let mut result = Vec::new();
     if visited_modules.contains(&module_id) {
         return Some(result.into());
@@ -125,8 +124,8 @@ fn visible_importables_in_module_ex(
     let resolver = Resolver::new(db, user_module_file_id, InferenceId::NoContext);
 
     // Check if an item in the current module is visible from the user module.
-    let is_visible = |item_name: SmolStr| {
-        let item_info = db.module_item_info_by_name(module_id, item_name).ok()??;
+    let is_visible = |item_name: &'db str| {
+        let item_info = db.module_item_info_by_name(module_id, item_name.into()).ok()??;
         Some(resolver.is_item_visible(module_id, &item_info, user_module_file_id.0))
     };
     visited_modules.insert(module_id);
@@ -148,12 +147,15 @@ fn visible_importables_in_module_ex(
                     )[..],
                 );
 
-                (ImportableId::Crate(crate_id), crate_id.name(db))
+                (ImportableId::Crate(crate_id), crate_id.long(db).name())
             }
             ResolvedGenericItem::Module(inner_module_id @ ModuleId::Submodule(module)) => {
                 modules_to_visit.push(inner_module_id);
 
                 (ImportableId::Submodule(module), module.name(db))
+            }
+            ResolvedGenericItem::Module(ModuleId::MacroCall { id: _, generated_file_id: _ }) => {
+                todo!("Handle macro calls in visible_importables_in_module_ex");
             }
             ResolvedGenericItem::GenericConstant(item_id) => {
                 (ImportableId::Constant(item_id), item_id.name(db))
@@ -198,25 +200,25 @@ fn visible_importables_in_module_ex(
             | ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(_)) => continue,
         };
 
-        result.push((resolved_item, name.to_string()));
+        result.push((resolved_item, name.into()));
     }
 
     for submodule_id in db.module_submodules_ids(module_id).unwrap_or_default().iter().copied() {
         if !is_visible(submodule_id.name(db)).unwrap_or_default() {
             continue;
         }
-        result.push((ImportableId::Submodule(submodule_id), submodule_id.name(db).to_string()));
+        result.push((ImportableId::Submodule(submodule_id), submodule_id.name(db).into()));
         modules_to_visit.push(ModuleId::Submodule(submodule_id));
     }
 
     // Handle enums separately because we need to include their variants.
     for enum_id in db.module_enums_ids(module_id).unwrap_or_default().iter().copied() {
         let enum_name = enum_id.name(db);
-        if !is_visible(enum_name.clone()).unwrap_or_default() {
+        if !is_visible(enum_name).unwrap_or_default() {
             continue;
         }
 
-        result.push((ImportableId::Enum(enum_id), enum_name.to_string()));
+        result.push((ImportableId::Enum(enum_id), enum_name.into()));
         for (name, id) in db.enum_variants(enum_id).unwrap_or_default() {
             result.push((ImportableId::Variant(id), format!("{enum_name}::{name}")));
         }
@@ -225,10 +227,10 @@ fn visible_importables_in_module_ex(
     macro_rules! module_importables {
         ($query:ident, $map:expr) => {
             for item_id in db.$query(module_id).ok().unwrap_or_default().iter().copied() {
-                if !is_visible(item_id.name(db)).unwrap_or_default() {
+                if !is_visible(item_id.name(db).into()).unwrap_or_default() {
                     continue;
                 }
-                result.push(($map(item_id), item_id.name(db).to_string()));
+                result.push(($map(item_id), item_id.name(db).into()));
             }
         };
     }
@@ -276,38 +278,39 @@ fn visible_importables_in_module_ex(
                     result.push((*item_id, format!("super::{path}")));
                 }
             }
+            ModuleId::MacroCall { id: _, generated_file_id: _ } => todo!(),
         }
     }
-    Some(result.into())
+    Some(Arc::new(result))
 }
 
 /// Query implementation of [crate::db::SemanticGroup::visible_importables_in_crate].
-pub fn visible_importables_in_crate(
-    db: &dyn SemanticGroup,
-    crate_id: CrateId,
-    user_module_file_id: ModuleFileId,
-) -> Arc<[(ImportableId, String)]> {
+pub fn visible_importables_in_crate<'db>(
+    db: &'db dyn SemanticGroup,
+    crate_id: CrateId<'db>,
+    user_module_file_id: ModuleFileId<'db>,
+) -> Arc<Vec<(ImportableId<'db>, String)>> {
     let is_current_crate = user_module_file_id.0.owning_crate(db) == crate_id;
-    let crate_name = if is_current_crate { "crate" } else { &crate_id.name(db) };
+    let crate_name = if is_current_crate { "crate" } else { crate_id.long(db).name() };
     let crate_as_module = ModuleId::CrateRoot(crate_id);
     db.visible_importables_in_module(crate_as_module, user_module_file_id, false)
         .iter()
         .cloned()
-        .map(|(item_id, path)| (item_id, format!("{crate_name}::{path}",)))
+        .map(|(item_id, path)| (item_id, format!("{crate_name}::{path}")))
         .collect::<Vec<_>>()
         .into()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::visible_importables_from_module].
-pub fn visible_importables_from_module(
-    db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId,
-) -> Option<Arc<OrderedHashMap<ImportableId, String>>> {
+pub fn visible_importables_from_module<'db>(
+    db: &'db dyn SemanticGroup,
+    module_file_id: ModuleFileId<'db>,
+) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
     let module_id = module_file_id.0;
 
     let current_crate_id = module_id.owning_crate(db);
-    let edition = db.crate_config(current_crate_id)?.settings.edition;
-    let prelude_submodule_name = edition.prelude_submodule_name();
+    let prelude_submodule_name =
+        db.crate_config(current_crate_id)?.settings.edition.prelude_submodule_name();
     let core_prelude_submodule = core_submodule(db, "prelude");
     let prelude_submodule = get_submodule(db, core_prelude_submodule, prelude_submodule_name)?;
     let prelude_submodule_file_id = ModuleFileId(prelude_submodule, FileIndex(0));
@@ -323,17 +326,14 @@ pub fn visible_importables_from_module(
         [current_crate_id],
         (!settings.dependencies.contains_key(CORELIB_CRATE_NAME)).then(|| corelib::core_crate(db)),
         settings.dependencies.iter().map(|(name, setting)| {
-            CrateLongId::Real {
-                name: name.clone().into(),
-                discriminator: setting.discriminator.clone(),
-            }
-            .intern(db)
+            CrateLongId::Real { name: name.clone(), discriminator: setting.discriminator.clone() }
+                .intern(db)
         })
     ) {
         module_visible_importables
             .extend_from_slice(&db.visible_importables_in_crate(crate_id, module_file_id)[..]);
         module_visible_importables
-            .push((ImportableId::Crate(crate_id), crate_id.name(db).to_string()));
+            .push((ImportableId::Crate(crate_id), crate_id.long(db).name().into()));
     }
 
     // Collect importables visible in the current module.
@@ -344,7 +344,7 @@ pub fn visible_importables_from_module(
     // This is the reason for searching in the crates before the current module - to prioritize
     // shorter, canonical paths prefixed with `crate::` over paths using `super::` or local
     // imports.
-    let mut result: OrderedHashMap<ImportableId, String> = OrderedHashMap::default();
+    let mut result: OrderedHashMap<ImportableId<'_>, String> = OrderedHashMap::default();
     for (trait_id, path) in module_visible_importables {
         match result.entry(trait_id) {
             Entry::Occupied(existing_path) => {
@@ -357,14 +357,14 @@ pub fn visible_importables_from_module(
             }
         }
     }
-    Some(result.into())
+    Some(Arc::new(result))
 }
 
 /// Query implementation of [crate::db::SemanticGroup::visible_traits_from_module].
-pub fn visible_traits_from_module(
-    db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId,
-) -> Option<Arc<OrderedHashMap<TraitId, String>>> {
+pub fn visible_traits_from_module<'db>(
+    db: &'db dyn SemanticGroup,
+    module_file_id: ModuleFileId<'db>,
+) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {
     let importables = db.visible_importables_from_module(module_file_id)?;
 
     let traits = importables

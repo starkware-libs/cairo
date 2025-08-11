@@ -38,7 +38,9 @@ pub trait SignatureSpecializationContext: TypeSpecializationContext {
     }
 
     /// Returns the ap-change of the given function.
-    fn try_get_function_ap_change(&self, function_id: &FunctionId) -> Option<SierraApChange>;
+    fn try_get_function_ap_change(&self, function_id: &FunctionId) -> Option<SierraApChange> {
+        Some(SierraApChange::FunctionCall(function_id.clone()))
+    }
 
     /// Wraps [Self::try_get_function_ap_change] with a result object.
     fn get_function_ap_change(
@@ -430,6 +432,8 @@ pub enum SierraApChange {
     /// The lib func is `branch_align`.
     /// The `ap` change is known during compilation.
     BranchAlign,
+    /// This is a function call, and the ap change should be fetched elsewhere.
+    FunctionCall(FunctionId),
 }
 /// Trait for a specialized library function.
 pub trait ConcreteLibfunc {

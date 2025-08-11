@@ -16,7 +16,10 @@ use super::entry_point::{
 use super::utils::{GenericParamExtract, forbid_attributes_in_impl};
 
 /// Handles an embeddable impl, generating entry point wrappers and modules pointing to them.
-pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> PluginResult {
+pub fn handle_embeddable<'db>(
+    db: &'db dyn SyntaxGroup,
+    item_impl: ast::ItemImpl<'db>,
+) -> PluginResult<'db> {
     let ast::MaybeImplBody::Some(body) = item_impl.body(db) else {
         return PluginResult {
             code: None,
@@ -38,7 +41,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         }
         ast::OptionWrappedGenericParamList::WrappedGenericParamList(params) => {
             let generic_params_node = params.generic_params(db);
-            let elements = generic_params_node.elements(db);
+            let elements = generic_params_node.elements_vec(db);
             let has_drop_impl = elements
                 .iter()
                 .any(|param| param.is_impl_of(db, "Drop", GENERIC_CONTRACT_STATE_NAME));
@@ -112,7 +115,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
     let mut data = EntryPointsGenerationData::default();
-    for item in body.items_vec(db) {
+    for item in body.iter_items(db) {
         // TODO(yuval): do the same in embeddable_As, to get a better diagnostic.
         forbid_attributes_in_impl(db, &mut diagnostics, &item, "#[embeddable]");
         let ast::ImplItem::Function(item_function) = item else {
@@ -203,6 +206,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
             code_mappings,
             aux_data: None,
             diagnostics_note: Default::default(),
+            is_unhygienic: false,
         }),
         diagnostics,
         remove_original_item: false,

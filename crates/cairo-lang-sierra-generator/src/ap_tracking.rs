@@ -19,7 +19,7 @@ pub struct ApTrackingConfiguration {
 
 /// Collects information about where ap tracking should be enabled/disabled.
 pub fn get_ap_tracking_configuration(
-    lowered_function: &Lowered,
+    lowered_function: &Lowered<'_>,
     known_ap_change: bool,
     vars_of_interest: OrderedHashSet<VariableId>,
 ) -> ApTrackingConfiguration {
@@ -63,11 +63,11 @@ struct ApTrackingAnalysisInfo {
     vars: OrderedHashMap<VariableId, OrderedHashSet<BlockId>>,
 }
 
-impl ApTrackingAnalysisInfo {
-    pub fn variables_used<'a>(
+impl<'db> ApTrackingAnalysisInfo {
+    pub fn variables_used(
         &mut self,
         ctx: &ApTrackingAnalysisContext,
-        vars: impl Iterator<Item = &'a VariableId>,
+        vars: impl Iterator<Item = &'db VariableId>,
         block_id: BlockId,
     ) {
         for var_id in vars {
@@ -79,14 +79,17 @@ impl ApTrackingAnalysisInfo {
     }
 }
 
-impl Analyzer<'_> for ApTrackingAnalysisContext {
+impl<'db, 'a> Analyzer<'db, 'a> for ApTrackingAnalysisContext
+where
+    'a: 'db,
+{
     type Info = ApTrackingAnalysisInfo;
 
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
         (block_id, _statement_index): StatementLocation,
-        stmt: &Statement,
+        stmt: &'a Statement<'db>,
     ) {
         for var_id in stmt.outputs() {
             info.vars.swap_remove(var_id);
@@ -104,7 +107,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
         info: &mut Self::Info,
         (block_id, _statement_index): StatementLocation,
         _target_block_id: BlockId,
-        remapping: &VarRemapping,
+        remapping: &'a VarRemapping<'db>,
     ) {
         for dst in remapping.keys() {
             info.vars.swap_remove(dst);
@@ -125,7 +128,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
     fn merge_match(
         &mut self,
         (block_id, _statement_index): StatementLocation,
-        match_info: &MatchInfo,
+        match_info: &'a MatchInfo<'db>,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         // Find all the variables that are alive after this block convergence.
@@ -165,7 +168,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
     fn info_from_return(
         &mut self,
         (block_id, _statement_index): StatementLocation,
-        vars: &[VarUsage],
+        vars: &'a [VarUsage<'db>],
     ) -> Self::Info {
         // TODO(ilya): Consider the following disabling of ap tracking.
 

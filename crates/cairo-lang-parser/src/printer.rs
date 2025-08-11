@@ -6,11 +6,10 @@ use cairo_lang_syntax_codegen::cairo_spec::get_spec;
 use cairo_lang_syntax_codegen::spec::{Member, Node, NodeKind};
 use colored::{ColoredString, Colorize};
 use itertools::zip_eq;
-use smol_str::SmolStr;
 
 pub fn print_tree(
     db: &dyn SyntaxGroup,
-    syntax_root: &SyntaxNode,
+    syntax_root: &SyntaxNode<'_>,
     print_colors: bool,
     print_trivia: bool,
 ) -> String {
@@ -21,7 +20,7 @@ pub fn print_tree(
 
 pub fn print_partial_tree(
     db: &dyn SyntaxGroup,
-    syntax_root: &SyntaxNode,
+    syntax_root: &SyntaxNode<'_>,
     top_level_kind: &str,
     ignored_kinds: Vec<&str>,
     print_trivia: bool,
@@ -84,7 +83,7 @@ impl<'a> Printer<'a> {
     fn print_tree(
         &mut self,
         field_description: &str,
-        syntax_node: &SyntaxNode,
+        syntax_node: &SyntaxNode<'_>,
         indent: &str,
         is_last: bool,
         under_top_level: bool,
@@ -98,7 +97,7 @@ impl<'a> Printer<'a> {
                         field_description,
                         indent,
                         extra_head_indent,
-                        text.clone(),
+                        text,
                         green_node.kind,
                     )
                 }
@@ -122,7 +121,7 @@ impl<'a> Printer<'a> {
         field_description: &str,
         indent: &str,
         extra_head_indent: &str,
-        text: SmolStr,
+        text: &str,
         kind: SyntaxKind,
     ) {
         let text = if kind == SyntaxKind::TokenMissing {
@@ -132,7 +131,7 @@ impl<'a> Printer<'a> {
                 SyntaxKind::TokenWhitespace
                 | SyntaxKind::TokenNewline
                 | SyntaxKind::TokenEndOfFile => ".".to_string(),
-                _ => format!(": '{}'", self.green(self.bold(text.as_str().into()))),
+                _ => format!(": '{}'", self.green(self.bold(text.into()))),
             };
             format!("{} (kind: {:?}){token_text}", self.blue(field_description.into()), kind)
         };
@@ -147,7 +146,7 @@ impl<'a> Printer<'a> {
         indent: &str,
         extra_head_indent: &str,
         is_last: bool,
-        syntax_node: &SyntaxNode,
+        syntax_node: &SyntaxNode<'_>,
         kind: SyntaxKind,
         under_top_level: bool,
     ) {
@@ -210,7 +209,7 @@ impl<'a> Printer<'a> {
             NodeKind::Struct { members: expected_children }
             | NodeKind::Terminal { members: expected_children, .. } => {
                 self.print_internal_struct(
-                    &children,
+                    children,
                     &expected_children,
                     indent.as_str(),
                     under_top_level,
@@ -229,7 +228,7 @@ impl<'a> Printer<'a> {
             }
             NodeKind::SeparatedList { .. } => {
                 for (i, child) in children.iter().enumerate() {
-                    let description = if i % 2 == 0 { "item" } else { "separator" };
+                    let description = if i.is_multiple_of(2) { "item" } else { "separator" };
                     self.print_tree(
                         format!("{description} #{}", i / 2).as_str(),
                         child,
@@ -247,7 +246,7 @@ impl<'a> Printer<'a> {
     /// `under_top_level`: whether we are in a subtree of the top-level kind.
     fn print_internal_struct(
         &mut self,
-        children: &[SyntaxNode],
+        children: &[SyntaxNode<'_>],
         expected_children: &[Member],
         indent: &str,
         under_top_level: bool,

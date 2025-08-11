@@ -18,12 +18,12 @@ impl NamedPlugin for ConstevalIntMacro {
     const NAME: &'static str = "consteval_int";
 }
 impl InlineMacroExprPlugin for ConstevalIntMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
         let Some(legacy_inline_macro) = syntax.clone().as_legacy_inline_macro(db) else {
             return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
                 syntax.as_syntax_node().stable_ptr(db),
@@ -63,6 +63,7 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
                     }],
                     aux_data: None,
                     diagnostics_note: Default::default(),
+                    is_unhygienic: false,
                 }
             }),
             diagnostics,
@@ -97,11 +98,11 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
 
 /// Compute the actual value of an integer expression, or fail with diagnostics.
 /// This computation handles arbitrary integers, unlike regular Cairo math.
-pub fn compute_constant_expr(
-    db: &dyn SyntaxGroup,
-    value: &ast::Expr,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    macro_ast: &ast::ExprInlineMacro,
+pub fn compute_constant_expr<'db>(
+    db: &'db dyn SyntaxGroup,
+    value: &ast::Expr<'db>,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    macro_ast: &ast::ExprInlineMacro<'db>,
 ) -> Option<BigInt> {
     match value {
         ast::Expr::Literal(lit) => lit.numeric_value(db),

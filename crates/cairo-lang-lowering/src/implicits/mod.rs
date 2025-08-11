@@ -2,38 +2,36 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
+use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{LookupIntern, Upcast};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::TypeId;
 
 use crate::blocks::Blocks;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, LocationId};
-use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockEnd, BlockId, DependencyType, Lowered, LoweringStage, MatchArm, MatchInfo, Statement,
-    VarUsage,
+    VarUsage, Variable, VariableArena,
 };
 
-struct Context<'a> {
-    db: &'a dyn LoweringGroup,
-    variables: &'a mut VariableAllocator<'a>,
-    lowered: &'a mut Lowered,
-    implicit_index: UnorderedHashMap<TypeId, usize>,
-    implicits_tys: Vec<TypeId>,
-    implicit_vars_for_block: UnorderedHashMap<BlockId, Vec<VarUsage>>,
+struct Context<'db, 'a> {
+    db: &'db dyn LoweringGroup,
+    lowered: &'a mut Lowered<'db>,
+    implicit_index: UnorderedHashMap<TypeId<'db>, usize>,
+    implicits_tys: Vec<TypeId<'db>>,
+    implicit_vars_for_block: UnorderedHashMap<BlockId, Vec<VarUsage<'db>>>,
     visited: UnorderedHashSet<BlockId>,
-    location: LocationId,
+    location: LocationId<'db>,
 }
 
 /// Lowering phase that adds implicits.
-pub fn lower_implicits(
-    db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut Lowered,
+pub fn lower_implicits<'db>(
+    db: &'db dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
+    lowered: &mut Lowered<'db>,
 ) {
     if let Err(diag_added) = inner_lower_implicits(db, function_id, lowered) {
         lowered.blocks = Blocks::new_errored(diag_added);
@@ -41,10 +39,10 @@ pub fn lower_implicits(
 }
 
 /// Similar to lower_implicits, but uses Maybe<> for convenience.
-pub fn inner_lower_implicits(
-    db: &dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut Lowered,
+pub fn inner_lower_implicits<'db>(
+    db: &'db dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
+    lowered: &mut Lowered<'db>,
 ) -> Maybe<()> {
     let semantic_function = function_id.base_semantic_function(db).function_with_body_id(db);
     let location = LocationId::from_stable_location(
@@ -54,18 +52,11 @@ pub fn inner_lower_implicits(
     lowered.blocks.has_root()?;
     let root_block_id = BlockId::root();
 
-    let mut variables = VariableAllocator::new(
-        db,
-        function_id.base_semantic_function(db).function_with_body_id(db),
-        lowered.variables.clone(),
-    )?;
-
     let implicits_tys = db.function_with_body_implicits(function_id)?;
 
     let implicit_index = implicits_tys.iter().enumerate().map(|(i, ty)| (*ty, i)).collect();
     let mut ctx = Context {
         db,
-        variables: &mut variables,
         lowered,
         implicit_index,
         implicits_tys,
@@ -81,36 +72,39 @@ pub fn inner_lower_implicits(
     let implicit_vars = &ctx.implicit_vars_for_block[&root_block_id];
     ctx.lowered.parameters.splice(0..0, implicit_vars.iter().map(|var_usage| var_usage.var_id));
 
-    lowered.variables = std::mem::take(&mut ctx.variables.variables);
-
     Ok(())
 }
 
 /// Allocates and returns new variables with usage location for each of the current function's
 /// implicits.
-fn alloc_implicits(
-    ctx: &mut VariableAllocator<'_>,
-    implicits_tys: &[TypeId],
-    location: LocationId,
-) -> Vec<VarUsage> {
+fn alloc_implicits<'db>(
+    db: &'db dyn LoweringGroup,
+    variables: &mut VariableArena<'db>,
+    implicits_tys: &[TypeId<'db>],
+    location: LocationId<'db>,
+) -> Vec<VarUsage<'db>> {
     implicits_tys
         .iter()
         .copied()
-        .map(|ty| VarUsage { var_id: ctx.new_var(VarRequest { ty, location }), location })
+        .map(|ty| VarUsage {
+            var_id: variables.alloc(Variable::with_default_context(db, ty, location)),
+            location,
+        })
         .collect_vec()
 }
 
 /// Returns the implicits that are used in the statements of a block.
-fn block_body_implicits(
-    ctx: &mut Context<'_>,
+fn block_body_implicits<'db>(
+    ctx: &mut Context<'db, '_>,
     block_id: BlockId,
-) -> Result<Vec<VarUsage>, cairo_lang_diagnostics::DiagnosticAdded> {
+) -> Result<Vec<VarUsage<'db>>, cairo_lang_diagnostics::DiagnosticAdded> {
     let mut implicits = ctx
         .implicit_vars_for_block
         .entry(block_id)
         .or_insert_with(|| {
             alloc_implicits(
-                ctx.variables,
+                ctx.db,
+                &mut ctx.lowered.variables,
                 &ctx.implicits_tys,
                 ctx.location.with_auto_generation_note(ctx.db, "implicits"),
             )
@@ -121,7 +115,7 @@ fn block_body_implicits(
     for (i, statement) in ctx.lowered.blocks[block_id].statements.iter_mut().enumerate() {
         if let Statement::Call(stmt) = statement {
             if matches!(
-                stmt.function.lookup_intern(ctx.db),
+                stmt.function.long(ctx.db),
                 FunctionLongId::Semantic(func_id)
                     if func_id.get_concrete(ctx.db).generic_function == require_implicits_libfunc_id
             ) {
@@ -138,10 +132,15 @@ fn block_body_implicits(
             let implicit_output_vars = callee_implicits
                 .iter()
                 .copied()
-                .map(|ty| ctx.variables.new_var(VarRequest { ty, location }))
+                .map(|ty| {
+                    ctx.lowered
+                        .variables
+                        .alloc(Variable::with_default_context(ctx.db, ty, location))
+                })
                 .collect_vec();
             for (i, var) in zip_eq(indices, implicit_output_vars.iter()) {
-                implicits[i] = VarUsage { var_id: *var, location: ctx.variables[*var].location };
+                implicits[i] =
+                    VarUsage { var_id: *var, location: ctx.lowered.variables[*var].location };
             }
             stmt.outputs.splice(0..0, implicit_output_vars);
         }
@@ -153,7 +152,10 @@ fn block_body_implicits(
 }
 
 /// Finds the implicits for a function's blocks starting from the root.
-fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId) -> Maybe<()> {
+fn lower_function_blocks_implicits<'db>(
+    ctx: &mut Context<'db, '_>,
+    root_block_id: BlockId,
+) -> Maybe<()> {
     let mut blocks_to_visit = vec![root_block_id];
     while let Some(block_id) = blocks_to_visit.pop() {
         if !ctx.visited.insert(block_id) {
@@ -173,7 +175,12 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
                     .implicit_vars_for_block
                     .entry(*block_id)
                     .or_insert_with(|| {
-                        alloc_implicits(ctx.variables, &ctx.implicits_tys, ctx.location)
+                        alloc_implicits(
+                            ctx.db,
+                            &mut ctx.lowered.variables,
+                            &ctx.implicits_tys,
+                            ctx.location,
+                        )
                     })
                     .clone();
                 let old_remapping = std::mem::take(&mut remapping.remapping);
@@ -215,7 +222,10 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
                             let mut arm_implicits = implicits.clone();
                             let mut implicit_input_vars = vec![];
                             for ty in callee_implicits.iter().copied() {
-                                let var = ctx.variables.new_var(VarRequest { ty, location });
+                                let var = ctx
+                                    .lowered
+                                    .variables
+                                    .alloc(Variable::with_default_context(ctx.db, ty, location));
                                 implicit_input_vars.push(var);
                                 let implicit_index = ctx.implicit_index[&ty];
                                 arm_implicits[implicit_index] = VarUsage { var_id: var, location };
@@ -241,7 +251,10 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
 // =========== Query implementations ===========
 
 /// Query implementation of [crate::db::LoweringGroup::function_implicits].
-pub fn function_implicits(db: &dyn LoweringGroup, function: FunctionId) -> Maybe<Vec<TypeId>> {
+pub fn function_implicits<'db>(
+    db: &'db dyn LoweringGroup,
+    function: FunctionId<'db>,
+) -> Maybe<Vec<TypeId<'db>>> {
     if let Some(body) = function.body(db)? {
         return db.function_with_body_implicits(body);
     }
@@ -249,12 +262,12 @@ pub fn function_implicits(db: &dyn LoweringGroup, function: FunctionId) -> Maybe
 }
 
 /// A trait to add helper methods in [LoweringGroup].
-pub trait FunctionImplicitsTrait<'a>: Upcast<dyn LoweringGroup + 'a> {
+pub trait FunctionImplicitsTrait<'db>: Upcast<'db, dyn LoweringGroup> {
     /// Returns all the implicits used by a [ConcreteFunctionWithBodyId].
     fn function_with_body_implicits(
-        &self,
-        function: ConcreteFunctionWithBodyId,
-    ) -> Maybe<Vec<TypeId>> {
+        &'db self,
+        function: ConcreteFunctionWithBodyId<'db>,
+    ) -> Maybe<Vec<TypeId<'db>>> {
         let db = self.upcast();
         let scc_representative = db.lowered_scc_representative(
             function,
@@ -271,10 +284,13 @@ pub trait FunctionImplicitsTrait<'a>: Upcast<dyn LoweringGroup + 'a> {
         Ok(implicits)
     }
 }
-impl<'a, T: Upcast<dyn LoweringGroup + 'a> + ?Sized> FunctionImplicitsTrait<'a> for T {}
+impl<'db, T: Upcast<'db, dyn LoweringGroup> + ?Sized> FunctionImplicitsTrait<'db> for T {}
 
 /// Query implementation of [LoweringGroup::scc_implicits].
-pub fn scc_implicits(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> Maybe<Vec<TypeId>> {
+pub fn scc_implicits<'db>(
+    db: &'db dyn LoweringGroup,
+    scc: ConcreteSCCRepresentative<'db>,
+) -> Maybe<Vec<TypeId<'db>>> {
     let scc_functions = db.lowered_scc(scc.0, DependencyType::Call, LoweringStage::PostBaseline);
     let mut all_implicits = OrderedHashSet::<_>::default();
     for function in scc_functions {

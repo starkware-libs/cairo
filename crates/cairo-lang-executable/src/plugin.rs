@@ -42,12 +42,12 @@ const IMPLICIT_PRECEDENCE: &[&str] = &[
 struct ExecutablePlugin;
 
 impl MacroPlugin for ExecutablePlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         let ast::ModuleItem::FreeFunction(item) = item_ast else {
             return PluginResult::default();
         };
@@ -80,7 +80,7 @@ impl MacroPlugin for ExecutablePlugin {
                 ("function_name".into(), RewriteNode::from_ast(&name))
             ].into()
         ));
-        let params = declaration.signature(db).parameters(db).elements(db);
+        let params = declaration.signature(db).parameters(db).elements_vec(db);
         for (param_idx, param) in params.iter().enumerate() {
             for modifier in param.modifiers(db).elements(db) {
                 if let ast::Modifier::Ref(terminal_ref) = modifier {
@@ -131,6 +131,7 @@ impl MacroPlugin for ExecutablePlugin {
                 code_mappings,
                 aux_data: None,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             }),
             diagnostics,
             remove_original_item: false,
@@ -151,7 +152,11 @@ impl MacroPlugin for ExecutablePlugin {
 struct RawExecutableAnalyzer;
 
 impl AnalyzerPlugin for RawExecutableAnalyzer {
-    fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic> {
+    fn diagnostics<'db>(
+        &self,
+        db: &'db dyn SemanticGroup,
+        module_id: ModuleId<'db>,
+    ) -> Vec<PluginDiagnostic<'db>> {
         let mut diagnostics = vec![];
         let Ok(free_functions) = db.module_free_functions(module_id) else {
             return diagnostics;
@@ -181,7 +186,7 @@ impl AnalyzerPlugin for RawExecutableAnalyzer {
             if input.ty
                 != corelib::get_core_ty_by_name(
                     db,
-                    "Span".into(),
+                    "Span",
                     vec![GenericArgumentId::Type(db.core_info().felt252)],
                 )
             {

@@ -6,27 +6,28 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering::ids::SemanticFunctionIdEx;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
-use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_sierra::extensions::snapshot::snapshot_ty;
 use cairo_lang_sierra::ids::UserTypeId;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGenericArg};
-use cairo_lang_utils::{Intern, LookupIntern, try_extract_matches};
+use cairo_lang_utils::{Intern, try_extract_matches};
 use itertools::chain;
 use num_traits::ToPrimitive;
 
-use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId, sierra_concrete_long_id};
+use crate::db::{
+    SierraGenGroup, SierraGenGroupData, SierraGeneratorTypeLongId, sierra_concrete_long_id,
+};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 
 /// See [SierraGenGroup::get_concrete_type_id] for documentation.
-pub fn get_concrete_type_id(
-    db: &dyn SierraGenGroup,
-    type_id: semantic::TypeId,
+pub fn get_concrete_type_id<'db>(
+    db: &'db dyn SierraGenGroup,
+    type_id: semantic::TypeId<'db>,
 ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
-    match type_id.lookup_intern(db) {
+    match type_id.long(db) {
         semantic::TypeLongId::Snapshot(inner_ty) => {
-            let inner = db.get_concrete_type_id(inner_ty)?;
+            let inner = db.get_concrete_type_id(*inner_ty)?;
             if matches!(
-                inner.lookup_intern(db),
+                db.lookup_concrete_type(inner.clone()),
                 SierraGeneratorTypeLongId::CycleBreaker(ty) if cycle_breaker_info(db, ty)?.duplicatable
             ) {
                 return Ok(inner);
@@ -35,15 +36,17 @@ pub fn get_concrete_type_id(
         semantic::TypeLongId::Concrete(
             semantic::ConcreteTypeId::Enum(_) | semantic::ConcreteTypeId::Struct(_),
         ) if db.is_self_referential(type_id)? => {
-            return Ok(SierraGeneratorTypeLongId::CycleBreaker(type_id).intern(db));
+            return Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::CycleBreaker(type_id)));
         }
         _ => {
             if type_id.is_phantom(db) {
-                return Ok(SierraGeneratorTypeLongId::Phantom(type_id).intern(db));
+                return Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Phantom(type_id)));
             }
         }
     }
-    Ok(SierraGeneratorTypeLongId::Regular(db.get_concrete_long_type_id(type_id)?).intern(db))
+    Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
+        db.get_concrete_long_type_id(type_id)?,
+    )))
 }
 
 /// See [SierraGenGroup::get_index_enum_type_id] for documentation.
@@ -63,13 +66,13 @@ pub fn get_index_enum_type_id(
         ConcreteTypeLongId { generic_id: "Enum".into(), generic_args }.into(),
     );
 
-    Ok(x.intern(db))
+    Ok(db.intern_concrete_type(x))
 }
 
 /// See [SierraGenGroup::get_concrete_long_type_id] for documentation.
-pub fn get_concrete_long_type_id(
-    db: &dyn SierraGenGroup,
-    type_id: semantic::TypeId,
+pub fn get_concrete_long_type_id<'db>(
+    db: &'db dyn SierraGenGroup,
+    type_id: semantic::TypeId<'db>,
 ) -> Maybe<Arc<cairo_lang_sierra::program::ConcreteTypeLongId>> {
     let user_type_long_id = |generic_id: &str, user_type: UserTypeId| {
         let deps = db.type_dependencies(type_id)?;
@@ -84,7 +87,7 @@ pub fn get_concrete_long_type_id(
             .collect::<Maybe<_>>()?,
         })
     };
-    Ok(match type_id.lookup_intern(db) {
+    Ok(match type_id.long(db) {
         semantic::TypeLongId::Concrete(ty) => {
             match ty {
                 semantic::ConcreteTypeId::Struct(_) => {
@@ -106,7 +109,8 @@ pub fn get_concrete_long_type_id(
                                 }
                                 semantic::GenericArgumentId::Constant(value_id) => {
                                     let value = value_id
-                                        .lookup_intern(db)
+                                        .long(db)
+                                        .clone()
                                         .into_int()
                                         .expect("Expected ConstValue::Int for size");
 
@@ -129,7 +133,7 @@ pub fn get_concrete_long_type_id(
             user_type_long_id("Struct", "Tuple".into())?.into()
         }
         semantic::TypeLongId::Snapshot(ty) => {
-            let inner_ty = db.get_concrete_type_id(ty).unwrap();
+            let inner_ty = db.get_concrete_type_id(*ty).unwrap();
             let ty =
                 snapshot_ty(&SierraSignatureSpecializationContext(db), inner_ty.clone()).unwrap();
             if ty == inner_ty {
@@ -144,7 +148,9 @@ pub fn get_concrete_long_type_id(
         }
         semantic::TypeLongId::Coupon(function_id) => ConcreteTypeLongId {
             generic_id: "Coupon".into(),
-            generic_args: vec![SierraGenericArg::UserFunc(function_id.lowered(db).intern(db))],
+            generic_args: vec![SierraGenericArg::UserFunc(
+                db.intern_sierra_function(function_id.lowered(db)),
+            )],
         }
         .into(),
         semantic::TypeLongId::GenericParameter(_)
@@ -160,22 +166,27 @@ pub fn get_concrete_long_type_id(
 }
 
 /// See [SierraGenGroup::is_self_referential] for documentation.
-pub fn is_self_referential(db: &dyn SierraGenGroup, type_id: semantic::TypeId) -> Maybe<bool> {
+pub fn is_self_referential<'db>(
+    db: &'db dyn SierraGenGroup,
+    type_id: semantic::TypeId<'db>,
+) -> Maybe<bool> {
     db.has_in_deps(type_id, type_id)
 }
 
 /// See [SierraGenGroup::type_dependencies] for documentation.
-pub fn type_dependencies(
-    db: &dyn SierraGenGroup,
-    type_id: semantic::TypeId,
-) -> Maybe<Arc<[semantic::TypeId]>> {
-    Ok(match type_id.lookup_intern(db) {
+pub fn type_dependencies<'db>(
+    db: &'db dyn SierraGenGroup,
+    type_id: semantic::TypeId<'db>,
+) -> Maybe<Arc<Vec<semantic::TypeId<'db>>>> {
+    Ok(Arc::new(match type_id.long(db) {
         semantic::TypeLongId::Concrete(ty) => match ty {
-            semantic::ConcreteTypeId::Struct(structure) => {
-                db.concrete_struct_members(structure)?.iter().map(|(_, member)| member.ty).collect()
-            }
+            semantic::ConcreteTypeId::Struct(structure) => db
+                .concrete_struct_members(*structure)?
+                .iter()
+                .map(|(_, member)| member.ty)
+                .collect(),
             semantic::ConcreteTypeId::Enum(enm) => {
-                db.concrete_enum_variants(enm)?.into_iter().map(|variant| variant.ty).collect()
+                db.concrete_enum_variants(*enm)?.into_iter().map(|variant| variant.ty).collect()
             }
             semantic::ConcreteTypeId::Extern(_extrn) => ty
                 .generic_args(db)
@@ -183,18 +194,19 @@ pub fn type_dependencies(
                 .filter_map(|arg| try_extract_matches!(arg, semantic::GenericArgumentId::Type))
                 .collect(),
         },
-        semantic::TypeLongId::Tuple(inner_types) => inner_types,
-        semantic::TypeLongId::Snapshot(ty) => vec![ty],
+        semantic::TypeLongId::Tuple(inner_types) => inner_types.clone(),
+        semantic::TypeLongId::Snapshot(ty) => vec![*ty],
         semantic::TypeLongId::Coupon(_) => vec![],
-        semantic::TypeLongId::Closure(closure_ty) => closure_ty.captured_types,
+        semantic::TypeLongId::Closure(closure_ty) => closure_ty.captured_types.clone(),
         semantic::TypeLongId::FixedSizeArray { type_id, size } => {
             let size = size
-                .lookup_intern(db)
+                .long(db)
+                .clone()
                 .into_int()
                 .expect("Expected ConstValue::Int for size")
                 .to_usize()
                 .unwrap();
-            [type_id].repeat(size)
+            [*type_id].repeat(size)
         }
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
@@ -202,15 +214,14 @@ pub fn type_dependencies(
         | semantic::TypeLongId::Missing(_) => {
             panic!("Types should be fully resolved at this point. Got: `{}`.", type_id.format(db))
         }
-    }
-    .into())
+    }))
 }
 
 /// See [SierraGenGroup::has_in_deps] for documentation.
-pub fn has_in_deps(
-    db: &dyn SierraGenGroup,
-    type_id: semantic::TypeId,
-    needle: semantic::TypeId,
+pub fn has_in_deps<'db>(
+    db: &'db dyn SierraGenGroup,
+    type_id: semantic::TypeId<'db>,
+    needle: semantic::TypeId<'db>,
 ) -> Maybe<bool> {
     let deps = type_dependencies(db, type_id)?;
     if deps.contains(&needle) {
@@ -225,11 +236,11 @@ pub fn has_in_deps(
 }
 
 /// See [SierraGenGroup::has_in_deps] for documentation.
-pub fn has_in_deps_cycle(
+pub fn has_in_deps_cycle<'db>(
     _db: &dyn SierraGenGroup,
-    _cycle: &salsa::Cycle,
-    _type_id: &semantic::TypeId,
-    _needle: &semantic::TypeId,
+    _cycle: SierraGenGroupData,
+    _type_id: semantic::TypeId<'db>,
+    _needle: semantic::TypeId<'db>,
 ) -> Maybe<bool> {
     Ok(false)
 }
@@ -247,24 +258,16 @@ pub struct CycleBreakerTypeInfo {
 /// Returns the approximation of `ty`s droppable and copyable traits.
 ///
 /// Assumes the type is a cycle breaker.
-pub fn cycle_breaker_info(
-    db: &dyn SierraGenGroup,
-    ty: semantic::TypeId,
+pub fn cycle_breaker_info<'db>(
+    db: &'db dyn SierraGenGroup,
+    ty: semantic::TypeId<'db>,
 ) -> Maybe<CycleBreakerTypeInfo> {
-    let info = db.type_info(ImplLookupContext::default(), ty)?;
-    if info.copyable.is_ok() && info.droppable.is_ok() {
-        return Ok(CycleBreakerTypeInfo { duplicatable: true, droppable: true });
+    let mut duplicatable = db.copyable(ty).is_ok();
+    let mut droppable = db.droppable(ty).is_ok();
+    if !duplicatable || !droppable {
+        let deps = db.type_dependencies(ty)?;
+        duplicatable = duplicatable || deps.iter().all(|dep| db.copyable(*dep).is_ok());
+        droppable = droppable || deps.iter().all(|dep| db.droppable(*dep).is_ok());
     }
-    let mut deps_copyable = true;
-    let mut deps_droppable = true;
-    let deps = db.type_dependencies(ty)?;
-    for dep in deps.iter() {
-        let dep_info = db.type_info(ImplLookupContext::default(), *dep)?;
-        deps_copyable &= dep_info.copyable.is_ok();
-        deps_droppable &= dep_info.droppable.is_ok();
-    }
-    Ok(CycleBreakerTypeInfo {
-        duplicatable: info.copyable.is_ok() || deps_copyable,
-        droppable: info.droppable.is_ok() || deps_droppable,
-    })
+    Ok(CycleBreakerTypeInfo { duplicatable, droppable })
 }

@@ -26,28 +26,28 @@ use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
 
 /// Token representing a link to another item inside the documentation.
-#[derive(Debug, PartialEq, Clone, Eq)]
-pub struct CommentLinkToken {
+#[derive(Debug, PartialEq, Clone, Eq, salsa::Update)]
+pub struct CommentLinkToken<'db> {
     /// A link part that's inside "[]" brackets.
     pub label: String,
     /// A link part that's inside "()" brackets, right after the label.
     pub path: Option<String>,
     /// Item resolved based on the path provided by user. If resolver cannot resolve the item, we
     /// leave it as None.
-    pub resolved_item: Option<DocumentableItemId>,
+    pub resolved_item: Option<DocumentableItemId<'db>>,
 }
 
 /// Generic type for a comment token. It's either a plain content or a link.
 /// Notice that the Content type of token can store much more than just one word.
-#[derive(Debug, PartialEq, Clone, Eq)]
-pub enum DocumentationCommentToken {
+#[derive(Debug, PartialEq, Clone, Eq, salsa::Update)]
+pub enum DocumentationCommentToken<'db> {
     /// Token with plain documentation content.
     Content(String),
     /// Link token.
-    Link(CommentLinkToken),
+    Link(CommentLinkToken<'db>),
 }
 
-impl DocumentationCommentToken {
+impl DocumentationCommentToken<'_> {
     /// Checks if string representation of [`DocumentationCommentToken`] ends with newline.
     pub fn ends_with_newline(self) -> bool {
         match self {
@@ -66,12 +66,12 @@ struct DocCommentListItem {
 }
 
 /// Parses plain documentation comments into [DocumentationCommentToken]s.
-pub struct DocumentationCommentParser<'a> {
-    db: &'a dyn DocGroup,
+pub struct DocumentationCommentParser<'db> {
+    db: &'db dyn DocGroup,
 }
 
-impl<'a> DocumentationCommentParser<'a> {
-    pub fn new(db: &'a dyn DocGroup) -> Self {
+impl<'db> DocumentationCommentParser<'db> {
+    pub fn new(db: &'db dyn DocGroup) -> Self {
         Self { db }
     }
 
@@ -82,11 +82,11 @@ impl<'a> DocumentationCommentParser<'a> {
     /// "\[label\](path)", "\[path\]" or "\[`path`\]".
     pub fn parse_documentation_comment(
         &self,
-        item_id: DocumentableItemId,
+        item_id: DocumentableItemId<'db>,
         documentation_comment: String,
-    ) -> Vec<DocumentationCommentToken> {
+    ) -> Vec<DocumentationCommentToken<'db>> {
         let mut tokens = Vec::new();
-        let mut current_link: Option<CommentLinkToken> = None;
+        let mut current_link: Option<CommentLinkToken<'db>> = None;
         let mut is_indented_code_block = false;
         let mut replacer = |broken_link: BrokenLink<'_>| {
             if matches!(broken_link.link_type, LinkType::ShortcutUnknown | LinkType::Shortcut) {
@@ -106,7 +106,7 @@ impl<'a> DocumentationCommentParser<'a> {
         let mut list_nesting: Vec<DocCommentListItem> = Vec::new();
         let write_list_item_prefix =
             |list_nesting: &mut Vec<DocCommentListItem>,
-             tokens: &mut Vec<DocumentationCommentToken>| {
+             tokens: &mut Vec<DocumentationCommentToken<'db>>| {
                 if !list_nesting.is_empty() {
                     let indent = "  ".repeat(list_nesting.len() - 1);
                     let list_nesting = list_nesting.last_mut().unwrap();
@@ -175,7 +175,9 @@ impl<'a> DocumentationCommentParser<'a> {
                             )));
                         }
                         Tag::List(list_type) => {
-                            tokens.push(DocumentationCommentToken::Content("\n".to_string()));
+                            if !list_nesting.is_empty() {
+                                tokens.push(DocumentationCommentToken::Content("\n".to_string()));
+                            }
                             list_nesting.push(DocCommentListItem {
                                 delimiter: list_type,
                                 is_ordered_list: list_type.is_some(),
@@ -185,16 +187,16 @@ impl<'a> DocumentationCommentParser<'a> {
                             CodeBlockKind::Fenced(language) => {
                                 if language.trim().is_empty() {
                                     tokens.push(DocumentationCommentToken::Content(String::from(
-                                        "\n```cairo\n",
+                                        "```cairo\n",
                                     )));
                                 } else {
                                     tokens.push(DocumentationCommentToken::Content(format!(
-                                        "\n```{language}\n"
+                                        "```{language}\n"
                                     )));
                                 }
                             }
                             CodeBlockKind::Indented => {
-                                tokens.push(DocumentationCommentToken::Content("\n\n".to_string()));
+                                tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                                 is_indented_code_block = true;
                             }
                         },
@@ -236,10 +238,16 @@ impl<'a> DocumentationCommentParser<'a> {
                         }
                         Tag::Table(alignment) => {
                             table_alignment = alignment;
-                            tokens.push(DocumentationCommentToken::Content("\n\n".to_string()));
+                            tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                         }
                         Tag::TableCell => {
                             tokens.push(DocumentationCommentToken::Content("|".to_string()));
+                        }
+                        Tag::Strong => {
+                            tokens.push(DocumentationCommentToken::Content("**".to_string()));
+                        }
+                        Tag::Emphasis => {
+                            tokens.push(DocumentationCommentToken::Content("_".to_string()));
                         }
                         _ => {}
                     }
@@ -285,13 +293,22 @@ impl<'a> DocumentationCommentParser<'a> {
                     TagEnd::TableRow => {
                         tokens.push(DocumentationCommentToken::Content("|".to_string()));
                     }
+                    TagEnd::Strong => {
+                        tokens.push(DocumentationCommentToken::Content("**".to_string()));
+                    }
+                    TagEnd::Emphasis => {
+                        tokens.push(DocumentationCommentToken::Content("_".to_string()));
+                    }
+                    TagEnd::Paragraph => {
+                        tokens.push(DocumentationCommentToken::Content("\n".to_string()));
+                    }
                     _ => {}
                 },
                 Event::SoftBreak => {
                     tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                 }
                 Event::Rule => {
-                    tokens.push(DocumentationCommentToken::Content("\n___\n".to_string()));
+                    tokens.push(DocumentationCommentToken::Content("___\n".to_string()));
                 }
                 _ => {}
             }
@@ -316,9 +333,9 @@ impl<'a> DocumentationCommentParser<'a> {
     /// Resolves item based on the provided path as a string.
     fn resolve_linked_item(
         &self,
-        item_id: DocumentableItemId,
+        item_id: DocumentableItemId<'db>,
         path: String,
-    ) -> Option<DocumentableItemId> {
+    ) -> Option<DocumentableItemId<'db>> {
         let syntax_node = item_id.stable_location(self.db)?.syntax_node(self.db);
         let containing_module = self.find_module_file_containing_node(&syntax_node)?;
         let mut resolver = Resolver::new(self.db, containing_module, InferenceId::NoContext);
@@ -336,21 +353,23 @@ impl<'a> DocumentationCommentParser<'a> {
     }
 
     /// Parses the path as a string to a Path Expression, which can be later used by a resolver.
-    fn parse_comment_link_path(&self, path: String) -> Option<ExprPath> {
+    fn parse_comment_link_path(&self, path: String) -> Option<ExprPath<'db>> {
         let virtual_file = FileLongId::Virtual(VirtualFile {
             parent: Default::default(),
             name: Default::default(),
-            content: Default::default(),
+            content: path.into(),
             code_mappings: Default::default(),
             kind: FileKind::Module,
+            original_item_removed: false,
         })
         .intern(self.db);
 
+        let content = self.db.file_content(virtual_file).unwrap().long(self.db).as_ref();
         let expr = Parser::parse_file_expr(
             self.db,
             &mut DiagnosticsBuilder::default(),
             virtual_file,
-            &path,
+            content,
         );
 
         if let Expr::Path(expr_path) = expr { Some(expr_path) } else { None }
@@ -360,7 +379,10 @@ impl<'a> DocumentationCommentParser<'a> {
     ///
     /// If the node is located in a virtual file generated by a compiler plugin, this method will
     /// return a [`ModuleFileId`] pointing to the main, user-written file of the module.
-    fn find_module_file_containing_node(&self, node: &SyntaxNode) -> Option<ModuleFileId> {
+    fn find_module_file_containing_node(
+        &self,
+        node: &SyntaxNode<'db>,
+    ) -> Option<ModuleFileId<'db>> {
         let module_id = self.find_module_containing_node(node)?;
         let file_index = FileIndex(0);
         Some(ModuleFileId(module_id, file_index))
@@ -369,7 +391,7 @@ impl<'a> DocumentationCommentParser<'a> {
     ///
     /// If the node is located in a virtual file generated by a compiler plugin, this method will
     /// return the (sub)module of the main, user-written file that leads to the node.
-    fn find_module_containing_node(&self, node: &SyntaxNode) -> Option<ModuleId> {
+    fn find_module_containing_node(&self, node: &SyntaxNode<'db>) -> Option<ModuleId<'db>> {
         let db = self.db;
 
         // Get the main module of the main file that leads to the node.
@@ -406,7 +428,7 @@ impl<'a> DocumentationCommentParser<'a> {
             // And get id of the (sub)module containing the node by traversing this stack top-down.
             .try_rfold(main_module, |module, name| {
                 let ModuleItemId::Submodule(submodule) =
-                    db.module_item_by_name(module, name).ok()??
+                    db.module_item_by_name(module, name.into()).ok()??
                 else {
                     return None;
                 };
@@ -415,15 +437,19 @@ impl<'a> DocumentationCommentParser<'a> {
     }
 }
 
-trait ToDocumentableItemId<T> {
-    fn to_documentable_item_id(self, db: &dyn SemanticGroup) -> Option<DocumentableItemId>;
+trait ToDocumentableItemId<'db, T> {
+    fn to_documentable_item_id(self, db: &'db dyn SemanticGroup)
+    -> Option<DocumentableItemId<'db>>;
 }
 
-impl ToDocumentableItemId<DocumentableItemId> for ResolvedGenericItem {
+impl<'db> ToDocumentableItemId<'db, DocumentableItemId<'db>> for ResolvedGenericItem<'db> {
     /// Converts the [ResolvedGenericItem] to [DocumentableItemId].
     /// As for now, returns None only for a common Variable, as those are not a supported
     /// documentable item.
-    fn to_documentable_item_id(self, db: &dyn SemanticGroup) -> Option<DocumentableItemId> {
+    fn to_documentable_item_id(
+        self,
+        db: &'db dyn SemanticGroup,
+    ) -> Option<DocumentableItemId<'db>> {
         match self {
             ResolvedGenericItem::GenericConstant(id) => Some(DocumentableItemId::LookupItem(
                 LookupItemId::ModuleItem(ModuleItemId::Constant(id)),
@@ -472,6 +498,10 @@ impl ToDocumentableItemId<DocumentableItemId> for ResolvedGenericItem {
             ResolvedGenericItem::Module(ModuleId::CrateRoot(id)) => {
                 Some(DocumentableItemId::Crate(id))
             }
+            ResolvedGenericItem::Module(ModuleId::MacroCall { id: _, generated_file_id: _ }) => {
+                None
+            }
+
             ResolvedGenericItem::Variant(variant) => Some(DocumentableItemId::Variant(variant.id)),
             ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(generic_impl_func)) => {
                 if let Some(impl_function) = generic_impl_func.impl_function(db).ok().flatten() {
@@ -492,7 +522,7 @@ impl ToDocumentableItemId<DocumentableItemId> for ResolvedGenericItem {
     }
 }
 
-impl fmt::Display for CommentLinkToken {
+impl fmt::Display for CommentLinkToken<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.path.clone() {
             Some(path) => write!(f, "[{}]({})", self.label, path),
@@ -501,7 +531,7 @@ impl fmt::Display for CommentLinkToken {
     }
 }
 
-impl fmt::Display for DocumentationCommentToken {
+impl fmt::Display for DocumentationCommentToken<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             DocumentationCommentToken::Content(ref content) => {
@@ -514,8 +544,9 @@ impl fmt::Display for DocumentationCommentToken {
     }
 }
 
-impl DebugWithDb<dyn DocGroup> for CommentLinkToken {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &dyn DocGroup) -> fmt::Result {
+impl<'db> DebugWithDb<'db> for CommentLinkToken<'db> {
+    type Db = dyn DocGroup;
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &Self::Db) -> fmt::Result {
         f.debug_struct("CommentLinkToken")
             .field("label", &self.label)
             .field("path", &self.path)

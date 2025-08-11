@@ -141,3 +141,29 @@ error: 'Deref' implementation must be defined in the same module as either the t
 | ...
 | }
 |_^
+
+//! > ==========================================================================
+
+//! > Can't use a method with a ref argument after deref.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+for mut inner_s in span_of_spans {
+    inner_s.pop_front();
+}
+
+//! > module_code
+
+//! > function_body
+let span_of_spans = array![array![1_u32].span()].span();
+
+//! > expected_diagnostics
+error[E0002]: Method `pop_front` could not be called on type `@core::array::Span::<core::integer::u32>`.
+Candidate `core::array::ArrayTrait::pop_front` inference failed with: Type mismatch: `@core::array::Span::<core::integer::u32>` and `core::array::Array::<?12>`.
+Candidate `core::array::SpanTrait::pop_front` inference failed with: Type mismatch: `@core::array::Span::<core::integer::u32>` and `core::array::Span::<?12>`.
+Candidate `core::array::ArrayTrait::pop_front` inference failed with: Type mismatch: `core::array::Span::<core::integer::u32>` and `core::array::Array::<?12>`.
+ --> lib.cairo:3:13
+    inner_s.pop_front();
+            ^^^^^^^^^

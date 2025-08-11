@@ -231,7 +231,8 @@ Example usage:
 Content("Point struct representing a point in a 2d space.")
 Content("\n")
 Content("Example usage:")
-Content("\n```cairo\n")
+Content("\n")
+Content("```cairo\n")
 Content("  fn new_Point() {\n    Point {x: 12, y: 14}\n  }\n")
 Content("```\n")
 Content("\n")
@@ -313,7 +314,8 @@ Example usage:
 
 //! > Item documentation tokens #15
 Content("Example usage:")
-Content("\n```cairo\n")
+Content("\n")
+Content("```cairo\n")
 Content("  fn new_circle() {\n    // [Circle] <- this should not tokenize as a link (neither be resolved), we're inside code\n    block.\n  }\n")
 Content("```")
 
@@ -330,7 +332,8 @@ Below there is a code example
 
 //! > Item documentation tokens #16
 Content("Below there is a code example")
-Content("\n\n")
+Content("\n")
+Content("\n")
 Content("    First line of code\n")
 Content("    // Comment inside the code block, that should be ignored. [Square] <- it will be ignored as\n")
 Content("    well.\n")

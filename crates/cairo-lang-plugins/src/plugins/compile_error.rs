@@ -12,12 +12,12 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 pub struct CompileErrorPlugin;
 
 impl MacroPlugin for CompileErrorPlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::ModuleItem,
+        db: &'db dyn SyntaxGroup,
+        item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         let item_ast_ptr = item_ast.stable_ptr(db);
         if let ast::ModuleItem::InlineMacro(inline_macro_ast) = item_ast.clone() {
             let Some(legacy_inline_macro_ast) = inline_macro_ast.as_legacy_inline_macro(db) else {
@@ -25,7 +25,9 @@ impl MacroPlugin for CompileErrorPlugin {
                     inline_macro_ast.as_syntax_node().stable_ptr(db),
                 ));
             };
-            if legacy_inline_macro_ast.name(db).text(db) == "compile_error" {
+            if legacy_inline_macro_ast.path(db).as_syntax_node().get_text_without_trivia(db)
+                == "compile_error"
+            {
                 let compilation_error_arg = extract_macro_single_unnamed_arg!(
                     db,
                     &legacy_inline_macro_ast,

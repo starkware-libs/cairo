@@ -42,7 +42,7 @@ impl CircuitInstance<'_> {
         write_circuit_value(self.vm, addr, value);
     }
 
-    /// Reads a values from the location specified by `index` in the `add_mod_offsets` buffer.
+    /// Reads a value from the location specified by `index` in the `add_mod_offsets` buffer.
     fn read_addmod_value(&mut self, index: usize) -> Option<BigUint> {
         self.read_circuit_value((self.add_mod_offsets + index).unwrap())
     }
@@ -52,7 +52,7 @@ impl CircuitInstance<'_> {
         self.write_circuit_value((self.add_mod_offsets + index).unwrap(), value)
     }
 
-    /// Reads a values from the location specified by `index` in the `mul_mod_offsets` buffer.
+    /// Reads a value from the location specified by `index` in the `mul_mod_offsets` buffer.
     fn get_mulmod_value(&mut self, index: usize) -> Option<BigUint> {
         self.read_circuit_value((self.mul_mod_offsets + index).unwrap())
     }
@@ -95,7 +95,7 @@ impl CircuitInstance<'_> {
 
     /// Fills the values for a mul mod gate.
     /// Assumes all the inputs are ready and the modulus is not zero or one.
-    /// Returns true if the values were filled successfully, returns false if its an inverse
+    /// Returns true if the values were filled successfully, returns false if it's an inverse
     /// operation and input is not invertible.
     fn fill_mul_gate(&mut self, index: usize) -> bool {
         let lhs = self.get_mulmod_value(index);

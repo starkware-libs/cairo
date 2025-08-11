@@ -1,0 +1,109 @@
+//! > Test let-else
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    let Some(x): u32 = 5 else {
+        return;
+    };
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList) []
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: PatternEnum)
+    │   ├── path (kind: ExprPath)
+    │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   └── segments (kind: ExprPathInner)
+    │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │           └── ident (kind: TokenIdentifier): 'Some'
+    │   └── pattern (kind: PatternEnumInnerPattern)
+    │       ├── lparen (kind: TokenLParen): '('
+    │       ├── pattern (kind: ExprPath)
+    │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   └── segments (kind: ExprPathInner)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'x'
+    │       └── rparen (kind: TokenRParen): ')'
+    ├── type_clause (kind: TypeClause)
+    │   ├── colon (kind: TokenColon): ':'
+    │   └── ty (kind: ExprPath)
+    │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       └── segments (kind: ExprPathInner)
+    │           └── item #0 (kind: PathSegmentSimple)
+    │               └── ident (kind: TokenIdentifier): 'u32'
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: TokenLiteralNumber): '5'
+    ├── let_else_clause (kind: LetElseClause)
+    │   ├── else_kw (kind: TokenElse): 'else'
+    │   └── else_block (kind: ExprBlock)
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── statements (kind: StatementList)
+    │       │   └── child #0 (kind: StatementReturn)
+    │       │       ├── attributes (kind: AttributeList) []
+    │       │       ├── return_kw (kind: TokenReturn): 'return'
+    │       │       ├── expr_clause (kind: OptionExprClauseEmpty) []
+    │       │       └── semicolon (kind: TokenSemicolon): ';'
+    │       └── rbrace (kind: TokenRBrace): '}'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test let-else with missing expression and pattern
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+fn f() {
+    let  = else {
+        return;
+    };
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Missing token '_'.
+ --> dummy_file.cairo:2:8
+    let  = else {
+       ^
+
+error: Missing tokens. Expected an expression.
+ --> dummy_file.cairo:2:11
+    let  = else {
+          ^
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList) []
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern: Missing
+    ├── type_clause (kind: OptionTypeClauseEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── rhs: Missing []
+    ├── let_else_clause (kind: LetElseClause)
+    │   ├── else_kw (kind: TokenElse): 'else'
+    │   └── else_block (kind: ExprBlock)
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── statements (kind: StatementList)
+    │       │   └── child #0 (kind: StatementReturn)
+    │       │       ├── attributes (kind: AttributeList) []
+    │       │       ├── return_kw (kind: TokenReturn): 'return'
+    │       │       ├── expr_clause (kind: OptionExprClauseEmpty) []
+    │       │       └── semicolon (kind: TokenSemicolon): ';'
+    │       └── rbrace (kind: TokenRBrace): '}'
+    └── semicolon (kind: TokenSemicolon): ';'

@@ -11,7 +11,7 @@ use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_defs::ids::{NamedLanguageElementId, TopLevelLanguageElementId};
 use cairo_lang_executable::plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
-use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::ids::{CrateId, CrateInput};
 use cairo_lang_lowering::add_withdraw_gas::add_withdraw_gas;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::destructs::add_destructs;
@@ -30,8 +30,8 @@ use cairo_lang_semantic::items::functions::{
 };
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_plugin::test_plugin_suite;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
 use clap::Parser;
 use convert_case::Casing;
 use itertools::Itertools;
@@ -96,10 +96,10 @@ struct Args {
 /// Helper class for formatting the lowering phases of a concrete function.
 struct PhasesDisplay<'a> {
     db: &'a dyn LoweringGroup,
-    function_id: ConcreteFunctionWithBodyId,
+    function_id: ConcreteFunctionWithBodyId<'a>,
 }
 
-impl fmt::Display for PhasesDisplay<'_> {
+impl<'a> fmt::Display for PhasesDisplay<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let db = self.db;
         let function_id = self.function_id;
@@ -108,13 +108,13 @@ impl fmt::Display for PhasesDisplay<'_> {
             (*db.lowered_body(function_id, LoweringStage::Monomorphized).unwrap()).clone();
 
         let mut phase_index = 0;
-        let mut add_stage_state = |name: &str, lowered: &Lowered| {
+        let mut add_stage_state = |name: &str, lowered: &Lowered<'_>| {
             writeln!(f, "{phase_index}. {name}: {}", LoweredDisplay::new(db, lowered)).unwrap();
             phase_index += 1;
         };
         add_stage_state("before_all", &curr_state);
 
-        let mut apply_stage = |name: &'static str, stage: &dyn Fn(&mut Lowered)| {
+        let mut apply_stage = |name: &'static str, stage: &dyn Fn(&mut Lowered<'a>)| {
             (*stage)(&mut curr_state);
             add_stage_state(name, &curr_state);
         };
@@ -138,7 +138,7 @@ impl fmt::Display for PhasesDisplay<'_> {
             (db.baseline_optimization_strategy(), post_base_opts),
             (db.final_optimization_strategy(), final_state),
         ] {
-            for phase in strategy.lookup_intern(db).0 {
+            for phase in strategy.long(db).0.clone() {
                 let name = format!("{phase:?}").to_case(convert_case::Case::Snake);
                 phase.apply(db, function_id, &mut curr_state).unwrap();
                 add_stage_state(&name, &curr_state);
@@ -156,10 +156,10 @@ impl fmt::Display for PhasesDisplay<'_> {
 /// Helper for displaying the lowered representation of a concrete function.
 struct LoweredDisplay<'a> {
     db: &'a dyn LoweringGroup,
-    lowered: &'a Lowered,
+    lowered: &'a Lowered<'a>,
 }
 impl<'a> LoweredDisplay<'a> {
-    fn new(db: &'a dyn LoweringGroup, lowered: &'a Lowered) -> Self {
+    fn new(db: &'a dyn LoweringGroup, lowered: &'a Lowered<'_>) -> Self {
         Self { db, lowered }
     }
 }
@@ -174,11 +174,11 @@ impl fmt::Display for LoweredDisplay<'_> {
 
 // Returns a dictionary mapping function names to their ids for all the functions in the given
 // crate.
-fn get_all_funcs(
-    db: &dyn LoweringGroup,
-    crate_ids: &[CrateId],
-) -> anyhow::Result<OrderedHashMap<String, GenericFunctionWithBodyId>> {
-    let mut res: OrderedHashMap<String, GenericFunctionWithBodyId> = Default::default();
+fn get_all_funcs<'db>(
+    db: &'db dyn LoweringGroup,
+    crate_ids: &[CrateId<'db>],
+) -> anyhow::Result<OrderedHashMap<String, GenericFunctionWithBodyId<'db>>> {
+    let mut res: OrderedHashMap<String, GenericFunctionWithBodyId<'db>> = Default::default();
     for crate_id in crate_ids {
         let modules = db.crate_modules(*crate_id);
         for module_id in modules.iter() {
@@ -211,11 +211,11 @@ fn get_all_funcs(
 }
 
 /// Given a function name and list of crates, returns the Concrete id of the function.
-fn get_func_id_by_name(
-    db: &dyn LoweringGroup,
-    crate_ids: &[CrateId],
+fn get_func_id_by_name<'db>(
+    db: &'db dyn LoweringGroup,
+    crate_ids: &[CrateId<'db>],
     function_path: String,
-) -> anyhow::Result<ConcreteFunctionWithBodyId> {
+) -> anyhow::Result<ConcreteFunctionWithBodyId<'db>> {
     let all_funcs = get_all_funcs(db, crate_ids)?;
     let Some(func_id) = all_funcs.get(&function_path) else {
         anyhow::bail!("Function {} not found in the project.", function_path.as_str())
@@ -250,7 +250,8 @@ fn main() -> anyhow::Result<()> {
 
     let mut db_val = db_builder.build()?;
 
-    let main_crate_ids = setup_project(&mut db_val, Path::new(&args.path))?;
+    let main_crate_inputs = setup_project(&mut db_val, Path::new(&args.path))?;
+    let main_crate_ids = CrateInput::into_crate_ids(&db_val, main_crate_inputs.clone());
     let db = &db_val;
 
     let res = if let Some(function_path) = args.function_path {
@@ -265,9 +266,7 @@ fn main() -> anyhow::Result<()> {
                 .generated_lowerings
                 .keys()
                 .sorted_by_key(|key| match key {
-                    GeneratedFunctionKey::Loop(id) => {
-                        (id.0.lookup(db).span_without_trivia(db), "".into())
-                    }
+                    GeneratedFunctionKey::Loop(id) => (id.0.lookup(db).span_without_trivia(db), ""),
                     GeneratedFunctionKey::TraitFunc(trait_function, id) => {
                         (id.syntax_node(db).span_without_trivia(db), trait_function.name(db))
                     }
@@ -294,7 +293,7 @@ fn main() -> anyhow::Result<()> {
         let Ok(lowered) = db.lowered_body(function_id, LoweringStage::Final) else {
             // Run DiagnosticsReporter only in case of failure.
             DiagnosticsReporter::default()
-                .with_crates(&main_crate_ids)
+                .with_crates(&main_crate_inputs)
                 .ensure(db)
                 .with_context(|| "Failed to compile")?;
             anyhow::bail!("Failed to get lowered function.")

@@ -198,12 +198,15 @@ fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__OwnableBalanceImpl__get_balance as get_balance;
     pub use super::__wrapper__OwnableBalanceImpl__set_balance as set_balance;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
     pub use super::__wrapper__OwnableBalanceImpl__constructor as constructor;
 }
@@ -285,9 +288,13 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
         #[external(v0)]
         fn set_balance(ref self: ContractState, new_balance: u128);
     }
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
 
@@ -480,12 +487,15 @@ fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__OwnableBalanceImpl__get_balance as get_balance;
     pub use super::__wrapper__OwnableBalanceImpl__set_balance as set_balance;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
     pub use super::__wrapper__OwnableBalanceImpl__constructor as constructor;
 }
@@ -567,9 +577,13 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
         #[external(v0)]
         fn set_balance(ref self: ContractState, new_balance: u128);
     }
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics

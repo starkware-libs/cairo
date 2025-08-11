@@ -1,42 +1,51 @@
 use std::sync::Arc;
 
+use cairo_lang_utils::Intern;
 use test_log::test;
 
 use super::FilesGroup;
 use crate::cfg::{Cfg, CfgSet};
 use crate::db::{CrateConfiguration, FilesGroupEx};
 use crate::flag::Flag;
-use crate::ids::{CrateId, Directory, FlagId};
+use crate::ids::{CrateLongId, Directory, FlagId, FlagLongId};
 use crate::test_utils::FilesDatabaseForTesting;
 
 #[test]
 fn test_filesystem() {
     let mut db = FilesDatabaseForTesting::default();
 
-    let crt = CrateId::plain(&db, "my_crate");
-    let crt2 = CrateId::plain(&db, "my_crate2");
     let directory = Directory::Real("src".into());
-    let file_id = directory.file(&db, "child.cairo".into());
-    let config = CrateConfiguration::default_for_root(directory);
-    db.override_file_content(file_id, Some("content\n".into()));
-    db.set_crate_config(crt, Some(config.clone()));
+    let child_str = "child.cairo";
+    let file_id = directory.file(&db, child_str);
+    let file_input = file_id.long(&db).into_file_input(&db);
+    let overrides = db.update_file_overrides_input(file_input, Some("content\n".into()));
+    db.set_file_overrides_input(overrides);
+
+    let config = CrateConfiguration::default_for_root(directory.clone());
+    let crt = CrateLongId::plain("my_crate").intern(&db);
+    let crate_configs = db.update_crate_configuration_input(crt, Some(config.clone()));
+    db.set_crate_configs_input(Arc::new(crate_configs));
+
+    let crt = CrateLongId::plain("my_crate").intern(&db);
+    let crt2 = CrateLongId::plain("my_crate2").intern(&db);
 
     assert_eq!(db.crate_config(crt), Some(config));
     assert!(db.crate_config(crt2).is_none());
 
-    assert_eq!(db.file_content(file_id).unwrap().as_ref(), "content\n");
+    let file_id = directory.file(&db, child_str);
+    assert_eq!(db.file_content(file_id).unwrap().long(&db).as_ref(), "content\n");
 }
 
 #[test]
 fn test_flags() {
     let mut db = FilesDatabaseForTesting::default();
 
-    let add_withdraw_gas_flag_id = FlagId::new(&db, "add_withdraw_gas");
+    let add_withdraw_gas_flag_id = FlagLongId("add_withdraw_gas".into());
+    db.set_flag(add_withdraw_gas_flag_id.clone(), Some(Arc::new(Flag::AddWithdrawGas(false))));
+    let id = add_withdraw_gas_flag_id.clone().intern(&db);
 
-    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
-
-    assert_eq!(*db.get_flag(add_withdraw_gas_flag_id).unwrap(), Flag::AddWithdrawGas(false));
-    assert!(db.get_flag(FlagId::new(&db, "non_existing_flag")).is_none());
+    assert_eq!(*db.get_flag(id).unwrap(), Flag::AddWithdrawGas(false));
+    assert!(db.get_flag(FlagId::new(&db, FlagLongId("non_existing_flag".into()))).is_none());
 }
 
 #[test]

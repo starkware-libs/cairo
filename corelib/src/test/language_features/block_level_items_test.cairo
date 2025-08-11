@@ -182,3 +182,21 @@ fn test_type_enum_generic_usage() {
         E::B(_) => panic!("Shouldn't get here"),
     }
 }
+
+mod a {
+    pub mod b {
+        pub const C: u8 = 1;
+    }
+}
+
+#[test]
+fn use_module_in_statement() {
+    use a::b;
+    assert_eq!(b::C, 1);
+}
+
+#[test]
+fn use_module_in_statement_with_self() {
+    use a::b::{self, C};
+    assert_eq!(C, b::C);
+}

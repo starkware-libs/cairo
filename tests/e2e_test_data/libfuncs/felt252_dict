@@ -51,7 +51,7 @@ memory[memory[memory[fp + -3] - 3] + index * 3] = segment_start
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1900})
+test::foo: CostTokenMap({Const: 1900})
 
 //! > sierra_code
 type SegmentArena = SegmentArena [storable: true, drop: false, dup: false, zero_sized: false];
@@ -100,7 +100,7 @@ dict_tracker.data[memory[memory[fp + -5] + 3 - 3]] = memory[fp + -3]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 5320})
+test::foo: CostTokenMap({Const: 5320})
 
 //! > sierra_code
 type Felt252Dict<felt252> = Felt252Dict<felt252> [storable: true, drop: false, dup: false, zero_sized: false];
@@ -153,7 +153,7 @@ dict_tracker.data[memory[memory[fp + -4] + 3 - 3]] = memory[ap + -1]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 5520})
+test::foo: CostTokenMap({Const: 5520})
 
 //! > sierra_code
 type Felt252Dict<felt252> = Felt252Dict<felt252> [storable: true, drop: false, dup: false, zero_sized: false];
@@ -245,7 +245,7 @@ dict_tracker.data[memory[memory[fp + -4] + 12 - 3]] = memory[ap + -1]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 21180})
+test::foo: CostTokenMap({Const: 21180})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -502,7 +502,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 6410})
+test::foo: CostTokenMap({Const: 6410})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -556,7 +556,7 @@ memory[memory[fp + -4] + 1] = dict_tracker.data[memory[fp + -3]]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 5320})
+test::foo: CostTokenMap({Const: 5320})
 
 //! > sierra_code
 type Felt252Dict<felt252> = Felt252Dict<felt252> [storable: true, drop: false, dup: false, zero_sized: false];
@@ -600,7 +600,7 @@ dict_tracker.data[memory[memory[fp + -4] - 3]] = memory[fp + -3]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 200})
+test::foo: CostTokenMap({Const: 200})
 
 //! > sierra_code
 type Felt252DictEntry<felt252> = Felt252DictEntry<felt252> [storable: true, drop: false, dup: false, zero_sized: false];
@@ -666,7 +666,7 @@ dict_tracker.data[memory[memory[fp + -7] + 6 - 3]] = memory[fp + -3]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 10740})
+test::foo: CostTokenMap({Const: 10740})
 
 //! > sierra_code
 type Felt252Dict<felt252> = Felt252Dict<felt252> [storable: true, drop: false, dup: false, zero_sized: false];
@@ -728,7 +728,7 @@ return([1]);
 test::test_squashed_dict_entries@F0([0]: SquashedFelt252Dict<felt252>) -> (Array<Tuple<felt252, felt252, felt252>>);
 
 //! > function_costs
-test::test_squashed_dict_entries: OrderedHashMap({Const: 200})
+test::test_squashed_dict_entries: CostTokenMap({Const: 200})
 
 //! > ==========================================================================
 
@@ -776,4 +776,4 @@ return([2]);
 test::test_squashed_dict_entries@F0([0]: SquashedFelt252Dict<Nullable<core::integer::u256>>) -> (core::option::Option::<core::array::Array::<(core::felt252, core::nullable::Nullable::<core::integer::u256>, core::nullable::Nullable::<core::integer::u256>)>>);
 
 //! > function_costs
-test::test_squashed_dict_entries: OrderedHashMap({Const: 300})
+test::test_squashed_dict_entries: CostTokenMap({Const: 300})

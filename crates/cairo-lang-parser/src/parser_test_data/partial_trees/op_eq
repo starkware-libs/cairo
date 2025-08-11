@@ -143,6 +143,7 @@ error: Skipped tokens. Expected: statement.
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq: Missing
     │   ├── rhs: Missing []
+    │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
     │   └── semicolon: Missing
     └── child #1 (kind: StatementExpr)
         ├── attributes (kind: AttributeList) []

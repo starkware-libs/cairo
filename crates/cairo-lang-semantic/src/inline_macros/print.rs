@@ -19,12 +19,12 @@ impl NamedPlugin for PrintMacro {
     const NAME: &'static str = "print";
 }
 impl InlineMacroExprPlugin for PrintMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
         generate_code_inner(syntax, db, false)
     }
 
@@ -58,12 +58,12 @@ impl NamedPlugin for PrintlnMacro {
     const NAME: &'static str = "println";
 }
 impl InlineMacroExprPlugin for PrintlnMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
         generate_code_inner(syntax, db, true)
     }
 
@@ -90,11 +90,11 @@ impl InlineMacroExprPlugin for PrintlnMacro {
     }
 }
 
-fn generate_code_inner(
-    syntax: &ast::ExprInlineMacro,
-    db: &dyn SyntaxGroup,
+fn generate_code_inner<'db>(
+    syntax: &ast::ExprInlineMacro<'db>,
+    db: &'db dyn SyntaxGroup,
     with_newline: bool,
-) -> InlinePluginResult {
+) -> InlinePluginResult<'db> {
     let Some(syntax) = syntax.as_legacy_inline_macro(db) else {
         return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
             syntax.as_syntax_node().stable_ptr(db),
@@ -138,11 +138,12 @@ fn generate_code_inner(
     let (content, code_mappings) = builder.build();
     InlinePluginResult {
         code: Some(PluginGeneratedFile {
-            name: format!("{}_macro", get_macro_name(with_newline)).into(),
+            name: format!("{}_macro", get_macro_name(with_newline)),
             content,
             code_mappings,
             aux_data: None,
             diagnostics_note: Default::default(),
+            is_unhygienic: false,
         }),
         diagnostics: vec![],
     }

@@ -11,7 +11,7 @@ use crate::formatter_impl::{
 };
 use crate::{CollectionsBreakingBehavior, FormatterConfig};
 
-impl SyntaxNodeFormat for SyntaxNode {
+impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
     fn force_no_space_before(&self, db: &dyn SyntaxGroup) -> bool {
         match self.kind(db) {
             SyntaxKind::TokenDot
@@ -269,7 +269,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             },
             Some(SyntaxKind::ExprWhile) => match self.kind(db) {
                 SyntaxKind::ExprBlock => Some(1),
-                SyntaxKind::ConditionExpr | SyntaxKind::ConditionLet => Some(2),
+                SyntaxKind::ConditionListAnd => Some(2),
                 SyntaxKind::ExprBinary
                 | SyntaxKind::ExprErrorPropagate
                 | SyntaxKind::ExprFieldInitShorthand
@@ -297,7 +297,7 @@ impl SyntaxNodeFormat for SyntaxNode {
 
             Some(SyntaxKind::ExprIf) => match self.kind(db) {
                 SyntaxKind::ExprBlock => Some(1),
-                SyntaxKind::ConditionExpr | SyntaxKind::ConditionLet => Some(2),
+                SyntaxKind::ConditionListAnd => Some(2),
                 SyntaxKind::ElseClause => Some(3),
                 _ => None,
             },
@@ -384,7 +384,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                         | SyntaxKind::ExprListParenthesized
                         | SyntaxKind::ArgListBraced
                         | SyntaxKind::ArgListBracketed
-                        | SyntaxKind::ExprUnary => Some(1),
+                        | SyntaxKind::ExprUnary => Some(9),
+                        SyntaxKind::LetElseClause => Some(7),
                         SyntaxKind::TerminalEq => Some(10),
                         SyntaxKind::PatternEnum
                         | SyntaxKind::PatternTuple
@@ -930,7 +931,8 @@ impl SyntaxNodeFormat for SyntaxNode {
     }
 
     fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool {
-        let is_last = |node: &SyntaxNode, siblings: &[SyntaxNode]| siblings.last() == Some(node);
+        let is_last =
+            |node: &SyntaxNode<'_>, siblings: &[SyntaxNode<'_>]| siblings.last() == Some(node);
         // Check for TerminalComma with specific conditions on list types and position.
         if self.kind(db) == SyntaxKind::TerminalComma
             && matches!(
@@ -961,7 +963,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             );
             if (!is_expr_or_pattern_list || children.len() > 2)
             // Ensure that this node is the last element in the list.
-            && is_last(self, &children)
+            && is_last(self, children)
             {
                 return true;
             }
@@ -976,7 +978,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             let statements_node = statement_node.parent(db).unwrap();
             // Checking if not the last statement, as `;` may be there to prevent the block from
             // returning the value of the current block.
-            let not_last = !is_last(&statement_node, &statements_node.get_children(db));
+            let not_last = !is_last(&statement_node, statements_node.get_children(db));
             let children = statement_node.get_children(db);
             if not_last
                 && matches!(
@@ -997,7 +999,7 @@ impl SyntaxNodeFormat for SyntaxNode {
         {
             let path_segment_node = self.parent(db).unwrap();
             let path_node = path_segment_node.parent(db).unwrap();
-            if !is_last(&path_segment_node, &path_node.get_children(db)) {
+            if !is_last(&path_segment_node, path_node.get_children(db)) {
                 false
             } else {
                 matches!(
@@ -1055,7 +1057,7 @@ impl SyntaxNodeFormat for SyntaxNode {
 }
 
 /// For statement lists, returns if we want these as a single line.
-fn is_statement_list_break_point_optional(db: &dyn SyntaxGroup, node: &SyntaxNode) -> bool {
+fn is_statement_list_break_point_optional(db: &dyn SyntaxGroup, node: &SyntaxNode<'_>) -> bool {
     // Currently, we only want single line blocks for match arms or generic args, with a single
     // statement, with no single line comments.
     matches!(
@@ -1066,7 +1068,6 @@ fn is_statement_list_break_point_optional(db: &dyn SyntaxGroup, node: &SyntaxNod
             d.kind(db) != SyntaxKind::Trivia
                 || ast::Trivia::from_syntax_node(db, d)
                     .elements(db)
-                    .iter()
                     .all(|t| !matches!(t, ast::Trivium::SingleLineComment(_)))
         })
 }

@@ -6,7 +6,6 @@ use cairo_lang_semantic::MatchArmSelector;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use id_arena::Arena;
 use itertools::{Itertools, zip_eq};
 
 use super::var_renamer::VarRenamer;
@@ -16,13 +15,13 @@ use crate::borrow_check::demand::EmptyDemandReporter;
 use crate::utils::RebuilderEx;
 use crate::{
     Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
-    StatementEnumConstruct, VarRemapping, VarUsage, Variable, VariableId,
+    StatementEnumConstruct, VarRemapping, VarUsage, VariableArena, VariableId,
 };
 
-pub type MatchOptimizerDemand = Demand<VariableId, (), ()>;
+pub type MatchOptimizerDemand<'db> = Demand<VariableId, (), ()>;
 
-impl MatchOptimizerDemand {
-    fn update(&mut self, statement: &Statement) {
+impl<'db> MatchOptimizerDemand<'db> {
+    fn update(&mut self, statement: &Statement<'db>) {
         self.variables_introduced(&mut EmptyDemandReporter {}, statement.outputs(), ());
         self.variables_used(
             &mut EmptyDemandReporter {},
@@ -53,7 +52,7 @@ impl MatchOptimizerDemand {
 /// ```
 ///
 /// Change `blk0` to jump directly to `blk4`.
-pub fn optimize_matches(lowered: &mut Lowered) {
+pub fn optimize_matches<'db>(lowered: &mut Lowered<'db>) {
     if lowered.blocks.is_empty() {
         return;
     }
@@ -152,7 +151,7 @@ pub fn optimize_matches(lowered: &mut Lowered) {
         let arm_var = arm.var_ids.get_mut(0).unwrap();
         let orig_var = *arm_var;
         *arm_var = lowered.variables.alloc(lowered.variables[orig_var].clone());
-        let mut new_block_remapping: VarRemapping = Default::default();
+        let mut new_block_remapping: VarRemapping<'_> = Default::default();
 
         new_block_remapping.insert(orig_var, VarUsage { var_id: *arm_var, location: *location });
         for (var, new_var) in renamed_vars.iter() {
@@ -186,13 +185,13 @@ pub fn optimize_matches(lowered: &mut Lowered) {
 /// further we need to remap and rename the outputs for the merge in `fix.target_block`.
 ///
 /// Note that since the statements are copied this might increase the code size.
-fn handle_additional_statements(
-    variables: &mut Arena<Variable>,
+fn handle_additional_statements<'db>(
+    variables: &mut VariableArena<'db>,
     var_renaming: &mut UnorderedHashMap<(VariableId, usize), VariableId>,
-    new_remapping: &mut VarRemapping,
+    new_remapping: &mut VarRemapping<'db>,
     renamed_vars: &mut OrderedHashMap<VariableId, VariableId>,
-    block: &mut Block,
-    fix: &FixInfo,
+    block: &mut Block<'db>,
+    fix: &FixInfo<'db>,
 ) {
     if fix.additional_stmts.is_empty() {
         return;
@@ -233,12 +232,12 @@ fn handle_additional_statements(
 /// Try to apply the optimization at the given statement.
 /// If the optimization can be applied, return the fix information and updates the analysis info
 /// accordingly.
-fn try_get_fix_info(
-    StatementEnumConstruct { variant, input, output }: &StatementEnumConstruct,
-    info: &mut AnalysisInfo<'_>,
-    candidate: &mut OptimizationCandidate<'_>,
+fn try_get_fix_info<'db>(
+    StatementEnumConstruct { variant, input, output }: &StatementEnumConstruct<'db>,
+    info: &mut AnalysisInfo<'db, '_>,
+    candidate: &mut OptimizationCandidate<'db, '_>,
     statement_location: (BlockId, usize),
-) -> Option<FixInfo> {
+) -> Option<FixInfo<'db>> {
     let (arm_idx, arm) = candidate
         .match_arms
         .iter()
@@ -318,7 +317,7 @@ fn try_get_fix_info(
     })
 }
 
-pub struct FixInfo {
+pub struct FixInfo<'db> {
     /// The location that needs to be fixed,
     statement_location: (BlockId, usize),
     /// The block with the match statement that we want to jump over.
@@ -328,33 +327,33 @@ pub struct FixInfo {
     /// The target block to jump to.
     target_block: BlockId,
     /// Remaps the input of the enum construct to the variable that is introduced by the match arm.
-    remapping: VarRemapping,
+    remapping: VarRemapping<'db>,
     /// The blocks that can be reached from the relevant arm of the match.
     reachable_blocks: OrderedHashSet<BlockId>,
     /// Additional remappings that appeared in a `Goto` leading to the match.
-    additional_remappings: VarRemapping,
+    additional_remappings: VarRemapping<'db>,
     /// The number of statement in the in the same block as the enum construct.
     n_same_block_statement: usize,
     /// Indicated that the enum construct statement can be removed.
     remove_enum_construct: bool,
     /// Additional statement that appear before the match but not in the same block as the enum
     /// construct.
-    additional_stmts: Vec<Statement>,
+    additional_stmts: Vec<Statement<'db>>,
 }
 
 #[derive(Clone)]
-struct OptimizationCandidate<'a> {
+struct OptimizationCandidate<'db, 'a> {
     /// The variable that is matched.
     match_variable: VariableId,
 
     /// The match arms of the extern match that we are optimizing.
-    match_arms: &'a [MatchArm],
+    match_arms: &'a [MatchArm<'db>],
 
     /// The block that the match is in.
     match_block: BlockId,
 
     /// The demands at the arms.
-    arm_demands: Vec<MatchOptimizerDemand>,
+    arm_demands: Vec<MatchOptimizerDemand<'db>>,
 
     /// Whether there is a future merge between the match arms.
     future_merge: bool,
@@ -366,31 +365,31 @@ struct OptimizationCandidate<'a> {
     /// Only one such remapping is allowed as this is typically the case
     /// after running `optimize_remapping` and `reorder_statements` and it simplifies the
     /// optimization.
-    remapping: Option<&'a VarRemapping>,
+    remapping: Option<&'a VarRemapping<'db>>,
 
     /// The statements before the match in reverse order.
-    statement_rev: Vec<&'a Statement>,
+    statement_rev: Vec<&'a Statement<'db>>,
 
     /// The number of statement in the in the same block as the enum construct.
     n_same_block_statement: usize,
 }
 
-pub struct MatchOptimizerContext {
-    fixes: Vec<FixInfo>,
+pub struct MatchOptimizerContext<'db> {
+    fixes: Vec<FixInfo<'db>>,
 }
 
 #[derive(Clone)]
-pub struct AnalysisInfo<'a> {
-    candidate: Option<OptimizationCandidate<'a>>,
-    demand: MatchOptimizerDemand,
+pub struct AnalysisInfo<'db, 'a> {
+    candidate: Option<OptimizationCandidate<'db, 'a>>,
+    demand: MatchOptimizerDemand<'db>,
     /// Blocks that can be reached from the current block.
     reachable_blocks: OrderedHashSet<BlockId>,
 }
 
-impl<'a> Analyzer<'a> for MatchOptimizerContext {
-    type Info = AnalysisInfo<'a>;
+impl<'db: 'a, 'a> Analyzer<'db, 'a> for MatchOptimizerContext<'db> {
+    type Info = AnalysisInfo<'db, 'a>;
 
-    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, _block: &Block) {
+    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, _block: &Block<'db>) {
         info.reachable_blocks.insert(block_id);
     }
 
@@ -398,7 +397,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         &mut self,
         info: &mut Self::Info,
         statement_location: StatementLocation,
-        stmt: &'a Statement,
+        stmt: &'a Statement<'db>,
     ) {
         if let Some(mut candidate) = info.candidate.take() {
             match stmt {
@@ -435,7 +434,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         info: &mut Self::Info,
         _statement_location: StatementLocation,
         _target_block_id: BlockId,
-        remapping: &'a VarRemapping,
+        remapping: &'a VarRemapping<'db>,
     ) {
         info.demand.apply_remapping(
             &mut EmptyDemandReporter {},
@@ -478,7 +477,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
     fn merge_match(
         &mut self,
         (block_id, _statement_idx): StatementLocation,
-        match_info: &'a MatchInfo,
+        match_info: &'a MatchInfo<'db>,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         let (arm_demands, arm_reachable_blocks): (Vec<_>, Vec<_>) =
@@ -541,7 +540,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
     fn info_from_return(
         &mut self,
         _statement_location: StatementLocation,
-        vars: &[VarUsage],
+        vars: &[VarUsage<'db>],
     ) -> Self::Info {
         let mut demand = MatchOptimizerDemand::default();
         demand.variables_used(

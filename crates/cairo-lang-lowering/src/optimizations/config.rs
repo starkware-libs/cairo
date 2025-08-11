@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::ExternFunctionId;
+use cairo_lang_filesystem::ids::db_str;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 
@@ -50,9 +51,9 @@ impl Default for OptimizationConfig {
     }
 }
 
-pub fn priv_movable_function_ids(
-    db: &dyn LoweringGroup,
-) -> Arc<UnorderedHashSet<ExternFunctionId>> {
+pub fn priv_movable_function_ids<'db>(
+    db: &'db dyn LoweringGroup,
+) -> Arc<UnorderedHashSet<ExternFunctionId<'db>>> {
     let libfunc_by_name = |name: &String| {
         let mut path_iter = name.split("::");
 
@@ -62,11 +63,11 @@ pub fn priv_movable_function_ids(
         while let Some(path_item) = next {
             next = path_iter.next();
             if next.is_some() {
-                module = module.submodule(path_item);
+                module = module.submodule(db_str(db, path_item));
                 continue;
             }
 
-            return module.extern_function_id(path_item);
+            return module.extern_function_id(db_str(db, path_item));
         }
 
         panic!("Got empty string as movable_function");

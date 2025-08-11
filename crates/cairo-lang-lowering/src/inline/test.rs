@@ -14,8 +14,8 @@ cairo_lang_test_utils::test_file_test!(
     inlining,
     "src/inline/test_data",
     {
-        inline :"inline",
-        inline_diagnostics :"inline_diagnostics",
+        inline: "inline",
+        inline_diagnostics: "inline_diagnostics",
     },
     test_function_inlining
 );
@@ -39,7 +39,9 @@ fn test_function_inlining(
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     let after = if let Some(before) = &before {
         let mut after = before.deref().clone();
-        OptimizationPhase::ApplyInlining.apply(db, function_id, &mut after).unwrap();
+        OptimizationPhase::ApplyInlining { enable_const_folding: false }
+            .apply(db, function_id, &mut after)
+            .unwrap();
         Some(after)
     } else {
         None

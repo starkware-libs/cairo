@@ -11,9 +11,9 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 
 /// Returns the expanded code for `module_id` after running all plugins and extends `diagnostics`
 /// with all the plugins diagnostics.
-pub fn expand_module_text(
-    db: &(dyn DefsGroup + 'static),
-    module_id: ModuleId,
+pub fn expand_module_text<'db>(
+    db: &'db dyn DefsGroup,
+    module_id: ModuleId<'db>,
     diagnostics: &mut Vec<String>,
 ) -> String {
     let mut output = String::new();
@@ -43,7 +43,7 @@ pub fn expand_module_text(
                     submodule_item.module_kw(db).as_syntax_node().get_text(db),
                     submodule_item.name(db).as_syntax_node().get_text(db),
                     body.lbrace(db).as_syntax_node().get_text(db),
-                    expand_module_text(db, ModuleId::Submodule(*item), diagnostics),
+                    &expand_module_text(db, ModuleId::Submodule(*item), diagnostics),
                     body.rbrace(db).as_syntax_node().get_text(db),
                 ]);
                 continue;
@@ -59,25 +59,25 @@ pub fn expand_module_text(
                 }
             }
             if uses_list.insert(use_item) {
-                output.push_str(&use_item.get_text(db));
+                output.push_str(use_item.get_text(db));
             }
             continue;
         }
         let syntax_item = item_id.untyped_stable_ptr(db);
         // Output other items as is.
-        output.push_str(&syntax_item.lookup(db).get_text(db));
+        output.push_str(syntax_item.lookup(db).get_text(db));
     }
     output
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-struct TestDiagnosticEntry(pub PluginDiagnostic);
-impl DiagnosticEntry for TestDiagnosticEntry {
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+struct TestDiagnosticEntry<'a>(pub PluginDiagnostic<'a>);
+impl<'a> DiagnosticEntry<'a> for TestDiagnosticEntry<'a> {
     type DbType = dyn DefsGroup;
     fn format(&self, _db: &Self::DbType) -> String {
         self.0.message.to_string()
     }
-    fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
+    fn location(&self, db: &'a Self::DbType) -> DiagnosticLocation<'a> {
         match self.0.inner_span {
             Some(inner_span) => StableLocation::with_inner_span(self.0.stable_ptr, inner_span)
                 .diagnostic_location(db),

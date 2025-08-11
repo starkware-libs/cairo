@@ -1,25 +1,24 @@
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::mpsc::channel;
 
 use anyhow::{Context, Result, bail};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
+use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
-use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::ids::CrateInput;
 use cairo_lang_runner::casm_run::format_for_panic;
 use cairo_lang_runner::profiling::{
-    ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
+    ProfilerConfig, ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
 };
 use cairo_lang_runner::{
-    ProfilingInfoCollectionConfig, RunResultValue, SierraCasmRunner, StarknetExecutionResources,
+    ProfilingInfoCollectionConfig, RunResultValue, RunnerError, SierraCasmRunner,
+    StarknetExecutionResources,
 };
-use cairo_lang_sierra::extensions::gas::CostTokenType;
-use cairo_lang_sierra::ids::FunctionId;
-use cairo_lang_sierra::program::{Program, StatementIdx};
+use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
-use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_plugin::test_config::{PanicExpectation, TestExpectation};
 use cairo_lang_test_plugin::{
@@ -27,24 +26,22 @@ use cairo_lang_test_plugin::{
     compile_test_prepared_db, test_plugin_suite,
 };
 use cairo_lang_utils::casts::IntoOrPanic;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use colored::Colorize;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use starknet_types_core::felt::Felt as Felt252;
 
 #[cfg(test)]
 mod test;
 
 /// Compile and run tests.
-pub struct TestRunner {
-    compiler: TestCompiler,
+pub struct TestRunner<'db> {
+    compiler: TestCompiler<'db>,
     config: TestRunConfig,
 }
 
-impl TestRunner {
+impl<'db> TestRunner<'db> {
     /// Configure a new test runner
     ///
     /// # Arguments
@@ -66,7 +63,10 @@ impl TestRunner {
             config.gas_enabled,
             TestsCompilationConfig {
                 starknet,
-                add_statements_functions: config.run_profiler == RunProfilerConfig::Cairo,
+                add_statements_functions: config
+                    .profiler_config
+                    .as_ref()
+                    .is_some_and(|c| c.requires_cairo_debug_info()),
                 add_statements_code_locations: false,
                 contract_declarations: None,
                 contract_crate_ids: None,
@@ -83,24 +83,24 @@ impl TestRunner {
     }
 }
 
-pub struct CompiledTestRunner {
-    pub compiled: TestCompilation,
+pub struct CompiledTestRunner<'db> {
+    pub compiled: TestCompilation<'db>,
     pub config: TestRunConfig,
 }
 
-impl CompiledTestRunner {
+impl<'db> CompiledTestRunner<'db> {
     /// Configure a new compiled test runner
     ///
     /// # Arguments
     ///
     /// * `compiled` - The compiled tests to run
     /// * `config` - Test run configuration
-    pub fn new(compiled: TestCompilation, config: TestRunConfig) -> Self {
+    pub fn new(compiled: TestCompilation<'db>, config: TestRunConfig) -> Self {
         Self { compiled, config }
     }
 
     /// Execute preconfigured test execution.
-    pub fn run(self, db: Option<&RootDatabase>) -> Result<Option<TestsSummary>> {
+    pub fn run(self, opt_db: Option<&'db RootDatabase>) -> Result<Option<TestsSummary>> {
         let (compiled, filtered_out) = filter_test_cases(
             self.compiled,
             self.config.include_ignored,
@@ -108,27 +108,8 @@ impl CompiledTestRunner {
             &self.config.filter,
         );
 
-        let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
-            if self.config.run_profiler == RunProfilerConfig::Cairo {
-                let db = db.expect("db must be passed when profiling.");
-                let statements_locations = compiled
-                    .metadata
-                    .statements_locations
-                    .expect("statements locations must be present when profiling.");
-                Some(PorfilingAuxData {
-                    db,
-                    statements_functions: statements_locations
-                        .get_statements_functions_map_for_tests(db),
-                })
-            } else {
-                None
-            },
-            compiled.metadata.named_tests,
-            compiled.sierra_program.program,
-            compiled.metadata.function_set_costs,
-            compiled.metadata.contracts_info,
-            &self.config,
-        )?;
+        let TestsSummary { passed, failed, ignored, failed_run_results } =
+            run_tests(opt_db.map(|db| db as &dyn SierraGenGroup), compiled, &self.config)?;
 
         if failed.is_empty() {
             println!(
@@ -144,11 +125,14 @@ impl CompiledTestRunner {
             for (failure, run_result) in failed.iter().zip_eq(failed_run_results) {
                 print!("   {failure} - ");
                 match run_result {
-                    RunResultValue::Success(_) => {
+                    Ok(RunResultValue::Success(_)) => {
                         println!("expected panic but finished successfully.");
                     }
-                    RunResultValue::Panic(values) => {
+                    Ok(RunResultValue::Panic(values)) => {
                         println!("{}", format_for_panic(values.into_iter()));
+                    }
+                    Err(err) => {
+                        println!("{err}");
                     }
                 }
             }
@@ -164,19 +148,6 @@ impl CompiledTestRunner {
     }
 }
 
-/// Whether to run the profiler, and what results to produce.
-///
-/// With `None`, don't run the profiler.
-/// With `Sierra`, run the profiler and produce sierra profiling information.
-/// With `Cairo`, run the profiler and additionally produce cairo profiling information (e.g.
-///     filtering out generated functions).
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum RunProfilerConfig {
-    None,
-    Cairo,
-    Sierra,
-}
-
 /// Configuration of compiled tests runner.
 #[derive(Clone, Debug)]
 pub struct TestRunConfig {
@@ -184,7 +155,7 @@ pub struct TestRunConfig {
     pub include_ignored: bool,
     pub ignored: bool,
     /// Whether to run the profiler and how.
-    pub run_profiler: RunProfilerConfig,
+    pub profiler_config: Option<ProfilerConfig>,
     /// Whether to enable gas calculation.
     pub gas_enabled: bool,
     /// Whether to print used resources after each test.
@@ -192,15 +163,15 @@ pub struct TestRunConfig {
 }
 
 /// The test cases compiler.
-pub struct TestCompiler {
+pub struct TestCompiler<'db> {
     pub db: RootDatabase,
-    pub main_crate_ids: Vec<CrateId>,
-    pub test_crate_ids: Vec<CrateId>,
+    pub main_crate_ids: Vec<CrateInput>,
+    pub test_crate_ids: Vec<CrateInput>,
     pub allow_warnings: bool,
-    pub config: TestsCompilationConfig,
+    pub config: TestsCompilationConfig<'db>,
 }
 
-impl TestCompiler {
+impl<'db> TestCompiler<'db> {
     /// Configure a new test compiler
     ///
     /// # Arguments
@@ -211,9 +182,9 @@ impl TestCompiler {
         path: &Path,
         allow_warnings: bool,
         gas_enabled: bool,
-        config: TestsCompilationConfig,
+        config: TestsCompilationConfig<'db>,
     ) -> Result<Self> {
-        let db = &mut {
+        let mut db = {
             let mut b = RootDatabase::builder();
             let mut cfg = CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]);
             if !gas_enabled {
@@ -229,19 +200,19 @@ impl TestCompiler {
             b.build()?
         };
 
-        let main_crate_ids = setup_project(db, Path::new(&path))?;
+        let main_crate_inputs = setup_project(&mut db, Path::new(&path))?;
 
         Ok(Self {
             db: db.snapshot(),
-            test_crate_ids: main_crate_ids.clone(),
-            main_crate_ids,
+            test_crate_ids: main_crate_inputs.clone(),
+            main_crate_ids: main_crate_inputs,
             allow_warnings,
             config,
         })
     }
 
     /// Build the tests and collect metadata.
-    pub fn build(&self) -> Result<TestCompilation> {
+    pub fn build(&self) -> Result<TestCompilation<'_>> {
         let mut diag_reporter = DiagnosticsReporter::stderr().with_crates(&self.main_crate_ids);
         if self.allow_warnings {
             diag_reporter = diag_reporter.allow_warnings();
@@ -265,12 +236,12 @@ impl TestCompiler {
 /// * `filter` - Include only tests containing the filter string.
 /// # Returns
 /// * (`TestCompilation`, `usize`) - The filtered test cases and the number of filtered out cases.
-pub fn filter_test_cases(
-    compiled: TestCompilation,
+pub fn filter_test_cases<'db>(
+    compiled: TestCompilation<'db>,
     include_ignored: bool,
     ignored: bool,
     filter: &str,
-) -> (TestCompilation, usize) {
+) -> (TestCompilation<'db>, usize) {
     let total_tests_count = compiled.metadata.named_tests.len();
     let named_tests = compiled
         .metadata
@@ -318,7 +289,7 @@ pub struct TestsSummary {
     passed: Vec<String>,
     failed: Vec<String>,
     ignored: Vec<String>,
-    failed_run_results: Vec<RunResultValue>,
+    failed_run_results: Vec<anyhow::Result<RunResultValue>>,
 }
 
 /// Auxiliary data that is required when running tests with profiling.
@@ -329,13 +300,21 @@ pub struct PorfilingAuxData<'a> {
 
 /// Runs the tests and process the results for a summary.
 pub fn run_tests(
-    profiler_data: Option<PorfilingAuxData<'_>>,
-    named_tests: Vec<(String, TestConfig)>,
-    sierra_program: Program,
-    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
-    contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+    opt_db: Option<&dyn SierraGenGroup>,
+    compiled: TestCompilation<'_>,
     config: &TestRunConfig,
 ) -> Result<TestsSummary> {
+    let TestCompilation {
+        sierra_program: sierra_program_with_debug_info,
+        metadata:
+            TestCompilationMetadata {
+                named_tests,
+                function_set_costs,
+                contracts_info,
+                statements_locations,
+            },
+    } = compiled;
+    let sierra_program = sierra_program_with_debug_info.program;
     let runner = SierraCasmRunner::new(
         sierra_program.clone(),
         if config.gas_enabled {
@@ -350,135 +329,130 @@ pub fn run_tests(
             None
         },
         contracts_info,
-        match config.run_profiler {
-            RunProfilerConfig::None => None,
-            RunProfilerConfig::Cairo | RunProfilerConfig::Sierra => {
-                Some(ProfilingInfoCollectionConfig::default())
-            }
-        },
+        config.profiler_config.as_ref().map(ProfilingInfoCollectionConfig::from_profiler_config),
     )
+    .map_err(|err| {
+        let (RunnerError::BuildError(err), Some(db), Some(statements_locations)) =
+            (&err, opt_db, &statements_locations)
+        else {
+            return err.into();
+        };
+        let mut locs = vec![];
+        for stmt_idx in err.stmt_indices() {
+            if let Some(loc) = statements_locations.statement_diagnostic_location(db, stmt_idx) {
+                locs.push(format!("#{stmt_idx} {:?}", loc.debug(db.elongate())))
+            }
+        }
+        anyhow::anyhow!("{err}\n{}", locs.join("\n"))
+    })
     .with_context(|| "Failed setting up runner.")?;
     let suffix = if named_tests.len() != 1 { "s" } else { "" };
     println!("running {} test{}", named_tests.len(), suffix);
-    let wrapped_summary = Mutex::new(Ok(TestsSummary {
+
+    let (tx, rx) = channel::<_>();
+    rayon::spawn(move || {
+        named_tests.into_par_iter().for_each(|(name, test)| {
+            let result = run_single_test(test, &name, &runner);
+            tx.send((name, result)).unwrap();
+        })
+    });
+
+    let profiler_data = config.profiler_config.as_ref().and_then(|profiler_config| {
+        if !profiler_config.requires_cairo_debug_info() {
+            return None;
+        }
+
+        let db = opt_db.expect("db must be passed when doing cairo level profiling.");
+        Some((
+            ProfilingInfoProcessor::new(
+                Some(db),
+                &sierra_program,
+                statements_locations
+                    .expect(
+                        "statements locations must be present when doing cairo level profiling.",
+                    )
+                    .get_statements_functions_map_for_tests(db),
+            ),
+            ProfilingInfoProcessorParams::from_profiler_config(profiler_config),
+        ))
+    });
+
+    let mut summary = TestsSummary {
         passed: vec![],
         failed: vec![],
         ignored: vec![],
         failed_run_results: vec![],
-    }));
-
-    // Run in parallel if possible. If running with db, parallelism is impossible.
-    if profiler_data.is_none() {
-        named_tests
-            .into_par_iter()
-            .map(|(name, test)| run_single_test(test, name, &runner))
-            .for_each(|res| {
-                update_summary(
-                    &wrapped_summary,
-                    res,
-                    &None,
-                    &sierra_program,
-                    &ProfilingInfoProcessorParams {
-                        process_by_original_user_function: false,
-                        process_by_cairo_function: false,
-                        ..ProfilingInfoProcessorParams::default()
-                    },
-                    config.print_resource_usage,
-                );
-            });
-    } else {
-        eprintln!("Note: Tests don't run in parallel when running with profiling.");
-        named_tests
-            .into_iter()
-            .map(move |(name, test)| run_single_test(test, name, &runner))
-            .for_each(|test_result| {
-                update_summary(
-                    &wrapped_summary,
-                    test_result,
-                    &profiler_data,
-                    &sierra_program,
-                    &ProfilingInfoProcessorParams::default(),
-                    config.print_resource_usage,
-                );
-            });
+    };
+    while let Ok((name, result)) = rx.recv() {
+        update_summary(&mut summary, name, result, &profiler_data, config.print_resource_usage);
     }
 
-    wrapped_summary.into_inner().unwrap()
+    Ok(summary)
 }
 
 /// Runs a single test and returns a tuple of its name and result.
 fn run_single_test(
     test: TestConfig,
-    name: String,
+    name: &str,
     runner: &SierraCasmRunner,
-) -> anyhow::Result<(String, Option<TestResult>)> {
+) -> anyhow::Result<Option<TestResult>> {
     if test.ignored {
-        return Ok((name, None));
+        return Ok(None);
     }
-    let func = runner.find_function(name.as_str())?;
-    let result = runner
-        .run_function_with_starknet_context(func, vec![], test.available_gas, Default::default())
-        .with_context(|| format!("Failed to run the function `{}`.", name.as_str()))?;
-    Ok((
-        name,
-        Some(TestResult {
-            status: match &result.value {
-                RunResultValue::Success(_) => match test.expectation {
-                    TestExpectation::Success => TestStatus::Success,
-                    TestExpectation::Panics(_) => TestStatus::Fail(result.value),
-                },
-                RunResultValue::Panic(value) => match test.expectation {
-                    TestExpectation::Success => TestStatus::Fail(result.value),
-                    TestExpectation::Panics(panic_expectation) => match panic_expectation {
-                        PanicExpectation::Exact(expected) if value != &expected => {
-                            TestStatus::Fail(result.value)
-                        }
-                        _ => TestStatus::Success,
-                    },
+    let func = runner.find_function(name)?;
+    let result = runner.run_function_with_starknet_context(
+        func,
+        vec![],
+        test.available_gas,
+        Default::default(),
+    )?;
+    Ok(Some(TestResult {
+        status: match &result.value {
+            RunResultValue::Success(_) => match test.expectation {
+                TestExpectation::Success => TestStatus::Success,
+                TestExpectation::Panics(_) => TestStatus::Fail(result.value),
+            },
+            RunResultValue::Panic(value) => match test.expectation {
+                TestExpectation::Success => TestStatus::Fail(result.value),
+                TestExpectation::Panics(panic_expectation) => match panic_expectation {
+                    PanicExpectation::Exact(expected) if value != &expected => {
+                        TestStatus::Fail(result.value)
+                    }
+                    _ => TestStatus::Success,
                 },
             },
-            gas_usage: test
-                .available_gas
-                .zip(result.gas_counter)
-                .map(|(before, after)| {
-                    before.into_or_panic::<i64>() - after.to_bigint().to_i64().unwrap()
-                })
-                .or_else(|| {
-                    runner.initial_required_gas(func).map(|gas| gas.into_or_panic::<i64>())
-                }),
-            used_resources: result.used_resources,
-            profiling_info: result.profiling_info,
-        }),
-    ))
+        },
+        gas_usage: test
+            .available_gas
+            .zip(result.gas_counter)
+            .map(|(before, after)| {
+                before.into_or_panic::<i64>() - after.to_bigint().to_i64().unwrap()
+            })
+            .or_else(|| runner.initial_required_gas(func).map(|gas| gas.into_or_panic::<i64>())),
+        used_resources: result.used_resources,
+        profiling_info: result.profiling_info,
+    }))
 }
 
 /// Updates the test summary with the given test result.
 fn update_summary(
-    wrapped_summary: &Mutex<std::prelude::v1::Result<TestsSummary, anyhow::Error>>,
-    test_result: std::prelude::v1::Result<(String, Option<TestResult>), anyhow::Error>,
-    profiler_data: &Option<PorfilingAuxData<'_>>,
-    sierra_program: &Program,
-    profiling_params: &ProfilingInfoProcessorParams,
+    summary: &mut TestsSummary,
+    name: String,
+    test_result: anyhow::Result<Option<TestResult>>,
+    profiler_data: &Option<(ProfilingInfoProcessor<'_>, ProfilingInfoProcessorParams)>,
     print_resource_usage: bool,
 ) {
-    let mut wrapped_summary = wrapped_summary.lock().unwrap();
-    if wrapped_summary.is_err() {
-        return;
-    }
-    let (name, opt_result) = match test_result {
-        Ok((name, opt_result)) => (name, opt_result),
+    let (res_type, status_str, gas_usage, used_resources, profiling_info) = match test_result {
+        Ok(None) => (&mut summary.ignored, "ignored".bright_yellow(), None, None, None),
         Err(err) => {
-            *wrapped_summary = Err(err);
-            return;
+            summary.failed_run_results.push(Err(err));
+            (&mut summary.failed, "failed to run".bright_magenta(), None, None, None)
         }
-    };
-    let summary = wrapped_summary.as_mut().unwrap();
-    let (res_type, status_str, gas_usage, used_resources, profiling_info) =
-        if let Some(result) = opt_result {
+        Ok(Some(result)) => {
             let (res_type, status_str) = match result.status {
                 TestStatus::Success => (&mut summary.passed, "ok".bright_green()),
                 TestStatus::Fail(run_result) => {
-                    summary.failed_run_results.push(run_result);
+                    summary.failed_run_results.push(Ok(run_result));
                     (&mut summary.failed, "fail".bright_red())
                 }
             };
@@ -489,9 +463,8 @@ fn update_summary(
                 print_resource_usage.then_some(result.used_resources),
                 result.profiling_info,
             )
-        } else {
-            (&mut summary.ignored, "ignored".bright_yellow(), None, None, None)
-        };
+        }
+    };
     if let Some(gas_usage) = gas_usage {
         println!("test {name} ... {status_str} (gas usage est.: {gas_usage})");
     } else {
@@ -521,18 +494,11 @@ fn update_summary(
         );
         print_resource_map(used_resources.syscalls.into_iter(), "syscalls");
     }
-    if let Some(profiling_info) = profiling_info {
-        let Some(PorfilingAuxData { db, statements_functions }) = profiler_data else {
-            panic!("profiler_data is None");
-        };
-        let profiling_processor = ProfilingInfoProcessor::new(
-            Some(*db),
-            sierra_program.clone(),
-            statements_functions.clone(),
-            Default::default(),
+    if let Some((profiling_processor, profiling_params)) = profiler_data {
+        let processed_profiling_info = profiling_processor.process(
+            &profiling_info.expect("profiling_info must be Some when profiler_config is Some"),
+            profiling_params,
         );
-        let processed_profiling_info =
-            profiling_processor.process_ex(&profiling_info, profiling_params);
         println!("Profiling info:\n{processed_profiling_info}");
     }
     res_type.push(name);

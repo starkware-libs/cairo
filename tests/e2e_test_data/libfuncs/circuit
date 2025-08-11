@@ -18,7 +18,7 @@ fn foo() -> CircuitInputAccumulator<MyCircuit> {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 2092})
+test::foo: CostTokenMap({Const: 2092})
 
 //! > sierra_code
 type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
@@ -66,7 +66,7 @@ fn foo() -> (CircuitInputAccumulator<MyCircuit>, CircuitInputAccumulator<MyCircu
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 4084})
+test::foo: CostTokenMap({Const: 4084})
 
 //! > sierra_code
 type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
@@ -165,7 +165,7 @@ return([5]);
 test::foo@F0([0]: CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, [1]: Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>) -> (core::circuit::AddInputResult::<core::circuit::Circuit::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1000})
+test::foo: CostTokenMap({Const: 1000})
 
 //! > ==========================================================================
 
@@ -245,7 +245,7 @@ return([0]);
 test::foo@F0() -> (CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>, core::circuit::SubModGate::<core::circuit::CircuitInput::<2>, core::circuit::CircuitInput::<0>>)>>);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 600})
+test::foo: CostTokenMap({Const: 600})
 
 //! > ==========================================================================
 
@@ -313,7 +313,7 @@ return([4]);
 test::foo@F0([0]: Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>) -> (core::option::Option::<core::circuit::CircuitModulus>);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1200})
+test::foo: CostTokenMap({Const: 1200})
 
 //! > ==========================================================================
 
@@ -465,7 +465,7 @@ return([10], [11], [16]);
 test::foo@F0([0]: AddMod, [1]: MulMod, [2]: CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, [3]: CircuitData<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, [4]: CircuitModulus) -> (AddMod, MulMod, core::result::Result::<core::circuit::CircuitOutputs::<core::circuit::Circuit::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, (core::circuit::CircuitPartialOutputs::<core::circuit::Circuit::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, core::circuit::CircuitFailureGuarantee)>);
 
 //! > function_costs
-test::foo: OrderedHashMap({AddMod: 1, MulMod: 3, Const: 4100})
+test::foo: CostTokenMap({AddMod: 1, MulMod: 3, Const: 4100})
 
 //! > ==========================================================================
 
@@ -608,7 +608,7 @@ return([10], [11], [16]);
 test::foo@F0([0]: AddMod, [1]: MulMod, [2]: CircuitDescriptor<Circuit<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)>>, [3]: CircuitData<Circuit<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)>>, [4]: CircuitModulus) -> (AddMod, MulMod, core::result::Result::<core::circuit::CircuitOutputs::<core::circuit::Circuit::<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)>>, (core::circuit::CircuitPartialOutputs::<core::circuit::Circuit::<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)>>, core::circuit::CircuitFailureGuarantee)>);
 
 //! > function_costs
-test::foo: OrderedHashMap({MulMod: 2, Const: 3400})
+test::foo: CostTokenMap({MulMod: 2, Const: 3400})
 
 //! > ==========================================================================
 
@@ -706,7 +706,7 @@ return([6], [5], [7]);
 test::foo@F0([0]: MulMod, [1]: RangeCheck96, [2]: CircuitFailureGuarantee) -> (MulMod, RangeCheck96, U96LimbsLtGuarantee<4>);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 4736})
+test::foo: CostTokenMap({Const: 4736})
 
 //! > ==========================================================================
 
@@ -774,7 +774,7 @@ return([3]);
 test::foo@F0([0]: CircuitOutputs<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>) -> (Tuple<core::circuit::u384, U96LimbsLtGuarantee<4>>);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1700})
+test::foo: CostTokenMap({Const: 1700})
 
 //! > ==========================================================================
 
@@ -810,7 +810,7 @@ return([1]);
 test::foo@F0([0]: u8) -> (U96Guarantee);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > ==========================================================================
 
@@ -847,7 +847,7 @@ return([2]);
 test::foo@F0([0]: RangeCheck96, [1]: U96Guarantee) -> (RangeCheck96);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 256})
+test::foo: CostTokenMap({Const: 256})
 
 //! > ==========================================================================
 
@@ -912,7 +912,7 @@ return([4]);
 test::foo@F0([0]: U96LimbsLtGuarantee<4>) -> (core::circuit::NextU96LessThanGuarantee::<3>);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 900})
+test::foo: CostTokenMap({Const: 900})
 
 //! > ==========================================================================
 
@@ -947,7 +947,7 @@ return([1]);
 test::foo@F0([0]: U96LimbsLtGuarantee<1>) -> (U96Guarantee);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: CostTokenMap({Const: 100})
 
 //! > ==========================================================================
 
@@ -1026,4 +1026,4 @@ return([10]);
 test::foo@F0([0]: RangeCheck96, [1]: U96LimbsLtGuarantee<4>) -> (RangeCheck96);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1056})
+test::foo: CostTokenMap({Const: 1056})

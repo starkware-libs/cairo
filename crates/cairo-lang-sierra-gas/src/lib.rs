@@ -8,11 +8,11 @@ use cairo_lang_sierra::extensions::core::{
     CoreConcreteLibfunc, CoreLibfunc, CoreType, CoreTypeConcrete,
 };
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
-use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
+use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType, GasConcreteLibfunc};
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
-use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
+use cairo_lang_sierra_type_size::{ProgramRegistryInfo, TypeSizeMap};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -93,14 +93,15 @@ impl<TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usize>
 /// Sierra classes. Generally, the new [compute_precost_info] is used.
 pub fn calc_gas_precost_info(
     program: &Program,
-    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    program_info: &ProgramRegistryInfo,
+    function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>>,
 ) -> Result<GasInfo, CostError> {
-    let cost_provider = ComputeCostInfoProvider::new(program)?;
-    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
+    let cost_provider = ComputeCostInfoProvider::new(program_info);
     let mut info = calc_gas_info_inner(
         program,
-        |statement_future_cost, idx, libfunc_id| -> Vec<OrderedHashMap<CostTokenType, Expr<Var>>> {
-            let libfunc = registry
+        |statement_future_cost, idx, libfunc_id| -> Vec<CostTokenMap<Expr<Var>>> {
+            let libfunc = program_info
+                .registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registry creation would have already failed.");
             core_libfunc_cost_expr::core_libfunc_precost_expr(
@@ -111,14 +112,14 @@ pub fn calc_gas_precost_info(
             )
         },
         function_set_costs,
-        &registry,
+        &program_info.registry,
     )?;
     // Make `withdraw_gas` and `refund` libfuncs return 0 valued variables for all tokens.
     for (i, statement) in program.statements.iter().enumerate() {
         let Statement::Invocation(invocation) = statement else {
             continue;
         };
-        let Ok(libfunc) = registry.get_libfunc(&invocation.libfunc_id) else {
+        let Ok(libfunc) = program_info.registry.get_libfunc(&invocation.libfunc_id) else {
             continue;
         };
         let is_withdraw_gas =
@@ -136,30 +137,27 @@ pub fn calc_gas_precost_info(
 }
 
 /// Info provider used for the computation of libfunc costs.
-struct ComputeCostInfoProvider {
-    pub registry: ProgramRegistry<CoreType, CoreLibfunc>,
-    pub type_sizes: TypeSizeMap,
+struct ComputeCostInfoProvider<'a> {
+    pub program_info: &'a ProgramRegistryInfo,
 }
 
-impl ComputeCostInfoProvider {
-    fn new(program: &Program) -> Result<Self, Box<ProgramRegistryError>> {
-        let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-        let type_sizes = get_type_size_map(program, &registry).unwrap();
-        Ok(Self { registry, type_sizes })
+impl<'a> ComputeCostInfoProvider<'a> {
+    fn new(program_info: &'a ProgramRegistryInfo) -> Self {
+        Self { program_info }
     }
 }
 
 /// Implementation of [CostInfoProvider] for [ComputeCostInfoProvider].
-impl CostInfoProvider for ComputeCostInfoProvider {
+impl CostInfoProvider for ComputeCostInfoProvider<'_> {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
-        self.type_sizes[ty].into_or_panic()
+        self.program_info.type_sizes[ty].into_or_panic()
     }
 
     fn circuit_info(&self, ty: &ConcreteTypeId) -> &CircuitInfo {
         let CoreTypeConcrete::Circuit(CircuitTypeConcrete::Circuit(ConcreteCircuit {
             circuit_info,
             ..
-        })) = self.registry.get_type(ty).unwrap()
+        })) = self.program_info.registry.get_type(ty).unwrap()
         else {
             panic!("Expected a circuit type, got {ty:?}.")
         };
@@ -168,12 +166,16 @@ impl CostInfoProvider for ComputeCostInfoProvider {
 }
 
 /// Calculates gas pre-cost information for a given program - the gas costs of non-step tokens.
-pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
-    let cost_provider = ComputeCostInfoProvider::new(program)?;
+pub fn compute_precost_info(
+    program: &Program,
+    program_info: &ProgramRegistryInfo,
+) -> Result<GasInfo, CostError> {
+    let cost_provider = ComputeCostInfoProvider::new(program_info);
     compute_costs::compute_costs(
         program,
         &(|libfunc_id| {
             let core_libfunc = cost_provider
+                .program_info
                 .registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registry creation would have already failed.");
@@ -190,16 +192,16 @@ pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
 /// Sierra classes. Generally, the new [compute_postcost_info] is used.
 pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
     program: &Program,
-    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    program_info: &ProgramRegistryInfo,
+    function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>>,
     precost_gas_info: &GasInfo,
     ap_change_var_value: ApChangeVarValue,
 ) -> Result<GasInfo, CostError> {
-    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-    let type_sizes = get_type_size_map(program, &registry).unwrap();
     let mut info = calc_gas_info_inner(
         program,
         |statement_future_cost, idx, libfunc_id| {
-            let libfunc = registry
+            let libfunc = program_info
+                .registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registry creation would have already failed.");
             core_libfunc_cost_expr::core_libfunc_postcost_expr(
@@ -207,7 +209,7 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
                 idx,
                 libfunc,
                 &InvocationCostInfoProviderForEqGen {
-                    type_sizes: &type_sizes,
+                    type_sizes: &program_info.type_sizes,
                     token_usages: |token_type| {
                         precost_gas_info.variable_values[&(*idx, token_type)].into_or_panic()
                     },
@@ -216,14 +218,14 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
             )
         },
         function_set_costs,
-        &registry,
+        &program_info.registry,
     )?;
     // Make `refund` libfuncs return 0 valued variables for all tokens.
     for (i, statement) in program.statements.iter().enumerate() {
         let Statement::Invocation(invocation) = statement else {
             continue;
         };
-        let Ok(libfunc) = registry.get_libfunc(&invocation.libfunc_id) else {
+        let Ok(libfunc) = program_info.registry.get_libfunc(&invocation.libfunc_id) else {
             continue;
         };
         let is_refund =
@@ -245,7 +247,7 @@ fn calc_gas_info_inner<
 >(
     program: &Program,
     get_cost: GetCost,
-    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>>,
     registry: &ProgramRegistry<CoreType, CoreLibfunc>,
 ) -> Result<GasInfo, CostError> {
     let mut equations = generate_equations::generate_equations(program, get_cost)?;
@@ -257,7 +259,7 @@ fn calc_gas_info_inner<
         .collect();
     for (func_id, cost_terms) in function_set_costs {
         for token_type in CostTokenType::iter_casm_tokens() {
-            equations[token_type].push(
+            equations.get_mut(token_type).unwrap().push(
                 Expr::from_var(Var::StatementFuture(
                     registry.get_function(&func_id)?.entry_point,
                     *token_type,
@@ -322,7 +324,7 @@ fn calc_gas_info_inner<
         for func in &program.funcs {
             let id = &func.id;
             if !function_costs.contains_key(id) {
-                function_costs.insert(id.clone(), OrderedHashMap::default());
+                function_costs.insert(id.clone(), CostTokenMap::default());
             }
             // The `None` case is of a function that can never actually be called, as it has no
             // return, so solver for it would not actually be calculated. (Such a function may exist
@@ -353,17 +355,19 @@ fn calc_gas_info_inner<
 /// or `ConstCost` to get the separate components (steps, holes, range-checks).
 pub fn compute_postcost_info<CostType: PostCostTypeEx>(
     program: &Program,
-    get_ap_change_fn: &dyn Fn(&StatementIdx) -> usize,
+    program_info: &ProgramRegistryInfo,
+    get_ap_change_fn: &impl Fn(&StatementIdx) -> usize,
     precost_gas_info: &GasInfo,
     enforced_function_costs: &OrderedHashMap<FunctionId, CostType>,
 ) -> Result<GasInfo, CostError> {
-    let cost_provider = ComputeCostInfoProvider::new(program)?;
+    let cost_provider = ComputeCostInfoProvider::new(program_info);
     let specific_cost_context =
         compute_costs::PostcostContext { get_ap_change_fn, precost_gas_info };
     compute_costs::compute_costs(
         program,
         &(|libfunc_id| {
             let core_libfunc = cost_provider
+                .program_info
                 .registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registry creation would have already failed.");
@@ -375,6 +379,7 @@ pub fn compute_postcost_info<CostType: PostCostTypeEx>(
             .map(|(func, val)| {
                 (
                     cost_provider
+                        .program_info
                         .registry
                         .get_function(func)
                         .expect("Program registry creation would have already failed.")

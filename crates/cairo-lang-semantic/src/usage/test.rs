@@ -17,7 +17,7 @@ cairo_lang_test_utils::test_file_test!(
     usage,
     "src/usage/test_data",
     {
-        usage :"usage",
+        usage: "usage",
     },
     test_function_usage
 );
@@ -59,17 +59,17 @@ fn test_function_usage(
         writeln!(usages_str, " {}:{}:", position.line, position.col).unwrap();
         write!(usages_str, "  Usage:").unwrap();
         for (_, expr) in usage.usage.iter() {
-            write!(usages_str, " {:?},", expr.debug(&expr_formatter)).unwrap();
+            write!(usages_str, " {:?},", expr.debug(expr_formatter.db)).unwrap();
         }
         writeln!(usages_str).unwrap();
         write!(usages_str, "  Changes:").unwrap();
         for (_, expr) in usage.changes.iter() {
-            write!(usages_str, " {:?},", expr.debug(&expr_formatter)).unwrap();
+            write!(usages_str, " {:?},", expr.debug(expr_formatter.db)).unwrap();
         }
         writeln!(usages_str).unwrap();
         write!(usages_str, "  Snapshot_Usage:").unwrap();
         for (_, expr) in usage.snap_usage.iter() {
-            write!(usages_str, " {:?},", expr.debug(&expr_formatter)).unwrap();
+            write!(usages_str, " {:?},", expr.debug(expr_formatter.db)).unwrap();
         }
 
         writeln!(usages_str).unwrap();

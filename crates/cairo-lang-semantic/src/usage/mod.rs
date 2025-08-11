@@ -6,13 +6,13 @@ use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use id_arena::Arena;
 
 use crate::expr::fmt::ExprFormatter;
 use crate::expr::objects::Arenas;
 use crate::{
     ConcreteStructId, Condition, Expr, ExprFunctionCallArg, ExprId, ExprVarMemberPath,
-    FixedSizeArrayItems, FunctionBody, Parameter, Pattern, PatternId, Statement, VarId,
+    FixedSizeArrayItems, FunctionBody, Parameter, Pattern, PatternArena, PatternId, Statement,
+    VarId,
 };
 
 #[cfg(test)]
@@ -21,21 +21,25 @@ mod test;
 /// Member path (e.g. a.b.c). Unlike [ExprVarMemberPath], this is not an expression, and has no
 /// syntax pointers.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'a>)]
-pub enum MemberPath {
-    Var(VarId),
-    Member { parent: Box<MemberPath>, member_id: MemberId, concrete_struct_id: ConcreteStructId },
+#[debug_db(ExprFormatter<'db>)]
+pub enum MemberPath<'db> {
+    Var(VarId<'db>),
+    Member {
+        parent: Box<MemberPath<'db>>,
+        member_id: MemberId<'db>,
+        concrete_struct_id: ConcreteStructId<'db>,
+    },
 }
-impl MemberPath {
-    pub fn base_var(&self) -> VarId {
+impl<'db> MemberPath<'db> {
+    pub fn base_var(&self) -> VarId<'db> {
         match self {
             MemberPath::Var(var) => *var,
             MemberPath::Member { parent, .. } => parent.base_var(),
         }
     }
 }
-impl From<&ExprVarMemberPath> for MemberPath {
-    fn from(value: &ExprVarMemberPath) -> Self {
+impl<'db> From<&ExprVarMemberPath<'db>> for MemberPath<'db> {
+    fn from(value: &ExprVarMemberPath<'db>) -> Self {
         match value {
             ExprVarMemberPath::Var(expr) => MemberPath::Var(expr.var),
             ExprVarMemberPath::Member { parent, member_id, concrete_struct_id, .. } => {
@@ -51,23 +55,23 @@ impl From<&ExprVarMemberPath> for MemberPath {
 
 /// Usages of variables and member paths in semantic code.
 #[derive(Clone, Debug, Default, DebugWithDb)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct Usage {
+#[debug_db(ExprFormatter<'db>)]
+pub struct Usage<'db> {
     /// Member paths that are read.
-    pub usage: OrderedHashMap<MemberPath, ExprVarMemberPath>,
+    pub usage: OrderedHashMap<MemberPath<'db>, ExprVarMemberPath<'db>>,
     /// Member paths that are assigned to.
-    pub changes: OrderedHashMap<MemberPath, ExprVarMemberPath>,
+    pub changes: OrderedHashMap<MemberPath<'db>, ExprVarMemberPath<'db>>,
     /// Member paths that are read as snapshots.
-    pub snap_usage: OrderedHashMap<MemberPath, ExprVarMemberPath>,
+    pub snap_usage: OrderedHashMap<MemberPath<'db>, ExprVarMemberPath<'db>>,
     /// Variables that are defined.
-    pub introductions: OrderedHashSet<VarId>,
+    pub introductions: OrderedHashSet<VarId<'db>>,
     /// indicates that the expression has an early return.
     pub has_early_return: bool,
 }
 
-impl Usage {
+impl<'db> Usage<'db> {
     /// Adds the usage and changes from 'usage' to self, Ignoring `introductions`.
-    pub fn add_usage_and_changes(&mut self, usage: &Usage) {
+    pub fn add_usage_and_changes(&mut self, usage: &Usage<'db>) {
         for (path, expr) in usage.usage.iter() {
             self.usage.insert(path.clone(), expr.clone());
         }
@@ -155,13 +159,13 @@ impl Usage {
 
 /// Usages of member paths in expressions of interest, currently loops and closures.
 #[derive(Debug, DebugWithDb)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct Usages {
+#[debug_db(ExprFormatter<'db>)]
+pub struct Usages<'db> {
     /// Mapping from an [ExprId] to its [Usage].
-    pub usages: OrderedHashMap<ExprId, Usage>,
+    pub usages: OrderedHashMap<ExprId, Usage<'db>>,
 }
-impl Usages {
-    pub fn from_function_body(function_body: &FunctionBody) -> Self {
+impl<'db> Usages<'db> {
+    pub fn from_function_body(function_body: &FunctionBody<'db>) -> Self {
         let mut current = Usage::default();
         let mut usages = Self { usages: Default::default() };
         usages.handle_expr(&function_body.arenas, function_body.body_expr, &mut current);
@@ -170,11 +174,11 @@ impl Usages {
 
     pub fn handle_closure(
         &mut self,
-        arenas: &Arenas,
-        param_ids: &[Parameter],
+        arenas: &Arenas<'db>,
+        param_ids: &[Parameter<'db>],
         body: ExprId,
-    ) -> Usage {
-        let mut usage: Usage = Default::default();
+    ) -> Usage<'db> {
+        let mut usage: Usage<'_> = Default::default();
 
         usage.introductions.extend(param_ids.iter().map(|param| VarId::Param(param.id)));
         self.handle_expr(arenas, body, &mut usage);
@@ -182,7 +186,7 @@ impl Usages {
         usage
     }
 
-    fn handle_expr(&mut self, arenas: &Arenas, expr_id: ExprId, current: &mut Usage) {
+    fn handle_expr(&mut self, arenas: &Arenas<'db>, expr_id: ExprId, current: &mut Usage<'db>) {
         match &arenas.exprs[expr_id] {
             Expr::Tuple(expr) => {
                 for expr_id in &expr.items {
@@ -289,7 +293,7 @@ impl Usages {
                 current.introductions.insert(
                     extract_matches!(&expr.into_iter_member_path, ExprVarMemberPath::Var).var,
                 );
-                let mut usage: Usage = Default::default();
+                let mut usage: Usage<'_> = Default::default();
                 usage.usage.insert(
                     (&expr.into_iter_member_path).into(),
                     expr.into_iter_member_path.clone(),
@@ -333,14 +337,16 @@ impl Usages {
                 }
             }
             Expr::If(expr) => {
-                match &expr.condition {
-                    Condition::BoolExpr(expr) => {
-                        self.handle_expr(arenas, *expr, current);
-                    }
-                    Condition::Let(expr, patterns) => {
-                        self.handle_expr(arenas, *expr, current);
-                        for pattern in patterns {
-                            Self::handle_pattern(&arenas.patterns, *pattern, current);
+                for condition in &expr.conditions {
+                    match condition {
+                        Condition::BoolExpr(expr) => {
+                            self.handle_expr(arenas, *expr, current);
+                        }
+                        Condition::Let(expr, patterns) => {
+                            self.handle_expr(arenas, *expr, current);
+                            for pattern in patterns {
+                                Self::handle_pattern(&arenas.patterns, *pattern, current);
+                            }
                         }
                     }
                 }
@@ -364,7 +370,7 @@ impl Usages {
                 }
             }
             Expr::StructCtor(expr) => {
-                for (_, expr_id) in &expr.members {
+                for (expr_id, _) in &expr.members {
                     self.handle_expr(arenas, *expr_id, current);
                 }
                 if let Some(base) = &expr.base_struct {
@@ -381,7 +387,7 @@ impl Usages {
         }
     }
 
-    fn handle_pattern(arena: &Arena<Pattern>, pattern: PatternId, current: &mut Usage) {
+    fn handle_pattern(arena: &PatternArena<'db>, pattern: PatternId, current: &mut Usage<'db>) {
         let pattern = &arena[pattern];
         match pattern {
             Pattern::Literal(_) | Pattern::StringLiteral(_) => {}
@@ -389,7 +395,7 @@ impl Usages {
                 current.introductions.insert(VarId::Local(pattern.var.id));
             }
             Pattern::Struct(pattern) => {
-                for (_, pattern) in &pattern.field_patterns {
+                for (pattern, _) in &pattern.field_patterns {
                     Self::handle_pattern(arena, *pattern, current);
                 }
             }

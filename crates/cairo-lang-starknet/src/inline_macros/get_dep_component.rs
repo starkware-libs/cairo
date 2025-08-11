@@ -9,6 +9,7 @@ use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::extract_matches;
+use itertools::Itertools;
 
 /// Macro for getting a component given a contract state that has it.
 #[derive(Debug, Default)]
@@ -17,12 +18,12 @@ impl NamedPlugin for GetDepComponentMacro {
     const NAME: &'static str = "get_dep_component";
 }
 impl InlineMacroExprPlugin for GetDepComponentMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
         get_dep_component_generate_code_helper(db, syntax, false)
     }
 }
@@ -34,23 +35,23 @@ impl NamedPlugin for GetDepComponentMutMacro {
     const NAME: &'static str = "get_dep_component_mut";
 }
 impl InlineMacroExprPlugin for GetDepComponentMutMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
         get_dep_component_generate_code_helper(db, syntax, true)
     }
 }
 
-/// A helper function for the code generation of both `DepComponentMacro` and
-/// `DepComponentMutMacro`. `is_mut` selects between the two.
-fn get_dep_component_generate_code_helper(
-    db: &dyn SyntaxGroup,
-    syntax: &ast::ExprInlineMacro,
+/// A helper function for the code generation of both [GetDepComponentMacro] and
+/// [GetDepComponentMutMacro]. `is_mut` selects between the two.
+fn get_dep_component_generate_code_helper<'db>(
+    db: &'db dyn SyntaxGroup,
+    syntax: &ast::ExprInlineMacro<'db>,
     is_mut: bool,
-) -> InlinePluginResult {
+) -> InlinePluginResult<'db> {
     let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
         return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
             syntax.as_syntax_node().stable_ptr(db),
@@ -71,12 +72,15 @@ fn get_dep_component_generate_code_helper(
             ast::WrappedArgList::ParenthesizedArgList
         )
         .arguments(db)
-        .elements(db)[0]
-            .modifiers(db)
-            .elements(db);
+        .elements(db)
+        .next()
+        .unwrap()
+        .modifiers(db)
+        .elements(db)
+        .collect_array();
 
         // Verify the first element has only a `ref` modifier.
-        if !matches!(&contract_arg_modifiers[..], &[ast::Modifier::Ref(_)]) {
+        if !matches!(contract_arg_modifiers, Some([ast::Modifier::Ref(_)])) {
             // TODO(Gil): The generated diagnostics points to the whole inline macro, it should
             // point to the arg.
             let diagnostics = vec![PluginDiagnostic::error_with_inner_span(
@@ -120,6 +124,7 @@ fn get_dep_component_generate_code_helper(
             code_mappings,
             aux_data: None,
             diagnostics_note: Default::default(),
+            is_unhygienic: false,
         }),
         diagnostics: vec![],
     }

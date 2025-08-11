@@ -3,6 +3,7 @@ use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroupEx};
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
+use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_utils::{Intern, extract_matches};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
@@ -15,7 +16,7 @@ use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 #[test]
 fn test_resolve_path() {
     let db_val = SemanticDatabaseForTesting::default();
-    let db = &db_val;
+    let db: &dyn SemanticGroup = &db_val;
     let test_module = setup_test_module(
         db,
         indoc! {"
@@ -43,24 +44,24 @@ fn test_resolve_path() {
         "Some(Block(ExprBlock { statements: [Expr(StatementExpr { expr: \
          FunctionCall(ExprFunctionCall { function: test::bar::<(core::felt252, Q)>, args: \
          [Value(Var(ParamId(test::value)))], coupon_arg: None, ty: test::S::<()> }) }), \
-         Let(StatementLet { pattern: Variable(_c), expr: Var(ParamId(test::b)) })], tail: None, \
-         ty: () }))"
+         Let(StatementLet { pattern: Variable(_c), expr: Var(ParamId(test::b)), else_clause: None \
+         })], tail: None, ty: () }))"
     );
 }
 
-fn set_file_content(db: &mut SemanticDatabaseForTesting, path: &str, content: &str) {
+fn set_file_content(db: &mut dyn SemanticGroup, path: &str, content: &str) {
     let file_id = FileLongId::OnDisk(path.into()).intern(db);
-    db.override_file_content(file_id, Some(content.into()));
+    override_file_content!(db, file_id, Some(content.into()));
 }
 
 #[test]
 fn test_resolve_path_super() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
-    let db = &mut db_val;
+    let db: &mut dyn SemanticGroup = &mut db_val;
 
     let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("src".into());
-    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
+    set_crate_config!(db, crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
     set_file_content(
@@ -83,6 +84,7 @@ fn test_resolve_path_super() {
             }
         "},
     );
+    let crate_id = CrateId::plain(db, "test");
     let test_module = ModuleId::CrateRoot(crate_id);
     let inner2_module_id = ModuleId::Submodule(extract_matches!(
         db.module_item_by_name(test_module, "inner2".into()).unwrap().unwrap(),
@@ -107,7 +109,7 @@ fn test_resolve_path_super() {
 #[test]
 fn test_resolve_path_trait_impl() {
     let db_val = SemanticDatabaseForTesting::default();
-    let db = &db_val;
+    let db: &dyn SemanticGroup = &db_val;
     let test_module = setup_test_module(
         db,
         indoc! {"

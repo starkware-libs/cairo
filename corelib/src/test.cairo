@@ -17,6 +17,7 @@ mod hash_test;
 mod integer_test;
 mod iter_test;
 mod keccak_test;
+mod let_else_test;
 mod math_test;
 mod nullable_test;
 mod num_test;
@@ -43,6 +44,7 @@ mod language_features {
     mod for_test;
     mod glob_use_test;
     mod macro_test;
+    mod match_test;
     mod panics_test;
     mod trait_test;
     mod while_test;

@@ -475,7 +475,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// assert!(span.pop_front() == Some(@1));
     /// ```
     #[inline]
-    fn pop_front(ref self: Span<T>) -> Option<@T> {
+    fn pop_front(ref self: Span<T>) -> Option<@T> nopanic {
         let mut snapshot = self.snapshot;
         let item = array_snapshot_pop_front(ref snapshot);
         self = Span { snapshot };

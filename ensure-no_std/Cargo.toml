@@ -2,6 +2,7 @@
 name = "ensure-no_std"
 version = "0.1.0"
 edition = "2021"
+publish = false
 
 [dependencies]
 cairo-lang-utils = { path = "../crates/cairo-lang-utils", default-features = false, features = ["serde", "parity-scale-codec"] }

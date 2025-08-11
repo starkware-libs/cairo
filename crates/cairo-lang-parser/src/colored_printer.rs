@@ -3,7 +3,6 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::green::GreenNodeDetails;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use colored::{ColoredString, Colorize};
-use smol_str::SmolStr;
 
 struct ColoredPrinter<'a> {
     db: &'a dyn SyntaxGroup,
@@ -12,14 +11,14 @@ struct ColoredPrinter<'a> {
     result: String,
 }
 impl ColoredPrinter<'_> {
-    fn print(&mut self, syntax_node: &SyntaxNode) {
+    fn print(&mut self, syntax_node: &SyntaxNode<'_>) {
         let node = syntax_node.green_node(self.db);
         match &node.details {
             GreenNodeDetails::Token(text) => {
                 if self.verbose && node.kind == SyntaxKind::TokenMissing {
                     self.result.push_str(format!("{}", "<m>".red()).as_str());
                 } else {
-                    self.result.push_str(set_color(text.clone(), node.kind).to_string().as_str());
+                    self.result.push_str(set_color(text, node.kind).to_string().as_str());
                 }
             }
             GreenNodeDetails::Node { .. } => {
@@ -55,7 +54,7 @@ pub fn is_empty_kind(kind: SyntaxKind) -> bool {
     )
 }
 
-fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
+fn set_color(text: &str, kind: SyntaxKind) -> ColoredString {
     // TODO(yuval): use tags on SyntaxKind
     match kind {
         SyntaxKind::TokenIdentifier => text.truecolor(255, 255, 100), // Yellow
@@ -134,7 +133,7 @@ fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
     }
 }
 
-pub fn print_colored(db: &dyn SyntaxGroup, syntax_root: &SyntaxNode, verbose: bool) -> String {
+pub fn print_colored(db: &dyn SyntaxGroup, syntax_root: &SyntaxNode<'_>, verbose: bool) -> String {
     let mut printer = ColoredPrinter { db, verbose, result: Default::default() };
     printer.print(syntax_root);
     printer.result

@@ -2,30 +2,10 @@
 
 use std::path::PathBuf;
 
-use anyhow::Ok;
 use cairo_lang_compiler::project::check_compiler_path;
-use cairo_lang_test_runner::{RunProfilerConfig, TestRunConfig, TestRunner};
-use clap::{Parser, ValueEnum};
-use serde::Serialize;
-
-/// The clap-arg equivalent of [RunProfilerConfig].
-#[derive(ValueEnum, Clone, Default, Debug, Serialize, PartialEq, Eq, Hash)]
-#[serde(rename_all = "kebab-case")]
-enum RunProfilerConfigArg {
-    #[default]
-    None,
-    Cairo,
-    Sierra,
-}
-impl From<RunProfilerConfigArg> for RunProfilerConfig {
-    fn from(val: RunProfilerConfigArg) -> Self {
-        match val {
-            RunProfilerConfigArg::None => RunProfilerConfig::None,
-            RunProfilerConfigArg::Cairo => RunProfilerConfig::Cairo,
-            RunProfilerConfigArg::Sierra => RunProfilerConfig::Sierra,
-        }
-    }
-}
+use cairo_lang_runner::clap::RunProfilerConfigArg;
+use cairo_lang_test_runner::{TestRunConfig, TestRunner};
+use clap::Parser;
 
 /// Compiles a Cairo project and runs all the functions marked as `#[test]`.
 /// Exits with 1 if the compilation or run fails, otherwise 0.
@@ -53,7 +33,7 @@ struct Args {
     #[arg(long, default_value_t = false)]
     starknet: bool,
     /// Whether to run the profiler, and what results to produce. See
-    /// [cairo_lang_test_runner::RunProfilerConfig]
+    /// [cairo_lang_runner::profiling::ProfilerConfig]
     #[arg(short, long, default_value_t, value_enum)]
     run_profiler: RunProfilerConfigArg,
     /// Should disable gas calculation.
@@ -74,7 +54,7 @@ fn main() -> anyhow::Result<()> {
         filter: args.filter,
         ignored: args.ignored,
         include_ignored: args.include_ignored,
-        run_profiler: args.run_profiler.into(),
+        profiler_config: args.run_profiler.try_into().ok(),
         gas_enabled: !args.gas_disabled,
         print_resource_usage: args.print_resource_usage,
     };

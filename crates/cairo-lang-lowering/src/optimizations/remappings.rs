@@ -17,8 +17,8 @@ use crate::{BlockEnd, BlockId, Lowered, VarRemapping, VariableId};
 
 /// Visits all the reachable remappings in the function, calls `f` on each one and returns a vector
 /// indicating which blocks are reachable.
-pub(crate) fn visit_remappings<F: FnMut(&VarRemapping)>(
-    lowered: &mut Lowered,
+pub(crate) fn visit_remappings<'db, F: FnMut(&VarRemapping<'db>)>(
+    lowered: &mut Lowered<'db>,
     mut f: F,
 ) -> Vec<bool> {
     let mut stack = vec![BlockId::root()];
@@ -67,7 +67,7 @@ impl Context {
     }
 }
 
-impl Rebuilder for Context {
+impl<'db> Rebuilder<'db> for Context {
     fn map_var_id(&mut self, var: VariableId) -> VariableId {
         if let Some(res) = self.var_representatives.get(&var) {
             *res
@@ -83,7 +83,7 @@ impl Rebuilder for Context {
         }
     }
 
-    fn transform_remapping(&mut self, remapping: &mut VarRemapping) {
+    fn transform_remapping(&mut self, remapping: &mut VarRemapping<'db>) {
         let mut new_remapping = VarRemapping::default();
         for (dst, src) in remapping.iter() {
             if dst != &src.var_id && self.variable_used.contains(dst) {
@@ -94,7 +94,7 @@ impl Rebuilder for Context {
     }
 }
 
-pub fn optimize_remappings(lowered: &mut Lowered) {
+pub fn optimize_remappings<'db>(lowered: &mut Lowered<'db>) {
     if lowered.blocks.has_root().is_err() {
         return;
     }

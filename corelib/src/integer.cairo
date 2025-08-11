@@ -1701,7 +1701,7 @@ impl U256TryIntoU128 of TryInto<u256, u128> {
     }
 }
 
-enum SignedIntegerResult<T> {
+pub(crate) enum SignedIntegerResult<T> {
     InRange: T,
     Underflow: T,
     Overflow: T,

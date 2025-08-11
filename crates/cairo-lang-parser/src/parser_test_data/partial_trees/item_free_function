@@ -172,5 +172,6 @@ fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
         │       ├── type_clause (kind: OptionTypeClauseEmpty) []
         │       ├── eq (kind: TokenEq): '='
         │       ├── rhs (kind: TokenLiteralNumber): '0'
+        │       ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
         │       └── semicolon (kind: TokenSemicolon): ';'
         └── rbrace (kind: TokenRBrace): '}'

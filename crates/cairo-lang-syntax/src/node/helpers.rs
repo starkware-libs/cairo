@@ -1,6 +1,3 @@
-use cairo_lang_utils::LookupIntern;
-use smol_str::SmolStr;
-
 use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
     ImplItem, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
@@ -22,18 +19,18 @@ use crate::node::green::GreenNodeDetails;
 #[path = "helpers_test.rs"]
 mod test;
 
-pub trait GetIdentifier {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr;
+pub trait GetIdentifier<'a> {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str;
 }
-impl ast::UsePathLeafPtr {
+impl<'a> ast::UsePathLeafPtr<'a> {
     pub fn name_green(&self, _syntax_db: &dyn SyntaxGroup) -> Self {
         *self
     }
 }
-impl GetIdentifier for ast::UsePathLeafPtr {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+impl<'a> GetIdentifier<'a> for ast::UsePathLeafPtr<'a> {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
         let alias_clause_green = self.alias_clause_green(db).0;
-        let green_node = alias_clause_green.lookup_intern(db);
+        let green_node = alias_clause_green.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
@@ -60,10 +57,10 @@ impl GetIdentifier for ast::UsePathLeafPtr {
         }
     }
 }
-impl GetIdentifier for ast::PathSegmentGreen {
+impl<'a> GetIdentifier<'a> for ast::PathSegmentGreen<'a> {
     /// Retrieves the text of the last identifier in the path.
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let green_node = self.0.lookup_intern(db);
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+        let green_node = self.0.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
@@ -72,10 +69,10 @@ impl GetIdentifier for ast::PathSegmentGreen {
         identifier.identifier(db)
     }
 }
-impl GetIdentifier for ast::ExprPathGreen {
+impl<'a> GetIdentifier<'a> for ast::ExprPathGreen<'a> {
     /// Retrieves the text of the last identifier in the path.
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let green_node = self.0.lookup_intern(db);
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+        let green_node = self.0.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
@@ -85,10 +82,10 @@ impl GetIdentifier for ast::ExprPathGreen {
     }
 }
 
-impl GetIdentifier for ast::ExprPathInnerGreen {
+impl<'a> GetIdentifier<'a> for ast::ExprPathInnerGreen<'a> {
     /// Retrieves the text of the last identifier in the path.
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let green_node = self.0.lookup_intern(db);
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+        let green_node = self.0.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
@@ -98,54 +95,87 @@ impl GetIdentifier for ast::ExprPathInnerGreen {
         segment_green.identifier(db)
     }
 }
-impl GetIdentifier for ast::TerminalIdentifierGreen {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        match &self.0.lookup_intern(db).details {
-            GreenNodeDetails::Token(_) => "Unexpected token".into(),
+impl<'a> GetIdentifier<'a> for ast::TerminalIdentifierGreen<'a> {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+        match &self.0.long(db).details {
+            GreenNodeDetails::Token(_) => "Unexpected token",
             GreenNodeDetails::Node { children, width: _ } => {
                 TokenIdentifierGreen(children[1]).text(db)
             }
         }
     }
 }
-impl GetIdentifier for ast::ExprPath {
+impl<'a> GetIdentifier<'a> for ast::ExprPath<'a> {
     /// Retrieves the identifier of the last segment of the path.
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.segments(db).elements(db).last().cloned().unwrap().identifier(db)
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+        self.segments(db).elements(db).next_back().unwrap().identifier(db)
     }
 }
 
 /// Helper trait for ast::PathSegment.
-pub trait PathSegmentEx {
-    fn identifier_ast(&self, db: &dyn SyntaxGroup) -> ast::TerminalIdentifier;
-    fn generic_args(&self, db: &dyn SyntaxGroup) -> Option<Vec<ast::GenericArg>>;
+pub trait PathSegmentEx<'a> {
+    fn identifier_ast(&self, db: &'a dyn SyntaxGroup) -> ast::TerminalIdentifier<'a>;
+    fn generic_args(&self, db: &'a dyn SyntaxGroup) -> Option<Vec<ast::GenericArg<'a>>>;
 }
-impl PathSegmentEx for ast::PathSegment {
+impl<'a> PathSegmentEx<'a> for ast::PathSegment<'a> {
     /// Retrieves the identifier ast of a path segment.
-    fn identifier_ast(&self, db: &dyn SyntaxGroup) -> ast::TerminalIdentifier {
+    fn identifier_ast(&self, db: &'a dyn SyntaxGroup) -> ast::TerminalIdentifier<'a> {
         match self {
             ast::PathSegment::Simple(segment) => segment.ident(db),
             ast::PathSegment::WithGenericArgs(segment) => segment.ident(db),
             ast::PathSegment::Missing(missing_segment) => missing_segment.ident(db),
         }
     }
-    fn generic_args(&self, db: &dyn SyntaxGroup) -> Option<Vec<ast::GenericArg>> {
+    fn generic_args(&self, db: &'a dyn SyntaxGroup) -> Option<Vec<ast::GenericArg<'a>>> {
         match self {
             ast::PathSegment::Simple(_) | ast::PathSegment::Missing(_) => None,
             ast::PathSegment::WithGenericArgs(segment) => {
-                Some(segment.generic_args(db).generic_args(db).elements(db))
+                Some(segment.generic_args(db).generic_args(db).elements_vec(db))
             }
         }
     }
 }
-impl GetIdentifier for ast::PathSegment {
+impl<'a> GetIdentifier<'a> for ast::PathSegment<'a> {
     /// Retrieves the text of the segment (without the generic args).
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.identifier_ast(db).text(db)
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+        match self {
+            ast::PathSegment::Simple(segment) => segment.identifier(db),
+            ast::PathSegment::WithGenericArgs(segment) => segment.identifier(db),
+            ast::PathSegment::Missing(missing_segment) => missing_segment.identifier(db),
+        }
     }
 }
-impl GetIdentifier for ast::Modifier {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+impl<'a> GetIdentifier<'a> for ast::PathSegmentSimple<'a> {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+        let green_node = self.as_syntax_node().green_node(db);
+        let GreenNodeDetails::Node { children, .. } = &green_node.details else {
+            panic!("Unexpected token");
+        };
+        TerminalIdentifierGreen(children[0]).identifier(db)
+    }
+}
+impl<'a> GetIdentifier<'a> for ast::PathSegmentWithGenericArgs<'a> {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+        let green_node = self.as_syntax_node().green_node(db);
+        let GreenNodeDetails::Node { children, .. } = &green_node.details else {
+            panic!("Unexpected token");
+        };
+        TerminalIdentifierGreen(children[0]).identifier(db)
+    }
+}
+
+impl<'a> GetIdentifier<'a> for ast::PathSegmentMissing<'a> {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+        let green_node = self.as_syntax_node().green_node(db);
+        let GreenNodeDetails::Node { children, .. } = &green_node.details else {
+            panic!("Unexpected token");
+        };
+        TerminalIdentifierGreen(children[0]).identifier(db)
+    }
+}
+
+impl<'a> GetIdentifier<'a> for ast::Modifier<'a> {
+    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
         match self {
             Modifier::Ref(r) => r.text(db),
             Modifier::Mut(m) => m.text(db),
@@ -154,63 +184,61 @@ impl GetIdentifier for ast::Modifier {
 }
 
 /// Trait for ast object with a name terminal.
-pub trait NameGreen {
+pub trait NameGreen<'a> {
     /// Returns the TerminalIdentifierGreen of the `name` node.
-    fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen;
+    fn name_green(self, db: &'a dyn SyntaxGroup) -> TerminalIdentifierGreen<'a>;
 }
 
-impl NameGreen for FunctionDeclarationGreen {
-    fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
-        TerminalIdentifierGreen(
-            self.0.lookup_intern(db).children()[FunctionDeclaration::INDEX_NAME],
-        )
+impl<'a> NameGreen<'a> for FunctionDeclarationGreen<'a> {
+    fn name_green(self, db: &'a dyn SyntaxGroup) -> TerminalIdentifierGreen<'a> {
+        TerminalIdentifierGreen(self.0.long(db).children()[FunctionDeclaration::INDEX_NAME])
     }
 }
 
-impl NameGreen for FunctionWithBodyPtr {
-    fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+impl<'a> NameGreen<'a> for FunctionWithBodyPtr<'a> {
+    fn name_green(self, db: &'a dyn SyntaxGroup) -> TerminalIdentifierGreen<'a> {
         self.declaration_green(db).name_green(db)
     }
 }
 
-impl NameGreen for ItemExternFunctionPtr {
-    fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+impl<'a> NameGreen<'a> for ItemExternFunctionPtr<'a> {
+    fn name_green(self, db: &'a dyn SyntaxGroup) -> TerminalIdentifierGreen<'a> {
         self.declaration_green(db).name_green(db)
     }
 }
 
-impl NameGreen for TraitItemFunctionPtr {
-    fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+impl<'a> NameGreen<'a> for TraitItemFunctionPtr<'a> {
+    fn name_green(self, db: &'a dyn SyntaxGroup) -> TerminalIdentifierGreen<'a> {
         self.declaration_green(db).name_green(db)
     }
 }
 
 /// Provides methods to extract a _name_ of AST objects.
-pub trait HasName {
+pub trait HasName<'a> {
     /// Gets a [`TerminalIdentifier`] that represents a _name_ of this AST object.
-    fn name(&self, db: &dyn SyntaxGroup) -> ast::TerminalIdentifier;
+    fn name(&self, db: &'a dyn SyntaxGroup) -> ast::TerminalIdentifier<'a>;
 }
 
-impl HasName for FunctionWithBody {
-    fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+impl<'a> HasName<'a> for FunctionWithBody<'a> {
+    fn name(&self, db: &'a dyn SyntaxGroup) -> TerminalIdentifier<'a> {
         self.declaration(db).name(db)
     }
 }
 
-impl HasName for ItemExternFunction {
-    fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+impl<'a> HasName<'a> for ItemExternFunction<'a> {
+    fn name(&self, db: &'a dyn SyntaxGroup) -> TerminalIdentifier<'a> {
         self.declaration(db).name(db)
     }
 }
 
-impl HasName for TraitItemFunction {
-    fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+impl<'a> HasName<'a> for TraitItemFunction<'a> {
+    fn name(&self, db: &'a dyn SyntaxGroup) -> TerminalIdentifier<'a> {
         self.declaration(db).name(db)
     }
 }
 
-impl HasName for UsePathLeaf {
-    fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+impl<'a> HasName<'a> for UsePathLeaf<'a> {
+    fn name(&self, db: &'a dyn SyntaxGroup) -> TerminalIdentifier<'a> {
         match self.alias_clause(db) {
             ast::OptionAliasClause::Empty(_) => self.ident(db).identifier_ast(db),
             ast::OptionAliasClause::AliasClause(alias) => alias.alias(db),
@@ -218,12 +246,12 @@ impl HasName for UsePathLeaf {
     }
 }
 
-pub trait GenericParamEx {
+pub trait GenericParamEx<'a> {
     /// Returns the name of a generic param if one exists.
-    fn name(&self, db: &dyn SyntaxGroup) -> Option<ast::TerminalIdentifier>;
+    fn name(&self, db: &'a dyn SyntaxGroup) -> Option<ast::TerminalIdentifier<'a>>;
 }
-impl GenericParamEx for ast::GenericParam {
-    fn name(&self, db: &dyn SyntaxGroup) -> Option<ast::TerminalIdentifier> {
+impl<'a> GenericParamEx<'a> for ast::GenericParam<'a> {
+    fn name(&self, db: &'a dyn SyntaxGroup) -> Option<ast::TerminalIdentifier<'a>> {
         match self {
             ast::GenericParam::Type(t) => Some(t.name(db)),
             ast::GenericParam::Const(c) => Some(c.name(db)),
@@ -235,10 +263,10 @@ impl GenericParamEx for ast::GenericParam {
 }
 
 /// Checks if the given attribute has a single argument with the given name.
-pub fn is_single_arg_attr(db: &dyn SyntaxGroup, attr: &Attribute, arg_name: &str) -> bool {
+pub fn is_single_arg_attr(db: &dyn SyntaxGroup, attr: &Attribute<'_>, arg_name: &str) -> bool {
     match attr.arguments(db) {
         OptionArgListParenthesized::ArgListParenthesized(args) => {
-            matches!(&args.arguments(db).elements(db)[..],
+            matches!(&args.arguments(db).elements_vec(db)[..],
                     [arg] if arg.as_syntax_node().get_text_without_trivia(db) == arg_name)
         }
         OptionArgListParenthesized::Empty(_) => false,
@@ -246,330 +274,333 @@ pub fn is_single_arg_attr(db: &dyn SyntaxGroup, attr: &Attribute, arg_name: &str
 }
 
 /// Trait for querying attributes of AST items.
-pub trait QueryAttrs {
-    /// Generic call `self.attributes(db).elements(db)`.
+pub trait QueryAttrs<'a> {
+    /// Generic call `self.attributes(db).elements(db)`, wrapped with `Option` for cases where the
+    /// type does not support attributes.
     ///
     /// Implementation detail, should not be used by this trait users.
     #[doc(hidden)]
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute>;
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>>;
+
+    /// Generic call to `self.attributes(db).elements(db)`.
+    fn attributes_elements(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Attribute<'a>> {
+        self.try_attributes(db).into_iter().flat_map(move |attrs| attrs.elements(db))
+    }
 
     /// Collect all attributes named exactly `attr` attached to this node.
-    fn query_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> Vec<Attribute> {
+    fn query_attr(
+        &self,
+        db: &'a dyn SyntaxGroup,
+        attr: &'a str,
+    ) -> impl Iterator<Item = Attribute<'a>> {
         self.attributes_elements(db)
-            .into_iter()
-            .filter(|a| a.attr(db).as_syntax_node().get_text_without_trivia(db) == attr)
-            .collect()
+            .filter(move |a| a.attr(db).as_syntax_node().get_text_without_trivia(db) == attr)
     }
 
     /// Find first attribute named exactly `attr` attached do this node.
-    fn find_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> Option<Attribute> {
-        self.query_attr(db, attr).into_iter().next()
+    fn find_attr(&self, db: &'a dyn SyntaxGroup, attr: &'a str) -> Option<Attribute<'a>> {
+        self.query_attr(db, attr).next()
     }
 
     /// Check if this node has an attribute named exactly `attr`.
-    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
+    fn has_attr(&self, db: &'a dyn SyntaxGroup, attr: &'a str) -> bool {
         self.find_attr(db, attr).is_some()
     }
 
     /// Checks if the given object has an attribute with the given name and argument.
-    fn has_attr_with_arg(&self, db: &dyn SyntaxGroup, attr_name: &str, arg_name: &str) -> bool {
-        self.query_attr(db, attr_name).iter().any(|attr| is_single_arg_attr(db, attr, arg_name))
+    fn has_attr_with_arg(
+        &self,
+        db: &'a dyn SyntaxGroup,
+        attr_name: &'a str,
+        arg_name: &str,
+    ) -> bool {
+        self.query_attr(db, attr_name).any(|attr| is_single_arg_attr(db, &attr, arg_name))
     }
 }
 
-impl QueryAttrs for ItemConstant {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for ItemConstant<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for ItemModule {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for ItemModule<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for FunctionWithBody {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for FunctionWithBody<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for ItemUse {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for ItemUse<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for ItemExternFunction {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for ItemExternFunction<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for ItemExternType {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for ItemExternType<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for ItemTrait {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for ItemTrait<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for ItemImpl {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for ItemImpl<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for ItemImplAlias {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for ItemImplAlias<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for ItemStruct {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for ItemStruct<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for ItemEnum {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for ItemEnum<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for ItemTypeAlias {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for ItemTypeAlias<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for ItemMacroDeclaration {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for ItemMacroDeclaration<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for TraitItemFunction {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for TraitItemFunction<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for TraitItemType {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for TraitItemType<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for TraitItemConstant {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for TraitItemConstant<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for TraitItemImpl {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for TraitItemImpl<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
-impl QueryAttrs for TraitItem {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+impl<'a> QueryAttrs<'a> for TraitItem<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
         match self {
-            TraitItem::Function(item) => item.attributes_elements(db),
-            TraitItem::Type(item) => item.attributes_elements(db),
-            TraitItem::Constant(item) => item.attributes_elements(db),
-            TraitItem::Impl(item) => item.attributes_elements(db),
-            TraitItem::Missing(_) => vec![],
+            TraitItem::Function(item) => Some(item.attributes(db)),
+            TraitItem::Type(item) => Some(item.attributes(db)),
+            TraitItem::Constant(item) => Some(item.attributes(db)),
+            TraitItem::Impl(item) => Some(item.attributes(db)),
+            TraitItem::Missing(_) => None,
         }
     }
 }
 
-impl QueryAttrs for ItemInlineMacro {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for ItemInlineMacro<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
 
-impl QueryAttrs for ModuleItem {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+impl<'a> QueryAttrs<'a> for ModuleItem<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
         match self {
-            ModuleItem::Constant(item) => item.attributes_elements(db),
-            ModuleItem::Module(item) => item.attributes_elements(db),
-            ModuleItem::FreeFunction(item) => item.attributes_elements(db),
-            ModuleItem::Use(item) => item.attributes_elements(db),
-            ModuleItem::ExternFunction(item) => item.attributes_elements(db),
-            ModuleItem::ExternType(item) => item.attributes_elements(db),
-            ModuleItem::Trait(item) => item.attributes_elements(db),
-            ModuleItem::Impl(item) => item.attributes_elements(db),
-            ModuleItem::ImplAlias(item) => item.attributes_elements(db),
-            ModuleItem::Struct(item) => item.attributes_elements(db),
-            ModuleItem::Enum(item) => item.attributes_elements(db),
-            ModuleItem::TypeAlias(item) => item.attributes_elements(db),
-            ModuleItem::InlineMacro(item) => item.attributes_elements(db),
-            ModuleItem::Missing(_) => vec![],
-            ModuleItem::HeaderDoc(_) => vec![],
+            ModuleItem::Constant(item) => Some(item.attributes(db)),
+            ModuleItem::Module(item) => Some(item.attributes(db)),
+            ModuleItem::FreeFunction(item) => Some(item.attributes(db)),
+            ModuleItem::Use(item) => Some(item.attributes(db)),
+            ModuleItem::ExternFunction(item) => Some(item.attributes(db)),
+            ModuleItem::ExternType(item) => Some(item.attributes(db)),
+            ModuleItem::Trait(item) => Some(item.attributes(db)),
+            ModuleItem::Impl(item) => Some(item.attributes(db)),
+            ModuleItem::ImplAlias(item) => Some(item.attributes(db)),
+            ModuleItem::Struct(item) => Some(item.attributes(db)),
+            ModuleItem::Enum(item) => Some(item.attributes(db)),
+            ModuleItem::TypeAlias(item) => Some(item.attributes(db)),
+            ModuleItem::InlineMacro(item) => Some(item.attributes(db)),
             ModuleItem::MacroDeclaration(macro_declaration) => {
-                macro_declaration.attributes_elements(db)
+                Some(macro_declaration.attributes(db))
             }
+            ModuleItem::Missing(_) => None,
+            ModuleItem::HeaderDoc(_) => None,
         }
     }
 }
 
-impl QueryAttrs for ImplItem {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+impl<'a> QueryAttrs<'a> for ImplItem<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
         match self {
-            ImplItem::Function(item) => item.attributes_elements(db),
-            ImplItem::Type(item) => item.attributes_elements(db),
-            ImplItem::Constant(item) => item.attributes_elements(db),
-            ImplItem::Impl(item) => item.attributes_elements(db),
-            ImplItem::Module(item) => item.attributes_elements(db),
-            ImplItem::Use(item) => item.attributes_elements(db),
-            ImplItem::ExternFunction(item) => item.attributes_elements(db),
-            ImplItem::ExternType(item) => item.attributes_elements(db),
-            ImplItem::Trait(item) => item.attributes_elements(db),
-            ImplItem::Struct(item) => item.attributes_elements(db),
-            ImplItem::Enum(item) => item.attributes_elements(db),
-            ImplItem::Missing(_) => vec![],
+            ImplItem::Function(item) => Some(item.attributes(db)),
+            ImplItem::Type(item) => Some(item.attributes(db)),
+            ImplItem::Constant(item) => Some(item.attributes(db)),
+            ImplItem::Impl(item) => Some(item.attributes(db)),
+            ImplItem::Module(item) => Some(item.attributes(db)),
+            ImplItem::Use(item) => Some(item.attributes(db)),
+            ImplItem::ExternFunction(item) => Some(item.attributes(db)),
+            ImplItem::ExternType(item) => Some(item.attributes(db)),
+            ImplItem::Trait(item) => Some(item.attributes(db)),
+            ImplItem::Struct(item) => Some(item.attributes(db)),
+            ImplItem::Enum(item) => Some(item.attributes(db)),
+            ImplItem::Missing(_) => None,
         }
     }
 }
 
-impl QueryAttrs for AttributeList {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.elements(db)
+impl<'a> QueryAttrs<'a> for AttributeList<'a> {
+    fn try_attributes(&self, _db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.clone())
     }
 }
-impl QueryAttrs for Member {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
-    }
-}
-
-impl QueryAttrs for Variant {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for Member<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
 
-impl QueryAttrs for StatementBreak {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for Variant<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
 
-impl QueryAttrs for StatementContinue {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for StatementBreak<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
 
-impl QueryAttrs for StatementReturn {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for StatementContinue<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
 
-impl QueryAttrs for StatementLet {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for StatementReturn<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
 
-impl QueryAttrs for StatementExpr {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-        self.attributes(db).elements(db)
+impl<'a> QueryAttrs<'a> for StatementLet<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
+    }
+}
+
+impl<'a> QueryAttrs<'a> for StatementExpr<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+        Some(self.attributes(db))
     }
 }
 
 /// Allows querying attributes of a syntax node, any typed node which QueryAttrs is implemented for
 /// should be added here.
-impl QueryAttrs for SyntaxNode {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+impl<'a> QueryAttrs<'a> for SyntaxNode<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
         match self.kind(db) {
             SyntaxKind::ItemConstant => {
-                ast::ItemConstant::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::ItemConstant::from_syntax_node(db, *self).attributes(db))
             }
             SyntaxKind::ItemModule => {
-                ast::ItemModule::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::ItemModule::from_syntax_node(db, *self).attributes(db))
             }
             SyntaxKind::FunctionWithBody => {
-                ast::FunctionWithBody::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::FunctionWithBody::from_syntax_node(db, *self).attributes(db))
             }
-            SyntaxKind::ItemUse => {
-                ast::ItemUse::from_syntax_node(db, *self).attributes_elements(db)
-            }
+            SyntaxKind::ItemUse => Some(ast::ItemUse::from_syntax_node(db, *self).attributes(db)),
             SyntaxKind::ItemExternFunction => {
-                ast::ItemExternFunction::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::ItemExternFunction::from_syntax_node(db, *self).attributes(db))
             }
             SyntaxKind::ItemExternType => {
-                ast::ItemExternType::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::ItemExternType::from_syntax_node(db, *self).attributes(db))
             }
             SyntaxKind::ItemTrait => {
-                ast::ItemTrait::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::ItemTrait::from_syntax_node(db, *self).attributes(db))
             }
-            SyntaxKind::ItemImpl => {
-                ast::ItemImpl::from_syntax_node(db, *self).attributes_elements(db)
-            }
+            SyntaxKind::ItemImpl => Some(ast::ItemImpl::from_syntax_node(db, *self).attributes(db)),
             SyntaxKind::ItemImplAlias => {
-                ast::ItemImplAlias::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::ItemImplAlias::from_syntax_node(db, *self).attributes(db))
             }
             SyntaxKind::ItemStruct => {
-                ast::ItemStruct::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::ItemStruct::from_syntax_node(db, *self).attributes(db))
             }
-            SyntaxKind::ItemEnum => {
-                ast::ItemEnum::from_syntax_node(db, *self).attributes_elements(db)
-            }
+            SyntaxKind::ItemEnum => Some(ast::ItemEnum::from_syntax_node(db, *self).attributes(db)),
             SyntaxKind::ItemTypeAlias => {
-                ast::ItemTypeAlias::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::ItemTypeAlias::from_syntax_node(db, *self).attributes(db))
             }
             SyntaxKind::TraitItemFunction => {
-                ast::TraitItemFunction::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::TraitItemFunction::from_syntax_node(db, *self).attributes(db))
             }
             SyntaxKind::ItemInlineMacro => {
-                ast::ItemInlineMacro::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::ItemInlineMacro::from_syntax_node(db, *self).attributes(db))
             }
-            SyntaxKind::AttributeList => {
-                ast::AttributeList::from_syntax_node(db, *self).attributes_elements(db)
-            }
-            SyntaxKind::Member => ast::Member::from_syntax_node(db, *self).attributes_elements(db),
-            SyntaxKind::Variant => {
-                ast::Variant::from_syntax_node(db, *self).attributes_elements(db)
-            }
+            SyntaxKind::AttributeList => Some(ast::AttributeList::from_syntax_node(db, *self)),
+            SyntaxKind::Member => Some(ast::Member::from_syntax_node(db, *self).attributes(db)),
+            SyntaxKind::Variant => Some(ast::Variant::from_syntax_node(db, *self).attributes(db)),
             SyntaxKind::StatementBreak => {
-                ast::StatementBreak::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::StatementBreak::from_syntax_node(db, *self).attributes(db))
             }
             SyntaxKind::StatementContinue => {
-                ast::StatementContinue::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::StatementContinue::from_syntax_node(db, *self).attributes(db))
             }
             SyntaxKind::StatementReturn => {
-                ast::StatementReturn::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::StatementReturn::from_syntax_node(db, *self).attributes(db))
             }
             SyntaxKind::StatementLet => {
-                ast::StatementLet::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::StatementLet::from_syntax_node(db, *self).attributes(db))
             }
             SyntaxKind::StatementExpr => {
-                ast::StatementExpr::from_syntax_node(db, *self).attributes_elements(db)
+                Some(ast::StatementExpr::from_syntax_node(db, *self).attributes(db))
             }
-            _ => vec![],
+            _ => None,
         }
     }
 }
 
-impl QueryAttrs for Statement {
-    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+impl<'a> QueryAttrs<'a> for Statement<'a> {
+    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
         match self {
-            Statement::Break(statement) => statement.attributes_elements(db),
-            Statement::Continue(statement) => statement.attributes_elements(db),
-            Statement::Return(statement) => statement.attributes_elements(db),
-            Statement::Let(statement) => statement.attributes_elements(db),
-            Statement::Expr(statement) => statement.attributes_elements(db),
-            Statement::Item(statement) => statement.item(db).attributes_elements(db),
-            Statement::Missing(_) => vec![],
+            Statement::Break(statement) => Some(statement.attributes(db)),
+            Statement::Continue(statement) => Some(statement.attributes(db)),
+            Statement::Return(statement) => Some(statement.attributes(db)),
+            Statement::Let(statement) => Some(statement.attributes(db)),
+            Statement::Expr(statement) => Some(statement.attributes(db)),
+            Statement::Item(statement) => statement.item(db).try_attributes(db),
+            Statement::Missing(_) => None,
         }
     }
 }
-pub trait WrappedArgListHelper {
+pub trait WrappedArgListHelper<'a> {
     /// Pills the wrapping brackets to get the argument list. Returns None if `self` is `Missing`.
-    fn arg_list(&self, db: &dyn SyntaxGroup) -> Option<ast::ArgList>;
+    fn arg_list(&self, db: &'a dyn SyntaxGroup) -> Option<ast::ArgList<'a>>;
     /// Gets the syntax node of the right wrapping bracket.
-    fn right_bracket_syntax_node(&self, db: &dyn SyntaxGroup) -> SyntaxNode;
+    fn right_bracket_syntax_node(&self, db: &'a dyn SyntaxGroup) -> SyntaxNode<'a>;
     /// Gets the syntax node of the left wrapping bracket.
-    fn left_bracket_syntax_node(&self, db: &dyn SyntaxGroup) -> SyntaxNode;
+    fn left_bracket_syntax_node(&self, db: &'a dyn SyntaxGroup) -> SyntaxNode<'a>;
     /// Gets a stable pointer to the left wrapping bracket.
-    fn left_bracket_stable_ptr(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId;
+    fn left_bracket_stable_ptr(&self, db: &'a dyn SyntaxGroup) -> SyntaxStablePtrId<'a>;
 }
-impl WrappedArgListHelper for WrappedArgList {
-    fn arg_list(&self, db: &dyn SyntaxGroup) -> Option<ast::ArgList> {
+impl<'a> WrappedArgListHelper<'a> for WrappedArgList<'a> {
+    fn arg_list(&self, db: &'a dyn SyntaxGroup) -> Option<ast::ArgList<'a>> {
         match self {
             WrappedArgList::ParenthesizedArgList(args) => Some(args.arguments(db)),
             WrappedArgList::BracketedArgList(args) => Some(args.arguments(db)),
@@ -578,7 +609,7 @@ impl WrappedArgListHelper for WrappedArgList {
         }
     }
 
-    fn right_bracket_syntax_node(&self, db: &dyn SyntaxGroup) -> SyntaxNode {
+    fn right_bracket_syntax_node(&self, db: &'a dyn SyntaxGroup) -> SyntaxNode<'a> {
         match self {
             WrappedArgList::ParenthesizedArgList(args) => args.rparen(db).as_syntax_node(),
             WrappedArgList::BracketedArgList(args) => args.rbrack(db).as_syntax_node(),
@@ -587,7 +618,7 @@ impl WrappedArgListHelper for WrappedArgList {
         }
     }
 
-    fn left_bracket_syntax_node(&self, db: &dyn SyntaxGroup) -> SyntaxNode {
+    fn left_bracket_syntax_node(&self, db: &'a dyn SyntaxGroup) -> SyntaxNode<'a> {
         match self {
             WrappedArgList::ParenthesizedArgList(args) => args.lparen(db).as_syntax_node(),
             WrappedArgList::BracketedArgList(args) => args.lbrack(db).as_syntax_node(),
@@ -596,7 +627,7 @@ impl WrappedArgListHelper for WrappedArgList {
         }
     }
 
-    fn left_bracket_stable_ptr(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
+    fn left_bracket_stable_ptr(&self, db: &'a dyn SyntaxGroup) -> SyntaxStablePtrId<'a> {
         match self {
             WrappedArgList::ParenthesizedArgList(args) => args.lparen(db).stable_ptr(db).untyped(),
             WrappedArgList::BracketedArgList(args) => args.lbrack(db).stable_ptr(db).untyped(),
@@ -606,23 +637,23 @@ impl WrappedArgListHelper for WrappedArgList {
     }
 }
 
-pub trait WrappedGenericParamListHelper {
+pub trait WrappedGenericParamListHelper<'a> {
     /// Checks whether there are 0 generic parameters
-    fn is_empty(&self, db: &dyn SyntaxGroup) -> bool;
+    fn is_empty(&'a self, db: &'a dyn SyntaxGroup) -> bool;
 }
-impl WrappedGenericParamListHelper for ast::WrappedGenericParamList {
-    fn is_empty(&self, db: &dyn SyntaxGroup) -> bool {
-        self.generic_params(db).elements(db).is_empty()
+impl<'a> WrappedGenericParamListHelper<'a> for ast::WrappedGenericParamList<'a> {
+    fn is_empty(&'a self, db: &'a dyn SyntaxGroup) -> bool {
+        self.generic_params(db).elements(db).len() == 0
     }
 }
 
-pub trait OptionWrappedGenericParamListHelper {
+pub trait OptionWrappedGenericParamListHelper<'a> {
     /// Checks whether there are 0 generic parameters. True either when the generic params clause
     /// doesn't exist or when it's empty
-    fn is_empty(&self, db: &dyn SyntaxGroup) -> bool;
+    fn is_empty(&'a self, db: &'a dyn SyntaxGroup) -> bool;
 }
-impl OptionWrappedGenericParamListHelper for ast::OptionWrappedGenericParamList {
-    fn is_empty(&self, db: &dyn SyntaxGroup) -> bool {
+impl<'a> OptionWrappedGenericParamListHelper<'a> for ast::OptionWrappedGenericParamList<'a> {
+    fn is_empty(&'a self, db: &'a dyn SyntaxGroup) -> bool {
         match self {
             ast::OptionWrappedGenericParamList::Empty(_) => true,
             ast::OptionWrappedGenericParamList::WrappedGenericParamList(
@@ -632,48 +663,48 @@ impl OptionWrappedGenericParamListHelper for ast::OptionWrappedGenericParamList 
     }
 }
 
-/// Trait for getting the items of a body-item (an item that contains items), as a vector.
-pub trait BodyItems {
+/// Trait for getting the items of a body-item (an item that contains items), as an iterator.
+pub trait BodyItems<'a> {
     /// The type of an Item.
-    type Item;
-    /// Returns the items of the body-item as a vector.
+    type Item: 'a;
+    /// Returns the items of the body-item as an iterator.
     /// Use with caution, as this includes items that may be filtered out by plugins.
     /// Do note that plugins that directly run on this body-item without going/checking up on the
     /// syntax tree may assume that e.g. out-of-config items were already filtered out.
     /// Don't use on an item that is not the original plugin's context, unless you are sure that
     /// while traversing the AST to get to it from the original plugin's context, you did not go
     /// through another submodule.
-    fn items_vec(&self, db: &dyn SyntaxGroup) -> Vec<Self::Item>;
+    fn iter_items(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self::Item> + 'a;
 }
 
-impl BodyItems for ast::ModuleBody {
-    type Item = ModuleItem;
-    fn items_vec(&self, db: &dyn SyntaxGroup) -> Vec<ModuleItem> {
+impl<'a> BodyItems<'a> for ast::ModuleBody<'a> {
+    type Item = ModuleItem<'a>;
+    fn iter_items(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self::Item> + 'a {
         self.items(db).elements(db)
     }
 }
 
-impl BodyItems for ast::TraitBody {
-    type Item = TraitItem;
-    fn items_vec(&self, db: &dyn SyntaxGroup) -> Vec<TraitItem> {
+impl<'a> BodyItems<'a> for ast::TraitBody<'a> {
+    type Item = TraitItem<'a>;
+    fn iter_items(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self::Item> + 'a {
         self.items(db).elements(db)
     }
 }
 
-impl BodyItems for ast::ImplBody {
-    type Item = ImplItem;
-    fn items_vec(&self, db: &dyn SyntaxGroup) -> Vec<ImplItem> {
+impl<'a> BodyItems<'a> for ast::ImplBody<'a> {
+    type Item = ImplItem<'a>;
+    fn iter_items(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self::Item> + 'a {
         self.items(db).elements(db)
     }
 }
 
 /// Helper trait for ast::UsePath.
-pub trait UsePathEx {
+pub trait UsePathEx<'a> {
     /// Retrieves the item of a use path.
-    fn get_item(&self, db: &dyn SyntaxGroup) -> ast::ItemUse;
+    fn get_item(&self, db: &'a dyn SyntaxGroup) -> ast::ItemUse<'a>;
 }
-impl UsePathEx for ast::UsePath {
-    fn get_item(&self, db: &dyn SyntaxGroup) -> ast::ItemUse {
+impl<'a> UsePathEx<'a> for ast::UsePath<'a> {
+    fn get_item(&self, db: &'a dyn SyntaxGroup) -> ast::ItemUse<'a> {
         let mut node = self.as_syntax_node();
         loop {
             let Some(parent) = node.parent(db) else {
@@ -689,9 +720,9 @@ impl UsePathEx for ast::UsePath {
     }
 }
 
-impl UsePathLeaf {
+impl<'a> UsePathLeaf<'a> {
     /// Retrieves the stable pointer of the name of the leaf.
-    pub fn name_stable_ptr(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
+    pub fn name_stable_ptr(&self, db: &'a dyn SyntaxGroup) -> SyntaxStablePtrId<'a> {
         self.name(db).stable_ptr(db).untyped()
     }
 }
@@ -705,17 +736,17 @@ pub trait IsDependentType {
     fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool;
 }
 
-impl IsDependentType for ast::ExprPath {
+impl<'a> IsDependentType for ast::ExprPath<'a> {
     fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool {
-        let segments = self.segments(db).elements(db);
+        let segments = self.segments(db).elements_vec(db);
         if let [ast::PathSegment::Simple(arg_segment)] = &segments[..] {
-            identifiers.contains(&arg_segment.ident(db).text(db).as_str())
+            identifiers.contains(&arg_segment.identifier(db))
         } else {
             segments.into_iter().any(|segment| {
                 let ast::PathSegment::WithGenericArgs(with_generics) = segment else {
                     return false;
                 };
-                with_generics.generic_args(db).generic_args(db).elements(db).iter().any(|arg| {
+                with_generics.generic_args(db).generic_args(db).elements(db).any(|arg| {
                     let generic_arg_value = match arg {
                         ast::GenericArg::Named(named) => named.value(db),
                         ast::GenericArg::Unnamed(unnamed) => unnamed.value(db),
@@ -732,7 +763,7 @@ impl IsDependentType for ast::ExprPath {
     }
 }
 
-impl IsDependentType for ast::Expr {
+impl<'a> IsDependentType for ast::Expr<'a> {
     fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool {
         match self {
             ast::Expr::Path(type_path) => type_path.is_dependent_type(db, identifiers),
@@ -744,13 +775,9 @@ impl IsDependentType for ast::Expr {
             ast::Expr::Tuple(tuple) => tuple
                 .expressions(db)
                 .elements(db)
-                .iter()
                 .any(|expr| expr.is_dependent_type(db, identifiers)),
             ast::Expr::FixedSizeArray(arr) => {
-                arr.exprs(db)
-                    .elements(db)
-                    .iter()
-                    .any(|expr| expr.is_dependent_type(db, identifiers))
+                arr.exprs(db).elements(db).any(|expr| expr.is_dependent_type(db, identifiers))
                     || match arr.size(db) {
                         ast::OptionFixedSizeArraySize::Empty(_) => false,
                         ast::OptionFixedSizeArraySize::FixedSizeArraySize(size) => {

@@ -253,13 +253,16 @@ impl ContractStateUpgradableImpl of
     }
 }
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__CounterContract__get_counter as get_counter;
     pub use super::__wrapper__CounterContract__increase_counter as increase_counter;
     pub use super::__wrapper__CounterContract__decrease_counter as decrease_counter;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
     pub use super::__wrapper__constructor as constructor;
 }
@@ -435,22 +438,29 @@ impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
         Option::Some(CounterDecreased {amount, })
     }
 }
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
+#[doc(group: "dispatchers")]
 trait ICounterContractDispatcherTrait<T> {
     fn increase_counter(self: T, amount: u128);
     fn decrease_counter(self: T, amount: u128);
     fn get_counter(self: T) -> u128;
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ICounterContractDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl ICounterContractDispatcherImpl of ICounterContractDispatcherTrait<ICounterContractDispatcher> {
     fn increase_counter(self: ICounterContractDispatcher, amount: u128) {
         let mut __calldata__ = core::traits::Default::default();
@@ -493,11 +503,13 @@ impl ICounterContractDispatcherImpl of ICounterContractDispatcherTrait<ICounterC
 
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ICounterContractLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl ICounterContractLibraryDispatcherImpl of ICounterContractDispatcherTrait<ICounterContractLibraryDispatcher> {
     fn increase_counter(self: ICounterContractLibraryDispatcher, amount: u128) {
         let mut __calldata__ = core::traits::Default::default();
@@ -540,6 +552,7 @@ impl ICounterContractLibraryDispatcherImpl of ICounterContractDispatcherTrait<IC
 
 }
 
+#[doc(group: "dispatchers")]
 trait ICounterContractSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn increase_counter(self: T, amount: u128) -> starknet::SyscallResult<()>;
@@ -549,11 +562,13 @@ trait ICounterContractSafeDispatcherTrait<T> {
     fn get_counter(self: T) -> starknet::SyscallResult<u128>;
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ICounterContractSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl ICounterContractSafeLibraryDispatcherImpl of ICounterContractSafeDispatcherTrait<ICounterContractSafeLibraryDispatcher> {
     fn increase_counter(self: ICounterContractSafeLibraryDispatcher, amount: u128) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -599,11 +614,13 @@ impl ICounterContractSafeLibraryDispatcherImpl of ICounterContractSafeDispatcher
 }
 
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ICounterContractSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<ICounterContractSafeDispatcher> {
     fn increase_counter(self: ICounterContractSafeDispatcher, amount: u128) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
@@ -647,8 +664,11 @@ impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<I
     }
 
 }
+#[doc(group: "dispatchers")]
 impl ICounterContractDispatcherCopy<> of core::traits::Copy::<ICounterContractDispatcher>;
+#[doc(group: "dispatchers")]
 impl ICounterContractDispatcherDrop<> of core::traits::Drop::<ICounterContractDispatcher>;
+#[doc(group: "dispatchers")]
 impl ICounterContractDispatcherSerde<> of core::serde::Serde::<ICounterContractDispatcher> {
     fn serialize(self: @ICounterContractDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -750,8 +770,11 @@ impl ICounterContractDispatcherSubPointersMutImpl of starknet::storage::SubPoint
         }
     }
 }
+#[doc(group: "dispatchers")]
 impl ICounterContractLibraryDispatcherCopy<> of core::traits::Copy::<ICounterContractLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl ICounterContractLibraryDispatcherDrop<> of core::traits::Drop::<ICounterContractLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl ICounterContractLibraryDispatcherSerde<> of core::serde::Serde::<ICounterContractLibraryDispatcher> {
     fn serialize(self: @ICounterContractLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -853,8 +876,11 @@ impl ICounterContractLibraryDispatcherSubPointersMutImpl of starknet::storage::S
         }
     }
 }
+#[doc(group: "dispatchers")]
 impl ICounterContractSafeLibraryDispatcherCopy<> of core::traits::Copy::<ICounterContractSafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl ICounterContractSafeLibraryDispatcherDrop<> of core::traits::Drop::<ICounterContractSafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl ICounterContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<ICounterContractSafeLibraryDispatcher> {
     fn serialize(self: @ICounterContractSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -956,8 +982,11 @@ impl ICounterContractSafeLibraryDispatcherSubPointersMutImpl of starknet::storag
         }
     }
 }
+#[doc(group: "dispatchers")]
 impl ICounterContractSafeDispatcherCopy<> of core::traits::Copy::<ICounterContractSafeDispatcher>;
+#[doc(group: "dispatchers")]
 impl ICounterContractSafeDispatcherDrop<> of core::traits::Drop::<ICounterContractSafeDispatcher>;
+#[doc(group: "dispatchers")]
 impl ICounterContractSafeDispatcherSerde<> of core::serde::Serde::<ICounterContractSafeDispatcher> {
     fn serialize(self: @ICounterContractSafeDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -1059,21 +1088,37 @@ impl ICounterContractSafeDispatcherSubPointersMutImpl of starknet::storage::SubP
         }
     }
 }
+#[doc(hidden)]
 impl ICounterContractDispatcherSubPointersDrop<> of core::traits::Drop::<ICounterContractDispatcherSubPointers>;
+#[doc(hidden)]
 impl ICounterContractDispatcherSubPointersCopy<> of core::traits::Copy::<ICounterContractDispatcherSubPointers>;
+#[doc(hidden)]
 impl ICounterContractDispatcherSubPointersMutDrop<> of core::traits::Drop::<ICounterContractDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl ICounterContractDispatcherSubPointersMutCopy<> of core::traits::Copy::<ICounterContractDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl ICounterContractLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<ICounterContractLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl ICounterContractLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<ICounterContractLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl ICounterContractLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<ICounterContractLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl ICounterContractLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<ICounterContractLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl ICounterContractSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<ICounterContractSafeLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl ICounterContractSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<ICounterContractSafeLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl ICounterContractSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<ICounterContractSafeLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl ICounterContractSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<ICounterContractSafeLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl ICounterContractSafeDispatcherSubPointersDrop<> of core::traits::Drop::<ICounterContractSafeDispatcherSubPointers>;
+#[doc(hidden)]
 impl ICounterContractSafeDispatcherSubPointersCopy<> of core::traits::Copy::<ICounterContractSafeDispatcherSubPointers>;
+#[doc(hidden)]
 impl ICounterContractSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<ICounterContractSafeDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl ICounterContractSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<ICounterContractSafeDispatcherSubPointersMut>;
 
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
@@ -1313,13 +1358,16 @@ impl ContractStateUpgradableImpl of
     }
 }
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__CounterContract__get_counter as get_counter;
     pub use super::__wrapper__CounterContract__increase_counter as increase_counter;
     pub use super::__wrapper__CounterContract__decrease_counter as decrease_counter;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
     pub use super::__wrapper__constructor as constructor;
 }
@@ -1495,9 +1543,13 @@ impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
         Option::Some(CounterDecreased {amount, })
     }
 }
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics

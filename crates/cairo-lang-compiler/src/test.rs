@@ -13,12 +13,12 @@ use crate::{CompilerConfig, compile_prepared_db_program_artifact};
 pub struct MockExecutablePlugin {}
 
 impl MacroPlugin for MockExecutablePlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        _db: &dyn SyntaxGroup,
-        _item_ast: ModuleItem,
+        _db: &'db dyn SyntaxGroup,
+        _item_ast: ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         PluginResult { code: None, diagnostics: vec![], remove_original_item: false }
     }
 
@@ -34,6 +34,7 @@ impl MacroPlugin for MockExecutablePlugin {
 #[test]
 fn can_collect_executables() {
     let content = indoc! {r#"
+        #[inline(never)]
         fn x() -> felt252 { 12 }
 
         fn main() -> felt252 { x() }
@@ -43,18 +44,19 @@ fn can_collect_executables() {
     "#};
     let mut suite = PluginSuite::default();
     suite.add_plugin::<MockExecutablePlugin>();
-    let mut db =
+    let db =
         RootDatabase::builder().detect_corelib().with_default_plugin_suite(suite).build().unwrap();
     let crate_id = setup_test_crate(&db, content);
     let config = CompilerConfig { replace_ids: true, ..CompilerConfig::default() };
-    let artifact = compile_prepared_db_program_artifact(&mut db, vec![crate_id], config).unwrap();
+    let artifact = compile_prepared_db_program_artifact(&db, vec![crate_id], config).unwrap();
     let executables = artifact.debug_info.unwrap().executables;
     assert!(!executables.is_empty());
     let f_ids = executables.get("some").unwrap();
     assert_eq!(f_ids.len(), 1);
     // Assert executable name
     assert_eq!(f_ids[0].debug_name, Some(SmolStr::new("test::test")));
-    // Assert only executable functions are compiled.
-    assert_eq!(artifact.program.funcs.len(), 1);
+    // Assert only executable functions and their dependencies are compiled.
+    assert_eq!(artifact.program.funcs.len(), 2);
     assert_eq!(artifact.program.funcs[0].id.debug_name, Some(SmolStr::new("test::test")));
+    assert_eq!(artifact.program.funcs[1].id.debug_name, Some(SmolStr::new("test::x")));
 }

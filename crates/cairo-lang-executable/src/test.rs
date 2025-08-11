@@ -76,10 +76,14 @@ impl TestFileRunner for CompileExecutableTestRunner {
             &db,
             None,
             vec![test_module.crate_id],
-            DiagnosticsReporter::stderr().with_crates(&[test_module.crate_id]),
+            DiagnosticsReporter::stderr().with_crates(&[test_module
+                .crate_id
+                .long(&db)
+                .clone()
+                .into_crate_input(&db)]),
             Default::default(),
         )
-        .map(|compiled| compiled.to_string())
+        .map(|compiled| compiled.compiled_function.to_string())
         .unwrap_or_else(|e| e.to_string());
         let error = verify_diagnostics_expectation(args, &semantic_diagnostics);
         TestRunnerResult {

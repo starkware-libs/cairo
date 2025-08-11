@@ -5,7 +5,6 @@
 use cairo_lang_utils::require;
 use num_bigint::{BigInt, Sign};
 use num_traits::Num;
-use smol_str::SmolStr;
 use unescaper::unescape;
 
 use super::{
@@ -14,31 +13,31 @@ use super::{
 use crate::node::Terminal;
 use crate::node::db::SyntaxGroup;
 
-impl TerminalTrue {
+impl<'a> TerminalTrue<'a> {
     #[inline(always)]
     pub fn boolean_value(&self) -> bool {
         true
     }
 }
 
-impl TerminalFalse {
+impl<'a> TerminalFalse<'a> {
     #[inline(always)]
     pub fn boolean_value(&self) -> bool {
         false
     }
 }
 
-impl TerminalLiteralNumber {
+impl<'a> TerminalLiteralNumber<'a> {
     /// Interpret this terminal as a [`BigInt`] number.
-    pub fn numeric_value(&self, db: &dyn SyntaxGroup) -> Option<BigInt> {
+    pub fn numeric_value(&self, db: &'a dyn SyntaxGroup) -> Option<BigInt> {
         self.numeric_value_and_suffix(db).map(|(value, _suffix)| value)
     }
 
     /// Interpret this terminal as a [`BigInt`] number and get the suffix if this literal has one.
     pub fn numeric_value_and_suffix(
         &self,
-        db: &dyn SyntaxGroup,
-    ) -> Option<(BigInt, Option<SmolStr>)> {
+        db: &'a dyn SyntaxGroup,
+    ) -> Option<(BigInt, Option<&'a str>)> {
         let text = self.text(db);
 
         let (text, radix) = if let Some(num_no_prefix) = text.strip_prefix("0x") {
@@ -48,7 +47,7 @@ impl TerminalLiteralNumber {
         } else if let Some(num_no_prefix) = text.strip_prefix("0b") {
             (num_no_prefix, 2)
         } else {
-            (text.as_str(), 10)
+            (text, 10)
         };
 
         // Catch an edge case, where literal seems to have a suffix that is valid numeric part
@@ -64,43 +63,43 @@ impl TerminalLiteralNumber {
                 }
                 None => (text, None),
             };
-            Some((BigInt::from_str_radix(text, radix).ok()?, suffix.map(SmolStr::new)))
+            Some((BigInt::from_str_radix(text, radix).ok()?, suffix))
         }
     }
 }
 
-impl TerminalShortString {
+impl<'a> TerminalShortString<'a> {
     /// Interpret this token/terminal as a string.
-    pub fn string_value(&self, db: &dyn SyntaxGroup) -> Option<String> {
+    pub fn string_value(&self, db: &'a dyn SyntaxGroup) -> Option<String> {
         let text = self.text(db);
 
-        let (text, _suffix) = string_value(&text, '\'')?;
+        let (text, _suffix) = string_value(text, '\'')?;
 
         Some(text)
     }
 
     /// Interpret this terminal as a [`BigInt`] number.
-    pub fn numeric_value(&self, db: &dyn SyntaxGroup) -> Option<BigInt> {
+    pub fn numeric_value(&self, db: &'a dyn SyntaxGroup) -> Option<BigInt> {
         self.string_value(db).map(|string| BigInt::from_bytes_be(Sign::Plus, string.as_bytes()))
     }
 
     /// Get suffix from this literal if it has one.
-    pub fn suffix(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
+    pub fn suffix(&self, db: &'a dyn SyntaxGroup) -> Option<&'a str> {
         let text = self.text(db);
         let (_literal, mut suffix) = text[1..].rsplit_once('\'')?;
         require(!suffix.is_empty())?;
         if suffix.starts_with('_') {
             suffix = &suffix[1..];
         }
-        Some(suffix.into())
+        Some(suffix)
     }
 }
 
-impl TerminalString {
+impl<'a> TerminalString<'a> {
     /// Interpret this token/terminal as a string.
-    pub fn string_value(&self, db: &dyn SyntaxGroup) -> Option<String> {
+    pub fn string_value(&self, db: &'a dyn SyntaxGroup) -> Option<String> {
         let text = self.text(db);
-        let (text, suffix) = string_value(&text, '"')?;
+        let (text, suffix) = string_value(text, '"')?;
         if !suffix.is_empty() {
             unreachable!();
         }
