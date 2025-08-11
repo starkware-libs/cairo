@@ -1217,7 +1217,7 @@ dependencies = [
 [[package]]
 name = "cairo-vm"
 version = "2.0.1"
-source = "git+https://github.com/lambdaclass/cairo-vm.git?rev=d3c649c129e6877d4af2ffda1e95781707aa1ad1#d3c649c129e6877d4af2ffda1e95781707aa1ad1"
+source = "git+https://github.com/lambdaclass/cairo-vm.git?rev=e2c6c91c73cd0bc351721f302390fcc0965c6224#e2c6c91c73cd0bc351721f302390fcc0965c6224"
 dependencies = [
  "anyhow",
  "bincode",
@@ -1242,7 +1242,7 @@ dependencies = [
  "sha3",
  "starknet-crypto",
  "starknet-types-core",
- "thiserror 2.0.12",
+ "thiserror",
  "zip",
 ]
 
