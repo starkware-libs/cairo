@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     EnumId, LanguageElementId, LookupItemId, ModuleItemId, VariantId, VariantLongId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -48,7 +48,7 @@ pub fn priv_enum_declaration_data<'db>(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
+    let enum_ast = db.module_enum_by_id(enum_id)?;
 
     // Generic params.
     let generic_params_data = db.enum_generic_params_data(enum_id)?;
@@ -100,7 +100,7 @@ pub fn enum_generic_params_data<'db>(
 ) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = enum_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
-    let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
+    let enum_ast = db.module_enum_by_id(enum_id)?;
 
     // Generic params.
     let inference_id =
@@ -195,7 +195,7 @@ pub fn priv_enum_definition_data<'db>(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
+    let enum_ast = db.module_enum_by_id(enum_id)?;
 
     // Generic params.
     let generic_params_data = db.enum_generic_params_data(enum_id)?;
@@ -302,7 +302,7 @@ pub fn variant_semantic<'db>(
     variant_id: VariantId<'db>,
 ) -> Maybe<Variant<'db>> {
     let data = db.priv_enum_definition_data(enum_id)?;
-    data.variant_semantic.get(&variant_id).cloned().to_maybe()
+    Ok(data.variant_semantic[&variant_id].clone())
 }
 
 // TODO(spapini): Consider making these queries.

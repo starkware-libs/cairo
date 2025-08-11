@@ -987,7 +987,7 @@ pub trait SemanticGroup:
     fn impl_type_by_id<'db>(
         &'db self,
         impl_type_id: ImplTypeDefId<'db>,
-    ) -> Maybe<Option<ast::ItemTypeAlias<'db>>>;
+    ) -> Maybe<ast::ItemTypeAlias<'db>>;
     /// Returns the impl type item that matches the given trait type item, if exists.
     #[salsa::invoke(items::imp::impl_type_by_trait_type)]
     fn impl_type_by_trait_type<'db>(
@@ -1020,7 +1020,7 @@ pub trait SemanticGroup:
     fn impl_impl_by_id<'db>(
         &'db self,
         impl_impl_id: ImplImplDefId<'db>,
-    ) -> Maybe<Option<ast::ItemImplAlias<'db>>>;
+    ) -> Maybe<ast::ItemImplAlias<'db>>;
     /// Returns the impl impl item that matches the given trait impl item, if exists.
     #[salsa::invoke(items::imp::impl_impl_by_trait_impl)]
     fn impl_impl_by_trait_impl<'db>(
@@ -1727,14 +1727,16 @@ pub trait SemanticGroup:
         &'db self,
         macro_call_id: MacroCallId<'db>,
     ) -> Maybe<items::macro_call::MacroCallData<'db>>;
-    /// Returns the macro declaration id of a macro call.
-    #[salsa::invoke(items::macro_call::macro_call_declaration_id)]
-    fn macro_call_declaration_id<'db>(
+    /// Returns the expansion result of a macro call.
+    #[salsa::invoke(items::macro_call::macro_call_module_id)]
+    #[salsa::cycle(items::macro_call::macro_call_module_id_cycle)]
+    fn macro_call_module_id<'db>(
         &'db self,
         macro_call_id: MacroCallId<'db>,
-    ) -> Maybe<Option<MacroDeclarationId<'db>>>;
+    ) -> Maybe<ModuleId<'db>>;
     /// Returns the semantic diagnostics of a macro call.
     #[salsa::invoke(items::macro_call::macro_call_diagnostics)]
+    #[salsa::cycle(items::macro_call::macro_call_diagnostics_cycle)]
     fn macro_call_diagnostics<'db>(
         &'db self,
         macro_call_id: MacroCallId<'db>,
@@ -2083,6 +2085,11 @@ fn module_semantic_diagnostics<'db>(
     }
     for macro_call in db.module_macro_calls_ids(module_id)?.iter() {
         diagnostics.extend(db.macro_call_diagnostics(*macro_call));
+        if let Ok(macro_module_id) = db.macro_call_module_id(*macro_call) {
+            if let Ok(semantic_diags) = db.module_semantic_diagnostics(macro_module_id) {
+                diagnostics.extend(semantic_diags);
+            }
+        }
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
     for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db)).iter() {

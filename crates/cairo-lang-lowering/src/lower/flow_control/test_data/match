@@ -174,7 +174,7 @@ End:
 //! > Tuple of enums
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, skip_lowering: true)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo(color: (Color, Color)) -> felt252 {
@@ -193,26 +193,87 @@ enum Color {
 }
 
 //! > graph
-Root: 7
+Root: 6
 0 ArmExpr { expr: ExprId(1) }
 1 ArmExpr { expr: ExprId(2) }
 2 ArmExpr { expr: ExprId(3) }
 3 EnumMatch { matched_var: v2, variants: (NodeId(1), v8), (NodeId(2), v9), (NodeId(2), v10)}
-4 EnumMatch { matched_var: v2, variants: (NodeId(1), v12), (NodeId(2), v13), (NodeId(2), v14)}
-5 EnumMatch { matched_var: v1, variants: (NodeId(0), v3), (NodeId(3), v7), (NodeId(4), v11)}
-6 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(5) }
-7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+4 EnumMatch { matched_var: v1, variants: (NodeId(0), v3), (NodeId(3), v7), (NodeId(3), v11)}
+5 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(4) }
+6 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(5) }
 
 //! > semantic_diagnostics
 
 //! > lowered
+Parameters: v0: (test::Color, test::Color)
+blk0 (root):
+Statements:
+  (v1: test::Color, v2: test::Color) <- struct_destructure(v0)
+End:
+  Match(match_enum(v1) {
+    Color::Red(v3) => blk1,
+    Color::Green(v4) => blk2,
+    Color::Blue(v5) => blk3,
+  })
+
+blk1:
+Statements:
+  (v11: core::felt252) <- 1
+End:
+  Goto(blk9, {v11 -> v12})
+
+blk2:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk4:
+Statements:
+End:
+  Match(match_enum(v2) {
+    Color::Red(v6) => blk5,
+    Color::Green(v7) => blk6,
+    Color::Blue(v8) => blk7,
+  })
+
+blk5:
+Statements:
+  (v10: core::felt252) <- 2
+End:
+  Goto(blk9, {v10 -> v12})
+
+blk6:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk8:
+Statements:
+  (v9: core::felt252) <- 3
+End:
+  Goto(blk9, {v9 -> v12})
+
+blk9:
+Statements:
+End:
+  Return(v12)
 
 //! > ==========================================================================
 
 //! > Tuple inside enum
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, skip_lowering: true)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo(color: Option<(Color, Color)>) -> felt252 {
@@ -243,6 +304,64 @@ Root: 7
 //! > semantic_diagnostics
 
 //! > lowered
+Parameters: v0: core::option::Option::<(test::Color, test::Color)>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: test::Color, v4: test::Color) <- struct_destructure(v1)
+End:
+  Match(match_enum(v3) {
+    Color::Red(v5) => blk3,
+    Color::Green(v6) => blk4,
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk4:
+Statements:
+End:
+  Match(match_enum(v4) {
+    Color::Red(v7) => blk5,
+    Color::Green(v8) => blk6,
+  })
+
+blk5:
+Statements:
+  (v10: core::felt252) <- 2
+End:
+  Goto(blk8, {v10 -> v12})
+
+blk6:
+Statements:
+  (v9: core::felt252) <- 3
+End:
+  Goto(blk8, {v9 -> v12})
+
+blk7:
+Statements:
+  (v11: core::felt252) <- 1
+End:
+  Goto(blk8, {v11 -> v12})
+
+blk8:
+Statements:
+End:
+  Return(v12)
 
 //! > ==========================================================================
 
@@ -321,3 +440,553 @@ Root: 4
 //! > semantic_diagnostics
 
 //! > lowered
+
+//! > ==========================================================================
+
+//! > Numeric match
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(x: felt252) -> felt252 {
+    match x {
+        2 | 4 => x,
+        0 => 0,
+        _ => 1,
+    }
+}
+
+//! > graph
+Root: 6
+0 ArmExpr { expr: ExprId(1) }
+1 ArmExpr { expr: ExprId(2) }
+2 ArmExpr { expr: ExprId(3) }
+3 EqualsLiteral { input: v0, literal: 0, true_branch: NodeId(1), false_branch: NodeId(2) }
+4 EqualsLiteral { input: v0, literal: 4, true_branch: NodeId(0), false_branch: NodeId(3) }
+5 EqualsLiteral { input: v0, literal: 2, true_branch: NodeId(0), false_branch: NodeId(4) }
+6 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(5) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 2
+  (v2: core::felt252) <- core::Felt252Sub::sub(v0, v1)
+End:
+  Match(match core::felt252_is_zero(v2) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v3) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk2:
+Statements:
+  (v4: core::felt252) <- 4
+  (v5: core::felt252) <- core::Felt252Sub::sub(v0, v4)
+End:
+  Match(match core::felt252_is_zero(v5) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero(v6) => blk4,
+  })
+
+blk3:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk4:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero(v7) => blk6,
+  })
+
+blk5:
+Statements:
+  (v9: core::felt252) <- 0
+End:
+  Goto(blk8, {v9 -> v10})
+
+blk6:
+Statements:
+  (v8: core::felt252) <- 1
+End:
+  Goto(blk8, {v8 -> v10})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {v0 -> v10})
+
+blk8:
+Statements:
+End:
+  Return(v10)
+
+//! > ==========================================================================
+
+//! > Numeric match with tuples and bindings
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(x: felt252, y: felt252) -> felt252 {
+    match (x, y) {
+        (1, 3) => 0,
+        (1, 4) | (2, 3) => 1,
+        (1, 5) => 2,
+        (3, _) => 3,
+        (x, 0) => x,
+        _ => 4,
+    }
+}
+
+//! > graph
+Root: 18
+0 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(4) }
+2 ArmExpr { expr: ExprId(5) }
+3 ArmExpr { expr: ExprId(6) }
+4 ArmExpr { expr: ExprId(7) }
+5 ArmExpr { expr: ExprId(8) }
+6 BindVar { input: v1, output: PatternVarId(0), next: NodeId(4) }
+7 EqualsLiteral { input: v2, literal: 0, true_branch: NodeId(6), false_branch: NodeId(5) }
+8 EqualsLiteral { input: v1, literal: 3, true_branch: NodeId(3), false_branch: NodeId(7) }
+9 EqualsLiteral { input: v2, literal: 0, true_branch: NodeId(6), false_branch: NodeId(5) }
+10 EqualsLiteral { input: v2, literal: 3, true_branch: NodeId(1), false_branch: NodeId(9) }
+11 EqualsLiteral { input: v1, literal: 2, true_branch: NodeId(10), false_branch: NodeId(8) }
+12 EqualsLiteral { input: v2, literal: 0, true_branch: NodeId(6), false_branch: NodeId(5) }
+13 EqualsLiteral { input: v2, literal: 5, true_branch: NodeId(2), false_branch: NodeId(12) }
+14 EqualsLiteral { input: v2, literal: 4, true_branch: NodeId(1), false_branch: NodeId(13) }
+15 EqualsLiteral { input: v2, literal: 3, true_branch: NodeId(0), false_branch: NodeId(14) }
+16 EqualsLiteral { input: v1, literal: 1, true_branch: NodeId(15), false_branch: NodeId(11) }
+17 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(16) }
+18 EvaluateExpr { expr: ExprId(2), var_id: v0, next: NodeId(17) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: (core::felt252, core::felt252)) <- struct_construct(v0, v1)
+  (v3: core::felt252, v4: core::felt252) <- struct_destructure(v2)
+  (v5: core::felt252) <- 1
+  (v6: core::felt252) <- core::Felt252Sub::sub(v3, v5)
+End:
+  Match(match core::felt252_is_zero(v6) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: core::felt252) <- 3
+  (v9: core::felt252) <- core::Felt252Sub::sub(v4, v8)
+End:
+  Match(match core::felt252_is_zero(v9) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero(v10) => blk4,
+  })
+
+blk2:
+Statements:
+  (v18: core::felt252) <- 2
+  (v19: core::felt252) <- core::Felt252Sub::sub(v3, v18)
+End:
+  Match(match core::felt252_is_zero(v19) {
+    IsZeroResult::Zero => blk11,
+    IsZeroResult::NonZero(v20) => blk12,
+  })
+
+blk3:
+Statements:
+  (v33: core::felt252) <- 0
+End:
+  Goto(blk24, {v33 -> v34})
+
+blk4:
+Statements:
+  (v11: core::felt252) <- 4
+  (v12: core::felt252) <- core::Felt252Sub::sub(v4, v11)
+End:
+  Match(match core::felt252_is_zero(v12) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero(v13) => blk6,
+  })
+
+blk5:
+Statements:
+End:
+  Goto(blk23, {})
+
+blk6:
+Statements:
+  (v14: core::felt252) <- 5
+  (v15: core::felt252) <- core::Felt252Sub::sub(v4, v14)
+End:
+  Match(match core::felt252_is_zero(v15) {
+    IsZeroResult::Zero => blk7,
+    IsZeroResult::NonZero(v16) => blk8,
+  })
+
+blk7:
+Statements:
+  (v31: core::felt252) <- 2
+End:
+  Goto(blk24, {v31 -> v34})
+
+blk8:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v4) {
+    IsZeroResult::Zero => blk9,
+    IsZeroResult::NonZero(v17) => blk10,
+  })
+
+blk9:
+Statements:
+End:
+  Goto(blk21, {})
+
+blk10:
+Statements:
+End:
+  Goto(blk22, {})
+
+blk11:
+Statements:
+  (v21: core::felt252) <- 3
+  (v22: core::felt252) <- core::Felt252Sub::sub(v4, v21)
+End:
+  Match(match core::felt252_is_zero(v22) {
+    IsZeroResult::Zero => blk13,
+    IsZeroResult::NonZero(v23) => blk14,
+  })
+
+blk12:
+Statements:
+  (v25: core::felt252) <- 3
+  (v26: core::felt252) <- core::Felt252Sub::sub(v3, v25)
+End:
+  Match(match core::felt252_is_zero(v26) {
+    IsZeroResult::Zero => blk17,
+    IsZeroResult::NonZero(v27) => blk18,
+  })
+
+blk13:
+Statements:
+End:
+  Goto(blk23, {})
+
+blk14:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v4) {
+    IsZeroResult::Zero => blk15,
+    IsZeroResult::NonZero(v24) => blk16,
+  })
+
+blk15:
+Statements:
+End:
+  Goto(blk21, {})
+
+blk16:
+Statements:
+End:
+  Goto(blk22, {})
+
+blk17:
+Statements:
+  (v30: core::felt252) <- 3
+End:
+  Goto(blk24, {v30 -> v34})
+
+blk18:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v4) {
+    IsZeroResult::Zero => blk19,
+    IsZeroResult::NonZero(v28) => blk20,
+  })
+
+blk19:
+Statements:
+End:
+  Goto(blk21, {})
+
+blk20:
+Statements:
+End:
+  Goto(blk22, {})
+
+blk21:
+Statements:
+End:
+  Goto(blk24, {v3 -> v34})
+
+blk22:
+Statements:
+  (v29: core::felt252) <- 4
+End:
+  Goto(blk24, {v29 -> v34})
+
+blk23:
+Statements:
+  (v32: core::felt252) <- 1
+End:
+  Goto(blk24, {v32 -> v34})
+
+blk24:
+Statements:
+End:
+  Return(v34)
+
+//! > ==========================================================================
+
+//! > Test a non-branching graph
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(x: Option<felt252>) -> felt252 {
+    match x {
+        _ => 0,
+    }
+}
+
+//! > module_code
+
+//! > graph
+Root: 1
+0 ArmExpr { expr: ExprId(1) }
+1 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(0) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+Parameters: v0: core::option::Option::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0
+End:
+  Return(v1)
+
+//! > ==========================================================================
+
+//! > Tuples with pattern binding inside of enums
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(color: @(Color, Color)) -> felt252 {
+    match color {
+        // x can be bound to different tuple items.
+        (Color::Red(x), _) | (_, Color::Red(x)) => *x,
+        _ => 0,
+    }
+}
+
+//! > module_code
+enum Color {
+    Red: felt252,
+    Green,
+    Blue,
+}
+
+//! > graph
+Root: 7
+0 ArmExpr { expr: ExprId(2) }
+1 ArmExpr { expr: ExprId(3) }
+2 BindVar { input: v3, output: PatternVarId(0), next: NodeId(0) }
+3 BindVar { input: v8, output: PatternVarId(2), next: NodeId(0) }
+4 EnumMatch { matched_var: v2, variants: (NodeId(3), v8), (NodeId(1), v9), (NodeId(1), v10)}
+5 EnumMatch { matched_var: v1, variants: (NodeId(2), v3), (NodeId(4), v7), (NodeId(4), v11)}
+6 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(5) }
+7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+Parameters: v0: @(test::Color, test::Color)
+blk0 (root):
+Statements:
+  (v1: @test::Color, v2: @test::Color) <- struct_destructure(v0)
+End:
+  Match(match_enum(v1) {
+    Color::Red(v3) => blk1,
+    Color::Green(v4) => blk2,
+    Color::Blue(v5) => blk3,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk9, {v3 -> v10})
+
+blk2:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk4:
+Statements:
+End:
+  Match(match_enum(v2) {
+    Color::Red(v6) => blk5,
+    Color::Green(v7) => blk6,
+    Color::Blue(v8) => blk7,
+  })
+
+blk5:
+Statements:
+End:
+  Goto(blk9, {v6 -> v10})
+
+blk6:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk8:
+Statements:
+  (v9: core::felt252) <- 0
+End:
+  Goto(blk10, {v9 -> v12})
+
+blk9:
+Statements:
+  (v11: core::felt252) <- desnap(v10)
+End:
+  Goto(blk10, {v11 -> v12})
+
+blk10:
+Statements:
+End:
+  Return(v12)
+
+//! > ==========================================================================
+
+//! > Tuples with pattern binding outside of enums
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(color: (Color, Color)) -> Color {
+    match color {
+        // x can be bound to different tuple items.
+        (Color::Red, x) | (x, Color::Red) => x,
+        _ => Color::Green,
+    }
+}
+
+//! > module_code
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+//! > graph
+Root: 7
+0 ArmExpr { expr: ExprId(1) }
+1 ArmExpr { expr: ExprId(3) }
+2 BindVar { input: v2, output: PatternVarId(1), next: NodeId(0) }
+3 BindVar { input: v1, output: PatternVarId(0), next: NodeId(0) }
+4 EnumMatch { matched_var: v2, variants: (NodeId(3), v8), (NodeId(1), v9), (NodeId(1), v10)}
+5 EnumMatch { matched_var: v1, variants: (NodeId(2), v3), (NodeId(4), v7), (NodeId(4), v11)}
+6 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(5) }
+7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+
+//! > semantic_diagnostics
+
+//! > lowered
+Parameters: v0: (test::Color, test::Color)
+blk0 (root):
+Statements:
+  (v1: test::Color, v2: test::Color) <- struct_destructure(v0)
+End:
+  Match(match_enum(v1) {
+    Color::Red(v3) => blk1,
+    Color::Green(v4) => blk2,
+    Color::Blue(v5) => blk3,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk9, {v2 -> v11})
+
+blk2:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk4:
+Statements:
+End:
+  Match(match_enum(v2) {
+    Color::Red(v6) => blk5,
+    Color::Green(v7) => blk6,
+    Color::Blue(v8) => blk7,
+  })
+
+blk5:
+Statements:
+End:
+  Goto(blk9, {v1 -> v11})
+
+blk6:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk8:
+Statements:
+  (v9: ()) <- struct_construct()
+  (v10: test::Color) <- Color::Green(v9)
+End:
+  Goto(blk10, {v10 -> v12})
+
+blk9:
+Statements:
+End:
+  Goto(blk10, {v11 -> v12})
+
+blk10:
+Statements:
+End:
+  Return(v12)

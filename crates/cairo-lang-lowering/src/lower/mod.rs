@@ -931,32 +931,37 @@ fn lower_expr<'db>(
     }
 }
 
+/// Lowers a semantic expression that is a literal, possibly including a negation.
 fn lower_expr_literal<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     expr: &semantic::ExprLiteral<'db>,
     builder: &mut BlockBuilder<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!("Lowering a literal: {:?}", expr.debug(&ctx.expr_formatter));
-    lower_expr_literal_helper(ctx, expr.stable_ptr.untyped(), expr.ty, &expr.value, builder)
+    Ok(LoweredExpr::AtVariable(lower_expr_literal_to_var_usage(
+        ctx,
+        expr.stable_ptr.untyped(),
+        expr.ty,
+        &expr.value,
+        builder,
+    )))
 }
 
-/// Lowers a semantic expression that is a literal, possibly including a negation.
-fn lower_expr_literal_helper<'db>(
+/// Same as [lower_expr_literal] but returns a [VarUsage] instead of a [LoweredExpr].
+fn lower_expr_literal_to_var_usage<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     stable_ptr: SyntaxStablePtrId<'db>,
     ty: semantic::TypeId<'db>,
     value: &BigInt,
     builder: &mut BlockBuilder<'db>,
-) -> LoweringResult<'db, LoweredExpr<'db>> {
+) -> VarUsage<'db> {
     let value = value_as_const_value(ctx.db, ty, value)
         .map_err(|err| {
             ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::LiteralError(err))
         })
         .unwrap_or_else(ConstValue::Missing);
     let location = ctx.get_location(stable_ptr);
-    Ok(LoweredExpr::AtVariable(
-        generators::Const { value, ty, location }.add(ctx, &mut builder.statements),
-    ))
+    generators::Const { value, ty, location }.add(ctx, &mut builder.statements)
 }
 
 fn lower_expr_string_literal<'db>(

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     ExternTypeId, GenericKind, LanguageElementId, LookupItemId, ModuleItemId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
@@ -57,7 +57,7 @@ pub fn extern_type_declaration_generic_params_data<'db>(
 ) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = extern_type_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
-    let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?.to_maybe()?;
+    let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?;
 
     let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(
         ModuleItemId::ExternType(extern_type_id),
@@ -88,7 +88,7 @@ pub fn priv_extern_type_declaration_data<'db>(
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<ExternTypeDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
-    let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?.to_maybe()?;
+    let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?;
 
     // Generic params.
     let generic_params_data = extern_type_declaration_generic_params_data(db, extern_type_id)?;

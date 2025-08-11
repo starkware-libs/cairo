@@ -2,18 +2,22 @@ use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::{
     self as semantic, ConcreteEnumId, ConcreteTypeId, PatternEnumVariant, PatternTuple, TypeId,
-    TypeLongId,
+    TypeLongId, corelib,
 };
+use cairo_lang_syntax::node::ast::ExprPtr;
 use cairo_lang_utils::iterators::zip_eq3;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
+use num_traits::ToPrimitive;
 
 use super::super::graph::{
-    EnumMatch, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
+    Deconstruct, EnumMatch, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
 };
+use super::cache::Cache;
 use super::filtered_patterns::{Bindings, FilteredPatterns};
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
-use crate::lower::flow_control::graph::Deconstruct;
+use crate::lower::flow_control::graph::EqualsLiteral;
 
 /// A callback that gets a [FilteredPatterns] and constructs a node that continues the pattern
 /// matching restricted to the filtered patterns.
@@ -39,7 +43,7 @@ use crate::lower::flow_control::graph::Deconstruct;
 /// Finally, the inner pattern-matching function (for `x`) will construct a [EnumMatch] node
 /// that leads to the two nodes returned by the callback.
 type BuildNodeCallback<'db, 'a> =
-    &'a dyn Fn(&mut FlowControlGraphBuilder<'db>, FilteredPatterns) -> NodeId;
+    &'a mut dyn FnMut(&mut FlowControlGraphBuilder<'db>, FilteredPatterns) -> NodeId;
 
 /// A thin wrapper around [semantic::Pattern], where `None` represents the `_` pattern.
 type PatternOption<'a, 'db> = Option<&'a semantic::Pattern<'db>>;
@@ -82,11 +86,17 @@ pub fn create_node_for_patterns<'db>(
         })
         .collect_vec();
 
-    // Wrap `build_node_callback` to add the bindings to the patterns.
-    let build_node_callback = |graph: &mut FlowControlGraphBuilder<'db>,
-                               pattern_indices: FilteredPatterns| {
-        build_node_callback(graph, pattern_indices.add_bindings(bindings.clone()))
-    };
+    let mut cache = Cache::default();
+
+    // Wrap `build_node_callback` to add the bindings to the patterns and cache the result.
+    let mut build_node_callback =
+        |graph: &mut FlowControlGraphBuilder<'db>, pattern_indices: FilteredPatterns| {
+            cache.get_or_compute(
+                build_node_callback,
+                graph,
+                pattern_indices.add_bindings(bindings.clone()),
+            )
+        };
 
     // If all the patterns are catch-all, we do not need to look into `input_var`.
     if patterns.iter().all(|pattern| pattern_is_any(pattern)) {
@@ -94,14 +104,22 @@ pub fn create_node_for_patterns<'db>(
         return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
     }
 
-    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, graph.var_ty(input_var));
+    let var_ty = graph.var_ty(input_var);
+
     let params = CreateNodeParams {
         ctx,
         graph,
         patterns: &patterns,
-        build_node_callback: &build_node_callback,
+        build_node_callback: &mut build_node_callback,
         location,
     };
+
+    // Check if this is a numeric type that should use value matching.
+    if corelib::numeric_upcastable_to_felt252(ctx.db, var_ty) {
+        return create_node_for_value(params, input_var);
+    }
+
+    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, var_ty);
     match long_ty {
         TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) => {
             create_node_for_enum(params, input_var, concrete_enum_id, n_snapshots)
@@ -123,8 +141,7 @@ fn create_node_for_enum<'db>(
     let concrete_variants = ctx.db.concrete_enum_variants(concrete_enum_id).unwrap();
 
     // Maps variant index to the list of the indices of the patterns that match it.
-    let mut variant_to_pattern_indices: Vec<FilteredPatterns> =
-        (0..concrete_variants.len()).map(|_| FilteredPatterns::empty()).collect_vec();
+    let mut variant_to_pattern_indices = vec![FilteredPatterns::default(); concrete_variants.len()];
 
     // Maps variant index to the list of the inner patterns.
     // For example, a pattern `A(B(x))` will add the (inner) pattern `B(x)` to the vector at the
@@ -169,7 +186,7 @@ fn create_node_for_enum<'db>(
                         ctx,
                         graph,
                         patterns: &inner_patterns,
-                        build_node_callback: &|graph, pattern_indices_inner| {
+                        build_node_callback: &mut |graph, pattern_indices_inner| {
                             build_node_callback(graph, pattern_indices_inner.lift(&pattern_indices))
                         },
                         location,
@@ -262,14 +279,14 @@ fn create_node_for_tuple_inner<'db>(
             ctx,
             graph,
             patterns: &patterns_on_current_item,
-            build_node_callback: &|graph, pattern_indices| {
+            build_node_callback: &mut |graph, pattern_indices| {
                 // Call `create_node_for_tuple_inner` recursively to handle the rest of the tuple.
                 create_node_for_tuple_inner(
                     CreateNodeParams {
                         ctx,
                         graph,
                         patterns: &pattern_indices.indices().map(|idx| patterns[idx]).collect_vec(),
-                        build_node_callback: &|graph, pattern_indices_inner| {
+                        build_node_callback: &mut |graph, pattern_indices_inner| {
                             build_node_callback(graph, pattern_indices_inner.lift(&pattern_indices))
                         },
                         location,
@@ -283,6 +300,75 @@ fn create_node_for_tuple_inner<'db>(
         },
         inner_vars[item_idx],
     )
+}
+
+/// Creates a node for matching over numeric values, using [EqualsLiteral] nodes.
+fn create_node_for_value<'db>(
+    params: CreateNodeParams<'db, '_, '_>,
+    input_var: FlowControlVar,
+) -> NodeId {
+    let CreateNodeParams { ctx: _, graph, patterns, build_node_callback, location: _ } = params;
+
+    // A map from literals to their corresponding filter and the location of the first pattern with
+    // this literal.
+    let mut literals_map = OrderedHashMap::<usize, (FilteredPatterns, ExprPtr<'db>)>::default();
+
+    // The filter of patterns that correspond to the otherwise patterns.
+    let mut otherwise_filter = FilteredPatterns::default();
+
+    // Go over the patterns, and update the maps.
+    for (pattern_index, pattern) in patterns.iter().enumerate() {
+        match pattern {
+            Some(semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. })) => {
+                // Extract the literal value as `usize`.
+                let Some(literal_value) = literal.value.to_usize() else {
+                    // TODO(lior): Report diagnostics.
+                    todo!();
+                };
+
+                literals_map
+                    .entry(literal_value)
+                    .or_insert((otherwise_filter.clone(), literal.stable_ptr))
+                    .0
+                    .add(pattern_index);
+            }
+            Some(semantic::Pattern::Otherwise(_)) | None => {
+                otherwise_filter.add(pattern_index);
+                for (_, (filter, _)) in literals_map.iter_mut() {
+                    filter.add(pattern_index);
+                }
+            }
+            Some(semantic::Pattern::Variable(..)) => unreachable!(),
+            _ => {
+                // TODO(lior): Report `UnsupportedPattern` diagnostics.
+                todo!();
+            }
+        }
+    }
+
+    // First, construct a node that handles the otherwise patterns.
+    let mut current_node = build_node_callback(graph, otherwise_filter.clone());
+
+    // Go over the literals (in reverse order), and construct a chain of [BooleanIf] nodes that
+    // handle each literal.
+    for (literal, (filter, stable_ptr)) in literals_map.into_iter().rev() {
+        let node_if_literal = build_node_callback(graph, filter);
+
+        // Don't add an [EqualsLiteral] node if both branches lead to the same node.
+        if node_if_literal == current_node {
+            continue;
+        }
+
+        current_node = graph.add_node(FlowControlNode::EqualsLiteral(EqualsLiteral {
+            input: input_var,
+            literal,
+            stable_ptr,
+            true_branch: node_if_literal,
+            false_branch: current_node,
+        }));
+    }
+
+    current_node
 }
 
 /// Returns `true` if the pattern accepts any value (`_` or a variable name).

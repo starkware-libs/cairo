@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     ExternFunctionId, FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
@@ -70,7 +70,7 @@ pub fn extern_function_declaration_generic_params_data<'db>(
 ) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = extern_function_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
-    let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?.to_maybe()?;
+    let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?;
     let declaration = extern_function_syntax.declaration(db);
 
     // Generic params.
@@ -134,7 +134,7 @@ pub fn priv_extern_function_declaration_data<'db>(
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<FunctionDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
-    let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?.to_maybe()?;
+    let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?;
 
     let declaration = extern_function_syntax.declaration(db);
 

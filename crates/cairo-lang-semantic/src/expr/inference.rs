@@ -2,7 +2,6 @@
 
 use std::collections::{BTreeMap, HashMap};
 use std::hash::Hash;
-use std::mem;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
@@ -283,10 +282,10 @@ pub struct ErrorSet;
 
 pub type InferenceResult<T> = Result<T, ErrorSet>;
 
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub enum InferenceErrorStatus {
-    Pending,
-    Consumed,
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+enum InferenceErrorStatus<'db> {
+    Pending(InferenceError<'db>),
+    Consumed(DiagnosticAdded),
 }
 
 /// A mapping of an impl var's trait items to concrete items
@@ -340,13 +339,8 @@ pub struct InferenceData<'db> {
     /// Mapping from impl types to type variables.
     pub impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
 
-    // Error handling members.
     /// The current error status.
-    pub error_status: Result<(), InferenceErrorStatus>,
-    /// `Some` only when error_state is Err(Pending).
-    error: Option<InferenceError<'db>>,
-    /// `Some` only when error_state is Err(Consumed).
-    consumed_error: Option<DiagnosticAdded>,
+    error_status: Result<(), InferenceErrorStatus<'db>>,
 }
 impl<'db> InferenceData<'db> {
     pub fn new(inference_id: InferenceId<'db>) -> Self {
@@ -366,8 +360,6 @@ impl<'db> InferenceData<'db> {
             ambiguous: Vec::new(),
             impl_type_bounds: Default::default(),
             error_status: Ok(()),
-            error: None,
-            consumed_error: None,
         }
     }
     pub fn inference<'r>(&'r mut self, db: &'db dyn SemanticGroup) -> Inference<'db, 'r> {
@@ -434,9 +426,7 @@ impl<'db> InferenceData<'db> {
             // we do not need to rewrite the impl type bounds, as they all should be var free.
             impl_type_bounds: self.impl_type_bounds.clone(),
 
-            error_status: self.error_status,
-            error: self.error.clone(),
-            consumed_error: self.consumed_error,
+            error_status: self.error_status.clone(),
         }
     }
     pub fn temporary_clone(&self) -> InferenceData<'db> {
@@ -455,9 +445,7 @@ impl<'db> InferenceData<'db> {
             solved: self.solved.clone(),
             ambiguous: self.ambiguous.clone(),
             impl_type_bounds: self.impl_type_bounds.clone(),
-            error_status: self.error_status,
-            error: self.error.clone(),
-            consumed_error: self.consumed_error,
+            error_status: self.error_status.clone(),
         }
     }
 }
@@ -816,8 +804,9 @@ impl<'db, 'id> Inference<'db, 'id> {
                     let ty0 = self.rewrite(ty).no_err();
                     let ty1 = self.rewrite(impl_ty).no_err();
 
-                    self.error =
-                        Some(InferenceError::ImplTypeMismatch { impl_id, trait_type_id, ty0, ty1 });
+                    let error =
+                        InferenceError::ImplTypeMismatch { impl_id, trait_type_id, ty0, ty1 };
+                    self.error_status = Err(InferenceErrorStatus::Pending(error));
                     return Err(err_set);
                 }
             }
@@ -1103,19 +1092,17 @@ impl<'db, 'id> Inference<'db, 'id> {
         if self.error_status.is_err() {
             return ErrorSet;
         }
-        self.error_status = if let InferenceError::Reported(diag_added) = err {
-            self.consumed_error = Some(diag_added);
-            Err(InferenceErrorStatus::Consumed)
+        self.error_status = Err(if let InferenceError::Reported(diag_added) = err {
+            InferenceErrorStatus::Consumed(diag_added)
         } else {
-            self.error = Some(err);
-            Err(InferenceErrorStatus::Pending)
-        };
+            InferenceErrorStatus::Pending(err)
+        });
         ErrorSet
     }
 
     /// Returns whether an error is set (either pending or consumed).
     pub fn is_error_set(&self) -> InferenceResult<()> {
-        if self.error_status.is_err() { Err(ErrorSet) } else { Ok(()) }
+        self.error_status.as_ref().copied().map_err(|_| ErrorSet)
     }
 
     /// Consumes the error but doesn't report it. If there is no error, or the error is consumed,
@@ -1151,13 +1138,15 @@ impl<'db, 'id> Inference<'db, 'id> {
         _err_set: ErrorSet,
         diag_added: DiagnosticAdded,
     ) -> Option<InferenceError<'db>> {
-        if self.error_status != Err(InferenceErrorStatus::Pending) {
-            return None;
-            // panic!("consume_error when there is no pending error");
+        match &mut self.error_status {
+            Err(InferenceErrorStatus::Pending(error)) => {
+                let pending_error = std::mem::replace(error, InferenceError::Reported(diag_added));
+                self.error_status = Err(InferenceErrorStatus::Consumed(diag_added));
+                Some(pending_error)
+            }
+            // TODO(orizi): `panic!("consume_error when there is no pending error")` instead.
+            _ => None,
         }
-        self.error_status = Err(InferenceErrorStatus::Consumed);
-        self.consumed_error = Some(diag_added);
-        self.error.take()
     }
 
     /// Consumes the pending error, if any, and reports it.
@@ -1171,17 +1160,13 @@ impl<'db, 'id> Inference<'db, 'id> {
         diagnostics: &mut SemanticDiagnostics<'db>,
         stable_ptr: SyntaxStablePtrId<'db>,
     ) -> DiagnosticAdded {
-        let Err(state_error) = self.error_status else {
+        let Err(state_error) = &self.error_status else {
             panic!("report_on_pending_error should be called only on error");
         };
         match state_error {
-            InferenceErrorStatus::Consumed => self
-                .consumed_error
-                .expect("consumed_error is not set although error_status is Err(Consumed)"),
-            InferenceErrorStatus::Pending => {
-                let diag_added = match mem::take(&mut self.error)
-                    .expect("error is not set although error_status is Err(Pending)")
-                {
+            InferenceErrorStatus::Consumed(diag_added) => *diag_added,
+            InferenceErrorStatus::Pending(error) => {
+                let diag_added = match error {
                     InferenceError::TypeNotInferred(_) if diagnostics.error_count > 0 => {
                         // If we have other diagnostics, there is no need to TypeNotInferred.
 
@@ -1191,9 +1176,7 @@ impl<'db, 'id> Inference<'db, 'id> {
                     }
                     diag => diag.report(diagnostics, stable_ptr),
                 };
-
-                self.error_status = Err(InferenceErrorStatus::Consumed);
-                self.consumed_error = Some(diag_added);
+                self.error_status = Err(InferenceErrorStatus::Consumed(diag_added));
                 diag_added
             }
         }
@@ -1206,7 +1189,7 @@ impl<'db, 'id> Inference<'db, 'id> {
         err_set: ErrorSet,
         report: impl FnOnce() -> DiagnosticAdded,
     ) {
-        if self.error_status == Err(InferenceErrorStatus::Pending) {
+        if matches!(self.error_status, Err(InferenceErrorStatus::Pending(_))) {
             self.consume_reported_error(err_set, report());
         }
     }

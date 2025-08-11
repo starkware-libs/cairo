@@ -25,9 +25,7 @@ use crate::corelib::{
 use crate::db::{SemanticGroup, SemanticGroupData};
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::expr::compute::{
-    ComputationContext, ContextFunction, Environment, compute_expr_semantic,
-};
+use crate::expr::compute::{ComputationContext, compute_expr_semantic};
 use crate::expr::fmt::CountingWriter;
 use crate::expr::inference::canonic::{CanonicalTrait, ResultNoErrEx};
 use crate::expr::inference::solver::{SolutionSet, enrich_lookup_context};
@@ -645,23 +643,11 @@ pub fn extract_fixed_size_array_size<'db>(
     db: &'db dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics<'db>,
     syntax: &ast::ExprFixedSizeArray<'db>,
-    resolver: &Resolver<'db>,
+    resolver: &mut Resolver<'db>,
 ) -> Maybe<Option<ConstValueId<'db>>> {
     match syntax.size(db) {
         ast::OptionFixedSizeArraySize::FixedSizeArraySize(size_clause) => {
-            let environment = Environment::empty();
-            let resolver = Resolver::with_data(
-                db,
-                (resolver.data).clone_with_inference_id(db, resolver.inference_data.inference_id),
-            );
-            let mut ctx = ComputationContext::new(
-                db,
-                diagnostics,
-                resolver,
-                None,
-                environment,
-                ContextFunction::Global,
-            );
+            let mut ctx = ComputationContext::new_global(db, diagnostics, resolver);
             let size_expr_syntax = size_clause.size(db);
             let size = compute_expr_semantic(&mut ctx, &size_expr_syntax);
             let const_value = resolve_const_expr_and_evaluate(

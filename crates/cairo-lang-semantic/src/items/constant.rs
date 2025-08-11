@@ -7,7 +7,7 @@ use cairo_lang_defs::ids::{
     NamedLanguageElementId, TopLevelLanguageElementId, TraitConstantId, TraitId, VarId,
 };
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, ToMaybe, skip_diagnostic,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, skip_diagnostic,
 };
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast::ItemConstant;
@@ -29,9 +29,7 @@ use crate::corelib::{
 };
 use crate::db::{SemanticGroup, SemanticGroupData};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::expr::compute::{
-    ComputationContext, ContextFunction, Environment, ExprAndId, compute_expr_semantic,
-};
+use crate::expr::compute::{ComputationContext, ExprAndId, compute_expr_semantic};
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::{ConstVar, InferenceId};
 use crate::helper::ModuleHelper;
@@ -257,7 +255,7 @@ pub fn priv_constant_semantic_data<'db>(
     if in_cycle {
         constant_semantic_data_cycle_helper(
             db,
-            &db.module_constant_by_id(const_id)?.to_maybe()?,
+            &db.module_constant_by_id(const_id)?,
             lookup_item_id,
             None,
             &const_id,
@@ -265,7 +263,7 @@ pub fn priv_constant_semantic_data<'db>(
     } else {
         constant_semantic_data_helper(
             db,
-            &db.module_constant_by_id(const_id)?.to_maybe()?,
+            &db.module_constant_by_id(const_id)?,
             lookup_item_id,
             None,
             &const_id,
@@ -314,15 +312,7 @@ pub fn constant_semantic_data_helper<'db>(
         &constant_ast.type_clause(syntax_db).ty(syntax_db),
     );
 
-    let environment = Environment::empty();
-    let mut ctx = ComputationContext::new(
-        db,
-        &mut diagnostics,
-        resolver,
-        None,
-        environment,
-        ContextFunction::Global,
-    );
+    let mut ctx = ComputationContext::new_global(db, &mut diagnostics, &mut resolver);
 
     let value = compute_expr_semantic(&mut ctx, &constant_ast.value(syntax_db));
     let const_value = resolve_const_expr_and_evaluate(
@@ -334,20 +324,13 @@ pub fn constant_semantic_data_helper<'db>(
         true,
     )
     .intern(db);
-
-    let const_value = ctx
-        .resolver
+    let constant = Ok(Constant { value: value.id, arenas: Arc::new(ctx.arenas) });
+    let const_value = resolver
         .inference()
         .rewrite(const_value)
         .unwrap_or_else(|_| ConstValue::Missing(skip_diagnostic()).intern(db));
-    let resolver_data = Arc::new(ctx.resolver.data);
-    let constant = Constant { value: value.id, arenas: Arc::new(ctx.arenas) };
-    Ok(ConstantData {
-        diagnostics: diagnostics.build(),
-        const_value,
-        constant: Ok(constant),
-        resolver_data,
-    })
+    let resolver_data = Arc::new(resolver.data);
+    Ok(ConstantData { diagnostics: diagnostics.build(), const_value, constant, resolver_data })
 }
 
 /// Helper for cycle handling of constants.

@@ -248,7 +248,7 @@ pub trait DefsGroup: ParserGroup {
     fn module_constant_by_id<'db>(
         &'db self,
         constant_id: ConstantId<'db>,
-    ) -> Maybe<Option<ast::ItemConstant<'db>>>;
+    ) -> Maybe<ast::ItemConstant<'db>>;
     fn module_free_functions<'db>(
         &'db self,
         module_id: ModuleId<'db>,
@@ -260,7 +260,7 @@ pub trait DefsGroup: ParserGroup {
     fn module_free_function_by_id<'db>(
         &'db self,
         free_function_id: FreeFunctionId<'db>,
-    ) -> Maybe<Option<ast::FunctionWithBody<'db>>>;
+    ) -> Maybe<ast::FunctionWithBody<'db>>;
     fn module_items<'db>(&'db self, module_id: ModuleId<'db>)
     -> Maybe<Arc<Vec<ModuleItemId<'db>>>>;
     fn module_global_uses<'db>(
@@ -278,12 +278,11 @@ pub trait DefsGroup: ParserGroup {
         module_id: ModuleId<'db>,
     ) -> Maybe<Arc<OrderedHashMap<UseId<'db>, ast::UsePathLeaf<'db>>>>;
     fn module_uses_ids<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<Arc<Vec<UseId<'db>>>>;
-    fn module_use_by_id<'db>(&'db self, use_id: UseId<'db>)
-    -> Maybe<Option<ast::UsePathLeaf<'db>>>;
+    fn module_use_by_id<'db>(&'db self, use_id: UseId<'db>) -> Maybe<ast::UsePathLeaf<'db>>;
     fn module_global_use_by_id<'db>(
         &'db self,
         global_use_id: GlobalUseId<'db>,
-    ) -> Maybe<Option<ast::UsePathStar<'db>>>;
+    ) -> Maybe<ast::UsePathStar<'db>>;
     fn module_structs<'db>(
         &'db self,
         module_id: ModuleId<'db>,
@@ -292,17 +291,14 @@ pub trait DefsGroup: ParserGroup {
         &'db self,
         module_id: ModuleId<'db>,
     ) -> Maybe<Arc<Vec<StructId<'db>>>>;
-    fn module_struct_by_id<'db>(
-        &'db self,
-        struct_id: StructId<'db>,
-    ) -> Maybe<Option<ast::ItemStruct<'db>>>;
+    fn module_struct_by_id<'db>(&'db self, struct_id: StructId<'db>)
+    -> Maybe<ast::ItemStruct<'db>>;
     fn module_enums<'db>(
         &'db self,
         module_id: ModuleId<'db>,
     ) -> Maybe<Arc<OrderedHashMap<EnumId<'db>, ast::ItemEnum<'db>>>>;
     fn module_enums_ids<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<Arc<Vec<EnumId<'db>>>>;
-    fn module_enum_by_id<'db>(&'db self, enum_id: EnumId<'db>)
-    -> Maybe<Option<ast::ItemEnum<'db>>>;
+    fn module_enum_by_id<'db>(&'db self, enum_id: EnumId<'db>) -> Maybe<ast::ItemEnum<'db>>;
     fn module_type_aliases<'db>(
         &'db self,
         module_id: ModuleId<'db>,
@@ -314,7 +310,7 @@ pub trait DefsGroup: ParserGroup {
     fn module_type_alias_by_id<'db>(
         &'db self,
         module_type_alias_id: ModuleTypeAliasId<'db>,
-    ) -> Maybe<Option<ast::ItemTypeAlias<'db>>>;
+    ) -> Maybe<ast::ItemTypeAlias<'db>>;
     fn module_impl_aliases<'db>(
         &'db self,
         module_id: ModuleId<'db>,
@@ -326,17 +322,14 @@ pub trait DefsGroup: ParserGroup {
     fn module_impl_alias_by_id<'db>(
         &'db self,
         impl_alias_id: ImplAliasId<'db>,
-    ) -> Maybe<Option<ast::ItemImplAlias<'db>>>;
+    ) -> Maybe<ast::ItemImplAlias<'db>>;
     fn module_traits<'db>(
         &'db self,
         module_id: ModuleId<'db>,
     ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, ast::ItemTrait<'db>>>>;
     fn module_traits_ids<'db>(&'db self, module_id: ModuleId<'db>)
     -> Maybe<Arc<Vec<TraitId<'db>>>>;
-    fn module_trait_by_id<'db>(
-        &'db self,
-        trait_id: TraitId<'db>,
-    ) -> Maybe<Option<ast::ItemTrait<'db>>>;
+    fn module_trait_by_id<'db>(&'db self, trait_id: TraitId<'db>) -> Maybe<ast::ItemTrait<'db>>;
     fn module_impls<'db>(
         &'db self,
         module_id: ModuleId<'db>,
@@ -345,10 +338,7 @@ pub trait DefsGroup: ParserGroup {
         &'db self,
         module_id: ModuleId<'db>,
     ) -> Maybe<Arc<Vec<ImplDefId<'db>>>>;
-    fn module_impl_by_id<'db>(
-        &'db self,
-        impl_id: ImplDefId<'db>,
-    ) -> Maybe<Option<ast::ItemImpl<'db>>>;
+    fn module_impl_by_id<'db>(&'db self, impl_id: ImplDefId<'db>) -> Maybe<ast::ItemImpl<'db>>;
     fn module_extern_types<'db>(
         &'db self,
         module_id: ModuleId<'db>,
@@ -360,7 +350,7 @@ pub trait DefsGroup: ParserGroup {
     fn module_extern_type_by_id<'db>(
         &'db self,
         extern_type_id: ExternTypeId<'db>,
-    ) -> Maybe<Option<ast::ItemExternType<'db>>>;
+    ) -> Maybe<ast::ItemExternType<'db>>;
     fn module_extern_functions<'db>(
         &'db self,
         module_id: ModuleId<'db>,
@@ -372,7 +362,7 @@ pub trait DefsGroup: ParserGroup {
     fn module_extern_function_by_id<'db>(
         &'db self,
         extern_function_id: ExternFunctionId<'db>,
-    ) -> Maybe<Option<ast::ItemExternFunction<'db>>>;
+    ) -> Maybe<ast::ItemExternFunction<'db>>;
     /// Returns the macro declarations in the module.
     fn module_macro_declarations<'db>(
         &'db self,
@@ -387,7 +377,7 @@ pub trait DefsGroup: ParserGroup {
     fn module_macro_declaration_by_id<'db>(
         &'db self,
         macro_declaration_id: MacroDeclarationId<'db>,
-    ) -> Maybe<Option<ast::ItemMacroDeclaration<'db>>>;
+    ) -> Maybe<ast::ItemMacroDeclaration<'db>>;
     /// Returns the macro calls in the module.
     fn module_macro_calls<'db>(
         &'db self,
@@ -402,7 +392,7 @@ pub trait DefsGroup: ParserGroup {
     fn module_macro_call_by_id<'db>(
         &'db self,
         macro_call_id: MacroCallId<'db>,
-    ) -> Maybe<Option<ast::ItemInlineMacro<'db>>>;
+    ) -> Maybe<ast::ItemInlineMacro<'db>>;
     fn module_ancestors<'db>(&'db self, module_id: ModuleId<'db>) -> OrderedHashSet<ModuleId<'db>>;
     fn module_generated_file_aux_data<'db>(
         &'db self,
@@ -876,16 +866,6 @@ fn priv_module_data<'db>(
                     let item_id =
                         MacroCallLongId(module_file_id, inline_macro_ast.stable_ptr(db)).intern(db);
                     macro_calls.insert(item_id, inline_macro_ast.clone());
-                    plugin_diagnostics.push((
-                        module_file_id,
-                        PluginDiagnostic::error(
-                            inline_macro_ast.stable_ptr(db),
-                            format!(
-                                "Unknown inline item macro: '{}'.",
-                                inline_macro_ast.path(db).as_syntax_node().get_text(db)
-                            ),
-                        ),
-                    ));
                 }
                 ast::ModuleItem::HeaderDoc(_) => {}
                 ast::ModuleItem::Missing(_) => {}
@@ -1240,9 +1220,9 @@ pub fn module_constants_ids<'db>(
 pub fn module_constant_by_id<'db>(
     db: &'db dyn DefsGroup,
     constant_id: ConstantId<'db>,
-) -> Maybe<Option<ast::ItemConstant<'db>>> {
+) -> Maybe<ast::ItemConstant<'db>> {
     let module_constants = db.module_constants(constant_id.module_file_id(db).0)?;
-    Ok(module_constants.get(&constant_id).cloned())
+    Ok(module_constants[&constant_id].clone())
 }
 
 /// Returns all the *direct* submodules of the given module - including those generated by macro
@@ -1262,9 +1242,9 @@ fn module_submodules_ids<'db>(
 pub fn module_submodule_by_id<'db>(
     db: &'db dyn DefsGroup,
     submodule_id: SubmoduleId<'db>,
-) -> Maybe<Option<ast::ItemModule<'db>>> {
+) -> Maybe<ast::ItemModule<'db>> {
     let module_submodules = db.module_submodules(submodule_id.module_file_id(db).0)?;
-    Ok(module_submodules.get(&submodule_id).cloned())
+    Ok(module_submodules[&submodule_id].clone())
 }
 
 /// Returns all the free functions of the given module.
@@ -1283,9 +1263,9 @@ pub fn module_free_functions_ids<'db>(
 pub fn module_free_function_by_id<'db>(
     db: &'db dyn DefsGroup,
     free_function_id: FreeFunctionId<'db>,
-) -> Maybe<Option<ast::FunctionWithBody<'db>>> {
+) -> Maybe<ast::FunctionWithBody<'db>> {
     let module_free_functions = db.module_free_functions(free_function_id.module_file_id(db).0)?;
-    Ok(module_free_functions.get(&free_function_id).cloned())
+    Ok(module_free_functions[&free_function_id].clone())
 }
 
 /// Returns all the uses of the given module.
@@ -1304,18 +1284,18 @@ pub fn module_uses_ids<'db>(
 pub fn module_use_by_id<'db>(
     db: &'db dyn DefsGroup,
     use_id: UseId<'db>,
-) -> Maybe<Option<ast::UsePathLeaf<'db>>> {
+) -> Maybe<ast::UsePathLeaf<'db>> {
     let module_uses = db.module_uses(use_id.module_file_id(db).0)?;
-    Ok(module_uses.get(&use_id).cloned())
+    Ok(module_uses[&use_id].clone())
 }
 
 /// Returns the `use *` of the given module, by its ID.
 pub fn module_global_use_by_id<'db>(
     db: &'db dyn DefsGroup,
     global_use_id: GlobalUseId<'db>,
-) -> Maybe<Option<ast::UsePathStar<'db>>> {
+) -> Maybe<ast::UsePathStar<'db>> {
     let module_global_uses = db.module_global_uses(global_use_id.module_file_id(db).0)?;
-    Ok(module_global_uses.get(&global_use_id).cloned())
+    Ok(module_global_uses[&global_use_id].clone())
 }
 
 /// Returns all the structs of the given module.
@@ -1334,9 +1314,9 @@ pub fn module_structs_ids<'db>(
 pub fn module_struct_by_id<'db>(
     db: &'db dyn DefsGroup,
     struct_id: StructId<'db>,
-) -> Maybe<Option<ast::ItemStruct<'db>>> {
+) -> Maybe<ast::ItemStruct<'db>> {
     let module_structs = db.module_structs(struct_id.module_file_id(db).0)?;
-    Ok(module_structs.get(&struct_id).cloned())
+    Ok(module_structs[&struct_id].clone())
 }
 
 /// Returns all the enums of the given module.
@@ -1355,9 +1335,9 @@ pub fn module_enums_ids<'db>(
 pub fn module_enum_by_id<'db>(
     db: &'db dyn DefsGroup,
     enum_id: EnumId<'db>,
-) -> Maybe<Option<ast::ItemEnum<'db>>> {
+) -> Maybe<ast::ItemEnum<'db>> {
     let module_enums = db.module_enums(enum_id.module_file_id(db).0)?;
-    Ok(module_enums.get(&enum_id).cloned())
+    Ok(module_enums[&enum_id].clone())
 }
 
 /// Returns all the type aliases of the given module.
@@ -1376,9 +1356,9 @@ pub fn module_type_aliases_ids<'db>(
 pub fn module_type_alias_by_id<'db>(
     db: &'db dyn DefsGroup,
     module_type_alias_id: ModuleTypeAliasId<'db>,
-) -> Maybe<Option<ast::ItemTypeAlias<'db>>> {
+) -> Maybe<ast::ItemTypeAlias<'db>> {
     let module_type_aliases = db.module_type_aliases(module_type_alias_id.module_file_id(db).0)?;
-    Ok(module_type_aliases.get(&module_type_alias_id).cloned())
+    Ok(module_type_aliases[&module_type_alias_id].clone())
 }
 
 /// Returns all the impl aliases of the given module.
@@ -1397,9 +1377,9 @@ pub fn module_impl_aliases_ids<'db>(
 pub fn module_impl_alias_by_id<'db>(
     db: &'db dyn DefsGroup,
     impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<Option<ast::ItemImplAlias<'db>>> {
+) -> Maybe<ast::ItemImplAlias<'db>> {
     let module_impl_aliases = db.module_impl_aliases(impl_alias_id.module_file_id(db).0)?;
-    Ok(module_impl_aliases.get(&impl_alias_id).cloned())
+    Ok(module_impl_aliases[&impl_alias_id].clone())
 }
 
 /// Returns all the traits of the given module.
@@ -1418,9 +1398,9 @@ pub fn module_traits_ids<'db>(
 pub fn module_trait_by_id<'db>(
     db: &'db dyn DefsGroup,
     trait_id: TraitId<'db>,
-) -> Maybe<Option<ast::ItemTrait<'db>>> {
+) -> Maybe<ast::ItemTrait<'db>> {
     let module_traits = db.module_traits(trait_id.module_file_id(db).0)?;
-    Ok(module_traits.get(&trait_id).cloned())
+    Ok(module_traits[&trait_id].clone())
 }
 
 /// Returns all the impls of the given module.
@@ -1439,9 +1419,9 @@ pub fn module_impls_ids<'db>(
 pub fn module_impl_by_id<'db>(
     db: &'db dyn DefsGroup,
     impl_def_id: ImplDefId<'db>,
-) -> Maybe<Option<ast::ItemImpl<'db>>> {
+) -> Maybe<ast::ItemImpl<'db>> {
     let module_impls = db.module_impls(impl_def_id.module_file_id(db).0)?;
-    Ok(module_impls.get(&impl_def_id).cloned())
+    Ok(module_impls[&impl_def_id].clone())
 }
 
 /// Returns all the extern_types of the given module.
@@ -1460,9 +1440,9 @@ pub fn module_extern_types_ids<'db>(
 pub fn module_extern_type_by_id<'db>(
     db: &'db dyn DefsGroup,
     extern_type_id: ExternTypeId<'db>,
-) -> Maybe<Option<ast::ItemExternType<'db>>> {
+) -> Maybe<ast::ItemExternType<'db>> {
     let module_extern_types = db.module_extern_types(extern_type_id.module_file_id(db).0)?;
-    Ok(module_extern_types.get(&extern_type_id).cloned())
+    Ok(module_extern_types[&extern_type_id].clone())
 }
 
 /// Returns all the macro declarations of the given module.
@@ -1483,10 +1463,10 @@ pub fn module_macro_declarations_ids<'db>(
 pub fn module_macro_declaration_by_id<'db>(
     db: &'db dyn DefsGroup,
     macro_declaration_id: MacroDeclarationId<'db>,
-) -> Maybe<Option<ast::ItemMacroDeclaration<'db>>> {
+) -> Maybe<ast::ItemMacroDeclaration<'db>> {
     let module_macro_declarations =
         db.module_macro_declarations(macro_declaration_id.module_file_id(db).0)?;
-    Ok(module_macro_declarations.get(&macro_declaration_id).cloned())
+    Ok(module_macro_declarations[&macro_declaration_id].clone())
 }
 
 /// Query implementation of [DefsGroup::module_macro_calls].
@@ -1507,9 +1487,9 @@ pub fn module_macro_calls_ids<'db>(
 fn module_macro_call_by_id<'db>(
     db: &'db dyn DefsGroup,
     macro_call_id: MacroCallId<'db>,
-) -> Maybe<Option<ast::ItemInlineMacro<'db>>> {
+) -> Maybe<ast::ItemInlineMacro<'db>> {
     let module_macro_calls = db.module_macro_calls(macro_call_id.module_file_id(db).0)?;
-    Ok(module_macro_calls.get(&macro_call_id).cloned())
+    Ok(module_macro_calls[&macro_call_id].clone())
 }
 
 /// Returns all the extern_functions of the given module.
@@ -1528,10 +1508,10 @@ pub fn module_extern_functions_ids<'db>(
 pub fn module_extern_function_by_id<'db>(
     db: &'db dyn DefsGroup,
     extern_function_id: ExternFunctionId<'db>,
-) -> Maybe<Option<ast::ItemExternFunction<'db>>> {
+) -> Maybe<ast::ItemExternFunction<'db>> {
     let module_extern_functions =
         db.module_extern_functions(extern_function_id.module_file_id(db).0)?;
-    Ok(module_extern_functions.get(&extern_function_id).cloned())
+    Ok(module_extern_functions[&extern_function_id].clone())
 }
 
 pub fn module_ancestors<'db>(

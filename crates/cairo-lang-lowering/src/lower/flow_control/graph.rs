@@ -22,6 +22,7 @@
 use std::fmt::Debug;
 
 use cairo_lang_semantic::{self as semantic, ConcreteVariant, PatternVariable};
+use cairo_lang_syntax::node::ast::ExprPtr;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::Itertools;
 
@@ -108,6 +109,30 @@ impl<'db> std::fmt::Debug for EnumMatch<'db> {
     }
 }
 
+/// Checks whether a value is equal to a literal.
+pub struct EqualsLiteral<'db> {
+    /// The input value to check.
+    pub input: FlowControlVar,
+    /// The literal to check against.
+    pub literal: usize,
+    /// A stable pointer to the first instance of the literal in the patterns.
+    pub stable_ptr: ExprPtr<'db>,
+    /// The node to jump to if the value is equal to the literal.
+    pub true_branch: NodeId,
+    /// The node to jump to if the value is not equal to the literal.
+    pub false_branch: NodeId,
+}
+
+impl<'db> std::fmt::Debug for EqualsLiteral<'db> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "EqualsLiteral {{ input: {:?}, literal: {}, true_branch: {:?}, false_branch: {:?} }}",
+            self.input, self.literal, self.true_branch, self.false_branch,
+        )
+    }
+}
+
 /// An arm (final node) that returns an expression.
 #[derive(Debug)]
 pub struct ArmExpr {
@@ -122,10 +147,8 @@ pub struct Deconstruct {
     pub input: FlowControlVar,
     /// The (output) variables to assign the result to. The number of variables is equal to the
     /// number of fields in the struct or tuple.
-    #[expect(dead_code)]
     pub outputs: Vec<FlowControlVar>,
     /// The next node.
-    #[expect(dead_code)]
     pub next: NodeId,
 }
 
@@ -149,6 +172,8 @@ pub enum FlowControlNode<'db> {
     BooleanIf(BooleanIf),
     /// Enum match node.
     EnumMatch(EnumMatch<'db>),
+    /// Checks whether a value is equal to a literal.
+    EqualsLiteral(EqualsLiteral<'db>),
     /// An arm (final node) that returns an expression.
     ArmExpr(ArmExpr),
     /// Destructure a tuple to its members.
@@ -166,6 +191,7 @@ impl<'db> FlowControlNode<'db> {
             FlowControlNode::EvaluateExpr(..) => None,
             FlowControlNode::BooleanIf(node) => Some(node.condition_var),
             FlowControlNode::EnumMatch(node) => Some(node.matched_var),
+            FlowControlNode::EqualsLiteral(node) => Some(node.input),
             FlowControlNode::ArmExpr(..) => None,
             FlowControlNode::Deconstruct(node) => Some(node.input),
             FlowControlNode::BindVar(node) => Some(node.input),
@@ -180,6 +206,7 @@ impl<'db> Debug for FlowControlNode<'db> {
             FlowControlNode::EvaluateExpr(node) => node.fmt(f),
             FlowControlNode::BooleanIf(node) => node.fmt(f),
             FlowControlNode::EnumMatch(node) => node.fmt(f),
+            FlowControlNode::EqualsLiteral(node) => node.fmt(f),
             FlowControlNode::ArmExpr(node) => node.fmt(f),
             FlowControlNode::Deconstruct(node) => node.fmt(f),
             FlowControlNode::BindVar(node) => node.fmt(f),

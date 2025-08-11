@@ -81,7 +81,7 @@ use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, Resolv
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ImplTypeId, add_type_based_diagnostics, get_impl_at_context, resolve_type};
 use crate::{
-    Arenas, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId, FunctionId, FunctionLongId,
+    ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId, FunctionId, FunctionLongId,
     GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic, TypeId, TypeLongId, semantic,
     semantic_object_for_id,
 };
@@ -482,7 +482,7 @@ pub fn impl_def_generic_params_data<'db>(
     let module_file_id = impl_def_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
 
-    let impl_ast = db.module_impl_by_id(impl_def_id)?.to_maybe()?;
+    let impl_ast = db.module_impl_by_id(impl_def_id)?;
     let inference_id =
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Impl(impl_def_id)));
 
@@ -572,7 +572,7 @@ pub fn impl_def_trait<'db>(
     let module_file_id = impl_def_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
 
-    let impl_ast = db.module_impl_by_id(impl_def_id)?.to_maybe()?;
+    let impl_ast = db.module_impl_by_id(impl_def_id)?;
     let inference_id = InferenceId::ImplDefTrait(impl_def_id);
 
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
@@ -642,7 +642,7 @@ pub fn priv_impl_declaration_data_inner<'db>(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let impl_ast = db.module_impl_by_id(impl_def_id)?.to_maybe()?;
+    let impl_ast = db.module_impl_by_id(impl_def_id)?;
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
         ModuleItemId::Impl(impl_def_id),
     ));
@@ -1115,9 +1115,9 @@ pub fn impl_type_ids<'db>(
 pub fn impl_type_by_id<'db>(
     db: &'db dyn SemanticGroup,
     impl_type_id: ImplTypeDefId<'db>,
-) -> Maybe<Option<ast::ItemTypeAlias<'db>>> {
+) -> Maybe<ast::ItemTypeAlias<'db>> {
     let impl_types = db.impl_types(impl_type_id.impl_def_id(db))?;
-    Ok(impl_types.get(&impl_type_id).cloned())
+    Ok(impl_types[&impl_type_id].clone())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_type_by_trait_type].
@@ -1190,9 +1190,9 @@ pub fn impl_impl_ids<'db>(
 pub fn impl_impl_by_id<'db>(
     db: &'db dyn SemanticGroup,
     impl_impl_id: ImplImplDefId<'db>,
-) -> Maybe<Option<ast::ItemImplAlias<'db>>> {
+) -> Maybe<ast::ItemImplAlias<'db>> {
     let impl_impls = db.impl_impls(impl_impl_id.impl_def_id(db))?;
-    Ok(impl_impls.get(&impl_impl_id).cloned())
+    Ok(impl_impls[&impl_impl_id].clone())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_impl_by_trait_impl].
@@ -1247,7 +1247,7 @@ pub fn priv_impl_definition_data<'db>(
     let generic_params = db.impl_def_generic_params(impl_def_id)?;
     let concrete_trait = db.priv_impl_declaration_data(impl_def_id)?.concrete_trait?;
 
-    let impl_ast = db.module_impl_by_id(impl_def_id)?.to_maybe()?;
+    let impl_ast = db.module_impl_by_id(impl_def_id)?;
 
     let generic_params_ids =
         generic_params.iter().map(|generic_param| generic_param.id()).collect();
@@ -2298,20 +2298,19 @@ pub fn priv_impl_type_semantic_data<'db>(
     in_cycle: bool,
 ) -> Maybe<ImplItemTypeData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
-    let impl_type_defs = db.impl_types(impl_type_def_id.impl_def_id(db))?;
-    let impl_type_def_ast = impl_type_defs.get(&impl_type_def_id).to_maybe()?;
+    let impl_type_def_ast = db.impl_type_by_id(impl_type_def_id)?;
     let generic_params_data = db.priv_impl_type_def_generic_params_data(impl_type_def_id)?;
     let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(impl_type_def_id));
 
     let trait_type_id =
-        validate_impl_item_type(db, &mut diagnostics, impl_type_def_id, impl_type_def_ast);
+        validate_impl_item_type(db, &mut diagnostics, impl_type_def_id, &impl_type_def_ast);
 
     if in_cycle {
         Ok(ImplItemTypeData {
             type_alias_data: type_alias_semantic_data_cycle_helper(
                 db,
                 &mut diagnostics,
-                impl_type_def_ast,
+                &impl_type_def_ast,
                 lookup_item_id,
                 generic_params_data,
             )?,
@@ -2325,7 +2324,7 @@ pub fn priv_impl_type_semantic_data<'db>(
             type_alias_data: type_alias_semantic_data_helper(
                 db,
                 &mut diagnostics,
-                impl_type_def_ast,
+                &impl_type_def_ast,
                 lookup_item_id,
                 generic_params_data,
             )?,
@@ -2352,7 +2351,7 @@ pub fn priv_impl_type_def_generic_params_data<'db>(
     impl_type_def_id: ImplTypeDefId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = impl_type_def_id.module_file_id(db);
-    let impl_type_def_ast = db.impl_type_by_id(impl_type_def_id)?.to_maybe()?;
+    let impl_type_def_ast = db.impl_type_by_id(impl_type_def_id)?;
     let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(impl_type_def_id));
 
     let impl_resolver_data = db.impl_def_resolver_data(impl_type_def_id.impl_def_id(db))?;
@@ -2822,7 +2821,7 @@ pub fn priv_impl_impl_def_generic_params_data<'db>(
     impl_impl_def_id: ImplImplDefId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = impl_impl_def_id.module_file_id(db);
-    let impl_impl_def_ast = db.impl_impl_by_id(impl_impl_def_id)?.to_maybe()?;
+    let impl_impl_def_ast = db.impl_impl_by_id(impl_impl_def_id)?;
     let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Impl(impl_impl_def_id));
 
     let impl_resolver_data = db.impl_def_resolver_data(impl_impl_def_id.impl_def_id(db))?;
@@ -3594,7 +3593,7 @@ pub fn priv_impl_function_body_data<'db>(
     let inference_id = InferenceId::LookupItemDefinition(LookupItemId::ImplItem(
         ImplItemId::Function(impl_function_id),
     ));
-    let resolver =
+    let mut resolver =
         Resolver::with_data(db, (*parent_resolver_data).clone_with_inference_id(db, inference_id));
     let environment: Environment<'_> = declaration.function_declaration_data.environment;
 
@@ -3620,7 +3619,7 @@ pub fn priv_impl_function_body_data<'db>(
     let mut ctx = ComputationContext::new(
         db,
         &mut diagnostics,
-        resolver,
+        &mut resolver,
         Some(&declaration.function_declaration_data.signature),
         environment,
         ContextFunction::Function(function_id),
@@ -3628,19 +3627,19 @@ pub fn priv_impl_function_body_data<'db>(
     let function_body = function_syntax.body(db);
     let return_type = declaration.function_declaration_data.signature.return_type;
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
-    let ComputationContext { arenas: Arenas { exprs, patterns, statements }, resolver, .. } = ctx;
+    let ComputationContext { arenas, .. } = ctx;
 
     let expr_lookup: UnorderedHashMap<_, _> =
-        exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
+        arenas.exprs.iter().map(|(id, expr)| (expr.stable_ptr(), id)).collect();
     let pattern_lookup: UnorderedHashMap<_, _> =
-        patterns.iter().map(|(pattern_id, pattern)| (pattern.stable_ptr(), pattern_id)).collect();
+        arenas.patterns.iter().map(|(id, pattern)| (pattern.stable_ptr(), id)).collect();
     let resolver_data = Arc::new(resolver.data);
     Ok(FunctionBodyData {
         diagnostics: diagnostics.build(),
         expr_lookup,
         pattern_lookup,
         resolver_data,
-        body: Arc::new(FunctionBody { arenas: Arenas { exprs, patterns, statements }, body_expr }),
+        body: Arc::new(FunctionBody { arenas, body_expr }),
     })
 }
 

@@ -3,15 +3,20 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::{self as semantic, MatchArmSelector, corelib};
 use cairo_lang_syntax::node::TypedStablePtr;
+use itertools::zip_eq;
 
 use super::LowerGraphContext;
+use crate::ids::SemanticFunctionIdEx;
 use crate::lower::block_builder::BlockBuilder;
 use crate::lower::context::{LoweredExpr, VarRequest};
 use crate::lower::flow_control::graph::{
-    ArmExpr, BindVar, BooleanIf, EnumMatch, EvaluateExpr, FlowControlNode, NodeId,
+    ArmExpr, BindVar, BooleanIf, Deconstruct, EnumMatch, EqualsLiteral, EvaluateExpr,
+    FlowControlNode, NodeId,
 };
-use crate::lower::{lower_expr_to_var_usage, lower_tail_expr, lowered_expr_to_block_scope_end};
-use crate::{MatchArm, MatchEnumInfo, MatchInfo, VarUsage};
+use crate::lower::{
+    generators, lower_expr, lower_expr_literal_to_var_usage, lower_expr_to_var_usage,
+};
+use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage};
 
 /// Lowers the node with the given [NodeId].
 pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<()> {
@@ -22,11 +27,12 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
     match ctx.graph.node(id) {
         FlowControlNode::EvaluateExpr(node) => lower_evaluate_expr(ctx, id, node, builder),
         FlowControlNode::BooleanIf(node) => lower_boolean_if(ctx, id, node, builder),
-        FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, node, builder),
-        FlowControlNode::UnitResult => lower_unit_result(ctx, builder),
+        FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, id, node, builder),
+        FlowControlNode::UnitResult => lower_unit_result(ctx, id, builder),
         FlowControlNode::EnumMatch(node) => lower_enum_match(ctx, id, node, builder),
+        FlowControlNode::EqualsLiteral(node) => lower_equals_literal(ctx, id, node, builder),
         FlowControlNode::BindVar(node) => lower_bind_var(ctx, id, node, builder),
-        _ => todo!(),
+        FlowControlNode::Deconstruct(node) => lower_deconstruct(ctx, id, node, builder),
     }
 }
 
@@ -92,26 +98,26 @@ fn lower_boolean_if<'db>(
 /// Lowers an [ArmExpr] node.
 fn lower_arm_expr<'db>(
     ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
     node: &ArmExpr,
-    builder: BlockBuilder<'db>,
+    mut builder: BlockBuilder<'db>,
 ) -> Maybe<()> {
-    let sealed_block = lower_tail_expr(ctx.ctx, builder, node.expr)?;
-    ctx.add_sealed_block(sealed_block);
+    let lowered_expr = lower_expr(ctx.ctx, &mut builder, node.expr);
+    ctx.finalize_with_arm(id, builder, lowered_expr)?;
     Ok(())
 }
 
 /// Lowers a `UnitResult` node.
 fn lower_unit_result<'db>(
     ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
     builder: BlockBuilder<'db>,
 ) -> Maybe<()> {
-    let sealed_block = lowered_expr_to_block_scope_end(
-        ctx.ctx,
+    ctx.finalize_with_arm(
+        id,
         builder,
         Ok(LoweredExpr::Tuple { exprs: vec![], location: ctx.location }),
     )?;
-    ctx.add_sealed_block(sealed_block);
-
     Ok(())
 }
 
@@ -153,6 +159,85 @@ fn lower_enum_match<'db>(
     Ok(())
 }
 
+/// Lowers an [EqualsLiteral] node.
+fn lower_equals_literal<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &EqualsLiteral<'db>,
+    mut builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let db = ctx.ctx.db;
+    let felt252_ty = db.core_info().felt252;
+
+    // TODO(TomerStarkware): Use the same type of literal as the input, without the cast to
+    //   felt252.
+    let literal_stable_ptr = node.stable_ptr.untyped();
+    let literal_location = ctx.ctx.get_location(literal_stable_ptr);
+    let input_var = ctx.vars[&node.input];
+
+    // Lower the expression `input_var - literal`.
+    let is_equal: VarUsage<'db> = if node.literal == 0 {
+        // If the literal is 0, simply use the input variable.
+        input_var
+    } else {
+        // Lower the literal to a [VarUsage].
+        let literal_var_usage: VarUsage<'db> = lower_expr_literal_to_var_usage(
+            ctx.ctx,
+            literal_stable_ptr,
+            felt252_ty,
+            &node.literal.into(),
+            &mut builder,
+        );
+
+        let call_result = generators::Call {
+            function: corelib::felt252_sub(db).lowered(db),
+            inputs: vec![input_var, literal_var_usage],
+            coupon_input: None,
+            extra_ret_tys: vec![],
+            ret_tys: vec![felt252_ty],
+            location: literal_location,
+        }
+        .add(ctx.ctx, &mut builder.statements);
+
+        call_result.returns.into_iter().next().unwrap()
+    };
+
+    // Allocate block ids for the two branches.
+    let true_branch_block_id = ctx.assign_child_block_id(node.true_branch, &builder);
+    let false_branch_block_id = ctx.assign_child_block_id(node.false_branch, &builder);
+
+    // Create dummy variable for the non-zero return value of `core_felt252_is_zero`.
+    let non_zero_type = corelib::core_nonzero_ty(db, felt252_ty);
+    let false_branch_nonzero_var_id =
+        ctx.ctx.new_var(VarRequest { ty: non_zero_type, location: literal_location });
+
+    // Finalize the block.
+    let match_info = MatchInfo::Extern(MatchExternInfo {
+        function: corelib::core_felt252_is_zero(db).lowered(db),
+        inputs: vec![is_equal],
+        arms: vec![
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_zero_variant(
+                    db, felt252_ty,
+                )),
+                block_id: true_branch_block_id,
+                var_ids: vec![],
+            },
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_nonzero_variant(
+                    db, felt252_ty,
+                )),
+                block_id: false_branch_block_id,
+                var_ids: vec![false_branch_nonzero_var_id],
+            },
+        ],
+        location: literal_location,
+    });
+
+    ctx.finalize_with_match(id, builder, match_info);
+    Ok(())
+}
+
 /// Lowers a [BindVar] node.
 fn lower_bind_var<'db>(
     ctx: &mut LowerGraphContext<'db, '_, '_>,
@@ -174,6 +259,34 @@ fn lower_bind_var<'db>(
     let sem_var = semantic::Binding::LocalVar(pattern_variable.var.clone());
     builder.put_semantic(sem_var.id(), var_id);
     ctx.ctx.semantic_defs.insert(sem_var.id(), sem_var);
+
+    ctx.pass_builder_to_child(id, node.next, builder);
+    Ok(())
+}
+
+/// Lowers a [Deconstruct] node.
+///
+/// Deconstructs the input [super::FlowControlVar] into its members (tuple or struct), and binds the
+/// members to the output [super::FlowControlVar]s.
+fn lower_deconstruct<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &Deconstruct,
+    mut builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let var_requests = node
+        .outputs
+        .iter()
+        .map(|output| VarRequest { ty: output.ty(ctx.graph), location: output.location(ctx.graph) })
+        .collect();
+
+    let variable_ids =
+        generators::StructDestructure { input: ctx.vars[&node.input], var_reqs: var_requests }
+            .add(ctx.ctx, &mut builder.statements);
+
+    for (var_id, output) in zip_eq(variable_ids, &node.outputs) {
+        ctx.register_var(*output, VarUsage { var_id, location: output.location(ctx.graph) });
+    }
 
     ctx.pass_builder_to_child(id, node.next, builder);
     Ok(())

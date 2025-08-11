@@ -8,7 +8,7 @@ use cairo_lang_defs::ids::{
     TraitFunctionId, TraitFunctionLongId, TraitId, TraitImplId, TraitImplLongId, TraitItemId,
     TraitTypeId, TraitTypeLongId, UseId,
 };
-use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -43,8 +43,8 @@ use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::resolve_type;
 use crate::{
-    Arenas, FunctionBody, FunctionLongId, GenericArgumentId, GenericParam, Mutability,
-    SemanticDiagnostic, TypeId, semantic, semantic_object_for_id,
+    FunctionBody, FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic,
+    TypeId, semantic, semantic_object_for_id,
 };
 
 #[cfg(test)]
@@ -377,7 +377,7 @@ pub fn trait_generic_params_data<'db>(
 ) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = trait_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
-    let trait_ast = db.module_trait_by_id(trait_id)?.to_maybe()?;
+    let trait_ast = db.module_trait_by_id(trait_id)?;
 
     // Generic params.
     let inference_id =
@@ -437,7 +437,7 @@ pub fn priv_trait_declaration_data<'db>(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let trait_ast = db.module_trait_by_id(trait_id)?.to_maybe()?;
+    let trait_ast = db.module_trait_by_id(trait_id)?;
 
     // Generic params.
     let generic_params_data = db.trait_generic_params_data(trait_id, false)?;
@@ -712,7 +712,7 @@ pub fn priv_trait_definition_data<'db>(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let trait_ast = db.module_trait_by_id(trait_id)?.to_maybe()?;
+    let trait_ast = db.module_trait_by_id(trait_id)?;
 
     let mut function_asts = OrderedHashMap::default();
     let mut item_type_asts = OrderedHashMap::default();
@@ -1428,7 +1428,7 @@ pub fn priv_trait_function_body_data<'db>(
     let mut ctx: ComputationContext<'db, '_> = ComputationContext::new(
         db,
         &mut diagnostics,
-        resolver,
+        &mut resolver,
         Some(&trait_function_declaration_data.signature),
         environment,
         ContextFunction::Function(function_id),
@@ -1439,18 +1439,18 @@ pub fn priv_trait_function_body_data<'db>(
     };
     let return_type = trait_function_declaration_data.signature.return_type;
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
-    let ComputationContext { arenas: Arenas { exprs, patterns, statements }, resolver, .. } = ctx;
+    let ComputationContext { arenas, .. } = ctx;
 
     let expr_lookup: UnorderedHashMap<_, _> =
-        exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
+        arenas.exprs.iter().map(|(id, expr)| (expr.stable_ptr(), id)).collect();
     let pattern_lookup: UnorderedHashMap<_, _> =
-        patterns.iter().map(|(pattern_id, pattern)| (pattern.stable_ptr(), pattern_id)).collect();
+        arenas.patterns.iter().map(|(id, pattern)| (pattern.stable_ptr(), id)).collect();
     let resolver_data = Arc::new(resolver.data);
     Ok(Some(FunctionBodyData {
         diagnostics: diagnostics.build(),
         expr_lookup,
         pattern_lookup,
         resolver_data,
-        body: Arc::new(FunctionBody { arenas: Arenas { exprs, patterns, statements }, body_expr }),
+        body: Arc::new(FunctionBody { arenas, body_expr }),
     }))
 }

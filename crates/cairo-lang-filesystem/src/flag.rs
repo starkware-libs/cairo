@@ -18,7 +18,7 @@ pub enum Flag {
     PanicBacktrace(bool),
     /// Whether to use unsafe_panic in the generated code.
     ///
-    /// Default is false as it make panic unprovable.
+    /// Default is false as it makes panic unprovable.
     UnsafePanic(bool),
 }
 

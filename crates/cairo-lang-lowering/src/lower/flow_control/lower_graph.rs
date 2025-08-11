@@ -6,12 +6,12 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use super::graph::{FlowControlGraph, FlowControlVar, NodeId};
 use crate::ids::LocationId;
 use crate::lower::block_builder::{
-    BlockBuilder, SealedBlockBuilder, SealedGotoCallsite, merge_block_builders,
-    merge_sealed_block_builders,
+    BlockBuilder, SealedGotoCallsite, merge_block_builders, merge_sealed_block_builders,
 };
 use crate::lower::context::{
     LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, handle_lowering_flow_error,
 };
+use crate::lower::lowered_expr_to_block_scope_end;
 use crate::{BlockEnd, BlockId, MatchInfo, VarUsage};
 
 mod lower_node;
@@ -42,6 +42,18 @@ pub fn lower_graph<'db, 'mt>(
     res
 }
 
+/// Information about the final result of the lowering of the graph.
+enum LowerGraphResult<'db> {
+    /// The result is the given expression.
+    Expr(LoweredExpr<'db>),
+    /// The graph is finalized using the given [MatchInfo] on the sealed blocks from all the arms.
+    /// In this case, the final [LoweringResult] may be `Ok` or [LoweringFlowError::Match] (if
+    /// all arms panic or return).
+    Match(MatchInfo<'db>),
+    /// The flow does not continue to the callsite (for example, if all the arms panic or return).
+    Error(LoweringFlowError<'db>),
+}
+
 /// Helper struct for the lowering of a flow control graph.
 struct LowerGraphContext<'db, 'mt, 'a> {
     /// The lowering context.
@@ -50,7 +62,7 @@ struct LowerGraphContext<'db, 'mt, 'a> {
     graph: &'a FlowControlGraph<'db>,
     /// The [BlockBuilder] for the result of the lowering, and the [MatchInfo] for its
     /// finalization.
-    result: Option<(BlockBuilder<'db>, LoweringResult<'db, MatchInfo<'db>>)>,
+    result: Option<(BlockBuilder<'db>, LowerGraphResult<'db>)>,
     /// A map from [NodeId] to all the [BlockBuilder]s that lead to it.
     /// When a node is visited, it creates a [BlockBuilder] for each of its child nodes
     /// (see [Self::assign_child_block_id]) and adds it to the map.
@@ -160,7 +172,7 @@ impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
         info: MatchInfo<'db>,
     ) {
         if id == self.effective_root {
-            self.result = Some((builder, Ok(info)));
+            self.result = Some((builder, LowerGraphResult::Match(info)));
         } else {
             builder.finalize(self.ctx, BlockEnd::Match { info });
         }
@@ -175,34 +187,45 @@ impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
         err: LoweringFlowError<'db>,
     ) -> Maybe<()> {
         if id == self.effective_root {
-            self.result = Some((builder, Err(err)));
+            self.result = Some((builder, LowerGraphResult::Error(err)));
         } else {
             handle_lowering_flow_error(self.ctx, builder, err)?;
         }
         Ok(())
     }
 
-    /// Adds a sealed block to the context.
-    ///
-    /// The block is an arm's block that was already sealed and should be merged with the other
-    /// arms.
-    fn add_sealed_block(&mut self, sealed_block: SealedBlockBuilder<'db>) {
-        // If sealed_block is `None`, ignore it as it doesn't return to the callsite and therefore
-        // should not be merged.
-        if let Some(sealed_block) = sealed_block {
-            self.sealed_blocks.push(sealed_block);
+    /// Finalizes an arm block that ends with the given `lowering_result`.
+    fn finalize_with_arm(
+        &mut self,
+        id: NodeId,
+        builder: BlockBuilder<'db>,
+        lowering_result: LoweringResult<'db, LoweredExpr<'db>>,
+    ) -> Maybe<()> {
+        if id == self.effective_root {
+            let lower_graph_result = match lowering_result {
+                Ok(lowered_expr) => LowerGraphResult::Expr(lowered_expr),
+                Err(err) => LowerGraphResult::Error(err),
+            };
+            self.result = Some((builder, lower_graph_result));
+        } else {
+            let sealed_block = lowered_expr_to_block_scope_end(self.ctx, builder, lowering_result)?;
+            if let Some(sealed_block) = sealed_block {
+                self.sealed_blocks.push(sealed_block);
+            }
         }
+
+        Ok(())
     }
 
     /// Finalizes the lowering of the graph.
     ///
-    /// Returns the [BlockBuilder] with the state at the end of the graph, and the
-    /// [LoweredExpr] or [LoweringFlowError] for the resulting expression.
+    /// Returns the [LoweredExpr] or [LoweringFlowError] for the resulting expression,
+    /// and the [BlockBuilder] with the state at the end of the graph.
     fn finalize(mut self) -> (LoweringResult<'db, LoweredExpr<'db>>, BlockBuilder<'db>) {
         let (builder, match_info) = self.result.take().unwrap();
 
         match match_info {
-            Ok(match_info) => {
+            LowerGraphResult::Match(match_info) => {
                 if let Some((new_builder, lowered_expr)) = merge_sealed_block_builders(
                     self.ctx,
                     self.sealed_blocks,
@@ -215,7 +238,8 @@ impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
                     (Err(LoweringFlowError::Match(match_info)), builder)
                 }
             }
-            Err(err) => (Err(err), builder),
+            LowerGraphResult::Error(err) => (Err(err), builder),
+            LowerGraphResult::Expr(lowered_expr) => (Ok(lowered_expr), builder),
         }
     }
 }
