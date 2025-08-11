@@ -58,12 +58,12 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[?0; 3]".
+error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[?1; 3]".
  --> lib.cairo:2:24
     let _x: [u32; 2] = [1, 2, 3];
                        ^^^^^^^^^
 
-error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[?3; 3]".
+error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[?6; 3]".
  --> lib.cairo:3:24
     let _x: [u32; 2] = [1; 3];
                        ^^^^^^
@@ -105,7 +105,7 @@ error: Fixed size array with defined size must have exactly one value.
     let _x: [u32; 2] = [1, 2; 2];
                        ^^^^^^^^^
 
-error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[?4; 0]".
+error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[?7; 0]".
  --> lib.cairo:5:24
     let _x: [u32; 2] = [];
                        ^^

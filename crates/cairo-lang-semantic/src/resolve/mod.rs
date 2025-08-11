@@ -2030,7 +2030,7 @@ impl<'db> Resolver<'db> {
         let db = self.db;
         Ok(match generic_param {
             GenericParam::Type(_) => {
-                let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
+                let ty = resolve_type(db, diagnostics, self, generic_arg_syntax);
                 GenericArgumentId::Type(ty)
             }
             GenericParam::Const(const_param) => {
@@ -2041,16 +2041,10 @@ impl<'db> Resolver<'db> {
 
                 // Using the resolver's data in the constant computation context, so impl vars are
                 // added to the correct inference.
-                let mut resolver_data = ResolverData::new(
-                    self.active_module_file_id(MacroContextModifier::None),
-                    self.inference_data.inference_id,
-                );
-                std::mem::swap(&mut self.data, &mut resolver_data);
-
                 let mut ctx = ComputationContext::new(
-                    self.db,
+                    db,
                     diagnostics,
-                    Resolver::with_data(self.db, resolver_data),
+                    self,
                     None,
                     environment,
                     ContextFunction::Global,
@@ -2058,17 +2052,13 @@ impl<'db> Resolver<'db> {
                 let value = compute_expr_semantic(&mut ctx, generic_arg_syntax);
 
                 let const_value = resolve_const_expr_and_evaluate(
-                    self.db,
+                    db,
                     &mut ctx,
                     &value,
                     generic_arg_syntax.stable_ptr(db).untyped(),
                     const_param.ty,
                     false,
                 );
-
-                // Update `self` data with const_eval_resolver's data.
-                std::mem::swap(&mut ctx.resolver.data, &mut self.data);
-
                 GenericArgumentId::Constant(const_value.intern(self.db))
             }
 

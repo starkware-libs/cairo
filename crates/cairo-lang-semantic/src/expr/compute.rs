@@ -203,7 +203,7 @@ struct InlineMacroExpansion<'db> {
 pub struct ComputationContext<'ctx, 'mt> {
     pub db: &'ctx dyn SemanticGroup,
     pub diagnostics: &'mt mut SemanticDiagnostics<'ctx>,
-    pub resolver: Resolver<'ctx>,
+    pub resolver: &'mt mut Resolver<'ctx>,
     signature: Option<&'mt Signature<'ctx>>,
     environment: Box<Environment<'ctx>>,
     /// Arenas of semantic objects.
@@ -224,7 +224,7 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
     pub fn new(
         db: &'ctx dyn SemanticGroup,
         diagnostics: &'mt mut SemanticDiagnostics<'ctx>,
-        resolver: Resolver<'ctx>,
+        resolver: &'mt mut Resolver<'ctx>,
         signature: Option<&'mt Signature<'ctx>>,
         environment: Environment<'ctx>,
         function_id: ContextFunction<'ctx>,
@@ -1114,7 +1114,7 @@ fn compute_expr_fixed_size_array_semantic<'db>(
     let exprs = syntax.exprs(db).elements_vec(db);
     let size_ty = get_usize_ty(db);
     let (items, type_id, size) = if let Some(size_const_id) =
-        extract_fixed_size_array_size(db, ctx.diagnostics, syntax, &ctx.resolver)?
+        extract_fixed_size_array_size(db, ctx.diagnostics, syntax, ctx.resolver)?
     {
         // Fixed size array with a defined size must have exactly one element.
         let [expr] = exprs.as_slice() else {
@@ -2087,7 +2087,7 @@ fn compute_expr_closure_semantic<'db>(
             function_signature_params(
                 new_ctx.diagnostics,
                 new_ctx.db,
-                &mut new_ctx.resolver,
+                new_ctx.resolver,
                 &params.params(db).elements_vec(db),
                 None,
                 &mut new_ctx.environment,
@@ -2122,7 +2122,7 @@ fn compute_expr_closure_semantic<'db>(
             OptionReturnTypeClause::ReturnTypeClause(ty_syntax) => resolve_type_ex(
                 new_ctx.db,
                 new_ctx.diagnostics,
-                &mut new_ctx.resolver,
+                new_ctx.resolver,
                 &ty_syntax.ty(db),
                 ResolutionContext::Statement(&mut new_ctx.environment),
             ),
@@ -3078,7 +3078,7 @@ fn struct_ctor_expr<'db>(
     let ty = resolve_type_ex(
         db,
         ctx.diagnostics,
-        &mut ctx.resolver,
+        ctx.resolver,
         &ast::Expr::Path(path.clone()),
         ResolutionContext::Statement(&mut ctx.environment),
     );
@@ -4119,7 +4119,7 @@ pub fn compute_and_append_statement_semantic<'db>(
                     let explicit_type = resolve_type_ex(
                         db,
                         ctx.diagnostics,
-                        &mut ctx.resolver,
+                        ctx.resolver,
                         &var_type_path,
                         ResolutionContext::Statement(&mut ctx.environment),
                     );
@@ -4348,7 +4348,7 @@ pub fn compute_and_append_statement_semantic<'db>(
                     let explicit_type = resolve_type_ex(
                         db,
                         ctx.diagnostics,
-                        &mut ctx.resolver,
+                        ctx.resolver,
                         &lhs,
                         ResolutionContext::Statement(&mut ctx.environment),
                     );

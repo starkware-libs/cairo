@@ -24,7 +24,7 @@ use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
-use crate::{Arenas, FunctionLongId, SemanticDiagnostic, TypeId, semantic};
+use crate::{FunctionLongId, SemanticDiagnostic, TypeId, semantic};
 
 #[cfg(test)]
 #[path = "free_function_test.rs"]
@@ -224,7 +224,7 @@ pub fn priv_free_function_body_data<'db>(
     let inference_id = InferenceId::LookupItemDefinition(LookupItemId::ModuleItem(
         ModuleItemId::FreeFunction(free_function_id),
     ));
-    let resolver =
+    let mut resolver =
         Resolver::with_data(db, (*parent_resolver_data).clone_with_inference_id(db, inference_id));
 
     let environment = declaration.environment;
@@ -237,7 +237,7 @@ pub fn priv_free_function_body_data<'db>(
     let mut ctx = ComputationContext::new(
         db,
         &mut diagnostics,
-        resolver,
+        &mut resolver,
         Some(&declaration.signature),
         environment,
         ContextFunction::Function(function_id),
@@ -245,18 +245,18 @@ pub fn priv_free_function_body_data<'db>(
     let function_body = free_function_syntax.body(db);
     let return_type = declaration.signature.return_type;
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
-    let ComputationContext { arenas: Arenas { exprs, patterns, statements }, resolver, .. } = ctx;
+    let ComputationContext { arenas, .. } = ctx;
 
     let expr_lookup: UnorderedHashMap<_, _> =
-        exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
+        arenas.exprs.iter().map(|(id, expr)| (expr.stable_ptr(), id)).collect();
     let pattern_lookup: UnorderedHashMap<_, _> =
-        patterns.iter().map(|(pattern_id, pattern)| (pattern.stable_ptr(), pattern_id)).collect();
+        arenas.patterns.iter().map(|(id, pattern)| (pattern.stable_ptr(), id)).collect();
     let resolver_data = Arc::new(resolver.data);
     Ok(FunctionBodyData {
         diagnostics: diagnostics.build(),
         expr_lookup,
         pattern_lookup,
         resolver_data,
-        body: Arc::new(FunctionBody { arenas: Arenas { exprs, patterns, statements }, body_expr }),
+        body: Arc::new(FunctionBody { arenas, body_expr }),
     })
 }

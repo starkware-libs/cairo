@@ -81,7 +81,7 @@ use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, Resolv
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ImplTypeId, add_type_based_diagnostics, get_impl_at_context, resolve_type};
 use crate::{
-    Arenas, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId, FunctionId, FunctionLongId,
+    ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId, FunctionId, FunctionLongId,
     GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic, TypeId, TypeLongId, semantic,
     semantic_object_for_id,
 };
@@ -3594,7 +3594,7 @@ pub fn priv_impl_function_body_data<'db>(
     let inference_id = InferenceId::LookupItemDefinition(LookupItemId::ImplItem(
         ImplItemId::Function(impl_function_id),
     ));
-    let resolver =
+    let mut resolver =
         Resolver::with_data(db, (*parent_resolver_data).clone_with_inference_id(db, inference_id));
     let environment: Environment<'_> = declaration.function_declaration_data.environment;
 
@@ -3620,7 +3620,7 @@ pub fn priv_impl_function_body_data<'db>(
     let mut ctx = ComputationContext::new(
         db,
         &mut diagnostics,
-        resolver,
+        &mut resolver,
         Some(&declaration.function_declaration_data.signature),
         environment,
         ContextFunction::Function(function_id),
@@ -3628,19 +3628,19 @@ pub fn priv_impl_function_body_data<'db>(
     let function_body = function_syntax.body(db);
     let return_type = declaration.function_declaration_data.signature.return_type;
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
-    let ComputationContext { arenas: Arenas { exprs, patterns, statements }, resolver, .. } = ctx;
+    let ComputationContext { arenas, .. } = ctx;
 
     let expr_lookup: UnorderedHashMap<_, _> =
-        exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
+        arenas.exprs.iter().map(|(id, expr)| (expr.stable_ptr(), id)).collect();
     let pattern_lookup: UnorderedHashMap<_, _> =
-        patterns.iter().map(|(pattern_id, pattern)| (pattern.stable_ptr(), pattern_id)).collect();
+        arenas.patterns.iter().map(|(id, pattern)| (pattern.stable_ptr(), id)).collect();
     let resolver_data = Arc::new(resolver.data);
     Ok(FunctionBodyData {
         diagnostics: diagnostics.build(),
         expr_lookup,
         pattern_lookup,
         resolver_data,
-        body: Arc::new(FunctionBody { arenas: Arenas { exprs, patterns, statements }, body_expr }),
+        body: Arc::new(FunctionBody { arenas, body_expr }),
     })
 }
 
