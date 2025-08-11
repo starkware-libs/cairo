@@ -138,7 +138,7 @@ impl WithdrawGasBranchInfo {
             BuiltinCostsType::cost_computation_steps(self.with_builtin_costs, token_usages)
                 .into_or_panic();
         let mut steps = 3 + cost_computation;
-        // Failure branch have some additional costs.
+        // Failure branch has some additional costs.
         if !self.success {
             if self.with_builtin_costs || cost_computation > 0 {
                 // The additional jump to failure branch, and an additional minus 1 for the
