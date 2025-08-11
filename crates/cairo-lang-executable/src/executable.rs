@@ -67,7 +67,7 @@ pub enum EntryPointKind {
     Bootloader,
     /// Entrypoint is for running this executable as a standalone program.
     ///
-    /// The entrypoint starts with `ap += <builtins.len()>` and expected the builtins to be injected
+    /// The entrypoint starts with `ap += <builtins.len()>` and expects the builtins to be injected
     /// there, and ends with an infinite loop.
     Standalone,
 }
