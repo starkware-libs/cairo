@@ -1103,7 +1103,7 @@ impl<'db> Resolver<'db> {
             Some(info) => Ok(info),
             None => {
                 if let Some((info, _macro_mod)) =
-                    self.resolve_item_in_macro_calls(*module_id, identifier)
+                    self.resolve_item_in_macro_calls(*module_id, identifier.text(db))
                 {
                     return Ok(info);
                 }
@@ -1594,6 +1594,11 @@ impl<'db> Resolver<'db> {
             self.insert_used_use(inner_item_info.item_id);
             return Some(inner_item_info);
         }
+        if let Some((inner_item_info, _macro_mod)) =
+            self.resolve_item_in_macro_calls(module_id, ident)
+        {
+            return Some(inner_item_info);
+        }
         None
     }
 
@@ -1732,7 +1737,7 @@ impl<'db> Resolver<'db> {
             return Ok(ResolvedBase::Module(self.prelude_submodule_ex(macro_context_modifier)));
         }
         if let Some((item_info, module_id)) =
-            self.resolve_item_in_macro_calls(module_id, identifier)
+            self.resolve_item_in_macro_calls(module_id, identifier.text(db))
         {
             return Ok(ResolvedBase::FoundThroughGlobalUse {
                 item_info,
@@ -1769,10 +1774,9 @@ impl<'db> Resolver<'db> {
     fn resolve_item_in_macro_calls(
         &mut self,
         module_id: ModuleId<'db>,
-        identifier: &ast::TerminalIdentifier<'db>,
+        ident: &'db str,
     ) -> Option<(ModuleItemInfo<'db>, ModuleId<'db>)> {
         let db = self.db;
-        let ident = identifier.text(db);
         let mut queue: VecDeque<_> =
             self.db.module_macro_calls_ids(module_id).ok()?.iter().copied().collect();
         while let Some(macro_call_id) = queue.pop_front() {
