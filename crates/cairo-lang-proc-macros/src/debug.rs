@@ -184,8 +184,7 @@ fn debug_crate() -> syn::Ident {
 
 /// Creates the impl generics for the DebugWithDb implementation.
 ///
-/// The impl generics are the original generics plus a lifetime 'a and a lifetime 'db.
-/// The lifetime 'a is added to the impl generics if it is not already present.
+/// The impl generics are the original generics plus a lifetime 'db.
 /// The lifetime 'db is added to the impl generics if it is not already present.
 fn create_impl_generics(_name: &syn::Ident, generics: &Generics) -> Generics {
     let mut impl_generics = generics.clone();
