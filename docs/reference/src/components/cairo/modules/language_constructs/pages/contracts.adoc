@@ -124,7 +124,7 @@ For example:
 Each contract has an ABI (Application Binary Interface) that defines:
 
 - The entry points that can be called on it, of the kinds mentioned above.
-- The types in the entry points signatures.
+- The types in the entry point signatures.
 - The contract's events.
 
 
