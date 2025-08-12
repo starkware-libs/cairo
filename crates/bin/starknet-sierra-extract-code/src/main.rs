@@ -27,7 +27,7 @@ fn main() -> anyhow::Result<()> {
         .with_context(|| "Failed parsing felt252s stream into Sierra program.")?;
     match args.output {
         Some(path) => fs::write(path, sierra_program.to_string())
-            .with_context(|| "Failed to write casm contract.")?,
+            .with_context(|| "Failed to write Sierra program.")?,
         None => println!("{sierra_program}"),
     }
     Ok(())

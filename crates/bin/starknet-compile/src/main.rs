@@ -46,7 +46,7 @@ fn main() -> anyhow::Result<()> {
 
     let list_selector =
         ListSelector::new(args.allowed_libfuncs_list_name, args.allowed_libfuncs_list_file)
-            .expect("Both allowed libfunc list name and file were supplied.");
+            .expect("Cannot supply both --allowed-libfuncs-list-name and --allowed-libfuncs-list-file");
     let mut diagnostics_reporter = DiagnosticsReporter::stderr();
     if args.allow_warnings {
         diagnostics_reporter = diagnostics_reporter.allow_warnings();
