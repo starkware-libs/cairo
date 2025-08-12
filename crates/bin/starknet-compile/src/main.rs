@@ -45,8 +45,9 @@ fn main() -> anyhow::Result<()> {
     check_compiler_path(args.single_file, &args.path)?;
 
     let list_selector =
-        ListSelector::new(args.allowed_libfuncs_list_name, args.allowed_libfuncs_list_file)
-            .expect("Both allowed libfunc list name and file were supplied.");
+        ListSelector::new(args.allowed_libfuncs_list_name, args.allowed_libfuncs_list_file).expect(
+            "Cannot supply both --allowed-libfuncs-list-name and --allowed-libfuncs-list-file",
+        );
     let mut diagnostics_reporter = DiagnosticsReporter::stderr();
     if args.allow_warnings {
         diagnostics_reporter = diagnostics_reporter.allow_warnings();
