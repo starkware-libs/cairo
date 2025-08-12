@@ -36,3 +36,26 @@ fn f() {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > And let inside expression
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+    let x = true && let y = 1;
+}
+
+//! > expected_diagnostics
+error: Missing tokens. Expected an expression.
+ --> dummy_file.cairo:2:20
+    let x = true && let y = 1;
+                   ^
+
+error: Missing token ';'.
+ --> dummy_file.cairo:2:20
+    let x = true && let y = 1;
+                   ^

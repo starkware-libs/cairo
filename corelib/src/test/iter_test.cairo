@@ -1,4 +1,4 @@
-use core::iter::PeekableTrait;
+use core::iter::{PeekableTrait, zip};
 
 #[test]
 fn test_iter_count() {
@@ -59,7 +59,7 @@ fn test_iterator_enumerate() {
 
 #[test]
 fn test_iterator_zip() {
-    let mut iter = array![1, 2, 3].into_iter().zip(array![4, 5, 6]);
+    let mut iter = zip(array![1, 2, 3], array![4, 5, 6]);
 
     assert_eq!(iter.next(), Some((1, 4)));
     assert_eq!(iter.next(), Some((2, 5)));

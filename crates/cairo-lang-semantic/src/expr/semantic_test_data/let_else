@@ -1,0 +1,159 @@
+//! > Test let-else statement
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > function_body
+let a = MyEnum::A(9);
+
+//! > expr_code
+{
+    let x = ();
+    let MyEnum::A(x) = a else {
+        // The `x` below is the outer `x` (unit type).
+        return x;
+    };
+    x
+}
+
+//! > module_code
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        x,
+                    ),
+                    expr: Tuple(
+                        ExprTuple {
+                            items: [],
+                            ty: (),
+                        },
+                    ),
+                    else_clause: None,
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: EnumVariant(
+                        PatternEnumVariant {
+                            variant: MyEnum::A,
+                            inner_pattern: Some(
+                                Variable(
+                                    x,
+                                ),
+                            ),
+                            ty: test::MyEnum,
+                        },
+                    ),
+                    expr: Var(
+                        LocalVarId(test::a),
+                    ),
+                    else_clause: Some(
+                        Block(
+                            ExprBlock {
+                                statements: [
+                                    Return(
+                                        StatementReturn {
+                                            expr_option: Some(
+                                                Var(
+                                                    LocalVarId(test::x),
+                                                ),
+                                            ),
+                                        },
+                                    ),
+                                ],
+                                tail: None,
+                                ty: core::never,
+                            },
+                        ),
+                    ),
+                },
+            ),
+        ],
+        tail: Some(
+            Var(
+                LocalVarId(test::x),
+            ),
+        ),
+        ty: core::felt252,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test let-else statement with empty else block
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > function_body
+let a = MyEnum::A(9);
+
+//! > expr_code
+{
+    let MyEnum::A(x) = a else {};
+    x
+}
+
+//! > module_code
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: EnumVariant(
+                        PatternEnumVariant {
+                            variant: MyEnum::A,
+                            inner_pattern: Some(
+                                Variable(
+                                    x,
+                                ),
+                            ),
+                            ty: test::MyEnum,
+                        },
+                    ),
+                    expr: Var(
+                        LocalVarId(test::a),
+                    ),
+                    else_clause: Some(
+                        Block(
+                            ExprBlock {
+                                statements: [],
+                                tail: None,
+                                ty: (),
+                            },
+                        ),
+                    ),
+                },
+            ),
+        ],
+        tail: Some(
+            Var(
+                LocalVarId(test::x),
+            ),
+        ),
+        ty: core::felt252,
+    },
+)
+
+//! > expected_diagnostics
+error: `else` clause of `let...else` must exit the scope. Consider using `return`, `continue`, ...
+ --> lib.cairo:7:31
+    let MyEnum::A(x) = a else {};
+                              ^^

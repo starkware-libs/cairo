@@ -1,4 +1,4 @@
-use cairo_lang_sierra::extensions::gas::CostTokenType;
+use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_ap_change::ap_change_info::ApChangeInfo;
@@ -10,6 +10,7 @@ use cairo_lang_sierra_gas::{
     CostError, calc_gas_postcost_info, calc_gas_precost_info, compute_postcost_info,
     compute_precost_info,
 };
+use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use thiserror::Error;
 
@@ -35,7 +36,7 @@ pub enum MetadataError {
 #[derive(Clone)]
 pub struct MetadataComputationConfig {
     /// Functions to enforce costs for, as well as the costs to enforce.
-    pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    pub function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>>,
     /// If true, uses a linear-time algorithm for calculating the gas, instead of solving
     /// equations.
     pub linear_gas_solver: bool,
@@ -63,9 +64,12 @@ impl Default for MetadataComputationConfig {
 }
 
 /// Calculates the metadata for a Sierra program, with ap change info only.
-pub fn calc_metadata_ap_change_only(program: &Program) -> Result<Metadata, MetadataError> {
+pub fn calc_metadata_ap_change_only(
+    program: &Program,
+    program_info: &ProgramRegistryInfo,
+) -> Result<Metadata, MetadataError> {
     Ok(Metadata {
-        ap_change_info: linear_calc_ap_changes(program, |_, _| 0)?,
+        ap_change_info: linear_calc_ap_changes(program, program_info, |_, _| 0)?,
         gas_info: GasInfo {
             variable_values: Default::default(),
             function_costs: Default::default(),
@@ -79,6 +83,7 @@ pub fn calc_metadata_ap_change_only(program: &Program) -> Result<Metadata, Metad
 /// equations.
 pub fn calc_metadata(
     program: &Program,
+    program_info: &ProgramRegistryInfo,
     config: MetadataComputationConfig,
 ) -> Result<Metadata, MetadataError> {
     let pre_function_set_costs = config
@@ -93,11 +98,12 @@ pub fn calc_metadata(
             )
         })
         .collect();
-    let pre_gas_info_new = compute_precost_info(program)?;
+    let pre_gas_info_new = compute_precost_info(program, program_info)?;
     let pre_gas_info = if config.linear_gas_solver {
         pre_gas_info_new
     } else {
-        let pre_gas_info_old = calc_gas_precost_info(program, pre_function_set_costs)?;
+        let pre_gas_info_old =
+            calc_gas_precost_info(program, program_info, pre_function_set_costs)?;
         if !config.skip_non_linear_solver_comparisons {
             pre_gas_info_old.assert_eq_variables(&pre_gas_info_new, program);
             pre_gas_info_old.assert_eq_functions(&pre_gas_info_new);
@@ -108,6 +114,7 @@ pub fn calc_metadata(
     let ap_change_info =
         if config.linear_ap_change_solver { linear_calc_ap_changes } else { calc_ap_changes }(
             program,
+            program_info,
             |idx, token_type| pre_gas_info.variable_values[&(idx, token_type)] as usize,
         )?;
 
@@ -119,6 +126,7 @@ pub fn calc_metadata(
             .collect();
         compute_postcost_info(
             program,
+            program_info,
             &|idx| ap_change_info.variable_values.get(idx).copied().unwrap_or_default(),
             &pre_gas_info,
             &enforced_function_costs,
@@ -137,14 +145,19 @@ pub fn calc_metadata(
                 )
             })
             .collect();
-        calc_gas_postcost_info(program, post_function_set_costs, &pre_gas_info, |idx| {
-            ap_change_info.variable_values.get(&idx).copied().unwrap_or_default()
-        })
+        calc_gas_postcost_info(
+            program,
+            program_info,
+            post_function_set_costs,
+            &pre_gas_info,
+            |idx| ap_change_info.variable_values.get(&idx).copied().unwrap_or_default(),
+        )
     }?;
 
     if config.compute_runtime_costs {
         let post_gas_info_runtime = compute_postcost_info::<ConstCost>(
             program,
+            program_info,
             &|idx| ap_change_info.variable_values.get(idx).copied().unwrap_or_default(),
             &pre_gas_info,
             &Default::default(),

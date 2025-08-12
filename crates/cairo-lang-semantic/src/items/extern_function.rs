@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     ExternFunctionId, FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
@@ -31,46 +31,46 @@ mod test;
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_inline_config].
-pub fn extern_function_declaration_inline_config(
-    db: &dyn SemanticGroup,
-    extern_function_id: ExternFunctionId,
-) -> Maybe<InlineConfiguration> {
+pub fn extern_function_declaration_inline_config<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_function_id: ExternFunctionId<'db>,
+) -> Maybe<InlineConfiguration<'db>> {
     Ok(db.priv_extern_function_declaration_data(extern_function_id)?.inline_config)
 }
 // TODO(spapini): Remove declaration from the names.
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_diagnostics].
-pub fn extern_function_declaration_diagnostics(
-    db: &dyn SemanticGroup,
-    extern_function_id: ExternFunctionId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn extern_function_declaration_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_function_id: ExternFunctionId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_extern_function_declaration_data(extern_function_id)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
 /// Query implementation of [crate::db::SemanticGroup::extern_function_signature].
-pub fn extern_function_signature(
-    db: &dyn SemanticGroup,
-    extern_function_id: ExternFunctionId,
-) -> Maybe<semantic::Signature> {
+pub fn extern_function_signature<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_function_id: ExternFunctionId<'db>,
+) -> Maybe<semantic::Signature<'db>> {
     Ok(db.priv_extern_function_declaration_data(extern_function_id)?.signature)
 }
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_generic_params].
-pub fn extern_function_declaration_generic_params(
-    db: &dyn SemanticGroup,
-    extern_function_id: ExternFunctionId,
-) -> Maybe<Vec<semantic::GenericParam>> {
+pub fn extern_function_declaration_generic_params<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_function_id: ExternFunctionId<'db>,
+) -> Maybe<Vec<semantic::GenericParam<'db>>> {
     Ok(db.extern_function_declaration_generic_params_data(extern_function_id)?.generic_params)
 }
 
 /// Query implementation of
 /// [crate::db::SemanticGroup::extern_function_declaration_generic_params_data].
-pub fn extern_function_declaration_generic_params_data(
-    db: &dyn SemanticGroup,
-    extern_function_id: ExternFunctionId,
-) -> Maybe<GenericParamsData> {
+pub fn extern_function_declaration_generic_params_data<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_function_id: ExternFunctionId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = extern_function_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
-    let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?.to_maybe()?;
+    let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?;
     let declaration = extern_function_syntax.declaration(db);
 
     // Generic params.
@@ -96,18 +96,18 @@ pub fn extern_function_declaration_generic_params_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_implicits].
-pub fn extern_function_declaration_implicits(
-    db: &dyn SemanticGroup,
-    extern_function_id: ExternFunctionId,
-) -> Maybe<Vec<TypeId>> {
+pub fn extern_function_declaration_implicits<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_function_id: ExternFunctionId<'db>,
+) -> Maybe<Vec<TypeId<'db>>> {
     Ok(db.priv_extern_function_declaration_data(extern_function_id)?.signature.implicits)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_refs].
-pub fn extern_function_declaration_refs(
-    db: &dyn SemanticGroup,
-    extern_function_id: ExternFunctionId,
-) -> Maybe<Vec<Parameter>> {
+pub fn extern_function_declaration_refs<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_function_id: ExternFunctionId<'db>,
+) -> Maybe<Vec<Parameter<'db>>> {
     Ok(db
         .priv_extern_function_declaration_data(extern_function_id)?
         .signature
@@ -119,22 +119,22 @@ pub fn extern_function_declaration_refs(
 
 /// Query implementation of
 /// [crate::db::SemanticGroup::extern_function_declaration_resolver_data].
-pub fn extern_function_declaration_resolver_data(
-    db: &dyn SemanticGroup,
-    extern_function_id: ExternFunctionId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn extern_function_declaration_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_function_id: ExternFunctionId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_extern_function_declaration_data(extern_function_id)?.resolver_data)
 }
 
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_extern_function_declaration_data].
-pub fn priv_extern_function_declaration_data(
-    db: &dyn SemanticGroup,
-    extern_function_id: ExternFunctionId,
-) -> Maybe<FunctionDeclarationData> {
+pub fn priv_extern_function_declaration_data<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_function_id: ExternFunctionId<'db>,
+) -> Maybe<FunctionDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
-    let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?.to_maybe()?;
+    let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?;
 
     let declaration = extern_function_syntax.declaration(db);
 
@@ -162,10 +162,8 @@ pub fn priv_extern_function_declaration_data(
     );
 
     if signature.panicable {
-        let panic_function = extract_matches!(
-            get_core_generic_function_id(db, "panic".into()),
-            GenericFunctionId::Extern
-        );
+        let panic_function =
+            extract_matches!(get_core_generic_function_id(db, "panic"), GenericFunctionId::Extern);
         if extern_function_id != panic_function {
             diagnostics.report(extern_function_syntax.stable_ptr(db), PanicableExternFunction);
         }
@@ -176,10 +174,10 @@ pub fn priv_extern_function_declaration_data(
 
     match &inline_config {
         InlineConfiguration::None => {}
-        InlineConfiguration::Always(attr)
-        | InlineConfiguration::Never(attr)
-        | InlineConfiguration::Should(attr) => {
-            diagnostics.report(attr.stable_ptr.untyped(), InlineAttrForExternFunctionNotAllowed);
+        InlineConfiguration::Always(stable_ptr)
+        | InlineConfiguration::Never(stable_ptr)
+        | InlineConfiguration::Should(stable_ptr) => {
+            diagnostics.report(stable_ptr.untyped(), InlineAttrForExternFunctionNotAllowed);
         }
     }
 

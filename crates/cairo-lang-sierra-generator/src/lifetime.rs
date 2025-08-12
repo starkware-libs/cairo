@@ -58,8 +58,8 @@ impl From<VariableId> for SierraGenVar {
     }
 }
 
-impl From<VarUsage> for SierraGenVar {
-    fn from(var_usage: VarUsage) -> Self {
+impl<'db> From<VarUsage<'db>> for SierraGenVar {
+    fn from(var_usage: VarUsage<'db>) -> Self {
         SierraGenVar::LoweringVar(var_usage.var_id)
     }
 }
@@ -100,8 +100,8 @@ impl VariableLifetimeResult {
 
 /// Given the lowering of a function, returns lifetime information for all the variables.
 /// See [VariableLifetimeResult].
-pub fn find_variable_lifetime(
-    lowered_function: &Lowered,
+pub fn find_variable_lifetime<'db>(
+    lowered_function: &Lowered<'db>,
     local_vars: &OrderedHashSet<VariableId>,
 ) -> Maybe<VariableLifetimeResult> {
     lowered_function.blocks.has_root()?;
@@ -178,14 +178,14 @@ impl DemandReporter<SierraGenVar, ReturnState> for VariableLifetimeContext<'_> {
     }
 }
 
-impl Analyzer<'_> for VariableLifetimeContext<'_> {
+impl<'db> Analyzer<'db, '_> for VariableLifetimeContext<'_> {
     type Info = SierraDemand;
 
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
         statement_location: StatementLocation,
-        stmt: &lowering::Statement,
+        stmt: &lowering::Statement<'db>,
     ) {
         self.introduce(
             info,
@@ -207,7 +207,7 @@ impl Analyzer<'_> for VariableLifetimeContext<'_> {
         info: &mut Self::Info,
         statement_location: StatementLocation,
         _target_block_id: BlockId,
-        remapping: &lowering::VarRemapping,
+        remapping: &lowering::VarRemapping<'db>,
     ) {
         info.apply_remapping(
             self,
@@ -233,7 +233,7 @@ impl Analyzer<'_> for VariableLifetimeContext<'_> {
     fn merge_match(
         &mut self,
         statement_location: StatementLocation,
-        match_info: &lowering::MatchInfo,
+        match_info: &lowering::MatchInfo<'db>,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         let arm_demands = zip_eq(match_info.arms(), infos)
@@ -263,7 +263,7 @@ impl Analyzer<'_> for VariableLifetimeContext<'_> {
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
-        vars: &[VarUsage],
+        vars: &[VarUsage<'db>],
     ) -> Self::Info {
         let mut info = SierraDemand::default();
         info.variables_used(

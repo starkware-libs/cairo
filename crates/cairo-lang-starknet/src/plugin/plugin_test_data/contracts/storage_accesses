@@ -494,6 +494,7 @@ fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252>
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__IERC20Impl__get_name as get_name;
     pub use super::__wrapper__IERC20Impl__get_symbol as get_symbol;
@@ -506,8 +507,10 @@ pub mod __external {
     pub use super::__wrapper__IERC20Impl__write_info as write_info;
     pub use super::__wrapper__IERC20Impl__get_info as get_info;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
     pub use super::__wrapper__constructor as constructor;
 }
@@ -556,11 +559,16 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
+#[doc(group: "dispatchers")]
 trait IERC20DispatcherTrait<T> {
     fn get_name(self: T) -> felt252;
     fn get_symbol(self: T) -> felt252;
@@ -576,11 +584,13 @@ self: T, spender: ContractAddress, subtracted_value: u256,
     fn get_info(self: T) -> UserInfo;
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IERC20Dispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl IERC20DispatcherImpl of IERC20DispatcherTrait<IERC20Dispatcher> {
     fn get_name(self: IERC20Dispatcher) -> felt252 {
         let mut __calldata__ = core::traits::Default::default();
@@ -726,11 +736,13 @@ self: IERC20Dispatcher, spender: ContractAddress, subtracted_value: u256,
 
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IERC20LibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl IERC20LibraryDispatcherImpl of IERC20DispatcherTrait<IERC20LibraryDispatcher> {
     fn get_name(self: IERC20LibraryDispatcher) -> felt252 {
         let mut __calldata__ = core::traits::Default::default();
@@ -876,6 +888,7 @@ self: IERC20LibraryDispatcher, spender: ContractAddress, subtracted_value: u256,
 
 }
 
+#[doc(group: "dispatchers")]
 trait IERC20SafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn get_name(self: T) -> starknet::SyscallResult<felt252>;
@@ -901,11 +914,13 @@ self: T, spender: ContractAddress, subtracted_value: u256,
     fn get_info(self: T) -> starknet::SyscallResult<UserInfo>;
 }
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IERC20SafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
+#[doc(group: "dispatchers")]
 impl IERC20SafeLibraryDispatcherImpl of IERC20SafeDispatcherTrait<IERC20SafeLibraryDispatcher> {
     fn get_name(self: IERC20SafeLibraryDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = core::traits::Default::default();
@@ -1066,11 +1081,13 @@ self: IERC20SafeLibraryDispatcher, spender: ContractAddress, subtracted_value: u
 }
 
 
+#[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IERC20SafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
+#[doc(group: "dispatchers")]
 impl IERC20SafeDispatcherImpl of IERC20SafeDispatcherTrait<IERC20SafeDispatcher> {
     fn get_name(self: IERC20SafeDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = core::traits::Default::default();
@@ -1512,8 +1529,11 @@ impl TransactionInfoStorageNodeMutImpl of starknet::storage::StorageNodeMut<Tran
         }
     }
 }
+#[doc(group: "dispatchers")]
 impl IERC20DispatcherCopy<> of core::traits::Copy::<IERC20Dispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20DispatcherDrop<> of core::traits::Drop::<IERC20Dispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20DispatcherSerde<> of core::serde::Serde::<IERC20Dispatcher> {
     fn serialize(self: @IERC20Dispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -1615,8 +1635,11 @@ impl IERC20DispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IER
         }
     }
 }
+#[doc(group: "dispatchers")]
 impl IERC20LibraryDispatcherCopy<> of core::traits::Copy::<IERC20LibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20LibraryDispatcherDrop<> of core::traits::Drop::<IERC20LibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20LibraryDispatcherSerde<> of core::serde::Serde::<IERC20LibraryDispatcher> {
     fn serialize(self: @IERC20LibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -1718,8 +1741,11 @@ impl IERC20LibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointers
         }
     }
 }
+#[doc(group: "dispatchers")]
 impl IERC20SafeLibraryDispatcherCopy<> of core::traits::Copy::<IERC20SafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20SafeLibraryDispatcherDrop<> of core::traits::Drop::<IERC20SafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20SafeLibraryDispatcherSerde<> of core::serde::Serde::<IERC20SafeLibraryDispatcher> {
     fn serialize(self: @IERC20SafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
@@ -1821,8 +1847,11 @@ impl IERC20SafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoin
         }
     }
 }
+#[doc(group: "dispatchers")]
 impl IERC20SafeDispatcherCopy<> of core::traits::Copy::<IERC20SafeDispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20SafeDispatcherDrop<> of core::traits::Drop::<IERC20SafeDispatcher>;
+#[doc(group: "dispatchers")]
 impl IERC20SafeDispatcherSerde<> of core::serde::Serde::<IERC20SafeDispatcher> {
     fn serialize(self: @IERC20SafeDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
@@ -1924,33 +1953,61 @@ impl IERC20SafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut
         }
     }
 }
+#[doc(hidden)]
 impl UserInfoSubPointersDrop<> of core::traits::Drop::<UserInfoSubPointers>;
+#[doc(hidden)]
 impl UserInfoSubPointersCopy<> of core::traits::Copy::<UserInfoSubPointers>;
+#[doc(hidden)]
 impl UserInfoSubPointersMutDrop<> of core::traits::Drop::<UserInfoSubPointersMut>;
+#[doc(hidden)]
 impl UserInfoSubPointersMutCopy<> of core::traits::Copy::<UserInfoSubPointersMut>;
+#[doc(hidden)]
 impl TransactionInfoStorageBaseDrop<> of core::traits::Drop::<TransactionInfoStorageBase>;
+#[doc(hidden)]
 impl TransactionInfoStorageBaseCopy<> of core::traits::Copy::<TransactionInfoStorageBase>;
+#[doc(hidden)]
 impl TransactionInfoStorageBaseMutDrop<> of core::traits::Drop::<TransactionInfoStorageBaseMut>;
+#[doc(hidden)]
 impl TransactionInfoStorageBaseMutCopy<> of core::traits::Copy::<TransactionInfoStorageBaseMut>;
+#[doc(hidden)]
 impl TransactionInfoStorageNodeDrop<> of core::traits::Drop::<TransactionInfoStorageNode>;
+#[doc(hidden)]
 impl TransactionInfoStorageNodeCopy<> of core::traits::Copy::<TransactionInfoStorageNode>;
+#[doc(hidden)]
 impl TransactionInfoStorageNodeMutDrop<> of core::traits::Drop::<TransactionInfoStorageNodeMut>;
+#[doc(hidden)]
 impl TransactionInfoStorageNodeMutCopy<> of core::traits::Copy::<TransactionInfoStorageNodeMut>;
+#[doc(hidden)]
 impl IERC20DispatcherSubPointersDrop<> of core::traits::Drop::<IERC20DispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20DispatcherSubPointersCopy<> of core::traits::Copy::<IERC20DispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20DispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20DispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IERC20DispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20DispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IERC20LibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IERC20LibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20LibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IERC20LibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20LibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20LibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IERC20LibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20LibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IERC20SafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20SafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20SafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IERC20SafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IERC20SafeDispatcherSubPointersDrop<> of core::traits::Drop::<IERC20SafeDispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20SafeDispatcherSubPointersCopy<> of core::traits::Copy::<IERC20SafeDispatcherSubPointers>;
+#[doc(hidden)]
 impl IERC20SafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20SafeDispatcherSubPointersMut>;
+#[doc(hidden)]
 impl IERC20SafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20SafeDispatcherSubPointersMut>;
 
     use core::num::traits::Zero;
@@ -2405,6 +2462,7 @@ fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252>
 }
 
 
+#[doc(hidden)]
 pub mod __external {
     pub use super::__wrapper__IERC20Impl__get_name as get_name;
     pub use super::__wrapper__IERC20Impl__get_symbol as get_symbol;
@@ -2417,8 +2475,10 @@ pub mod __external {
     pub use super::__wrapper__IERC20Impl__write_info as write_info;
     pub use super::__wrapper__IERC20Impl__get_info as get_info;
 }
+#[doc(hidden)]
 pub mod __l1_handler {
 }
+#[doc(hidden)]
 pub mod __constructor {
     pub use super::__wrapper__constructor as constructor;
 }
@@ -2467,9 +2527,13 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
+#[doc(hidden)]
 impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+#[doc(hidden)]
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics

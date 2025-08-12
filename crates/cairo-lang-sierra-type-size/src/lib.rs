@@ -3,21 +3,58 @@ use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType, CoreTypeConcret
 use cairo_lang_sierra::extensions::starknet::StarknetTypeConcrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Program;
-use cairo_lang_sierra::program_registry::ProgramRegistry;
+use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 pub type TypeSizeMap = UnorderedHashMap<ConcreteTypeId, i16>;
+
+/// A wrapper that combines a program registry with its corresponding type size map.
+/// This is commonly used together throughout the codebase.
+pub struct ProgramRegistryInfo {
+    pub registry: ProgramRegistry<CoreType, CoreLibfunc>,
+    pub type_sizes: TypeSizeMap,
+}
+
+impl ProgramRegistryInfo {
+    /// Creates a new ProgramRegistryInfo by building both the registry and type size map from a
+    /// program.
+    pub fn new(program: &Program) -> Result<Self, Box<ProgramRegistryError>> {
+        let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
+        let type_sizes = get_type_size_map(program, &registry)?;
+        Ok(Self { registry, type_sizes })
+    }
+
+    /// Get a reference to the program registry.
+    pub fn registry(&self) -> &ProgramRegistry<CoreType, CoreLibfunc> {
+        &self.registry
+    }
+
+    /// Get a reference to the type size map.
+    pub fn type_sizes(&self) -> &TypeSizeMap {
+        &self.type_sizes
+    }
+}
 
 /// Returns a mapping for the sizes of all types for the given program.
 pub fn get_type_size_map(
     program: &Program,
     registry: &ProgramRegistry<CoreType, CoreLibfunc>,
-) -> Option<TypeSizeMap> {
+) -> Result<TypeSizeMap, Box<ProgramRegistryError>> {
     let mut type_sizes = TypeSizeMap::default();
     for declaration in &program.type_declarations {
-        let size = match registry.get_type(&declaration.id).ok()? {
+        let get_dep_size = |dep: &ConcreteTypeId| {
+            type_sizes.get(dep).copied().ok_or_else(|| {
+                Box::new(ProgramRegistryError::TypeSizeDependencyMissing {
+                    ty: declaration.id.clone(),
+                    dep: dep.clone(),
+                })
+            })
+        };
+        let size_overflow_error =
+            || Box::new(ProgramRegistryError::TypeSizeOverflow(declaration.id.clone()));
+        let size = match registry.get_type(&declaration.id)? {
             // Size 0.
-            CoreTypeConcrete::Coupon(_) => Some(0),
+            CoreTypeConcrete::Coupon(_) => 0,
             // Size 1.
             CoreTypeConcrete::Felt252(_)
             | CoreTypeConcrete::GasBuiltin(_)
@@ -53,53 +90,54 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::SegmentArena(_)
             | CoreTypeConcrete::Bytes31(_)
             | CoreTypeConcrete::BoundedInt(_)
-            | CoreTypeConcrete::QM31(_) => Some(1),
+            | CoreTypeConcrete::QM31(_) => 1,
             // Size 2.
             CoreTypeConcrete::Array(_)
             | CoreTypeConcrete::Span(_)
             | CoreTypeConcrete::EcPoint(_)
             | CoreTypeConcrete::SquashedFelt252Dict(_)
-            | CoreTypeConcrete::IntRange(_) => Some(2),
+            | CoreTypeConcrete::IntRange(_) => 2,
             // Other.
             CoreTypeConcrete::NonZero(wrapped_ty)
             | CoreTypeConcrete::Snapshot(wrapped_ty)
-            | CoreTypeConcrete::Uninitialized(wrapped_ty) => {
-                type_sizes.get(&wrapped_ty.ty).cloned()
-            }
-            CoreTypeConcrete::EcState(_) => Some(3),
-            CoreTypeConcrete::Uint128MulGuarantee(_) => Some(4),
+            | CoreTypeConcrete::Uninitialized(wrapped_ty) => get_dep_size(&wrapped_ty.ty)?,
+            CoreTypeConcrete::EcState(_) => 3,
+            CoreTypeConcrete::Uint128MulGuarantee(_) => 4,
             CoreTypeConcrete::Enum(enum_type) => {
-                let mut size = 1;
+                let mut max_variant_size: i16 = 0;
                 for variant in &enum_type.variants {
-                    size = size.max(type_sizes.get(variant).cloned()? + 1);
+                    max_variant_size = max_variant_size.max(get_dep_size(variant)?);
                 }
-                Some(size)
+                max_variant_size.checked_add(1).ok_or_else(size_overflow_error)?
             }
             CoreTypeConcrete::Struct(struct_type) => {
                 if !struct_type.info.storable {
                     // If the struct is not storable, it should not have a size.
                     continue;
                 }
-                let mut size = 0;
+                let mut size: i16 = 0;
                 for member in &struct_type.members {
-                    size += type_sizes.get(member).cloned()?;
+                    size =
+                        size.checked_add(get_dep_size(member)?).ok_or_else(size_overflow_error)?;
                 }
-                Some(size)
+                size
             }
 
-            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitInputAccumulator(_)) => Some(2),
-            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitDescriptor(_)) => Some(4),
-            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitFailureGuarantee(_)) => Some(8),
-            CoreTypeConcrete::Circuit(CircuitTypeConcrete::U96LimbsLessThanGuarantee(g)) => {
-                Some((g.limb_count.checked_mul(2)?).try_into().ok()?)
-            }
-            CoreTypeConcrete::Circuit(CircuitTypeConcrete::U96Guarantee(_)) => Some(1),
-            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitOutputs(_)) => Some(5),
-            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitPartialOutputs(_)) => Some(6),
-            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitModulus(_)) => Some(4),
+            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitInputAccumulator(_)) => 2,
+            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitDescriptor(_)) => 4,
+            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitFailureGuarantee(_)) => 8,
+            CoreTypeConcrete::Circuit(CircuitTypeConcrete::U96LimbsLessThanGuarantee(g)) => g
+                .limb_count
+                .checked_mul(2)
+                .and_then(|v| v.try_into().ok())
+                .ok_or_else(size_overflow_error)?,
+            CoreTypeConcrete::Circuit(CircuitTypeConcrete::U96Guarantee(_)) => 1,
+            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitOutputs(_)) => 5,
+            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitPartialOutputs(_)) => 6,
+            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitModulus(_)) => 4,
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitData(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::AddMod(_))
-            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::MulMod(_)) => Some(1),
+            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::MulMod(_)) => 1,
 
             // Const and circuit types are not moved around and should not have a size.
             CoreTypeConcrete::Const(_)
@@ -109,9 +147,9 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::InverseGate(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::MulModGate(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::SubModGate(_)) => continue,
-            CoreTypeConcrete::Blake(_) => Some(1),
-        }?;
+            CoreTypeConcrete::Blake(_) => 1,
+        };
         type_sizes.insert(declaration.id.clone(), size);
     }
-    Some(type_sizes)
+    Ok(type_sizes)
 }

@@ -48,9 +48,9 @@ impl TestFileRunner for ExpandContractTestRunner {
         let mut file_contents = vec![];
 
         for file_id in files {
-            let content = db.file_content(file_id).unwrap();
+            let content = db.file_content(file_id).unwrap().long(&db).as_ref();
             let content_location =
-                DiagnosticLocation { file_id, span: TextSpan::from_str(&content) };
+                DiagnosticLocation { file_id, span: TextSpan::from_str(content) };
             let original_location = content_location.user_location(db.upcast());
             let origin = if content_location == original_location {
                 "".to_string()
@@ -61,7 +61,7 @@ impl TestFileRunner for ExpandContractTestRunner {
             file_contents.push(format!("{origin}{file_name}:\n\n{content}"));
         }
 
-        let diagnostics = get_diagnostics_as_string(&db, &[test_module.crate_id]);
+        let diagnostics = get_diagnostics_as_string(&db, Some(vec![test_module.crate_id]));
         let error = verify_diagnostics_expectation(args, &diagnostics);
 
         TestRunnerResult {

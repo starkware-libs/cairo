@@ -13,17 +13,17 @@ mod event;
 mod store;
 
 /// Checks whether the given item has a starknet derive attribute.
-pub fn derive_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) -> bool {
+pub fn derive_needed<'db, T: QueryAttrs<'db>>(with_attrs: &T, db: &'db dyn SyntaxGroup) -> bool {
     has_derive(with_attrs, db, EVENT_TRAIT).is_some()
         || has_derive(with_attrs, db, STORE_TRAIT).is_some()
 }
 
 /// Handles the derive attributes for the given item.
-pub fn handle_derive(
-    db: &dyn SyntaxGroup,
-    item_ast: ast::ModuleItem,
+pub fn handle_derive<'db>(
+    db: &'db dyn SyntaxGroup,
+    item_ast: ast::ModuleItem<'db>,
     metadata: &MacroPluginMetadata<'_>,
-) -> PluginResult {
+) -> PluginResult<'db> {
     let mut builder = PatchBuilder::new(db, &item_ast);
     let mut diagnostics = vec![];
     let mut aux_data = None;
@@ -52,6 +52,7 @@ pub fn handle_derive(
                 code_mappings,
                 aux_data,
                 diagnostics_note: Default::default(),
+                is_unhygienic: false,
             })
         },
         diagnostics,

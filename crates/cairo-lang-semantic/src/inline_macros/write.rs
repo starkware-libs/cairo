@@ -25,12 +25,12 @@ impl NamedPlugin for WriteMacro {
     const NAME: &'static str = "write";
 }
 impl InlineMacroExprPlugin for WriteMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
         generate_code_inner(syntax, db, false)
     }
 
@@ -70,12 +70,12 @@ impl NamedPlugin for WritelnMacro {
     const NAME: &'static str = "writeln";
 }
 impl InlineMacroExprPlugin for WritelnMacro {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> InlinePluginResult {
+    ) -> InlinePluginResult<'db> {
         generate_code_inner(syntax, db, true)
     }
 
@@ -108,11 +108,11 @@ impl InlineMacroExprPlugin for WritelnMacro {
     }
 }
 
-fn generate_code_inner(
-    syntax: &ast::ExprInlineMacro,
-    db: &dyn SyntaxGroup,
+fn generate_code_inner<'db>(
+    syntax: &ast::ExprInlineMacro<'db>,
+    db: &'db dyn SyntaxGroup,
     with_newline: bool,
-) -> InlinePluginResult {
+) -> InlinePluginResult<'db> {
     let info = match FormattingInfo::extract(db, syntax) {
         Ok(info) => info,
         Err(diagnostics) => return InlinePluginResult { code: None, diagnostics },
@@ -126,11 +126,12 @@ fn generate_code_inner(
     let (content, code_mappings) = builder.build();
     InlinePluginResult {
         code: Some(PluginGeneratedFile {
-            name: format!("{}_macro", get_macro_name(with_newline)).into(),
+            name: format!("{}_macro", get_macro_name(with_newline)),
             content,
             code_mappings,
             aux_data: None,
             diagnostics_note: Default::default(),
+            is_unhygienic: false,
         }),
         diagnostics: vec![],
     }
@@ -142,23 +143,23 @@ fn get_macro_name(with_newline: bool) -> &'static str {
 }
 
 /// Information about a formatting a string for the write macros.
-struct FormattingInfo {
+struct FormattingInfo<'db> {
     /// The syntax rewrite node for the formatter input for the macro.
-    formatter_arg_node: RewriteNode,
+    formatter_arg_node: RewriteNode<'db>,
     /// The format string argument.
-    format_string_arg: ast::Arg,
+    format_string_arg: ast::Arg<'db>,
     /// The format string content.
     format_string: String,
     /// The positional arguments for the format string.
-    args: Vec<ast::Expr>,
-    macro_ast: ast::ExprInlineMacro,
+    args: Vec<ast::Expr<'db>>,
+    macro_ast: ast::ExprInlineMacro<'db>,
 }
-impl FormattingInfo {
+impl<'db> FormattingInfo<'db> {
     /// Extracts the arguments from a formatted string macro.
     fn extract(
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
-    ) -> Result<FormattingInfo, Vec<PluginDiagnostic>> {
+        db: &'db dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro<'db>,
+    ) -> Result<FormattingInfo<'db>, Vec<PluginDiagnostic<'db>>> {
         let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
             return Err(vec![not_legacy_macro_diagnostic(syntax.as_syntax_node().stable_ptr(db))]);
         };
@@ -172,9 +173,9 @@ impl FormattingInfo {
             )
             .diagnostics);
         };
-        let argument_list_elements = arguments.arguments(db).elements(db);
-        let mut args_iter = argument_list_elements.iter();
-        let error_with_inner_span = |inner_span: SyntaxNode, message: &str| {
+        let arguments_var = arguments.arguments(db);
+        let mut args_iter = arguments_var.elements(db);
+        let error_with_inner_span = |inner_span: SyntaxNode<'_>, message: &str| {
             PluginDiagnostic::error_with_inner_span(
                 db,
                 syntax.stable_ptr(db),
@@ -188,7 +189,7 @@ impl FormattingInfo {
                 "Macro expected formatter argument.",
             )]);
         };
-        let Some(formatter_expr) = try_extract_unnamed_arg(db, formatter_arg) else {
+        let Some(formatter_expr) = try_extract_unnamed_arg(db, &formatter_arg) else {
             return Err(vec![error_with_inner_span(
                 formatter_arg.as_syntax_node(),
                 "Formatter argument must be unnamed.",
@@ -206,7 +207,7 @@ impl FormattingInfo {
                 "Macro expected format string argument.",
             )]);
         };
-        let Some(format_string_expr) = try_extract_unnamed_arg(db, format_string_arg) else {
+        let Some(format_string_expr) = try_extract_unnamed_arg(db, &format_string_arg) else {
             return Err(vec![error_with_inner_span(
                 format_string_arg.as_syntax_node(),
                 "Format string argument must be unnamed.",
@@ -223,7 +224,7 @@ impl FormattingInfo {
         let mut diagnostics = vec![];
         let args: Vec<_> = args_iter
             .filter_map(|arg| {
-                try_extract_unnamed_arg(db, arg).on_none(|| {
+                try_extract_unnamed_arg(db, &arg).on_none(|| {
                     diagnostics.push(error_with_inner_span(
                         arg.as_syntax_node(),
                         "Argument must be unnamed.",
@@ -235,7 +236,7 @@ impl FormattingInfo {
             return Err(diagnostics);
         }
         Ok(FormattingInfo {
-            formatter_arg_node: RewriteNode::from_ast_trimmed(formatter_arg),
+            formatter_arg_node: RewriteNode::from_ast_trimmed(&formatter_arg),
             format_string_arg: format_string_arg.clone(),
             // `unwrap` is ok because the above `on_none` ensures it's not None.
             format_string,
@@ -247,8 +248,8 @@ impl FormattingInfo {
     /// Adds the formatted string from macro to the formatter.
     fn add_to_formatter(
         &self,
-        builder: &mut PatchBuilder<'_>,
-        diagnostics: &mut Vec<PluginDiagnostic>,
+        builder: &mut PatchBuilder<'db>,
+        diagnostics: &mut Vec<PluginDiagnostic<'db>>,
         with_newline: bool,
     ) {
         let mut next_arg_index = 0..self.args.len();
@@ -423,10 +424,10 @@ impl FormattingInfo {
     /// This includes opening a new match, which is only closed at the end of the macro handling.
     fn append_formatted_arg(
         &self,
-        builder: &mut PatchBuilder<'_>,
+        builder: &mut PatchBuilder<'db>,
         ident_count: &mut usize,
         pending_chars: &mut String,
-        arg: RewriteNode,
+        arg: RewriteNode<'db>,
         fmt_type: FormattingTrait,
     ) {
         self.flush_pending_chars(builder, pending_chars, *ident_count);
@@ -444,7 +445,7 @@ impl FormattingInfo {
     /// Flushes the pending bytes to the formatter.
     fn flush_pending_chars(
         &self,
-        builder: &mut PatchBuilder<'_>,
+        builder: &mut PatchBuilder<'db>,
         pending_chars: &mut String,
         ident_count: usize,
     ) {

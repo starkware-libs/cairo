@@ -38,7 +38,7 @@ pub struct DebugInfo {
     pub annotations: Annotations,
     /// List of functions marked as executable.
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub executables: HashMap<SmolStr, Vec<FunctionId>>,
+    pub executables: HashMap<String, Vec<FunctionId>>,
 }
 
 /// Store for non-crucial information about the program, for use by external libraries and tools.

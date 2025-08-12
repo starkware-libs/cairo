@@ -3,14 +3,13 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     EnumId, LanguageElementId, LookupItemId, ModuleItemId, VariantId, VariantLongId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, Upcast};
-use itertools::enumerate;
-use smol_str::SmolStr;
+use cairo_lang_utils::{Intern, Upcast};
 
 use super::attribute::SemanticQueryAttrs;
 use super::feature_kind::extract_item_feature_config;
@@ -31,25 +30,25 @@ use crate::{ConcreteEnumId, SemanticDiagnostic, semantic};
 mod test;
 
 // Declaration
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct EnumDeclarationData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    generic_params: Vec<semantic::GenericParam>,
-    attributes: Vec<Attribute>,
-    resolver_data: Arc<ResolverData>,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct EnumDeclarationData<'db> {
+    diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    generic_params: Vec<semantic::GenericParam<'db>>,
+    attributes: Vec<Attribute<'db>>,
+    resolver_data: Arc<ResolverData<'db>>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_enum_declaration_data].
-pub fn priv_enum_declaration_data(
-    db: &dyn SemanticGroup,
-    enum_id: EnumId,
-) -> Maybe<EnumDeclarationData> {
+pub fn priv_enum_declaration_data<'db>(
+    db: &'db dyn SemanticGroup,
+    enum_id: EnumId<'db>,
+) -> Maybe<EnumDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
+    let enum_ast = db.module_enum_by_id(enum_id)?;
 
     // Generic params.
     let generic_params_data = db.enum_generic_params_data(enum_id)?;
@@ -79,29 +78,29 @@ pub fn priv_enum_declaration_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_declaration_diagnostics].
-pub fn enum_declaration_diagnostics(
-    db: &dyn SemanticGroup,
-    enum_id: EnumId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn enum_declaration_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    enum_id: EnumId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_enum_declaration_data(enum_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_generic_params].
-pub fn enum_generic_params(
-    db: &dyn SemanticGroup,
-    enum_id: EnumId,
-) -> Maybe<Vec<semantic::GenericParam>> {
+pub fn enum_generic_params<'db>(
+    db: &'db dyn SemanticGroup,
+    enum_id: EnumId<'db>,
+) -> Maybe<Vec<semantic::GenericParam<'db>>> {
     Ok(db.enum_generic_params_data(enum_id)?.generic_params)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_generic_params_data].
-pub fn enum_generic_params_data(
-    db: &dyn SemanticGroup,
-    enum_id: EnumId,
-) -> Maybe<GenericParamsData> {
+pub fn enum_generic_params_data<'db>(
+    db: &'db dyn SemanticGroup,
+    enum_id: EnumId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = enum_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
-    let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
+    let enum_ast = db.module_enum_by_id(enum_id)?;
 
     // Generic params.
     let inference_id =
@@ -124,43 +123,46 @@ pub fn enum_generic_params_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_attributes].
-pub fn enum_attributes(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe<Vec<Attribute>> {
+pub fn enum_attributes<'db>(
+    db: &'db dyn SemanticGroup,
+    enum_id: EnumId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_enum_declaration_data(enum_id)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_declaration_resolver_data].
-pub fn enum_declaration_resolver_data(
-    db: &dyn SemanticGroup,
-    enum_id: EnumId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn enum_declaration_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    enum_id: EnumId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_enum_declaration_data(enum_id)?.resolver_data)
 }
 
 // Definition
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct EnumDefinitionData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    variants: OrderedHashMap<SmolStr, VariantId>,
-    variant_semantic: OrderedHashMap<VariantId, Variant>,
-    resolver_data: Arc<ResolverData>,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct EnumDefinitionData<'db> {
+    diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    variants: OrderedHashMap<StrRef<'db>, VariantId<'db>>,
+    variant_semantic: OrderedHashMap<VariantId<'db>, Variant<'db>>,
+    resolver_data: Arc<ResolverData<'db>>,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct Variant {
-    pub enum_id: EnumId,
-    pub id: VariantId,
-    pub ty: semantic::TypeId,
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct Variant<'db> {
+    pub enum_id: EnumId<'db>,
+    pub id: VariantId<'db>,
+    pub ty: semantic::TypeId<'db>,
     /// The index of the variant from within the variant list.
     pub idx: usize,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
-pub struct ConcreteVariant {
-    pub concrete_enum_id: ConcreteEnumId,
-    pub id: VariantId,
-    pub ty: semantic::TypeId,
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update)]
+pub struct ConcreteVariant<'db> {
+    pub concrete_enum_id: ConcreteEnumId<'db>,
+    pub id: VariantId<'db>,
+    pub ty: semantic::TypeId<'db>,
     /// The index of the variant from within the variant list.
     #[dont_rewrite]
     pub idx: usize,
@@ -169,7 +171,7 @@ pub struct ConcreteVariant {
 /// Selector pattern of a match arm of a match on numeric values.
 /// Required for the dont_rewrite attribute to work.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[debug_db(dyn SemanticGroup)]
 pub struct ValueSelectorArm {
     #[dont_rewrite]
     pub value: usize,
@@ -177,23 +179,23 @@ pub struct ValueSelectorArm {
 
 /// Selector pattern of a match arm.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
-pub enum MatchArmSelector {
-    VariantId(ConcreteVariant),
+pub enum MatchArmSelector<'db> {
+    VariantId(ConcreteVariant<'db>),
     Value(ValueSelectorArm),
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_enum_definition_data].
-pub fn priv_enum_definition_data(
-    db: &dyn SemanticGroup,
-    enum_id: EnumId,
-) -> Maybe<EnumDefinitionData> {
+pub fn priv_enum_definition_data<'db>(
+    db: &'db dyn SemanticGroup,
+    enum_id: EnumId<'db>,
+) -> Maybe<EnumDefinitionData<'db>> {
     let module_file_id = enum_id.module_file_id(db);
     let crate_id = module_file_id.0.owning_crate(db);
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
+    let enum_ast = db.module_enum_by_id(enum_id)?;
 
     // Generic params.
     let generic_params_data = db.enum_generic_params_data(enum_id)?;
@@ -208,7 +210,7 @@ pub fn priv_enum_definition_data(
     // Variants.
     let mut variants = OrderedHashMap::default();
     let mut variant_semantic = OrderedHashMap::default();
-    for (variant_idx, variant) in enumerate(enum_ast.variants(db).elements(db)) {
+    for (variant_idx, variant) in enum_ast.variants(db).elements(db).enumerate() {
         let feature_restore = resolver
             .data
             .feature_config
@@ -220,8 +222,8 @@ pub fn priv_enum_definition_data(
                 resolve_type(db, &mut diagnostics, &mut resolver, &type_clause.ty(db))
             }
         };
-        let variant_name = variant.name(db).text(db);
-        if let Some(_other_variant) = variants.insert(variant_name.clone(), id) {
+        let variant_name: StrRef<'_> = variant.name(db).text(db).into();
+        if let Some(_other_variant) = variants.insert(variant_name, id) {
             diagnostics
                 .report(variant.stable_ptr(db), EnumVariantRedefinition { enum_id, variant_name });
         }
@@ -247,10 +249,10 @@ pub fn priv_enum_definition_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_definition_diagnostics].
-pub fn enum_definition_diagnostics(
-    db: &dyn SemanticGroup,
-    enum_id: EnumId,
-) -> Diagnostics<SemanticDiagnostic> {
+pub fn enum_definition_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    enum_id: EnumId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     let Ok(data) = db.priv_enum_definition_data(enum_id) else {
         return Default::default();
     };
@@ -278,44 +280,44 @@ pub fn enum_definition_diagnostics(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_definition_resolver_data].
-pub fn enum_definition_resolver_data(
-    db: &dyn SemanticGroup,
-    enum_id: EnumId,
-) -> Maybe<Arc<ResolverData>> {
+pub fn enum_definition_resolver_data<'db>(
+    db: &'db dyn SemanticGroup,
+    enum_id: EnumId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_enum_definition_data(enum_id)?.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_variants].
-pub fn enum_variants(
-    db: &dyn SemanticGroup,
-    enum_id: EnumId,
-) -> Maybe<OrderedHashMap<SmolStr, VariantId>> {
+pub fn enum_variants<'db>(
+    db: &'db dyn SemanticGroup,
+    enum_id: EnumId<'db>,
+) -> Maybe<OrderedHashMap<StrRef<'db>, VariantId<'db>>> {
     Ok(db.priv_enum_definition_data(enum_id)?.variants)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::variant_semantic].
-pub fn variant_semantic(
-    db: &dyn SemanticGroup,
-    enum_id: EnumId,
-    variant_id: VariantId,
-) -> Maybe<Variant> {
+pub fn variant_semantic<'db>(
+    db: &'db dyn SemanticGroup,
+    enum_id: EnumId<'db>,
+    variant_id: VariantId<'db>,
+) -> Maybe<Variant<'db>> {
     let data = db.priv_enum_definition_data(enum_id)?;
-    data.variant_semantic.get(&variant_id).cloned().to_maybe()
+    Ok(data.variant_semantic[&variant_id].clone())
 }
 
 // TODO(spapini): Consider making these queries.
-pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
+pub trait SemanticEnumEx: for<'a> Upcast<'a, dyn SemanticGroup> {
     /// Retrieves the [ConcreteVariant] for a [ConcreteEnumId] and a [Variant].
-    fn concrete_enum_variant(
-        &self,
-        concrete_enum_id: ConcreteEnumId,
-        variant: &Variant,
-    ) -> Maybe<ConcreteVariant> {
+    fn concrete_enum_variant<'db>(
+        &'db self,
+        concrete_enum_id: ConcreteEnumId<'db>,
+        variant: &Variant<'db>,
+    ) -> Maybe<ConcreteVariant<'db>> {
         // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
         //   always have the correct number of generic arguments.
         let db = self.upcast();
         let generic_params = db.enum_generic_params(concrete_enum_id.enum_id(db))?;
-        let generic_args = concrete_enum_id.lookup_intern(db).generic_args;
+        let generic_args = concrete_enum_id.long(db).generic_args.clone();
         GenericSubstitution::new(&generic_params, &generic_args).substitute(
             db,
             ConcreteVariant { concrete_enum_id, id: variant.id, ty: variant.ty, idx: variant.idx },
@@ -323,10 +325,10 @@ pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
     }
 
     /// Retrieves all the [ConcreteVariant]s for a [ConcreteEnumId].
-    fn concrete_enum_variants(
-        &self,
-        concrete_enum_id: ConcreteEnumId,
-    ) -> Maybe<Vec<ConcreteVariant>> {
+    fn concrete_enum_variants<'db>(
+        &'db self,
+        concrete_enum_id: ConcreteEnumId<'db>,
+    ) -> Maybe<Vec<ConcreteVariant<'db>>> {
         // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
         //   always have the correct number of generic arguments.
         let db = self.upcast();
@@ -343,4 +345,4 @@ pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
     }
 }
 
-impl<'a, T: Upcast<dyn SemanticGroup + 'a> + ?Sized> SemanticEnumEx<'a> for T {}
+impl<T: for<'db> Upcast<'db, dyn SemanticGroup> + ?Sized> SemanticEnumEx for T {}

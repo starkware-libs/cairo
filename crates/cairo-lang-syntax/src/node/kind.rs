@@ -2,7 +2,7 @@
 use core::fmt;
 
 use serde::{Deserialize, Serialize};
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, salsa::Update)]
 pub enum SyntaxKind {
     Trivia,
     ExprList,
@@ -34,6 +34,7 @@ pub enum SyntaxKind {
     MatchArms,
     MatchArm,
     ExprIf,
+    ConditionListAnd,
     ConditionLet,
     ConditionExpr,
     ExprLoop,
@@ -75,6 +76,8 @@ pub enum SyntaxKind {
     StatementList,
     StatementMissing,
     StatementLet,
+    LetElseClause,
+    OptionLetElseClauseEmpty,
     OptionTerminalSemicolonEmpty,
     StatementExpr,
     StatementContinue,

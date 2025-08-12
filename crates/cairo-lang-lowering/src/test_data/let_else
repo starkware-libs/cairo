@@ -1,0 +1,120 @@
+//! > let else
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo(a: MyEnum) {
+    let MyEnum::A(x) = a else {
+        bar(0);
+        return;
+    };
+    bar(x);
+}
+
+extern fn bar(x: felt252) nopanic;
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: test::MyEnum
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    MyEnum::A(v1) => blk1,
+    MyEnum::B(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  () <- test::bar(v1)
+End:
+  Return()
+
+blk2:
+Statements:
+  (v3: core::felt252) <- 0
+  () <- test::bar(v3)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > let else with multiple variables
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo(a: MyEnum) {
+    let MyEnum::A((x, y, _, z)) = a else {
+        bar(0);
+        return;
+    };
+    bar(x + y + z);
+}
+
+extern fn bar(x: felt252) nopanic;
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    A: (felt252, felt252, felt252, felt252),
+    B: felt252,
+    C: (),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: test::MyEnum
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    MyEnum::A(v1) => blk1,
+    MyEnum::B(v2) => blk2,
+    MyEnum::C(v3) => blk3,
+  })
+
+blk1:
+Statements:
+  (v4: core::felt252, v5: core::felt252, v6: core::felt252, v7: core::felt252) <- struct_destructure(v1)
+  (v8: core::felt252) <- core::felt252_add(v4, v5)
+  (v9: core::felt252) <- core::felt252_add(v8, v7)
+  () <- test::bar(v9)
+End:
+  Return()
+
+blk2:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk4:
+Statements:
+  (v10: core::felt252) <- 0
+  () <- test::bar(v10)
+End:
+  Return()

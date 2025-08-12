@@ -37,17 +37,16 @@ fn check_variable_lifetime(
     let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
 
     // Parse code and create semantic model.
-    let test_function = setup_test_function(
+    let (test_function, semantic_diagnostics) = setup_test_function(
         db,
         inputs["function_code"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
     )
-    .unwrap();
+    .split();
 
-    db.module_lowering_diagnostics(test_function.module_id)
-        .unwrap()
-        .expect_with_db(db, "Unexpected diagnostics.");
+    let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
+    assert_eq!(lowering_diagnostics.0.error_count, 0);
 
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
@@ -96,5 +95,7 @@ fn check_variable_lifetime(
         ("lowering_format".into(), lowered_str),
         ("last_use".into(), last_use_str),
         ("drops".into(), drop_str),
+        ("semantic_diagnostics".into(), semantic_diagnostics),
+        ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
     ]))
 }

@@ -37,7 +37,7 @@ impl ValidationError {
 /// Validates that the lowering structure is valid.
 ///
 /// Currently only does basic SSA validations.
-pub fn validate(lowered: &Lowered) -> Result<(), ValidationError> {
+pub fn validate(lowered: &Lowered<'_>) -> Result<(), ValidationError> {
     if lowered.blocks.is_empty() {
         return Ok(());
     }

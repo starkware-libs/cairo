@@ -3,15 +3,14 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use smol_str::SmolStr;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ParserDiagnostic {
-    pub file_id: FileId,
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct ParserDiagnostic<'a> {
+    pub file_id: FileId<'a>,
     pub span: TextSpan,
     pub kind: ParserDiagnosticKind,
 }
-impl ParserDiagnostic {
+impl<'a> ParserDiagnostic<'a> {
     /// Converts a `SyntaxKind` to its corresponding operator string.
     fn kind_to_string(&self, kind: SyntaxKind) -> String {
         format!(
@@ -97,7 +96,7 @@ impl ParserDiagnostic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ParserDiagnosticKind {
     // TODO(spapini): Add tokens from the recovery set to the message.
-    SkippedElement { element_name: SmolStr },
+    SkippedElement { element_name: String },
     MissingToken(SyntaxKind),
     MissingExpression,
     MissingPathSegment,
@@ -106,12 +105,11 @@ pub enum ParserDiagnosticKind {
     MissingWrappedArgList,
     MissingPattern,
     MissingMacroRuleParamKind,
-    InvalidPlaceholderPath,
     InvalidParamKindInMacroExpansion,
     InvalidParamKindInMacroRule,
     ExpectedInToken,
-    ItemInlineMacroWithoutBang { identifier: SmolStr, bracket_type: SyntaxKind },
-    ReservedIdentifier { identifier: SmolStr },
+    ItemInlineMacroWithoutBang { identifier: String, bracket_type: SyntaxKind },
+    ReservedIdentifier { identifier: String },
     UnderscoreNotAllowedAsIdentifier,
     MissingLiteralSuffix,
     InvalidNumericLiteralValue,
@@ -128,8 +126,10 @@ pub enum ParserDiagnosticKind {
     DisallowedTrailingSeparatorOr,
     ConsecutiveMathOperators { first_op: SyntaxKind, second_op: SyntaxKind },
     ExpectedSemicolonOrBody,
+    LowPrecedenceOperatorInIfLet { op: SyntaxKind },
 }
-impl DiagnosticEntry for ParserDiagnostic {
+
+impl<'a> DiagnosticEntry<'a> for ParserDiagnostic<'a> {
     type DbType = dyn FilesGroup;
 
     fn format(&self, _db: &dyn FilesGroup) -> String {
@@ -168,10 +168,6 @@ impl DiagnosticEntry for ParserDiagnostic {
             ParserDiagnosticKind::MissingMacroRuleParamKind => {
                 "Missing tokens. Expected a macro rule parameter kind.".to_string()
             }
-            ParserDiagnosticKind::InvalidPlaceholderPath => "Placeholder expression ($expression) \
-                                                             is allowed only in the context of a \
-                                                             macro rule."
-                .to_string(),
             ParserDiagnosticKind::ExpectedInToken => {
                 "Missing identifier token, expected 'in'.".to_string()
             }
@@ -238,10 +234,17 @@ Did you mean to write `{identifier}!{left}...{right}'?",
                  declaration or '{' for a module with a body."
                     .to_string()
             }
+            ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op } => {
+                format!(
+                    "Operator {} is not allowed in let chains. Consider wrapping the expression \
+                     in parentheses.",
+                    self.kind_to_string(*op)
+                )
+            }
         }
     }
 
-    fn location(&self, _db: &dyn FilesGroup) -> cairo_lang_diagnostics::DiagnosticLocation {
+    fn location(&self, _db: &'a dyn FilesGroup) -> cairo_lang_diagnostics::DiagnosticLocation<'a> {
         cairo_lang_diagnostics::DiagnosticLocation { file_id: self.file_id, span: self.span }
     }
 

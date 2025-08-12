@@ -16,7 +16,7 @@ use cairo_lang_sierra::program::{
     BranchTarget, GenericArg, Invocation, Program, Statement, StatementIdx,
 };
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
-use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
+use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -42,8 +42,6 @@ mod test;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum CompilationError {
-    #[error("Failed building type information")]
-    FailedBuildingTypeInformation,
     #[error("Error from program registry: {0}")]
     ProgramRegistryError(Box<ProgramRegistryError>),
     #[error(transparent)]
@@ -182,6 +180,16 @@ impl CairoProgram {
         }
         AssembledCairoProgram { bytecode, hints }
     }
+
+    /// Returns the Sierra statement corresponding to the given PC.
+    pub fn sierra_statement_index_by_pc(&self, pc: usize) -> StatementIdx {
+        // the `-1` here can't cause an underflow as the first statement is always at
+        // offset 0, so it is always on the left side of the
+        // partition, and thus the partition index is >0.
+        StatementIdx(
+            self.debug_info.sierra_statement_info.partition_point(|x| x.start_offset <= pc) - 1,
+        )
+    }
 }
 
 /// The debug information of a compilation from Sierra to casm.
@@ -240,8 +248,7 @@ pub struct ConstsInfo {
 impl ConstsInfo {
     /// Creates a new `ConstSegmentsInfo` from the given libfuncs.
     pub fn new<'a>(
-        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
-        type_sizes: &TypeSizeMap,
+        program_info: &ProgramRegistryInfo,
         libfunc_ids: impl Iterator<Item = &'a ConcreteLibfuncId> + Clone,
         circuit_infos: &OrderedHashMap<ConcreteTypeId, CircuitInfo>,
         const_segments_max_size: usize,
@@ -269,13 +276,13 @@ impl ConstsInfo {
 
         for id in libfunc_ids.clone() {
             if let CoreConcreteLibfunc::Const(ConstConcreteLibfunc::AsBox(as_box)) =
-                registry.get_libfunc(id).unwrap()
+                program_info.registry.get_libfunc(id).unwrap()
             {
                 add_const(
                     &mut segments,
                     as_box.segment_id,
                     as_box.const_type.clone(),
-                    extract_const_value(registry, type_sizes, &as_box.const_type).unwrap(),
+                    extract_const_value(program_info, &as_box.const_type).unwrap(),
                 )?;
             }
         }
@@ -294,7 +301,7 @@ impl ConstsInfo {
 
         for id in libfunc_ids {
             if let CoreConcreteLibfunc::Circuit(CircuitConcreteLibfunc::GetDescriptor(libfunc)) =
-                registry.get_libfunc(id).unwrap()
+                program_info.registry.get_libfunc(id).unwrap()
             {
                 let circ_ty = &libfunc.ty;
                 let info = circuit_infos.get(circ_ty).unwrap();
@@ -337,17 +344,17 @@ pub struct ConstSegment {
 /// Gets a concrete type, if it is a const type returns a vector of the values to be stored in the
 /// const segment.
 fn extract_const_value(
-    registry: &ProgramRegistry<CoreType, CoreLibfunc>,
-    type_sizes: &TypeSizeMap,
+    program_info: &ProgramRegistryInfo,
     ty: &ConcreteTypeId,
 ) -> Result<Vec<BigInt>, CompilationError> {
     let mut values = Vec::new();
     let mut types_stack = vec![ty.clone()];
     while let Some(ty) = types_stack.pop() {
-        let CoreTypeConcrete::Const(const_type) = registry.get_type(&ty).unwrap() else {
+        let CoreTypeConcrete::Const(const_type) = program_info.registry.get_type(&ty).unwrap()
+        else {
             return Err(CompilationError::UnsupportedConstType);
         };
-        let inner_type = registry.get_type(&const_type.inner_ty).unwrap();
+        let inner_type = program_info.registry.get_type(&const_type.inner_ty).unwrap();
         match inner_type {
             CoreTypeConcrete::Struct(_) => {
                 // Add the struct members' types to the stack in reverse order.
@@ -367,9 +374,9 @@ fn extract_const_value(
                             get_variant_selector(enm.variants.len(), variant_index).unwrap().into(),
                         );
                         let full_enum_size: usize =
-                            type_sizes[&const_type.inner_ty].into_or_panic();
+                            program_info.type_sizes[&const_type.inner_ty].into_or_panic();
                         let variant_size: usize =
-                            type_sizes[&enm.variants[variant_index]].into_or_panic();
+                            program_info.type_sizes[&enm.variants[variant_index]].into_or_panic();
                         // Padding with zeros to full enum size.
                         values.extend(itertools::repeat_n(
                             BigInt::zero(),
@@ -426,6 +433,7 @@ pub fn check_basic_structure(
 /// and gas usage, and config additional compilation flavours.
 pub fn compile(
     program: &Program,
+    program_info: &ProgramRegistryInfo,
     metadata: &Metadata,
     config: SierraToCasmConfig,
 ) -> Result<CairoProgram, Box<CompilationError>> {
@@ -438,14 +446,7 @@ pub fn compile(
     let mut sierra_statement_info: Vec<SierraStatementDebugInfo> =
         Vec::with_capacity(program.statements.len());
 
-    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new_with_ap_change(
-        program,
-        metadata.ap_change_info.function_ap_change.clone(),
-    )
-    .map_err(CompilationError::ProgramRegistryError)?;
-    validate_metadata(program, &registry, metadata)?;
-    let type_sizes = get_type_size_map(program, &registry)
-        .ok_or(CompilationError::FailedBuildingTypeInformation)?;
+    validate_metadata(program, &program_info.registry, metadata)?;
     let mut backwards_jump_indices = UnorderedHashSet::<_>::default();
     for (statement_id, statement) in program.statements.iter().enumerate() {
         if let Statement::Invocation(invocation) = statement {
@@ -464,12 +465,14 @@ pub fn compile(
         &program.funcs,
         metadata,
         config.gas_usage_check,
-        &type_sizes,
+        &program_info.type_sizes,
     )
     .map_err(|err| Box::new(err.into()))?;
 
-    let circuits_info =
-        CircuitsInfo::new(&registry, program.type_declarations.iter().map(|td| &td.id))?;
+    let circuits_info = CircuitsInfo::new(
+        &program_info.registry,
+        program.type_declarations.iter().map(|td| &td.id),
+    )?;
 
     let mut program_offset: usize = 0;
     for (statement_id, statement) in program.statements.iter().enumerate() {
@@ -483,7 +486,7 @@ pub fn compile(
                 let (annotations, return_refs) = program_annotations
                     .get_annotations_after_take_args(statement_idx, ref_ids.iter())
                     .map_err(|err| Box::new(err.into()))?;
-                return_refs.iter().for_each(|r| r.validate(&type_sizes));
+                return_refs.iter().for_each(|r| r.validate(&program_info.type_sizes));
 
                 if let Some(var_id) = annotations.refs.keys().next() {
                     return Err(Box::new(CompilationError::DanglingReferences {
@@ -529,7 +532,8 @@ pub fn compile(
                     .get_annotations_after_take_args(statement_idx, invocation.args.iter())
                     .map_err(|err| Box::new(err.into()))?;
 
-                let libfunc = registry
+                let libfunc = program_info
+                    .registry
                     .get_libfunc(&invocation.libfunc_id)
                     .map_err(CompilationError::ProgramRegistryError)?;
                 check_basic_structure(statement_idx, invocation, libfunc)?;
@@ -542,15 +546,13 @@ pub fn compile(
                 check_types_match(&invoke_refs, &param_types).map_err(|error| {
                     Box::new(AnnotationError::ReferencesError { statement_idx, error }.into())
                 })?;
-                invoke_refs.iter().for_each(|r| r.validate(&type_sizes));
+                invoke_refs.iter().for_each(|r| r.validate(&program_info.type_sizes));
                 let compiled_invocation = compile_invocation(
                     ProgramInfo {
                         metadata,
-                        type_sizes: &type_sizes,
+                        type_sizes: &program_info.type_sizes,
                         circuits_info: &circuits_info,
-                        const_data_values: &|ty| {
-                            extract_const_value(&registry, &type_sizes, ty).unwrap()
-                        },
+                        const_data_values: &|ty| extract_const_value(program_info, ty).unwrap(),
                     },
                     invocation,
                     libfunc,
@@ -604,7 +606,7 @@ pub fn compile(
                     let destination_statement_idx = statement_idx.next(&branch_info.target);
                     if branching_libfunc
                         && !is_branch_align(
-                            &registry,
+                            &program_info.registry,
                             &program.statements[destination_statement_idx.0],
                         )?
                     {
@@ -638,8 +640,7 @@ pub fn compile(
         .checked_sub(program_offset)
         .ok_or_else(|| Box::new(CompilationError::CodeSizeLimitExceeded))?;
     let consts_info = ConstsInfo::new(
-        &registry,
-        &type_sizes,
+        program_info,
         program.libfunc_declarations.iter().map(|ld| &ld.id),
         &circuits_info.circuits,
         const_segments_max_size,

@@ -1,9 +1,8 @@
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
-use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
+use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType, GasConcreteLibfunc};
 use cairo_lang_sierra::program::StatementIdx;
-use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::collection_arithmetics::{AddCollection, SubCollection};
 
 use crate::core_libfunc_cost_base::{
     CostOperations, InvocationCostInfoProvider, core_libfunc_postcost, core_libfunc_precost,
@@ -12,7 +11,7 @@ use crate::cost_expr::{CostExpr, Var};
 use crate::generate_equations::StatementFutureCost;
 use crate::objects::CostInfoProvider;
 
-pub type CostExprMap = OrderedHashMap<CostTokenType, CostExpr>;
+pub type CostExprMap = CostTokenMap<CostExpr>;
 
 /// Cost operations for getting `CostExpr` costs values.
 struct Ops<'a> {
@@ -45,11 +44,11 @@ impl CostOperations for Ops<'_> {
     }
 
     fn add(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType {
-        add_maps(lhs, rhs)
+        lhs.add_collection(rhs)
     }
 
     fn sub(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType {
-        sub_maps(lhs, rhs)
+        lhs.sub_collection(rhs)
     }
 }
 

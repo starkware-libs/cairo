@@ -1,0 +1,76 @@
+//! > Test while-let with parenthesis
+
+//! > test_comments
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+    while (let x = 0) {}
+}
+
+//! > expected_diagnostics
+error: Missing token ')'.
+ --> dummy_file.cairo:2:12
+    while (let x = 0) {}
+           ^
+
+error: Missing token '{'.
+ --> dummy_file.cairo:2:12
+    while (let x = 0) {}
+           ^
+
+error: Missing token ';'.
+ --> dummy_file.cairo:2:21
+    while (let x = 0) {}
+                    ^
+
+error: Skipped tokens. Expected: statement.
+ --> dummy_file.cairo:2:21
+    while (let x = 0) {}
+                    ^
+
+error: Missing token '}'.
+ --> dummy_file.cairo:3:2
+}
+ ^
+
+//! > ==========================================================================
+
+//! > Test while-let with operators of precedence lower than `&&`
+
+//! > test_comments
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+    // Check that tokens after the operator are skipped without diagnostics, and diagnostics inside
+    // the `while` body are reported.
+    while let x = 10  || false < > { += }
+    while let x = 0 += 2 {}
+    while let x = 0..2 {}
+}
+
+//! > expected_diagnostics
+error: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
+ --> dummy_file.cairo:4:23
+    while let x = 10  || false < > { += }
+                      ^
+
+error: Skipped tokens. Expected: statement.
+ --> dummy_file.cairo:4:38
+    while let x = 10  || false < > { += }
+                                     ^^
+
+error: Operator '+=' is not allowed in let chains. Consider wrapping the expression in parentheses.
+ --> dummy_file.cairo:5:21
+    while let x = 0 += 2 {}
+                    ^
+
+error: Operator '..' is not allowed in let chains. Consider wrapping the expression in parentheses.
+ --> dummy_file.cairo:6:20
+    while let x = 0..2 {}
+                   ^

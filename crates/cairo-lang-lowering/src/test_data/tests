@@ -24,7 +24,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test unreachable code.
+//! > Test unreachable code by return.
 
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
@@ -46,11 +46,12 @@ foo
 
 //! > lowering_diagnostics
 warning: Unreachable code
- --> lib.cairo:3:5-4:6
+ --> lib.cairo:3:5-5:5
       5;
  _____^
 |     6;
-|______^
+|     7
+|_____^
 
 //! > lowering_flat
 Parameters: v0: core::felt252
@@ -66,7 +67,7 @@ End:
 //! > Test unreachable code by match.
 
 //! > test_runner_name
-test_function_lowering(expect_diagnostics: false)
+test_function_lowering(expect_diagnostics: warnings_only)
 
 //! > function
 fn foo(a: never) -> felt252 {
@@ -82,6 +83,10 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+warning: Unreachable code
+ --> lib.cairo:3:5
+    1 + 2
+    ^^^^^
 
 //! > lowering_flat
 Parameters: v0: core::never
@@ -90,6 +95,40 @@ Statements:
 End:
   Match(match_enum(v0) {
   })
+
+//! > ==========================================================================
+
+//! > Test unreachable code by loop.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: warnings_only)
+
+//! > function
+fn foo() -> felt252 {
+    loop {}
+    1
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+warning: Unreachable code
+ --> lib.cairo:3:5
+    1
+    ^
+
+//! > lowering_flat
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252,)>) <- test::foo[22-34](v0, v1)
+End:
+  Return(v2, v3, v4)
 
 //! > ==========================================================================
 

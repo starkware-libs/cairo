@@ -47,7 +47,7 @@ fn test_ast() {
             (SyntaxKind::Trivia, None, TextOffset::START, TextWidth::new_for_testing(0)),
             (
                 SyntaxKind::TokenIdentifier,
-                Some("foo".into()),
+                Some("foo"),
                 TextOffset::START,
                 TextWidth::new_for_testing(3)
             ),
@@ -59,7 +59,7 @@ fn test_ast() {
             ),
             (
                 SyntaxKind::TokenWhitespace,
-                Some(" ".into()),
+                Some(" "),
                 TextWidth::new_for_testing(3).as_offset(),
                 TextWidth::new_for_testing(1)
             ),
@@ -77,7 +77,7 @@ fn test_ast() {
             ),
             (
                 SyntaxKind::TokenPlus,
-                Some("+".into()),
+                Some("+"),
                 TextWidth::new_for_testing(4).as_offset(),
                 TextWidth::new_for_testing(1)
             ),
@@ -89,7 +89,7 @@ fn test_ast() {
             ),
             (
                 SyntaxKind::TokenWhitespace,
-                Some(" ".into()),
+                Some(" "),
                 TextWidth::new_for_testing(5).as_offset(),
                 TextWidth::new_for_testing(1)
             ),
@@ -107,7 +107,7 @@ fn test_ast() {
             ),
             (
                 SyntaxKind::TokenLiteralNumber,
-                Some("5".into()),
+                Some("5"),
                 TextWidth::new_for_testing(6).as_offset(),
                 TextWidth::new_for_testing(1)
             ),
@@ -133,29 +133,29 @@ fn test_stable_ptr() {
     }
 }
 
-fn setup(db: &DatabaseForTesting) -> SyntaxNode {
+fn setup(db: &DatabaseForTesting) -> SyntaxNode<'_> {
     // TODO: Use a builder for easier construction of token.
     // Construct green nodes.
-    let token_foo = TokenIdentifier::new_green(db, "foo".into());
-    let token_whitespace1 = TokenWhitespace::new_green(db, " ".into());
-    let token_plus = TokenPlus::new_green(db, "+".into());
-    let token_whitespace2 = TokenWhitespace::new_green(db, " ".into());
-    let token5 = TokenLiteralNumber::new_green(db, "5".into());
+    let token_foo = TokenIdentifier::new_green(db, "foo");
+    let token_whitespace1 = TokenWhitespace::new_green(db, " ");
+    let token_plus = TokenPlus::new_green(db, "+");
+    let token_whitespace2 = TokenWhitespace::new_green(db, " ");
+    let token5 = TokenLiteralNumber::new_green(db, "5");
     assert_eq!(token_whitespace1, token_whitespace2);
-    let no_trivia = Trivia::new_green(db, vec![]);
+    let no_trivia = Trivia::new_green(db, &[]);
     let triviums = [token_whitespace1, token_whitespace2];
     assert_eq!(triviums[0], triviums[1]);
     let terminal_foo = TerminalIdentifier::new_green(
         db,
         no_trivia,
         token_foo,
-        Trivia::new_green(db, vec![triviums[0].into()]),
+        Trivia::new_green(db, &[triviums[0].into()]),
     );
     let terminal_plus = TerminalPlus::new_green(
         db,
         no_trivia,
         token_plus,
-        Trivia::new_green(db, vec![triviums[1].into()]),
+        Trivia::new_green(db, &[triviums[1].into()]),
     );
     let terminal5 = TerminalLiteralNumber::new_green(db, no_trivia, token5, no_trivia);
     let empty_dollar = OptionTerminalDollarEmpty::new_green(db).into();
@@ -166,7 +166,7 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
             empty_dollar,
             ExprPathInner::new_green(
                 db,
-                vec![PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into()],
+                &[PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into()],
             ),
         )
         .into(),

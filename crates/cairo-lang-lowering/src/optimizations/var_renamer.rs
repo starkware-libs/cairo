@@ -11,7 +11,7 @@ pub struct VarRenamer {
     pub renamed_vars: UnorderedHashMap<VariableId, VariableId>,
 }
 
-impl Rebuilder for VarRenamer {
+impl<'db> Rebuilder<'db> for VarRenamer {
     fn map_var_id(&mut self, var: VariableId) -> VariableId {
         let Some(mut new_var_id) = self.renamed_vars.get(&var).cloned() else {
             return var;

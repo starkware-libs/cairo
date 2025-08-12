@@ -66,7 +66,7 @@ impl VariablesState {
         arg_states: &[VarState],
     ) {
         // Clear the stack if needed.
-        match branch_signature.ap_change {
+        match &branch_signature.ap_change {
             SierraApChange::BranchAlign
             | SierraApChange::Unknown
             | SierraApChange::Known { new_vars_only: false } => {
@@ -75,6 +75,9 @@ impl VariablesState {
                 self.clear_known_stack();
             }
             SierraApChange::Known { new_vars_only: true } => {}
+            SierraApChange::FunctionCall(id) => {
+                unreachable!("Missing ap-change for function `{id}`.")
+            }
         }
 
         for (var, var_info) in itertools::zip_eq(results, &branch_signature.vars) {

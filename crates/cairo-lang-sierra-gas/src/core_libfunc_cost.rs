@@ -1,8 +1,7 @@
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
-use cairo_lang_sierra::extensions::gas::CostTokenType;
+use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::program::StatementIdx;
-use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::collection_arithmetics::{AddCollection, SubCollection};
 use itertools::zip_eq;
 
 use crate::core_libfunc_cost_base::{CostOperations, core_libfunc_postcost, core_libfunc_precost};
@@ -19,10 +18,10 @@ struct Ops<'a> {
     idx: StatementIdx,
 }
 impl CostOperations for Ops<'_> {
-    type CostType = OrderedHashMap<CostTokenType, i64>;
+    type CostType = CostTokenMap<i64>;
 
     fn cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType {
-        OrderedHashMap::from_iter([(token_type, value as i64)])
+        CostTokenMap::from_iter([(token_type, value as i64)])
     }
 
     fn function_token_cost(
@@ -32,26 +31,26 @@ impl CostOperations for Ops<'_> {
     ) -> Self::CostType {
         if let Some(function_cost) = self.gas_info.function_costs.get(&function.id) {
             if let Some(v) = function_cost.get(&token_type) {
-                return OrderedHashMap::from_iter([(token_type, *v)]);
+                return CostTokenMap::from_iter([(token_type, *v)]);
             }
         }
-        OrderedHashMap::default()
+        CostTokenMap::default()
     }
 
     fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType {
         if let Some(v) = self.gas_info.variable_values.get(&(self.idx, token_type)) {
-            OrderedHashMap::from_iter([(token_type, *v)])
+            CostTokenMap::from_iter([(token_type, *v)])
         } else {
-            OrderedHashMap::default()
+            CostTokenMap::default()
         }
     }
 
     fn add(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType {
-        add_maps(lhs, rhs)
+        lhs.add_collection(rhs)
     }
 
     fn sub(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType {
-        sub_maps(lhs, rhs)
+        lhs.sub_collection(rhs)
     }
 }
 
@@ -62,7 +61,7 @@ pub fn core_libfunc_cost<InfoProvider: InvocationCostInfoProvider>(
     idx: &StatementIdx,
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
-) -> Vec<OrderedHashMap<CostTokenType, i64>> {
+) -> Vec<CostTokenMap<i64>> {
     let precost = core_libfunc_precost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
     let postcost = core_libfunc_postcost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
     zip_eq(precost, postcost)

@@ -17,16 +17,16 @@ use crate::lifetime::{DropLocation, SierraGenVar, UseLocation, VariableLifetimeR
 use crate::pre_sierra;
 
 /// Context for the methods that generate Sierra instructions for an expression.
-pub struct ExprGeneratorContext<'a> {
-    db: &'a dyn SierraGenGroup,
-    lowered: &'a Lowered,
-    function_id: ConcreteFunctionWithBodyId,
+pub struct ExprGeneratorContext<'db, 'a> {
+    db: &'db dyn SierraGenGroup,
+    lowered: &'a Lowered<'db>,
+    function_id: ConcreteFunctionWithBodyId<'db>,
     lifetime: &'a VariableLifetimeResult,
 
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
     variables: UnorderedHashMap<SierraGenVar, cairo_lang_sierra::ids::VarId>,
-    block_labels: OrderedHashMap<BlockId, pre_sierra::LabelId>,
+    block_labels: OrderedHashMap<BlockId, pre_sierra::LabelId<'db>>,
 
     /// The current ap tracking status.
     ap_tracking_enabled: bool,
@@ -34,16 +34,16 @@ pub struct ExprGeneratorContext<'a> {
     ap_tracking_configuration: ApTrackingConfiguration,
 
     /// The current location for adding statements.
-    pub curr_cairo_location: Vec<StableLocation>,
+    pub curr_cairo_location: Vec<StableLocation<'db>>,
     /// The accumulated statements for the expression.
-    statements: Vec<pre_sierra::StatementWithLocation>,
+    statements: Vec<pre_sierra::StatementWithLocation<'db>>,
 }
-impl<'a> ExprGeneratorContext<'a> {
+impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
     /// Constructs an empty [ExprGeneratorContext].
     pub fn new(
-        db: &'a dyn SierraGenGroup,
-        lowered: &'a Lowered,
-        function_id: ConcreteFunctionWithBodyId,
+        db: &'db dyn SierraGenGroup,
+        lowered: &'a Lowered<'db>,
+        function_id: ConcreteFunctionWithBodyId<'db>,
         lifetime: &'a VariableLifetimeResult,
         ap_tracking_configuration: ApTrackingConfiguration,
     ) -> Self {
@@ -69,7 +69,7 @@ impl<'a> ExprGeneratorContext<'a> {
     }
 
     /// Returns the SierraGenGroup salsa database.
-    pub fn get_db(&self) -> &'a dyn SierraGenGroup {
+    pub fn get_db(&self) -> &'db dyn SierraGenGroup {
         self.db
     }
 
@@ -98,19 +98,19 @@ impl<'a> ExprGeneratorContext<'a> {
     }
 
     /// Allocates a label id inside the given function.
-    pub fn alloc_label_id(&mut self) -> pre_sierra::LabelId {
+    pub fn alloc_label_id(&mut self) -> pre_sierra::LabelId<'db> {
         // TODO(lior): Consider using stable ids, instead of allocating sequential ids.
         alloc_label_id(self.db, self.function_id, &mut self.label_id_allocator)
     }
 
     /// Generates a label id and a label statement.
-    pub fn new_label(&mut self) -> (pre_sierra::Statement, pre_sierra::LabelId) {
+    pub fn new_label(&mut self) -> (pre_sierra::Statement<'db>, pre_sierra::LabelId<'db>) {
         let id = self.alloc_label_id();
         (pre_sierra::Statement::Label(pre_sierra::Label { id }), id)
     }
 
     /// Adds the block to pending_blocks and returns the label id of the block.
-    pub fn block_label(&mut self, block_id: BlockId) -> &pre_sierra::LabelId {
+    pub fn block_label(&mut self, block_id: BlockId) -> &pre_sierra::LabelId<'db> {
         self.block_labels.entry(block_id).or_insert_with(|| {
             alloc_label_id(self.db, self.function_id, &mut self.label_id_allocator)
         })
@@ -129,14 +129,13 @@ impl<'a> ExprGeneratorContext<'a> {
             SierraGenVar::UninitializedLocal(lowering_var) => {
                 let inner_type =
                     self.db.get_concrete_type_id(self.lowered.variables[lowering_var].ty)?;
-                crate::db::SierraGeneratorTypeLongId::Regular(
+                self.db.intern_concrete_type(crate::db::SierraGeneratorTypeLongId::Regular(
                     ConcreteTypeLongId {
                         generic_id: UninitializedType::ID,
                         generic_args: vec![GenericArg::Type(inner_type)],
                     }
                     .into(),
-                )
-                .intern(self.db)
+                ))
             }
         })
     }
@@ -144,7 +143,7 @@ impl<'a> ExprGeneratorContext<'a> {
     /// Returns the block ([lowering::Block]) associated with
     /// [lowering::BlockId].
     /// Assumes `block_id` exists in `self.lowered.blocks`.
-    pub fn get_lowered_block(&self, block_id: lowering::BlockId) -> &'a lowering::Block {
+    pub fn get_lowered_block(&self, block_id: lowering::BlockId) -> &'a lowering::Block<'db> {
         &self.lowered.blocks[block_id]
     }
 
@@ -182,7 +181,7 @@ impl<'a> ExprGeneratorContext<'a> {
     }
 
     /// Adds a statement for the expression.
-    pub fn push_statement(&mut self, statement: pre_sierra::Statement) {
+    pub fn push_statement(&mut self, statement: pre_sierra::Statement<'db>) {
         self.statements.push(pre_sierra::StatementWithLocation {
             statement,
             location: self.curr_cairo_location.clone(),
@@ -190,24 +189,24 @@ impl<'a> ExprGeneratorContext<'a> {
     }
 
     /// Sets up a location for the next pushed statements.
-    pub fn maybe_set_cairo_location(&mut self, location: Vec<StableLocation>) {
+    pub fn maybe_set_cairo_location(&mut self, location: Vec<StableLocation<'db>>) {
         if !location.is_empty() {
             self.curr_cairo_location = location;
         }
     }
 
     /// Returns the statements generated for the expression.
-    pub fn statements(self) -> Vec<pre_sierra::StatementWithLocation> {
+    pub fn statements(self) -> Vec<pre_sierra::StatementWithLocation<'db>> {
         self.statements
     }
 }
 
 /// A variant of ExprGeneratorContext::alloc_label_id that allows the caller to avoid
 /// allocate labels while parts of the context are borrowed.
-pub fn alloc_label_id(
-    db: &dyn SierraGenGroup,
-    function_id: ConcreteFunctionWithBodyId,
+pub fn alloc_label_id<'db>(
+    db: &'db dyn SierraGenGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
     label_id_allocator: &mut IdAllocator,
-) -> pre_sierra::LabelId {
+) -> pre_sierra::LabelId<'db> {
     pre_sierra::LabelLongId { parent: function_id, id: label_id_allocator.allocate() }.intern(db)
 }

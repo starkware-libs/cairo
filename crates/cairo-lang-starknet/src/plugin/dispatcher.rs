@@ -13,13 +13,16 @@ use itertools::Itertools;
 
 use super::consts::CALLDATA_PARAM_NAME;
 use super::utils::{AstPathExtract, ParamEx};
-use super::{DEPRECATED_ABI_ATTR, INTERFACE_ATTR, STORE_TRAIT};
+use super::{DEPRECATED_ABI_ATTR, DISPATCHER_DOC_GROUP_ATTR, INTERFACE_ATTR, STORE_TRAIT};
 
 /// The name of the variable that holds the returned data.
 const RET_DATA: &str = "__dispatcher_return_data__";
 
 /// If the trait is annotated with INTERFACE_ATTR, generate the relevant dispatcher logic.
-pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
+pub fn handle_trait<'db>(
+    db: &'db dyn SyntaxGroup,
+    trait_ast: ast::ItemTrait<'db>,
+) -> PluginResult<'db> {
     if trait_ast.has_attr(db, DEPRECATED_ABI_ATTR) {
         return PluginResult {
             code: None,
@@ -53,8 +56,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let Some(single_generic_param) = (match &generic_params {
         ast::OptionWrappedGenericParamList::Empty(_) => None,
         ast::OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) => {
-            if let [ast::GenericParam::Type(param)] =
-                generic_params.generic_params(db).elements(db).as_slice()
+            if let Some([ast::GenericParam::Type(param)]) =
+                generic_params.generic_params(db).elements(db).collect_array()
             {
                 Some(param.name(db).text(db))
             } else {
@@ -87,7 +90,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let safe_contract_caller_name = format!("{base_name}SafeDispatcher");
     let library_caller_name = format!("{base_name}LibraryDispatcher");
     let safe_library_caller_name = format!("{base_name}SafeLibraryDispatcher");
-    for item_ast in body.items_vec(db) {
+    for item_ast in body.iter_items(db) {
         match item_ast {
             ast::TraitItem::Function(func) => {
                 let declaration = func.declaration(db);
@@ -95,7 +98,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 let mut skip_generation = false;
                 let mut serialization_code = vec![];
                 let signature = declaration.signature(db);
-                let mut params = signature.parameters(db).elements(db).into_iter();
+                let sig_params = signature.parameters(db);
+                let mut params = sig_params.elements(db);
                 // The first parameter is the `self` parameter.
                 let Some(self_param) = params.next() else {
                     diagnostics.push(PluginDiagnostic::error(
@@ -114,9 +118,9 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 let self_param_type_ok = if self_param.is_ref_param(db) {
                     extract_matches!(self_param.type_clause(db), OptionTypeClause::TypeClause)
                         .ty(db)
-                        .is_identifier(db, &single_generic_param)
+                        .is_identifier(db, single_generic_param)
                 } else if let Some(snapped_ty) = self_param.try_extract_snapshot(db) {
-                    snapped_ty.is_identifier(db, &single_generic_param)
+                    snapped_ty.is_identifier(db, single_generic_param)
                 } else {
                     false
                 };
@@ -143,7 +147,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     }
                     if extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause)
                         .ty(db)
-                        .is_dependent_type(db, &[&single_generic_param])
+                        .is_dependent_type(db, &[single_generic_param])
                     {
                         skip_generation = true;
 
@@ -281,46 +285,56 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let mut builder = PatchBuilder::new(db, &interface_attr);
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
-            "$visibility$trait {dispatcher_trait_name}<T> {{$dispatcher_signatures$
+            "{DISPATCHER_DOC_GROUP_ATTR}
+            $visibility$trait {dispatcher_trait_name}<T> {{$dispatcher_signatures$
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
             $visibility$struct {contract_caller_name} {{
                 pub contract_address: starknet::ContractAddress,
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             impl {contract_caller_name}Impl of {dispatcher_trait_name}<{contract_caller_name}> {{
             $contract_caller_method_impls$
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
             $visibility$struct {library_caller_name} {{
                 pub class_hash: starknet::ClassHash,
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             impl {library_caller_name}Impl of {dispatcher_trait_name}<{library_caller_name}> {{
             $library_caller_method_impls$
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             $visibility$trait {safe_dispatcher_trait_name}<T> {{$safe_dispatcher_signatures$
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
             $visibility$struct {safe_library_caller_name} {{
                 pub class_hash: starknet::ClassHash,
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             impl {safe_library_caller_name}Impl of \
              {safe_dispatcher_trait_name}<{safe_library_caller_name}> {{
             $safe_library_caller_method_impls$
             }}
 
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
             $visibility$struct {safe_contract_caller_name} {{
                 pub contract_address: starknet::ContractAddress,
             }}
 
+            {DISPATCHER_DOC_GROUP_ATTR}
             impl {safe_contract_caller_name}Impl of \
              {safe_dispatcher_trait_name}<{safe_contract_caller_name}> {{
             $safe_contract_caller_method_impls$
@@ -360,11 +374,12 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let (content, code_mappings) = builder.build();
     PluginResult {
         code: Some(PluginGeneratedFile {
-            name: dispatcher_trait_name.into(),
+            name: dispatcher_trait_name,
             content,
             code_mappings,
             aux_data: None,
             diagnostics_note: Default::default(),
+            is_unhygienic: false,
         }),
         diagnostics,
         remove_original_item: false,
@@ -372,15 +387,15 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
 }
 
 /// Returns the method implementation rewrite node for a declaration.
-fn declaration_method_impl(
-    func_declaration: RewriteNode,
-    entry_point_selector: RewriteNode,
+fn declaration_method_impl<'db>(
+    func_declaration: RewriteNode<'db>,
+    entry_point_selector: RewriteNode<'db>,
     member: &str,
     syscall: &str,
-    serialization_code: Vec<RewriteNode>,
+    serialization_code: Vec<RewriteNode<'db>>,
     ret_decode: String,
     unwrap: bool,
-) -> RewriteNode {
+) -> RewriteNode<'db> {
     let deserialization_code = if ret_decode.is_empty() {
         RewriteNode::text("()")
     } else {
@@ -436,12 +451,12 @@ fn declaration_method_impl(
 }
 
 /// Returns the matching signature for a dispatcher implementation for the given declaration.
-fn dispatcher_signature(
-    db: &dyn SyntaxGroup,
-    declaration: &ast::FunctionDeclaration,
+fn dispatcher_signature<'db>(
+    db: &'db dyn SyntaxGroup,
+    declaration: &ast::FunctionDeclaration<'db>,
     self_type_name: &str,
     unwrap: bool,
-) -> RewriteNode {
+) -> RewriteNode<'db> {
     let mut func_declaration = RewriteNode::from_ast(declaration);
     let params = func_declaration
         .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)

@@ -13,19 +13,19 @@ use super::kind::SyntaxKind;
 /// For example, if a function is changed, the pointer of an unrelated function in the AST should
 /// remain the same, as much as possible.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum SyntaxStablePtr {
+pub enum SyntaxStablePtr<'a> {
     /// The root node of the tree.
-    Root(FileId, GreenId),
+    Root(FileId<'a>, GreenId<'a>),
     /// A child node.
     Child {
         /// The parent of the node.
-        parent: SyntaxStablePtrId,
+        parent: SyntaxStablePtrId<'a>,
         /// The SyntaxKind of the node.
         kind: SyntaxKind,
         /// A list of field values for this node, to index by.
         /// Which fields are used is determined by each SyntaxKind.
         /// For example, a function item might use the name of the function.
-        key_fields: Vec<GreenId>,
+        key_fields: Box<[GreenId<'a>]>,
         /// Chronological index among all nodes with the same (parent, kind, key_fields).
         index: usize,
     },

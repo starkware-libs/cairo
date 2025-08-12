@@ -129,7 +129,7 @@ impl<TIntTraits: IntTraits> SignatureBasedConcreteLibfunc for IntConstConcreteLi
     }
 }
 
-/// Libfunc for comparing integers` equality.
+/// Libfunc for comparing integers equality.
 #[derive(Default)]
 pub struct IntEqualLibfunc<TIntTraits: IntTraits> {
     _phantom: PhantomData<TIntTraits>,

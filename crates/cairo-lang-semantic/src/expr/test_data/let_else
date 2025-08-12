@@ -1,0 +1,86 @@
+//! > let-else wrong types
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let MyEnum::A(x): felt252 = MyEnum::A(7) else {
+        return;
+    };
+    let MyEnum::A(x): felt252 = 7 else {
+        return;
+    };
+    let MyEnum2::A(x): MyEnum = MyEnum::A(7) else {
+        return;
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+enum MyEnum2 {
+    A: felt252,
+    B: felt252,
+}
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::felt252", found: "test::MyEnum".
+ --> lib.cairo:11:33
+    let MyEnum::A(x): felt252 = MyEnum::A(7) else {
+                                ^^^^^^^^^^^^
+
+error: Unexpected type for enum pattern. "core::felt252" is not an enum.
+ --> lib.cairo:11:9
+    let MyEnum::A(x): felt252 = MyEnum::A(7) else {
+        ^^^^^^^^^^^^
+
+error: Unexpected type for enum pattern. "core::felt252" is not an enum.
+ --> lib.cairo:14:9
+    let MyEnum::A(x): felt252 = 7 else {
+        ^^^^^^^^^^^^
+
+error: Wrong enum in pattern. Expected: "test::MyEnum". Got: "test::MyEnum2".
+ --> lib.cairo:17:9
+    let MyEnum2::A(x): MyEnum = MyEnum::A(7) else {
+        ^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > let-else try access pattern variable in else arm.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let MyEnum::A(x) = MyEnum::A(7) else {
+        return x;
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:7:16
+        return x;
+               ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:6:19
+    let MyEnum::A(x) = MyEnum::A(7) else {
+                  ^

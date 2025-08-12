@@ -30,7 +30,7 @@ pub const CAIRO_FMT_IGNORE: &str = ".cairofmtignore";
 /// * `String` - The formatted file.
 pub fn get_formatted_file(
     db: &dyn SyntaxGroup,
-    syntax_root: &SyntaxNode,
+    syntax_root: &SyntaxNode<'_>,
     config: FormatterConfig,
 ) -> String {
     let mut formatter = FormatterImpl::new(db, config);
@@ -50,6 +50,7 @@ pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
         content: content.clone().into(),
         code_mappings: [].into(),
         kind: FileKind::Module,
+        original_item_removed: false,
     })
     .intern(db);
     let mut diagnostics = DiagnosticsBuilder::default();

@@ -25,29 +25,29 @@ pub enum InliningStrategy {
 }
 
 /// A rebuilder trait for rebuilding lowered representation.
-pub trait Rebuilder {
+pub trait Rebuilder<'db> {
     fn map_var_id(&mut self, var: VariableId) -> VariableId;
-    fn map_var_usage(&mut self, var_usage: VarUsage) -> VarUsage {
+    fn map_var_usage(&mut self, var_usage: VarUsage<'db>) -> VarUsage<'db> {
         VarUsage {
             var_id: self.map_var_id(var_usage.var_id),
             location: self.map_location(var_usage.location),
         }
     }
-    fn map_location(&mut self, location: LocationId) -> LocationId {
+    fn map_location(&mut self, location: LocationId<'db>) -> LocationId<'db> {
         location
     }
     fn map_block_id(&mut self, block: BlockId) -> BlockId {
         block
     }
-    fn transform_statement(&mut self, _statement: &mut Statement) {}
-    fn transform_remapping(&mut self, _remapping: &mut VarRemapping) {}
-    fn transform_end(&mut self, _end: &mut BlockEnd) {}
-    fn transform_block(&mut self, _block: &mut Block) {}
+    fn transform_statement(&mut self, _statement: &mut Statement<'db>) {}
+    fn transform_remapping(&mut self, _remapping: &mut VarRemapping<'db>) {}
+    fn transform_end(&mut self, _end: &mut BlockEnd<'db>) {}
+    fn transform_block(&mut self, _block: &mut Block<'db>) {}
 }
 
-pub trait RebuilderEx: Rebuilder {
+pub trait RebuilderEx<'db>: Rebuilder<'db> {
     /// Rebuilds the statement with renamed var and block ids.
-    fn rebuild_statement(&mut self, statement: &Statement) -> Statement {
+    fn rebuild_statement(&mut self, statement: &Statement<'db>) -> Statement<'db> {
         let mut statement = match statement {
             Statement::Const(stmt) => Statement::Const(StatementConst {
                 value: stmt.value.clone(),
@@ -73,7 +73,7 @@ pub trait RebuilderEx: Rebuilder {
                 })
             }
             Statement::EnumConstruct(stmt) => Statement::EnumConstruct(StatementEnumConstruct {
-                variant: stmt.variant.clone(),
+                variant: stmt.variant,
                 input: self.map_var_usage(stmt.input),
                 output: self.map_var_id(stmt.output),
             }),
@@ -92,7 +92,7 @@ pub trait RebuilderEx: Rebuilder {
     }
 
     /// Apply map_var_id to all the variables in the `remapping`.
-    fn rebuild_remapping(&mut self, remapping: &VarRemapping) -> VarRemapping {
+    fn rebuild_remapping(&mut self, remapping: &VarRemapping<'db>) -> VarRemapping<'db> {
         let mut remapping = VarRemapping {
             remapping: OrderedHashMap::from_iter(remapping.iter().map(|(dst, src_var_usage)| {
                 (self.map_var_id(*dst), self.map_var_usage(*src_var_usage))
@@ -103,7 +103,7 @@ pub trait RebuilderEx: Rebuilder {
     }
 
     /// Rebuilds the block end with renamed var and block ids.
-    fn rebuild_end(&mut self, end: &BlockEnd) -> BlockEnd {
+    fn rebuild_end(&mut self, end: &BlockEnd<'db>) -> BlockEnd<'db> {
         let mut end = match end {
             BlockEnd::Return(returns, location) => BlockEnd::Return(
                 returns.iter().map(|var_usage| self.map_var_usage(*var_usage)).collect(),
@@ -178,7 +178,7 @@ pub trait RebuilderEx: Rebuilder {
     }
 
     /// Rebuilds the block with renamed var and block ids.
-    fn rebuild_block(&mut self, block: &Block) -> Block {
+    fn rebuild_block(&mut self, block: &Block<'db>) -> Block<'db> {
         let mut statements = vec![];
         for stmt in &block.statements {
             statements.push(self.rebuild_statement(stmt));
@@ -190,4 +190,4 @@ pub trait RebuilderEx: Rebuilder {
     }
 }
 
-impl<T: Rebuilder> RebuilderEx for T {}
+impl<'db, T: Rebuilder<'db>> RebuilderEx<'db> for T {}

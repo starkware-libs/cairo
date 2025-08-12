@@ -1,12 +1,12 @@
+use std::hash::{Hash, Hasher};
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::{DiagnosticLocation, DiagnosticNote, Maybe, Severity};
-use cairo_lang_filesystem::db::CrateSettings;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{
-    CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, VirtualFile,
+    CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, VirtualFile, db_str,
 };
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
@@ -19,9 +19,8 @@ use cairo_lang_syntax::node::ids::{GreenId, SyntaxStablePtrId};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
-use salsa::InternKey;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
@@ -40,30 +39,34 @@ use crate::plugin::{DynGeneratedFileAuxData, PluginDiagnostic};
 /// Metadata for a cached crate.
 #[derive(Serialize, Deserialize)]
 pub struct CachedCrateMetadata {
-    /// The settings the crate was compiles with.
-    pub settings: Option<CrateSettings>,
+    /// Hash of the settings the crate was compiled with.
+    pub settings: Option<u64>,
     /// The version of the compiler that compiled the crate.
     pub compiler_version: String,
     /// The global flags the crate was compiled with.
-    pub global_flags: OrderedHashMap<SmolStr, Flag>,
+    pub global_flags: OrderedHashMap<String, Flag>,
 }
 
 impl CachedCrateMetadata {
     /// Creates a new [CachedCrateMetadata] from the input crate with the current settings.
-    pub fn new(crate_id: CrateId, db: &dyn DefsGroup) -> Self {
-        let settings = db.crate_config(crate_id).map(|config| config.settings);
+    pub fn new(crate_id: CrateId<'_>, db: &dyn DefsGroup) -> Self {
+        let settings = db.crate_config(crate_id).map(|config| config.settings).map(|v| {
+            let mut hasher = xxhash_rust::xxh3::Xxh3::default();
+            v.hash(&mut hasher);
+            hasher.finish()
+        });
         let compiler_version = env!("CARGO_PKG_VERSION").to_string();
         let global_flags = db
             .flags()
             .iter()
-            .map(|(flag_id, flag)| (flag_id.lookup_intern(db).0, (**flag).clone()))
+            .map(|(flag_id, flag)| (flag_id.long(db).0.clone(), (**flag).clone()))
             .collect();
         Self { settings, compiler_version, global_flags }
     }
 }
 
 /// Validates that the metadata of the cached crate is valid.
-fn validate_metadata(crate_id: CrateId, metadata: &CachedCrateMetadata, db: &dyn DefsGroup) {
+fn validate_metadata(crate_id: CrateId<'_>, metadata: &CachedCrateMetadata, db: &dyn DefsGroup) {
     let current_metadata = CachedCrateMetadata::new(crate_id, db);
 
     if current_metadata.compiler_version != metadata.compiler_version {
@@ -78,13 +81,14 @@ fn validate_metadata(crate_id: CrateId, metadata: &CachedCrateMetadata, db: &dyn
     }
 }
 
-type DefCache = (CachedCrateMetadata, Vec<(ModuleIdCached, ModuleDataCached)>, DefCacheLookups);
+type DefCache<'db> =
+    (CachedCrateMetadata, Vec<(ModuleIdCached, ModuleDataCached<'db>)>, DefCacheLookups);
 
 /// Load the cached lowering of a crate if it has a cache file configuration.
-pub fn load_cached_crate_modules(
-    db: &dyn DefsGroup,
-    crate_id: CrateId,
-) -> Option<ModuleDataCacheAndLoadingData> {
+pub fn load_cached_crate_modules<'db>(
+    db: &'db dyn DefsGroup,
+    crate_id: CrateId<'db>,
+) -> Option<ModuleDataCacheAndLoadingData<'db>> {
     let blob_id = db.crate_config(crate_id)?.cache_file?;
     let Some(content) = db.blob_content(blob_id) else {
         return Default::default();
@@ -94,11 +98,15 @@ pub fn load_cached_crate_modules(
 
     let content = &content[8..size + 8];
 
-    let Ok((metadata, module_data, defs_lookups)): Result<DefCache, _> =
-        bincode::deserialize(content)
-    else {
-        return Default::default();
-    };
+    let ((metadata, module_data, defs_lookups), _): (DefCache<'_>, _) =
+        bincode::serde::borrow_decode_from_slice(content, bincode::config::standard())
+            .unwrap_or_else(|e| {
+                panic!(
+                    "failed to deserialize modules cache for crate `{}`: {e}",
+                    crate_id.long(db).name(),
+                )
+            });
+
     validate_metadata(crate_id, &metadata, db);
 
     let mut ctx = DefCacheLoadingContext::new(db, defs_lookups, crate_id);
@@ -118,14 +126,14 @@ pub fn load_cached_crate_modules(
 }
 
 /// Cache the module_data of each module in the crate and returns the cache and the context.
-pub fn generate_crate_def_cache(
-    db: &dyn DefsGroup,
-    crate_id: cairo_lang_filesystem::ids::CrateId,
-    ctx: &mut DefCacheSavingContext<'_>,
-) -> Maybe<Vec<(ModuleIdCached, ModuleDataCached)>> {
+pub fn generate_crate_def_cache<'db>(
+    db: &'db dyn DefsGroup,
+    crate_id: cairo_lang_filesystem::ids::CrateId<'db>,
+    ctx: &mut DefCacheSavingContext<'db>,
+) -> Maybe<Vec<(ModuleIdCached, ModuleDataCached<'db>)>> {
     let modules = db.crate_modules(crate_id);
 
-    let cached: Vec<(ModuleIdCached, ModuleDataCached)> = modules
+    let cached: Vec<(ModuleIdCached, ModuleDataCached<'_>)> = modules
         .iter()
         .map(|id| {
             let module_data = db.priv_module_data(*id)?;
@@ -142,11 +150,15 @@ pub struct DefCacheLoadingContext<'db> {
     db: &'db dyn DefsGroup,
 
     /// data for loading the entire cache into the database.
-    data: DefCacheLoadingData,
+    data: DefCacheLoadingData<'db>,
 }
 
 impl<'db> DefCacheLoadingContext<'db> {
-    pub fn new(db: &'db dyn DefsGroup, lookups: DefCacheLookups, self_crate_id: CrateId) -> Self {
+    pub fn new(
+        db: &'db dyn DefsGroup,
+        lookups: DefCacheLookups,
+        self_crate_id: CrateId<'db>,
+    ) -> Self {
         let mut res = Self { db, data: DefCacheLoadingData::new(lookups, self_crate_id) };
         res.embed_lookups();
         res
@@ -207,8 +219,8 @@ impl<'db> DefCacheLoadingContext<'db> {
     }
 }
 
-impl Deref for DefCacheLoadingContext<'_> {
-    type Target = DefCacheLoadingData;
+impl<'db> Deref for DefCacheLoadingContext<'db> {
+    type Target = DefCacheLoadingData<'db>;
 
     fn deref(&self) -> &Self::Target {
         &self.data
@@ -221,33 +233,33 @@ impl DerefMut for DefCacheLoadingContext<'_> {
 }
 
 /// Data for loading cache into the database.
-#[derive(PartialEq, Eq)]
-pub struct DefCacheLoadingData {
-    green_ids: OrderedHashMap<GreenIdCached, GreenId>,
-    crate_ids: OrderedHashMap<CrateIdCached, CrateId>,
-    syntax_stable_ptr_ids: OrderedHashMap<SyntaxStablePtrIdCached, SyntaxStablePtrId>,
-    submodule_ids: OrderedHashMap<SubmoduleIdCached, SubmoduleId>,
-    constant_ids: OrderedHashMap<ConstantIdCached, ConstantId>,
-    use_ids: OrderedHashMap<UseIdCached, UseId>,
-    free_function_ids: OrderedHashMap<FreeFunctionIdCached, FreeFunctionId>,
-    struct_ids: OrderedHashMap<StructIdCached, StructId>,
-    enum_ids: OrderedHashMap<EnumIdCached, EnumId>,
-    type_alias_ids: OrderedHashMap<ModuleTypeAliasIdCached, ModuleTypeAliasId>,
-    impl_alias_ids: OrderedHashMap<ImplAliasIdCached, ImplAliasId>,
-    trait_ids: OrderedHashMap<TraitIdCached, TraitId>,
-    impl_def_ids: OrderedHashMap<ImplDefIdCached, ImplDefId>,
-    extern_type_ids: OrderedHashMap<ExternTypeIdCached, ExternTypeId>,
-    extern_function_ids: OrderedHashMap<ExternFunctionIdCached, ExternFunctionId>,
-    macro_declaration_ids: OrderedHashMap<MacroDeclarationIdCached, MacroDeclarationId>,
-    global_use_ids: OrderedHashMap<GlobalUseIdCached, GlobalUseId>,
+#[derive(PartialEq, Eq, salsa::Update)]
+pub struct DefCacheLoadingData<'db> {
+    green_ids: OrderedHashMap<GreenIdCached, GreenId<'db>>,
+    crate_ids: OrderedHashMap<CrateIdCached, CrateId<'db>>,
+    syntax_stable_ptr_ids: OrderedHashMap<SyntaxStablePtrIdCached, SyntaxStablePtrId<'db>>,
+    submodule_ids: OrderedHashMap<SubmoduleIdCached, SubmoduleId<'db>>,
+    constant_ids: OrderedHashMap<ConstantIdCached, ConstantId<'db>>,
+    use_ids: OrderedHashMap<UseIdCached, UseId<'db>>,
+    free_function_ids: OrderedHashMap<FreeFunctionIdCached, FreeFunctionId<'db>>,
+    struct_ids: OrderedHashMap<StructIdCached, StructId<'db>>,
+    enum_ids: OrderedHashMap<EnumIdCached, EnumId<'db>>,
+    type_alias_ids: OrderedHashMap<ModuleTypeAliasIdCached, ModuleTypeAliasId<'db>>,
+    impl_alias_ids: OrderedHashMap<ImplAliasIdCached, ImplAliasId<'db>>,
+    trait_ids: OrderedHashMap<TraitIdCached, TraitId<'db>>,
+    impl_def_ids: OrderedHashMap<ImplDefIdCached, ImplDefId<'db>>,
+    extern_type_ids: OrderedHashMap<ExternTypeIdCached, ExternTypeId<'db>>,
+    extern_function_ids: OrderedHashMap<ExternFunctionIdCached, ExternFunctionId<'db>>,
+    macro_declaration_ids: OrderedHashMap<MacroDeclarationIdCached, MacroDeclarationId<'db>>,
+    global_use_ids: OrderedHashMap<GlobalUseIdCached, GlobalUseId<'db>>,
 
-    file_ids: OrderedHashMap<FileIdCached, FileId>,
-    self_crate_id: CrateId,
+    file_ids: OrderedHashMap<FileIdCached, FileId<'db>>,
+    self_crate_id: CrateId<'db>,
     lookups: DefCacheLookups,
 }
 
-impl DefCacheLoadingData {
-    fn new(lookups: DefCacheLookups, self_crate_id: CrateId) -> Self {
+impl<'db> DefCacheLoadingData<'db> {
+    fn new(lookups: DefCacheLookups, self_crate_id: CrateId<'db>) -> Self {
         Self {
             green_ids: OrderedHashMap::default(),
             syntax_stable_ptr_ids: OrderedHashMap::default(),
@@ -274,20 +286,20 @@ impl DefCacheLoadingData {
     }
 }
 
-impl std::fmt::Debug for DefCacheLoadingData {
+impl<'db> std::fmt::Debug for DefCacheLoadingData<'db> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DefCacheLoadingData").finish()
     }
 }
 
-impl Deref for DefCacheLoadingData {
+impl<'db> Deref for DefCacheLoadingData<'db> {
     type Target = DefCacheLookups;
 
     fn deref(&self) -> &Self::Target {
         &self.lookups
     }
 }
-impl DerefMut for DefCacheLoadingData {
+impl<'db> DerefMut for DefCacheLoadingData<'db> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.lookups
     }
@@ -296,11 +308,11 @@ impl DerefMut for DefCacheLoadingData {
 /// Context for saving cache from the database.
 pub struct DefCacheSavingContext<'db> {
     db: &'db dyn DefsGroup,
-    data: DefCacheSavingData,
-    self_crate_id: CrateId,
+    data: DefCacheSavingData<'db>,
+    self_crate_id: CrateId<'db>,
 }
-impl Deref for DefCacheSavingContext<'_> {
-    type Target = DefCacheSavingData;
+impl<'db> Deref for DefCacheSavingContext<'db> {
+    type Target = DefCacheSavingData<'db>;
 
     fn deref(&self) -> &Self::Target {
         &self.data
@@ -312,71 +324,79 @@ impl DerefMut for DefCacheSavingContext<'_> {
     }
 }
 impl<'db> DefCacheSavingContext<'db> {
-    pub fn new(db: &'db dyn DefsGroup, self_crate_id: CrateId) -> Self {
+    pub fn new(db: &'db dyn DefsGroup, self_crate_id: CrateId<'db>) -> Self {
         Self { db, data: DefCacheSavingData::default(), self_crate_id }
     }
 }
 
 /// Data for saving cache from the database.
 #[derive(Default)]
-pub struct DefCacheSavingData {
-    green_ids: OrderedHashMap<GreenId, GreenIdCached>,
-    crate_ids: OrderedHashMap<CrateId, CrateIdCached>,
-    submodule_ids: OrderedHashMap<SubmoduleId, SubmoduleIdCached>,
-    constant_ids: OrderedHashMap<ConstantId, ConstantIdCached>,
-    use_ids: OrderedHashMap<UseId, UseIdCached>,
-    free_function_ids: OrderedHashMap<FreeFunctionId, FreeFunctionIdCached>,
-    struct_ids: OrderedHashMap<StructId, StructIdCached>,
-    enum_ids: OrderedHashMap<EnumId, EnumIdCached>,
-    type_alias_ids: OrderedHashMap<ModuleTypeAliasId, ModuleTypeAliasIdCached>,
-    impl_alias_ids: OrderedHashMap<ImplAliasId, ImplAliasIdCached>,
-    trait_ids: OrderedHashMap<TraitId, TraitIdCached>,
-    impl_def_ids: OrderedHashMap<ImplDefId, ImplDefIdCached>,
-    extern_type_ids: OrderedHashMap<ExternTypeId, ExternTypeIdCached>,
-    extern_function_ids: OrderedHashMap<ExternFunctionId, ExternFunctionIdCached>,
-    global_use_ids: OrderedHashMap<GlobalUseId, GlobalUseIdCached>,
-    macro_declaration_ids: OrderedHashMap<MacroDeclarationId, MacroDeclarationIdCached>,
+pub struct DefCacheSavingData<'db> {
+    green_ids: OrderedHashMap<GreenId<'db>, GreenIdCached>,
+    crate_ids: OrderedHashMap<CrateId<'db>, CrateIdCached>,
+    submodule_ids: OrderedHashMap<SubmoduleId<'db>, SubmoduleIdCached>,
+    constant_ids: OrderedHashMap<ConstantId<'db>, ConstantIdCached>,
+    use_ids: OrderedHashMap<UseId<'db>, UseIdCached>,
+    free_function_ids: OrderedHashMap<FreeFunctionId<'db>, FreeFunctionIdCached>,
+    struct_ids: OrderedHashMap<StructId<'db>, StructIdCached>,
+    enum_ids: OrderedHashMap<EnumId<'db>, EnumIdCached>,
+    type_alias_ids: OrderedHashMap<ModuleTypeAliasId<'db>, ModuleTypeAliasIdCached>,
+    impl_alias_ids: OrderedHashMap<ImplAliasId<'db>, ImplAliasIdCached>,
+    trait_ids: OrderedHashMap<TraitId<'db>, TraitIdCached>,
+    impl_def_ids: OrderedHashMap<ImplDefId<'db>, ImplDefIdCached>,
+    extern_type_ids: OrderedHashMap<ExternTypeId<'db>, ExternTypeIdCached>,
+    extern_function_ids: OrderedHashMap<ExternFunctionId<'db>, ExternFunctionIdCached>,
+    global_use_ids: OrderedHashMap<GlobalUseId<'db>, GlobalUseIdCached>,
+    macro_declaration_ids: OrderedHashMap<MacroDeclarationId<'db>, MacroDeclarationIdCached>,
 
-    syntax_stable_ptr_ids: OrderedHashMap<SyntaxStablePtrId, SyntaxStablePtrIdCached>,
-    file_ids: OrderedHashMap<FileId, FileIdCached>,
+    syntax_stable_ptr_ids: OrderedHashMap<SyntaxStablePtrId<'db>, SyntaxStablePtrIdCached>,
+    file_ids: OrderedHashMap<FileId<'db>, FileIdCached>,
 
     pub lookups: DefCacheLookups,
 }
 
-impl Deref for DefCacheSavingData {
+impl<'db> Deref for DefCacheSavingData<'db> {
     type Target = DefCacheLookups;
 
     fn deref(&self) -> &Self::Target {
         &self.lookups
     }
 }
-impl DerefMut for DefCacheSavingData {
+impl<'db> DerefMut for DefCacheSavingData<'db> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.lookups
     }
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct ModuleDataCached {
+pub struct ModuleDataCached<'db> {
     items: Vec<ModuleItemIdCached>,
 
-    constants: OrderedHashMap<ConstantIdCached, TypeSyntaxNodeCached<ast::ItemConstant>>,
-    submodules: OrderedHashMap<SubmoduleIdCached, TypeSyntaxNodeCached<ast::ItemModule>>,
-    uses: OrderedHashMap<UseIdCached, TypeSyntaxNodeCached<ast::UsePathLeaf>>,
+    constants: OrderedHashMap<ConstantIdCached, TypeSyntaxNodeCached<'db, ast::ItemConstant<'db>>>,
+    submodules: OrderedHashMap<SubmoduleIdCached, TypeSyntaxNodeCached<'db, ast::ItemModule<'db>>>,
+    uses: OrderedHashMap<UseIdCached, TypeSyntaxNodeCached<'db, ast::UsePathLeaf<'db>>>,
     free_functions:
-        OrderedHashMap<FreeFunctionIdCached, TypeSyntaxNodeCached<ast::FunctionWithBody>>,
-    structs: OrderedHashMap<StructIdCached, TypeSyntaxNodeCached<ast::ItemStruct>>,
-    enums: OrderedHashMap<EnumIdCached, TypeSyntaxNodeCached<ast::ItemEnum>>,
-    type_aliases: OrderedHashMap<ModuleTypeAliasIdCached, TypeSyntaxNodeCached<ast::ItemTypeAlias>>,
-    impl_aliases: OrderedHashMap<ImplAliasIdCached, TypeSyntaxNodeCached<ast::ItemImplAlias>>,
-    traits: OrderedHashMap<TraitIdCached, TypeSyntaxNodeCached<ast::ItemTrait>>,
-    impls: OrderedHashMap<ImplDefIdCached, TypeSyntaxNodeCached<ast::ItemImpl>>,
-    extern_types: OrderedHashMap<ExternTypeIdCached, TypeSyntaxNodeCached<ast::ItemExternType>>,
-    extern_functions:
-        OrderedHashMap<ExternFunctionIdCached, TypeSyntaxNodeCached<ast::ItemExternFunction>>,
-    macro_declarations:
-        OrderedHashMap<MacroDeclarationIdCached, TypeSyntaxNodeCached<ast::ItemMacroDeclaration>>,
-    global_uses: OrderedHashMap<GlobalUseIdCached, TypeSyntaxNodeCached<ast::UsePathStar>>,
+        OrderedHashMap<FreeFunctionIdCached, TypeSyntaxNodeCached<'db, ast::FunctionWithBody<'db>>>,
+    structs: OrderedHashMap<StructIdCached, TypeSyntaxNodeCached<'db, ast::ItemStruct<'db>>>,
+    enums: OrderedHashMap<EnumIdCached, TypeSyntaxNodeCached<'db, ast::ItemEnum<'db>>>,
+    type_aliases:
+        OrderedHashMap<ModuleTypeAliasIdCached, TypeSyntaxNodeCached<'db, ast::ItemTypeAlias<'db>>>,
+    impl_aliases:
+        OrderedHashMap<ImplAliasIdCached, TypeSyntaxNodeCached<'db, ast::ItemImplAlias<'db>>>,
+    traits: OrderedHashMap<TraitIdCached, TypeSyntaxNodeCached<'db, ast::ItemTrait<'db>>>,
+    impls: OrderedHashMap<ImplDefIdCached, TypeSyntaxNodeCached<'db, ast::ItemImpl<'db>>>,
+    extern_types:
+        OrderedHashMap<ExternTypeIdCached, TypeSyntaxNodeCached<'db, ast::ItemExternType<'db>>>,
+    extern_functions: OrderedHashMap<
+        ExternFunctionIdCached,
+        TypeSyntaxNodeCached<'db, ast::ItemExternFunction<'db>>,
+    >,
+    macro_declarations: OrderedHashMap<
+        MacroDeclarationIdCached,
+        TypeSyntaxNodeCached<'db, ast::ItemMacroDeclaration<'db>>,
+    >,
+    global_uses:
+        OrderedHashMap<GlobalUseIdCached, TypeSyntaxNodeCached<'db, ast::UsePathStar<'db>>>,
 
     files: Vec<FileIdCached>,
 
@@ -384,8 +404,8 @@ pub struct ModuleDataCached {
     plugin_diagnostics: Vec<(ModuleFileCached, PluginDiagnosticCached)>,
     diagnostics_notes: PluginFileDiagnosticNotesCached,
 }
-impl ModuleDataCached {
-    fn new(module_data: ModuleData, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+impl<'db> ModuleDataCached<'db> {
+    fn new(module_data: ModuleData<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         Self {
             items: module_data.items.iter().map(|id| ModuleItemIdCached::new(*id, ctx)).collect(),
             constants: module_data
@@ -520,18 +540,15 @@ impl ModuleDataCached {
             diagnostics_notes: module_data
                 .diagnostics_notes
                 .iter()
-                .map(|(filed_id, note)| {
-                    (
-                        FileIdCached::new(*filed_id, ctx),
-                        DiagnosticNoteCached::new(note.clone(), ctx),
-                    )
+                .map(|(file_id, note)| {
+                    (FileIdCached::new(*file_id, ctx), DiagnosticNoteCached::new(note.clone(), ctx))
                 })
                 .collect(),
         }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> ModuleData {
+    fn embed(self, ctx: &mut DefCacheLoadingContext<'db>) -> ModuleData<'db> {
         ModuleData {
-            items: self.items.iter().map(|id| id.embed(ctx)).collect(),
+            items: Arc::new(self.items.iter().map(|id| id.embed(ctx)).collect()),
             constants: Arc::new(
                 self.constants.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
             ),
@@ -595,13 +612,14 @@ impl ModuleDataCached {
                     .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
                     .collect(),
             ),
-            files: self.files.iter().map(|id| id.embed(ctx)).collect(),
+            files: Arc::new(self.files.iter().map(|id| id.embed(ctx)).collect()),
 
-            plugin_diagnostics: self
-                .plugin_diagnostics
-                .into_iter()
-                .map(|(file_id, diagnostic)| (file_id.embed(ctx), diagnostic.embed(ctx)))
-                .collect(),
+            plugin_diagnostics: Arc::new(
+                self.plugin_diagnostics
+                    .into_iter()
+                    .map(|(file_id, diagnostic)| (file_id.embed(ctx), diagnostic.embed(ctx)))
+                    .collect(),
+            ),
 
             diagnostics_notes: self
                 .diagnostics_notes
@@ -610,12 +628,14 @@ impl ModuleDataCached {
                 .collect(),
 
             generated_file_aux_data: self.generated_file_aux_data.into(),
+            // TODO(Gil): Handle macro calls.
+            macro_calls: Default::default(),
         }
     }
 }
 
 /// Saved interned items for the cache.
-#[derive(Serialize, Deserialize, Default, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Default, PartialEq, Eq, salsa::Update)]
 pub struct DefCacheLookups {
     green_ids_lookup: Vec<GreenNodeCached>,
     crate_ids_lookup: Vec<CrateCached>,
@@ -639,18 +659,18 @@ pub struct DefCacheLookups {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-struct TypeSyntaxNodeCached<T: TypedSyntaxNode> {
+struct TypeSyntaxNodeCached<'db, T: TypedSyntaxNode<'db>> {
     syntax_node: SyntaxNodeCached,
-    _marker: std::marker::PhantomData<T>,
+    _marker: std::marker::PhantomData<&'db T>,
 }
-impl<T: TypedSyntaxNode> TypeSyntaxNodeCached<T> {
-    fn new(syntax_node: T, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+impl<'db, T: TypedSyntaxNode<'db>> TypeSyntaxNodeCached<'db, T> {
+    fn new(syntax_node: T, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         Self {
             syntax_node: SyntaxNodeCached::new(syntax_node.as_syntax_node(), ctx),
             _marker: std::marker::PhantomData,
         }
     }
-    fn embed(&self, ctx: &mut DefCacheLoadingContext<'_>) -> T {
+    fn embed(&self, ctx: &mut DefCacheLoadingContext<'db>) -> T {
         T::from_syntax_node(ctx.db, self.syntax_node.embed(ctx))
     }
 }
@@ -660,15 +680,18 @@ pub struct GenericParamCached {
     language_element: LanguageElementCached,
 }
 impl GenericParamCached {
-    pub fn new(generic_param_id: GenericParamId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    pub fn new<'db>(
+        generic_param_id: GenericParamId<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
+    ) -> Self {
         Self { language_element: LanguageElementCached::new(generic_param_id, ctx) }
     }
 
-    pub fn get_embedded(
+    pub fn get_embedded<'db>(
         self,
-        data: &Arc<DefCacheLoadingData>,
-        db: &dyn DefsGroup,
-    ) -> GenericParamId {
+        data: &Arc<DefCacheLoadingData<'db>>,
+        db: &'db dyn DefsGroup,
+    ) -> GenericParamId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.get_embedded(data);
         GenericParamLongId(module_file_id, GenericParamPtr(stable_ptr)).intern(db)
     }
@@ -680,13 +703,13 @@ struct ModuleFileCached {
     file_index: usize,
 }
 impl ModuleFileCached {
-    fn new(module_file_id: ModuleFileId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(module_file_id: ModuleFileId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         Self { module: ModuleIdCached::new(module_file_id.0, ctx), file_index: module_file_id.1.0 }
     }
-    fn embed(&self, ctx: &mut DefCacheLoadingContext<'_>) -> ModuleFileId {
+    fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> ModuleFileId<'db> {
         ModuleFileId(self.module.embed(ctx), FileIndex(self.file_index))
     }
-    fn get_embedded(self, data: &Arc<DefCacheLoadingData>) -> ModuleFileId {
+    fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> ModuleFileId<'db> {
         ModuleFileId(self.module.get_embedded(data), FileIndex(self.file_index))
     }
 }
@@ -697,7 +720,7 @@ pub enum ModuleIdCached {
     Submodule(SubmoduleIdCached),
 }
 impl ModuleIdCached {
-    fn new(module_id: ModuleId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(module_id: ModuleId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         match module_id {
             ModuleId::CrateRoot(crate_id) => {
                 ModuleIdCached::CrateRoot(CrateIdCached::new(crate_id, ctx))
@@ -705,15 +728,20 @@ impl ModuleIdCached {
             ModuleId::Submodule(submodule_id) => {
                 ModuleIdCached::Submodule(SubmoduleIdCached::new(submodule_id, ctx))
             }
+            ModuleId::MacroCall { .. } => todo!(
+                "Caching for macro-generated modules is not supported yet. If you encounter this \
+                 error, it means the crate contains macro-generated modules that cannot currently \
+                 be cached."
+            ),
         }
     }
-    fn embed(&self, ctx: &mut DefCacheLoadingContext<'_>) -> ModuleId {
+    fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> ModuleId<'db> {
         match self {
             ModuleIdCached::CrateRoot(crate_id) => ModuleId::CrateRoot(crate_id.embed(ctx)),
             ModuleIdCached::Submodule(submodule_id) => ModuleId::Submodule(submodule_id.embed(ctx)),
         }
     }
-    fn get_embedded(self, data: &Arc<DefCacheLoadingData>) -> ModuleId {
+    fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> ModuleId<'db> {
         match self {
             ModuleIdCached::CrateRoot(crate_id) => ModuleId::CrateRoot(crate_id.get_embedded(data)),
             ModuleIdCached::Submodule(submodule_id) => {
@@ -725,19 +753,19 @@ impl ModuleIdCached {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 enum CrateCached {
-    Real { name: SmolStr, discriminator: Option<SmolStr> },
-    Virtual { name: SmolStr, file_id: FileIdCached, settings: String },
+    Real { name: String, discriminator: Option<String> },
+    Virtual { name: String, file_id: FileIdCached, settings: String },
 }
 impl CrateCached {
-    fn new(crate_id: CrateLongId, _ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(crate_id: CrateLongId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         match crate_id {
             CrateLongId::Real { name, discriminator } => CrateCached::Real { name, discriminator },
             CrateLongId::Virtual { name, file_id, settings, cache_file: _ } => {
-                CrateCached::Virtual { name, file_id: FileIdCached::new(file_id, _ctx), settings }
+                CrateCached::Virtual { name, file_id: FileIdCached::new(file_id, ctx), settings }
             }
         }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> CrateLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> CrateLongId<'db> {
         match self {
             CrateCached::Real { name, discriminator } => CrateLongId::Real { name, discriminator },
             CrateCached::Virtual { name, file_id, settings } => {
@@ -751,26 +779,26 @@ impl CrateCached {
         }
     }
 }
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 pub enum CrateIdCached {
     SelfCrate,
     Other(usize),
 }
 impl CrateIdCached {
-    fn new(crate_id: CrateId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(crate_id: CrateId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if crate_id == ctx.self_crate_id {
             return CrateIdCached::SelfCrate;
         }
         if let Some(id) = ctx.crate_ids.get(&crate_id) {
             return *id;
         }
-        let crate_long_id = CrateCached::new(crate_id.lookup_intern(ctx.db), ctx);
+        let crate_long_id = CrateCached::new(crate_id.long(ctx.db).clone(), ctx);
         let id = CrateIdCached::Other(ctx.crate_ids_lookup.len());
         ctx.crate_ids_lookup.push(crate_long_id);
         ctx.crate_ids.insert(crate_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> CrateId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> CrateId<'db> {
         let CrateIdCached::Other(id) = self else {
             return ctx.self_crate_id;
         };
@@ -783,7 +811,7 @@ impl CrateIdCached {
         ctx.data.crate_ids.insert(self, crate_id);
         crate_id
     }
-    fn get_embedded(self, data: &Arc<DefCacheLoadingData>) -> CrateId {
+    fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> CrateId<'db> {
         let CrateIdCached::Other(_) = self else {
             return data.self_crate_id;
         };
@@ -809,7 +837,7 @@ enum ModuleItemIdCached {
 }
 
 impl ModuleItemIdCached {
-    fn new(module_item_id: ModuleItemId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(module_item_id: ModuleItemId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         match module_item_id {
             ModuleItemId::Constant(constant_id) => {
                 ModuleItemIdCached::Constant(ConstantIdCached::new(constant_id, ctx))
@@ -853,7 +881,7 @@ impl ModuleItemIdCached {
             }
         }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> ModuleItemId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ModuleItemId<'db> {
         match self {
             ModuleItemIdCached::Constant(constant_id) => {
                 ModuleItemId::Constant(constant_id.embed(ctx))
@@ -893,31 +921,32 @@ struct ConstantCached {
     language_element: LanguageElementCached,
 }
 impl ConstantCached {
-    fn new(constant_id: ConstantLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
-        Self { language_element: LanguageElementCached::new(constant_id.intern(ctx.db), ctx) }
+    fn new<'db>(constant_id: ConstantLongId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
+        let short = constant_id.intern(ctx.db);
+        Self { language_element: LanguageElementCached::new(short, ctx) }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> ConstantLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ConstantLongId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
 
         ConstantLongId(module_file_id, ItemConstantPtr(stable_ptr))
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 struct ConstantIdCached(usize);
 
 impl ConstantIdCached {
-    fn new(constant_id: ConstantId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(constant_id: ConstantId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(id) = ctx.constant_ids.get(&constant_id) {
             return *id;
         }
-        let constant = ConstantCached::new(constant_id.lookup_intern(ctx.db), ctx);
+        let constant = ConstantCached::new(constant_id.long(ctx.db).clone(), ctx);
         let id = ConstantIdCached(ctx.constant_ids_lookup.len());
         ctx.constant_ids_lookup.push(constant);
         ctx.constant_ids.insert(constant_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> ConstantId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ConstantId<'db> {
         if let Some(constant_id) = ctx.constant_ids.get(&self) {
             return *constant_id;
         }
@@ -933,31 +962,31 @@ struct SubmoduleCached {
     language_element: LanguageElementCached,
 }
 impl SubmoduleCached {
-    fn new(submodule_id: SubmoduleLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(submodule_id: SubmoduleLongId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         Self { language_element: LanguageElementCached::new(submodule_id.intern(ctx.db), ctx) }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> SubmoduleLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> SubmoduleLongId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
 
         SubmoduleLongId(module_file_id, ItemModulePtr(stable_ptr))
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 pub struct SubmoduleIdCached(usize);
 
 impl SubmoduleIdCached {
-    fn new(submodule_id: SubmoduleId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(submodule_id: SubmoduleId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(id) = ctx.submodule_ids.get(&submodule_id) {
             return *id;
         }
-        let submodule = SubmoduleCached::new(submodule_id.lookup_intern(ctx.db), ctx);
+        let submodule = SubmoduleCached::new(submodule_id.long(ctx.db).clone(), ctx);
         let id = SubmoduleIdCached(ctx.submodule_ids_lookup.len());
         ctx.submodule_ids_lookup.push(submodule);
         ctx.submodule_ids.insert(submodule_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> SubmoduleId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> SubmoduleId<'db> {
         if let Some(submodule_id) = ctx.submodule_ids.get(&self) {
             return *submodule_id;
         }
@@ -966,7 +995,7 @@ impl SubmoduleIdCached {
         ctx.submodule_ids.insert(self, submodule);
         submodule
     }
-    fn get_embedded(self, data: &Arc<DefCacheLoadingData>) -> SubmoduleId {
+    fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> SubmoduleId<'db> {
         data.submodule_ids[&self]
     }
 }
@@ -976,31 +1005,31 @@ struct UseCached {
     language_element: LanguageElementCached,
 }
 impl UseCached {
-    fn new(use_id: UseLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(use_id: UseLongId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         Self { language_element: LanguageElementCached::new(use_id.intern(ctx.db), ctx) }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> UseLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> UseLongId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
 
         UseLongId(module_file_id, UsePathLeafPtr(stable_ptr))
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 struct UseIdCached(usize);
 
 impl UseIdCached {
-    fn new(use_id: UseId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(use_id: UseId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(id) = ctx.use_ids.get(&use_id) {
             return *id;
         }
-        let use_cache = UseCached::new(use_id.lookup_intern(ctx.db), ctx);
+        let use_cache = UseCached::new(use_id.long(ctx.db).clone(), ctx);
         let id = UseIdCached(ctx.use_ids_lookup.len());
         ctx.use_ids_lookup.push(use_cache);
         ctx.use_ids.insert(use_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> UseId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> UseId<'db> {
         if let Some(use_id) = ctx.use_ids.get(&self) {
             return *use_id;
         }
@@ -1016,31 +1045,37 @@ struct FreeFunctionCached {
     language_element: LanguageElementCached,
 }
 impl FreeFunctionCached {
-    fn new(free_function_id: FreeFunctionLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(
+        free_function_id: FreeFunctionLongId<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
+    ) -> Self {
         Self { language_element: LanguageElementCached::new(free_function_id.intern(ctx.db), ctx) }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> FreeFunctionLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> FreeFunctionLongId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
 
         FreeFunctionLongId(module_file_id, FunctionWithBodyPtr(stable_ptr))
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 struct FreeFunctionIdCached(usize);
 
 impl FreeFunctionIdCached {
-    fn new(free_function_id: FreeFunctionId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(
+        free_function_id: FreeFunctionId<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
+    ) -> Self {
         if let Some(id) = ctx.free_function_ids.get(&free_function_id) {
             return *id;
         }
-        let free_function = FreeFunctionCached::new(free_function_id.lookup_intern(ctx.db), ctx);
+        let free_function = FreeFunctionCached::new(free_function_id.long(ctx.db).clone(), ctx);
         let id = FreeFunctionIdCached(ctx.free_function_ids_lookup.len());
         ctx.free_function_ids_lookup.push(free_function);
         ctx.free_function_ids.insert(free_function_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> FreeFunctionId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> FreeFunctionId<'db> {
         if let Some(free_function_id) = ctx.free_function_ids.get(&self) {
             return *free_function_id;
         }
@@ -1056,31 +1091,31 @@ struct StructCached {
     language_element: LanguageElementCached,
 }
 impl StructCached {
-    fn new(struct_id: StructLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(struct_id: StructLongId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         Self { language_element: LanguageElementCached::new(struct_id.intern(ctx.db), ctx) }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> StructLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> StructLongId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
 
         StructLongId(module_file_id, ItemStructPtr(stable_ptr))
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 struct StructIdCached(usize);
 
 impl StructIdCached {
-    fn new(struct_id: StructId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(struct_id: StructId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(id) = ctx.struct_ids.get(&struct_id) {
             return *id;
         }
-        let struct_cached = StructCached::new(struct_id.lookup_intern(ctx.db), ctx);
+        let struct_cached = StructCached::new(struct_id.long(ctx.db).clone(), ctx);
         let id = StructIdCached(ctx.struct_ids_lookup.len());
         ctx.struct_ids_lookup.push(struct_cached);
         ctx.struct_ids.insert(struct_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> StructId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> StructId<'db> {
         if let Some(struct_id) = ctx.struct_ids.get(&self) {
             return *struct_id;
         }
@@ -1096,31 +1131,31 @@ struct EnumCached {
     language_element: LanguageElementCached,
 }
 impl EnumCached {
-    fn new(enum_id: EnumLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(enum_id: EnumLongId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         Self { language_element: LanguageElementCached::new(enum_id.intern(ctx.db), ctx) }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> EnumLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> EnumLongId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
 
         EnumLongId(module_file_id, ItemEnumPtr(stable_ptr))
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 struct EnumIdCached(usize);
 
 impl EnumIdCached {
-    fn new(enum_id: EnumId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(enum_id: EnumId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(id) = ctx.enum_ids.get(&enum_id) {
             return *id;
         }
-        let enum_cached = EnumCached::new(enum_id.lookup_intern(ctx.db), ctx);
+        let enum_cached = EnumCached::new(enum_id.long(ctx.db).clone(), ctx);
         let id = EnumIdCached(ctx.enum_ids_lookup.len());
         ctx.enum_ids_lookup.push(enum_cached);
         ctx.enum_ids.insert(enum_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> EnumId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> EnumId<'db> {
         if let Some(enum_id) = ctx.enum_ids.get(&self) {
             return *enum_id;
         }
@@ -1136,31 +1171,37 @@ struct ModuleTypeAliasCached {
     language_element: LanguageElementCached,
 }
 impl ModuleTypeAliasCached {
-    fn new(type_alias_id: ModuleTypeAliasLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(
+        type_alias_id: ModuleTypeAliasLongId<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
+    ) -> Self {
         Self { language_element: LanguageElementCached::new(type_alias_id.intern(ctx.db), ctx) }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> ModuleTypeAliasLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ModuleTypeAliasLongId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
 
         ModuleTypeAliasLongId(module_file_id, ItemTypeAliasPtr(stable_ptr))
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 struct ModuleTypeAliasIdCached(usize);
 
 impl ModuleTypeAliasIdCached {
-    fn new(type_alias_id: ModuleTypeAliasId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(
+        type_alias_id: ModuleTypeAliasId<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
+    ) -> Self {
         if let Some(id) = ctx.type_alias_ids.get(&type_alias_id) {
             return *id;
         }
-        let type_alias = ModuleTypeAliasCached::new(type_alias_id.lookup_intern(ctx.db), ctx);
+        let type_alias = ModuleTypeAliasCached::new(type_alias_id.long(ctx.db).clone(), ctx);
         let id = ModuleTypeAliasIdCached(ctx.type_alias_ids_lookup.len());
         ctx.type_alias_ids_lookup.push(type_alias);
         ctx.type_alias_ids.insert(type_alias_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> ModuleTypeAliasId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ModuleTypeAliasId<'db> {
         if let Some(type_alias_id) = ctx.type_alias_ids.get(&self) {
             return *type_alias_id;
         }
@@ -1176,31 +1217,31 @@ struct ImplAliasCached {
     language_element: LanguageElementCached,
 }
 impl ImplAliasCached {
-    fn new(impl_alias_id: ImplAliasLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(impl_alias_id: ImplAliasLongId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         Self { language_element: LanguageElementCached::new(impl_alias_id.intern(ctx.db), ctx) }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> ImplAliasLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ImplAliasLongId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
 
         ImplAliasLongId(module_file_id, ItemImplAliasPtr(stable_ptr))
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 struct ImplAliasIdCached(usize);
 
 impl ImplAliasIdCached {
-    fn new(impl_alias_id: ImplAliasId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(impl_alias_id: ImplAliasId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(id) = ctx.impl_alias_ids.get(&impl_alias_id) {
             return *id;
         }
-        let impl_alias = ImplAliasCached::new(impl_alias_id.lookup_intern(ctx.db), ctx);
+        let impl_alias = ImplAliasCached::new(impl_alias_id.long(ctx.db).clone(), ctx);
         let id = ImplAliasIdCached(ctx.impl_alias_ids_lookup.len());
         ctx.impl_alias_ids_lookup.push(impl_alias);
         ctx.impl_alias_ids.insert(impl_alias_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> ImplAliasId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ImplAliasId<'db> {
         if let Some(impl_alias_id) = ctx.impl_alias_ids.get(&self) {
             return *impl_alias_id;
         }
@@ -1216,31 +1257,31 @@ struct TraitCached {
     language_element: LanguageElementCached,
 }
 impl TraitCached {
-    fn new(trait_id: TraitLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(trait_id: TraitLongId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         Self { language_element: LanguageElementCached::new(trait_id.intern(ctx.db), ctx) }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> TraitLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> TraitLongId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
 
         TraitLongId(module_file_id, ItemTraitPtr(stable_ptr))
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 struct TraitIdCached(usize);
 
 impl TraitIdCached {
-    fn new(trait_id: TraitId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(trait_id: TraitId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(id) = ctx.trait_ids.get(&trait_id) {
             return *id;
         }
-        let trait_cached = TraitCached::new(trait_id.lookup_intern(ctx.db), ctx);
+        let trait_cached = TraitCached::new(trait_id.long(ctx.db).clone(), ctx);
         let id = TraitIdCached(ctx.trait_ids_lookup.len());
         ctx.trait_ids_lookup.push(trait_cached);
         ctx.trait_ids.insert(trait_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> TraitId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> TraitId<'db> {
         if let Some(trait_id) = ctx.trait_ids.get(&self) {
             return *trait_id;
         }
@@ -1256,32 +1297,32 @@ struct ImplDefCached {
     language_element: LanguageElementCached,
 }
 impl ImplDefCached {
-    fn new(impl_def_id: ImplDefLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(impl_def_id: ImplDefLongId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         Self { language_element: LanguageElementCached::new(impl_def_id.intern(ctx.db), ctx) }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> ImplDefLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ImplDefLongId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
 
         ImplDefLongId(module_file_id, ItemImplPtr(stable_ptr))
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 pub struct ImplDefIdCached(usize);
 
 impl ImplDefIdCached {
-    pub fn new(impl_def_id: ImplDefId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    pub fn new<'db>(impl_def_id: ImplDefId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(id) = ctx.impl_def_ids.get(&impl_def_id) {
             return *id;
         }
-        let impl_def = ImplDefCached::new(impl_def_id.lookup_intern(ctx.db), ctx);
+        let impl_def = ImplDefCached::new(impl_def_id.long(ctx.db).clone(), ctx);
         let id = ImplDefIdCached(ctx.impl_def_ids_lookup.len());
         ctx.impl_def_ids_lookup.push(impl_def);
         ctx.impl_def_ids.insert(impl_def_id, id);
         id
     }
 
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> ImplDefId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ImplDefId<'db> {
         if let Some(impl_def_id) = ctx.impl_def_ids.get(&self) {
             return *impl_def_id;
         }
@@ -1291,7 +1332,7 @@ impl ImplDefIdCached {
         impl_def
     }
 
-    pub fn get_embedded(self, data: &Arc<DefCacheLoadingData>) -> ImplDefId {
+    pub fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> ImplDefId<'db> {
         data.impl_def_ids[&self]
     }
 }
@@ -1301,31 +1342,34 @@ struct ExternTypeCached {
     language_element: LanguageElementCached,
 }
 impl ExternTypeCached {
-    fn new(extern_type_id: ExternTypeLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(
+        extern_type_id: ExternTypeLongId<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
+    ) -> Self {
         Self { language_element: LanguageElementCached::new(extern_type_id.intern(ctx.db), ctx) }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> ExternTypeLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ExternTypeLongId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
 
         ExternTypeLongId(module_file_id, ItemExternTypePtr(stable_ptr))
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 struct ExternTypeIdCached(usize);
 
 impl ExternTypeIdCached {
-    fn new(extern_type_id: ExternTypeId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(extern_type_id: ExternTypeId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(id) = ctx.extern_type_ids.get(&extern_type_id) {
             return *id;
         }
-        let extern_type = ExternTypeCached::new(extern_type_id.lookup_intern(ctx.db), ctx);
+        let extern_type = ExternTypeCached::new(extern_type_id.long(ctx.db).clone(), ctx);
         let id = ExternTypeIdCached(ctx.extern_type_ids_lookup.len());
         ctx.extern_type_ids_lookup.push(extern_type);
         ctx.extern_type_ids.insert(extern_type_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> ExternTypeId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ExternTypeId<'db> {
         if let Some(extern_type_id) = ctx.extern_type_ids.get(&self) {
             return *extern_type_id;
         }
@@ -1341,34 +1385,40 @@ struct ExternFunctionCached {
     language_element: LanguageElementCached,
 }
 impl ExternFunctionCached {
-    fn new(extern_function_id: ExternFunctionLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(
+        extern_function_id: ExternFunctionLongId<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
+    ) -> Self {
         Self {
             language_element: LanguageElementCached::new(extern_function_id.intern(ctx.db), ctx),
         }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> ExternFunctionLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ExternFunctionLongId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
 
         ExternFunctionLongId(module_file_id, ItemExternFunctionPtr(stable_ptr))
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 struct ExternFunctionIdCached(usize);
 
 impl ExternFunctionIdCached {
-    fn new(extern_function_id: ExternFunctionId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(
+        extern_function_id: ExternFunctionId<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
+    ) -> Self {
         if let Some(id) = ctx.extern_function_ids.get(&extern_function_id) {
             return *id;
         }
         let extern_function =
-            ExternFunctionCached::new(extern_function_id.lookup_intern(ctx.db), ctx);
+            ExternFunctionCached::new(extern_function_id.long(ctx.db).clone(), ctx);
         let id = ExternFunctionIdCached(ctx.extern_function_ids_lookup.len());
         ctx.extern_function_ids_lookup.push(extern_function);
         ctx.extern_function_ids.insert(extern_function_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> ExternFunctionId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ExternFunctionId<'db> {
         if let Some(extern_function_id) = ctx.extern_function_ids.get(&self) {
             return *extern_function_id;
         }
@@ -1384,37 +1434,40 @@ struct MacroDeclarationCached {
 }
 
 impl MacroDeclarationCached {
-    fn new(
-        macro_declaration_id: MacroDeclarationLongId,
-        ctx: &mut DefCacheSavingContext<'_>,
+    fn new<'db>(
+        macro_declaration_id: MacroDeclarationLongId<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
     ) -> Self {
         Self {
             language_element: LanguageElementCached::new(macro_declaration_id.intern(ctx.db), ctx),
         }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> MacroDeclarationLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> MacroDeclarationLongId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
 
         MacroDeclarationLongId(module_file_id, ItemMacroDeclarationPtr(stable_ptr))
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 struct MacroDeclarationIdCached(usize);
 
 impl MacroDeclarationIdCached {
-    fn new(macro_declaration_id: MacroDeclarationId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(
+        macro_declaration_id: MacroDeclarationId<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
+    ) -> Self {
         if let Some(id) = ctx.macro_declaration_ids.get(&macro_declaration_id) {
             return *id;
         }
         let macro_declaration =
-            MacroDeclarationCached::new(macro_declaration_id.lookup_intern(ctx.db), ctx);
+            MacroDeclarationCached::new(macro_declaration_id.long(ctx.db).clone(), ctx);
         let id = MacroDeclarationIdCached(ctx.macro_declaration_ids_lookup.len());
         ctx.macro_declaration_ids_lookup.push(macro_declaration);
         ctx.macro_declaration_ids.insert(macro_declaration_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> MacroDeclarationId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> MacroDeclarationId<'db> {
         if let Some(macro_declaration_id) = ctx.macro_declaration_ids.get(&self) {
             return *macro_declaration_id;
         }
@@ -1430,31 +1483,31 @@ struct GlobalUseCached {
     language_element: LanguageElementCached,
 }
 impl GlobalUseCached {
-    fn new(global_use_id: GlobalUseLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(global_use_id: GlobalUseLongId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         Self { language_element: LanguageElementCached::new(global_use_id.intern(ctx.db), ctx) }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> GlobalUseLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> GlobalUseLongId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
 
         GlobalUseLongId(module_file_id, UsePathStarPtr(stable_ptr))
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 struct GlobalUseIdCached(usize);
 
 impl GlobalUseIdCached {
-    fn new(global_use_id: GlobalUseId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(global_use_id: GlobalUseId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(id) = ctx.global_use_ids.get(&global_use_id) {
             return *id;
         }
-        let global_use = GlobalUseCached::new(global_use_id.lookup_intern(ctx.db), ctx);
+        let global_use = GlobalUseCached::new(global_use_id.long(ctx.db).clone(), ctx);
         let id = GlobalUseIdCached(ctx.global_use_ids_lookup.len());
         ctx.global_use_ids_lookup.push(global_use);
         ctx.global_use_ids.insert(global_use_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> GlobalUseId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> GlobalUseId<'db> {
         if let Some(global_use_id) = ctx.global_use_ids.get(&self) {
             return *global_use_id;
         }
@@ -1477,16 +1530,16 @@ struct SyntaxNodeInnerCached {
 }
 
 impl SyntaxNodeCached {
-    fn new(syntax_node: SyntaxNode, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(syntax_node: SyntaxNode<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         let db = ctx.db;
-        let green = GreenIdCached::new(syntax_node.green_node(db).intern(db), ctx);
+        let green = GreenIdCached::new(syntax_node.green_node(db).clone().intern(db), ctx);
         let parent = syntax_node.parent(db).map(|it| Self::new(it, ctx));
         let stable_ptr = SyntaxStablePtrIdCached::new(syntax_node.stable_ptr(db), ctx);
         let offset = syntax_node.offset(db);
         let inner = SyntaxNodeInnerCached { green, offset, parent, stable_ptr };
         SyntaxNodeCached(Box::new(inner))
     }
-    fn embed(&self, ctx: &mut DefCacheLoadingContext<'_>) -> SyntaxNode {
+    fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> SyntaxNode<'db> {
         let inner = self.0.as_ref();
         let green = inner.green.embed(ctx);
         let parent = inner.parent.as_ref().map(|it| it.embed(ctx));
@@ -1502,9 +1555,9 @@ pub struct LanguageElementCached {
     stable_ptr: SyntaxStablePtrIdCached,
 }
 impl LanguageElementCached {
-    pub fn new<T: LanguageElementId>(
+    pub fn new<'db, T: LanguageElementId<'db> + 'db>(
         language_element: T,
-        ctx: &mut DefCacheSavingContext<'_>,
+        ctx: &mut DefCacheSavingContext<'db>,
     ) -> Self {
         Self {
             module_file_id: ModuleFileCached::new(language_element.module_file_id(ctx.db), ctx),
@@ -1514,15 +1567,18 @@ impl LanguageElementCached {
             ),
         }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> (ModuleFileId, SyntaxStablePtrId) {
+    fn embed<'db>(
+        self,
+        ctx: &mut DefCacheLoadingContext<'db>,
+    ) -> (ModuleFileId<'db>, SyntaxStablePtrId<'db>) {
         let module_file_id = self.module_file_id.embed(ctx);
         let stable_ptr = self.stable_ptr.embed(ctx);
         (module_file_id, stable_ptr)
     }
-    pub fn get_embedded(
+    pub fn get_embedded<'db>(
         self,
-        data: &Arc<DefCacheLoadingData>,
-    ) -> (ModuleFileId, SyntaxStablePtrId) {
+        data: &Arc<DefCacheLoadingData<'db>>,
+    ) -> (ModuleFileId<'db>, SyntaxStablePtrId<'db>) {
         let module_file_id = self.module_file_id.get_embedded(data);
         let stable_ptr = self.stable_ptr.get_embedded(data);
         (module_file_id, stable_ptr)
@@ -1549,7 +1605,10 @@ enum SyntaxStablePtrCached {
 }
 
 impl SyntaxStablePtrCached {
-    fn new(syntax_stable_ptr: SyntaxStablePtr, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(
+        syntax_stable_ptr: SyntaxStablePtr<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
+    ) -> Self {
         match syntax_stable_ptr {
             SyntaxStablePtr::Root(root, green_id) => SyntaxStablePtrCached::Root(
                 FileIdCached::new(root, ctx),
@@ -1560,15 +1619,15 @@ impl SyntaxStablePtrCached {
                     parent: SyntaxStablePtrIdCached::new(parent, ctx),
                     kind,
                     key_fields: key_fields
-                        .into_iter()
-                        .map(|field| GreenIdCached::new(field, ctx))
+                        .iter()
+                        .map(|field| GreenIdCached::new(*field, ctx))
                         .collect(),
                     index,
                 }
             }
         }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> SyntaxStablePtr {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> SyntaxStablePtr<'db> {
         match self {
             SyntaxStablePtrCached::Root(file, green_id) => {
                 SyntaxStablePtr::Root(file.embed(ctx), green_id.embed(ctx))
@@ -1585,24 +1644,23 @@ impl SyntaxStablePtrCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 pub struct SyntaxStablePtrIdCached(usize);
 impl SyntaxStablePtrIdCached {
-    pub fn new(
-        syntax_stable_ptr_id: SyntaxStablePtrId,
-        ctx: &mut DefCacheSavingContext<'_>,
+    pub fn new<'db>(
+        syntax_stable_ptr_id: SyntaxStablePtrId<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
     ) -> Self {
         if let Some(id) = ctx.syntax_stable_ptr_ids.get(&syntax_stable_ptr_id) {
             return *id;
         }
-        let stable_ptr =
-            SyntaxStablePtrCached::new(syntax_stable_ptr_id.lookup_intern(ctx.db), ctx);
+        let stable_ptr = SyntaxStablePtrCached::new(syntax_stable_ptr_id.long(ctx.db).clone(), ctx);
         let id = SyntaxStablePtrIdCached(ctx.syntax_stable_ptr_ids_lookup.len());
         ctx.syntax_stable_ptr_ids_lookup.push(stable_ptr);
         ctx.syntax_stable_ptr_ids.insert(syntax_stable_ptr_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> SyntaxStablePtrId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> SyntaxStablePtrId<'db> {
         if let Some(syntax_stable_ptr_id) = ctx.syntax_stable_ptr_ids.get(&self) {
             return *syntax_stable_ptr_id;
         }
@@ -1612,7 +1670,7 @@ impl SyntaxStablePtrIdCached {
         ctx.syntax_stable_ptr_ids.insert(self, stable_ptr_id);
         stable_ptr_id
     }
-    pub fn get_embedded(self, data: &Arc<DefCacheLoadingData>) -> SyntaxStablePtrId {
+    pub fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> SyntaxStablePtrId<'db> {
         data.syntax_stable_ptr_ids[&self]
     }
 }
@@ -1624,21 +1682,23 @@ enum GreenNodeDetailsCached {
 }
 
 impl GreenNodeDetailsCached {
-    fn new(
-        green_node_details: &GreenNodeDetails,
-        ctx: &mut DefCacheSavingContext<'_>,
+    fn new<'db>(
+        green_node_details: &GreenNodeDetails<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
     ) -> GreenNodeDetailsCached {
         match green_node_details {
-            GreenNodeDetails::Token(token) => GreenNodeDetailsCached::Token(token.clone()),
+            GreenNodeDetails::Token(token) => GreenNodeDetailsCached::Token((*token).into()),
             GreenNodeDetails::Node { children, width } => GreenNodeDetailsCached::Node {
                 children: children.iter().map(|child| GreenIdCached::new(*child, ctx)).collect(),
                 width: *width,
             },
         }
     }
-    fn embed(&self, ctx: &mut DefCacheLoadingContext<'_>) -> GreenNodeDetails {
+    fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> GreenNodeDetails<'db> {
         match self {
-            GreenNodeDetailsCached::Token(token) => GreenNodeDetails::Token(token.clone()),
+            GreenNodeDetailsCached::Token(token) => {
+                GreenNodeDetails::Token(db_str(ctx.db, token.clone()))
+            }
             GreenNodeDetailsCached::Node { children, width } => GreenNodeDetails::Node {
                 children: children.iter().map(|child| child.embed(ctx)).collect(),
                 width: *width,
@@ -1653,37 +1713,37 @@ struct GreenNodeCached {
     details: GreenNodeDetailsCached,
 }
 impl GreenNodeCached {
-    fn new(green_node: &GreenNode, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(green_node: &GreenNode<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         Self {
             kind: green_node.kind,
             details: GreenNodeDetailsCached::new(&green_node.details, ctx),
         }
     }
-    fn embed(&self, ctx: &mut DefCacheLoadingContext<'_>) -> GreenNode {
+    fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> GreenNode<'db> {
         GreenNode { kind: self.kind, details: self.details.embed(ctx) }
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::Update)]
 struct GreenIdCached(usize);
 
 impl GreenIdCached {
-    fn new(green_id: GreenId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(green_id: GreenId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(id) = ctx.green_ids.get(&green_id) {
             return *id;
         }
-        let green_node = GreenNodeCached::new(green_id.lookup_intern(ctx.db).as_ref(), ctx);
+        let green_node = GreenNodeCached::new(green_id.long(ctx.db), ctx);
         let id = GreenIdCached(ctx.green_ids_lookup.len());
         ctx.green_ids_lookup.push(green_node);
         ctx.green_ids.insert(green_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> GreenId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> GreenId<'db> {
         if let Some(green_id) = ctx.green_ids.get(&self) {
             return *green_id;
         }
         let green_node = ctx.green_ids_lookup[self.0].clone();
-        let green_node = Arc::new(green_node.embed(ctx));
+        let green_node = green_node.embed(ctx);
         let green_id = green_node.intern(ctx.db);
         ctx.green_ids.insert(self, green_id);
         green_id
@@ -1697,7 +1757,7 @@ enum FileCached {
 }
 
 impl FileCached {
-    fn new(file: &FileLongId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(file: &FileLongId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         match file {
             FileLongId::OnDisk(path) => FileCached::OnDisk(path.clone()),
             FileLongId::Virtual(virtual_file) => {
@@ -1711,7 +1771,7 @@ impl FileCached {
             }
         }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> FileLongId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> FileLongId<'db> {
         match self {
             FileCached::OnDisk(path) => FileLongId::OnDisk(path),
             FileCached::Virtual(virtual_file) => FileLongId::Virtual(virtual_file.embed(ctx)),
@@ -1722,20 +1782,20 @@ impl FileCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::Update)]
 struct FileIdCached(usize);
 impl FileIdCached {
-    fn new(file_id: FileId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(file_id: FileId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(id) = ctx.file_ids.get(&file_id) {
             return *id;
         }
-        let file = FileCached::new(&file_id.lookup_intern(ctx.db), ctx);
+        let file = FileCached::new(file_id.long(ctx.db), ctx);
         let id = FileIdCached(ctx.file_ids_lookup.len());
         ctx.file_ids_lookup.push(file);
         ctx.file_ids.insert(file_id, id);
         id
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> FileId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> FileId<'db> {
         if let Some(file_id) = ctx.file_ids.get(&self) {
             return *file_id;
         }
@@ -1750,29 +1810,32 @@ impl FileIdCached {
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 struct VirtualFileCached {
     parent: Option<FileIdCached>,
-    name: SmolStr,
+    name: String,
     content: String,
     code_mappings: Vec<CodeMapping>,
     kind: FileKind,
+    original_item_removed: bool,
 }
 
 impl VirtualFileCached {
-    fn new(virtual_file: &VirtualFile, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+    fn new<'db>(virtual_file: &VirtualFile<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         Self {
             parent: virtual_file.parent.map(|parent| FileIdCached::new(parent, ctx)),
             name: virtual_file.name.clone(),
             content: String::from(&*(virtual_file.content)),
             code_mappings: virtual_file.code_mappings.to_vec(),
-            kind: virtual_file.kind.clone(),
+            kind: virtual_file.kind,
+            original_item_removed: virtual_file.original_item_removed,
         }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> VirtualFile {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> VirtualFile<'db> {
         VirtualFile {
             parent: self.parent.map(|parent| parent.embed(ctx)),
             name: self.name,
             content: self.content.into(),
             code_mappings: self.code_mappings.into(),
             kind: self.kind,
+            original_item_removed: self.original_item_removed,
         }
     }
 }
@@ -1781,22 +1844,22 @@ impl VirtualFileCached {
 struct PluginGeneratedFileCached {
     module_id: ModuleIdCached,
     stable_ptr: SyntaxStablePtrIdCached,
-    name: SmolStr,
+    name: String,
 }
 
 impl PluginGeneratedFileCached {
-    fn new(
-        plugin_generated_file: PluginGeneratedFileId,
-        ctx: &mut DefCacheSavingContext<'_>,
+    fn new<'db>(
+        plugin_generated_file: PluginGeneratedFileId<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
     ) -> Self {
-        let long_id = plugin_generated_file.lookup_intern(ctx.db);
+        let long_id = plugin_generated_file.long(ctx.db);
         Self {
             module_id: ModuleIdCached::new(long_id.module_id, ctx),
             stable_ptr: SyntaxStablePtrIdCached::new(long_id.stable_ptr, ctx),
-            name: long_id.name,
+            name: long_id.name.clone(),
         }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> PluginGeneratedFileId {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> PluginGeneratedFileId<'db> {
         let module_id = self.module_id.embed(ctx);
         let stable_ptr = self.stable_ptr.embed(ctx);
         let long_id = PluginGeneratedFileLongId { module_id, stable_ptr, name: self.name };
@@ -1819,9 +1882,9 @@ struct PluginDiagnosticCached {
 }
 
 impl PluginDiagnosticCached {
-    fn new(
-        diagnostic: &PluginDiagnostic,
-        ctx: &mut DefCacheSavingContext<'_>,
+    fn new<'db>(
+        diagnostic: &PluginDiagnostic<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
     ) -> PluginDiagnosticCached {
         PluginDiagnosticCached {
             stable_ptr: SyntaxStablePtrIdCached::new(diagnostic.stable_ptr, ctx),
@@ -1833,10 +1896,9 @@ impl PluginDiagnosticCached {
             inner_span: diagnostic.inner_span,
         }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> PluginDiagnostic {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> PluginDiagnostic<'db> {
         PluginDiagnostic {
             stable_ptr: self.stable_ptr.embed(ctx),
-            relative_span: None,
             message: self.message,
             severity: match self.severity {
                 SeverityCached::Error => Severity::Error,
@@ -1856,13 +1918,16 @@ struct DiagnosticNoteCached {
 }
 
 impl DiagnosticNoteCached {
-    fn new(note: DiagnosticNote, ctx: &mut DefCacheSavingContext<'_>) -> DiagnosticNoteCached {
+    fn new<'db>(
+        note: DiagnosticNote<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
+    ) -> DiagnosticNoteCached {
         DiagnosticNoteCached {
             text: note.text.clone(),
             location: note.location.map(|location| DiagnosticLocationCached::new(&location, ctx)),
         }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> DiagnosticNote {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> DiagnosticNote<'db> {
         DiagnosticNote {
             text: self.text,
             location: self.location.map(|location| location.embed(ctx)),
@@ -1877,16 +1942,16 @@ struct DiagnosticLocationCached {
 }
 
 impl DiagnosticLocationCached {
-    fn new(
-        location: &DiagnosticLocation,
-        ctx: &mut DefCacheSavingContext<'_>,
+    fn new<'db>(
+        location: &DiagnosticLocation<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
     ) -> DiagnosticLocationCached {
         DiagnosticLocationCached {
             file_id: FileIdCached::new(location.file_id, ctx),
             span: location.span,
         }
     }
-    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> DiagnosticLocation {
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> DiagnosticLocation<'db> {
         DiagnosticLocation { file_id: self.file_id.embed(ctx), span: self.span }
     }
 }

@@ -16,7 +16,7 @@ cairo_lang_test_utils::test_file_test!(
     reorder_statements,
     "src/optimizations/test_data",
     {
-        reorder_statements :"reorder_statements",
+        reorder_statements: "reorder_statements",
     },
     test_reorder_statements
 );
@@ -40,7 +40,9 @@ fn test_reorder_statements(
         db.lowered_body(function_id, LoweringStage::Monomorphized).unwrap().deref().clone();
 
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
-    OptimizationPhase::ApplyInlining.apply(db, function_id, &mut before).unwrap();
+    OptimizationPhase::ApplyInlining { enable_const_folding: true }
+        .apply(db, function_id, &mut before)
+        .unwrap();
     OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();
 
     let mut after = before.clone();

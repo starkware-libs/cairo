@@ -9,7 +9,7 @@ use crate::{BlockEnd, BlockId, Lowered, MatchEnumInfo, MatchInfo, VarUsage, Vari
 
 /// Trims unreachable code.
 /// The unreachable code is detected by the introduction of an enum with 0 variants.
-pub fn trim_unreachable(db: &dyn LoweringGroup, lowered: &mut Lowered) {
+pub fn trim_unreachable<'db>(db: &'db dyn LoweringGroup, lowered: &mut Lowered<'db>) {
     if lowered.blocks.is_empty() {
         return;
     }

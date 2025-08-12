@@ -1,11 +1,10 @@
 //! Sierra AP change model.
 use ap_change_info::ApChangeInfo;
-use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, StatementIdx};
-use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
-use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
+use cairo_lang_sierra::program_registry::ProgramRegistryError;
+use cairo_lang_sierra_type_size::{ProgramRegistryInfo, TypeSizeMap};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use core_libfunc_ap_change::InvocationApChangeInfoProvider;
@@ -81,16 +80,15 @@ impl<TokenUsages: Fn(CostTokenType) -> usize> InvocationApChangeInfoProvider
 /// Calculates gas information for a given program.
 pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
     program: &Program,
+    program_info: &ProgramRegistryInfo,
     token_usages: TokenUsages,
 ) -> Result<ApChangeInfo, ApChangeError> {
-    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-    let type_sizes = get_type_size_map(program, &registry).unwrap();
     let equations = generate_equations::generate_equations(program, |idx, libfunc_id| {
-        let libfunc = registry.get_libfunc(libfunc_id)?;
+        let libfunc = program_info.registry.get_libfunc(libfunc_id)?;
         core_libfunc_ap_change::core_libfunc_ap_change(
             libfunc,
             &InvocationApChangeInfoProviderForEqGen {
-                type_sizes: &type_sizes,
+                type_sizes: &program_info.type_sizes,
                 token_usages: |token_type| token_usages(idx, token_type),
             },
         )

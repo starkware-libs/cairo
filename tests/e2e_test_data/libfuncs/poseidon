@@ -19,7 +19,7 @@ fn foo(s0: felt252, s1: felt252, s2: felt252) -> (felt252, felt252, felt252) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Poseidon: 1, Const: 700})
+test::foo: CostTokenMap({Poseidon: 1, Const: 700})
 
 //! > sierra_code
 type Poseidon = Poseidon [storable: true, drop: false, dup: false, zero_sized: false];
@@ -76,7 +76,7 @@ fn foo(s0: felt252, s1: felt252, s2: felt252) -> felt252 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Poseidon: 2, Const: 1800})
+test::foo: CostTokenMap({Poseidon: 2, Const: 1800})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];

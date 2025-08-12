@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, izip};
 use thiserror::Error;
 
@@ -67,6 +66,10 @@ pub enum ProgramRegistryError {
     MultipleJumpsToSameStatement { src1: StatementIdx, src2: StatementIdx, dst: StatementIdx },
     #[error("#{0}: Jump out of range")]
     JumpOutOfRange(StatementIdx),
+    #[error("Type size computation failed for `{ty}`: missing size information for `{dep}`")]
+    TypeSizeDependencyMissing { ty: ConcreteTypeId, dep: ConcreteTypeId },
+    #[error("Type size computation failed for `{0}`: size overflow.")]
+    TypeSizeOverflow(ConcreteTypeId),
 }
 
 type TypeMap<TType> = HashMap<ConcreteTypeId, TType>;
@@ -87,9 +90,8 @@ pub struct ProgramRegistry<TType: GenericType, TLibfunc: GenericLibfunc> {
 }
 impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfunc> {
     /// Create a registry for the program.
-    pub fn new_with_ap_change(
+    pub fn new(
         program: &Program,
-        function_ap_change: OrderedHashMap<FunctionId, usize>,
     ) -> Result<ProgramRegistry<TType, TLibfunc>, Box<ProgramRegistryError>> {
         let functions = get_functions(program)?;
         let (concrete_types, concrete_type_ids) = get_concrete_types_maps::<TType>(program)?;
@@ -99,7 +101,6 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
                 functions: &functions,
                 concrete_type_ids: &concrete_type_ids,
                 concrete_types: &concrete_types,
-                function_ap_change,
             },
         )?;
         let registry = ProgramRegistry { functions, concrete_types, concrete_libfuncs };
@@ -107,11 +108,6 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
         Ok(registry)
     }
 
-    pub fn new(
-        program: &Program,
-    ) -> Result<ProgramRegistry<TType, TLibfunc>, Box<ProgramRegistryError>> {
-        Self::new_with_ap_change(program, Default::default())
-    }
     /// Gets a function from the input program.
     pub fn get_function<'a>(
         &'a self,
@@ -351,8 +347,6 @@ pub struct SpecializationContextForRegistry<'a, TType: GenericType> {
     pub functions: &'a FunctionMap,
     pub concrete_type_ids: &'a ConcreteTypeIdMap<'a>,
     pub concrete_types: &'a TypeMap<TType::Concrete>,
-    /// AP changes information for Sierra user functions.
-    pub function_ap_change: OrderedHashMap<FunctionId, usize>,
 }
 impl<TType: GenericType> TypeSpecializationContext for SpecializationContextForRegistry<'_, TType> {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
@@ -372,14 +366,6 @@ impl<TType: GenericType> SignatureSpecializationContext
 
     fn try_get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
         self.try_get_function(function_id).map(|f| f.signature)
-    }
-
-    fn try_get_function_ap_change(&self, function_id: &FunctionId) -> Option<SierraApChange> {
-        Some(if self.function_ap_change.contains_key(function_id) {
-            SierraApChange::Known { new_vars_only: false }
-        } else {
-            SierraApChange::Unknown
-        })
     }
 }
 impl<TType: GenericType> SpecializationContext for SpecializationContextForRegistry<'_, TType> {

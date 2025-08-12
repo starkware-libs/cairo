@@ -4,8 +4,8 @@
 test_specialized_function
 
 //! > function
-fn foo(x: felt252, y: felt252) -> felt252 {
-    x + y
+fn foo(ref arr: Array<felt252>, d: Span<felt252>, x: felt252, y: felt252) {
+    arr.append(x + y)
 }
 
 //! > function_name
@@ -21,13 +21,16 @@ foo
 Parameters:
 
 //! > full_path
-test::foo{None, 1, }
+test::foo{array![], { array![] }, None, 1, }
 
 //! > lowering
-Parameters: v0: core::felt252
+Parameters: v2: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 1
-  (v2: core::felt252) <- test::foo(v0, v1)
+  (v3: core::felt252) <- 1
+  (v4: @core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v1: core::array::Span::<core::felt252>) <- struct_construct(v4)
+  (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v5: core::array::Array::<core::felt252>, v6: ()) <- test::foo(v0, v1, v2, v3)
 End:
-  Return(v2)
+  Return(v5, v6)

@@ -16,7 +16,11 @@ ItemInlineMacro
 //! > expected_tree
 └── Top level kind: ItemInlineMacro
     ├── attributes (kind: AttributeList) []
-    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
     ├── bang (kind: TokenNot): '!'
     ├── arguments (kind: TokenTreeNode)
     │   └── subtree (kind: ParenthesizedTokenTree)
@@ -30,6 +34,91 @@ ItemInlineMacro
     │       │       └── leaf (kind: TokenLiteralNumber): '2'
     │       └── rparen (kind: TokenRParen): ')'
     └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test an ItemInlineMacro path starting with a placeholder ($) token
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+$inline_macro!(1, 2);
+
+//! > top_level_kind
+ItemInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemInlineMacro
+    ├── attributes (kind: AttributeList) []
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: TokenDollar): '$'
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
+    ├── bang (kind: TokenNot): '!'
+    ├── arguments (kind: TokenTreeNode)
+    │   └── subtree (kind: ParenthesizedTokenTree)
+    │       ├── lparen (kind: TokenLParen): '('
+    │       ├── tokens (kind: TokenList)
+    │       │   ├── child #0 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenLiteralNumber): '1'
+    │       │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │   │   └── leaf (kind: TokenComma): ','
+    │       │   └── child #2 (kind: TokenTreeLeaf)
+    │       │       └── leaf (kind: TokenLiteralNumber): '2'
+    │       └── rparen (kind: TokenRParen): ')'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test item use path with dollar token prefix.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+use $a::b;
+use $dollar;
+
+//! > top_level_kind
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   ├── child #0 (kind: ItemUse)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
+    │   │   ├── use_kw (kind: TokenUse): 'use'
+    │   │   ├── dollar (kind: TokenDollar): '$'
+    │   │   ├── use_path (kind: UsePathSingle)
+    │   │   │   ├── ident (kind: PathSegmentSimple)
+    │   │   │   │   └── ident (kind: TokenIdentifier): 'a'
+    │   │   │   ├── colon_colon (kind: TokenColonColon): '::'
+    │   │   │   └── use_path (kind: UsePathLeaf)
+    │   │   │       ├── ident (kind: PathSegmentSimple)
+    │   │   │       │   └── ident (kind: TokenIdentifier): 'b'
+    │   │   │       └── alias_clause (kind: OptionAliasClauseEmpty) []
+    │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   └── child #1 (kind: ItemUse)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── use_kw (kind: TokenUse): 'use'
+    │       ├── dollar (kind: TokenDollar): '$'
+    │       ├── use_path (kind: UsePathLeaf)
+    │       │   ├── ident (kind: PathSegmentSimple)
+    │       │   │   └── ident (kind: TokenIdentifier): 'dollar'
+    │       │   └── alias_clause (kind: OptionAliasClauseEmpty) []
+    │       └── semicolon (kind: TokenSemicolon): ';'
+    └── eof (kind: TokenEndOfFile).
 
 //! > ==========================================================================
 
@@ -51,7 +140,11 @@ ItemInlineMacro
 //! > expected_tree
 └── Top level kind: ItemInlineMacro
     ├── attributes (kind: AttributeList) []
-    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
     ├── bang (kind: TokenNot): '!'
     ├── arguments (kind: TokenTreeNode)
     │   └── subtree (kind: BracketedTokenTree)
@@ -86,7 +179,11 @@ ItemInlineMacro
 //! > expected_tree
 └── Top level kind: ItemInlineMacro
     ├── attributes (kind: AttributeList) []
-    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
     ├── bang (kind: TokenNot): '!'
     ├── arguments (kind: TokenTreeNode)
     │   └── subtree (kind: BracedTokenTree)
@@ -132,7 +229,11 @@ ItemInlineMacro
     │       │           └── ident (kind: TokenIdentifier): 'an_attr'
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TokenRBrack): ']'
-    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
     ├── bang (kind: TokenNot): '!'
     ├── arguments (kind: TokenTreeNode)
     │   └── subtree (kind: ParenthesizedTokenTree)
@@ -172,7 +273,11 @@ inline_macro(1,2);
 //! > expected_tree
 └── Top level kind: ItemInlineMacro
     ├── attributes (kind: AttributeList) []
-    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
     ├── bang: Missing
     ├── arguments (kind: TokenTreeNode)
     │   └── subtree (kind: ParenthesizedTokenTree)
@@ -212,7 +317,11 @@ inline_macro{1,2};
 //! > expected_tree
 └── Top level kind: ItemInlineMacro
     ├── attributes (kind: AttributeList) []
-    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
     ├── bang: Missing
     ├── arguments (kind: TokenTreeNode)
     │   └── subtree (kind: BracedTokenTree)
@@ -252,7 +361,11 @@ inline_macro[1,2];
 //! > expected_tree
 └── Top level kind: ItemInlineMacro
     ├── attributes (kind: AttributeList) []
-    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'inline_macro'
     ├── bang: Missing
     ├── arguments (kind: TokenTreeNode)
     │   └── subtree (kind: BracketedTokenTree)
@@ -284,9 +397,9 @@ fn foo() {}
 
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
- --> dummy_file.cairo:1:1
+ --> dummy_file.cairo:1:11
 identifier
-^^^^^^^^^^
+          ^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -344,7 +457,11 @@ a_macro!
 └── Top level kind: ModuleItemList
     ├── child #0 (kind: ItemInlineMacro)
     │   ├── attributes (kind: AttributeList) []
-    │   ├── name (kind: TokenIdentifier): 'a_macro'
+    │   ├── path (kind: ExprPath)
+    │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   └── segments (kind: ExprPathInner)
+    │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │           └── ident (kind: TokenIdentifier): 'a_macro'
     │   ├── bang (kind: TokenNot): '!'
     │   ├── arguments (kind: TokenTreeNode)
     │   │   └── subtree (kind: WrappedTokenTreeMissing) []
@@ -383,7 +500,11 @@ fn foo() {}
 └── Top level kind: ModuleItemList
     └── child #0 (kind: ItemInlineMacro)
         ├── attributes (kind: AttributeList) []
-        ├── name (kind: TokenIdentifier): 'identifier'
+        ├── path (kind: ExprPath)
+        │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │   └── segments (kind: ExprPathInner)
+        │       └── item #0 (kind: PathSegmentSimple)
+        │           └── ident (kind: TokenIdentifier): 'identifier'
         ├── bang (kind: TokenNot): '!'
         ├── arguments (kind: TokenTreeNode)
         │   └── subtree (kind: ParenthesizedTokenTree)
@@ -439,7 +560,11 @@ identifier!(1,2)
 └── Top level kind: ModuleItemList
     ├── child #0 (kind: ItemInlineMacro)
     │   ├── attributes (kind: AttributeList) []
-    │   ├── name (kind: TokenIdentifier): 'identifier'
+    │   ├── path (kind: ExprPath)
+    │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   └── segments (kind: ExprPathInner)
+    │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │           └── ident (kind: TokenIdentifier): 'identifier'
     │   ├── bang (kind: TokenNot): '!'
     │   ├── arguments (kind: TokenTreeNode)
     │   │   └── subtree (kind: ParenthesizedTokenTree)
@@ -488,7 +613,11 @@ identifier(x)
 └── Top level kind: ModuleItemList
     ├── child #0 (kind: ItemInlineMacro)
     │   ├── attributes (kind: AttributeList) []
-    │   ├── name (kind: TokenIdentifier): 'identifier'
+    │   ├── path (kind: ExprPath)
+    │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   └── segments (kind: ExprPathInner)
+    │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │           └── ident (kind: TokenIdentifier): 'identifier'
     │   ├── bang: Missing
     │   ├── arguments (kind: TokenTreeNode)
     │   │   └── subtree (kind: ParenthesizedTokenTree)

@@ -9,6 +9,7 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
+use cairo_lang_filesystem::ids::CrateInput;
 use cairo_lang_runner::casm_run::format_next_item;
 use cairo_lang_runner::profiling::ProfilingInfoProcessor;
 use cairo_lang_runner::{ProfilingInfoCollectionConfig, SierraCasmRunner, StarknetState};
@@ -57,9 +58,9 @@ fn main() -> anyhow::Result<()> {
     }
     let db = &mut db_builder.build()?;
 
-    let main_crate_ids = setup_project(db, Path::new(&args.path))?;
+    let main_crate_inputs = setup_project(db, Path::new(&args.path))?;
 
-    let mut reporter = DiagnosticsReporter::stderr().with_crates(&main_crate_ids);
+    let mut reporter = DiagnosticsReporter::stderr().with_crates(&main_crate_inputs);
     if args.allow_warnings {
         reporter = reporter.allow_warnings();
     }
@@ -67,6 +68,7 @@ fn main() -> anyhow::Result<()> {
         anyhow::bail!("failed to compile: {}", args.path.display());
     }
 
+    let main_crate_ids = CrateInput::into_crate_ids(db, main_crate_inputs);
     let SierraProgramWithDebug { program: mut sierra_program, debug_info } = Arc::unwrap_or_clone(
         db.get_sierra_program(main_crate_ids.clone())
             .to_option()
@@ -99,15 +101,15 @@ fn main() -> anyhow::Result<()> {
         .with_context(|| "Failed to run the function.")?;
 
     if args.run_profiler {
-        let profiling_info_processor = ProfilingInfoProcessor::new(
-            Some(db),
-            sierra_program,
-            debug_info.statements_locations.get_statements_functions_map_for_tests(db),
-            Default::default(),
-        );
         match result.profiling_info {
             Some(raw_profiling_info) => {
-                let profiling_info = profiling_info_processor.process(&raw_profiling_info);
+                let statements_functions =
+                    debug_info.statements_locations.get_statements_functions_map_for_tests(db);
+                let profiling_info_processor =
+                    ProfilingInfoProcessor::new(Some(db), &sierra_program, statements_functions);
+
+                let profiling_info =
+                    profiling_info_processor.process(&raw_profiling_info, &Default::default());
                 println!("Profiling info:\n{profiling_info}");
             }
             None => println!("Warning: Profiling info not found."),

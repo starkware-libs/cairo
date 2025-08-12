@@ -89,7 +89,10 @@ fn test_program_generator(
 #[test_case("f5", &["f5", "f6"]; "f5 -> f6")]
 #[test_case("f6", &["f6"]; "self loop")]
 fn test_only_include_dependencies(func_name: &str, sierra_used_funcs: &[&str]) {
-    let (db, crate_id) = setup_db_and_get_crate_id(indoc! {"
+    let db = SierraGenDatabaseForTesting::default();
+    let crate_id = setup_db_and_get_crate_id(
+        &db,
+        indoc! {"
         #[inline(never)]
         fn f1() { f2(); f3(); }
         #[inline(never)]
@@ -102,7 +105,8 @@ fn test_only_include_dependencies(func_name: &str, sierra_used_funcs: &[&str]) {
         fn f5() { f6(); }
         #[inline(never)]
         fn f6() { f6(); }
-    "});
+    "},
+    );
     let func_id = ConcreteFunctionWithBodyId::from_no_generics_free(
         &db,
         db.crate_modules(crate_id)

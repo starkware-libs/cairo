@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::node::SyntaxNode;
 use crate::node::db::SyntaxGroup;
 
@@ -28,16 +26,16 @@ pub struct Preorder<'a> {
     // FIXME(mkaput): Is it possible to avoid allocating iterators in layers here?
     //   This code does it because without fast parent & prev/next sibling operations it has to
     //   maintain DFS trace.
-    layers: Vec<PreorderLayer>,
+    layers: Vec<PreorderLayer<'a>>,
 }
 
-struct PreorderLayer {
-    start: SyntaxNode,
-    children: Option<(Arc<[SyntaxNode]>, usize)>,
+struct PreorderLayer<'a> {
+    start: SyntaxNode<'a>,
+    children: Option<(&'a [SyntaxNode<'a>], usize)>,
 }
 
 impl<'a> Preorder<'a> {
-    pub(super) fn new(start: SyntaxNode, db: &'a dyn SyntaxGroup) -> Self {
+    pub(super) fn new(start: SyntaxNode<'a>, db: &'a dyn SyntaxGroup) -> Self {
         let initial_layer = PreorderLayer { start, children: None };
 
         // NOTE(mkaput): Reserving some capacity should help amortization and thus make this
@@ -50,8 +48,8 @@ impl<'a> Preorder<'a> {
     }
 }
 
-impl Iterator for Preorder<'_> {
-    type Item = WalkEvent<SyntaxNode>;
+impl<'a> Iterator for Preorder<'a> {
+    type Item = WalkEvent<SyntaxNode<'a>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         // Lack of layers to traverse means end of iteration, so early return here.

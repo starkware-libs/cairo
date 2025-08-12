@@ -141,7 +141,7 @@ macro macro_name {
 //! > Test expr placeholder outside of macro definition
 
 //! > test_runner_name
-test_partial_parser_tree(expect_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 fn foo() {
@@ -153,10 +153,6 @@ fn foo() {
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Placeholder expression ($expression) is allowed only in the context of a macro rule.
- --> dummy_file.cairo:2:9
-    2 + $placeholder
-        ^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)

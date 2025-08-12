@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId};
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{Upcast, extract_matches};
 use pretty_assertions::assert_eq;
 use test_log::test;
 
@@ -38,7 +38,7 @@ fn test_expr_lookup() {
     let mut expr_debugs = Vec::new();
     for (expr_id, expr) in &db.function_body(function_id).unwrap().arenas.exprs {
         assert_eq!(db.lookup_expr_by_ptr(function_id, expr.stable_ptr()), Ok(expr_id));
-        expr_debugs.push(format!("{:?}", expr.debug(&expr_formatter)));
+        expr_debugs.push(format!("{:?}", expr.debug(expr_formatter.upcast())));
     }
     expr_debugs.sort();
     assert_eq!(
@@ -48,7 +48,7 @@ fn test_expr_lookup() {
              FunctionCall(ExprFunctionCall { function: core::Felt252Add::add, args: \
              [Value(Literal(ExprLiteral { value: 5, ty: core::felt252 })), \
              Value(Literal(ExprLiteral { value: 5, ty: core::felt252 }))], coupon_arg: None, ty: \
-             core::felt252 }) })], tail: Some(Match(ExprMatch { matched_expr: \
+             core::felt252 }), else_clause: None })], tail: Some(Match(ExprMatch { matched_expr: \
              FunctionCall(ExprFunctionCall { function: core::Felt252Mul::mul, args: \
              [Value(Literal(ExprLiteral { value: 1, ty: core::felt252 })), \
              Value(Literal(ExprLiteral { value: 1, ty: core::felt252 }))], coupon_arg: None, ty: \

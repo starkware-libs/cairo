@@ -11,8 +11,8 @@ use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function, setu
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
+use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{LookupIntern, extract_matches};
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
@@ -26,35 +26,37 @@ cairo_lang_test_utils::test_file_test!(
     lowering,
     "src/test_data",
     {
-        assignment :"assignment",
-        call :"call",
-        constant :"constant",
-        coupon :"coupon",
-        closure :"closure",
-        cycles :"cycles",
-        literal :"literal",
-        destruct :"destruct",
-        enums :"enums",
-        error_propagate :"error_propagate",
-        generics :"generics",
-        extern_ :"extern",
-        fixed_size_array :"fixed_size_array",
-        arm_pattern_destructure :"arm_pattern_destructure",
-        if_ :"if",
-        implicits :"implicits",
-        logical_operator :"logical_operator",
-        loop_ :"loop",
-        match_ :"match",
-        members :"members",
-        panic :"panic",
-        rebindings :"rebindings",
-        snapshot :"snapshot",
-        struct_ :"struct",
-        tests :"tests",
-        tuple :"tuple",
-        strings :"strings",
-        while_ :"while",
-        for_ :"for",
+        assignment: "assignment",
+        call: "call",
+        constant: "constant",
+        coupon: "coupon",
+        closure: "closure",
+        cycles: "cycles",
+        literal: "literal",
+        destruct: "destruct",
+        enums: "enums",
+        error_propagate: "error_propagate",
+        generics: "generics",
+        extern_: "extern",
+        fixed_size_array: "fixed_size_array",
+        arm_pattern_destructure: "arm_pattern_destructure",
+        if_: "if",
+        inline_macros:"inline_macros",
+        implicits: "implicits",
+        let_else: "let_else",
+        logical_operator: "logical_operator",
+        loop_: "loop",
+        match_: "match",
+        members: "members",
+        panic: "panic",
+        rebindings: "rebindings",
+        snapshot: "snapshot",
+        struct_: "struct",
+        tests: "tests",
+        tuple: "tuple",
+        strings: "strings",
+        while_: "while",
+        for_: "for",
     },
     test_function_lowering
 );
@@ -119,7 +121,7 @@ fn test_location_and_diagnostics() {
             db,
             DiagnosticNote::with_location("Adding destructor for".to_string(), expr_location),
         )
-        .lookup_intern(db);
+        .long(db);
 
     assert_eq!(
         format!("{:?}", location.debug(db)),
@@ -140,7 +142,7 @@ a = a * 3
     let mut builder = DiagnosticsBuilder::default();
 
     builder.add(LoweringDiagnostic {
-        location,
+        location: location.clone(),
         kind: LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
     });
 
@@ -211,7 +213,7 @@ fn test_sizes() {
         let ty = db.module_type_alias_resolved_type(*alias_id).unwrap();
         let size = db.type_size(ty);
         let alias_name = alias.name(db).text(db);
-        let expected_size = alias_expected_size[alias_name.as_str()];
+        let expected_size = alias_expected_size[alias_name];
         assert_eq!(size, expected_size, "Wrong size for type alias `{}`", ty.format(db));
     }
 }
