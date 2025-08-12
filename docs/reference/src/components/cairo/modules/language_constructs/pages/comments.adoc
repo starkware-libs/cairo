@@ -1,6 +1,6 @@
 = Comments
 
-Comments follow general C++/Rust style of line (`//`) comments.
+Comments follow the general C++/Rust style of line (`//`) comments.
 
 == Example
 
