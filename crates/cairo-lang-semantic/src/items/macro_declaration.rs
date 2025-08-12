@@ -512,8 +512,7 @@ fn expand_macro_rule_ex(
                     .and_then(|v| rep_index.map_or_else(|| v.first(), |i| v.get(i)))
                     .ok_or_else(skip_diagnostic)?;
                 let start = TextWidth::from_str(res_buffer).as_offset();
-                let span =
-                    TextSpan { start, end: start.add_width(TextWidth::from_str(&value.text)) };
+                let span = TextSpan::new_with_width(start, TextWidth::from_str(&value.text));
                 res_buffer.push_str(&value.text);
                 code_mappings.push(CodeMapping {
                     span,

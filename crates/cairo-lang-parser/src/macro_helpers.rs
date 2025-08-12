@@ -56,9 +56,7 @@ pub fn as_expr_macro_token_tree<'a>(
         token_tree.next_back().map(|last| last.as_syntax_node()).unwrap_or(first_token);
     let file_content = db.file_content(file_id).expect("Failed to read file content");
 
-    let start = first_token.offset(db);
-    let end = last_token.span(db).end;
-    let span = TextSpan { start, end };
+    let span = TextSpan::new(first_token.offset(db), last_token.span(db).end);
 
     let mut parser = Parser::new(db, file_id, span.take(file_content.long(db)), &mut diagnostics);
     let expr_green = parser.parse_expr();

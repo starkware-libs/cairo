@@ -591,7 +591,7 @@ pub fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Optio
 
     // We construct new span from the first and last mappings.
     // If the new span does not contain the original span, there is no translation.
-    let constructed_span = TextSpan { start: first.span.start, end: last.span.end };
+    let constructed_span = TextSpan::new(first.span.start, last.span.end);
     if !constructed_span.contains(span) {
         return call_site;
     }
@@ -609,7 +609,7 @@ pub fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Optio
         CodeOrigin::CallSite(span) => span.start,
     };
 
-    Some(TextSpan { start, end })
+    Some(TextSpan::new(start, end))
 }
 
 /// Returns the parent file and the code mappings of the file.

@@ -94,9 +94,7 @@ impl<'a> SyntaxNode<'a> {
         self.green_node(db).kind
     }
     pub fn span(&self, db: &dyn SyntaxGroup) -> TextSpan {
-        let start = self.offset(db);
-        let end = start.add_width(self.width(db));
-        TextSpan { start, end }
+        TextSpan::new_with_width(self.offset(db), self.width(db))
     }
     /// Returns the text of the token if this node is a token.
     pub fn text(&self, db: &'a dyn SyntaxGroup) -> Option<&'a str> {
@@ -118,7 +116,7 @@ impl<'a> SyntaxNode<'a> {
         let (leading, trailing) = both_trivia_width(db, green_node);
         let start = node.offset.add_width(leading);
         let end = node.offset.add_width(green_node.width()).sub_width(trailing);
-        TextSpan { start, end }
+        TextSpan::new(start, end)
     }
     pub fn parent(&self, db: &'a dyn SyntaxGroup) -> Option<SyntaxNode<'a>> {
         self.long(db).parent

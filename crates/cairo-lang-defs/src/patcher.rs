@@ -317,7 +317,7 @@ impl<'db> PatchBuilder<'db> {
         let start = TextOffset::from_str(&self.code);
         let orig_span = node.span(self.db);
         self.code_mappings.push(CodeMapping {
-            span: TextSpan { start, end: start.add_width(orig_span.width()) },
+            span: TextSpan::new_with_width(start, orig_span.width()),
             origin: CodeOrigin::Start(orig_span.start),
         });
         self.code += node.get_text(self.db);
@@ -327,15 +327,17 @@ impl<'db> PatchBuilder<'db> {
         let start = TextOffset::from_str(&self.code);
         self.add_modified(node);
         let end = TextOffset::from_str(&self.code);
-        self.code_mappings
-            .push(CodeMapping { span: TextSpan { start, end }, origin: CodeOrigin::Span(origin) });
+        self.code_mappings.push(CodeMapping {
+            span: TextSpan::new(start, end),
+            origin: CodeOrigin::Span(origin),
+        });
     }
 
     fn add_trimmed_node(&mut self, node: SyntaxNode<'db>, trim_left: bool, trim_right: bool) {
-        let TextSpan { start: trimmed_start, end: trimmed_end } = node.span_without_trivia(self.db);
-        let orig_start = if trim_left { trimmed_start } else { node.span(self.db).start };
-        let orig_end = if trim_right { trimmed_end } else { node.span(self.db).end };
-        let origin_span = TextSpan { start: orig_start, end: orig_end };
+        let trimmed = node.span_without_trivia(self.db);
+        let orig_start = if trim_left { trimmed.start } else { node.span(self.db).start };
+        let orig_end = if trim_right { trimmed.end } else { node.span(self.db).end };
+        let origin_span = TextSpan::new(orig_start, orig_end);
 
         let text = node.get_text_of_span(self.db, origin_span);
         let start = TextOffset::from_str(&self.code);
@@ -343,7 +345,7 @@ impl<'db> PatchBuilder<'db> {
         self.code += text;
 
         self.code_mappings.push(CodeMapping {
-            span: TextSpan { start, end: start.add_width(TextWidth::from_str(text)) },
+            span: TextSpan::new_with_width(start, TextWidth::from_str(text)),
             origin: CodeOrigin::Start(orig_start),
         });
     }

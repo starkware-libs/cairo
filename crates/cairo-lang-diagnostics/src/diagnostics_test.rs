@@ -26,10 +26,7 @@ impl<'db> DiagnosticEntry<'db> for SimpleDiag<'db> {
     ) -> DiagnosticLocation<'db> {
         DiagnosticLocation {
             file_id: self.file_id,
-            span: TextSpan {
-                start: TextOffset::START,
-                end: TextWidth::new_for_testing(6).as_offset(),
-            },
+            span: TextSpan::new(TextOffset::START, TextWidth::new_for_testing(6).as_offset()),
         }
     }
 

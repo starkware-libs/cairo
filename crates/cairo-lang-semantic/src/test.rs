@@ -99,9 +99,8 @@ impl MacroPlugin for MappingsPlugin {
             .flat_map(|node| {
                 let span_with_trivia = node.span(db);
                 let span_without_trivia = node.span_without_trivia(db);
-                let prefix =
-                    TextSpan { start: span_with_trivia.start, end: span_without_trivia.start };
-                let suffix = TextSpan { start: span_without_trivia.end, end: span_with_trivia.end };
+                let prefix = TextSpan::new(span_with_trivia.start, span_without_trivia.start);
+                let suffix = TextSpan::new(span_without_trivia.end, span_with_trivia.end);
                 vec![
                     CodeMapping { span: prefix, origin: CodeOrigin::Span(prefix) },
                     CodeMapping {

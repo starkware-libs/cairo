@@ -62,8 +62,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn peek_span_text(&self) -> &'a str {
-        let span = TextSpan { start: self.previous_position, end: self.current_position };
-        span.take(self.text)
+        TextSpan::new(self.previous_position, self.current_position).take(self.text)
     }
 
     fn consume_span(&mut self) -> &'a str {

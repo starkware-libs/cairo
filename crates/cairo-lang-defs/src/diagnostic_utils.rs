@@ -55,8 +55,10 @@ impl<'db> StableLocation<'db> {
         match self.inner_span {
             Some((start, width)) => {
                 let start = self.syntax_node(db).offset(db).add_width(start);
-                let end = start.add_width(width);
-                DiagnosticLocation { file_id: self.file_id(db), span: TextSpan { start, end } }
+                DiagnosticLocation {
+                    file_id: self.file_id(db),
+                    span: TextSpan::new_with_width(start, width),
+                }
             }
             None => {
                 let syntax_node = self.syntax_node(db);
@@ -76,7 +78,7 @@ impl<'db> StableLocation<'db> {
     ) -> DiagnosticLocation<'db> {
         let start = self.stable_ptr.lookup(db).span_start_without_trivia(db);
         let end = until_stable_ptr.lookup(db).span_end_without_trivia(db);
-        DiagnosticLocation { file_id: self.stable_ptr.file_id(db), span: TextSpan { start, end } }
+        DiagnosticLocation { file_id: self.stable_ptr.file_id(db), span: TextSpan::new(start, end) }
     }
 }
 

@@ -169,7 +169,7 @@ impl CodeMapping {
             Some(match self.origin {
                 CodeOrigin::Start(origin_start) => {
                     let start = origin_start.add_width(span.start - self.span.start);
-                    TextSpan { start, end: start.add_width(span.width()) }
+                    TextSpan::new_with_width(start, span.width())
                 }
                 CodeOrigin::Span(span) => span,
                 CodeOrigin::CallSite(span) => span,
