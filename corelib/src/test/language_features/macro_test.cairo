@@ -656,4 +656,26 @@ mod item_level_macro {
         assert_eq!(outer(), 10);
         assert_eq!(inner(), 20);
     }
+
+    mod macro_vs_global_use {
+        mod glob {
+            pub fn call() -> felt252 {
+                1
+            }
+        }
+
+        macro define_call {
+            () => {
+            fn call() -> felt252 { 2 }
+        };
+        }
+        
+        use glob::*;
+        define_call!();
+
+        #[test]
+        fn test_macro_wins_over_global_use() {
+            assert_eq!(call(), 2);
+        }
+    }
 }
