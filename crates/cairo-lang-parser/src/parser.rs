@@ -254,7 +254,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         missing_kind: ParserDiagnosticKind,
     ) -> T::Green {
         let next_offset = self.offset.add_width(self.current_width - self.last_trivia_length);
-        self.add_diagnostic(missing_kind, TextSpan { start: next_offset, end: next_offset });
+        self.add_diagnostic(missing_kind, TextSpan::cursor(next_offset));
         T::missing(self.db)
     }
 
@@ -364,10 +364,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                                 identifier: path.identifier(self.db).to_string(),
                                 bracket_type: self.peek().kind,
                             },
-                            TextSpan {
-                                start: self.offset,
-                                end: self.offset.add_width(self.current_width),
-                            },
+                            TextSpan::new(self.offset, self.offset.add_width(self.current_width)),
                         );
                         Ok(self
                             .parse_item_inline_macro_given_bang(
@@ -784,10 +781,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                             {
                                 self.add_diagnostic(
                                     ParserDiagnosticKind::InvalidParamKindInMacroExpansion,
-                                    TextSpan {
-                                        start: self.offset,
-                                        end: self.offset.add_width(self.current_width),
-                                    },
+                                    TextSpan::new_with_width(self.offset, self.current_width),
                                 );
                             }
                             result
@@ -795,10 +789,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                             if let MacroParsingContext::MacroRule = self.macro_parsing_context {
                                 self.add_diagnostic(
                                     ParserDiagnosticKind::InvalidParamKindInMacroRule,
-                                    TextSpan {
-                                        start: self.offset,
-                                        end: self.offset.add_width(self.current_width),
-                                    },
+                                    TextSpan::new_with_width(self.offset, self.current_width),
                                 );
                             }
                             OptionParamKindEmpty::new_green(self.db).into()
@@ -1556,13 +1547,12 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                         if self.is_comparison_operator(child_op_kind)
                             && self.is_comparison_operator(current_op)
                         {
-                            let offset = self.offset.add_width(self.current_width);
                             self.add_diagnostic(
                                 ParserDiagnosticKind::ConsecutiveMathOperators {
                                     first_op: child_op_kind,
                                     second_op: current_op,
                                 },
-                                TextSpan { start: offset, end: offset },
+                                TextSpan::cursor(self.offset.add_width(self.current_width)),
                             );
                         }
                     }
@@ -2155,7 +2145,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         if let [ExprListElementOrSeparatorGreen::Element(_)] = &exprs[..] {
             self.add_diagnostic(
                 ParserDiagnosticKind::MissingToken(SyntaxKind::TokenComma),
-                TextSpan { start: self.offset, end: self.offset },
+                TextSpan::cursor(self.offset),
             );
         }
         ExprListParenthesized::new_green(
@@ -2353,7 +2343,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                             self.offset.add_width(self.current_width - self.last_trivia_length);
                         self.add_diagnostic(
                             ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op },
-                            TextSpan { start: start_offset, end: offset },
+                            TextSpan::new(start_offset, offset),
                         );
                     }
                 }
@@ -2371,10 +2361,9 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         let peek_item = self.peek();
         if let Some(op_precedence) = get_post_operator_precedence(peek_item.kind) {
             if op_precedence > and_and_precedence {
-                let offset = self.offset.add_width(self.current_width);
                 self.add_diagnostic(
                     ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op: peek_item.kind },
-                    TextSpan { start: offset, end: offset },
+                    TextSpan::cursor(self.offset.add_width(self.current_width)),
                 );
                 // Skip the rest of the tokens until `{`. Don't report additional diagnostics.
                 let _ = self.skip_until(is_of_kind!(rbrace, lbrace, module_item_kw, block));
@@ -3184,10 +3173,13 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// Adds a diagnostic of kind `kind` if provided, at the current offset.
     fn add_optional_diagnostic(&mut self, err: Option<ValidationError>) {
         if let Some(err) = err {
-            let span_end = self.offset.add_width(self.current_width);
             let span = match err.location {
-                ValidationLocation::Full => TextSpan { start: self.offset, end: span_end },
-                ValidationLocation::After => TextSpan { start: span_end, end: span_end },
+                ValidationLocation::Full => {
+                    TextSpan::new_with_width(self.offset, self.current_width)
+                }
+                ValidationLocation::After => {
+                    TextSpan::cursor(self.offset.add_width(self.current_width))
+                }
             };
             self.add_diagnostic(err.kind, span);
         }
@@ -3461,10 +3453,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                     if let (Some(diagnostic_kind), true) =
                         (forbid_trailing_separator, !children.is_empty())
                     {
-                        self.add_diagnostic(
-                            diagnostic_kind,
-                            TextSpan { start: self.offset, end: self.offset },
-                        );
+                        self.add_diagnostic(diagnostic_kind, TextSpan::cursor(self.offset));
                     }
                     break;
                 }
@@ -3541,7 +3530,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// current trivia as skipped, and continuing the compilation as if it wasn't there.
     fn skip_token(&mut self, diagnostic_kind: ParserDiagnosticKind) {
         if self.peek().kind == SyntaxKind::TerminalEndOfFile {
-            self.add_diagnostic(diagnostic_kind, TextSpan { start: self.offset, end: self.offset });
+            self.add_diagnostic(diagnostic_kind, TextSpan::cursor(self.offset));
             return;
         }
         let terminal = self.take_raw();
@@ -3567,7 +3556,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         self.pending_trivia.extend(terminal.trailing_trivia);
         self.pending_skipped_token_diagnostics.push(PendingParserDiagnostic {
             kind: diagnostic_kind,
-            span: TextSpan { start: diag_start, end: diag_end },
+            span: TextSpan::new(diag_start, diag_end),
             leading_trivia_start: orig_offset,
             trailing_trivia_end: diag_end.add_width(trailing_trivia_width),
         });
@@ -3609,7 +3598,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
         self.pending_skipped_token_diagnostics.push(PendingParserDiagnostic {
             kind: diagnostic_kind,
-            span: TextSpan { start: diag_pos, end: diag_pos },
+            span: TextSpan::cursor(diag_pos),
             leading_trivia_start: start_of_node_offset,
             trailing_trivia_end: end_of_node_offset,
         });
@@ -3655,7 +3644,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             self.pending_trivia.extend(terminal.trailing_trivia);
         }
         if let (Some(diag_start), Some(diag_end)) = (diag_start, diag_end) {
-            Err(SkippedError(TextSpan { start: diag_start, end: diag_end }))
+            Err(SkippedError(TextSpan::new(diag_start, diag_end)))
         } else {
             Ok(())
         }
@@ -3698,7 +3687,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             {
                 // Aggregate this diagnostic with the previous ones.
                 current_diag = PendingParserDiagnostic {
-                    span: TextSpan { start: current_diag.span.start, end: diag.span.end },
+                    span: TextSpan::new(current_diag.span.start, diag.span.end),
                     kind: diag.kind,
                     leading_trivia_start: current_diag.leading_trivia_start,
                     trailing_trivia_end: diag.trailing_trivia_end,

@@ -133,10 +133,22 @@ pub struct TextSpan {
     pub end: TextOffset,
 }
 impl TextSpan {
+    /// Creates a `TextSpan` from a start and end offset.
+    pub fn new(start: TextOffset, end: TextOffset) -> Self {
+        Self { start, end }
+    }
+    /// Creates a `TextSpan` from a start offset and a width.
+    pub fn new_with_width(start: TextOffset, width: TextWidth) -> Self {
+        Self::new(start, start.add_width(width))
+    }
+    /// Creates a `TextSpan` of width 0, located at the given offset.
+    pub fn cursor(offset: TextOffset) -> Self {
+        Self::new(offset, offset)
+    }
     /// Creates a `TextSpan` for the entirety of a given string.
     #[allow(clippy::should_implement_trait)]
     pub fn from_str(content: &str) -> Self {
-        Self { start: TextOffset::START, end: TextOffset::from_str(content) }
+        Self::new(TextOffset::START, TextOffset::from_str(content))
     }
     pub fn width(self) -> TextWidth {
         self.end - self.start
@@ -152,11 +164,11 @@ impl TextSpan {
     }
     /// Get the span of width 0, located right after this span.
     pub fn after(self) -> Self {
-        Self { start: self.end, end: self.end }
+        Self::cursor(self.end)
     }
     /// Get the span of width 0, located right at the beginning of this span.
     pub fn start_only(self) -> Self {
-        Self { start: self.start, end: self.start }
+        Self::cursor(self.start)
     }
 
     /// Returns self.start..self.end as [`Range<usize>`]
@@ -203,7 +215,7 @@ impl TextOffset {
         let line_number = self.get_line_number(db, file)?;
         let line_offset = summary.line_offsets[line_number];
         let content = db.file_content(file)?;
-        let col = TextSpan { start: line_offset, end: self }.n_chars(content.long(db).as_ref());
+        let col = TextSpan::new(line_offset, self).n_chars(content.long(db).as_ref());
         Some(TextPosition { line: line_number, col })
     }
 }
@@ -263,12 +275,10 @@ pub struct TextPositionSpan {
 impl TextPositionSpan {
     /// Convert this span to a [`TextSpan`] in the file.
     pub fn offset_in_file<'db>(
-        self,
+        Self { start, end }: Self,
         db: &'db dyn FilesGroup,
         file: FileId<'db>,
     ) -> Option<TextSpan> {
-        let start = self.start.offset_in_file(db, file)?;
-        let end = self.end.offset_in_file(db, file)?;
-        Some(TextSpan { start, end })
+        Some(TextSpan::new(start.offset_in_file(db, file)?, end.offset_in_file(db, file)?))
     }
 }

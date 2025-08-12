@@ -53,12 +53,11 @@ fn get_single_line_location_marks(
         None => summary.last_offset,
     };
 
-    let first_line_span = TextSpan { start: first_line_start, end: first_line_end };
+    let first_line_span = TextSpan::new(first_line_start, first_line_end);
     let mut res = first_line_span.take(content).to_string();
     res.push('\n');
     res.extend(repeat_n(' ', col));
-    let subspan_in_first_line =
-        TextSpan { start: span.start, end: std::cmp::min(first_line_end, span.end) };
+    let subspan_in_first_line = TextSpan::new(span.start, std::cmp::min(first_line_end, span.end));
     let marker_length = subspan_in_first_line.n_chars(content);
     // marker_length can be 0 if the span is empty.
     res.extend(repeat_n('^', std::cmp::max(marker_length, 1)));
@@ -117,6 +116,6 @@ fn get_line_content(
         None => summary.last_offset,
     };
 
-    let line_span = TextSpan { start: line_start, end: line_end };
+    let line_span = TextSpan::new(line_start, line_end);
     format!("{}{}\n", if first_line { "  " } else { "| " }, line_span.take(content))
 }

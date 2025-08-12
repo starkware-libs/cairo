@@ -339,7 +339,8 @@ impl<'db> FormattingInfo<'db> {
                     PlaceholderArgumentSource::Named(argument) => {
                         let start = format_string_base
                             .add_width(TextWidth::from_str(&self.format_string[..(idx + 1)]));
-                        let end = start.add_width(TextWidth::from_str(&argument));
+                        let origin =
+                            TextSpan::new_with_width(start, TextWidth::from_str(&argument));
                         self.append_formatted_arg(
                             builder,
                             &mut ident_count,
@@ -347,7 +348,7 @@ impl<'db> FormattingInfo<'db> {
                             RewriteNode::new_modified(vec![
                                 RewriteNode::text("@"),
                                 RewriteNode::Mapped {
-                                    origin: TextSpan { start, end },
+                                    origin,
                                     node: RewriteNode::text(&argument).into(),
                                 },
                             ]),
