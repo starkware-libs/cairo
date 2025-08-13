@@ -5,7 +5,7 @@ use anyhow::{Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
-use cairo_lang_compiler::{DbWarmupContext, get_sierra_program_for_functions};
+use cairo_lang_compiler::{ensure_diagnostics, get_sierra_program_for_functions};
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
@@ -127,8 +127,7 @@ pub fn compile_executable_in_prepared_db<'db>(
     mut diagnostics_reporter: DiagnosticsReporter<'_>,
     config: ExecutableConfig,
 ) -> Result<CompileExecutableResult<'db>> {
-    let context = DbWarmupContext::new();
-    context.ensure_diagnostics(db, &mut diagnostics_reporter)?;
+    ensure_diagnostics(db, &mut diagnostics_reporter)?;
 
     let executables = find_executable_functions(db, main_crate_ids, executable_path);
 
@@ -151,7 +150,7 @@ pub fn compile_executable_in_prepared_db<'db>(
         }
     };
 
-    compile_executable_function_in_prepared_db(db, executable, config, context)
+    compile_executable_function_in_prepared_db(db, executable, config)
 }
 
 /// Search crates identified by `main_crate_ids` for executable functions.
@@ -208,10 +207,9 @@ pub fn compile_executable_function_in_prepared_db<'db>(
     db: &'db RootDatabase,
     executable: ConcreteFunctionWithBodyId<'db>,
     config: ExecutableConfig,
-    context: DbWarmupContext,
 ) -> Result<CompileExecutableResult<'db>> {
     let SierraProgramWithDebug { program: sierra_program, debug_info } = Arc::unwrap_or_clone(
-        get_sierra_program_for_functions(db, vec![executable], context)
+        get_sierra_program_for_functions(db, vec![executable])
             .ok()
             .with_context(|| "Compilation failed without any diagnostics.")?,
     );
