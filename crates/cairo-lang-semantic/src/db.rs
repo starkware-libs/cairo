@@ -270,6 +270,13 @@ pub trait SemanticGroup:
         module_id: ModuleId<'db>,
     ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>>;
 
+    /// Returns all names declared in the module, including macro-generated modules.
+    #[salsa::invoke(items::module::module_declared_names)]
+    fn module_declared_names<'db>(
+        &'db self,
+        module_id: ModuleId<'db>,
+    ) -> OrderedHashMap<StrRef<'db>, Vec<ModuleItemId<'db>>>;
+
     // Struct.
     // =======
     /// Private query to compute data about a struct declaration.
@@ -2103,6 +2110,17 @@ fn module_semantic_diagnostics<'db>(
         }
     }
 
+    let declared_names = db.module_declared_names(module_id);
+    for (name, ids) in declared_names.iter() {
+        if ids.len() > 1 {
+            for id in ids {
+                diagnostics.add(SemanticDiagnostic::new(
+                    StableLocation::new(id.untyped_stable_ptr(db)),
+                    SemanticDiagnosticKind::NameDefinedMultipleTimes(*name),
+                ));
+            }
+        }
+    }
     Ok(diagnostics.build())
 }
 
