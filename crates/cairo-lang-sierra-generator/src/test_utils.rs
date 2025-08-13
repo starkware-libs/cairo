@@ -1,6 +1,6 @@
 use std::sync::{Arc, LazyLock, Mutex};
 
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
+use cairo_lang_defs::db::{init_defs_group, init_external_files};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{FilesGroup, init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;

@@ -20,12 +20,13 @@ use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, Upcast, require};
 use itertools::Itertools;
 use salsa::{Database, Setter};
 
 use crate::corelib::CoreInfo;
-use crate::diagnostic::SemanticDiagnosticKind;
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
 use crate::expr::inference::{self, InferenceError};
 use crate::ids::{AnalyzerPluginId, AnalyzerPluginLongId};
 use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
@@ -37,7 +38,7 @@ use crate::items::imp::{
     ImplicitImplImplData, ModuleImpls, UninferredImplById,
 };
 use crate::items::macro_declaration::{MacroDeclarationData, MacroRuleData};
-use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
+use crate::items::module::{ModuleItemInfo, ModuleSemanticData, module_all_declared_names};
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemConstantData, TraitItemImplData,
     TraitItemInfo, TraitItemTypeData,
@@ -88,7 +89,9 @@ pub trait Elongate {
 // Declarations and definitions must not depend on other definitions, only other declarations.
 // This prevents cycles where there shouldn't be any.
 #[cairo_lang_proc_macros::query_group]
-pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + Elongate {
+pub trait SemanticGroup:
+    Database + DefsGroup + for<'db> Upcast<'db, dyn salsa::Database> + Elongate
+{
     #[salsa::interned(revisions = usize::MAX)]
     fn intern_impl_lookup_context<'db>(
         &'db self,
@@ -220,6 +223,20 @@ pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + 
         &'db self,
         module_id: ModuleId<'db>,
     ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>>;
+
+    /// Returns all names declared in the module, including macro-generated modules.
+    #[salsa::invoke(items::module::module_declared_names)]
+    fn module_declared_names<'db>(
+        &'db self,
+        module_id: ModuleId<'db>,
+    ) -> OrderedHashMap<StrRef<'db>, ModuleItemId<'db>>;
+
+    /// Returns a flat list of all names declared in the given module and all of its macro-generated
+    /// submodules (recursively).
+    fn module_all_declared_names<'db>(
+        &'db self,
+        module_id: ModuleId<'db>,
+    ) -> Vec<(StrRef<'db>, ModuleItemId<'db>, ModuleId<'db>)>;
 
     // Struct.
     // =======
@@ -2129,7 +2146,66 @@ fn module_semantic_diagnostics<'db>(
         }
     }
 
+    add_duplicated_items_diagnostics(db, &mut diagnostics, module_id);
     Ok(diagnostics.build())
+}
+
+/// Collects all items declared in the given module and its directly macro-generated modules.
+/// Only checks for duplicates among directly declared items to avoid duplicate diagnostics
+/// at multiple hierarchy levels.
+fn add_duplicated_items_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+    module_id: ModuleId<'db>,
+) {
+    let mut declared_names: UnorderedHashSet<StrRef<'db>> = Default::default();
+    let declared = module_directly_declared_names(db, module_id);
+    for (name, item_id, declared_in_module) in declared.iter() {
+        if !declared_names.insert(*name)
+            && let Ok(stable_ptr) = db.module_item_name_stable_ptr(*declared_in_module, *item_id)
+        {
+            diagnostics.report(stable_ptr, SemanticDiagnosticKind::NameDefinedMultipleTimes(*name));
+        }
+    }
+}
+
+/// Returns all (name, item_id, module_id) triples declared directly in the given module and its
+/// immediate macro-generated modules, without recursing into submodules.
+fn module_directly_declared_names<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Vec<(StrRef<'db>, ModuleItemId<'db>, ModuleId<'db>)> {
+    let mut result = Vec::new();
+    if let Ok(items) = module_id.module_data(db).map(|data| data.items(db)) {
+        for item in items.iter() {
+            let all_names = db.module_all_declared_names(module_id);
+            for (name, item_id, declared_module) in all_names.iter() {
+                if *item_id == *item && *declared_module == module_id {
+                    result.push((*name, *item_id, *declared_module));
+                    break;
+                }
+            }
+        }
+    }
+    if let Ok(macro_call_ids) = db.module_macro_calls_ids(module_id) {
+        for macro_call_id in macro_call_ids.iter() {
+            if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id)
+                && let Ok(items) = generated_module_id.module_data(db).map(|data| data.items(db))
+            {
+                for item in items.iter() {
+                    let all_names = db.module_all_declared_names(generated_module_id);
+                    for (name, item_id, declared_module) in all_names.iter() {
+                        if *item_id == *item && *declared_module == generated_module_id {
+                            result.push((*name, *item_id, *declared_module));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    result
 }
 
 fn crate_analyzer_plugins<'db>(

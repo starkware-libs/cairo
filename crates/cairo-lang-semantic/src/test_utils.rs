@@ -1,6 +1,6 @@
 use std::sync::{LazyLock, Mutex};
 
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
+use cairo_lang_defs::db::{init_defs_group, init_external_files};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{

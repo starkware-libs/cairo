@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     FileIndex, GenericTypeId, ImportableId, LanguageElementId, ModuleFileId, ModuleId,
     NamedLanguageElementId, TraitFunctionId, TraitId,
