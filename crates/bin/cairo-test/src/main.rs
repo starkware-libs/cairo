@@ -1,5 +1,9 @@
 //! Compiles and runs a Cairo program.
 
+// Use snmalloc as the global allocator for better multi-threaded performance.
+#[global_allocator]
+static GLOBAL: snmalloc_rs::SnMalloc = snmalloc_rs::SnMalloc;
+
 use std::path::PathBuf;
 
 use cairo_lang_compiler::project::check_compiler_path;
