@@ -5,7 +5,6 @@ use std::sync::Arc;
 use std::{mem, panic, vec};
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     FunctionTitleId, GenericKind, GenericParamId, GenericParamLongId, ImplAliasId,
     ImplConstantDefId, ImplConstantDefLongId, ImplDefId, ImplFunctionId, ImplFunctionLongId,
