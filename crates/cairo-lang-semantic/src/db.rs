@@ -19,12 +19,13 @@ use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, Upcast, require};
 use itertools::Itertools;
 use salsa::{Database, Setter};
 
 use crate::corelib::CoreInfo;
-use crate::diagnostic::SemanticDiagnosticKind;
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::{self, InferenceError};
 use crate::ids::{AnalyzerPluginId, AnalyzerPluginLongId};
 use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
@@ -35,7 +36,7 @@ use crate::items::imp::{
     ImplId, ImplImplId, ImplItemInfo, ImplLookupContext, ImplicitImplImplData, UninferredImpl,
 };
 use crate::items::macro_declaration::{MacroDeclarationData, MacroRuleData};
-use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
+use crate::items::module::{ModuleItemInfo, ModuleSemanticData, module_all_declared_names};
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemConstantData, TraitItemImplData,
     TraitItemInfo, TraitItemTypeData,
@@ -218,6 +219,20 @@ pub trait SemanticGroup:
         &'db self,
         module_id: ModuleId<'db>,
     ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>>;
+
+    /// Returns all names declared in the module, including macro-generated modules.
+    #[salsa::invoke(items::module::module_declared_names)]
+    fn module_declared_names<'db>(
+        &'db self,
+        module_id: ModuleId<'db>,
+    ) -> OrderedHashMap<StrRef<'db>, ModuleItemId<'db>>;
+
+    /// Returns a flat list of all names declared in the given module and all of its macro-generated
+    /// submodules (recursively).
+    fn module_all_declared_names<'db>(
+        &'db self,
+        module_id: ModuleId<'db>,
+    ) -> Vec<(StrRef<'db>, ModuleItemId<'db>, ModuleId<'db>)>;
 
     // Struct.
     // =======
@@ -2054,7 +2069,26 @@ fn module_semantic_diagnostics<'db>(
         }
     }
 
+    let mut declared_names: UnorderedHashSet<StrRef<'db>> = Default::default();
+    add_duplicated_items_diagnostics(db, &mut diagnostics, module_id, &mut declared_names);
     Ok(diagnostics.build())
+}
+
+/// Collects all items declared in the given module and its directly macro-generated modules.
+fn add_duplicated_items_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    module_id: ModuleId<'db>,
+    declared_names: &mut UnorderedHashSet<StrRef<'db>>,
+) {
+    let declared = db.module_all_declared_names(module_id);
+    for (name, item_id, declared_in_module) in declared.iter() {
+        if !declared_names.insert(*name)
+            && let Ok(stable_ptr) = db.module_item_name_stable_ptr(*declared_in_module, *item_id)
+        {
+            diagnostics.report(stable_ptr, SemanticDiagnosticKind::NameDefinedMultipleTimes(*name));
+        }
+    }
 }
 
 fn crate_analyzer_plugins<'db>(
