@@ -1,10 +1,9 @@
 use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
-use cairo_lang_filesystem::db::{ExternalFiles, FilesGroup, init_dev_corelib, init_files_group};
+use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
+use cairo_lang_filesystem::db::{FilesGroup, init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_filesystem::ids::VirtualFile;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
@@ -25,14 +24,11 @@ pub struct LoweringDatabaseForTesting {
 }
 #[salsa::db]
 impl salsa::Database for LoweringDatabaseForTesting {}
-impl ExternalFiles for LoweringDatabaseForTesting {
-    fn try_ext_as_virtual(&self, external_id: salsa::Id) -> Option<VirtualFile<'_>> {
-        try_ext_as_virtual_impl(self, external_id)
-    }
-}
+
 impl LoweringDatabaseForTesting {
     pub fn new() -> Self {
         let mut res = LoweringDatabaseForTesting { storage: Default::default() };
+        init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
