@@ -19,11 +19,12 @@ use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, Upcast, require};
 use itertools::Itertools;
 
 use crate::corelib::CoreInfo;
-use crate::diagnostic::SemanticDiagnosticKind;
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::{self, ImplVar, ImplVarId, InferenceError};
 use crate::ids::{AnalyzerPluginId, AnalyzerPluginLongId};
 use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
@@ -269,6 +270,13 @@ pub trait SemanticGroup:
         &'db self,
         module_id: ModuleId<'db>,
     ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>>;
+
+    /// Returns all names declared in the module, including macro-generated modules.
+    #[salsa::invoke(items::module::module_declared_names)]
+    fn module_declared_names<'db>(
+        &'db self,
+        module_id: ModuleId<'db>,
+    ) -> OrderedHashMap<StrRef<'db>, ModuleItemId<'db>>;
 
     // Struct.
     // =======
@@ -2103,7 +2111,46 @@ fn module_semantic_diagnostics<'db>(
         }
     }
 
+    let mut declared_names: UnorderedHashSet<StrRef<'db>> = Default::default();
+    add_duplicated_items_diagnostics(db, &mut diagnostics, module_id, &mut declared_names);
     Ok(diagnostics.build())
+}
+
+/// Collects all items declared in the given module and its directly macro-generated modules.
+fn add_duplicated_items_diagnostics<'db>(
+    db: &'db dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    module_id: ModuleId<'db>,
+    declared_names: &mut UnorderedHashSet<StrRef<'db>>,
+) {
+    use cairo_lang_defs::ids::NamedLanguageElementId;
+    if let Ok(items) = db.module_items(module_id) {
+        for item in items.iter() {
+            declared_names.insert(item.name(db).into());
+        }
+    }
+    let Ok(macro_call_ids) = db.module_macro_calls_ids(module_id) else {
+        return;
+    };
+    for macro_call_id in macro_call_ids.iter() {
+        let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) else {
+            continue;
+        };
+        let Ok(macro_items) = db.module_items(generated_module_id) else {
+            return;
+        };
+        for item in macro_items.iter() {
+            let name = item.name(db).into();
+            if declared_names.insert(name) {
+                continue;
+            }
+            if let Ok(stable_ptr) = db.module_item_name_stable_ptr(generated_module_id, *item) {
+                diagnostics
+                    .report(stable_ptr, SemanticDiagnosticKind::NameDefinedMultipleTimes(name));
+            }
+        }
+        add_duplicated_items_diagnostics(db, diagnostics, generated_module_id, declared_names);
+    }
 }
 
 fn crate_analyzer_plugins<'db>(
