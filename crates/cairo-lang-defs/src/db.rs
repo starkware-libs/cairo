@@ -1,7 +1,9 @@
+use std::any::Any;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe, PluginFileDiagnosticNotes, ToMaybe};
+use cairo_lang_filesystem::db::{ExternalFiles, FilesGroup, TryExtAsVirtual};
 use cairo_lang_filesystem::ids::{
     CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, VirtualFile,
 };
@@ -901,6 +903,16 @@ fn cached_crate_modules<'db>(
     crate_id: CrateId<'db>,
 ) -> Option<ModuleDataCacheAndLoadingData<'db>> {
     load_cached_crate_modules(db, crate_id)
+}
+
+pub fn init_external_files<T: DefsGroup>(db: &mut T) {
+    let try_ext_as_virtual_impl: TryExtAsVirtual =
+        Arc::new(|db: &dyn FilesGroup, external_id: salsa::Id| {
+            // TODO(eytan-starkware): Once everything is &dyn Database, remove the unsafe cast.
+            let defs_db = (db as &dyn Any).downcast_ref::<T>().unwrap();
+            try_ext_as_virtual_impl(defs_db, external_id)
+        });
+    ExternalFiles::replace_existing(db, try_ext_as_virtual_impl);
 }
 
 /// Returns the `VirtualFile` matching the given external id.
