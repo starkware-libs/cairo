@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use salsa::Database;
+use salsa::{Database, Setter};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 
@@ -202,22 +202,61 @@ pub struct ExperimentalFeaturesConfig {
     pub user_defined_inline_macros: bool,
 }
 
+pub type TryExtAsVirtual =
+    Arc<dyn for<'a> Fn(&'a dyn Database, salsa::Id) -> Option<VirtualFile<'a>> + Send + Sync>;
+pub type ExtAsVirtual =
+    Arc<dyn for<'a> Fn(&'a dyn Database, salsa::Id) -> VirtualFile<'a> + Send + Sync>;
+
 /// A trait for defining files external to the `filesystem` crate.
-pub trait ExternalFiles: Database {
+#[salsa::input]
+pub struct ExternalFiles {
     /// Returns the virtual file matching the external id.
-    fn ext_as_virtual(&self, external_id: salsa::Id) -> VirtualFile<'_> {
-        self.try_ext_as_virtual(external_id).unwrap()
-    }
+    pub ext_as_virtual: ExtAsVirtual,
 
     /// Returns the virtual file matching the external id if found.
-    fn try_ext_as_virtual(&self, _external_id: salsa::Id) -> Option<VirtualFile<'_>> {
-        panic!("Should not be called, unless specifically implemented!");
+    pub try_ext_as_virtual: TryExtAsVirtual,
+}
+
+impl ExternalFiles {
+    pub fn default(db: &dyn Database) -> Self {
+        let try_ext_as_virtual: for<'a> fn(&'a dyn Database, salsa::Id) -> Option<VirtualFile<'a>> =
+            |_, _| panic!("Should not be called, unless specifically implemented!");
+        Self::from_try_ext_as_virtual(db, Arc::new(try_ext_as_virtual))
     }
+
+    pub fn create_ext_as_virtual(try_ext_as_virtual: TryExtAsVirtual) -> ExtAsVirtual {
+        let ext_as_virtual: ExtAsVirtual =
+            Arc::new(move |db, id| try_ext_as_virtual(db, id).unwrap());
+        ext_as_virtual
+    }
+
+    pub fn from_try_ext_as_virtual(db: &dyn Database, try_ext_as_virtual: TryExtAsVirtual) -> Self {
+        ExternalFiles::new(
+            db,
+            Self::create_ext_as_virtual(try_ext_as_virtual.clone()),
+            try_ext_as_virtual,
+        )
+    }
+
+    pub fn replace_existing(
+        db: &mut dyn Database,
+        ext_as_virtual: ExtAsVirtual,
+        try_ext_as_virtual: TryExtAsVirtual,
+    ) {
+        let external_files = get_external_files(db);
+        external_files.set_ext_as_virtual(db).to(ext_as_virtual);
+        external_files.set_try_ext_as_virtual(db).to(try_ext_as_virtual);
+    }
+}
+
+#[salsa::tracked]
+pub fn get_external_files(db: &dyn Database) -> ExternalFiles {
+    ExternalFiles::default(db)
 }
 
 // Salsa database interface.
 #[cairo_lang_proc_macros::query_group]
-pub trait FilesGroup: ExternalFiles {
+pub trait FilesGroup: Database {
     #[salsa::interned]
     fn intern_crate<'db>(&'db self, crt: CrateLongId<'db>) -> CrateId<'db>;
     #[salsa::interned]
@@ -496,7 +535,7 @@ fn priv_raw_file_content<'db>(db: &'db dyn FilesGroup, file: FileId<'db>) -> Opt
         }
         FileLongId::Virtual(virt) => Some(virt.content.clone().intern(db)),
         FileLongId::External(external_id) => {
-            Some(db.ext_as_virtual(*external_id).content.intern(db))
+            Some(get_external_files(db).ext_as_virtual(db)(db, *external_id).content.intern(db))
         }
     }
 }
@@ -664,7 +703,7 @@ pub fn get_parent_and_mapping<'db>(
     let vf = match file_id.long(db).clone() {
         FileLongId::OnDisk(_) => return None,
         FileLongId::Virtual(vf) => vf,
-        FileLongId::External(id) => db.ext_as_virtual(id),
+        FileLongId::External(id) => get_external_files(db).ext_as_virtual(db)(db, id),
     };
     Some((vf.parent?, vf.code_mappings))
 }

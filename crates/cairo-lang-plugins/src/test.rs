@@ -1,18 +1,14 @@
 use std::default::Default;
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::{MacroPluginLongId, ModuleId};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_filesystem::cfg::CfgSet;
-use cairo_lang_filesystem::db::{
-    CrateConfiguration, ExternalFiles, FilesGroup, FilesGroupEx, init_files_group,
-};
-use cairo_lang_filesystem::ids::{
-    CodeMapping, CodeOrigin, CrateId, Directory, FileLongId, VirtualFile,
-};
+use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup, FilesGroupEx, init_files_group};
+use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin, CrateId, Directory, FileLongId};
 use cairo_lang_filesystem::override_file_content;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -57,14 +53,11 @@ pub struct DatabaseForTesting {
 }
 #[salsa::db]
 impl salsa::Database for DatabaseForTesting {}
-impl ExternalFiles for DatabaseForTesting {
-    fn try_ext_as_virtual(&self, external_id: salsa::Id) -> Option<VirtualFile<'_>> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
-    }
-}
+
 impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
+        init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
         res.set_default_macro_plugins_input(
