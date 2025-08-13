@@ -8,6 +8,7 @@ use std::sync::{Arc, Mutex};
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
+use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
@@ -18,8 +19,8 @@ use cairo_lang_sierra_generator::program_generator::{
     SierraProgramWithDebug, try_get_function_with_body_id,
 };
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use cairo_lang_utils::Upcast;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use cairo_lang_utils::{Intern, Upcast};
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use salsa::par_map;
 
@@ -194,7 +195,8 @@ impl DbWarmupContext {
         rayon::current_num_threads() > 1
     }
 
-    /// Performs parallel database warmup (if possible)
+    /// Performs parallel database warmup (if possible).
+    // TODO(eytan-starkware): This is now blocking and should be made non-blocking.
     fn warmup_diagnostics(
         &self,
         db: &RootDatabase,
@@ -202,8 +204,9 @@ impl DbWarmupContext {
     ) {
         match self {
             Self::Warmup { pool } => {
+                let crates = diagnostic_reporter.crates_of_interest(db);
                 let db = Box::new(db.clone());
-                pool.install(|| diagnostic_reporter.warm_up_diagnostics(db));
+                pool.install(|| warmup_diagnostics_blocking(db, crates));
             }
             Self::NoWarmup => {}
         }
@@ -225,7 +228,7 @@ impl DbWarmupContext {
 
     /// Spawns a task to warm up the db for the requested functions (if possible).
     // TODO(eytan-starkware): This is now blocking and should be made non-blocking.
-    fn warmup_db<'db>(
+    fn warmup_functions<'db>(
         &self,
         db: &'db RootDatabase,
         requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
@@ -233,7 +236,7 @@ impl DbWarmupContext {
         match self {
             Self::Warmup { pool } => {
                 let db = Box::new(db.clone());
-                pool.install(|| warmup_db_blocking(db, requested_function_ids));
+                pool.install(|| warmup_functions_blocking(db, requested_function_ids));
             }
             Self::NoWarmup => {}
         }
@@ -246,11 +249,29 @@ impl Default for DbWarmupContext {
     }
 }
 
+/// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
+/// would be faster as the queries were already computed.
+fn warmup_diagnostics_blocking(db: Box<dyn LoweringGroup>, crates: Vec<CrateInput>) {
+    let _: () = par_map(db.as_ref(), crates, |db, crate_input| {
+        let crate_id = crate_input.into_crate_long_id(db).intern(db);
+        let crate_modules = db.crate_modules(crate_id);
+        let _: () = par_map(db, (*crate_modules).clone(), |db, module_id| {
+            for file_id in db.module_files(module_id).unwrap_or_default().iter().copied() {
+                db.file_syntax_diagnostics(file_id);
+            }
+
+            let _ = db.module_semantic_diagnostics(module_id);
+
+            let _ = db.module_lowering_diagnostics(module_id);
+        });
+    });
+}
+
 /// Spawns threads to compute the `function_with_body_sierra` query and all dependent queries for
 /// the requested functions and their dependencies.
 ///
 /// Note that typically spawn_warmup_db should be used as this function is blocking.
-fn warmup_db_blocking<'db>(
+fn warmup_functions_blocking<'db>(
     db: Box<RootDatabase>,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
 ) {
@@ -289,7 +310,7 @@ pub fn get_sierra_program_for_functions<'db>(
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
     context: DbWarmupContext,
 ) -> Result<Arc<SierraProgramWithDebug<'db>>> {
-    context.warmup_db(db, requested_function_ids.clone());
+    context.warmup_functions(db, requested_function_ids.clone());
     db.get_sierra_program_for_functions(requested_function_ids)
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")
