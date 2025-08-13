@@ -27,7 +27,7 @@ use profiling::ProfilingInfo;
 use starknet_types_core::felt::Felt as Felt252;
 use thiserror::Error;
 
-use crate::casm_run::RunFunctionResult;
+use crate::casm_run::{RunFunctionResult, StarknetHintProcessor};
 use crate::profiling::ProfilerConfig;
 
 pub mod casm_run;
@@ -60,28 +60,6 @@ pub struct RunResultStarknet {
     pub used_resources: StarknetExecutionResources,
     /// The profiling info of the run, if requested.
     pub profiling_info: Option<ProfilingInfo>,
-}
-
-impl RunResultStarknet {
-    /// Creates a `RunResultStarknet` object by combining the results of a `RunResult` instance
-    /// and syscall-related state from a `CairoHintProcessor`.
-    ///
-    /// This function combines resource usage information from both the `RunResult` and the
-    /// system calls tracked by the `CairoHintProcessor`. Specifically, the `used_resources`
-    /// value in the resulting `RunResultStarknet` is aggregated as a combination of
-    /// `run_result.used_resources` and `hint_processor.syscalls_used_resources`.
-    pub fn compose(run_result: RunResult, hint_processor: &CairoHintProcessor<'_>) -> Self {
-        let mut all_used_resources = hint_processor.syscalls_used_resources.clone();
-        all_used_resources.basic_resources += &run_result.used_resources;
-        RunResultStarknet {
-            gas_counter: run_result.gas_counter,
-            memory: run_result.memory,
-            value: run_result.value,
-            starknet_state: hint_processor.starknet_state.clone(),
-            used_resources: all_used_resources,
-            profiling_info: run_result.profiling_info,
-        }
-    }
 }
 
 /// The full result of a run.
@@ -185,14 +163,11 @@ pub fn build_hints_dict(
 /// A struct representing a prepared execution context for starting a function within a given
 /// Starknet state.
 ///
-/// Pass fields from this object to [`SierraCasmRunner::run_function`] to run the function.
+/// Pass fields from this object to
+/// [`SierraCasmRunner::run_function_with_prepared_starknet_context`] to run the function.
 /// For typical use-cases you should use [`SierraCasmRunner::run_function_with_starknet_context`],
 /// which does all the preparation, running, and result composition for you.
-pub struct PreparedStarknetContext<'a> {
-    /// An instance of the hint processor responsible for interpreting and executing the hints
-    /// provided during the Cairo program's execution. Can be customised by wrapping into a custom
-    /// hint processor implementation and passing that to the `run_function` method.
-    pub hint_processor: CairoHintProcessor<'a>,
+pub struct PreparedStarknetContext {
     pub hints_dict: HashMap<usize, Vec<HintParams>>,
     pub bytecode: Vec<BigInt>,
     pub builtins: Vec<BuiltinName>,
@@ -230,11 +205,31 @@ impl SierraCasmRunner {
         available_gas: Option<usize>,
         starknet_state: StarknetState,
     ) -> Result<RunResultStarknet, RunnerError> {
-        let PreparedStarknetContext { mut hint_processor, hints_dict, bytecode, builtins } =
+        let (mut hint_processor, ctx) =
             self.prepare_starknet_context(func, args, available_gas, starknet_state)?;
-        let run_result =
-            self.run_function(func, &mut hint_processor, hints_dict, bytecode.iter(), builtins)?;
-        Ok(RunResultStarknet::compose(run_result, &hint_processor))
+        self.run_function_with_prepared_starknet_context(func, &mut hint_processor, ctx)
+    }
+
+    /// Runs the vm starting from a function in the context of a given starknet state and a
+    /// (possibly) amended hint processor.
+    pub fn run_function_with_prepared_starknet_context(
+        &self,
+        func: &Function,
+        hint_processor: &mut dyn StarknetHintProcessor,
+        PreparedStarknetContext { hints_dict, bytecode, builtins }: PreparedStarknetContext,
+    ) -> Result<RunResultStarknet, RunnerError> {
+        let RunResult { gas_counter, memory, value, used_resources, profiling_info } =
+            self.run_function(func, hint_processor, hints_dict, bytecode.iter(), builtins)?;
+        let mut all_used_resources = hint_processor.take_syscalls_used_resources();
+        all_used_resources.basic_resources += &used_resources;
+        Ok(RunResultStarknet {
+            gas_counter,
+            memory,
+            value,
+            starknet_state: hint_processor.take_starknet_state(),
+            used_resources: all_used_resources,
+            profiling_info,
+        })
     }
 
     /// Extract inner type if `ty` is a panic wrapper
@@ -323,13 +318,17 @@ impl SierraCasmRunner {
     }
 
     /// Prepare context for running a function in the context of a given starknet state.
+    ///
+    /// The returned hint processor instance is set up for interpreting and executing the hints
+    /// provided during the Cairo program's execution. Can be customised by wrapping into a custom
+    /// hint processor implementation and passing that to the `run_function` method.
     pub fn prepare_starknet_context(
         &self,
         func: &Function,
         args: Vec<Arg>,
         available_gas: Option<usize>,
         starknet_state: StarknetState,
-    ) -> Result<PreparedStarknetContext<'_>, RunnerError> {
+    ) -> Result<(CairoHintProcessor<'_>, PreparedStarknetContext), RunnerError> {
         let (assembled_program, builtins) =
             self.builder.assemble_function_program(func, EntryCodeConfig::testing())?;
         let (hints_dict, string_to_hint) = build_hints_dict(&assembled_program.hints);
@@ -345,12 +344,10 @@ impl SierraCasmRunner {
             markers: Default::default(),
             panic_traceback: Default::default(),
         };
-        Ok(PreparedStarknetContext {
+        Ok((
             hint_processor,
-            hints_dict,
-            bytecode: assembled_program.bytecode,
-            builtins,
-        })
+            PreparedStarknetContext { hints_dict, bytecode: assembled_program.bytecode, builtins },
+        ))
     }
 
     /// Groups the args by parameters, and additionally add `gas` as the first if required.

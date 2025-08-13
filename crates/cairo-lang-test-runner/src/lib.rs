@@ -9,13 +9,13 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateInput;
-use cairo_lang_runner::casm_run::format_for_panic;
+use cairo_lang_runner::casm_run::{StarknetHintProcessor, format_for_panic};
 use cairo_lang_runner::profiling::{
     ProfilerConfig, ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
 };
 use cairo_lang_runner::{
-    CairoHintProcessor, ProfilingInfoCollectionConfig, RunResultStarknet, RunResultValue,
-    RunnerError, SierraCasmRunner, StarknetExecutionResources,
+    CairoHintProcessor, ProfilingInfoCollectionConfig, RunResultValue, RunnerError,
+    SierraCasmRunner, StarknetExecutionResources,
 };
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -28,7 +28,6 @@ use cairo_lang_test_plugin::{
 };
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use colored::Colorize;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
@@ -41,7 +40,7 @@ mod test;
 pub struct TestRunner<'db> {
     compiler: TestCompiler<'db>,
     config: TestRunConfig,
-    custom_hint_processor_factory: Option<Arc<dyn CustomHintProcessorFactory>>,
+    custom_hint_processor_factory: Option<Arc<dyn StarknetHintProcessorFactory>>,
 }
 
 impl<'db> TestRunner<'db> {
@@ -82,7 +81,7 @@ impl<'db> TestRunner<'db> {
     /// Make this runner run tests using a custom hint processor.
     pub fn with_custom_hint_processor(
         &mut self,
-        factory: impl CustomHintProcessorFactory + 'static,
+        factory: impl StarknetHintProcessorFactory + 'static,
     ) -> &mut Self {
         self.custom_hint_processor_factory = Some(Arc::new(factory));
         self
@@ -102,7 +101,7 @@ impl<'db> TestRunner<'db> {
 pub struct CompiledTestRunner<'db> {
     compiled: TestCompilation<'db>,
     config: TestRunConfig,
-    custom_hint_processor_factory: Option<Arc<dyn CustomHintProcessorFactory>>,
+    custom_hint_processor_factory: Option<Arc<dyn StarknetHintProcessorFactory>>,
 }
 
 impl<'db> CompiledTestRunner<'db> {
@@ -119,7 +118,7 @@ impl<'db> CompiledTestRunner<'db> {
     /// Make this runner run tests using a custom hint processor.
     pub fn with_custom_hint_processor(
         &mut self,
-        factory: impl CustomHintProcessorFactory + 'static,
+        factory: impl StarknetHintProcessorFactory + 'static,
     ) -> &mut Self {
         self.custom_hint_processor_factory = Some(Arc::new(factory));
         self
@@ -192,25 +191,14 @@ pub struct TestRunConfig {
     pub print_resource_usage: bool,
 }
 
-/// A wrapper over [`CairoHintProcessor`] that behaves like it and can always become upcasted to it.
-pub trait CustomHintProcessor<'a>: HintProcessor {
-    fn upcast(&self) -> &CairoHintProcessor<'a>;
-}
-
-impl<'a> CustomHintProcessor<'a> for CairoHintProcessor<'a> {
-    fn upcast(&self) -> &CairoHintProcessor<'a> {
-        self
-    }
-}
-
 /// A function that builds a custom hint processor on top of a [`CairoHintProcessor`].
-pub trait CustomHintProcessorFactory:
-    (for<'a> Fn(CairoHintProcessor<'a>) -> Box<dyn CustomHintProcessor<'a> + 'a>) + Send + Sync
+pub trait StarknetHintProcessorFactory:
+    (for<'a> Fn(CairoHintProcessor<'a>) -> Box<dyn StarknetHintProcessor + 'a>) + Send + Sync
 {
 }
 
-impl<F> CustomHintProcessorFactory for F where
-    F: (for<'a> Fn(CairoHintProcessor<'a>) -> Box<dyn CustomHintProcessor<'a> + 'a>) + Send + Sync
+impl<F> StarknetHintProcessorFactory for F where
+    F: (for<'a> Fn(CairoHintProcessor<'a>) -> Box<dyn StarknetHintProcessor + 'a>) + Send + Sync
 {
 }
 
@@ -355,7 +343,7 @@ pub fn run_tests(
     opt_db: Option<&dyn SierraGenGroup>,
     compiled: TestCompilation<'_>,
     config: &TestRunConfig,
-    custom_hint_processor_factory: Option<Arc<dyn CustomHintProcessorFactory>>,
+    custom_hint_processor_factory: Option<Arc<dyn StarknetHintProcessorFactory>>,
 ) -> Result<TestsSummary> {
     let TestCompilation {
         sierra_program: sierra_program_with_debug_info,
@@ -449,30 +437,23 @@ fn run_single_test(
     test: TestConfig,
     name: &str,
     runner: &SierraCasmRunner,
-    custom_hint_processor_factory: Option<Arc<dyn CustomHintProcessorFactory>>,
+    custom_hint_processor_factory: Option<Arc<dyn StarknetHintProcessorFactory>>,
 ) -> Result<Option<TestResult>> {
     if test.ignored {
         return Ok(None);
     }
     let func = runner.find_function(name)?;
 
-    let ctx =
+    let (hint_processor, ctx) =
         runner.prepare_starknet_context(func, vec![], test.available_gas, Default::default())?;
 
     let mut hint_processor = match custom_hint_processor_factory {
-        Some(f) => f(ctx.hint_processor),
-        None => Box::new(ctx.hint_processor),
+        Some(f) => f(hint_processor),
+        None => Box::new(hint_processor),
     };
 
-    let run_result = runner.run_function(
-        func,
-        &mut *hint_processor,
-        ctx.hints_dict,
-        ctx.bytecode.iter(),
-        ctx.builtins,
-    )?;
-
-    let result = RunResultStarknet::compose(run_result, (*hint_processor).upcast());
+    let result =
+        runner.run_function_with_prepared_starknet_context(func, &mut *hint_processor, ctx)?;
 
     Ok(Some(TestResult {
         status: match &result.value {
