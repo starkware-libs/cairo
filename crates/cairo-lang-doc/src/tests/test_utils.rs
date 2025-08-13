@@ -94,7 +94,7 @@ pub fn setup_test_module(db: &mut dyn DefsGroup, content: &str) {
     override_file_content!(db, file, Some(content.into()));
     let crate_id = test_crate_id(db);
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
-    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(Upcast::upcast(db));
+    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(db);
     assert_eq!(syntax_diagnostics, "");
 }
 
