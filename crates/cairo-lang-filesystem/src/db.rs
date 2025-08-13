@@ -457,9 +457,7 @@ fn priv_raw_file_content<'db>(db: &'db dyn FilesGroup, file: FileId<'db>) -> Opt
         FileLongId::OnDisk(path) => {
             // This does not result in performance cost due to OS caching and the fact that salsa
             // will re-execute only this single query if the file content did not change.
-
-            // TODO(eytan-starkware) Reenable this line on new salsa version.
-            // db.salsa_runtime().report_synthetic_read(Durability::LOW);
+            db.report_untracked_read();
 
             match fs::read_to_string(path) {
                 Ok(content) => {
