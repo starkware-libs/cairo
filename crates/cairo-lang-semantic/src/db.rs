@@ -270,6 +270,13 @@ pub trait SemanticGroup:
         module_id: ModuleId<'db>,
     ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>>;
 
+    /// Returns all names declared in the module, including macro-generated modules.
+    #[salsa::invoke(items::module::module_declared_names)]
+    fn module_declared_names<'db>(
+        &'db self,
+        module_id: ModuleId<'db>,
+    ) -> OrderedHashMap<StrRef<'db>, ModuleItemId<'db>>;
+
     // Struct.
     // =======
     /// Private query to compute data about a struct declaration.
@@ -2103,9 +2110,52 @@ fn module_semantic_diagnostics<'db>(
         }
     }
 
+    let name_to_ids = collect_all_items_in_scope(db, module_id);
+    for (name, ids) in name_to_ids.iter() {
+        if ids.len() > 1 {
+            let mut seen = std::collections::HashSet::new();
+            for (defining_module_id, id) in ids {
+                let untyped = db.module_item_name_stable_ptr(*defining_module_id, *id)?;
+                if seen.insert(untyped) {
+                    diagnostics.add(SemanticDiagnostic::new(
+                        StableLocation::new(untyped),
+                        SemanticDiagnosticKind::NameDefinedMultipleTimes(*name),
+                    ));
+                }
+            }
+        }
+    }
     Ok(diagnostics.build())
 }
 
+/// Collects all items declared in the given module and its directly macro-generated modules.
+fn collect_all_items_in_scope<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> OrderedHashMap<StrRef<'db>, Vec<(ModuleId<'db>, ModuleItemId<'db>)>> {
+    use cairo_lang_defs::ids::NamedLanguageElementId;
+    let mut name_to_ids: OrderedHashMap<StrRef<'db>, Vec<(ModuleId<'db>, ModuleItemId<'db>)>> =
+        OrderedHashMap::default();
+    if let Ok(items) = db.module_items(module_id) {
+        for item in items.iter() {
+            let name: StrRef<'db> = item.name(db).into();
+            name_to_ids.entry(name).or_default().push((module_id, *item));
+        }
+    }
+    if let Ok(macro_call_ids) = db.module_macro_calls_ids(module_id) {
+        for macro_call_id in macro_call_ids.iter() {
+            if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
+                if let Ok(macro_items) = db.module_items(generated_module_id) {
+                    for item in macro_items.iter() {
+                        let name: StrRef<'db> = item.name(db).into();
+                        name_to_ids.entry(name).or_default().push((generated_module_id, *item));
+                    }
+                }
+            }
+        }
+    }
+    name_to_ids
+}
 fn crate_analyzer_plugins<'db>(
     db: &'db dyn SemanticGroup,
     crate_id: CrateId<'db>,

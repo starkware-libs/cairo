@@ -35,6 +35,11 @@ impl abc of abc;
 
 //! > expected_diagnostics
 error: The name `abc` is defined multiple times.
+ --> lib.cairo:1:4
+fn abc() {}
+   ^^^
+
+error: The name `abc` is defined multiple times.
  --> lib.cairo:3:4
 fn abc(a: felt252) {}
    ^^^
