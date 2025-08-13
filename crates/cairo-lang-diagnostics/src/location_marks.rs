@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_filesystem::span::{FileSummary, TextPosition, TextSpan, TextWidth};
 use itertools::repeat_n;
 
@@ -80,7 +78,7 @@ fn get_multiple_lines_location_marks(
         .start
         .position_in_file(db, location.file_id)
         .expect("Failed to find location in file.");
-    let mut res = get_line_content(summary.clone(), first_line_idx, content, true);
+    let mut res = get_line_content(summary, first_line_idx, content, true);
     res += " _";
     res.extend(repeat_n('_', col));
     res += "^\n";
@@ -90,7 +88,7 @@ fn get_multiple_lines_location_marks(
     const LINES_TO_REPLACE_MIDDLE: usize = 3;
     if !skip_middle_lines || first_line_idx + LINES_TO_REPLACE_MIDDLE > last_line_idx {
         for row_index in first_line_idx + 1..=last_line_idx - 1 {
-            res += &get_line_content(summary.clone(), row_index, content, false);
+            res += &get_line_content(summary, row_index, content, false);
         }
     } else {
         res += "| ...\n";
@@ -105,7 +103,7 @@ fn get_multiple_lines_location_marks(
 }
 
 fn get_line_content(
-    summary: Arc<FileSummary>,
+    summary: &FileSummary,
     row_index: usize,
     content: &str,
     first_line: bool,
