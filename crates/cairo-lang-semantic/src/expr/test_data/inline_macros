@@ -1911,7 +1911,7 @@ error: Expected path after modifier.
 //! > Test macro context resolution through use-star.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > crate_settings
 edition = "2024_07"
@@ -1942,10 +1942,6 @@ mod a {
 use a::*;
 
 //! > expected_diagnostics
-error[E0006]: Function not found.
- --> lib.cairo:12:5
-    bar();
-    ^^^
 
 //! > ==========================================================================
 
