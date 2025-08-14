@@ -85,7 +85,6 @@ pub fn handle_storage_struct<'db, 'a>(
             }}
 
             impl {state_struct_name}Drop{generic_arg_str} of Drop<{full_state_struct_name}> {{}}
-             
             impl {state_struct_name}Deref{generic_arg_str} of \
              core::ops::Deref<@{full_state_struct_name}> {{
                 type Target = starknet::storage::FlattenedStorage<Storage>;
