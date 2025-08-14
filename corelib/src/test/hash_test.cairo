@@ -113,3 +113,53 @@ fn test_blake2s() {
         ],
     );
 }
+
+#[test]
+fn test_blake2s_with_abc() {
+    // hashing `abc` as it is done in RFC 7693 Appendix B
+    // - input: b'abc'
+    // - output: 508C5E8C327C14E2E1A72BA34EEB452F37458B209ED63A294D999B4C86675982
+
+    // inital state is the IV
+    let state = BoxTrait::new([
+        0x6A09E667 ^ 0x01010020,
+        0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
+        0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
+    ]);
+    // message `abc` padded with zeros
+    let msg = BoxTrait::new([
+        0x00636261, 0,0,0,
+        0,0,0,0,
+        0,0,0,0,
+        0,0,0,0,
+    ]);
+    let byte_count = 3_u32;
+    let res = blake2s_finalize(state, byte_count, msg).unbox();
+
+    // Conversion (in python) into words:
+    // (Python code)
+    // hex_str = "508C5E8C327C14E2E1A72BA34EEB452F37458B209ED63A294D999B4C86675982"
+    // b = bytes.fromhex(hex_str) 
+    // words = []
+    // for i in range(0, len(b), 4):
+    //     # Extract 4 bytes chunk
+    //     chunk = b[i:i+4] 
+    //     # Interpret as little-endian uint32
+    //     word = int.from_bytes(chunk, 'little')
+    //     words.append(word)
+
+    assert_eq!(
+        res,
+        [
+            0x8c5e8c50,
+            0xe2147c32,
+            0xa32ba7e1,
+            0x2f45eb4e,
+            0x208b4537,
+            0x293ad69e,
+            0x4c9b994d,
+            0x82596786,
+        ],
+    );
+}
+
