@@ -1,6 +1,7 @@
 use std::any::Any;
 use std::borrow::Cow;
 use std::collections::{HashMap, VecDeque};
+use std::mem;
 use std::ops::{Shl, Sub};
 use std::vec::IntoIter;
 
@@ -488,6 +489,23 @@ impl ResourceTracker for CairoHintProcessor<'_> {
 
     fn run_resources(&self) -> &RunResources {
         self.run_resources.run_resources()
+    }
+}
+
+pub trait StarknetHintProcessor: HintProcessor {
+    /// Take [`StarknetState`] out of this hint processor, resetting own state.
+    fn take_starknet_state(&mut self) -> StarknetState;
+    /// Take [`StarknetExecutionResources`] out of this hint processor, resetting own state.
+    fn take_syscalls_used_resources(&mut self) -> StarknetExecutionResources;
+}
+
+impl StarknetHintProcessor for CairoHintProcessor<'_> {
+    fn take_starknet_state(&mut self) -> StarknetState {
+        mem::take(&mut self.starknet_state)
+    }
+
+    fn take_syscalls_used_resources(&mut self) -> StarknetExecutionResources {
+        mem::take(&mut self.syscalls_used_resources)
     }
 }
 
