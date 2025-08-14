@@ -321,7 +321,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test match inputs are moved next to the matchh.
+//! > Test match inputs are moved next to the match.
 
 //! > test_runner_name
 test_reorder_statements
