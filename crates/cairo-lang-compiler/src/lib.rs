@@ -7,6 +7,8 @@ use std::sync::{Arc, Mutex};
 
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
+use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -227,6 +229,17 @@ impl Default for DbWarmupContext {
 /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
 /// would be faster as the queries were already computed.
 fn warmup_diagnostics_blocking(db: &dyn LoweringGroup, crates: Vec<CrateInput>) {
+    fn warmup_parser<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) {
+        if let Ok(submodule_ids) = db.module_submodules_ids(module_id) {
+            let _: () = par_map(db, submodule_ids.as_slice(), |db, submodule_id| {
+                warmup_parser(db, ModuleId::Submodule(*submodule_id));
+            });
+        }
+    }
+    let _: () = par_map(db, &crates, |db, crate_input| {
+        let crate_id = crate_input.clone().into_crate_long_id(db).intern(db);
+        warmup_parser(db, ModuleId::CrateRoot(crate_id));
+    });
     let _: () = par_map(db, crates, |db, crate_input| {
         let crate_id = crate_input.into_crate_long_id(db).intern(db);
         let crate_modules = db.crate_modules(crate_id);
