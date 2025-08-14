@@ -179,7 +179,7 @@ pub fn setup_test_module_ex<'a>(
     let module_id = ModuleId::CrateRoot(crate_id);
     let file_id = db.module_main_file(module_id).unwrap();
 
-    let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(Upcast::upcast(db));
+    let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(db);
     let semantic_diagnostics = get_recursive_module_semantic_diagnostics(db, module_id).format(db);
 
     WithStringDiagnostics {

@@ -85,11 +85,11 @@ fn test_generic_item_id(
 
     let module_file_id = ModuleFileId(module_id, FileIndex(0));
     let file_id = db_val.module_main_file(module_id).unwrap();
-    let node = db_val.file_syntax(file_id).unwrap();
+    let file_syntax = db_val.file_module_syntax(file_id).unwrap();
     let mut output = String::new();
 
     fn find_generics<'db>(
-        db: &'db DatabaseForTesting,
+        db: &'db dyn DefsGroup,
         mut module_file_id: ModuleFileId<'db>,
         node: &SyntaxNode<'db>,
         output: &mut String,
@@ -105,18 +105,12 @@ fn test_generic_item_id(
             | SyntaxKind::GenericParamConst
             | SyntaxKind::GenericParamImplNamed
             | SyntaxKind::GenericParamImplAnonymous => {
-                let db_ref: &dyn DefsGroup = db;
                 let param_id =
                     GenericParamLongId(module_file_id, ast::GenericParamPtr(node.stable_ptr(db)))
                         .intern(db);
                 let generic_item = param_id.generic_item(db);
-                writeln!(
-                    output,
-                    "{:?} -> {:?}",
-                    param_id.debug(db_ref),
-                    generic_item.debug(db_ref)
-                )
-                .unwrap();
+                writeln!(output, "{:?} -> {:?}", param_id.debug(db), generic_item.debug(db))
+                    .unwrap();
             }
             _ => {}
         }
@@ -124,7 +118,7 @@ fn test_generic_item_id(
             find_generics(db, module_file_id, child, output);
         }
     }
-    find_generics(&db_val, module_file_id, &node, &mut output);
+    find_generics(&db_val, module_file_id, &file_syntax.as_syntax_node(), &mut output);
 
     TestRunnerResult::success(OrderedHashMap::from([("output".into(), output)]))
 }
@@ -142,7 +136,7 @@ pub fn setup_test_module(db: &mut dyn DefsGroup, content: &str) {
     override_file_content!(db, file, Some(content.into()));
     let crate_id = get_crate_id(db);
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
-    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(Upcast::upcast(db));
+    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(db);
     assert_eq!(syntax_diagnostics, "");
 }
 
