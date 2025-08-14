@@ -1,4 +1,4 @@
-use cairo_lang_filesystem::db::{ExternalFiles, FilesGroup};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_utils::Upcast;
 
 #[salsa::db]
@@ -8,8 +8,6 @@ pub struct DatabaseForTesting {
 }
 #[salsa::db]
 impl salsa::Database for DatabaseForTesting {}
-
-impl ExternalFiles for DatabaseForTesting {}
 
 impl<'a> Upcast<'a, dyn FilesGroup> for DatabaseForTesting {
     fn upcast(&'a self) -> &'a dyn FilesGroup {

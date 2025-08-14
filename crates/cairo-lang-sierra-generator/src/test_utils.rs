@@ -1,13 +1,11 @@
 use std::sync::{Arc, LazyLock, Mutex};
 
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_filesystem::db::{
-    ExternalFiles, FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group,
-};
+use cairo_lang_filesystem::db::{FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::{FlagLongId, VirtualFile};
+use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_lowering::db::{LoweringGroup, UseApproxCodeSizeEstimator};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
@@ -37,11 +35,7 @@ pub struct SierraGenDatabaseForTesting {
 }
 #[salsa::db]
 impl salsa::Database for SierraGenDatabaseForTesting {}
-impl ExternalFiles for SierraGenDatabaseForTesting {
-    fn try_ext_as_virtual(&self, external_id: salsa::Id) -> Option<VirtualFile<'_>> {
-        try_ext_as_virtual_impl(self, external_id)
-    }
-}
+
 pub static SHARED_DB: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
     LazyLock::new(|| Mutex::new(SierraGenDatabaseForTesting::new_empty()));
 pub static SHARED_DB_WITHOUT_AD_WITHDRAW_GAS: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
@@ -54,6 +48,7 @@ pub static SHARED_DB_WITHOUT_AD_WITHDRAW_GAS: LazyLock<Mutex<SierraGenDatabaseFo
 impl SierraGenDatabaseForTesting {
     pub fn new_empty() -> Self {
         let mut res = SierraGenDatabaseForTesting { storage: Default::default() };
+        init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
         init_semantic_group(&mut res);

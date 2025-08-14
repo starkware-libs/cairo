@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
-use cairo_lang_filesystem::db::{ExternalFiles, FilesGroup, init_files_group};
+use cairo_lang_filesystem::db::{FilesGroup, init_files_group};
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextWidth};
 use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
@@ -22,7 +22,6 @@ pub struct SimpleParserDatabase {
 }
 #[salsa::db]
 impl salsa::Database for SimpleParserDatabase {}
-impl ExternalFiles for SimpleParserDatabase {}
 impl Default for SimpleParserDatabase {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };

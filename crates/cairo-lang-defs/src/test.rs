@@ -2,10 +2,8 @@ use std::fmt::Write as _;
 use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
-use cairo_lang_filesystem::db::{
-    CrateConfiguration, ExternalFiles, FilesGroup, FilesGroupEx, init_files_group,
-};
-use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, VirtualFile};
+use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup, FilesGroupEx, init_files_group};
+use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -17,7 +15,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, Upcast, extract_matches, try_extract_matches};
 use indoc::indoc;
 
-use crate::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use crate::db::{DefsGroup, init_defs_group, init_external_files};
 use crate::ids::{
     FileIndex, GenericParamLongId, MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId,
     NamedLanguageElementId, SubmoduleLongId,
@@ -33,14 +31,11 @@ pub struct DatabaseForTesting {
 }
 #[salsa::db]
 impl salsa::Database for DatabaseForTesting {}
-impl ExternalFiles for DatabaseForTesting {
-    fn try_ext_as_virtual(&self, external_id: salsa::Id) -> Option<VirtualFile<'_>> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
-    }
-}
+
 impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
+        init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
         res.set_default_macro_plugins_input(Arc::new([

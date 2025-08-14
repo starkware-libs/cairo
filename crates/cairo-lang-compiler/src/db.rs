@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
 use anyhow::{Result, anyhow, bail};
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    CORELIB_VERSION, ExternalFiles, FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group,
+    CORELIB_VERSION, FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::{CrateId, FlagLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{CrateId, FlagLongId};
 use cairo_lang_lowering::db::{ExternalCodeSizeEstimator, LoweringGroup, init_lowering_group};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_parser::db::ParserGroup;
@@ -75,14 +75,11 @@ pub struct RootDatabase {
 }
 #[salsa::db]
 impl salsa::Database for RootDatabase {}
-impl ExternalFiles for RootDatabase {
-    fn try_ext_as_virtual(&self, external_id: salsa::Id) -> Option<VirtualFile<'_>> {
-        try_ext_as_virtual_impl(self, external_id)
-    }
-}
+
 impl RootDatabase {
     fn new(default_plugin_suite: PluginSuite, inlining_strategy: InliningStrategy) -> Self {
         let mut res = Self { storage: Default::default() };
+        init_external_files(&mut res);
         init_files_group(&mut res);
         init_lowering_group(&mut res, inlining_strategy);
         init_defs_group(&mut res);

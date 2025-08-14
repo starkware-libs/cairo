@@ -1,4 +1,4 @@
-use crate::db::{ExternalFiles, init_files_group};
+use crate::db::init_files_group;
 
 // Test salsa database.
 #[salsa::db]
@@ -10,7 +10,6 @@ pub struct FilesDatabaseForTesting {
 #[salsa::db]
 impl salsa::Database for FilesDatabaseForTesting {}
 
-impl ExternalFiles for FilesDatabaseForTesting {}
 impl Default for FilesDatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
