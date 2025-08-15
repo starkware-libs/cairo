@@ -28,6 +28,11 @@ const out_of_range: u8 = consteval_int!(120 + 160);
 
 //! > expected_diagnostics
 error: The name `e` is defined multiple times.
+ --> lib.cairo:9:7
+const e: felt252 = consteval_int!(234 < 5);
+      ^
+
+error: The name `e` is defined multiple times.
  --> lib.cairo:11:7
 const e: felt252 = consteval_int![4 + 5];
       ^
@@ -1973,3 +1978,77 @@ mod a {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test collision: two macro-generated items with the same name.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro define_bar1 {
+    () => {
+        fn bar(){}
+    };
+}
+macro define_bar2 {
+    () => {
+        fn bar(){}
+    };
+}
+define_bar1!();
+define_bar2!();
+
+//! > expected_diagnostics
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[define_bar1]:1:12
+        fn bar(){}
+           ^^^
+
+//! > ==========================================================================
+
+//! > Test collision: macro-generated item vs use-imported item.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    pub fn bar() {}
+}
+use a::bar;
+
+macro define_bar {
+    () => {
+        fn bar() {}
+    };
+}
+define_bar!();
+
+//! > expected_diagnostics
+error: The name `bar` is defined multiple times.
+ --> lib.cairo:4:8
+use a::bar;
+       ^^^
+
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[define_bar]:1:12
+        fn bar() {}
+           ^^^
