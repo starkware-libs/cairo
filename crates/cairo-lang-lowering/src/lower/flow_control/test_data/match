@@ -1,14 +1,15 @@
 //! > Simple match
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false)
+test_create_graph(expect_diagnostics: true)
 
 //! > function_code
 fn foo(color: Color) -> felt252 {
     match color {
         Color::Red | Color::Green(_) => 1,
         Color::Red(_) | Color::Blue => 2,
-        _ => 3,
+        Color::Blue | Color::Green => 3,
+        _ => 4,
     }
 }
 
@@ -22,16 +23,21 @@ enum Color {
 }
 
 //! > graph
-Root: 4
+Root: 5
 0 ArmExpr { expr: ExprId(1) }
 1 ArmExpr { expr: ExprId(2) }
 2 ArmExpr { expr: ExprId(3) }
-3 EnumMatch { matched_var: v0, variants: (NodeId(0), v1), (NodeId(0), v2), (NodeId(1), v3), (NodeId(2), v4), (NodeId(2), v5)}
-4 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(3) }
+3 ArmExpr { expr: ExprId(4) }
+4 EnumMatch { matched_var: v0, variants: (NodeId(0), v1), (NodeId(0), v2), (NodeId(1), v3), (NodeId(3), v4), (NodeId(3), v5)}
+5 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(4) }
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+warning: Unreachable pattern arm.
+ --> lib.cairo:12:39
+        Color::Blue | Color::Green => 3,
+                                      ^
 
 //! > lowered
 Parameters: v0: test::Color
@@ -74,7 +80,7 @@ End:
 
 blk6:
 Statements:
-  (v6: core::felt252) <- 3
+  (v6: core::felt252) <- 4
 End:
   Goto(blk8, {v6 -> v9})
 
