@@ -170,6 +170,17 @@ pub struct BindVar {
     pub next: NodeId,
 }
 
+/// Upcasts a value to a larger type.
+#[derive(Debug)]
+pub struct Upcast {
+    /// The input variable.
+    pub input: FlowControlVar,
+    /// The output variable.
+    pub output: FlowControlVar,
+    /// The next node.
+    pub next: NodeId,
+}
+
 /// A node in the flow control graph for a match or if lowering.
 pub enum FlowControlNode<'db> {
     /// Evaluates an expression and assigns the result to a [FlowControlVar].
@@ -186,6 +197,8 @@ pub enum FlowControlNode<'db> {
     Deconstruct(Deconstruct),
     /// Binds a [FlowControlVar] to a pattern variable.
     BindVar(BindVar),
+    /// Upcasts a value to a larger type.
+    Upcast(Upcast),
     /// An arm (final node) that returns a unit value - `()`.
     UnitResult,
     /// A missing node due to an error in the code.
@@ -203,6 +216,7 @@ impl<'db> FlowControlNode<'db> {
             FlowControlNode::ArmExpr(..) => None,
             FlowControlNode::Deconstruct(node) => Some(node.input),
             FlowControlNode::BindVar(node) => Some(node.input),
+            FlowControlNode::Upcast(node) => Some(node.input),
             FlowControlNode::UnitResult => None,
             FlowControlNode::Missing(_) => None,
         }
@@ -219,6 +233,7 @@ impl<'db> Debug for FlowControlNode<'db> {
             FlowControlNode::ArmExpr(node) => node.fmt(f),
             FlowControlNode::Deconstruct(node) => node.fmt(f),
             FlowControlNode::BindVar(node) => node.fmt(f),
+            FlowControlNode::Upcast(node) => node.fmt(f),
             FlowControlNode::UnitResult => write!(f, "UnitResult"),
             FlowControlNode::Missing(_) => write!(f, "Missing"),
         }
@@ -350,6 +365,11 @@ impl<'db> FlowControlGraphBuilder<'db> {
     /// Returns the type of the given [FlowControlVar].
     pub fn var_ty(&self, input_var: FlowControlVar) -> semantic::TypeId<'db> {
         self.graph.var_types[input_var.0]
+    }
+
+    /// Returns the location of the given [FlowControlVar].
+    pub fn var_location(&self, input_var: FlowControlVar) -> LocationId<'db> {
+        self.graph.var_locations[input_var.0]
     }
 
     /// Reports a diagnostic, and returns a new [FlowControlNode::Missing] node.
