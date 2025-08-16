@@ -121,7 +121,6 @@ pub struct ValueMatch {
     /// The input value to match.
     pub matched_var: FlowControlVar,
     /// For each literal in the range `[0, n)`, the [NodeId] to jump to.
-    #[expect(dead_code)]
     pub nodes: Vec<NodeId>,
 }
 
@@ -197,13 +196,10 @@ pub struct DownCast {
     /// The input variable.
     pub input: FlowControlVar,
     /// The output variable (if the value is in range).
-    #[expect(dead_code)]
     pub output: FlowControlVar,
     /// The next node if the value is in range.
-    #[expect(dead_code)]
     pub in_range: NodeId,
     /// The next node if the value is out of range.
-    #[expect(dead_code)]
     pub out_of_range: NodeId,
 }
 
