@@ -48,6 +48,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::EqualsLiteral(node) => lower_equals_literal(ctx, id, node, builder),
         FlowControlNode::BindVar(node) => lower_bind_var(ctx, id, node, builder),
         FlowControlNode::Deconstruct(node) => lower_deconstruct(ctx, id, node, builder),
+        FlowControlNode::Missing(diag_added) => Err(*diag_added),
     }
 }
 
