@@ -45,10 +45,12 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, id, node, builder),
         FlowControlNode::UnitResult => lower_unit_result(ctx, id, builder),
         FlowControlNode::EnumMatch(node) => lower_enum_match(ctx, id, node, builder),
+        FlowControlNode::ValueMatch(..) => todo!(),
         FlowControlNode::EqualsLiteral(node) => lower_equals_literal(ctx, id, node, builder),
         FlowControlNode::BindVar(node) => lower_bind_var(ctx, id, node, builder),
         FlowControlNode::Deconstruct(node) => lower_deconstruct(ctx, id, node, builder),
         FlowControlNode::Upcast(node) => lower_upcast(ctx, id, node, builder),
+        FlowControlNode::Downcast(..) => todo!(),
         FlowControlNode::Missing(diag_added) => Err(*diag_added),
     }
 }
