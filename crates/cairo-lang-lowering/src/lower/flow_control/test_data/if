@@ -21,6 +21,8 @@ Root: 3
 
 //! > semantic_diagnostics
 
+//! > lowering_diagnostics
+
 //! > lowered
 Parameters: v0: core::bool
 blk0 (root):
@@ -73,6 +75,8 @@ Root: 3
 3 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(2) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: core::bool
@@ -131,6 +135,8 @@ Root: 6
 6 EvaluateExpr { expr: ExprId(2), var_id: v3, next: NodeId(5) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: core::felt252, v1: core::felt252
@@ -220,6 +226,8 @@ Root: 7
 7 EvaluateExpr { expr: ExprId(2), var_id: v6, next: NodeId(6) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: core::felt252, v1: test::MyStruct
@@ -320,6 +328,8 @@ Root: 3
 
 //! > semantic_diagnostics
 
+//! > lowering_diagnostics
+
 //! > lowered
 Parameters:
 blk0 (root):
@@ -360,6 +370,8 @@ Root: 3
 3 EvaluateExpr { expr: ExprId(1), var_id: v0, next: NodeId(2) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters:
@@ -423,6 +435,8 @@ Root: 3
 
 //! > semantic_diagnostics
 
+//! > lowering_diagnostics
+
 //! > lowered
 Parameters:
 blk0 (root):
@@ -480,6 +494,8 @@ Root: 4
 4 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(3) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: core::option::Option::<core::option::Option::<core::felt252>>
@@ -554,6 +570,8 @@ Root: 5
 5 EvaluateExpr { expr: ExprId(1), var_id: v1, next: NodeId(4) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters:
