@@ -173,7 +173,7 @@ impl<'db> MatchError<'db> {
                 "Unreachable pattern arm.".into()
             }
             (MatchDiagnostic::UnreachableMatchArm, MatchKind::IfLet) => {
-                "Unreachable else clause.".into()
+                "Unreachable clause.".into()
             }
             (MatchDiagnostic::UnreachableMatchArm, MatchKind::WhileLet(_, _)) => {
                 unreachable!("While-let does not have two arms.")
