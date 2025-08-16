@@ -19,7 +19,8 @@ use super::filtered_patterns::{Bindings, FilteredPatterns};
 use crate::diagnostic::{LoweringDiagnosticKind, MatchDiagnostic, MatchError};
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
-use crate::lower::flow_control::graph::{EqualsLiteral, Upcast};
+use crate::lower::flow_control::graph::{DownCast, EqualsLiteral, Upcast, ValueMatch};
+use crate::lower::lower_match::numeric_match_optimization_threshold;
 
 /// A callback that gets a [FilteredPatterns] and constructs a node that continues the pattern
 /// matching restricted to the filtered patterns.
@@ -357,14 +358,20 @@ fn create_node_for_value<'db>(
         }
     }
 
-    // Convert to felt252 if needed.
     let info = ctx.db.core_info();
     let var_ty = graph.var_ty(input_var);
     let felt252_ty = info.felt252;
-    let input_var_felt252 = if var_ty == felt252_ty {
-        input_var
-    } else {
+
+    let n_optimized_literals =
+        optimized_numeric_match_size(ctx, &literals_map, var_ty != felt252_ty);
+
+    // Convert to felt252 if needed (if the input is not a felt252, and there are unoptimized
+    // literals).
+    let convert_to_felt252 = var_ty != felt252_ty && literals_map.len() > n_optimized_literals;
+    let input_var_felt252 = if convert_to_felt252 {
         graph.new_var(felt252_ty, graph.var_location(input_var))
+    } else {
+        input_var
     };
 
     // First, construct a node that handles the otherwise patterns.
@@ -372,8 +379,11 @@ fn create_node_for_value<'db>(
 
     // Go over the literals (in reverse order), and construct a chain of [BooleanIf] nodes that
     // handle each literal.
-    for (literal, (filter, stable_ptr)) in literals_map.into_iter().rev() {
-        let node_if_literal = build_node_callback(graph, filter);
+    for (literal, (filter, stable_ptr)) in literals_map.iter().rev() {
+        if *literal < n_optimized_literals {
+            continue;
+        }
+        let node_if_literal = build_node_callback(graph, filter.clone());
 
         // Don't add an [EqualsLiteral] node if both branches lead to the same node.
         if node_if_literal == current_node {
@@ -382,14 +392,14 @@ fn create_node_for_value<'db>(
 
         current_node = graph.add_node(FlowControlNode::EqualsLiteral(EqualsLiteral {
             input: input_var_felt252,
-            literal,
-            stable_ptr,
+            literal: *literal,
+            stable_ptr: *stable_ptr,
             true_branch: node_if_literal,
             false_branch: current_node,
         }));
     }
 
-    if input_var_felt252 != input_var {
+    if convert_to_felt252 {
         current_node = graph.add_node(FlowControlNode::Upcast(Upcast {
             input: input_var,
             output: input_var_felt252,
@@ -397,7 +407,47 @@ fn create_node_for_value<'db>(
         }));
     }
 
+    if n_optimized_literals > 0 {
+        let bounded_int_ty =
+            corelib::bounded_int_ty(ctx.db, 0.into(), (n_optimized_literals - 1).into());
+        let in_range_var = graph.new_var(bounded_int_ty, graph.var_location(input_var));
+
+        let variants = (0..n_optimized_literals)
+            .map(|i| build_node_callback(graph, literals_map[&i].0.clone()))
+            .collect();
+        let optimized_node = graph.add_node(FlowControlNode::ValueMatch(ValueMatch {
+            matched_var: in_range_var,
+            variants,
+        }));
+        current_node = graph.add_node(FlowControlNode::DownCast(DownCast {
+            input: input_var,
+            output: in_range_var,
+            in_range: optimized_node,
+            out_of_range: current_node,
+        }));
+    }
+
     current_node
+}
+
+/// Checks if the optimization should be applied.
+/// If so, returns the number of consecutive literals 0, 1, 2, ... that are present
+/// (equals to the first missing value).
+/// Otherwise, returns 0.
+fn optimized_numeric_match_size<'db>(
+    ctx: &LoweringContext<'_, '_>,
+    values: &OrderedHashMap<usize, (FilteredPatterns, ExprPtr<'db>)>,
+    is_small_type: bool,
+) -> usize {
+    // Find the first missing value.
+    let mut i = 0;
+    while values.contains_key(&i) {
+        i += 1;
+    }
+
+    // Number of arms including the otherwise arm.
+    let n_arms = i + 1;
+    if n_arms >= numeric_match_optimization_threshold(ctx, is_small_type) { i } else { 0 }
 }
 
 /// Whether a pattern accepts any value.

@@ -115,6 +115,16 @@ impl<'db> std::fmt::Debug for EnumMatch<'db> {
     }
 }
 
+/// Matches on a BoundedInt type of the form `[0, n)` using a jump table.
+#[derive(Debug)]
+pub struct ValueMatch {
+    /// The input value to match.
+    pub matched_var: FlowControlVar,
+    /// For each literal in the range `[0, n)`, the [NodeId] to jump to.
+    #[expect(dead_code)]
+    pub variants: Vec<NodeId>,
+}
+
 /// Checks whether a value is equal to a literal.
 pub struct EqualsLiteral<'db> {
     /// The input value to check.
@@ -181,6 +191,22 @@ pub struct Upcast {
     pub next: NodeId,
 }
 
+/// Downcasts a value to a smaller type.
+#[derive(Debug)]
+pub struct DownCast {
+    /// The input variable.
+    pub input: FlowControlVar,
+    /// The output variable (if the value is in range).
+    #[expect(dead_code)]
+    pub output: FlowControlVar,
+    /// The next node if the value is in range.
+    #[expect(dead_code)]
+    pub in_range: NodeId,
+    /// The next node if the value is out of range.
+    #[expect(dead_code)]
+    pub out_of_range: NodeId,
+}
+
 /// A node in the flow control graph for a match or if lowering.
 pub enum FlowControlNode<'db> {
     /// Evaluates an expression and assigns the result to a [FlowControlVar].
@@ -189,6 +215,8 @@ pub enum FlowControlNode<'db> {
     BooleanIf(BooleanIf),
     /// Enum match node.
     EnumMatch(EnumMatch<'db>),
+    /// Matches on a BoundedInt type of the form `[0, n)` using a jump table.
+    ValueMatch(ValueMatch),
     /// Checks whether a value is equal to a literal.
     EqualsLiteral(EqualsLiteral<'db>),
     /// An arm (final node) that returns an expression.
@@ -199,6 +227,8 @@ pub enum FlowControlNode<'db> {
     BindVar(BindVar),
     /// Upcasts a value to a larger type.
     Upcast(Upcast),
+    /// Downcasts a value to a smaller type.
+    DownCast(DownCast),
     /// An arm (final node) that returns a unit value - `()`.
     UnitResult,
     /// A missing node due to an error in the code.
@@ -212,11 +242,13 @@ impl<'db> FlowControlNode<'db> {
             FlowControlNode::EvaluateExpr(..) => None,
             FlowControlNode::BooleanIf(node) => Some(node.condition_var),
             FlowControlNode::EnumMatch(node) => Some(node.matched_var),
+            FlowControlNode::ValueMatch(node) => Some(node.matched_var),
             FlowControlNode::EqualsLiteral(node) => Some(node.input),
             FlowControlNode::ArmExpr(..) => None,
             FlowControlNode::Deconstruct(node) => Some(node.input),
             FlowControlNode::BindVar(node) => Some(node.input),
             FlowControlNode::Upcast(node) => Some(node.input),
+            FlowControlNode::DownCast(node) => Some(node.input),
             FlowControlNode::UnitResult => None,
             FlowControlNode::Missing(_) => None,
         }
@@ -229,11 +261,13 @@ impl<'db> Debug for FlowControlNode<'db> {
             FlowControlNode::EvaluateExpr(node) => node.fmt(f),
             FlowControlNode::BooleanIf(node) => node.fmt(f),
             FlowControlNode::EnumMatch(node) => node.fmt(f),
+            FlowControlNode::ValueMatch(node) => node.fmt(f),
             FlowControlNode::EqualsLiteral(node) => node.fmt(f),
             FlowControlNode::ArmExpr(node) => node.fmt(f),
             FlowControlNode::Deconstruct(node) => node.fmt(f),
             FlowControlNode::BindVar(node) => node.fmt(f),
             FlowControlNode::Upcast(node) => node.fmt(f),
+            FlowControlNode::DownCast(node) => node.fmt(f),
             FlowControlNode::UnitResult => write!(f, "UnitResult"),
             FlowControlNode::Missing(_) => write!(f, "Missing"),
         }
