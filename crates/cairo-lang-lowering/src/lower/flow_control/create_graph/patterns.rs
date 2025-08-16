@@ -19,7 +19,7 @@ use super::filtered_patterns::{Bindings, FilteredPatterns};
 use crate::diagnostic::{LoweringDiagnosticKind, MatchDiagnostic, MatchError};
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
-use crate::lower::flow_control::graph::EqualsLiteral;
+use crate::lower::flow_control::graph::{EqualsLiteral, Upcast};
 
 /// A callback that gets a [FilteredPatterns] and constructs a node that continues the pattern
 /// matching restricted to the filtered patterns.
@@ -318,7 +318,7 @@ fn create_node_for_value<'db>(
     params: CreateNodeParams<'db, '_, '_>,
     input_var: FlowControlVar,
 ) -> NodeId {
-    let CreateNodeParams { ctx: _, graph, patterns, build_node_callback, location: _ } = params;
+    let CreateNodeParams { ctx, graph, patterns, build_node_callback, location: _ } = params;
 
     // A map from literals to their corresponding filter and the location of the first pattern with
     // this literal.
@@ -357,6 +357,16 @@ fn create_node_for_value<'db>(
         }
     }
 
+    // Convert to felt252 if needed.
+    let info = ctx.db.core_info();
+    let var_ty = graph.var_ty(input_var);
+    let felt252_ty = info.felt252;
+    let input_var_felt252 = if var_ty == felt252_ty {
+        input_var
+    } else {
+        graph.new_var(felt252_ty, graph.var_location(input_var))
+    };
+
     // First, construct a node that handles the otherwise patterns.
     let mut current_node = build_node_callback(graph, otherwise_filter.clone());
 
@@ -371,11 +381,19 @@ fn create_node_for_value<'db>(
         }
 
         current_node = graph.add_node(FlowControlNode::EqualsLiteral(EqualsLiteral {
-            input: input_var,
+            input: input_var_felt252,
             literal,
             stable_ptr,
             true_branch: node_if_literal,
             false_branch: current_node,
+        }));
+    }
+
+    if input_var_felt252 != input_var {
+        current_node = graph.add_node(FlowControlNode::Upcast(Upcast {
+            input: input_var,
+            output: input_var_felt252,
+            next: current_node,
         }));
     }
 
