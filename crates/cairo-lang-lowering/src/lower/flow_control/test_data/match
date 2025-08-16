@@ -633,7 +633,7 @@ End:
 //! > Optimized numeric match u16
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, skip_lowering: true)
+test_create_graph(expect_diagnostics: false, skip_lowering: false)
 
 //! > function_code
 fn foo(x: u16) -> u16 {
@@ -658,6 +658,90 @@ Root: 5
 //! > lowering_diagnostics
 
 //! > lowered
+Parameters: v0: core::integer::u16
+blk0 (root):
+Statements:
+End:
+  Match(match core::internal::bounded_int::downcast::<core::integer::u16, core::internal::bounded_int::BoundedInt::<0, 7>>(v0) {
+    Option::Some(v1) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum.(v1) {
+    0(v2) => blk3,
+    1(v3) => blk4,
+    2(v4) => blk5,
+    3(v5) => blk6,
+    4(v6) => blk7,
+    5(v7) => blk8,
+    6(v8) => blk9,
+    7(v9) => blk10,
+  })
+
+blk2:
+Statements:
+  (v10: core::integer::u16) <- 2
+End:
+  Goto(blk13, {v10 -> v12})
+
+blk3:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk11, {})
+
+blk5:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk6:
+Statements:
+End:
+  Goto(blk11, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk8:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk9:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk10:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk11:
+Statements:
+  (v11: core::integer::u16) <- 1
+End:
+  Goto(blk13, {v11 -> v12})
+
+blk12:
+Statements:
+End:
+  Goto(blk13, {v0 -> v12})
+
+blk13:
+Statements:
+End:
+  Return(v12)
 
 //! > ==========================================================================
 
