@@ -19,7 +19,7 @@ pub struct LabelLongId<'db> {
     // A unique identifier inside the function
     pub id: usize,
 }
-define_short_id!(LabelId, LabelLongId<'db>, SierraGenGroup, intern_label_id);
+define_short_id!(LabelId, LabelLongId<'db>, SierraGenGroup);
 
 pub struct LabelIdWithDb<'db> {
     db: &'db dyn SierraGenGroup,

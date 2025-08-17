@@ -95,8 +95,8 @@ pub struct ConcreteImplLongId<'db> {
     pub impl_def_id: ImplDefId<'db>,
     pub generic_args: Vec<GenericArgumentId<'db>>,
 }
-define_short_id!(ConcreteImplId, ConcreteImplLongId<'db>, SemanticGroup, intern_concrete_impl);
-semantic_object_for_id!(ConcreteImplId<'a>, intern_concrete_impl, ConcreteImplLongId<'a>);
+define_short_id!(ConcreteImplId, ConcreteImplLongId<'db>, SemanticGroup);
+semantic_object_for_id!(ConcreteImplId, ConcreteImplLongId<'a>);
 impl<'db> DebugWithDb<'db> for ConcreteImplLongId<'db> {
     type Db = dyn SemanticGroup;
 
@@ -277,8 +277,8 @@ impl<'db> DebugWithDb<'db> for ImplLongId<'db> {
     }
 }
 
-define_short_id!(ImplId, ImplLongId<'db>, SemanticGroup, intern_impl);
-semantic_object_for_id!(ImplId<'a>, intern_impl, ImplLongId<'a>);
+define_short_id!(ImplId, ImplLongId<'db>, SemanticGroup);
+semantic_object_for_id!(ImplId, ImplLongId<'a>);
 impl<'db> ImplId<'db> {
     pub fn concrete_trait(&self, db: &'db dyn SemanticGroup) -> Maybe<ConcreteTraitId<'db>> {
         db.impl_concrete_trait(*self)
@@ -309,8 +309,8 @@ impl<'db> ImplId<'db> {
     }
 }
 
-define_short_id!(GeneratedImplId, GeneratedImplLongId<'db>, SemanticGroup, intern_generated_impl);
-semantic_object_for_id!(GeneratedImplId<'a>, intern_generated_impl, GeneratedImplLongId<'a>);
+define_short_id!(GeneratedImplId, GeneratedImplLongId<'db>, SemanticGroup);
+semantic_object_for_id!(GeneratedImplId, GeneratedImplLongId<'a>);
 
 impl<'db> GeneratedImplId<'db> {
     pub fn concrete_trait(self, db: &'db dyn SemanticGroup) -> ConcreteTraitId<'db> {
@@ -1844,17 +1844,8 @@ impl<'db> DebugWithDb<'db> for UninferredImpl<'db> {
     }
 }
 
-define_short_id!(
-    UninferredGeneratedImplId,
-    UninferredGeneratedImplLongId<'db>,
-    SemanticGroup,
-    intern_uninferred_generated_impl
-);
-semantic_object_for_id!(
-    UninferredGeneratedImplId<'a>,
-    intern_uninferred_generated_impl,
-    UninferredGeneratedImplLongId<'a>
-);
+define_short_id!(UninferredGeneratedImplId, UninferredGeneratedImplLongId<'db>, SemanticGroup);
+semantic_object_for_id!(UninferredGeneratedImplId, UninferredGeneratedImplLongId<'a>);
 
 impl<'db> UninferredGeneratedImplId<'db> {
     pub fn concrete_trait(self, db: &'db dyn SemanticGroup) -> ConcreteTraitId<'db> {

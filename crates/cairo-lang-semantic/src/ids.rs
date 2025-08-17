@@ -46,4 +46,4 @@ impl Hash for AnalyzerPluginLongId {
     }
 }
 
-define_short_id!(AnalyzerPluginId, AnalyzerPluginLongId, SemanticGroup, intern_analyzer_plugin);
+define_short_id!(AnalyzerPluginId, AnalyzerPluginLongId, SemanticGroup);
