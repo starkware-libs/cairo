@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{DefsGroup, DefsGroupEx};
+use cairo_lang_defs::db::{DefsGroup, DefsGroupEx, module_ancestors};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
@@ -1734,6 +1734,12 @@ pub trait SemanticGroup:
         &'db self,
         macro_call_id: MacroCallId<'db>,
     ) -> Maybe<ModuleId<'db>>;
+    /// Returns all ancestor modules (parents) of the given module, as well as all macro-generated
+    /// (plugin-generated) descendant modules, recursively.
+    fn module_ancestors_and_macro_generated<'db>(
+        &'db self,
+        module_id: ModuleId<'db>,
+    ) -> OrderedHashSet<ModuleId<'db>>;
     /// Returns the semantic diagnostics of a macro call.
     #[salsa::invoke(items::macro_call::macro_call_diagnostics)]
     #[salsa::cycle(items::macro_call::macro_call_diagnostics_cycle)]
@@ -2395,3 +2401,36 @@ pub trait PluginSuiteInput: SemanticGroup {
 }
 
 impl<T: SemanticGroup + ?Sized> PluginSuiteInput for T {}
+
+/// Returns all macro-generated (plugins) modules recursively for the given module.
+pub fn module_macro_generated_descendants<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> OrderedHashSet<ModuleId<'db>> {
+    let mut result = OrderedHashSet::default();
+    let mut stack = vec![module_id];
+    while let Some(current) = stack.pop() {
+        if let Ok(macro_call_ids) = db.module_macro_calls_ids(current) {
+            for macro_call_id in macro_call_ids.iter() {
+                let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) else {
+                    continue;
+                };
+                if result.insert(generated_module_id) {
+                    stack.push(generated_module_id);
+                }
+            }
+        }
+    }
+    result
+}
+
+/// Returns all ancestors (parents) and all macro-generated descendants for the given module.
+pub fn module_ancestors_and_macro_generated<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> OrderedHashSet<ModuleId<'db>> {
+    let mut result = module_ancestors(db, module_id);
+    let macro_descendants = module_macro_generated_descendants(db, module_id);
+    result.extend(macro_descendants);
+    result
+}
