@@ -1857,7 +1857,7 @@ macro import_with_bar {
 import_with_bar!();
 
 //! > expected_diagnostics
-error[E0006]: Function not found.
+error: Item `test::with_bar::bar` is not visible in this context through module `test::with_bar`.
  --> lib.cairo:13:5
     bar();
     ^^^
@@ -1911,7 +1911,7 @@ error: Expected path after modifier.
 //! > Test macro context resolution through use-star.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > crate_settings
 edition = "2024_07"
@@ -1942,8 +1942,46 @@ mod a {
 use a::*;
 
 //! > expected_diagnostics
-error[E0006]: Function not found.
- --> lib.cairo:12:5
+
+//! > ==========================================================================
+
+//! > Test use-star inside macro context resolution.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > function
+fn foo() {
+    bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    pub fn bar() {}
+}
+
+macro import_a_star {
+    () => {
+        use $callsite::a::*;
+    };
+}
+
+import_a_star!();
+
+//! > expected_diagnostics
+error: Item `test::a::bar` is not visible in this context through module `test::a`.
+ --> lib.cairo:13:5
     bar();
     ^^^
 
