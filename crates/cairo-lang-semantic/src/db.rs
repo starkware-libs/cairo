@@ -7,10 +7,10 @@ use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, GlobalUseId, ImplAliasId, ImplConstantDefId,
     ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, ImportableId,
-    InlineMacroExprPluginLongId, LanguageElementId, LookupItemId, MacroCallId, MacroDeclarationId,
-    MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId,
-    TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId,
-    VariantId,
+    InlineMacroExprPluginId, InlineMacroExprPluginLongId, LanguageElementId, LookupItemId,
+    MacroCallId, MacroDeclarationId, MacroPluginId, MacroPluginLongId, ModuleFileId, ModuleId,
+    ModuleItemId, ModuleTypeAliasId, StructId, TraitConstantId, TraitFunctionId, TraitId,
+    TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, StrRef};
@@ -2328,14 +2328,14 @@ pub trait PluginSuiteInput: SemanticGroup {
 
         let macro_plugins = plugins
             .into_iter()
-            .map(|plugin| self.intern_macro_plugin(MacroPluginLongId(plugin)))
+            .map(|plugin| MacroPluginId::new(self, MacroPluginLongId(plugin)))
             .collect::<Arc<[_]>>();
 
         let inline_macro_plugins = Arc::new(
             inline_macro_plugins
                 .into_iter()
                 .map(|(name, plugin)| {
-                    (name, self.intern_inline_macro_plugin(InlineMacroExprPluginLongId(plugin)))
+                    (name, InlineMacroExprPluginId::new(self, InlineMacroExprPluginLongId(plugin)))
                 })
                 .collect::<OrderedHashMap<_, _>>(),
         );

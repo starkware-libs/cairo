@@ -218,15 +218,6 @@ pub trait ExternalFiles: Database {
 // Salsa database interface.
 #[cairo_lang_proc_macros::query_group]
 pub trait FilesGroup: ExternalFiles {
-    #[salsa::interned]
-    fn intern_crate<'db>(&'db self, crt: CrateLongId<'db>) -> CrateId<'db>;
-    #[salsa::interned]
-    fn intern_file<'db>(&'db self, file: FileLongId<'db>) -> FileId<'db>;
-    #[salsa::interned]
-    fn intern_blob<'db>(&'db self, blob: BlobLongId) -> BlobId<'db>;
-    #[salsa::interned]
-    fn intern_flag<'db>(&'db self, flag: FlagLongId) -> FlagId<'db>;
-
     /// Main input of the project. Lists all the crates configurations.
     #[salsa::input]
     fn crate_configs_input(&self) -> Arc<OrderedHashMap<CrateInput, CrateConfigurationInput>>;
