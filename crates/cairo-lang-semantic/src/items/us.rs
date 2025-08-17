@@ -332,6 +332,14 @@ pub fn priv_module_use_star_modules<'db>(
         if !visited.insert((user_module, containing_module)) {
             continue;
         }
+        if let Ok(macro_call_ids) = db.module_macro_calls_ids(containing_module) {
+            for macro_call_id in macro_call_ids.iter() {
+                if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
+                    stack.push((user_module, generated_module_id));
+                    accessible_modules.insert((user_module, generated_module_id));
+                }
+            }
+        }
         let Ok(glob_uses) = get_module_global_uses(db, containing_module) else {
             continue;
         };
@@ -354,6 +362,15 @@ pub fn priv_module_use_star_modules<'db>(
             continue;
         }
         all_modules.insert(curr_module_id);
+        // Traverse macro-generated modules immediately.
+        if let Ok(macro_call_ids) = db.module_macro_calls_ids(curr_module_id) {
+            for macro_call_id in macro_call_ids.iter() {
+                if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
+                    stack.push(generated_module_id);
+                    all_modules.insert(generated_module_id);
+                }
+            }
+        }
         let Ok(glob_uses) = get_module_global_uses(db, curr_module_id) else { continue };
         for glob_use in glob_uses.keys() {
             let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use) else {
