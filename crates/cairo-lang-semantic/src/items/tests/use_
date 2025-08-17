@@ -40,7 +40,7 @@ use NonExisting;
 use internal::bar;
 
 //! > expected_diagnostics
-error[E0006]: Identifier not found.
+error: Item `test::NonExisting` is not visible in this context through module `test`.
  --> lib.cairo:4:5
 use NonExisting;
     ^^^^^^^^^^^

@@ -221,7 +221,7 @@ use bad_module_name;
 //! > function_body
 
 //! > expected_diagnostics
-error[E0006]: Identifier not found.
+error: Item `test::bad_module_name` is not visible in this context through module `test`.
  --> lib.cairo:1:5
 use bad_module_name;
     ^^^^^^^^^^^^^^^
