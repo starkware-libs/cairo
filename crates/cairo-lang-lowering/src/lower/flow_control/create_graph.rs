@@ -17,7 +17,7 @@ mod patterns;
 
 /// Creates a graph node for [semantic::ExprIf].
 pub fn create_graph_expr_if<'db>(
-    ctx: &LoweringContext<'db, '_>,
+    ctx: &mut LoweringContext<'db, '_>,
     expr: &semantic::ExprIf<'db>,
 ) -> FlowControlGraph<'db> {
     let mut graph = FlowControlGraphBuilder::default();
@@ -102,13 +102,13 @@ pub fn create_graph_expr_if<'db>(
         }
     }
 
-    graph.finalize(current_node)
+    graph.finalize(current_node, ctx)
 }
 
 /// Creates a graph node for [semantic::ExprMatch].
 #[allow(dead_code)]
 pub fn create_graph_expr_match<'db>(
-    ctx: &LoweringContext<'db, '_>,
+    ctx: &mut LoweringContext<'db, '_>,
     expr: &semantic::ExprMatch<'db>,
 ) -> FlowControlGraph<'db> {
     let mut graph = FlowControlGraphBuilder::default();
@@ -164,5 +164,5 @@ pub fn create_graph_expr_match<'db>(
         next: match_node_id,
     }));
 
-    graph.finalize(root)
+    graph.finalize(root, ctx)
 }
