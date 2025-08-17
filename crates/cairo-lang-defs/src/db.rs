@@ -511,9 +511,7 @@ fn allowed_attributes<'db>(
 
     Arc::new(OrderedHashSet::from_iter(chain!(
         base_attrs.map(|attr| attr.into()),
-        crate_plugins
-            .iter()
-            .flat_map(|plugin| db.lookup_intern_macro_plugin(*plugin).declared_attributes())
+        crate_plugins.iter().flat_map(|plugin| plugin.long(db).declared_attributes())
     )))
 }
 
@@ -541,9 +539,7 @@ fn declared_phantom_type_attributes<'db>(
 
     Arc::new(OrderedHashSet::from_iter(chain!(
         [PHANTOM_ATTR.into()],
-        crate_plugins
-            .iter()
-            .flat_map(|plugin| db.lookup_intern_macro_plugin(*plugin).phantom_type_attributes())
+        crate_plugins.iter().flat_map(|plugin| plugin.long(db).phantom_type_attributes())
     )))
 }
 
@@ -1626,9 +1622,7 @@ pub trait DefsGroupEx: DefsGroup {
         let plugins = Arc::new(
             plugins
                 .iter()
-                .map(|(name, plugin)| {
-                    (name.clone(), self.lookup_intern_inline_macro_plugin(*plugin))
-                })
+                .map(|(name, plugin)| (name.clone(), plugin.long(self).clone()))
                 .collect(),
         );
         overrides.insert(crate_input, plugins);

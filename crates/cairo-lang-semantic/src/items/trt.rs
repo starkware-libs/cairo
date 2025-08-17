@@ -66,19 +66,8 @@ impl<'db> DebugWithDb<'db> for ConcreteTraitLongId<'db> {
     }
 }
 
-define_short_id!(
-    ConcreteTraitId,
-    ConcreteTraitLongId<'db>,
-    SemanticGroup,
-    lookup_intern_concrete_trait,
-    intern_concrete_trait
-);
-semantic_object_for_id!(
-    ConcreteTraitId<'a>,
-    lookup_intern_concrete_trait,
-    intern_concrete_trait,
-    ConcreteTraitLongId<'a>
-);
+define_short_id!(ConcreteTraitId, ConcreteTraitLongId<'db>, SemanticGroup, intern_concrete_trait);
+semantic_object_for_id!(ConcreteTraitId<'a>, intern_concrete_trait, ConcreteTraitLongId<'a>);
 impl<'db> ConcreteTraitId<'db> {
     pub fn trait_id(&self, db: &'db dyn SemanticGroup) -> TraitId<'db> {
         self.long(db).trait_id
@@ -145,12 +134,10 @@ define_short_id!(
     ConcreteTraitGenericFunctionId,
     ConcreteTraitGenericFunctionLongId<'db>,
     SemanticGroup,
-    lookup_intern_concrete_trait_function,
     intern_concrete_trait_function
 );
 semantic_object_for_id!(
     ConcreteTraitGenericFunctionId<'a>,
-    lookup_intern_concrete_trait_function,
     intern_concrete_trait_function,
     ConcreteTraitGenericFunctionLongId<'a>
 );
@@ -198,12 +185,10 @@ define_short_id!(
     ConcreteTraitTypeId,
     ConcreteTraitTypeLongId<'db>,
     SemanticGroup,
-    lookup_intern_concrete_trait_type,
     intern_concrete_trait_type
 );
 semantic_object_for_id!(
     ConcreteTraitTypeId<'a>,
-    lookup_intern_concrete_trait_type,
     intern_concrete_trait_type,
     ConcreteTraitTypeLongId<'a>
 );
@@ -251,12 +236,10 @@ define_short_id!(
     ConcreteTraitConstantId,
     ConcreteTraitConstantLongId<'db>,
     SemanticGroup,
-    lookup_intern_concrete_trait_constant,
     intern_concrete_trait_constant
 );
 semantic_object_for_id!(
     ConcreteTraitConstantId<'a>,
-    lookup_intern_concrete_trait_constant,
     intern_concrete_trait_constant,
     ConcreteTraitConstantLongId<'a>
 );
@@ -304,12 +287,10 @@ define_short_id!(
     ConcreteTraitImplId,
     ConcreteTraitImplLongId<'db>,
     SemanticGroup,
-    lookup_intern_concrete_trait_impl,
     intern_concrete_trait_impl
 );
 semantic_object_for_id!(
     ConcreteTraitImplId<'a>,
-    lookup_intern_concrete_trait_impl,
     intern_concrete_trait_impl,
     ConcreteTraitImplLongId<'a>
 );

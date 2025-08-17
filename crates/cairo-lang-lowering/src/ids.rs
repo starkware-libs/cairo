@@ -35,7 +35,6 @@ define_short_id!(
     FunctionWithBodyId,
     FunctionWithBodyLongId<'db>,
     LoweringGroup,
-    lookup_intern_lowering_function_with_body,
     intern_lowering_function_with_body
 );
 impl<'db> FunctionWithBodyLongId<'db> {
@@ -102,7 +101,6 @@ define_short_id!(
     ConcreteFunctionWithBodyId,
     ConcreteFunctionWithBodyLongId<'db>,
     LoweringGroup,
-    lookup_intern_lowering_concrete_function_with_body,
     intern_lowering_concrete_function_with_body
 );
 
@@ -263,13 +261,7 @@ pub enum FunctionLongId<'db> {
     /// A specialized function.
     Specialized(SpecializedFunction<'db>),
 }
-define_short_id!(
-    FunctionId,
-    FunctionLongId<'db>,
-    LoweringGroup,
-    lookup_intern_lowering_function,
-    intern_lowering_function
-);
+define_short_id!(FunctionId, FunctionLongId<'db>, LoweringGroup, intern_lowering_function);
 impl<'db> FunctionLongId<'db> {
     pub fn body(
         &self,
@@ -585,7 +577,7 @@ pub(crate) fn parameter_as_member_path<'db>(
     })
 }
 
-define_short_id!(LocationId, Location<'db>, LoweringGroup, lookup_intern_location, intern_location);
+define_short_id!(LocationId, Location<'db>, LoweringGroup, intern_location);
 impl<'db> LocationId<'db> {
     pub fn from_stable_location(
         db: &'db dyn LoweringGroup,

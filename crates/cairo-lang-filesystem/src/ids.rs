@@ -91,7 +91,7 @@ impl<'db> CrateLongId<'db> {
         CrateLongId::Real { name: name.into(), discriminator: None }
     }
 }
-define_short_id!(CrateId, CrateLongId<'db>, FilesGroup, lookup_intern_crate, intern_crate);
+define_short_id!(CrateId, CrateLongId<'db>, FilesGroup, intern_crate);
 impl<'db> CrateId<'db> {
     /// Gets the crate id for a real crate by name, without a discriminator.
     pub fn plain(db: &'db dyn FilesGroup, name: &str) -> Self {
@@ -120,7 +120,7 @@ impl UnstableSalsaId for CrateId<'_> {
 /// The long ID for a compilation flag.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FlagLongId(pub String);
-define_short_id!(FlagId, FlagLongId, FilesGroup, lookup_intern_flag, intern_flag);
+define_short_id!(FlagId, FlagLongId, FilesGroup, intern_flag);
 
 /// Same as `FileLongId`, but without the interning inside virtual files.
 /// This is used to avoid the need to intern the file id inside salsa database inputs.
@@ -303,7 +303,7 @@ impl<'db> FileLongId<'db> {
     }
 }
 
-define_short_id!(FileId, FileLongId<'db>, FilesGroup, lookup_intern_file, intern_file);
+define_short_id!(FileId, FileLongId<'db>, FilesGroup, intern_file);
 impl<'db> FileId<'db> {
     pub fn new_on_disk(db: &'db dyn FilesGroup, path: PathBuf) -> FileId<'db> {
         FileLongId::OnDisk(path.clean()).intern(db)
@@ -322,7 +322,7 @@ impl<'db> FileId<'db> {
     }
 }
 
-define_short_id!(StrId, Arc<str>, FilesGroup, lookup_intern_str, intern_str);
+define_short_id!(StrId, Arc<str>, FilesGroup, intern_str);
 
 /// Same as `Directory`, but without the interning inside virtual directories.
 /// This is used to avoid the need to intern the file id inside salsa database inputs.
@@ -351,7 +351,7 @@ impl DirectoryInput {
     }
 }
 
-define_short_id!(SmolStrId, SmolStr, FilesGroup, lookup_intern_smol_str, intern_smol_str);
+define_short_id!(SmolStrId, SmolStr, FilesGroup, intern_smol_str);
 
 /// Returns a string with a lifetime that is valid on the database's lifetime.
 pub fn db_str(db: &dyn FilesGroup, str: impl Into<SmolStr>) -> &str {
@@ -475,7 +475,7 @@ impl BlobLongId {
     }
 }
 
-define_short_id!(BlobId, BlobLongId, FilesGroup, lookup_intern_blob, intern_blob);
+define_short_id!(BlobId, BlobLongId, FilesGroup, intern_blob);
 
 impl<'db> BlobId<'db> {
     pub fn new_on_disk(db: &'db (dyn FilesGroup + 'db), path: PathBuf) -> Self {

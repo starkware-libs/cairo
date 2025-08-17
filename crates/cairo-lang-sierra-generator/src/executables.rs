@@ -29,7 +29,7 @@ pub fn find_executable_function_ids<'db>(
         let executable_attributes = db
             .crate_macro_plugins(crate_id)
             .iter()
-            .flat_map(|plugin| db.lookup_intern_macro_plugin(*plugin).executable_attributes())
+            .flat_map(|plugin| plugin.long(db).executable_attributes())
             .collect::<Vec<_>>();
 
         if executable_attributes.is_empty() {
