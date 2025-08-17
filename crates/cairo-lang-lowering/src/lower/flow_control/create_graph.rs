@@ -9,6 +9,7 @@ use super::graph::{
     ArmExpr, BooleanIf, EvaluateExpr, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode,
     NodeId,
 };
+use crate::diagnostic::MatchKind;
 use crate::lower::context::LoweringContext;
 
 mod cache;
@@ -17,10 +18,10 @@ mod patterns;
 
 /// Creates a graph node for [semantic::ExprIf].
 pub fn create_graph_expr_if<'db>(
-    ctx: &LoweringContext<'db, '_>,
+    ctx: &mut LoweringContext<'db, '_>,
     expr: &semantic::ExprIf<'db>,
 ) -> FlowControlGraph<'db> {
-    let mut graph = FlowControlGraphBuilder::default();
+    let mut graph = FlowControlGraphBuilder::new(MatchKind::IfLet);
 
     // Add the `true` branch (the `if` block).
     let true_branch = graph.add_node(FlowControlNode::ArmExpr(ArmExpr { expr: expr.if_block }));
@@ -102,16 +103,16 @@ pub fn create_graph_expr_if<'db>(
         }
     }
 
-    graph.finalize(current_node)
+    graph.finalize(current_node, ctx)
 }
 
 /// Creates a graph node for [semantic::ExprMatch].
 #[allow(dead_code)]
 pub fn create_graph_expr_match<'db>(
-    ctx: &LoweringContext<'db, '_>,
+    ctx: &mut LoweringContext<'db, '_>,
     expr: &semantic::ExprMatch<'db>,
 ) -> FlowControlGraph<'db> {
-    let mut graph = FlowControlGraphBuilder::default();
+    let mut graph = FlowControlGraphBuilder::new(MatchKind::Match);
 
     let matched_expr = &ctx.function_body.arenas.exprs[expr.matched_expr];
     let matched_expr_location = ctx.get_location(matched_expr.stable_ptr().untyped());
@@ -164,5 +165,5 @@ pub fn create_graph_expr_match<'db>(
         next: match_node_id,
     }));
 
-    graph.finalize(root)
+    graph.finalize(root, ctx)
 }

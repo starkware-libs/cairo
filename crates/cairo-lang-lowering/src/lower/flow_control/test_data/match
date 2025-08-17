@@ -1,14 +1,15 @@
 //! > Simple match
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false)
+test_create_graph(expect_diagnostics: true)
 
 //! > function_code
 fn foo(color: Color) -> felt252 {
     match color {
         Color::Red | Color::Green(_) => 1,
         Color::Red(_) | Color::Blue => 2,
-        _ => 3,
+        Color::Blue | Color::Green => 3,
+        _ => 4,
     }
 }
 
@@ -22,14 +23,21 @@ enum Color {
 }
 
 //! > graph
-Root: 4
+Root: 5
 0 ArmExpr { expr: ExprId(1) }
 1 ArmExpr { expr: ExprId(2) }
 2 ArmExpr { expr: ExprId(3) }
-3 EnumMatch { matched_var: v0, variants: (NodeId(0), v1), (NodeId(0), v2), (NodeId(1), v3), (NodeId(2), v4), (NodeId(2), v5)}
-4 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(3) }
+3 ArmExpr { expr: ExprId(4) }
+4 EnumMatch { matched_var: v0, variants: (NodeId(0), v1), (NodeId(0), v2), (NodeId(1), v3), (NodeId(3), v4), (NodeId(3), v5)}
+5 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(4) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
+warning: Unreachable pattern arm.
+ --> lib.cairo:12:39
+        Color::Blue | Color::Green => 3,
+                                      ^
 
 //! > lowered
 Parameters: v0: test::Color
@@ -72,7 +80,7 @@ End:
 
 blk6:
 Statements:
-  (v6: core::felt252) <- 3
+  (v6: core::felt252) <- 4
 End:
   Goto(blk8, {v6 -> v9})
 
@@ -123,6 +131,8 @@ Root: 7
 7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: test::Color
@@ -203,6 +213,8 @@ Root: 6
 6 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(5) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: (test::Color, test::Color)
@@ -303,6 +315,8 @@ Root: 7
 
 //! > semantic_diagnostics
 
+//! > lowering_diagnostics
+
 //! > lowered
 Parameters: v0: core::option::Option::<(test::Color, test::Color)>
 blk0 (root):
@@ -402,6 +416,8 @@ Root: 10
 
 //! > semantic_diagnostics
 
+//! > lowering_diagnostics
+
 //! > lowered
 
 //! > ==========================================================================
@@ -439,6 +455,8 @@ Root: 4
 
 //! > semantic_diagnostics
 
+//! > lowering_diagnostics
+
 //! > lowered
 
 //! > ==========================================================================
@@ -468,6 +486,8 @@ Root: 6
 6 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(5) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: core::felt252
@@ -573,6 +593,8 @@ Root: 18
 18 EvaluateExpr { expr: ExprId(2), var_id: v0, next: NodeId(17) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: core::felt252, v1: core::felt252
@@ -775,6 +797,8 @@ Root: 1
 
 //! > semantic_diagnostics
 
+//! > lowering_diagnostics
+
 //! > lowered
 Parameters: v0: core::option::Option::<core::felt252>
 blk0 (root):
@@ -818,6 +842,8 @@ Root: 7
 7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: @(test::Color, test::Color)
@@ -922,6 +948,8 @@ Root: 7
 7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: (test::Color, test::Color)
