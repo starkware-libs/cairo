@@ -100,7 +100,7 @@ impl<'db> OptimizationPhase<'db> {
     }
 }
 
-define_short_id!(OptimizationStrategyId, OptimizationStrategy<'db>, LoweringGroup, intern_strategy);
+define_short_id!(OptimizationStrategyId, OptimizationStrategy<'db>, LoweringGroup);
 
 /// A strategy is a sequence of optimization phases.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

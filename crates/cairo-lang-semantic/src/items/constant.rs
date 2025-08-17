@@ -85,8 +85,8 @@ pub struct ConstantData<'db> {
     pub resolver_data: Arc<ResolverData<'db>>,
 }
 
-define_short_id!(ConstValueId, ConstValue<'db>, SemanticGroup, intern_const_value);
-semantic_object_for_id!(ConstValueId<'a>, intern_const_value, ConstValue<'a>);
+define_short_id!(ConstValueId, ConstValue<'db>, SemanticGroup);
+semantic_object_for_id!(ConstValueId, ConstValue<'a>);
 impl<'db> ConstValueId<'db> {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         format!("{:?}", self.long(db).debug(db.elongate()))
