@@ -318,7 +318,7 @@ impl<'db> FlowControlGraph<'db> {
 impl<'db> Debug for FlowControlGraph<'db> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Root: {}", self.root().0)?;
-        for (i, node) in self.nodes.iter().enumerate() {
+        for (i, node) in self.nodes.iter().enumerate().rev() {
             writeln!(f, "{i} {node:?}")?;
         }
         Ok(())
