@@ -393,7 +393,6 @@ pub trait DefsGroup: ParserGroup {
         &'db self,
         macro_call_id: MacroCallId<'db>,
     ) -> Maybe<ast::ItemInlineMacro<'db>>;
-    fn module_ancestors<'db>(&'db self, module_id: ModuleId<'db>) -> OrderedHashSet<ModuleId<'db>>;
     fn module_generated_file_aux_data<'db>(
         &'db self,
         module_id: ModuleId<'db>,
@@ -1512,20 +1511,6 @@ pub fn module_extern_function_by_id<'db>(
     let module_extern_functions =
         db.module_extern_functions(extern_function_id.module_file_id(db).0)?;
     Ok(module_extern_functions[&extern_function_id].clone())
-}
-
-pub fn module_ancestors<'db>(
-    db: &'db dyn DefsGroup,
-    module_id: ModuleId<'db>,
-) -> OrderedHashSet<ModuleId<'db>> {
-    let mut current = module_id;
-    let mut ancestors = OrderedHashSet::default();
-    while let ModuleId::Submodule(submodule_id) = current {
-        let parent = submodule_id.parent_module(db);
-        ancestors.insert(parent);
-        current = parent
-    }
-    ancestors
 }
 
 /// Returns the generated_file_infos of the given module.
