@@ -316,6 +316,8 @@ pub struct ImportedModules<'db> {
     // TODO(Tomer-StarkWare): consider changing from all_modules to inaccessible_modules
     /// All the imported modules.
     pub all: OrderedHashSet<ModuleId<'db>>,
+    /// All macro-generated modules, recursively (including indirect ones).
+    pub macro_generated: OrderedHashSet<ModuleId<'db>>,
 }
 /// Returns the modules that are imported with `use *` in the current module.
 /// Query implementation of [crate::db::SemanticGroup::priv_module_use_star_modules].
@@ -331,6 +333,14 @@ pub fn priv_module_use_star_modules<'db>(
     while let Some((user_module, containing_module)) = stack.pop() {
         if !visited.insert((user_module, containing_module)) {
             continue;
+        }
+        if let Ok(macro_call_ids) = db.module_macro_calls_ids(containing_module) {
+            for macro_call_id in macro_call_ids.iter() {
+                if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
+                    stack.push((containing_module, generated_module_id));
+                    accessible_modules.insert((containing_module, generated_module_id));
+                }
+            }
         }
         let Ok(glob_uses) = get_module_global_uses(db, containing_module) else {
             continue;
@@ -348,12 +358,22 @@ pub fn priv_module_use_star_modules<'db>(
     let mut visited = UnorderedHashSet::<_>::default();
     let mut stack = vec![module_id];
     let mut all_modules = OrderedHashSet::default();
+    let mut macro_generated = OrderedHashSet::default();
     // Iterate over all modules that are imported through `use *`.
     while let Some(curr_module_id) = stack.pop() {
         if !visited.insert(curr_module_id) {
             continue;
         }
         all_modules.insert(curr_module_id);
+        // Traverse macro-generated modules immediately.
+        if let Ok(macro_call_ids) = db.module_macro_calls_ids(curr_module_id) {
+            for macro_call_id in macro_call_ids.iter() {
+                if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
+                    stack.push(generated_module_id);
+                    macro_generated.insert(generated_module_id);
+                }
+            }
+        }
         let Ok(glob_uses) = get_module_global_uses(db, curr_module_id) else { continue };
         for glob_use in glob_uses.keys() {
             let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use) else {
@@ -365,5 +385,5 @@ pub fn priv_module_use_star_modules<'db>(
     // Remove the current module from the list of all modules, as if items in the module not found
     // previously, it was explicitly ignored.
     all_modules.swap_remove(&module_id);
-    Arc::new(ImportedModules { accessible: accessible_modules, all: all_modules })
+    Arc::new(ImportedModules { accessible: accessible_modules, all: all_modules, macro_generated })
 }
