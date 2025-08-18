@@ -18,6 +18,7 @@ use cairo_lang_utils::{Intern, Upcast};
 use defs::ids::NamedLanguageElementId;
 use itertools::{Itertools, chain};
 use num_traits::ToPrimitive;
+use salsa::{Database, Setter};
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::blocks::Blocks;
@@ -42,6 +43,21 @@ use crate::utils::InliningStrategy;
 use crate::{
     BlockEnd, BlockId, DependencyType, Location, Lowered, LoweringStage, MatchInfo, Statement, ids,
 };
+
+#[salsa::input]
+pub struct LoweringGroupInput {
+    #[returns(ref)]
+    pub optimization_config: Option<OptimizationConfig>,
+}
+
+#[salsa::tracked(returns(ref))]
+pub fn lowering_group_input(db: &dyn Database) -> LoweringGroupInput {
+    LoweringGroupInput::new(db, None)
+}
+
+fn optimization_config(db: &dyn Database) -> &OptimizationConfig {
+    lowering_group_input(db).optimization_config(db).as_ref().unwrap()
+}
 
 /// A trait for estimation of the code size of a function.
 pub trait ExternalCodeSizeEstimator {
@@ -323,8 +339,8 @@ pub trait LoweringGroup:
     ) -> Maybe<bool>;
 
     /// Returns the configuration struct that controls the behavior of the optimization passes.
-    #[salsa::input]
-    fn optimization_config(&self) -> Arc<OptimizationConfig>;
+    #[salsa::transparent]
+    fn optimization_config(&self) -> &OptimizationConfig;
 
     /// Returns the final optimization strategy that is applied on top of
     /// inlined_function_optimization_strategy.
@@ -357,7 +373,7 @@ pub fn init_lowering_group(
         moveable_functions.push(format!("integer::{ty}_wide_mul"));
     }
 
-    db.set_optimization_config(Arc::new(
+    lowering_group_input(db).set_optimization_config(db).to(Some(
         OptimizationConfig::default()
             .with_moveable_functions(moveable_functions)
             .with_inlining_strategy(inlining_strategy),
