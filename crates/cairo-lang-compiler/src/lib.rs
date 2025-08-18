@@ -176,6 +176,10 @@ pub enum DbWarmupContext {
     NoWarmup,
 }
 
+/// A special hack. Calling this function runs salsa's hooks, which is needed to register views.
+#[salsa::tracked]
+fn empty_func(_db: &dyn LoweringGroup) -> () {}
+
 impl DbWarmupContext {
     /// Creates a new thread pool.
     pub fn new() -> Self {
@@ -201,16 +205,21 @@ impl DbWarmupContext {
     /// Performs parallel database warmup (if possible) and calls `DiagnosticsReporter::ensure`.
     pub fn ensure_diagnostics(
         &self,
-        db: &dyn LoweringGroup,
+        db: &RootDatabase,
         diagnostic_reporter: &mut DiagnosticsReporter<'_>,
     ) -> std::result::Result<(), DiagnosticsError> {
         match self {
             Self::NoWarmup => {}
             Self::Warmup { pool } => {
                 let crates = diagnostic_reporter.crates_of_interest(db);
-                let db_fork = db.fork_db();
+                let db_fork = Box::new(db.clone());
+
+                // Hack to make the views register. When we clone the database, the views are not
+                // registered anymore, so we need to call any tracked function to register them.
+                empty_func(db_fork.as_ref());
+
                 pool.spawn(move || {
-                    warmup_diagnostics_blocking(db_fork.as_view(), crates);
+                    warmup_diagnostics_blocking(db_fork.as_ref(), crates);
                 });
             }
         }
