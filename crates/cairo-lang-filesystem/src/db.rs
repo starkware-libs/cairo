@@ -299,9 +299,8 @@ pub trait FilesGroup: Database {
     fn crate_config<'db>(&'db self, crate_id: CrateId<'db>)
     -> Option<&'db CrateConfiguration<'db>>;
 
-    /// Query for raw file contents. Private.
-    fn priv_raw_file_content<'db>(&'db self, file_id: FileId<'db>) -> Option<StrId<'db>>;
     /// Query for the file contents. This takes overrides into consideration.
+    #[salsa::transparent]
     fn file_content<'db>(&'db self, file_id: FileId<'db>) -> Option<StrId<'db>>;
     #[salsa::transparent]
     fn file_summary<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db FileSummary>;
@@ -310,19 +309,23 @@ pub trait FilesGroup: Database {
     #[salsa::transparent]
     fn blob_content<'db>(&'db self, blob_id: BlobId<'db>) -> Option<&'db [u8]>;
     /// Query to get a compilation flag by its ID.
-    fn get_flag<'db>(&'db self, id: FlagId<'db>) -> Option<Arc<Flag>>;
+    #[salsa::transparent]
+    fn get_flag<'db>(&'db self, id: FlagId<'db>) -> Option<&'db Flag>;
 
     /// Create an input file from an interned file id.
-    fn file_input<'db>(&'db self, file_id: FileId<'db>) -> FileInput;
+    #[salsa::transparent]
+    fn file_input<'db>(&'db self, file_id: FileId<'db>) -> &'db FileInput;
 
     /// Create an input crate from an interned crate id.
-    fn crate_input<'db>(&'db self, crt: CrateId<'db>) -> CrateInput;
+    #[salsa::transparent]
+    fn crate_input<'db>(&'db self, crt: CrateId<'db>) -> &'db CrateInput;
 
     /// Create an input crate configuration from a [`CrateConfiguration`].
+    #[salsa::transparent]
     fn crate_configuration_input<'db>(
         &'db self,
         config: CrateConfiguration<'db>,
-    ) -> CrateConfigurationInput;
+    ) -> &'db CrateConfigurationInput;
 }
 
 pub fn init_files_group<'db>(db: &mut (dyn FilesGroup + 'db)) {
@@ -372,19 +375,32 @@ pub fn flags<'db>(db: &'db dyn FilesGroup) -> OrderedHashMap<FlagId<'db>, Arc<Fl
     inp.iter().map(|(flag_id, flag)| (flag_id.clone().intern(db), flag.clone())).collect()
 }
 
+#[salsa::tracked(returns(ref))]
 fn file_input(db: &dyn FilesGroup, file_id: FileId<'_>) -> FileInput {
     file_id.long(db).into_file_input(db)
 }
 
+#[salsa::tracked(returns(ref))]
 fn crate_input(db: &dyn FilesGroup, crt: CrateId<'_>) -> CrateInput {
     crt.long(db).clone().into_crate_input(db)
 }
 
-fn crate_configuration_input(
+#[salsa::tracked(returns(ref))]
+// TODO(eytan-starkware): Remove the id argument. It is used to to CrateConfiguration not being in
+// Db.
+fn crate_configuration_input_helper(
     db: &dyn Database,
+    _id: BlobId<'_>,
     config: CrateConfiguration<'_>,
 ) -> CrateConfigurationInput {
     config.clone().into_crate_configuration_input(db)
+}
+
+fn crate_configuration_input<'db>(
+    db: &'db dyn Database,
+    config: CrateConfiguration<'db>,
+) -> &'db CrateConfigurationInput {
+    crate_configuration_input_helper(db, BlobId::new(db, BlobLongId::Virtual(vec![])), config)
 }
 
 pub fn init_dev_corelib(db: &mut dyn FilesGroup, core_lib_dir: PathBuf) {
@@ -420,8 +436,8 @@ pub fn update_crate_configuration_input_helper(
     let db_ref: &dyn Database = db;
     let mut crate_configs = files_group_input(db_ref).crate_configs(db_ref).clone().unwrap();
     match root {
-        Some(root) => crate_configs.insert(crt, db.crate_configuration_input(root)),
-        None => crate_configs.swap_remove(&crt),
+        Some(root) => crate_configs.insert(crt.clone(), db.crate_configuration_input(root).clone()),
+        None => crate_configs.swap_remove(crt),
     };
     crate_configs
 }
@@ -454,7 +470,7 @@ pub fn update_file_overrides_input_helper(
 #[macro_export]
 macro_rules! override_file_content {
     ($self:expr, $file:expr, $content:expr) => {
-        let file = $self.file_input($file);
+        let file = $self.file_input($file).clone();
         let overrides = $crate::db::update_file_overrides_input_helper($self, file, $content);
         salsa::Setter::to(
             $crate::db::files_group_input($self).set_file_overrides($self),
@@ -489,8 +505,10 @@ pub trait FilesGroupEx: FilesGroup {
         let crt = self.crate_input(crt);
         let mut crate_configs = files_group_input(db_ref).crate_configs(db_ref).clone().unwrap();
         match root {
-            Some(root) => crate_configs.insert(crt, crate_configuration_input(db_ref, root)),
-            None => crate_configs.swap_remove(&crt),
+            Some(root) => {
+                crate_configs.insert(crt.clone(), crate_configuration_input(db_ref, root).clone())
+            }
+            None => crate_configs.swap_remove(crt),
         };
         crate_configs
     }
@@ -564,6 +582,7 @@ fn crate_config<'db>(
     crate_config_helper(db, crt).as_ref()
 }
 
+#[salsa::tracked]
 fn priv_raw_file_content<'db>(db: &'db dyn FilesGroup, file: FileId<'db>) -> Option<StrId<'db>> {
     match file.long(db) {
         FileLongId::OnDisk(path) => {
@@ -586,9 +605,10 @@ fn priv_raw_file_content<'db>(db: &'db dyn FilesGroup, file: FileId<'db>) -> Opt
     }
 }
 
+#[salsa::tracked]
 fn file_content<'db>(db: &'db dyn FilesGroup, file: FileId<'db>) -> Option<StrId<'db>> {
     let overrides = db.file_overrides();
-    overrides.get(&file).copied().or_else(|| db.priv_raw_file_content(file))
+    overrides.get(&file).copied().or_else(|| priv_raw_file_content(db, file))
 }
 
 /// Tracked function to return the content of a file as a string.
@@ -612,8 +632,17 @@ fn file_summary_helper<'db>(db: &'db dyn FilesGroup, file: FileId<'db>) -> Optio
 fn file_summary<'db>(db: &'db dyn FilesGroup, file: FileId<'db>) -> Option<&'db FileSummary> {
     file_summary_helper(db, file).as_ref()
 }
-fn get_flag(db: &dyn FilesGroup, id: FlagId<'_>) -> Option<Arc<Flag>> {
+
+/// Returns a reference to the flag value.
+#[salsa::tracked(returns(ref))]
+fn get_flag_helper<'db>(db: &'db dyn FilesGroup, id: FlagId<'db>) -> Option<Arc<Flag>> {
     db.flags().get(&id).cloned()
+}
+
+/// Returns a reference to the flag value.
+// TODO(eytan-starkware): Remove helper function and use flags here.
+fn get_flag<'db>(db: &'db dyn FilesGroup, id: FlagId<'db>) -> Option<&'db Flag> {
+    db.flags().get(&id).map(|flag| flag.as_ref())
 }
 
 /// Tracked function to return the blob's content.
