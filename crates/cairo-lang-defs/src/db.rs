@@ -1526,7 +1526,7 @@ pub trait DefsGroupEx: DefsGroup {
         let crate_input = self.crate_input(crate_id);
         let mut overrides = self.macro_plugin_overrides_input().as_ref().clone();
         let plugins = plugins.iter().map(|plugin| plugin.long(self).clone()).collect();
-        overrides.insert(crate_input, plugins);
+        overrides.insert(crate_input.clone(), plugins);
         self.set_macro_plugin_overrides_input(Arc::new(overrides));
     }
 
@@ -1546,7 +1546,7 @@ pub trait DefsGroupEx: DefsGroup {
                 .map(|(name, plugin)| (name.clone(), plugin.long(self).clone()))
                 .collect(),
         );
-        overrides.insert(crate_input, plugins);
+        overrides.insert(crate_input.clone(), plugins);
         self.set_inline_macro_plugin_overrides_input(Arc::new(overrides));
     }
 }
