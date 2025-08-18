@@ -47,7 +47,7 @@ pub fn handle_storage_struct<'db, 'a>(
                 diagnostics.push(PluginDiagnostic::error(
                     member.stable_ptr(db),
                     format!(
-                        "`{SUBSTORAGE_ATTR}` attribute is only allowed for members of type
+                        "`{SUBSTORAGE_ATTR}` attribute is only allowed for members of type \
                          [some_path::]{STORAGE_STRUCT_NAME}`"
                     ),
                 ));
@@ -86,19 +86,19 @@ pub fn handle_storage_struct<'db, 'a>(
 
             impl {state_struct_name}Drop{generic_arg_str} of Drop<{full_state_struct_name}> {{}}
 
-            impl {state_struct_name}Deref{generic_arg_str} of
+            impl {state_struct_name}Deref{generic_arg_str} of \
              core::ops::Deref<@{full_state_struct_name}> {{
                 type Target = starknet::storage::FlattenedStorage<Storage>;
-                fn deref(self: @{full_state_struct_name}) ->
+                fn deref(self: @{full_state_struct_name}) -> \
              starknet::storage::FlattenedStorage<Storage> {{
                     starknet::storage::FlattenedStorage {{}}
                 }}
             }}
-            impl {state_struct_name}DerefMut{generic_arg_str} of
+            impl {state_struct_name}DerefMut{generic_arg_str} of \
              core::ops::DerefMut<{full_state_struct_name}> {{
-                type Target =
+                type Target = \
              starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
-                fn deref_mut(ref self: {full_state_struct_name}) ->
+                fn deref_mut(ref self: {full_state_struct_name}) -> \
              starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {{
                     starknet::storage::FlattenedStorage {{}}
                 }}
@@ -109,7 +109,7 @@ pub fn handle_storage_struct<'db, 'a>(
             }}
             #[cfg(target: 'test')]
             #[inline(always)]
-            pub fn {module_kind}_state_for_testing{generic_arg_str}() -> {full_state_struct_name}
+            pub fn {module_kind}_state_for_testing{generic_arg_str}() -> {full_state_struct_name} \
              {{
                 {unsafe_new_function_name}{full_generic_arg_str}()
             }}
@@ -185,8 +185,8 @@ fn get_substorage_member_code<'db>(
                             .into(),
                         ).mapped(db, member),
                         RewriteNode::interpolate_patched(
-                            &format!("\n    $name$:
-                             $component_path$::unsafe_new_component_state::<{CONTRACT_STATE_NAME}>(),
+                            &format!("\n    $name$: \
+                             $component_path$::unsafe_new_component_state::<{CONTRACT_STATE_NAME}>(),\
                              "),
                             &[
                                 (
@@ -247,13 +247,13 @@ fn get_simple_member_code<'db>(
 
     SimpleMemberGeneratedCode {
         struct_code: RewriteNode::interpolate_patched(
-            "\n$attributes$    $member_visibility$ $member_name$:
+            "\n$attributes$    $member_visibility$ $member_name$: \
              starknet::storage::$member_wrapper_type$<$member_type$>,",
             &patches,
         )
         .mapped(db, member),
         struct_code_mut: RewriteNode::interpolate_patched(
-            "\n$attributes$    $member_visibility$ $member_name$:
+            "\n$attributes$    $member_visibility$ $member_name$: \
              starknet::storage::$member_wrapper_type$<starknet::storage::Mutable<$member_type$>>,",
             &patches,
         )
@@ -265,7 +265,7 @@ fn get_simple_member_code<'db>(
             )
         } else {
             RewriteNode::interpolate_patched(
-                "\n           $member_name$: starknet::storage::StorageBase{ address:
+                "\n           $member_name$: starknet::storage::StorageBase{ address: \
                  selector!(\"$member_selector_name$\") },",
                 &patches,
             )
