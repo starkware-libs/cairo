@@ -263,7 +263,7 @@ impl<'db> FunctionLongId<'db> {
                 if let GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }) =
                     concrete_function.generic_function
                 {
-                    if let ImplLongId::GeneratedImpl(imp) = db.lookup_intern_impl(impl_id) {
+                    if let ImplLongId::GeneratedImpl(imp) = impl_id.long(db) {
                         let concrete_trait = imp.concrete_trait(db);
                         let info = db.core_info();
                         assert!(

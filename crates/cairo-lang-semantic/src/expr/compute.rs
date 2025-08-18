@@ -66,7 +66,9 @@ use crate::diagnostic::{
 };
 use crate::expr::inference::solver::SolutionSet;
 use crate::expr::inference::{ImplVarTraitItemMappings, InferenceId};
-use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate, validate_const_expr};
+use crate::items::constant::{
+    ConstValue, ConstValueId, resolve_const_expr_and_evaluate, validate_const_expr,
+};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
@@ -4380,7 +4382,7 @@ pub fn compute_and_append_statement_semantic<'db>(
                     let var_def = Binding::LocalItem(LocalItem {
                         id: StatementItemId::Constant(rhs_id.intern(db)),
                         kind: StatementItemKind::Constant(
-                            db.intern_const_value(rhs_resolved_expr.clone()),
+                            ConstValueId::new(db, rhs_resolved_expr.clone()),
                             rhs_resolved_expr.ty(db)?,
                         ),
                     });
