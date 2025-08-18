@@ -405,7 +405,7 @@ impl<'db> HirDisplay<'db> for ConstantId<'db> {
                             constant_full_signature.full_path.clone(),
                         )
                     })?;
-                    let constant_value = f.db.lookup_intern_const_value(const_value_id);
+                    let constant_value = const_value_id.long(f.db);
                     if let ConstValue::Int(value, _) = constant_value {
                         write_syntactic_evaluation(f, constant_full_signature.item_id).map_err(
                             |_| {
