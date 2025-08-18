@@ -1,7 +1,7 @@
 use std::default::Default;
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
+use cairo_lang_defs::db::{DefsGroup, defs_group_input, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::{MacroPluginLongId, ModuleId};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
@@ -19,7 +19,7 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, Upcast};
-use itertools::chain;
+use itertools::{Itertools, chain};
 use salsa::{AsDynDatabase, Database, Setter};
 
 use crate::get_base_plugins;
@@ -62,9 +62,9 @@ impl Default for DatabaseForTesting {
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
-        res.set_default_macro_plugins_input(
-            get_base_plugins().into_iter().map(MacroPluginLongId).collect(),
-        );
+        defs_group_input(&res)
+            .set_default_macro_plugins(&mut res)
+            .to(Some(get_base_plugins().into_iter().map(MacroPluginLongId).collect()));
         res
     }
 }
@@ -106,8 +106,8 @@ pub fn test_expand_plugin_inner(
     let extra_plugins = extra_plugins.iter().cloned().map(MacroPluginLongId);
 
     let default_plugins = db.default_macro_plugins_input();
-    let plugins = chain!(default_plugins.iter().cloned(), extra_plugins).collect::<Arc<[_]>>();
-    db.set_default_macro_plugins_input(plugins);
+    let plugins = chain!(default_plugins.iter().cloned(), extra_plugins).collect_vec();
+    defs_group_input(&db).set_default_macro_plugins(&mut db).to(Some(plugins));
 
     let cfg_set: Option<CfgSet> =
         inputs.get("cfg").map(|s| serde_json::from_str(s.as_str()).unwrap());

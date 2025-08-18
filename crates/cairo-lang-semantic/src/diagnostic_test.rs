@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::db::{DefsGroup, defs_group_input};
 use cairo_lang_defs::ids::{GenericTypeId, MacroPluginLongId, ModuleId, TopLevelLanguageElementId};
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
@@ -10,7 +10,7 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use salsa::Database;
+use salsa::{Database, Setter};
 use test_log::test;
 
 use crate::db::SemanticGroup;
@@ -144,9 +144,9 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
 fn test_inline_module_diagnostics() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
-    db.set_default_macro_plugins_input(Arc::new([MacroPluginLongId(Arc::new(
-        AddInlineModuleDummyPlugin,
-    ))]));
+    defs_group_input(db)
+        .set_default_macro_plugins(db)
+        .to(Some(vec![MacroPluginLongId(Arc::new(AddInlineModuleDummyPlugin))]));
     let crate_id = setup_test_crate(
         db,
         indoc! {"
