@@ -1,7 +1,6 @@
 use std::any::Any;
 use std::borrow::Cow;
 use std::collections::{HashMap, VecDeque};
-use std::mem;
 use std::ops::{Shl, Sub};
 use std::vec::IntoIter;
 
@@ -501,11 +500,11 @@ pub trait StarknetHintProcessor: HintProcessor {
 
 impl StarknetHintProcessor for CairoHintProcessor<'_> {
     fn take_starknet_state(&mut self) -> StarknetState {
-        mem::take(&mut self.starknet_state)
+        std::mem::take(&mut self.starknet_state)
     }
 
     fn take_syscalls_used_resources(&mut self) -> StarknetExecutionResources {
-        mem::take(&mut self.syscalls_used_resources)
+        std::mem::take(&mut self.syscalls_used_resources)
     }
 }
 
