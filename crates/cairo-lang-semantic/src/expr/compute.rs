@@ -654,7 +654,7 @@ fn expand_inline_macro<'db>(
     } else if let Some(macro_plugin_id) =
         ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name.to_string()).cloned()
     {
-        let macro_plugin = ctx.db.lookup_intern_inline_macro_plugin(macro_plugin_id);
+        let macro_plugin = macro_plugin_id.long(ctx.db);
         let result = macro_plugin.generate_code(
             db,
             syntax,

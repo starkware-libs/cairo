@@ -270,19 +270,8 @@ impl<'db> DebugWithDb<'db> for FunctionLongId<'db> {
     }
 }
 
-define_short_id!(
-    FunctionId,
-    FunctionLongId<'db>,
-    SemanticGroup,
-    lookup_intern_function,
-    intern_function
-);
-semantic_object_for_id!(
-    FunctionId<'a>,
-    lookup_intern_function,
-    intern_function,
-    FunctionLongId<'a>
-);
+define_short_id!(FunctionId, FunctionLongId<'db>, SemanticGroup, intern_function);
+semantic_object_for_id!(FunctionId<'a>, intern_function, FunctionLongId<'a>);
 impl<'db> FunctionId<'db> {
     pub fn get_concrete(&self, db: &'db dyn SemanticGroup) -> ConcreteFunction<'db> {
         self.long(db).function.clone()
@@ -629,12 +618,10 @@ define_short_id!(
     ConcreteFunctionWithBodyId,
     ConcreteFunctionWithBody<'db>,
     SemanticGroup,
-    lookup_intern_concrete_function_with_body,
     intern_concrete_function_with_body
 );
 semantic_object_for_id!(
     ConcreteFunctionWithBodyId<'a>,
-    lookup_intern_concrete_function_with_body,
     intern_concrete_function_with_body,
     ConcreteFunctionWithBody<'a>
 );
