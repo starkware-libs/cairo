@@ -2,13 +2,14 @@ use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
-use cairo_lang_filesystem::db::{FilesGroup, init_dev_corelib, init_files_group};
+use cairo_lang_filesystem::db::{init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::Upcast;
+use salsa::Database;
 
 use crate::Lowered;
 use crate::db::{LoweringGroup, UseApproxCodeSizeEstimator, init_lowering_group};
@@ -61,8 +62,8 @@ impl Elongate for LoweringDatabaseForTesting {
     }
 }
 
-impl<'db> Upcast<'db, dyn FilesGroup> for LoweringDatabaseForTesting {
-    fn upcast(&self) -> &dyn FilesGroup {
+impl<'db> Upcast<'db, dyn Database> for LoweringDatabaseForTesting {
+    fn upcast(&self) -> &dyn Database {
         self
     }
 }

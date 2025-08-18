@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe, PluginFileDiagnosticNotes, ToMaybe};
-use cairo_lang_filesystem::db::{ExternalFiles, FilesGroup, FilesGroupEx, TryExtAsVirtual};
+use cairo_lang_filesystem::db::{ExternalFiles, TryExtAsVirtual};
 use cairo_lang_filesystem::ids::{
     CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, VirtualFile,
 };
@@ -23,6 +23,7 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{Itertools, chain};
+use salsa::Database;
 
 use crate::cache::{DefCacheLoadingData, load_cached_crate_modules};
 use crate::ids::*;
@@ -817,7 +818,7 @@ fn cached_crate_modules<'db>(
 
 pub fn init_external_files<T: DefsGroup>(db: &mut T) {
     let try_ext_as_virtual_impl: TryExtAsVirtual =
-        Arc::new(|db: &dyn FilesGroup, external_id: salsa::Id| {
+        Arc::new(|db: &dyn Database, external_id: salsa::Id| {
             // TODO(eytan-starkware): Once everything is &dyn Database, remove the unsafe cast.
             let defs_db = (db as &dyn Any).downcast_ref::<T>().unwrap();
             try_ext_as_virtual_impl(defs_db, external_id)
@@ -868,7 +869,7 @@ fn priv_module_sub_files<'db>(
     let cfg_set = db
         .crate_config(crate_id)
         .and_then(|cfg| cfg.settings.cfg_set.as_ref())
-        .unwrap_or(db.upcast().cfg_set());
+        .unwrap_or(db.cfg_set());
     let edition = db
         .crate_config(module_id.owning_crate(db))
         .map(|cfg| cfg.settings.edition)

@@ -650,7 +650,6 @@ name = "cairo-lang-filesystem"
 version = "2.12.0"
 dependencies = [
  "cairo-lang-debug",
- "cairo-lang-proc-macros",
  "cairo-lang-utils",
  "env_logger",
  "path-clean",
@@ -677,6 +676,7 @@ dependencies = [
  "ignore",
  "itertools 0.14.0",
  "pretty_assertions",
+ "salsa",
  "serde",
  "test-case",
  "thiserror",
@@ -1028,6 +1028,7 @@ dependencies = [
  "indoc",
  "itertools 0.14.0",
  "pretty_assertions",
+ "salsa",
  "serde",
  "serde_json",
  "starknet-types-core",

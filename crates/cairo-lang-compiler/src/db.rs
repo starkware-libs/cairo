@@ -4,9 +4,7 @@ use anyhow::{Result, anyhow, bail};
 use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::cfg::CfgSet;
-use cairo_lang_filesystem::db::{
-    CORELIB_VERSION, FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group,
-};
+use cairo_lang_filesystem::db::{CORELIB_VERSION, FilesGroup, init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{CrateId, FlagLongId};
@@ -223,7 +221,7 @@ impl RootDatabaseBuilder {
 }
 
 /// Validates that the corelib version matches the expected one.
-pub fn validate_corelib(db: &(dyn FilesGroup + 'static)) -> Result<()> {
+pub fn validate_corelib(db: &(dyn salsa::Database + 'static)) -> Result<()> {
     let Some(config) = db.crate_config(CrateId::core(db)) else {
         return Ok(());
     };
@@ -245,8 +243,8 @@ pub fn validate_corelib(db: &(dyn FilesGroup + 'static)) -> Result<()> {
     bail!("Corelib version mismatch: expected `{expected}`, found `{found}`{path_part}.");
 }
 
-impl<'db> Upcast<'db, dyn FilesGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn FilesGroup {
+impl<'db> Upcast<'db, dyn salsa::Database> for RootDatabase {
+    fn upcast(&self) -> &dyn salsa::Database {
         self
     }
 }
