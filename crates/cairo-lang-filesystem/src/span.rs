@@ -1,6 +1,7 @@
 use std::iter::Sum;
 use std::ops::{Add, Range, Sub};
 
+use salsa::Database;
 use serde::{Deserialize, Serialize};
 
 use crate::db::FilesGroup;
@@ -179,7 +180,7 @@ impl TextSpan {
     /// Convert this span to a [`TextPositionSpan`] in the file.
     pub fn position_in_file<'db>(
         self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         file: FileId<'db>,
     ) -> Option<TextPositionSpan> {
         let start = self.start.position_in_file(db, file)?;
@@ -198,7 +199,7 @@ pub struct TextPosition {
 }
 
 impl TextOffset {
-    fn get_line_number(self, db: &dyn FilesGroup, file: FileId<'_>) -> Option<usize> {
+    fn get_line_number(self, db: &dyn Database, file: FileId<'_>) -> Option<usize> {
         let summary = db.file_summary(file)?;
         assert!(
             self <= summary.last_offset,
@@ -210,7 +211,7 @@ impl TextOffset {
     }
 
     /// Convert this offset to an equivalent [`TextPosition`] in the file.
-    pub fn position_in_file(self, db: &dyn FilesGroup, file: FileId<'_>) -> Option<TextPosition> {
+    pub fn position_in_file(self, db: &dyn Database, file: FileId<'_>) -> Option<TextPosition> {
         let summary = db.file_summary(file)?;
         let line_number = self.get_line_number(db, file)?;
         let line_offset = summary.line_offsets[line_number];
@@ -227,7 +228,7 @@ impl TextPosition {
     /// of line respectively.
     ///
     /// Returns `None` if file is not found in `db`.
-    pub fn offset_in_file(self, db: &dyn FilesGroup, file: FileId<'_>) -> Option<TextOffset> {
+    pub fn offset_in_file(self, db: &dyn Database, file: FileId<'_>) -> Option<TextOffset> {
         let file_summary = db.file_summary(file)?;
         let content = db.file_content(file)?.long(db);
 
@@ -276,7 +277,7 @@ impl TextPositionSpan {
     /// Convert this span to a [`TextSpan`] in the file.
     pub fn offset_in_file<'db>(
         Self { start, end }: Self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         file: FileId<'db>,
     ) -> Option<TextSpan> {
         Some(TextSpan::new(start.offset_in_file(db, file)?, end.offset_in_file(db, file)?))

@@ -63,8 +63,8 @@ impl<'db> Upcast<'db, dyn DefsGroup> for TestDatabase {
         self
     }
 }
-impl<'db> Upcast<'db, dyn FilesGroup> for TestDatabase {
-    fn upcast(&self) -> &dyn FilesGroup {
+impl<'db> Upcast<'db, dyn salsa::Database> for TestDatabase {
+    fn upcast(&self) -> &dyn salsa::Database {
         self
     }
 }

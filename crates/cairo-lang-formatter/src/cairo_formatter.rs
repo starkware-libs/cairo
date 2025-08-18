@@ -12,6 +12,7 @@ use cairo_lang_utils::Intern;
 use diffy::{PatchFormatter, create_patch};
 use ignore::WalkBuilder;
 use ignore::types::TypesBuilder;
+use salsa::Database;
 use thiserror::Error;
 
 use crate::{CAIRO_FMT_IGNORE, FormatterConfig, get_formatted_file};
@@ -135,13 +136,13 @@ pub struct StdinFmt;
 /// A trait for types that can be used as input for the cairo formatter.
 pub trait FormattableInput {
     /// Converts the input to a [`FileId`] that can be used by the formatter.
-    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn FilesGroup) -> Result<FileId<'a>>;
+    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn Database) -> Result<FileId<'a>>;
     /// Overwrites the content of the input with the given string.
     fn overwrite_content(&self, _content: String) -> Result<()>;
 }
 
 impl FormattableInput for &Path {
-    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn FilesGroup) -> Result<FileId<'a>> {
+    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn Database) -> Result<FileId<'a>> {
         Ok(FileId::new_on_disk(db, PathBuf::from(self)))
     }
     fn overwrite_content(&self, content: String) -> Result<()> {
@@ -151,7 +152,7 @@ impl FormattableInput for &Path {
 }
 
 impl FormattableInput for String {
-    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn FilesGroup) -> Result<FileId<'a>> {
+    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn Database) -> Result<FileId<'a>> {
         Ok(FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "string_to_format".into(),
@@ -169,7 +170,7 @@ impl FormattableInput for String {
 }
 
 impl FormattableInput for StdinFmt {
-    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn FilesGroup) -> Result<FileId<'a>> {
+    fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn Database) -> Result<FileId<'a>> {
         let mut buffer = String::new();
         stdin().read_to_string(&mut buffer)?;
         Ok(FileLongId::Virtual(VirtualFile {

@@ -35,8 +35,8 @@ impl<'db> Upcast<'db, dyn SyntaxGroup> for SimpleParserDatabase {
         self
     }
 }
-impl<'db> Upcast<'db, dyn FilesGroup> for SimpleParserDatabase {
-    fn upcast(&'db self) -> &'db dyn FilesGroup {
+impl<'db> Upcast<'db, dyn salsa::Database> for SimpleParserDatabase {
+    fn upcast(&'db self) -> &'db dyn salsa::Database {
         self
     }
 }

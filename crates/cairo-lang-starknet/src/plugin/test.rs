@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use salsa::AsDynDatabase;
+
 use cairo_lang_compiler::diagnostics::get_diagnostics_as_string;
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
@@ -12,8 +14,8 @@ use cairo_lang_plugins::test_utils::expand_module_text;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, Upcast};
 
 use crate::test_utils::{SHARED_DB, SHARED_DB_WITH_CONTRACTS};
 
@@ -51,13 +53,14 @@ impl TestFileRunner for ExpandContractTestRunner {
             let content = db.file_content(file_id).unwrap().long(&db).as_ref();
             let content_location =
                 DiagnosticLocation { file_id, span: TextSpan::from_str(content) };
-            let original_location = content_location.user_location(db.upcast());
+            let db = db.as_dyn_database();
+            let original_location = content_location.user_location(db);
             let origin = if content_location == original_location {
                 "".to_string()
             } else {
-                format!("{:?}\n", original_location.debug(db.upcast()))
+                format!("{:?}\n", original_location.debug(db))
             };
-            let file_name = file_id.file_name(&db);
+            let file_name = file_id.file_name(db);
             file_contents.push(format!("{origin}{file_name}:\n\n{content}"));
         }
 

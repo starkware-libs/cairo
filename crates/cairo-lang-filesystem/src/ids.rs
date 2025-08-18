@@ -30,7 +30,7 @@ pub enum CrateInput {
 }
 
 impl CrateInput {
-    pub fn into_crate_long_id(self, db: &dyn FilesGroup) -> CrateLongId<'_> {
+    pub fn into_crate_long_id(self, db: &dyn Database) -> CrateLongId<'_> {
         match self {
             CrateInput::Real { name, discriminator } => CrateLongId::Real { name, discriminator },
             CrateInput::Virtual { name, file_long_id, settings, cache_file } => {
@@ -45,7 +45,7 @@ impl CrateInput {
     }
 
     pub fn into_crate_ids(
-        db: &dyn FilesGroup,
+        db: &dyn Database,
         inputs: impl IntoIterator<Item = CrateInput>,
     ) -> Vec<CrateId<'_>> {
         inputs.into_iter().map(|input| input.into_crate_long_id(db).intern(db)).collect()
@@ -72,7 +72,7 @@ impl<'db> CrateLongId<'db> {
         }
     }
 
-    pub fn into_crate_input(self, db: &'db dyn FilesGroup) -> CrateInput {
+    pub fn into_crate_input(self, db: &'db dyn Database) -> CrateInput {
         match self {
             CrateLongId::Real { name, discriminator } => CrateInput::Real { name, discriminator },
             CrateLongId::Virtual { name, file_id, settings, cache_file } => CrateInput::Virtual {
@@ -133,7 +133,7 @@ pub enum FileInput {
 }
 
 impl FileInput {
-    pub fn into_file_long_id(self, db: &dyn FilesGroup) -> FileLongId<'_> {
+    pub fn into_file_long_id(self, db: &dyn Database) -> FileLongId<'_> {
         match self {
             FileInput::OnDisk(path) => FileLongId::OnDisk(path),
             FileInput::Virtual(vf) => FileLongId::Virtual(vf.into_virtual_file(db)),
@@ -224,7 +224,7 @@ pub struct VirtualFileInput {
 }
 
 impl VirtualFileInput {
-    fn into_virtual_file(self, db: &dyn FilesGroup) -> VirtualFile<'_> {
+    fn into_virtual_file(self, db: &dyn Database) -> VirtualFile<'_> {
         VirtualFile {
             parent: self.parent.map(|id| id.as_ref().clone().into_file_long_id(db).intern(db)),
             name: self.name,
@@ -249,7 +249,7 @@ pub struct VirtualFile<'db> {
     pub original_item_removed: bool,
 }
 impl<'db> VirtualFile<'db> {
-    fn full_path(&self, db: &'db dyn FilesGroup) -> String {
+    fn full_path(&self, db: &'db dyn Database) -> String {
         if let Some(parent) = self.parent {
             // TODO(yuval): consider a different path format for virtual files.
             format!("{}[{}]", parent.full_path(db), self.name)
@@ -271,7 +271,7 @@ impl<'db> VirtualFile<'db> {
 }
 
 impl<'db> FileLongId<'db> {
-    pub fn file_name(&self, db: &'db dyn FilesGroup) -> String {
+    pub fn file_name(&self, db: &'db dyn Database) -> String {
         match self {
             FileLongId::OnDisk(path) => {
                 path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>").to_string()
@@ -282,7 +282,7 @@ impl<'db> FileLongId<'db> {
             }
         }
     }
-    pub fn full_path(&self, db: &'db dyn FilesGroup) -> String {
+    pub fn full_path(&self, db: &'db dyn Database) -> String {
         match self {
             FileLongId::OnDisk(path) => path.to_str().unwrap_or("<unknown>").to_string(),
             FileLongId::Virtual(vf) => vf.full_path(db),
@@ -314,15 +314,15 @@ impl<'db> FileId<'db> {
         FileLongId::OnDisk(path.clean()).intern(db)
     }
 
-    pub fn file_name(self, db: &dyn FilesGroup) -> String {
+    pub fn file_name(self, db: &dyn Database) -> String {
         self.long(db).file_name(db)
     }
 
-    pub fn full_path(self, db: &dyn FilesGroup) -> String {
+    pub fn full_path(self, db: &dyn Database) -> String {
         self.long(db).full_path(db)
     }
 
-    pub fn kind(self, db: &dyn FilesGroup) -> FileKind {
+    pub fn kind(self, db: &dyn Database) -> FileKind {
         self.long(db).kind()
     }
 }
@@ -339,7 +339,7 @@ pub enum DirectoryInput {
 
 impl DirectoryInput {
     /// Converts the input into a [`Directory`].
-    pub fn into_directory(self, db: &dyn FilesGroup) -> Directory<'_> {
+    pub fn into_directory(self, db: &dyn Database) -> Directory<'_> {
         match self {
             DirectoryInput::Real(path) => Directory::Real(path),
             DirectoryInput::Virtual { files, dirs } => Directory::Virtual {
@@ -359,7 +359,7 @@ impl DirectoryInput {
 define_short_id!(SmolStrId, SmolStr, FilesGroup);
 
 /// Returns a string with a lifetime that is valid on the database's lifetime.
-pub fn db_str(db: &dyn FilesGroup, str: impl Into<SmolStr>) -> &str {
+pub fn db_str(db: &dyn Database, str: impl Into<SmolStr>) -> &str {
     str.into().intern(db).long(db)
 }
 
@@ -483,7 +483,7 @@ impl BlobLongId {
 define_short_id!(BlobId, BlobLongId, FilesGroup);
 
 impl<'db> BlobId<'db> {
-    pub fn new_on_disk(db: &'db (dyn FilesGroup + 'db), path: PathBuf) -> Self {
+    pub fn new_on_disk(db: &'db (dyn salsa::Database + 'db), path: PathBuf) -> Self {
         BlobId::new(db, BlobLongId::OnDisk(path.clean()))
     }
 }
