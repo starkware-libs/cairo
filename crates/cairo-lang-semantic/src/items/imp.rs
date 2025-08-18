@@ -1948,10 +1948,13 @@ pub fn find_closure_generated_candidate<'db>(
             closure_type_long.captured_types.iter().unique().map(|ty| {
                 GenericParam::Impl(GenericParamImpl {
                     id,
-                    concrete_trait: Maybe::Ok(db.intern_concrete_trait(ConcreteTraitLongId {
-                        trait_id,
-                        generic_args: vec![GenericArgumentId::Type(*ty)],
-                    })),
+                    concrete_trait: Maybe::Ok(ConcreteTraitId::new(
+                        db,
+                        ConcreteTraitLongId {
+                            trait_id,
+                            generic_args: vec![GenericArgumentId::Type(*ty)],
+                        },
+                    )),
                     type_constraints: Default::default(),
                 })
             }),

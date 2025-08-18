@@ -17,7 +17,7 @@ use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::compute::ComputationContext;
 use crate::expr::inference::Inference;
 use crate::helper::ModuleHelper;
-use crate::items::constant::ConstValue;
+use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::ImplLongId;
@@ -849,16 +849,15 @@ pub fn try_extract_bounded_int_type_ranges<'db>(
     db: &'db dyn SemanticGroup,
     ty: TypeId<'db>,
 ) -> Option<(BigInt, BigInt)> {
-    let concrete_ty = try_extract_matches!(db.lookup_intern_type(ty), TypeLongId::Concrete)?;
+    let concrete_ty = try_extract_matches!(ty.long(db), TypeLongId::Concrete)?;
     let extern_ty = try_extract_matches!(concrete_ty, ConcreteTypeId::Extern)?;
-    let ConcreteExternTypeLongId { extern_type_id, generic_args } =
-        db.lookup_intern_concrete_extern_type(extern_ty);
+    let ConcreteExternTypeLongId { extern_type_id, generic_args } = extern_ty.long(db);
     require(extern_type_id.name(db) == "BoundedInt")?;
     let [GenericArgumentId::Constant(min), GenericArgumentId::Constant(max)] = generic_args[..]
     else {
         return None;
     };
-    let to_int = |id| db.lookup_intern_const_value(id).into_int();
+    let to_int = |id: ConstValueId<'db>| id.long(db).clone().into_int();
 
     Some((to_int(min)?, to_int(max)?))
 }
