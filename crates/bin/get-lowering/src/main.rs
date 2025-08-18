@@ -282,7 +282,8 @@ fn main() -> anyhow::Result<()> {
                 )
             })?;
 
-            function_id = db.intern_lowering_concrete_function_with_body(
+            function_id = ConcreteFunctionWithBodyId::new(
+                db,
                 ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
                     parent: function_id.base_semantic_function(db),
                     key,
