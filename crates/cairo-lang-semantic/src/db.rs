@@ -2276,7 +2276,7 @@ pub trait SemanticGroupEx: SemanticGroup {
         let mut overrides = self.analyzer_plugin_overrides_input().as_ref().clone();
         let plugins =
             plugins.iter().map(|plugin| self.lookup_intern_analyzer_plugin(*plugin)).collect_vec();
-        overrides.insert(self.crate_input(crate_id), Arc::from(plugins));
+        overrides.insert(self.crate_input(crate_id).clone(), Arc::from(plugins));
         self.set_analyzer_plugin_overrides_input(Arc::new(overrides));
     }
 }
