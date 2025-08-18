@@ -2311,13 +2311,13 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// kind.
     /// Otherwise, returns `None`.
     fn get_binary_operator(&self, condition: ConditionGreen<'_>) -> Option<SyntaxKind> {
-        let condition_expr_green = self.db.lookup_intern_green(condition.0);
+        let condition_expr_green = condition.0.long(self.db);
         require(condition_expr_green.kind == SyntaxKind::ConditionExpr)?;
 
-        let expr_binary_green = self.db.lookup_intern_green(condition_expr_green.children()[0]);
+        let expr_binary_green = condition_expr_green.children()[0].long(self.db);
         require(expr_binary_green.kind == SyntaxKind::ExprBinary)?;
 
-        Some(self.db.lookup_intern_green(expr_binary_green.children()[1]).kind)
+        Some(expr_binary_green.children()[1].long(self.db).kind)
     }
 
     /// Parses a conjunction of conditions of the form `<condition> && <condition> && ...`,

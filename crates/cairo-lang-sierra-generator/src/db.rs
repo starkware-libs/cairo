@@ -98,12 +98,6 @@ fn lookup_sierra_function<'db>(
 
 #[cairo_lang_proc_macros::query_group]
 pub trait SierraGenGroup: LoweringGroup + for<'db> Upcast<'db, dyn LoweringGroup> {
-    #[salsa::interned]
-    fn intern_label_id<'db>(
-        &'db self,
-        id: pre_sierra::LabelLongId<'db>,
-    ) -> pre_sierra::LabelId<'db>;
-
     fn intern_concrete_lib_func(
         &self,
         id: cairo_lang_sierra::program::ConcreteLibfuncLongId,
