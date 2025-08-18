@@ -1,11 +1,11 @@
 use std::sync::{LazyLock, Mutex};
 
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
-    CrateSettings, Edition, ExperimentalFeaturesConfig, ExternalFiles, FilesGroup,
-    init_dev_corelib, init_files_group,
+    CrateSettings, Edition, ExperimentalFeaturesConfig, FilesGroup, init_dev_corelib,
+    init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{BlobId, CrateId, CrateLongId, FileKind, FileLongId, VirtualFile};
@@ -30,11 +30,7 @@ pub struct SemanticDatabaseForTesting {
 
 #[salsa::db]
 impl salsa::Database for SemanticDatabaseForTesting {}
-impl ExternalFiles for SemanticDatabaseForTesting {
-    fn try_ext_as_virtual(&self, external_id: salsa::Id) -> Option<VirtualFile<'_>> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
-    }
-}
+
 impl SemanticDatabaseForTesting {
     pub fn new_empty() -> Self {
         let suite = get_default_plugin_suite();
@@ -43,6 +39,7 @@ impl SemanticDatabaseForTesting {
 
     pub fn with_plugin_suite(suite: PluginSuite) -> Self {
         let mut res = SemanticDatabaseForTesting { storage: Default::default() };
+        init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
@@ -179,7 +176,7 @@ pub fn setup_test_module_ex<'a>(
     let module_id = ModuleId::CrateRoot(crate_id);
     let file_id = db.module_main_file(module_id).unwrap();
 
-    let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(Upcast::upcast(db));
+    let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(db);
     let semantic_diagnostics = get_recursive_module_semantic_diagnostics(db, module_id).format(db);
 
     WithStringDiagnostics {

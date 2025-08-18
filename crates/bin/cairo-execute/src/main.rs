@@ -51,7 +51,7 @@ struct Args {
     /// In `--build-only` this would be the executable artifact.
     /// In bootloader mode it will be the resulting cairo PIE file.
     /// In standalone mode this parameter is disallowed.
-    #[arg(long, required_unless_present_any(["standalone", "profile"]))]
+    #[arg(long, required_unless_present_any(["standalone", "run_profiler"]))]
     output_path: Option<PathBuf>,
 
     /// Whether to only run a prebuilt executable.
@@ -61,7 +61,7 @@ struct Args {
     /// Whether to run the profiler, and what results to produce. See
     /// [cairo_lang_runner::profiling::ProfilerConfig]
     /// Currently does not work with prebuilt executables as it requires additional debug info.
-    #[arg(short, long, default_value_t, value_enum, conflicts_with_all = ["prebuilt"])]
+    #[arg(short, long, default_value_t, value_enum, conflicts_with = "prebuilt")]
     run_profiler: RunProfilerConfigArg,
 
     #[command(flatten)]

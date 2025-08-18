@@ -39,6 +39,7 @@ CRATES_TO_PUBLISH=(
     cairo-lang-compiler
     cairo-lang-starknet-classes
     cairo-lang-starknet
+    cairo-lang-executable-plugin
     cairo-lang-executable
     cairo-lang-runner
     cairo-lang-test-plugin

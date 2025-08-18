@@ -7,6 +7,9 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::{DbWarmupContext, get_sierra_program_for_functions};
 use cairo_lang_debug::debug::DebugWithDb;
+use cairo_lang_executable_plugin::{
+    EXECUTABLE_PREFIX, EXECUTABLE_RAW_ATTR, executable_plugin_suite,
+};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -21,8 +24,6 @@ use cairo_lang_sierra_generator::program_generator::{
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::write_comma_separated;
 use itertools::Itertools;
-
-use crate::plugin::{EXECUTABLE_PREFIX, EXECUTABLE_RAW_ATTR, executable_plugin_suite};
 
 /// The CASM compilation result.
 pub struct CompiledFunction {

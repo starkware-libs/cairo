@@ -31,13 +31,7 @@ pub enum FunctionWithBodyLongId<'db> {
     Semantic(defs::ids::FunctionWithBodyId<'db>),
     Generated { parent: defs::ids::FunctionWithBodyId<'db>, key: GeneratedFunctionKey<'db> },
 }
-define_short_id!(
-    FunctionWithBodyId,
-    FunctionWithBodyLongId<'db>,
-    LoweringGroup,
-    lookup_intern_lowering_function_with_body,
-    intern_lowering_function_with_body
-);
+define_short_id!(FunctionWithBodyId, FunctionWithBodyLongId<'db>, LoweringGroup);
 impl<'db> FunctionWithBodyLongId<'db> {
     pub fn base_semantic_function(
         &self,
@@ -98,13 +92,7 @@ pub enum ConcreteFunctionWithBodyLongId<'db> {
     Generated(GeneratedFunction<'db>),
     Specialized(SpecializedFunction<'db>),
 }
-define_short_id!(
-    ConcreteFunctionWithBodyId,
-    ConcreteFunctionWithBodyLongId<'db>,
-    LoweringGroup,
-    lookup_intern_lowering_concrete_function_with_body,
-    intern_lowering_concrete_function_with_body
-);
+define_short_id!(ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId<'db>, LoweringGroup);
 
 // The result of `generic_or_specialized`.
 pub enum GenericOrSpecialized<'db> {
@@ -263,13 +251,7 @@ pub enum FunctionLongId<'db> {
     /// A specialized function.
     Specialized(SpecializedFunction<'db>),
 }
-define_short_id!(
-    FunctionId,
-    FunctionLongId<'db>,
-    LoweringGroup,
-    lookup_intern_lowering_function,
-    intern_lowering_function
-);
+define_short_id!(FunctionId, FunctionLongId<'db>, LoweringGroup);
 impl<'db> FunctionLongId<'db> {
     pub fn body(
         &self,
@@ -585,7 +567,7 @@ pub(crate) fn parameter_as_member_path<'db>(
     })
 }
 
-define_short_id!(LocationId, Location<'db>, LoweringGroup, lookup_intern_location, intern_location);
+define_short_id!(LocationId, Location<'db>, LoweringGroup);
 impl<'db> LocationId<'db> {
     pub fn from_stable_location(
         db: &'db dyn LoweringGroup,

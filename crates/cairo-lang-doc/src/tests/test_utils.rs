@@ -2,7 +2,7 @@ use anyhow::{Result, anyhow};
 use cairo_lang_defs::db::{DefsGroup, init_defs_group};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    CrateConfiguration, ExternalFiles, FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group,
+    CrateConfiguration, FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
@@ -22,7 +22,6 @@ pub struct TestDatabase {
 }
 #[salsa::db]
 impl salsa::Database for TestDatabase {}
-impl ExternalFiles for TestDatabase {}
 
 impl Default for TestDatabase {
     fn default() -> Self {
@@ -94,7 +93,7 @@ pub fn setup_test_module(db: &mut dyn DefsGroup, content: &str) {
     override_file_content!(db, file, Some(content.into()));
     let crate_id = test_crate_id(db);
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
-    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(Upcast::upcast(db));
+    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(db);
     assert_eq!(syntax_diagnostics, "");
 }
 

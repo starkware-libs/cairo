@@ -103,7 +103,7 @@ pub trait Intern<'db, Target> {
 //   usually include the short id of the entity's parent.
 #[macro_export]
 macro_rules! define_short_id {
-    ($short_id:ident, $long_id:path, $db:ident, $lookup:ident, $intern:ident) => {
+    ($short_id:ident, $long_id:path, $db:ident) => {
         // 1. Modern interned struct.
         #[salsa::interned]
         pub struct $short_id<'db> {

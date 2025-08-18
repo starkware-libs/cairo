@@ -2,10 +2,8 @@ use std::fmt::Write as _;
 use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
-use cairo_lang_filesystem::db::{
-    CrateConfiguration, ExternalFiles, FilesGroup, FilesGroupEx, init_files_group,
-};
-use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, VirtualFile};
+use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup, FilesGroupEx, init_files_group};
+use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -17,7 +15,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, Upcast, extract_matches, try_extract_matches};
 use indoc::indoc;
 
-use crate::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use crate::db::{DefsGroup, init_defs_group, init_external_files};
 use crate::ids::{
     FileIndex, GenericParamLongId, MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId,
     NamedLanguageElementId, SubmoduleLongId,
@@ -33,14 +31,11 @@ pub struct DatabaseForTesting {
 }
 #[salsa::db]
 impl salsa::Database for DatabaseForTesting {}
-impl ExternalFiles for DatabaseForTesting {
-    fn try_ext_as_virtual(&self, external_id: salsa::Id) -> Option<VirtualFile<'_>> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
-    }
-}
+
 impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
+        init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
         res.set_default_macro_plugins_input(Arc::new([
@@ -85,11 +80,11 @@ fn test_generic_item_id(
 
     let module_file_id = ModuleFileId(module_id, FileIndex(0));
     let file_id = db_val.module_main_file(module_id).unwrap();
-    let node = db_val.file_syntax(file_id).unwrap();
+    let file_syntax = db_val.file_module_syntax(file_id).unwrap();
     let mut output = String::new();
 
     fn find_generics<'db>(
-        db: &'db DatabaseForTesting,
+        db: &'db dyn DefsGroup,
         mut module_file_id: ModuleFileId<'db>,
         node: &SyntaxNode<'db>,
         output: &mut String,
@@ -105,18 +100,12 @@ fn test_generic_item_id(
             | SyntaxKind::GenericParamConst
             | SyntaxKind::GenericParamImplNamed
             | SyntaxKind::GenericParamImplAnonymous => {
-                let db_ref: &dyn DefsGroup = db;
                 let param_id =
                     GenericParamLongId(module_file_id, ast::GenericParamPtr(node.stable_ptr(db)))
                         .intern(db);
                 let generic_item = param_id.generic_item(db);
-                writeln!(
-                    output,
-                    "{:?} -> {:?}",
-                    param_id.debug(db_ref),
-                    generic_item.debug(db_ref)
-                )
-                .unwrap();
+                writeln!(output, "{:?} -> {:?}", param_id.debug(db), generic_item.debug(db))
+                    .unwrap();
             }
             _ => {}
         }
@@ -124,7 +113,7 @@ fn test_generic_item_id(
             find_generics(db, module_file_id, child, output);
         }
     }
-    find_generics(&db_val, module_file_id, &node, &mut output);
+    find_generics(&db_val, module_file_id, &file_syntax.as_syntax_node(), &mut output);
 
     TestRunnerResult::success(OrderedHashMap::from([("output".into(), output)]))
 }
@@ -142,7 +131,7 @@ pub fn setup_test_module(db: &mut dyn DefsGroup, content: &str) {
     override_file_content!(db, file, Some(content.into()));
     let crate_id = get_crate_id(db);
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
-    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(Upcast::upcast(db));
+    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(db);
     assert_eq!(syntax_diagnostics, "");
 }
 

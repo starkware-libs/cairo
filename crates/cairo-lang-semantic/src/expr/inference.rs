@@ -120,7 +120,7 @@ pub struct LocalImplVarId(pub usize);
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, salsa::Update)]
 pub struct LocalConstVarId(pub usize);
 
-define_short_id!(ImplVarId, ImplVar<'db>, SemanticGroup, lookup_intern_impl_var, intern_impl_var);
+define_short_id!(ImplVarId, ImplVar<'db>, SemanticGroup);
 impl<'db> ImplVarId<'db> {
     pub fn id(&self, db: &dyn SemanticGroup) -> LocalImplVarId {
         self.long(db).id
@@ -132,7 +132,7 @@ impl<'db> ImplVarId<'db> {
         self.long(db).lookup_context.clone()
     }
 }
-semantic_object_for_id!(ImplVarId<'a>, lookup_intern_impl_var, intern_impl_var, ImplVar<'a>);
+semantic_object_for_id!(ImplVarId, ImplVar<'a>);
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, SemanticObject, salsa::Update)]
 pub enum InferenceVar {

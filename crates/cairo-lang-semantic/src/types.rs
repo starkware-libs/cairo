@@ -63,8 +63,8 @@ impl<'db> OptionFrom<TypeLongId<'db>> for ConcreteTypeId<'db> {
     }
 }
 
-define_short_id!(TypeId, TypeLongId<'db>, SemanticGroup, lookup_intern_type, intern_type);
-semantic_object_for_id!(TypeId<'a>, lookup_intern_type, intern_type, TypeLongId<'a>);
+define_short_id!(TypeId, TypeLongId<'db>, SemanticGroup);
+semantic_object_for_id!(TypeId, TypeLongId<'a>);
 impl<'db> TypeId<'db> {
     pub fn missing(db: &'db dyn SemanticGroup, diag_added: DiagnosticAdded) -> Self {
         TypeLongId::Missing(diag_added).intern(db)
@@ -147,22 +147,21 @@ impl<'db> TypeLongId<'db> {
         match self {
             TypeLongId::Concrete(id) => match id {
                 ConcreteTypeId::Struct(id) => {
-                    let crate_id = db.lookup_intern_struct(id.struct_id(db)).0.0.owning_crate(db);
+                    let crate_id = id.struct_id(db).long(db).0.0.owning_crate(db);
 
                     db.declared_phantom_type_attributes(crate_id)
                         .iter()
                         .any(|attr| id.has_attr(db, attr).unwrap_or_default())
                 }
                 ConcreteTypeId::Enum(id) => {
-                    let crate_id = db.lookup_intern_enum(id.enum_id(db)).0.0.owning_crate(db);
+                    let crate_id = id.enum_id(db).long(db).0.0.owning_crate(db);
 
                     db.declared_phantom_type_attributes(crate_id)
                         .iter()
                         .any(|attr| id.has_attr(db, attr).unwrap_or_default())
                 }
                 ConcreteTypeId::Extern(id) => {
-                    let crate_id =
-                        db.lookup_intern_extern_type(id.extern_type_id(db)).0.0.owning_crate(db);
+                    let crate_id = id.extern_type_id(db).long(db).0.0.owning_crate(db);
 
                     db.declared_phantom_type_attributes(crate_id)
                         .iter()
@@ -348,19 +347,8 @@ pub struct ConcreteStructLongId<'db> {
     pub struct_id: StructId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
 }
-define_short_id!(
-    ConcreteStructId,
-    ConcreteStructLongId<'db>,
-    SemanticGroup,
-    lookup_intern_concrete_struct,
-    intern_concrete_struct
-);
-semantic_object_for_id!(
-    ConcreteStructId<'a>,
-    lookup_intern_concrete_struct,
-    intern_concrete_struct,
-    ConcreteStructLongId<'a>
-);
+define_short_id!(ConcreteStructId, ConcreteStructLongId<'db>, SemanticGroup);
+semantic_object_for_id!(ConcreteStructId, ConcreteStructLongId<'a>);
 impl<'db> ConcreteStructId<'db> {
     pub fn struct_id(&self, db: &'db dyn SemanticGroup) -> StructId<'db> {
         self.long(db).struct_id
@@ -395,19 +383,8 @@ impl<'db> DebugWithDb<'db> for ConcreteEnumLongId<'db> {
     }
 }
 
-define_short_id!(
-    ConcreteEnumId,
-    ConcreteEnumLongId<'db>,
-    SemanticGroup,
-    lookup_intern_concrete_enum,
-    intern_concrete_enum
-);
-semantic_object_for_id!(
-    ConcreteEnumId<'a>,
-    lookup_intern_concrete_enum,
-    intern_concrete_enum,
-    ConcreteEnumLongId<'a>
-);
+define_short_id!(ConcreteEnumId, ConcreteEnumLongId<'db>, SemanticGroup);
+semantic_object_for_id!(ConcreteEnumId, ConcreteEnumLongId<'a>);
 impl<'db> ConcreteEnumId<'db> {
     pub fn enum_id(&self, db: &'db dyn SemanticGroup) -> EnumId<'db> {
         self.long(db).enum_id
@@ -419,19 +396,8 @@ pub struct ConcreteExternTypeLongId<'db> {
     pub extern_type_id: ExternTypeId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
 }
-define_short_id!(
-    ConcreteExternTypeId,
-    ConcreteExternTypeLongId<'db>,
-    SemanticGroup,
-    lookup_intern_concrete_extern_type,
-    intern_concrete_extern_type
-);
-semantic_object_for_id!(
-    ConcreteExternTypeId<'a>,
-    lookup_intern_concrete_extern_type,
-    intern_concrete_extern_type,
-    ConcreteExternTypeLongId<'a>
-);
+define_short_id!(ConcreteExternTypeId, ConcreteExternTypeLongId<'db>, SemanticGroup);
+semantic_object_for_id!(ConcreteExternTypeId, ConcreteExternTypeLongId<'a>);
 impl<'db> ConcreteExternTypeId<'db> {
     pub fn extern_type_id(&self, db: &'db dyn SemanticGroup) -> ExternTypeId<'db> {
         self.long(db).extern_type_id
