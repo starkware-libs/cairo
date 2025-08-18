@@ -33,87 +33,6 @@ use crate::plugin_utils::try_extract_unnamed_arg;
 /// See [`super::ids`] for further details.
 #[cairo_lang_proc_macros::query_group]
 pub trait DefsGroup: ParserGroup {
-    #[salsa::interned]
-    fn intern_constant<'db>(&'db self, id: ConstantLongId<'db>) -> ConstantId<'db>;
-    #[salsa::interned]
-    fn intern_submodule<'db>(&'db self, id: SubmoduleLongId<'db>) -> SubmoduleId<'db>;
-    #[salsa::interned]
-    fn intern_use<'db>(&'db self, id: UseLongId<'db>) -> UseId<'db>;
-    #[salsa::interned]
-    fn intern_global_use<'db>(&'db self, id: GlobalUseLongId<'db>) -> GlobalUseId<'db>;
-    #[salsa::interned]
-    fn intern_free_function<'db>(&'db self, id: FreeFunctionLongId<'db>) -> FreeFunctionId<'db>;
-    #[salsa::interned]
-    fn intern_impl_type_def<'db>(&'db self, id: ImplTypeDefLongId<'db>) -> ImplTypeDefId<'db>;
-    #[salsa::interned]
-    fn intern_impl_constant_def<'db>(
-        &'db self,
-        id: ImplConstantDefLongId<'db>,
-    ) -> ImplConstantDefId<'db>;
-    #[salsa::interned]
-    fn intern_impl_impl_def<'db>(&'db self, id: ImplImplDefLongId<'db>) -> ImplImplDefId<'db>;
-    #[salsa::interned]
-    fn intern_impl_function<'db>(&'db self, id: ImplFunctionLongId<'db>) -> ImplFunctionId<'db>;
-    #[salsa::interned]
-    fn intern_struct<'db>(&'db self, id: StructLongId<'db>) -> StructId<'db>;
-    #[salsa::interned]
-    fn intern_enum<'db>(&'db self, id: EnumLongId<'db>) -> EnumId<'db>;
-    #[salsa::interned]
-    fn intern_module_type_alias<'db>(
-        &'db self,
-        id: ModuleTypeAliasLongId<'db>,
-    ) -> ModuleTypeAliasId<'db>;
-    #[salsa::interned]
-    fn intern_impl_alias<'db>(&'db self, id: ImplAliasLongId<'db>) -> ImplAliasId<'db>;
-    #[salsa::interned]
-    fn intern_member<'db>(&'db self, id: MemberLongId<'db>) -> MemberId<'db>;
-    #[salsa::interned]
-    fn intern_variant<'db>(&'db self, id: VariantLongId<'db>) -> VariantId<'db>;
-    #[salsa::interned]
-    fn intern_trait<'db>(&'db self, id: TraitLongId<'db>) -> TraitId<'db>;
-    #[salsa::interned]
-    fn intern_trait_type<'db>(&'db self, id: TraitTypeLongId<'db>) -> TraitTypeId<'db>;
-    #[salsa::interned]
-    fn intern_trait_constant<'db>(&'db self, id: TraitConstantLongId<'db>) -> TraitConstantId<'db>;
-    #[salsa::interned]
-    fn intern_trait_impl<'db>(&'db self, id: TraitImplLongId<'db>) -> TraitImplId<'db>;
-    #[salsa::interned]
-    fn intern_trait_function<'db>(&'db self, id: TraitFunctionLongId<'db>) -> TraitFunctionId<'db>;
-    #[salsa::interned]
-    fn intern_impl_def<'db>(&'db self, id: ImplDefLongId<'db>) -> ImplDefId<'db>;
-    #[salsa::interned]
-    fn intern_extern_type<'db>(&'db self, id: ExternTypeLongId<'db>) -> ExternTypeId<'db>;
-    #[salsa::interned]
-    fn intern_extern_function<'db>(
-        &'db self,
-        id: ExternFunctionLongId<'db>,
-    ) -> ExternFunctionId<'db>;
-    #[salsa::interned]
-    fn intern_macro_declaration<'db>(
-        &'db self,
-        id: MacroDeclarationLongId<'db>,
-    ) -> MacroDeclarationId<'db>;
-    #[salsa::interned]
-    fn intern_macro_call<'db>(&'db self, id: MacroCallLongId<'db>) -> MacroCallId<'db>;
-    #[salsa::interned]
-    fn intern_param<'db>(&'db self, id: ParamLongId<'db>) -> ParamId<'db>;
-    #[salsa::interned]
-    fn intern_generic_param<'db>(&'db self, id: GenericParamLongId<'db>) -> GenericParamId<'db>;
-    #[salsa::interned]
-    fn intern_local_var<'db>(&'db self, id: LocalVarLongId<'db>) -> LocalVarId<'db>;
-    #[salsa::interned]
-    fn intern_statement_const<'db>(
-        &'db self,
-        id: StatementConstLongId<'db>,
-    ) -> StatementConstId<'db>;
-    #[salsa::interned]
-    fn intern_statement_use<'db>(&'db self, id: StatementUseLongId<'db>) -> StatementUseId<'db>;
-    #[salsa::interned]
-    fn intern_plugin_generated_file<'db>(
-        &'db self,
-        id: PluginGeneratedFileLongId<'db>,
-    ) -> PluginGeneratedFileId<'db>;
-
     // Plugins.
     // ========
 
@@ -132,9 +51,6 @@ pub trait DefsGroup: ParserGroup {
     fn macro_plugin_overrides<'db>(
         &'db self,
     ) -> Arc<OrderedHashMap<CrateId<'db>, Arc<Vec<MacroPluginId<'db>>>>>;
-
-    #[salsa::interned]
-    fn intern_macro_plugin(&self, plugin: MacroPluginLongId) -> MacroPluginId<'_>;
 
     /// Returns [`MacroPluginId`]s of the plugins set for the crate with [`CrateId`].
     /// Provides an override if it has been set with
@@ -161,12 +77,6 @@ pub trait DefsGroup: ParserGroup {
     fn inline_macro_plugin_overrides<'db>(
         &'db self,
     ) -> Arc<OrderedHashMap<CrateId<'db>, Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>>>;
-
-    #[salsa::interned]
-    fn intern_inline_macro_plugin(
-        &self,
-        plugin: InlineMacroExprPluginLongId,
-    ) -> InlineMacroExprPluginId<'_>;
 
     /// Returns [`InlineMacroExprPluginId`]s of the plugins set for the crate with [`CrateId`].
     /// Provides an override if it has been set with
@@ -422,7 +332,7 @@ pub fn default_macro_plugins<'db>(db: &'db dyn DefsGroup) -> Arc<Vec<MacroPlugin
     Arc::new(
         db.default_macro_plugins_input()
             .iter()
-            .map(|plugin| db.intern_macro_plugin(plugin.clone()))
+            .map(|plugin| MacroPluginId::new(db, plugin.clone()))
             .collect(),
     )
 }
@@ -529,7 +439,7 @@ fn declared_derives<'db>(
     Arc::new(OrderedHashSet::from_iter(
         db.crate_macro_plugins(crate_id)
             .iter()
-            .flat_map(|plugin| db.lookup_intern_macro_plugin(*plugin).declared_derives()),
+            .flat_map(|plugin| plugin.long(db).declared_derives()),
     ))
 }
 
@@ -981,7 +891,7 @@ fn priv_module_sub_files<'db>(
         // generate new code, remove the original code, or both), breaks the loop. If more
         // plugins might have act on the item, they can do it on the generated code.
         for plugin_id in db.crate_macro_plugins(crate_id).iter() {
-            let plugin = db.lookup_intern_macro_plugin(*plugin_id);
+            let plugin = plugin_id.long(db);
 
             let result = plugin.generate_code(db, item_ast.clone(), &metadata);
             plugin_diagnostics.extend(result.diagnostics);
@@ -1615,8 +1525,7 @@ pub trait DefsGroupEx: DefsGroup {
     ) {
         let crate_input = self.crate_input(crate_id);
         let mut overrides = self.macro_plugin_overrides_input().as_ref().clone();
-        let plugins =
-            plugins.iter().map(|plugin| self.lookup_intern_macro_plugin(*plugin)).collect();
+        let plugins = plugins.iter().map(|plugin| plugin.long(self).clone()).collect();
         overrides.insert(crate_input, plugins);
         self.set_macro_plugin_overrides_input(Arc::new(overrides));
     }
