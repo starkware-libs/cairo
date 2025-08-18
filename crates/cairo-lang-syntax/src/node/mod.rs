@@ -41,7 +41,7 @@ pub struct SyntaxNodeLongId<'a> {
     parent: Option<SyntaxNode<'a>>,
     stable_ptr: SyntaxStablePtrId<'a>,
 }
-define_short_id!(SyntaxNode, SyntaxNodeLongId<'db>, SyntaxGroup, intern_syntax_node);
+define_short_id!(SyntaxNode, SyntaxNodeLongId<'db>, SyntaxGroup);
 impl<'a> SyntaxNode<'a> {
     pub fn new_root(db: &'a dyn SyntaxGroup, file_id: FileId<'a>, green: GreenId<'a>) -> Self {
         Self::new_with_inner(
