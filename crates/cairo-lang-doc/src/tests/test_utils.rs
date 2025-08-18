@@ -2,7 +2,7 @@ use anyhow::{Result, anyhow};
 use cairo_lang_defs::db::{DefsGroup, init_defs_group};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    CrateConfiguration, ExternalFiles, FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group,
+    CrateConfiguration, FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
@@ -22,7 +22,6 @@ pub struct TestDatabase {
 }
 #[salsa::db]
 impl salsa::Database for TestDatabase {}
-impl ExternalFiles for TestDatabase {}
 
 impl Default for TestDatabase {
     fn default() -> Self {
