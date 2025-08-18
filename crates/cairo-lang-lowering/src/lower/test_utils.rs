@@ -1,7 +1,6 @@
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use super::context::{EncapsulatingLoweringContext, LoweringContext};
-use crate::db::LoweringGroup;
 use crate::ids::{FunctionWithBodyLongId, Signature};
 use crate::test_utils::LoweringDatabaseForTesting;
 
@@ -34,7 +33,7 @@ pub fn create_lowering_context<'a, 'db>(
     let return_type = lowering_signature.return_type;
 
     let lowering_function_id =
-        db.intern_lowering_function_with_body(FunctionWithBodyLongId::Semantic(function_id));
+        crate::ids::FunctionWithBodyId::new(db, FunctionWithBodyLongId::Semantic(function_id));
     LoweringContext::new(encapsulating_ctx, lowering_function_id, lowering_signature, return_type)
         .unwrap()
 }

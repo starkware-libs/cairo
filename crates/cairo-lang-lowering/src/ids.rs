@@ -102,14 +102,14 @@ pub enum GenericOrSpecialized<'db> {
 
 impl<'db> ConcreteFunctionWithBodyId<'db> {
     pub fn is_panic_destruct_fn(&self, db: &'db dyn LoweringGroup) -> Maybe<bool> {
-        match db.lookup_intern_lowering_concrete_function_with_body(*self) {
+        match self.long(db) {
             ConcreteFunctionWithBodyLongId::Semantic(semantic_func) => {
                 semantic_func.is_panic_destruct_fn(db)
             }
             ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
                 parent: _,
                 key: GeneratedFunctionKey::TraitFunc(function, _),
-            }) => Ok(function == db.core_info().panic_destruct_fn),
+            }) => Ok(function == &db.core_info().panic_destruct_fn),
             _ => Ok(false),
         }
     }
