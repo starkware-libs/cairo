@@ -1,8 +1,8 @@
 use cairo_lang_diagnostics::DiagnosticEntry;
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use salsa::Database;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub struct ParserDiagnostic<'a> {
@@ -130,9 +130,9 @@ pub enum ParserDiagnosticKind {
 }
 
 impl<'a> DiagnosticEntry<'a> for ParserDiagnostic<'a> {
-    type DbType = dyn FilesGroup;
+    type DbType = dyn Database;
 
-    fn format(&self, _db: &dyn FilesGroup) -> String {
+    fn format(&self, _db: &dyn Database) -> String {
         match &self.kind {
             ParserDiagnosticKind::InvalidParamKindInMacroExpansion => {
                 "Parameter kinds are not allowed in macro expansion.".to_string()
@@ -244,7 +244,7 @@ Did you mean to write `{identifier}!{left}...{right}'?",
         }
     }
 
-    fn location(&self, _db: &'a dyn FilesGroup) -> cairo_lang_diagnostics::DiagnosticLocation<'a> {
+    fn location(&self, _db: &'a dyn Database) -> cairo_lang_diagnostics::DiagnosticLocation<'a> {
         cairo_lang_diagnostics::DiagnosticLocation { file_id: self.file_id, span: self.span }
     }
 

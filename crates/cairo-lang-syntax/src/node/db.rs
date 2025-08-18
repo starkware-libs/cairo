@@ -8,7 +8,7 @@ use super::{SyntaxNode, SyntaxNodeLongId};
 
 // Salsa database interface.
 #[cairo_lang_proc_macros::query_group]
-pub trait SyntaxGroup: FilesGroup + for<'a> Upcast<'a, dyn FilesGroup> {
+pub trait SyntaxGroup: FilesGroup + for<'a> Upcast<'a, dyn salsa::Database> {
     #[salsa::interned]
     fn intern_green<'a>(&'a self, field: GreenNode<'a>) -> GreenId<'a>;
     #[salsa::interned]

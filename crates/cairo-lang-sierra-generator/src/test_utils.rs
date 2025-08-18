@@ -2,7 +2,7 @@ use std::sync::{Arc, LazyLock, Mutex};
 
 use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_filesystem::db::{FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group};
+use cairo_lang_filesystem::db::{FilesGroupEx, init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagLongId;
@@ -77,8 +77,8 @@ impl Default for SierraGenDatabaseForTesting {
         SHARED_DB.lock().unwrap().snapshot()
     }
 }
-impl<'db> Upcast<'db, dyn FilesGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn FilesGroup {
+impl<'db> Upcast<'db, dyn salsa::Database> for SierraGenDatabaseForTesting {
+    fn upcast(&'db self) -> &'db dyn salsa::Database {
         self
     }
 }

@@ -74,8 +74,8 @@ impl<'db> Upcast<'db, dyn DefsGroup> for DatabaseForTesting {
         self
     }
 }
-impl<'db> Upcast<'db, dyn FilesGroup> for DatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn FilesGroup {
+impl<'db> Upcast<'db, dyn salsa::Database> for DatabaseForTesting {
+    fn upcast(&'db self) -> &'db dyn salsa::Database {
         self
     }
 }
@@ -123,7 +123,7 @@ pub fn test_expand_plugin_inner(
 
     let cairo_code = &inputs["cairo_code"];
 
-    let db_ref: &mut dyn FilesGroup = &mut db;
+    let db_ref: &mut dyn salsa::Database = &mut db;
     let crate_id = CrateId::plain(db_ref, "test");
     let root = Directory::Real("test_src".into());
     cairo_lang_filesystem::set_crate_config!(
