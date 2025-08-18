@@ -1,7 +1,7 @@
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::node::helpers::{GenericParamEx, IsDependentType};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use itertools::{Itertools, chain};
+use salsa::Database;
 
 /// Information on struct members or enum variants.
 pub struct MemberInfo<'a> {
@@ -51,7 +51,7 @@ pub struct GenericParamsInfo<'a> {
 impl<'a> GenericParamsInfo<'a> {
     /// Extracts the information on generic params.
     pub fn new(
-        db: &'a dyn FilesGroup,
+        db: &'a dyn Database,
         generic_params: ast::OptionWrappedGenericParamList<'a>,
     ) -> Self {
         let ast::OptionWrappedGenericParamList::WrappedGenericParamList(gens) = generic_params
@@ -81,7 +81,7 @@ pub struct PluginTypeInfo<'a> {
 }
 impl<'a> PluginTypeInfo<'a> {
     /// Extracts the information on the type being derived.
-    pub fn new(db: &'a dyn FilesGroup, item_ast: &ast::ModuleItem<'a>) -> Option<Self> {
+    pub fn new(db: &'a dyn Database, item_ast: &ast::ModuleItem<'a>) -> Option<Self> {
         match item_ast {
             ast::ModuleItem::Struct(struct_ast) => {
                 let generics = GenericParamsInfo::new(db, struct_ast.generic_params(db));
@@ -156,7 +156,7 @@ impl<'a> PluginTypeInfo<'a> {
 
 /// Extracts the information on the members of the struct.
 fn extract_members<'a>(
-    db: &'a dyn FilesGroup,
+    db: &'a dyn Database,
     members: ast::MemberList<'a>,
     generics: &[&str],
 ) -> Vec<MemberInfo<'a>> {
@@ -173,7 +173,7 @@ fn extract_members<'a>(
 
 /// Extracts the information on the variants of the enum.
 fn extract_variants<'a>(
-    db: &'a dyn FilesGroup,
+    db: &'a dyn Database,
     variants: ast::VariantList<'a>,
     generics: &[&str],
 ) -> Vec<MemberInfo<'a>> {

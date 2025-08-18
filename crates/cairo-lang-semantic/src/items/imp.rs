@@ -16,7 +16,6 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{
     DiagnosticAdded, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, skip_diagnostic,
 };
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{StrRef, UnstableSalsaId};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
@@ -26,6 +25,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, define_short_id, extract_matches};
 use itertools::{Itertools, chain, izip};
+use salsa::Database;
 use syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use syntax::node::ast::{self, GenericArg, ImplItem, MaybeImplBody, OptionReturnTypeClause};
 use syntax::node::helpers::OptionWrappedGenericParamListHelper;
@@ -1406,7 +1406,7 @@ pub fn priv_impl_definition_data<'db>(
 /// A helper function to report diagnostics of items in an impl (used in
 /// priv_impl_definition_data).
 fn report_invalid_impl_item<'db, Terminal: syntax::node::Terminal<'db>>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     kw_terminal: Terminal,
 ) {

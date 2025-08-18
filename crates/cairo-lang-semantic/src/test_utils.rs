@@ -4,8 +4,7 @@ use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
-    CrateSettings, Edition, ExperimentalFeaturesConfig, FilesGroup, init_dev_corelib,
-    init_files_group,
+    CrateSettings, Edition, ExperimentalFeaturesConfig, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{BlobId, CrateId, CrateLongId, FileKind, FileLongId, VirtualFile};
@@ -62,8 +61,8 @@ impl Elongate for SemanticDatabaseForTesting {
         self
     }
 }
-impl<'db> Upcast<'db, dyn FilesGroup> for SemanticDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn FilesGroup {
+impl<'db> Upcast<'db, dyn salsa::Database> for SemanticDatabaseForTesting {
+    fn upcast(&'db self) -> &'db dyn salsa::Database {
         self
     }
 }

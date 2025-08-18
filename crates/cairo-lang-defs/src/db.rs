@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe, PluginFileDiagnosticNotes, ToMaybe};
-use cairo_lang_filesystem::db::{ExternalFiles, FilesGroup, FilesGroupEx, TryExtAsVirtual};
+use cairo_lang_filesystem::db::{ExternalFiles, TryExtAsVirtual};
 use cairo_lang_filesystem::ids::{
     CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, VirtualFile,
 };
@@ -22,6 +22,7 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{Itertools, chain};
+use salsa::Database;
 
 use crate::cache::{DefCacheLoadingData, load_cached_crate_modules};
 use crate::ids::*;
@@ -816,7 +817,7 @@ fn cached_crate_modules<'db>(
 
 pub fn init_external_files<T: DefsGroup>(db: &mut T) {
     let try_ext_as_virtual_impl: TryExtAsVirtual =
-        Arc::new(|db: &dyn FilesGroup, external_id: salsa::Id| {
+        Arc::new(|db: &dyn Database, external_id: salsa::Id| {
             // TODO(eytan-starkware): Once everything is &dyn Database, remove the unsafe cast.
             let defs_db = (db as &dyn Any).downcast_ref::<T>().unwrap();
             try_ext_as_virtual_impl(defs_db, external_id)
@@ -943,7 +944,7 @@ fn priv_module_sub_files<'db>(
 
 /// Collects attributes allowed by `allow_attr` attribute.
 fn collect_extra_allowed_attributes<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     item: &impl QueryAttrs<'db>,
     plugin_diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) -> OrderedHashSet<String> {
@@ -977,7 +978,7 @@ fn collect_extra_allowed_attributes<'db>(
 
 /// Validates that all attributes on the given item are in the allowed set or adds diagnostics.
 pub fn validate_attributes_flat<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     allowed_attributes: &OrderedHashSet<String>,
     extra_allowed_attributes: &OrderedHashSet<String>,
     item: &impl QueryAttrs<'db>,
@@ -1001,7 +1002,7 @@ pub fn validate_attributes_flat<'db>(
 /// Validates that all attributes on all items in the given element list are in the allowed set or
 /// adds diagnostics.
 fn validate_attributes_element_list<'db, Item: QueryAttrs<'db> + TypedSyntaxNode<'db>>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     allowed_attributes: &OrderedHashSet<String>,
     extra_allowed_attributes: &OrderedHashSet<String>,
     items: impl Iterator<Item = Item>,
@@ -1021,7 +1022,7 @@ fn validate_attributes_element_list<'db, Item: QueryAttrs<'db> + TypedSyntaxNode
 /// Validates that all attributes on an item and on items contained within it are in the allowed set
 /// or adds diagnostics.
 fn validate_attributes<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     allowed_attributes: &OrderedHashSet<String>,
     item_ast: &ast::ModuleItem<'db>,
     plugin_diagnostics: &mut Vec<PluginDiagnostic<'db>>,
@@ -1083,7 +1084,7 @@ fn validate_attributes<'db>(
 
 /// Returns all the path leaves under a given use item.
 pub fn get_all_path_leaves<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     use_item: &ast::ItemUse<'db>,
 ) -> Vec<ast::UsePathLeaf<'db>> {
     let mut res = vec![];
@@ -1103,7 +1104,7 @@ pub fn get_all_path_leaves<'db>(
 
 /// Returns all the path stars under a given use item.
 pub fn get_all_path_stars<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     use_item: &ast::ItemUse<'db>,
 ) -> Vec<ast::UsePathStar<'db>> {
     let mut res = vec![];

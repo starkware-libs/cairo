@@ -1,5 +1,7 @@
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::span::{FileSummary, TextPosition, TextSpan, TextWidth};
 use itertools::repeat_n;
+use salsa::Database;
 
 use crate::DiagnosticLocation;
 
@@ -9,7 +11,7 @@ mod test;
 
 /// Given a diagnostic location, returns a string with the location marks.
 pub fn get_location_marks(
-    db: &dyn cairo_lang_filesystem::db::FilesGroup,
+    db: &dyn Database,
     location: &DiagnosticLocation<'_>,
     skip_middle_lines: bool,
 ) -> String {
@@ -32,10 +34,7 @@ pub fn get_location_marks(
 }
 
 /// Given a single line diagnostic location, returns a string with the location marks.
-fn get_single_line_location_marks(
-    db: &dyn cairo_lang_filesystem::db::FilesGroup,
-    location: &DiagnosticLocation<'_>,
-) -> String {
+fn get_single_line_location_marks(db: &dyn Database, location: &DiagnosticLocation<'_>) -> String {
     // TODO(ilya, 10/10/2023): Handle locations which spread over a few lines.
     let content =
         db.file_content(location.file_id).expect("File missing from DB.").long(db).as_ref();
@@ -65,7 +64,7 @@ fn get_single_line_location_marks(
 
 /// Given a multiple lines diagnostic location, returns a string with the location marks.
 fn get_multiple_lines_location_marks(
-    db: &dyn cairo_lang_filesystem::db::FilesGroup,
+    db: &dyn Database,
     location: &DiagnosticLocation<'_>,
     skip_middle_lines: bool,
 ) -> String {

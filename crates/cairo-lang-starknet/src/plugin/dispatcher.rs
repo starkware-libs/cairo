@@ -1,6 +1,5 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::keyword::SELF_PARAM_KW;
 use cairo_lang_syntax::node::ast::{
     self, MaybeTraitBody, OptionReturnTypeClause, OptionTypeClause,
@@ -10,6 +9,7 @@ use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 use indoc::formatdoc;
 use itertools::Itertools;
+use salsa::Database;
 
 use super::consts::CALLDATA_PARAM_NAME;
 use super::utils::{AstPathExtract, ParamEx};
@@ -20,7 +20,7 @@ const RET_DATA: &str = "__dispatcher_return_data__";
 
 /// If the trait is annotated with INTERFACE_ATTR, generate the relevant dispatcher logic.
 pub fn handle_trait<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     trait_ast: ast::ItemTrait<'db>,
 ) -> PluginResult<'db> {
     if trait_ast.has_attr(db, DEPRECATED_ABI_ATTR) {
@@ -452,7 +452,7 @@ fn declaration_method_impl<'db>(
 
 /// Returns the matching signature for a dispatcher implementation for the given declaration.
 fn dispatcher_signature<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     declaration: &ast::FunctionDeclaration<'db>,
     self_type_name: &str,
     unwrap: bool,

@@ -2,9 +2,9 @@ use cairo_lang_defs::patcher::PatchBuilder;
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPluginMetadata, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use salsa::Database;
 
 use super::consts::{EVENT_TRAIT, STORE_TRAIT};
 use super::utils::has_derive;
@@ -13,14 +13,14 @@ mod event;
 mod store;
 
 /// Checks whether the given item has a starknet derive attribute.
-pub fn derive_needed<'db, T: QueryAttrs<'db>>(with_attrs: &T, db: &'db dyn FilesGroup) -> bool {
+pub fn derive_needed<'db, T: QueryAttrs<'db>>(with_attrs: &T, db: &'db dyn Database) -> bool {
     has_derive(with_attrs, db, EVENT_TRAIT).is_some()
         || has_derive(with_attrs, db, STORE_TRAIT).is_some()
 }
 
 /// Handles the derive attributes for the given item.
 pub fn handle_derive<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     item_ast: ast::ModuleItem<'db>,
     metadata: &MacroPluginMetadata<'_>,
 ) -> PluginResult<'db> {

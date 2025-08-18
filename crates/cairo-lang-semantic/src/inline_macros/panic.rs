@@ -7,17 +7,17 @@ use cairo_lang_defs::plugin_utils::{
     PluginResultTrait, not_legacy_macro_diagnostic, try_extract_unnamed_arg,
     unsupported_bracket_diagnostic,
 };
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::ast::{Arg, WrappedArgList};
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::{require, try_extract_matches};
 use indoc::{formatdoc, indoc};
+use salsa::Database;
 
 /// Try to generate a simple panic handlic code.
 /// Return `Some(())` if successful and updates the builder if successful.
 fn try_handle_simple_panic(
-    db: &dyn FilesGroup,
+    db: &dyn Database,
     builder: &mut PatchBuilder<'_>,
     arguments: &[Arg<'_>],
 ) -> Option<()> {
@@ -50,7 +50,7 @@ impl NamedPlugin for PanicMacro {
 impl InlineMacroExprPlugin for PanicMacro {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult<'db> {

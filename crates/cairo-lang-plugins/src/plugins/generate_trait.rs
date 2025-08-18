@@ -4,11 +4,11 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::helpers::{BodyItems, GenericParamEx, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use itertools::Itertools;
+use salsa::Database;
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -19,7 +19,7 @@ const GENERATE_TRAIT_ATTR: &str = "generate_trait";
 impl MacroPlugin for GenerateTraitPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
@@ -46,7 +46,7 @@ impl MacroPlugin for GenerateTraitPlugin {
 }
 
 fn generate_trait_for_impl<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     impl_ast: ast::ItemImpl<'db>,
 ) -> PluginResult<'db> {
     let Some(attr) = impl_ast.attributes(db).find_attr(db, GENERATE_TRAIT_ATTR) else {

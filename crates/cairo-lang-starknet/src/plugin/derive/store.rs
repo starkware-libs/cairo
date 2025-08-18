@@ -1,12 +1,12 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_plugins::plugins::utils::{PluginTypeInfo, TypeVariant};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::extract_matches;
 use indent::indent_by;
 use indoc::formatdoc;
+use salsa::Database;
 
 use crate::plugin::consts::STORE_TRAIT;
 use crate::plugin::storage_interfaces::{
@@ -15,7 +15,7 @@ use crate::plugin::storage_interfaces::{
 
 /// Returns the rewrite node for the `#[derive(starknet::Store)]` attribute.
 pub fn handle_store_derive<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     item_ast: &ast::ModuleItem<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     metadata: &MacroPluginMetadata<'_>,
@@ -211,7 +211,7 @@ fn handle_struct_store<'db>(info: &PluginTypeInfo<'db>) -> Option<RewriteNode<'d
 
 /// Derive the `starknet::Store` trait for enums annotated with `derive(starknet::Store)`.
 fn handle_enum<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     info: &PluginTypeInfo<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) -> Option<RewriteNode<'db>> {

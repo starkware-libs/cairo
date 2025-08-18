@@ -1,16 +1,16 @@
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_primitive_token::{PrimitiveSpan, PrimitiveToken, ToPrimitiveTokenStream};
+use salsa::Database;
 
 use super::SyntaxNode;
 
 pub struct SyntaxNodeWithDb<'a> {
     node: &'a SyntaxNode<'a>,
-    db: &'a dyn FilesGroup,
+    db: &'a dyn Database,
 }
 
 impl<'a> SyntaxNodeWithDb<'a> {
-    pub fn new(node: &'a SyntaxNode<'a>, db: &'a dyn FilesGroup) -> Self {
+    pub fn new(node: &'a SyntaxNode<'a>, db: &'a dyn Database) -> Self {
         Self { node, db }
     }
 }
@@ -31,11 +31,11 @@ pub struct SyntaxNodeWithDbIterator<'a> {
     /// **INVARIANT**: The collection to the buffer only happens when the buffer was previously
     /// empty.
     buffer: Vec<PrimitiveToken>,
-    db: &'a dyn FilesGroup,
+    db: &'a dyn Database,
 }
 
 impl<'a> SyntaxNodeWithDbIterator<'a> {
-    pub fn new(db: &'a dyn FilesGroup, node: &'a SyntaxNode<'a>) -> Self {
+    pub fn new(db: &'a dyn Database, node: &'a SyntaxNode<'a>) -> Self {
         Self { db, buffer: Vec::with_capacity(3), iter_stack: vec![node] }
     }
 }
@@ -81,7 +81,7 @@ impl<'a> Iterator for SyntaxNodeWithDbIterator<'a> {
 /// **INVARIANT**: `result` **MUST** be empty when passed to this function.
 fn token_from_syntax_node(
     node: &SyntaxNode<'_>,
-    db: &dyn FilesGroup,
+    db: &dyn Database,
     result: &mut Vec<PrimitiveToken>,
 ) {
     let span_without_trivia = node.span_without_trivia(db);

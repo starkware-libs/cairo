@@ -20,7 +20,7 @@ use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, Upcast};
 use itertools::chain;
-use salsa::{AsDynDatabase, Setter};
+use salsa::{AsDynDatabase, Database, Setter};
 
 use crate::get_base_plugins;
 use crate::test_utils::expand_module_text;
@@ -73,8 +73,8 @@ impl<'db> Upcast<'db, dyn DefsGroup> for DatabaseForTesting {
         self
     }
 }
-impl<'db> Upcast<'db, dyn FilesGroup> for DatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn FilesGroup {
+impl<'db> Upcast<'db, dyn salsa::Database> for DatabaseForTesting {
+    fn upcast(&'db self) -> &'db dyn salsa::Database {
         self
     }
 }
@@ -117,7 +117,7 @@ pub fn test_expand_plugin_inner(
 
     let cairo_code = &inputs["cairo_code"];
 
-    let db_ref: &mut dyn FilesGroup = &mut db;
+    let db_ref: &mut dyn salsa::Database = &mut db;
     let crate_id = CrateId::plain(db_ref, "test");
     let root = Directory::Real("test_src".into());
     cairo_lang_filesystem::set_crate_config!(
@@ -151,7 +151,7 @@ struct DoubleIndirectionPlugin;
 impl MacroPlugin for DoubleIndirectionPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {

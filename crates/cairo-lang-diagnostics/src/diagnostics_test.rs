@@ -1,9 +1,9 @@
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
 use cairo_lang_utils::Intern;
 use indoc::indoc;
+use salsa::Database;
 use test_log::test;
 
 use super::{DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder};
@@ -14,16 +14,13 @@ struct SimpleDiag<'db> {
     file_id: FileId<'db>,
 }
 impl<'db> DiagnosticEntry<'db> for SimpleDiag<'db> {
-    type DbType = dyn FilesGroup;
+    type DbType = dyn Database;
 
-    fn format(&self, _db: &dyn cairo_lang_filesystem::db::FilesGroup) -> String {
+    fn format(&self, _db: &dyn Database) -> String {
         "Simple diagnostic.".into()
     }
 
-    fn location(
-        &self,
-        _db: &'db dyn cairo_lang_filesystem::db::FilesGroup,
-    ) -> DiagnosticLocation<'db> {
+    fn location(&self, _db: &'db dyn Database) -> DiagnosticLocation<'db> {
         DiagnosticLocation {
             file_id: self.file_id,
             span: TextSpan::new(TextOffset::START, TextWidth::new_for_testing(6).as_offset()),

@@ -195,11 +195,7 @@ impl<'a> SyntaxNode<'a> {
     }
 
     /// Lookups a syntax node using a position.
-    pub fn lookup_position(
-        &self,
-        db: &'a dyn FilesGroup,
-        position: TextPosition,
-    ) -> SyntaxNode<'a> {
+    pub fn lookup_position(&self, db: &'a dyn Database, position: TextPosition) -> SyntaxNode<'a> {
         match position.offset_in_file(db, self.stable_ptr(db).file_id(db)) {
             Some(offset) => self.lookup_offset(db, offset),
             None => *self,
@@ -207,7 +203,7 @@ impl<'a> SyntaxNode<'a> {
     }
 
     /// Returns all the text under the syntax node.
-    pub fn get_text(&self, db: &'a dyn FilesGroup) -> &'a str {
+    pub fn get_text(&self, db: &'a dyn Database) -> &'a str {
         // A `None` return from reading the file content is only expected in the case of an IO
         // error. Since a SyntaxNode exists and is being processed, we should have already
         // successfully accessed this file earlier, therefore it should never fail.
@@ -289,7 +285,7 @@ impl<'a> SyntaxNode<'a> {
     /// of the first token and the trailing trivia of the last token).
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
-    pub fn get_text_without_trivia(self, db: &'a dyn FilesGroup) -> &'a str {
+    pub fn get_text_without_trivia(self, db: &'a dyn Database) -> &'a str {
         let file_content = db
             .file_content(self.stable_ptr(db).file_id(db))
             .expect("Failed to read file content")
@@ -303,7 +299,7 @@ impl<'a> SyntaxNode<'a> {
     /// `span` is assumed to be contained within the span of self.
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
-    pub fn get_text_of_span(self, db: &'a dyn FilesGroup, span: TextSpan) -> &'a str {
+    pub fn get_text_of_span(self, db: &'a dyn Database, span: TextSpan) -> &'a str {
         assert!(self.span(db).contains(span));
         let file_content = db
             .file_content(self.stable_ptr(db).file_id(db))

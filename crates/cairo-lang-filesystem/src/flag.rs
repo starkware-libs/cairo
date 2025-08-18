@@ -23,7 +23,7 @@ pub enum Flag {
 }
 
 /// Returns the value of the `unsafe_panic` flag, or `false` if the flag is not set.
-pub fn flag_unsafe_panic(db: &dyn FilesGroup) -> bool {
+pub fn flag_unsafe_panic(db: &dyn salsa::Database) -> bool {
     let flag = FlagId::new(db, FlagLongId("unsafe_panic".into()));
     if let Some(flag) = db.get_flag(flag) { *flag == Flag::UnsafePanic(true) } else { false }
 }

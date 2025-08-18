@@ -2,8 +2,8 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_diagnostics::DiagnosticsBuilder;
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::node::{Terminal, ast};
+use salsa::Database;
 
 use crate::SemanticDiagnostic;
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -17,7 +17,7 @@ pub enum Visibility {
 }
 impl Visibility {
     pub fn from_ast<'db>(
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
         visibility: &ast::Visibility<'db>,
     ) -> Self {

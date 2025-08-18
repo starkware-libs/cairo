@@ -1,9 +1,9 @@
 use cairo_lang_defs::extract_macro_single_unnamed_arg;
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginResult};
 use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
+use salsa::Database;
 
 /// Plugin that allows writing item level `compile_error!` causing a diagnostic.
 /// Useful for testing that `cfg` attributes are valid.
@@ -14,7 +14,7 @@ pub struct CompileErrorPlugin;
 impl MacroPlugin for CompileErrorPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {

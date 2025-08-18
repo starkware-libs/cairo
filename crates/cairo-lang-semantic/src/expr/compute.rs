@@ -18,7 +18,6 @@ use cairo_lang_defs::ids::{
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPluginMetadata};
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::cfg::CfgSet;
-use cairo_lang_filesystem::db::{FilesGroup, FilesGroupEx};
 use cairo_lang_filesystem::ids::{
     CodeMapping, CodeOrigin, FileKind, FileLongId, StrRef, VirtualFile,
 };
@@ -42,6 +41,7 @@ use cairo_lang_utils::{
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
+use salsa::Database;
 
 use super::inference::canonic::ResultNoErrEx;
 use super::inference::conform::InferenceConform;
@@ -3346,7 +3346,7 @@ fn string_literal_to_semantic<'db>(
 /// returns a tuple of (identifier, is_callsite_prefixed).
 /// Otherwise, returns None.
 fn try_extract_identifier_from_path<'a>(
-    db: &'a dyn FilesGroup,
+    db: &'a dyn Database,
     path: &ast::ExprPath<'a>,
 ) -> Option<(TerminalIdentifier<'a>, bool)> {
     let segments_var = path.segments(db);
@@ -3371,7 +3371,7 @@ fn try_extract_identifier_from_path<'a>(
 fn expr_as_identifier<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     path: &ast::ExprPath<'db>,
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
 ) -> Maybe<&'db str> {
     let segments_var = path.segments(db);
     let mut segments = segments_var.elements(db);

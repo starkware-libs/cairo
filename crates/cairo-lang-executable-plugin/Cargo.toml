@@ -13,6 +13,7 @@ cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.12.0" }
 cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.12.0" }
 indoc.workspace = true
 itertools = { workspace = true, default-features = true }
+salsa.workspace = true
 
 [dev-dependencies]
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }

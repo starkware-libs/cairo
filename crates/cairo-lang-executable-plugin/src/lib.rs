@@ -6,7 +6,6 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::plugin::{AnalyzerPlugin, PluginSuite};
 use cairo_lang_semantic::{GenericArgumentId, Mutability, corelib};
@@ -15,6 +14,7 @@ use cairo_lang_syntax::node::helpers::{OptionWrappedGenericParamListHelper, Quer
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use indoc::formatdoc;
 use itertools::Itertools;
+use salsa::Database;
 
 pub const EXECUTABLE_ATTR: &str = "executable";
 pub const EXECUTABLE_RAW_ATTR: &str = "executable_raw";
@@ -126,7 +126,7 @@ pub struct ExecutablePlugin;
 impl MacroPlugin for ExecutablePlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {

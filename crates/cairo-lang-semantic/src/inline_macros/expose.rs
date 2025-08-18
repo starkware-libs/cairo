@@ -3,9 +3,9 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
     PluginGeneratedFile,
 };
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::indoc;
+use salsa::Database;
 
 #[derive(Debug, Default)]
 pub struct ExposeMacro;
@@ -15,7 +15,7 @@ impl NamedPlugin for ExposeMacro {
 impl InlineMacroExprPlugin for ExposeMacro {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult<'db> {

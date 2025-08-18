@@ -4,12 +4,13 @@ use std::sync::Arc;
 
 use cairo_lang_diagnostics::Severity;
 use cairo_lang_filesystem::cfg::CfgSet;
-use cairo_lang_filesystem::db::{Edition, FilesGroup};
+use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::CodeMapping;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use salsa::Database;
 use serde::{Deserialize, Serialize};
 
 /// A trait for arbitrary data that a macro generates along with the generated file.
@@ -100,7 +101,7 @@ impl<'db> PluginDiagnostic<'db> {
 
     /// Creates a diagnostic, pointing to an inner span inside the given stable pointer.
     pub fn error_with_inner_span(
-        db: &dyn FilesGroup,
+        db: &dyn Database,
         stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
         inner_span: SyntaxNode<'_>,
         message: String,
@@ -149,7 +150,7 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send + Any {
     /// Otherwise, returns `PluginResult` with the generated virtual submodule.
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db>;
@@ -207,7 +208,7 @@ pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send + Any {
     /// with that name and content should be created.
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         item_ast: &ast::ExprInlineMacro<'db>,
         metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult<'db>;

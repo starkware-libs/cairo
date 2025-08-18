@@ -13,6 +13,7 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, Upcast, extract_matches, try_extract_matches};
 use indoc::indoc;
+use salsa::Database;
 
 use crate::db::{DefsGroup, init_defs_group, init_external_files};
 use crate::ids::{
@@ -50,8 +51,8 @@ impl<'db> Upcast<'db, dyn DefsGroup> for DatabaseForTesting {
         self
     }
 }
-impl<'db> Upcast<'db, dyn FilesGroup> for DatabaseForTesting {
-    fn upcast(&self) -> &dyn FilesGroup {
+impl<'db> Upcast<'db, dyn salsa::Database> for DatabaseForTesting {
+    fn upcast(&self) -> &dyn salsa::Database {
         self
     }
 }
@@ -210,7 +211,7 @@ struct DummyPlugin;
 impl MacroPlugin for DummyPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
@@ -312,7 +313,7 @@ struct RemoveOrigPlugin;
 impl MacroPlugin for RemoveOrigPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
@@ -338,7 +339,7 @@ struct FooToBarPlugin;
 impl MacroPlugin for FooToBarPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
