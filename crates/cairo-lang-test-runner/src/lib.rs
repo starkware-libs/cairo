@@ -36,11 +36,15 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 #[cfg(test)]
 mod test;
 
+type ArcCustomHintProcessorFactory = Arc<
+    dyn (for<'a> Fn(CairoHintProcessor<'a>) -> Box<dyn StarknetHintProcessor + 'a>) + Send + Sync,
+>;
+
 /// Compile and run tests.
 pub struct TestRunner<'db> {
     compiler: TestCompiler<'db>,
     config: TestRunConfig,
-    custom_hint_processor_factory: Option<Arc<dyn StarknetHintProcessorFactory>>,
+    custom_hint_processor_factory: Option<ArcCustomHintProcessorFactory>,
 }
 
 impl<'db> TestRunner<'db> {
@@ -81,7 +85,10 @@ impl<'db> TestRunner<'db> {
     /// Make this runner run tests using a custom hint processor.
     pub fn with_custom_hint_processor(
         &mut self,
-        factory: impl StarknetHintProcessorFactory + 'static,
+        factory: impl (for<'a> Fn(CairoHintProcessor<'a>) -> Box<dyn StarknetHintProcessor + 'a>)
+        + Send
+        + Sync
+        + 'static,
     ) -> &mut Self {
         self.custom_hint_processor_factory = Some(Arc::new(factory));
         self
@@ -101,7 +108,7 @@ impl<'db> TestRunner<'db> {
 pub struct CompiledTestRunner<'db> {
     compiled: TestCompilation<'db>,
     config: TestRunConfig,
-    custom_hint_processor_factory: Option<Arc<dyn StarknetHintProcessorFactory>>,
+    custom_hint_processor_factory: Option<ArcCustomHintProcessorFactory>,
 }
 
 impl<'db> CompiledTestRunner<'db> {
@@ -118,7 +125,10 @@ impl<'db> CompiledTestRunner<'db> {
     /// Make this runner run tests using a custom hint processor.
     pub fn with_custom_hint_processor(
         &mut self,
-        factory: impl StarknetHintProcessorFactory + 'static,
+        factory: impl (for<'a> Fn(CairoHintProcessor<'a>) -> Box<dyn StarknetHintProcessor + 'a>)
+        + Send
+        + Sync
+        + 'static,
     ) -> &mut Self {
         self.custom_hint_processor_factory = Some(Arc::new(factory));
         self
@@ -189,17 +199,6 @@ pub struct TestRunConfig {
     pub gas_enabled: bool,
     /// Whether to print used resources after each test.
     pub print_resource_usage: bool,
-}
-
-/// A function that builds a custom hint processor on top of a [`CairoHintProcessor`].
-pub trait StarknetHintProcessorFactory:
-    (for<'a> Fn(CairoHintProcessor<'a>) -> Box<dyn StarknetHintProcessor + 'a>) + Send + Sync
-{
-}
-
-impl<F> StarknetHintProcessorFactory for F where
-    F: (for<'a> Fn(CairoHintProcessor<'a>) -> Box<dyn StarknetHintProcessor + 'a>) + Send + Sync
-{
 }
 
 /// The test cases compiler.
@@ -343,7 +342,7 @@ pub fn run_tests(
     opt_db: Option<&dyn SierraGenGroup>,
     compiled: TestCompilation<'_>,
     config: &TestRunConfig,
-    custom_hint_processor_factory: Option<Arc<dyn StarknetHintProcessorFactory>>,
+    custom_hint_processor_factory: Option<ArcCustomHintProcessorFactory>,
 ) -> Result<TestsSummary> {
     let TestCompilation {
         sierra_program: sierra_program_with_debug_info,
@@ -437,7 +436,7 @@ fn run_single_test(
     test: TestConfig,
     name: &str,
     runner: &SierraCasmRunner,
-    custom_hint_processor_factory: Option<Arc<dyn StarknetHintProcessorFactory>>,
+    custom_hint_processor_factory: Option<ArcCustomHintProcessorFactory>,
 ) -> Result<Option<TestResult>> {
     if test.ignored {
         return Ok(None);
