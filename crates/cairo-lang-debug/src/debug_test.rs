@@ -6,8 +6,9 @@ use test_log::test;
 use crate::debug::DebugWithDb;
 
 // Test database query group.
-#[cairo_lang_proc_macros::query_group]
 trait TestGroup: salsa::Database {}
+
+impl TestGroup for DummyDb {}
 
 // Structs.
 #[salsa::interned]
