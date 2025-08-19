@@ -2393,10 +2393,7 @@ pub fn impl_type_concrete_implized<'db>(
     };
 
     let impl_def_id = concrete_impl.impl_def_id(db);
-    let ty = db.trait_type_implized_by_context(impl_type_id.ty(), impl_def_id);
-    let Ok(ty) = ty else {
-        return ty;
-    };
+    let ty = db.trait_type_implized_by_context(impl_type_id.ty(), impl_def_id)?;
     concrete_impl.substitution(db)?.substitute(db, ty)
 }
 
