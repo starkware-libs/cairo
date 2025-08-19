@@ -1787,7 +1787,7 @@ pub trait SemanticGroup:
         in_cycle: bool,
     ) -> Maybe<GenericParamData<'db>>;
 
-    /// Returns the type constraints intoduced by the generic params.
+    /// Returns the type constraints introduced by the generic params.
     #[salsa::invoke(items::generics::generic_params_type_constraints)]
     fn generic_params_type_constraints<'db>(
         &'db self,
