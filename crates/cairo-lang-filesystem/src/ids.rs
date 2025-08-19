@@ -310,6 +310,10 @@ impl<'db> FileLongId<'db> {
 
 define_short_id!(FileId, FileLongId<'db>, FilesGroup);
 impl<'db> FileId<'db> {
+    pub fn dummy(db: &'db dyn Database) -> FileId<'db> {
+        FileId::new(db, FileLongId::OnDisk(PathBuf::from("dummy")))
+    }
+
     pub fn new_on_disk(db: &'db dyn Database, path: PathBuf) -> FileId<'db> {
         FileLongId::OnDisk(path.clean()).intern(db)
     }
