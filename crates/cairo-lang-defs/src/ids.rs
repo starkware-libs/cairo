@@ -285,6 +285,7 @@ macro_rules! toplevel_enum {
 }
 
 /// Id for a module. Either the root module of a crate, or a submodule.
+// TODO(eytan-starkware): Track this type to improve performance.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
 pub enum ModuleId<'db> {
     CrateRoot(CrateId<'db>),
