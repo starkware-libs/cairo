@@ -1073,7 +1073,6 @@ dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
  "cairo-lang-primitive-token",
- "cairo-lang-proc-macros",
  "cairo-lang-utils",
  "env_logger",
  "num-bigint",

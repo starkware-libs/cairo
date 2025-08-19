@@ -1,4 +1,4 @@
-use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
@@ -11,19 +11,19 @@ use crate::plugin::{InlinePluginResult, PluginDiagnostic, PluginResult};
 pub trait InlineMacroCall<'db> {
     type PathNode: TypedSyntaxNode<'db>;
     type Result: PluginResultTrait<'db>;
-    fn arguments(&self, db: &'db dyn SyntaxGroup) -> ast::WrappedArgList<'db>;
-    fn path(&self, db: &'db dyn SyntaxGroup) -> Self::PathNode;
+    fn arguments(&self, db: &'db dyn FilesGroup) -> ast::WrappedArgList<'db>;
+    fn path(&self, db: &'db dyn FilesGroup) -> Self::PathNode;
 }
 
 impl<'db> InlineMacroCall<'db> for ast::LegacyExprInlineMacro<'db> {
     type PathNode = ast::ExprPath<'db>;
     type Result = InlinePluginResult<'db>;
 
-    fn arguments(&self, db: &'db dyn SyntaxGroup) -> ast::WrappedArgList<'db> {
+    fn arguments(&self, db: &'db dyn FilesGroup) -> ast::WrappedArgList<'db> {
         self.arguments(db)
     }
 
-    fn path(&self, db: &'db dyn SyntaxGroup) -> ast::ExprPath<'db> {
+    fn path(&self, db: &'db dyn FilesGroup) -> ast::ExprPath<'db> {
         self.path(db)
     }
 }
@@ -32,11 +32,11 @@ impl<'db> InlineMacroCall<'db> for ast::LegacyItemInlineMacro<'db> {
     type PathNode = ast::ExprPath<'db>;
     type Result = PluginResult<'db>;
 
-    fn arguments(&self, db: &'db dyn SyntaxGroup) -> ast::WrappedArgList<'db> {
+    fn arguments(&self, db: &'db dyn FilesGroup) -> ast::WrappedArgList<'db> {
         self.arguments(db)
     }
 
-    fn path(&self, db: &'db dyn SyntaxGroup) -> ast::ExprPath<'db> {
+    fn path(&self, db: &'db dyn FilesGroup) -> ast::ExprPath<'db> {
         self.path(db)
     }
 }
@@ -60,7 +60,7 @@ impl<'db> PluginResultTrait<'db> for PluginResult<'db> {
 
 /// Returns diagnostics for an unsupported bracket type.
 pub fn unsupported_bracket_diagnostic<'db, CallAst: InlineMacroCall<'db>>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     legacy_macro_ast: &CallAst,
     macro_ast: impl Into<SyntaxStablePtrId<'db>>,
 ) -> CallAst::Result {
@@ -86,7 +86,7 @@ pub fn not_legacy_macro_diagnostic(stable_ptr: SyntaxStablePtrId<'_>) -> PluginD
 
 /// Extracts a single unnamed argument.
 pub fn extract_single_unnamed_arg<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     macro_arguments: ast::ArgList<'db>,
 ) -> Option<ast::Expr<'db>> {
     let mut elements = macro_arguments.elements(db);
@@ -95,7 +95,7 @@ pub fn extract_single_unnamed_arg<'db>(
 
 /// Extracts `n` unnamed arguments.
 pub fn extract_unnamed_args<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     macro_arguments: &ast::ArgList<'db>,
     n: usize,
 ) -> Option<Vec<ast::Expr<'db>>> {
@@ -106,7 +106,7 @@ pub fn extract_unnamed_args<'db>(
 
 /// Gets the syntax of an argument, and extracts the value if it is unnamed.
 pub fn try_extract_unnamed_arg<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     arg_ast: &ast::Arg<'db>,
 ) -> Option<ast::Expr<'db>> {
     if let ast::ArgClause::Unnamed(arg_clause) = arg_ast.arg_clause(db) {
@@ -117,7 +117,7 @@ pub fn try_extract_unnamed_arg<'db>(
 }
 
 /// Escapes a node for use in a format string.
-pub fn escape_node(db: &dyn SyntaxGroup, node: SyntaxNode<'_>) -> String {
+pub fn escape_node(db: &dyn FilesGroup, node: SyntaxNode<'_>) -> String {
     node.get_text_without_trivia(db).replace('{', "{{").replace('}', "}}").escape_unicode().join("")
 }
 

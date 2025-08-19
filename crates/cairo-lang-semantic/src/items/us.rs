@@ -4,8 +4,8 @@ use cairo_lang_defs::ids::{
     GlobalUseId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::UsePathEx;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
@@ -81,7 +81,7 @@ pub fn priv_use_semantic_data<'db>(
 /// Given the `c` of `use a::b::{c, d};` will return `[a, b, c]`.
 /// Given the `b` of `use a::b::{c, d};` will return `[a, b]`.
 pub fn get_use_path_segments<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     use_path: ast::UsePath<'db>,
 ) -> Maybe<UseAsPathSegments<'db>> {
     let mut rev_segments = vec![];
@@ -117,7 +117,7 @@ pub fn get_use_path_segments<'db>(
 
 /// Returns the parent `UsePathSingle` of a use path if it exists.
 fn get_parent_single_use_path<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     use_path: &ast::UsePath<'db>,
 ) -> Maybe<UsePathOrDollar<'db>> {
     let node = use_path.as_syntax_node();

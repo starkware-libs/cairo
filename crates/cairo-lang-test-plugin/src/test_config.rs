@@ -1,6 +1,6 @@
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::byte_array::{BYTE_ARRAY_MAGIC, BYTES_IN_WORD};
 use cairo_lang_utils::{OptionHelper, require};
@@ -44,7 +44,7 @@ pub struct TestConfig {
 /// Extracts the configuration of a tests from attributes, or returns the diagnostics if the
 /// attributes are set illegally.
 pub fn try_extract_test_config<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     attrs: Vec<Attribute<'db>>,
 ) -> Result<Option<TestConfig>, Vec<PluginDiagnostic<'db>>> {
     let test_attr = attrs.iter().find(|attr| attr.id == TEST_ATTR);
@@ -125,7 +125,7 @@ pub fn try_extract_test_config<'db>(
 /// Returns `None` if the attribute is "static", or the attribute is malformed.
 fn extract_available_gas<'db>(
     available_gas_attr: Option<&Attribute<'db>>,
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) -> Option<usize> {
     let Some(attr) = available_gas_attr else {
@@ -160,7 +160,7 @@ fn extract_available_gas<'db>(
 
 /// Tries to extract the expected panic bytes out of the given `should_panic` attribute.
 /// Assumes the attribute is `should_panic`.
-fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute<'_>) -> Option<Vec<Felt252>> {
+fn extract_panic_bytes(db: &dyn FilesGroup, attr: &Attribute<'_>) -> Option<Vec<Felt252>> {
     let [AttributeArg { variant: AttributeArgVariant::Named { name, value, .. }, .. }] =
         &attr.args[..]
     else {
@@ -201,7 +201,7 @@ fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute<'_>) -> Option<Vec
 /// Extracts panic bytes from a string.
 fn extract_string_panic_bytes(
     panic_string: &ast::TerminalString<'_>,
-    db: &dyn SyntaxGroup,
+    db: &dyn FilesGroup,
 ) -> Vec<Felt252> {
     let panic_string = panic_string.string_value(db).unwrap();
     let chunks = panic_string.as_bytes().chunks_exact(BYTES_IN_WORD);

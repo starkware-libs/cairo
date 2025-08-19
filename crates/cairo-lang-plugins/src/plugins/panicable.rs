@@ -2,10 +2,10 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::attribute::structured::{
     Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::try_extract_matches;
@@ -21,7 +21,7 @@ const PANIC_WITH_ATTR: &str = "panic_with";
 impl MacroPlugin for PanicablePlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn FilesGroup,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
@@ -49,7 +49,7 @@ impl MacroPlugin for PanicablePlugin {
 
 /// Generate code defining a panicable variant of a function marked with `#[panic_with]` attribute.
 fn generate_panicable_code<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     declaration: ast::FunctionDeclaration<'db>,
     attributes: ast::AttributeList<'db>,
     visibility: ast::Visibility<'db>,
@@ -147,7 +147,7 @@ fn generate_panicable_code<'db>(
 /// Given a function signature, if it returns `Option::<T>` or `Result::<T, E>`, returns T and the
 /// variant match strings. Otherwise, returns None.
 fn extract_success_ty_and_variants<'a>(
-    db: &'a dyn SyntaxGroup,
+    db: &'a dyn FilesGroup,
     signature: &ast::FunctionSignature<'a>,
 ) -> Option<(ast::GenericArg<'a>, String, String)> {
     let ret_ty_expr =
@@ -177,7 +177,7 @@ fn extract_success_ty_and_variants<'a>(
 /// Parse `#[panic_with(...)]` attribute arguments and return a tuple with error value and
 /// panicable function name.
 fn parse_arguments<'a>(
-    db: &'a dyn SyntaxGroup,
+    db: &'a dyn FilesGroup,
     attr: &Attribute<'a>,
 ) -> Option<(ast::TerminalShortString<'a>, ast::TerminalIdentifier<'a>)> {
     let [

@@ -6,7 +6,6 @@ use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextWidth};
 use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax::node::ast::SyntaxFile;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::{Intern, Upcast};
 use itertools::chain;
@@ -30,11 +29,6 @@ impl Default for SimpleParserDatabase {
     }
 }
 
-impl<'db> Upcast<'db, dyn SyntaxGroup> for SimpleParserDatabase {
-    fn upcast(&'db self) -> &'db dyn SyntaxGroup {
-        self
-    }
-}
 impl<'db> Upcast<'db, dyn FilesGroup> for SimpleParserDatabase {
     fn upcast(&'db self) -> &'db dyn FilesGroup {
         self

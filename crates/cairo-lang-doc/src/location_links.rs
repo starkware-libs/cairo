@@ -1,9 +1,9 @@
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticsBuilder, Maybe};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_formatter::{FormatterConfig, get_formatted_file};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_parser::parser::Parser;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::green::GreenNodeDetails;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
@@ -25,7 +25,7 @@ pub struct LocationLink<'db> {
 /// Collects all [`cairo_lang_syntax::node::green::GreenNode`]s for a [`SyntaxNode`],
 /// returns a vector of their [`SyntaxKind`] and text.
 fn collect_green_nodes<'db>(
-    db: &dyn SyntaxGroup,
+    db: &dyn FilesGroup,
     syntax_node: &SyntaxNode<'db>,
     green_nodes: &mut Vec<(SyntaxKind, String)>,
 ) -> Vec<(SyntaxKind, String)> {

@@ -8,9 +8,9 @@ use cairo_lang_defs::plugin_utils::{
     unsupported_bracket_diagnostic,
 };
 use cairo_lang_filesystem::cfg::Cfg;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::ast::WrappedArgList;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
 
@@ -33,7 +33,7 @@ trait CompareAssertionPlugin: NamedPlugin {
 
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn FilesGroup,
         syntax: &ast::ExprInlineMacro<'db>,
         metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult<'db> {
@@ -226,7 +226,7 @@ macro_rules! define_compare_assert_macro {
         impl InlineMacroExprPlugin for $ident {
             fn generate_code<'db>(
                 &self,
-                db: &'db dyn SyntaxGroup,
+                db: &'db dyn FilesGroup,
                 syntax: &ast::ExprInlineMacro<'db>,
                 metadata: &MacroPluginMetadata<'_>,
             ) -> InlinePluginResult<'db> {

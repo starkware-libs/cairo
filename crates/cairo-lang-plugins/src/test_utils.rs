@@ -5,6 +5,7 @@ use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
     DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder, ErrorCode, Severity,
 };
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -73,7 +74,7 @@ pub fn expand_module_text<'db>(
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 struct TestDiagnosticEntry<'a>(pub PluginDiagnostic<'a>);
 impl<'a> DiagnosticEntry<'a> for TestDiagnosticEntry<'a> {
-    type DbType = dyn DefsGroup;
+    type DbType = dyn FilesGroup;
     fn format(&self, _db: &Self::DbType) -> String {
         self.0.message.to_string()
     }

@@ -1,12 +1,12 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_plugins::plugins::HIDDEN_ATTR_SYNTAX;
 use cairo_lang_semantic::keyword::SELF_PARAM_KW;
 use cairo_lang_syntax::attribute::consts::IMPLICIT_PRECEDENCE_ATTR;
 use cairo_lang_syntax::node::ast::{
     self, FunctionWithBody, OptionReturnTypeClause, OptionTypeClause, OptionWrappedGenericParamList,
 };
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
@@ -30,7 +30,7 @@ pub enum EntryPointKind {
 impl EntryPointKind {
     /// Returns the entry point kind if the given function is indeed marked as an entry point.
     pub fn try_from_function_with_body<'db>(
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn FilesGroup,
         diagnostics: &mut Vec<PluginDiagnostic<'db>>,
         item_function: &FunctionWithBody<'db>,
     ) -> Option<Self> {
@@ -52,7 +52,7 @@ impl EntryPointKind {
 
     /// Returns the entry point kind if the attributes mark it as an entry point.
     pub fn try_from_attrs<'db>(
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn FilesGroup,
         diagnostics: &mut Vec<PluginDiagnostic<'db>>,
         attrs: &impl QueryAttrs<'db>,
     ) -> Option<Self> {
@@ -135,7 +135,7 @@ pub struct EntryPointGenerationParams<'db, 'a> {
 
 /// Handles a contract entrypoint function.
 pub fn handle_entry_point<'db, 'a>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     EntryPointGenerationParams {
         entry_point_kind,
         item_function,
@@ -220,7 +220,7 @@ pub fn handle_entry_point<'db, 'a>(
 
 /// Generates Cairo code for an entry point wrapper.
 fn generate_entry_point_wrapper<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     function: &FunctionWithBody<'db>,
     wrapped_function_path: RewriteNode<'db>,
     wrapper_function_name: RewriteNode<'db>,
@@ -376,7 +376,7 @@ fn generate_entry_point_wrapper<'db>(
 /// Validates the first parameter of an L1 handler is `from_address: felt252` or `_from_address:
 /// felt252`.
 fn validate_l1_handler_first_parameter<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     params: &ast::ParamList<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {

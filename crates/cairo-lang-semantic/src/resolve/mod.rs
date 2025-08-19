@@ -9,7 +9,9 @@ use cairo_lang_defs::ids::{
     ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitId, TraitItemId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
-use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings, default_crate_settings};
+use cairo_lang_filesystem::db::{
+    CORELIB_CRATE_NAME, CrateSettings, FilesGroup, default_crate_settings,
+};
 use cairo_lang_filesystem::ids::{CodeMapping, CrateId, CrateLongId, StrRef};
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
@@ -26,7 +28,6 @@ use cairo_lang_utils::{Intern, extract_matches, require, try_extract_matches};
 pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
 use syntax::node::TypedStablePtr;
-use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::QueryAttrs;
 
 use crate::corelib::{core_submodule, get_submodule};
@@ -299,51 +300,51 @@ enum UseStarResult<'db> {
 
 /// A trait for things that can be interpreted as a path of segments.
 pub trait AsSegments<'db> {
-    fn to_segments(self, db: &'db dyn SyntaxGroup) -> Vec<ast::PathSegment<'db>>;
+    fn to_segments(self, db: &'db dyn FilesGroup) -> Vec<ast::PathSegment<'db>>;
     /// Returns placeholder marker `$` if the path prefixed with one, indicating a resolver site
     /// modifier.
-    fn placeholder_marker(&self, db: &'db dyn SyntaxGroup) -> Option<ast::TerminalDollar<'db>>;
+    fn placeholder_marker(&self, db: &'db dyn FilesGroup) -> Option<ast::TerminalDollar<'db>>;
     /// The offset of the path in the file.
-    fn offset(&self, db: &'db dyn SyntaxGroup) -> Option<TextOffset>;
+    fn offset(&self, db: &'db dyn FilesGroup) -> Option<TextOffset>;
 }
 impl<'db> AsSegments<'db> for &ast::ExprPath<'db> {
-    fn to_segments(self, db: &'db dyn SyntaxGroup) -> Vec<ast::PathSegment<'db>> {
+    fn to_segments(self, db: &'db dyn FilesGroup) -> Vec<ast::PathSegment<'db>> {
         self.segments(db).elements_vec(db)
     }
-    fn placeholder_marker(&self, db: &'db dyn SyntaxGroup) -> Option<ast::TerminalDollar<'db>> {
+    fn placeholder_marker(&self, db: &'db dyn FilesGroup) -> Option<ast::TerminalDollar<'db>> {
         match self.dollar(db) {
             ast::OptionTerminalDollar::Empty(_) => None,
             ast::OptionTerminalDollar::TerminalDollar(dollar) => Some(dollar),
         }
     }
 
-    fn offset(&self, db: &'db dyn SyntaxGroup) -> Option<TextOffset> {
+    fn offset(&self, db: &'db dyn FilesGroup) -> Option<TextOffset> {
         Some(self.as_syntax_node().offset(db))
     }
 }
 impl<'db> AsSegments<'db> for Vec<ast::PathSegment<'db>> {
-    fn to_segments(self, _: &'db dyn SyntaxGroup) -> Vec<ast::PathSegment<'db>> {
+    fn to_segments(self, _: &'db dyn FilesGroup) -> Vec<ast::PathSegment<'db>> {
         self
     }
-    fn placeholder_marker(&self, _: &'db dyn SyntaxGroup) -> Option<ast::TerminalDollar<'db>> {
+    fn placeholder_marker(&self, _: &'db dyn FilesGroup) -> Option<ast::TerminalDollar<'db>> {
         // A dollar can prefix only the first segment of a path, thus irrelevant to a list of
         // segments.
         None
     }
-    fn offset(&self, db: &'db dyn SyntaxGroup) -> Option<TextOffset> {
+    fn offset(&self, db: &'db dyn FilesGroup) -> Option<TextOffset> {
         self.first().map(|segment| segment.as_syntax_node().offset(db))
     }
 }
 impl<'db> AsSegments<'db> for UseAsPathSegments<'db> {
-    fn to_segments(self, _: &'db dyn SyntaxGroup) -> Vec<ast::PathSegment<'db>> {
+    fn to_segments(self, _: &'db dyn FilesGroup) -> Vec<ast::PathSegment<'db>> {
         self.segments
     }
 
-    fn placeholder_marker(&self, _: &'db dyn SyntaxGroup) -> Option<ast::TerminalDollar<'db>> {
+    fn placeholder_marker(&self, _: &'db dyn FilesGroup) -> Option<ast::TerminalDollar<'db>> {
         self.is_placeholder.clone()
     }
 
-    fn offset(&self, db: &'db dyn SyntaxGroup) -> Option<TextOffset> {
+    fn offset(&self, db: &'db dyn FilesGroup) -> Option<TextOffset> {
         if let Some(ref dollar) = self.is_placeholder {
             Some(dollar.as_syntax_node().offset(db))
         } else {

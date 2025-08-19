@@ -1,10 +1,10 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::keyword::SELF_PARAM_KW;
 use cairo_lang_syntax::node::ast::{
     self, MaybeTraitBody, OptionReturnTypeClause, OptionTypeClause,
 };
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, IsDependentType, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
@@ -20,7 +20,7 @@ const RET_DATA: &str = "__dispatcher_return_data__";
 
 /// If the trait is annotated with INTERFACE_ATTR, generate the relevant dispatcher logic.
 pub fn handle_trait<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     trait_ast: ast::ItemTrait<'db>,
 ) -> PluginResult<'db> {
     if trait_ast.has_attr(db, DEPRECATED_ABI_ATTR) {
@@ -452,7 +452,7 @@ fn declaration_method_impl<'db>(
 
 /// Returns the matching signature for a dispatcher implementation for the given declaration.
 fn dispatcher_signature<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     declaration: &ast::FunctionDeclaration<'db>,
     self_type_name: &str,
     unwrap: bool,
