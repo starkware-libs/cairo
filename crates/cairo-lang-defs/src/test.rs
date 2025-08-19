@@ -13,9 +13,9 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, Upcast, extract_matches, try_extract_matches};
 use indoc::indoc;
-use salsa::Database;
+use salsa::{Database, Setter};
 
-use crate::db::{DefsGroup, init_defs_group, init_external_files};
+use crate::db::{DefsGroup, defs_group_input, init_defs_group, init_external_files};
 use crate::ids::{
     FileIndex, GenericParamLongId, MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId,
     NamedLanguageElementId, SubmoduleLongId,
@@ -38,7 +38,7 @@ impl Default for DatabaseForTesting {
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
-        res.set_default_macro_plugins_input(Arc::new([
+        defs_group_input(&res).set_default_macro_plugins(&mut res).to(Some(vec![
             MacroPluginLongId(Arc::new(FooToBarPlugin)),
             MacroPluginLongId(Arc::new(RemoveOrigPlugin)),
             MacroPluginLongId(Arc::new(DummyPlugin)),

@@ -22,30 +22,82 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{Itertools, chain};
-use salsa::Database;
+use salsa::{Database, Setter};
 
 use crate::cache::{DefCacheLoadingData, load_cached_crate_modules};
 use crate::ids::*;
 use crate::plugin::{DynGeneratedFileAuxData, MacroPlugin, MacroPluginMetadata, PluginDiagnostic};
 use crate::plugin_utils::try_extract_unnamed_arg;
 
+#[salsa::input]
+pub struct DefsGroupInput {
+    #[returns(ref)]
+    pub default_macro_plugins: Option<Vec<MacroPluginLongId>>,
+    #[returns(ref)]
+    pub macro_plugin_overrides: Option<OrderedHashMap<CrateInput, Arc<[MacroPluginLongId]>>>,
+    #[returns(ref)]
+    pub default_inline_macro_plugins: Option<OrderedHashMap<String, InlineMacroExprPluginLongId>>,
+    #[returns(ref)]
+    pub inline_macro_plugin_overrides: Option<
+        OrderedHashMap<CrateInput, Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>>,
+    >,
+}
+
+/// Returns a reference to the inputs of [DefsGroup].
+/// The reference is also used to set the inputs to new values.
+#[salsa::tracked(returns(ref))]
+pub fn defs_group_input(db: &dyn Database) -> DefsGroupInput {
+    DefsGroupInput::new(db, None, None, None, None)
+}
+
+fn default_macro_plugins_input(db: &dyn Database) -> &[MacroPluginLongId] {
+    defs_group_input(db).default_macro_plugins(db).as_ref().unwrap()
+}
+
+fn macro_plugin_overrides_input(
+    db: &dyn Database,
+) -> &OrderedHashMap<CrateInput, Arc<[MacroPluginLongId]>> {
+    defs_group_input(db).macro_plugin_overrides(db).as_ref().unwrap()
+}
+
+fn inline_macro_plugin_overrides_input(
+    db: &dyn Database,
+) -> &OrderedHashMap<CrateInput, Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>> {
+    defs_group_input(db).inline_macro_plugin_overrides(db).as_ref().unwrap()
+}
+
+fn default_inline_macro_plugins_input(
+    db: &dyn Database,
+) -> &OrderedHashMap<String, InlineMacroExprPluginLongId> {
+    defs_group_input(db).default_inline_macro_plugins(db).as_ref().unwrap()
+}
+
 /// Salsa database interface.
 /// See [`super::ids`] for further details.
 #[cairo_lang_proc_macros::query_group]
 pub trait DefsGroup: ParserGroup {
+    #[salsa::transparent]
+    fn default_macro_plugins_input(&self) -> &[MacroPluginLongId];
+
+    #[salsa::transparent]
+    fn macro_plugin_overrides_input(&self)
+    -> &OrderedHashMap<CrateInput, Arc<[MacroPluginLongId]>>;
+
+    #[salsa::transparent]
+    fn inline_macro_plugin_overrides_input(
+        &self,
+    ) -> &OrderedHashMap<CrateInput, Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>>;
+
+    #[salsa::transparent]
+    fn default_inline_macro_plugins_input(
+        &self,
+    ) -> &OrderedHashMap<String, InlineMacroExprPluginLongId>;
+
     // Plugins.
     // ========
 
-    #[salsa::input]
-    fn default_macro_plugins_input(&self) -> Arc<[MacroPluginLongId]>;
-
     /// Interned version of `default_macro_plugins_input`.
     fn default_macro_plugins<'db>(&'db self) -> Arc<Vec<MacroPluginId<'db>>>;
-
-    #[salsa::input]
-    fn macro_plugin_overrides_input(
-        &self,
-    ) -> Arc<OrderedHashMap<CrateInput, Arc<[MacroPluginLongId]>>>;
 
     /// Interned version of `macro_plugin_overrides_input`.
     fn macro_plugin_overrides<'db>(
@@ -58,20 +110,10 @@ pub trait DefsGroup: ParserGroup {
     /// ([`DefsGroup::default_macro_plugins`]) otherwise.
     fn crate_macro_plugins<'db>(&'db self, crate_id: CrateId<'db>) -> Arc<Vec<MacroPluginId<'db>>>;
 
-    #[salsa::input]
-    fn default_inline_macro_plugins_input(
-        &self,
-    ) -> Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>;
-
     /// Interned version of `default_inline_macro_plugins_input`.
     fn default_inline_macro_plugins<'db>(
         &'db self,
     ) -> Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>;
-
-    #[salsa::input]
-    fn inline_macro_plugin_overrides_input(
-        &self,
-    ) -> Arc<OrderedHashMap<CrateInput, Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>>>;
 
     /// Interned version of `inline_macro_plugin_overrides_input`.
     fn inline_macro_plugin_overrides<'db>(
@@ -324,8 +366,8 @@ pub trait DefsGroup: ParserGroup {
 
 /// Initializes the [`DefsGroup`] database to a proper state.
 pub fn init_defs_group(db: &mut dyn DefsGroup) {
-    db.set_macro_plugin_overrides_input(Arc::new(OrderedHashMap::default()));
-    db.set_inline_macro_plugin_overrides_input(Arc::new(OrderedHashMap::default()));
+    defs_group_input(db).set_macro_plugin_overrides(db).to(Some(OrderedHashMap::default()));
+    defs_group_input(db).set_inline_macro_plugin_overrides(db).to(Some(OrderedHashMap::default()));
 }
 
 pub fn default_macro_plugins<'db>(db: &'db dyn DefsGroup) -> Arc<Vec<MacroPluginId<'db>>> {
@@ -377,8 +419,7 @@ pub fn inline_macro_plugin_overrides<'db>(
 pub fn default_inline_macro_plugins<'db>(
     db: &'db dyn DefsGroup,
 ) -> Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>> {
-    let inp: Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>> =
-        db.default_inline_macro_plugins_input();
+    let inp = db.default_inline_macro_plugins_input();
     Arc::new(inp.iter().map(|(name, plugin)| (name.clone(), plugin.clone().intern(db))).collect())
 }
 
@@ -1524,10 +1565,12 @@ pub trait DefsGroupEx: DefsGroup {
         plugins: Arc<Vec<MacroPluginId<'db>>>,
     ) {
         let crate_input = self.crate_input(crate_id);
-        let mut overrides = self.macro_plugin_overrides_input().as_ref().clone();
+        let mut overrides = self.macro_plugin_overrides_input().clone();
         let plugins = plugins.iter().map(|plugin| plugin.long(self).clone()).collect();
         overrides.insert(crate_input.clone(), plugins);
-        self.set_macro_plugin_overrides_input(Arc::new(overrides));
+        defs_group_input(self.as_dyn_database_mut())
+            .set_macro_plugin_overrides(self)
+            .to(Some(overrides));
     }
 
     /// Overrides the default inline macro plugins available for [`CrateId`] with `plugins`.
@@ -1539,7 +1582,7 @@ pub trait DefsGroupEx: DefsGroup {
         plugins: Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>,
     ) {
         let crate_input = self.crate_input(crate_id);
-        let mut overrides = self.inline_macro_plugin_overrides_input().as_ref().clone();
+        let mut overrides = self.inline_macro_plugin_overrides_input().clone();
         let plugins = Arc::new(
             plugins
                 .iter()
@@ -1547,7 +1590,9 @@ pub trait DefsGroupEx: DefsGroup {
                 .collect(),
         );
         overrides.insert(crate_input.clone(), plugins);
-        self.set_inline_macro_plugin_overrides_input(Arc::new(overrides));
+        defs_group_input(self.as_dyn_database_mut())
+            .set_inline_macro_plugin_overrides(self)
+            .to(Some(overrides));
     }
 }
 

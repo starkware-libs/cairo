@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{DefsGroup, DefsGroupEx};
+use cairo_lang_defs::db::{DefsGroup, DefsGroupEx, defs_group_input};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
@@ -21,6 +21,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, Upcast, require};
 use itertools::Itertools;
+use salsa::Setter;
 
 use crate::corelib::CoreInfo;
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -2276,20 +2277,21 @@ pub trait PluginSuiteInput: SemanticGroup {
         let PluginSuite { plugins, inline_macro_plugins, analyzer_plugins } = suite;
         // let interned = self.intern_plugin_suite(suite);
 
-        let macro_plugins = plugins.into_iter().map(MacroPluginLongId).collect::<Arc<[_]>>();
+        let macro_plugins = plugins.into_iter().map(MacroPluginLongId).collect_vec();
 
-        let inline_macro_plugins = Arc::new(
-            inline_macro_plugins
-                .into_iter()
-                .map(|(name, plugin)| (name, InlineMacroExprPluginLongId(plugin)))
-                .collect::<OrderedHashMap<_, _>>(),
-        );
+        let inline_macro_plugins = inline_macro_plugins
+            .into_iter()
+            .map(|(name, plugin)| (name, InlineMacroExprPluginLongId(plugin)))
+            .collect::<OrderedHashMap<_, _>>();
 
         let analyzer_plugins =
             analyzer_plugins.into_iter().map(AnalyzerPluginLongId).collect::<Arc<[_]>>();
 
-        self.set_default_macro_plugins_input(macro_plugins);
-        self.set_default_inline_macro_plugins_input(inline_macro_plugins);
+        let db_ref = self.as_dyn_database_mut();
+        defs_group_input(db_ref).set_default_macro_plugins(db_ref).to(Some(macro_plugins));
+        defs_group_input(db_ref)
+            .set_default_inline_macro_plugins(db_ref)
+            .to(Some(inline_macro_plugins));
         self.set_default_analyzer_plugins_input(analyzer_plugins);
     }
 
