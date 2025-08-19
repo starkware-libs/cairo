@@ -24,7 +24,7 @@ use itertools::Itertools;
 
 use crate::corelib::CoreInfo;
 use crate::diagnostic::SemanticDiagnosticKind;
-use crate::expr::inference::{self, ImplVar, ImplVarId, InferenceError};
+use crate::expr::inference::{self, InferenceError};
 use crate::ids::{AnalyzerPluginId, AnalyzerPluginLongId};
 use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
 use crate::items::function_with_body::FunctionBody;
@@ -69,85 +69,6 @@ pub trait SemanticGroup:
     + for<'db> Upcast<'db, dyn salsa::Database>
     + Elongate
 {
-    #[salsa::interned]
-    fn intern_function<'db>(
-        &'db self,
-        id: items::functions::FunctionLongId<'db>,
-    ) -> semantic::FunctionId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_function_with_body<'db>(
-        &'db self,
-        id: items::functions::ConcreteFunctionWithBody<'db>,
-    ) -> semantic::ConcreteFunctionWithBodyId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_struct<'db>(
-        &'db self,
-        id: types::ConcreteStructLongId<'db>,
-    ) -> types::ConcreteStructId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_enum<'db>(
-        &'db self,
-        id: types::ConcreteEnumLongId<'db>,
-    ) -> types::ConcreteEnumId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_extern_type<'db>(
-        &'db self,
-        id: types::ConcreteExternTypeLongId<'db>,
-    ) -> types::ConcreteExternTypeId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_trait<'db>(
-        &'db self,
-        id: items::trt::ConcreteTraitLongId<'db>,
-    ) -> items::trt::ConcreteTraitId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_trait_function<'db>(
-        &'db self,
-        id: items::trt::ConcreteTraitGenericFunctionLongId<'db>,
-    ) -> items::trt::ConcreteTraitGenericFunctionId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_trait_type<'db>(
-        &'db self,
-        id: items::trt::ConcreteTraitTypeLongId<'db>,
-    ) -> items::trt::ConcreteTraitTypeId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_trait_constant<'db>(
-        &'db self,
-        id: items::trt::ConcreteTraitConstantLongId<'db>,
-    ) -> items::trt::ConcreteTraitConstantId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_impl<'db>(
-        &'db self,
-        id: items::imp::ConcreteImplLongId<'db>,
-    ) -> items::imp::ConcreteImplId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_trait_impl<'db>(
-        &'db self,
-        id: items::trt::ConcreteTraitImplLongId<'db>,
-    ) -> items::trt::ConcreteTraitImplId<'db>;
-    #[salsa::interned]
-    fn intern_type<'db>(&'db self, id: types::TypeLongId<'db>) -> semantic::TypeId<'db>;
-    #[salsa::interned]
-    fn intern_const_value<'db>(
-        &'db self,
-        id: items::constant::ConstValue<'db>,
-    ) -> items::constant::ConstValueId<'db>;
-    #[salsa::interned]
-    fn intern_impl<'db>(&'db self, id: items::imp::ImplLongId<'db>) -> items::imp::ImplId<'db>;
-    #[salsa::interned]
-    fn intern_impl_var<'db>(&'db self, id: ImplVar<'db>) -> ImplVarId<'db>;
-
-    #[salsa::interned]
-    fn intern_generated_impl<'db>(
-        &'db self,
-        id: items::imp::GeneratedImplLongId<'db>,
-    ) -> items::imp::GeneratedImplId<'db>;
-
-    #[salsa::interned]
-    fn intern_uninferred_generated_impl<'db>(
-        &'db self,
-        id: items::imp::UninferredGeneratedImplLongId<'db>,
-    ) -> items::imp::UninferredGeneratedImplId<'db>;
-
     // Const.
     // ====
     /// Private query to compute data about a constant definition.
@@ -1901,12 +1822,6 @@ pub trait SemanticGroup:
         &'db self,
     ) -> Arc<OrderedHashMap<CrateId<'db>, Arc<Vec<AnalyzerPluginId<'db>>>>>;
 
-    #[salsa::interned]
-    fn intern_analyzer_plugin<'db>(
-        &'db self,
-        plugin: AnalyzerPluginLongId,
-    ) -> AnalyzerPluginId<'db>;
-
     /// Returns [`AnalyzerPluginId`]s of the plugins set for the crate with [`CrateId`].
     /// Returns
     /// [`SemanticGroupEx::set_override_crate_analyzer_plugins`] if it has been set,
@@ -2097,7 +2012,7 @@ fn module_semantic_diagnostics<'db>(
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
     for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db)).iter() {
-        let analyzer_plugin = db.lookup_intern_analyzer_plugin(*analyzer_plugin_id);
+        let analyzer_plugin = analyzer_plugin_id.long(db);
 
         for diag in analyzer_plugin.diagnostics(db, module_id) {
             diagnostics.add(SemanticDiagnostic::new(
@@ -2124,7 +2039,7 @@ fn declared_allows(db: &dyn SemanticGroup, crate_id: CrateId<'_>) -> Arc<Ordered
     Arc::new(OrderedHashSet::from_iter(
         db.crate_analyzer_plugins(crate_id)
             .iter()
-            .flat_map(|plugin| db.lookup_intern_analyzer_plugin(*plugin).declared_allows()),
+            .flat_map(|plugin| plugin.long(db).declared_allows()),
     ))
 }
 
@@ -2278,8 +2193,7 @@ pub trait SemanticGroupEx: SemanticGroup {
         plugins: Arc<[AnalyzerPluginId<'_>]>,
     ) {
         let mut overrides = self.analyzer_plugin_overrides_input().as_ref().clone();
-        let plugins =
-            plugins.iter().map(|plugin| self.lookup_intern_analyzer_plugin(*plugin)).collect_vec();
+        let plugins = plugins.iter().map(|plugin| plugin.long(self).clone()).collect_vec();
         overrides.insert(self.crate_input(crate_id).clone(), Arc::from(plugins));
         self.set_analyzer_plugin_overrides_input(Arc::new(overrides));
     }
@@ -2346,7 +2260,7 @@ pub trait PluginSuiteInput: SemanticGroup {
 
         let analyzer_plugins = analyzer_plugins
             .into_iter()
-            .map(|plugin| self.intern_analyzer_plugin(AnalyzerPluginLongId(plugin)))
+            .map(|plugin| AnalyzerPluginId::new(self, AnalyzerPluginLongId(plugin)))
             .collect::<Arc<[_]>>();
 
         InternedPluginSuite { macro_plugins, inline_macro_plugins, analyzer_plugins }

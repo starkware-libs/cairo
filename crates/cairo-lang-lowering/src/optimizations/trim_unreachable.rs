@@ -22,8 +22,7 @@ pub fn trim_unreachable<'db>(db: &'db dyn LoweringGroup, lowered: &mut Lowered<'
     // Otherwise, it returns `false.
     let mut handle_var = |var_id: &VariableId, introduction_block| {
         let variable = &lowered.variables[*var_id];
-        let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) =
-            db.lookup_intern_type(variable.ty)
+        let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) = variable.ty.long(db)
         else {
             return false;
         };
@@ -58,7 +57,7 @@ pub fn trim_unreachable<'db>(db: &'db dyn LoweringGroup, lowered: &mut Lowered<'
         block.statements.truncate(0);
         block.end = BlockEnd::Match {
             info: MatchInfo::Enum(MatchEnumInfo {
-                concrete_enum_id,
+                concrete_enum_id: *concrete_enum_id,
                 input: VarUsage { var_id: output, location },
                 arms: vec![],
                 location,
