@@ -1,10 +1,10 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{ImplDefId, TraitId};
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::ExprPath;
 use cairo_lang_utils::try_extract_matches;
+use salsa::Database;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::NotATrait;
@@ -41,7 +41,7 @@ mod test;
 
 /// Tries to resolve a trait path. Reports a diagnostic if the path doesn't point to a trait.
 fn resolve_trait_path<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     resolver: &mut Resolver<'db>,
     trait_path_syntax: &ExprPath<'db>,

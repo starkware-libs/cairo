@@ -1,4 +1,3 @@
-use cairo_lang_filesystem::db::FilesGroup;
 use salsa::Database;
 
 use super::ast::{
@@ -265,7 +264,7 @@ impl<'a> GenericParamEx<'a> for ast::GenericParam<'a> {
 }
 
 /// Checks if the given attribute has a single argument with the given name.
-pub fn is_single_arg_attr(db: &dyn FilesGroup, attr: &Attribute<'_>, arg_name: &str) -> bool {
+pub fn is_single_arg_attr(db: &dyn Database, attr: &Attribute<'_>, arg_name: &str) -> bool {
     match attr.arguments(db) {
         OptionArgListParenthesized::ArgListParenthesized(args) => {
             matches!(&args.arguments(db).elements_vec(db)[..],
@@ -292,7 +291,7 @@ pub trait QueryAttrs<'a> {
     /// Collect all attributes named exactly `attr` attached to this node.
     fn query_attr(
         &self,
-        db: &'a dyn FilesGroup,
+        db: &'a dyn Database,
         attr: &'a str,
     ) -> impl Iterator<Item = Attribute<'a>> {
         self.attributes_elements(db)
@@ -300,22 +299,17 @@ pub trait QueryAttrs<'a> {
     }
 
     /// Find first attribute named exactly `attr` attached do this node.
-    fn find_attr(&self, db: &'a dyn FilesGroup, attr: &'a str) -> Option<Attribute<'a>> {
+    fn find_attr(&self, db: &'a dyn Database, attr: &'a str) -> Option<Attribute<'a>> {
         self.query_attr(db, attr).next()
     }
 
     /// Check if this node has an attribute named exactly `attr`.
-    fn has_attr(&self, db: &'a dyn FilesGroup, attr: &'a str) -> bool {
+    fn has_attr(&self, db: &'a dyn Database, attr: &'a str) -> bool {
         self.find_attr(db, attr).is_some()
     }
 
     /// Checks if the given object has an attribute with the given name and argument.
-    fn has_attr_with_arg(
-        &self,
-        db: &'a dyn FilesGroup,
-        attr_name: &'a str,
-        arg_name: &str,
-    ) -> bool {
+    fn has_attr_with_arg(&self, db: &'a dyn Database, attr_name: &'a str, arg_name: &str) -> bool {
         self.query_attr(db, attr_name).any(|attr| is_single_arg_attr(db, &attr, arg_name))
     }
 }

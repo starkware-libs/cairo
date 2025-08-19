@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::{DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::consts::{IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
@@ -10,6 +9,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Upcast, try_extract_matches};
 use itertools::Itertools;
+use salsa::Database;
 
 use super::functions::InlineConfiguration;
 use crate::db::SemanticGroup;
@@ -346,7 +346,7 @@ pub fn get_inline_config<'db>(
 /// If there is no implicit precedence influencing attribute, then this function returns
 /// [ImplicitPrecedence::UNSPECIFIED].
 pub fn get_implicit_precedence<'a, 'r>(
-    syntax_db: &'a dyn FilesGroup,
+    syntax_db: &'a dyn Database,
     diagnostics: &mut SemanticDiagnostics<'a>,
     resolver: &mut Resolver<'a>,
     attributes: &'r [Attribute<'a>],

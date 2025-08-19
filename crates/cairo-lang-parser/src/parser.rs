@@ -43,7 +43,7 @@ enum MacroParsingContext {
 }
 
 pub struct Parser<'a, 'mt> {
-    db: &'a dyn FilesGroup,
+    db: &'a dyn Database,
     file_id: FileId<'a>,
     lexer: Lexer<'a>,
     /// The next terminal to handle.
@@ -125,7 +125,7 @@ macro_rules! or_an_attribute {
 impl<'a, 'mt> Parser<'a, 'mt> {
     /// Creates a new parser.
     pub fn new(
-        db: &'a dyn FilesGroup,
+        db: &'a dyn Database,
         file_id: FileId<'a>,
         text: &'a str,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
@@ -155,7 +155,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Parses a file.
     pub fn parse_file(
-        db: &'a dyn FilesGroup,
+        db: &'a dyn Database,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         text: &'a str,
@@ -167,7 +167,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Parses a file expr.
     pub fn parse_file_expr(
-        db: &'a dyn FilesGroup,
+        db: &'a dyn Database,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         text: &'a str,
@@ -186,7 +186,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Parses a file as a list of statements.
     pub fn parse_file_statement_list(
-        db: &'a dyn FilesGroup,
+        db: &'a dyn Database,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         text: &'a str,
@@ -207,7 +207,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Parses a token stream.
     pub fn parse_token_stream(
-        db: &'a dyn FilesGroup,
+        db: &'a dyn Database,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
@@ -231,7 +231,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Parses a token stream expression.
     pub fn parse_token_stream_expr(
-        db: &'a dyn FilesGroup,
+        db: &'a dyn Database,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         offset: Option<TextOffset>,
@@ -3845,12 +3845,12 @@ pub struct PendingParserDiagnostic {
 }
 
 /// Returns the total width of the given trivia list.
-fn trivia_total_width(db: &dyn FilesGroup, trivia: &[TriviumGreen<'_>]) -> TextWidth {
+fn trivia_total_width(db: &dyn Database, trivia: &[TriviumGreen<'_>]) -> TextWidth {
     trivia.iter().map(|trivium| trivium.0.width(db)).sum::<TextWidth>()
 }
 
 /// The width of the trailing trivia, traversing the tree to the bottom right node.
-fn trailing_trivia_width(db: &dyn FilesGroup, green_id: GreenId<'_>) -> Option<TextWidth> {
+fn trailing_trivia_width(db: &dyn Database, green_id: GreenId<'_>) -> Option<TextWidth> {
     let node = green_id.long(db);
     if node.kind == SyntaxKind::Trivia {
         return Some(node.width());

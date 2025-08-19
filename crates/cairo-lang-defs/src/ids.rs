@@ -26,7 +26,6 @@ use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_filesystem::db::FilesGroup;
 pub use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
@@ -36,6 +35,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, OptionFrom, define_short_id, require};
+use salsa::Database;
 
 use crate::db::DefsGroup;
 use crate::diagnostic_utils::StableLocation;
@@ -369,7 +369,7 @@ pub struct MacroPluginLongId(pub Arc<dyn MacroPlugin>);
 impl MacroPlugin for MacroPluginLongId {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         metadata: &crate::plugin::MacroPluginMetadata<'_>,
     ) -> crate::plugin::PluginResult<'db> {
@@ -424,7 +424,7 @@ pub struct InlineMacroExprPluginLongId(pub Arc<dyn InlineMacroExprPlugin>);
 impl InlineMacroExprPlugin for InlineMacroExprPluginLongId {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         item_ast: &ast::ExprInlineMacro<'db>,
         metadata: &crate::plugin::MacroPluginMetadata<'_>,
     ) -> crate::plugin::InlinePluginResult<'db> {
@@ -763,7 +763,7 @@ define_language_element_id_as_enum! {
 define_top_level_language_element_id!(ParamId, ParamLongId, ast::Param<'db>);
 define_language_element_id_basic!(GenericParamId, GenericParamLongId, ast::GenericParam<'db>);
 impl<'db> GenericParamLongId<'db> {
-    pub fn name(&self, db: &'db dyn FilesGroup) -> Option<&'db str> {
+    pub fn name(&self, db: &'db dyn Database) -> Option<&'db str> {
         let SyntaxStablePtr::Child { key_fields, kind, .. } = self.1.0.long(db) else {
             unreachable!()
         };
@@ -776,10 +776,10 @@ impl<'db> GenericParamLongId<'db> {
         Some(name_green.identifier(db))
     }
 
-    pub fn debug_name(&self, db: &'db dyn FilesGroup) -> &'db str {
+    pub fn debug_name(&self, db: &'db dyn Database) -> &'db str {
         self.name(db).unwrap_or("_")
     }
-    pub fn kind(&self, db: &dyn FilesGroup) -> GenericKind {
+    pub fn kind(&self, db: &dyn Database) -> GenericKind {
         let SyntaxStablePtr::Child { kind, .. } = self.1.0.long(db) else { unreachable!() };
         match kind {
             SyntaxKind::GenericParamType => GenericKind::Type,

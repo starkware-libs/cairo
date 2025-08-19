@@ -8,13 +8,13 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_defs::plugin_utils::{
     not_legacy_macro_diagnostic, try_extract_unnamed_arg, unsupported_bracket_diagnostic,
 };
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::{OptionHelper, try_extract_matches};
 use indoc::indoc;
 use num_bigint::{BigInt, Sign};
+use salsa::Database;
 
 pub const FELT252_BYTES: usize = 31;
 
@@ -27,7 +27,7 @@ impl NamedPlugin for WriteMacro {
 impl InlineMacroExprPlugin for WriteMacro {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult<'db> {
@@ -72,7 +72,7 @@ impl NamedPlugin for WritelnMacro {
 impl InlineMacroExprPlugin for WritelnMacro {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult<'db> {
@@ -110,7 +110,7 @@ impl InlineMacroExprPlugin for WritelnMacro {
 
 fn generate_code_inner<'db>(
     syntax: &ast::ExprInlineMacro<'db>,
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     with_newline: bool,
 ) -> InlinePluginResult<'db> {
     let info = match FormattingInfo::extract(db, syntax) {
@@ -157,7 +157,7 @@ struct FormattingInfo<'db> {
 impl<'db> FormattingInfo<'db> {
     /// Extracts the arguments from a formatted string macro.
     fn extract(
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         syntax: &ast::ExprInlineMacro<'db>,
     ) -> Result<FormattingInfo<'db>, Vec<PluginDiagnostic<'db>>> {
         let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {

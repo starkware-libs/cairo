@@ -1,6 +1,5 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_semantic::keyword::SELF_PARAM_KW;
 use cairo_lang_syntax::attribute::structured::{AttributeArg, AttributeArgVariant};
@@ -10,6 +9,7 @@ use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{extract_matches, require, try_extract_matches};
 use indoc::{formatdoc, indoc};
 use itertools::{Itertools, chain};
+use salsa::Database;
 
 use super::StarknetModuleKind;
 use super::generation_data::{ComponentGenerationData, StarknetModuleCommonGenerationData};
@@ -29,7 +29,7 @@ pub struct ComponentSpecificGenerationData<'db> {
 impl<'db> ComponentSpecificGenerationData<'db> {
     pub fn into_rewrite_node(
         self,
-        _db: &'db dyn FilesGroup,
+        _db: &'db dyn Database,
         _diagnostics: &mut [PluginDiagnostic<'db>],
     ) -> RewriteNode<'db> {
         RewriteNode::interpolate_patched(
@@ -55,7 +55,7 @@ impl<'db> ComponentSpecificGenerationData<'db> {
 
 /// Generates the specific code for a component.
 pub(super) fn generate_component_specific_code<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     common_data: StarknetModuleCommonGenerationData<'db>,
     body: &ast::ModuleBody<'db>,
@@ -71,7 +71,7 @@ pub(super) fn generate_component_specific_code<'db>(
 
 /// Handles a single item inside a component module.
 fn handle_component_item<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     item: &ast::ModuleItem<'db>,
     metadata: &MacroPluginMetadata<'_>,
@@ -99,7 +99,7 @@ fn handle_component_item<'db>(
 
 /// Validates the `embeddable_as` attribute and returns the value of its unnamed argument.
 fn get_embeddable_as_attr_value<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     attr: &ast::Attribute<'db>,
 ) -> Option<ast::Expr<'db>> {
     let ast::OptionArgListParenthesized::ArgListParenthesized(attribute_args) = attr.arguments(db)
@@ -120,7 +120,7 @@ fn get_embeddable_as_attr_value<'db>(
 /// Validates the generic parameters of the impl marked with `embeddable_as` attribute and returns
 /// them if valid.
 fn get_embeddable_as_impl_generic_params<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     item_impl: &ast::ItemImpl<'db>,
 ) -> Result<ast::GenericParamList<'db>, PluginDiagnostic<'db>> {
     let generic_params = item_impl.generic_params(db);
@@ -181,7 +181,7 @@ struct EmbeddableAsImplParams<'db> {
 impl<'db> EmbeddableAsImplParams<'db> {
     /// Extracts the parameters for an `#[embeddable_as]` impl, and validates them.
     fn from_impl(
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         diagnostics: &mut Vec<PluginDiagnostic<'db>>,
         item_impl: &ast::ItemImpl<'db>,
         attr: ast::Attribute<'db>,
@@ -224,7 +224,7 @@ impl<'db> EmbeddableAsImplParams<'db> {
 
 /// Handles an impl inside a component module.
 fn handle_component_impl<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     item_impl: &ast::ItemImpl<'db>,
     metadata: &MacroPluginMetadata<'_>,
@@ -311,7 +311,7 @@ fn handle_component_impl<'db>(
 
 /// Returns a RewriteNode of a path similar to the given path, but without generic params.
 fn remove_generics_from_path<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     trait_path: &ast::ExprPath<'db>,
 ) -> RewriteNode<'db> {
     let segments = trait_path.segments(db);
@@ -327,7 +327,7 @@ fn remove_generics_from_path<'db>(
 
 /// Handles an item of an `#[embeddable_as]` impl inside a component module.
 fn handle_component_embeddable_as_impl_item<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     impl_path: RewriteNode<'db>,
     item: ast::ImplItem<'db>,
@@ -423,7 +423,7 @@ fn handle_component_embeddable_as_impl_item<'db>(
 /// `#[embeddable_as]`, and returns the matching (wrapping function contract state param, code for
 /// fetching the matching component state from it, callsite_modifier).
 fn handle_first_param_for_embeddable_as<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     param: &ast::Param<'db>,
 ) -> Option<(String, String, String)> {
     require(param.name(db).text(db) == SELF_PARAM_KW)?;

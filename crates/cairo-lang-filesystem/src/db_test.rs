@@ -5,7 +5,7 @@ use test_log::test;
 
 use super::FilesGroup;
 use crate::cfg::{Cfg, CfgSet};
-use crate::db::{CrateConfiguration, FilesGroupEx};
+use crate::db::CrateConfiguration;
 use crate::flag::Flag;
 use crate::ids::{CrateLongId, Directory, FlagId, FlagLongId};
 use crate::test_utils::FilesDatabaseForTesting;

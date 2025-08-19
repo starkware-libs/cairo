@@ -4,11 +4,11 @@ use cairo_lang_defs::plugin::{
     PluginGeneratedFile,
 };
 use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::{formatdoc, indoc};
+use salsa::Database;
 
 /// Macro for formatting.
 #[derive(Default, Debug)]
@@ -19,7 +19,7 @@ impl NamedPlugin for FormatMacro {
 impl InlineMacroExprPlugin for FormatMacro {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult<'db> {

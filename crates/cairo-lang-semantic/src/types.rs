@@ -7,7 +7,6 @@ use cairo_lang_defs::ids::{
     NamedLanguageElementId, StructId, TraitTypeId, UnstableSalsaId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -16,6 +15,7 @@ use cairo_lang_utils::{Intern, OptionFrom, define_short_id, try_extract_matches}
 use itertools::{Itertools, chain};
 use num_bigint::BigInt;
 use num_traits::Zero;
+use salsa::Database;
 use sha3::{Digest, Keccak256};
 
 use crate::corelib::{
@@ -636,7 +636,7 @@ pub fn extract_fixed_size_array_size<'db>(
 
 /// Verifies that a given fixed size array size is within limits, and adds a diagnostic if not.
 pub fn verify_fixed_size_array_size<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     size: &BigInt,
     syntax: &ast::ExprFixedSizeArray<'db>,

@@ -189,7 +189,7 @@ impl<'a> DiagnosticsReporter<'a> {
                     for file_id in module_files.iter().copied() {
                         if processed_file_ids.insert(file_id) {
                             found_diagnostics |= self.check_diag_group(
-                                db.upcast(),
+                                db.as_dyn_database(),
                                 db.file_syntax_diagnostics(file_id),
                                 ignore_warnings_in_crate,
                                 &diagnostic_notes,

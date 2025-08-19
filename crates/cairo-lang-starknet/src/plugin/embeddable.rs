@@ -1,11 +1,11 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, GenericParamEx};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
 use itertools::chain;
+use salsa::Database;
 
 use super::consts::{
     CONSTRUCTOR_MODULE, EXTERNAL_MODULE, GENERIC_CONTRACT_STATE_NAME, L1_HANDLER_MODULE,
@@ -17,7 +17,7 @@ use super::utils::{GenericParamExtract, forbid_attributes_in_impl};
 
 /// Handles an embeddable impl, generating entry point wrappers and modules pointing to them.
 pub fn handle_embeddable<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     item_impl: ast::ItemImpl<'db>,
 ) -> PluginResult<'db> {
     let ast::MaybeImplBody::Some(body) = item_impl.body(db) else {

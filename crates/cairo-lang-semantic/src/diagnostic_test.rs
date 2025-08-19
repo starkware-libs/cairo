@@ -6,11 +6,11 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
+use salsa::Database;
 use test_log::test;
 
 use crate::db::SemanticGroup;
@@ -77,7 +77,7 @@ struct AddInlineModuleDummyPlugin;
 impl MacroPlugin for AddInlineModuleDummyPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {

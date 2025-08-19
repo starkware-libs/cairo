@@ -1,9 +1,9 @@
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
 use itertools::{Itertools, chain};
+use salsa::Database;
 
 use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
@@ -12,7 +12,7 @@ pub const DEFAULT_ATTR: &str = "default";
 
 /// Adds derive result for the `Default` trait.
 pub fn handle_default<'db>(
-    db: &'db dyn FilesGroup,
+    db: &'db dyn Database,
     info: &PluginTypeInfo<'db>,
     derived: &ast::ExprPath<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
