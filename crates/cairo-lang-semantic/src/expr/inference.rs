@@ -798,7 +798,7 @@ impl<'db, 'id> Inference<'db, 'id> {
                 let impl_ty = self
                     .db
                     .impl_type_concrete_implized(ImplTypeId::new(impl_id, trait_type_id, self.db))
-                    .map_err(|_| ErrorSet)?;
+                    .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
                 if let Err(err_set) = self.conform_ty(ty, impl_ty) {
                     // Override the error with ImplTypeMismatch.
                     let ty0 = self.rewrite(ty).no_err();
@@ -811,24 +811,22 @@ impl<'db, 'id> Inference<'db, 'id> {
                 }
             }
             for (trait_constant, constant_id) in mappings.constants {
-                self.conform_const(
-                    constant_id,
-                    self.db
-                        .impl_constant_concrete_implized_value(ImplConstantId::new(
-                            impl_id,
-                            trait_constant,
-                            self.db,
-                        ))
-                        .map_err(|_| ErrorSet)?,
-                )?;
+                let concrete_impl_constant = self
+                    .db
+                    .impl_constant_concrete_implized_value(ImplConstantId::new(
+                        impl_id,
+                        trait_constant,
+                        self.db,
+                    ))
+                    .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
+                self.conform_const(constant_id, concrete_impl_constant)?;
             }
             for (trait_impl, inner_impl_id) in mappings.impls {
-                self.conform_impl(
-                    inner_impl_id,
-                    self.db
-                        .impl_impl_concrete_implized(ImplImplId::new(impl_id, trait_impl, self.db))
-                        .map_err(|_| ErrorSet)?,
-                )?;
+                let concrete_impl_impl = self
+                    .db
+                    .impl_impl_concrete_implized(ImplImplId::new(impl_id, trait_impl, self.db))
+                    .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
+                self.conform_impl(inner_impl_id, concrete_impl_impl)?;
             }
         }
         Ok(impl_id)
