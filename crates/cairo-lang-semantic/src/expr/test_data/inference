@@ -755,3 +755,35 @@ error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:1:13
 fn foo() -> Option {
             ^^^^^^
+
+//! > ==========================================================================
+
+//! > Use of an impl with and inferred and missing trait type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    MyTrait::f();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+    fn f() -> Self::ty;
+}
+impl MyImpl of MyTrait {
+    fn f() -> u32 {
+        5_u32
+    }
+}
+
+//! > expected_diagnostics
+error[E0004]: Not all trait items are implemented. Missing: 'ty'.
+ --> lib.cairo:5:6
+impl MyImpl of MyTrait {
+     ^^^^^^
