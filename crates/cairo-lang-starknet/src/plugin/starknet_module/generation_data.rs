@@ -1,6 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_filesystem::db::FilesGroup;
 
 use super::component::ComponentSpecificGenerationData;
 use super::contract::ContractSpecificGenerationData;
@@ -16,7 +16,7 @@ pub struct ContractGenerationData<'db> {
 impl<'db> ContractGenerationData<'db> {
     pub fn into_rewrite_node(
         self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn FilesGroup,
         diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     ) -> RewriteNode<'db> {
         RewriteNode::interpolate_patched(
@@ -41,7 +41,7 @@ pub struct ComponentGenerationData<'db> {
 impl<'db> ComponentGenerationData<'db> {
     pub fn into_rewrite_node(
         self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn FilesGroup,
         diagnostics: &mut [PluginDiagnostic<'db>],
     ) -> RewriteNode<'db> {
         RewriteNode::interpolate_patched(
@@ -66,7 +66,7 @@ pub struct StarknetModuleCommonGenerationData<'db> {
 impl<'db> StarknetModuleCommonGenerationData<'db> {
     pub fn into_rewrite_node(
         self,
-        _db: &'db dyn SyntaxGroup,
+        _db: &'db dyn FilesGroup,
         _diagnostics: &mut [PluginDiagnostic<'db>],
     ) -> RewriteNode<'db> {
         RewriteNode::interpolate_patched(

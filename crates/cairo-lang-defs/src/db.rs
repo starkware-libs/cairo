@@ -15,7 +15,6 @@ use cairo_lang_syntax::attribute::consts::{
 };
 use cairo_lang_syntax::attribute::structured::AttributeStructurize;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -868,7 +867,7 @@ fn priv_module_sub_files<'db>(
     let cfg_set = db
         .crate_config(crate_id)
         .and_then(|cfg| cfg.settings.cfg_set.as_ref())
-        .unwrap_or(db.upcast().cfg_set());
+        .unwrap_or(db.cfg_set());
     let edition = db
         .crate_config(module_id.owning_crate(db))
         .map(|cfg| cfg.settings.edition)
@@ -944,7 +943,7 @@ fn priv_module_sub_files<'db>(
 
 /// Collects attributes allowed by `allow_attr` attribute.
 fn collect_extra_allowed_attributes<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     item: &impl QueryAttrs<'db>,
     plugin_diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) -> OrderedHashSet<String> {
@@ -978,7 +977,7 @@ fn collect_extra_allowed_attributes<'db>(
 
 /// Validates that all attributes on the given item are in the allowed set or adds diagnostics.
 pub fn validate_attributes_flat<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     allowed_attributes: &OrderedHashSet<String>,
     extra_allowed_attributes: &OrderedHashSet<String>,
     item: &impl QueryAttrs<'db>,
@@ -1002,7 +1001,7 @@ pub fn validate_attributes_flat<'db>(
 /// Validates that all attributes on all items in the given element list are in the allowed set or
 /// adds diagnostics.
 fn validate_attributes_element_list<'db, Item: QueryAttrs<'db> + TypedSyntaxNode<'db>>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     allowed_attributes: &OrderedHashSet<String>,
     extra_allowed_attributes: &OrderedHashSet<String>,
     items: impl Iterator<Item = Item>,
@@ -1022,7 +1021,7 @@ fn validate_attributes_element_list<'db, Item: QueryAttrs<'db> + TypedSyntaxNode
 /// Validates that all attributes on an item and on items contained within it are in the allowed set
 /// or adds diagnostics.
 fn validate_attributes<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     allowed_attributes: &OrderedHashSet<String>,
     item_ast: &ast::ModuleItem<'db>,
     plugin_diagnostics: &mut Vec<PluginDiagnostic<'db>>,
@@ -1084,7 +1083,7 @@ fn validate_attributes<'db>(
 
 /// Returns all the path leaves under a given use item.
 pub fn get_all_path_leaves<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     use_item: &ast::ItemUse<'db>,
 ) -> Vec<ast::UsePathLeaf<'db>> {
     let mut res = vec![];
@@ -1104,7 +1103,7 @@ pub fn get_all_path_leaves<'db>(
 
 /// Returns all the path stars under a given use item.
 pub fn get_all_path_stars<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     use_item: &ast::ItemUse<'db>,
 ) -> Vec<ast::UsePathStar<'db>> {
     let mut res = vec![];

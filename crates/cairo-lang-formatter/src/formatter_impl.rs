@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 use std::fmt;
 
 use cairo_lang_diagnostics::DiagnosticsBuilder;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_parser::ParserDiagnostic;
@@ -9,7 +10,6 @@ use cairo_lang_parser::macro_helpers::token_tree_as_wrapped_arg_list;
 use cairo_lang_parser::parser::Parser;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{TokenTreeNode, UsePath};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -38,7 +38,7 @@ struct Leaf {
 
 impl UseTree {
     /// Inserts a path into the `UseTree`, creating nested entries as needed.
-    fn insert_path(&mut self, db: &dyn SyntaxGroup, use_path: UsePath<'_>) {
+    fn insert_path(&mut self, db: &dyn FilesGroup, use_path: UsePath<'_>) {
         match use_path {
             UsePath::Leaf(leaf) => {
                 let name = leaf.extract_ident(db);
@@ -114,7 +114,7 @@ impl UseTree {
     /// Formats `use` items, creates a virtual file, and parses it into a syntax node.
     pub fn generate_syntax_node_from_use(
         mut self,
-        db: &dyn SyntaxGroup,
+        db: &dyn FilesGroup,
         allow_duplicate_uses: bool,
         decorations: String,
     ) -> SyntaxNode<'_> {
@@ -897,42 +897,40 @@ pub struct IgnoreFormattingSpacingData {
 // TODO(spapini): Introduce the correct types here, to reflect the "applicable" nodes types.
 pub trait SyntaxNodeFormat {
     /// Returns true if a token should never have a space before it.
-    fn force_no_space_before(&self, db: &dyn SyntaxGroup) -> bool;
+    fn force_no_space_before(&self, db: &dyn FilesGroup) -> bool;
     /// Returns true if a token should never have a space after it.
-    fn force_no_space_after(&self, db: &dyn SyntaxGroup) -> bool;
+    fn force_no_space_after(&self, db: &dyn FilesGroup) -> bool;
     /// Returns true if the line is allowed to break after the node.
     /// Only applicable for terminal nodes.
-    fn allow_newline_after(&self, db: &dyn SyntaxGroup) -> bool;
+    fn allow_newline_after(&self, db: &dyn FilesGroup) -> bool;
     /// Returns the number of allowed empty lines between two consecutive children of this node.
-    fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> usize;
+    fn allowed_empty_between(&self, db: &dyn FilesGroup) -> usize;
     /// Returns the break point properties before and after a specific node if a break point should
     /// exist, otherwise returns None.
     fn get_wrapping_break_line_point_properties(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn FilesGroup,
     ) -> BreakLinePointsPositions;
     /// Returns the breaking position between the children of a syntax node.
     fn get_internal_break_line_point_properties(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn FilesGroup,
         config: &FormatterConfig,
     ) -> BreakLinePointsPositions;
     /// If self is a protected zone, returns its precedence (highest precedence == lowest number).
     /// Otherwise, returns None.
-    fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize>;
-    fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool;
+    fn get_protected_zone_precedence(&self, db: &dyn FilesGroup) -> Option<usize>;
+    fn should_skip_terminal(&self, db: &dyn FilesGroup) -> bool;
     /// Returns the sorting kind of the syntax node. This method will be used to sections in the
     /// syntax tree.
-    fn as_sort_kind(&self, db: &dyn SyntaxGroup) -> SortKind;
+    fn as_sort_kind(&self, db: &dyn FilesGroup) -> SortKind;
     /// Gets a syntax node and returns Some if the formatting should be kept as it.
-    fn should_ignore_node_format(
-        &self,
-        db: &dyn SyntaxGroup,
-    ) -> Option<IgnoreFormattingSpacingData>;
+    fn should_ignore_node_format(&self, db: &dyn FilesGroup)
+    -> Option<IgnoreFormattingSpacingData>;
 }
 
 pub struct FormatterImpl<'a> {
-    db: &'a dyn SyntaxGroup,
+    db: &'a dyn FilesGroup,
     config: FormatterConfig,
     /// A buffer for the current line.
     line_state: PendingLineState,
@@ -946,7 +944,7 @@ pub struct FormatterImpl<'a> {
     is_merging_use_items: bool,
 }
 impl<'a> FormatterImpl<'a> {
-    pub fn new(db: &'a dyn SyntaxGroup, config: FormatterConfig) -> Self {
+    pub fn new(db: &'a dyn FilesGroup, config: FormatterConfig) -> Self {
         Self {
             db,
             config,
@@ -1283,7 +1281,7 @@ impl<'a> FormatterImpl<'a> {
 }
 
 /// Compares two `UsePath` nodes to determine their ordering.
-fn compare_use_paths<'a>(a: &UsePath<'a>, b: &UsePath<'a>, db: &dyn SyntaxGroup) -> Ordering {
+fn compare_use_paths<'a>(a: &UsePath<'a>, b: &UsePath<'a>, db: &dyn FilesGroup) -> Ordering {
     match (a, b) {
         // Case for multi vs multi.
         (UsePath::Multi(a_multi), UsePath::Multi(b_multi)) => {
@@ -1360,10 +1358,7 @@ fn compare_names(a: &str, b: &str) -> Ordering {
 }
 
 /// Helper function to extract `UsePath` from a `SyntaxNode`.
-fn extract_use_path<'a>(
-    node: &SyntaxNode<'a>,
-    db: &'a dyn SyntaxGroup,
-) -> Option<ast::UsePath<'a>> {
+fn extract_use_path<'a>(node: &SyntaxNode<'a>, db: &'a dyn FilesGroup) -> Option<ast::UsePath<'a>> {
     match node.kind(db) {
         SyntaxKind::UsePathLeaf => {
             Some(ast::UsePath::Leaf(ast::UsePathLeaf::from_syntax_node(db, *node)))
@@ -1384,15 +1379,15 @@ fn extract_use_path<'a>(
 /// A trait for extracting identifiers from UsePathLeaf and UsePathSingle.
 trait IdentExtractor {
     /// Extracts the identifier and aliases from the syntax node, removing any trivia.
-    fn extract_ident(&self, db: &dyn SyntaxGroup) -> String;
-    fn extract_alias(&self, db: &dyn SyntaxGroup) -> Option<String>;
+    fn extract_ident(&self, db: &dyn FilesGroup) -> String;
+    fn extract_alias(&self, db: &dyn FilesGroup) -> Option<String>;
 }
 impl<'a> IdentExtractor for ast::UsePathLeaf<'a> {
-    fn extract_ident(&self, db: &dyn SyntaxGroup) -> String {
+    fn extract_ident(&self, db: &dyn FilesGroup) -> String {
         self.ident(db).as_syntax_node().get_text_without_trivia(db).to_string()
     }
 
-    fn extract_alias(&self, db: &dyn SyntaxGroup) -> Option<String> {
+    fn extract_alias(&self, db: &dyn FilesGroup) -> Option<String> {
         match self.alias_clause(db) {
             ast::OptionAliasClause::Empty(_) => None,
             ast::OptionAliasClause::AliasClause(alias_clause) => Some(
@@ -1403,11 +1398,11 @@ impl<'a> IdentExtractor for ast::UsePathLeaf<'a> {
 }
 
 impl<'a> IdentExtractor for ast::UsePathSingle<'a> {
-    fn extract_ident(&self, db: &dyn SyntaxGroup) -> String {
+    fn extract_ident(&self, db: &dyn FilesGroup) -> String {
         self.ident(db).as_syntax_node().get_text_without_trivia(db).to_string()
     }
 
-    fn extract_alias(&self, _db: &dyn SyntaxGroup) -> Option<String> {
+    fn extract_alias(&self, _db: &dyn FilesGroup) -> Option<String> {
         None
     }
 }
@@ -1415,7 +1410,7 @@ impl<'a> IdentExtractor for ast::UsePathSingle<'a> {
 /// Extracts sections of syntax nodes based on their `SortKind`.
 fn extract_sections<'a, 'b>(
     children: &'b [SyntaxNode<'a>],
-    db: &dyn SyntaxGroup,
+    db: &dyn FilesGroup,
 ) -> Vec<(SortKind, &'b [SyntaxNode<'a>])> {
     let mut sections = Vec::new();
     let mut start_idx = 0;

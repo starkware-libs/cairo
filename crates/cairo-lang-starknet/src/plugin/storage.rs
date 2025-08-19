@@ -1,6 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
-use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
@@ -17,7 +17,7 @@ use crate::plugin::SUBSTORAGE_ATTR;
 
 /// Generate getters and setters for the members of the storage struct.
 pub fn handle_storage_struct<'db, 'a>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     struct_ast: ast::ItemStruct<'db>,
     starknet_module_kind: StarknetModuleKind,
@@ -143,7 +143,7 @@ pub fn handle_storage_struct<'db, 'a>(
 
 /// Returns the relevant code for a substorage storage member.
 fn get_substorage_member_code<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     member: &ast::Member<'db>,
     metadata: &MacroPluginMetadata<'_>,
 ) -> Option<(RewriteNode<'db>, RewriteNode<'db>)> {
@@ -215,7 +215,7 @@ struct SimpleMemberGeneratedCode<'db> {
 
 /// Returns the relevant code for a substorage storage member.
 fn get_simple_member_code<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     member: &ast::Member<'db>,
     config: &StorageMemberConfig,
     metadata: &MacroPluginMetadata<'_>,

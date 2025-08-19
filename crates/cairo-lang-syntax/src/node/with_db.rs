@@ -1,22 +1,22 @@
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_primitive_token::{PrimitiveSpan, PrimitiveToken, ToPrimitiveTokenStream};
 
 use super::SyntaxNode;
-use super::db::SyntaxGroup;
 
-pub struct SyntaxNodeWithDb<'a, Db: SyntaxGroup> {
+pub struct SyntaxNodeWithDb<'a> {
     node: &'a SyntaxNode<'a>,
-    db: &'a Db,
+    db: &'a dyn FilesGroup,
 }
 
-impl<'a, Db: SyntaxGroup> SyntaxNodeWithDb<'a, Db> {
-    pub fn new(node: &'a SyntaxNode<'a>, db: &'a Db) -> Self {
+impl<'a> SyntaxNodeWithDb<'a> {
+    pub fn new(node: &'a SyntaxNode<'a>, db: &'a dyn FilesGroup) -> Self {
         Self { node, db }
     }
 }
 
-impl<'a, Db: SyntaxGroup> ToPrimitiveTokenStream for SyntaxNodeWithDb<'a, Db> {
-    type Iter = SyntaxNodeWithDbIterator<'a, Db>;
+impl<'a> ToPrimitiveTokenStream for SyntaxNodeWithDb<'a> {
+    type Iter = SyntaxNodeWithDbIterator<'a>;
 
     fn to_primitive_token_stream(&self) -> Self::Iter {
         // The lifetime of the iterator should extend 'a because it derives from both node and db
@@ -24,23 +24,23 @@ impl<'a, Db: SyntaxGroup> ToPrimitiveTokenStream for SyntaxNodeWithDb<'a, Db> {
     }
 }
 
-pub struct SyntaxNodeWithDbIterator<'a, Db: SyntaxGroup> {
+pub struct SyntaxNodeWithDbIterator<'a> {
     /// Stack used for driving iterative depth-first traversal of the syntax tree.
     iter_stack: Vec<&'a SyntaxNode<'a>>,
     /// Each step of the traversal may yield up to three tokens, so we collect them in this buffer.
     /// **INVARIANT**: The collection to the buffer only happens when the buffer was previously
     /// empty.
     buffer: Vec<PrimitiveToken>,
-    db: &'a Db,
+    db: &'a dyn FilesGroup,
 }
 
-impl<'a, Db: SyntaxGroup> SyntaxNodeWithDbIterator<'a, Db> {
-    pub fn new(db: &'a Db, node: &'a SyntaxNode<'a>) -> Self {
+impl<'a> SyntaxNodeWithDbIterator<'a> {
+    pub fn new(db: &'a dyn FilesGroup, node: &'a SyntaxNode<'a>) -> Self {
         Self { db, buffer: Vec::with_capacity(3), iter_stack: vec![node] }
     }
 }
 
-impl<Db: SyntaxGroup> Iterator for SyntaxNodeWithDbIterator<'_, Db> {
+impl<'a> Iterator for SyntaxNodeWithDbIterator<'a> {
     type Item = PrimitiveToken;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -81,7 +81,7 @@ impl<Db: SyntaxGroup> Iterator for SyntaxNodeWithDbIterator<'_, Db> {
 /// **INVARIANT**: `result` **MUST** be empty when passed to this function.
 fn token_from_syntax_node(
     node: &SyntaxNode<'_>,
-    db: &dyn SyntaxGroup,
+    db: &dyn FilesGroup,
     result: &mut Vec<PrimitiveToken>,
 ) {
     let span_without_trivia = node.span_without_trivia(db);

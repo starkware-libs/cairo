@@ -12,7 +12,6 @@ use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_se
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::{Intern, Upcast};
 use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
@@ -79,11 +78,6 @@ impl Default for SierraGenDatabaseForTesting {
 }
 impl<'db> Upcast<'db, dyn FilesGroup> for SierraGenDatabaseForTesting {
     fn upcast(&'db self) -> &'db dyn FilesGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SyntaxGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn SyntaxGroup {
         self
     }
 }

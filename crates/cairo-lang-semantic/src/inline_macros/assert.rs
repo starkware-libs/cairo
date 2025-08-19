@@ -7,9 +7,9 @@ use cairo_lang_defs::plugin_utils::{
     PluginResultTrait, escape_node, not_legacy_macro_diagnostic, try_extract_unnamed_arg,
     unsupported_bracket_diagnostic,
 };
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::ast::WrappedArgList;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::{formatdoc, indoc};
 
@@ -22,7 +22,7 @@ impl NamedPlugin for AssertMacro {
 impl InlineMacroExprPlugin for AssertMacro {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn FilesGroup,
         syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult<'db> {

@@ -1,7 +1,7 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_diagnostics::DiagnosticsBuilder;
-use cairo_lang_filesystem::db::default_crate_settings;
+use cairo_lang_filesystem::db::{FilesGroup, default_crate_settings};
 use cairo_lang_filesystem::ids::{CrateId, StrRef};
 use cairo_lang_syntax::attribute::consts::{
     ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR,
@@ -9,7 +9,6 @@ use cairo_lang_syntax::attribute::consts::{
 use cairo_lang_syntax::attribute::structured::{
     self, AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -35,7 +34,7 @@ pub enum FeatureKind<'db> {
 }
 impl<'db> FeatureKind<'db> {
     pub fn from_ast(
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn FilesGroup,
         diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
         attrs: &ast::AttributeList<'db>,
     ) -> Self {
@@ -94,7 +93,7 @@ pub enum FeatureMarkerDiagnostic {
 
 /// Parses the feature attribute.
 fn parse_feature_attr<'db, const EXTRA_ALLOWED: usize>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
     attr: &structured::Attribute<'db>,
     allowed_args: [&str; EXTRA_ALLOWED],
@@ -228,7 +227,7 @@ pub fn extract_item_feature_config<'db>(
 
 /// Processes the feature attribute kind.
 fn process_feature_attr_kind<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     syntax: &impl QueryAttrs<'db>,
     attr: &'db str,
     diagnostic_kind: impl Fn() -> SemanticDiagnosticKind<'db>,
