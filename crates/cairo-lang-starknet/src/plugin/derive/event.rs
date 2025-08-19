@@ -1,7 +1,7 @@
 use cairo_lang_defs::patcher::{ModifiedNode, RewriteNode};
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_starknet_classes::abi::EventFieldKind;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use indoc::{formatdoc, indoc};
@@ -14,7 +14,7 @@ use crate::plugin::events::EventData;
 
 /// Returns the relevant information for the `#[derive(starknet::Event)]` attribute.
 pub fn handle_event_derive<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     item_ast: &ast::ModuleItem<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) -> Option<(RewriteNode<'db>, StarknetEventAuxData)> {
@@ -28,7 +28,7 @@ pub fn handle_event_derive<'db>(
 // TODO(spapini): Avoid names collisions with `keys` and `data`.
 /// Derive the `Event` trait for structs annotated with `derive(starknet::Event)`.
 fn handle_struct<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     struct_ast: &ast::ItemStruct<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) -> Option<(RewriteNode<'db>, StarknetEventAuxData)> {
@@ -107,7 +107,7 @@ fn handle_struct<'db>(
 /// indicating how the field should be serialized.
 /// See [EventFieldKind].
 fn get_field_kind_for_member<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     member: &ast::Member<'db>,
     default: EventFieldKind,
@@ -141,7 +141,7 @@ fn get_field_kind_for_member<'db>(
 /// indicating how the field should be serialized.
 /// See [EventFieldKind].
 fn get_field_kind_for_variant<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     variant: &ast::Variant<'db>,
     default: EventFieldKind,
@@ -179,7 +179,7 @@ fn get_field_kind_for_variant<'db>(
 
 /// Derive the `Event` trait for enums annotated with `derive(starknet::Event)`.
 fn handle_enum<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     enum_ast: &ast::ItemEnum<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) -> Option<(RewriteNode<'db>, StarknetEventAuxData)> {

@@ -175,13 +175,14 @@ fn generate_ast_code() -> rust::Tokens {
 
         use cairo_lang_filesystem::span::TextWidth;
         use cairo_lang_utils::{extract_matches, Intern};
+        use salsa::Database;
 
         use super::element_list::ElementList;
         use super::green::GreenNodeDetails;
         use super::kind::SyntaxKind;
         use super::{
-            GreenId, GreenNode, SyntaxGroup, SyntaxNode, SyntaxStablePtr, SyntaxStablePtrId,
-            Terminal, Token, TypedStablePtr, TypedSyntaxNode,
+            GreenId, GreenNode, SyntaxNode, SyntaxStablePtr, SyntaxStablePtrId, Terminal, Token, TypedStablePtr,
+            TypedSyntaxNode,
         };
         #[path = "ast_ext.rs"]
         mod ast_ext;
@@ -230,7 +231,7 @@ fn gen_list_code(name: String, element_type: String) -> rust::Tokens {
         }
         impl<'db> $(&name)<'db>{
             pub fn new_green(
-                db: &'db dyn SyntaxGroup, children: &[$(&element_green_name)<'db>]
+                db: &'db dyn Database, children: &[$(&element_green_name)<'db>]
             ) -> $(&green_name)<'db> {
                 let width = children.iter().map(|id|
                     id.0.long(db).width()).sum();
@@ -250,7 +251,7 @@ fn gen_list_code(name: String, element_type: String) -> rust::Tokens {
             fn untyped(self) -> SyntaxStablePtrId<'db> {
                 self.0
             }
-            fn lookup(&self, db: &'db dyn SyntaxGroup) -> $(&name)<'db> {
+            fn lookup(&self, db: &'db dyn Database) -> $(&name)<'db> {
                 $(&name)::from_syntax_node(db, self.0.lookup(db))
             }
         }
@@ -286,7 +287,7 @@ fn gen_separated_list_code(
         }
         impl<'db> $(&name)<'db>{
             pub fn new_green(
-                db: &'db dyn SyntaxGroup, children: &[$(&element_or_separator_green_name)<'db>]
+                db: &'db dyn Database, children: &[$(&element_or_separator_green_name)<'db>]
             ) -> $(&green_name)<'db> {
                 let width = children.iter().map(|id|
                     id.id().long(db).width()).sum();
@@ -306,7 +307,7 @@ fn gen_separated_list_code(
             fn untyped(self) -> SyntaxStablePtrId<'db> {
                 self.0
             }
-            fn lookup(&self, db: &'db dyn SyntaxGroup) -> $(&name)<'db> {
+            fn lookup(&self, db: &'db dyn Database) -> $(&name)<'db> {
                 $(&name)::from_syntax_node(db, self.0.lookup(db))
             }
         }
@@ -350,7 +351,7 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
             const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::$name);
             type StablePtr = $ptr_name<'db>;
             type Green = $green_name<'db>;
-            fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
+            fn missing(db: &'db dyn Database) -> Self::Green {
                 $green_name(
                     GreenNode {
                         kind: SyntaxKind::$name,
@@ -358,10 +359,10 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
                     }.intern(db)
                 )
             }
-            fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
+            fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
                 Self(ElementList::new(node))
             }
-            fn cast(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Option<Self> {
+            fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
                 if node.kind(db) == SyntaxKind::$name {
                     Some(Self(ElementList::new(node)))
                 } else {
@@ -371,7 +372,7 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
             fn as_syntax_node(&self) -> SyntaxNode<'db> {
                 self.node
             }
-            fn stable_ptr(&self, db: &'db dyn SyntaxGroup) -> Self::StablePtr {
+            fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
                 $ptr_name(self.node.stable_ptr(db))
             }
         }
@@ -441,7 +442,7 @@ fn gen_enum_code(
             fn untyped(self) -> SyntaxStablePtrId<'db> {
                 self.0
             }
-            fn lookup(&self, db: &'db dyn SyntaxGroup) -> Self::SyntaxNode {
+            fn lookup(&self, db: &'db dyn Database) -> Self::SyntaxNode {
                 $(&name)::from_syntax_node(db, self.0.lookup(db))
             }
         }
@@ -458,10 +459,10 @@ fn gen_enum_code(
             const OPTIONAL_KIND: Option<SyntaxKind> = None;
             type StablePtr = $(&ptr_name)<'db>;
             type Green = $(&green_name)<'db>;
-            fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
+            fn missing(db: &'db dyn Database) -> Self::Green {
                 $missing_body
             }
-            fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
+            fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
                 let kind = node.kind(db);
                 match kind{
                     $from_node_body
@@ -471,7 +472,7 @@ fn gen_enum_code(
                         $[str]($[const](&name))),
                 }
             }
-            fn cast(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Option<Self> {
+            fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
                 let kind = node.kind(db);
                 match kind {
                     $cast_body
@@ -483,7 +484,7 @@ fn gen_enum_code(
                     $(for v in &variants => $(&name)::$(&v.name)(x) => x.as_syntax_node(),)
                 }
             }
-            fn stable_ptr(&self, db: &'db dyn SyntaxGroup) -> Self::StablePtr {
+            fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
                 $(&ptr_name)(self.as_syntax_node().long(db).stable_ptr)
             }
         }
@@ -507,13 +508,13 @@ fn gen_token_code(name: String) -> rust::Tokens {
             node: SyntaxNode<'db>,
         }
         impl<'db> Token<'db> for $(&name)<'db> {
-            fn new_green(db: &'db dyn SyntaxGroup, text: &'db str) -> Self::Green {
+            fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
                 $(&green_name)(GreenNode {
                     kind: SyntaxKind::$(&name),
                     details: GreenNodeDetails::Token(text),
                 }.intern(db))
             }
-            fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+            fn text(&self, db: &'db dyn Database) -> &'db str {
                 extract_matches!(&self.node.long(db).green.long(db).details,
                     GreenNodeDetails::Token)
             }
@@ -525,7 +526,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
             fn untyped(self) -> SyntaxStablePtrId<'db> {
                 self.0
             }
-            fn lookup(&self, db: &'db dyn SyntaxGroup) -> $(&name)<'db> {
+            fn lookup(&self, db: &'db dyn Database) -> $(&name)<'db> {
                 $(&name)::from_syntax_node(db, self.0.lookup(db))
             }
         }
@@ -537,7 +538,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
         pub struct $(&green_name)<'db>(pub GreenId<'db>);
         impl<'db> $(&green_name)<'db> {
-            pub fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+            pub fn text(&self, db: &'db dyn Database) -> &'db str {
                 extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
             }
         }
@@ -545,13 +546,13 @@ fn gen_token_code(name: String) -> rust::Tokens {
             const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::$(&name));
             type StablePtr = $(&ptr_name)<'db>;
             type Green = $(&green_name)<'db>;
-            fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
+            fn missing(db: &'db dyn Database) -> Self::Green {
                 $(&green_name)(GreenNode {
                     kind: SyntaxKind::TokenMissing,
                     details: GreenNodeDetails::Token(""),
                 }.intern(db))
             }
-            fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
+            fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
                 match node.long(db).green.long(db).details {
                     GreenNodeDetails::Token(_) => Self { node },
                     GreenNodeDetails::Node { .. } => panic!(
@@ -560,7 +561,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
                     ),
                 }
             }
-            fn cast(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Option<Self> {
+            fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
                 match node.long(db).green.long(db).details {
                     GreenNodeDetails::Token(_) => Some(Self { node }),
                     GreenNodeDetails::Node { .. } => None,
@@ -569,7 +570,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
             fn as_syntax_node(&self) -> SyntaxNode<'db> {
                 self.node
             }
-            fn stable_ptr(&self, db: &'db dyn SyntaxGroup) -> Self::StablePtr {
+            fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
                 $(&ptr_name)(self.node.stable_ptr(db))
             }
         }
@@ -598,7 +599,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         let child_green = format!("{kind}Green");
         params.extend(quote! {$name: $(&child_green)<'db>,});
         body.extend(quote! {
-            pub fn $name(&self, db: &'db dyn SyntaxGroup) -> $kind<'db> {
+            pub fn $name(&self, db: &'db dyn Database) -> $kind<'db> {
                 $kind::from_syntax_node(db, self.node.get_children(db)[$i])
             }
         });
@@ -606,7 +607,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
 
         if *key {
             ptr_getters.extend(quote! {
-                pub fn $(&key_name_green)(self, db: &'db dyn SyntaxGroup) -> $(&child_green)<'db> {
+                pub fn $(&key_name_green)(self, db: &'db dyn Database) -> $(&child_green)<'db> {
                     let ptr = self.0.long(db);
                     if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
                         $(&child_green)(key_fields[$key_field_index])
@@ -626,7 +627,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 const KIND: SyntaxKind = SyntaxKind::$(&name);
                 type TokenType = $(&token_name)<'db>;
                 fn new_green(
-                    db: &'db dyn SyntaxGroup,
+                    db: &'db dyn Database,
                     leading_trivia: TriviaGreen<'db>,
                     token: <<$(&name)<'db> as Terminal<'db>>::TokenType as TypedSyntaxNode<'db>>::Green,
                     trailing_trivia: TriviaGreen<'db>
@@ -639,7 +640,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                         details: GreenNodeDetails::Node { children: children.into(), width },
                     }.intern(db))
                 }
-                fn text(&self, db: &'db dyn SyntaxGroup) -> &'db str {
+                fn text(&self, db: &'db dyn Database) -> &'db str {
                     let GreenNodeDetails::Node{children,..} = &self.node.long(db).green.long(db).details else {
                         unreachable!("Expected a node, not a token");
                     };
@@ -651,7 +652,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         quote! {
             impl<'db> $(&name)<'db> {
                 $field_indices
-                pub fn new_green(db: &'db dyn SyntaxGroup, $params) -> $(&green_name)<'db> {
+                pub fn new_green(db: &'db dyn Database, $params) -> $(&green_name)<'db> {
                     let children = [$args];
                     let width =
                         children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
@@ -682,7 +683,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
             fn untyped(self) -> SyntaxStablePtrId<'db> {
                 self.0
             }
-            fn lookup(&self, db: &'db dyn SyntaxGroup) -> $(&name)<'db> {
+            fn lookup(&self, db: &'db dyn Database) -> $(&name)<'db> {
                 $(&name)::from_syntax_node(db, self.0.lookup(db))
             }
         }
@@ -697,7 +698,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
             const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::$(&name));
             type StablePtr = $(&ptr_name)<'db>;
             type Green = $(&green_name)<'db>;
-            fn missing(db: &'db dyn SyntaxGroup) -> Self::Green {
+            fn missing(db: &'db dyn Database) -> Self::Green {
                 // Note: A missing syntax element should result in an internal green node
                 // of width 0, with as much structure as possible.
                 $(&green_name)(GreenNode {
@@ -708,12 +709,12 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                     },
                 }.intern(db))
             }
-            fn from_syntax_node(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Self {
+            fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
                 let kind = node.kind(db);
                 assert_eq!(kind, SyntaxKind::$(&name), "Unexpected SyntaxKind {:?}. Expected {:?}.", kind, SyntaxKind::$(&name));
                 Self { node }
             }
-            fn cast(db: &'db dyn SyntaxGroup, node: SyntaxNode<'db>) -> Option<Self> {
+            fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
                 let kind = node.kind(db);
                 if kind == SyntaxKind::$(&name) {
                     Some(Self::from_syntax_node(db, node))
@@ -724,7 +725,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
             fn as_syntax_node(&self) -> SyntaxNode<'db> {
                 self.node
             }
-            fn stable_ptr(&self, db: &'db dyn SyntaxGroup) -> Self::StablePtr {
+            fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
                 $(&ptr_name)(self.node.stable_ptr(db))
             }
         }

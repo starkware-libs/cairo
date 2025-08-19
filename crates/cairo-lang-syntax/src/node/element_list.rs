@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 
-use super::SyntaxGroup;
+use salsa::Database;
+
 use crate::node::{SyntaxNode, TypedSyntaxNode};
 
 // A typed view of an element list node.
@@ -17,26 +18,26 @@ impl<'db, T: TypedSyntaxNode<'db>, const STEP: usize> ElementList<'db, T, STEP> 
     }
 }
 impl<'db, T: TypedSyntaxNode<'db>> ElementList<'db, T, 1> {
-    pub fn elements_vec(&self, db: &'db dyn SyntaxGroup) -> Vec<T> {
+    pub fn elements_vec(&self, db: &'db dyn Database) -> Vec<T> {
         self.elements(db).collect()
     }
     pub fn elements<'a: 'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
     ) -> impl ExactSizeIterator<Item = T> + DoubleEndedIterator + 'db {
         self.node.get_children(db).iter().copied().map(move |x| T::from_syntax_node(db, x))
     }
-    pub fn has_tail(&self, _db: &dyn SyntaxGroup) -> bool {
+    pub fn has_tail(&self, _db: &dyn Database) -> bool {
         false
     }
 }
 impl<'db, T: TypedSyntaxNode<'db>> ElementList<'db, T, 2> {
-    pub fn elements_vec(&self, db: &'db dyn SyntaxGroup) -> Vec<T> {
+    pub fn elements_vec(&self, db: &'db dyn Database) -> Vec<T> {
         self.elements(db).collect()
     }
     pub fn elements(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
     ) -> impl ExactSizeIterator<Item = T> + DoubleEndedIterator + 'db {
         self.node
             .get_children(db)
@@ -45,7 +46,7 @@ impl<'db, T: TypedSyntaxNode<'db>> ElementList<'db, T, 2> {
             .step_by(2)
             .map(move |x| T::from_syntax_node(db, x))
     }
-    pub fn has_tail(&self, db: &dyn SyntaxGroup) -> bool {
+    pub fn has_tail(&self, db: &dyn Database) -> bool {
         !self.node.get_children(db).len().is_multiple_of(2)
     }
 }

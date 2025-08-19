@@ -7,9 +7,9 @@ use cairo_lang_defs::ids::{
     NamedLanguageElementId, StructId, TraitTypeId, UnstableSalsaId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, OptionFrom, define_short_id, try_extract_matches};
@@ -636,7 +636,7 @@ pub fn extract_fixed_size_array_size<'db>(
 
 /// Verifies that a given fixed size array size is within limits, and adds a diagnostic if not.
 pub fn verify_fixed_size_array_size<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     diagnostics: &mut SemanticDiagnostics<'db>,
     size: &BigInt,
     syntax: &ast::ExprFixedSizeArray<'db>,

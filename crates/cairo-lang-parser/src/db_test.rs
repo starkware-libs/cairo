@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::ast::{
     ModuleItemList, SyntaxFile, TerminalEndOfFile, TokenEndOfFile, Trivia,
 };
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, Token as SyntaxToken, TypedSyntaxNode};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
@@ -15,7 +15,7 @@ use crate::printer::print_tree;
 use crate::test_utils::{MockToken, MockTokenStream, create_virtual_file};
 use crate::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics_from_file};
 
-fn build_empty_file_green_tree<'a>(db: &'a dyn SyntaxGroup, file_id: FileId<'a>) -> SyntaxFile<'a> {
+fn build_empty_file_green_tree<'a>(db: &'a dyn FilesGroup, file_id: FileId<'a>) -> SyntaxFile<'a> {
     let eof_token = TokenEndOfFile::new_green(db, "");
     let eof_terminal = TerminalEndOfFile::new_green(
         db,

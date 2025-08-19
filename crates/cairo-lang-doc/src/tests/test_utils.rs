@@ -10,7 +10,6 @@ use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
 use cairo_lang_semantic::plugin::PluginSuite;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::{Intern, Upcast};
 
 use crate::db::DocGroup;
@@ -75,11 +74,6 @@ impl<'db> Upcast<'db, dyn ParserGroup> for TestDatabase {
 }
 impl<'db> Upcast<'db, dyn SemanticGroup> for TestDatabase {
     fn upcast(&self) -> &dyn SemanticGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SyntaxGroup> for TestDatabase {
-    fn upcast(&self) -> &dyn SyntaxGroup {
         self
     }
 }

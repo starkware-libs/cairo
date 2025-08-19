@@ -1,11 +1,11 @@
 use std::fmt::Display;
 use std::vec::IntoIter;
 
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_primitive_token::{PrimitiveSpan, PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax::node::SyntaxNode;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -68,7 +68,7 @@ impl MockToken {
     }
 
     /// Create a token based on [SyntaxNode]
-    pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode<'_>) -> MockToken {
+    pub fn from_syntax_node(db: &dyn FilesGroup, node: SyntaxNode<'_>) -> MockToken {
         MockToken::new(node.get_text(db).to_string(), node.span(db))
     }
 }
@@ -80,7 +80,7 @@ impl MockTokenStream {
     }
 
     /// Create whole [MockTokenStream] based upon the [SyntaxNode].
-    pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode<'_>) -> Self {
+    pub fn from_syntax_node(db: &dyn FilesGroup, node: SyntaxNode<'_>) -> Self {
         let leaves = node.tokens(db);
         let tokens = leaves.map(|node| MockToken::from_syntax_node(db, node)).collect();
         Self::new(tokens)

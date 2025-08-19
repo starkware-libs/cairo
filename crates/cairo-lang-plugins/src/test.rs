@@ -11,7 +11,6 @@ use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup, FilesGroupEx, in
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin, CrateId, Directory, FileLongId};
 use cairo_lang_filesystem::override_file_content;
 use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
@@ -73,11 +72,6 @@ impl<'db> Upcast<'db, dyn DefsGroup> for DatabaseForTesting {
 }
 impl<'db> Upcast<'db, dyn FilesGroup> for DatabaseForTesting {
     fn upcast(&'db self) -> &'db dyn FilesGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SyntaxGroup> for DatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn SyntaxGroup {
         self
     }
 }
@@ -153,7 +147,7 @@ struct DoubleIndirectionPlugin;
 impl MacroPlugin for DoubleIndirectionPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn FilesGroup,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {

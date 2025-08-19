@@ -1,6 +1,6 @@
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginResult};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use itertools::Itertools;
@@ -18,7 +18,7 @@ const GROUP_ATTR_SYNTAX: &str = "#[doc(group: \"group name\")]";
 impl MacroPlugin for ExternalAttributesValidationPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn FilesGroup,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
@@ -36,7 +36,7 @@ impl MacroPlugin for ExternalAttributesValidationPlugin {
 }
 
 fn get_diagnostics<'a, Item: QueryAttrs<'a>>(
-    db: &'a dyn SyntaxGroup,
+    db: &'a dyn FilesGroup,
     item: &Item,
 ) -> Option<Vec<PluginDiagnostic<'a>>> {
     let mut diagnostics: Vec<PluginDiagnostic<'_>> = Vec::new();

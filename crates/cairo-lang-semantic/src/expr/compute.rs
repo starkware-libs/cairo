@@ -18,6 +18,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPluginMetadata};
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::cfg::CfgSet;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{
     CodeMapping, CodeOrigin, FileKind, FileLongId, StrRef, VirtualFile,
 };
@@ -27,7 +28,6 @@ use cairo_lang_syntax::node::ast::{
     BinaryOperator, BlockOrIf, ClosureParamWrapper, ConditionListAnd, ExprPtr,
     OptionReturnTypeClause, PatternListOr, PatternStructParam, TerminalIdentifier, UnaryOperator,
 };
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -3346,7 +3346,7 @@ fn string_literal_to_semantic<'db>(
 /// returns a tuple of (identifier, is_callsite_prefixed).
 /// Otherwise, returns None.
 fn try_extract_identifier_from_path<'a>(
-    db: &'a dyn SyntaxGroup,
+    db: &'a dyn FilesGroup,
     path: &ast::ExprPath<'a>,
 ) -> Option<(TerminalIdentifier<'a>, bool)> {
     let segments_var = path.segments(db);
@@ -3371,7 +3371,7 @@ fn try_extract_identifier_from_path<'a>(
 fn expr_as_identifier<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     path: &ast::ExprPath<'db>,
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
 ) -> Maybe<&'db str> {
     let segments_var = path.segments(db);
     let mut segments = segments_var.elements(db);

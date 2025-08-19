@@ -3,9 +3,9 @@ use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginGeneratedFile, PluginResult,
 };
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::extract_matches;
 use indoc::indoc;
@@ -80,7 +80,7 @@ struct MappingsPlugin;
 impl MacroPlugin for MappingsPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn FilesGroup,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {

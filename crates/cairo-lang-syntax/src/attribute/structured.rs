@@ -1,9 +1,10 @@
 use std::fmt;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::StrRef;
+use salsa::Database;
 
-use crate::node::db::SyntaxGroup;
 use crate::node::{Terminal, TypedSyntaxNode, ast};
 
 /// Easier to digest representation of an [ast::Attribute].
@@ -17,7 +18,7 @@ pub struct Attribute<'a> {
 }
 impl<'a> Attribute<'a> {
     /// Checks if the given attribute has a single argument with the given name.
-    pub fn is_single_unnamed_arg(&self, db: &'a dyn SyntaxGroup, arg_name: &str) -> bool {
+    pub fn is_single_unnamed_arg(&self, db: &'a dyn FilesGroup, arg_name: &str) -> bool {
         match &self.args[..] {
             [arg] => match &arg.variant {
                 AttributeArgVariant::Unnamed(value) => {
@@ -58,7 +59,7 @@ pub struct NameInfo<'a> {
     pub stable_ptr: ast::TerminalIdentifierPtr<'a>,
 }
 impl<'a> NameInfo<'a> {
-    fn from_ast(name: &ast::TerminalIdentifier<'a>, db: &'a dyn SyntaxGroup) -> Self {
+    fn from_ast(name: &ast::TerminalIdentifier<'a>, db: &'a dyn Database) -> Self {
         NameInfo { text: name.text(db).into(), stable_ptr: name.stable_ptr(db) }
     }
 }
@@ -71,8 +72,8 @@ pub struct Modifier<'a> {
 }
 
 impl<'a> DebugWithDb<'a> for Attribute<'a> {
-    type Db = dyn SyntaxGroup;
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &'a dyn SyntaxGroup) -> fmt::Result {
+    type Db = dyn FilesGroup;
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &'a dyn FilesGroup) -> fmt::Result {
         write!(f, r#"Attribute {{ id: "{}""#, self.id)?;
         if !self.args.is_empty() {
             write!(f, ", args: [")?;
@@ -87,11 +88,11 @@ impl<'a> DebugWithDb<'a> for Attribute<'a> {
 
 pub trait AttributeStructurize<'a> {
     /// Return the structured attribute for the given [ast::Attribute].
-    fn structurize(self, db: &'a dyn SyntaxGroup) -> Attribute<'a>;
+    fn structurize(self, db: &'a dyn FilesGroup) -> Attribute<'a>;
 }
 
 impl<'a> AttributeStructurize<'a> for ast::Attribute<'a> {
-    fn structurize(self, db: &'a dyn SyntaxGroup) -> Attribute<'a> {
+    fn structurize(self, db: &'a dyn FilesGroup) -> Attribute<'a> {
         let attr_id = self.attr(db);
         let attr_args = self.arguments(db);
 
@@ -116,11 +117,11 @@ impl<'a> AttributeStructurize<'a> for ast::Attribute<'a> {
 
 pub trait AttributeListStructurize<'a> {
     /// Return structured attributes for the given [ast::AttributeList].
-    fn structurize(self, db: &'a dyn SyntaxGroup) -> Vec<Attribute<'a>>;
+    fn structurize(self, db: &'a dyn FilesGroup) -> Vec<Attribute<'a>>;
 }
 
 impl<'a> AttributeListStructurize<'a> for ast::AttributeList<'a> {
-    fn structurize(self, db: &'a dyn SyntaxGroup) -> Vec<Attribute<'a>> {
+    fn structurize(self, db: &'a dyn FilesGroup) -> Vec<Attribute<'a>> {
         // TODO(ilya): Consider checking for attribute repetitions.
         self.elements(db).map(|attr| attr.structurize(db)).collect()
     }
@@ -128,7 +129,7 @@ impl<'a> AttributeListStructurize<'a> for ast::AttributeList<'a> {
 
 impl<'a> AttributeArg<'a> {
     /// Build [`AttributeArg`] from [`ast::Arg`].
-    pub fn from_ast(arg: ast::Arg<'a>, db: &'a dyn SyntaxGroup) -> AttributeArg<'a> {
+    pub fn from_ast(arg: ast::Arg<'a>, db: &'a dyn FilesGroup) -> AttributeArg<'a> {
         let variant = match arg.arg_clause(db) {
             ast::ArgClause::Unnamed(clause) => AttributeArgVariant::Unnamed(clause.value(db)),
             ast::ArgClause::Named(clause) => AttributeArgVariant::Named {
@@ -146,7 +147,7 @@ impl<'a> AttributeArg<'a> {
         AttributeArg { variant, arg, modifiers }
     }
 
-    pub fn text(&self, db: &dyn SyntaxGroup) -> String {
+    pub fn text(&self, db: &dyn FilesGroup) -> String {
         match &self.variant {
             AttributeArgVariant::Unnamed(value) => {
                 value.as_syntax_node().get_text_without_trivia(db).to_string()
@@ -163,7 +164,7 @@ impl<'a> AttributeArg<'a> {
 
 impl<'a> Modifier<'a> {
     /// Build [`Modifier`] from [`ast::Modifier`].
-    fn from(modifier: ast::Modifier<'a>, db: &'a dyn SyntaxGroup) -> Modifier<'a> {
+    fn from(modifier: ast::Modifier<'a>, db: &'a dyn FilesGroup) -> Modifier<'a> {
         Modifier {
             stable_ptr: modifier.stable_ptr(db),
             text: modifier.as_syntax_node().get_text(db).into(),
