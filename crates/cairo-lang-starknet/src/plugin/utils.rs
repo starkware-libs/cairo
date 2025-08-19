@@ -1,10 +1,10 @@
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{self, Attribute, Modifier, OptionTypeClause};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs, is_single_arg_attr};
 use cairo_lang_utils::{extract_matches, require, try_extract_matches};
 use itertools::Itertools;
@@ -14,28 +14,28 @@ use super::consts::{CONSTRUCTOR_ATTR, EXTERNAL_ATTR, L1_HANDLER_ATTR};
 /// Helper trait for syntax queries on `ast::Param`.
 pub trait ParamEx<'db> {
     /// Checks if the parameter is defined as a ref parameter.
-    fn is_ref_param(&self, db: &'db dyn SyntaxGroup) -> bool;
+    fn is_ref_param(&self, db: &'db dyn FilesGroup) -> bool;
     /// Checks if the parameter is defined as a mutable parameter.
-    fn is_mut_param(&self, db: &'db dyn SyntaxGroup) -> bool;
+    fn is_mut_param(&self, db: &'db dyn FilesGroup) -> bool;
     /// Extracts the snapshot type if the parameter's type is a snapshot. Otherwise, returns None.
-    fn try_extract_snapshot(&self, db: &'db dyn SyntaxGroup) -> Option<ast::Expr<'db>>;
+    fn try_extract_snapshot(&self, db: &'db dyn FilesGroup) -> Option<ast::Expr<'db>>;
 }
 impl<'db> ParamEx<'db> for ast::Param<'db> {
-    fn is_ref_param(&self, db: &dyn SyntaxGroup) -> bool {
+    fn is_ref_param(&self, db: &dyn FilesGroup) -> bool {
         let param_modifiers = self.modifiers(db).elements(db).collect_array();
         // TODO(yuval): This works only if "ref" is the only modifier. If the expansion was at the
         // semantic level, we could just ask if it's a reference.
         matches!(param_modifiers, Some([Modifier::Ref(_)]))
     }
 
-    fn is_mut_param(&self, db: &dyn SyntaxGroup) -> bool {
+    fn is_mut_param(&self, db: &dyn FilesGroup) -> bool {
         let param_modifiers = self.modifiers(db).elements(db).collect_array();
         // TODO(yuval): This works only if "mut" is the only modifier. If the expansion was at the
         // semantic level, we could just ask if it's a reference.
         matches!(param_modifiers, Some([Modifier::Mut(_)]))
     }
 
-    fn try_extract_snapshot(&self, db: &'db dyn SyntaxGroup) -> Option<ast::Expr<'db>> {
+    fn try_extract_snapshot(&self, db: &'db dyn FilesGroup) -> Option<ast::Expr<'db>> {
         let unary = try_extract_matches!(
             extract_matches!(self.type_clause(db), OptionTypeClause::TypeClause).ty(db),
             ast::Expr::Unary
@@ -49,23 +49,23 @@ impl<'db> ParamEx<'db> for ast::Param<'db> {
 pub trait AstPathExtract {
     /// Returns true if `self` matches `identifier`.
     /// Does not resolve paths or type aliases.
-    fn is_identifier(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool;
+    fn is_identifier(&self, db: &dyn FilesGroup, identifier: &str) -> bool;
     /// Returns true if `self` matches `$name$<$generic_arg$>`.
     /// Does not resolve paths, type aliases or named generics.
-    fn is_name_with_arg(&self, db: &dyn SyntaxGroup, name: &str, generic_arg: &str) -> bool;
+    fn is_name_with_arg(&self, db: &dyn FilesGroup, name: &str, generic_arg: &str) -> bool;
     /// Returns true if `self` is `felt252`.
     /// Does not resolve paths or type aliases.
-    fn is_felt252(&self, db: &dyn SyntaxGroup) -> bool {
+    fn is_felt252(&self, db: &dyn FilesGroup) -> bool {
         self.is_identifier(db, "felt252")
     }
     /// Returns true if `type_ast` matches `Span<felt252>`.
     /// Does not resolve paths, type aliases or named generics.
-    fn is_felt252_span(&self, db: &dyn SyntaxGroup) -> bool {
+    fn is_felt252_span(&self, db: &dyn FilesGroup) -> bool {
         self.is_name_with_arg(db, "Span", "felt252")
     }
 }
 impl<'db> AstPathExtract for ast::ExprPath<'db> {
-    fn is_identifier(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool {
+    fn is_identifier(&self, db: &dyn FilesGroup, identifier: &str) -> bool {
         let segments = self.segments(db);
         let type_path_elements = segments.elements(db);
         let Some([ast::PathSegment::Simple(arg_segment)]) = type_path_elements.collect_array()
@@ -76,7 +76,7 @@ impl<'db> AstPathExtract for ast::ExprPath<'db> {
         arg_segment.identifier(db) == identifier
     }
 
-    fn is_name_with_arg(&self, db: &dyn SyntaxGroup, name: &str, generic_arg: &str) -> bool {
+    fn is_name_with_arg(&self, db: &dyn FilesGroup, name: &str, generic_arg: &str) -> bool {
         let segments = self.segments(db);
         let type_path_elements = segments.elements(db);
         let Some([ast::PathSegment::WithGenericArgs(path_segment_with_generics)]) =
@@ -101,7 +101,7 @@ impl<'db> AstPathExtract for ast::ExprPath<'db> {
     }
 }
 impl<'db> AstPathExtract for ast::Expr<'db> {
-    fn is_identifier(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool {
+    fn is_identifier(&self, db: &dyn FilesGroup, identifier: &str) -> bool {
         if let ast::Expr::Path(type_path) = self {
             type_path.is_identifier(db, identifier)
         } else {
@@ -109,7 +109,7 @@ impl<'db> AstPathExtract for ast::Expr<'db> {
         }
     }
 
-    fn is_name_with_arg(&self, db: &dyn SyntaxGroup, name: &str, generic_arg: &str) -> bool {
+    fn is_name_with_arg(&self, db: &dyn FilesGroup, name: &str, generic_arg: &str) -> bool {
         if let ast::Expr::Path(type_path) = self {
             type_path.is_name_with_arg(db, name, generic_arg)
         } else {
@@ -121,10 +121,10 @@ impl<'db> AstPathExtract for ast::Expr<'db> {
 /// Helper trait for syntax queries on `ast::GenericParam`.
 pub trait GenericParamExtract<'db> {
     /// Returns the trait_path of the generic param if it is an impl.
-    fn trait_path(&self, db: &'db dyn SyntaxGroup) -> Option<ast::ExprPath<'db>>;
+    fn trait_path(&self, db: &'db dyn FilesGroup) -> Option<ast::ExprPath<'db>>;
     /// Returns true if `self` matches an impl of `$trait_name$<$generic_arg$>`.
     /// Does not resolve paths or type aliases.
-    fn is_impl_of(&self, db: &'db dyn SyntaxGroup, trait_name: &str, generic_arg: &str) -> bool {
+    fn is_impl_of(&self, db: &'db dyn FilesGroup, trait_name: &str, generic_arg: &str) -> bool {
         if let Some(path) = self.trait_path(db) {
             path.is_name_with_arg(db, trait_name, generic_arg)
         } else {
@@ -133,7 +133,7 @@ pub trait GenericParamExtract<'db> {
     }
 }
 impl<'db> GenericParamExtract<'db> for ast::GenericParam<'db> {
-    fn trait_path(&self, db: &'db dyn SyntaxGroup) -> Option<ast::ExprPath<'db>> {
+    fn trait_path(&self, db: &'db dyn FilesGroup) -> Option<ast::ExprPath<'db>> {
         match self {
             ast::GenericParam::Type(_) | ast::GenericParam::Const(_) => None,
             ast::GenericParam::ImplNamed(i) => Some(i.trait_path(db)),
@@ -156,7 +156,7 @@ pub fn maybe_strip_underscore(s: &str) -> &str {
 /// Checks if the given (possibly-attributed-)object is attributed with the given `attr_name`. Also
 /// validates that the attribute is v0.
 pub fn has_v0_attribute<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     object: &impl QueryAttrs<'db>,
     attr_name: &'db str,
@@ -167,7 +167,7 @@ pub fn has_v0_attribute<'db>(
 /// Checks if the given (possibly-attributed-)object is attributed with the given `attr_name`. Also
 /// validates that the attribute is v0, and adds a warning if supplied `deprecated` returns a value.
 pub fn has_v0_attribute_ex<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     object: &impl QueryAttrs<'db>,
     attr_name: &'db str,
@@ -185,7 +185,7 @@ pub fn has_v0_attribute_ex<'db>(
 
 /// Assuming the attribute is `name`, validates it's in the form "#[name(v0)]".
 pub fn validate_v0<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     attr: &Attribute<'db>,
     name: &str,
@@ -200,7 +200,7 @@ pub fn validate_v0<'db>(
 
 /// Forbids `#[external]`, `#[l1_handler]` and `#[constructor]` attributes in the given impl.
 pub fn forbid_attributes_in_impl<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     impl_item: &ast::ImplItem<'db>,
     embedded_impl_attr: &str,
@@ -212,7 +212,7 @@ pub fn forbid_attributes_in_impl<'db>(
 
 /// Forbids the given attribute in the given impl, assuming it's marked `embedded_impl_attr`.
 pub fn forbid_attribute_in_impl<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     impl_item: &ast::ImplItem<'db>,
     attr_name: &'db str,
@@ -232,7 +232,7 @@ pub fn forbid_attribute_in_impl<'db>(
 /// Returns true if the type has a derive attribute with the given type.
 pub fn has_derive<'db, T: QueryAttrs<'db>>(
     with_attrs: &T,
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     derived_type: &str,
 ) -> Option<ast::Arg<'db>> {
     with_attrs.query_attr(db, "derive").find_map(|attr| {

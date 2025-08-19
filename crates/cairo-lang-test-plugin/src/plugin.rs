@@ -1,7 +1,7 @@
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginResult};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::ast;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 
 use super::{AVAILABLE_GAS_ATTR, IGNORE_ATTR, SHOULD_PANIC_ATTR, TEST_ATTR};
 use crate::test_config::try_extract_test_config;
@@ -14,7 +14,7 @@ pub struct TestPlugin;
 impl MacroPlugin for TestPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn FilesGroup,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {

@@ -1,8 +1,8 @@
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginResult};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_syntax::node::ast::ModuleItem;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use indoc::indoc;
 use smol_str::SmolStr;
 
@@ -15,7 +15,7 @@ pub struct MockExecutablePlugin {}
 impl MacroPlugin for MockExecutablePlugin {
     fn generate_code<'db>(
         &self,
-        _db: &'db dyn SyntaxGroup,
+        _db: &'db dyn FilesGroup,
         _item_ast: ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {

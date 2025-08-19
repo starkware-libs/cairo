@@ -2,18 +2,18 @@
 #[path = "lexer_test.rs"]
 mod test;
 
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{
     TokenNewline, TokenSingleLineComment, TokenSingleLineDocComment, TokenSingleLineInnerComment,
     TokenWhitespace, TriviumGreen,
 };
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::require;
 
 pub struct Lexer<'a> {
-    db: &'a dyn SyntaxGroup,
+    db: &'a dyn FilesGroup,
     text: &'a str,
     previous_position: TextOffset,
     current_position: TextOffset,
@@ -22,7 +22,7 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     // Ctors.
-    pub fn from_text(db: &'a dyn SyntaxGroup, text: &'a str) -> Lexer<'a> {
+    pub fn from_text(db: &'a dyn FilesGroup, text: &'a str) -> Lexer<'a> {
         Lexer {
             db,
             text,
@@ -330,7 +330,7 @@ pub struct LexerTerminal<'a> {
     pub trailing_trivia: Vec<TriviumGreen<'a>>,
 }
 impl<'a> LexerTerminal<'a> {
-    pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
+    pub fn width(&self, db: &dyn FilesGroup) -> TextWidth {
         self.leading_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()
             + TextWidth::from_str(self.text)
             + self.trailing_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()

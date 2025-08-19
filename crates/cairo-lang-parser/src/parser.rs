@@ -1,16 +1,17 @@
 use std::mem;
 
 use cairo_lang_diagnostics::DiagnosticsBuilder;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::*;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
 use cairo_lang_utils::{extract_matches, require};
+use salsa::Database;
 use syntax::node::green::{GreenNode, GreenNodeDetails};
 use syntax::node::ids::GreenId;
 
@@ -42,7 +43,7 @@ enum MacroParsingContext {
 }
 
 pub struct Parser<'a, 'mt> {
-    db: &'a dyn SyntaxGroup,
+    db: &'a dyn FilesGroup,
     file_id: FileId<'a>,
     lexer: Lexer<'a>,
     /// The next terminal to handle.
@@ -124,7 +125,7 @@ macro_rules! or_an_attribute {
 impl<'a, 'mt> Parser<'a, 'mt> {
     /// Creates a new parser.
     pub fn new(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn FilesGroup,
         file_id: FileId<'a>,
         text: &'a str,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
@@ -154,7 +155,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Parses a file.
     pub fn parse_file(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn FilesGroup,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         text: &'a str,
@@ -166,7 +167,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Parses a file expr.
     pub fn parse_file_expr(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn FilesGroup,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         text: &'a str,
@@ -185,7 +186,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Parses a file as a list of statements.
     pub fn parse_file_statement_list(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn FilesGroup,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         text: &'a str,
@@ -206,7 +207,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Parses a token stream.
     pub fn parse_token_stream(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn FilesGroup,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
@@ -230,7 +231,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Parses a token stream expression.
     pub fn parse_token_stream_expr(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn FilesGroup,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         offset: Option<TextOffset>,
@@ -858,7 +859,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         RTerminal: syntax::node::Terminal<'a>,
         ListGreen,
         NewGreen: Fn(
-            &'a dyn SyntaxGroup,
+            &'a dyn Database,
             LTerminal::Green,
             MacroElementsGreen<'a>,
             RTerminal::Green,
@@ -1809,12 +1810,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         LTerminal: syntax::node::Terminal<'a>,
         RTerminal: syntax::node::Terminal<'a>,
         ListGreen,
-        NewGreen: Fn(
-            &'a dyn SyntaxGroup,
-            LTerminal::Green,
-            TokenListGreen<'a>,
-            RTerminal::Green,
-        ) -> ListGreen,
+        NewGreen: Fn(&'a dyn Database, LTerminal::Green, TokenListGreen<'a>, RTerminal::Green) -> ListGreen,
     >(
         &mut self,
         new_green: NewGreen,
@@ -1957,7 +1953,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         LTerminal: syntax::node::Terminal<'a>,
         RTerminal: syntax::node::Terminal<'a>,
         ListGreen,
-        NewGreen: Fn(&'a dyn SyntaxGroup, LTerminal::Green, ArgListGreen<'a>, RTerminal::Green) -> ListGreen,
+        NewGreen: Fn(&'a dyn Database, LTerminal::Green, ArgListGreen<'a>, RTerminal::Green) -> ListGreen,
     >(
         &mut self,
         new_green: NewGreen,
@@ -2311,13 +2307,13 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// kind.
     /// Otherwise, returns `None`.
     fn get_binary_operator(&self, condition: ConditionGreen<'_>) -> Option<SyntaxKind> {
-        let condition_expr_green = self.db.lookup_intern_green(condition.0);
+        let condition_expr_green = condition.0.long(self.db);
         require(condition_expr_green.kind == SyntaxKind::ConditionExpr)?;
 
-        let expr_binary_green = self.db.lookup_intern_green(condition_expr_green.children()[0]);
+        let expr_binary_green = condition_expr_green.children()[0].long(self.db);
         require(expr_binary_green.kind == SyntaxKind::ExprBinary)?;
 
-        Some(self.db.lookup_intern_green(expr_binary_green.children()[1]).kind)
+        Some(expr_binary_green.children()[1].long(self.db).kind)
     }
 
     /// Parses a conjunction of conditions of the form `<condition> && <condition> && ...`,
@@ -3849,12 +3845,12 @@ pub struct PendingParserDiagnostic {
 }
 
 /// Returns the total width of the given trivia list.
-fn trivia_total_width(db: &dyn SyntaxGroup, trivia: &[TriviumGreen<'_>]) -> TextWidth {
+fn trivia_total_width(db: &dyn FilesGroup, trivia: &[TriviumGreen<'_>]) -> TextWidth {
     trivia.iter().map(|trivium| trivium.0.width(db)).sum::<TextWidth>()
 }
 
 /// The width of the trailing trivia, traversing the tree to the bottom right node.
-fn trailing_trivia_width(db: &dyn SyntaxGroup, green_id: GreenId<'_>) -> Option<TextWidth> {
+fn trailing_trivia_width(db: &dyn FilesGroup, green_id: GreenId<'_>) -> Option<TextWidth> {
     let node = green_id.long(db);
     if node.kind == SyntaxKind::Trivia {
         return Some(node.width());

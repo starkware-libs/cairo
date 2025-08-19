@@ -6,7 +6,6 @@ use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup, init_files_group
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
@@ -53,11 +52,6 @@ impl<'db> Upcast<'db, dyn DefsGroup> for DatabaseForTesting {
 }
 impl<'db> Upcast<'db, dyn FilesGroup> for DatabaseForTesting {
     fn upcast(&self) -> &dyn FilesGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SyntaxGroup> for DatabaseForTesting {
-    fn upcast(&self) -> &dyn SyntaxGroup {
         self
     }
 }
@@ -216,7 +210,7 @@ struct DummyPlugin;
 impl MacroPlugin for DummyPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn FilesGroup,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
@@ -318,7 +312,7 @@ struct RemoveOrigPlugin;
 impl MacroPlugin for RemoveOrigPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn FilesGroup,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
@@ -344,7 +338,7 @@ struct FooToBarPlugin;
 impl MacroPlugin for FooToBarPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn FilesGroup,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {

@@ -1,7 +1,7 @@
 use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_starknet_classes::abi::EventFieldKind;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use const_format::formatcp;
@@ -27,7 +27,7 @@ pub enum {EVENT_TYPE_NAME} {{}}
 /// Checks whether the given item is a starknet event, and if so - makes sure it's valid and returns
 /// its variants. Returns None if it's not a starknet event.
 pub fn get_starknet_event_variants<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     item: &ast::ModuleItem<'db>,
     module_kind: StarknetModuleKind,

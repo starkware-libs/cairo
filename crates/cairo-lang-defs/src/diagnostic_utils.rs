@@ -2,11 +2,12 @@ use std::fmt;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::DiagnosticLocation;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use salsa::Database;
 
 use crate::db::DefsGroup;
 
@@ -32,16 +33,16 @@ impl<'db> StableLocation<'db> {
         Self { stable_ptr, inner_span: Some(inner_span) }
     }
 
-    pub fn file_id(&self, db: &'db dyn DefsGroup) -> FileId<'db> {
+    pub fn file_id(&self, db: &'db dyn Database) -> FileId<'db> {
         self.stable_ptr.file_id(db)
     }
 
-    pub fn from_ast<TNode: TypedSyntaxNode<'db>>(db: &'db dyn SyntaxGroup, node: &TNode) -> Self {
+    pub fn from_ast<TNode: TypedSyntaxNode<'db>>(db: &'db dyn FilesGroup, node: &TNode) -> Self {
         Self::new(node.as_syntax_node().stable_ptr(db))
     }
 
     /// Returns the [SyntaxNode] that corresponds to the [StableLocation].
-    pub fn syntax_node(&self, db: &'db dyn DefsGroup) -> SyntaxNode<'db> {
+    pub fn syntax_node(&self, db: &'db dyn Database) -> SyntaxNode<'db> {
         self.stable_ptr.lookup(db)
     }
 
@@ -51,7 +52,7 @@ impl<'db> StableLocation<'db> {
     }
 
     /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
-    pub fn diagnostic_location(&self, db: &'db dyn DefsGroup) -> DiagnosticLocation<'db> {
+    pub fn diagnostic_location(&self, db: &'db dyn FilesGroup) -> DiagnosticLocation<'db> {
         match self.inner_span {
             Some((start, width)) => {
                 let start = self.syntax_node(db).offset(db).add_width(start);

@@ -7,7 +7,6 @@ use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::Upcast;
 
 use crate::Lowered;
@@ -63,11 +62,6 @@ impl Elongate for LoweringDatabaseForTesting {
 
 impl<'db> Upcast<'db, dyn FilesGroup> for LoweringDatabaseForTesting {
     fn upcast(&self) -> &dyn FilesGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SyntaxGroup> for LoweringDatabaseForTesting {
-    fn upcast(&self) -> &dyn SyntaxGroup {
         self
     }
 }

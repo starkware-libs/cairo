@@ -2,7 +2,6 @@ use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind};
 use cairo_lang_syntax::node::ast::{Expr, StatementList, SyntaxFile};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 
 use crate::diagnostic::ParserDiagnostic;
@@ -15,7 +14,7 @@ mod db_test;
 // TODO(orizi): Remove `query_group` macro and have this implemented for `salsa::Database` directly.
 /// Interface of the parser database.
 #[cairo_lang_proc_macros::query_group(ParserDatabase)]
-pub trait ParserGroup: SyntaxGroup + FilesGroup {
+pub trait ParserGroup: FilesGroup {
     /// Parses a file and returns its AST as a root SyntaxFile.
     #[salsa::transparent]
     fn file_module_syntax<'db>(&'db self, file_id: FileId<'db>) -> Maybe<SyntaxFile<'db>>;
