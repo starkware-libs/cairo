@@ -35,7 +35,7 @@ use crate::inline::statements_weights::{ApproxCasmInlineWeight, InlineWeight};
 use crate::lower::{MultiLowering, lower_semantic_function};
 use crate::optimizations::config::OptimizationConfig;
 use crate::optimizations::scrub_units::scrub_units;
-use crate::optimizations::strategy::{OptimizationStrategy, OptimizationStrategyId};
+use crate::optimizations::strategy::OptimizationStrategyId;
 use crate::panic::lower_panics;
 use crate::specialization::specialized_function_lowered;
 use crate::utils::InliningStrategy;
@@ -65,31 +65,6 @@ impl<T: UseApproxCodeSizeEstimator> ExternalCodeSizeEstimator for T {
 pub trait LoweringGroup:
     SemanticGroup + for<'a> Upcast<'a, dyn SemanticGroup> + ExternalCodeSizeEstimator
 {
-    #[salsa::interned]
-    fn intern_lowering_function<'db>(
-        &'db self,
-        id: ids::FunctionLongId<'db>,
-    ) -> ids::FunctionId<'db>;
-    #[salsa::interned]
-    fn intern_lowering_concrete_function_with_body<'db>(
-        &'db self,
-        id: ids::ConcreteFunctionWithBodyLongId<'db>,
-    ) -> ids::ConcreteFunctionWithBodyId<'db>;
-    #[salsa::interned]
-    fn intern_lowering_function_with_body<'db>(
-        &'db self,
-        id: ids::FunctionWithBodyLongId<'db>,
-    ) -> ids::FunctionWithBodyId<'db>;
-
-    #[salsa::interned]
-    fn intern_location<'db>(&'db self, id: Location<'db>) -> ids::LocationId<'db>;
-
-    #[salsa::interned]
-    fn intern_strategy<'db>(
-        &'db self,
-        id: OptimizationStrategy<'db>,
-    ) -> OptimizationStrategyId<'db>;
-
     /// Computes the lowered representation of a function with a body, along with all it generated
     /// functions (e.g. closures, lambdas, loops, ...).
     fn priv_function_with_body_multi_lowering<'db>(
