@@ -21,7 +21,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, Upcast, require};
 use itertools::Itertools;
-use salsa::Setter;
+use salsa::{Database, Setter};
 
 use crate::corelib::CoreInfo;
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -49,6 +49,29 @@ use crate::types::{ImplTypeById, ImplTypeId, TypeSizeInformation};
 use crate::{
     FunctionId, Parameter, SemanticDiagnostic, TypeId, corelib, items, lsp_helpers, semantic, types,
 };
+
+#[salsa::input]
+pub struct SemanticGroupInput {
+    #[returns(ref)]
+    pub default_analyzer_plugins: Option<Vec<AnalyzerPluginLongId>>,
+    #[returns(ref)]
+    pub analyzer_plugin_overrides: Option<OrderedHashMap<CrateInput, Arc<[AnalyzerPluginLongId]>>>,
+}
+
+#[salsa::tracked(returns(ref))]
+pub fn semantic_group_input(db: &dyn Database) -> SemanticGroupInput {
+    SemanticGroupInput::new(db, None, None)
+}
+
+fn default_analyzer_plugins_input(db: &dyn Database) -> &[AnalyzerPluginLongId] {
+    semantic_group_input(db).default_analyzer_plugins(db).as_ref().unwrap()
+}
+
+fn analyzer_plugin_overrides_input(
+    db: &dyn Database,
+) -> &OrderedHashMap<CrateInput, Arc<[AnalyzerPluginLongId]>> {
+    semantic_group_input(db).analyzer_plugin_overrides(db).as_ref().unwrap()
+}
 
 /// Helper trait to make sure we can always get a `dyn SemanticGroup + 'static` from a
 /// SemanticGroup.
@@ -1886,16 +1909,16 @@ pub trait SemanticGroup:
     // Analyzer plugins.
     // ========
 
-    #[salsa::input]
-    fn default_analyzer_plugins_input(&self) -> Arc<[AnalyzerPluginLongId]>;
+    #[salsa::transparent]
+    fn default_analyzer_plugins_input(&self) -> &[AnalyzerPluginLongId];
 
     /// Interned version of `default_analyzer_plugins`.
     fn default_analyzer_plugins<'db>(&'db self) -> Arc<Vec<AnalyzerPluginId<'db>>>;
 
-    #[salsa::input]
+    #[salsa::transparent]
     fn analyzer_plugin_overrides_input(
         &self,
-    ) -> Arc<OrderedHashMap<CrateInput, Arc<[AnalyzerPluginLongId]>>>;
+    ) -> &OrderedHashMap<CrateInput, Arc<[AnalyzerPluginLongId]>>;
 
     /// Interned version of `analyzer_plugin_overrides_input`.
     fn analyzer_plugin_overrides<'db>(
@@ -1972,7 +1995,10 @@ pub trait SemanticGroup:
 
 /// Initializes the [`SemanticGroup`] database to a proper state.
 pub fn init_semantic_group(db: &mut dyn SemanticGroup) {
-    db.set_analyzer_plugin_overrides_input(Arc::new(OrderedHashMap::default()));
+    let db_ref = db.as_dyn_database_mut();
+    semantic_group_input(db_ref)
+        .set_analyzer_plugin_overrides(db_ref)
+        .to(Some(OrderedHashMap::default()));
 }
 
 fn default_analyzer_plugins(db: &dyn SemanticGroup) -> Arc<Vec<AnalyzerPluginId<'_>>> {
@@ -2278,11 +2304,12 @@ pub trait SemanticGroupEx: SemanticGroup {
         crate_id: CrateId<'_>,
         plugins: Arc<[AnalyzerPluginId<'_>]>,
     ) {
-        let mut overrides = self.analyzer_plugin_overrides_input().as_ref().clone();
+        let mut overrides = self.analyzer_plugin_overrides_input().clone();
         let plugins =
             plugins.iter().map(|plugin| self.lookup_intern_analyzer_plugin(*plugin)).collect_vec();
         overrides.insert(self.crate_input(crate_id).clone(), Arc::from(plugins));
-        self.set_analyzer_plugin_overrides_input(Arc::new(overrides));
+        let db_ref = self.as_dyn_database_mut();
+        semantic_group_input(db_ref).set_analyzer_plugin_overrides(db_ref).to(Some(overrides));
     }
 }
 
@@ -2371,14 +2398,16 @@ pub trait PluginSuiteInput: SemanticGroup {
             .collect::<OrderedHashMap<_, _>>();
 
         let analyzer_plugins =
-            analyzer_plugins.into_iter().map(AnalyzerPluginLongId).collect::<Arc<[_]>>();
+            analyzer_plugins.into_iter().map(AnalyzerPluginLongId).collect::<Vec<_>>();
 
         let db_ref = self.as_dyn_database_mut();
         defs_group_input(db_ref).set_default_macro_plugins(db_ref).to(Some(macro_plugins));
         defs_group_input(db_ref)
             .set_default_inline_macro_plugins(db_ref)
             .to(Some(inline_macro_plugins));
-        self.set_default_analyzer_plugins_input(analyzer_plugins);
+        semantic_group_input(db_ref)
+            .set_default_analyzer_plugins(db_ref)
+            .to(Some(analyzer_plugins));
     }
 
     /// Sets macro, inline macro and analyzer plugins present in the [`PluginSuite`] for a crate
