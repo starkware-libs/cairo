@@ -5,6 +5,7 @@ use cairo_lang_defs::ids::{
     FileIndex, GenericTypeId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, TraitItemId,
 };
 use cairo_lang_diagnostics::DiagnosticsBuilder;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::parser::Parser;
 use cairo_lang_semantic::db::SemanticGroup;

@@ -9,6 +9,7 @@ use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, ModuleFileId, TraitId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{AssociatedItemConstraints, OptionAssociatedItemConstraints};

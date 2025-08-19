@@ -10,7 +10,6 @@ use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{CrateId, FlagLongId};
 use cairo_lang_lowering::db::{ExternalCodeSizeEstimator, LoweringGroup, init_lowering_group};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
 use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
@@ -264,11 +263,6 @@ impl<'db> Upcast<'db, dyn LoweringGroup> for RootDatabase {
 }
 impl<'db> Upcast<'db, dyn SierraGenGroup> for RootDatabase {
     fn upcast(&self) -> &dyn SierraGenGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn ParserGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn ParserGroup {
         self
     }
 }

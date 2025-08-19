@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe, PluginFileDiagnosticNotes, ToMaybe};
-use cairo_lang_filesystem::db::{ExternalFiles, TryExtAsVirtual};
+use cairo_lang_filesystem::db::{ExternalFiles, FilesGroup, TryExtAsVirtual};
 use cairo_lang_filesystem::ids::{
     CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, VirtualFile,
 };
@@ -75,7 +75,7 @@ fn default_inline_macro_plugins_input(
 /// Salsa database interface.
 /// See [`super::ids`] for further details.
 #[cairo_lang_proc_macros::query_group]
-pub trait DefsGroup: ParserGroup {
+pub trait DefsGroup: Database {
     #[salsa::transparent]
     fn default_macro_plugins_input(&self) -> &[MacroPluginLongId];
 

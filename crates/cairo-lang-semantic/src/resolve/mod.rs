@@ -9,7 +9,9 @@ use cairo_lang_defs::ids::{
     ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitId, TraitItemId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
-use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings, default_crate_settings};
+use cairo_lang_filesystem::db::{
+    CORELIB_CRATE_NAME, CrateSettings, FilesGroup, default_crate_settings,
+};
 use cairo_lang_filesystem::ids::{CodeMapping, CrateId, CrateLongId, StrRef};
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
