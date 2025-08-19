@@ -4,8 +4,10 @@ use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_diagnostics::{
     DiagnosticEntry, Diagnostics, FormattedDiagnosticEntry, PluginFileDiagnosticNotes, Severity,
 };
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use thiserror::Error;
@@ -190,7 +192,7 @@ impl<'a> DiagnosticsReporter<'a> {
                         if processed_file_ids.insert(file_id) {
                             found_diagnostics |= self.check_diag_group(
                                 db.as_dyn_database(),
-                                db.file_syntax_diagnostics(file_id),
+                                db.file_syntax_diagnostics(file_id).clone(),
                                 ignore_warnings_in_crate,
                                 &diagnostic_notes,
                             );

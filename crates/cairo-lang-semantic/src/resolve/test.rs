@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_filesystem::db::CrateConfiguration;
+use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_utils::{Intern, extract_matches};

@@ -47,7 +47,7 @@ impl Default for DatabaseForTesting {
     }
 }
 impl<'db> Upcast<'db, dyn DefsGroup> for DatabaseForTesting {
-    fn upcast(&self) -> &dyn DefsGroup {
+    fn upcast(&'db self) -> &'db dyn DefsGroup {
         self
     }
 }
