@@ -1,6 +1,6 @@
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -40,7 +40,7 @@ impl<'db> RewriteNode<'db> {
 
     pub fn mapped_text(
         text: impl Into<String>,
-        db: &dyn SyntaxGroup,
+        db: &dyn FilesGroup,
         origin: &impl TypedSyntaxNode<'db>,
     ) -> Self {
         RewriteNode::Text(text.into()).mapped(db, origin)
@@ -61,7 +61,7 @@ impl<'db> RewriteNode<'db> {
     }
 
     /// Prepares a node for modification.
-    pub fn modify(&mut self, db: &'db dyn SyntaxGroup) -> &mut ModifiedNode<'db> {
+    pub fn modify(&mut self, db: &'db dyn FilesGroup) -> &mut ModifiedNode<'db> {
         match self {
             RewriteNode::Copied(syntax_node) => {
                 *self = RewriteNode::new_modified(
@@ -136,11 +136,7 @@ impl<'db> RewriteNode<'db> {
     }
 
     /// Prepares a node for modification and returns a specific child.
-    pub fn modify_child(
-        &mut self,
-        db: &'db dyn SyntaxGroup,
-        index: usize,
-    ) -> &mut RewriteNode<'db> {
+    pub fn modify_child(&mut self, db: &'db dyn FilesGroup, index: usize) -> &mut RewriteNode<'db> {
         if matches!(self, RewriteNode::Modified(ModifiedNode { children: None })) {
             // Modification of an empty node is idempotent.
             return self;
@@ -214,7 +210,7 @@ impl<'db> RewriteNode<'db> {
     }
 
     /// Creates a new rewrite node wrapped in a mapping to the original code.
-    pub fn mapped(self, db: &dyn SyntaxGroup, origin: &impl TypedSyntaxNode<'db>) -> Self {
+    pub fn mapped(self, db: &dyn FilesGroup, origin: &impl TypedSyntaxNode<'db>) -> Self {
         RewriteNode::Mapped {
             origin: origin.as_syntax_node().span_without_trivia(db),
             node: Box::new(self),
@@ -243,19 +239,19 @@ pub struct ModifiedNode<'db> {
 }
 
 pub struct PatchBuilder<'a> {
-    pub db: &'a dyn SyntaxGroup,
+    pub db: &'a dyn FilesGroup,
     code: String,
     code_mappings: Vec<CodeMapping>,
     origin: CodeOrigin,
 }
 impl<'db> PatchBuilder<'db> {
     /// Creates a new patch builder, originating from `origin` typed node.
-    pub fn new(db: &'db dyn SyntaxGroup, origin: &impl TypedSyntaxNode<'db>) -> Self {
+    pub fn new(db: &'db dyn FilesGroup, origin: &impl TypedSyntaxNode<'db>) -> Self {
         Self::new_ex(db, &origin.as_syntax_node())
     }
 
     /// Creates a new patch builder, originating from `origin` node.
-    pub fn new_ex(db: &'db dyn SyntaxGroup, origin: &SyntaxNode<'db>) -> Self {
+    pub fn new_ex(db: &'db dyn FilesGroup, origin: &SyntaxNode<'db>) -> Self {
         Self {
             db,
             code: String::default(),

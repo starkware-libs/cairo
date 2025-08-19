@@ -1,6 +1,6 @@
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::SyntaxNode;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax_codegen::cairo_spec::get_spec;
 use cairo_lang_syntax_codegen::spec::{Member, Node, NodeKind};
@@ -8,7 +8,7 @@ use colored::{ColoredString, Colorize};
 use itertools::zip_eq;
 
 pub fn print_tree(
-    db: &dyn SyntaxGroup,
+    db: &dyn FilesGroup,
     syntax_root: &SyntaxNode<'_>,
     print_colors: bool,
     print_trivia: bool,
@@ -19,7 +19,7 @@ pub fn print_tree(
 }
 
 pub fn print_partial_tree(
-    db: &dyn SyntaxGroup,
+    db: &dyn FilesGroup,
     syntax_root: &SyntaxNode<'_>,
     top_level_kind: &str,
     ignored_kinds: Vec<&str>,
@@ -32,7 +32,7 @@ pub fn print_partial_tree(
 }
 
 struct Printer<'a> {
-    db: &'a dyn SyntaxGroup,
+    db: &'a dyn FilesGroup,
     spec: Vec<Node>,
     print_colors: bool,
     print_trivia: bool,
@@ -45,7 +45,7 @@ struct Printer<'a> {
     result: String,
 }
 impl<'a> Printer<'a> {
-    fn new(db: &'a dyn SyntaxGroup, print_colors: bool, print_trivia: bool) -> Self {
+    fn new(db: &'a dyn FilesGroup, print_colors: bool, print_trivia: bool) -> Self {
         Self {
             db,
             spec: get_spec(),
@@ -59,7 +59,7 @@ impl<'a> Printer<'a> {
 
     /// Create a new printer that is capable of partial printing of the syntax tree.
     fn new_partial(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn FilesGroup,
         top_level_kind: &str,
         ignored_kinds: Vec<&str>,
         print_trivia: bool,

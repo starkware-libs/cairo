@@ -20,7 +20,6 @@ use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_sierra_generator::db::{SierraGenGroup, init_sierra_gen_group};
 use cairo_lang_sierra_generator::program_generator::get_dummy_program_for_size_estimation;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::Upcast;
 
 use crate::InliningStrategy;
@@ -247,11 +246,6 @@ pub fn validate_corelib(db: &(dyn FilesGroup + 'static)) -> Result<()> {
 
 impl<'db> Upcast<'db, dyn FilesGroup> for RootDatabase {
     fn upcast(&self) -> &dyn FilesGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SyntaxGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn SyntaxGroup {
         self
     }
 }

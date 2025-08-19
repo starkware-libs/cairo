@@ -192,14 +192,13 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 expected,
                 actual,
             } => {
-                let defs_db = db;
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(db);
                 format!(
                     "The number of parameters in the impl function `{}::{}` is incompatible with \
                      `{}::{}`. Expected: {}, actual: {}.",
-                    impl_def_id.name(defs_db),
+                    impl_def_id.name(db),
                     function_name,
-                    trait_id.name(defs_db),
+                    trait_id.name(db),
                     function_name,
                     expected,
                     actual,
@@ -215,14 +214,13 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 expected_ty,
                 actual_ty,
             } => {
-                let defs_db = db;
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(db);
                 format!(
                     "Parameter type of impl function `{}::{}` is incompatible with `{}::{}`. \
                      Expected: `{}`, actual: `{}`.",
-                    impl_def_id.name(defs_db),
+                    impl_def_id.name(db),
                     function_name,
-                    trait_id.name(defs_db),
+                    trait_id.name(db),
                     function_name,
                     expected_ty.format(db),
                     actual_ty.format(db)
@@ -232,11 +230,10 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 "Variant constructor argument must be immutable.".to_string()
             }
             SemanticDiagnosticKind::TraitParamMutable { trait_id, function_id } => {
-                let defs_db = db;
                 format!(
                     "Parameter of trait function `{}::{}` can't be defined as mutable.",
-                    trait_id.name(defs_db),
-                    function_id.name(defs_db),
+                    trait_id.name(db),
+                    function_id.name(db),
                 )
             }
             SemanticDiagnosticKind::ParameterShouldBeReference {
@@ -244,14 +241,13 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 impl_function_id,
                 trait_id,
             } => {
-                let defs_db = db;
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(db);
                 format!(
                     "Parameter of impl function {}::{} is incompatible with {}::{}. It should be \
                      a reference.",
-                    impl_def_id.name(defs_db),
+                    impl_def_id.name(db),
                     function_name,
-                    trait_id.name(defs_db),
+                    trait_id.name(db),
                     function_name,
                 )
             }

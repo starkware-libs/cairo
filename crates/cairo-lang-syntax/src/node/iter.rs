@@ -1,5 +1,6 @@
+use salsa::Database;
+
 use crate::node::SyntaxNode;
-use crate::node::db::SyntaxGroup;
 
 /// `WalkEvent` describes tree walking process.
 #[derive(Debug, Copy, Clone)]
@@ -22,7 +23,7 @@ impl<T> WalkEvent<T> {
 /// Traverse the subtree rooted at the current node (including the current node) in preorder,
 /// excluding tokens.
 pub struct Preorder<'a> {
-    db: &'a dyn SyntaxGroup,
+    db: &'a dyn Database,
     // FIXME(mkaput): Is it possible to avoid allocating iterators in layers here?
     //   This code does it because without fast parent & prev/next sibling operations it has to
     //   maintain DFS trace.
@@ -35,7 +36,7 @@ struct PreorderLayer<'a> {
 }
 
 impl<'a> Preorder<'a> {
-    pub(super) fn new(start: SyntaxNode<'a>, db: &'a dyn SyntaxGroup) -> Self {
+    pub(super) fn new(start: SyntaxNode<'a>, db: &'a dyn Database) -> Self {
         let initial_layer = PreorderLayer { start, children: None };
 
         // NOTE(mkaput): Reserving some capacity should help amortization and thus make this

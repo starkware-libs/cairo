@@ -1,6 +1,6 @@
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
@@ -12,7 +12,7 @@ use crate::formatter_impl::{
 use crate::{CollectionsBreakingBehavior, FormatterConfig};
 
 impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
-    fn force_no_space_before(&self, db: &dyn SyntaxGroup) -> bool {
+    fn force_no_space_before(&self, db: &dyn FilesGroup) -> bool {
         match self.kind(db) {
             SyntaxKind::TokenDot
             | SyntaxKind::TokenColonColon
@@ -94,7 +94,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
         }
     }
 
-    fn force_no_space_after(&self, db: &dyn SyntaxGroup) -> bool {
+    fn force_no_space_after(&self, db: &dyn FilesGroup) -> bool {
         match self.kind(db) {
             SyntaxKind::TokenDot
             | SyntaxKind::TokenNot
@@ -190,10 +190,10 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
         }
     }
     // TODO(gil): consider removing this function as it is no longer used.
-    fn allow_newline_after(&self, _db: &dyn SyntaxGroup) -> bool {
+    fn allow_newline_after(&self, _db: &dyn FilesGroup) -> bool {
         false
     }
-    fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> usize {
+    fn allowed_empty_between(&self, db: &dyn FilesGroup) -> usize {
         match self.kind(db) {
             SyntaxKind::ModuleItemList | SyntaxKind::ImplItemList | SyntaxKind::TraitItemList => 2,
             SyntaxKind::StatementList => 1,
@@ -201,7 +201,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
         }
     }
     // TODO(Gil): Add all protected zones and break points when the formatter is stable.
-    fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize> {
+    fn get_protected_zone_precedence(&self, db: &dyn FilesGroup) -> Option<usize> {
         match self.parent_kind(db) {
             // TODO(Gil): protected zone preferences should be local for each syntax node.
             Some(
@@ -467,7 +467,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
     }
     fn get_wrapping_break_line_point_properties(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn FilesGroup,
     ) -> BreakLinePointsPositions {
         // TODO(Gil): Make it easier to order the break points precedence.
         match self.parent_kind(db) {
@@ -824,7 +824,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
     }
     fn get_internal_break_line_point_properties(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn FilesGroup,
         config: &FormatterConfig,
     ) -> BreakLinePointsPositions {
         match self.kind(db) {
@@ -930,7 +930,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
         }
     }
 
-    fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool {
+    fn should_skip_terminal(&self, db: &dyn FilesGroup) -> bool {
         let is_last =
             |node: &SyntaxNode<'_>, siblings: &[SyntaxNode<'_>]| siblings.last() == Some(node);
         // Check for TerminalComma with specific conditions on list types and position.
@@ -1020,7 +1020,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
     }
 
     // Merge the `as_sort_kind` method here
-    fn as_sort_kind(&self, db: &dyn SyntaxGroup) -> SortKind {
+    fn as_sort_kind(&self, db: &dyn FilesGroup) -> SortKind {
         match self.kind(db) {
             SyntaxKind::ItemModule => {
                 let item_module = ast::ItemModule::from_syntax_node(db, *self);
@@ -1036,7 +1036,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
     }
     fn should_ignore_node_format(
         &self,
-        db: &dyn SyntaxGroup,
+        db: &dyn FilesGroup,
     ) -> Option<IgnoreFormattingSpacingData> {
         if self.has_attr(db, FMT_SKIP_ATTR) {
             return Some(IgnoreFormattingSpacingData {
@@ -1057,7 +1057,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
 }
 
 /// For statement lists, returns if we want these as a single line.
-fn is_statement_list_break_point_optional(db: &dyn SyntaxGroup, node: &SyntaxNode<'_>) -> bool {
+fn is_statement_list_break_point_optional(db: &dyn FilesGroup, node: &SyntaxNode<'_>) -> bool {
     // Currently, we only want single line blocks for match arms or generic args, with a single
     // statement, with no single line comments.
     matches!(

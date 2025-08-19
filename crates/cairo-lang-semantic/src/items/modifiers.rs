@@ -1,5 +1,5 @@
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::node::ast::Modifier;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 
 use crate::Mutability;
@@ -9,7 +9,7 @@ use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 /// Returns the mutability of a variable, given the list of modifiers in the AST.
 pub fn compute_mutability<'db>(
     diagnostics: &mut SemanticDiagnostics<'db>,
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn FilesGroup,
     modifier_list: &[Modifier<'db>],
 ) -> Mutability {
     let mut mutability = Mutability::Immutable;

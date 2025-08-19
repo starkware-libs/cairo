@@ -10,7 +10,6 @@ use cairo_lang_filesystem::db::{
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{BlobId, CrateId, CrateLongId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -65,11 +64,6 @@ impl Elongate for SemanticDatabaseForTesting {
 }
 impl<'db> Upcast<'db, dyn FilesGroup> for SemanticDatabaseForTesting {
     fn upcast(&'db self) -> &'db dyn FilesGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SyntaxGroup> for SemanticDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn SyntaxGroup {
         self
     }
 }

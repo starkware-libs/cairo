@@ -16,7 +16,6 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::{Intern, extract_matches};
 use syntax::node::TypedStablePtr;
-use syntax::node::db::SyntaxGroup;
 
 use super::constant::{ConstValue, ConstValueId};
 use super::imp::{ImplHead, ImplId, ImplLongId};
@@ -307,7 +306,6 @@ pub fn priv_generic_param_data<'db>(
             )),
         });
     }
-    let syntax_db: &dyn SyntaxGroup = db;
     let module_file_id = generic_param_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let parent_item_id = generic_param_id.generic_item(db);
@@ -327,9 +325,9 @@ pub fn priv_generic_param_data<'db>(
     );
 
     let mut opt_generic_param_syntax = None;
-    for param_syntax in generic_params_syntax.generic_params(syntax_db).elements(syntax_db) {
+    for param_syntax in generic_params_syntax.generic_params(db).elements(db) {
         let cur_generic_param_id =
-            GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db)).intern(db);
+            GenericParamLongId(module_file_id, param_syntax.stable_ptr(db)).intern(db);
         resolver.add_generic_param(cur_generic_param_id);
 
         if cur_generic_param_id == generic_param_id {
@@ -347,7 +345,7 @@ pub fn priv_generic_param_data<'db>(
         parent_item_id,
     );
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, generic_param_syntax.stable_ptr(syntax_db).untyped());
+    inference.finalize(&mut diagnostics, generic_param_syntax.stable_ptr(db).untyped());
 
     let param_semantic = inference.rewrite(param_semantic).no_err();
     let resolver_data = Arc::new(resolver.data);
