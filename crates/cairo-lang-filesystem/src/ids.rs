@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_utils::{Intern, define_short_id};
 use path_clean::PathClean;
+use salsa::Database;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
@@ -94,12 +95,12 @@ impl<'db> CrateLongId<'db> {
 define_short_id!(CrateId, CrateLongId<'db>, FilesGroup);
 impl<'db> CrateId<'db> {
     /// Gets the crate id for a real crate by name, without a discriminator.
-    pub fn plain(db: &'db dyn FilesGroup, name: &str) -> Self {
+    pub fn plain(db: &'db dyn Database, name: &str) -> Self {
         CrateId::new(db, CrateLongId::plain(name))
     }
 
     /// Gets the crate id for `core`.
-    pub fn core(db: &'db dyn FilesGroup) -> Self {
+    pub fn core(db: &'db dyn Database) -> Self {
         CrateId::new(db, CrateLongId::core())
     }
 }
@@ -257,7 +258,7 @@ impl<'db> VirtualFile<'db> {
         }
     }
 
-    fn into_virtual_file_input(self, db: &dyn FilesGroup) -> VirtualFileInput {
+    fn into_virtual_file_input(self, db: &dyn Database) -> VirtualFileInput {
         VirtualFileInput {
             parent: self.parent.map(|id| Arc::new(id.long(db).clone().into_file_input(db))),
             name: self.name,
@@ -298,7 +299,7 @@ impl<'db> FileLongId<'db> {
         }
     }
 
-    pub fn into_file_input(&self, db: &dyn FilesGroup) -> FileInput {
+    pub fn into_file_input(&self, db: &dyn Database) -> FileInput {
         match self {
             FileLongId::OnDisk(path) => FileInput::OnDisk(path.clone()),
             FileLongId::Virtual(vf) => FileInput::Virtual(vf.clone().into_virtual_file_input(db)),
@@ -309,7 +310,7 @@ impl<'db> FileLongId<'db> {
 
 define_short_id!(FileId, FileLongId<'db>, FilesGroup);
 impl<'db> FileId<'db> {
-    pub fn new_on_disk(db: &'db dyn FilesGroup, path: PathBuf) -> FileId<'db> {
+    pub fn new_on_disk(db: &'db dyn Database, path: PathBuf) -> FileId<'db> {
         FileLongId::OnDisk(path.clean()).intern(db)
     }
 
@@ -420,7 +421,7 @@ pub enum Directory<'db> {
 impl<'db> Directory<'db> {
     /// Returns a file inside this directory. The file and directory don't necessarily exist on
     /// the file system. These are ids/paths to them.
-    pub fn file(&self, db: &'db dyn FilesGroup, name: &str) -> FileId<'db> {
+    pub fn file(&self, db: &'db dyn Database, name: &str) -> FileId<'db> {
         match self {
             Directory::Real(path) => FileId::new_on_disk(db, path.join(name)),
             Directory::Virtual { files, dirs: _ } => files
@@ -446,7 +447,7 @@ impl<'db> Directory<'db> {
     }
 
     /// Converts the directory into an [`DirectoryInput`].
-    pub fn into_directory_input(self, db: &dyn FilesGroup) -> DirectoryInput {
+    pub fn into_directory_input(self, db: &dyn Database) -> DirectoryInput {
         match self {
             Directory::Real(path) => DirectoryInput::Real(path),
             Directory::Virtual { files, dirs } => DirectoryInput::Virtual {

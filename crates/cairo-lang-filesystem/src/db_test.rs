@@ -9,6 +9,7 @@ use crate::db::{CrateConfiguration, FilesGroupEx};
 use crate::flag::Flag;
 use crate::ids::{CrateLongId, Directory, FlagId, FlagLongId};
 use crate::test_utils::FilesDatabaseForTesting;
+use crate::{override_file_content, set_crate_config};
 
 #[test]
 fn test_filesystem() {
@@ -16,15 +17,13 @@ fn test_filesystem() {
 
     let directory = Directory::Real("src".into());
     let child_str = "child.cairo";
-    let file_id = directory.file(&db, child_str);
-    let file_input = file_id.long(&db).into_file_input(&db);
-    let overrides = db.update_file_overrides_input(file_input, Some("content\n".into()));
-    db.set_file_overrides_input(overrides);
+    let db_ref = &mut db;
+    let file_id = directory.file(db_ref, child_str);
+    override_file_content!(db_ref, file_id, Some("content\n".into()));
 
     let config = CrateConfiguration::default_for_root(directory.clone());
-    let crt = CrateLongId::plain("my_crate").intern(&db);
-    let crate_configs = db.update_crate_configuration_input(crt, Some(config.clone()));
-    db.set_crate_configs_input(Arc::new(crate_configs));
+    let crt = CrateLongId::plain("my_crate").intern(db_ref);
+    set_crate_config!(db_ref, crt, Some(config.clone()));
 
     let crt = CrateLongId::plain("my_crate").intern(&db);
     let crt2 = CrateLongId::plain("my_crate2").intern(&db);
@@ -57,7 +56,7 @@ fn test_cfgs() {
     db.use_cfg(&CfgSet::from_iter([Cfg::kv("k", "v2")]));
 
     assert_eq!(
-        *db.cfg_set(),
-        CfgSet::from_iter([Cfg::name("test"), Cfg::kv("k", "v1"), Cfg::kv("k", "v2")])
+        db.cfg_set(),
+        &CfgSet::from_iter([Cfg::name("test"), Cfg::kv("k", "v1"), Cfg::kv("k", "v2")])
     )
 }
