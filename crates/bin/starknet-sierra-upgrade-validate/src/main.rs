@@ -52,8 +52,8 @@ struct Cli {
     /// files should be provided.
     #[arg(
         long,
-        requires_ifs = [("fullnode_url", "FullnodeArgs")], 
-        required_unless_present = "input_files", 
+        requires_ifs = [("fullnode_url", "FullnodeArgs")],
+        required_unless_present = "input_files",
         conflicts_with = "input_files"
     )]
     fullnode_url: Option<String>,

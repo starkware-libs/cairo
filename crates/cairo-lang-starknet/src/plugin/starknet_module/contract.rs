@@ -414,7 +414,7 @@ fn generate_deploy_function<'db>(
             class_hash: starknet::ClassHash,
             deployment_params: starknet::deployment::DeploymentParams,
             {param_declarations_str}
-        ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {{    
+        ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {{
             let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
 
             {calldata_serialization_str}
