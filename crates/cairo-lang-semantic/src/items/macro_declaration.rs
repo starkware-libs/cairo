@@ -4,6 +4,7 @@ use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MacroDeclarationId, ModuleFileId, ModuleItemId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;

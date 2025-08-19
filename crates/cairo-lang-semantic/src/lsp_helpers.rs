@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{
     FileIndex, GenericTypeId, ImportableId, LanguageElementId, ModuleFileId, ModuleId,
     NamedLanguageElementId, TraitFunctionId, TraitId,
 };
-use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, default_crate_settings};
+use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, FilesGroup, default_crate_settings};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};

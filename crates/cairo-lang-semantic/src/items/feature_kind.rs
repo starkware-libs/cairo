@@ -1,7 +1,7 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_diagnostics::DiagnosticsBuilder;
-use cairo_lang_filesystem::db::default_crate_settings;
+use cairo_lang_filesystem::db::{FilesGroup, default_crate_settings};
 use cairo_lang_filesystem::ids::{CrateId, StrRef};
 use cairo_lang_syntax::attribute::consts::{
     ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR,

@@ -4,7 +4,6 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_filesystem::db::{init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_utils::Upcast;
@@ -78,11 +77,6 @@ impl<'db> Upcast<'db, dyn SemanticGroup> for LoweringDatabaseForTesting {
 }
 impl<'db> Upcast<'db, dyn LoweringGroup> for LoweringDatabaseForTesting {
     fn upcast(&self) -> &dyn LoweringGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn ParserGroup> for LoweringDatabaseForTesting {
-    fn upcast(&self) -> &dyn ParserGroup {
         self
     }
 }

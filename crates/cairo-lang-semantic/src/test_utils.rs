@@ -76,11 +76,6 @@ impl<'db> Upcast<'db, dyn SemanticGroup> for SemanticDatabaseForTesting {
         self
     }
 }
-impl<'db> Upcast<'db, dyn ParserGroup> for SemanticDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn ParserGroup {
-        self
-    }
-}
 
 pub struct WithStringDiagnostics<T> {
     value: T,

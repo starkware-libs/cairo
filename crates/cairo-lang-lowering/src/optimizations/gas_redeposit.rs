@@ -2,6 +2,7 @@
 #[path = "gas_redeposit_test.rs"]
 mod test;
 
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
 use cairo_lang_semantic::{ConcreteVariant, corelib};

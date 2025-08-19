@@ -18,10 +18,12 @@ use cairo_lang_defs::ids::{
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPluginMetadata};
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::cfg::CfgSet;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{
     CodeMapping, CodeOrigin, FileKind, FileLongId, StrRef, VirtualFile,
 };
 use cairo_lang_filesystem::span::TextOffset;
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast::{
     BinaryOperator, BlockOrIf, ClosureParamWrapper, ConditionListAnd, ExprPtr,

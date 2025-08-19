@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 
 use assert_matches::assert_matches;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::{Flag, flag_unsafe_panic};
 use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
 use cairo_lang_semantic::corelib::{
