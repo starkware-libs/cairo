@@ -664,7 +664,7 @@ fn expand_inline_macro<'db>(
             syntax,
             &MacroPluginMetadata {
                 cfg_set: &ctx.cfg_set,
-                declared_derives: &ctx.db.declared_derives(crate_id),
+                declared_derives: ctx.db.declared_derives(crate_id),
                 allowed_features: &ctx
                     .resolver
                     .data
@@ -4557,7 +4557,7 @@ fn validate_statement_attributes<'db>(
     let mut diagnostics = vec![];
     validate_attributes_flat(
         ctx.db,
-        &allowed_attributes,
+        allowed_attributes,
         &OrderedHashSet::default(),
         syntax,
         &mut diagnostics,
