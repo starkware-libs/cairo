@@ -197,7 +197,7 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send + Any {
 #[derive(Default)]
 pub struct InlinePluginResult<'db> {
     pub code: Option<PluginGeneratedFile>,
-    /// Diagnostics.    
+    /// Diagnostics.
     pub diagnostics: Vec<PluginDiagnostic<'db>>,
 }
 

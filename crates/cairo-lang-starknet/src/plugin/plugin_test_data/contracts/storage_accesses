@@ -205,7 +205,7 @@ pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
- 
+
 impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
     fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
@@ -2173,7 +2173,7 @@ pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
- 
+
 impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
     fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
