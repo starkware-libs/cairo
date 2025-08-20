@@ -76,7 +76,8 @@ fn checked_compile_to_sierra(
             if module_id.full_path(&db) != format!("examples::{name}") {
                 continue;
             }
-            for (free_func_id, _) in db.module_free_functions(*module_id).unwrap().iter() {
+            for (free_func_id, _) in module_id.module_data(&db).unwrap().free_functions(&db).iter()
+            {
                 if let Some(function) =
                     ConcreteFunctionWithBodyId::from_no_generics_free(&db, *free_func_id)
                 {

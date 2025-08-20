@@ -183,7 +183,7 @@ impl<'db> AbiBuilder<'db> {
         let mut structs = Vec::new();
         let mut impl_defs = Vec::new();
         let mut impl_aliases = Vec::new();
-        for item in &*self.db.module_items(ModuleId::Submodule(submodule_id))? {
+        for item in ModuleId::Submodule(submodule_id).module_data(self.db)?.items(self.db).iter() {
             match item {
                 ModuleItemId::FreeFunction(id) => free_functions.push(*id),
                 ModuleItemId::Struct(id) => structs.push(*id),
@@ -841,7 +841,7 @@ fn fetch_event_data<'db>(
 
     // Attempt to extract the event data from the aux data from the impl generation.
     let module_file = impl_def_id.module_file_id(db);
-    let all_aux_data = db.module_generated_file_aux_data(module_file.0).ok()?;
+    let all_aux_data = module_file.0.module_data(db).ok()?.generated_file_aux_data(db);
     let aux_data = all_aux_data.get(module_file.1.0)?.as_ref()?;
     Some(aux_data.0.as_any().downcast_ref::<StarknetEventAuxData>()?.event_data.clone())
 }

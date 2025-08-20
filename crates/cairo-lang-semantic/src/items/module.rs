@@ -44,59 +44,60 @@ pub fn priv_module_semantic_data<'db>(
     // We use the builder here since the items can come from different file_ids.
     let mut diagnostics = DiagnosticsBuilder::default();
     let mut items = OrderedHashMap::default();
-    for item_id in db.module_items(module_id)?.iter().copied() {
+    let module_data = module_id.module_data(db)?;
+    for item_id in module_data.items(db).iter().copied() {
         let (name, attributes, visibility) = match &item_id {
             ModuleItemId::Constant(item_id) => {
-                let item = &db.module_constants(module_id)?[item_id];
+                let item = &module_data.constants(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Submodule(item_id) => {
-                let item = &db.module_submodules(module_id)?[item_id];
+                let item = &module_data.submodules(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Use(item_id) => {
-                let use_ast = &db.module_uses(module_id)?[item_id];
+                let use_ast = &module_data.uses(db)[item_id];
                 let item = ast::UsePath::Leaf(use_ast.clone()).get_item(db);
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::FreeFunction(item_id) => {
-                let item = &db.module_free_functions(module_id)?[item_id];
+                let item = &module_data.free_functions(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Struct(item_id) => {
-                let item = &db.module_structs(module_id)?[item_id];
+                let item = &module_data.structs(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Enum(item_id) => {
-                let item = &db.module_enums(module_id)?[item_id];
+                let item = &module_data.enums(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::TypeAlias(item_id) => {
-                let item = &db.module_type_aliases(module_id)?[item_id];
+                let item = &module_data.type_aliases(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::ImplAlias(item_id) => {
-                let item = &db.module_impl_aliases(module_id)?[item_id];
+                let item = &module_data.impl_aliases(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Trait(item_id) => {
-                let item = &db.module_traits(module_id)?[item_id];
+                let item = &module_data.traits(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Impl(item_id) => {
-                let item = &db.module_impls(module_id)?[item_id];
+                let item = &module_data.impls(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::ExternType(item_id) => {
-                let item = &db.module_extern_types(module_id)?[item_id];
+                let item = &module_data.extern_types(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::ExternFunction(item_id) => {
-                let item = &db.module_extern_functions(module_id)?[item_id];
+                let item = &module_data.extern_functions(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::MacroDeclaration(item_id) => {
-                let item = &db.module_macro_declarations(module_id)?[item_id];
+                let item = &module_data.macro_declarations(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
         };
@@ -113,8 +114,8 @@ pub fn priv_module_semantic_data<'db>(
         }
     }
 
-    let global_uses = db
-        .module_global_uses(module_id)?
+    let global_uses = module_data
+        .global_uses(db)
         .iter()
         .map(|(global_use_id, use_path_star)| {
             let item = ast::UsePath::Star(use_path_star.clone()).get_item(db);
@@ -158,7 +159,7 @@ pub fn module_all_used_uses<'db>(
     module_id: ModuleId<'db>,
 ) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
     let mut all_used_uses = OrderedHashSet::default();
-    let module_items = db.module_items(module_id)?;
+    let module_items = module_id.module_data(db)?.items(db);
     for item in module_items.iter() {
         if let Some(items) = match *item {
             ModuleItemId::Submodule(submodule_id) => {
@@ -186,7 +187,7 @@ pub fn module_attributes<'db>(
     Ok(match &module_id {
         ModuleId::CrateRoot(_) | ModuleId::MacroCall { id: _, generated_file_id: _ } => vec![],
         ModuleId::Submodule(submodule_id) => {
-            let module_ast = &db.module_submodules(submodule_id.parent_module(db))?[submodule_id];
+            let module_ast = &submodule_id.module_data(db)?.submodules(db)[submodule_id];
 
             module_ast.attributes(db).structurize(db)
         }

@@ -25,7 +25,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
-use crate::db::{DefsGroup, ModuleData, ModuleDataCacheAndLoadingData};
+use crate::db::{DefsGroup, ModuleData, ModuleDataCacheAndLoadingData, ModuleDataMetadata};
 use crate::ids::{
     ConstantId, ConstantLongId, EnumId, EnumLongId, ExternFunctionId, ExternFunctionLongId,
     ExternTypeId, ExternTypeLongId, FileIndex, FreeFunctionId, FreeFunctionLongId, GenericParamId,
@@ -137,8 +137,8 @@ pub fn generate_crate_def_cache<'db>(
     let cached: Vec<(ModuleIdCached, ModuleDataCached<'_>)> = modules
         .iter()
         .map(|id| {
-            let module_data = db.priv_module_data(*id)?;
-            Ok((ModuleIdCached::new(*id, ctx), ModuleDataCached::new(module_data, ctx)))
+            let module_data = id.module_data(db)?;
+            Ok((ModuleIdCached::new(*id, ctx), ModuleDataCached::new(db, module_data, ctx)))
         })
         .collect::<Maybe<Vec<_>>>()?;
 
@@ -406,11 +406,20 @@ pub struct ModuleDataCached<'db> {
     diagnostics_notes: PluginFileDiagnosticNotesCached,
 }
 impl<'db> ModuleDataCached<'db> {
-    fn new(module_data: ModuleData<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
+    fn new(
+        db: &'db dyn DefsGroup,
+        module_data: ModuleData<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
+    ) -> Self {
+        let metadata = module_data.metadata(db);
         Self {
-            items: module_data.items.iter().map(|id| ModuleItemIdCached::new(*id, ctx)).collect(),
+            items: module_data
+                .items(db)
+                .iter()
+                .map(|id| ModuleItemIdCached::new(*id, ctx))
+                .collect(),
             constants: module_data
-                .constants
+                .constants(db)
                 .iter()
                 .map(|(id, node)| {
                     (ConstantIdCached::new(*id, ctx), TypeSyntaxNodeCached::new(node.clone(), ctx))
@@ -418,7 +427,7 @@ impl<'db> ModuleDataCached<'db> {
                 .collect(),
 
             submodules: module_data
-                .submodules
+                .submodules(db)
                 .iter()
                 .map(|(id, node)| {
                     (SubmoduleIdCached::new(*id, ctx), TypeSyntaxNodeCached::new(node.clone(), ctx))
@@ -426,14 +435,14 @@ impl<'db> ModuleDataCached<'db> {
                 .collect(),
 
             uses: module_data
-                .uses
+                .uses(db)
                 .iter()
                 .map(|(id, node)| {
                     (UseIdCached::new(*id, ctx), TypeSyntaxNodeCached::new(node.clone(), ctx))
                 })
                 .collect(),
             free_functions: module_data
-                .free_functions
+                .free_functions(db)
                 .iter()
                 .map(|(id, node)| {
                     (
@@ -443,21 +452,21 @@ impl<'db> ModuleDataCached<'db> {
                 })
                 .collect(),
             structs: module_data
-                .structs
+                .structs(db)
                 .iter()
                 .map(|(id, node)| {
                     (StructIdCached::new(*id, ctx), TypeSyntaxNodeCached::new(node.clone(), ctx))
                 })
                 .collect(),
             enums: module_data
-                .enums
+                .enums(db)
                 .iter()
                 .map(|(id, node)| {
                     (EnumIdCached::new(*id, ctx), TypeSyntaxNodeCached::new(node.clone(), ctx))
                 })
                 .collect(),
             type_aliases: module_data
-                .type_aliases
+                .type_aliases(db)
                 .iter()
                 .map(|(id, node)| {
                     (
@@ -467,28 +476,28 @@ impl<'db> ModuleDataCached<'db> {
                 })
                 .collect(),
             impl_aliases: module_data
-                .impl_aliases
+                .impl_aliases(db)
                 .iter()
                 .map(|(id, node)| {
                     (ImplAliasIdCached::new(*id, ctx), TypeSyntaxNodeCached::new(node.clone(), ctx))
                 })
                 .collect(),
             traits: module_data
-                .traits
+                .traits(db)
                 .iter()
                 .map(|(id, node)| {
                     (TraitIdCached::new(*id, ctx), TypeSyntaxNodeCached::new(node.clone(), ctx))
                 })
                 .collect(),
             impls: module_data
-                .impls
+                .impls(db)
                 .iter()
                 .map(|(id, node)| {
                     (ImplDefIdCached::new(*id, ctx), TypeSyntaxNodeCached::new(node.clone(), ctx))
                 })
                 .collect(),
-            extern_types: module_data
-                .extern_types
+            extern_types: metadata
+                .extern_types(db)
                 .iter()
                 .map(|(id, node)| {
                     (
@@ -497,8 +506,8 @@ impl<'db> ModuleDataCached<'db> {
                     )
                 })
                 .collect(),
-            extern_functions: module_data
-                .extern_functions
+            extern_functions: metadata
+                .extern_functions(db)
                 .iter()
                 .map(|(id, node)| {
                     (
@@ -508,8 +517,8 @@ impl<'db> ModuleDataCached<'db> {
                 })
                 .collect(),
 
-            macro_declarations: module_data
-                .macro_declarations
+            macro_declarations: metadata
+                .macro_declarations(db)
                 .iter()
                 .map(|(id, node)| {
                     (
@@ -518,18 +527,18 @@ impl<'db> ModuleDataCached<'db> {
                     )
                 })
                 .collect(),
-            global_uses: module_data
-                .global_uses
+            global_uses: metadata
+                .global_uses(db)
                 .iter()
                 .map(|(id, node)| {
                     (GlobalUseIdCached::new(*id, ctx), TypeSyntaxNodeCached::new(node.clone(), ctx))
                 })
                 .collect(),
-            files: module_data.files.iter().map(|id| FileIdCached::new(*id, ctx)).collect(),
-            generated_file_aux_data: module_data.generated_file_aux_data.to_vec(),
+            files: metadata.files(db).iter().map(|id| FileIdCached::new(*id, ctx)).collect(),
+            generated_file_aux_data: metadata.generated_file_aux_data(db).to_vec(),
 
-            plugin_diagnostics: module_data
-                .plugin_diagnostics
+            plugin_diagnostics: metadata
+                .plugin_diagnostics(db)
                 .iter()
                 .map(|(file_id, diagnostic)| {
                     (
@@ -538,8 +547,8 @@ impl<'db> ModuleDataCached<'db> {
                     )
                 })
                 .collect(),
-            diagnostics_notes: module_data
-                .diagnostics_notes
+            diagnostics_notes: metadata
+                .diagnostics_notes(db)
                 .iter()
                 .map(|(file_id, note)| {
                     (FileIdCached::new(*file_id, ctx), DiagnosticNoteCached::new(note.clone(), ctx))
@@ -548,90 +557,51 @@ impl<'db> ModuleDataCached<'db> {
         }
     }
     fn embed(self, ctx: &mut DefCacheLoadingContext<'db>) -> ModuleData<'db> {
-        ModuleData {
-            items: Arc::new(self.items.iter().map(|id| id.embed(ctx)).collect()),
-            constants: Arc::new(
-                self.constants.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            ),
-            submodules: Arc::new(
-                self.submodules.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            ),
-            uses: Arc::new(
-                self.uses.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            ),
-            free_functions: Arc::new(
-                self.free_functions
-                    .iter()
-                    .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
-                    .collect(),
-            ),
-            structs: Arc::new(
-                self.structs.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            ),
-            enums: Arc::new(
-                self.enums.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            ),
-            type_aliases: Arc::new(
-                self.type_aliases
-                    .iter()
-                    .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
-                    .collect(),
-            ),
-            impl_aliases: Arc::new(
-                self.impl_aliases
-                    .iter()
-                    .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
-                    .collect(),
-            ),
-            traits: Arc::new(
-                self.traits.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            ),
-            impls: Arc::new(
-                self.impls.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            ),
-            extern_types: Arc::new(
+        ModuleData::new(
+            ctx.db,
+            self.items.iter().map(|id| id.embed(ctx)).collect(),
+            self.constants.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+            self.submodules.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+            self.uses.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+            self.free_functions.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+            self.structs.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+            self.enums.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+            self.type_aliases.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+            self.impl_aliases.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+            self.traits.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+            self.impls.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+            ModuleDataMetadata::new(
+                ctx.db,
                 self.extern_types
                     .iter()
                     .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
                     .collect(),
-            ),
-            extern_functions: Arc::new(
                 self.extern_functions
                     .iter()
                     .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
                     .collect(),
-            ),
-            macro_declarations: Arc::new(
                 self.macro_declarations
                     .iter()
                     .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
                     .collect(),
-            ),
-            global_uses: Arc::new(
                 self.global_uses
                     .iter()
                     .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
                     .collect(),
-            ),
-            files: Arc::new(self.files.iter().map(|id| id.embed(ctx)).collect()),
-
-            plugin_diagnostics: Arc::new(
+                // TODO(Gil): Handle macro calls.
+                Default::default(),
+                self.files.iter().map(|id| id.embed(ctx)).collect(),
+                self.generated_file_aux_data,
                 self.plugin_diagnostics
                     .into_iter()
                     .map(|(file_id, diagnostic)| (file_id.embed(ctx), diagnostic.embed(ctx)))
                     .collect(),
+                self.diagnostics_notes
+                    .into_iter()
+                    .map(|(file_id, note)| (file_id.embed(ctx), note.embed(ctx)))
+                    .collect(),
             ),
-
-            diagnostics_notes: self
-                .diagnostics_notes
-                .into_iter()
-                .map(|(file_id, note)| (file_id.embed(ctx), note.embed(ctx)))
-                .collect(),
-
-            generated_file_aux_data: self.generated_file_aux_data.into(),
-            // TODO(Gil): Handle macro calls.
-            macro_calls: Default::default(),
-        }
+        )
     }
 }
 

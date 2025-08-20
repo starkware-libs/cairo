@@ -256,10 +256,10 @@ fn find_all_tests<'db>(
     for crate_id in main_crates {
         let modules = db.crate_modules(crate_id);
         for module_id in modules.iter() {
-            let Ok(module_items) = db.module_items(*module_id) else {
+            let Ok(module_data) = module_id.module_data(db) else {
                 continue;
             };
-            tests.extend(module_items.iter().filter_map(|item| {
+            tests.extend(module_data.items(db).iter().filter_map(|item| {
                 let ModuleItemId::FreeFunction(func_id) = item else { return None };
                 let Ok(attrs) =
                     db.function_with_body_attributes(FunctionWithBodyId::Free(*func_id))
