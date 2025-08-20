@@ -872,13 +872,13 @@ pub enum ABIError<'db> {
     UnexpectedType,
     #[error("Entrypoints must have a self first param.")]
     EntrypointMustHaveSelf,
-    #[error("An embedded impl must be an impl of a trait marked with #[starknet::interface].")]
+    #[error("An embedded impl must be an impl of a trait marked with #[{INTERFACE_ATTR}].")]
     EmbeddedImplMustBeInterface(Source<'db>),
     #[error("Embedded impls must be annotated with #[starknet::embeddable].")]
     EmbeddedImplNotEmbeddable(Source<'db>),
     #[error(
         "An impl marked with #[abi(per_item)] can't be of a trait marked with \
-         #[starknet::interface].\n    Consider using #[abi(embed_v0)] instead, or use a \
+         #[{INTERFACE_ATTR}].\n    Consider using #[abi(embed_v0)] instead, or use a \
          non-interface trait."
     )]
     ContractInterfaceImplCannotBePerItem(Source<'db>),

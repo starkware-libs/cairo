@@ -104,7 +104,7 @@ pub fn handle_trait<'db>(
                 let Some(self_param) = params.next() else {
                     diagnostics.push(PluginDiagnostic::error(
                         declaration.stable_ptr(db),
-                        "`starknet::interface` functions must have a `self` parameter.".to_string(),
+                        format!("`{INTERFACE_ATTR}` functions must have a `self` parameter."),
                     ));
                     continue;
                 };
@@ -127,9 +127,10 @@ pub fn handle_trait<'db>(
                 if !self_param_type_ok {
                     diagnostics.push(PluginDiagnostic::error(
                         self_param.stable_ptr(db),
-                        "`starknet::interface` function first parameter must be a reference to \
-                         the trait's generic parameter or a snapshot of it."
-                            .to_string(),
+                        format!(
+                            "`{INTERFACE_ATTR}` function first parameter must be a reference to \
+                             the trait's generic parameter or a snapshot of it."
+                        ),
                     ));
                     skip_generation = true;
                 }
@@ -140,9 +141,10 @@ pub fn handle_trait<'db>(
 
                         diagnostics.push(PluginDiagnostic::error(
                             param.modifiers(db).stable_ptr(db),
-                            "`starknet::interface` functions don't support `ref` parameters other \
-                             than the first one."
-                                .to_string(),
+                            format!(
+                                "`{INTERFACE_ATTR}` functions don't support `ref` parameters \
+                                 other than the first one."
+                            ),
                         ))
                     }
                     if extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause)
@@ -155,9 +157,10 @@ pub fn handle_trait<'db>(
                             extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause)
                                 .ty(db)
                                 .stable_ptr(db),
-                            "`starknet::interface` functions don't support parameters that depend \
-                             on the trait's generic param type."
-                                .to_string(),
+                            format!(
+                                "`{INTERFACE_ATTR}` functions don't support parameters that \
+                                 depend on the trait's generic param type."
+                            ),
                         ))
                     }
 
@@ -261,21 +264,21 @@ pub fn handle_trait<'db>(
             ast::TraitItem::Type(ty) => {
                 diagnostics.push(PluginDiagnostic::error(
                     ty.type_kw(db).stable_ptr(db),
-                    "`starknet::interface` does not yet support type items.".to_string(),
+                    format!("`{INTERFACE_ATTR}` does not yet support type items."),
                 ));
                 continue;
             }
             ast::TraitItem::Constant(constant) => {
                 diagnostics.push(PluginDiagnostic::error(
                     constant.const_kw(db).stable_ptr(db),
-                    "`starknet::interface` does not yet support constant items.".to_string(),
+                    format!("`{INTERFACE_ATTR}` does not yet support constant items."),
                 ));
                 continue;
             }
             ast::TraitItem::Impl(imp) => {
                 diagnostics.push(PluginDiagnostic::error(
                     imp.impl_kw(db).stable_ptr(db),
-                    "`starknet::interface` does not yet support impl items.".to_string(),
+                    format!("`{INTERFACE_ATTR}` does not yet support impl items."),
                 ));
                 continue;
             }
