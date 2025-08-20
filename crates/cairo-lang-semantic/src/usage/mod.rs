@@ -186,8 +186,13 @@ impl<'db> Usages<'db> {
         usage
     }
 
-    fn handle_expr(&mut self, arenas: &Arenas<'db>, expr_id: ExprId, current: &mut Usage<'db>) {
-        match &arenas.exprs[expr_id] {
+    fn handle_expr(
+        &mut self,
+        arenas: &Arenas<'db>,
+        curr_expr_id: ExprId,
+        current: &mut Usage<'db>,
+    ) {
+        match &arenas.exprs[curr_expr_id] {
             Expr::Tuple(expr) => {
                 for expr_id in &expr.items {
                     self.handle_expr(arenas, *expr_id, current);
@@ -276,7 +281,7 @@ impl<'db> Usages<'db> {
                 let mut usage = Default::default();
                 self.handle_expr(arenas, expr.body, &mut usage);
                 current.add_usage_and_changes(&usage);
-                self.usages.insert(expr_id, usage);
+                self.usages.insert(curr_expr_id, usage);
             }
             Expr::While(expr) => {
                 let mut usage = Default::default();
@@ -295,7 +300,7 @@ impl<'db> Usages<'db> {
                 usage.finalize_as_scope();
                 current.add_usage_and_changes(&usage);
 
-                self.usages.insert(expr_id, usage);
+                self.usages.insert(curr_expr_id, usage);
             }
             Expr::For(expr) => {
                 self.handle_expr(arenas, expr.expr_id, current);
@@ -315,13 +320,13 @@ impl<'db> Usages<'db> {
                 self.handle_expr(arenas, expr.body, &mut usage);
                 usage.finalize_as_scope();
                 current.add_usage_and_changes(&usage);
-                self.usages.insert(expr_id, usage);
+                self.usages.insert(curr_expr_id, usage);
             }
             Expr::ExprClosure(expr) => {
                 let usage = self.handle_closure(arenas, &expr.params, expr.body);
 
                 current.add_usage_and_changes(&usage);
-                self.usages.insert(expr_id, usage);
+                self.usages.insert(curr_expr_id, usage);
             }
             Expr::FunctionCall(expr) => {
                 for arg in &expr.args {
