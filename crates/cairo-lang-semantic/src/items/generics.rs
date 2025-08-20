@@ -7,11 +7,13 @@ use cairo_lang_defs::ids::{
     GenericItemId, GenericKind, GenericModuleItemId, GenericParamId, GenericParamLongId,
     LanguageElementId, LookupItemId, ModuleFileId, TraitId, TraitTypeId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
-use cairo_lang_syntax::node::ast::{AssociatedItemConstraints, OptionAssociatedItemConstraints};
+use cairo_lang_syntax::node::ast::{
+    AssociatedItemConstraints, GenericArgValue, OptionAssociatedItemConstraints,
+};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::{Intern, extract_matches};
@@ -30,9 +32,13 @@ use crate::expr::fmt::CountingWriter;
 use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::lookup_item::LookupItemEx;
-use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
+use crate::resolve::{
+    ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData,
+};
 use crate::substitution::SemanticRewriter;
-use crate::types::{ImplTypeId, TypeHead, resolve_type};
+use crate::types::{
+    ImplTypeId, ShallowGenericArg, TypeHead, maybe_resolve_shallow_generic_arg_type, resolve_type,
+};
 use crate::{ConcreteTraitId, ConcreteTraitLongId, SemanticDiagnostic, TypeId, TypeLongId};
 
 /// Generic argument.
@@ -112,7 +118,7 @@ impl<'db> DebugWithDb<'db> for GenericArgumentId<'db> {
 /// A non-param non-variable generic argument has a head, which represents the kind of the root node
 /// in its tree. This is used for caching queries for fast lookups when the generic argument is not
 /// completely inferred yet.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
 pub enum GenericArgumentHead<'db> {
     Type(TypeHead<'db>),
     Impl(ImplHead<'db>),
@@ -283,6 +289,125 @@ pub fn generic_impl_param_trait<'db>(
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
 
     resolve_trait_path(syntax_db, &mut diagnostics, &mut resolver, &trait_path_syntax)
+}
+
+/// Query implementation of
+/// [crate::db::SemanticGroup::generic_impl_param_shallow_trait_generic_args].
+pub fn generic_impl_param_shallow_trait_generic_args<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: GenericParamId<'db>,
+) -> Maybe<&'db [(GenericParamId<'db>, ShallowGenericArg<'db>)]> {
+    generic_impl_param_shallow_trait_generic_args_helper(db, impl_def_id)
+        .as_ref()
+        .map(|res| res.as_slice())
+        .map_err(|e| *e)
+}
+
+/// Helper for [generic_impl_param_shallow_trait_generic_args]
+/// The actual query implementation, separated to allow returning a reference.
+#[salsa::tracked(returns(ref))]
+fn generic_impl_param_shallow_trait_generic_args_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    generic_param_id: GenericParamId<'db>,
+) -> Maybe<Vec<(GenericParamId<'db>, ShallowGenericArg<'db>)>> {
+    let syntax_db: &dyn Database = db;
+    let module_file_id = generic_param_id.module_file_id(db);
+    let mut diagnostics: cairo_lang_diagnostics::DiagnosticsBuilder<'_, SemanticDiagnostic<'_>> =
+        SemanticDiagnostics::default();
+    let parent_item_id = generic_param_id.generic_item(db);
+    let lookup_item: LookupItemId<'_> = parent_item_id.into();
+    let context_resolver_data = lookup_item.resolver_context(db)?;
+    let inference_id = InferenceId::GenericParam(generic_param_id);
+    let mut resolver =
+        Resolver::with_data(db, (*context_resolver_data).clone_with_inference_id(db, inference_id));
+    resolver.set_feature_config(
+        &lookup_item,
+        &lookup_item.untyped_stable_ptr(db).lookup(db),
+        &mut diagnostics,
+    );
+    let generic_params_syntax = extract_matches!(
+        generic_param_generic_params_list(db, generic_param_id)?,
+        ast::OptionWrappedGenericParamList::WrappedGenericParamList
+    );
+
+    let mut opt_generic_param_syntax = None;
+    for param_syntax in generic_params_syntax.generic_params(syntax_db).elements(syntax_db) {
+        let cur_generic_param_id =
+            GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db)).intern(db);
+        resolver.add_generic_param(cur_generic_param_id);
+
+        if cur_generic_param_id == generic_param_id {
+            opt_generic_param_syntax = Some(param_syntax);
+            break;
+        }
+    }
+
+    let generic_param_syntax =
+        opt_generic_param_syntax.expect("Query called on a non existing generic param.");
+
+    let trait_path_syntax = match generic_param_syntax {
+        ast::GenericParam::ImplNamed(syntax) => syntax.trait_path(syntax_db),
+        ast::GenericParam::ImplAnonymous(syntax) => syntax.trait_path(syntax_db),
+        ast::GenericParam::NegativeImpl(syntax) => syntax.trait_path(syntax_db),
+        _ => {
+            unreachable!(
+                "generic_impl_param_shallow_trait_generic_args called on a non impl generic param."
+            )
+        }
+    };
+
+    let ResolvedGenericItem::Trait(trait_id) = resolver.resolve_generic_path_with_args(
+        &mut diagnostics,
+        &trait_path_syntax,
+        NotFoundItemType::Trait,
+        ResolutionContext::Default,
+    )?
+    else {
+        return Err(skip_diagnostic());
+    };
+    let generic_params = db
+        .trait_generic_params_ids(trait_id)?
+        .iter()
+        .map(|param_syntax| {
+            GenericParamLongId(trait_id.module_file_id(db), param_syntax.stable_ptr(db)).intern(db)
+        })
+        .collect::<Vec<_>>();
+
+    let elements = trait_path_syntax.segments(db).elements(db);
+    let Some(last) = elements.last() else {
+        return Ok(Vec::new());
+    };
+
+    match last {
+        ast::PathSegment::Simple(_) => Ok(Vec::new()),
+        ast::PathSegment::WithGenericArgs(path_segment_with_generic_args) => {
+            let generic_args =
+                path_segment_with_generic_args.generic_args(db).generic_args(db).elements_vec(db);
+
+            let arg_syntax_per_param = resolver.get_arg_syntax_per_param(
+                &mut diagnostics,
+                &generic_params,
+                &generic_args,
+            )?;
+            Ok(generic_params
+                .iter()
+                .filter_map(|generic_param| {
+                    let value = arg_syntax_per_param.get(generic_param)?;
+                    let GenericArgValue::Expr(expr) = value else {
+                        return None;
+                    };
+                    let x = maybe_resolve_shallow_generic_arg_type(
+                        db,
+                        &mut diagnostics,
+                        &mut resolver,
+                        &expr.expr(db),
+                    )?;
+                    Some((*generic_param, x))
+                })
+                .collect::<Vec<_>>())
+        }
+        ast::PathSegment::Missing(_) => Ok(Vec::new()),
+    }
 }
 
 // --- Computation ---
