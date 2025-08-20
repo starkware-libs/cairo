@@ -17,11 +17,19 @@ opt-level = 1
 opt-level = 3
 [profile.ci-dev.package."cairo-vm"]
 opt-level = 3
+[profile.ci-dev.package."hashbrown"]
+opt-level = 3
+[profile.ci-dev.package."num-bigint"]
+opt-level = 3
 [profile.ci-dev.package."rayon"]
 opt-level = 3
 [profile.ci-dev.package."salsa"]
 opt-level = 3
+[profile.ci-dev.package."starknet-types-core"]
+opt-level = 3
 [profile.ci-dev.package."tokio"]
+opt-level = 3
+[profile.ci-dev.package."vector-map"]
 opt-level = 3
 
 [workspace]
