@@ -10,7 +10,7 @@ use cairo_lang_semantic::types::get_impl_at_context;
 use cairo_lang_semantic::{
     ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId,
 };
-use cairo_lang_syntax::attribute::consts::{ALLOW_ATTR, STARKNET_INTERFACE_ATTR};
+use cairo_lang_syntax::attribute::consts::ALLOW_ATTR;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
@@ -21,8 +21,8 @@ use smol_str::SmolStr;
 use crate::abi::{ABIError, AbiBuilder, BuilderConfig};
 use crate::contract::module_contract;
 use crate::plugin::consts::{
-    COMPONENT_ATTR, CONTRACT_ATTR, EMBEDDABLE_ATTR, STORAGE_ATTR, STORAGE_NODE_ATTR,
-    STORAGE_STRUCT_NAME, STORE_TRAIT,
+    COMPONENT_ATTR, CONTRACT_ATTR, EMBEDDABLE_ATTR, INTERFACE_ATTR, STORAGE_ATTR,
+    STORAGE_NODE_ATTR, STORAGE_STRUCT_NAME, STORE_TRAIT,
 };
 use crate::plugin::storage_interfaces::{StorageMemberKind, get_member_storage_config};
 use crate::plugin::utils::has_derive;
@@ -58,7 +58,7 @@ fn add_non_starknet_interface_embeddable_diagnostics(
             continue;
         }
         let Ok(impl_trait) = db.impl_def_trait(*id) else { continue };
-        if !impl_trait.has_attr(db, STARKNET_INTERFACE_ATTR).unwrap_or(true) {
+        if !impl_trait.has_attr(db, INTERFACE_ATTR).unwrap_or(true) {
             diagnostics.push(PluginDiagnostic::warning(
                 item.stable_ptr(db).untyped(),
                 "Impls with the embeddable attribute must implement a starknet interface trait."
