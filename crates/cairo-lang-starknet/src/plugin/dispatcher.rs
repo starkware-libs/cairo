@@ -90,6 +90,12 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     for item_ast in body.iter_items(db) {
         match item_ast {
             ast::TraitItem::Function(func) => {
+                if let ast::MaybeTraitFunctionBody::Some(body) = func.body(db) {
+                    diagnostics.push(PluginDiagnostic::error(
+                        body.stable_ptr(db),
+                        format!("`{INTERFACE_ATTR}` functions don't support bodies."),
+                    ));
+                }
                 let declaration = func.declaration(db);
 
                 let mut skip_generation = false;
