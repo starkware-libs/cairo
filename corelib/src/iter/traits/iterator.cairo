@@ -80,8 +80,7 @@ pub trait Iterator<T> {
     fn count<+Destruct<T>, +Destruct<Self::Item>>(
         self: T,
     ) -> usize {
-        let mut self = self;
-        Self::fold(ref self, 0_usize, |count, _x| {
+        Self::fold(self, 0_usize, |count, _x| {
             count + 1
         })
     }
@@ -374,11 +373,12 @@ pub trait Iterator<T> {
         +Destruct<F>,
         +Destruct<B>,
     >(
-        ref self: T, init: B, f: F,
+        self: T, init: B, f: F,
     ) -> B {
+        let mut self = self;
         match Self::next(ref self) {
             None => init,
-            Some(x) => Self::fold(ref self, f(init, x), f),
+            Some(x) => Self::fold(self, f(init, x), f),
         }
     }
 
