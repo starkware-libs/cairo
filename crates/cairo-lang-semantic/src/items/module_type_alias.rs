@@ -103,7 +103,7 @@ pub fn priv_module_type_alias_semantic_data<'db>(
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
-    let module_type_aliases = db.module_type_aliases(module_file_id.0)?;
+    let module_type_aliases = module_file_id.0.module_data(db)?.type_aliases(db);
     let module_type_alias_ast = module_type_aliases.get(&module_type_alias_id).to_maybe()?;
     let generic_params_data =
         db.priv_module_type_alias_generic_params_data(module_type_alias_id)?;

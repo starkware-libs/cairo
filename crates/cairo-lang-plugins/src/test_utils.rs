@@ -22,18 +22,18 @@ pub fn expand_module_text<'db>(
     let mut uses_list = UnorderedHashSet::<_>::default();
     // Collect the module diagnostics.
     let mut builder = DiagnosticsBuilder::default();
-    for (_file_id, diag) in db.module_plugin_diagnostics(module_id).unwrap().iter() {
+    for (_file_id, diag) in module_id.module_data(db).unwrap().plugin_diagnostics(db).iter() {
         builder.add(TestDiagnosticEntry(diag.clone()));
     }
     let build = builder.build();
-    let file_notes = db.module_plugin_diagnostics_notes(module_id).unwrap();
-    let formatted = build.format_with_severity(db, &file_notes);
+    let file_notes = module_id.module_data(db).unwrap().diagnostics_notes(db);
+    let formatted = build.format_with_severity(db, file_notes);
     diagnostics.extend(
         formatted
             .into_iter()
             .map(|formatted| format!("{}: {}", Severity::Error, formatted.message())),
     );
-    for item_id in db.module_items(module_id).unwrap().iter() {
+    for item_id in module_id.module_data(db).unwrap().items(db).iter() {
         if let ModuleItemId::Submodule(item) = item_id {
             let submodule_item = item.stable_ptr(db).lookup(db);
             if let ast::MaybeModuleBody::Some(body) = submodule_item.body(db) {
