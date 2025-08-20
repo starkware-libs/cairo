@@ -1648,7 +1648,7 @@ impl<'db> Resolver<'db> {
     }
 
     /// Determines whether the first identifier of a path is a local item.
-    fn determine_base_item_in_local_scope(
+    pub fn determine_base_item_in_local_scope(
         &mut self,
         identifier: &ast::TerminalIdentifier<'db>,
     ) -> Option<ResolvedConcreteItem<'db>> {
@@ -1973,8 +1973,11 @@ impl<'db> Resolver<'db> {
         stable_ptr: SyntaxStablePtrId<'db>,
     ) -> Maybe<Vec<GenericArgumentId<'db>>> {
         let mut resolved_args = vec![];
-        let arg_syntax_per_param =
-            self.get_arg_syntax_per_param(diagnostics, generic_params, generic_args_syntax)?;
+        let arg_syntax_per_param = self.get_arg_syntax_per_param(
+            diagnostics,
+            &generic_params.iter().map(|generic_param| generic_param.id()).collect_vec(),
+            generic_args_syntax,
+        )?;
 
         for generic_param in generic_params {
             let generic_param = substitution.substitute(self.db, generic_param.clone())?;
@@ -2001,10 +2004,10 @@ impl<'db> Resolver<'db> {
     }
 
     /// Returns a map of generic param id -> its assigned arg syntax.
-    fn get_arg_syntax_per_param(
+    pub fn get_arg_syntax_per_param(
         &self,
         diagnostics: &mut SemanticDiagnostics<'db>,
-        generic_params: &[GenericParam<'db>],
+        generic_params: &[GenericParamId<'db>],
         generic_args_syntax: &[ast::GenericArg<'db>],
     ) -> Maybe<UnorderedHashMap<GenericParamId<'db>, ast::GenericArgValue<'db>>> {
         let db = self.db;
@@ -2014,7 +2017,7 @@ impl<'db> Resolver<'db> {
         let generic_param_by_name = generic_params
             .iter()
             .enumerate()
-            .filter_map(|(i, param)| Some((param.id().name(self.db)?, (i, param.id()))))
+            .filter_map(|(i, param)| Some((param.name(self.db)?, (i, param))))
             .collect::<UnorderedHashMap<_, _>>();
         for (idx, generic_arg_syntax) in generic_args_syntax.iter().enumerate() {
             match generic_arg_syntax {
@@ -2034,7 +2037,7 @@ impl<'db> Resolver<'db> {
                     }
                     last_named_arg_index = Some(index);
                     if arg_syntax_per_param
-                        .insert(*generic_param_id, arg_syntax.value(db))
+                        .insert(**generic_param_id, arg_syntax.value(db))
                         .is_some()
                     {
                         return Err(diagnostics
@@ -2056,7 +2059,7 @@ impl<'db> Resolver<'db> {
                         )
                     })?;
                     assert_eq!(
-                        arg_syntax_per_param.insert(generic_param.id(), arg_syntax.value(db)),
+                        arg_syntax_per_param.insert(*generic_param, arg_syntax.value(db)),
                         None,
                         "Unexpected duplication in ordered params."
                     );
