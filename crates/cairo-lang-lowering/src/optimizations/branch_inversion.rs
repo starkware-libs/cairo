@@ -30,8 +30,8 @@ pub fn branch_inversion(db: &dyn LoweringGroup, lowered: &mut Lowered<'_>) {
             .intern(db);
 
     for block in lowered.blocks.iter_mut() {
-        if let BlockEnd::Match { info: MatchInfo::Enum(ref mut info) } = &mut block.end {
-            if let Some(negated_condition) = block
+        if let BlockEnd::Match { info: MatchInfo::Enum(info) } = &mut block.end
+            && let Some(negated_condition) = block
                 .statements
                 .iter()
                 .rev()
@@ -48,17 +48,16 @@ pub fn branch_inversion(db: &dyn LoweringGroup, lowered: &mut Lowered<'_>) {
                     _ => None,
                 })
                 .next()
-            {
-                info.input = negated_condition;
+        {
+            info.input = negated_condition;
 
-                // Swap arms.
-                let [ref mut false_arm, ref mut true_arm] = &mut info.arms[..] else {
-                    panic!("Match on bool should have 2 arms.");
-                };
+            // Swap arms.
+            let [false_arm, true_arm] = &mut info.arms[..] else {
+                panic!("Match on bool should have 2 arms.");
+            };
 
-                std::mem::swap(false_arm, true_arm);
-                std::mem::swap(&mut false_arm.arm_selector, &mut true_arm.arm_selector);
-            }
+            std::mem::swap(false_arm, true_arm);
+            std::mem::swap(&mut false_arm.arm_selector, &mut true_arm.arm_selector);
         }
     }
 }

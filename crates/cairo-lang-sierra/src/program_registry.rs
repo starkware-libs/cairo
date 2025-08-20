@@ -208,13 +208,13 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
                     branch_index,
                 )));
             }
-            if !matches!(libfunc_branch.ap_change, SierraApChange::BranchAlign) {
-                if let Some(prev) = branches.get(&index) {
-                    return Err(Box::new(ProgramRegistryError::BranchNotToBranchAlign {
-                        src: *prev,
-                        dst: index,
-                    }));
-                }
+            if !matches!(libfunc_branch.ap_change, SierraApChange::BranchAlign)
+                && let Some(prev) = branches.get(&index)
+            {
+                return Err(Box::new(ProgramRegistryError::BranchNotToBranchAlign {
+                    src: *prev,
+                    dst: index,
+                }));
             }
             let next = index.next(&invocation_branch.target);
             if next.0 >= program.statements.len() {
@@ -316,12 +316,12 @@ fn get_concrete_types_maps<TType: GenericType>(
             })
         })?;
         // Check that the info is consistent with declaration.
-        if let Some(declared_info) = declared_type_info.get(&declaration.id) {
-            if concrete_type.info() != declared_info {
-                return Err(Box::new(ProgramRegistryError::TypeInfoDeclarationMismatch(
-                    declaration.id.clone(),
-                )));
-            }
+        if let Some(declared_info) = declared_type_info.get(&declaration.id)
+            && concrete_type.info() != declared_info
+        {
+            return Err(Box::new(ProgramRegistryError::TypeInfoDeclarationMismatch(
+                declaration.id.clone(),
+            )));
         }
 
         match concrete_types.entry(declaration.id.clone()) {

@@ -581,10 +581,10 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             GenericFunctionId::Free(id) => db.free_function_signature(id),
             GenericFunctionId::Extern(id) => db.extern_function_signature(id),
             GenericFunctionId::Impl(id) => {
-                if let ImplLongId::Concrete(impl_id) = id.impl_id.long(db) {
-                    if let Ok(Some(impl_function_id)) = impl_id.get_impl_function(db, id.function) {
-                        return self.db.impl_function_signature(impl_function_id);
-                    }
+                if let ImplLongId::Concrete(impl_id) = id.impl_id.long(db)
+                    && let Ok(Some(impl_function_id)) = impl_id.get_impl_function(db, id.function)
+                {
+                    return self.db.impl_function_signature(impl_function_id);
                 }
                 self.db.trait_function_signature(id.function)
             }
@@ -1061,12 +1061,11 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 }
             }
             Pattern::EnumVariant(pattern) => {
-                if let ConstValue::Enum(variant, inner_value) = value {
-                    if pattern.variant == variant {
-                        if let Some(inner_pattern) = pattern.inner_pattern {
-                            self.destructure_pattern(inner_pattern, *inner_value);
-                        }
-                    }
+                if let ConstValue::Enum(variant, inner_value) = value
+                    && pattern.variant == variant
+                    && let Some(inner_pattern) = pattern.inner_pattern
+                {
+                    self.destructure_pattern(inner_pattern, *inner_value);
                 }
             }
         }

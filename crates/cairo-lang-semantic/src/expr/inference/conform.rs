@@ -112,10 +112,10 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
                     if *inner_ty == ty0 {
                         return Ok((ty1, 1));
                     }
-                    if !matches!(ty0.long(self.db), TypeLongId::Snapshot(_)) {
-                        if let TypeLongId::Var(var) = inner_ty.long(self.db) {
-                            return Ok((self.assign_ty(*var, ty0)?, 1));
-                        }
+                    if !matches!(ty0.long(self.db), TypeLongId::Snapshot(_))
+                        && let TypeLongId::Var(var) = inner_ty.long(self.db)
+                    {
+                        return Ok((self.assign_ty(*var, ty0)?, 1));
                     }
                 }
             }

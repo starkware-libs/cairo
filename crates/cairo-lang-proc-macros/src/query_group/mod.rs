@@ -281,13 +281,13 @@ pub(crate) fn query_group_impl(
             let syn::ReturnType::Type(_, return_ty) = signature.output.clone() else {
                 return Err(syn::Error::new(signature.span(), "Queries must have a return type"));
             };
-            if matches!(query_kind, QueryKind::Input) {
-                if let syn::Type::Path(ty_path) = *return_ty.clone() {
-                    input_struct_fields.push(InputStructField {
-                        name: method_name.to_token_stream(),
-                        ty: ty_path.path.to_token_stream(),
-                    });
-                }
+            if matches!(query_kind, QueryKind::Input)
+                && let syn::Type::Path(ty_path) = *return_ty.clone()
+            {
+                input_struct_fields.push(InputStructField {
+                    name: method_name.to_token_stream(),
+                    ty: ty_path.path.to_token_stream(),
+                });
             }
 
             // — Build the specific query structs —
@@ -407,10 +407,10 @@ pub(crate) fn query_group_impl(
     }
 
     for trait_method in trait_methods.iter() {
-        if let Queries::TrackedQuery(tracked_query) = trait_method {
-            if let Some(cycle_fn) = tracked_query.cycle_fn() {
-                cycle_functions.push(cycle_fn);
-            }
+        if let Queries::TrackedQuery(tracked_query) = trait_method
+            && let Some(cycle_fn) = tracked_query.cycle_fn()
+        {
+            cycle_functions.push(cycle_fn);
         }
     }
 

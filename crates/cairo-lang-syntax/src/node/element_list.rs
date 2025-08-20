@@ -24,7 +24,7 @@ impl<'db, T: TypedSyntaxNode<'db>> ElementList<'db, T, 1> {
     pub fn elements<'a: 'db>(
         &self,
         db: &'db dyn Database,
-    ) -> impl ExactSizeIterator<Item = T> + DoubleEndedIterator + 'db {
+    ) -> impl ExactSizeIterator<Item = T> + DoubleEndedIterator + use<'db, T> {
         self.node.get_children(db).iter().copied().map(move |x| T::from_syntax_node(db, x))
     }
     pub fn has_tail(&self, _db: &dyn Database) -> bool {
@@ -38,7 +38,7 @@ impl<'db, T: TypedSyntaxNode<'db>> ElementList<'db, T, 2> {
     pub fn elements(
         &self,
         db: &'db dyn Database,
-    ) -> impl ExactSizeIterator<Item = T> + DoubleEndedIterator + 'db {
+    ) -> impl ExactSizeIterator<Item = T> + DoubleEndedIterator + use<'db, T> {
         self.node
             .get_children(db)
             .iter()

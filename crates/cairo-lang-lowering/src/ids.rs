@@ -262,39 +262,33 @@ impl<'db> FunctionLongId<'db> {
                 let concrete_function = id.get_concrete(db);
                 if let GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }) =
                     concrete_function.generic_function
+                    && let ImplLongId::GeneratedImpl(imp) = impl_id.long(db)
                 {
-                    if let ImplLongId::GeneratedImpl(imp) = impl_id.long(db) {
-                        let concrete_trait = imp.concrete_trait(db);
-                        let info = db.core_info();
-                        assert!(
-                            [
-                                info.destruct_fn,
-                                info.panic_destruct_fn,
-                                info.call_fn,
-                                info.call_once_fn
-                            ]
+                    let concrete_trait = imp.concrete_trait(db);
+                    let info = db.core_info();
+                    assert!(
+                        [info.destruct_fn, info.panic_destruct_fn, info.call_fn, info.call_once_fn]
                             .contains(&function)
-                        );
+                    );
 
-                        let generic_args = concrete_trait.generic_args(db);
-                        let Some(GenericArgumentId::Type(ty)) = generic_args.first() else {
-                            unreachable!("Expected Generated Impl to have a type argument");
-                        };
-                        let TypeLongId::Closure(ty) = ty.long(db) else {
-                            unreachable!("Expected Generated Impl to have a closure type argument");
-                        };
+                    let generic_args = concrete_trait.generic_args(db);
+                    let Some(GenericArgumentId::Type(ty)) = generic_args.first() else {
+                        unreachable!("Expected Generated Impl to have a type argument");
+                    };
+                    let TypeLongId::Closure(ty) = ty.long(db) else {
+                        unreachable!("Expected Generated Impl to have a closure type argument");
+                    };
 
-                        let Some(parent) = ty.parent_function?.get_concrete(db).body(db)? else {
-                            return Ok(None);
-                        };
-                        return Ok(Some(
-                            GeneratedFunction {
-                                parent,
-                                key: GeneratedFunctionKey::TraitFunc(function, ty.wrapper_location),
-                            }
-                            .body(db),
-                        ));
-                    }
+                    let Some(parent) = ty.parent_function?.get_concrete(db).body(db)? else {
+                        return Ok(None);
+                    };
+                    return Ok(Some(
+                        GeneratedFunction {
+                            parent,
+                            key: GeneratedFunctionKey::TraitFunc(function, ty.wrapper_location),
+                        }
+                        .body(db),
+                    ));
                 }
 
                 let Some(body) = concrete_function.body(db)? else {
@@ -370,10 +364,10 @@ impl<'db> SemanticFunctionIdEx<'db> for semantic::FunctionId<'db> {
         // If the function is generated, we need to check if it has a body, so we can return its
         // generated function id.
         // TODO(orizi): This is a hack, we should have a better way to do this.
-        if let Ok(Some(body)) = ret.body(db) {
-            if let Ok(id) = body.function_id(db) {
-                return id;
-            }
+        if let Ok(Some(body)) = ret.body(db)
+            && let Ok(id) = body.function_id(db)
+        {
+            return id;
         }
         ret
     }

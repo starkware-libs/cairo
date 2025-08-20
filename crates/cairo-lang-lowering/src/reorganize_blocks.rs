@@ -80,15 +80,15 @@ pub fn reorganize_blocks<'db>(lowered: &mut Lowered<'db>) {
                 statements
                     .push(var_reassigner.rebuild_statement(&rebuilder.rebuild_statement(stmt)));
             }
-            if let BlockEnd::Goto(target_block_id, remappings) = &block.end {
-                if !rebuilder.block_remapping.contains_key(target_block_id) {
-                    assert!(
-                        rebuilder.rebuild_remapping(remappings).is_empty(),
-                        "Remapping should be empty."
-                    );
-                    block = &lowered.blocks[*target_block_id];
-                    continue;
-                }
+            if let BlockEnd::Goto(target_block_id, remappings) = &block.end
+                && !rebuilder.block_remapping.contains_key(target_block_id)
+            {
+                assert!(
+                    rebuilder.rebuild_remapping(remappings).is_empty(),
+                    "Remapping should be empty."
+                );
+                block = &lowered.blocks[*target_block_id];
+                continue;
             }
             break;
         }

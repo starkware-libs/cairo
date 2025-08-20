@@ -403,7 +403,7 @@ impl<'db> core::fmt::Debug for StrRef<'db> {
 }
 unsafe impl<'db> salsa::Update for StrRef<'db> {
     unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = &mut *old_pointer;
+        let old_value = unsafe { &mut *old_pointer };
         let changed = old_value != &new_value;
         *old_value = new_value;
         changed

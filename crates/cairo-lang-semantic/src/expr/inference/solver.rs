@@ -41,14 +41,14 @@ unsafe impl<'db, T: salsa::Update> salsa::Update for SolutionSet<'db, T> {
         let old_pointer = unsafe { &mut *old_pointer };
         match (old_pointer, new_value) {
             (SolutionSet::None, SolutionSet::None) => false,
-            (SolutionSet::Unique(u1), SolutionSet::Unique(u2)) => {
+            (SolutionSet::Unique(u1), SolutionSet::Unique(u2)) => unsafe {
                 salsa::plumbing::UpdateDispatch::<T>::maybe_update(u1, u2)
-            }
-            (SolutionSet::Ambiguous(ambiguity), SolutionSet::Ambiguous(ambiguity2)) => {
+            },
+            (SolutionSet::Ambiguous(ambiguity), SolutionSet::Ambiguous(ambiguity2)) => unsafe {
                 salsa::plumbing::UpdateDispatch::<Ambiguity<'db>>::maybe_update(
                     ambiguity, ambiguity2,
                 )
-            }
+            },
             (old_pointer, new_value) => {
                 *old_pointer = new_value;
                 true

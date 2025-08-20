@@ -53,13 +53,13 @@ pub fn lower_expr_if<'db>(
     }
 
     // Else block is not supported yet for multiple conditions.
-    if expr.conditions.len() > 1 {
-        if let Some(else_block) = expr.else_block {
-            let stable_ptr = ctx.function_body.arenas.exprs[else_block].stable_ptr().untyped();
-            return Err(LoweringFlowError::Failed(
-                ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::Unsupported),
-            ));
-        }
+    if expr.conditions.len() > 1
+        && let Some(else_block) = expr.else_block
+    {
+        let stable_ptr = ctx.function_body.arenas.exprs[else_block].stable_ptr().untyped();
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::Unsupported),
+        ));
     }
     lower_conditioned_expr(
         ctx,

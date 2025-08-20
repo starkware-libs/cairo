@@ -315,10 +315,10 @@ pub fn find_changed_members<'db, 'a>(
     semantics1: &'a SemanticLoweringMapping<'db>,
 ) -> impl Iterator<Item = MemberPath<'db>> + 'a {
     semantics0.scattered.iter().filter_map(|(path, value0)| {
-        if let Some(value1) = semantics1.scattered.get(path) {
-            if value0 != value1 {
-                return Some(path.clone());
-            }
+        if let Some(value1) = semantics1.scattered.get(path)
+            && value0 != value1
+        {
+            return Some(path.clone());
         }
         None
     })

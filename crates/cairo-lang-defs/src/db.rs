@@ -1000,13 +1000,12 @@ fn collect_extra_allowed_attributes<'db>(
             continue;
         }
         for arg in args {
-            if let Some(ast::Expr::Path(path)) = try_extract_unnamed_arg(db, &arg.arg) {
-                if let Some([ast::PathSegment::Simple(segment)]) =
+            if let Some(ast::Expr::Path(path)) = try_extract_unnamed_arg(db, &arg.arg)
+                && let Some([ast::PathSegment::Simple(segment)]) =
                     path.segments(db).elements(db).collect_array()
-                {
-                    extra_allowed_attributes.insert(segment.ident(db).text(db).into());
-                    continue;
-                }
+            {
+                extra_allowed_attributes.insert(segment.ident(db).text(db).into());
+                continue;
             }
             plugin_diagnostics.push(PluginDiagnostic::error(
                 arg.arg.stable_ptr(db),

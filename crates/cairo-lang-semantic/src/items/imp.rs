@@ -651,8 +651,8 @@ pub fn priv_impl_declaration_data_inner<'db>(
     let info = db.core_info();
 
     // Check for reimplementation of compilers' Traits.
-    if let Ok(concrete_trait) = concrete_trait {
-        if [
+    if let Ok(concrete_trait) = concrete_trait
+        && [
             info.type_eq_trt,
             info.fn_trt,
             info.fn_once_trt,
@@ -661,13 +661,12 @@ pub fn priv_impl_declaration_data_inner<'db>(
             info.string_literal_trt,
         ]
         .contains(&concrete_trait.trait_id(db))
-            && impl_def_id.parent_module(db).owning_crate(db) != core_crate(db)
-        {
-            diagnostics.report(
-                trait_path_syntax.stable_ptr(db),
-                CompilerTraitReImplementation { trait_id: concrete_trait.trait_id(db) },
-            );
-        }
+        && impl_def_id.parent_module(db).owning_crate(db) != core_crate(db)
+    {
+        diagnostics.report(
+            trait_path_syntax.stable_ptr(db),
+            CompilerTraitReImplementation { trait_id: concrete_trait.trait_id(db) },
+        );
     }
 
     // Check fully resolved.
@@ -921,10 +920,10 @@ fn deref_impl_diagnostics<'db>(
 
     let gargs = concrete_trait.generic_args(db);
     let deref_ty = extract_matches!(gargs[0], GenericArgumentId::Type);
-    if let Some(module_id) = deref_ty.long(db).module_id(db) {
-        if module_id == impl_module {
-            impl_in_valid_location = true;
-        }
+    if let Some(module_id) = deref_ty.long(db).module_id(db)
+        && module_id == impl_module
+    {
+        impl_in_valid_location = true;
     }
 
     if !impl_in_valid_location {
@@ -3328,18 +3327,18 @@ fn validate_impl_function_signature<'db>(
         GenericSubstitution::new(&func_generics, &generic_params_to_args(impl_func_generics, db));
 
     for (trait_generic_param, generic_param) in izip!(func_generics, impl_func_generics.iter()) {
-        if let Some(name) = trait_generic_param.id().name(db) {
-            if Some(name) != generic_param.id().name(db) {
-                diagnostics.report(
-                    generic_param.stable_ptr(db),
-                    WrongParameterName {
-                        impl_def_id,
-                        impl_function_id,
-                        trait_id,
-                        expected_name: name.into(),
-                    },
-                );
-            }
+        if let Some(name) = trait_generic_param.id().name(db)
+            && Some(name) != generic_param.id().name(db)
+        {
+            diagnostics.report(
+                generic_param.stable_ptr(db),
+                WrongParameterName {
+                    impl_def_id,
+                    impl_function_id,
+                    trait_id,
+                    expected_name: name.into(),
+                },
+            );
         }
         match (generic_param, trait_generic_param) {
             (GenericParam::Type(_), GenericParam::Type(_)) => {}

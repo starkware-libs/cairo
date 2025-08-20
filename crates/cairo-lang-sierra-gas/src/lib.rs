@@ -330,10 +330,10 @@ fn calc_gas_info_inner<
             // return, so solver for it would not actually be calculated. (Such a function may exist
             // by receiving a never type and matching on it) The cost of the function is considered
             // as 0.
-            if let Some(value) = solution.get(&Var::StatementFuture(func.entry_point, token_type)) {
-                if *value != 0 {
-                    function_costs.get_mut(id).unwrap().insert(token_type, *value);
-                }
+            if let Some(value) = solution.get(&Var::StatementFuture(func.entry_point, token_type))
+                && *value != 0
+            {
+                function_costs.get_mut(id).unwrap().insert(token_type, *value);
             }
         }
         for (var, value) in solution {

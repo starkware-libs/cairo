@@ -2414,10 +2414,10 @@ fn format_for_debug(mut felts: IntoIter<Felt252>) -> String {
     while let Some(item) = format_next_item(&mut felts) {
         items.push(item);
     }
-    if let [item] = &items[..] {
-        if item.is_string {
-            return item.item.clone();
-        }
+    if let [item] = &items[..]
+        && item.is_string
+    {
+        return item.item.clone();
     }
     items
         .into_iter()
@@ -2457,10 +2457,10 @@ where
 {
     let first_felt = values.next()?;
 
-    if first_felt == Felt252::from_hex(BYTE_ARRAY_MAGIC).unwrap() {
-        if let Some(string) = try_format_string(values) {
-            return Some(FormattedItem { item: string, is_string: true });
-        }
+    if first_felt == Felt252::from_hex(BYTE_ARRAY_MAGIC).unwrap()
+        && let Some(string) = try_format_string(values)
+    {
+        return Some(FormattedItem { item: string, is_string: true });
     }
     Some(FormattedItem { item: format_short_string(&first_felt), is_string: false })
 }

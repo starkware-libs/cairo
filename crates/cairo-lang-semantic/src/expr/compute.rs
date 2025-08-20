@@ -2070,10 +2070,12 @@ fn compute_loop_body_semantic<'db>(
         compute_statements_semantic_and_extend(new_ctx, statements, &mut statements_semantic);
         let tail_semantic_expr =
             tail.map(|tail| compute_tail_semantic(new_ctx, &tail, &mut statements_semantic));
-        if let Some(tail) = &tail_semantic_expr {
-            if !tail.ty().is_missing(db) && !tail.ty().is_unit(db) && tail.ty() != never_ty(db) {
-                new_ctx.diagnostics.report(tail.deref(), TailExpressionNotAllowedInLoop);
-            }
+        if let Some(tail) = &tail_semantic_expr
+            && !tail.ty().is_missing(db)
+            && !tail.ty().is_unit(db)
+            && tail.ty() != never_ty(db)
+        {
+            new_ctx.diagnostics.report(tail.deref(), TailExpressionNotAllowedInLoop);
         }
         let inner_ctx = std::mem::replace(&mut new_ctx.inner_ctx, old_inner_ctx).unwrap();
         let body = new_ctx.arenas.exprs.alloc(Expr::Block(ExprBlock {
@@ -2111,15 +2113,14 @@ fn compute_expr_closure_semantic<'db>(
         };
         let closure_type =
             TypeLongId::Tuple(params.iter().map(|param| param.ty).collect()).intern(new_ctx.db);
-        if let Some(param_types) = params_tuple_ty {
-            if let Err(err_set) = new_ctx.resolver.inference().conform_ty(closure_type, param_types)
-            {
-                new_ctx.resolver.inference().report_on_pending_error(
-                    err_set,
-                    new_ctx.diagnostics,
-                    syntax.stable_ptr(db).untyped(),
-                );
-            }
+        if let Some(param_types) = params_tuple_ty
+            && let Err(err_set) = new_ctx.resolver.inference().conform_ty(closure_type, param_types)
+        {
+            new_ctx.resolver.inference().report_on_pending_error(
+                err_set,
+                new_ctx.diagnostics,
+                syntax.stable_ptr(db).untyped(),
+            );
         }
 
         params.iter().filter(|param| param.mutability == Mutability::Reference).for_each(|param| {
@@ -3220,12 +3221,12 @@ fn struct_ctor_expr<'db>(
             ctx.diagnostics.report(ctor_syntax.stable_ptr(db), MissingMember(member_name));
         }
     }
-    if members.len() == member_exprs.len() {
-        if let Some((_, base_struct_syntax)) = base_struct {
-            return Err(ctx
-                .diagnostics
-                .report(base_struct_syntax.stable_ptr(db), StructBaseStructExpressionNoEffect));
-        }
+    if members.len() == member_exprs.len()
+        && let Some((_, base_struct_syntax)) = base_struct
+    {
+        return Err(ctx
+            .diagnostics
+            .report(base_struct_syntax.stable_ptr(db), StructBaseStructExpressionNoEffect));
     }
     Ok(Expr::StructCtor(ExprStructCtor {
         concrete_struct_id,
@@ -3498,14 +3499,14 @@ fn method_call_expr<'db>(
             }
         })?;
 
-    if let Ok(trait_definition_data) = ctx.db.priv_trait_definition_data(actual_trait_id) {
-        if let Some(trait_item_info) = trait_definition_data.get_trait_item_info(func_name.into()) {
-            ctx.resolver.validate_feature_constraints(
-                ctx.diagnostics,
-                &segment.identifier_ast(db),
-                &trait_item_info,
-            );
-        }
+    if let Ok(trait_definition_data) = ctx.db.priv_trait_definition_data(actual_trait_id)
+        && let Some(trait_item_info) = trait_definition_data.get_trait_item_info(func_name.into())
+    {
+        ctx.resolver.validate_feature_constraints(
+            ctx.diagnostics,
+            &segment.identifier_ast(db),
+            &trait_item_info,
+        );
     }
     if let LookupItemId::ModuleItem(item_id) = candidate_traits[&actual_trait_id] {
         ctx.resolver.insert_used_use(item_id);
@@ -3896,27 +3897,27 @@ pub fn get_binded_expr_by_name<'db>(
     while let Some(env) = maybe_env {
         // If a variable is from an expanded macro placeholder, we need to look for it in the parent
         // env.
-        if let Some(macro_info) = &env.macro_info {
-            if let Some(new_offset) = cur_offset.mapped(&macro_info.mappings) {
-                maybe_env = env.parent.as_deref_mut();
-                cur_offset = new_offset;
-                continue;
-            }
+        if let Some(macro_info) = &env.macro_info
+            && let Some(new_offset) = cur_offset.mapped(&macro_info.mappings)
+        {
+            maybe_env = env.parent.as_deref_mut();
+            cur_offset = new_offset;
+            continue;
         }
-        if !is_callsite_prefixed || found_callsite_scope {
-            if let Some(var) = env.variables.get(variable_name) {
-                env.used_variables.insert(var.id());
-                return match var {
-                    Binding::LocalItem(local_const) => match local_const.kind.clone() {
-                        crate::StatementItemKind::Constant(const_value_id, ty) => {
-                            Some(Expr::Constant(ExprConstant { const_value_id, ty, stable_ptr }))
-                        }
-                    },
-                    Binding::LocalVar(_) | Binding::Param(_) => {
-                        Some(Expr::Var(ExprVar { var: var.id(), ty: var.ty(), stable_ptr }))
+        if (!is_callsite_prefixed || found_callsite_scope)
+            && let Some(var) = env.variables.get(variable_name)
+        {
+            env.used_variables.insert(var.id());
+            return match var {
+                Binding::LocalItem(local_const) => match local_const.kind.clone() {
+                    crate::StatementItemKind::Constant(const_value_id, ty) => {
+                        Some(Expr::Constant(ExprConstant { const_value_id, ty, stable_ptr }))
                     }
-                };
-            }
+                },
+                Binding::LocalVar(_) | Binding::Param(_) => {
+                    Some(Expr::Var(ExprVar { var: var.id(), ty: var.ty(), stable_ptr }))
+                }
+            };
         }
 
         // Don't look inside a callsite environment unless explicitly stated.
@@ -4194,10 +4195,10 @@ pub fn compute_and_append_statement_semantic<'db>(
                         &old_var,
                     );
                 }
-                if ctx.macro_defined_var_unhygienic {
-                    if let Some(macro_info) = &mut ctx.environment.macro_info {
-                        macro_info.vars_to_expose.push((v.name, var_def.clone()));
-                    }
+                if ctx.macro_defined_var_unhygienic
+                    && let Some(macro_info) = &mut ctx.environment.macro_info
+                {
+                    macro_info.vars_to_expose.push((v.name, var_def.clone()));
                 }
                 ctx.semantic_defs.insert(var_def.id(), var_def);
             }
@@ -4231,11 +4232,10 @@ pub fn compute_and_append_statement_semantic<'db>(
                     ctx.diagnostics.report_after(expr_syntax.stable_ptr(db), MissingSemicolon);
                 }
                 let ty: TypeId<'_> = expr.ty();
-                if let TypeLongId::Concrete(concrete) = ty.long(db) {
-                    if concrete.is_must_use(db)? {
-                        ctx.diagnostics
-                            .report(expr_syntax.stable_ptr(db), UnhandledMustUseType(ty));
-                    }
+                if let TypeLongId::Concrete(concrete) = ty.long(db)
+                    && concrete.is_must_use(db)?
+                {
+                    ctx.diagnostics.report(expr_syntax.stable_ptr(db), UnhandledMustUseType(ty));
                 }
                 if let Expr::FunctionCall(expr_function_call) = &expr.expr {
                     let generic_function_id =
@@ -4571,7 +4571,7 @@ fn validate_statement_attributes<'db>(
 fn function_parameter_types<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     function: FunctionId<'db>,
-) -> Maybe<impl Iterator<Item = TypeId<'db>>> {
+) -> Maybe<impl Iterator<Item = TypeId<'db>> + use<'db>> {
     let signature = ctx.db.concrete_function_signature(function)?;
     let param_types = signature.params.into_iter().map(|param| param.ty);
     Ok(param_types)

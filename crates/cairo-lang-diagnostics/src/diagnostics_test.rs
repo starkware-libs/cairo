@@ -33,7 +33,7 @@ impl<'db> DiagnosticEntry<'db> for SimpleDiag<'db> {
 }
 
 fn setup<'db>(db: &'db FilesDatabaseForTesting) -> FileId<'db> {
-    let file_id = FileLongId::Virtual(VirtualFile {
+    FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "dummy_file.sierra".into(),
         content: "abcd\nefg.\n".into(),
@@ -41,8 +41,7 @@ fn setup<'db>(db: &'db FilesDatabaseForTesting) -> FileId<'db> {
         kind: FileKind::Module,
         original_item_removed: false,
     })
-    .intern(db);
-    file_id
+    .intern(db)
 }
 
 #[test]

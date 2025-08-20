@@ -119,11 +119,10 @@ impl<'a> DebugWithDb<'a> for DiagnosticLocation<'a> {
         let mut ending_pos = String::new();
         let starting_pos = match self.span.start.position_in_file(db, self.file_id) {
             Some(starting_text_pos) => {
-                if let Some(ending_text_pos) = self.span.end.position_in_file(db, self.file_id) {
-                    if starting_text_pos.line != ending_text_pos.line {
-                        ending_pos =
-                            format!("-{}:{}", ending_text_pos.line + 1, ending_text_pos.col);
-                    }
+                if let Some(ending_text_pos) = self.span.end.position_in_file(db, self.file_id)
+                    && starting_text_pos.line != ending_text_pos.line
+                {
+                    ending_pos = format!("-{}:{}", ending_text_pos.line + 1, ending_text_pos.col);
                 }
                 marks = get_location_marks(db, self, true);
                 format!("{}:{}", starting_text_pos.line + 1, starting_text_pos.col + 1)

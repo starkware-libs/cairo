@@ -421,12 +421,11 @@ impl LineBuilder {
         let active_builder = self.get_active_builder_mut();
         if let Some(LineComponent::Comment { content: prev_content, is_trailing }) =
             active_builder.children.last_mut()
+            && !*is_trailing
         {
-            if !*is_trailing {
-                *prev_content += "\n";
-                *prev_content += content;
-                return;
-            }
+            *prev_content += "\n";
+            *prev_content += content;
+            return;
         }
         self.push_child(LineComponent::Comment { content: content.to_string(), is_trailing });
         self.push_break_line_point(BreakLinePointProperties::new(
@@ -609,10 +608,9 @@ impl LineBuilder {
             }
             if let Some(LineComponent::BreakLinePoint(cur_break_line_points_properties)) =
                 self.children.get(*current_line_end)
+                && cur_break_line_points_properties.is_comma_if_broken()
             {
-                if cur_break_line_points_properties.is_comma_if_broken() {
-                    trees.last_mut().unwrap().push_str(",");
-                }
+                trees.last_mut().unwrap().push_str(",");
             }
             current_line_start = *current_line_end + 1;
         }
@@ -1058,10 +1056,10 @@ impl<'a> FormatterImpl<'a> {
 
             if let BreakLinePointsPositions::List { properties, breaking_frequency } =
                 &internal_break_line_points_positions
+                && i % breaking_frequency == breaking_frequency - 1
+                && i < n_children - 1
             {
-                if i % breaking_frequency == breaking_frequency - 1 && i < n_children - 1 {
-                    self.append_break_line_point(Some(properties.clone()));
-                }
+                self.append_break_line_point(Some(properties.clone()));
             }
             self.empty_lines_allowance = allowed_empty_between;
         }

@@ -1962,25 +1962,25 @@ fn module_semantic_diagnostics<'db>(
             }
             ModuleItemId::Submodule(submodule_id) => {
                 // Note that the parent module does not report the diagnostics of its submodules.
-                if let Ok(file_id) = db.module_main_file(ModuleId::Submodule(*submodule_id)) {
-                    if db.file_content(file_id).is_none() {
-                        // Note that the error location is in the parent module, not the
-                        // submodule.
+                if let Ok(file_id) = db.module_main_file(ModuleId::Submodule(*submodule_id))
+                    && db.file_content(file_id).is_none()
+                {
+                    // Note that the error location is in the parent module, not the
+                    // submodule.
 
-                        let path = match file_id.long(db) {
-                            FileLongId::OnDisk(path) => path.display().to_string(),
-                            FileLongId::Virtual(_) | FileLongId::External(_) => {
-                                panic!("Expected OnDisk file.")
-                            }
-                        };
+                    let path = match file_id.long(db) {
+                        FileLongId::OnDisk(path) => path.display().to_string(),
+                        FileLongId::Virtual(_) | FileLongId::External(_) => {
+                            panic!("Expected OnDisk file.")
+                        }
+                    };
 
-                        let stable_location =
-                            StableLocation::new(submodule_id.stable_ptr(db).untyped());
-                        diagnostics.add(SemanticDiagnostic::new(
-                            stable_location,
-                            SemanticDiagnosticKind::ModuleFileNotFound(path),
-                        ));
-                    }
+                    let stable_location =
+                        StableLocation::new(submodule_id.stable_ptr(db).untyped());
+                    diagnostics.add(SemanticDiagnostic::new(
+                        stable_location,
+                        SemanticDiagnosticKind::ModuleFileNotFound(path),
+                    ));
                 }
             }
             ModuleItemId::ExternType(extern_type) => {
@@ -2005,10 +2005,10 @@ fn module_semantic_diagnostics<'db>(
     }
     for macro_call in db.module_macro_calls_ids(module_id)?.iter() {
         diagnostics.extend(db.macro_call_diagnostics(*macro_call));
-        if let Ok(macro_module_id) = db.macro_call_module_id(*macro_call) {
-            if let Ok(semantic_diags) = db.module_semantic_diagnostics(macro_module_id) {
-                diagnostics.extend(semantic_diags);
-            }
+        if let Ok(macro_module_id) = db.macro_call_module_id(*macro_call)
+            && let Ok(semantic_diags) = db.module_semantic_diagnostics(macro_module_id)
+        {
+            diagnostics.extend(semantic_diags);
         }
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);

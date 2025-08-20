@@ -27,18 +27,17 @@ pub fn handle_derive<'db>(
     let mut builder = PatchBuilder::new(db, &item_ast);
     let mut diagnostics = vec![];
     let mut aux_data = None;
-    if let Some(derive_arg) = has_derive(&item_ast, db, EVENT_TRAIT) {
-        if let Some((node, starknet_aux_data)) =
+    if let Some(derive_arg) = has_derive(&item_ast, db, EVENT_TRAIT)
+        && let Some((node, starknet_aux_data)) =
             event::handle_event_derive(db, &item_ast, &mut diagnostics)
-        {
-            builder.add_modified(node.mapped(db, &derive_arg));
-            aux_data = Some(DynGeneratedFileAuxData::new(starknet_aux_data));
-        }
+    {
+        builder.add_modified(node.mapped(db, &derive_arg));
+        aux_data = Some(DynGeneratedFileAuxData::new(starknet_aux_data));
     }
-    if let Some(derive_arg) = has_derive(&item_ast, db, STORE_TRAIT) {
-        if let Some(node) = store::handle_store_derive(db, &item_ast, &mut diagnostics, metadata) {
-            builder.add_modified(node.mapped(db, &derive_arg));
-        }
+    if let Some(derive_arg) = has_derive(&item_ast, db, STORE_TRAIT)
+        && let Some(node) = store::handle_store_derive(db, &item_ast, &mut diagnostics, metadata)
+    {
+        builder.add_modified(node.mapped(db, &derive_arg));
     }
 
     let (content, code_mappings) = builder.build();

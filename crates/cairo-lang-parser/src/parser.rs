@@ -1544,18 +1544,17 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                     ExprIndexed::new_green(self.db, expr, lbrack, index_expr, rbrack).into()
                 }
                 current_op => {
-                    if let Some(child_op_kind) = child_op {
-                        if self.is_comparison_operator(child_op_kind)
-                            && self.is_comparison_operator(current_op)
-                        {
-                            self.add_diagnostic(
-                                ParserDiagnosticKind::ConsecutiveMathOperators {
-                                    first_op: child_op_kind,
-                                    second_op: current_op,
-                                },
-                                TextSpan::cursor(self.offset.add_width(self.current_width)),
-                            );
-                        }
+                    if let Some(child_op_kind) = child_op
+                        && self.is_comparison_operator(child_op_kind)
+                        && self.is_comparison_operator(current_op)
+                    {
+                        self.add_diagnostic(
+                            ParserDiagnosticKind::ConsecutiveMathOperators {
+                                first_op: child_op_kind,
+                                second_op: current_op,
+                            },
+                            TextSpan::cursor(self.offset.add_width(self.current_width)),
+                        );
                     }
                     child_op = Some(current_op);
                     let op = self.parse_binary_operator();
@@ -2028,15 +2027,17 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         let value = self.try_parse_expr()?;
         // If the next token is `:` and the expression is an identifier, this is the argument's
         // name.
-        if self.peek().kind == SyntaxKind::TerminalColon {
-            if let Some(argname) = self.try_extract_identifier(value) {
+        Ok(
+            if self.peek().kind == SyntaxKind::TerminalColon
+                && let Some(argname) = self.try_extract_identifier(value)
+            {
                 let colon = self.take::<TerminalColon<'_>>();
                 let expr = self.parse_expr();
-                return Ok(ArgClauseNamed::new_green(self.db, argname, colon, expr).into());
-            }
-        }
-
-        Ok(ArgClauseUnnamed::new_green(self.db, value).into())
+                ArgClauseNamed::new_green(self.db, argname, colon, expr).into()
+            } else {
+                ArgClauseUnnamed::new_green(self.db, value).into()
+            },
+        )
     }
 
     /// If the given `expr` is a simple identifier, returns the corresponding green node.
@@ -2331,19 +2332,16 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
         // If there is more than one condition, check that the first condition does not have a
         // precedence lower than `&&`.
-        if self.peek().kind == SyntaxKind::TerminalAndAnd {
-            if let Some(op) = self.get_binary_operator(condition) {
-                if let Some(precedence) = get_post_operator_precedence(op) {
-                    if precedence > and_and_precedence {
-                        let offset =
-                            self.offset.add_width(self.current_width - self.last_trivia_length);
-                        self.add_diagnostic(
-                            ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op },
-                            TextSpan::new(start_offset, offset),
-                        );
-                    }
-                }
-            }
+        if self.peek().kind == SyntaxKind::TerminalAndAnd
+            && let Some(op) = self.get_binary_operator(condition)
+            && let Some(precedence) = get_post_operator_precedence(op)
+            && precedence > and_and_precedence
+        {
+            let offset = self.offset.add_width(self.current_width - self.last_trivia_length);
+            self.add_diagnostic(
+                ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op },
+                TextSpan::new(start_offset, offset),
+            );
         }
 
         while self.peek().kind == SyntaxKind::TerminalAndAnd {
@@ -2355,17 +2353,16 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         }
 
         let peek_item = self.peek();
-        if let Some(op_precedence) = get_post_operator_precedence(peek_item.kind) {
-            if op_precedence > and_and_precedence {
-                self.add_diagnostic(
-                    ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op: peek_item.kind },
-                    TextSpan::cursor(self.offset.add_width(self.current_width)),
-                );
-                // Skip the rest of the tokens until `{`. Don't report additional diagnostics.
-                let _ = self.skip_until(is_of_kind!(rbrace, lbrace, module_item_kw, block));
-            }
+        if let Some(op_precedence) = get_post_operator_precedence(peek_item.kind)
+            && op_precedence > and_and_precedence
+        {
+            self.add_diagnostic(
+                ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op: peek_item.kind },
+                TextSpan::cursor(self.offset.add_width(self.current_width)),
+            );
+            // Skip the rest of the tokens until `{`. Don't report additional diagnostics.
+            let _ = self.skip_until(is_of_kind!(rbrace, lbrace, module_item_kw, block));
         }
-
         ConditionListAnd::new_green(self.db, &conditions)
     }
 
@@ -3205,17 +3202,17 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
         // If the next token is `:` and the expression is an identifier, this is the argument's
         // name.
-        if self.peek().kind == SyntaxKind::TerminalColon {
-            if let Some(argname) = self.try_extract_identifier(expr) {
-                let colon = self.take::<TerminalColon<'_>>();
-                let expr = if self.peek().kind == SyntaxKind::TerminalUnderscore {
-                    self.take::<TerminalUnderscore<'_>>().into()
-                } else {
-                    let expr = self.parse_type_expr();
-                    GenericArgValueExpr::new_green(self.db, expr).into()
-                };
-                return Ok(GenericArgNamed::new_green(self.db, argname, colon, expr).into());
-            }
+        if self.peek().kind == SyntaxKind::TerminalColon
+            && let Some(argname) = self.try_extract_identifier(expr)
+        {
+            let colon = self.take::<TerminalColon<'_>>();
+            let expr = if self.peek().kind == SyntaxKind::TerminalUnderscore {
+                self.take::<TerminalUnderscore<'_>>().into()
+            } else {
+                let expr = self.parse_type_expr();
+                GenericArgValueExpr::new_green(self.db, expr).into()
+            };
+            return Ok(GenericArgNamed::new_green(self.db, argname, colon, expr).into());
         }
         Ok(GenericArgUnnamed::new_green(
             self.db,
