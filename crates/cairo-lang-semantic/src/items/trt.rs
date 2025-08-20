@@ -4,14 +4,15 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId, NamedLanguageElementId,
-    NamedLanguageElementLongId, TopLevelLanguageElementId, TraitConstantId, TraitConstantLongId,
-    TraitFunctionId, TraitFunctionLongId, TraitId, TraitImplId, TraitImplLongId, TraitItemId,
-    TraitTypeId, TraitTypeLongId, UseId,
+    FunctionTitleId, GenericParamId, GenericParamLongId, LanguageElementId, LookupItemId,
+    ModuleItemId, NamedLanguageElementId, NamedLanguageElementLongId, TopLevelLanguageElementId,
+    TraitConstantId, TraitConstantLongId, TraitFunctionId, TraitFunctionLongId, TraitId,
+    TraitImplId, TraitImplLongId, TraitItemId, TraitTypeId, TraitTypeLongId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::helpers::OptionWrappedGenericParamListHelper;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -360,6 +361,30 @@ pub fn trait_generic_params_data_cycle<'db>(
     // Forwarding cycle handling to `priv_generic_param_data` handler.
     trait_generic_params_data(db, trait_id, true)
 }
+
+/// Query implementation of [crate::db::SemanticGroup::trait_generic_params_ids].
+pub fn trait_generic_params_ids<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+) -> Maybe<Vec<GenericParamId<'db>>> {
+    let module_file_id = trait_id.module_file_id(db);
+    let trait_ast = db.module_trait_by_id(trait_id)?;
+
+    let generic_params = &trait_ast.generic_params(db);
+
+    let syntax_db = db;
+    Ok(match generic_params {
+        syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
+        syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
+            .generic_params(syntax_db)
+            .elements(syntax_db)
+            .map(|param_syntax| {
+                GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db)).intern(db)
+            })
+            .collect(),
+    })
+}
+
 /// Query implementation of [crate::db::SemanticGroup::trait_attributes].
 pub fn trait_attributes<'db>(
     db: &'db dyn SemanticGroup,
