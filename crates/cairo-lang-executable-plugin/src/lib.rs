@@ -51,7 +51,8 @@ impl AnalyzerPlugin for RawExecutableAnalyzer {
         module_id: ModuleId<'db>,
     ) -> Vec<PluginDiagnostic<'db>> {
         let mut diagnostics = vec![];
-        let Ok(free_functions) = db.module_free_functions(module_id) else {
+        let Ok(free_functions) = module_id.module_data(db).map(|data| data.free_functions(db))
+        else {
             return diagnostics;
         };
         for (id, item) in free_functions.iter() {

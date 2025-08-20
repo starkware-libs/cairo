@@ -1946,7 +1946,9 @@ fn module_semantic_diagnostics<'db>(
     module_id: ModuleId<'db>,
 ) -> Maybe<Diagnostics<'db, SemanticDiagnostic<'db>>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for (_module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)?.iter().cloned() {
+    for (_module_file_id, plugin_diag) in
+        module_id.module_data(db)?.plugin_diagnostics(db).iter().cloned()
+    {
         diagnostics.add(SemanticDiagnostic::new(
             match plugin_diag.inner_span {
                 None => StableLocation::new(plugin_diag.stable_ptr),
@@ -1961,7 +1963,7 @@ fn module_semantic_diagnostics<'db>(
     diagnostics.extend(data.diagnostics.clone());
     // TODO(Gil): Aggregate diagnostics for subitems with semantic model (i.e. impl function, trait
     // functions and generic params) directly and not via the parent item.
-    for item in db.module_items(module_id)?.iter() {
+    for item in module_id.module_data(db)?.items(db).iter() {
         match item {
             ModuleItemId::Constant(const_id) => {
                 diagnostics.extend(db.constant_semantic_diagnostics(*const_id));
@@ -2030,7 +2032,7 @@ fn module_semantic_diagnostics<'db>(
             }
         }
     }
-    for global_use in db.module_global_uses(module_id)?.keys() {
+    for global_use in module_id.module_data(db)?.global_uses(db).keys() {
         diagnostics.extend(db.global_use_semantic_diagnostics(*global_use));
     }
     for macro_call in db.module_macro_calls_ids(module_id)?.iter() {

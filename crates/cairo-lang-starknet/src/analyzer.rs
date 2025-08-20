@@ -54,10 +54,10 @@ fn add_non_starknet_interface_embeddable_diagnostics<'db>(
     module_id: ModuleId<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
-    let Ok(impls) = db.module_impls(module_id) else {
+    let Ok(module_data) = module_id.module_data(db) else {
         return;
     };
-    for (id, item) in impls.iter() {
+    for (id, item) in module_data.impls(db).iter() {
         if !item.has_attr(db, EMBEDDABLE_ATTR) {
             continue;
         }
@@ -119,8 +119,8 @@ impl AnalyzerPlugin for StorageAnalyzer {
         let mut diagnostics = vec![];
 
         // Analyze all the structs in the module.
-        if let Ok(module_structs) = db.module_structs(module_id) {
-            for (id, item) in module_structs.iter() {
+        if let Ok(module_data) = module_id.module_data(db) {
+            for (id, item) in module_data.structs(db).iter() {
                 // Only run the analysis on storage structs or structs with the storage attribute.
                 if item.has_attr(db, STORAGE_NODE_ATTR)
                     || item.has_attr(db, STORAGE_ATTR)
@@ -133,8 +133,8 @@ impl AnalyzerPlugin for StorageAnalyzer {
             }
         }
         // Analyze all the enums in the module.
-        if let Ok(module_enums) = db.module_enums(module_id) {
-            for (id, item) in module_enums.iter() {
+        if let Ok(module_data) = module_id.module_data(db) {
+            for (id, item) in module_data.enums(db).iter() {
                 if has_derive(item, db, STORE_TRAIT).is_some()
                     && !item.has_attr_with_arg(db, ALLOW_ATTR, ALLOW_NO_DEFAULT_VARIANT_ATTR)
                 {
