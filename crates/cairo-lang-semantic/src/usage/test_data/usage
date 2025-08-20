@@ -210,3 +210,32 @@ For 4:4:
   Usage: LocalVarId(test::in), LocalVarId(test::counter),
   Changes: LocalVarId(test::in), LocalVarId(test::counter),
   Snapshot_Usage: LocalVarId(test::inner),
+
+//! > ==========================================================================
+
+//! > closure in else block.
+
+//! > test_runner_name
+test_function_usage
+
+//! > function
+fn foo(mut a: Span<u32>, mut b: Span<u32>) -> Option<usize> {
+    let Some(_) = a.pop_front() else {
+        return b.pop_front().map(|q| *q);
+    };
+
+    None
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > usage
+Closure 2:33:
+  Usage:
+  Changes:
+  Snapshot_Usage:
