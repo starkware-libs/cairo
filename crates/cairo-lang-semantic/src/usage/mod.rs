@@ -12,7 +12,8 @@ use crate::expr::fmt::ExprFormatter;
 use crate::expr::objects::Arenas;
 use crate::{
     ConcreteStructId, Condition, Expr, ExprFunctionCallArg, ExprId, ExprVarMemberPath,
-    FixedSizeArrayItems, FunctionBody, Parameter, Pattern, PatternId, Statement, VarId,
+    FixedSizeArrayItems, FunctionBody, Parameter, Pattern, PatternId, Statement, StatementLet,
+    VarId,
 };
 
 #[cfg(test)]
@@ -233,9 +234,18 @@ impl Usages {
                 let mut usage = Default::default();
                 for stmt in &expr.statements {
                     match &arenas.statements[*stmt] {
-                        Statement::Let(stmt) => {
-                            self.handle_expr(arenas, stmt.expr, &mut usage);
-                            Self::handle_pattern(&arenas.patterns, stmt.pattern, &mut usage);
+                        Statement::Let(StatementLet {
+                            pattern,
+                            expr,
+                            else_clause,
+                            stable_ptr: _,
+                        }) => {
+                            self.handle_expr(arenas, *expr, &mut usage);
+                            Self::handle_pattern(&arenas.patterns, *pattern, &mut usage);
+
+                            if let Some(else_clause) = else_clause {
+                                self.handle_expr(arenas, *else_clause, &mut usage);
+                            }
                         }
                         Statement::Expr(stmt) => self.handle_expr(arenas, stmt.expr, &mut usage),
                         Statement::Continue(_) => (),
