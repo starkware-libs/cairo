@@ -93,23 +93,39 @@ fn test_blake2s() {
     let state = BoxTrait::new([0_u32; 8]);
     let msg = BoxTrait::new([0_u32; 16]);
     let byte_count = 64_u32;
-
-    let res = blake2s_compress(state, byte_count, msg).unbox();
-
     assert_eq!(
-        res,
+        blake2s_compress(state, byte_count, msg).unbox(),
         [
-            3893814314, 2107143640, 4255525973, 2730947657, 3397056017, 3710875177, 3168346915,
-            365144891,
+            0xe816e42a, 0x7d9875d8, 0xfda62c55, 0xa2c6f449, 0xca7af611, 0xdd2f7629, 0xbcd92323,
+            0x15c3ab3b,
         ],
     );
-
-    let res = blake2s_finalize(state, byte_count, msg).unbox();
     assert_eq!(
-        res,
+        blake2s_finalize(state, byte_count, msg).unbox(),
         [
-            128291589, 1454945417, 3191583614, 1491889056, 794023379, 651000200, 3725903680,
-            1044330286,
+            0x7a59305, 0x56b8b489, 0xbe3bb37e, 0x58ec6ba0, 0x2f53d5d3, 0x26cd7988, 0xde14c740,
+            0x3e3f372e,
+        ],
+    );
+}
+
+#[test]
+fn test_blake2s_with_abc() {
+    // hashing `abc` as it is done in RFC 7693 Appendix B.
+    // Initial state is the IV, with keylen 0 and output length 32.
+    let state = BoxTrait::new(
+        [
+            0x6A09E667 ^ (0x01010000 ^ 0x20), 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F,
+            0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
+        ],
+    );
+    // Message `abc` padded with zeros.
+    let msg = BoxTrait::new(['cba', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    assert_eq!(
+        blake2s_finalize(state, 3, msg).unbox(),
+        [
+            0x8c5e8c50, 0xe2147c32, 0xa32ba7e1, 0x2f45eb4e, 0x208b4537, 0x293ad69e, 0x4c9b994d,
+            0x82596786,
         ],
     );
 }
