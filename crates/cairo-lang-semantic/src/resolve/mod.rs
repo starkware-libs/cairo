@@ -837,16 +837,16 @@ impl<'db> Resolver<'db> {
     ) -> Maybe<ResolvedGenericItem<'db>> {
         let mut segments = get_use_path_segments(self.db, use_path.clone())?;
         // Remove the last segment if it's `self`.
-        if let Some(last) = segments.segments.last() {
-            if last.identifier(self.db) == SELF_PARAM_KW {
-                // If the `self` keyword is used in a non-multi-use path, report an error.
-                if use_path.as_syntax_node().parent(self.db).unwrap().kind(self.db)
-                    != SyntaxKind::UsePathList
-                {
-                    diagnostics.report(use_path.stable_ptr(self.db), UseSelfNonMulti);
-                }
-                segments.segments.pop();
+        if let Some(last) = segments.segments.last()
+            && last.identifier(self.db) == SELF_PARAM_KW
+        {
+            // If the `self` keyword is used in a non-multi-use path, report an error.
+            if use_path.as_syntax_node().parent(self.db).unwrap().kind(self.db)
+                != SyntaxKind::UsePathList
+            {
+                diagnostics.report(use_path.stable_ptr(self.db), UseSelfNonMulti);
             }
+            segments.segments.pop();
         }
         if segments.segments.is_empty() {
             return Err(diagnostics.report(use_path.stable_ptr(self.db), UseSelfEmptyPath));
@@ -1548,13 +1548,11 @@ impl<'db> Resolver<'db> {
         for (star_module_id, item_module_id) in &imported_modules.accessible {
             if let Some(inner_item_info) =
                 self.resolve_item_in_imported_module(*item_module_id, ident)
+                && self.is_item_visible(*item_module_id, &inner_item_info, *star_module_id)
+                && self.is_item_feature_usable(&inner_item_info)
             {
-                if self.is_item_visible(*item_module_id, &inner_item_info, *star_module_id)
-                    && self.is_item_feature_usable(&inner_item_info)
-                {
-                    item_info = Some(inner_item_info.clone());
-                    module_items_found.insert(inner_item_info.item_id);
-                }
+                item_info = Some(inner_item_info.clone());
+                module_items_found.insert(inner_item_info.item_id);
             }
         }
         if module_items_found.len() > 1 {
@@ -1687,20 +1685,20 @@ impl<'db> Resolver<'db> {
     ) -> Maybe<ResolvedBase<'db>> {
         let db = self.db;
         let ident = identifier.text(db);
-        if let ResolutionContext::Statement(ref mut env) = ctx {
-            if let Some(item) = get_statement_item_by_name(env, ident) {
-                return Ok(ResolvedBase::StatementEnvironment(item));
-            }
+        if let ResolutionContext::Statement(ref mut env) = ctx
+            && let Some(item) = get_statement_item_by_name(env, ident)
+        {
+            return Ok(ResolvedBase::StatementEnvironment(item));
         }
 
         let Some(module_id) = self.try_get_active_module_id(macro_context_modifier) else {
             return Err(diagnostics.report(identifier.stable_ptr(db), PathNotFound(item_type)));
         };
         // If an item with this name is found inside the current module, use the current module.
-        if let Ok(Some(item_id)) = db.module_item_by_name(module_id, ident.into()) {
-            if !matches!(ctx, ResolutionContext::ModuleItem(id) if id == item_id) {
-                return Ok(ResolvedBase::Module(module_id));
-            }
+        if let Ok(Some(item_id)) = db.module_item_by_name(module_id, ident.into())
+            && !matches!(ctx, ResolutionContext::ModuleItem(id) if id == item_id)
+        {
+            return Ok(ResolvedBase::Module(module_id));
         }
 
         // If the first element is `crate`, use the crate's root module as the base module.
@@ -2022,13 +2020,11 @@ impl<'db> Resolver<'db> {
                         return Err(diagnostics
                             .report(arg_syntax.stable_ptr(db), UnknownGenericParam(name.into())));
                     };
-                    if let Some(prev_index) = last_named_arg_index {
-                        if prev_index > index {
-                            return Err(diagnostics.report(
-                                arg_syntax.stable_ptr(db),
-                                GenericArgOutOfOrder(name.into()),
-                            ));
-                        }
+                    if let Some(prev_index) = last_named_arg_index
+                        && prev_index > index
+                    {
+                        return Err(diagnostics
+                            .report(arg_syntax.stable_ptr(db), GenericArgOutOfOrder(name.into())));
                     }
                     last_named_arg_index = Some(index);
                     if arg_syntax_per_param

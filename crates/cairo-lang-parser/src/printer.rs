@@ -156,11 +156,11 @@ impl<'a> Printer<'a> {
         let (under_top_level, indent) =
             if current_is_top_level { (true, "") } else { (under_top_level, indent) };
 
-        if !self.print_trivia {
-            if let Some(token_node) = syntax_node.get_terminal_token(self.db) {
-                self.print_tree(field_description, &token_node, indent, is_last, under_top_level);
-                return;
-            }
+        if !self.print_trivia
+            && let Some(token_node) = syntax_node.get_terminal_token(self.db)
+        {
+            self.print_tree(field_description, &token_node, indent, is_last, under_top_level);
+            return;
         }
 
         let extra_info = if is_missing_kind(kind) {

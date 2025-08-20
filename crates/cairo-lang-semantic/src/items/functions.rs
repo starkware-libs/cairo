@@ -1033,23 +1033,18 @@ pub fn get_closure_params<'db>(
 
     for param in generic_params {
         if let GenericParam::Impl(generic_param_impl) = param {
-            let trait_id = generic_param_impl.concrete_trait?.trait_id(db);
+            let concrete_trait = generic_param_impl.concrete_trait?;
+            if fn_traits(db).contains(&concrete_trait.trait_id(db)) {
+                let [GenericArgumentId::Type(closure_type), GenericArgumentId::Type(params_type)] =
+                    *concrete_trait.generic_args(db)
+                else {
+                    unreachable!(
+                        "Fn trait must have exactly two generic arguments: closure type and \
+                         parameter type."
+                    )
+                };
 
-            if fn_traits(db).contains(&trait_id) {
-                if let Ok(concrete_trait) = generic_param_impl.concrete_trait {
-                    let [
-                        GenericArgumentId::Type(closure_type),
-                        GenericArgumentId::Type(params_type),
-                    ] = *concrete_trait.generic_args(db)
-                    else {
-                        unreachable!(
-                            "Fn trait must have exactly two generic arguments: closure type and \
-                             parameter type."
-                        )
-                    };
-
-                    closure_params_map.insert(closure_type, params_type);
-                }
+                closure_params_map.insert(closure_type, params_type);
             }
         }
     }

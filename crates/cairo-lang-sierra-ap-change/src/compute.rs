@@ -257,10 +257,10 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             return Ok(());
         };
         if matches!(self.program.get_statement(&idx), Some(Statement::Return(_))) {
-            if let ApTrackingBase::FunctionStart(id) = base_info.base {
-                if let Some(func_change) = self.function_ap_change.get(&id) {
-                    self.effective_ap_change_from_base.insert(idx, *func_change);
-                }
+            if let ApTrackingBase::FunctionStart(id) = base_info.base
+                && let Some(func_change) = self.function_ap_change.get(&id)
+            {
+                self.effective_ap_change_from_base.insert(idx, *func_change);
             }
             return Ok(());
         }

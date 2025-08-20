@@ -751,12 +751,11 @@ pub fn add_type_based_diagnostics<'db>(
     }
     if let TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) = ty.long(db) {
         let long_id = extrn.long(db);
-        if long_id.extern_type_id.name(db) == "Array" {
-            if let [GenericArgumentId::Type(arg_ty)] = &long_id.generic_args[..] {
-                if db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized) {
-                    diagnostics.report(stable_ptr, ArrayOfZeroSizedElements(*arg_ty));
-                }
-            }
+        if long_id.extern_type_id.name(db) == "Array"
+            && let [GenericArgumentId::Type(arg_ty)] = &long_id.generic_args[..]
+            && db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized)
+        {
+            diagnostics.report(stable_ptr, ArrayOfZeroSizedElements(*arg_ty));
         }
     }
 }

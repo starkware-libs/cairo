@@ -815,10 +815,10 @@ fn write_function_signature<'db>(
     }
     f.write_str(")")?;
 
-    if let Some(return_type) = documentable_signature.return_type {
-        if !return_type.is_unit(f.db) {
-            f.write_type(Some(" -> "), return_type, None, &documentable_signature.full_path)?;
-        }
+    if let Some(return_type) = documentable_signature.return_type
+        && !return_type.is_unit(f.db)
+    {
+        f.write_type(Some(" -> "), return_type, None, &documentable_signature.full_path)?;
     }
     Ok(())
 }

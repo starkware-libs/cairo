@@ -51,12 +51,11 @@ pub fn methods_in_module<'db>(
             if first_param.name != SELF_PARAM_KW {
                 continue;
             }
-            if let TypeFilter::TypeHead(type_head) = &type_filter {
-                if let Some(head) = first_param.ty.head(db) {
-                    if !fit_for_method(&head, type_head) {
-                        continue;
-                    }
-                }
+            if let TypeFilter::TypeHead(type_head) = &type_filter
+                && let Some(head) = first_param.ty.head(db)
+                && !fit_for_method(&head, type_head)
+            {
+                continue;
             }
 
             result.push(trait_function)

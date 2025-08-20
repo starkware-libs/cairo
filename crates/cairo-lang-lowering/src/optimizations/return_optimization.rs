@@ -229,12 +229,12 @@ impl<'db> ValueInfo<'db> {
     {
         match self {
             ValueInfo::Var(var_usage) => *self = f(var_usage),
-            ValueInfo::StructConstruct { ty: _, ref mut var_infos } => {
+            ValueInfo::StructConstruct { ty: _, var_infos } => {
                 for var_info in var_infos.iter_mut() {
                     var_info.apply(f);
                 }
             }
-            ValueInfo::EnumConstruct { ref mut var_info, .. } => {
+            ValueInfo::EnumConstruct { var_info, .. } => {
                 var_info.apply(f);
             }
             ValueInfo::Interchangeable(_) => {}
@@ -299,9 +299,7 @@ impl<'db> ValueInfo<'db> {
                     false => OpResult::NoChange,
                 }
             }
-            ValueInfo::EnumConstruct { ref mut var_info, .. } => {
-                var_info.apply_deconstruct(ctx, stmt)
-            }
+            ValueInfo::EnumConstruct { var_info, .. } => var_info.apply_deconstruct(ctx, stmt),
             ValueInfo::Interchangeable(_) => OpResult::NoChange,
         }
     }
@@ -317,7 +315,7 @@ impl<'db> ValueInfo<'db> {
                     OpResult::NoChange
                 }
             }
-            ValueInfo::StructConstruct { ty: _, ref mut var_infos } => {
+            ValueInfo::StructConstruct { ty: _, var_infos } => {
                 let mut input_consumed = false;
                 for var_info in var_infos.iter_mut() {
                     match var_info.apply_match_arm(input, arm) {
@@ -334,7 +332,7 @@ impl<'db> ValueInfo<'db> {
                 }
                 OpResult::NoChange
             }
-            ValueInfo::EnumConstruct { ref mut var_info, variant } => {
+            ValueInfo::EnumConstruct { var_info, variant } => {
                 let MatchArmSelector::VariantId(arm_variant) = &arm.arm_selector else {
                     panic!("Enum construct should not appear in value match");
                 };
@@ -524,13 +522,13 @@ impl<'db, 'a> Analyzer<'db, 'a> for ReturnOptimizerContext<'db, 'a> {
             _ => info.invalidate(),
         }
 
-        if let Some(early_return_info) = opt_early_return_info {
-            if info.try_get_early_return_info().is_none() {
-                self.fixes.push(FixInfo {
-                    location: (block_idx, statement_idx + 1),
-                    return_info: early_return_info,
-                });
-            }
+        if let Some(early_return_info) = opt_early_return_info
+            && info.try_get_early_return_info().is_none()
+        {
+            self.fixes.push(FixInfo {
+                location: (block_idx, statement_idx + 1),
+                return_info: early_return_info,
+            });
         }
     }
 

@@ -364,25 +364,24 @@ fn generate_constructor_deploy_function<'db>(
     let mut deploy_function_node = RewriteNode::empty();
 
     for item in body.iter_items(db) {
-        if let ast::ModuleItem::FreeFunction(func) = item {
-            if let Some(EntryPointKind::Constructor) =
+        if let ast::ModuleItem::FreeFunction(func) = item
+            && let Some(EntryPointKind::Constructor) =
                 EntryPointKind::try_from_function_with_body(db, diagnostics, &func)
-            {
-                let signature_params = func.declaration(db).signature(db).parameters(db);
-                let params = signature_params.elements(db);
-                let mut constructor_params = Vec::new();
+        {
+            let signature_params = func.declaration(db).signature(db).parameters(db);
+            let params = signature_params.elements(db);
+            let mut constructor_params = Vec::new();
 
-                for param in params.skip(1) {
-                    let name = param.name(db).text(db);
-                    let type_clause =
-                        extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause);
-                    constructor_params.push((name, type_clause.ty(db)));
-                }
-
-                deploy_function_node = generate_deploy_function(db, constructor_params);
-
-                break;
+            for param in params.skip(1) {
+                let name = param.name(db).text(db);
+                let type_clause =
+                    extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause);
+                constructor_params.push((name, type_clause.ty(db)));
             }
+
+            deploy_function_node = generate_deploy_function(db, constructor_params);
+
+            break;
         }
     }
     deploy_function_node
@@ -741,10 +740,9 @@ pub fn remove_component_inline_macro<'db>(
 ) -> PluginResult<'db> {
     if let Some((_module_ast, module_kind, _)) =
         grand_grand_parent_starknet_module(component_macro_ast.as_syntax_node(), db)
+        && module_kind == StarknetModuleKind::Contract
     {
-        if module_kind == StarknetModuleKind::Contract {
-            return PluginResult { code: None, diagnostics: vec![], remove_original_item: true };
-        }
+        return PluginResult { code: None, diagnostics: vec![], remove_original_item: true };
     }
     PluginResult { code: None, diagnostics: vec![], remove_original_item: false }
 }

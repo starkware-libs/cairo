@@ -152,10 +152,12 @@ unsafe impl<'db> salsa::Update for FunctionBodyData<'db> {
     // For lookups we assume they are built from the arena,
     // so a change will be detected and they will be copied.
     unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = &mut *old_pointer;
-        let res = Diagnostics::maybe_update(&mut old_value.diagnostics, new_value.diagnostics)
-            | Arc::maybe_update(&mut old_value.resolver_data, new_value.resolver_data)
-            | Arc::maybe_update(&mut old_value.body, new_value.body);
+        let old_value = unsafe { &mut *old_pointer };
+        let res = unsafe {
+            Diagnostics::maybe_update(&mut old_value.diagnostics, new_value.diagnostics)
+                | Arc::maybe_update(&mut old_value.resolver_data, new_value.resolver_data)
+                | Arc::maybe_update(&mut old_value.body, new_value.body)
+        };
         if res {
             old_value.expr_lookup = new_value.expr_lookup;
             old_value.pattern_lookup = new_value.pattern_lookup;
@@ -176,10 +178,10 @@ unsafe impl<'db> salsa::Update for FunctionBody<'db> {
     unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
         // The function body contains both the arena and the expr id, so a change will be detected.
         // The comparison should still be safe to do as we wont follow expired references.
-        let old_value = &*old_pointer;
+        let old_value = unsafe { &mut *old_pointer };
 
         if old_value != &new_value {
-            *old_pointer = new_value;
+            *old_value = new_value;
             return true;
         }
 

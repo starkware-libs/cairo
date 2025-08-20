@@ -55,7 +55,7 @@ pub struct Function<'db> {
 
 unsafe impl<'db> salsa::Update for Function<'db> {
     unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = &mut *old_pointer;
+        let old_value = unsafe { &mut *old_pointer };
         if old_value == &new_value {
             return false;
         }

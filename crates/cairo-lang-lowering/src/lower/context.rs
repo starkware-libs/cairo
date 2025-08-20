@@ -278,10 +278,10 @@ impl<'db> LoweredExpr<'db> {
                 Ok(builder.get_ref(ctx, &member_path).unwrap())
             }
             LoweredExpr::Snapshot { expr, location } => {
-                if let LoweredExpr::MemberPath(member_path, _location) = &*expr {
-                    if let Some(var_usage) = builder.get_snap_ref(ctx, member_path) {
-                        return Ok(VarUsage { var_id: var_usage.var_id, location });
-                    }
+                if let LoweredExpr::MemberPath(member_path, _location) = &*expr
+                    && let Some(var_usage) = builder.get_snap_ref(ctx, member_path)
+                {
+                    return Ok(VarUsage { var_id: var_usage.var_id, location });
                 }
 
                 let input = expr.clone().as_var_usage(ctx, builder)?;

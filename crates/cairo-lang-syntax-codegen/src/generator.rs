@@ -17,10 +17,10 @@ pub fn project_root() -> PathBuf {
 }
 
 pub fn ensure_file_content(filename: PathBuf, content: String) {
-    if let Ok(old_contents) = fs::read_to_string(&filename) {
-        if old_contents == content {
-            return;
-        }
+    if let Ok(old_contents) = fs::read_to_string(&filename)
+        && old_contents == content
+    {
+        return;
     }
 
     fs::write(&filename, content).unwrap();

@@ -553,10 +553,10 @@ fn functions_with_body_from_function_ids<'db>(
     Ok(function_ids
         .into_iter()
         .map(|concrete| {
-            if dependency_type == DependencyType::Cost {
-                if let Some(function_with_body) = extract_coupon_function(db, concrete)? {
-                    return Ok(Some(function_with_body));
-                }
+            if dependency_type == DependencyType::Cost
+                && let Some(function_with_body) = extract_coupon_function(db, concrete)?
+            {
+                return Ok(Some(function_with_body));
             }
             concrete.body(db)
         })
@@ -724,10 +724,10 @@ fn module_lowering_diagnostics<'db>(
         }
     }
     for macro_call in db.module_macro_calls_ids(module_id)?.iter() {
-        if let Ok(macro_module_id) = db.macro_call_module_id(*macro_call) {
-            if let Ok(lowering_diags) = db.module_lowering_diagnostics(macro_module_id) {
-                diagnostics.extend(lowering_diags);
-            }
+        if let Ok(macro_module_id) = db.macro_call_module_id(*macro_call)
+            && let Ok(lowering_diags) = db.module_lowering_diagnostics(macro_module_id)
+        {
+            diagnostics.extend(lowering_diags);
         }
     }
     Ok(diagnostics.build())

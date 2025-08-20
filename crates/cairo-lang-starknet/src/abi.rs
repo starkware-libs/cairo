@@ -779,10 +779,8 @@ impl<'db> AbiBuilder<'db> {
             Item::Impl(item) => format!("Impl '{}'", item.name),
         };
         let already_existed = !self.abi_items.insert(item);
-        if already_existed {
-            if let Some(source) = prevent_dups {
-                return Err(ABIError::InvalidDuplicatedItem { description, source_ptr: source });
-            }
+        if already_existed && let Some(source) = prevent_dups {
+            return Err(ABIError::InvalidDuplicatedItem { description, source_ptr: source });
         }
 
         Ok(())

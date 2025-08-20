@@ -195,18 +195,16 @@ impl<'db> StorageInterfaceInfo<'db> {
         enum_ast: &ast::ItemEnum<'db>,
         is_mutable: bool,
     ) -> Option<Self> {
-        if let Some(attr) = enum_ast.find_attr(db, STORAGE_SUB_POINTERS_ATTR) {
-            if let OptionArgListParenthesized::ArgListParenthesized(arguments) = attr.arguments(db)
-            {
-                if let Some(arg) = extract_single_unnamed_arg(db, arguments.arguments(db)) {
-                    let target_name = arg.as_syntax_node().get_text_without_trivia(db).to_string();
-                    return Some(Self {
-                        db,
-                        node_type: StorageInterfaceType::EnumSubPointers { target_name },
-                        is_mutable,
-                    });
-                }
-            }
+        if let Some(attr) = enum_ast.find_attr(db, STORAGE_SUB_POINTERS_ATTR)
+            && let OptionArgListParenthesized::ArgListParenthesized(arguments) = attr.arguments(db)
+            && let Some(arg) = extract_single_unnamed_arg(db, arguments.arguments(db))
+        {
+            let target_name = arg.as_syntax_node().get_text_without_trivia(db).to_string();
+            return Some(Self {
+                db,
+                node_type: StorageInterfaceType::EnumSubPointers { target_name },
+                is_mutable,
+            });
         }
         None
     }

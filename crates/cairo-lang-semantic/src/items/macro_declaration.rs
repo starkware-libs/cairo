@@ -545,10 +545,10 @@ fn expand_macro_rule_ex(
                     )?;
                 }
 
-                if i + 1 < repetition_len {
-                    if let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db) {
-                        res_buffer.push_str(sep.as_syntax_node().get_text(db));
-                    }
+                if i + 1 < repetition_len
+                    && let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db)
+                {
+                    res_buffer.push_str(sep.as_syntax_node().get_text(db));
                 }
             }
 

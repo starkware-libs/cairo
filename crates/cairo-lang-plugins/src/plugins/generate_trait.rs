@@ -113,8 +113,7 @@ fn generate_trait_for_impl<'db>(
                 let trait_generic_args = generic_args.elements(db);
                 let longer_lived = impl_generic_params.generic_params(db);
                 let impl_generic_params = longer_lived.elements(db);
-                // Temporary result is used to avoid the borrow checker error.
-                let temporary_result = zip(trait_generic_args, impl_generic_params).all(
+                zip(trait_generic_args, impl_generic_params).all(
                     |(trait_generic_arg, impl_generic_param)| {
                         let ast::GenericArg::Unnamed(trait_generic_arg) = trait_generic_arg else {
                             return false;
@@ -138,8 +137,7 @@ fn generate_trait_for_impl<'db>(
                         };
                         trait_generic_arg_name.text(db) == impl_generic_param_name.text(db)
                     },
-                );
-                temporary_result
+                )
             } else {
                 false
             }

@@ -148,17 +148,17 @@ impl<'db> DemandReporter<VariableId, PanicState> for DestructAdder<'db, '_> {
             return;
         }
         // If a non destructible variable gets out of scope, add a panic_destruct call for it.
-        if let Ok(impl_id) = var.info.panic_destruct_impl.clone() {
-            if let PanicState::EndsWithPanic(panic_locations) = panic_state {
-                for panic_location in panic_locations {
-                    self.destructions.push(DestructionEntry::Panic(PanicDeconstructionEntry {
-                        panic_location,
-                        var_id,
-                        impl_id,
-                    }));
-                }
-                return;
+        if let Ok(impl_id) = var.info.panic_destruct_impl.clone()
+            && let PanicState::EndsWithPanic(panic_locations) = panic_state
+        {
+            for panic_location in panic_locations {
+                self.destructions.push(DestructionEntry::Panic(PanicDeconstructionEntry {
+                    panic_location,
+                    var_id,
+                    impl_id,
+                }));
             }
+            return;
         }
 
         panic!("Borrow checker should have caught this.")

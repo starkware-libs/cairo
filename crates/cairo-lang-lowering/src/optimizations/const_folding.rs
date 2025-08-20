@@ -309,13 +309,11 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                             let output = arm.var_ids[0];
                             if self.variables[input.var_id].info.droppable.is_ok()
                                 && self.variables[output].info.copyable.is_ok()
-                            {
-                                if let Some(stmt) =
+                                && let Some(stmt) =
                                     self.try_generate_const_statement(&value, output)
-                                {
-                                    block.statements.push(stmt);
-                                    block.end = BlockEnd::Goto(arm.block_id, Default::default());
-                                }
+                            {
+                                block.statements.push(stmt);
+                                block.end = BlockEnd::Goto(arm.block_id, Default::default());
                             }
                             self.var_info.insert(output, VarInfo::Const(value));
                         }
@@ -323,22 +321,18 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     MatchInfo::Value(info) => {
                         if let Some(value) =
                             self.as_int(info.input.var_id).and_then(|x| x.to_usize())
-                        {
-                            if let Some(arm) = info.arms.iter().find(|arm| {
+                            && let Some(arm) = info.arms.iter().find(|arm| {
                                 matches!(
                                     &arm.arm_selector,
                                     MatchArmSelector::Value(v) if v.value == value
                                 )
-                            }) {
-                                // Create the variable that was previously introduced in match arm.
-                                block.statements.push(Statement::StructConstruct(
-                                    StatementStructConstruct {
-                                        inputs: vec![],
-                                        output: arm.var_ids[0],
-                                    },
-                                ));
-                                block.end = BlockEnd::Goto(arm.block_id, Default::default());
-                            }
+                            })
+                        {
+                            // Create the variable that was previously introduced in match arm.
+                            block.statements.push(Statement::StructConstruct(
+                                StatementStructConstruct { inputs: vec![], output: arm.var_ids[0] },
+                            ));
+                            block.end = BlockEnd::Goto(arm.block_id, Default::default());
                         }
                     }
                     MatchInfo::Extern(info) => {
@@ -350,7 +344,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     }
                 }
             }
-            BlockEnd::Return(ref mut inputs, _) => self.maybe_replace_inputs(inputs),
+            BlockEnd::Return(inputs, _) => self.maybe_replace_inputs(inputs),
             BlockEnd::Panic(_) | BlockEnd::NotSet => unreachable!(),
         }
         match &block.end {
@@ -602,13 +596,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         let mut const_args = vec![];
         let mut new_args = vec![];
         for arg in &call_stmt.inputs {
-            if let Some(var_info) = self.var_info.get(&arg.var_id) {
-                if let Some(c) =
+            if let Some(var_info) = self.var_info.get(&arg.var_id)
+                && let Some(c) =
                     self.try_get_specialization_arg(var_info.clone(), self.variables[arg.var_id].ty)
-                {
-                    const_args.push(Some(c.clone()));
-                    continue;
-                }
+            {
+                const_args.push(Some(c.clone()));
+                continue;
             }
             const_args.push(None);
             new_args.push(*arg);
@@ -857,12 +850,13 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     ));
                 }
             }
-            if let Some(lhs) = lhs {
-                if lhs.is_zero() && (self.uadd_fns.contains(&id) || self.iadd_fns.contains(&id)) {
-                    let arm = &info.arms[0];
-                    self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[1]));
-                    return Some((vec![], BlockEnd::Goto(arm.block_id, Default::default())));
-                }
+            if let Some(lhs) = lhs
+                && lhs.is_zero()
+                && (self.uadd_fns.contains(&id) || self.iadd_fns.contains(&id))
+            {
+                let arm = &info.arms[0];
+                self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[1]));
+                return Some((vec![], BlockEnd::Goto(arm.block_id, Default::default())));
             }
             None
         } else if let Some(reversed) = self.downcast_fns.get(&id) {
@@ -926,71 +920,70 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             ))
         } else if id == self.array_get {
             let index = self.as_int(info.inputs[1].var_id)?.to_usize()?;
-            if let Some(VarInfo::Snapshot(arr_info)) = self.var_info.get(&info.inputs[0].var_id) {
-                if let VarInfo::Array(infos) = arr_info.as_ref() {
-                    if let Some(Some(output_var_info)) = infos.get(index) {
-                        let arm = &info.arms[0];
-                        let output_var_info = output_var_info.clone();
-                        let box_info =
-                            VarInfo::Box(VarInfo::Snapshot(output_var_info.clone().into()).into());
-                        self.var_info.insert(arm.var_ids[0], box_info);
-                        if let VarInfo::Const(value) = output_var_info {
-                            let value_ty = value.ty(db).ok()?;
-                            let value_box_ty = corelib::core_box_ty(db, value_ty);
-                            let location = info.location;
-                            let boxed_var =
-                                Variable::with_default_context(db, value_box_ty, location);
-                            let boxed = self.variables.alloc(boxed_var.clone());
-                            let unused_boxed = self.variables.alloc(boxed_var);
-                            let snapped = self.variables.alloc(Variable::with_default_context(
-                                db,
-                                TypeLongId::Snapshot(value_box_ty).intern(db),
-                                location,
-                            ));
-                            return Some((
-                                vec![
-                                    Statement::Const(StatementConst {
-                                        value: ConstValue::Boxed(value.into()),
-                                        output: boxed,
-                                    }),
-                                    Statement::Snapshot(StatementSnapshot {
-                                        input: VarUsage { var_id: boxed, location },
-                                        outputs: [unused_boxed, snapped],
-                                    }),
-                                    Statement::Call(StatementCall {
-                                        function: self
-                                            .box_forward_snapshot
-                                            .concretize(db, vec![GenericArgumentId::Type(value_ty)])
-                                            .lowered(db),
-                                        inputs: vec![VarUsage { var_id: snapped, location }],
-                                        with_coupon: false,
-                                        outputs: vec![arm.var_ids[0]],
-                                        location: info.location,
-                                    }),
-                                ],
-                                BlockEnd::Goto(arm.block_id, Default::default()),
-                            ));
-                        }
-                    } else {
+            if let Some(VarInfo::Snapshot(arr_info)) = self.var_info.get(&info.inputs[0].var_id)
+                && let VarInfo::Array(infos) = arr_info.as_ref()
+            {
+                if let Some(Some(output_var_info)) = infos.get(index) {
+                    let arm = &info.arms[0];
+                    let output_var_info = output_var_info.clone();
+                    let box_info =
+                        VarInfo::Box(VarInfo::Snapshot(output_var_info.clone().into()).into());
+                    self.var_info.insert(arm.var_ids[0], box_info);
+                    if let VarInfo::Const(value) = output_var_info {
+                        let value_ty = value.ty(db).ok()?;
+                        let value_box_ty = corelib::core_box_ty(db, value_ty);
+                        let location = info.location;
+                        let boxed_var = Variable::with_default_context(db, value_box_ty, location);
+                        let boxed = self.variables.alloc(boxed_var.clone());
+                        let unused_boxed = self.variables.alloc(boxed_var);
+                        let snapped = self.variables.alloc(Variable::with_default_context(
+                            db,
+                            TypeLongId::Snapshot(value_box_ty).intern(db),
+                            location,
+                        ));
                         return Some((
-                            vec![],
-                            BlockEnd::Goto(info.arms[1].block_id, Default::default()),
+                            vec![
+                                Statement::Const(StatementConst {
+                                    value: ConstValue::Boxed(value.into()),
+                                    output: boxed,
+                                }),
+                                Statement::Snapshot(StatementSnapshot {
+                                    input: VarUsage { var_id: boxed, location },
+                                    outputs: [unused_boxed, snapped],
+                                }),
+                                Statement::Call(StatementCall {
+                                    function: self
+                                        .box_forward_snapshot
+                                        .concretize(db, vec![GenericArgumentId::Type(value_ty)])
+                                        .lowered(db),
+                                    inputs: vec![VarUsage { var_id: snapped, location }],
+                                    with_coupon: false,
+                                    outputs: vec![arm.var_ids[0]],
+                                    location: info.location,
+                                }),
+                            ],
+                            BlockEnd::Goto(arm.block_id, Default::default()),
                         ));
                     }
+                } else {
+                    return Some((
+                        vec![],
+                        BlockEnd::Goto(info.arms[1].block_id, Default::default()),
+                    ));
                 }
             }
-            if index.is_zero() {
-                if let [success, failure] = info.arms.as_mut_slice() {
-                    let arr = info.inputs[0].var_id;
-                    let unused_arr_output0 = self.variables.alloc(self.variables[arr].clone());
-                    let unused_arr_output1 = self.variables.alloc(self.variables[arr].clone());
-                    info.inputs.truncate(1);
-                    info.function = GenericFunctionId::Extern(self.array_snapshot_pop_front)
-                        .concretize(db, generic_args)
-                        .lowered(db);
-                    success.var_ids.insert(0, unused_arr_output0);
-                    failure.var_ids.insert(0, unused_arr_output1);
-                }
+            if index.is_zero()
+                && let [success, failure] = info.arms.as_mut_slice()
+            {
+                let arr = info.inputs[0].var_id;
+                let unused_arr_output0 = self.variables.alloc(self.variables[arr].clone());
+                let unused_arr_output1 = self.variables.alloc(self.variables[arr].clone());
+                info.inputs.truncate(1);
+                info.function = GenericFunctionId::Extern(self.array_snapshot_pop_front)
+                    .concretize(db, generic_args)
+                    .lowered(db);
+                success.var_ids.insert(0, unused_arr_output0);
+                failure.var_ids.insert(0, unused_arr_output1);
             }
             None
         } else if id == self.array_pop_front {

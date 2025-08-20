@@ -180,19 +180,19 @@ impl<'db, 'mt> Analyzer<'db, '_> for BorrowChecker<'db, 'mt, '_> {
         info.variables_introduced(self, stmt.outputs(), (None, block_id));
         match stmt {
             Statement::Call(stmt) => {
-                if let Ok(signature) = stmt.function.signature(self.db) {
-                    if signature.panicable {
-                        // Be prepared to panic here.
-                        let panic_demand = BorrowCheckerDemand {
-                            aux: PanicState::EndsWithPanic,
-                            ..Default::default()
-                        };
-                        let location = (Some(DropPosition::Panic(stmt.location)), block_id);
-                        *info = BorrowCheckerDemand::merge_demands(
-                            &[(panic_demand, location), (info.clone(), location)],
-                            self,
-                        );
-                    }
+                if let Ok(signature) = stmt.function.signature(self.db)
+                    && signature.panicable
+                {
+                    // Be prepared to panic here.
+                    let panic_demand = BorrowCheckerDemand {
+                        aux: PanicState::EndsWithPanic,
+                        ..Default::default()
+                    };
+                    let location = (Some(DropPosition::Panic(stmt.location)), block_id);
+                    *info = BorrowCheckerDemand::merge_demands(
+                        &[(panic_demand, location), (info.clone(), location)],
+                        self,
+                    );
                 }
             }
             Statement::Desnap(stmt) => {

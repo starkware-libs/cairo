@@ -593,20 +593,16 @@ impl<'db> SemanticRewriter<GenericFunctionWithBodyId<'db>, DiagnosticAdded>
         &mut self,
         value: &mut GenericFunctionWithBodyId<'db>,
     ) -> Maybe<RewriteResult> {
-        if let GenericFunctionWithBodyId::Trait(id) = value {
-            if let Some(self_impl) = &self.substitution.self_impl {
-                if let ImplLongId::Concrete(concrete_impl_id) = self_impl.long(self.db) {
-                    if self.rewrite(id.concrete_trait(self.db))?
-                        == self_impl.concrete_trait(self.db)?
-                    {
-                        *value = GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
-                            concrete_impl_id: *concrete_impl_id,
-                            function_body: ImplFunctionBodyId::Trait(id.trait_function(self.db)),
-                        });
-                        return Ok(RewriteResult::Modified);
-                    }
-                }
-            }
+        if let GenericFunctionWithBodyId::Trait(id) = value
+            && let Some(self_impl) = &self.substitution.self_impl
+            && let ImplLongId::Concrete(concrete_impl_id) = self_impl.long(self.db)
+            && self.rewrite(id.concrete_trait(self.db))? == self_impl.concrete_trait(self.db)?
+        {
+            *value = GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
+                concrete_impl_id: *concrete_impl_id,
+                function_body: ImplFunctionBodyId::Trait(id.trait_function(self.db)),
+            });
+            return Ok(RewriteResult::Modified);
         }
         value.default_rewrite(self)
     }

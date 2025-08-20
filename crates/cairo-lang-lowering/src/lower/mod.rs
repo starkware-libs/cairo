@@ -1242,25 +1242,24 @@ fn lower_expr_function_call<'db>(
     }
 
     // The following is relevant only to extern functions.
-    if expr.function.try_get_extern_function_id(ctx.db).is_some() {
-        if let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
+    if expr.function.try_get_extern_function_id(ctx.db).is_some()
+        && let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
             expr.ty.long(ctx.db)
-        {
-            let lowered_expr = LoweredExprExternEnum {
-                function: expr.function,
-                concrete_enum_id: *concrete_enum_id,
-                inputs: arg_inputs,
-                member_paths: ref_args_iter.cloned().collect(),
-                location,
-            };
+    {
+        let lowered_expr = LoweredExprExternEnum {
+            function: expr.function,
+            concrete_enum_id: *concrete_enum_id,
+            inputs: arg_inputs,
+            member_paths: ref_args_iter.cloned().collect(),
+            location,
+        };
 
-            // It is still unknown whether we directly match on this enum result, or store it to a
-            // variable. Thus we can't perform the call. Performing it and pushing/bringing-back
-            // variables are done on the 2 places where this result is used:
-            // 1. [lower_optimized_extern_match]
-            // 2. [context::LoweredExprExternEnum::var]
-            return Ok(LoweredExpr::ExternEnum(lowered_expr));
-        }
+        // It is still unknown whether we directly match on this enum result, or store it to a
+        // variable. Thus we can't perform the call. Performing it and pushing/bringing-back
+        // variables are done on the 2 places where this result is used:
+        // 1. [lower_optimized_extern_match]
+        // 2. [context::LoweredExprExternEnum::var]
+        return Ok(LoweredExpr::ExternEnum(lowered_expr));
     }
 
     let (ref_outputs, res) = perform_function_call(
