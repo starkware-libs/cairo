@@ -1,6 +1,7 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::{Intern, define_short_id};
 
+use super::cse::cse;
 use super::dedup_blocks::dedup_blocks;
 use super::early_unsafe_panic::early_unsafe_panic;
 use super::gas_redeposit::gas_redeposit;
@@ -30,6 +31,7 @@ pub enum OptimizationPhase<'db> {
     BranchInversion,
     CancelOps,
     ConstFolding,
+    Cse,
     DedupBlocks,
     EarlyUnsafePanic,
     OptimizeMatches,
@@ -72,6 +74,7 @@ impl<'db> OptimizationPhase<'db> {
             OptimizationPhase::BranchInversion => branch_inversion(db, lowered),
             OptimizationPhase::CancelOps => cancel_ops(lowered),
             OptimizationPhase::ConstFolding => const_folding(db, function, lowered),
+            OptimizationPhase::Cse => cse(lowered),
             OptimizationPhase::EarlyUnsafePanic => early_unsafe_panic(db, lowered),
             OptimizationPhase::DedupBlocks => dedup_blocks(lowered),
             OptimizationPhase::OptimizeMatches => optimize_matches(lowered),
