@@ -132,6 +132,9 @@ pub fn baseline_optimization_strategy<'db>(
     db: &'db dyn LoweringGroup,
 ) -> OptimizationStrategyId<'db> {
     OptimizationStrategy(vec![
+        // Doing CSE before inlining, since currently only performed on blocks.
+        // TODO(orizi): Remove this once CSE can happen across blocks.
+        OptimizationPhase::Cse,
         // Must be right before inlining.
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::ApplyInlining { enable_const_folding: true },
@@ -151,6 +154,8 @@ pub fn baseline_optimization_strategy<'db>(
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::CancelOps,
         OptimizationPhase::ReorganizeBlocks,
+        // Perfroming CSE here after blocks are the most contiguous, to reach maximum effect.
+        OptimizationPhase::Cse,
         OptimizationPhase::DedupBlocks,
         // Re-run ReturnOptimization to eliminate harmful merges introduced by DedupBlocks.
         OptimizationPhase::ReturnOptimization,
