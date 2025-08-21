@@ -1660,6 +1660,11 @@ pub trait SemanticGroup:
         &'db self,
         macro_call_id: MacroCallId<'db>,
     ) -> Maybe<ModuleId<'db>>;
+    /// Returns all ancestors (parents) and all macro-generated modules within them.
+    fn module_fully_accessible_modules<'db>(
+        &'db self,
+        module_id: ModuleId<'db>,
+    ) -> OrderedHashSet<ModuleId<'db>>;
     /// Returns the semantic diagnostics of a macro call.
     #[salsa::invoke(items::macro_call::macro_call_diagnostics)]
     #[salsa::cycle(items::macro_call::macro_call_diagnostics_cycle)]
@@ -2315,3 +2320,39 @@ pub trait PluginSuiteInput: SemanticGroup {
 }
 
 impl<T: SemanticGroup + ?Sized> PluginSuiteInput for T {}
+
+/// Returns all ancestors (parents) of the given module, including the module itself, in order from
+/// closest to farthest.
+pub fn module_ancestors<'db>(
+    db: &'db dyn DefsGroup,
+    mut module_id: ModuleId<'db>,
+) -> Vec<ModuleId<'db>> {
+    let mut ancestors = Vec::new();
+    ancestors.push(module_id); // Include the module itself first
+    while let ModuleId::Submodule(submodule_id) = module_id {
+        let parent = submodule_id.parent_module(db);
+        ancestors.push(parent);
+        module_id = parent;
+    }
+    ancestors
+}
+
+/// Returns all ancestors (parents) and all macro-generated modules within them.
+pub fn module_fully_accessible_modules<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> OrderedHashSet<ModuleId<'db>> {
+    let mut result: Vec<ModuleId<'db>> = module_ancestors(db, module_id);
+    let mut index = 0;
+    while let Some(curr) = result.get(index).copied() {
+        index += 1;
+        if let Ok(macro_call_ids) = db.module_macro_calls_ids(curr) {
+            for macro_call_id in macro_call_ids.iter() {
+                if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
+                    result.push(generated_module_id);
+                }
+            }
+        }
+    }
+    result.into_iter().collect()
+}

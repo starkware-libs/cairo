@@ -1,4 +1,3 @@
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_diagnostics::DiagnosticsBuilder;
@@ -6,6 +5,7 @@ use cairo_lang_syntax::node::{Terminal, ast};
 use salsa::Database;
 
 use crate::SemanticDiagnostic;
+use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
 
 /// Visibility of an item.
@@ -44,7 +44,7 @@ impl Visibility {
 /// Determine whether a module member is visible to user module given the visibility within it,
 /// ignoring or forgetting the visibility of the ancestors of the containing module for a moment.
 pub fn peek_visible_in<'db>(
-    db: &dyn DefsGroup,
+    db: &dyn SemanticGroup,
     visibility_in_module: Visibility,
     containing_module_id: ModuleId<'db>,
     user_module_id: ModuleId<'db>,
@@ -57,6 +57,8 @@ pub fn peek_visible_in<'db>(
         Visibility::PublicInCrate => {
             user_module_id.owning_crate(db) == containing_module_id.owning_crate(db)
         }
-        Visibility::Private => db.module_ancestors(user_module_id).contains(&containing_module_id),
+        Visibility::Private => {
+            db.module_fully_accessible_modules(user_module_id).contains(&containing_module_id)
+        }
     }
 }
