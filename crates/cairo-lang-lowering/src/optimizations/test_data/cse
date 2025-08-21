@@ -1,0 +1,309 @@
+//! > Test struct construct.
+
+//! > test_runner_name
+test_cse
+
+//! > function
+fn foo(x: u32, y: u32) -> ((u32, u32), (u32, u32)) {
+    ((x, y), (x, y))
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u32, v1: core::integer::u32
+blk0 (root):
+Statements:
+  (v2: (core::integer::u32, core::integer::u32)) <- struct_construct(v0, v1)
+  (v3: (core::integer::u32, core::integer::u32)) <- struct_construct(v0, v1)
+  (v4: ((core::integer::u32, core::integer::u32), (core::integer::u32, core::integer::u32))) <- struct_construct(v2, v3)
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: core::integer::u32, v1: core::integer::u32
+blk0 (root):
+Statements:
+  (v2: (core::integer::u32, core::integer::u32)) <- struct_construct(v0, v1)
+  (v4: ((core::integer::u32, core::integer::u32), (core::integer::u32, core::integer::u32))) <- struct_construct(v2, v2)
+End:
+  Return(v4)
+
+//! > ==========================================================================
+
+//! > Test enum construct.
+
+//! > test_runner_name
+test_cse
+
+//! > function
+use core::option::Option;
+
+fn foo(x: u32) -> (Option<u32>, Option<u32>) {
+    (Option::Some(x), Option::Some(x))
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::option::Option::<core::integer::u32>) <- Option::Some(v0)
+  (v2: core::option::Option::<core::integer::u32>) <- Option::Some(v0)
+  (v3: (core::option::Option::<core::integer::u32>, core::option::Option::<core::integer::u32>)) <- struct_construct(v1, v2)
+End:
+  Return(v3)
+
+//! > after
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::option::Option::<core::integer::u32>) <- Option::Some(v0)
+  (v3: (core::option::Option::<core::integer::u32>, core::option::Option::<core::integer::u32>)) <- struct_construct(v1, v1)
+End:
+  Return(v3)
+
+//! > ==========================================================================
+
+//! > Test snapshot.
+
+//! > test_runner_name
+test_cse
+
+//! > function
+fn foo(x: u32) -> (@u32, @u32) {
+    (@x, @x)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::integer::u32, v2: @core::integer::u32) <- snapshot(v0)
+  (v3: core::integer::u32, v4: @core::integer::u32) <- snapshot(v1)
+  (v5: (@core::integer::u32, @core::integer::u32)) <- struct_construct(v2, v4)
+End:
+  Return(v5)
+
+//! > after
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::integer::u32, v2: @core::integer::u32) <- snapshot(v0)
+  (v5: (@core::integer::u32, @core::integer::u32)) <- struct_construct(v2, v2)
+End:
+  Return(v5)
+
+//! > ==========================================================================
+
+//! > Test desnap.
+
+//! > test_runner_name
+test_cse
+
+//! > function
+fn foo(x: @u32) -> (u32, u32) {
+    (*x, *x)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: @core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- desnap(v0)
+  (v2: core::integer::u32) <- desnap(v0)
+  (v3: (core::integer::u32, core::integer::u32)) <- struct_construct(v1, v2)
+End:
+  Return(v3)
+
+//! > after
+Parameters: v0: @core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- desnap(v0)
+  (v3: (core::integer::u32, core::integer::u32)) <- struct_construct(v1, v1)
+End:
+  Return(v3)
+
+//! > ==========================================================================
+
+//! > Test struct destructure.
+
+//! > test_runner_name
+test_cse
+
+//! > function
+fn foo(tuple: (u32, u32)) -> (u32, u32, u32, u32) {
+    let (a, b) = tuple;
+    let (c, d) = tuple;
+    (a, b, c, d)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: (core::integer::u32, core::integer::u32)
+blk0 (root):
+Statements:
+  (v1: core::integer::u32, v2: core::integer::u32) <- struct_destructure(v0)
+  (v3: core::integer::u32, v4: core::integer::u32) <- struct_destructure(v0)
+  (v5: (core::integer::u32, core::integer::u32, core::integer::u32, core::integer::u32)) <- struct_construct(v1, v2, v3, v4)
+End:
+  Return(v5)
+
+//! > after
+Parameters: v0: (core::integer::u32, core::integer::u32)
+blk0 (root):
+Statements:
+  (v1: core::integer::u32, v2: core::integer::u32) <- struct_destructure(v0)
+  (v5: (core::integer::u32, core::integer::u32, core::integer::u32, core::integer::u32)) <- struct_construct(v1, v2, v1, v2)
+End:
+  Return(v5)
+
+//! > ==========================================================================
+
+//! > Test mixed CSE operations.
+
+//! > test_runner_name
+test_cse
+
+//! > function
+fn foo(x: u32, y: u32) -> u32 {
+    let tuple1 = (x, y);
+    let tuple2 = (x, y); // Duplicate struct construct
+    let snap1 = @x;
+    let snap2 = @x; // Duplicate snapshot
+    let (a, b) = tuple1;
+    let (c, d) = tuple2;
+    let val1 = *snap1;
+    let val2 = *snap2; // Using duplicate snapshots
+    a + b + c + d + val1 + val2
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u32, v1: core::integer::u32
+blk0 (root):
+Statements:
+  (v2: (core::integer::u32, core::integer::u32)) <- struct_construct(v0, v1)
+  (v3: (core::integer::u32, core::integer::u32)) <- struct_construct(v0, v1)
+  (v4: core::integer::u32, v5: @core::integer::u32) <- snapshot(v0)
+  (v6: core::integer::u32, v7: @core::integer::u32) <- snapshot(v4)
+  (v8: core::integer::u32, v9: core::integer::u32) <- struct_destructure(v2)
+  (v10: core::integer::u32, v11: core::integer::u32) <- struct_destructure(v3)
+  (v12: core::integer::u32) <- desnap(v5)
+  (v13: core::integer::u32) <- desnap(v7)
+  (v14: core::integer::u32) <- core::integer::U32Add::add(v8, v9)
+  (v15: core::integer::u32) <- core::integer::U32Add::add(v14, v10)
+  (v16: core::integer::u32) <- core::integer::U32Add::add(v15, v11)
+  (v17: core::integer::u32) <- core::integer::U32Add::add(v16, v12)
+  (v18: core::integer::u32) <- core::integer::U32Add::add(v17, v13)
+End:
+  Return(v18)
+
+//! > after
+Parameters: v0: core::integer::u32, v1: core::integer::u32
+blk0 (root):
+Statements:
+  (v2: (core::integer::u32, core::integer::u32)) <- struct_construct(v0, v1)
+  (v4: core::integer::u32, v5: @core::integer::u32) <- snapshot(v0)
+  (v8: core::integer::u32, v9: core::integer::u32) <- struct_destructure(v2)
+  (v12: core::integer::u32) <- desnap(v5)
+  (v14: core::integer::u32) <- core::integer::U32Add::add(v8, v9)
+  (v15: core::integer::u32) <- core::integer::U32Add::add(v14, v8)
+  (v16: core::integer::u32) <- core::integer::U32Add::add(v15, v9)
+  (v17: core::integer::u32) <- core::integer::U32Add::add(v16, v12)
+  (v18: core::integer::u32) <- core::integer::U32Add::add(v17, v12)
+End:
+  Return(v18)
+
+//! > ==========================================================================
+
+//! > Test no CSE for different inputs.
+
+//! > test_runner_name
+test_cse
+
+//! > function
+fn foo(x: u32, y: u32, z: u32) -> ((u32, u32), (u32, u32)) {
+    let tuple1 = (x, y); // Different inputs
+    let tuple2 = (x, z); // Should NOT be eliminated
+    (tuple1, tuple2)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u32, v1: core::integer::u32, v2: core::integer::u32
+blk0 (root):
+Statements:
+  (v3: (core::integer::u32, core::integer::u32)) <- struct_construct(v0, v1)
+  (v4: (core::integer::u32, core::integer::u32)) <- struct_construct(v0, v2)
+  (v5: ((core::integer::u32, core::integer::u32), (core::integer::u32, core::integer::u32))) <- struct_construct(v3, v4)
+End:
+  Return(v5)
+
+//! > after
+Parameters: v0: core::integer::u32, v1: core::integer::u32, v2: core::integer::u32
+blk0 (root):
+Statements:
+  (v3: (core::integer::u32, core::integer::u32)) <- struct_construct(v0, v1)
+  (v4: (core::integer::u32, core::integer::u32)) <- struct_construct(v0, v2)
+  (v5: ((core::integer::u32, core::integer::u32), (core::integer::u32, core::integer::u32))) <- struct_construct(v3, v4)
+End:
+  Return(v5)
