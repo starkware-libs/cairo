@@ -1439,7 +1439,7 @@ pub trait SemanticGroup:
     fn priv_crate_dependencies<'db>(
         &'db self,
         crate_id: CrateId<'db>,
-    ) -> Maybe<Arc<OrderedHashSet<CrateId<'db>>>>;
+    ) -> Arc<OrderedHashSet<CrateId<'db>>>;
     /// Returns the uninferred impls of a crate which are global.
     /// An impl is global if it is defined in the same module as the trait it implements or in the
     /// same module as one of its concrete traits' types.
@@ -1449,6 +1449,21 @@ pub trait SemanticGroup:
         &'db self,
         crate_id: CrateId<'db>,
     ) -> Maybe<&'db UnorderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImplById<'db>>>>;
+
+    /// Returns the traits which impls of a trait directly depend on.
+    #[salsa::invoke(items::imp::crate_traits_dependancies)]
+    fn crate_traits_dependancies<'db>(
+        &'db self,
+        crate_id: CrateId<'db>,
+    ) -> Arc<UnorderedHashMap<TraitId<'db>, OrderedHashSet<TraitId<'db>>>>;
+
+    /// Returns the traits which are reachable from a trait.
+    #[salsa::invoke(items::imp::reachable_trait_dependencies)]
+    fn reachable_trait_dependencies<'db>(
+        &'db self,
+        trait_id: TraitId<'db>,
+        crate_id: CrateId<'db>,
+    ) -> OrderedHashSet<TraitId<'db>>;
 
     /// Returns the global and local impls of a module.
     #[salsa::invoke(items::imp::module_global_impls)]

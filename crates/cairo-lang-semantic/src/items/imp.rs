@@ -1,4 +1,5 @@
 use std::collections::BTreeSet;
+use std::collections::hash_map::RandomState;
 use std::fmt::Write;
 use std::hash::Hash;
 use std::sync::Arc;
@@ -2000,22 +2001,21 @@ impl<'db> ImplLookupContext<'db> {
                 self.inner_impls.insert(*imp);
             });
             // If the module is not in the lookup context's crate, we add its global impls
-            if let Ok(x) = db.priv_crate_dependencies(self.crate_id) {
-                if !x.contains(&module_id.owning_crate(db)) {
-                    module_impls.globals_by_trait.iter().for_each(|(_, imps)| {
-                        imps.iter().for_each(|imp| {
-                            if let Ok(trait_id) = imp.0.trait_id(db) {
-                                if let Some(set) = crate_global_impls.get(&trait_id) {
-                                    if set.contains(imp) {
-                                        return;
-                                    }
+
+            if !db.priv_crate_dependencies(self.crate_id).contains(&module_id.owning_crate(db)) {
+                module_impls.globals_by_trait.iter().for_each(|(_, imps)| {
+                    imps.iter().for_each(|imp| {
+                        if let Ok(trait_id) = imp.0.trait_id(db) {
+                            if let Some(set) = crate_global_impls.get(&trait_id) {
+                                if set.contains(imp) {
+                                    return;
                                 }
                             }
+                        }
 
-                            self.inner_impls.insert(*imp);
-                        });
+                        self.inner_impls.insert(*imp);
                     });
-                }
+                });
             }
         }
     }
@@ -2040,6 +2040,19 @@ impl<'db> ImplLookupContext<'db> {
         for uninferred_impl in uninferred_impls {
             self.inner_impls.insert(uninferred_impl.into());
         }
+    }
+    pub fn strip_for_trait_id(&mut self, db: &dyn SemanticGroup, trait_id: TraitId<'db>) {
+        let deps = db.reachable_trait_dependencies(trait_id, self.crate_id);
+        let type_eq_trt = db.core_info().type_eq_trt;
+        self.inner_impls.retain(|impl_by_id| {
+            if let Ok(impl_trait_id) = impl_by_id.0.trait_id(db) {
+                return trait_id == impl_trait_id
+                    || trait_id == type_eq_trt
+                    || deps.contains(&impl_trait_id);
+            }
+
+            false
+        });
     }
 }
 
@@ -3964,7 +3977,7 @@ pub fn priv_impl_is_var_free(db: &dyn SemanticGroup, impl_id: ImplId<'_>) -> boo
 pub fn priv_crate_dependencies<'db>(
     db: &'db dyn SemanticGroup,
     crate_id: CrateId<'db>,
-) -> Maybe<Arc<OrderedHashSet<CrateId<'db>>>> {
+) -> Arc<OrderedHashSet<CrateId<'db>>> {
     let mut crates = [crate_id, db.core_crate()].into_iter().unique().collect_vec();
     let mut crates_set: OrderedHashSet<CrateId<'db>, _> = OrderedHashSet::<
         CrateId<'db>,
@@ -3985,7 +3998,7 @@ pub fn priv_crate_dependencies<'db>(
             }
         }
     }
-    Ok(crates_set.into())
+    crates_set.into()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::crate_global_impls].
@@ -4008,7 +4021,7 @@ fn crate_global_impls_helper<'db>(
         TraitId<'db>,
         OrderedHashSet<UninferredImplById<'db>>,
     > = UnorderedHashMap::default();
-    for crate_id in db.priv_crate_dependencies(crate_id)?.iter() {
+    for crate_id in db.priv_crate_dependencies(crate_id).iter() {
         let mut modules = vec![ModuleId::CrateRoot(*crate_id)];
         while let Some(module_id) = modules.pop() {
             if let Ok(module_impls) = db.module_global_impls(module_id.owning_crate(db), module_id)
@@ -4030,9 +4043,172 @@ fn crate_global_impls_helper<'db>(
     Ok(crate_global_impls)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::crate_traits_dependencies].
+pub fn crate_traits_dependencies<'db>(
+    db: &'db dyn SemanticGroup,
+    crate_id: CrateId<'db>,
+) -> Arc<UnorderedHashMap<TraitId<'db>, OrderedHashSet<TraitId<'db>>>> {
+    let mut dependencies: UnorderedHashMap<TraitId<'db>, OrderedHashSet<TraitId<'db>>> =
+        UnorderedHashMap::default();
+    for crate_id in db.priv_crate_dependencies(crate_id).iter() {
+        let mut modules = vec![ModuleId::CrateRoot(*crate_id)];
+        while let Some(module_id) = modules.pop() {
+            if let Ok(module_impls) = db.module_global_impls(module_id.owning_crate(db), module_id)
+            {
+                for (trait_id, impls) in module_impls.trait_deps.iter() {
+                    dependencies.entry(*trait_id).or_default().extend(impls.clone());
+                }
+            }
+            if let Ok(x) = db.module_submodules_ids(module_id) {
+                modules.extend(x.iter().map(|sub_module| ModuleId::Submodule(*sub_module)));
+            }
+        }
+    }
+
+    dependencies.into()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::reachable_trait_dependencies].
+pub fn reachable_trait_dependencies<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+    crate_id: CrateId<'db>,
+) -> OrderedHashSet<TraitId<'db>> {
+    let dependencies = db.crate_traits_dependencies(crate_id);
+    let mut reachable_deps = OrderedHashSet::default();
+    let mut to_visit = vec![trait_id];
+    let mut visited: OrderedHashSet<TraitId<'db>, RandomState> = OrderedHashSet::default();
+    while let Some(current_trait) = to_visit.pop() {
+        if visited.contains(&current_trait) {
+            continue;
+        }
+        visited.insert(current_trait);
+        if let Some(deps) = dependencies.get(&current_trait) {
+            for dep in deps.iter() {
+                reachable_deps.insert(*dep);
+                if !visited.contains(dep) {
+                    to_visit.push(*dep);
+                }
+            }
+        }
+    }
+    reachable_deps
+}
+
+/// Adds the trait dependencies of an uninferred impl to the trait_deps map.
+fn uninferred_impl_trait_dependency<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_id: UninferredImpl<'db>,
+    trait_deps: &mut OrderedHashMap<TraitId<'db>, OrderedHashSet<TraitId<'db>>>,
+) -> Maybe<()> {
+    if let Ok(imp_trait_id) = impl_id.trait_id(db) {
+        match impl_id {
+            UninferredImpl::Def(impl_def_id) => {
+                let module_file_id = impl_def_id.module_file_id(db);
+                let mut diagnostics = SemanticDiagnostics::default();
+
+                let impl_ast = db.module_impl_by_id(impl_def_id)?;
+                let inference_id = InferenceId::ImplDefTrait(impl_def_id);
+
+                let mut resolver = Resolver::new(db, module_file_id, inference_id);
+                resolver.set_feature_config(&impl_def_id, &impl_ast, &mut diagnostics);
+
+                if let OptionWrappedGenericParamList::WrappedGenericParamList(params_list) =
+                    impl_ast.generic_params(db)
+                {
+                    params_list.generic_params(db).elements(db).for_each(|param_syntax| {
+                        let generic_param_id =
+                            GenericParamLongId(module_file_id, param_syntax.stable_ptr(db))
+                                .intern(db);
+                        resolver.add_generic_param(generic_param_id);
+                        let dependant_trait_id = match param_syntax {
+                            ast::GenericParam::ImplNamed(impl_param) => resolve_trait_path(
+                                db,
+                                &mut diagnostics,
+                                &mut resolver,
+                                &impl_param.trait_path(db),
+                            ),
+                            ast::GenericParam::ImplAnonymous(impl_param) => resolve_trait_path(
+                                db,
+                                &mut diagnostics,
+                                &mut resolver,
+                                &impl_param.trait_path(db),
+                            ),
+                            ast::GenericParam::NegativeImpl(impl_param) => resolve_trait_path(
+                                db,
+                                &mut diagnostics,
+                                &mut resolver,
+                                &impl_param.trait_path(db),
+                            ),
+                            _ => {
+                                return;
+                            }
+                        };
+                        let Ok(dependant_trait_id) = dependant_trait_id else {
+                            return;
+                        };
+                        trait_deps.entry(imp_trait_id).or_default().insert(dependant_trait_id);
+                    })
+                };
+            }
+            UninferredImpl::ImplAlias(impl_alias_id) => {
+                let module_file_id = impl_alias_id.module_file_id(db);
+                let mut diagnostics = SemanticDiagnostics::default();
+
+                let impl_ast = db.module_impl_alias_by_id(impl_alias_id)?;
+                let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
+
+                let mut resolver = Resolver::new(db, module_file_id, inference_id);
+                resolver.set_feature_config(&impl_alias_id, &impl_ast, &mut diagnostics);
+
+                if let OptionWrappedGenericParamList::WrappedGenericParamList(params_list) =
+                    impl_ast.generic_params(db)
+                {
+                    params_list.generic_params(db).elements(db).for_each(|param_syntax| {
+                        let generic_param_id =
+                            GenericParamLongId(module_file_id, param_syntax.stable_ptr(db))
+                                .intern(db);
+                        resolver.add_generic_param(generic_param_id);
+                        let dependant_trait_id = match param_syntax {
+                            ast::GenericParam::ImplNamed(impl_param) => resolve_trait_path(
+                                db,
+                                &mut diagnostics,
+                                &mut resolver,
+                                &impl_param.trait_path(db),
+                            ),
+                            ast::GenericParam::ImplAnonymous(impl_param) => resolve_trait_path(
+                                db,
+                                &mut diagnostics,
+                                &mut resolver,
+                                &impl_param.trait_path(db),
+                            ),
+                            ast::GenericParam::NegativeImpl(impl_param) => resolve_trait_path(
+                                db,
+                                &mut diagnostics,
+                                &mut resolver,
+                                &impl_param.trait_path(db),
+                            ),
+                            _ => {
+                                return;
+                            }
+                        };
+                        let Ok(dependant_trait_id) = dependant_trait_id else {
+                            return;
+                        };
+                        trait_deps.entry(imp_trait_id).or_default().insert(dependant_trait_id);
+                    })
+                }
+            }
+            _ => {}
+        }
+    };
+    Ok(())
+}
+
 #[derive(Default, Debug, Eq, PartialEq, salsa::Update)]
 pub struct ModuleImpls<'db> {
     globals_by_trait: OrderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImplById<'db>>>,
+    trait_deps: OrderedHashMap<TraitId<'db>, OrderedHashSet<TraitId<'db>>>,
     globals_by_type: OrderedHashMap<TypeId<'db>, Vec<UninferredImpl<'db>>>,
 
     locals: BTreeSet<UninferredImplById<'db>>,
@@ -4097,6 +4273,8 @@ pub fn module_global_impls<'db>(
                 }
                 _ => continue,
             };
+
+            uninferred_impl_trait_dependency(db, imp, &mut module_impls.trait_deps)?;
 
             if let Ok(true) = is_global_impl(db, imp, module_id) {
                 let trait_id = imp.trait_id(db)?;

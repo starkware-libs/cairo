@@ -161,6 +161,7 @@ pub fn enrich_lookup_context<'db>(
             enrich_lookup_context_with_ty(db, *ty, lookup_context);
         }
     }
+    lookup_context.strip_for_trait_id(db, concrete_trait_id.trait_id(db));
 }
 
 /// Adds the defining module of the type to the lookup context.
