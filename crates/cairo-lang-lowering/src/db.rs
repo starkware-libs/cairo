@@ -440,7 +440,7 @@ fn function_with_body_lowering_with_borrow_check<'db>(
     let lowered = match borrow_check_result.diagnostics.check_error_free() {
         Ok(_) => lowered,
         Err(diag_added) => Arc::new(Lowered {
-            diagnostics: borrow_check_result.diagnostics,
+            diagnostics: lowered.diagnostics.clone().merge(borrow_check_result.diagnostics),
             signature: lowered.signature.clone(),
             variables: lowered.variables.clone(),
             blocks: Blocks::new_errored(diag_added),
