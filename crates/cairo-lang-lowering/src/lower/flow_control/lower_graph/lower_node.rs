@@ -1,7 +1,7 @@
 //! Functions for lowering nodes of a [super::FlowControlGraph].
 
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_semantic::{self as semantic, MatchArmSelector, corelib};
+use cairo_lang_semantic::{self as semantic, GenericArgumentId, MatchArmSelector, corelib};
 use cairo_lang_syntax::node::TypedStablePtr;
 use itertools::zip_eq;
 
@@ -14,7 +14,7 @@ use crate::lower::block_builder::BlockBuilder;
 use crate::lower::context::{LoweredExpr, VarRequest};
 use crate::lower::flow_control::graph::{
     ArmExpr, BindVar, BooleanIf, Deconstruct, EnumMatch, EqualsLiteral, EvaluateExpr,
-    FlowControlNode, NodeId,
+    FlowControlNode, NodeId, Upcast,
 };
 use crate::lower::{
     generators, lower_expr, lower_expr_literal_to_var_usage, lower_expr_to_var_usage,
@@ -48,6 +48,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::EqualsLiteral(node) => lower_equals_literal(ctx, id, node, builder),
         FlowControlNode::BindVar(node) => lower_bind_var(ctx, id, node, builder),
         FlowControlNode::Deconstruct(node) => lower_deconstruct(ctx, id, node, builder),
+        FlowControlNode::Upcast(node) => lower_upcast(ctx, id, node, builder),
         FlowControlNode::Missing(diag_added) => Err(*diag_added),
     }
 }
@@ -304,6 +305,35 @@ fn lower_deconstruct<'db>(
         ctx.register_var(*output, VarUsage { var_id, location: output.location(ctx.graph) });
     }
 
+    ctx.pass_builder_to_child(id, node.next, builder);
+    Ok(())
+}
+
+/// Lowers an [Upcast] node.
+fn lower_upcast<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &Upcast,
+    mut builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let db = ctx.ctx.db;
+    let input_ty = node.input.ty(ctx.graph);
+    let output_ty = node.output.ty(ctx.graph);
+
+    let generic_args = vec![GenericArgumentId::Type(input_ty), GenericArgumentId::Type(output_ty)];
+    let function = db.core_info().upcast_fn.concretize(db, generic_args).lowered(db);
+
+    let call_result = generators::Call {
+        function,
+        inputs: vec![ctx.vars[&node.input]],
+        coupon_input: None,
+        extra_ret_tys: vec![],
+        ret_tys: vec![output_ty],
+        location: node.input.location(ctx.graph),
+    }
+    .add(ctx.ctx, &mut builder.statements);
+
+    ctx.register_var(node.output, call_result.returns.into_iter().next().unwrap());
     ctx.pass_builder_to_child(id, node.next, builder);
     Ok(())
 }
