@@ -740,7 +740,7 @@ fn lower_tuple_match_arm<'db>(
                             location: pattern_location,
                         });
 
-                        lower_single_pattern(ctx, &mut builder, inner_pattern, variant_expr)
+                        lower_single_pattern(ctx, &mut builder, inner_pattern, variant_expr, false)
                     }
                     Pattern::EnumVariant(PatternEnumVariant { inner_pattern: None, .. })
                     | Pattern::Otherwise(_) => Ok(()),
@@ -1605,7 +1605,9 @@ impl<'db> EnumVariantScopeBuilder<'db> for ExternEnumVariantPatternBuilder<'db> 
 
         let variant_expr = extern_facade_expr(ctx, ty, input_vars.clone(), location);
         match inner_pattern {
-            Some(inner_pattern) => lower_single_pattern(ctx, subscope, inner_pattern, variant_expr),
+            Some(inner_pattern) => {
+                lower_single_pattern(ctx, subscope, inner_pattern, variant_expr, false)
+            }
             None => Ok(()),
         }
         .map(|_| input_vars_to_report)
@@ -1642,7 +1644,8 @@ impl<'db> EnumVariantScopeBuilder<'db> for ConcreteEnumVariantPatternBuilder {
             });
             let variant_expr =
                 LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
-            lower_single_pattern(ctx, subscope, inner_pattern, variant_expr).map(|_| vec![var_id])
+            lower_single_pattern(ctx, subscope, inner_pattern, variant_expr, false)
+                .map(|_| vec![var_id])
         } else {
             let var_id = ctx.new_var(VarRequest {
                 ty: wrap_in_snapshots(ctx.db, ty, self.n_snapshots),

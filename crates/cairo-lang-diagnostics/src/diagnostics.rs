@@ -322,9 +322,14 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
         Self(DiagnosticsBuilder::default().into())
     }
 
-    /// Returns Ok if there are no errors, or DiagnosticAdded if there are.
+    /// Returns `true` if there are errors, or `false` otherwise.
+    pub fn has_errors(&self) -> bool {
+        self.0.error_count > 0
+    }
+
+    /// Returns `Ok` if there are no errors, or `DiagnosticAdded` if there are.
     pub fn check_error_free(&self) -> Maybe<()> {
-        if self.0.error_count == 0 { Ok(()) } else { Err(DiagnosticAdded) }
+        if self.has_errors() { Err(DiagnosticAdded) } else { Ok(()) }
     }
 
     /// Checks if there are no entries inside `Diagnostics`
@@ -427,6 +432,14 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
         }
         diagnostic_without_dup.sort_by_key(|(idx, _)| *idx);
         diagnostic_without_dup.into_iter().map(|(_, diag)| diag.clone()).collect()
+    }
+
+    /// Merges two sets of diagnostics.
+    pub fn merge(self, other: Self) -> Self {
+        let mut builder = DiagnosticsBuilder::default();
+        builder.extend(self);
+        builder.extend(other);
+        builder.build()
     }
 }
 impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Default for Diagnostics<'db, TEntry> {
