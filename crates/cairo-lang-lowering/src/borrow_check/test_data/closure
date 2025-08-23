@@ -154,7 +154,6 @@ Parameters: v0: test::S
 blk0 (root):
 Statements:
   (v1: {closure@lib.cairo:8:5: 8:7}) <- struct_construct(v0{`a`})
-  (v2: core::integer::u32) <- struct_destructure(v0{`a.a`})
   (v3: ()) <- struct_construct()
 End:
   Return(v3)
