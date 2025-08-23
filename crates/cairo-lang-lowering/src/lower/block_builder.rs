@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId};
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_diagnostics::{DiagnosticNote, Maybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
@@ -14,7 +14,7 @@ use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
 use super::generators::StatementsBuilder;
-use super::refs::{SemanticLoweringMapping, merge_semantics};
+use super::refs::{AssembleValueError, MovedVar, SemanticLoweringMapping, merge_semantics};
 use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
 use crate::lower::refs::ClosureInfo;
@@ -78,20 +78,31 @@ impl<'db> BlockBuilder<'db> {
 
     /// Returns the [VarUsage] for a given `member_path`.
     ///
+    /// If the variable is not copyable, it is marked as [MovedVar].
+    ///
     /// If the `member_path` is not in the semantics, returns `None`.
+    ///
+    /// If the variable was marked as [MovedVar], an error will be reported and a dummy variable
+    /// will be returned.
     pub fn get_ref(
         &mut self,
         ctx: &mut LoweringContext<'db, '_>,
         member_path: &ExprVarMemberPath<'db>,
+        dont_mark_as_used: bool,
     ) -> Option<VarUsage<'db>> {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
-        self.get_ref_raw(ctx, &member_path.into(), location, None)
+        self.get_ref_raw(ctx, &member_path.into(), location, None, dont_mark_as_used)
     }
 
     /// Returns the [VarUsage] for a given `member_path`.
     ///
     /// If `member_path` is not in the semantics, or the resulting [VarUsage] does not have the
     /// expected type, returns `None`.
+    ///
+    /// If the variable is not copyable, it is marked as [MovedVar].
+    ///
+    /// If the variable was marked as [MovedVar], an error will be reported and a dummy variable
+    /// will be returned.
     pub fn get_ref_of_type(
         &mut self,
         ctx: &mut LoweringContext<'db, '_>,
@@ -99,34 +110,102 @@ impl<'db> BlockBuilder<'db> {
         expected_ty: semantic::TypeId<'db>,
     ) -> Option<VarUsage<'db>> {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
-        self.get_ref_raw(ctx, &member_path.into(), location, Some(expected_ty))
+        self.get_ref_raw(ctx, &member_path.into(), location, Some(expected_ty), false)
     }
 
     /// Returns the [VarUsage] for a given `member_path`.
     ///
-    /// If `expected_ty` is given (`Some`), returns `None` if the resulting [VarUsage] does not have
-    /// the expected type.
+    /// If `member_path` is not in the semantics, or the resulting [VarUsage] does not have the
+    /// expected type (if specified), returns `None`.
+    ///
+    /// If the variable is not copyable, it is marked as [MovedVar].
+    ///
+    /// If the variable was marked as [MovedVar], an error will be reported and a dummy variable
+    /// will be returned.
     pub fn get_ref_raw(
         &mut self,
         ctx: &mut LoweringContext<'db, '_>,
         member_path: &MemberPath<'db>,
         location: LocationId<'db>,
         expected_ty: Option<semantic::TypeId<'db>>,
+        dont_mark_as_used: bool,
+    ) -> Option<VarUsage<'db>> {
+        // Fetch the variable from the semantics.
+        let res = self.semantics.get(
+            BlockStructRecomposer { statements: &mut self.statements, ctx, location },
+            member_path,
+        );
+
+        match res {
+            Ok(var_id) => {
+                // If `expected_ty` is given, check that the returned variable has that type.
+                if let Some(expected_ty) = expected_ty
+                    && ctx.variables[var_id].ty != expected_ty
+                {
+                    return None;
+                }
+
+                // If the variable is not copyable, mark it as [MovedVar].
+                let var = &ctx.variables[var_id];
+                let copyable = var.info.copyable.clone();
+                let ty = var.ty;
+
+                if let Err(inference_error) = copyable
+                    && !dont_mark_as_used
+                {
+                    self.semantics.mark_as_used(
+                        BlockStructRecomposer { statements: &mut self.statements, ctx, location },
+                        member_path,
+                        MovedVar { ty, inference_error, last_use_location: location },
+                    );
+                }
+
+                Some(VarUsage { var_id, location })
+            }
+            Err(AssembleValueError::Moved(MovedVar { ty, inference_error, last_use_location })) => {
+                // If the variable was already moved, report an error.
+                let diag_location = location
+                    .long(ctx.db)
+                    .clone()
+                    .add_note_with_location(
+                        ctx.db,
+                        "variable was previously used here",
+                        last_use_location,
+                    )
+                    .with_note(DiagnosticNote::text_only(inference_error.format(ctx.db.upcast())));
+                ctx.diagnostics.report_by_location(
+                    diag_location,
+                    LoweringDiagnosticKind::VariableMoved { inference_error },
+                );
+
+                // Create and return a dummy variable.
+                let var_id = ctx.new_var(VarRequest { ty, location });
+                Some(VarUsage { var_id, location })
+            }
+            Err(AssembleValueError::Missing) => None,
+        }
+    }
+
+    /// Returns the [VarUsage] for a given `member_path` for the purpose of remapping.
+    ///
+    /// Returns `None` if the variable was marked as [MovedVar].
+    pub fn get_ref_for_remapping(
+        &mut self,
+        ctx: &mut LoweringContext<'db, '_>,
+        member_path: &MemberPath<'db>,
+        location: LocationId<'db>,
     ) -> Option<VarUsage<'db>> {
         let res = self.semantics.get(
             BlockStructRecomposer { statements: &mut self.statements, ctx, location },
             member_path,
         );
 
-        if let Some(res) = res {
-            if let Some(expected_ty) = expected_ty
-                && ctx.variables[res].ty != expected_ty
-            {
-                return None;
+        match res {
+            Ok(var_id) => Some(VarUsage { var_id, location }),
+            Err(AssembleValueError::Moved { .. }) => None,
+            Err(AssembleValueError::Missing) => {
+                unreachable!();
             }
-            Some(VarUsage { var_id: res, location })
-        } else {
-            None
         }
     }
 
@@ -204,7 +283,7 @@ impl<'db> BlockBuilder<'db> {
             .extra_rets
             .clone()
             .iter()
-            .map(|member_path| self.get_ref(ctx, member_path))
+            .map(|member_path| self.get_ref(ctx, member_path, false))
             .collect::<Option<Vec<_>>>()
             .ok_or_else(|| {
                 ctx.diagnostics.report_by_location(
@@ -381,14 +460,11 @@ impl<'db> SealedGotoCallsite<'db> {
         let mut remapping = VarRemapping::default();
         // Since SemanticRemapping should have unique variable ids, these asserts will pass.
         for (semantic, remapped_var) in semantic_remapping.member_path_value.iter() {
-            assert!(
-                remapping
-                    .insert(
-                        *remapped_var,
-                        builder.get_ref_raw(ctx, semantic, location, None).unwrap()
-                    )
-                    .is_none()
-            );
+            // If the variable is not copyable and was moved before, do not remap it (it can no
+            // longer be used).
+            if let Some(var_usage) = builder.get_ref_for_remapping(ctx, semantic, location) {
+                assert!(remapping.insert(*remapped_var, var_usage).is_none());
+            }
         }
         if let Some(remapped_var) = semantic_remapping.expr {
             let var_usage = expr.unwrap_or_else(|| {
@@ -409,7 +485,7 @@ pub type SealedBlockBuilder<'db> = Option<SealedGotoCallsite<'db>>;
 
 pub struct BlockStructRecomposer<'a, 'b, 'db> {
     statements: &'a mut StatementsBuilder<'db>,
-    ctx: &'a mut LoweringContext<'db, 'b>,
+    pub ctx: &'a mut LoweringContext<'db, 'b>,
     location: LocationId<'db>,
 }
 impl<'db> BlockStructRecomposer<'_, '_, 'db> {

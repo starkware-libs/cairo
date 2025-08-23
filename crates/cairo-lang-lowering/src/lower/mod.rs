@@ -191,7 +191,7 @@ pub fn lower_for_loop<'db, 'mt>(
     let for_location = ctx.get_location(loop_expr.stable_ptr.untyped());
     let next_semantic_signature =
         db.concrete_function_signature(loop_expr.next_function_id).unwrap();
-    let into_iter = builder.get_ref(ctx, &loop_expr.into_iter_member_path).unwrap();
+    let into_iter = builder.get_ref(ctx, &loop_expr.into_iter_member_path, false).unwrap();
     let next_call = generators::Call {
         function: loop_expr.next_function_id.lowered(db),
         inputs: vec![into_iter],
@@ -226,7 +226,7 @@ pub fn lower_for_loop<'db, 'mt>(
         location: ctx.get_location(some_block.stable_ptr.untyped()),
     });
     let lowered_pattern =
-        lower_single_pattern(ctx, &mut some_subscope, loop_expr.pattern, variant_expr);
+        lower_single_pattern(ctx, &mut some_subscope, loop_expr.pattern, variant_expr, false);
     let sealed_some = match lowered_pattern {
         Ok(_) => {
             let block_expr = (|| {
@@ -676,7 +676,7 @@ pub fn lower_statement<'db>(
                     stable_ptr,
                 )?;
             } else {
-                lower_single_pattern(ctx, builder, *pattern, lowered_expr)?;
+                lower_single_pattern(ctx, builder, *pattern, lowered_expr, true)?;
             }
         }
         semantic::Statement::Continue(semantic::StatementContinue { stable_ptr }) => {
@@ -725,6 +725,7 @@ fn lower_single_pattern<'db>(
     builder: &mut BlockBuilder<'db>,
     pattern_id: semantic::PatternId,
     lowered_expr: LoweredExpr<'db>,
+    dont_mark_as_used: bool,
 ) -> LoweringResult<'db, ()> {
     log::trace!("Lowering a single pattern.");
     let pattern = &ctx.function_body.arenas.patterns[pattern_id];
@@ -744,7 +745,7 @@ fn lower_single_pattern<'db>(
             let sem_var = semantic::Binding::LocalVar(sem_var.clone());
             let stable_ptr = *stable_ptr;
             // Deposit the owned variable in the semantic variables store.
-            let var = lowered_expr.as_var_usage(ctx, builder)?.var_id;
+            let var = lowered_expr.as_var_usage_ex(ctx, builder, dont_mark_as_used)?.var_id;
             // Override variable location.
             ctx.variables.variables[var].location = ctx.get_location(stable_ptr.untyped());
             builder.put_semantic(sem_var.id(), var);
@@ -793,6 +794,7 @@ fn lower_single_pattern<'db>(
                             var_id,
                             location: ctx.get_location(stable_ptr.untyped()),
                         }),
+                        false,
                     )?;
                 }
             }
@@ -870,7 +872,7 @@ fn lower_tuple_like_pattern_helper<'db>(
         }
     };
     for (var, pattern) in zip_eq(outputs, patterns) {
-        lower_single_pattern(ctx, builder, *pattern, var)?;
+        lower_single_pattern(ctx, builder, *pattern, var, false)?;
     }
     Ok(())
 }
@@ -1514,7 +1516,7 @@ fn lower_expr_loop<'db>(
             if let Some(var) = builder.get_snap_ref(ctx, param) {
                 return Some(var);
             };
-            let input = builder.get_ref(ctx, param)?;
+            let input = builder.get_ref(ctx, param, false)?;
             let location = ctx.get_location(param.stable_ptr().untyped());
             let (original, snapped) =
                 generators::Snapshot { input, location }.add(ctx, &mut builder.statements);
@@ -1691,7 +1693,7 @@ fn lower_exprs_to_var_usages<'db>(
         .iter()
         .map(|arg| match arg {
             semantic::ExprFunctionCallArg::Reference(ref_arg) => {
-                builder.get_ref(ctx, ref_arg).unwrap()
+                builder.get_ref(ctx, ref_arg, false).unwrap()
             }
             semantic::ExprFunctionCallArg::Value(_) => value_iter.next().unwrap(),
         })

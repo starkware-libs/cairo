@@ -248,11 +248,26 @@ pub enum LoweredExpr<'db> {
     },
 }
 impl<'db> LoweredExpr<'db> {
-    // Returns a VarUsage corresponding to the lowered expression.
+    /// Returns a [VarUsage] corresponding to the lowered expression.
     pub fn as_var_usage(
         self,
         ctx: &mut LoweringContext<'db, '_>,
         builder: &mut BlockBuilder<'db>,
+    ) -> LoweringResult<'db, VarUsage<'db>> {
+        self.as_var_usage_ex(ctx, builder, false)
+    }
+
+    /// Returns a [VarUsage] corresponding to the lowered expression.
+    ///
+    /// Pass `dont_mark_as_used=true` to avoid marking the variable as used.
+    /// For backward compatibility, when we encounter a statement of the form `let x = y`,
+    /// we don't mark `y` as used.
+    // TODO(lior): Remove this special case.
+    pub fn as_var_usage_ex(
+        self,
+        ctx: &mut LoweringContext<'db, '_>,
+        builder: &mut BlockBuilder<'db>,
+        dont_mark_as_used: bool,
     ) -> LoweringResult<'db, VarUsage<'db>> {
         match self {
             LoweredExpr::AtVariable(var_usage) => Ok(var_usage),
@@ -269,7 +284,7 @@ impl<'db> LoweredExpr<'db> {
             }
             LoweredExpr::ExternEnum(extern_enum) => extern_enum.as_var_usage(ctx, builder),
             LoweredExpr::MemberPath(member_path, _location) => {
-                Ok(builder.get_ref(ctx, &member_path).unwrap())
+                Ok(builder.get_ref(ctx, &member_path, dont_mark_as_used).unwrap())
             }
             LoweredExpr::Snapshot { expr, location } => {
                 if let LoweredExpr::MemberPath(member_path, _location) = &*expr
