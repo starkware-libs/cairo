@@ -37,7 +37,9 @@ pub fn find_executable_function_ids<'db>(
         }
 
         for module in db.crate_modules(crate_id).iter() {
-            if let Some(free_functions) = db.module_free_functions(*module).to_option() {
+            if let Some(free_functions) =
+                module.module_data(db).map(|data| data.free_functions(db)).to_option()
+            {
                 for (free_func_id, body) in free_functions.iter() {
                     let found_attrs = executable_attributes
                         .clone()

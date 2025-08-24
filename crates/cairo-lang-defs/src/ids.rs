@@ -37,7 +37,7 @@ use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, OptionFrom, define_short_id, require};
 use salsa::Database;
 
-use crate::db::DefsGroup;
+use crate::db::{DefsGroup, ModuleData};
 use crate::diagnostic_utils::StableLocation;
 use crate::plugin::{InlineMacroExprPlugin, MacroPlugin};
 
@@ -54,6 +54,10 @@ pub trait LanguageElementId<'db> {
     }
 
     fn stable_location(&self, db: &'db dyn DefsGroup) -> StableLocation<'db>;
+
+    fn module_data(&self, db: &'db dyn DefsGroup) -> Maybe<ModuleData<'db>> {
+        self.parent_module(db).module_data(db)
+    }
 }
 
 pub trait NamedLanguageElementLongId<'db> {
@@ -331,6 +335,9 @@ impl<'db> ModuleId<'db> {
                 macro_call_id.parent_module(db).owning_crate(db)
             }
         }
+    }
+    pub fn module_data(&self, db: &'db dyn DefsGroup) -> Maybe<ModuleData<'db>> {
+        crate::db::module_data(db, *self)
     }
 }
 impl<'db> DebugWithDb<'db> for ModuleId<'db> {

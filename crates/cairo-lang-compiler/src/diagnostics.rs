@@ -184,8 +184,11 @@ impl<'a> DiagnosticsReporter<'a> {
             let modules = db.crate_modules(crate_id);
             let mut processed_file_ids = UnorderedHashSet::<_>::default();
             for module_id in modules.iter() {
-                let diagnostic_notes =
-                    db.module_plugin_diagnostics_notes(*module_id).unwrap_or_default();
+                let default = Default::default();
+                let diagnostic_notes = module_id
+                    .module_data(db)
+                    .map(|data| data.diagnostics_notes(db))
+                    .unwrap_or(&default);
 
                 if let Ok(module_files) = db.module_files(*module_id) {
                     for file_id in module_files.iter().copied() {
@@ -194,7 +197,7 @@ impl<'a> DiagnosticsReporter<'a> {
                                 db.as_dyn_database(),
                                 db.file_syntax_diagnostics(file_id).clone(),
                                 ignore_warnings_in_crate,
-                                &diagnostic_notes,
+                                diagnostic_notes,
                             );
                         }
                     }
@@ -205,7 +208,7 @@ impl<'a> DiagnosticsReporter<'a> {
                         db.upcast(),
                         group,
                         ignore_warnings_in_crate,
-                        &diagnostic_notes,
+                        diagnostic_notes,
                     );
                 }
 
@@ -218,7 +221,7 @@ impl<'a> DiagnosticsReporter<'a> {
                         db.upcast(),
                         group,
                         ignore_warnings_in_crate,
-                        &diagnostic_notes,
+                        diagnostic_notes,
                     );
                 }
             }
