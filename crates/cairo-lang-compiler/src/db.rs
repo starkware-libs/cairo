@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::{Result, anyhow, bail};
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
+use cairo_lang_defs::db::{init_defs_group, init_external_files};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{CORELIB_VERSION, FilesGroup, init_dev_corelib, init_files_group};
@@ -243,11 +243,6 @@ pub fn validate_corelib(db: &(dyn salsa::Database + 'static)) -> Result<()> {
 
 impl<'db> Upcast<'db, dyn salsa::Database> for RootDatabase {
     fn upcast(&self) -> &dyn salsa::Database {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn DefsGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn DefsGroup {
         self
     }
 }

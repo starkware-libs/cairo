@@ -3,7 +3,6 @@ use std::hash::Hash;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     GenericItemId, GenericKind, GenericModuleItemId, GenericParamId, GenericParamLongId,
     LanguageElementId, LookupItemId, ModuleFileId, TraitId, TraitTypeId,
@@ -16,6 +15,7 @@ use cairo_lang_syntax::node::ast::{AssociatedItemConstraints, OptionAssociatedIt
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::{Intern, extract_matches};
+use salsa::Database;
 use syntax::node::TypedStablePtr;
 
 use super::constant::{ConstValue, ConstValueId};
@@ -146,7 +146,7 @@ impl<'db> GenericParam<'db> {
             GenericParam::NegImpl(_) => GenericKind::NegImpl,
         }
     }
-    pub fn stable_ptr(&self, db: &'db dyn DefsGroup) -> ast::GenericParamPtr<'db> {
+    pub fn stable_ptr(&self, db: &'db dyn Database) -> ast::GenericParamPtr<'db> {
         self.id().stable_ptr(db)
     }
     /// Returns the generic param as a generic argument.
