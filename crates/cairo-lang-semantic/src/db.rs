@@ -13,8 +13,8 @@ use cairo_lang_defs::ids::{
     TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, StrRef};
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -89,7 +89,6 @@ pub trait Elongate {
 pub trait SemanticGroup:
     DefsGroup
     + for<'db> Upcast<'db, dyn DefsGroup>
-    + for<'db> Upcast<'db, dyn ParserGroup>
     + for<'db> Upcast<'db, dyn salsa::Database>
     + Elongate
 {
