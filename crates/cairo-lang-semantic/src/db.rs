@@ -86,12 +86,7 @@ pub trait Elongate {
 // Declarations and definitions must not depend on other definitions, only other declarations.
 // This prevents cycles where there shouldn't be any.
 #[cairo_lang_proc_macros::query_group]
-pub trait SemanticGroup:
-    DefsGroup
-    + for<'db> Upcast<'db, dyn DefsGroup>
-    + for<'db> Upcast<'db, dyn salsa::Database>
-    + Elongate
-{
+pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + Elongate {
     // Const.
     // ====
     /// Private query to compute data about a constant definition.
@@ -2354,7 +2349,7 @@ impl<T: SemanticGroup + ?Sized> PluginSuiteInput for T {}
 /// Returns all ancestors (parents) of the given module, including the module itself, in order from
 /// closest to farthest.
 pub fn module_ancestors<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     mut module_id: ModuleId<'db>,
 ) -> Vec<ModuleId<'db>> {
     let mut ancestors = Vec::new();

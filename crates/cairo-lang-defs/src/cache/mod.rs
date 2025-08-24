@@ -22,6 +22,7 @@ use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use salsa::Database;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
@@ -50,7 +51,7 @@ pub struct CachedCrateMetadata {
 
 impl CachedCrateMetadata {
     /// Creates a new [CachedCrateMetadata] from the input crate with the current settings.
-    pub fn new(crate_id: CrateId<'_>, db: &dyn DefsGroup) -> Self {
+    pub fn new(crate_id: CrateId<'_>, db: &dyn Database) -> Self {
         let settings = db.crate_config(crate_id).map(|config| &config.settings).map(|v| {
             let mut hasher = xxhash_rust::xxh3::Xxh3::default();
             v.hash(&mut hasher);
@@ -67,7 +68,7 @@ impl CachedCrateMetadata {
 }
 
 /// Validates that the metadata of the cached crate is valid.
-fn validate_metadata(crate_id: CrateId<'_>, metadata: &CachedCrateMetadata, db: &dyn DefsGroup) {
+fn validate_metadata(crate_id: CrateId<'_>, metadata: &CachedCrateMetadata, db: &dyn Database) {
     let current_metadata = CachedCrateMetadata::new(crate_id, db);
 
     if current_metadata.compiler_version != metadata.compiler_version {
@@ -87,7 +88,7 @@ type DefCache<'db> =
 
 /// Load the cached lowering of a crate if it has a cache file configuration.
 pub fn load_cached_crate_modules<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
 ) -> Option<ModuleDataCacheAndLoadingData<'db>> {
     let blob_id = db.crate_config(crate_id)?.cache_file?;
@@ -128,7 +129,7 @@ pub fn load_cached_crate_modules<'db>(
 
 /// Cache the module_data of each module in the crate and returns the cache and the context.
 pub fn generate_crate_def_cache<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     crate_id: cairo_lang_filesystem::ids::CrateId<'db>,
     ctx: &mut DefCacheSavingContext<'db>,
 ) -> Maybe<Vec<(ModuleIdCached, ModuleDataCached<'db>)>> {
@@ -148,7 +149,7 @@ pub fn generate_crate_def_cache<'db>(
 /// Context for loading cache into the database.
 pub struct DefCacheLoadingContext<'db> {
     /// The variable ids of the flat lowered that is currently being loaded.
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
 
     /// data for loading the entire cache into the database.
     data: DefCacheLoadingData<'db>,
@@ -156,7 +157,7 @@ pub struct DefCacheLoadingContext<'db> {
 
 impl<'db> DefCacheLoadingContext<'db> {
     pub fn new(
-        db: &'db dyn DefsGroup,
+        db: &'db dyn Database,
         lookups: DefCacheLookups,
         self_crate_id: CrateId<'db>,
     ) -> Self {
@@ -308,7 +309,7 @@ impl<'db> DerefMut for DefCacheLoadingData<'db> {
 
 /// Context for saving cache from the database.
 pub struct DefCacheSavingContext<'db> {
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     data: DefCacheSavingData<'db>,
     self_crate_id: CrateId<'db>,
 }
@@ -325,7 +326,7 @@ impl DerefMut for DefCacheSavingContext<'_> {
     }
 }
 impl<'db> DefCacheSavingContext<'db> {
-    pub fn new(db: &'db dyn DefsGroup, self_crate_id: CrateId<'db>) -> Self {
+    pub fn new(db: &'db dyn Database, self_crate_id: CrateId<'db>) -> Self {
         Self { db, data: DefCacheSavingData::default(), self_crate_id }
     }
 }
@@ -407,7 +408,7 @@ pub struct ModuleDataCached<'db> {
 }
 impl<'db> ModuleDataCached<'db> {
     fn new(
-        db: &'db dyn DefsGroup,
+        db: &'db dyn Database,
         module_data: ModuleData<'db>,
         ctx: &mut DefCacheSavingContext<'db>,
     ) -> Self {
@@ -661,7 +662,7 @@ impl GenericParamCached {
     pub fn get_embedded<'db>(
         self,
         data: &Arc<DefCacheLoadingData<'db>>,
-        db: &'db dyn DefsGroup,
+        db: &'db dyn Database,
     ) -> GenericParamId<'db> {
         let (module_file_id, stable_ptr) = self.language_element.get_embedded(data);
         GenericParamLongId(module_file_id, GenericParamPtr(stable_ptr)).intern(db)
