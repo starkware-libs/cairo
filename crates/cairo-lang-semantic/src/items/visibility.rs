@@ -44,7 +44,7 @@ impl Visibility {
 /// Determine whether a module member is visible to user module given the visibility within it,
 /// ignoring or forgetting the visibility of the ancestors of the containing module for a moment.
 pub fn peek_visible_in<'db>(
-    db: &dyn DefsGroup,
+    db: &dyn Database,
     visibility_in_module: Visibility,
     containing_module_id: ModuleId<'db>,
     user_module_id: ModuleId<'db>,

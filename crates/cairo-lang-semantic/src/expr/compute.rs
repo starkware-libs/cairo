@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use ast::PathSegment;
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::{get_all_path_leaves, validate_attributes_flat};
+use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves, validate_attributes_flat};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, LookupItemId, MemberId,

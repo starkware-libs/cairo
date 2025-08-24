@@ -86,12 +86,7 @@ pub trait Elongate {
 // Declarations and definitions must not depend on other definitions, only other declarations.
 // This prevents cycles where there shouldn't be any.
 #[cairo_lang_proc_macros::query_group]
-pub trait SemanticGroup:
-    DefsGroup
-    + for<'db> Upcast<'db, dyn DefsGroup>
-    + for<'db> Upcast<'db, dyn salsa::Database>
-    + Elongate
-{
+pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + Elongate {
     // Const.
     // ====
     /// Private query to compute data about a constant definition.
@@ -2345,3 +2340,39 @@ pub trait PluginSuiteInput: SemanticGroup {
 }
 
 impl<T: SemanticGroup + ?Sized> PluginSuiteInput for T {}
+
+/// Returns all ancestors (parents) of the given module, including the module itself, in order from
+/// closest to farthest.
+pub fn module_ancestors<'db>(
+    db: &'db dyn Database,
+    mut module_id: ModuleId<'db>,
+) -> Vec<ModuleId<'db>> {
+    let mut ancestors = Vec::new();
+    ancestors.push(module_id); // Include the module itself first
+    while let ModuleId::Submodule(submodule_id) = module_id {
+        let parent = submodule_id.parent_module(db);
+        ancestors.push(parent);
+        module_id = parent;
+    }
+    ancestors
+}
+
+/// Returns all ancestors (parents) and all macro-generated modules within them.
+pub fn module_fully_accessible_modules<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> OrderedHashSet<ModuleId<'db>> {
+    let mut result: Vec<ModuleId<'db>> = module_ancestors(db, module_id);
+    let mut index = 0;
+    while let Some(curr) = result.get(index).copied() {
+        index += 1;
+        if let Ok(macro_call_ids) = db.module_macro_calls_ids(curr) {
+            for macro_call_id in macro_call_ids.iter() {
+                if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
+                    result.push(generated_module_id);
+                }
+            }
+        }
+    }
+    result.into_iter().collect()
+}
