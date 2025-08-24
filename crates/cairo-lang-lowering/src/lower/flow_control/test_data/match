@@ -24,12 +24,12 @@ enum Color {
 
 //! > graph
 Root: 5
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(2) }
-2 ArmExpr { expr: ExprId(3) }
-3 ArmExpr { expr: ExprId(4) }
-4 EnumMatch { matched_var: v0, variants: (NodeId(0), v1), (NodeId(0), v2), (NodeId(1), v3), (NodeId(3), v4), (NodeId(3), v5)}
 5 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(4) }
+4 EnumMatch { matched_var: v0, variants: (NodeId(0), v1), (NodeId(0), v2), (NodeId(1), v3), (NodeId(3), v4), (NodeId(3), v5)}
+3 ArmExpr { expr: ExprId(4) }
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
 
@@ -121,14 +121,14 @@ enum Color {
 
 //! > graph
 Root: 7
-0 ArmExpr { expr: ExprId(3) }
-1 ArmExpr { expr: ExprId(4) }
-2 ArmExpr { expr: ExprId(5) }
-3 BindVar { input: v1, output: PatternVarId(0), next: NodeId(0) }
-4 BindVar { input: v2, output: PatternVarId(1), next: NodeId(0) }
-5 BindVar { input: v3, output: PatternVarId(2), next: NodeId(1) }
-6 EnumMatch { matched_var: v0, variants: (NodeId(3), v1), (NodeId(4), v2), (NodeId(5), v3), (NodeId(2), v4)}
 7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+6 EnumMatch { matched_var: v0, variants: (NodeId(3), v1), (NodeId(4), v2), (NodeId(5), v3), (NodeId(2), v4)}
+5 BindVar { input: v3, output: PatternVarId(2), next: NodeId(1) }
+4 BindVar { input: v2, output: PatternVarId(1), next: NodeId(0) }
+3 BindVar { input: v1, output: PatternVarId(0), next: NodeId(0) }
+2 ArmExpr { expr: ExprId(5) }
+1 ArmExpr { expr: ExprId(4) }
+0 ArmExpr { expr: ExprId(3) }
 
 //! > semantic_diagnostics
 
@@ -204,13 +204,13 @@ enum Color {
 
 //! > graph
 Root: 6
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(2) }
-2 ArmExpr { expr: ExprId(3) }
-3 EnumMatch { matched_var: v2, variants: (NodeId(1), v8), (NodeId(2), v9), (NodeId(2), v10)}
-4 EnumMatch { matched_var: v1, variants: (NodeId(0), v3), (NodeId(3), v7), (NodeId(3), v11)}
-5 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(4) }
 6 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(5) }
+5 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(4) }
+4 EnumMatch { matched_var: v1, variants: (NodeId(0), v3), (NodeId(3), v7), (NodeId(3), v11)}
+3 EnumMatch { matched_var: v2, variants: (NodeId(1), v8), (NodeId(2), v9), (NodeId(2), v10)}
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
 
@@ -304,14 +304,14 @@ enum Color {
 
 //! > graph
 Root: 7
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(2) }
-2 ArmExpr { expr: ExprId(3) }
-3 EnumMatch { matched_var: v3, variants: (NodeId(1), v8), (NodeId(2), v9)}
-4 EnumMatch { matched_var: v2, variants: (NodeId(0), v4), (NodeId(3), v7)}
-5 Deconstruct { input: v1, outputs: [v2, v3], next: NodeId(4) }
-6 EnumMatch { matched_var: v0, variants: (NodeId(5), v1), (NodeId(0), v10)}
 7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+6 EnumMatch { matched_var: v0, variants: (NodeId(5), v1), (NodeId(0), v10)}
+5 Deconstruct { input: v1, outputs: [v2, v3], next: NodeId(4) }
+4 EnumMatch { matched_var: v2, variants: (NodeId(0), v4), (NodeId(3), v7)}
+3 EnumMatch { matched_var: v3, variants: (NodeId(1), v8), (NodeId(2), v9)}
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
 
@@ -402,17 +402,17 @@ enum Color {
 
 //! > graph
 Root: 10
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(2) }
-2 ArmExpr { expr: ExprId(3) }
-3 EnumMatch { matched_var: v2, variants: (NodeId(0), v5), (NodeId(1), v6), (NodeId(2), v7)}
-4 EnumMatch { matched_var: v2, variants: (NodeId(0), v9), (NodeId(1), v10), (NodeId(2), v11)}
-5 EnumMatch { matched_var: v2, variants: (NodeId(2), v13), (NodeId(1), v14), (NodeId(2), v15)}
-6 EnumMatch { matched_var: v3, variants: (NodeId(3), v4), (NodeId(4), v8), (NodeId(5), v12)}
-7 EnumMatch { matched_var: v2, variants: (NodeId(0), v17), (NodeId(1), v18), (NodeId(2), v19)}
-8 EnumMatch { matched_var: v1, variants: (NodeId(6), v3), (NodeId(7), v16)}
-9 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(8) }
 10 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(9) }
+9 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(8) }
+8 EnumMatch { matched_var: v1, variants: (NodeId(6), v3), (NodeId(7), v16)}
+7 EnumMatch { matched_var: v2, variants: (NodeId(0), v17), (NodeId(1), v18), (NodeId(2), v19)}
+6 EnumMatch { matched_var: v3, variants: (NodeId(3), v4), (NodeId(4), v8), (NodeId(5), v12)}
+5 EnumMatch { matched_var: v2, variants: (NodeId(2), v13), (NodeId(1), v14), (NodeId(2), v15)}
+4 EnumMatch { matched_var: v2, variants: (NodeId(0), v9), (NodeId(1), v10), (NodeId(2), v11)}
+3 EnumMatch { matched_var: v2, variants: (NodeId(0), v5), (NodeId(1), v6), (NodeId(2), v7)}
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
 
@@ -447,11 +447,11 @@ enum Enum2 {
 
 //! > graph
 Root: 4
-0 ArmExpr { expr: ExprId(1) }
-1 BindVar { input: v2, output: PatternVarId(0), next: NodeId(0) }
-2 EnumMatch { matched_var: v1, variants: (NodeId(1), v2)}
-3 EnumMatch { matched_var: v0, variants: (NodeId(2), v1)}
 4 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(3) }
+3 EnumMatch { matched_var: v0, variants: (NodeId(2), v1)}
+2 EnumMatch { matched_var: v1, variants: (NodeId(1), v2)}
+1 BindVar { input: v2, output: PatternVarId(0), next: NodeId(0) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
 
@@ -477,13 +477,13 @@ fn foo(x: felt252) -> felt252 {
 
 //! > graph
 Root: 6
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(2) }
-2 ArmExpr { expr: ExprId(3) }
-3 EqualsLiteral { input: v0, literal: 0, true_branch: NodeId(1), false_branch: NodeId(2) }
-4 EqualsLiteral { input: v0, literal: 4, true_branch: NodeId(0), false_branch: NodeId(3) }
-5 EqualsLiteral { input: v0, literal: 2, true_branch: NodeId(0), false_branch: NodeId(4) }
 6 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(5) }
+5 EqualsLiteral { input: v0, literal: 2, true_branch: NodeId(0), false_branch: NodeId(4) }
+4 EqualsLiteral { input: v0, literal: 4, true_branch: NodeId(0), false_branch: NodeId(3) }
+3 EqualsLiteral { input: v0, literal: 0, true_branch: NodeId(1), false_branch: NodeId(2) }
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
 
@@ -568,12 +568,12 @@ fn foo(x: u16) -> u16 {
 
 //! > graph
 Root: 5
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(2) }
-2 EqualsLiteral { input: v1, literal: 4, true_branch: NodeId(0), false_branch: NodeId(1) }
-3 EqualsLiteral { input: v1, literal: 2, true_branch: NodeId(0), false_branch: NodeId(2) }
-4 Upcast { input: v0, output: v1, next: NodeId(3) }
 5 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(4) }
+4 Upcast { input: v0, output: v1, next: NodeId(3) }
+3 EqualsLiteral { input: v1, literal: 2, true_branch: NodeId(0), false_branch: NodeId(2) }
+2 EqualsLiteral { input: v1, literal: 4, true_branch: NodeId(0), false_branch: NodeId(1) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
 
@@ -646,12 +646,12 @@ fn foo(x: u16) -> u16 {
 
 //! > graph
 Root: 5
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(2) }
-2 ArmExpr { expr: ExprId(3) }
-3 ValueMatch { matched_var: v1, nodes: [NodeId(0), NodeId(1), NodeId(0), NodeId(1), NodeId(0), NodeId(0), NodeId(0), NodeId(0)] }
-4 Downcast { input: v0, output: v1, in_range: NodeId(3), out_of_range: NodeId(2) }
 5 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(4) }
+4 Downcast { input: v0, output: v1, in_range: NodeId(3), out_of_range: NodeId(2) }
+3 ValueMatch { matched_var: v1, nodes: [NodeId(0), NodeId(1), NodeId(0), NodeId(1), NodeId(0), NodeId(0), NodeId(0), NodeId(0)] }
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
 
@@ -761,16 +761,16 @@ fn foo(x: u16) -> u16 {
 
 //! > graph
 Root: 9
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(2) }
-2 ArmExpr { expr: ExprId(3) }
-3 EqualsLiteral { input: v1, literal: 20, true_branch: NodeId(1), false_branch: NodeId(2) }
-4 EqualsLiteral { input: v1, literal: 13, true_branch: NodeId(1), false_branch: NodeId(3) }
-5 EqualsLiteral { input: v1, literal: 100, true_branch: NodeId(0), false_branch: NodeId(4) }
-6 Upcast { input: v0, output: v1, next: NodeId(5) }
-7 ValueMatch { matched_var: v2, nodes: [NodeId(0), NodeId(1), NodeId(0), NodeId(1), NodeId(0), NodeId(0), NodeId(0), NodeId(0)] }
-8 Downcast { input: v0, output: v2, in_range: NodeId(7), out_of_range: NodeId(6) }
 9 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(8) }
+8 Downcast { input: v0, output: v2, in_range: NodeId(7), out_of_range: NodeId(6) }
+7 ValueMatch { matched_var: v2, nodes: [NodeId(0), NodeId(1), NodeId(0), NodeId(1), NodeId(0), NodeId(0), NodeId(0), NodeId(0)] }
+6 Upcast { input: v0, output: v1, next: NodeId(5) }
+5 EqualsLiteral { input: v1, literal: 100, true_branch: NodeId(0), false_branch: NodeId(4) }
+4 EqualsLiteral { input: v1, literal: 13, true_branch: NodeId(1), false_branch: NodeId(3) }
+3 EqualsLiteral { input: v1, literal: 20, true_branch: NodeId(1), false_branch: NodeId(2) }
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
 
@@ -799,25 +799,25 @@ fn foo(x: felt252, y: felt252) -> felt252 {
 
 //! > graph
 Root: 18
-0 ArmExpr { expr: ExprId(3) }
-1 ArmExpr { expr: ExprId(4) }
-2 ArmExpr { expr: ExprId(5) }
-3 ArmExpr { expr: ExprId(6) }
-4 ArmExpr { expr: ExprId(7) }
-5 ArmExpr { expr: ExprId(8) }
-6 BindVar { input: v1, output: PatternVarId(0), next: NodeId(4) }
-7 EqualsLiteral { input: v2, literal: 0, true_branch: NodeId(6), false_branch: NodeId(5) }
-8 EqualsLiteral { input: v1, literal: 3, true_branch: NodeId(3), false_branch: NodeId(7) }
-9 EqualsLiteral { input: v2, literal: 0, true_branch: NodeId(6), false_branch: NodeId(5) }
-10 EqualsLiteral { input: v2, literal: 3, true_branch: NodeId(1), false_branch: NodeId(9) }
-11 EqualsLiteral { input: v1, literal: 2, true_branch: NodeId(10), false_branch: NodeId(8) }
-12 EqualsLiteral { input: v2, literal: 0, true_branch: NodeId(6), false_branch: NodeId(5) }
-13 EqualsLiteral { input: v2, literal: 5, true_branch: NodeId(2), false_branch: NodeId(12) }
-14 EqualsLiteral { input: v2, literal: 4, true_branch: NodeId(1), false_branch: NodeId(13) }
-15 EqualsLiteral { input: v2, literal: 3, true_branch: NodeId(0), false_branch: NodeId(14) }
-16 EqualsLiteral { input: v1, literal: 1, true_branch: NodeId(15), false_branch: NodeId(11) }
-17 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(16) }
 18 EvaluateExpr { expr: ExprId(2), var_id: v0, next: NodeId(17) }
+17 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(16) }
+16 EqualsLiteral { input: v1, literal: 1, true_branch: NodeId(15), false_branch: NodeId(11) }
+15 EqualsLiteral { input: v2, literal: 3, true_branch: NodeId(0), false_branch: NodeId(14) }
+14 EqualsLiteral { input: v2, literal: 4, true_branch: NodeId(1), false_branch: NodeId(13) }
+13 EqualsLiteral { input: v2, literal: 5, true_branch: NodeId(2), false_branch: NodeId(12) }
+12 EqualsLiteral { input: v2, literal: 0, true_branch: NodeId(6), false_branch: NodeId(5) }
+11 EqualsLiteral { input: v1, literal: 2, true_branch: NodeId(10), false_branch: NodeId(8) }
+10 EqualsLiteral { input: v2, literal: 3, true_branch: NodeId(1), false_branch: NodeId(9) }
+9 EqualsLiteral { input: v2, literal: 0, true_branch: NodeId(6), false_branch: NodeId(5) }
+8 EqualsLiteral { input: v1, literal: 3, true_branch: NodeId(3), false_branch: NodeId(7) }
+7 EqualsLiteral { input: v2, literal: 0, true_branch: NodeId(6), false_branch: NodeId(5) }
+6 BindVar { input: v1, output: PatternVarId(0), next: NodeId(4) }
+5 ArmExpr { expr: ExprId(8) }
+4 ArmExpr { expr: ExprId(7) }
+3 ArmExpr { expr: ExprId(6) }
+2 ArmExpr { expr: ExprId(5) }
+1 ArmExpr { expr: ExprId(4) }
+0 ArmExpr { expr: ExprId(3) }
 
 //! > semantic_diagnostics
 
@@ -1019,8 +1019,8 @@ fn foo(x: Option<felt252>) -> felt252 {
 
 //! > graph
 Root: 1
-0 ArmExpr { expr: ExprId(1) }
 1 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(0) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
 
@@ -1059,14 +1059,14 @@ enum Color {
 
 //! > graph
 Root: 7
-0 ArmExpr { expr: ExprId(2) }
-1 ArmExpr { expr: ExprId(3) }
-2 BindVar { input: v3, output: PatternVarId(0), next: NodeId(0) }
-3 BindVar { input: v8, output: PatternVarId(2), next: NodeId(0) }
-4 EnumMatch { matched_var: v2, variants: (NodeId(3), v8), (NodeId(1), v9), (NodeId(1), v10)}
-5 EnumMatch { matched_var: v1, variants: (NodeId(2), v3), (NodeId(4), v7), (NodeId(4), v11)}
-6 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(5) }
 7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+6 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(5) }
+5 EnumMatch { matched_var: v1, variants: (NodeId(2), v3), (NodeId(4), v7), (NodeId(4), v11)}
+4 EnumMatch { matched_var: v2, variants: (NodeId(3), v8), (NodeId(1), v9), (NodeId(1), v10)}
+3 BindVar { input: v8, output: PatternVarId(2), next: NodeId(0) }
+2 BindVar { input: v3, output: PatternVarId(0), next: NodeId(0) }
+1 ArmExpr { expr: ExprId(3) }
+0 ArmExpr { expr: ExprId(2) }
 
 //! > semantic_diagnostics
 
@@ -1165,14 +1165,14 @@ enum Color {
 
 //! > graph
 Root: 7
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(3) }
-2 BindVar { input: v2, output: PatternVarId(1), next: NodeId(0) }
-3 BindVar { input: v1, output: PatternVarId(0), next: NodeId(0) }
-4 EnumMatch { matched_var: v2, variants: (NodeId(3), v8), (NodeId(1), v9), (NodeId(1), v10)}
-5 EnumMatch { matched_var: v1, variants: (NodeId(2), v3), (NodeId(4), v7), (NodeId(4), v11)}
-6 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(5) }
 7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+6 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(5) }
+5 EnumMatch { matched_var: v1, variants: (NodeId(2), v3), (NodeId(4), v7), (NodeId(4), v11)}
+4 EnumMatch { matched_var: v2, variants: (NodeId(3), v8), (NodeId(1), v9), (NodeId(1), v10)}
+3 BindVar { input: v1, output: PatternVarId(0), next: NodeId(0) }
+2 BindVar { input: v2, output: PatternVarId(1), next: NodeId(0) }
+1 ArmExpr { expr: ExprId(3) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
 
