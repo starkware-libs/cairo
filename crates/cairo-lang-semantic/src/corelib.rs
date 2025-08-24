@@ -32,10 +32,16 @@ use crate::{
     ExprId, ExprTuple, FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId, semantic,
 };
 
-/// Query implementation of [SemanticGroup::core_module].
+/// Implementation of [SemanticGroup::core_module].
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId<'_> {
     let core_crate = db.core_crate();
     ModuleId::CrateRoot(core_crate)
+}
+
+/// Query implementation of [SemanticGroup::core_module].
+#[salsa::tracked]
+pub fn core_module_tracked(db: &dyn SemanticGroup) -> ModuleId<'_> {
+    core_module(db)
 }
 
 /// Returns the submodule of `base_module`, named `submodule_name`, if exists.
@@ -59,9 +65,15 @@ pub fn core_submodule<'db>(db: &'db dyn SemanticGroup, submodule_name: &'db str)
         .unwrap_or_else(|| panic!("`{submodule_name}` is not a core submodule."))
 }
 
-/// Query implementation of [SemanticGroup::core_crate].
+/// Implementation of [SemanticGroup::core_crate].
 pub fn core_crate(db: &dyn SemanticGroup) -> CrateId<'_> {
     CrateId::core(db)
+}
+
+/// Query implementation of [SemanticGroup::core_crate].
+#[salsa::tracked]
+pub fn core_crate_tracked(db: &dyn SemanticGroup) -> CrateId<'_> {
+    core_crate(db)
 }
 
 /// Returns the concrete type of a bounded int type with a given min and max.
@@ -1099,7 +1111,13 @@ impl<'db> CoreInfo<'db> {
     }
 }
 
-/// Query implementation of [SemanticGroup::core_info].
+/// Implementation of [SemanticGroup::core_info].
 pub fn core_info(db: &dyn SemanticGroup) -> Arc<CoreInfo<'_>> {
     CoreInfo::new(db).into()
+}
+
+/// Query implementation of [SemanticGroup::core_info].
+#[salsa::tracked]
+pub fn core_info_tracked(db: &dyn SemanticGroup) -> Arc<CoreInfo<'_>> {
+    core_info(db)
 }

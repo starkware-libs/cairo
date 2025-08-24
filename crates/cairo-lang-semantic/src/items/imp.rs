@@ -68,7 +68,7 @@ use super::type_aliases::{
 use super::visibility::peek_visible_in;
 use super::{TraitOrImplContext, resolve_trait_path};
 use crate::corelib::{concrete_destruct_trait, concrete_drop_trait, core_crate};
-use crate::db::{SemanticGroup, SemanticGroupData, get_resolver_data_options};
+use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
@@ -456,7 +456,7 @@ pub struct ImplDeclarationData<'db> {
 
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::impl_semantic_declaration_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::impl_semantic_declaration_diagnostics].
 pub fn impl_semantic_declaration_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -464,7 +464,16 @@ pub fn impl_semantic_declaration_diagnostics<'db>(
     db.priv_impl_declaration_data(impl_def_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_def_generic_params_data].
+/// Query implementation of [crate::db::SemanticGroup::impl_semantic_declaration_diagnostics].
+#[salsa::tracked]
+pub fn impl_semantic_declaration_diagnostics_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    impl_semantic_declaration_diagnostics(db, impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_def_generic_params_data].
 pub fn impl_def_generic_params_data<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -492,7 +501,16 @@ pub fn impl_def_generic_params_data<'db>(
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_def_generic_params].
+/// Query implementation of [crate::db::SemanticGroup::impl_def_generic_params_data].
+#[salsa::tracked]
+pub fn impl_def_generic_params_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
+    impl_def_generic_params_data(db, impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_def_generic_params].
 pub fn impl_def_generic_params<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -500,9 +518,19 @@ pub fn impl_def_generic_params<'db>(
     Ok(db.impl_def_generic_params_data(impl_def_id)?.generic_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_def_resolver_data].
+/// Query implementation of [crate::db::SemanticGroup::impl_def_generic_params].
+#[salsa::tracked]
+pub fn impl_def_generic_params_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<Vec<semantic::GenericParam<'db>>> {
+    impl_def_generic_params(db, impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_def_resolver_data].
 pub fn impl_def_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
+
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_impl_declaration_data(impl_def_id)?.resolver_data)
@@ -511,16 +539,25 @@ pub fn impl_def_resolver_data<'db>(
 /// Trivial cycle handler for [crate::db::SemanticGroup::impl_def_resolver_data].
 pub fn impl_def_resolver_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     // Forwarding (not as a query) cycle handling to `priv_impl_declaration_data` cycle handler.
     impl_def_resolver_data(db, impl_def_id)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_def_concrete_trait].
+/// Query implementation of [crate::db::SemanticGroup::impl_def_resolver_data].
+#[salsa::tracked(cycle_result=impl_def_resolver_data_cycle)]
+pub fn impl_def_resolver_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    impl_def_resolver_data(db, impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_def_concrete_trait].
 pub fn impl_def_concrete_trait<'db>(
     db: &'db dyn SemanticGroup,
+
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<ConcreteTraitId<'db>> {
     db.priv_impl_declaration_data(impl_def_id)?.concrete_trait
@@ -529,14 +566,22 @@ pub fn impl_def_concrete_trait<'db>(
 /// Trivial cycle handler for [crate::db::SemanticGroup::impl_def_concrete_trait].
 pub fn impl_def_concrete_trait_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<ConcreteTraitId<'db>> {
     // Forwarding (not as a query) cycle handling to `priv_impl_declaration_data` cycle handler.
     impl_def_concrete_trait(db, impl_def_id)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_def_substitution].
+/// Query implementation of [crate::db::SemanticGroup::impl_def_concrete_trait].
+#[salsa::tracked(cycle_result=impl_def_concrete_trait_cycle)]
+pub fn impl_def_concrete_trait_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<ConcreteTraitId<'db>> {
+    impl_def_concrete_trait(db, impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_def_substitution].
 pub fn impl_def_substitution<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -546,7 +591,16 @@ pub fn impl_def_substitution<'db>(
     Ok(Arc::new(ConcreteImplLongId { impl_def_id, generic_args }.intern(db).substitution(db)?))
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_def_attributes].
+/// Query implementation of [crate::db::SemanticGroup::impl_def_substitution].
+#[salsa::tracked]
+pub fn impl_def_substitution_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<Arc<GenericSubstitution<'db>>> {
+    impl_def_substitution(db, impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_def_attributes].
 pub fn impl_def_attributes<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -554,7 +608,16 @@ pub fn impl_def_attributes<'db>(
     Ok(db.priv_impl_declaration_data(impl_def_id)?.attributes)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_def_trait].
+/// Query implementation of [crate::db::SemanticGroup::impl_def_attributes].
+#[salsa::tracked]
+pub fn impl_def_attributes_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    impl_def_attributes(db, impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_def_trait].
 pub fn impl_def_trait<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -571,6 +634,15 @@ pub fn impl_def_trait<'db>(
     let trait_path_syntax = impl_ast.trait_path(db);
 
     resolve_trait_path(db, &mut diagnostics, &mut resolver, &trait_path_syntax)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_def_trait].
+#[salsa::tracked]
+pub fn impl_def_trait_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<TraitId<'db>> {
+    impl_def_trait(db, impl_def_id)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_def_shallow_trait_generic_args].
@@ -794,7 +866,7 @@ fn impl_alias_trait_generic_args_helper<'db>(
     }
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_concrete_trait].
+/// Implementation of [crate::db::SemanticGroup::impl_concrete_trait].
 pub fn impl_concrete_trait<'db>(
     db: &'db dyn SemanticGroup,
     impl_id: ImplId<'db>,
@@ -822,19 +894,28 @@ pub fn impl_concrete_trait<'db>(
     }
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_concrete_trait].
+#[salsa::tracked]
+pub fn impl_concrete_trait_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_id: ImplId<'db>,
+) -> Maybe<ConcreteTraitId<'db>> {
+    impl_concrete_trait(db, impl_id)
+}
+
 // --- Computation ---
 
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_declaration_data].
 pub fn priv_impl_declaration_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<ImplDeclarationData<'db>> {
     priv_impl_declaration_data_inner(db, impl_def_id, false)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_declaration_data].
-pub fn priv_impl_declaration_data<'db>(
+#[salsa::tracked(cycle_result=priv_impl_declaration_data_cycle)]
+pub fn priv_impl_declaration_data_tracked<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<ImplDeclarationData<'db>> {
@@ -971,7 +1052,7 @@ impl<'db> HasFeatureKind<'db> for ImplItemInfo<'db> {
 
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::impl_semantic_definition_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::impl_semantic_definition_diagnostics].
 pub fn impl_semantic_definition_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1018,6 +1099,15 @@ pub fn impl_semantic_definition_diagnostics<'db>(
     diagnostics.build()
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_semantic_definition_diagnostics].
+#[salsa::tracked]
+pub fn impl_semantic_definition_diagnostics_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    impl_semantic_definition_diagnostics(db, impl_def_id)
+}
+
 /// Represents a chain of dereferences.
 #[derive(Clone, Debug, Eq, PartialEq, salsa::Update)]
 pub struct DerefChain<'db> {
@@ -1038,7 +1128,6 @@ pub struct DerefInfo<'db> {
 /// Cycle handling for  [crate::db::SemanticGroup::deref_chain].
 pub fn deref_chain_cycle<'db>(
     _db: &dyn SemanticGroup,
-    _input: SemanticGroupData,
     _ty: TypeId<'db>,
     _crate_id: CrateId<'db>,
     _try_deref_mut: bool,
@@ -1047,7 +1136,7 @@ pub fn deref_chain_cycle<'db>(
     Maybe::Err(skip_diagnostic())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::deref_chain].
+/// Implementation of [crate::db::SemanticGroup::deref_chain].
 pub fn deref_chain<'db>(
     db: &'db dyn SemanticGroup,
     ty: TypeId<'db>,
@@ -1080,6 +1169,17 @@ pub fn deref_chain<'db>(
             .collect(),
         ),
     })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::deref_chain].
+#[salsa::tracked(cycle_result=deref_chain_cycle)]
+pub fn deref_chain_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    ty: TypeId<'db>,
+    crate_id: CrateId<'db>,
+    try_deref_mut: bool,
+) -> Maybe<DerefChain<'db>> {
+    deref_chain(db, ty, crate_id, try_deref_mut)
 }
 
 /// Tries to find the deref function and the target type for a given type and deref trait.
@@ -1235,7 +1335,7 @@ fn get_impl_based_on_single_impl_type<'db>(
         .map_err(|err| (err, *impl_item_type_id))
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_functions].
+/// Implementation of [crate::db::SemanticGroup::impl_functions].
 pub fn impl_functions<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1251,7 +1351,16 @@ pub fn impl_functions<'db>(
         .collect())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_function_by_trait_function].
+/// Query implementation of [crate::db::SemanticGroup::impl_functions].
+#[salsa::tracked]
+pub fn impl_functions_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<OrderedHashMap<StrRef<'db>, ImplFunctionId<'db>>> {
+    impl_functions(db, impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_function_by_trait_function].
 pub fn impl_function_by_trait_function<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1266,7 +1375,17 @@ pub fn impl_function_by_trait_function<'db>(
     Ok(None)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_item_by_name].
+/// Query implementation of [crate::db::SemanticGroup::impl_function_by_trait_function].
+#[salsa::tracked]
+pub fn impl_function_by_trait_function_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<Option<ImplFunctionId<'db>>> {
+    impl_function_by_trait_function(db, impl_def_id, trait_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_item_by_name].
 pub fn impl_item_by_name<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1275,7 +1394,17 @@ pub fn impl_item_by_name<'db>(
     Ok(db.priv_impl_definition_data(impl_def_id)?.item_id_by_name.get(&name).map(|info| info.id))
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_item_info_by_name].
+/// Query implementation of [crate::db::SemanticGroup::impl_item_by_name].
+#[salsa::tracked]
+pub fn impl_item_by_name_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<ImplItemId<'db>>> {
+    impl_item_by_name(db, impl_def_id, name)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_item_info_by_name].
 pub fn impl_item_info_by_name<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1285,7 +1414,17 @@ pub fn impl_item_info_by_name<'db>(
     Ok(impl_definition_data.get_impl_item_info(name))
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_implicit_impl_by_name].
+/// Query implementation of [crate::db::SemanticGroup::impl_item_info_by_name].
+#[salsa::tracked]
+pub fn impl_item_info_by_name_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<ImplItemInfo<'db>>> {
+    impl_item_info_by_name(db, impl_def_id, name)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_implicit_impl_by_name].
 pub fn impl_implicit_impl_by_name<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1294,7 +1433,17 @@ pub fn impl_implicit_impl_by_name<'db>(
     Ok(db.priv_impl_definition_data(impl_def_id)?.implicit_impls_id_by_name.get(&name).cloned())
 }
 
-/// Query implementation of [SemanticGroup::impl_all_used_uses].
+/// Query implementation of [crate::db::SemanticGroup::impl_implicit_impl_by_name].
+#[salsa::tracked]
+pub fn impl_implicit_impl_by_name_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<TraitImplId<'db>>> {
+    impl_implicit_impl_by_name(db, impl_def_id, name)
+}
+
+/// Implementation of [SemanticGroup::impl_all_used_uses].
 pub fn impl_all_used_uses<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1309,7 +1458,16 @@ pub fn impl_all_used_uses<'db>(
     Ok(all_used_uses.into())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_types].
+/// Query implementation of [SemanticGroup::impl_all_used_uses].
+#[salsa::tracked]
+pub fn impl_all_used_uses_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
+    impl_all_used_uses(db, impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_types].
 pub fn impl_types<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1317,7 +1475,16 @@ pub fn impl_types<'db>(
     Ok(db.priv_impl_definition_data(impl_def_id)?.item_type_asts)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_ids].
+/// Query implementation of [crate::db::SemanticGroup::impl_types].
+#[salsa::tracked]
+pub fn impl_types_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<Arc<OrderedHashMap<ImplTypeDefId<'db>, ast::ItemTypeAlias<'db>>>> {
+    impl_types(db, impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_type_ids].
 pub fn impl_type_ids<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1325,7 +1492,16 @@ pub fn impl_type_ids<'db>(
     Ok(Arc::new(db.impl_types(impl_def_id)?.keys().copied().collect_vec()))
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_by_id].
+/// Query implementation of [crate::db::SemanticGroup::impl_type_ids].
+#[salsa::tracked]
+pub fn impl_type_ids_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<Arc<Vec<ImplTypeDefId<'db>>>> {
+    impl_type_ids(db, impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_type_by_id].
 pub fn impl_type_by_id<'db>(
     db: &'db dyn SemanticGroup,
     impl_type_id: ImplTypeDefId<'db>,
@@ -1334,7 +1510,16 @@ pub fn impl_type_by_id<'db>(
     Ok(impl_types[&impl_type_id].clone())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_by_trait_type].
+/// Query implementation of [crate::db::SemanticGroup::impl_type_by_id].
+#[salsa::tracked]
+pub fn impl_type_by_id_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_type_id: ImplTypeDefId<'db>,
+) -> Maybe<ast::ItemTypeAlias<'db>> {
+    impl_type_by_id(db, impl_type_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_type_by_trait_type].
 pub fn impl_type_by_trait_type<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1355,7 +1540,17 @@ pub fn impl_type_by_trait_type<'db>(
     })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_constants].
+/// Query implementation of [crate::db::SemanticGroup::impl_type_by_trait_type].
+#[salsa::tracked]
+pub fn impl_type_by_trait_type_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+    trait_type_id: TraitTypeId<'db>,
+) -> Maybe<ImplTypeDefId<'db>> {
+    impl_type_by_trait_type(db, impl_def_id, trait_type_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_constants].
 pub fn impl_constants<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1363,7 +1558,16 @@ pub fn impl_constants<'db>(
     Ok(db.priv_impl_definition_data(impl_def_id)?.item_constant_asts)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_constant_by_trait_constant].
+/// Query implementation of [crate::db::SemanticGroup::impl_constants].
+#[salsa::tracked]
+pub fn impl_constants_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<Arc<OrderedHashMap<ImplConstantDefId<'db>, ast::ItemConstant<'db>>>> {
+    impl_constants(db, impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_constant_by_trait_constant].
 pub fn impl_constant_by_trait_constant<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1384,7 +1588,17 @@ pub fn impl_constant_by_trait_constant<'db>(
     })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_impls].
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_by_trait_constant].
+#[salsa::tracked]
+pub fn impl_constant_by_trait_constant_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+    trait_constant_id: TraitConstantId<'db>,
+) -> Maybe<ImplConstantDefId<'db>> {
+    impl_constant_by_trait_constant(db, impl_def_id, trait_constant_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_impls].
 pub fn impl_impls<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1392,7 +1606,16 @@ pub fn impl_impls<'db>(
     Ok(db.priv_impl_definition_data(impl_def_id)?.item_impl_asts)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_impl_ids].
+/// Query implementation of [crate::db::SemanticGroup::impl_impls].
+#[salsa::tracked]
+pub fn impl_impls_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<Arc<OrderedHashMap<ImplImplDefId<'db>, ast::ItemImplAlias<'db>>>> {
+    impl_impls(db, impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_impl_ids].
 pub fn impl_impl_ids<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1400,7 +1623,16 @@ pub fn impl_impl_ids<'db>(
     Ok(Arc::new(db.impl_impls(impl_def_id)?.keys().copied().collect_vec()))
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_impl_by_id].
+/// Query implementation of [crate::db::SemanticGroup::impl_impl_ids].
+#[salsa::tracked]
+pub fn impl_impl_ids_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<Arc<Vec<ImplImplDefId<'db>>>> {
+    impl_impl_ids(db, impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_impl_by_id].
 pub fn impl_impl_by_id<'db>(
     db: &'db dyn SemanticGroup,
     impl_impl_id: ImplImplDefId<'db>,
@@ -1409,7 +1641,16 @@ pub fn impl_impl_by_id<'db>(
     Ok(impl_impls[&impl_impl_id].clone())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_impl_by_trait_impl].
+/// Query implementation of [crate::db::SemanticGroup::impl_impl_by_id].
+#[salsa::tracked]
+pub fn impl_impl_by_id_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_impl_id: ImplImplDefId<'db>,
+) -> Maybe<ast::ItemImplAlias<'db>> {
+    impl_impl_by_id(db, impl_impl_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_impl_by_trait_impl].
 pub fn impl_impl_by_trait_impl<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1430,7 +1671,17 @@ pub fn impl_impl_by_trait_impl<'db>(
     })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::is_implicit_impl_impl].
+/// Query implementation of [crate::db::SemanticGroup::impl_impl_by_trait_impl].
+#[salsa::tracked]
+pub fn impl_impl_by_trait_impl_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+    trait_impl_id: TraitImplId<'db>,
+) -> Maybe<ImplImplDefId<'db>> {
+    impl_impl_by_trait_impl(db, impl_def_id, trait_impl_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::is_implicit_impl_impl].
 pub fn is_implicit_impl_impl<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1448,9 +1699,19 @@ pub fn is_implicit_impl_impl<'db>(
     Ok(db.impl_implicit_impl_by_name(impl_def_id, name.into())?.is_some())
 }
 
+/// Query implementation of [crate::db::SemanticGroup::is_implicit_impl_impl].
+#[salsa::tracked]
+pub fn is_implicit_impl_impl_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+    trait_impl_id: TraitImplId<'db>,
+) -> Maybe<bool> {
+    is_implicit_impl_impl(db, impl_def_id, trait_impl_id)
+}
+
 // --- Computation ---
 
-/// Query implementation of [crate::db::SemanticGroup::priv_impl_definition_data].
+/// Implementation of [crate::db::SemanticGroup::priv_impl_definition_data].
 pub fn priv_impl_definition_data<'db>(
     db: &'db dyn SemanticGroup,
     impl_def_id: ImplDefId<'db>,
@@ -1640,6 +1901,15 @@ pub fn priv_impl_definition_data<'db>(
     })
 }
 
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_definition_data].
+#[salsa::tracked]
+pub fn priv_impl_definition_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<ImplDefinitionData<'db>> {
+    priv_impl_definition_data(db, impl_def_id)
+}
+
 /// A helper function to report diagnostics of items in an impl (used in
 /// priv_impl_definition_data).
 fn report_invalid_impl_item<'db, Terminal: syntax::node::Terminal<'db>>(
@@ -1769,7 +2039,7 @@ pub enum GenericsHeadFilter<'db> {
     NoGenerics,
 }
 
-/// Query implementation of [crate::db::SemanticGroup::module_impl_ids].
+/// Implementation of [crate::db::SemanticGroup::module_impl_ids].
 /// Returns the uninferred impls in a module.
 pub fn module_impl_ids<'db>(
     db: &'db dyn SemanticGroup,
@@ -1804,6 +2074,17 @@ pub fn module_impl_ids<'db>(
         })
         .collect::<BTreeSet<_>>();
     Ok(res.into())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::module_impl_ids].
+/// Returns the uninferred impls in a module.
+#[salsa::tracked]
+pub fn module_impl_ids_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    user_module: ModuleId<'db>,
+    containing_module: ModuleId<'db>,
+) -> Maybe<Arc<BTreeSet<UninferredImplById<'db>>>> {
+    module_impl_ids(db, user_module, containing_module)
 }
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
@@ -2516,7 +2797,7 @@ pub struct ImplItemTypeData<'db> {
 
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_def_semantic_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::impl_type_def_semantic_diagnostics].
 pub fn impl_type_def_semantic_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     impl_type_def_id: ImplTypeDefId<'db>,
@@ -2526,7 +2807,16 @@ pub fn impl_type_def_semantic_diagnostics<'db>(
         .unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_def_resolved_type].
+/// Query implementation of [crate::db::SemanticGroup::impl_type_def_semantic_diagnostics].
+#[salsa::tracked]
+pub fn impl_type_def_semantic_diagnostics_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_type_def_id: ImplTypeDefId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    impl_type_def_semantic_diagnostics(db, impl_type_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_type_def_resolved_type].
 pub fn impl_type_def_resolved_type<'db>(
     db: &'db dyn SemanticGroup,
     impl_type_def_id: ImplTypeDefId<'db>,
@@ -2534,16 +2824,24 @@ pub fn impl_type_def_resolved_type<'db>(
     db.priv_impl_type_semantic_data(impl_type_def_id, false)?.type_alias_data.resolved_type
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_type_def_resolved_type].
+#[salsa::tracked(cycle_result=impl_type_def_resolved_type_cycle)]
+pub fn impl_type_def_resolved_type_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_type_def_id: ImplTypeDefId<'db>,
+) -> Maybe<TypeId<'db>> {
+    impl_type_def_resolved_type(db, impl_type_def_id)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::impl_type_def_resolved_type].
 pub fn impl_type_def_resolved_type_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     impl_type_def_id: ImplTypeDefId<'db>,
 ) -> Maybe<TypeId<'db>> {
     db.priv_impl_type_semantic_data(impl_type_def_id, true)?.type_alias_data.resolved_type
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_def_generic_params].
+/// Implementation of [crate::db::SemanticGroup::impl_type_def_generic_params].
 pub fn impl_type_def_generic_params<'db>(
     db: &'db dyn SemanticGroup,
     impl_type_def_id: ImplTypeDefId<'db>,
@@ -2551,7 +2849,16 @@ pub fn impl_type_def_generic_params<'db>(
     Ok(db.priv_impl_type_def_generic_params_data(impl_type_def_id)?.generic_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_def_attributes].
+/// Query implementation of [crate::db::SemanticGroup::impl_type_def_generic_params].
+#[salsa::tracked]
+pub fn impl_type_def_generic_params_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_type_def_id: ImplTypeDefId<'db>,
+) -> Maybe<Vec<GenericParam<'db>>> {
+    impl_type_def_generic_params(db, impl_type_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_type_def_attributes].
 pub fn impl_type_def_attributes<'db>(
     db: &'db dyn SemanticGroup,
     impl_type_def_id: ImplTypeDefId<'db>,
@@ -2559,7 +2866,16 @@ pub fn impl_type_def_attributes<'db>(
     Ok(db.priv_impl_type_semantic_data(impl_type_def_id, false)?.type_alias_data.attributes)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_def_resolver_data].
+/// Query implementation of [crate::db::SemanticGroup::impl_type_def_attributes].
+#[salsa::tracked]
+pub fn impl_type_def_attributes_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_type_def_id: ImplTypeDefId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    impl_type_def_attributes(db, impl_type_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_type_def_resolver_data].
 pub fn impl_type_def_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     impl_type_def_id: ImplTypeDefId<'db>,
@@ -2567,7 +2883,16 @@ pub fn impl_type_def_resolver_data<'db>(
     Ok(db.priv_impl_type_semantic_data(impl_type_def_id, false)?.type_alias_data.resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_def_trait_type].
+/// Query implementation of [crate::db::SemanticGroup::impl_type_def_resolver_data].
+#[salsa::tracked]
+pub fn impl_type_def_resolver_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_type_def_id: ImplTypeDefId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    impl_type_def_resolver_data(db, impl_type_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_type_def_trait_type].
 pub fn impl_type_def_trait_type<'db>(
     db: &'db dyn SemanticGroup,
     impl_type_def_id: ImplTypeDefId<'db>,
@@ -2575,9 +2900,18 @@ pub fn impl_type_def_trait_type<'db>(
     db.priv_impl_type_semantic_data(impl_type_def_id, false)?.trait_type_id
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_type_def_trait_type].
+#[salsa::tracked]
+pub fn impl_type_def_trait_type_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_type_def_id: ImplTypeDefId<'db>,
+) -> Maybe<TraitTypeId<'db>> {
+    impl_type_def_trait_type(db, impl_type_def_id)
+}
+
 // --- Computation ---
 
-/// Query implementation of [crate::db::SemanticGroup::priv_impl_type_semantic_data].
+/// Implementation of [crate::db::SemanticGroup::priv_impl_type_semantic_data].
 pub fn priv_impl_type_semantic_data<'db>(
     db: &'db dyn SemanticGroup,
     impl_type_def_id: ImplTypeDefId<'db>,
@@ -2620,10 +2954,19 @@ pub fn priv_impl_type_semantic_data<'db>(
     }
 }
 
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_type_semantic_data].
+#[salsa::tracked(cycle_result=priv_impl_type_semantic_data_cycle)]
+pub fn priv_impl_type_semantic_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_type_def_id: ImplTypeDefId<'db>,
+    in_cycle: bool,
+) -> Maybe<ImplItemTypeData<'db>> {
+    priv_impl_type_semantic_data(db, impl_type_def_id, in_cycle)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_type_semantic_data].
 pub fn priv_impl_type_semantic_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     impl_type_def_id: ImplTypeDefId<'db>,
     _in_cycle: bool,
 ) -> Maybe<ImplItemTypeData<'db>> {
@@ -2631,7 +2974,7 @@ pub fn priv_impl_type_semantic_data_cycle<'db>(
     priv_impl_type_semantic_data(db, impl_type_def_id, true)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_impl_type_def_generic_params_data].
+/// Implementation of [crate::db::SemanticGroup::priv_impl_type_def_generic_params_data].
 pub fn priv_impl_type_def_generic_params_data<'db>(
     db: &'db dyn SemanticGroup,
     impl_type_def_id: ImplTypeDefId<'db>,
@@ -2648,6 +2991,15 @@ pub fn priv_impl_type_def_generic_params_data<'db>(
         lookup_item_id,
         Some(impl_resolver_data),
     )
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_type_def_generic_params_data].
+#[salsa::tracked]
+pub fn priv_impl_type_def_generic_params_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_type_def_id: ImplTypeDefId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
+    priv_impl_type_def_generic_params_data(db, impl_type_def_id)
 }
 
 /// Validates the impl item type, and returns the matching trait type id.
@@ -2688,7 +3040,7 @@ fn validate_impl_item_type<'db>(
 
 // === Impl Type ===
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_concrete_implized].
+/// Implementation of [crate::db::SemanticGroup::impl_type_concrete_implized].
 pub fn impl_type_concrete_implized<'db>(
     db: &'db dyn SemanticGroup,
     impl_type_id: ImplTypeId<'db>,
@@ -2716,10 +3068,27 @@ pub fn impl_type_concrete_implized<'db>(
     concrete_impl.substitution(db)?.substitute(db, ty)
 }
 
+#[salsa::tracked(cycle_result=impl_type_concrete_implized_cycle)]
+fn impl_type_concrete_implized_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _tracked: Tracked,
+    impl_type_id: ImplTypeId<'db>,
+) -> Maybe<TypeId<'db>> {
+    impl_type_concrete_implized(db, impl_type_id)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_type_concrete_implized].
+pub fn impl_type_concrete_implized_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_type_id: ImplTypeId<'db>,
+) -> Maybe<TypeId<'db>> {
+    impl_type_concrete_implized_helper(db, (), impl_type_id)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::impl_type_concrete_implized].
 pub fn impl_type_concrete_implized_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
+    _tracked: Tracked,
     impl_type_id: ImplTypeId<'db>,
 ) -> Maybe<TypeId<'db>> {
     // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
@@ -2739,7 +3108,7 @@ pub struct ImplItemConstantData<'db> {
 
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::impl_constant_def_semantic_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::impl_constant_def_semantic_diagnostics].
 pub fn impl_constant_def_semantic_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     impl_constant_def_id: ImplConstantDefId<'db>,
@@ -2749,7 +3118,16 @@ pub fn impl_constant_def_semantic_diagnostics<'db>(
         .unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_constant_def_value].
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_def_semantic_diagnostics].
+#[salsa::tracked]
+pub fn impl_constant_def_semantic_diagnostics_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_constant_def_id: ImplConstantDefId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    impl_constant_def_semantic_diagnostics(db, impl_constant_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_constant_def_value].
 pub fn impl_constant_def_value<'db>(
     db: &'db dyn SemanticGroup,
     impl_constant_def_id: ImplConstantDefId<'db>,
@@ -2757,16 +3135,24 @@ pub fn impl_constant_def_value<'db>(
     Ok(db.priv_impl_constant_semantic_data(impl_constant_def_id, false)?.constant_data.const_value)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_def_value].
+#[salsa::tracked(cycle_result=impl_constant_def_value_cycle)]
+pub fn impl_constant_def_value_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_constant_def_id: ImplConstantDefId<'db>,
+) -> Maybe<ConstValueId<'db>> {
+    impl_constant_def_value(db, impl_constant_def_id)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_def_value].
 pub fn impl_constant_def_value_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     impl_constant_def_id: ImplConstantDefId<'db>,
 ) -> Maybe<ConstValueId<'db>> {
     Ok(db.priv_impl_constant_semantic_data(impl_constant_def_id, true)?.constant_data.const_value)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_constant_def_resolver_data].
+/// Implementation of [crate::db::SemanticGroup::impl_constant_def_resolver_data].
 pub fn impl_constant_def_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     impl_constant_def_id: ImplConstantDefId<'db>,
@@ -2777,12 +3163,30 @@ pub fn impl_constant_def_resolver_data<'db>(
         .resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_constant_def_trait_constant].
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_def_resolver_data].
+#[salsa::tracked]
+pub fn impl_constant_def_resolver_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_constant_def_id: ImplConstantDefId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    impl_constant_def_resolver_data(db, impl_constant_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_constant_def_trait_constant].
 pub fn impl_constant_def_trait_constant<'db>(
     db: &'db dyn SemanticGroup,
     impl_constant_def_id: ImplConstantDefId<'db>,
 ) -> Maybe<TraitConstantId<'db>> {
     db.priv_impl_constant_semantic_data(impl_constant_def_id, false)?.trait_constant_id
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_def_trait_constant].
+#[salsa::tracked]
+pub fn impl_constant_def_trait_constant_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_constant_def_id: ImplConstantDefId<'db>,
+) -> Maybe<TraitConstantId<'db>> {
+    impl_constant_def_trait_constant(db, impl_constant_def_id)
 }
 
 // --- Computation ---
@@ -2834,10 +3238,19 @@ pub fn priv_impl_constant_semantic_data<'db>(
     Ok(ImplItemConstantData { constant_data, trait_constant_id, diagnostics: diagnostics.build() })
 }
 
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_constant_semantic_data].
+#[salsa::tracked(cycle_result=priv_impl_constant_semantic_data_cycle)]
+pub fn priv_impl_constant_semantic_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_constant_def_id: ImplConstantDefId<'db>,
+    in_cycle: bool,
+) -> Maybe<ImplItemConstantData<'db>> {
+    priv_impl_constant_semantic_data(db, impl_constant_def_id, in_cycle)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_constant_semantic_data].
 pub fn priv_impl_constant_semantic_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     impl_constant_def_id: ImplConstantDefId<'db>,
     _in_cycle: bool,
 ) -> Maybe<ImplItemConstantData<'db>> {
@@ -2906,10 +3319,19 @@ pub fn impl_constant_implized_by_context<'db>(
     db.impl_constant_def_value(impl_constant_def_id)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_implized_by_context].
+#[salsa::tracked(cycle_result=impl_constant_implized_by_context_cycle)]
+pub fn impl_constant_implized_by_context_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_constant_id: ImplConstantId<'db>,
+    impl_def_id: ImplDefId<'db>,
+) -> Maybe<ConstValueId<'db>> {
+    impl_constant_implized_by_context(db, impl_constant_id, impl_def_id)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_implized_by_context].
 pub fn impl_constant_implized_by_context_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     impl_constant_id: ImplConstantId<'db>,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<ConstValueId<'db>> {
@@ -2935,10 +3357,29 @@ pub fn impl_constant_concrete_implized_value<'db>(
     Ok(const_val.intern(db))
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_concrete_implized_value].
+pub fn impl_constant_concrete_implized_value_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_constant_id: ImplConstantId<'db>,
+) -> Maybe<ConstValueId<'db>> {
+    impl_constant_concrete_implized_value_helper(db, (), impl_constant_id)
+}
+
+/// Tracked implementation of [crate::db::SemanticGroup::impl_constant_concrete_implized_value].
+/// Receives a dummy id to support salsa tracking.
+#[salsa::tracked(cycle_result=impl_constant_concrete_implized_value_cycle)]
+fn impl_constant_concrete_implized_value_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _tracked: Tracked,
+    impl_constant_id: ImplConstantId<'db>,
+) -> Maybe<ConstValueId<'db>> {
+    impl_constant_concrete_implized_value(db, impl_constant_id)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_concrete_implized_value].
 pub fn impl_constant_concrete_implized_value_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
+    _tracked: Tracked,
     impl_constant_id: ImplConstantId<'db>,
 ) -> Maybe<ConstValueId<'db>> {
     // Forwarding cycle handling to `priv_impl_const_semantic_data` handler.
@@ -2975,10 +3416,27 @@ pub fn impl_constant_concrete_implized_type<'db>(
     GenericSubstitution::from_impl(impl_constant_id.impl_id()).substitute(db, ty)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_concrete_implized_type].
+pub fn impl_constant_concrete_implized_type_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_constant_id: ImplConstantId<'db>,
+) -> Maybe<TypeId<'db>> {
+    impl_constant_concrete_implized_type_helper(db, (), impl_constant_id)
+}
+
+#[salsa::tracked(cycle_result=impl_constant_concrete_implized_type_cycle)]
+fn impl_constant_concrete_implized_type_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _tracked: Tracked,
+    impl_constant_id: ImplConstantId<'db>,
+) -> Maybe<TypeId<'db>> {
+    impl_constant_concrete_implized_type(db, impl_constant_id)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_concrete_implized_type].
 pub fn impl_constant_concrete_implized_type_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
+    _tracked: Tracked,
     impl_constant_id: ImplConstantId<'db>,
 ) -> Maybe<TypeId<'db>> {
     // Forwarding cycle handling to `priv_impl_const_semantic_data` handler.
@@ -3008,7 +3466,16 @@ pub fn impl_impl_def_semantic_diagnostics<'db>(
         .unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_impl_def_resolver_data].
+/// Query implementation of [crate::db::SemanticGroup::impl_impl_def_semantic_diagnostics].
+#[salsa::tracked]
+pub fn impl_impl_def_semantic_diagnostics_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_impl_def_id: ImplImplDefId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    impl_impl_def_semantic_diagnostics(db, impl_impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_impl_def_resolver_data].
 pub fn impl_impl_def_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     impl_impl_def_id: ImplImplDefId<'db>,
@@ -3016,12 +3483,30 @@ pub fn impl_impl_def_resolver_data<'db>(
     Ok(db.priv_impl_impl_semantic_data(impl_impl_def_id, false)?.impl_data.resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_impl_def_trait_impl].
+/// Query implementation of [crate::db::SemanticGroup::impl_impl_def_resolver_data].
+#[salsa::tracked]
+pub fn impl_impl_def_resolver_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_impl_def_id: ImplImplDefId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    impl_impl_def_resolver_data(db, impl_impl_def_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_impl_def_trait_impl].
 pub fn impl_impl_def_trait_impl<'db>(
     db: &'db dyn SemanticGroup,
     impl_impl_def_id: ImplImplDefId<'db>,
 ) -> Maybe<TraitImplId<'db>> {
     db.priv_impl_impl_semantic_data(impl_impl_def_id, false)?.trait_impl_id
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_impl_def_trait_impl].
+#[salsa::tracked]
+pub fn impl_impl_def_trait_impl_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_impl_def_id: ImplImplDefId<'db>,
+) -> Maybe<TraitImplId<'db>> {
+    impl_impl_def_trait_impl(db, impl_impl_def_id)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_impl_def_impl].
@@ -3032,10 +3517,20 @@ pub fn impl_impl_def_impl<'db>(
 ) -> Maybe<ImplId<'db>> {
     db.priv_impl_impl_semantic_data(impl_impl_def_id, in_cycle)?.impl_data.resolved_impl
 }
+
+/// Query implementation of [crate::db::SemanticGroup::impl_impl_def_impl].
+#[salsa::tracked(cycle_result=impl_impl_def_impl_cycle)]
+pub fn impl_impl_def_impl_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_impl_def_id: ImplImplDefId<'db>,
+    in_cycle: bool,
+) -> Maybe<ImplId<'db>> {
+    impl_impl_def_impl(db, impl_impl_def_id, in_cycle)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::impl_impl_def_impl].
 pub fn impl_impl_def_impl_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     impl_impl_def_id: ImplImplDefId<'db>,
     _in_cycle: bool,
 ) -> Maybe<ImplId<'db>> {
@@ -3087,10 +3582,19 @@ pub fn priv_impl_impl_semantic_data<'db>(
     Ok(ImplItemImplData { impl_data, trait_impl_id, diagnostics: diagnostics.build() })
 }
 
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_impl_semantic_data].
+#[salsa::tracked(cycle_result=priv_impl_impl_semantic_data_cycle)]
+pub fn priv_impl_impl_semantic_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_impl_def_id: ImplImplDefId<'db>,
+    in_cycle: bool,
+) -> Maybe<ImplItemImplData<'db>> {
+    priv_impl_impl_semantic_data(db, impl_impl_def_id, in_cycle)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_impl_semantic_data].
 pub fn priv_impl_impl_semantic_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     impl_impl_def_id: ImplImplDefId<'db>,
     _in_cycle: bool,
 ) -> Maybe<ImplItemImplData<'db>> {
@@ -3115,6 +3619,15 @@ pub fn priv_impl_impl_def_generic_params_data<'db>(
         lookup_item_id,
         Some(impl_resolver_data),
     )
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_impl_def_generic_params_data].
+#[salsa::tracked]
+pub fn priv_impl_impl_def_generic_params_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_impl_def_id: ImplImplDefId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
+    priv_impl_impl_def_generic_params_data(db, impl_impl_def_id)
 }
 
 /// Validates the impl item impl, and returns the matching trait impl id.
@@ -3196,6 +3709,16 @@ pub fn implicit_impl_impl_semantic_diagnostics<'db>(
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
+
+/// Query implementation of [crate::db::SemanticGroup::implicit_impl_impl_semantic_diagnostics].
+#[salsa::tracked]
+pub fn implicit_impl_impl_semantic_diagnostics_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+    trait_impl_id: TraitImplId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    implicit_impl_impl_semantic_diagnostics(db, impl_def_id, trait_impl_id)
+}
 /// Query implementation of [crate::db::SemanticGroup::implicit_impl_impl_impl].
 pub fn implicit_impl_impl_impl<'db>(
     db: &'db dyn SemanticGroup,
@@ -3205,10 +3728,21 @@ pub fn implicit_impl_impl_impl<'db>(
 ) -> Maybe<ImplId<'db>> {
     db.priv_implicit_impl_impl_semantic_data(impl_def_id, trait_impl_id, in_cycle)?.resolved_impl
 }
+
+/// Query implementation of [crate::db::SemanticGroup::implicit_impl_impl_impl].
+#[salsa::tracked(cycle_result=implicit_impl_impl_impl_cycle)]
+pub fn implicit_impl_impl_impl_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+    trait_impl_id: TraitImplId<'db>,
+    in_cycle: bool,
+) -> Maybe<ImplId<'db>> {
+    implicit_impl_impl_impl(db, impl_def_id, trait_impl_id, in_cycle)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::implicit_impl_impl_impl].
 pub fn implicit_impl_impl_impl_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     impl_def_id: ImplDefId<'db>,
     trait_impl_id: TraitImplId<'db>,
     _in_cycle: bool,
@@ -3274,10 +3808,21 @@ pub fn priv_implicit_impl_impl_semantic_data<'db>(
 
     Ok(ImplicitImplImplData { resolved_impl, trait_impl_id, diagnostics: diagnostics.build() })
 }
+
+/// Query implementation of [crate::db::SemanticGroup::priv_implicit_impl_impl_semantic_data].
+#[salsa::tracked(cycle_result=priv_implicit_impl_impl_semantic_data_cycle)]
+pub fn priv_implicit_impl_impl_semantic_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_def_id: ImplDefId<'db>,
+    trait_impl_id: TraitImplId<'db>,
+    in_cycle: bool,
+) -> Maybe<ImplicitImplImplData<'db>> {
+    priv_implicit_impl_impl_semantic_data(db, impl_def_id, trait_impl_id, in_cycle)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::priv_implicit_impl_impl_semantic_data].
 pub fn priv_implicit_impl_impl_semantic_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     impl_def_id: ImplDefId<'db>,
     trait_impl_id: TraitImplId<'db>,
     _in_cycle: bool,
@@ -3304,10 +3849,20 @@ pub fn impl_impl_implized_by_context<'db>(
     db.impl_impl_def_impl(impl_impl_def_id, in_cycle)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_impl_implized_by_context].
+#[salsa::tracked(cycle_result=impl_impl_implized_by_context_cycle)]
+pub fn impl_impl_implized_by_context_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_impl_id: ImplImplId<'db>,
+    impl_def_id: ImplDefId<'db>,
+    in_cycle: bool,
+) -> Maybe<ImplId<'db>> {
+    impl_impl_implized_by_context(db, impl_impl_id, impl_def_id, in_cycle)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::impl_impl_implized_by_context].
 pub fn impl_impl_implized_by_context_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     impl_impl_id: ImplImplId<'db>,
     impl_def_id: ImplDefId<'db>,
     _in_cycle: bool,
@@ -3316,7 +3871,7 @@ pub fn impl_impl_implized_by_context_cycle<'db>(
     impl_impl_implized_by_context(db, impl_impl_id, impl_def_id, true)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_impl_concrete_implized].
+/// Implementation of [crate::db::SemanticGroup::impl_impl_concrete_implized].
 pub fn impl_impl_concrete_implized<'db>(
     db: &'db dyn SemanticGroup,
     impl_impl_id: ImplImplId<'db>,
@@ -3324,10 +3879,27 @@ pub fn impl_impl_concrete_implized<'db>(
     impl_impl_concrete_implized_ex(db, impl_impl_id, false)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_impl_concrete_implized].
+pub fn impl_impl_concrete_implized_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_impl_id: ImplImplId<'db>,
+) -> Maybe<ImplId<'db>> {
+    impl_impl_concrete_implized_helper(db, (), impl_impl_id)
+}
+
+#[salsa::tracked(cycle_result=impl_impl_concrete_implized_cycle)]
+fn impl_impl_concrete_implized_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _tracked: Tracked,
+    impl_impl_id: ImplImplId<'db>,
+) -> Maybe<ImplId<'db>> {
+    impl_impl_concrete_implized(db, impl_impl_id)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::impl_impl_concrete_implized].
 pub fn impl_impl_concrete_implized_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
+    _tracked: Tracked,
     impl_impl_id: ImplImplId<'db>,
 ) -> Maybe<ImplId<'db>> {
     impl_impl_concrete_implized_ex(db, impl_impl_id, true)
@@ -3350,7 +3922,7 @@ fn impl_impl_concrete_implized_ex<'db>(
     .intern(db))
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_impl_concrete_trait].
+/// Implementation of [crate::db::SemanticGroup::impl_impl_concrete_trait].
 pub fn impl_impl_concrete_trait<'db>(
     db: &'db dyn SemanticGroup,
     impl_impl_id: ImplImplId<'db>,
@@ -3359,6 +3931,23 @@ pub fn impl_impl_concrete_trait<'db>(
     db.concrete_trait_impl_concrete_trait(concrete_trait_impl).and_then(|concrete_trait_id| {
         GenericSubstitution::from_impl(impl_impl_id.impl_id()).substitute(db, concrete_trait_id)
     })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_impl_concrete_trait].
+pub fn impl_impl_concrete_trait_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_impl_id: ImplImplId<'db>,
+) -> Maybe<ConcreteTraitId<'db>> {
+    impl_impl_concrete_trait_helper(db, (), impl_impl_id)
+}
+
+#[salsa::tracked]
+fn impl_impl_concrete_trait_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _tracked: Tracked,
+    impl_impl_id: ImplImplId<'db>,
+) -> Maybe<ConcreteTraitId<'db>> {
+    impl_impl_concrete_trait(db, impl_impl_id)
 }
 
 // === Impl Function Declaration ===
@@ -3382,7 +3971,16 @@ pub fn impl_function_declaration_diagnostics<'db>(
         .unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_function_signature].
+/// Query implementation of [crate::db::SemanticGroup::impl_function_declaration_diagnostics].
+#[salsa::tracked]
+pub fn impl_function_declaration_diagnostics_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_function_id: ImplFunctionId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    impl_function_declaration_diagnostics(db, impl_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_function_signature].
 pub fn impl_function_signature<'db>(
     db: &'db dyn SemanticGroup,
     impl_function_id: ImplFunctionId<'db>,
@@ -3393,7 +3991,16 @@ pub fn impl_function_signature<'db>(
         .signature)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_function_generic_params].
+/// Query implementation of [crate::db::SemanticGroup::impl_function_signature].
+#[salsa::tracked]
+pub fn impl_function_signature_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_function_id: ImplFunctionId<'db>,
+) -> Maybe<semantic::Signature<'db>> {
+    impl_function_signature(db, impl_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_function_generic_params].
 pub fn impl_function_generic_params<'db>(
     db: &'db dyn SemanticGroup,
     impl_function_id: ImplFunctionId<'db>,
@@ -3401,7 +4008,16 @@ pub fn impl_function_generic_params<'db>(
     Ok(db.priv_impl_function_generic_params_data(impl_function_id)?.generic_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_impl_function_generic_params_data].
+/// Query implementation of [crate::db::SemanticGroup::impl_function_generic_params].
+#[salsa::tracked]
+pub fn impl_function_generic_params_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_function_id: ImplFunctionId<'db>,
+) -> Maybe<Vec<semantic::GenericParam<'db>>> {
+    impl_function_generic_params(db, impl_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::priv_impl_function_generic_params_data].
 pub fn priv_impl_function_generic_params_data<'db>(
     db: &'db dyn SemanticGroup,
     impl_function_id: ImplFunctionId<'db>,
@@ -3433,7 +4049,16 @@ pub fn priv_impl_function_generic_params_data<'db>(
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_function_attributes].
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_function_generic_params_data].
+#[salsa::tracked]
+pub fn priv_impl_function_generic_params_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_function_id: ImplFunctionId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
+    priv_impl_function_generic_params_data(db, impl_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_function_attributes].
 pub fn impl_function_attributes<'db>(
     db: &'db dyn SemanticGroup,
     impl_function_id: ImplFunctionId<'db>,
@@ -3444,7 +4069,16 @@ pub fn impl_function_attributes<'db>(
         .attributes)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_function_resolver_data].
+/// Query implementation of [crate::db::SemanticGroup::impl_function_attributes].
+#[salsa::tracked]
+pub fn impl_function_attributes_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_function_id: ImplFunctionId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    impl_function_attributes(db, impl_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_function_resolver_data].
 pub fn impl_function_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     impl_function_id: ImplFunctionId<'db>,
@@ -3455,7 +4089,16 @@ pub fn impl_function_resolver_data<'db>(
         .resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_function_declaration_inline_config].
+/// Query implementation of [crate::db::SemanticGroup::impl_function_resolver_data].
+#[salsa::tracked]
+pub fn impl_function_resolver_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_function_id: ImplFunctionId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    impl_function_resolver_data(db, impl_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_function_declaration_inline_config].
 pub fn impl_function_declaration_inline_config<'db>(
     db: &'db dyn SemanticGroup,
     impl_function_id: ImplFunctionId<'db>,
@@ -3466,7 +4109,16 @@ pub fn impl_function_declaration_inline_config<'db>(
         .inline_config)
 }
 
-/// Query implementation of [SemanticGroup::impl_function_declaration_implicit_precedence].
+/// Query implementation of [crate::db::SemanticGroup::impl_function_declaration_inline_config].
+#[salsa::tracked]
+pub fn impl_function_declaration_inline_config_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_function_id: ImplFunctionId<'db>,
+) -> Maybe<InlineConfiguration<'db>> {
+    impl_function_declaration_inline_config(db, impl_function_id)
+}
+
+/// Implementation of [SemanticGroup::impl_function_declaration_implicit_precedence].
 pub fn impl_function_declaration_implicit_precedence<'db>(
     db: &'db dyn SemanticGroup,
     impl_function_id: ImplFunctionId<'db>,
@@ -3477,7 +4129,16 @@ pub fn impl_function_declaration_implicit_precedence<'db>(
         .implicit_precedence)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_function_declaration_implicits].
+/// Query implementation of [SemanticGroup::impl_function_declaration_implicit_precedence].
+#[salsa::tracked]
+pub fn impl_function_declaration_implicit_precedence_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_function_id: ImplFunctionId<'db>,
+) -> Maybe<ImplicitPrecedence<'db>> {
+    impl_function_declaration_implicit_precedence(db, impl_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_function_declaration_implicits].
 pub fn impl_function_declaration_implicits<'db>(
     db: &'db dyn SemanticGroup,
     impl_function_id: ImplFunctionId<'db>,
@@ -3489,7 +4150,16 @@ pub fn impl_function_declaration_implicits<'db>(
         .implicits)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_function_trait_function].
+/// Query implementation of [crate::db::SemanticGroup::impl_function_declaration_implicits].
+#[salsa::tracked]
+pub fn impl_function_declaration_implicits_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_function_id: ImplFunctionId<'db>,
+) -> Maybe<Vec<TypeId<'db>>> {
+    impl_function_declaration_implicits(db, impl_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_function_trait_function].
 pub fn impl_function_trait_function<'db>(
     db: &'db dyn SemanticGroup,
     impl_function_id: ImplFunctionId<'db>,
@@ -3497,9 +4167,18 @@ pub fn impl_function_trait_function<'db>(
     db.priv_impl_function_declaration_data(impl_function_id)?.trait_function_id
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_function_trait_function].
+#[salsa::tracked]
+pub fn impl_function_trait_function_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_function_id: ImplFunctionId<'db>,
+) -> Maybe<TraitFunctionId<'db>> {
+    impl_function_trait_function(db, impl_function_id)
+}
+
 // --- Computation ---
 
-/// Query implementation of [crate::db::SemanticGroup::priv_impl_function_declaration_data].
+/// Implementation of [crate::db::SemanticGroup::priv_impl_function_declaration_data].
 pub fn priv_impl_function_declaration_data<'db>(
     db: &'db dyn SemanticGroup,
     impl_function_id: ImplFunctionId<'db>,
@@ -3573,6 +4252,15 @@ pub fn priv_impl_function_declaration_data<'db>(
         },
         trait_function_id,
     })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_function_declaration_data].
+#[salsa::tracked]
+pub fn priv_impl_function_declaration_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_function_id: ImplFunctionId<'db>,
+) -> Maybe<ImplFunctionDeclarationData<'db>> {
+    priv_impl_function_declaration_data(db, impl_function_id)
 }
 
 /// Struct for the parameters of [validate_impl_function_signature].
@@ -3833,7 +4521,7 @@ fn validate_impl_function_signature<'db>(
 
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::impl_function_body_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::impl_function_body_diagnostics].
 pub fn impl_function_body_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     impl_function_id: ImplFunctionId<'db>,
@@ -3843,7 +4531,16 @@ pub fn impl_function_body_diagnostics<'db>(
         .unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_function_body].
+/// Query implementation of [crate::db::SemanticGroup::impl_function_body_diagnostics].
+#[salsa::tracked]
+pub fn impl_function_body_diagnostics_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_function_id: ImplFunctionId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    impl_function_body_diagnostics(db, impl_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_function_body].
 pub fn impl_function_body<'db>(
     db: &'db dyn SemanticGroup,
     impl_function_id: ImplFunctionId<'db>,
@@ -3851,7 +4548,16 @@ pub fn impl_function_body<'db>(
     Ok(db.priv_impl_function_body_data(impl_function_id)?.body)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_function_body_resolver_data].
+/// Query implementation of [crate::db::SemanticGroup::impl_function_body].
+#[salsa::tracked]
+pub fn impl_function_body_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_function_id: ImplFunctionId<'db>,
+) -> Maybe<Arc<FunctionBody<'db>>> {
+    impl_function_body(db, impl_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::impl_function_body_resolver_data].
 pub fn impl_function_body_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     impl_function_id: ImplFunctionId<'db>,
@@ -3859,9 +4565,18 @@ pub fn impl_function_body_resolver_data<'db>(
     Ok(db.priv_impl_function_body_data(impl_function_id)?.resolver_data)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_function_body_resolver_data].
+#[salsa::tracked]
+pub fn impl_function_body_resolver_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_function_id: ImplFunctionId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    impl_function_body_resolver_data(db, impl_function_id)
+}
+
 // --- Computation ---
 
-/// Query implementation of [crate::db::SemanticGroup::priv_impl_function_body_data].
+/// Implementation of [crate::db::SemanticGroup::priv_impl_function_body_data].
 pub fn priv_impl_function_body_data<'db>(
     db: &'db dyn SemanticGroup,
     impl_function_id: ImplFunctionId<'db>,
@@ -3926,15 +4641,40 @@ pub fn priv_impl_function_body_data<'db>(
     })
 }
 
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_function_body_data].
+#[salsa::tracked]
+pub fn priv_impl_function_body_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_function_id: ImplFunctionId<'db>,
+) -> Maybe<FunctionBodyData<'db>> {
+    priv_impl_function_body_data(db, impl_function_id)
+}
+
 pub fn priv_impl_is_fully_concrete<'db>(db: &dyn SemanticGroup, impl_id: ImplId<'db>) -> bool {
     impl_id.long(db).is_fully_concrete(db)
+}
+
+#[salsa::tracked]
+pub fn priv_impl_is_fully_concrete_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_id: ImplId<'db>,
+) -> bool {
+    priv_impl_is_fully_concrete(db, impl_id)
 }
 
 pub fn priv_impl_is_var_free(db: &dyn SemanticGroup, impl_id: ImplId<'_>) -> bool {
     impl_id.long(db).is_var_free(db)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_crate_dependencies].
+#[salsa::tracked]
+pub fn priv_impl_is_var_free_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    impl_id: ImplId<'db>,
+) -> bool {
+    priv_impl_is_var_free(db, impl_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::priv_crate_dependencies].
 pub fn priv_crate_dependencies<'db>(
     db: &'db dyn SemanticGroup,
     crate_id: CrateId<'db>,
@@ -3960,6 +4700,15 @@ pub fn priv_crate_dependencies<'db>(
         }
     }
     crates_set.into()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_crate_dependencies].
+#[salsa::tracked]
+pub fn priv_crate_dependencies_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    crate_id: CrateId<'db>,
+) -> Arc<OrderedHashSet<CrateId<'db>>> {
+    priv_crate_dependencies(db, crate_id)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::crate_global_impls].
@@ -4003,7 +4752,7 @@ fn crate_global_impls_helper<'db>(
     Ok(crate_global_impls)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::crate_traits_dependencies].
+/// Implementation of [crate::db::SemanticGroup::crate_traits_dependencies].
 pub fn crate_traits_dependencies<'db>(
     db: &'db dyn SemanticGroup,
     crate_id: CrateId<'db>,
@@ -4027,7 +4776,16 @@ pub fn crate_traits_dependencies<'db>(
     dependencies.into()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::reachable_trait_dependencies].
+/// Query implementation of [crate::db::SemanticGroup::crate_traits_dependencies].
+#[salsa::tracked]
+pub fn crate_traits_dependencies_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    crate_id: CrateId<'db>,
+) -> Arc<UnorderedHashMap<TraitId<'db>, OrderedHashSet<TraitId<'db>>>> {
+    crate_traits_dependencies(db, crate_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::reachable_trait_dependencies].
 pub fn reachable_trait_dependencies<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -4052,6 +4810,16 @@ pub fn reachable_trait_dependencies<'db>(
         }
     }
     reachable_deps
+}
+
+/// Query implementation of [crate::db::SemanticGroup::reachable_trait_dependencies].
+#[salsa::tracked]
+pub fn reachable_trait_dependencies_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+    crate_id: CrateId<'db>,
+) -> OrderedHashSet<TraitId<'db>> {
+    reachable_trait_dependencies(db, trait_id, crate_id)
 }
 
 /// Adds the trait dependencies of an uninferred impl to the trait_deps map.

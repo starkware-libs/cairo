@@ -5,6 +5,7 @@ use cairo_lang_defs::ids::{
     GlobalUseId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_filesystem::ids::Tracked;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::helpers::UsePathEx;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -17,7 +18,7 @@ use salsa::Database;
 use super::module::get_module_global_uses;
 use super::visibility::peek_visible_in;
 use crate::SemanticDiagnostic;
-use crate::db::{SemanticGroup, SemanticGroupData};
+use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder,
@@ -47,7 +48,7 @@ pub enum UsePathOrDollar<'db> {
     None,
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_use_semantic_data].
+/// Implementation of [crate::db::SemanticGroup::priv_use_semantic_data].
 pub fn priv_use_semantic_data<'db>(
     db: &'db dyn SemanticGroup,
     use_id: UseId<'db>,
@@ -71,6 +72,15 @@ pub fn priv_use_semantic_data<'db>(
     let resolver_data: Arc<ResolverData<'_>> = Arc::new(resolver.data);
 
     Ok(Arc::new(UseData { diagnostics: diagnostics.build(), resolved_item, resolver_data }))
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_use_semantic_data].
+#[salsa::tracked(cycle_result=priv_use_semantic_data_cycle)]
+pub fn priv_use_semantic_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    use_id: UseId<'db>,
+) -> Maybe<Arc<UseData<'db>>> {
+    priv_use_semantic_data(db, use_id)
 }
 
 /// Returns the segments that are the parts of the use path.
@@ -168,7 +178,6 @@ fn get_parent_single_use_path<'db>(
 /// Cycle handling for [crate::db::SemanticGroup::priv_use_semantic_data].
 pub fn priv_use_semantic_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     use_id: UseId<'db>,
 ) -> Maybe<Arc<UseData<'db>>> {
     let module_file_id = use_id.module_file_id(db);
@@ -184,7 +193,7 @@ pub fn priv_use_semantic_data_cycle<'db>(
     }))
 }
 
-/// Query implementation of [crate::db::SemanticGroup::use_semantic_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::use_semantic_diagnostics].
 pub fn use_semantic_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     use_id: UseId<'db>,
@@ -192,7 +201,16 @@ pub fn use_semantic_diagnostics<'db>(
     db.priv_use_semantic_data(use_id).map(|data| data.diagnostics.clone()).unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::use_resolver_data].
+/// Query implementation of [crate::db::SemanticGroup::use_semantic_diagnostics].
+#[salsa::tracked]
+pub fn use_semantic_diagnostics_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    use_id: UseId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    use_semantic_diagnostics(db, use_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::use_resolver_data].
 pub fn use_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     use_id: UseId<'db>,
@@ -200,10 +218,18 @@ pub fn use_resolver_data<'db>(
     Ok(db.priv_use_semantic_data(use_id)?.resolver_data.clone())
 }
 
+/// Query implementation of [crate::db::SemanticGroup::use_resolver_data].
+#[salsa::tracked(cycle_result=use_resolver_data_cycle)]
+pub fn use_resolver_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    use_id: UseId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    use_resolver_data(db, use_id)
+}
+
 /// Trivial cycle handler for [crate::db::SemanticGroup::use_resolver_data].
 pub fn use_resolver_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     use_id: UseId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     // Forwarding (not as a query) cycle handling to `priv_use_semantic_data` cycle handler.
@@ -229,7 +255,7 @@ pub struct UseGlobalData<'db> {
     imported_module: Maybe<ModuleId<'db>>,
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_global_use_semantic_data].
+/// Implementation of [crate::db::SemanticGroup::priv_global_use_semantic_data].
 pub fn priv_global_use_semantic_data<'db>(
     db: &'db dyn SemanticGroup,
     global_use_id: GlobalUseId<'db>,
@@ -270,7 +296,16 @@ pub fn priv_global_use_semantic_data<'db>(
     Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_global_use_imported_module].
+/// Query implementation of [crate::db::SemanticGroup::priv_global_use_semantic_data].
+#[salsa::tracked(cycle_result=priv_global_use_semantic_data_cycle)]
+pub fn priv_global_use_semantic_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    global_use_id: GlobalUseId<'db>,
+) -> Maybe<UseGlobalData<'db>> {
+    priv_global_use_semantic_data(db, global_use_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::priv_global_use_imported_module].
 pub fn priv_global_use_imported_module<'db>(
     db: &'db dyn SemanticGroup,
     global_use_id: GlobalUseId<'db>,
@@ -278,7 +313,16 @@ pub fn priv_global_use_imported_module<'db>(
     db.priv_global_use_semantic_data(global_use_id)?.imported_module
 }
 
-/// Query implementation of [crate::db::SemanticGroup::global_use_semantic_diagnostics].
+/// Query implementation of [crate::db::SemanticGroup::priv_global_use_imported_module].
+#[salsa::tracked]
+pub fn priv_global_use_imported_module_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    global_use_id: GlobalUseId<'db>,
+) -> Maybe<ModuleId<'db>> {
+    priv_global_use_imported_module(db, global_use_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::global_use_semantic_diagnostics].
 pub fn global_use_semantic_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     global_use_id: GlobalUseId<'db>,
@@ -286,10 +330,18 @@ pub fn global_use_semantic_diagnostics<'db>(
     db.priv_global_use_semantic_data(global_use_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
+/// Query implementation of [crate::db::SemanticGroup::global_use_semantic_diagnostics].
+#[salsa::tracked]
+pub fn global_use_semantic_diagnostics_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    global_use_id: GlobalUseId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    global_use_semantic_diagnostics(db, global_use_id)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::priv_global_use_semantic_data].
 pub fn priv_global_use_semantic_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     global_use_id: GlobalUseId<'db>,
 ) -> Maybe<UseGlobalData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -319,9 +371,26 @@ pub struct ImportedModules<'db> {
     pub all: OrderedHashSet<ModuleId<'db>>,
 }
 /// Returns the modules that are imported with `use *` in the current module.
-/// Query implementation of [crate::db::SemanticGroup::module_imported_modules].
+/// Implementation of [crate::db::SemanticGroup::module_imported_modules].
 pub fn module_imported_modules<'db>(
     db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Arc<ImportedModules<'db>> {
+    priv_module_use_star_modules_helper(db, (), module_id)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::module_imported_modules].
+pub fn module_imported_modules_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Arc<ImportedModules<'db>> {
+    module_imported_modules(db, module_id)
+}
+
+#[salsa::tracked]
+fn priv_module_use_star_modules_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _tracked: Tracked,
     module_id: ModuleId<'db>,
 ) -> Arc<ImportedModules<'db>> {
     let mut visited = UnorderedHashSet::<_>::default();

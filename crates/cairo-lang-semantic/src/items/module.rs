@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
     TraitId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
-use cairo_lang_filesystem::ids::StrRef;
+use cairo_lang_filesystem::ids::{StrRef, Tracked};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::helpers::UsePathEx;
@@ -38,7 +38,23 @@ pub struct ModuleSemanticData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
 }
 
-pub fn priv_module_semantic_data<'db>(
+pub fn priv_module_semantic_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<ModuleSemanticData<'db>>> {
+    priv_module_semantic_data_helper(db, (), module_id)
+}
+
+#[salsa::tracked]
+fn priv_module_semantic_data_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _tracked: Tracked,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<ModuleSemanticData<'db>>> {
+    priv_module_semantic_data(db, module_id)
+}
+
+fn priv_module_semantic_data<'db>(
     db: &'db dyn SemanticGroup,
     module_id: ModuleId<'db>,
 ) -> Maybe<Arc<ModuleSemanticData<'db>>> {
@@ -136,6 +152,24 @@ pub fn module_item_by_name<'db>(
     Ok(module_data.items.get(&name).map(|info| info.item_id))
 }
 
+pub fn module_item_by_name_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<ModuleItemId<'db>>> {
+    module_item_by_name_helper(db, (), module_id, name)
+}
+
+#[salsa::tracked]
+fn module_item_by_name_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _tracked: Tracked,
+    module_id: ModuleId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<ModuleItemId<'db>>> {
+    module_item_by_name(db, module_id, name)
+}
+
 pub fn module_item_info_by_name<'db>(
     db: &'db dyn SemanticGroup,
     module_id: ModuleId<'db>,
@@ -143,6 +177,24 @@ pub fn module_item_info_by_name<'db>(
 ) -> Maybe<Option<ModuleItemInfo<'db>>> {
     let module_data = db.priv_module_semantic_data(module_id)?;
     Ok(module_data.items.get(&name).cloned())
+}
+
+pub fn module_item_info_by_name_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<ModuleItemInfo<'db>>> {
+    module_item_info_by_name_helper(db, (), module_id, name)
+}
+
+#[salsa::tracked]
+fn module_item_info_by_name_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _tracked: Tracked,
+    module_id: ModuleId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<ModuleItemInfo<'db>>> {
+    module_item_info_by_name(db, module_id, name)
 }
 
 /// Get the imported global uses of a module, and their visibility.
@@ -154,7 +206,7 @@ pub fn get_module_global_uses<'db>(
     Ok(module_data.global_uses.clone())
 }
 
-/// Query implementation of [SemanticGroup::module_all_used_uses].
+/// Implementation of [SemanticGroup::module_all_used_uses].
 pub fn module_all_used_uses<'db>(
     db: &'db dyn SemanticGroup,
     module_id: ModuleId<'db>,
@@ -180,7 +232,24 @@ pub fn module_all_used_uses<'db>(
     Ok(all_used_uses.into())
 }
 
-/// Query implementation of [SemanticGroup::module_attributes].
+/// Query implementation of [SemanticGroup::module_all_used_uses].
+pub fn module_all_used_uses_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
+    module_all_used_uses_helper(db, (), module_id)
+}
+
+#[salsa::tracked]
+fn module_all_used_uses_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _tracked: Tracked,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
+    module_all_used_uses(db, module_id)
+}
+
+/// Implementation of [SemanticGroup::module_attributes].
 pub fn module_attributes<'db>(
     db: &'db dyn SemanticGroup,
     module_id: ModuleId<'db>,
@@ -195,7 +264,25 @@ pub fn module_attributes<'db>(
     })
 }
 
+/// Query implementation of [SemanticGroup::module_attributes].
+pub fn module_attributes_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    module_attributes_helper(db, (), module_id)
+}
+
+#[salsa::tracked]
+fn module_attributes_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _tracked: Tracked,
+    module_id: ModuleId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    module_attributes(db, module_id)
+}
+
 /// Finds all the trait ids usable in the current context, using `global use` imports.
+/// Implementation of [SemanticGroup::module_usable_trait_ids].
 pub fn module_usable_trait_ids<'db>(
     db: &'db dyn SemanticGroup,
     module_id: ModuleId<'db>,
@@ -212,6 +299,23 @@ pub fn module_usable_trait_ids<'db>(
         }
     }
     Ok(module_traits.into())
+}
+
+/// Query implementation of [SemanticGroup::module_usable_trait_ids].
+pub fn module_usable_trait_ids_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
+    module_usable_trait_ids_helper(db, (), module_id)
+}
+
+#[salsa::tracked]
+fn module_usable_trait_ids_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _tracked: Tracked,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
+    module_usable_trait_ids(db, module_id)
 }
 
 /// Finds all the trait ids usable in the current context, not using `global use` imports.

@@ -9,6 +9,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::ids::Tracked;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{
@@ -24,7 +25,7 @@ use super::constant::{ConstValue, ConstValueId};
 use super::imp::{ImplHead, ImplId, ImplLongId};
 use super::resolve_trait_path;
 use super::trt::ConcreteTraitTypeId;
-use crate::db::{SemanticGroup, SemanticGroupData};
+use crate::db::SemanticGroup;
 use crate::diagnostic::{
     NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
@@ -226,7 +227,7 @@ pub struct GenericParamsData<'db> {
 
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::generic_param_semantic].
+/// Implementation of [crate::db::SemanticGroup::generic_param_semantic].
 pub fn generic_param_semantic<'db>(
     db: &'db dyn SemanticGroup,
     generic_param_id: GenericParamId<'db>,
@@ -234,7 +235,16 @@ pub fn generic_param_semantic<'db>(
     db.priv_generic_param_data(generic_param_id, false)?.generic_param
 }
 
-/// Query implementation of [crate::db::SemanticGroup::generic_param_diagnostics].
+/// Query implementation of [crate::db::SemanticGroup::generic_param_semantic].
+#[salsa::tracked]
+pub fn generic_param_semantic_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    generic_param_id: GenericParamId<'db>,
+) -> Maybe<GenericParam<'db>> {
+    generic_param_semantic(db, generic_param_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::generic_param_diagnostics].
 pub fn generic_param_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     generic_param_id: GenericParamId<'db>,
@@ -244,7 +254,16 @@ pub fn generic_param_diagnostics<'db>(
         .unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::generic_param_resolver_data].
+/// Query implementation of [crate::db::SemanticGroup::generic_param_diagnostics].
+#[salsa::tracked]
+pub fn generic_param_diagnostics_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    generic_param_id: GenericParamId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    generic_param_diagnostics(db, generic_param_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::generic_param_resolver_data].
 pub fn generic_param_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     generic_param_id: GenericParamId<'db>,
@@ -252,7 +271,16 @@ pub fn generic_param_resolver_data<'db>(
     Ok(db.priv_generic_param_data(generic_param_id, false)?.resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::generic_impl_param_trait].
+/// Query implementation of [crate::db::SemanticGroup::generic_param_resolver_data].
+#[salsa::tracked]
+pub fn generic_param_resolver_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    generic_param_id: GenericParamId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    generic_param_resolver_data(db, generic_param_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::generic_impl_param_trait].
 pub fn generic_impl_param_trait<'db>(
     db: &'db dyn SemanticGroup,
     generic_param_id: GenericParamId<'db>,
@@ -291,7 +319,16 @@ pub fn generic_impl_param_trait<'db>(
     resolve_trait_path(syntax_db, &mut diagnostics, &mut resolver, &trait_path_syntax)
 }
 
-/// Query implementation of
+/// Query implementation of [crate::db::SemanticGroup::generic_impl_param_trait].
+#[salsa::tracked]
+pub fn generic_impl_param_trait_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    generic_param_id: GenericParamId<'db>,
+) -> Maybe<TraitId<'db>> {
+    generic_impl_param_trait(db, generic_param_id)
+}
+
+/// Implementation of
 /// [crate::db::SemanticGroup::generic_impl_param_shallow_trait_generic_args].
 pub fn generic_impl_param_shallow_trait_generic_args<'db>(
     db: &'db dyn SemanticGroup,
@@ -412,7 +449,7 @@ fn generic_impl_param_shallow_trait_generic_args_helper<'db>(
 
 // --- Computation ---
 
-/// Query implementation of [crate::db::SemanticGroup::priv_generic_param_data].
+/// Implementation of [crate::db::SemanticGroup::priv_generic_param_data].
 pub fn priv_generic_param_data<'db>(
     db: &'db dyn SemanticGroup,
     generic_param_id: GenericParamId<'db>,
@@ -482,17 +519,26 @@ pub fn priv_generic_param_data<'db>(
     })
 }
 
+/// Query implementation of [crate::db::SemanticGroup::priv_generic_param_data].
+#[salsa::tracked(cycle_result=priv_generic_param_data_cycle)]
+pub fn priv_generic_param_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    generic_param_id: GenericParamId<'db>,
+    in_cycle: bool,
+) -> Maybe<GenericParamData<'db>> {
+    priv_generic_param_data(db, generic_param_id, in_cycle)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::priv_generic_param_data].
 pub fn priv_generic_param_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     generic_param_id: GenericParamId<'db>,
     _in_cycle: bool,
 ) -> Maybe<GenericParamData<'db>> {
     priv_generic_param_data(db, generic_param_id, true)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::generic_params_type_constraints].
+/// Implementation of [crate::db::SemanticGroup::generic_params_type_constraints].
 pub fn generic_params_type_constraints<'db>(
     db: &'db dyn SemanticGroup,
     generic_params: Vec<GenericParamId<'db>>,
@@ -525,6 +571,23 @@ pub fn generic_params_type_constraints<'db>(
         constraints.push((*ty0, *ty1));
     }
     constraints
+}
+
+/// Query implementation of [crate::db::SemanticGroup::generic_params_type_constraints].
+pub fn generic_params_type_constraints_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    generic_params: Vec<GenericParamId<'db>>,
+) -> Vec<(TypeId<'db>, TypeId<'db>)> {
+    generic_params_type_constraints_helper(db, (), generic_params)
+}
+
+#[salsa::tracked]
+fn generic_params_type_constraints_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _tracked: Tracked,
+    generic_params: Vec<GenericParamId<'db>>,
+) -> Vec<(TypeId<'db>, TypeId<'db>)> {
+    generic_params_type_constraints(db, generic_params)
 }
 
 // --- Helpers ---
