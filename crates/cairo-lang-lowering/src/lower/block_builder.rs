@@ -14,8 +14,7 @@ use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
 use super::generators::StatementsBuilder;
-use super::refs::{SemanticLoweringMapping, StructRecomposer, merge_semantics};
-use crate::db::LoweringGroup;
+use super::refs::{SemanticLoweringMapping, merge_semantics};
 use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
 use crate::lower::refs::ClosureInfo;
@@ -374,13 +373,13 @@ impl<'db> SealedGotoCallsite<'db> {
 #[allow(clippy::large_enum_variant)]
 pub type SealedBlockBuilder<'db> = Option<SealedGotoCallsite<'db>>;
 
-struct BlockStructRecomposer<'a, 'b, 'db> {
+pub struct BlockStructRecomposer<'a, 'b, 'db> {
     statements: &'a mut StatementsBuilder<'db>,
     ctx: &'a mut LoweringContext<'db, 'b>,
     location: LocationId<'db>,
 }
-impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
-    fn deconstruct(
+impl<'db> BlockStructRecomposer<'_, '_, 'db> {
+    pub fn deconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId<'db>,
         value: VariableId,
@@ -394,7 +393,7 @@ impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
         OrderedHashMap::from_iter(zip_eq(member_ids, member_values))
     }
 
-    fn deconstruct_by_types(
+    pub fn deconstruct_by_types(
         &mut self,
         value: VariableId,
         types: impl Iterator<Item = semantic::TypeId<'db>>,
@@ -411,7 +410,7 @@ impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
         .add(self.ctx, self.statements)
     }
 
-    fn reconstruct(
+    pub fn reconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId<'db>,
         members: Vec<VariableId>,
@@ -429,14 +428,6 @@ impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
         }
         .add(self.ctx, self.statements)
         .var_id
-    }
-
-    fn var_ty(&self, var: VariableId) -> semantic::TypeId<'db> {
-        self.ctx.variables[var].ty
-    }
-
-    fn db(&self) -> &dyn LoweringGroup {
-        self.ctx.db
     }
 }
 
