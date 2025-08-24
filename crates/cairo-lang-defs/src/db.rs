@@ -50,312 +50,367 @@ pub fn defs_group_input(db: &dyn Database) -> DefsGroupInput {
     DefsGroupInput::new(db, None, None, None, None)
 }
 
-fn default_macro_plugins_input(db: &dyn Database) -> &[MacroPluginLongId] {
-    defs_group_input(db).default_macro_plugins(db).as_ref().unwrap()
-}
-
-fn macro_plugin_overrides_input(
-    db: &dyn Database,
-) -> &OrderedHashMap<CrateInput, Arc<[MacroPluginLongId]>> {
-    defs_group_input(db).macro_plugin_overrides(db).as_ref().unwrap()
-}
-
-fn inline_macro_plugin_overrides_input(
-    db: &dyn Database,
-) -> &OrderedHashMap<CrateInput, Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>> {
-    defs_group_input(db).inline_macro_plugin_overrides(db).as_ref().unwrap()
-}
-
-fn default_inline_macro_plugins_input(
-    db: &dyn Database,
-) -> &OrderedHashMap<String, InlineMacroExprPluginLongId> {
-    defs_group_input(db).default_inline_macro_plugins(db).as_ref().unwrap()
-}
-
 /// Salsa database interface.
 /// See [`super::ids`] for further details.
-#[cairo_lang_proc_macros::query_group]
 pub trait DefsGroup: Database {
-    #[salsa::transparent]
-    fn default_macro_plugins_input(&self) -> &[MacroPluginLongId];
+    fn default_macro_plugins_input(&self) -> &[MacroPluginLongId] {
+        defs_group_input(self.as_dyn_database()).default_macro_plugins(self).as_ref().unwrap()
+    }
 
-    #[salsa::transparent]
-    fn macro_plugin_overrides_input(&self)
-    -> &OrderedHashMap<CrateInput, Arc<[MacroPluginLongId]>>;
+    fn macro_plugin_overrides_input(
+        &self,
+    ) -> &OrderedHashMap<CrateInput, Arc<[MacroPluginLongId]>> {
+        defs_group_input(self.as_dyn_database()).macro_plugin_overrides(self).as_ref().unwrap()
+    }
 
-    #[salsa::transparent]
     fn inline_macro_plugin_overrides_input(
         &self,
-    ) -> &OrderedHashMap<CrateInput, Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>>;
+    ) -> &OrderedHashMap<CrateInput, Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>> {
+        defs_group_input(self.as_dyn_database())
+            .inline_macro_plugin_overrides(self)
+            .as_ref()
+            .unwrap()
+    }
 
-    #[salsa::transparent]
     fn default_inline_macro_plugins_input(
         &self,
-    ) -> &OrderedHashMap<String, InlineMacroExprPluginLongId>;
+    ) -> &OrderedHashMap<String, InlineMacroExprPluginLongId> {
+        defs_group_input(self.as_dyn_database())
+            .default_inline_macro_plugins(self)
+            .as_ref()
+            .unwrap()
+    }
 
     // Plugins.
     // ========
 
     /// Interned version of `default_macro_plugins_input`.
-    #[salsa::transparent]
-    fn default_macro_plugins<'db>(&'db self) -> &'db [MacroPluginId<'db>];
+    fn default_macro_plugins<'db>(&'db self) -> &'db [MacroPluginId<'db>] {
+        default_macro_plugins(self.as_dyn_database())
+    }
 
     /// Interned version of `macro_plugin_overrides_input`.
-    #[salsa::transparent]
     fn macro_plugin_overrides<'db>(
         &'db self,
-    ) -> &'db OrderedHashMap<CrateId<'db>, Arc<Vec<MacroPluginId<'db>>>>;
+    ) -> &'db OrderedHashMap<CrateId<'db>, Arc<Vec<MacroPluginId<'db>>>> {
+        macro_plugin_overrides(self.as_dyn_database())
+    }
 
     /// Returns [`MacroPluginId`]s of the plugins set for the crate with [`CrateId`].
     /// Provides an override if it has been set with
     /// [`DefsGroupEx::set_override_crate_macro_plugins`] or the default
     /// ([`DefsGroup::default_macro_plugins`]) otherwise.
-    #[salsa::transparent]
-    fn crate_macro_plugins<'db>(&'db self, crate_id: CrateId<'db>) -> &'db [MacroPluginId<'db>];
+    fn crate_macro_plugins<'db>(&'db self, crate_id: CrateId<'db>) -> &'db [MacroPluginId<'db>] {
+        crate_macro_plugins(self.as_dyn_database(), crate_id)
+    }
 
     /// Interned version of `default_inline_macro_plugins_input`.
-    #[salsa::transparent]
     fn default_inline_macro_plugins<'db>(
         &'db self,
-    ) -> &'db OrderedHashMap<String, InlineMacroExprPluginId<'db>>;
+    ) -> &'db OrderedHashMap<String, InlineMacroExprPluginId<'db>> {
+        default_inline_macro_plugins(self.as_dyn_database())
+    }
 
     /// Interned version of `inline_macro_plugin_overrides_input`.
-    #[salsa::transparent]
     fn inline_macro_plugin_overrides<'db>(
         &'db self,
-    ) -> &'db OrderedHashMap<CrateId<'db>, Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>>;
+    ) -> &'db OrderedHashMap<CrateId<'db>, Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>>
+    {
+        inline_macro_plugin_overrides(self.as_dyn_database())
+    }
 
     /// Returns [`InlineMacroExprPluginId`]s of the plugins set for the crate with [`CrateId`].
     /// Provides an override if it has been set with
     /// [`DefsGroupEx::set_override_crate_inline_macro_plugins`] or the default
     /// ([`DefsGroup::default_inline_macro_plugins`]) otherwise.
-    #[salsa::transparent]
     fn crate_inline_macro_plugins<'db>(
         &'db self,
         crate_id: CrateId<'db>,
-    ) -> &'db OrderedHashMap<String, InlineMacroExprPluginId<'db>>;
+    ) -> &'db OrderedHashMap<String, InlineMacroExprPluginId<'db>> {
+        crate_inline_macro_plugins(self.as_dyn_database(), crate_id)
+    }
 
     /// Returns the set of attributes allowed anywhere.
     /// An attribute on any item that is not in this set will be handled as an unknown attribute.
-    #[salsa::transparent]
-    fn allowed_attributes<'db>(&'db self, crate_id: CrateId<'db>) -> &'db OrderedHashSet<String>;
+    fn allowed_attributes<'db>(&'db self, crate_id: CrateId<'db>) -> &'db OrderedHashSet<String> {
+        allowed_attributes(self.as_dyn_database(), crate_id)
+    }
 
     /// Returns the set of attributes allowed on statements.
     /// An attribute on a statement that is not in this set will be handled as an unknown attribute.
-    #[salsa::transparent]
-    fn allowed_statement_attributes(&self) -> &OrderedHashSet<String>;
+    fn allowed_statement_attributes(&self) -> &OrderedHashSet<String> {
+        allowed_statement_attributes(self.as_dyn_database())
+    }
 
     /// Returns the set of `derive` that were declared as by a plugin.
     /// A derive that is not in this set will be handled as an unknown derive.
-    #[salsa::transparent]
-    fn declared_derives<'db>(&'db self, crate_id: CrateId<'db>) -> &'db OrderedHashSet<String>;
+    fn declared_derives<'db>(&'db self, crate_id: CrateId<'db>) -> &'db OrderedHashSet<String> {
+        declared_derives(self.as_dyn_database(), crate_id)
+    }
 
     /// Returns the set of attributes that were declared as phantom type attributes by a plugin,
     /// i.e. a type marked with this attribute is considered a phantom type.
-    #[salsa::transparent]
     fn declared_phantom_type_attributes<'db>(
         &'db self,
         crate_id: CrateId<'db>,
-    ) -> &'db OrderedHashSet<String>;
+    ) -> &'db OrderedHashSet<String> {
+        declared_phantom_type_attributes(self.as_dyn_database(), crate_id)
+    }
 
     /// Checks whether the submodule is defined as inline.
-    #[salsa::transparent]
-    fn is_submodule_inline<'db>(&self, submodule_id: SubmoduleId<'db>) -> bool;
+    fn is_submodule_inline<'db>(&self, submodule_id: SubmoduleId<'db>) -> bool {
+        is_submodule_inline(self.as_dyn_database(), submodule_id)
+    }
 
     // Module to syntax.
     /// Gets the main file of the module.
     /// A module might have more virtual files generated by plugins.
-    #[salsa::transparent]
-    fn module_main_file<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<FileId<'db>>;
+    fn module_main_file<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<FileId<'db>> {
+        module_main_file(self.as_dyn_database(), module_id)
+    }
     /// Gets all the files of a module - main files and generated virtual files.
-    #[salsa::transparent]
-    fn module_files<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db [FileId<'db>]>;
+    fn module_files<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db [FileId<'db>]> {
+        module_files(self.as_dyn_database(), module_id)
+    }
     /// Gets a file from a module and a FileIndex (i.e. ModuleFileId).
-    #[salsa::transparent]
-    fn module_file<'db>(&'db self, module_id: ModuleFileId<'db>) -> Maybe<FileId<'db>>;
+    fn module_file<'db>(&'db self, module_id: ModuleFileId<'db>) -> Maybe<FileId<'db>> {
+        module_file(self.as_dyn_database(), module_id)
+    }
     /// Gets the directory of a module.
-    #[salsa::transparent]
-    fn module_dir<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db Directory<'db>>;
+    fn module_dir<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db Directory<'db>> {
+        module_dir(self.as_dyn_database(), module_id)
+    }
 
     // File to module.
-    #[salsa::transparent]
-    fn crate_modules<'db>(&'db self, crate_id: CrateId<'db>) -> &'db [ModuleId<'db>];
-    #[salsa::transparent]
+    fn crate_modules<'db>(&'db self, crate_id: CrateId<'db>) -> &'db [ModuleId<'db>] {
+        crate_modules(self.as_dyn_database(), crate_id)
+    }
     fn priv_file_to_module_mapping<'db>(
         &'db self,
-    ) -> &'db OrderedHashMap<FileId<'db>, Vec<ModuleId<'db>>>;
-    #[salsa::transparent]
-    fn file_modules<'db>(&'db self, file_id: FileId<'db>) -> Maybe<&'db [ModuleId<'db>]>;
+    ) -> &'db OrderedHashMap<FileId<'db>, Vec<ModuleId<'db>>> {
+        priv_file_to_module_mapping(self.as_dyn_database())
+    }
+    fn file_modules<'db>(&'db self, file_id: FileId<'db>) -> Maybe<&'db [ModuleId<'db>]> {
+        file_modules(self.as_dyn_database(), file_id)
+    }
 
     /// Returns the [ModuleData] of all modules in the crate's cache, and the loading data of the
     /// [DefsGroup] in the crate.
     fn cached_crate_modules<'db>(
         &'db self,
         crate_id: CrateId<'db>,
-    ) -> Option<ModuleDataCacheAndLoadingData<'db>>;
+    ) -> Option<ModuleDataCacheAndLoadingData<'db>> {
+        cached_crate_modules(self.as_dyn_database(), crate_id)
+    }
     // Returns the information about sub-files generated by the file in the module.
     fn priv_module_sub_files<'db>(
         &'db self,
         module_id: ModuleId<'db>,
         file_id: FileId<'db>,
-    ) -> Maybe<Arc<PrivModuleSubFiles<'db>>>;
-    #[salsa::transparent]
+    ) -> Maybe<Arc<PrivModuleSubFiles<'db>>> {
+        priv_module_sub_files(self.as_dyn_database(), module_id, file_id)
+    }
     fn module_submodules_ids<'db>(
         &'db self,
         module_id: ModuleId<'db>,
-    ) -> Maybe<&'db [SubmoduleId<'db>]>;
-    #[salsa::transparent]
+    ) -> Maybe<&'db [SubmoduleId<'db>]> {
+        module_submodules_ids(self.as_dyn_database(), module_id)
+    }
     fn module_constants_ids<'db>(
         &'db self,
         module_id: ModuleId<'db>,
-    ) -> Maybe<&'db [ConstantId<'db>]>;
-    #[salsa::transparent]
+    ) -> Maybe<&'db [ConstantId<'db>]> {
+        module_constants_ids(self.as_dyn_database(), module_id)
+    }
     fn module_constant_by_id<'db>(
         &'db self,
         constant_data: ConstantId<'db>,
-    ) -> Maybe<ast::ItemConstant<'db>>;
-    #[salsa::transparent]
+    ) -> Maybe<ast::ItemConstant<'db>> {
+        module_constant_by_id(self.as_dyn_database(), constant_data)
+    }
     fn module_free_functions_ids<'db>(
         &'db self,
         module_id: ModuleId<'db>,
-    ) -> Maybe<&'db [FreeFunctionId<'db>]>;
-    #[salsa::transparent]
+    ) -> Maybe<&'db [FreeFunctionId<'db>]> {
+        module_free_functions_ids(self.as_dyn_database(), module_id)
+    }
     fn module_free_function_by_id<'db>(
         &'db self,
         free_function_id: FreeFunctionId<'db>,
-    ) -> Maybe<ast::FunctionWithBody<'db>>;
+    ) -> Maybe<ast::FunctionWithBody<'db>> {
+        module_free_function_by_id(self.as_dyn_database(), free_function_id)
+    }
     /// Returns the stable ptr of the name of a module item.
-    #[salsa::transparent]
     fn module_item_name_stable_ptr<'db>(
         &'db self,
         module_id: ModuleId<'db>,
         item_id: ModuleItemId<'db>,
-    ) -> Maybe<SyntaxStablePtrId<'db>>;
-    #[salsa::transparent]
-    fn module_uses_ids<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db [UseId<'db>]>;
-    #[salsa::transparent]
-    fn module_use_by_id<'db>(&'db self, use_id: UseId<'db>) -> Maybe<ast::UsePathLeaf<'db>>;
-    #[salsa::transparent]
+    ) -> Maybe<SyntaxStablePtrId<'db>> {
+        module_item_name_stable_ptr(self.as_dyn_database(), module_id, item_id)
+    }
+    fn module_uses_ids<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db [UseId<'db>]> {
+        module_uses_ids(self.as_dyn_database(), module_id)
+    }
+    fn module_use_by_id<'db>(&'db self, use_id: UseId<'db>) -> Maybe<ast::UsePathLeaf<'db>> {
+        module_use_by_id(self.as_dyn_database(), use_id)
+    }
     fn module_global_use_by_id<'db>(
         &'db self,
         global_use_id: GlobalUseId<'db>,
-    ) -> Maybe<ast::UsePathStar<'db>>;
-    #[salsa::transparent]
-    fn module_structs_ids<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db [StructId<'db>]>;
-    #[salsa::transparent]
-    fn module_struct_by_id<'db>(&'db self, struct_id: StructId<'db>)
-    -> Maybe<ast::ItemStruct<'db>>;
-    #[salsa::transparent]
-    fn module_enums_ids<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db [EnumId<'db>]>;
-    #[salsa::transparent]
-    fn module_enum_by_id<'db>(&'db self, enum_id: EnumId<'db>) -> Maybe<ast::ItemEnum<'db>>;
-    #[salsa::transparent]
+    ) -> Maybe<ast::UsePathStar<'db>> {
+        module_global_use_by_id(self.as_dyn_database(), global_use_id)
+    }
+    fn module_structs_ids<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db [StructId<'db>]> {
+        module_structs_ids(self.as_dyn_database(), module_id)
+    }
+    fn module_struct_by_id<'db>(
+        &'db self,
+        struct_id: StructId<'db>,
+    ) -> Maybe<ast::ItemStruct<'db>> {
+        module_struct_by_id(self.as_dyn_database(), struct_id)
+    }
+    fn module_enums_ids<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db [EnumId<'db>]> {
+        module_enums_ids(self.as_dyn_database(), module_id)
+    }
+    fn module_enum_by_id<'db>(&'db self, enum_id: EnumId<'db>) -> Maybe<ast::ItemEnum<'db>> {
+        module_enum_by_id(self.as_dyn_database(), enum_id)
+    }
     fn module_type_aliases_ids<'db>(
         &'db self,
         module_id: ModuleId<'db>,
-    ) -> Maybe<&'db [ModuleTypeAliasId<'db>]>;
-    #[salsa::transparent]
+    ) -> Maybe<&'db [ModuleTypeAliasId<'db>]> {
+        module_type_aliases_ids(self.as_dyn_database(), module_id)
+    }
     fn module_type_alias_by_id<'db>(
         &'db self,
         module_type_alias_id: ModuleTypeAliasId<'db>,
-    ) -> Maybe<ast::ItemTypeAlias<'db>>;
-    #[salsa::transparent]
+    ) -> Maybe<ast::ItemTypeAlias<'db>> {
+        module_type_alias_by_id(self.as_dyn_database(), module_type_alias_id)
+    }
     fn module_impl_aliases_ids<'db>(
         &'db self,
         module_id: ModuleId<'db>,
-    ) -> Maybe<&'db [ImplAliasId<'db>]>;
-    #[salsa::transparent]
+    ) -> Maybe<&'db [ImplAliasId<'db>]> {
+        module_impl_aliases_ids(self.as_dyn_database(), module_id)
+    }
     fn module_impl_alias_by_id<'db>(
         &'db self,
         impl_alias_id: ImplAliasId<'db>,
-    ) -> Maybe<ast::ItemImplAlias<'db>>;
-    #[salsa::transparent]
-    fn module_traits_ids<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db [TraitId<'db>]>;
-    #[salsa::transparent]
-    fn module_trait_by_id<'db>(&'db self, trait_id: TraitId<'db>) -> Maybe<ast::ItemTrait<'db>>;
-    #[salsa::transparent]
-    fn module_impls_ids<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db [ImplDefId<'db>]>;
-    #[salsa::transparent]
-    fn module_impl_by_id<'db>(&'db self, impl_id: ImplDefId<'db>) -> Maybe<ast::ItemImpl<'db>>;
-    #[salsa::transparent]
+    ) -> Maybe<ast::ItemImplAlias<'db>> {
+        module_impl_alias_by_id(self.as_dyn_database(), impl_alias_id)
+    }
+    fn module_traits_ids<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db [TraitId<'db>]> {
+        module_traits_ids(self.as_dyn_database(), module_id)
+    }
+    fn module_trait_by_id<'db>(&'db self, trait_id: TraitId<'db>) -> Maybe<ast::ItemTrait<'db>> {
+        module_trait_by_id(self.as_dyn_database(), trait_id)
+    }
+    fn module_impls_ids<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db [ImplDefId<'db>]> {
+        module_impls_ids(self.as_dyn_database(), module_id)
+    }
+    fn module_impl_by_id<'db>(&'db self, impl_id: ImplDefId<'db>) -> Maybe<ast::ItemImpl<'db>> {
+        module_impl_by_id(self.as_dyn_database(), impl_id)
+    }
     fn module_extern_types_ids<'db>(
         &'db self,
         module_id: ModuleId<'db>,
-    ) -> Maybe<&'db [ExternTypeId<'db>]>;
-    #[salsa::transparent]
+    ) -> Maybe<&'db [ExternTypeId<'db>]> {
+        module_extern_types_ids(self.as_dyn_database(), module_id)
+    }
     fn module_extern_type_by_id<'db>(
         &'db self,
         extern_type_id: ExternTypeId<'db>,
-    ) -> Maybe<ast::ItemExternType<'db>>;
-    #[salsa::transparent]
+    ) -> Maybe<ast::ItemExternType<'db>> {
+        module_extern_type_by_id(self.as_dyn_database(), extern_type_id)
+    }
     fn module_extern_functions_ids<'db>(
         &'db self,
         module_id: ModuleId<'db>,
-    ) -> Maybe<&'db [ExternFunctionId<'db>]>;
+    ) -> Maybe<&'db [ExternFunctionId<'db>]> {
+        module_extern_functions_ids(self.as_dyn_database(), module_id)
+    }
     fn module_extern_function_by_id<'db>(
         &'db self,
         extern_function_id: ExternFunctionId<'db>,
-    ) -> Maybe<ast::ItemExternFunction<'db>>;
+    ) -> Maybe<ast::ItemExternFunction<'db>> {
+        module_extern_function_by_id(self.as_dyn_database(), extern_function_id)
+    }
 
     /// Returns the IDs of the macro declarations in the module.
-    #[salsa::transparent]
     fn module_macro_declarations_ids<'db>(
         &'db self,
         module_id: ModuleId<'db>,
-    ) -> Maybe<&'db [MacroDeclarationId<'db>]>;
+    ) -> Maybe<&'db [MacroDeclarationId<'db>]> {
+        module_macro_declarations_ids(self.as_dyn_database(), module_id)
+    }
     /// Returns the macro declaration by its ID.
-    #[salsa::transparent]
     fn module_macro_declaration_by_id<'db>(
         &'db self,
         macro_declaration_id: MacroDeclarationId<'db>,
-    ) -> Maybe<ast::ItemMacroDeclaration<'db>>;
+    ) -> Maybe<ast::ItemMacroDeclaration<'db>> {
+        module_macro_declaration_by_id(self.as_dyn_database(), macro_declaration_id)
+    }
 
     /// Returns the IDs of the macro calls in the module.
-    #[salsa::transparent]
     fn module_macro_calls_ids<'db>(
         &'db self,
         module_id: ModuleId<'db>,
-    ) -> Maybe<&'db [MacroCallId<'db>]>;
+    ) -> Maybe<&'db [MacroCallId<'db>]> {
+        module_macro_calls_ids(self.as_dyn_database(), module_id)
+    }
     /// Returns the macro call by its ID.
-    #[salsa::transparent]
     fn module_macro_call_by_id<'db>(
         &'db self,
         macro_call_id: MacroCallId<'db>,
-    ) -> Maybe<ast::ItemInlineMacro<'db>>;
+    ) -> Maybe<ast::ItemInlineMacro<'db>> {
+        module_macro_call_by_id(self.as_dyn_database(), macro_call_id)
+    }
     /// Returns the ancestors of a module.
-    #[salsa::transparent]
     fn module_ancestors<'db>(
         &'db self,
         module_id: ModuleId<'db>,
-    ) -> &'db OrderedHashSet<ModuleId<'db>>;
+    ) -> &'db OrderedHashSet<ModuleId<'db>> {
+        module_ancestors_helper(
+            self.as_dyn_database(),
+            FileId::dummy(self.as_dyn_database()),
+            module_id,
+        )
+    }
     /// Returns the module that the module is perceives as.
     /// Specifically if this is a macro call, it returns the module that the macro call was called
     /// from, including recursive calls.
-    #[salsa::transparent]
-    fn module_perceived_module<'db>(&'db self, module_id: ModuleId<'db>) -> ModuleId<'db>;
+    fn module_perceived_module<'db>(&'db self, module_id: ModuleId<'db>) -> ModuleId<'db> {
+        module_perceived_module_helper(
+            self.as_dyn_database(),
+            FileId::dummy(self.as_dyn_database()),
+            module_id,
+        )
+    }
 }
 
+impl<T: Database + ?Sized> DefsGroup for T {}
+
 /// Initializes the [`DefsGroup`] database to a proper state.
-pub fn init_defs_group(db: &mut dyn DefsGroup) {
+pub fn init_defs_group(db: &mut dyn Database) {
     defs_group_input(db).set_macro_plugin_overrides(db).to(Some(OrderedHashMap::default()));
     defs_group_input(db).set_inline_macro_plugin_overrides(db).to(Some(OrderedHashMap::default()));
 }
 
 #[salsa::tracked(returns(ref))]
-fn default_macro_plugins_helper<'db>(db: &'db dyn DefsGroup) -> Vec<MacroPluginId<'db>> {
+fn default_macro_plugins_helper<'db>(db: &'db dyn Database) -> Vec<MacroPluginId<'db>> {
     db.default_macro_plugins_input()
         .iter()
         .map(|plugin| MacroPluginId::new(db, plugin.clone()))
         .collect()
 }
 
-pub fn default_macro_plugins<'db>(db: &'db dyn DefsGroup) -> &'db [MacroPluginId<'db>] {
+pub fn default_macro_plugins<'db>(db: &'db dyn Database) -> &'db [MacroPluginId<'db>] {
     default_macro_plugins_helper(db)
 }
 
 #[salsa::tracked(returns(ref))]
 pub fn macro_plugin_overrides<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
 ) -> OrderedHashMap<CrateId<'db>, Arc<Vec<MacroPluginId<'db>>>> {
     let inp = db.macro_plugin_overrides_input();
     inp.iter()
@@ -370,7 +425,7 @@ pub fn macro_plugin_overrides<'db>(
 
 #[salsa::tracked(returns(ref))]
 pub fn inline_macro_plugin_overrides<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
 ) -> OrderedHashMap<CrateId<'db>, Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>> {
     let inp = db.inline_macro_plugin_overrides_input();
     inp.iter()
@@ -390,14 +445,14 @@ pub fn inline_macro_plugin_overrides<'db>(
 
 #[salsa::tracked(returns(ref))]
 pub fn default_inline_macro_plugins<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
 ) -> OrderedHashMap<String, InlineMacroExprPluginId<'db>> {
     let inp = db.default_inline_macro_plugins_input();
     inp.iter().map(|(name, plugin)| (name.clone(), plugin.clone().intern(db))).collect()
 }
 
 fn crate_macro_plugins<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
 ) -> &'db [MacroPluginId<'db>] {
     macro_plugin_overrides(db)
@@ -407,7 +462,7 @@ fn crate_macro_plugins<'db>(
 }
 
 fn crate_inline_macro_plugins<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
 ) -> &'db OrderedHashMap<String, InlineMacroExprPluginId<'db>> {
     db.inline_macro_plugin_overrides()
@@ -418,7 +473,7 @@ fn crate_inline_macro_plugins<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn allowed_attributes<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
 ) -> OrderedHashSet<String> {
     let base_attrs = [
@@ -447,13 +502,13 @@ fn allowed_attributes<'db>(
 
 // TODO(eytan-starkware): Untrack this
 #[salsa::tracked(returns(ref))]
-fn allowed_statement_attributes<'db>(_db: &'db dyn DefsGroup) -> OrderedHashSet<String> {
+fn allowed_statement_attributes<'db>(_db: &'db dyn Database) -> OrderedHashSet<String> {
     let all_attributes = [FMT_SKIP_ATTR, ALLOW_ATTR, FEATURE_ATTR];
     OrderedHashSet::from_iter(all_attributes.map(|attr| attr.into()))
 }
 
 #[salsa::tracked(returns(ref))]
-fn declared_derives<'db>(db: &'db dyn DefsGroup, crate_id: CrateId<'db>) -> OrderedHashSet<String> {
+fn declared_derives<'db>(db: &'db dyn Database, crate_id: CrateId<'db>) -> OrderedHashSet<String> {
     OrderedHashSet::from_iter(
         db.crate_macro_plugins(crate_id)
             .iter()
@@ -463,7 +518,7 @@ fn declared_derives<'db>(db: &'db dyn DefsGroup, crate_id: CrateId<'db>) -> Orde
 
 #[salsa::tracked(returns(ref))]
 fn declared_phantom_type_attributes<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
 ) -> OrderedHashSet<String> {
     let crate_plugins = db.crate_macro_plugins(crate_id);
@@ -475,7 +530,7 @@ fn declared_phantom_type_attributes<'db>(
 }
 
 #[salsa::tracked]
-fn is_submodule_inline<'db>(db: &'db dyn DefsGroup, submodule_id: SubmoduleId<'db>) -> bool {
+fn is_submodule_inline<'db>(db: &'db dyn Database, submodule_id: SubmoduleId<'db>) -> bool {
     match submodule_id.stable_ptr(db).lookup(db).body(db) {
         MaybeModuleBody::Some(_) => true,
         MaybeModuleBody::None(_) => false,
@@ -484,7 +539,7 @@ fn is_submodule_inline<'db>(db: &'db dyn DefsGroup, submodule_id: SubmoduleId<'d
 
 #[salsa::tracked]
 fn module_main_file_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     _helper: FileId<'db>,
     module_id: ModuleId<'db>,
 ) -> Maybe<FileId<'db>> {
@@ -511,20 +566,17 @@ fn module_main_file_helper<'db>(
     })
 }
 
-fn module_main_file<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) -> Maybe<FileId<'db>> {
+fn module_main_file<'db>(db: &'db dyn Database, module_id: ModuleId<'db>) -> Maybe<FileId<'db>> {
     // TODO(eytan-starkware): Remove this dummy file when ModuleId is tracked.
     module_main_file_helper(db, FileId::dummy(db), module_id)
 }
 
-fn module_files<'db>(
-    db: &'db dyn DefsGroup,
-    module_id: ModuleId<'db>,
-) -> Maybe<&'db [FileId<'db>]> {
+fn module_files<'db>(db: &'db dyn Database, module_id: ModuleId<'db>) -> Maybe<&'db [FileId<'db>]> {
     Ok(module_id.module_data(db)?.files(db))
 }
 
 fn module_file<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_file_id: ModuleFileId<'db>,
 ) -> Maybe<FileId<'db>> {
     Ok(db.module_files(module_file_id.0)?[module_file_id.1.0])
@@ -533,7 +585,7 @@ fn module_file<'db>(
 // TODO(eytan-starkware): This doesnt really need to be tracked.
 #[salsa::tracked(returns(ref))]
 fn module_dir_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     _helper: FileId<'db>,
     module_id: ModuleId<'db>,
 ) -> Maybe<Directory<'db>> {
@@ -554,13 +606,13 @@ fn module_dir_helper<'db>(
     }
 }
 
-fn module_dir<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) -> Maybe<&'db Directory<'db>> {
+fn module_dir<'db>(db: &'db dyn Database, module_id: ModuleId<'db>) -> Maybe<&'db Directory<'db>> {
     module_dir_helper(db, FileId::dummy(db), module_id).as_ref().map_err(|x| *x)
 }
 
 /// Appends all the modules under the given module, including nested modules.
 fn collect_modules_under<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     modules: &mut Vec<ModuleId<'db>>,
     module_id: ModuleId<'db>,
 ) {
@@ -574,7 +626,7 @@ fn collect_modules_under<'db>(
 
 /// Returns all the modules in the crate, including recursively.
 #[salsa::tracked(returns(ref))]
-fn crate_modules<'db>(db: &'db dyn DefsGroup, crate_id: CrateId<'db>) -> Vec<ModuleId<'db>> {
+fn crate_modules<'db>(db: &'db dyn Database, crate_id: CrateId<'db>) -> Vec<ModuleId<'db>> {
     let mut modules = Vec::new();
     collect_modules_under(db, &mut modules, ModuleId::CrateRoot(crate_id));
     modules
@@ -582,7 +634,7 @@ fn crate_modules<'db>(db: &'db dyn DefsGroup, crate_id: CrateId<'db>) -> Vec<Mod
 
 #[salsa::tracked(returns(ref))]
 fn priv_file_to_module_mapping<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
 ) -> OrderedHashMap<FileId<'db>, Vec<ModuleId<'db>>> {
     let mut mapping = OrderedHashMap::<FileId<'db>, Vec<ModuleId<'db>>>::default();
     for crate_id in db.crates() {
@@ -605,13 +657,13 @@ fn priv_file_to_module_mapping<'db>(
 }
 #[salsa::tracked(returns(ref))]
 fn file_modules_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     file_id: FileId<'db>,
 ) -> Maybe<Arc<Vec<ModuleId<'db>>>> {
     Ok(Arc::new(db.priv_file_to_module_mapping().get(&file_id).to_maybe()?.clone()))
 }
 
-fn file_modules<'db>(db: &'db dyn DefsGroup, file_id: FileId<'db>) -> Maybe<&'db [ModuleId<'db>]> {
+fn file_modules<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Maybe<&'db [ModuleId<'db>]> {
     file_modules_helper(db, file_id).as_ref().map(|x| x.as_slice()).map_err(|x| *x)
 }
 
@@ -664,55 +716,55 @@ impl<'db> ModuleData<'db> {
     /// All the extern types of the given module.
     pub fn extern_types(
         &self,
-        db: &'db dyn DefsGroup,
+        db: &'db dyn Database,
     ) -> &'db OrderedHashMap<ExternTypeId<'db>, ast::ItemExternType<'db>> {
         self.metadata(db).extern_types(db)
     }
     /// All the extern functions of the given module.
     pub fn extern_functions(
         &self,
-        db: &'db dyn DefsGroup,
+        db: &'db dyn Database,
     ) -> &'db OrderedHashMap<ExternFunctionId<'db>, ast::ItemExternFunction<'db>> {
         self.metadata(db).extern_functions(db)
     }
     /// All the macro declarations of the given module.
     pub fn macro_declarations(
         &self,
-        db: &'db dyn DefsGroup,
+        db: &'db dyn Database,
     ) -> &'db OrderedHashMap<MacroDeclarationId<'db>, ast::ItemMacroDeclaration<'db>> {
         self.metadata(db).macro_declarations(db)
     }
     /// All the global uses of the given module.
     pub fn global_uses(
         &self,
-        db: &'db dyn DefsGroup,
+        db: &'db dyn Database,
     ) -> &'db OrderedHashMap<GlobalUseId<'db>, ast::UsePathStar<'db>> {
         self.metadata(db).global_uses(db)
     }
     /// Calls to inline macros in the module (only those that were not handled by plugins).
     pub fn macro_calls(
         &self,
-        db: &'db dyn DefsGroup,
+        db: &'db dyn Database,
     ) -> &'db OrderedHashMap<MacroCallId<'db>, ast::ItemInlineMacro<'db>> {
         self.metadata(db).macro_calls(db)
     }
 
     /// All the files of the given module.
-    pub fn files(&self, db: &'db dyn DefsGroup) -> &'db Vec<FileId<'db>> {
+    pub fn files(&self, db: &'db dyn Database) -> &'db Vec<FileId<'db>> {
         self.metadata(db).files(db)
     }
 
     /// Generation info for each file. Virtual files have Some. Other files have None.
     pub fn generated_file_aux_data(
         &self,
-        db: &'db dyn DefsGroup,
+        db: &'db dyn Database,
     ) -> &'db Vec<Option<DynGeneratedFileAuxData>> {
         self.metadata(db).generated_file_aux_data(db)
     }
 
     pub fn plugin_diagnostics(
         &self,
-        db: &'db dyn DefsGroup,
+        db: &'db dyn Database,
     ) -> &'db Vec<(ModuleFileId<'db>, PluginDiagnostic<'db>)> {
         self.metadata(db).plugin_diagnostics(db)
     }
@@ -720,7 +772,7 @@ impl<'db> ModuleData<'db> {
     /// Diagnostic notes for diagnostics originating in the plugin generated files identified by
     /// [`FileId`].
     /// Diagnostic notes are added with `note: ` prefix at the end of diagnostic display.
-    pub fn diagnostics_notes(&self, db: &'db dyn DefsGroup) -> &'db PluginFileDiagnosticNotes<'db> {
+    pub fn diagnostics_notes(&self, db: &'db dyn Database) -> &'db PluginFileDiagnosticNotes<'db> {
         self.metadata(db).diagnostics_notes(db)
     }
 }
@@ -776,7 +828,7 @@ pub struct PrivModuleSubFiles<'db> {
 
 #[salsa::tracked]
 fn priv_module_data_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     _helper: FileId<'db>,
     module_id: ModuleId<'db>,
 ) -> Maybe<ModuleData<'db>> {
@@ -967,7 +1019,7 @@ fn priv_module_data_helper<'db>(
 }
 
 pub(crate) fn module_data<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<ModuleData<'db>> {
     priv_module_data_helper(db, FileId::dummy(db), module_id)
@@ -977,7 +1029,7 @@ pub type ModuleDataCacheAndLoadingData<'db> =
     (Arc<OrderedHashMap<ModuleId<'db>, ModuleData<'db>>>, Arc<DefCacheLoadingData<'db>>);
 
 fn cached_crate_modules<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
 ) -> Option<ModuleDataCacheAndLoadingData<'db>> {
     load_cached_crate_modules(db, crate_id)
@@ -995,7 +1047,7 @@ pub fn init_external_files<T: DefsGroup>(db: &mut T) {
 
 /// Returns the `VirtualFile` matching the given external id.
 pub fn try_ext_as_virtual_impl<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     external_id: salsa::Id,
 ) -> Option<VirtualFile<'db>> {
     let long_id = PluginGeneratedFileId::from_intern_id(external_id).long(db);
@@ -1005,7 +1057,7 @@ pub fn try_ext_as_virtual_impl<'db>(
 }
 
 fn priv_module_sub_files<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     file_id: FileId<'db>,
 ) -> Maybe<Arc<PrivModuleSubFiles<'db>>> {
@@ -1291,21 +1343,21 @@ pub fn get_all_path_stars<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn module_constants_ids_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_data: ModuleData<'db>,
 ) -> Vec<ConstantId<'db>> {
     module_data.constants(db).keys().copied().collect_vec()
 }
 
 pub fn module_constants_ids<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<&'db [ConstantId<'db>]> {
     Ok(module_constants_ids_helper(db, module_id.module_data(db)?))
 }
 
 pub fn module_constant_by_id<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     constant_id: ConstantId<'db>,
 ) -> Maybe<ast::ItemConstant<'db>> {
     let module_constants = constant_id.module_data(db)?.constants(db);
@@ -1314,21 +1366,21 @@ pub fn module_constant_by_id<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn module_submodules_ids_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_data: ModuleData<'db>,
 ) -> Vec<SubmoduleId<'db>> {
     module_data.submodules(db).keys().copied().collect_vec()
 }
 
 fn module_submodules_ids<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<&'db [SubmoduleId<'db>]> {
     Ok(module_submodules_ids_helper(db, module_id.module_data(db)?))
 }
 
 pub fn module_submodule_by_id<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     submodule_id: SubmoduleId<'db>,
 ) -> Maybe<ast::ItemModule<'db>> {
     let module_submodules = submodule_id.module_data(db)?.submodules(db);
@@ -1337,20 +1389,20 @@ pub fn module_submodule_by_id<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn module_free_functions_ids_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_data: ModuleData<'db>,
 ) -> Vec<FreeFunctionId<'db>> {
     module_data.free_functions(db).keys().copied().collect_vec()
 }
 
 pub fn module_free_functions_ids<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<&'db [FreeFunctionId<'db>]> {
     Ok(module_free_functions_ids_helper(db, module_id.module_data(db)?))
 }
 pub fn module_free_function_by_id<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<ast::FunctionWithBody<'db>> {
     let module_free_functions = free_function_id.module_data(db)?.free_functions(db);
@@ -1359,19 +1411,19 @@ pub fn module_free_function_by_id<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn module_uses_ids_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_data: ModuleData<'db>,
 ) -> Vec<UseId<'db>> {
     module_data.uses(db).keys().copied().collect_vec()
 }
 pub fn module_uses_ids<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<&'db [UseId<'db>]> {
     Ok(module_uses_ids_helper(db, module_id.module_data(db)?))
 }
 pub fn module_use_by_id<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     use_id: UseId<'db>,
 ) -> Maybe<ast::UsePathLeaf<'db>> {
     let module_uses = use_id.module_data(db)?.uses(db);
@@ -1380,7 +1432,7 @@ pub fn module_use_by_id<'db>(
 
 /// Returns the `use *` of the given module, by its ID.
 pub fn module_global_use_by_id<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     global_use_id: GlobalUseId<'db>,
 ) -> Maybe<ast::UsePathStar<'db>> {
     let module_global_uses = global_use_id.module_data(db)?.global_uses(db);
@@ -1389,21 +1441,21 @@ pub fn module_global_use_by_id<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn module_structs_ids_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_data: ModuleData<'db>,
 ) -> Vec<StructId<'db>> {
     module_data.structs(db).keys().copied().collect_vec()
 }
 
 pub fn module_structs_ids<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<&'db [StructId<'db>]> {
     Ok(module_structs_ids_helper(db, module_id.module_data(db)?))
 }
 
 pub fn module_struct_by_id<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<ast::ItemStruct<'db>> {
     let module_structs = struct_id.module_data(db)?.structs(db);
@@ -1412,21 +1464,21 @@ pub fn module_struct_by_id<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn module_enums_ids_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_data: ModuleData<'db>,
 ) -> Vec<EnumId<'db>> {
     module_data.enums(db).keys().copied().collect_vec()
 }
 
 pub fn module_enums_ids<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<&'db [EnumId<'db>]> {
     Ok(module_enums_ids_helper(db, module_id.module_data(db)?))
 }
 
 pub fn module_enum_by_id<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<ast::ItemEnum<'db>> {
     let module_enums = enum_id.module_data(db)?.enums(db);
@@ -1435,21 +1487,21 @@ pub fn module_enum_by_id<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn module_type_aliases_ids_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_data: ModuleData<'db>,
 ) -> Vec<ModuleTypeAliasId<'db>> {
     module_data.type_aliases(db).keys().copied().collect_vec()
 }
 
 pub fn module_type_aliases_ids<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<&'db [ModuleTypeAliasId<'db>]> {
     Ok(module_type_aliases_ids_helper(db, module_id.module_data(db)?))
 }
 
 pub fn module_type_alias_by_id<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<ast::ItemTypeAlias<'db>> {
     let module_type_aliases = module_type_alias_id.module_data(db)?.type_aliases(db);
@@ -1458,21 +1510,21 @@ pub fn module_type_alias_by_id<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn module_impl_aliases_ids_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_data: ModuleData<'db>,
 ) -> Vec<ImplAliasId<'db>> {
     module_data.impl_aliases(db).keys().copied().collect_vec()
 }
 
 pub fn module_impl_aliases_ids<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<&'db [ImplAliasId<'db>]> {
     Ok(module_impl_aliases_ids_helper(db, module_id.module_data(db)?))
 }
 
 pub fn module_impl_alias_by_id<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<ast::ItemImplAlias<'db>> {
     let module_impl_aliases = impl_alias_id.module_data(db)?.impl_aliases(db);
@@ -1481,21 +1533,21 @@ pub fn module_impl_alias_by_id<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn module_traits_ids_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_data: ModuleData<'db>,
 ) -> Vec<TraitId<'db>> {
     module_data.traits(db).keys().copied().collect_vec()
 }
 
 pub fn module_traits_ids<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<&'db [TraitId<'db>]> {
     Ok(module_traits_ids_helper(db, module_id.module_data(db)?))
 }
 
 pub fn module_trait_by_id<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<ast::ItemTrait<'db>> {
     let module_traits = trait_id.module_data(db)?.traits(db);
@@ -1504,20 +1556,20 @@ pub fn module_trait_by_id<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn module_impls_ids_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_data: ModuleData<'db>,
 ) -> Vec<ImplDefId<'db>> {
     module_data.impls(db).keys().copied().collect_vec()
 }
 
 pub fn module_impls_ids<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<&'db [ImplDefId<'db>]> {
     Ok(module_impls_ids_helper(db, module_id.module_data(db)?))
 }
 pub fn module_impl_by_id<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<ast::ItemImpl<'db>> {
     let module_impls = impl_def_id.module_data(db)?.impls(db);
@@ -1526,19 +1578,19 @@ pub fn module_impl_by_id<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn module_extern_types_ids_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_data: ModuleData<'db>,
 ) -> Vec<ExternTypeId<'db>> {
     module_data.extern_types(db).keys().copied().collect_vec()
 }
 pub fn module_extern_types_ids<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<&'db [ExternTypeId<'db>]> {
     Ok(module_extern_types_ids_helper(db, module_id.module_data(db)?))
 }
 pub fn module_extern_type_by_id<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<ast::ItemExternType<'db>> {
     let module_extern_types = extern_type_id.module_data(db)?.extern_types(db);
@@ -1547,7 +1599,7 @@ pub fn module_extern_type_by_id<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn module_macro_declarations_ids_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_data: ModuleData<'db>,
 ) -> Vec<MacroDeclarationId<'db>> {
     module_data.macro_declarations(db).keys().copied().collect_vec()
@@ -1555,14 +1607,14 @@ fn module_macro_declarations_ids_helper<'db>(
 
 /// Returns all the ids of the macro declarations of the given module.
 pub fn module_macro_declarations_ids<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<&'db [MacroDeclarationId<'db>]> {
     Ok(module_macro_declarations_ids_helper(db, module_id.module_data(db)?))
 }
 /// Returns the macro declaration of the given id.
 pub fn module_macro_declaration_by_id<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<ast::ItemMacroDeclaration<'db>> {
     let module_macro_declarations = macro_declaration_id.module_data(db)?.macro_declarations(db);
@@ -1571,21 +1623,21 @@ pub fn module_macro_declaration_by_id<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn module_macro_calls_ids_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_data: ModuleData<'db>,
 ) -> Vec<MacroCallId<'db>> {
     module_data.macro_calls(db).keys().copied().collect_vec()
 }
 
 pub fn module_macro_calls_ids<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<&'db [MacroCallId<'db>]> {
     Ok(module_macro_calls_ids_helper(db, module_id.module_data(db)?))
 }
 /// Query implementation of [DefsGroup::module_macro_call_by_id].
 fn module_macro_call_by_id<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
 ) -> Maybe<ast::ItemInlineMacro<'db>> {
     let module_macro_calls = macro_call_id.module_data(db)?.macro_calls(db);
@@ -1594,20 +1646,20 @@ fn module_macro_call_by_id<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn module_extern_functions_ids_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_data: ModuleData<'db>,
 ) -> Vec<ExternFunctionId<'db>> {
     module_data.extern_functions(db).keys().copied().collect_vec()
 }
 
 pub fn module_extern_functions_ids<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<&'db [ExternFunctionId<'db>]> {
     Ok(module_extern_functions_ids_helper(db, module_id.module_data(db)?))
 }
 pub fn module_extern_function_by_id<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<ast::ItemExternFunction<'db>> {
     let module_extern_functions = extern_function_id.module_data(db)?.extern_functions(db);
@@ -1616,7 +1668,7 @@ pub fn module_extern_function_by_id<'db>(
 
 #[salsa::tracked(returns(ref))]
 fn module_ancestors_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     _dummy: FileId<'db>,
     module_id: ModuleId<'db>,
 ) -> OrderedHashSet<ModuleId<'db>> {
@@ -1639,16 +1691,9 @@ fn module_ancestors_helper<'db>(
     }
 }
 
-pub fn module_ancestors<'db>(
-    db: &'db dyn DefsGroup,
-    module_id: ModuleId<'db>,
-) -> &'db OrderedHashSet<ModuleId<'db>> {
-    module_ancestors_helper(db, FileId::dummy(db), module_id)
-}
-
 #[salsa::tracked]
 fn module_perceived_module_helper<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     _dummy: FileId<'db>,
     mut module_id: ModuleId<'db>,
 ) -> ModuleId<'db> {
@@ -1658,15 +1703,8 @@ fn module_perceived_module_helper<'db>(
     module_id
 }
 
-pub fn module_perceived_module<'db>(
-    db: &'db dyn DefsGroup,
-    module_id: ModuleId<'db>,
-) -> ModuleId<'db> {
-    module_perceived_module_helper(db, FileId::dummy(db), module_id)
-}
-
 fn module_item_name_stable_ptr<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     item_id: ModuleItemId<'db>,
 ) -> Maybe<SyntaxStablePtrId<'db>> {
