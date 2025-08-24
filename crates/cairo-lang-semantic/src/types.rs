@@ -24,7 +24,7 @@ use crate::corelib::{
     concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
     concrete_panic_destruct_trait, get_usize_ty,
 };
-use crate::db::{SemanticGroup, SemanticGroupData};
+use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, compute_expr_semantic};
@@ -695,6 +695,7 @@ pub fn get_impl_at_context<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::single_value_type].
+#[salsa::tracked]
 pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<bool> {
     Ok(match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
@@ -775,6 +776,7 @@ pub enum TypeSizeInformation {
 }
 
 /// Query implementation of [crate::db::SemanticGroup::type_size_info].
+#[salsa::tracked(cycle_result=type_size_info_cycle)]
 pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<TypeSizeInformation> {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
@@ -840,9 +842,9 @@ fn check_all_type_are_zero_sized<'a>(
 }
 
 /// Cycle handling of [crate::db::SemanticGroup::type_size_info].
+#[salsa::tracked]
 pub fn type_size_info_cycle<'db>(
-    _db: &dyn SemanticGroup,
-    _input: SemanticGroupData,
+    _db: &'db dyn SemanticGroup,
     _ty: TypeId<'db>,
 ) -> Maybe<TypeSizeInformation> {
     Ok(TypeSizeInformation::Infinite)
@@ -851,6 +853,7 @@ pub fn type_size_info_cycle<'db>(
 // TODO(spapini): type info lookup for non generic types needs to not depend on lookup_context.
 // This is to ensure that sierra generator will see a consistent type info of types.
 /// Query implementation of [crate::db::SemanticGroup::type_info].
+#[salsa::tracked]
 pub fn type_info<'db>(
     db: &'db dyn SemanticGroup,
     lookup_context: ImplLookupContext<'db>,
@@ -888,6 +891,7 @@ fn solve_concrete_trait_no_constraints<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::copyable].
+#[salsa::tracked]
 pub fn copyable<'db>(
     db: &'db dyn SemanticGroup,
     ty: TypeId<'db>,
@@ -896,6 +900,7 @@ pub fn copyable<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::droppable].
+#[salsa::tracked]
 pub fn droppable<'db>(
     db: &'db dyn SemanticGroup,
     ty: TypeId<'db>,
@@ -903,6 +908,7 @@ pub fn droppable<'db>(
     solve_concrete_trait_no_constraints(db, Default::default(), concrete_drop_trait(db, ty))
 }
 
+#[salsa::tracked]
 pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId<'_>) -> bool {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
@@ -924,6 +930,7 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId<'_>) -> bo
     }
 }
 
+#[salsa::tracked]
 pub fn priv_type_is_var_free<'db>(db: &'db dyn SemanticGroup, ty: TypeId<'db>) -> bool {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_var_free(db),
@@ -945,6 +952,7 @@ pub fn priv_type_is_var_free<'db>(db: &'db dyn SemanticGroup, ty: TypeId<'db>) -
     }
 }
 
+#[salsa::tracked]
 pub fn priv_type_short_name(db: &dyn SemanticGroup, ty: TypeId<'_>) -> String {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => {

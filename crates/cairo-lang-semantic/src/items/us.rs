@@ -17,12 +17,13 @@ use salsa::Database;
 use super::module::get_module_global_uses;
 use super::visibility::peek_visible_in;
 use crate::SemanticDiagnostic;
-use crate::db::{SemanticGroup, SemanticGroupData};
+use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
 use crate::expr::inference::InferenceId;
+use crate::ids::DummyId;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverData};
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
@@ -48,6 +49,7 @@ pub enum UsePathOrDollar<'db> {
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_use_semantic_data].
+#[salsa::tracked(cycle_result=priv_use_semantic_data_cycle)]
 pub fn priv_use_semantic_data<'db>(
     db: &'db dyn SemanticGroup,
     use_id: UseId<'db>,
@@ -168,7 +170,6 @@ fn get_parent_single_use_path<'db>(
 /// Cycle handling for [crate::db::SemanticGroup::priv_use_semantic_data].
 pub fn priv_use_semantic_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     use_id: UseId<'db>,
 ) -> Maybe<Arc<UseData<'db>>> {
     let module_file_id = use_id.module_file_id(db);
@@ -185,6 +186,7 @@ pub fn priv_use_semantic_data_cycle<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::use_semantic_diagnostics].
+#[salsa::tracked]
 pub fn use_semantic_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     use_id: UseId<'db>,
@@ -193,6 +195,7 @@ pub fn use_semantic_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::use_resolver_data].
+#[salsa::tracked(cycle_result=use_resolver_data_cycle)]
 pub fn use_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     use_id: UseId<'db>,
@@ -203,7 +206,6 @@ pub fn use_resolver_data<'db>(
 /// Trivial cycle handler for [crate::db::SemanticGroup::use_resolver_data].
 pub fn use_resolver_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     use_id: UseId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     // Forwarding (not as a query) cycle handling to `priv_use_semantic_data` cycle handler.
@@ -230,6 +232,7 @@ pub struct UseGlobalData<'db> {
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_global_use_semantic_data].
+#[salsa::tracked(cycle_result=priv_global_use_semantic_data_cycle)]
 pub fn priv_global_use_semantic_data<'db>(
     db: &'db dyn SemanticGroup,
     global_use_id: GlobalUseId<'db>,
@@ -271,6 +274,7 @@ pub fn priv_global_use_semantic_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_global_use_imported_module].
+#[salsa::tracked]
 pub fn priv_global_use_imported_module<'db>(
     db: &'db dyn SemanticGroup,
     global_use_id: GlobalUseId<'db>,
@@ -279,6 +283,7 @@ pub fn priv_global_use_imported_module<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::global_use_semantic_diagnostics].
+#[salsa::tracked]
 pub fn global_use_semantic_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     global_use_id: GlobalUseId<'db>,
@@ -289,7 +294,6 @@ pub fn global_use_semantic_diagnostics<'db>(
 /// Cycle handling for [crate::db::SemanticGroup::priv_global_use_semantic_data].
 pub fn priv_global_use_semantic_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     global_use_id: GlobalUseId<'db>,
 ) -> Maybe<UseGlobalData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -322,6 +326,15 @@ pub struct ImportedModules<'db> {
 /// Query implementation of [crate::db::SemanticGroup::priv_module_use_star_modules].
 pub fn priv_module_use_star_modules<'db>(
     db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Arc<ImportedModules<'db>> {
+    priv_module_use_star_modules_helper(db, DummyId::dummy(db), module_id)
+}
+
+#[salsa::tracked]
+fn priv_module_use_star_modules_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _dummy: DummyId<'db>,
     module_id: ModuleId<'db>,
 ) -> Arc<ImportedModules<'db>> {
     let mut visited = UnorderedHashSet::<_>::default();

@@ -43,6 +43,7 @@ pub struct StructDeclarationData<'db> {
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_struct_declaration_data].
+#[salsa::tracked]
 pub fn priv_struct_declaration_data<'db>(
     db: &'db dyn SemanticGroup,
     struct_id: StructId<'db>,
@@ -83,6 +84,7 @@ pub fn priv_struct_declaration_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_declaration_diagnostics].
+#[salsa::tracked]
 pub fn struct_declaration_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     struct_id: StructId<'db>,
@@ -91,6 +93,7 @@ pub fn struct_declaration_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_generic_params].
+#[salsa::tracked]
 pub fn struct_generic_params<'db>(
     db: &'db dyn SemanticGroup,
     struct_id: StructId<'db>,
@@ -99,6 +102,7 @@ pub fn struct_generic_params<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_generic_params_data].
+#[salsa::tracked]
 pub fn struct_generic_params_data<'db>(
     db: &'db dyn SemanticGroup,
     struct_id: StructId<'db>,
@@ -131,6 +135,7 @@ pub fn struct_generic_params_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_attributes].
+#[salsa::tracked]
 pub fn struct_attributes<'db>(
     db: &'db dyn SemanticGroup,
     struct_id: StructId<'db>,
@@ -139,6 +144,7 @@ pub fn struct_attributes<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_declaration_resolver_data].
+#[salsa::tracked]
 pub fn struct_declaration_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     struct_id: StructId<'db>,
@@ -164,6 +170,7 @@ pub struct Member<'db> {
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_struct_definition_data].
+#[salsa::tracked]
 pub fn priv_struct_definition_data<'db>(
     db: &'db dyn SemanticGroup,
     struct_id: StructId<'db>,
@@ -223,6 +230,7 @@ pub fn priv_struct_definition_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_definition_diagnostics].
+#[salsa::tracked]
 pub fn struct_definition_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     struct_id: StructId<'db>,
@@ -254,6 +262,7 @@ pub fn struct_definition_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_members].
+#[salsa::tracked]
 pub fn struct_members<'db>(
     db: &'db dyn SemanticGroup,
     struct_id: StructId<'db>,
@@ -262,6 +271,7 @@ pub fn struct_members<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_definition_resolver_data].
+#[salsa::tracked]
 pub fn struct_definition_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     struct_id: StructId<'db>,
@@ -270,6 +280,7 @@ pub fn struct_definition_resolver_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_struct_members].
+#[salsa::tracked]
 pub fn concrete_struct_members<'db>(
     db: &'db dyn SemanticGroup,
     concrete_struct_id: ConcreteStructId<'db>,

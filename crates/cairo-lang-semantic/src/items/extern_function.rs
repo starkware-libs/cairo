@@ -32,6 +32,7 @@ mod test;
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_inline_config].
+#[salsa::tracked]
 pub fn extern_function_declaration_inline_config<'db>(
     db: &'db dyn SemanticGroup,
     extern_function_id: ExternFunctionId<'db>,
@@ -40,6 +41,7 @@ pub fn extern_function_declaration_inline_config<'db>(
 }
 // TODO(spapini): Remove declaration from the names.
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_diagnostics].
+#[salsa::tracked]
 pub fn extern_function_declaration_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     extern_function_id: ExternFunctionId<'db>,
@@ -49,6 +51,7 @@ pub fn extern_function_declaration_diagnostics<'db>(
         .unwrap_or_default()
 }
 /// Query implementation of [crate::db::SemanticGroup::extern_function_signature].
+#[salsa::tracked]
 pub fn extern_function_signature<'db>(
     db: &'db dyn SemanticGroup,
     extern_function_id: ExternFunctionId<'db>,
@@ -56,6 +59,7 @@ pub fn extern_function_signature<'db>(
     Ok(db.priv_extern_function_declaration_data(extern_function_id)?.signature)
 }
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_generic_params].
+#[salsa::tracked]
 pub fn extern_function_declaration_generic_params<'db>(
     db: &'db dyn SemanticGroup,
     extern_function_id: ExternFunctionId<'db>,
@@ -65,6 +69,7 @@ pub fn extern_function_declaration_generic_params<'db>(
 
 /// Query implementation of
 /// [crate::db::SemanticGroup::extern_function_declaration_generic_params_data].
+#[salsa::tracked]
 pub fn extern_function_declaration_generic_params_data<'db>(
     db: &'db dyn SemanticGroup,
     extern_function_id: ExternFunctionId<'db>,
@@ -97,6 +102,7 @@ pub fn extern_function_declaration_generic_params_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_implicits].
+#[salsa::tracked]
 pub fn extern_function_declaration_implicits<'db>(
     db: &'db dyn SemanticGroup,
     extern_function_id: ExternFunctionId<'db>,
@@ -105,6 +111,7 @@ pub fn extern_function_declaration_implicits<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_refs].
+#[salsa::tracked]
 pub fn extern_function_declaration_refs<'db>(
     db: &'db dyn SemanticGroup,
     extern_function_id: ExternFunctionId<'db>,
@@ -120,6 +127,7 @@ pub fn extern_function_declaration_refs<'db>(
 
 /// Query implementation of
 /// [crate::db::SemanticGroup::extern_function_declaration_resolver_data].
+#[salsa::tracked]
 pub fn extern_function_declaration_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     extern_function_id: ExternFunctionId<'db>,
@@ -130,6 +138,7 @@ pub fn extern_function_declaration_resolver_data<'db>(
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_extern_function_declaration_data].
+#[salsa::tracked]
 pub fn priv_extern_function_declaration_data<'db>(
     db: &'db dyn SemanticGroup,
     extern_function_id: ExternFunctionId<'db>,

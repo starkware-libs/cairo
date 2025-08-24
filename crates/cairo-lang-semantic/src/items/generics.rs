@@ -22,13 +22,14 @@ use super::constant::{ConstValue, ConstValueId};
 use super::imp::{ImplHead, ImplId, ImplLongId};
 use super::resolve_trait_path;
 use super::trt::ConcreteTraitTypeId;
-use crate::db::{SemanticGroup, SemanticGroupData};
+use crate::db::SemanticGroup;
 use crate::diagnostic::{
     NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
 use crate::expr::fmt::CountingWriter;
 use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::ids::DummyId;
 use crate::lookup_item::LookupItemEx;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
@@ -221,6 +222,7 @@ pub struct GenericParamsData<'db> {
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::generic_param_semantic].
+#[salsa::tracked]
 pub fn generic_param_semantic<'db>(
     db: &'db dyn SemanticGroup,
     generic_param_id: GenericParamId<'db>,
@@ -229,6 +231,7 @@ pub fn generic_param_semantic<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_param_diagnostics].
+#[salsa::tracked]
 pub fn generic_param_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     generic_param_id: GenericParamId<'db>,
@@ -239,6 +242,7 @@ pub fn generic_param_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_param_resolver_data].
+#[salsa::tracked]
 pub fn generic_param_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     generic_param_id: GenericParamId<'db>,
@@ -247,6 +251,7 @@ pub fn generic_param_resolver_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_impl_param_trait].
+#[salsa::tracked]
 pub fn generic_impl_param_trait<'db>(
     db: &'db dyn SemanticGroup,
     generic_param_id: GenericParamId<'db>,
@@ -288,6 +293,7 @@ pub fn generic_impl_param_trait<'db>(
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_generic_param_data].
+#[salsa::tracked(cycle_result=priv_generic_param_data_cycle)]
 pub fn priv_generic_param_data<'db>(
     db: &'db dyn SemanticGroup,
     generic_param_id: GenericParamId<'db>,
@@ -360,7 +366,6 @@ pub fn priv_generic_param_data<'db>(
 /// Cycle handling for [crate::db::SemanticGroup::priv_generic_param_data].
 pub fn priv_generic_param_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     generic_param_id: GenericParamId<'db>,
     _in_cycle: bool,
 ) -> Maybe<GenericParamData<'db>> {
@@ -370,6 +375,15 @@ pub fn priv_generic_param_data_cycle<'db>(
 /// Query implementation of [crate::db::SemanticGroup::generic_params_type_constraints].
 pub fn generic_params_type_constraints<'db>(
     db: &'db dyn SemanticGroup,
+    generic_params: Vec<GenericParamId<'db>>,
+) -> Vec<(TypeId<'db>, TypeId<'db>)> {
+    generic_params_type_constraints_helper(db, DummyId::dummy(db), generic_params)
+}
+
+#[salsa::tracked]
+fn generic_params_type_constraints_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _dummy: DummyId<'db>,
     generic_params: Vec<GenericParamId<'db>>,
 ) -> Vec<(TypeId<'db>, TypeId<'db>)> {
     let mut constraints = vec![];

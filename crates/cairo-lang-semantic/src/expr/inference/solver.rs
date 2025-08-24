@@ -15,7 +15,7 @@ use super::{
     ImplVarTraitItemMappings, InferenceData, InferenceError, InferenceId, InferenceResult,
     InferenceVar, LocalImplVarId,
 };
-use crate::db::{SemanticGroup, SemanticGroupData};
+use crate::db::SemanticGroup;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::imp::{
     ImplId, ImplImplId, ImplLongId, ImplLookupContext, UninferredImpl, find_candidates_at_context,
@@ -105,6 +105,7 @@ impl<'db> Ambiguity<'db> {
 
 /// Query implementation of [SemanticGroup::canonic_trait_solutions].
 /// Assumes the lookup context is already enriched by [enrich_lookup_context].
+#[salsa::tracked(cycle_result=canonic_trait_solutions_cycle)]
 pub fn canonic_trait_solutions<'db>(
     db: &'db dyn SemanticGroup,
     canonical_trait: CanonicalTrait<'db>,
@@ -144,7 +145,6 @@ pub fn canonic_trait_solutions<'db>(
 /// Cycle handling for [canonic_trait_solutions].
 pub fn canonic_trait_solutions_cycle<'db>(
     _db: &dyn SemanticGroup,
-    _input: SemanticGroupData,
     _canonical_trait: CanonicalTrait<'db>,
     _lookup_context: ImplLookupContext<'db>,
     _impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
