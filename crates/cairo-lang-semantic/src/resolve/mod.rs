@@ -287,7 +287,7 @@ pub enum ResolutionContext<'a, 'mt> {
     Statement(&'mt mut Environment<'a>),
 }
 
-/// The result of resolveing an item using `use *` imports.
+/// The result of resolving an item using `use *` imports.
 enum UseStarResult<'db> {
     /// A unique path was found, considering only the `use *` imports.
     UniquePathFound(ModuleItemInfo<'db>),
