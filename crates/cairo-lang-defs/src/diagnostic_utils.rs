@@ -8,8 +8,6 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use salsa::Database;
 
-use crate::db::DefsGroup;
-
 /// A stable location of a real, concrete syntax.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub struct StableLocation<'db> {
@@ -73,7 +71,7 @@ impl<'db> StableLocation<'db> {
     /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
     pub fn diagnostic_location_until(
         &self,
-        db: &'db dyn DefsGroup,
+        db: &'db dyn Database,
         until_stable_ptr: SyntaxStablePtrId<'db>,
     ) -> DiagnosticLocation<'db> {
         let start = self.stable_ptr.lookup(db).span_start_without_trivia(db);
@@ -83,9 +81,9 @@ impl<'db> StableLocation<'db> {
 }
 
 impl<'db> DebugWithDb<'db> for StableLocation<'db> {
-    type Db = dyn DefsGroup;
+    type Db = dyn Database;
 
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &'db dyn DefsGroup) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &'db dyn Database) -> fmt::Result {
         let diag_location = self.diagnostic_location(db);
         diag_location.fmt_location(f, db)
     }

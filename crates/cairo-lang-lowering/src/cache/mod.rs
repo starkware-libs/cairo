@@ -10,6 +10,7 @@ use cairo_lang_defs::cache::{
     CachedCrateMetadata, DefCacheLoadingData, DefCacheSavingContext, GenericParamCached,
     ImplDefIdCached, LanguageElementCached, SyntaxStablePtrIdCached, generate_crate_def_cache,
 };
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumLongId, ExternFunctionLongId, ExternTypeLongId, FreeFunctionLongId, FunctionWithBodyId,

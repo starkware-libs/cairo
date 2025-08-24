@@ -1,9 +1,9 @@
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MemberId, NamedLanguageElementId, VariantId,
 };
 use cairo_lang_filesystem::ids::CrateId;
+use salsa::Database;
 
 /// Item whose documentation can be fetched from source code.
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, salsa::Update)]
@@ -15,7 +15,7 @@ pub enum DocumentableItemId<'db> {
 }
 
 impl<'db> DocumentableItemId<'db> {
-    pub fn stable_location(&self, db: &'db dyn DefsGroup) -> Option<StableLocation<'db>> {
+    pub fn stable_location(&self, db: &'db dyn Database) -> Option<StableLocation<'db>> {
         match self {
             DocumentableItemId::Crate(_) => None,
             DocumentableItemId::LookupItem(lookup_item_id) => {
@@ -27,7 +27,7 @@ impl<'db> DocumentableItemId<'db> {
     }
 
     /// Gets the name of the item.
-    pub fn name(&self, db: &'db dyn DefsGroup) -> &'db str {
+    pub fn name(&self, db: &'db dyn Database) -> &'db str {
         match self {
             DocumentableItemId::LookupItem(LookupItemId::ModuleItem(id)) => id.name(db),
             DocumentableItemId::LookupItem(LookupItemId::ImplItem(id)) => id.name(db),

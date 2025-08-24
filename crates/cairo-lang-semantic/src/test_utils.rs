@@ -66,11 +66,6 @@ impl<'db> Upcast<'db, dyn salsa::Database> for SemanticDatabaseForTesting {
         self
     }
 }
-impl<'db> Upcast<'db, dyn DefsGroup> for SemanticDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn DefsGroup {
-        self
-    }
-}
 impl<'db> Upcast<'db, dyn SemanticGroup> for SemanticDatabaseForTesting {
     fn upcast(&'db self) -> &'db dyn SemanticGroup {
         self
