@@ -9,6 +9,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::ids::Tracked;
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ast::PathSegment;
@@ -25,7 +26,7 @@ use crate::corelib::{
     concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
     concrete_panic_destruct_trait, get_usize_ty, unit_ty,
 };
-use crate::db::{SemanticGroup, SemanticGroupData};
+use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, compute_expr_semantic};
@@ -40,7 +41,9 @@ use crate::items::generics::fmt_generic_args;
 use crate::items::imp::{ImplId, ImplLookupContext, ImplLookupContextId};
 use crate::resolve::{ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::substitution::SemanticRewriter;
-use crate::{ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id};
+use crate::{
+    ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id, types,
+};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum TypeLongId<'db> {
@@ -756,7 +759,7 @@ pub fn verify_fixed_size_array_size<'db>(
     Ok(())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::generic_type_generic_params].
+/// Implementation of [crate::db::SemanticGroup::generic_type_generic_params].
 pub fn generic_type_generic_params<'db>(
     db: &'db dyn SemanticGroup,
     generic_type: GenericTypeId<'db>,
@@ -766,6 +769,23 @@ pub fn generic_type_generic_params<'db>(
         GenericTypeId::Enum(id) => db.enum_generic_params(id),
         GenericTypeId::Extern(id) => db.extern_type_declaration_generic_params(id),
     }
+}
+
+/// Query implementation of [crate::db::SemanticGroup::generic_type_generic_params].
+pub fn generic_type_generic_params_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    generic_type: GenericTypeId<'db>,
+) -> Maybe<Vec<semantic::GenericParam<'db>>> {
+    generic_type_generic_params_helper(db, (), generic_type)
+}
+
+#[salsa::tracked]
+fn generic_type_generic_params_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _tracked: Tracked,
+    generic_type: GenericTypeId<'db>,
+) -> Maybe<Vec<semantic::GenericParam<'db>>> {
+    generic_type_generic_params(db, generic_type)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
@@ -802,7 +822,7 @@ pub fn get_impl_at_context<'db>(
     Ok(inference.rewrite(impl_id).no_err())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::single_value_type].
+/// Implementation of [crate::db::SemanticGroup::single_value_type].
 pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<bool> {
     Ok(match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
@@ -849,6 +869,15 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<bool> 
     })
 }
 
+/// Query implementation of [crate::db::SemanticGroup::single_value_type].
+#[salsa::tracked]
+pub fn single_value_type_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    ty: types::TypeId<'db>,
+) -> Maybe<bool> {
+    single_value_type(db, ty)
+}
+
 /// Adds diagnostics for a type, post semantic analysis of types.
 pub fn add_type_based_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
@@ -882,7 +911,7 @@ pub enum TypeSizeInformation {
     Other,
 }
 
-/// Query implementation of [crate::db::SemanticGroup::type_size_info].
+/// Implementation of [crate::db::SemanticGroup::type_size_info].
 pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<TypeSizeInformation> {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
@@ -933,6 +962,15 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<TypeSizeI
     Ok(TypeSizeInformation::Other)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::type_size_info].
+#[salsa::tracked(cycle_result=type_size_info_cycle)]
+pub fn type_size_info_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    ty: types::TypeId<'db>,
+) -> Maybe<TypeSizeInformation> {
+    type_size_info(db, ty)
+}
+
 /// Checks if all types in the iterator are zero sized.
 fn check_all_type_are_zero_sized<'a>(
     db: &dyn SemanticGroup,
@@ -949,8 +987,7 @@ fn check_all_type_are_zero_sized<'a>(
 
 /// Cycle handling of [crate::db::SemanticGroup::type_size_info].
 pub fn type_size_info_cycle<'db>(
-    _db: &dyn SemanticGroup,
-    _input: SemanticGroupData,
+    _db: &'db dyn SemanticGroup,
     _ty: TypeId<'db>,
 ) -> Maybe<TypeSizeInformation> {
     Ok(TypeSizeInformation::Infinite)
@@ -958,7 +995,7 @@ pub fn type_size_info_cycle<'db>(
 
 // TODO(spapini): type info lookup for non generic types needs to not depend on lookup_context.
 // This is to ensure that sierra generator will see a consistent type info of types.
-/// Query implementation of [crate::db::SemanticGroup::type_info].
+/// Implementation of [crate::db::SemanticGroup::type_info].
 pub fn type_info<'db>(
     db: &'db dyn SemanticGroup,
     lookup_context: ImplLookupContextId<'db>,
@@ -972,6 +1009,16 @@ pub fn type_info<'db>(
     let panic_destruct_impl =
         get_impl_at_context(db, lookup_context, concrete_panic_destruct_trait(db, ty), None);
     TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl }
+}
+
+/// Query implementation of [crate::db::SemanticGroup::type_info].
+#[salsa::tracked]
+pub fn type_info_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    lookup_context: ImplLookupContextId<'db>,
+    ty: TypeId<'db>,
+) -> TypeInfo<'db> {
+    type_info(db, lookup_context, ty)
 }
 
 /// Solves a concrete trait without any constraints.
@@ -995,7 +1042,7 @@ fn solve_concrete_trait_no_constraints<'db>(
     }
 }
 
-/// Query implementation of [crate::db::SemanticGroup::copyable].
+/// Implementation of [crate::db::SemanticGroup::copyable].
 pub fn copyable<'db>(
     db: &'db dyn SemanticGroup,
     ty: TypeId<'db>,
@@ -1007,7 +1054,16 @@ pub fn copyable<'db>(
     )
 }
 
-/// Query implementation of [crate::db::SemanticGroup::droppable].
+/// Query implementation of [crate::db::SemanticGroup::copyable].
+#[salsa::tracked]
+pub fn copyable_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    ty: TypeId<'db>,
+) -> Result<ImplId<'db>, InferenceError<'db>> {
+    copyable(db, ty)
+}
+
+/// Implementation of [crate::db::SemanticGroup::droppable].
 pub fn droppable<'db>(
     db: &'db dyn SemanticGroup,
     ty: TypeId<'db>,
@@ -1019,6 +1075,16 @@ pub fn droppable<'db>(
     )
 }
 
+/// Query implementation of [crate::db::SemanticGroup::droppable].
+#[salsa::tracked]
+pub fn droppable_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    ty: TypeId<'db>,
+) -> Result<ImplId<'db>, InferenceError<'db>> {
+    droppable(db, ty)
+}
+
+/// Implementation of [crate::db::SemanticGroup::priv_type_is_fully_concrete].
 pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId<'_>) -> bool {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
@@ -1040,6 +1106,15 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId<'_>) -> bo
     }
 }
 
+/// Query implementation of [crate::db::SemanticGroup::priv_type_is_fully_concrete].
+#[salsa::tracked]
+pub fn priv_type_is_fully_concrete_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    ty: types::TypeId<'db>,
+) -> bool {
+    priv_type_is_fully_concrete(db, ty)
+}
+
 pub fn priv_type_is_var_free<'db>(db: &'db dyn SemanticGroup, ty: TypeId<'db>) -> bool {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_var_free(db),
@@ -1059,6 +1134,12 @@ pub fn priv_type_is_var_free<'db>(db: &'db dyn SemanticGroup, ty: TypeId<'db>) -
                 && closure.ret_ty.is_var_free(db)
         }
     }
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_type_is_var_free].
+#[salsa::tracked]
+pub fn priv_type_is_var_free_tracked<'db>(db: &'db dyn SemanticGroup, ty: TypeId<'db>) -> bool {
+    priv_type_is_var_free(db, ty)
 }
 
 pub fn priv_type_short_name(db: &dyn SemanticGroup, ty: TypeId<'_>) -> String {
@@ -1099,6 +1180,14 @@ pub fn priv_type_short_name(db: &dyn SemanticGroup, ty: TypeId<'_>) -> String {
         }
         other => other.format(db),
     }
+}
+
+#[salsa::tracked]
+pub fn priv_type_short_name_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    ty: types::TypeId<'db>,
+) -> String {
+    priv_type_short_name(db, ty)
 }
 
 /// Peels all wrapping Snapshot (`@`) from the type.

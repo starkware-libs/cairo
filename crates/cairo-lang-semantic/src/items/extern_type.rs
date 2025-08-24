@@ -33,7 +33,7 @@ pub struct ExternTypeDeclarationData<'db> {
 }
 
 // Selectors.
-/// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::extern_type_declaration_diagnostics].
 pub fn extern_type_declaration_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     extern_type_id: ExternTypeId<'db>,
@@ -42,7 +42,16 @@ pub fn extern_type_declaration_diagnostics<'db>(
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
-/// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params].
+
+/// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_diagnostics].
+#[salsa::tracked]
+pub fn extern_type_declaration_diagnostics_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_type_id: ExternTypeId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    extern_type_declaration_diagnostics(db, extern_type_id)
+}
+/// Implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params].
 pub fn extern_type_declaration_generic_params<'db>(
     db: &'db dyn SemanticGroup,
     extern_type_id: ExternTypeId<'db>,
@@ -50,8 +59,17 @@ pub fn extern_type_declaration_generic_params<'db>(
     Ok(db.extern_type_declaration_generic_params_data(extern_type_id)?.generic_params)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params].
+#[salsa::tracked]
+pub fn extern_type_declaration_generic_params_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_type_id: ExternTypeId<'db>,
+) -> Maybe<Vec<GenericParam<'db>>> {
+    extern_type_declaration_generic_params(db, extern_type_id)
+}
+
 // Computation.
-/// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params_data].
+/// Implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params_data].
 pub fn extern_type_declaration_generic_params_data<'db>(
     db: &'db dyn SemanticGroup,
     extern_type_id: ExternTypeId<'db>,
@@ -83,7 +101,16 @@ pub fn extern_type_declaration_generic_params_data<'db>(
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_extern_type_declaration_data].
+/// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params_data].
+#[salsa::tracked]
+pub fn extern_type_declaration_generic_params_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_type_id: ExternTypeId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
+    extern_type_declaration_generic_params_data(db, extern_type_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::priv_extern_type_declaration_data].
 pub fn priv_extern_type_declaration_data<'db>(
     db: &'db dyn SemanticGroup,
     extern_type_id: ExternTypeId<'db>,
@@ -113,10 +140,28 @@ pub fn priv_extern_type_declaration_data<'db>(
     Ok(ExternTypeDeclarationData { diagnostics: diagnostics.build(), generic_params, attributes })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::extern_type_attributes].
+/// Query implementation of [crate::db::SemanticGroup::priv_extern_type_declaration_data].
+#[salsa::tracked]
+pub fn priv_extern_type_declaration_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_type_id: ExternTypeId<'db>,
+) -> Maybe<ExternTypeDeclarationData<'db>> {
+    priv_extern_type_declaration_data(db, extern_type_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::extern_type_attributes].
 pub fn extern_type_attributes<'db>(
     db: &'db dyn SemanticGroup,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_extern_type_declaration_data(extern_type_id)?.attributes)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::extern_type_attributes].
+#[salsa::tracked]
+pub fn extern_type_attributes_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    extern_type_id: ExternTypeId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    extern_type_attributes(db, extern_type_id)
 }

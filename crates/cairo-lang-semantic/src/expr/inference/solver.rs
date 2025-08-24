@@ -15,7 +15,7 @@ use super::{
     ImplVarTraitItemMappings, InferenceData, InferenceError, InferenceId, InferenceResult,
     InferenceVar, LocalImplVarId,
 };
-use crate::db::{SemanticGroup, SemanticGroupData};
+use crate::db::SemanticGroup;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::imp::{
     ImplId, ImplImplId, ImplLongId, ImplLookupContext, ImplLookupContextId, UninferredImpl,
@@ -103,7 +103,7 @@ impl<'db> Ambiguity<'db> {
     }
 }
 
-/// Query implementation of [SemanticGroup::canonic_trait_solutions].
+/// Implementation of [SemanticGroup::canonic_trait_solutions].
 /// Assumes the lookup context is already enriched by [enrich_lookup_context].
 pub fn canonic_trait_solutions<'db>(
     db: &'db dyn SemanticGroup,
@@ -136,10 +136,21 @@ pub fn canonic_trait_solutions<'db>(
     ))
 }
 
+/// Query implementation of [SemanticGroup::canonic_trait_solutions].
+/// Assumes the lookup context is already enriched by [enrich_lookup_context].
+#[salsa::tracked(cycle_result=canonic_trait_solutions_cycle)]
+pub fn canonic_trait_solutions_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    canonical_trait: CanonicalTrait<'db>,
+    lookup_context: ImplLookupContextId<'db>,
+    impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
+) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
+    canonic_trait_solutions(db, canonical_trait, lookup_context, impl_type_bounds)
+}
+
 /// Cycle handling for [canonic_trait_solutions].
 pub fn canonic_trait_solutions_cycle<'db>(
     _db: &dyn SemanticGroup,
-    _input: SemanticGroupData,
     _canonical_trait: CanonicalTrait<'db>,
     _lookup_context: ImplLookupContextId<'db>,
     _impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
