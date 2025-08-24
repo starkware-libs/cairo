@@ -347,6 +347,12 @@ pub trait DefsGroup: Database {
         &'db self,
         macro_call_id: MacroCallId<'db>,
     ) -> Maybe<ast::ItemInlineMacro<'db>>;
+    /// Returns the ancestors of a module.
+    fn module_ancestors<'db>(&'db self, module_id: ModuleId<'db>) -> OrderedHashSet<ModuleId<'db>>;
+    /// Returns the module that the module is perceives as.
+    /// Specifically if this is a macro call, it returns the module that the macro call was called
+    /// from, including recursive calls.
+    fn module_percieved_module<'db>(&'db self, module_id: ModuleId<'db>) -> ModuleId<'db>;
     fn module_generated_file_aux_data<'db>(
         &'db self,
         module_id: ModuleId<'db>,
@@ -1469,6 +1475,39 @@ pub fn module_extern_function_by_id<'db>(
     let module_extern_functions =
         db.module_extern_functions(extern_function_id.module_file_id(db).0)?;
     Ok(module_extern_functions[&extern_function_id].clone())
+}
+
+pub fn module_ancestors<'db>(
+    db: &'db dyn DefsGroup,
+    module_id: ModuleId<'db>,
+) -> OrderedHashSet<ModuleId<'db>> {
+    let mut current = module_id;
+    let mut ancestors = OrderedHashSet::default();
+    loop {
+        match current {
+            ModuleId::CrateRoot(_) => {
+                ancestors.insert(current);
+                return ancestors;
+            }
+            ModuleId::Submodule(submodule_id) => {
+                ancestors.insert(current);
+                current = submodule_id.parent_module(db);
+            }
+            ModuleId::MacroCall { id, generated_file_id: _ } => {
+                current = id.parent_module(db);
+            }
+        }
+    }
+}
+
+pub fn module_percieved_module<'db>(
+    db: &'db dyn DefsGroup,
+    mut module_id: ModuleId<'db>,
+) -> ModuleId<'db> {
+    while let ModuleId::MacroCall { id, generated_file_id: _ } = module_id {
+        module_id = id.parent_module(db);
+    }
+    module_id
 }
 
 /// Returns the generated_file_infos of the given module.
