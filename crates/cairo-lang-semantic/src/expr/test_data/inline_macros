@@ -1979,6 +1979,36 @@ import_a_star!();
 
 //! > ==========================================================================
 
+//! > Test use-path as placeholder.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    pub fn bar() {}
+}
+
+macro import {
+    ($path:expr) => {
+        use $path;
+    };
+}
+
+import!(a::bar);
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
 //! > Test macro generating function inside existing module.
 
 //! > test_runner_name

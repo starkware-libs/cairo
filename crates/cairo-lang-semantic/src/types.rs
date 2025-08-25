@@ -4,7 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, ModuleFileId, ModuleId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, ModuleId,
     NamedLanguageElementId, StructId, TraitTypeId, UnstableSalsaId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
@@ -1029,11 +1029,8 @@ pub fn wrap_in_snapshots<'db>(
 }
 
 /// Returns `true` if coupons are enabled in the module.
-pub(crate) fn are_coupons_enabled(
-    db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId<'_>,
-) -> bool {
-    let owning_crate = module_file_id.0.owning_crate(db);
+pub(crate) fn are_coupons_enabled(db: &dyn SemanticGroup, module_id: ModuleId<'_>) -> bool {
+    let owning_crate = module_id.owning_crate(db);
     let Some(config) = db.crate_config(owning_crate) else { return false };
     config.settings.experimental_features.coupons
 }
