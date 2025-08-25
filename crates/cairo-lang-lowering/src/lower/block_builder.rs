@@ -76,27 +76,58 @@ impl<'db> BlockBuilder<'db> {
         );
     }
 
+    /// Returns the [VarUsage] for a given `member_path`.
+    ///
+    /// If the `member_path` is not in the semantics, returns `None`.
     pub fn get_ref(
         &mut self,
         ctx: &mut LoweringContext<'db, '_>,
         member_path: &ExprVarMemberPath<'db>,
     ) -> Option<VarUsage<'db>> {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
-        self.get_ref_raw(ctx, &member_path.into(), location)
+        self.get_ref_raw(ctx, &member_path.into(), location, None)
     }
 
+    /// Returns the [VarUsage] for a given `member_path`.
+    ///
+    /// If `member_path` is not in the semantics, or the resulting [VarUsage] does not have the
+    /// expected type, returns `None`.
+    pub fn get_ref_of_type(
+        &mut self,
+        ctx: &mut LoweringContext<'db, '_>,
+        member_path: &ExprVarMemberPath<'db>,
+        expected_ty: semantic::TypeId<'db>,
+    ) -> Option<VarUsage<'db>> {
+        let location = ctx.get_location(member_path.stable_ptr().untyped());
+        self.get_ref_raw(ctx, &member_path.into(), location, Some(expected_ty))
+    }
+
+    /// Returns the [VarUsage] for a given `member_path`.
+    ///
+    /// If `expected_ty` is given (`Some`), returns `None` if the resulting [VarUsage] does not have
+    /// the expected type.
     pub fn get_ref_raw(
         &mut self,
         ctx: &mut LoweringContext<'db, '_>,
         member_path: &MemberPath<'db>,
         location: LocationId<'db>,
+        expected_ty: Option<semantic::TypeId<'db>>,
     ) -> Option<VarUsage<'db>> {
-        self.semantics
-            .get(
-                BlockStructRecomposer { statements: &mut self.statements, ctx, location },
-                member_path,
-            )
-            .map(|var_id| VarUsage { var_id, location })
+        let res = self.semantics.get(
+            BlockStructRecomposer { statements: &mut self.statements, ctx, location },
+            member_path,
+        );
+
+        if let Some(res) = res {
+            if let Some(expected_ty) = expected_ty
+                && ctx.variables[res].ty != expected_ty
+            {
+                return None;
+            }
+            Some(VarUsage { var_id: res, location })
+        } else {
+            None
+        }
     }
 
     /// Introduces a semantic variable as the representation of the given member path.
@@ -352,7 +383,10 @@ impl<'db> SealedGotoCallsite<'db> {
         for (semantic, remapped_var) in semantic_remapping.member_path_value.iter() {
             assert!(
                 remapping
-                    .insert(*remapped_var, builder.get_ref_raw(ctx, semantic, location).unwrap())
+                    .insert(
+                        *remapped_var,
+                        builder.get_ref_raw(ctx, semantic, location, None).unwrap()
+                    )
                     .is_none()
             );
         }
