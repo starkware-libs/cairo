@@ -1,11 +1,14 @@
 use std::fmt::Write;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_diagnostics::{
     DiagnosticEntry, Diagnostics, FormattedDiagnosticEntry, PluginFileDiagnosticNotes, Severity,
 };
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use thiserror::Error;
@@ -182,17 +185,20 @@ impl<'a> DiagnosticsReporter<'a> {
             let modules = db.crate_modules(crate_id);
             let mut processed_file_ids = UnorderedHashSet::<_>::default();
             for module_id in modules.iter() {
-                let diagnostic_notes =
-                    db.module_plugin_diagnostics_notes(*module_id).unwrap_or_default();
+                let default = Default::default();
+                let diagnostic_notes = module_id
+                    .module_data(db)
+                    .map(|data| data.diagnostics_notes(db))
+                    .unwrap_or(&default);
 
                 if let Ok(module_files) = db.module_files(*module_id) {
                     for file_id in module_files.iter().copied() {
                         if processed_file_ids.insert(file_id) {
                             found_diagnostics |= self.check_diag_group(
                                 db.as_dyn_database(),
-                                db.file_syntax_diagnostics(file_id),
+                                db.file_syntax_diagnostics(file_id).clone(),
                                 ignore_warnings_in_crate,
-                                &diagnostic_notes,
+                                diagnostic_notes,
                             );
                         }
                     }
@@ -203,7 +209,7 @@ impl<'a> DiagnosticsReporter<'a> {
                         db.upcast(),
                         group,
                         ignore_warnings_in_crate,
-                        &diagnostic_notes,
+                        diagnostic_notes,
                     );
                 }
 
@@ -216,7 +222,7 @@ impl<'a> DiagnosticsReporter<'a> {
                         db.upcast(),
                         group,
                         ignore_warnings_in_crate,
-                        &diagnostic_notes,
+                        diagnostic_notes,
                     );
                 }
             }

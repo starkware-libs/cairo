@@ -1,8 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::FunctionWithBodyId;
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_utils::Upcast;
+use salsa::Database;
 
 use crate::db::SemanticGroup;
 use crate::{ExprId, PatternId, StatementId};
@@ -19,14 +18,8 @@ impl<'db> Upcast<'db, dyn SemanticGroup> for ExprFormatter<'db> {
         self.db
     }
 }
-impl<'db> Upcast<'db, dyn DefsGroup> for ExprFormatter<'db> {
-    fn upcast(&'db self) -> &'db dyn DefsGroup {
-        self.db.upcast()
-    }
-}
-
-impl<'db> Upcast<'db, dyn ParserGroup> for ExprFormatter<'db> {
-    fn upcast(&'db self) -> &'db dyn ParserGroup {
+impl<'db> Upcast<'db, dyn Database> for ExprFormatter<'db> {
+    fn upcast(&'db self) -> &'db dyn Database {
         self.db.upcast()
     }
 }

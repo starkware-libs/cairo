@@ -1,4 +1,3 @@
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -29,9 +28,11 @@ fn contains_cycles_test(
         .unwrap()
         .expect_with_db(db, "Unexpected diagnostics.");
 
-    let result = db
-        .module_free_functions(test_module.module_id)
+    let result = test_module
+        .module_id
+        .module_data(db)
         .unwrap()
+        .free_functions(db)
         .iter()
         .map(|(free_function_id, _)| {
             let function_id =

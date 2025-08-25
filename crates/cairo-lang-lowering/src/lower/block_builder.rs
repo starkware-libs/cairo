@@ -224,11 +224,13 @@ impl<'db> BlockBuilder<'db> {
         sealed_blocks: Vec<SealedBlockBuilder<'db>>,
         location: LocationId<'db>,
     ) -> LoweringResult<'db, LoweredExpr<'db>> {
-        let Some((merged_expr, following_block)) = self.merge_sealed(ctx, sealed_blocks, location)
+        let sealed_blocks = sealed_blocks.into_iter().flatten().collect_vec();
+
+        let Some((new_scope, merged_expr)) =
+            merge_sealed_block_builders(ctx, sealed_blocks, self, location)
         else {
             return Err(LoweringFlowError::Match(match_info));
         };
-        let new_scope = self.sibling_block_builder(following_block);
         let prev_scope = std::mem::replace(self, new_scope);
         prev_scope.finalize(ctx, BlockEnd::Match { info: match_info });
         Ok(merged_expr)
@@ -291,97 +293,6 @@ impl<'db> BlockBuilder<'db> {
                 .add(ctx, &mut self.statements);
 
         (var_usage, ClosureInfo { members, snapshots })
-    }
-
-    /// Merges sibling sealed blocks.
-    /// If there are reachable blocks, returns the converged expression of the blocks, usable at the
-    /// calling builder, and the following block ID.
-    /// Otherwise, returns None.
-    fn merge_sealed(
-        &mut self,
-        ctx: &mut LoweringContext<'db, '_>,
-        sealed_blocks: Vec<SealedBlockBuilder<'db>>,
-        location: LocationId<'db>,
-    ) -> Option<(LoweredExpr<'db>, BlockId)> {
-        // TODO(spapini): When adding Gotos, include the callsite target in the required information
-        // to merge.
-        // TODO(spapini): Don't remap if we have a single reachable branch.
-
-        let mut semantic_remapping = SemanticRemapping::default();
-        let mut n_reachable_blocks = 0;
-
-        // Remap Variables from all blocks.
-        for sealed_block in &sealed_blocks {
-            let Some(SealedGotoCallsite { builder: subscope, expr }) = sealed_block else {
-                continue;
-            };
-            n_reachable_blocks += 1;
-            if let Some(var_usage) = expr {
-                semantic_remapping.expr.get_or_insert_with(|| {
-                    let var = ctx.variables[var_usage.var_id].clone();
-                    ctx.variables.variables.alloc(var)
-                });
-            }
-            for member_path in subscope.changed_member_paths.iter() {
-                let Some(containing_member_path) =
-                    self.semantics.topmost_mapped_containing_member_path(member_path.clone())
-                else {
-                    // This variable is local to the subscope.
-                    continue;
-                };
-                // Consider the topmost used(==mapped) member path that contains the changed member,
-                // as it might be needed in the merge site.
-                let mut queue = vec![containing_member_path];
-                while let Some(v) = queue.pop() {
-                    // If we reached the original member path, it needs to be restructured - so no
-                    // need to continue recursively.
-                    if v != *member_path {
-                        // If it is scattered - add its members instead of itself, to avoid a
-                        // possibly unnecessary restructuring.
-                        if let Some(members) = self.semantics.get_scattered_members(&v) {
-                            queue.extend(members);
-                            continue;
-                        }
-                    }
-                    // Actually adding to the remapping.
-                    semantic_remapping.member_path_value.entry(v.clone()).or_insert_with(|| {
-                        let ty = get_ty(ctx, &v);
-                        ctx.new_var(VarRequest { ty, location })
-                    });
-                }
-            }
-        }
-
-        // Prune parents from semantic_remapping.
-        for member_path in semantic_remapping.member_path_value.keys().cloned().collect_vec() {
-            let mut current = member_path.clone();
-            while let MemberPath::Member { parent, .. } = current {
-                if semantic_remapping.member_path_value.contains_key(&*parent) {
-                    semantic_remapping.member_path_value.swap_remove(&member_path);
-                }
-                current = *parent;
-            }
-        }
-
-        require(n_reachable_blocks != 0)?;
-
-        // If there are reachable blocks, create a new empty block for the code after this match.
-        let following_block = ctx.blocks.alloc_empty();
-
-        for sealed_goto_callsite in sealed_blocks.into_iter().flatten() {
-            sealed_goto_callsite.finalize(ctx, following_block, &semantic_remapping, location);
-        }
-
-        // Apply remapping on builder.
-        for (semantic, var) in semantic_remapping.member_path_value {
-            self.update_ref_raw(ctx, semantic, var, location);
-        }
-
-        let expr = match semantic_remapping.expr {
-            Some(var_id) => LoweredExpr::AtVariable(VarUsage { var_id, location }),
-            None => LoweredExpr::Tuple { exprs: vec![], location },
-        };
-        Some((expr, following_block))
     }
 
     /// Destructures a closure.

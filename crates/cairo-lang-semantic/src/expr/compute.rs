@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use ast::PathSegment;
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::{get_all_path_leaves, validate_attributes_flat};
+use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves, validate_attributes_flat};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, LookupItemId, MemberId,
@@ -18,10 +18,12 @@ use cairo_lang_defs::ids::{
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPluginMetadata};
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::cfg::CfgSet;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{
     CodeMapping, CodeOrigin, FileKind, FileLongId, StrRef, VirtualFile,
 };
 use cairo_lang_filesystem::span::TextOffset;
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast::{
     BinaryOperator, BlockOrIf, ClosureParamWrapper, ConditionListAnd, ExprPtr,
@@ -662,7 +664,7 @@ fn expand_inline_macro<'db>(
             syntax,
             &MacroPluginMetadata {
                 cfg_set: &ctx.cfg_set,
-                declared_derives: &ctx.db.declared_derives(crate_id),
+                declared_derives: ctx.db.declared_derives(crate_id),
                 allowed_features: &ctx
                     .resolver
                     .data
@@ -4555,7 +4557,7 @@ fn validate_statement_attributes<'db>(
     let mut diagnostics = vec![];
     validate_attributes_flat(
         ctx.db,
-        &allowed_attributes,
+        allowed_attributes,
         &OrderedHashSet::default(),
         syntax,
         &mut diagnostics,

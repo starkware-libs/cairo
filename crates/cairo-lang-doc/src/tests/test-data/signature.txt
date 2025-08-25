@@ -78,6 +78,30 @@ fn test_fixed_size_array(param: [u32; 8]) -> [u32; 8] {
     return param;
 }
 
+macro count_idents {
+    ($x:ident) => { 1 };
+
+    ($x:ident, $y:ident) => { 2 };
+
+    ($x:ident, $y:ident, $z:ident) => { 3 };
+
+    ($x:ident $y:ident $z:ident) => { 3 };
+
+    ($x:ident | $y:ident | $z:ident) => { 3 };
+
+    (abc {$x:ident, (abc $y:ident) }) => { 2 };
+}
+
+macro matcher_star {
+    ($($x:expr), *) => { 222 };
+}
+
+macro square_brackets_redundant_whitespace {
+    [$x:ident  ] => {
+        println!("{}", $x)
+	};
+}
+
 //! > Item signature #1
 
 //! > Item documentation #1
@@ -302,3 +326,35 @@ fn test_fixed_size_array(param: [u32; 8]) -> [u32; 8]
 //! > Item documentation #29
 
 //! > Item documentation tokens #29
+
+//! > Item signature #30
+macro count_idents {
+    ($x:ident) => { ... };
+    ($x:ident, $y:ident) => { ... };
+    ($x:ident, $y:ident, $z:ident) => { ... };
+    ($x:ident $y:ident $z:ident) => { ... };
+    ($x:ident | $y:ident | $z:ident) => { ... };
+    (abc {$x:ident, (abc $y:ident) }) => { ... };
+} => { ... }
+
+//! > Item documentation #30
+
+//! > Item documentation tokens #30
+
+//! > Item signature #31
+macro matcher_star {
+    ($($x:expr), *) => { ... };
+} => { ... }
+
+//! > Item documentation #31
+
+//! > Item documentation tokens #31
+
+//! > Item signature #32
+macro square_brackets_redundant_whitespace {
+    [$x:ident] => { ... };
+} => { ... }
+
+//! > Item documentation #32
+
+//! > Item documentation tokens #32

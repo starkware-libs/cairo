@@ -13,8 +13,8 @@ use cairo_lang_defs::ids::{
     TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, StrRef};
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -86,13 +86,7 @@ pub trait Elongate {
 // Declarations and definitions must not depend on other definitions, only other declarations.
 // This prevents cycles where there shouldn't be any.
 #[cairo_lang_proc_macros::query_group]
-pub trait SemanticGroup:
-    DefsGroup
-    + for<'db> Upcast<'db, dyn DefsGroup>
-    + for<'db> Upcast<'db, dyn ParserGroup>
-    + for<'db> Upcast<'db, dyn salsa::Database>
-    + Elongate
-{
+pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + Elongate {
     // Const.
     // ====
     /// Private query to compute data about a constant definition.
@@ -1683,11 +1677,6 @@ pub trait SemanticGroup:
         &'db self,
         macro_call_id: MacroCallId<'db>,
     ) -> Maybe<ModuleId<'db>>;
-    /// Returns all ancestors (parents) and all macro-generated modules within them.
-    fn module_fully_accessible_modules<'db>(
-        &'db self,
-        module_id: ModuleId<'db>,
-    ) -> OrderedHashSet<ModuleId<'db>>;
     /// Returns the semantic diagnostics of a macro call.
     #[salsa::invoke(items::macro_call::macro_call_diagnostics)]
     #[salsa::cycle(items::macro_call::macro_call_diagnostics_cycle)]
@@ -1947,7 +1936,9 @@ fn module_semantic_diagnostics<'db>(
     module_id: ModuleId<'db>,
 ) -> Maybe<Diagnostics<'db, SemanticDiagnostic<'db>>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for (_module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)?.iter().cloned() {
+    for (_module_file_id, plugin_diag) in
+        module_id.module_data(db)?.plugin_diagnostics(db).iter().cloned()
+    {
         diagnostics.add(SemanticDiagnostic::new(
             match plugin_diag.inner_span {
                 None => StableLocation::new(plugin_diag.stable_ptr),
@@ -1962,7 +1953,7 @@ fn module_semantic_diagnostics<'db>(
     diagnostics.extend(data.diagnostics.clone());
     // TODO(Gil): Aggregate diagnostics for subitems with semantic model (i.e. impl function, trait
     // functions and generic params) directly and not via the parent item.
-    for item in db.module_items(module_id)?.iter() {
+    for item in module_id.module_data(db)?.items(db).iter() {
         match item {
             ModuleItemId::Constant(const_id) => {
                 diagnostics.extend(db.constant_semantic_diagnostics(*const_id));
@@ -2031,7 +2022,7 @@ fn module_semantic_diagnostics<'db>(
             }
         }
     }
-    for global_use in db.module_global_uses(module_id)?.keys() {
+    for global_use in module_id.module_data(db)?.global_uses(db).keys() {
         diagnostics.extend(db.global_use_semantic_diagnostics(*global_use));
     }
     for macro_call in db.module_macro_calls_ids(module_id)?.iter() {
@@ -2353,7 +2344,7 @@ impl<T: SemanticGroup + ?Sized> PluginSuiteInput for T {}
 /// Returns all ancestors (parents) of the given module, including the module itself, in order from
 /// closest to farthest.
 pub fn module_ancestors<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     mut module_id: ModuleId<'db>,
 ) -> Vec<ModuleId<'db>> {
     let mut ancestors = Vec::new();

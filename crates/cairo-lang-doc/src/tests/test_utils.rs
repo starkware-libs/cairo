@@ -11,6 +11,7 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::{Intern, Upcast};
+use salsa::Database;
 
 use crate::db::DocGroup;
 
@@ -57,18 +58,8 @@ impl<'db> Upcast<'db, dyn DocGroup> for TestDatabase {
         self
     }
 }
-impl<'db> Upcast<'db, dyn DefsGroup> for TestDatabase {
-    fn upcast(&self) -> &dyn DefsGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn salsa::Database> for TestDatabase {
-    fn upcast(&self) -> &dyn salsa::Database {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn ParserGroup> for TestDatabase {
-    fn upcast(&self) -> &dyn ParserGroup {
+impl<'db> Upcast<'db, dyn Database> for TestDatabase {
+    fn upcast(&self) -> &dyn Database {
         self
     }
 }
@@ -78,7 +69,7 @@ impl<'db> Upcast<'db, dyn SemanticGroup> for TestDatabase {
     }
 }
 
-pub fn setup_test_module(db: &mut dyn DefsGroup, content: &str) {
+pub fn setup_test_module(db: &mut dyn Database, content: &str) {
     let crate_id = test_crate_id(db);
     let directory = Directory::Real("src".into());
     set_crate_config!(db, crate_id, Some(CrateConfiguration::default_for_root(directory)));
@@ -91,11 +82,11 @@ pub fn setup_test_module(db: &mut dyn DefsGroup, content: &str) {
     assert_eq!(syntax_diagnostics, "");
 }
 
-pub fn test_crate_id<'db>(db: &'db dyn DefsGroup) -> CrateId<'db> {
+pub fn test_crate_id<'db>(db: &'db dyn Database) -> CrateId<'db> {
     CrateId::plain(db, "test")
 }
 
-pub fn setup_test_module_without_syntax_diagnostics(db: &mut dyn DefsGroup, content: &str) {
+pub fn setup_test_module_without_syntax_diagnostics(db: &mut dyn Database, content: &str) {
     let crate_id = test_crate_id(db);
     let directory = Directory::Real("src".into());
     set_crate_config!(db, crate_id, Some(CrateConfiguration::default_for_root(directory)));

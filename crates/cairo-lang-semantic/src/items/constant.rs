@@ -2,6 +2,7 @@ use std::iter::zip;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ConstantId, ExternFunctionId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
     NamedLanguageElementId, TopLevelLanguageElementId, TraitConstantId, TraitId, VarId,

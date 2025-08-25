@@ -340,6 +340,11 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
             }
         }
     }
+
+    /// Clears the map, removing all key-value pairs. Keeps the allocated memory for reuse.
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
 }
 
 impl<Key, Q: ?Sized, Value, BH: BuildHasher> Index<&Q> for UnorderedHashMap<Key, Value, BH>

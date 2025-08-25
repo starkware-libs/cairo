@@ -4,12 +4,15 @@ use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId,
     ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitId, TraitItemId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
-use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings, default_crate_settings};
+use cairo_lang_filesystem::db::{
+    CORELIB_CRATE_NAME, CrateSettings, FilesGroup, default_crate_settings,
+};
 use cairo_lang_filesystem::ids::{CodeMapping, CrateId, CrateLongId, StrRef};
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
@@ -285,7 +288,7 @@ pub enum ResolutionContext<'a, 'mt> {
     Statement(&'mt mut Environment<'a>),
 }
 
-/// The result of resolveing an item using `use *` imports.
+/// The result of resolving an item using `use *` imports.
 enum UseStarResult<'db> {
     /// A unique path was found, considering only the `use *` imports.
     UniquePathFound(ModuleItemInfo<'db>),
