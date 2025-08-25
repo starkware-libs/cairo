@@ -44,28 +44,6 @@ impl<'db> SemanticLoweringMapping<'db> {
         }
     }
 
-    /// Returns the scattered members of the given member path, or None if the member path is not
-    /// scattered.
-    pub fn get_scattered_members(
-        &self,
-        member_path: &MemberPath<'db>,
-    ) -> Option<Vec<MemberPath<'db>>> {
-        let Some(Value::Scattered(scattered)) = self.scattered.get(member_path) else {
-            return None;
-        };
-        Some(
-            scattered
-                .members
-                .iter()
-                .map(|(member_id, _)| MemberPath::Member {
-                    parent: member_path.clone().into(),
-                    member_id: *member_id,
-                    concrete_struct_id: scattered.concrete_struct_id,
-                })
-                .collect(),
-        )
-    }
-
     pub fn destructure_closure<TContext: StructRecomposer<'db>>(
         &mut self,
         ctx: &mut TContext,
