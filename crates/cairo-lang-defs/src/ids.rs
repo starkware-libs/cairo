@@ -546,6 +546,11 @@ impl<'db> UnstableSalsaId for FreeFunctionId<'db> {
 
 // --- Impls ---
 define_top_level_language_element_id!(ImplDefId, ImplDefLongId, ast::ItemImpl<'db>);
+impl<'db> UnstableSalsaId for ImplDefId<'db> {
+    fn get_internal_id(&self) -> salsa::Id {
+        self.0
+    }
+}
 
 // --- Impl type items ---
 define_named_language_element_id!(ImplTypeDefId, ImplTypeDefLongId, ast::ItemTypeAlias<'db>);
@@ -643,6 +648,11 @@ define_top_level_language_element_id!(
     ast::ItemTypeAlias<'db>
 );
 define_top_level_language_element_id!(ImplAliasId, ImplAliasLongId, ast::ItemImplAlias<'db>);
+impl<'db> UnstableSalsaId for ImplAliasId<'db> {
+    fn get_internal_id(&self) -> salsa::Id {
+        self.0
+    }
+}
 define_top_level_language_element_id!(ExternTypeId, ExternTypeLongId, ast::ItemExternType<'db>);
 
 // --- Trait ---
@@ -702,6 +712,11 @@ impl<'db> TraitImplId<'db> {
 impl<'db> TopLevelLanguageElementId<'db> for TraitImplId<'db> {
     fn full_path(&self, db: &dyn Database) -> String {
         format!("{}::{}", self.trait_id(db).full_path(db), self.name(db))
+    }
+}
+impl<'db> UnstableSalsaId for TraitImplId<'db> {
+    fn get_internal_id(&self) -> salsa::Id {
+        self.0
     }
 }
 
@@ -804,6 +819,28 @@ impl<'db> GenericParamLongId<'db> {
         let item_ptr = self.1.0.nth_parent(db, 3);
         GenericItemId::from_ptr(db, self.0, item_ptr)
     }
+
+    /// Returns `true` if the generic parameter has type constraints syntax.
+    pub fn has_type_constraints_syntax(&self, db: &dyn Database) -> bool {
+        let param = ast::GenericParamPtr(self.1.0).lookup(db);
+        match param {
+            ast::GenericParam::Type(_) => false,
+            ast::GenericParam::Const(_) => false,
+            ast::GenericParam::ImplNamed(imp) => {
+                matches!(
+                    imp.type_constrains(db),
+                    ast::OptionAssociatedItemConstraints::AssociatedItemConstraints(_)
+                )
+            }
+            ast::GenericParam::ImplAnonymous(imp) => {
+                matches!(
+                    imp.type_constrains(db),
+                    ast::OptionAssociatedItemConstraints::AssociatedItemConstraints(_)
+                )
+            }
+            ast::GenericParam::NegativeImpl(_) => false,
+        }
+    }
 }
 impl<'db> GenericParamId<'db> {
     pub fn name(&self, db: &'db dyn Database) -> Option<&'db str> {
@@ -841,6 +878,13 @@ impl<'db> GenericParamId<'db> {
         self.long(db).generic_item(db)
     }
 }
+
+impl<'db> UnstableSalsaId for GenericParamId<'db> {
+    fn get_internal_id(&self) -> salsa::Id {
+        self.0
+    }
+}
+
 impl<'db> DebugWithDb<'db> for GenericParamLongId<'db> {
     type Db = dyn Database;
 
