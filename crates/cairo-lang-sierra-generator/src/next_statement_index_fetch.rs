@@ -40,6 +40,8 @@ impl<'db> NextStatementIndexFetch<'db> {
     /// Returns the index of a statement pointed by the given label.
     pub fn resolve_label(&self, label: &LabelId<'db>) -> usize {
         // TODO(lior): handle missing labels.
-        *self.label_to_statement.get(label).unwrap()
+        *self.label_to_statement.get(label).unwrap_or_else(|| {
+            panic!("Missing label in NextStatementIndexFetch::resolve_label: {label:?}")
+        })
     }
 }
