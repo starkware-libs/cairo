@@ -394,17 +394,12 @@ pub fn get_concrete_libfunc_id<'db>(
     for generic_arg in &concrete_function.generic_args {
         match generic_arg {
             semantic::GenericArgumentId::Type(ty) => {
-                match db.get_concrete_type_id(*ty) {
-                    Ok(concrete_type_id) => {
-                        generic_args.push(GenericArg::Type(concrete_type_id))
-                    }
-                    Err(_diag) => {
-                        panic!(
-                            "Failed to obtain concrete type id for generic type argument: {:?}",
-                            ty
-                        );
-                    }
-                }
+                // TODO(lior): How should the following unwrap() be handled?
+                generic_args.push(GenericArg::Type(db.get_concrete_type_id(*ty).unwrap_or_else(|_| {
+                    panic!(
+                        "Failed to obtain concrete type id for generic type argument: {ty:?}"
+                    )
+                })))
             }
             semantic::GenericArgumentId::Constant(value_id) => {
                 let size = value_id
