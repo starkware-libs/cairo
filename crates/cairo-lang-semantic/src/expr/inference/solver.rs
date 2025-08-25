@@ -235,7 +235,9 @@ fn solve_candidate<'db>(
     lookup_context: ImplLookupContextId<'db>,
     impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
 ) -> InferenceResult<SolutionSet<'db, CanonicalImpl<'db>>> {
-    let candidate_concrete_trait = candidate.concrete_trait(db).unwrap();
+    let Ok(candidate_concrete_trait) = candidate.concrete_trait(db) else {
+        return Err(super::ErrorSet);
+    };
     // If the candidate is fully concrete, or its a generic which is var free, there is nothing
     // to substitute. A generic param may not be var free, if it contains impl types.
     let candidate_final = matches!(candidate, UninferredImpl::GenericParam(_))

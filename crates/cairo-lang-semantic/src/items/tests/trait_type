@@ -1938,9 +1938,7 @@ error: `Self` is not supported in this context.
 //! > `Self` segment for a result type.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
-
-//! > TODO(orizi): Make this not generate diagnostics.
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {}
@@ -1974,29 +1972,6 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error[E0002]: Method `my_into` could not be called on type `core::integer::u16`.
-Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
- --> lib.cairo:20:43
-        let _: Self::MyTraitType = (3_u16.my_into(), 3_u16.my_into());
-                                          ^^^^^^^
-
-error[E0002]: Method `my_into` could not be called on type `core::integer::u16`.
-Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
- --> lib.cairo:20:60
-        let _: Self::MyTraitType = (3_u16.my_into(), 3_u16.my_into());
-                                                           ^^^^^^^
-
-error[E0002]: Method `my_into` could not be called on type `core::integer::u16`.
-Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
- --> lib.cairo:21:16
-        (3_u16.my_into(), 3_u16.my_into())
-               ^^^^^^^
-
-error[E0002]: Method `my_into` could not be called on type `core::integer::u16`.
-Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
- --> lib.cairo:21:33
-        (3_u16.my_into(), 3_u16.my_into())
-                                ^^^^^^^
 
 //! > ==========================================================================
 
