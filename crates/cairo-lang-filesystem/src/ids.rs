@@ -310,13 +310,6 @@ impl<'db> FileLongId<'db> {
 
 define_short_id!(FileId, FileLongId<'db>, FilesGroup);
 impl<'db> FileId<'db> {
-    /// Returns a dummy file id for implementing `salsa::tracked` structs.
-    /// A struct that is `InSalsaDatabase` must be the first parameter of a tracked function.
-    /// This is a workaround to allow support existing API until further refactoring.
-    pub fn dummy(db: &'db dyn Database) -> FileId<'db> {
-        FileId::new(db, FileLongId::OnDisk(PathBuf::from("dummy")))
-    }
-
     pub fn new_on_disk(db: &'db dyn Database, path: PathBuf) -> FileId<'db> {
         FileLongId::OnDisk(path.clean()).intern(db)
     }
@@ -492,5 +485,16 @@ define_short_id!(BlobId, BlobLongId, FilesGroup);
 impl<'db> BlobId<'db> {
     pub fn new_on_disk(db: &'db (dyn salsa::Database + 'db), path: PathBuf) -> Self {
         BlobId::new(db, BlobLongId::OnDisk(path.clean()))
+    }
+}
+
+#[salsa::interned]
+pub struct DummyId {
+    u: (),
+}
+
+impl<'db> DummyId<'db> {
+    pub fn dummy(db: &'db dyn Database) -> Self {
+        DummyId::new(db, ())
     }
 }
