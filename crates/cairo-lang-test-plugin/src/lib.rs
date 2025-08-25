@@ -6,6 +6,7 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::{DbWarmupContext, get_sierra_program_for_functions};
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
@@ -256,10 +257,10 @@ fn find_all_tests<'db>(
     for crate_id in main_crates {
         let modules = db.crate_modules(crate_id);
         for module_id in modules.iter() {
-            let Ok(module_items) = db.module_items(*module_id) else {
+            let Ok(module_data) = module_id.module_data(db) else {
                 continue;
             };
-            tests.extend(module_items.iter().filter_map(|item| {
+            tests.extend(module_data.items(db).iter().filter_map(|item| {
                 let ModuleItemId::FreeFunction(func_id) = item else { return None };
                 let Ok(attrs) =
                     db.function_with_body_attributes(FunctionWithBodyId::Free(*func_id))

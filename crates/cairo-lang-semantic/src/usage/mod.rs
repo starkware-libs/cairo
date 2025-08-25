@@ -10,9 +10,10 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use crate::expr::fmt::ExprFormatter;
 use crate::expr::objects::Arenas;
 use crate::{
-    ConcreteStructId, Condition, Expr, ExprFunctionCallArg, ExprId, ExprVarMemberPath,
-    FixedSizeArrayItems, FunctionBody, Parameter, Pattern, PatternArena, PatternId, Statement,
-    StatementLet, VarId,
+    ConcreteStructId, Condition, Expr, ExprClosure, ExprFor, ExprFunctionCall, ExprFunctionCallArg,
+    ExprId, ExprLoop, ExprVarMemberPath, ExprWhile, FixedSizeArrayItems, FunctionBody, Parameter,
+    Pattern, PatternArena, PatternId, Statement, StatementBreak, StatementExpr, StatementLet,
+    StatementReturn, VarId,
 };
 
 #[cfg(test)]
@@ -255,17 +256,19 @@ impl<'db> Usages<'db> {
                                 self.handle_expr(arenas, *else_clause, &mut usage);
                             }
                         }
-                        Statement::Expr(stmt) => self.handle_expr(arenas, stmt.expr, &mut usage),
+                        Statement::Expr(StatementExpr { expr, stable_ptr: _ }) => {
+                            self.handle_expr(arenas, *expr, &mut usage)
+                        }
                         Statement::Continue(_) => (),
-                        Statement::Return(stmt) => {
+                        Statement::Return(StatementReturn { expr_option, stable_ptr: _ }) => {
                             usage.has_early_return = true;
-                            if let Some(expr) = stmt.expr_option {
-                                self.handle_expr(arenas, expr, &mut usage)
+                            if let Some(expr) = expr_option {
+                                self.handle_expr(arenas, *expr, &mut usage)
                             };
                         }
-                        Statement::Break(stmt) => {
-                            if let Some(expr) = stmt.expr_option {
-                                self.handle_expr(arenas, expr, &mut usage)
+                        Statement::Break(StatementBreak { expr_option, stable_ptr: _ }) => {
+                            if let Some(expr) = expr_option {
+                                self.handle_expr(arenas, *expr, &mut usage)
                             };
                         }
                         Statement::Item(_) => {}
@@ -277,15 +280,15 @@ impl<'db> Usages<'db> {
                 usage.finalize_as_scope();
                 current.add_usage_and_changes(&usage);
             }
-            Expr::Loop(expr) => {
+            Expr::Loop(ExprLoop { body, ty: _, stable_ptr: _ }) => {
                 let mut usage = Default::default();
-                self.handle_expr(arenas, expr.body, &mut usage);
+                self.handle_expr(arenas, *body, &mut usage);
                 current.add_usage_and_changes(&usage);
                 self.usages.insert(curr_expr_id, usage);
             }
-            Expr::While(expr) => {
+            Expr::While(ExprWhile { condition, body, stable_ptr: _, ty: _ }) => {
                 let mut usage = Default::default();
-                match &expr.condition {
+                match condition {
                     Condition::BoolExpr(expr) => {
                         self.handle_expr(arenas, *expr, &mut usage);
                     }
@@ -296,40 +299,49 @@ impl<'db> Usages<'db> {
                         }
                     }
                 }
-                self.handle_expr(arenas, expr.body, &mut usage);
+                self.handle_expr(arenas, *body, &mut usage);
                 usage.finalize_as_scope();
                 current.add_usage_and_changes(&usage);
 
                 self.usages.insert(curr_expr_id, usage);
             }
-            Expr::For(expr) => {
-                self.handle_expr(arenas, expr.expr_id, current);
-                current.introductions.insert(
-                    extract_matches!(&expr.into_iter_member_path, ExprVarMemberPath::Var).var,
-                );
+            Expr::For(ExprFor {
+                expr_id,
+                into_iter_member_path,
+                pattern,
+                body,
+                stable_ptr: _,
+                into_iter: _,
+                next_function_id: _,
+                ty: _,
+            }) => {
+                self.handle_expr(arenas, *expr_id, current);
+                current
+                    .introductions
+                    .insert(extract_matches!(into_iter_member_path, ExprVarMemberPath::Var).var);
                 let mut usage: Usage<'_> = Default::default();
-                usage.usage.insert(
-                    (&expr.into_iter_member_path).into(),
-                    expr.into_iter_member_path.clone(),
-                );
-                usage.changes.insert(
-                    (&expr.into_iter_member_path).into(),
-                    expr.into_iter_member_path.clone(),
-                );
-                Self::handle_pattern(&arenas.patterns, expr.pattern, &mut usage);
-                self.handle_expr(arenas, expr.body, &mut usage);
+                usage.usage.insert(into_iter_member_path.into(), into_iter_member_path.clone());
+                usage.changes.insert(into_iter_member_path.into(), into_iter_member_path.clone());
+                Self::handle_pattern(&arenas.patterns, *pattern, &mut usage);
+                self.handle_expr(arenas, *body, &mut usage);
                 usage.finalize_as_scope();
                 current.add_usage_and_changes(&usage);
                 self.usages.insert(curr_expr_id, usage);
             }
-            Expr::ExprClosure(expr) => {
-                let usage = self.handle_closure(arenas, &expr.params, expr.body);
+            Expr::ExprClosure(ExprClosure { body, params, stable_ptr: _, ty: _ }) => {
+                let usage = self.handle_closure(arenas, params, *body);
 
                 current.add_usage_and_changes(&usage);
                 self.usages.insert(curr_expr_id, usage);
             }
-            Expr::FunctionCall(expr) => {
-                for arg in &expr.args {
+            Expr::FunctionCall(ExprFunctionCall {
+                args,
+                function: _,
+                coupon_arg: _,
+                stable_ptr: _,
+                ty: _,
+            }) => {
+                for arg in args {
                     match arg {
                         ExprFunctionCallArg::Reference(member_path) => {
                             current.usage.insert(member_path.into(), member_path.clone());

@@ -68,13 +68,8 @@ impl Default for DatabaseForTesting {
         res
     }
 }
-impl<'db> Upcast<'db, dyn DefsGroup> for DatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn DefsGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn salsa::Database> for DatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn salsa::Database {
+impl<'db> Upcast<'db, dyn Database> for DatabaseForTesting {
+    fn upcast(&'db self) -> &'db dyn Database {
         self
     }
 }

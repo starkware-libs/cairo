@@ -1,19 +1,18 @@
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
     DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder, ErrorCode, Severity,
 };
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use salsa::Database;
 
 /// Returns the expanded code for `module_id` after running all plugins and extends `diagnostics`
 /// with all the plugins diagnostics.
 pub fn expand_module_text<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     diagnostics: &mut Vec<String>,
 ) -> String {
@@ -22,18 +21,18 @@ pub fn expand_module_text<'db>(
     let mut uses_list = UnorderedHashSet::<_>::default();
     // Collect the module diagnostics.
     let mut builder = DiagnosticsBuilder::default();
-    for (_file_id, diag) in db.module_plugin_diagnostics(module_id).unwrap().iter() {
+    for (_file_id, diag) in module_id.module_data(db).unwrap().plugin_diagnostics(db).iter() {
         builder.add(TestDiagnosticEntry(diag.clone()));
     }
     let build = builder.build();
-    let file_notes = db.module_plugin_diagnostics_notes(module_id).unwrap();
-    let formatted = build.format_with_severity(db, &file_notes);
+    let file_notes = module_id.module_data(db).unwrap().diagnostics_notes(db);
+    let formatted = build.format_with_severity(db, file_notes);
     diagnostics.extend(
         formatted
             .into_iter()
             .map(|formatted| format!("{}: {}", Severity::Error, formatted.message())),
     );
-    for item_id in db.module_items(module_id).unwrap().iter() {
+    for item_id in module_id.module_data(db).unwrap().items(db).iter() {
         if let ModuleItemId::Submodule(item) = item_id {
             let submodule_item = item.stable_ptr(db).lookup(db);
             if let ast::MaybeModuleBody::Some(body) = submodule_item.body(db) {
@@ -74,7 +73,7 @@ pub fn expand_module_text<'db>(
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 struct TestDiagnosticEntry<'a>(pub PluginDiagnostic<'a>);
 impl<'a> DiagnosticEntry<'a> for TestDiagnosticEntry<'a> {
-    type DbType = dyn FilesGroup;
+    type DbType = dyn Database;
     fn format(&self, _db: &Self::DbType) -> String {
         self.0.message.to_string()
     }

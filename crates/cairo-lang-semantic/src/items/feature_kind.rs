@@ -1,7 +1,7 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_diagnostics::DiagnosticsBuilder;
-use cairo_lang_filesystem::db::default_crate_settings;
+use cairo_lang_filesystem::db::{FilesGroup, default_crate_settings};
 use cairo_lang_filesystem::ids::{CrateId, StrRef};
 use cairo_lang_syntax::attribute::consts::{
     ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR,
@@ -278,7 +278,7 @@ pub fn extract_feature_config<'db>(
             }
             ModuleId::Submodule(id) => {
                 current_module_id = id.parent_module(defs_db);
-                let module = &db.module_submodules(current_module_id).unwrap()[&id];
+                let module = &current_module_id.module_data(db).unwrap().submodules(db)[&id];
                 // TODO(orizi): Add parent module diagnostics.
                 let ignored = &mut SemanticDiagnostics::default();
                 config_stack.push(extract_item_feature_config(db, crate_id, module, ignored));

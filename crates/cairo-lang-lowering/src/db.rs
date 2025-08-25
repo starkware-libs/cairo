@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs as defs;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ExternFunctionId, LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementLongId,
 };
@@ -703,7 +704,7 @@ fn module_lowering_diagnostics<'db>(
     module_id: ModuleId<'db>,
 ) -> Maybe<Diagnostics<'db, LoweringDiagnostic<'db>>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for item in db.module_items(module_id)?.iter() {
+    for item in module_id.module_data(db)?.items(db).iter() {
         match item {
             ModuleItemId::FreeFunction(free_function) => {
                 let function_id = defs::ids::FunctionWithBodyId::Free(*free_function);

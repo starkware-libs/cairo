@@ -1,6 +1,8 @@
 use std::fmt::Write;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, TraitItemId};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::Upcast;

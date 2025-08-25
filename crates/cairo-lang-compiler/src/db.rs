@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::{Result, anyhow, bail};
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
+use cairo_lang_defs::db::{init_defs_group, init_external_files};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{CORELIB_VERSION, FilesGroup, init_dev_corelib, init_files_group};
@@ -10,7 +10,6 @@ use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{CrateId, FlagLongId};
 use cairo_lang_lowering::db::{ExternalCodeSizeEstimator, LoweringGroup, init_lowering_group};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
 use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
@@ -247,11 +246,6 @@ impl<'db> Upcast<'db, dyn salsa::Database> for RootDatabase {
         self
     }
 }
-impl<'db> Upcast<'db, dyn DefsGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn DefsGroup {
-        self
-    }
-}
 impl<'db> Upcast<'db, dyn SemanticGroup> for RootDatabase {
     fn upcast(&self) -> &dyn SemanticGroup {
         self
@@ -264,11 +258,6 @@ impl<'db> Upcast<'db, dyn LoweringGroup> for RootDatabase {
 }
 impl<'db> Upcast<'db, dyn SierraGenGroup> for RootDatabase {
     fn upcast(&self) -> &dyn SierraGenGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn ParserGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn ParserGroup {
         self
     }
 }

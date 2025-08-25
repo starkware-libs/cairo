@@ -7,7 +7,6 @@ use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_lowering::db::{LoweringGroup, UseApproxCodeSizeEstimator, lowering_group_input};
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
@@ -82,11 +81,6 @@ impl<'db> Upcast<'db, dyn salsa::Database> for SierraGenDatabaseForTesting {
         self
     }
 }
-impl<'db> Upcast<'db, dyn DefsGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn DefsGroup {
-        self
-    }
-}
 impl<'db> Upcast<'db, dyn SemanticGroup> for SierraGenDatabaseForTesting {
     fn upcast(&'db self) -> &'db dyn SemanticGroup {
         self
@@ -94,11 +88,6 @@ impl<'db> Upcast<'db, dyn SemanticGroup> for SierraGenDatabaseForTesting {
 }
 impl<'db> Upcast<'db, dyn LoweringGroup> for SierraGenDatabaseForTesting {
     fn upcast(&'db self) -> &'db dyn LoweringGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn ParserGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn ParserGroup {
         self
     }
 }

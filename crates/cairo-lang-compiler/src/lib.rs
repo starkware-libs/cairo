@@ -7,10 +7,12 @@ use std::sync::{Arc, Mutex};
 
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_lowering::utils::InliningStrategy;
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
 use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -240,12 +242,12 @@ fn warmup_diagnostics_blocking(db: &dyn LoweringGroup, crates: Vec<CrateInput>) 
     let _: () = par_map(db, crates, |db, crate_input| {
         let crate_id = crate_input.into_crate_long_id(db).intern(db);
         let crate_modules = db.crate_modules(crate_id);
-        let _: () = par_map(db, (*crate_modules).clone(), |db, module_id| {
-            for file_id in db.module_files(module_id).unwrap_or_default().iter().copied() {
+        let _: () = par_map(db, crate_modules, |db, module_id| {
+            for file_id in db.module_files(*module_id).unwrap_or_default().iter().copied() {
                 db.file_syntax_diagnostics(file_id);
             }
-            let _ = db.module_semantic_diagnostics(module_id);
-            let _ = db.module_lowering_diagnostics(module_id);
+            let _ = db.module_semantic_diagnostics(*module_id);
+            let _ = db.module_lowering_diagnostics(*module_id);
         });
     });
 }

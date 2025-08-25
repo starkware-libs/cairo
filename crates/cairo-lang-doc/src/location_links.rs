@@ -1,4 +1,5 @@
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticsBuilder, Maybe};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_formatter::{FormatterConfig, get_formatted_file};
 use cairo_lang_parser::db::ParserGroup;
@@ -45,7 +46,7 @@ fn collect_green_nodes<'db>(
 
 /// Creates a virtual file for further signature syntax processing.
 fn get_virtual_syntax_file_signature<'db>(
-    sig_db: &'db dyn ParserGroup,
+    sig_db: &'db dyn Database,
     signature: String,
 ) -> Maybe<SyntaxNode<'db>> {
     let virtual_file = FileLongId::Virtual(VirtualFile {
@@ -134,7 +135,7 @@ fn move_location_links<'db>(
 
 /// Performs set of actions to return formatted signature with [`LocationLink`]s adjusted.
 pub fn format_signature<'db>(
-    db: &'db dyn ParserGroup,
+    db: &'db dyn Database,
     signature: String,
     location_links: Vec<LocationLink<'db>>,
 ) -> (String, Vec<LocationLink<'db>>) {

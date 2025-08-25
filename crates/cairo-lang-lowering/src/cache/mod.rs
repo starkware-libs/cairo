@@ -10,6 +10,7 @@ use cairo_lang_defs::cache::{
     CachedCrateMetadata, DefCacheLoadingData, DefCacheSavingContext, GenericParamCached,
     ImplDefIdCached, LanguageElementCached, SyntaxStablePtrIdCached, generate_crate_def_cache,
 };
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumLongId, ExternFunctionLongId, ExternTypeLongId, FreeFunctionLongId, FunctionWithBodyId,
@@ -19,6 +20,7 @@ use cairo_lang_defs::ids::{
     TraitTypeId, TraitTypeLongId, VariantLongId,
 };
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;

@@ -1,12 +1,14 @@
 use std::fmt::Write;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, ModuleFileId, ModuleId,
     NamedLanguageElementId, StructId, TraitTypeId, UnstableSalsaId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;

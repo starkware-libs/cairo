@@ -11,7 +11,7 @@ use super::consts::{EVENT_ATTR, EVENT_TRAIT, EVENT_TYPE_NAME};
 use super::starknet_module::StarknetModuleKind;
 
 /// Generated auxiliary data for the `#[derive(starknet::Event)]` attribute.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum EventData {
     Struct { members: Vec<(String, EventFieldKind)> },
     Enum { variants: Vec<(String, EventFieldKind)> },
