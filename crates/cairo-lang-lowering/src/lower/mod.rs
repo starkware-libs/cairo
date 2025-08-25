@@ -1634,20 +1634,21 @@ fn call_loop_func_ex<'db>(
         .params
         .into_iter()
         .map(|param| {
-            builder
-                .get_ref(ctx, &param)
-                .and_then(|var| (ctx.variables[var.var_id].ty == param.ty()).then_some(var))
-                .or_else(|| {
-                    let var = handle_snap(ctx, builder, &param)?;
-                    (ctx.variables[var.var_id].ty == param.ty()).then_some(var)
-                })
-                .ok_or_else(|| {
-                    // TODO(TomerStaskware): make sure this is unreachable and remove
-                    // `MemberPathLoop` diagnostic.
-                    LoweringFlowError::Failed(
-                        ctx.diagnostics.report(param.stable_ptr(), MemberPathLoop),
-                    )
-                })
+            if let Some(var) = builder.get_ref_of_type(ctx, &param, param.ty()) {
+                return Ok(var);
+            }
+
+            if let Some(var) = handle_snap(ctx, builder, &param)
+                && ctx.variables[var.var_id].ty == param.ty()
+            {
+                return Ok(var);
+            }
+
+            // TODO(TomerStaskware): make sure this is unreachable and remove
+            // `MemberPathLoop` diagnostic.
+            Err(LoweringFlowError::Failed(
+                ctx.diagnostics.report(param.stable_ptr(), MemberPathLoop),
+            ))
         })
         .collect::<LoweringResult<'db, Vec<_>>>()?;
     let extra_ret_tys = loop_signature.extra_rets.iter().map(|path| path.ty()).collect_vec();
