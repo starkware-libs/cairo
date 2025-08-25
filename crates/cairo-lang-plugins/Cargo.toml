@@ -10,12 +10,12 @@ description = "Cairo core plugin implementations."
 testing = []
 
 [dependencies]
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.12.0" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.12.0" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.12.0" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.12.0" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.12.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.0" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.12.1" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.12.1" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.12.1" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.12.1" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.12.1" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.1" }
 indent.workspace = true
 indoc.workspace = true
 itertools = { workspace = true, default-features = true }
