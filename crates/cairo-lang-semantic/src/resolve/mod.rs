@@ -158,7 +158,7 @@ pub struct EnrichedTypeMemberAccess<'db> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup)]
-pub enum MacroContextModifier {
+enum MacroContextModifier {
     /// The path is resolved in the macro definition site.
     DefSite,
     /// The path is resolved in the macro call site.
@@ -227,18 +227,37 @@ impl<'db> ResolverData<'db> {
 pub struct ResolverMacroData<'db> {
     /// The module file id of the macro definition site. It is used if the path begins with
     /// `$defsite`.
-    pub defsite_module_file_id: ModuleFileId<'db>,
+    pub defsite_module_id: ModuleId<'db>,
     /// The module file id of the macro call site. Items are resolved in this context in two cases:
     /// 1. The path begins with `$callsite`.
     /// 2. The path was supplied as a macro argument. In other words, the path is an expansion of a
     ///    placeholder and is not a part of the macro expansion template.
-    pub callsite_module_file_id: ModuleFileId<'db>,
+    pub callsite_module_id: ModuleId<'db>,
     /// This is the mappings of the macro expansion. It is used to determine if a part of the
     /// code came from a macro argument or from the macro expansion template.
     pub expansion_mappings: Arc<[CodeMapping]>,
     /// The parent macro data. Exists in case of a macro calling another macro, and is used if we
     /// climb to the callsite environment.
-    pub parent_macro_call_data: Option<Box<ResolverMacroData<'db>>>,
+    pub parent_macro_call_data: Option<Arc<ResolverMacroData<'db>>>,
+}
+
+/// Information for resolving a path in a macro context.
+struct MacroResolutionInfo<'db> {
+    /// The module where the resolved path is defined.
+    base: ModuleId<'db>,
+    /// The macro call data of the current resolution.
+    data: Option<Arc<ResolverMacroData<'db>>>,
+    /// The macro context modifier.
+    modifier: MacroContextModifier,
+}
+impl<'db> MacroResolutionInfo<'db> {
+    fn from_resolver(resolver: &Resolver<'db>) -> Self {
+        Self {
+            base: resolver.data.module_file_id.0,
+            data: resolver.macro_call_data.clone(),
+            modifier: MacroContextModifier::None,
+        }
+    }
 }
 
 /// Resolves paths semantically.
@@ -247,7 +266,7 @@ pub struct Resolver<'db> {
     pub data: ResolverData<'db>,
     /// The resolving context for macro related resolving. Should be `Some` only if the current
     /// code is an expansion of a macro.
-    pub macro_call_data: Option<ResolverMacroData<'db>>,
+    pub macro_call_data: Option<Arc<ResolverMacroData<'db>>>,
     /// If true, allow resolution of path through the module definition, without a modifier.
     /// Should be true only within plugin macros generated code, or item macro call generated code.
     pub default_module_allowed: bool,
@@ -369,12 +388,15 @@ impl<'db> Resolver<'db> {
         let macro_call_data = match data.module_file_id.0 {
             ModuleId::CrateRoot(_) | ModuleId::Submodule(_) => None,
             ModuleId::MacroCall { id, .. } => match db.priv_macro_call_data(id) {
-                Ok(data) => Some(ResolverMacroData {
-                    defsite_module_file_id: data.defsite_module_file_id,
-                    callsite_module_file_id: data.callsite_module_file_id,
-                    expansion_mappings: data.expansion_mappings.clone(),
-                    parent_macro_call_data: data.parent_macro_call_data.clone(),
-                }),
+                Ok(data) => Some(
+                    ResolverMacroData {
+                        defsite_module_id: data.defsite_module_id,
+                        callsite_module_id: data.callsite_module_id,
+                        expansion_mappings: data.expansion_mappings.clone(),
+                        parent_macro_call_data: data.parent_macro_call_data,
+                    }
+                    .into(),
+                ),
                 Err(_) => None,
             },
         };
@@ -411,58 +433,46 @@ impl<'db> Resolver<'db> {
 
     /// Return the module_file_id, with respect to the macro context modifier, see
     /// [`MacroContextModifier`].
-    pub fn active_module_file_id(
-        &self,
-        macro_context_modifier: MacroContextModifier,
-    ) -> ModuleFileId<'db> {
-        match macro_context_modifier {
-            MacroContextModifier::DefSite => *self
-                .macro_call_data
-                .as_ref()
-                .map(|data| &data.defsite_module_file_id)
-                .expect("Non-default macro context is set only when macro_call_data is Some."),
-            MacroContextModifier::CallSite => *self
-                .macro_call_data
-                .as_ref()
-                .map(|data| &data.callsite_module_file_id)
-                .expect("Non-default macro context is set only when macro_call_data is Some."),
-            MacroContextModifier::None => self.data.module_file_id,
+    fn active_module_id(&self, info: &MacroResolutionInfo<'db>) -> ModuleId<'db> {
+        if let Some(data) = &info.data {
+            match info.modifier {
+                MacroContextModifier::DefSite => data.defsite_module_id,
+                MacroContextModifier::CallSite => data.callsite_module_id,
+                MacroContextModifier::None => info.base,
+            }
+        } else {
+            assert_eq!(info.modifier, MacroContextModifier::None);
+            info.base
         }
     }
 
     /// Return the module_file_id, with respect to the macro context modifier, see
     /// [`MacroContextModifier`].
-    pub fn try_get_active_module_id(
-        &self,
-        macro_context_modifier: MacroContextModifier,
-    ) -> Option<ModuleId<'db>> {
-        match macro_context_modifier {
-            MacroContextModifier::DefSite => {
-                self.macro_call_data.as_ref().map(|data| data.defsite_module_file_id.0)
+    fn try_get_active_module_id(&self, info: &MacroResolutionInfo<'db>) -> Option<ModuleId<'db>> {
+        if let Some(data) = &info.data {
+            match info.modifier {
+                MacroContextModifier::DefSite => Some(data.defsite_module_id),
+                MacroContextModifier::CallSite => Some(data.callsite_module_id),
+                MacroContextModifier::None => (data.callsite_module_id != info.base
+                    || self.default_module_allowed)
+                    .then_some(info.base),
             }
-            MacroContextModifier::CallSite => {
-                self.macro_call_data.as_ref().map(|data| data.callsite_module_file_id.0)
-            }
-            MacroContextModifier::None => (self.default_module_allowed
-                || self.macro_call_data.is_none())
-            .then_some(self.data.module_file_id.0),
+        } else {
+            Some(info.base)
         }
     }
 
     /// Returns the owning crate id of the active module file id, with respect to the macro context
     /// modifier, see [`MacroContextModifier`].
-    pub fn active_owning_crate_id(
-        &self,
-        macro_context_modifier: MacroContextModifier,
-    ) -> CrateId<'db> {
-        self.active_module_file_id(macro_context_modifier).0.owning_crate(self.db)
+    fn active_owning_crate_id(&self, info: &MacroResolutionInfo<'db>) -> CrateId<'db> {
+        self.active_module_id(info).owning_crate(self.db)
     }
 
     /// Returns the active settings of the owning crate, with respect to the macro context
     /// modifier, see [`MacroContextModifier`].
-    pub fn active_settings(&self, macro_context_modifier: MacroContextModifier) -> &CrateSettings {
+    fn active_settings(&self, info: &MacroResolutionInfo<'db>) -> &CrateSettings {
         self.db
-            .crate_config(self.active_owning_crate_id(macro_context_modifier))
+            .crate_config(self.active_owning_crate_id(info))
             .map(|c| &c.settings)
             .unwrap_or_else(|| default_crate_settings(self.db))
     }
@@ -781,7 +791,7 @@ impl<'db> Resolver<'db> {
     }
 
     pub fn prelude_submodule(&self) -> ModuleId<'db> {
-        self.prelude_submodule_ex(MacroContextModifier::None)
+        self.prelude_submodule_ex(&MacroResolutionInfo::from_resolver(self))
     }
 
     /// Trying to find an item in a module's item level macro calls expansions.
@@ -811,11 +821,8 @@ impl<'db> Resolver<'db> {
     }
 
     /// Returns the crate's `prelude` submodule.
-    pub fn prelude_submodule_ex(
-        &self,
-        macro_context_modifier: MacroContextModifier,
-    ) -> ModuleId<'db> {
-        let active_settings = self.active_settings(macro_context_modifier);
+    fn prelude_submodule_ex(&self, info: &MacroResolutionInfo<'db>) -> ModuleId<'db> {
+        let active_settings = self.active_settings(info);
         let prelude_submodule_name = active_settings.edition.prelude_submodule_name();
         let core_prelude_submodule = core_submodule(self.db, "prelude");
         get_submodule(self.db, core_prelude_submodule, prelude_submodule_name).unwrap_or_else(
@@ -949,19 +956,14 @@ impl<'db> Resolver<'db> {
 
     /// Returns the current impl lookup context.
     pub fn impl_lookup_context(&self) -> ImplLookupContext<'db> {
-        self.impl_lookup_context_ex(MacroContextModifier::None)
+        self.impl_lookup_context_ex(&MacroResolutionInfo::from_resolver(self))
     }
 
     /// Returns the current impl lookup context, with respect to the macro context modifier,
     /// see [`MacroContextModifier`].
-    pub fn impl_lookup_context_ex(
-        &self,
-        macro_context_modifier: MacroContextModifier,
-    ) -> ImplLookupContext<'db> {
-        let mut lookup_context = ImplLookupContext::new(
-            self.active_module_file_id(macro_context_modifier).0,
-            self.generic_params.clone(),
-        );
+    fn impl_lookup_context_ex(&self, info: &MacroResolutionInfo<'db>) -> ImplLookupContext<'db> {
+        let mut lookup_context =
+            ImplLookupContext::new(self.active_module_id(info), self.generic_params.clone());
 
         if let TraitOrImplContext::Impl(impl_def_id) = &self.trait_or_impl_ctx {
             let Ok(generic_params) = self.db.impl_def_generic_params(*impl_def_id) else {
@@ -1183,21 +1185,21 @@ impl<'db> Resolver<'db> {
     /// Should visibility checks not actually happen for lookups in this module.
     // TODO(orizi): Remove this check when performing a major Cairo update.
     pub fn ignore_visibility_checks(&self, module_id: ModuleId<'db>) -> bool {
-        self.ignore_visibility_checks_ex(module_id, MacroContextModifier::None)
+        self.ignore_visibility_checks_ex(module_id, &MacroResolutionInfo::from_resolver(self))
     }
 
     /// Same as [Self::ignore_visibility_checks], but takes into account the current macro context
     /// modifier.
-    pub fn ignore_visibility_checks_ex(
+    fn ignore_visibility_checks_ex(
         &self,
         module_id: ModuleId<'db>,
-        macro_context_modifier: MacroContextModifier,
+        info: &MacroResolutionInfo<'db>,
     ) -> bool {
         let module_crate = module_id.owning_crate(self.db);
         let module_edition =
             self.db.crate_config(module_crate).map(|c| c.settings.edition).unwrap_or_default();
         module_edition.ignore_visibility()
-            || self.active_settings(macro_context_modifier).edition.ignore_visibility()
+            || self.active_settings(info).edition.ignore_visibility()
                 && module_crate == self.db.core_crate()
     }
 
@@ -1253,26 +1255,26 @@ impl<'db> Resolver<'db> {
             containing_module_id,
             item_info,
             user_module,
-            MacroContextModifier::None,
+            &MacroResolutionInfo::from_resolver(self),
         )
     }
 
     /// Same as [Self::is_item_visible], but takes into account the current macro context modifier.
-    pub fn is_item_visible_ex(
+    fn is_item_visible_ex(
         &self,
         mut containing_module_id: ModuleId<'db>, // must never be a macro.
         item_info: &ModuleItemInfo<'db>,
         user_module: ModuleId<'db>,
-        macro_context_modifier: MacroContextModifier,
+        info: &MacroResolutionInfo<'db>,
     ) -> bool {
         let db = self.db;
         if containing_module_id == user_module {
             return true;
         }
         while let ModuleId::MacroCall { id: macro_call_id, .. } = containing_module_id {
-            containing_module_id = macro_call_id.module_file_id(self.db).0;
+            containing_module_id = macro_call_id.parent_module(self.db);
         }
-        self.ignore_visibility_checks_ex(containing_module_id, macro_context_modifier)
+        self.ignore_visibility_checks_ex(containing_module_id, info)
             || visibility::peek_visible_in(
                 db,
                 item_info.visibility,
@@ -1656,10 +1658,10 @@ struct Resolution<'db, 'a> {
     segments: Peekable<std::vec::IntoIter<ast::PathSegment<'db>>>,
     /// The type of item expected by the path.
     expected_item_type: NotFoundItemType,
-    /// The macro context modifier to apply to the path.
-    macro_context_modifier: MacroContextModifier,
     /// The context of the path resolution.
     resolution_context: ResolutionContext<'db, 'a>,
+    /// The macro resolution info.
+    macro_info: MacroResolutionInfo<'db>,
 }
 impl<'db, 'a> Resolution<'db, 'a> {
     fn new(
@@ -1677,20 +1679,21 @@ impl<'db, 'a> Resolution<'db, 'a> {
         let elements_vec = path.to_segments(db);
         let mut segments = elements_vec.into_iter().peekable();
         let mut cur_macro_call_data = resolver.macro_call_data.as_ref();
+        let mut path_defining_module = resolver.data.module_file_id.0;
         // Climb up the macro call data while the current resolved path is being mapped to an
         // argument of a macro call.
         while let Some(macro_call_data) = &cur_macro_call_data {
-            if let Some(new_offset) = cur_offset.mapped(&macro_call_data.expansion_mappings) {
-                cur_macro_call_data =
-                    macro_call_data.parent_macro_call_data.as_ref().map(|data| data.as_ref());
-                cur_offset = new_offset;
-                continue;
-            }
-            break;
+            let Some(new_offset) = cur_offset.mapped(&macro_call_data.expansion_mappings) else {
+                break;
+            };
+            path_defining_module = macro_call_data.callsite_module_id;
+            cur_macro_call_data = macro_call_data.parent_macro_call_data.as_ref();
+            cur_offset = new_offset;
         }
+        let macro_call_data = cur_macro_call_data.cloned();
 
         let macro_context_modifier = if let Some(marker) = placeholder_marker {
-            if cur_macro_call_data.is_some() {
+            if macro_call_data.is_some() {
                 handle_macro_context_modifier(db, diagnostics, &mut segments)?
             } else {
                 return Err(diagnostics.report(marker.stable_ptr(db), DollarNotSupportedInContext));
@@ -1698,13 +1701,18 @@ impl<'db, 'a> Resolution<'db, 'a> {
         } else {
             MacroContextModifier::None
         };
+        let macro_info = MacroResolutionInfo {
+            base: path_defining_module,
+            data: macro_call_data,
+            modifier: macro_context_modifier,
+        };
         Ok(Resolution {
             resolver,
             diagnostics,
             segments,
             expected_item_type: item_type,
-            macro_context_modifier,
             resolution_context,
+            macro_info,
         })
     }
 
@@ -2045,7 +2053,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                 Some(module_id) => module_id,
                 None => {
                     if let Some(module_id) =
-                        self.resolver.try_get_active_module_id(self.macro_context_modifier)
+                        self.resolver.try_get_active_module_id(&self.macro_info)
                     {
                         module_id
                     } else {
@@ -2237,7 +2245,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                         .intern(db);
                         let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
                         let impl_lookup_context =
-                            self.resolver.impl_lookup_context_ex(self.macro_context_modifier);
+                            self.resolver.impl_lookup_context_ex(&self.macro_info);
                         let generic_function = GenericFunctionId::Impl(
                             self.resolver.inference().infer_trait_generic_function(
                                 concrete_trait_function,
@@ -2261,7 +2269,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                         );
 
                         let impl_lookup_context =
-                            self.resolver.impl_lookup_context_ex(self.macro_context_modifier);
+                            self.resolver.impl_lookup_context_ex(&self.macro_info);
                         let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
                         let ty = self.resolver.inference().infer_trait_type(
                             concrete_trait_type,
@@ -2281,7 +2289,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                         .intern(db);
 
                         let impl_lookup_context =
-                            self.resolver.impl_lookup_context_ex(self.macro_context_modifier);
+                            self.resolver.impl_lookup_context_ex(&self.macro_info);
                         let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
                         let imp_constant_id = self.resolver.inference().infer_trait_constant(
                             concrete_trait_constant,
@@ -2306,7 +2314,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                         .intern(db);
 
                         let impl_lookup_context =
-                            self.resolver.impl_lookup_context_ex(self.macro_context_modifier);
+                            self.resolver.impl_lookup_context_ex(&self.macro_info);
                         let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
                         let impl_impl_id = self.resolver.inference().infer_trait_impl(
                             concrete_trait_impl,
@@ -2402,10 +2410,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                 }
             }
             ResolvedConcreteItem::Function(function_id) if ident == "Coupon" => {
-                if !are_coupons_enabled(
-                    db,
-                    self.resolver.active_module_file_id(self.macro_context_modifier),
-                ) {
+                if !are_coupons_enabled(db, self.resolver.active_module_id(&self.macro_info)) {
                     self.diagnostics.report(identifier.stable_ptr(db), CouponsDisabled);
                 }
                 if matches!(
@@ -2468,8 +2473,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
             return Ok(ResolvedBase::StatementEnvironment(item));
         }
 
-        let Some(module_id) = self.resolver.try_get_active_module_id(self.macro_context_modifier)
-        else {
+        let Some(module_id) = self.resolver.try_get_active_module_id(&self.macro_info) else {
             let item_type = if self.segments.len() == 1 {
                 self.expected_item_type
             } else {
@@ -2488,15 +2492,11 @@ impl<'db, 'a> Resolution<'db, 'a> {
 
         // If the first element is `crate`, use the crate's root module as the base module.
         if ident == CRATE_KW {
-            return Ok(ResolvedBase::Crate(
-                self.resolver.active_owning_crate_id(self.macro_context_modifier),
-            ));
+            return Ok(ResolvedBase::Crate(self.resolver.active_owning_crate_id(&self.macro_info)));
         }
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
-        if let Some(dep) =
-            self.resolver.active_settings(self.macro_context_modifier).dependencies.get(ident)
-        {
+        if let Some(dep) = self.resolver.active_settings(&self.macro_info).dependencies.get(ident) {
             let dep_crate_id =
                 CrateLongId::Real { name: ident.into(), discriminator: dep.discriminator.clone() }
                     .intern(db);
@@ -2519,9 +2519,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
         // TODO(orizi): Remove when `starknet` becomes a proper crate.
         if ident == STARKNET_CRATE_NAME {
             // Making sure we don't look for it in `*` modules, to prevent cycles.
-            return Ok(ResolvedBase::Module(
-                self.resolver.prelude_submodule_ex(self.macro_context_modifier),
-            ));
+            return Ok(ResolvedBase::Module(self.resolver.prelude_submodule_ex(&self.macro_info)));
         }
         if let Some((item_info, module_id)) =
             self.resolver.resolve_item_in_macro_calls(module_id, identifier)
@@ -2544,14 +2542,14 @@ impl<'db, 'a> Resolution<'db, 'a> {
             }
             UseStarResult::PathNotFound => {}
             UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
-                let prelude = self.resolver.prelude_submodule_ex(self.macro_context_modifier);
+                let prelude = self.resolver.prelude_submodule_ex(&self.macro_info);
                 if let Ok(Some(_)) = db.module_item_by_name(prelude, ident.into()) {
                     return Ok(ResolvedBase::Module(prelude));
                 }
                 return Ok(ResolvedBase::ItemNotVisible(module_item_id, containing_modules));
             }
         }
-        Ok(ResolvedBase::Module(self.resolver.prelude_submodule_ex(self.macro_context_modifier)))
+        Ok(ResolvedBase::Module(self.resolver.prelude_submodule_ex(&self.macro_info)))
     }
 
     /// Validates that an item is usable from the current module or adds a diagnostic.
@@ -2565,8 +2563,8 @@ impl<'db, 'a> Resolution<'db, 'a> {
         if !self.resolver.is_item_visible_ex(
             containing_module_id,
             item_info,
-            self.resolver.active_module_file_id(self.macro_context_modifier).0,
-            self.macro_context_modifier,
+            self.resolver.active_module_id(&self.macro_info),
+            &self.macro_info,
         ) {
             self.diagnostics.report(
                 identifier.stable_ptr(self.resolver.db),

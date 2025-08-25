@@ -648,12 +648,12 @@ fn expand_inline_macro<'db>(
             kind: MacroKind::UserDefined,
             vars_to_expose: vec![],
         };
-        ctx.resolver.macro_call_data = Some(ResolverMacroData {
-            defsite_module_file_id: macro_defsite_resolver_data.module_file_id,
-            callsite_module_file_id: callsite_resolver.module_file_id,
+        ctx.resolver.macro_call_data = Some(Arc::new(ResolverMacroData {
+            defsite_module_id: macro_defsite_resolver_data.module_file_id.0,
+            callsite_module_id: callsite_resolver.module_file_id.0,
             expansion_mappings: info.mappings.clone(),
-            parent_macro_call_data: parent_macro_call_data.map(|data| data.into()),
-        });
+            parent_macro_call_data,
+        }));
         Ok(InlineMacroExpansion { content: expanded_code.text, name: macro_name.to_string(), info })
     } else if let Some(macro_plugin_id) =
         ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name.to_string()).cloned()
@@ -4027,7 +4027,7 @@ fn maybe_pop_coupon_argument<'db>(
 ) -> Option<ExprId> {
     let mut coupon_arg: Option<ExprId> = None;
     if let Some(NamedArg(arg, Some(name_terminal), mutability)) = named_args.last() {
-        let coupons_enabled = are_coupons_enabled(ctx.db, ctx.resolver.module_file_id);
+        let coupons_enabled = are_coupons_enabled(ctx.db, ctx.resolver.module_file_id.0);
         if name_terminal.text(ctx.db) == "__coupon__" && coupons_enabled {
             // Check that the argument type is correct.
             let expected_ty = TypeLongId::Coupon(function_id).intern(ctx.db);
