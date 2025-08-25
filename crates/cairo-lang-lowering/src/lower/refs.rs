@@ -7,8 +7,8 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::{Itertools, chain};
 
+use super::block_builder::BlockStructRecomposer;
 use crate::VariableId;
-use crate::db::LoweringGroup;
 
 /// Information about members captured by the closure and their types.
 #[derive(Clone, Debug)]
@@ -44,9 +44,9 @@ impl<'db> SemanticLoweringMapping<'db> {
         }
     }
 
-    pub fn destructure_closure<TContext: StructRecomposer<'db>>(
+    pub fn destructure_closure(
         &mut self,
-        ctx: &mut TContext,
+        ctx: &mut BlockStructRecomposer<'_, '_, 'db>,
         closure_var: VariableId,
         closure_info: &ClosureInfo<'db>,
     ) -> Vec<VariableId> {
@@ -56,9 +56,9 @@ impl<'db> SemanticLoweringMapping<'db> {
         )
     }
 
-    pub fn get<TContext: StructRecomposer<'db>>(
+    pub fn get(
         &mut self,
-        mut ctx: TContext,
+        mut ctx: BlockStructRecomposer<'_, '_, 'db>,
         path: &MemberPath<'db>,
     ) -> Option<VariableId> {
         let value = self.break_into_value(&mut ctx, path)?;
@@ -69,9 +69,9 @@ impl<'db> SemanticLoweringMapping<'db> {
         self.scattered.insert(path, Value::Var(var));
     }
 
-    pub fn update<TContext: StructRecomposer<'db>>(
+    pub fn update(
         &mut self,
-        ctx: &mut TContext,
+        ctx: &mut BlockStructRecomposer<'_, '_, 'db>,
         path: &MemberPath<'db>,
         var: VariableId,
     ) -> Option<()> {
@@ -86,8 +86,8 @@ impl<'db> SemanticLoweringMapping<'db> {
         Some(())
     }
 
-    fn assemble_value<TContext: StructRecomposer<'db>>(
-        ctx: &mut TContext,
+    fn assemble_value(
+        ctx: &mut BlockStructRecomposer<'_, '_, 'db>,
         value: &mut Value<'db>,
     ) -> Option<VariableId> {
         Some(match value {
@@ -105,9 +105,9 @@ impl<'db> SemanticLoweringMapping<'db> {
         })
     }
 
-    fn break_into_value<TContext: StructRecomposer<'db>>(
+    fn break_into_value(
         &mut self,
-        ctx: &mut TContext,
+        ctx: &mut BlockStructRecomposer<'_, '_, 'db>,
         path: &MemberPath<'db>,
     ) -> Option<&mut Value<'db>> {
         if self.scattered.contains_key(path) {
@@ -300,29 +300,6 @@ pub fn find_changed_members<'db, 'a>(
         }
         None
     })
-}
-
-/// A trait for deconstructing and constructing structs.
-pub trait StructRecomposer<'db> {
-    fn deconstruct(
-        &mut self,
-        concrete_struct_id: semantic::ConcreteStructId<'db>,
-        value: VariableId,
-    ) -> OrderedHashMap<MemberId<'db>, VariableId>;
-
-    fn deconstruct_by_types(
-        &mut self,
-        value: VariableId,
-        types: impl Iterator<Item = semantic::TypeId<'db>>,
-    ) -> Vec<VariableId>;
-
-    fn reconstruct(
-        &mut self,
-        concrete_struct_id: semantic::ConcreteStructId<'db>,
-        members: Vec<VariableId>,
-    ) -> VariableId;
-    fn var_ty(&self, var: VariableId) -> semantic::TypeId<'db>;
-    fn db(&self) -> &dyn LoweringGroup;
 }
 
 /// An intermediate value for a member path.
