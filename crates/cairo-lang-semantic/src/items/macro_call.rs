@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
 
 use crate::SemanticDiagnostic;
-use crate::db::{SemanticGroup, SemanticGroupData};
+use crate::db::SemanticGroup;
 use crate::diagnostic::{
     NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
@@ -29,6 +29,7 @@ pub struct MacroCallData<'db> {
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_macro_call_data].
+#[salsa::tracked]
 pub fn priv_macro_call_data<'db>(
     db: &'db dyn SemanticGroup,
     macro_call_id: MacroCallId<'db>,
@@ -158,6 +159,7 @@ pub fn priv_macro_call_data_cycle<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_call_diagnostics].
+#[salsa::tracked(cycle_result=macro_call_diagnostics_cycle)]
 pub fn macro_call_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     macro_call_id: MacroCallId<'db>,
@@ -168,13 +170,13 @@ pub fn macro_call_diagnostics<'db>(
 /// Cycle handling for the `macro_call_diagnostics` query.
 pub fn macro_call_diagnostics_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     macro_call_id: MacroCallId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     priv_macro_call_data(db, macro_call_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_call_module_id].
+#[salsa::tracked(cycle_result=macro_call_module_id_cycle)]
 pub fn macro_call_module_id<'db>(
     db: &'db dyn SemanticGroup,
     macro_call_id: MacroCallId<'db>,
@@ -184,7 +186,6 @@ pub fn macro_call_module_id<'db>(
 /// Cycle handling for the `macro_call_module_id` query.
 pub fn macro_call_module_id_cycle<'db>(
     _db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     _macro_call_id: MacroCallId<'db>,
 ) -> Maybe<ModuleId<'db>> {
     Err(skip_diagnostic())

@@ -32,6 +32,7 @@ pub enum TypeFilter<'db> {
 }
 
 /// Query implementation of [crate::db::SemanticGroup::methods_in_module].
+#[salsa::tracked]
 pub fn methods_in_module<'db>(
     db: &'db dyn SemanticGroup,
     module_id: ModuleId<'db>,
@@ -77,6 +78,7 @@ fn fit_for_method(head: &TypeHead<'_>, type_head: &TypeHead<'_>) -> bool {
 }
 
 /// Query implementation of [crate::db::SemanticGroup::methods_in_crate].
+#[salsa::tracked]
 pub fn methods_in_crate<'db>(
     db: &'db dyn SemanticGroup,
     crate_id: CrateId<'db>,
@@ -90,6 +92,7 @@ pub fn methods_in_crate<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::visible_importables_in_module].
+#[salsa::tracked]
 pub fn visible_importables_in_module<'db>(
     db: &'db dyn SemanticGroup,
     module_id: ModuleId<'db>,
@@ -285,6 +288,7 @@ fn visible_importables_in_module_ex<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::visible_importables_in_crate].
+#[salsa::tracked]
 pub fn visible_importables_in_crate<'db>(
     db: &'db dyn SemanticGroup,
     crate_id: CrateId<'db>,

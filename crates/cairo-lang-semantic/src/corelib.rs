@@ -33,6 +33,7 @@ use crate::{
 };
 
 /// Query implementation of [SemanticGroup::core_module].
+#[salsa::tracked]
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId<'_> {
     let core_crate = db.core_crate();
     ModuleId::CrateRoot(core_crate)
@@ -60,6 +61,7 @@ pub fn core_submodule<'db>(db: &'db dyn SemanticGroup, submodule_name: &'db str)
 }
 
 /// Query implementation of [SemanticGroup::core_crate].
+#[salsa::tracked]
 pub fn core_crate(db: &dyn SemanticGroup) -> CrateId<'_> {
     CrateId::core(db)
 }
@@ -1100,6 +1102,7 @@ impl<'db> CoreInfo<'db> {
 }
 
 /// Query implementation of [SemanticGroup::core_info].
+#[salsa::tracked]
 pub fn core_info(db: &dyn SemanticGroup) -> Arc<CoreInfo<'_>> {
     CoreInfo::new(db).into()
 }

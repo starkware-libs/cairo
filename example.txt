@@ -1,0 +1,555 @@
+commit b76417a492b673b80d3e9d1adf6074205f08f1b1
+Author: eytan-starkware <eytan.s@starkware.co>
+Date:   Sun Aug 24 12:54:04 2025 +0300
+
+    Cleaning up Defs and debug_test query groups (#8226)
+
+diff --git a/crates/cairo-lang-compiler/src/lib.rs b/crates/cairo-lang-compiler/src/lib.rs
+index 0f72cbaae..c038a9c06 100644
+--- a/crates/cairo-lang-compiler/src/lib.rs
++++ b/crates/cairo-lang-compiler/src/lib.rs
+@@ -241,12 +241,12 @@ fn warmup_diagnostics_blocking(db: &dyn LoweringGroup, crates: Vec<CrateInput>)
+     let _: () = par_map(db, crates, |db, crate_input| {
+         let crate_id = crate_input.into_crate_long_id(db).intern(db);
+         let crate_modules = db.crate_modules(crate_id);
+-        let _: () = par_map(db, (*crate_modules).clone(), |db, module_id| {
+-            for file_id in db.module_files(module_id).unwrap_or_default().iter().copied() {
++        let _: () = par_map(db, crate_modules, |db, module_id| {
++            for file_id in db.module_files(*module_id).unwrap_or_default().iter().copied() {
+                 db.file_syntax_diagnostics(file_id);
+             }
+-            let _ = db.module_semantic_diagnostics(module_id);
+-            let _ = db.module_lowering_diagnostics(module_id);
++            let _ = db.module_semantic_diagnostics(*module_id);
++            let _ = db.module_lowering_diagnostics(*module_id);
+         });
+     });
+ }
+diff --git a/crates/cairo-lang-debug/src/debug_test.rs b/crates/cairo-lang-debug/src/debug_test.rs
+index f8a496247..9240bf50d 100644
+--- a/crates/cairo-lang-debug/src/debug_test.rs
++++ b/crates/cairo-lang-debug/src/debug_test.rs
+@@ -6,9 +6,10 @@ use test_log::test;
+ use crate::debug::DebugWithDb;
+ 
+ // Test database query group.
+-#[cairo_lang_proc_macros::query_group]
+ trait TestGroup: salsa::Database {}
+ 
++impl TestGroup for DummyDb {}
++
+ // Structs.
+ #[salsa::interned]
+ struct Dummy {
+diff --git a/crates/cairo-lang-defs/src/db.rs b/crates/cairo-lang-defs/src/db.rs
+index e43a42e3f..1ea05a31d 100644
+--- a/crates/cairo-lang-defs/src/db.rs
++++ b/crates/cairo-lang-defs/src/db.rs
+@@ -97,77 +97,95 @@ pub trait DefsGroup: Database {
+     // ========
+ 
+     /// Interned version of `default_macro_plugins_input`.
+-    fn default_macro_plugins<'db>(&'db self) -> Arc<Vec<MacroPluginId<'db>>>;
++    #[salsa::transparent]
++    fn default_macro_plugins<'db>(&'db self) -> &'db [MacroPluginId<'db>];
+ 
+     /// Interned version of `macro_plugin_overrides_input`.
++    #[salsa::transparent]
+     fn macro_plugin_overrides<'db>(
+         &'db self,
+-    ) -> Arc<OrderedHashMap<CrateId<'db>, Arc<Vec<MacroPluginId<'db>>>>>;
++    ) -> &'db OrderedHashMap<CrateId<'db>, Arc<Vec<MacroPluginId<'db>>>>;
+ 
+     /// Returns [`MacroPluginId`]s of the plugins set for the crate with [`CrateId`].
+     /// Provides an override if it has been set with
+     /// [`DefsGroupEx::set_override_crate_macro_plugins`] or the default
+     /// ([`DefsGroup::default_macro_plugins`]) otherwise.
+-    fn crate_macro_plugins<'db>(&'db self, crate_id: CrateId<'db>) -> Arc<Vec<MacroPluginId<'db>>>;
++    #[salsa::transparent]
++    fn crate_macro_plugins<'db>(&'db self, crate_id: CrateId<'db>) -> &'db [MacroPluginId<'db>];
+ 
+     /// Interned version of `default_inline_macro_plugins_input`.
++    #[salsa::transparent]
+     fn default_inline_macro_plugins<'db>(
+         &'db self,
+-    ) -> Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>;
++    ) -> &'db OrderedHashMap<String, InlineMacroExprPluginId<'db>>;
+ 
+     /// Interned version of `inline_macro_plugin_overrides_input`.
++    #[salsa::transparent]
+     fn inline_macro_plugin_overrides<'db>(
+         &'db self,
+-    ) -> Arc<OrderedHashMap<CrateId<'db>, Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>>>;
++    ) -> &'db OrderedHashMap<CrateId<'db>, Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>>;
+ 
+     /// Returns [`InlineMacroExprPluginId`]s of the plugins set for the crate with [`CrateId`].
+     /// Provides an override if it has been set with
+     /// [`DefsGroupEx::set_override_crate_inline_macro_plugins`] or the default
+     /// ([`DefsGroup::default_inline_macro_plugins`]) otherwise.
++    #[salsa::transparent]
+     fn crate_inline_macro_plugins<'db>(
+         &'db self,
+         crate_id: CrateId<'db>,
+-    ) -> Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>;
++    ) -> &'db OrderedHashMap<String, InlineMacroExprPluginId<'db>>;
+ 
+     /// Returns the set of attributes allowed anywhere.
+     /// An attribute on any item that is not in this set will be handled as an unknown attribute.
+-    fn allowed_attributes<'db>(&self, crate_id: CrateId<'db>) -> Arc<OrderedHashSet<String>>;
++    #[salsa::transparent]
++    fn allowed_attributes<'db>(&'db self, crate_id: CrateId<'db>) -> &'db OrderedHashSet<String>;
+ 
+     /// Returns the set of attributes allowed on statements.
+     /// An attribute on a statement that is not in this set will be handled as an unknown attribute.
+-    fn allowed_statement_attributes(&self) -> Arc<OrderedHashSet<String>>;
++    #[salsa::transparent]
++    fn allowed_statement_attributes(&self) -> &OrderedHashSet<String>;
+ 
+     /// Returns the set of `derive` that were declared as by a plugin.
+     /// A derive that is not in this set will be handled as an unknown derive.
+-    fn declared_derives<'db>(&self, crate_id: CrateId<'db>) -> Arc<OrderedHashSet<String>>;
++    #[salsa::transparent]
++    fn declared_derives<'db>(&'db self, crate_id: CrateId<'db>) -> &'db OrderedHashSet<String>;
+ 
+     /// Returns the set of attributes that were declared as phantom type attributes by a plugin,
+     /// i.e. a type marked with this attribute is considered a phantom type.
++    #[salsa::transparent]
+     fn declared_phantom_type_attributes<'db>(
+-        &self,
++        &'db self,
+         crate_id: CrateId<'db>,
+-    ) -> Arc<OrderedHashSet<String>>;
++    ) -> &'db OrderedHashSet<String>;
+ 
+     /// Checks whether the submodule is defined as inline.
++    #[salsa::transparent]
+     fn is_submodule_inline<'db>(&self, submodule_id: SubmoduleId<'db>) -> bool;
+ 
+     // Module to syntax.
+     /// Gets the main file of the module.
+     /// A module might have more virtual files generated by plugins.
++    #[salsa::transparent]
+     fn module_main_file<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<FileId<'db>>;
+     /// Gets all the files of a module - main files and generated virtual files.
++    #[salsa::transparent]
+     fn module_files<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<Arc<Vec<FileId<'db>>>>;
+     /// Gets a file from a module and a FileIndex (i.e. ModuleFileId).
++    #[salsa::transparent]
+     fn module_file<'db>(&'db self, module_id: ModuleFileId<'db>) -> Maybe<FileId<'db>>;
+     /// Gets the directory of a module.
+-    fn module_dir<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<Directory<'db>>;
++    #[salsa::transparent]
++    fn module_dir<'db>(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db Directory<'db>>;
+ 
+     // File to module.
+-    fn crate_modules<'db>(&'db self, crate_id: CrateId<'db>) -> Arc<Vec<ModuleId<'db>>>;
++    #[salsa::transparent]
++    fn crate_modules<'db>(&'db self, crate_id: CrateId<'db>) -> &'db [ModuleId<'db>];
++    #[salsa::transparent]
+     fn priv_file_to_module_mapping<'db>(
+         &'db self,
+-    ) -> Arc<OrderedHashMap<FileId<'db>, Vec<ModuleId<'db>>>>;
+-    fn file_modules<'db>(&'db self, file_id: FileId<'db>) -> Maybe<Arc<Vec<ModuleId<'db>>>>;
++    ) -> &'db OrderedHashMap<FileId<'db>, Vec<ModuleId<'db>>>;
++    #[salsa::transparent]
++    fn file_modules<'db>(&'db self, file_id: FileId<'db>) -> Maybe<&'db [ModuleId<'db>]>;
+ 
+     /// Returns the [ModuleData] of all modules in the crate's cache, and the loading data of the
+     /// [DefsGroup] in the crate.
+@@ -375,80 +393,86 @@ pub fn init_defs_group(db: &mut dyn DefsGroup) {
+     defs_group_input(db).set_inline_macro_plugin_overrides(db).to(Some(OrderedHashMap::default()));
+ }
+ 
+-pub fn default_macro_plugins<'db>(db: &'db dyn DefsGroup) -> Arc<Vec<MacroPluginId<'db>>> {
+-    Arc::new(
+-        db.default_macro_plugins_input()
+-            .iter()
+-            .map(|plugin| MacroPluginId::new(db, plugin.clone()))
+-            .collect(),
+-    )
++#[salsa::tracked(returns(ref))]
++fn default_macro_plugins_helper<'db>(db: &'db dyn DefsGroup) -> Vec<MacroPluginId<'db>> {
++    db.default_macro_plugins_input()
++        .iter()
++        .map(|plugin| MacroPluginId::new(db, plugin.clone()))
++        .collect()
+ }
+ 
++pub fn default_macro_plugins<'db>(db: &'db dyn DefsGroup) -> &'db [MacroPluginId<'db>] {
++    default_macro_plugins_helper(db)
++}
++
++#[salsa::tracked(returns(ref))]
+ pub fn macro_plugin_overrides<'db>(
+     db: &'db dyn DefsGroup,
+-) -> Arc<OrderedHashMap<CrateId<'db>, Arc<Vec<MacroPluginId<'db>>>>> {
++) -> OrderedHashMap<CrateId<'db>, Arc<Vec<MacroPluginId<'db>>>> {
+     let inp = db.macro_plugin_overrides_input();
+-    Arc::new(
+-        inp.iter()
+-            .map(|(crate_id, plugins)| {
+-                (
+-                    crate_id.clone().into_crate_long_id(db).intern(db),
+-                    Arc::new(plugins.iter().map(|plugin| plugin.clone().intern(db)).collect()),
+-                )
+-            })
+-            .collect(),
+-    )
++    inp.iter()
++        .map(|(crate_id, plugins)| {
++            (
++                crate_id.clone().into_crate_long_id(db).intern(db),
++                Arc::new(plugins.iter().map(|plugin| plugin.clone().intern(db)).collect()),
++            )
++        })
++        .collect()
+ }
+ 
++#[salsa::tracked(returns(ref))]
+ pub fn inline_macro_plugin_overrides<'db>(
+     db: &'db dyn DefsGroup,
+-) -> Arc<OrderedHashMap<CrateId<'db>, Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>>> {
++) -> OrderedHashMap<CrateId<'db>, Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>> {
+     let inp = db.inline_macro_plugin_overrides_input();
+-    Arc::new(
+-        inp.iter()
+-            .map(|(crate_id, plugins)| {
+-                (
+-                    crate_id.clone().into_crate_long_id(db).intern(db),
+-                    Arc::new(
+-                        plugins
+-                            .iter()
+-                            .map(|(name, plugin)| (name.clone(), plugin.clone().intern(db)))
+-                            .collect(),
+-                    ),
+-                )
+-            })
+-            .collect(),
+-    )
++    inp.iter()
++        .map(|(crate_id, plugins)| {
++            (
++                crate_id.clone().into_crate_long_id(db).intern(db),
++                Arc::new(
++                    plugins
++                        .iter()
++                        .map(|(name, plugin)| (name.clone(), plugin.clone().intern(db)))
++                        .collect(),
++                ),
++            )
++        })
++        .collect()
+ }
+ 
++#[salsa::tracked(returns(ref))]
+ pub fn default_inline_macro_plugins<'db>(
+     db: &'db dyn DefsGroup,
+-) -> Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>> {
++) -> OrderedHashMap<String, InlineMacroExprPluginId<'db>> {
+     let inp = db.default_inline_macro_plugins_input();
+-    Arc::new(inp.iter().map(|(name, plugin)| (name.clone(), plugin.clone().intern(db))).collect())
++    inp.iter().map(|(name, plugin)| (name.clone(), plugin.clone().intern(db))).collect()
+ }
+ 
+ fn crate_macro_plugins<'db>(
+     db: &'db dyn DefsGroup,
+     crate_id: CrateId<'db>,
+-) -> Arc<Vec<MacroPluginId<'db>>> {
+-    macro_plugin_overrides(db).get(&crate_id).cloned().unwrap_or_else(|| db.default_macro_plugins())
++) -> &'db [MacroPluginId<'db>] {
++    macro_plugin_overrides(db)
++        .get(&crate_id)
++        .map(|x| x.as_ref())
++        .unwrap_or_else(|| default_macro_plugins_helper(db))
+ }
+ 
+ fn crate_inline_macro_plugins<'db>(
+     db: &'db dyn DefsGroup,
+     crate_id: CrateId<'db>,
+-) -> Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>> {
++) -> &'db OrderedHashMap<String, InlineMacroExprPluginId<'db>> {
+     db.inline_macro_plugin_overrides()
+         .get(&crate_id)
+-        .cloned()
++        .map(|x| x.as_ref())
+         .unwrap_or_else(|| db.default_inline_macro_plugins())
+ }
+ 
++#[salsa::tracked(returns(ref))]
+ fn allowed_attributes<'db>(
+-    db: &dyn DefsGroup,
++    db: &'db dyn DefsGroup,
+     crate_id: CrateId<'db>,
+-) -> Arc<OrderedHashSet<String>> {
++) -> OrderedHashSet<String> {
+     let base_attrs = [
+         INLINE_ATTR,
+         MUST_USE_ATTR,
+@@ -467,48 +491,55 @@ fn allowed_attributes<'db>(
+ 
+     let crate_plugins = db.crate_macro_plugins(crate_id);
+ 
+-    Arc::new(OrderedHashSet::from_iter(chain!(
++    OrderedHashSet::from_iter(chain!(
+         base_attrs.map(|attr| attr.into()),
+         crate_plugins.iter().flat_map(|plugin| plugin.long(db).declared_attributes())
+-    )))
++    ))
+ }
+ 
+-fn allowed_statement_attributes(_db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
++// TODO(eytan-starkware): Untrack this
++#[salsa::tracked(returns(ref))]
++fn allowed_statement_attributes<'db>(_db: &'db dyn DefsGroup) -> OrderedHashSet<String> {
+     let all_attributes = [FMT_SKIP_ATTR, ALLOW_ATTR, FEATURE_ATTR];
+-    Arc::new(OrderedHashSet::from_iter(all_attributes.map(|attr| attr.into())))
++    OrderedHashSet::from_iter(all_attributes.map(|attr| attr.into()))
+ }
+ 
+-fn declared_derives<'db>(
+-    db: &dyn DefsGroup,
+-    crate_id: CrateId<'db>,
+-) -> Arc<OrderedHashSet<String>> {
+-    Arc::new(OrderedHashSet::from_iter(
++#[salsa::tracked(returns(ref))]
++fn declared_derives<'db>(db: &'db dyn DefsGroup, crate_id: CrateId<'db>) -> OrderedHashSet<String> {
++    OrderedHashSet::from_iter(
+         db.crate_macro_plugins(crate_id)
+             .iter()
+             .flat_map(|plugin| plugin.long(db).declared_derives()),
+-    ))
++    )
+ }
+ 
++#[salsa::tracked(returns(ref))]
+ fn declared_phantom_type_attributes<'db>(
+-    db: &dyn DefsGroup,
++    db: &'db dyn DefsGroup,
+     crate_id: CrateId<'db>,
+-) -> Arc<OrderedHashSet<String>> {
++) -> OrderedHashSet<String> {
+     let crate_plugins = db.crate_macro_plugins(crate_id);
+ 
+-    Arc::new(OrderedHashSet::from_iter(chain!(
++    OrderedHashSet::from_iter(chain!(
+         [PHANTOM_ATTR.into()],
+         crate_plugins.iter().flat_map(|plugin| plugin.long(db).phantom_type_attributes())
+-    )))
++    ))
+ }
+ 
+-fn is_submodule_inline<'db>(db: &dyn DefsGroup, submodule_id: SubmoduleId<'db>) -> bool {
++#[salsa::tracked]
++fn is_submodule_inline<'db>(db: &'db dyn DefsGroup, submodule_id: SubmoduleId<'db>) -> bool {
+     match submodule_id.stable_ptr(db).lookup(db).body(db) {
+         MaybeModuleBody::Some(_) => true,
+         MaybeModuleBody::None(_) => false,
+     }
+ }
+ 
+-fn module_main_file<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) -> Maybe<FileId<'db>> {
++#[salsa::tracked]
++fn module_main_file_helper<'db>(
++    db: &'db dyn DefsGroup,
++    _helper: FileId<'db>,
++    module_id: ModuleId<'db>,
++) -> Maybe<FileId<'db>> {
+     Ok(match module_id {
+         ModuleId::CrateRoot(crate_id) => {
+             db.crate_config(crate_id).to_maybe()?.root.file(db, "lib.cairo")
+@@ -532,11 +563,25 @@ fn module_main_file<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) -> Ma
+     })
+ }
+ 
++fn module_main_file<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) -> Maybe<FileId<'db>> {
++    // TODO(eytan-starkware): Remove this dummy file when ModuleId is tracked.
++    module_main_file_helper(db, FileId::dummy(db), module_id)
++}
++
++#[salsa::tracked]
++fn module_files_helper<'db>(
++    db: &'db dyn DefsGroup,
++    _helper: FileId<'db>,
++    module_id: ModuleId<'db>,
++) -> Maybe<Arc<Vec<FileId<'db>>>> {
++    Ok(db.priv_module_data(module_id)?.files.clone())
++}
++
+ fn module_files<'db>(
+     db: &'db dyn DefsGroup,
+     module_id: ModuleId<'db>,
+ ) -> Maybe<Arc<Vec<FileId<'db>>>> {
+-    Ok(Arc::new(db.priv_module_data(module_id)?.files.to_vec()))
++    module_files_helper(db, FileId::dummy(db), module_id)
+ }
+ 
+ fn module_file<'db>(
+@@ -546,7 +591,12 @@ fn module_file<'db>(
+     Ok(db.module_files(module_file_id.0)?[module_file_id.1.0])
+ }
+ 
+-fn module_dir<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) -> Maybe<Directory<'db>> {
++#[salsa::tracked(returns(ref))]
++fn module_dir_helper<'db>(
++    db: &'db dyn DefsGroup,
++    _helper: FileId<'db>,
++    module_id: ModuleId<'db>,
++) -> Maybe<Directory<'db>> {
+     match module_id {
+         ModuleId::CrateRoot(crate_id) => {
+             db.crate_config(crate_id).to_maybe().map(|config| config.root.clone())
+@@ -559,11 +609,15 @@ fn module_dir<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) -> Maybe<Di
+         ModuleId::MacroCall { id: macro_call_id, .. } => {
+             // This is a macro call, we return the directory for the file that contained the macro
+             // call, as it is considered the location of the macro itself.
+-            db.module_dir(macro_call_id.module_file_id(db).0)
++            db.module_dir(macro_call_id.module_file_id(db).0).cloned()
+         }
+     }
+ }
+ 
++fn module_dir<'db>(db: &'db dyn DefsGroup, module_id: ModuleId<'db>) -> Maybe<&'db Directory<'db>> {
++    module_dir_helper(db, FileId::dummy(db), module_id).as_ref().map_err(|x| *x)
++}
++
+ /// Appends all the modules under the given module, including nested modules.
+ fn collect_modules_under<'db>(
+     db: &'db dyn DefsGroup,
+@@ -579,15 +633,17 @@ fn collect_modules_under<'db>(
+ }
+ 
+ /// Returns all the modules in the crate, including recursively.
+-fn crate_modules<'db>(db: &'db dyn DefsGroup, crate_id: CrateId<'db>) -> Arc<Vec<ModuleId<'db>>> {
++#[salsa::tracked(returns(ref))]
++fn crate_modules<'db>(db: &'db dyn DefsGroup, crate_id: CrateId<'db>) -> Vec<ModuleId<'db>> {
+     let mut modules = Vec::new();
+     collect_modules_under(db, &mut modules, ModuleId::CrateRoot(crate_id));
+-    Arc::new(modules)
++    modules
+ }
+ 
++#[salsa::tracked(returns(ref))]
+ fn priv_file_to_module_mapping<'db>(
+     db: &'db dyn DefsGroup,
+-) -> Arc<OrderedHashMap<FileId<'db>, Vec<ModuleId<'db>>>> {
++) -> OrderedHashMap<FileId<'db>, Vec<ModuleId<'db>>> {
+     let mut mapping = OrderedHashMap::<FileId<'db>, Vec<ModuleId<'db>>>::default();
+     for crate_id in db.crates() {
+         for module_id in db.crate_modules(*crate_id).iter().copied() {
+@@ -605,13 +661,18 @@ fn priv_file_to_module_mapping<'db>(
+             }
+         }
+     }
+-    mapping.into()
++    mapping
+ }
+-fn file_modules<'db>(
++#[salsa::tracked(returns(ref))]
++fn file_modules_helper<'db>(
+     db: &'db dyn DefsGroup,
+     file_id: FileId<'db>,
+-) -> Maybe<Arc<Vec<ModuleId<'db>>>> {
+-    Ok(Arc::new(db.priv_file_to_module_mapping().get(&file_id).to_maybe()?.clone()))
++) -> Maybe<Vec<ModuleId<'db>>> {
++    Ok(db.priv_file_to_module_mapping().get(&file_id).to_maybe()?.clone())
++}
++
++fn file_modules<'db>(db: &'db dyn DefsGroup, file_id: FileId<'db>) -> Maybe<&'db [ModuleId<'db>]> {
++    file_modules_helper(db, file_id).as_ref().map(|x| x.as_slice()).map_err(|x| *x)
+ }
+ 
+ #[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+@@ -921,7 +982,7 @@ fn priv_module_sub_files<'db>(
+         .unwrap_or_default();
+     let metadata = MacroPluginMetadata {
+         cfg_set,
+-        declared_derives: &db.declared_derives(crate_id),
++        declared_derives: db.declared_derives(crate_id),
+         allowed_features: &allowed_features,
+         edition,
+     };
+@@ -981,7 +1042,7 @@ fn priv_module_sub_files<'db>(
+             // Don't add the original item to the module data.
+             continue;
+         }
+-        validate_attributes(db, &allowed_attributes, &item_ast, &mut plugin_diagnostics);
++        validate_attributes(db, allowed_attributes, &item_ast, &mut plugin_diagnostics);
+         items.push(item_ast);
+     }
+     let res = PrivModuleSubFiles { files, aux_data, items, plugin_diagnostics, diagnostics_notes };
+diff --git a/crates/cairo-lang-defs/src/ids.rs b/crates/cairo-lang-defs/src/ids.rs
+index 2e25b40d8..650452e6d 100644
+--- a/crates/cairo-lang-defs/src/ids.rs
++++ b/crates/cairo-lang-defs/src/ids.rs
+@@ -285,6 +285,7 @@ macro_rules! toplevel_enum {
+ }
+ 
+ /// Id for a module. Either the root module of a crate, or a submodule.
++// TODO(eytan-starkware): Track this type to improve performance.
+ #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+ pub enum ModuleId<'db> {
+     CrateRoot(CrateId<'db>),
+diff --git a/crates/cairo-lang-defs/src/test.rs b/crates/cairo-lang-defs/src/test.rs
+index 610d85e20..7fac439ee 100644
+--- a/crates/cairo-lang-defs/src/test.rs
++++ b/crates/cairo-lang-defs/src/test.rs
+@@ -192,16 +192,13 @@ fn test_submodules() {
+     );
+ 
+     // Test file mappings.
++    assert_eq!(db.file_modules(db.module_main_file(module_id).unwrap()).unwrap(), vec![module_id]);
+     assert_eq!(
+-        &db.file_modules(db.module_main_file(module_id).unwrap()).unwrap()[..],
+-        vec![module_id]
+-    );
+-    assert_eq!(
+-        &db.file_modules(db.module_main_file(submodule_id).unwrap()).unwrap()[..],
++        db.file_modules(db.module_main_file(submodule_id).unwrap()).unwrap(),
+         vec![submodule_id]
+     );
+     assert_eq!(
+-        &db.file_modules(db.module_main_file(subsubmodule_id).unwrap()).unwrap()[..],
++        db.file_modules(db.module_main_file(subsubmodule_id).unwrap()).unwrap(),
+         vec![subsubmodule_id]
+     );
+ }
+diff --git a/crates/cairo-lang-filesystem/src/ids.rs b/crates/cairo-lang-filesystem/src/ids.rs
+index f9b7425d7..39d4a6948 100644
+--- a/crates/cairo-lang-filesystem/src/ids.rs
++++ b/crates/cairo-lang-filesystem/src/ids.rs
+@@ -310,6 +310,13 @@ impl<'db> FileLongId<'db> {
+ 
+ define_short_id!(FileId, FileLongId<'db>, FilesGroup);
+ impl<'db> FileId<'db> {
++    /// Returns a dummy file id for implementing `salsa::tracked` structs.
++    /// A struct that is `InSalsaDatabase` must be the first parameter of a tracked function.
++    /// This is a workaround to allow support existing API until further refactoring.
++    pub fn dummy(db: &'db dyn Database) -> FileId<'db> {
++        FileId::new(db, FileLongId::OnDisk(PathBuf::from("dummy")))
++    }
++
+     pub fn new_on_disk(db: &'db dyn Database, path: PathBuf) -> FileId<'db> {
+         FileLongId::OnDisk(path.clean()).intern(db)
+     }
+diff --git a/crates/cairo-lang-semantic/src/expr/compute.rs b/crates/cairo-lang-semantic/src/expr/compute.rs
+index e9f99c65a..46a6184b8 100644
+--- a/crates/cairo-lang-semantic/src/expr/compute.rs
++++ b/crates/cairo-lang-semantic/src/expr/compute.rs
+@@ -664,7 +664,7 @@ fn expand_inline_macro<'db>(
+             syntax,
+             &MacroPluginMetadata {
+                 cfg_set: &ctx.cfg_set,
+-                declared_derives: &ctx.db.declared_derives(crate_id),
++                declared_derives: ctx.db.declared_derives(crate_id),
+                 allowed_features: &ctx
+                     .resolver
+                     .data
+@@ -4557,7 +4557,7 @@ fn validate_statement_attributes<'db>(
+     let mut diagnostics = vec![];
+     validate_attributes_flat(
+         ctx.db,
+-        &allowed_attributes,
++        allowed_attributes,
+         &OrderedHashSet::default(),
+         syntax,
+         &mut diagnostics,

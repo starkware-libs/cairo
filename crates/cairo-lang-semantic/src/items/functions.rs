@@ -30,6 +30,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
 use crate::expr::fmt::CountingWriter;
+use crate::ids::DummyId;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::GenericSubstitution;
 use crate::types::resolve_type;
@@ -808,9 +809,10 @@ pub fn function_signature_params<'db>(
     update_env_with_ast_params(diagnostics, db, resolver, params, function_title_id, env)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::function_title_signature].
-pub fn function_title_signature<'db>(
+#[salsa::tracked]
+fn function_title_signature_helper<'db>(
     db: &'db dyn SemanticGroup,
+    _dummy: DummyId<'db>,
     function_title_id: FunctionTitleId<'db>,
 ) -> Maybe<Signature<'db>> {
     match function_title_id {
@@ -820,9 +822,26 @@ pub fn function_title_signature<'db>(
         FunctionTitleId::Impl(impl_function) => db.impl_function_signature(impl_function),
     }
 }
+
+/// Query implementation of [crate::db::SemanticGroup::function_title_signature].
+pub fn function_title_signature<'db>(
+    db: &'db dyn SemanticGroup,
+    function_title_id: FunctionTitleId<'db>,
+) -> Maybe<Signature<'db>> {
+    function_title_signature_helper(db, DummyId::dummy(db), function_title_id)
+}
 /// Query implementation of [crate::db::SemanticGroup::function_title_generic_params].
 pub fn function_title_generic_params<'db>(
     db: &'db dyn SemanticGroup,
+    function_title_id: FunctionTitleId<'db>,
+) -> Maybe<Vec<semantic::GenericParam<'db>>> {
+    function_title_generic_params_helper(db, DummyId::dummy(db), function_title_id)
+}
+
+#[salsa::tracked]
+fn function_title_generic_params_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _dummy: DummyId<'db>,
     function_title_id: FunctionTitleId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
     match function_title_id {
@@ -836,6 +855,7 @@ pub fn function_title_generic_params<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_function_signature].
+#[salsa::tracked]
 pub fn concrete_function_signature<'db>(
     db: &'db dyn SemanticGroup,
     function_id: FunctionId<'db>,
@@ -851,6 +871,7 @@ pub fn concrete_function_signature<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_function_closure_params].
+#[salsa::tracked]
 pub fn concrete_function_closure_params<'db>(
     db: &'db dyn SemanticGroup,
     function_id: FunctionId<'db>,
@@ -1026,6 +1047,15 @@ impl<'db> FromIterator<TypeId<'db>> for ImplicitPrecedence<'db> {
 /// Query implementation of [crate::db::SemanticGroup::get_closure_params].
 pub fn get_closure_params<'db>(
     db: &'db dyn SemanticGroup,
+    generic_function_id: GenericFunctionId<'db>,
+) -> Maybe<OrderedHashMap<TypeId<'db>, TypeId<'db>>> {
+    get_closure_params_helper(db, DummyId::dummy(db), generic_function_id)
+}
+
+#[salsa::tracked]
+fn get_closure_params_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _dummy: DummyId<'db>,
     generic_function_id: GenericFunctionId<'db>,
 ) -> Maybe<OrderedHashMap<TypeId<'db>, TypeId<'db>>> {
     let mut closure_params_map = OrderedHashMap::default();

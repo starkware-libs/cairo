@@ -32,7 +32,7 @@ use super::generics::{
     semantic_generic_params_ex,
 };
 use super::imp::{GenericsHeadFilter, ImplLongId, TraitFilter};
-use crate::db::{SemanticGroup, SemanticGroupData, get_resolver_data_options};
+use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
@@ -295,6 +295,7 @@ pub struct TraitDeclarationData<'db> {
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::trait_semantic_declaration_diagnostics].
+#[salsa::tracked]
 pub fn trait_semantic_declaration_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -303,6 +304,7 @@ pub fn trait_semantic_declaration_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_generic_params].
+#[salsa::tracked(cycle_result=trait_generic_params_cycle)]
 pub fn trait_generic_params<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -312,7 +314,6 @@ pub fn trait_generic_params<'db>(
 /// Cycle handling for [crate::db::SemanticGroup::trait_generic_params].
 pub fn trait_generic_params_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     trait_id: TraitId<'db>,
 ) -> Maybe<Vec<GenericParam<'db>>> {
     // Forwarding cycle handling to `priv_generic_param_data` handler.
@@ -320,6 +321,7 @@ pub fn trait_generic_params_cycle<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_generic_params_data].
+#[salsa::tracked(cycle_result=trait_generic_params_data_cycle)]
 pub fn trait_generic_params_data<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -353,7 +355,6 @@ pub fn trait_generic_params_data<'db>(
 /// Cycle handling for [crate::db::SemanticGroup::trait_generic_params_data].
 pub fn trait_generic_params_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     trait_id: TraitId<'db>,
     _in_cycle: bool,
 ) -> Maybe<GenericParamsData<'db>> {
@@ -361,6 +362,7 @@ pub fn trait_generic_params_data_cycle<'db>(
     trait_generic_params_data(db, trait_id, true)
 }
 /// Query implementation of [crate::db::SemanticGroup::trait_attributes].
+#[salsa::tracked]
 pub fn trait_attributes<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -369,6 +371,7 @@ pub fn trait_attributes<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_resolver_data].
+#[salsa::tracked]
 pub fn trait_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -379,6 +382,7 @@ pub fn trait_resolver_data<'db>(
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_declaration_data].
+#[salsa::tracked]
 pub fn priv_trait_declaration_data<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -464,6 +468,7 @@ impl<'db> HasFeatureKind<'db> for TraitItemInfo<'db> {
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::trait_semantic_definition_diagnostics].
+#[salsa::tracked]
 pub fn trait_semantic_definition_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -495,6 +500,7 @@ pub fn trait_semantic_definition_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_required_item_names].
+#[salsa::tracked]
 pub fn trait_required_item_names<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -516,6 +522,7 @@ pub fn trait_required_item_names<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_item_by_name].
+#[salsa::tracked]
 pub fn trait_item_by_name<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -525,6 +532,7 @@ pub fn trait_item_by_name<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_item_info_by_name].
+#[salsa::tracked]
 pub fn trait_item_info_by_name<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -535,6 +543,7 @@ pub fn trait_item_info_by_name<'db>(
 }
 
 /// Query implementation of [SemanticGroup::trait_all_used_uses].
+#[salsa::tracked]
 pub fn trait_all_used_uses<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -550,6 +559,7 @@ pub fn trait_all_used_uses<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_functions].
+#[salsa::tracked]
 pub fn trait_functions<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -566,6 +576,7 @@ pub fn trait_functions<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_by_name].
+#[salsa::tracked]
 pub fn trait_function_by_name<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -575,6 +586,7 @@ pub fn trait_function_by_name<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_types].
+#[salsa::tracked]
 pub fn trait_types<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -591,6 +603,7 @@ pub fn trait_types<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_type_by_name].
+#[salsa::tracked]
 pub fn trait_type_by_name<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -600,6 +613,7 @@ pub fn trait_type_by_name<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_constants].
+#[salsa::tracked]
 pub fn trait_constants<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -616,6 +630,7 @@ pub fn trait_constants<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_constant_by_name].
+#[salsa::tracked]
 pub fn trait_constant_by_name<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -625,6 +640,7 @@ pub fn trait_constant_by_name<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_impls].
+#[salsa::tracked]
 pub fn trait_impls<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -641,6 +657,7 @@ pub fn trait_impls<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_impl_by_name].
+#[salsa::tracked]
 pub fn trait_impl_by_name<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -652,6 +669,7 @@ pub fn trait_impl_by_name<'db>(
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_definition_data].
+#[salsa::tracked]
 pub fn priv_trait_definition_data<'db>(
     db: &'db dyn SemanticGroup,
     trait_id: TraitId<'db>,
@@ -794,6 +812,7 @@ pub struct TraitItemTypeData<'db> {
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::trait_type_diagnostics].
+#[salsa::tracked]
 pub fn trait_type_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     trait_type_id: TraitTypeId<'db>,
@@ -802,6 +821,7 @@ pub fn trait_type_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_type_generic_params].
+#[salsa::tracked]
 pub fn trait_type_generic_params<'db>(
     db: &'db dyn SemanticGroup,
     trait_type_id: TraitTypeId<'db>,
@@ -810,6 +830,7 @@ pub fn trait_type_generic_params<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_type_attributes].
+#[salsa::tracked]
 pub fn trait_type_attributes<'db>(
     db: &'db dyn SemanticGroup,
     trait_type_id: TraitTypeId<'db>,
@@ -818,6 +839,7 @@ pub fn trait_type_attributes<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_type_resolver_data].
+#[salsa::tracked]
 pub fn trait_type_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     trait_type_id: TraitTypeId<'db>,
@@ -828,6 +850,7 @@ pub fn trait_type_resolver_data<'db>(
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_type_generic_params_data].
+#[salsa::tracked]
 pub fn priv_trait_type_generic_params_data<'db>(
     db: &'db dyn SemanticGroup,
     trait_type_id: TraitTypeId<'db>,
@@ -873,6 +896,7 @@ pub fn priv_trait_type_generic_params_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_type_data].
+#[salsa::tracked]
 pub fn priv_trait_type_data<'db>(
     db: &'db dyn SemanticGroup,
     trait_type_id: TraitTypeId<'db>,
@@ -918,6 +942,7 @@ pub struct TraitItemConstantData<'db> {
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::trait_constant_diagnostics].
+#[salsa::tracked]
 pub fn trait_constant_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     trait_constant: TraitConstantId<'db>,
@@ -926,6 +951,7 @@ pub fn trait_constant_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_constant_resolver_data].
+#[salsa::tracked]
 pub fn trait_constant_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     trait_constant: TraitConstantId<'db>,
@@ -934,6 +960,7 @@ pub fn trait_constant_resolver_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_constant_attributes].
+#[salsa::tracked]
 pub fn trait_constant_attributes<'db>(
     db: &'db dyn SemanticGroup,
     trait_constant: TraitConstantId<'db>,
@@ -942,6 +969,7 @@ pub fn trait_constant_attributes<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_constant_type].
+#[salsa::tracked]
 pub fn trait_constant_type<'db>(
     db: &'db dyn SemanticGroup,
     trait_constant_id: TraitConstantId<'db>,
@@ -952,6 +980,7 @@ pub fn trait_constant_type<'db>(
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_constant_data].
+#[salsa::tracked]
 pub fn priv_trait_constant_data<'db>(
     db: &'db dyn SemanticGroup,
     trait_constant: TraitConstantId<'db>,
@@ -976,6 +1005,7 @@ pub fn priv_trait_constant_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_trait_constant_type].
+#[salsa::tracked]
 pub fn concrete_trait_constant_type<'db>(
     db: &'db dyn SemanticGroup,
     concrete_trait_constant_id: ConcreteTraitConstantId<'db>,
@@ -1003,6 +1033,7 @@ pub struct TraitItemImplData<'db> {
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::trait_impl_diagnostics].
+#[salsa::tracked]
 pub fn trait_impl_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     trait_impl: TraitImplId<'db>,
@@ -1011,6 +1042,7 @@ pub fn trait_impl_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_impl_resolver_data].
+#[salsa::tracked]
 pub fn trait_impl_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     trait_impl: TraitImplId<'db>,
@@ -1019,6 +1051,7 @@ pub fn trait_impl_resolver_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_impl_attributes].
+#[salsa::tracked]
 pub fn trait_impl_attributes<'db>(
     db: &'db dyn SemanticGroup,
     trait_impl: TraitImplId<'db>,
@@ -1027,6 +1060,7 @@ pub fn trait_impl_attributes<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_impl_concrete_trait].
+#[salsa::tracked]
 pub fn trait_impl_concrete_trait<'db>(
     db: &'db dyn SemanticGroup,
     trait_impl_id: TraitImplId<'db>,
@@ -1037,6 +1071,7 @@ pub fn trait_impl_concrete_trait<'db>(
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_impl_data].
+#[salsa::tracked]
 pub fn priv_trait_impl_data<'db>(
     db: &'db dyn SemanticGroup,
     trait_impl: TraitImplId<'db>,
@@ -1072,6 +1107,7 @@ pub fn priv_trait_impl_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_trait_impl_concrete_trait].
+#[salsa::tracked]
 pub fn concrete_trait_impl_concrete_trait<'db>(
     db: &'db dyn SemanticGroup,
     concrete_trait_impl_id: ConcreteTraitImplId<'db>,
@@ -1089,6 +1125,7 @@ pub fn concrete_trait_impl_concrete_trait<'db>(
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_declaration_diagnostics].
+#[salsa::tracked]
 pub fn trait_function_declaration_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     trait_function_id: TraitFunctionId<'db>,
@@ -1099,6 +1136,7 @@ pub fn trait_function_declaration_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_signature].
+#[salsa::tracked]
 pub fn trait_function_signature<'db>(
     db: &'db dyn SemanticGroup,
     trait_function_id: TraitFunctionId<'db>,
@@ -1107,6 +1145,7 @@ pub fn trait_function_signature<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_generic_params].
+#[salsa::tracked]
 pub fn trait_function_generic_params<'db>(
     db: &'db dyn SemanticGroup,
     trait_function_id: TraitFunctionId<'db>,
@@ -1115,6 +1154,7 @@ pub fn trait_function_generic_params<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_function_generic_params_data].
+#[salsa::tracked]
 pub fn priv_trait_function_generic_params_data<'db>(
     db: &'db dyn SemanticGroup,
     trait_function_id: TraitFunctionId<'db>,
@@ -1152,6 +1192,7 @@ pub fn priv_trait_function_generic_params_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_attributes].
+#[salsa::tracked]
 pub fn trait_function_attributes<'db>(
     db: &'db dyn SemanticGroup,
     trait_function_id: TraitFunctionId<'db>,
@@ -1160,6 +1201,7 @@ pub fn trait_function_attributes<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_resolver_data].
+#[salsa::tracked]
 pub fn trait_function_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     trait_function_id: TraitFunctionId<'db>,
@@ -1168,6 +1210,7 @@ pub fn trait_function_resolver_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_declaration_inline_config].
+#[salsa::tracked]
 pub fn trait_function_declaration_inline_config<'db>(
     db: &'db dyn SemanticGroup,
     trait_function_id: TraitFunctionId<'db>,
@@ -1176,6 +1219,7 @@ pub fn trait_function_declaration_inline_config<'db>(
 }
 
 /// Query implementation of [SemanticGroup::trait_function_declaration_implicit_precedence].
+#[salsa::tracked]
 pub fn trait_function_declaration_implicit_precedence<'db>(
     db: &'db dyn SemanticGroup,
     trait_function_id: TraitFunctionId<'db>,
@@ -1184,6 +1228,7 @@ pub fn trait_function_declaration_implicit_precedence<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_declaration_implicits].
+#[salsa::tracked]
 pub fn trait_function_declaration_implicits<'db>(
     db: &'db dyn SemanticGroup,
     trait_function_id: TraitFunctionId<'db>,
@@ -1194,6 +1239,7 @@ pub fn trait_function_declaration_implicits<'db>(
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_function_declaration_data].
+#[salsa::tracked]
 pub fn priv_trait_function_declaration_data<'db>(
     db: &'db dyn SemanticGroup,
     trait_function_id: TraitFunctionId<'db>,
@@ -1280,6 +1326,7 @@ fn validate_trait_function_signature<'db>(
 // === Concrete Trait Function ===
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_trait_function_generic_params].
+#[salsa::tracked]
 pub fn concrete_trait_function_generic_params<'db>(
     db: &'db dyn SemanticGroup,
     concrete_trait_function_id: ConcreteTraitGenericFunctionId<'db>,
@@ -1296,6 +1343,7 @@ pub fn concrete_trait_function_generic_params<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_trait_function_signature].
+#[salsa::tracked]
 pub fn concrete_trait_function_signature<'db>(
     db: &'db dyn SemanticGroup,
     concrete_trait_function_id: ConcreteTraitGenericFunctionId<'db>,
@@ -1313,6 +1361,7 @@ pub fn concrete_trait_function_signature<'db>(
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_body_diagnostics].
+#[salsa::tracked]
 pub fn trait_function_body_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     trait_function_id: TraitFunctionId<'db>,
@@ -1326,6 +1375,7 @@ pub fn trait_function_body_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_body].
+#[salsa::tracked]
 pub fn trait_function_body<'db>(
     db: &'db dyn SemanticGroup,
     trait_function_id: TraitFunctionId<'db>,
@@ -1339,6 +1389,7 @@ pub fn trait_function_body<'db>(
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_function_body_data].
+#[salsa::tracked]
 pub fn priv_trait_function_body_data<'db>(
     db: &'db dyn SemanticGroup,
     trait_function_id: TraitFunctionId<'db>,

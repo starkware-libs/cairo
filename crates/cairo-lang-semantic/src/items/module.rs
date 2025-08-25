@@ -19,6 +19,7 @@ use super::visibility::{Visibility, peek_visible_in};
 use crate::SemanticDiagnostic;
 use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
+use crate::ids::DummyId;
 use crate::items::feature_kind::HasFeatureKind;
 use crate::resolve::ResolvedGenericItem;
 
@@ -40,6 +41,15 @@ pub struct ModuleSemanticData<'db> {
 
 pub fn priv_module_semantic_data<'db>(
     db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<ModuleSemanticData<'db>>> {
+    priv_module_semantic_data_helper(db, DummyId::dummy(db), module_id)
+}
+
+#[salsa::tracked]
+fn priv_module_semantic_data_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _dummy: DummyId<'db>,
     module_id: ModuleId<'db>,
 ) -> Maybe<Arc<ModuleSemanticData<'db>>> {
     // We use the builder here since the items can come from different file_ids.
@@ -127,6 +137,7 @@ pub fn priv_module_semantic_data<'db>(
     Ok(Arc::new(ModuleSemanticData { items, global_uses, diagnostics: diagnostics.build() }))
 }
 
+#[salsa::tracked]
 pub fn module_item_by_name<'db>(
     db: &'db dyn SemanticGroup,
     module_id: ModuleId<'db>,
@@ -136,6 +147,7 @@ pub fn module_item_by_name<'db>(
     Ok(module_data.items.get(&name).map(|info| info.item_id))
 }
 
+#[salsa::tracked]
 pub fn module_item_info_by_name<'db>(
     db: &'db dyn SemanticGroup,
     module_id: ModuleId<'db>,
@@ -157,6 +169,15 @@ pub fn get_module_global_uses<'db>(
 /// Query implementation of [SemanticGroup::module_all_used_uses].
 pub fn module_all_used_uses<'db>(
     db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
+    module_all_used_uses_helper(db, DummyId::dummy(db), module_id)
+}
+
+#[salsa::tracked]
+fn module_all_used_uses_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _dummy: DummyId<'db>,
     module_id: ModuleId<'db>,
 ) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
     let mut all_used_uses = OrderedHashSet::default();
@@ -185,6 +206,15 @@ pub fn module_attributes<'db>(
     db: &'db dyn SemanticGroup,
     module_id: ModuleId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
+    module_attributes_helper(db, DummyId::dummy(db), module_id)
+}
+
+#[salsa::tracked]
+fn module_attributes_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _dummy: DummyId<'db>,
+    module_id: ModuleId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
     Ok(match &module_id {
         ModuleId::CrateRoot(_) | ModuleId::MacroCall { id: _, generated_file_id: _ } => vec![],
         ModuleId::Submodule(submodule_id) => {
@@ -198,6 +228,15 @@ pub fn module_attributes<'db>(
 /// Finds all the trait ids usable in the current context, using `global use` imports.
 pub fn module_usable_trait_ids<'db>(
     db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
+    module_usable_trait_ids_helper(db, DummyId::dummy(db), module_id)
+}
+
+#[salsa::tracked]
+fn module_usable_trait_ids_helper<'db>(
+    db: &'db dyn SemanticGroup,
+    _dummy: DummyId<'db>,
     module_id: ModuleId<'db>,
 ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
     // Get the traits first from the module, do not change this order.

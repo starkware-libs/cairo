@@ -10,7 +10,7 @@ use super::type_aliases::{
     TypeAliasData, type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
     type_alias_semantic_data_helper,
 };
-use crate::db::{SemanticGroup, SemanticGroupData};
+use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve::ResolverData;
 use crate::{GenericParam, SemanticDiagnostic, TypeId};
@@ -26,6 +26,7 @@ pub struct ModuleTypeAliasData<'db> {
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::module_type_alias_semantic_diagnostics].
+#[salsa::tracked]
 pub fn module_type_alias_semantic_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     module_type_alias_id: ModuleTypeAliasId<'db>,
@@ -36,6 +37,7 @@ pub fn module_type_alias_semantic_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::module_type_alias_resolved_type].
+#[salsa::tracked(cycle_result=module_type_alias_resolved_type_cycle)]
 pub fn module_type_alias_resolved_type<'db>(
     db: &'db dyn SemanticGroup,
     module_type_alias_id: ModuleTypeAliasId<'db>,
@@ -48,7 +50,6 @@ pub fn module_type_alias_resolved_type<'db>(
 /// Trivial cycle handling for [crate::db::SemanticGroup::module_type_alias_resolved_type].
 pub fn module_type_alias_resolved_type_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<TypeId<'db>> {
     // Forwarding (not as a query) cycle handling to `priv_module_type_alias_semantic_data` cycle
@@ -59,6 +60,7 @@ pub fn module_type_alias_resolved_type_cycle<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::module_type_alias_generic_params].
+#[salsa::tracked]
 pub fn module_type_alias_generic_params<'db>(
     db: &'db dyn SemanticGroup,
     module_type_alias_id: ModuleTypeAliasId<'db>,
@@ -67,6 +69,7 @@ pub fn module_type_alias_generic_params<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::module_type_alias_resolver_data].
+#[salsa::tracked(cycle_result=module_type_alias_resolver_data_cycle)]
 pub fn module_type_alias_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     module_type_alias_id: ModuleTypeAliasId<'db>,
@@ -80,7 +83,6 @@ pub fn module_type_alias_resolver_data<'db>(
 /// Trivial cycle handling for [crate::db::SemanticGroup::module_type_alias_resolver_data].
 pub fn module_type_alias_resolver_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     // Forwarding (not as a query) cycle handling to `priv_module_type_alias_semantic_data` cycle
@@ -94,6 +96,7 @@ pub fn module_type_alias_resolver_data_cycle<'db>(
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_module_type_alias_semantic_data].
+#[salsa::tracked(cycle_result=priv_module_type_alias_semantic_data_cycle)]
 pub fn priv_module_type_alias_semantic_data<'db>(
     db: &'db dyn SemanticGroup,
     module_type_alias_id: ModuleTypeAliasId<'db>,
@@ -134,7 +137,6 @@ pub fn priv_module_type_alias_semantic_data<'db>(
 /// Cycle handling for [crate::db::SemanticGroup::priv_module_type_alias_semantic_data].
 pub fn priv_module_type_alias_semantic_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     module_type_alias_id: ModuleTypeAliasId<'db>,
     _in_cycle: bool,
 ) -> Maybe<ModuleTypeAliasData<'db>> {
@@ -142,6 +144,7 @@ pub fn priv_module_type_alias_semantic_data_cycle<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_module_type_alias_generic_params_data].
+#[salsa::tracked]
 pub fn priv_module_type_alias_generic_params_data<'db>(
     db: &'db dyn SemanticGroup,
     module_type_alias_id: ModuleTypeAliasId<'db>,

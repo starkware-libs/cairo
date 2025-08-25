@@ -41,6 +41,7 @@ pub struct EnumDeclarationData<'db> {
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_enum_declaration_data].
+#[salsa::tracked]
 pub fn priv_enum_declaration_data<'db>(
     db: &'db dyn SemanticGroup,
     enum_id: EnumId<'db>,
@@ -79,6 +80,7 @@ pub fn priv_enum_declaration_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_declaration_diagnostics].
+#[salsa::tracked]
 pub fn enum_declaration_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     enum_id: EnumId<'db>,
@@ -87,6 +89,7 @@ pub fn enum_declaration_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_generic_params].
+#[salsa::tracked]
 pub fn enum_generic_params<'db>(
     db: &'db dyn SemanticGroup,
     enum_id: EnumId<'db>,
@@ -95,6 +98,7 @@ pub fn enum_generic_params<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_generic_params_data].
+#[salsa::tracked]
 pub fn enum_generic_params_data<'db>(
     db: &'db dyn SemanticGroup,
     enum_id: EnumId<'db>,
@@ -124,6 +128,7 @@ pub fn enum_generic_params_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_attributes].
+#[salsa::tracked]
 pub fn enum_attributes<'db>(
     db: &'db dyn SemanticGroup,
     enum_id: EnumId<'db>,
@@ -132,6 +137,7 @@ pub fn enum_attributes<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_declaration_resolver_data].
+#[salsa::tracked]
 pub fn enum_declaration_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     enum_id: EnumId<'db>,
@@ -186,6 +192,7 @@ pub enum MatchArmSelector<'db> {
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_enum_definition_data].
+#[salsa::tracked]
 pub fn priv_enum_definition_data<'db>(
     db: &'db dyn SemanticGroup,
     enum_id: EnumId<'db>,
@@ -250,6 +257,7 @@ pub fn priv_enum_definition_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_definition_diagnostics].
+#[salsa::tracked]
 pub fn enum_definition_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     enum_id: EnumId<'db>,
@@ -281,6 +289,7 @@ pub fn enum_definition_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_definition_resolver_data].
+#[salsa::tracked]
 pub fn enum_definition_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     enum_id: EnumId<'db>,
@@ -289,6 +298,7 @@ pub fn enum_definition_resolver_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_variants].
+#[salsa::tracked]
 pub fn enum_variants<'db>(
     db: &'db dyn SemanticGroup,
     enum_id: EnumId<'db>,
@@ -297,6 +307,7 @@ pub fn enum_variants<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::variant_semantic].
+#[salsa::tracked]
 pub fn variant_semantic<'db>(
     db: &'db dyn SemanticGroup,
     enum_id: EnumId<'db>,

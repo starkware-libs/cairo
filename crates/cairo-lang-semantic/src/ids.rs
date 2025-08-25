@@ -47,3 +47,11 @@ impl Hash for AnalyzerPluginLongId {
 }
 
 define_short_id!(AnalyzerPluginId, AnalyzerPluginLongId, SemanticGroup);
+
+define_short_id!(DummyId, u8, SemanticGroup);
+
+impl DummyId<'_> {
+    pub fn dummy(db: &dyn SemanticGroup) -> DummyId<'_> {
+        DummyId::new(db, 0)
+    }
+}

@@ -106,6 +106,7 @@ pub struct CapturedValue<'db> {
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_macro_declaration_data].
+#[salsa::tracked]
 pub fn priv_macro_declaration_data<'db>(
     db: &'db dyn SemanticGroup,
     macro_declaration_id: MacroDeclarationId<'db>,
@@ -614,6 +615,7 @@ fn repetition_params_extend<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_diagnostics].
+#[salsa::tracked]
 pub fn macro_declaration_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     macro_declaration_id: MacroDeclarationId<'db>,
@@ -624,6 +626,7 @@ pub fn macro_declaration_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_attributes].
+#[salsa::tracked]
 pub fn macro_declaration_attributes<'db>(
     db: &'db dyn SemanticGroup,
     macro_declaration_id: MacroDeclarationId<'db>,
@@ -632,6 +635,7 @@ pub fn macro_declaration_attributes<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_resolver_data].
+#[salsa::tracked]
 pub fn macro_declaration_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     macro_declaration_id: MacroDeclarationId<'db>,
@@ -640,6 +644,7 @@ pub fn macro_declaration_resolver_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_rules].
+#[salsa::tracked]
 pub fn macro_declaration_rules<'db>(
     db: &'db dyn SemanticGroup,
     macro_declaration_id: MacroDeclarationId<'db>,

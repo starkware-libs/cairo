@@ -34,6 +34,7 @@ pub struct ExternTypeDeclarationData<'db> {
 
 // Selectors.
 /// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_diagnostics].
+#[salsa::tracked]
 pub fn extern_type_declaration_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     extern_type_id: ExternTypeId<'db>,
@@ -43,6 +44,7 @@ pub fn extern_type_declaration_diagnostics<'db>(
         .unwrap_or_default()
 }
 /// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params].
+#[salsa::tracked]
 pub fn extern_type_declaration_generic_params<'db>(
     db: &'db dyn SemanticGroup,
     extern_type_id: ExternTypeId<'db>,
@@ -52,6 +54,7 @@ pub fn extern_type_declaration_generic_params<'db>(
 
 // Computation.
 /// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params_data].
+#[salsa::tracked]
 pub fn extern_type_declaration_generic_params_data<'db>(
     db: &'db dyn SemanticGroup,
     extern_type_id: ExternTypeId<'db>,
@@ -84,6 +87,7 @@ pub fn extern_type_declaration_generic_params_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_extern_type_declaration_data].
+#[salsa::tracked]
 pub fn priv_extern_type_declaration_data<'db>(
     db: &'db dyn SemanticGroup,
     extern_type_id: ExternTypeId<'db>,
@@ -114,6 +118,7 @@ pub fn priv_extern_type_declaration_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::extern_type_attributes].
+#[salsa::tracked]
 pub fn extern_type_attributes<'db>(
     db: &'db dyn SemanticGroup,
     extern_type_id: ExternTypeId<'db>,
