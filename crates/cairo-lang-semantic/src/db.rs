@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsGroup, DefsGroupEx, defs_group_input};
@@ -32,7 +32,7 @@ use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{GenericFunctionId, ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{
-    ImplId, ImplImplId, ImplItemInfo, ImplLookupContext, ImplicitImplImplData, UninferredImpl,
+    ImplId, ImplImplId, ImplItemInfo, ImplLookupContextId, ImplicitImplImplData, UninferredImplById,
 };
 use crate::items::macro_declaration::{MacroDeclarationData, MacroRuleData};
 use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
@@ -87,6 +87,12 @@ pub trait Elongate {
 // This prevents cycles where there shouldn't be any.
 #[cairo_lang_proc_macros::query_group]
 pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + Elongate {
+    #[salsa::interned]
+    fn intern_impl_lookup_context<'db>(
+        &'db self,
+        id: items::imp::ImplLookupContext<'db>,
+    ) -> items::imp::ImplLookupContextId<'db>;
+
     // Const.
     // ====
     /// Private query to compute data about a constant definition.
@@ -791,28 +797,13 @@ pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + 
 
     // Trait filter.
     // ==============
-    /// Returns candidate [ImplDefId]s for a specific trait lookup constraint.
-    #[salsa::invoke(items::imp::module_impl_ids_for_trait_filter)]
-    #[salsa::cycle(items::imp::module_impl_ids_for_trait_filter_cycle)]
-    fn module_impl_ids_for_trait_filter<'db>(
-        &'db self,
-        module_id: ModuleId<'db>,
-        trait_lookup_constraint: items::imp::TraitFilter<'db>,
-    ) -> Maybe<Vec<UninferredImpl<'db>>>;
-    #[salsa::invoke(items::imp::impl_impl_ids_for_trait_filter)]
-    #[salsa::cycle(items::imp::impl_impl_ids_for_trait_filter_cycle)]
-    fn impl_impl_ids_for_trait_filter<'db>(
-        &'db self,
-        impl_id: ImplId<'db>,
-        trait_lookup_constraint: items::imp::TraitFilter<'db>,
-    ) -> Maybe<Vec<UninferredImpl<'db>>>;
     // Returns the solution set for a canonical trait.
     #[salsa::invoke(inference::solver::canonic_trait_solutions)]
     #[salsa::cycle(inference::solver::canonic_trait_solutions_cycle)]
     fn canonic_trait_solutions<'db>(
         &'db self,
         canonical_trait: inference::canonic::CanonicalTrait<'db>,
-        lookup_context: ImplLookupContext<'db>,
+        lookup_context: ImplLookupContextId<'db>,
         impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
     ) -> Result<
         inference::solver::SolutionSet<'db, inference::canonic::CanonicalImpl<'db>>,
@@ -1010,6 +1001,14 @@ pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + 
         impl_def_id: ImplDefId<'db>,
     ) -> Maybe<items::imp::ImplDefinitionData<'db>>;
 
+    /// Returns the uninferred impls in a module.
+    #[salsa::invoke(items::imp::module_impl_ids)]
+    fn module_impl_ids<'db>(
+        &'db self,
+        user_module: ModuleId<'db>,
+        containing_module: ModuleId<'db>,
+    ) -> Maybe<Arc<BTreeSet<UninferredImplById<'db>>>>;
+
     /// Private query to check if an impl is fully concrete.
     #[salsa::invoke(items::imp::priv_impl_is_fully_concrete)]
     fn priv_impl_is_fully_concrete<'db>(&self, impl_id: ImplId<'db>) -> bool;
@@ -1079,6 +1078,7 @@ pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + 
     fn deref_chain<'db>(
         &'db self,
         ty: TypeId<'db>,
+        crate_id: CrateId<'db>,
         try_deref_mut: bool,
     ) -> Maybe<items::imp::DerefChain<'db>>;
 
@@ -1755,7 +1755,7 @@ pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + 
     #[salsa::invoke(types::type_info)]
     fn type_info<'db>(
         &'db self,
-        lookup_context: ImplLookupContext<'db>,
+        lookup_context: ImplLookupContextId<'db>,
         ty: types::TypeId<'db>,
     ) -> types::TypeInfo<'db>;
 
