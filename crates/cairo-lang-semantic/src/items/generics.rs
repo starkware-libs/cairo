@@ -369,8 +369,7 @@ fn generic_impl_param_shallow_trait_generic_args_helper<'db>(
         .trait_generic_params_ids(trait_id)?
         .iter()
         .map(|param_syntax| {
-                GenericParamLongId(trait_id.module_file_id(db), param_syntax.stable_ptr(db))
-                    .intern(db)
+            GenericParamLongId(trait_id.module_file_id(db), param_syntax.stable_ptr(db)).intern(db)
         })
         .collect::<Vec<_>>();
 
