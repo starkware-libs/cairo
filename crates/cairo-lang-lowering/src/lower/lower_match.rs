@@ -1763,8 +1763,7 @@ fn lower_match_arm_expr_and_seal_patterns<'db>(
     }
 
     // A parent block builder where the variables of each pattern are introduced.
-    // The parent block should have the same semantics and changed_member_paths as any of
-    // the child blocks.
+    // The parent block should have the same semantics as any of the child blocks.
     let mut outer_subscope = lowering_inner_pattern_results_and_subscopes[0]
         .1
         .sibling_block_builder(alloc_empty_block(ctx));

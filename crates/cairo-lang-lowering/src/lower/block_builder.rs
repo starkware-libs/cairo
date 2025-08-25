@@ -7,7 +7,6 @@ use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::usage::{MemberPath, Usage};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, require};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
@@ -15,9 +14,7 @@ use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
 use super::generators::StatementsBuilder;
-use super::refs::{
-    SemanticLoweringMapping, StructRecomposer, find_changed_members, merge_semantics,
-};
+use super::refs::{SemanticLoweringMapping, StructRecomposer, merge_semantics};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
@@ -29,8 +26,6 @@ use crate::{Block, BlockEnd, BlockId, MatchInfo, Statement, VarRemapping, VarUsa
 pub struct BlockBuilder<'db> {
     /// A store for semantic variables, owning their OwnedVariable instances.
     semantics: SemanticLoweringMapping<'db>,
-    /// The semantic variables that are added/changed in this block.
-    changed_member_paths: OrderedHashSet<MemberPath<'db>>,
     /// Current sequence of lowered statements emitted.
     pub statements: StatementsBuilder<'db>,
     /// The block id to use for this block when it's finalized.
@@ -39,39 +34,23 @@ pub struct BlockBuilder<'db> {
 impl<'db> BlockBuilder<'db> {
     /// Creates a new [BlockBuilder] for the root block of a function body.
     pub fn root(block_id: BlockId) -> Self {
-        BlockBuilder {
-            semantics: Default::default(),
-            changed_member_paths: Default::default(),
-            statements: Default::default(),
-            block_id,
-        }
+        BlockBuilder { semantics: Default::default(), statements: Default::default(), block_id }
     }
 
     /// Creates a [BlockBuilder] for a subscope.
     pub fn child_block_builder(&self, block_id: BlockId) -> BlockBuilder<'db> {
-        BlockBuilder {
-            semantics: self.semantics.clone(),
-            changed_member_paths: Default::default(),
-            statements: Default::default(),
-            block_id,
-        }
+        BlockBuilder { semantics: self.semantics.clone(), statements: Default::default(), block_id }
     }
 
     /// Creates a [BlockBuilder] for a sibling builder. This is used when an original block is split
     /// (e.g. after a match statement) to add the ability to 'goto' to after-the-block.
     pub fn sibling_block_builder(&self, block_id: BlockId) -> BlockBuilder<'db> {
-        BlockBuilder {
-            semantics: self.semantics.clone(),
-            changed_member_paths: self.changed_member_paths.clone(),
-            statements: Default::default(),
-            block_id,
-        }
+        BlockBuilder { semantics: self.semantics.clone(), statements: Default::default(), block_id }
     }
 
     /// Binds a semantic variable to a lowered variable.
     pub fn put_semantic(&mut self, semantic_var_id: semantic::VarId<'db>, var: VariableId) {
         self.semantics.introduce(MemberPath::Var(semantic_var_id), var);
-        self.changed_member_paths.insert(MemberPath::Var(semantic_var_id));
     }
 
     pub fn update_ref(
@@ -96,7 +75,6 @@ impl<'db> BlockBuilder<'db> {
             &member_path,
             var,
         );
-        self.changed_member_paths.insert(member_path);
     }
 
     pub fn get_ref(
@@ -227,7 +205,7 @@ impl<'db> BlockBuilder<'db> {
         let sealed_blocks = sealed_blocks.into_iter().flatten().collect_vec();
 
         let Some((new_scope, merged_expr)) =
-            merge_sealed_block_builders(ctx, sealed_blocks, self, location)
+            merge_sealed_block_builders(ctx, sealed_blocks, location)
         else {
             return Err(LoweringFlowError::Match(match_info));
         };
@@ -309,15 +287,6 @@ impl<'db> BlockBuilder<'db> {
             closure_var,
             closure_info,
         )
-    }
-
-    /// Marks the following as changed members:
-    /// (1) the changed members of `parent_builder`,
-    /// (2) the members whose value was changed between `parent_builder` and `self`.
-    fn set_changed_member_paths(&mut self, parent_builder: &Self) {
-        self.changed_member_paths.extend(parent_builder.changed_member_paths.iter().cloned());
-        self.changed_member_paths
-            .extend(find_changed_members(&parent_builder.semantics, &self.semantics));
     }
 }
 
@@ -479,13 +448,9 @@ impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
 /// * Variables mapped to the same lowered variable across all input blocks are kept as-is.
 /// * Local variables that appear in only a subset of the blocks are removed.
 /// * Variables with different mappings across blocks are remapped to a new lowered variable.
-///
-/// `parent_builder` is used to compute the [BlockBuilder::changed_member_paths] of the returned
-/// [BlockBuilder].
 pub fn merge_sealed_block_builders<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     sealed_blocks: Vec<SealedGotoCallsite<'db>>,
-    parent_builder: &BlockBuilder<'db>,
     location: LocationId<'db>,
 ) -> Option<(BlockBuilder<'db>, LoweredExpr<'db>)> {
     require(!sealed_blocks.is_empty())?;
@@ -507,8 +472,7 @@ pub fn merge_sealed_block_builders<'db>(
         LoweredExpr::Tuple { exprs: vec![], location }
     };
 
-    let mut merged_builder = merge_block_builders_inner(ctx, sealed_blocks, res_var, location);
-    merged_builder.set_changed_member_paths(parent_builder);
+    let merged_builder = merge_block_builders_inner(ctx, sealed_blocks, res_var, location);
 
     Some((merged_builder, lowered_expr))
 }
@@ -568,10 +532,5 @@ fn merge_block_builders_inner<'db>(
     }
 
     // Create a new [BlockBuilder] with the merged `semantics`.
-    BlockBuilder {
-        semantics,
-        changed_member_paths: Default::default(),
-        statements: Default::default(),
-        block_id,
-    }
+    BlockBuilder { semantics, statements: Default::default(), block_id }
 }
