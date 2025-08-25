@@ -87,7 +87,7 @@ pub trait Elongate {
 // This prevents cycles where there shouldn't be any.
 #[cairo_lang_proc_macros::query_group]
 pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + Elongate {
-    #[salsa::interned]
+    #[salsa::interned(revisions = usize::MAX)]
     fn intern_impl_lookup_context<'db>(
         &'db self,
         id: items::imp::ImplLookupContext<'db>,

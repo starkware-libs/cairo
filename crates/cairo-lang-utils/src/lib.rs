@@ -105,7 +105,7 @@ pub trait Intern<'db, Target> {
 macro_rules! define_short_id {
     ($short_id:ident, $long_id:path, $db:ident) => {
         // 1. Modern interned struct.
-        #[salsa::interned]
+        #[salsa::interned(revisions = usize::MAX)]
         pub struct $short_id<'db> {
             #[returns(ref)]
             pub long: $long_id,

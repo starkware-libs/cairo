@@ -31,17 +31,17 @@ pub enum SierraGeneratorTypeLongId<'db> {
     Phantom(semantic::TypeId<'db>),
 }
 
-#[salsa::interned]
+#[salsa::interned(revisions = usize::MAX)]
 struct ConcreteLibfuncIdLongWrapper {
     id: cairo_lang_sierra::program::ConcreteLibfuncLongId,
 }
 
-#[salsa::interned]
+#[salsa::interned(revisions = usize::MAX)]
 struct SierraGeneratorTypeLongIdWrapper<'db> {
     id: SierraGeneratorTypeLongId<'db>,
 }
 
-#[salsa::interned]
+#[salsa::interned(revisions = usize::MAX)]
 struct LoweringFunctionIdWrapper<'db> {
     id: lowering::ids::FunctionId<'db>,
 }
