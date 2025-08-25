@@ -126,7 +126,7 @@ impl NamedLibfunc for CouponCallLibfunc {
     }
 }
 
-/// Libfunc to replace function calls in size estiamtion.
+/// Libfunc to replace function calls in size estimation.
 /// The libfunc consumes the function arguments and returns the function return values.
 /// The ap_change and signature are encoded in the generic arguments, see
 /// `try_extract_dummy_func_info` for details.
