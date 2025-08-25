@@ -101,28 +101,26 @@ type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: 
 
 libfunc dup<Snapshot<test::A>> = dup<Snapshot<test::A>>;
 libfunc struct_snapshot_deconstruct<test::A> = struct_snapshot_deconstruct<test::A>;
-libfunc drop<felt252> = drop<felt252>;
-libfunc drop<Snapshot<Array<felt252>>> = drop<Snapshot<Array<felt252>>>;
+libfunc dup<Snapshot<Array<felt252>>> = dup<Snapshot<Array<felt252>>>;
 libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
+libfunc dup<felt252> = dup<felt252>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc function_call<user@test::bar> = function_call<user@test::bar>;
 libfunc store_temp<Snapshot<test::A>> = store_temp<Snapshot<test::A>>;
+libfunc drop<Snapshot<Array<felt252>>> = drop<Snapshot<Array<felt252>>>;
+libfunc drop<felt252> = drop<felt252>;
 
 F0:
 dup<Snapshot<test::A>>([0]) -> ([0], [1]);
 struct_snapshot_deconstruct<test::A>([1]) -> ([2], [3]);
-drop<felt252>([3]) -> ();
-dup<Snapshot<test::A>>([0]) -> ([0], [4]);
-struct_snapshot_deconstruct<test::A>([4]) -> ([5], [6]);
-drop<Snapshot<Array<felt252>>>([5]) -> ();
+dup<Snapshot<Array<felt252>>>([2]) -> ([2], [4]);
+store_temp<Snapshot<Array<felt252>>>([4]) -> ([4]);
+dup<felt252>([3]) -> ([3], [5]);
+store_temp<felt252>([5]) -> ([5]);
+function_call<user@test::bar>([4], [5]) -> ();
 store_temp<Snapshot<Array<felt252>>>([2]) -> ([2]);
-store_temp<felt252>([6]) -> ([6]);
-function_call<user@test::bar>([2], [6]) -> ();
-dup<Snapshot<test::A>>([0]) -> ([0], [7]);
-struct_snapshot_deconstruct<test::A>([7]) -> ([8], [9]);
-store_temp<Snapshot<Array<felt252>>>([8]) -> ([8]);
-store_temp<felt252>([9]) -> ([9]);
-function_call<user@test::bar>([8], [9]) -> ();
+store_temp<felt252>([3]) -> ([3]);
+function_call<user@test::bar>([2], [3]) -> ();
 store_temp<Snapshot<test::A>>([0]) -> ([0]);
 return([0]);
 F1:

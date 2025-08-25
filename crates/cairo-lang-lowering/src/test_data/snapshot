@@ -62,10 +62,8 @@ Parameters: v0: @test::A
 blk0 (root):
 Statements:
   (v1: @core::array::Array::<core::felt252>, v2: @core::felt252) <- struct_destructure(v0)
-  (v3: @core::array::Array::<core::felt252>, v4: @core::felt252) <- struct_destructure(v0)
-  () <- test::bar(v1, v4)
-  (v5: @core::array::Array::<core::felt252>, v6: @core::felt252) <- struct_destructure(v0)
-  () <- test::bar(v5, v6)
+  () <- test::bar(v1, v2)
+  () <- test::bar(v1, v2)
 End:
   Return(v0)
 
