@@ -749,22 +749,37 @@ fn compute_tail_semantic<'db>(
     tail: &ast::StatementExpr<'db>,
     statements_ids: &mut Vec<StatementId>,
 ) -> ExprAndId<'db> {
+    let db = ctx.db;
+    let crate_id = ctx.resolver.owning_crate_id;
+    // Push the statement's attributes into the context, restored after the computation is resolved.
+    let feature_restore = ctx
+        .resolver
+        .data
+        .feature_config
+        .override_with(extract_item_feature_config(db, crate_id, tail, ctx.diagnostics));
+
     let expr = tail.expr(ctx.db);
-    let ast::Expr::InlineMacro(inline_macro_syntax) = &expr else {
-        return compute_expr_semantic(ctx, &expr);
-    };
-    match expand_macro_for_statement(ctx, inline_macro_syntax, true, statements_ids) {
-        Ok(Some(expr_and_id)) => expr_and_id,
-        Ok(None) => unreachable!("Tail expression should not be None"),
-        Err(diag_added) => {
-            let expr = Expr::Missing(ExprMissing {
-                ty: TypeId::missing(ctx.db, diag_added),
-                stable_ptr: expr.stable_ptr(ctx.db),
-                diag_added,
-            });
-            ExprAndId { id: ctx.arenas.exprs.alloc(expr.clone()), expr }
+    let res = match &expr {
+        ast::Expr::InlineMacro(inline_macro_syntax) => {
+            match expand_macro_for_statement(ctx, inline_macro_syntax, true, statements_ids) {
+                Ok(Some(expr_and_id)) => expr_and_id,
+                Ok(None) => unreachable!("Tail expression should not be None"),
+                Err(diag_added) => {
+                    let expr = Expr::Missing(ExprMissing {
+                        ty: TypeId::missing(ctx.db, diag_added),
+                        stable_ptr: expr.stable_ptr(ctx.db),
+                        diag_added,
+                    });
+                    ExprAndId { id: ctx.arenas.exprs.alloc(expr.clone()), expr }
+                }
+            }
         }
-    }
+        _ => compute_expr_semantic(ctx, &expr),
+    };
+
+    // Pop the statement's attributes from the context.
+    ctx.resolver.data.feature_config.restore(feature_restore);
+    res
 }
 
 /// Expands an inline macro used in statement position, computes its semantic model, and extends
@@ -4112,8 +4127,6 @@ pub fn compute_and_append_statement_semantic<'db>(
     let db = ctx.db;
     let crate_id = ctx.resolver.owning_crate_id;
 
-    // As for now, statement attributes does not have any semantic affect, so we only validate they
-    // are allowed.
     validate_statement_attributes(ctx, &syntax);
     let feature_restore = ctx
         .resolver
