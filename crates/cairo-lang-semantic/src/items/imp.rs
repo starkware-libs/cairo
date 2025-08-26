@@ -1955,6 +1955,8 @@ impl<'db> ImplLookupContext<'db> {
     /// Inserts a module into the lookup context, extending the inner impls with the module's
     /// impls.
     pub fn insert_module(&mut self, module_id: ModuleId<'db>, db: &'db dyn SemanticGroup) {
+        // Make sure to use the module as perceived by the user, as it contains all the macros.
+        let module_id = db.module_perceived_module(module_id);
         let default_map = UnorderedHashMap::default();
         let crate_global_impls = db.crate_global_impls(self.crate_id).unwrap_or(&default_map);
         if let Ok(module_impls) = db.module_global_impls(module_id.owning_crate(db), module_id) {
