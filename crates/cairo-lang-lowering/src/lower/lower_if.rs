@@ -47,30 +47,8 @@ pub fn lower_expr_if<'db>(
     builder: &mut BlockBuilder<'db>,
     expr: &semantic::ExprIf<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
-    if expr.conditions.len() == 1 {
-        let graph = create_graph_expr_if(ctx, expr);
-        return lower_graph(ctx, builder, &graph, ctx.get_location(expr.stable_ptr.untyped()));
-    }
-
-    // Else block is not supported yet for multiple conditions.
-    if expr.conditions.len() > 1
-        && let Some(else_block) = expr.else_block
-    {
-        let stable_ptr = ctx.function_body.arenas.exprs[else_block].stable_ptr().untyped();
-        return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::Unsupported),
-        ));
-    }
-    lower_conditioned_expr(
-        ctx,
-        builder,
-        &ConditionedExpr {
-            expr: expr.if_block,
-            conditions: &expr.conditions,
-            else_block: expr.else_block,
-            if_expr_location: ctx.get_location(expr.stable_ptr.untyped()),
-        },
-    )
+    let graph = create_graph_expr_if(ctx, expr);
+    lower_graph(ctx, builder, &graph, ctx.get_location(expr.stable_ptr.untyped()))
 }
 
 /// Lowers an expression of type [semantic::ExprIf].
