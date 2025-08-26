@@ -71,6 +71,7 @@ use crate::items::constant::{
     ConstValue, ConstValueId, resolve_const_expr_and_evaluate, validate_const_expr,
 };
 use crate::items::enm::SemanticEnumEx;
+use crate::items::feature_kind::FeatureConfigRestore;
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
 use crate::items::imp::{ImplLookupContextId, filter_candidate_traits, infer_impl_by_self};
 use crate::items::macro_declaration::{MatcherContext, expand_macro_rule, is_macro_rule_match};
@@ -411,6 +412,16 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
             InnerContextKind::Loop { .. } | InnerContextKind::While | InnerContextKind::For => true,
         }
     }
+
+    /// Validates the features of the given item, then pushes them into the context.
+    fn add_features_from_statement(
+        &mut self,
+        item: &impl QueryAttrs<'ctx>,
+    ) -> FeatureConfigRestore<'ctx> {
+        validate_statement_attributes(self, item);
+        let crate_id = self.resolver.owning_crate_id;
+        self.resolver.extend_feature_config_from_item(self.db, crate_id, self.diagnostics, item)
+    }
 }
 
 /// Adds warning for unused bindings if required.
@@ -748,14 +759,11 @@ fn compute_tail_semantic<'db>(
     tail: &ast::StatementExpr<'db>,
     statements_ids: &mut Vec<StatementId>,
 ) -> ExprAndId<'db> {
-    let db = ctx.db;
-    let crate_id = ctx.resolver.owning_crate_id;
     // Push the statement's attributes into the context, restored after the computation is resolved.
-    validate_statement_attributes(ctx, tail);
-    let feature_restore =
-        ctx.resolver.extend_feature_config_from_item(db, crate_id, ctx.diagnostics, tail);
+    let feature_restore = ctx.add_features_from_statement(tail);
 
-    let expr = tail.expr(ctx.db);
+    let db = ctx.db;
+    let expr = tail.expr(db);
     let res = match &expr {
         ast::Expr::InlineMacro(inline_macro_syntax) => {
             match expand_macro_for_statement(ctx, inline_macro_syntax, true, statements_ids) {
@@ -763,8 +771,8 @@ fn compute_tail_semantic<'db>(
                 Ok(None) => unreachable!("Tail expression should not be None"),
                 Err(diag_added) => {
                     let expr = Expr::Missing(ExprMissing {
-                        ty: TypeId::missing(ctx.db, diag_added),
-                        stable_ptr: expr.stable_ptr(ctx.db),
+                        ty: TypeId::missing(db, diag_added),
+                        stable_ptr: expr.stable_ptr(db),
                         diag_added,
                     });
                     ExprAndId { id: ctx.arenas.exprs.alloc(expr.clone()), expr }
@@ -4124,12 +4132,10 @@ pub fn compute_and_append_statement_semantic<'db>(
     syntax: ast::Statement<'db>,
     statements: &mut Vec<StatementId>,
 ) -> Maybe<()> {
-    let db = ctx.db;
-    let crate_id = ctx.resolver.owning_crate_id;
+    // Push the statement's attributes into the context, restored after the computation is resolved.
+    let feature_restore = ctx.add_features_from_statement(&syntax);
 
-    validate_statement_attributes(ctx, &syntax);
-    let feature_restore =
-        ctx.resolver.extend_feature_config_from_item(db, crate_id, ctx.diagnostics, &syntax);
+    let db = ctx.db;
     let _ = match &syntax {
         ast::Statement::Let(let_syntax) => {
             let rhs_syntax = &let_syntax.rhs(db);
