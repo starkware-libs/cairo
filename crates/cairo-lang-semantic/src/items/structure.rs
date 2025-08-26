@@ -190,7 +190,8 @@ pub fn priv_struct_definition_data<'db>(
     // Members.
     let mut members = OrderedHashMap::default();
     for member in struct_ast.members(db).elements(db) {
-        let feature_restore = resolver.extend_feature_config_from_item(db, crate_id, &mut diagnostics, &member);
+        let feature_restore =
+            resolver.extend_feature_config_from_item(db, crate_id, &mut diagnostics, &member);
         let id = MemberLongId(module_file_id, member.stable_ptr(db)).intern(db);
         let ty = resolve_type(db, &mut diagnostics, &mut resolver, &member.type_clause(db).ty(db));
         let visibility = Visibility::from_ast(db, &mut diagnostics, &member.visibility(db));
@@ -199,7 +200,7 @@ pub fn priv_struct_definition_data<'db>(
             diagnostics
                 .report(member.stable_ptr(db), StructMemberRedefinition { struct_id, member_name });
         }
-        resolver.data.feature_config.restore(feature_restore);
+        resolver.restore_feature_config(feature_restore);
     }
 
     // Check fully resolved.
