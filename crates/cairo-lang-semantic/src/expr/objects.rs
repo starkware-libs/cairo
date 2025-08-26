@@ -4,6 +4,7 @@ use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::{Arena, ArenaBehavior};
 use num_bigint::BigInt;
 
@@ -224,6 +225,17 @@ impl<'db> Expr<'db> {
             Expr::MemberAccess(expr) => expr.member_path.clone(),
             _ => None,
         }
+    }
+
+    pub fn is_mutable_var(
+        &self,
+        semantic_defs: &UnorderedHashMap<semantic::VarId<'db>, semantic::Binding<'db>>,
+    ) -> bool {
+        let Some(base_var) = self.as_member_path().map(|path| path.base_var()) else {
+            return false;
+        };
+
+        semantic_defs.get(&base_var).map(|var| var.is_mut()).unwrap_or(false)
     }
 }
 

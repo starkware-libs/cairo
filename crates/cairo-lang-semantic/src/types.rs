@@ -574,6 +574,7 @@ fn maybe_resolve_type<'db>(
             let ty = resolve_type_ex(db, diagnostics, resolver, &unary_syntax.expr(db), ctx);
             TypeLongId::Snapshot(ty).intern(db)
         }
+        // TODO(TomerStarkware): make sure this is unreachable.
         ast::Expr::Unary(unary_syntax)
             if matches!(unary_syntax.op(db), ast::UnaryOperator::Desnap(_)) =>
         {
@@ -581,7 +582,7 @@ fn maybe_resolve_type<'db>(
             if let Some(desnapped_ty) = try_extract_matches!(ty.long(db), TypeLongId::Snapshot) {
                 *desnapped_ty
             } else {
-                return Err(diagnostics.report(ty_syntax.stable_ptr(db), DesnapNonSnapshot));
+                return Err(diagnostics.report(ty_syntax.stable_ptr(db), DerefNonRef { ty }));
             }
         }
         ast::Expr::FixedSizeArray(array_syntax) => {
