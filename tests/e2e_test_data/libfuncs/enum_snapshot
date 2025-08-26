@@ -26,19 +26,15 @@ type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false
 type test::SingleVariant = Enum<ut@test::SingleVariant, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc enum_match<test::SingleVariant> = enum_match<test::SingleVariant>;
-libfunc branch_align = branch_align;
-libfunc drop<felt252> = drop<felt252>;
+libfunc drop<test::SingleVariant> = drop<test::SingleVariant>;
 libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
 F0:
-enum_match<test::SingleVariant>([0]) -> ([1]);
-branch_align() -> ();
-drop<felt252>([1]) -> ();
-const_as_immediate<Const<felt252, 0>>() -> ([2]);
-store_temp<felt252>([2]) -> ([2]);
-return([2]);
+drop<test::SingleVariant>([0]) -> ();
+const_as_immediate<Const<felt252, 0>>() -> ([1]);
+store_temp<felt252>([1]) -> ([1]);
+return([1]);
 
 test::foo@F0([0]: test::SingleVariant) -> (felt252);
 

@@ -5,10 +5,7 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
-use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::{
-    self as semantic, ConcreteEnumId, ConcreteVariant, GenericArgumentId, VarId, corelib,
-};
+use cairo_lang_semantic::{self as semantic, ConcreteEnumId, ConcreteVariant, VarId};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -16,13 +13,10 @@ use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use itertools::{Itertools, zip_eq};
 use log::trace;
-use num_traits::ToPrimitive;
-use semantic::corelib::unit_ty;
 use semantic::items::enm::SemanticEnumEx;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
     ConcreteTypeId, MatchArmSelector, Pattern, PatternEnumVariant, PatternId, TypeLongId,
-    ValueSelectorArm,
 };
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
@@ -33,7 +27,7 @@ use super::context::{
 use super::lower_if::{ConditionedExpr, lower_conditioned_expr_and_seal};
 use super::lower_let_else::lower_success_arm_body;
 use super::{
-    alloc_empty_block, generators, lower_expr_block, lower_expr_literal, lower_tail_expr,
+    alloc_empty_block, generators, lower_expr_block, lower_tail_expr,
     lowered_expr_to_block_scope_end, recursively_call_loop_func,
 };
 use crate::diagnostic::LoweringDiagnosticKind::{self, *};
@@ -41,14 +35,13 @@ use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError,
 use crate::ids::{LocationId, SemanticFunctionIdEx};
 use crate::lower::context::VarRequest;
 use crate::lower::external::extern_facade_expr;
+use crate::lower::flow_control::create_graph::create_graph_expr_match;
+use crate::lower::flow_control::lower_graph::lower_graph;
 use crate::lower::{
-    create_subscope, lower_expr, lower_single_pattern, match_extern_arm_ref_args_bind,
+    create_subscope, lower_single_pattern, match_extern_arm_ref_args_bind,
     match_extern_variant_arm_input_types,
 };
-use crate::{
-    BlockEnd, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo, VarUsage,
-    VariableId,
-};
+use crate::{BlockEnd, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage, VariableId};
 
 /// Information about the enum of a match statement. See [extract_concrete_enum].
 struct ExtractedEnumDetails<'db> {
@@ -954,31 +947,12 @@ pub(crate) fn lower_expr_match_tuple<'db>(
 /// Lowers an expression of type [semantic::ExprMatch].
 pub(crate) fn lower_expr_match<'db>(
     ctx: &mut LoweringContext<'db, '_>,
-    expr: semantic::ExprMatch<'db>,
+    expr: &semantic::ExprMatch<'db>,
     builder: &mut BlockBuilder<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!("Lowering a match expression: {:?}", expr.debug(&ctx.expr_formatter));
-    let location = ctx.get_location(expr.stable_ptr.untyped());
-    let lowered_expr = lower_expr(ctx, builder, expr.matched_expr)?;
-
-    let ty = ctx.function_body.arenas.exprs[expr.matched_expr].ty();
-
-    if corelib::numeric_upcastable_to_felt252(ctx.db, ty) {
-        let match_input = lowered_expr.as_var_usage(ctx, builder)?;
-        return lower_expr_match_value(ctx, expr, match_input, builder);
-    }
-
-    let arms = expr.arms.iter().map(|arm| arm.into()).collect_vec();
-
-    lower_match_arms(
-        ctx,
-        builder,
-        expr.matched_expr,
-        lowered_expr,
-        arms,
-        location,
-        MatchKind::Match,
-    )
+    let graph = create_graph_expr_match(ctx, expr);
+    lower_graph(ctx, builder, &graph, ctx.get_location(expr.stable_ptr.untyped()))
 }
 
 /// Lower the collected match arms according to the matched expression.
@@ -1832,391 +1806,6 @@ fn lower_arm_expr_and_seal<'db>(
             lower_conditioned_expr_and_seal(ctx, subscope, expr)
         }
     }
-}
-
-/// Lowers the [semantic::MatchArm] of an expression of type [semantic::ExprMatch] where the matched
-/// expression is a felt252.
-fn lower_expr_felt252_arm<'db>(
-    ctx: &mut LoweringContext<'db, '_>,
-    expr: &semantic::ExprMatch<'db>,
-    match_input: VarUsage<'db>,
-    builder: &mut BlockBuilder<'db>,
-    arm_index: usize,
-    pattern_index: usize,
-    branches_block_builders: &mut Vec<MatchLeafBuilder<'db>>,
-) -> LoweringResult<'db, MatchInfo<'db>> {
-    if pattern_index == expr.arms[arm_index].patterns.len() {
-        return lower_expr_felt252_arm(
-            ctx,
-            expr,
-            match_input,
-            builder,
-            arm_index + 1,
-            0,
-            branches_block_builders,
-        );
-    }
-
-    let location = ctx.get_location(expr.stable_ptr.untyped());
-    let arm = &expr.arms[arm_index];
-    let db = ctx.db;
-
-    let main_block = create_subscope(ctx, builder);
-    let main_block_id = main_block.block_id;
-
-    let mut else_block = create_subscope(ctx, builder);
-    let block_else_id = else_block.block_id;
-
-    let pattern = &ctx.function_body.arenas.patterns[arm.patterns[pattern_index]];
-    let semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }) = pattern else {
-        return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-            pattern.stable_ptr().untyped(),
-            MatchError(MatchError {
-                kind: MatchKind::Match,
-                error: MatchDiagnostic::UnsupportedMatchArmNotALiteral,
-            }),
-        )));
-    };
-
-    let felt252_ty = ctx.db.core_info().felt252;
-    let if_input = if literal.value == 0.into() {
-        match_input
-    } else {
-        // TODO(TomerStarkware): Use the same type of literal as the input, without the cast to
-        // felt252.
-        let lowered_arm_val = lower_expr_literal(
-            ctx,
-            &semantic::ExprLiteral {
-                stable_ptr: literal.stable_ptr,
-                value: literal.value.clone(),
-                ty: felt252_ty,
-            },
-            builder,
-        )?
-        .as_var_usage(ctx, builder)?;
-
-        let call_result = generators::Call {
-            function: corelib::felt252_sub(db).lowered(db),
-            inputs: vec![match_input, lowered_arm_val],
-            coupon_input: None,
-            extra_ret_tys: vec![],
-            ret_tys: vec![felt252_ty],
-            location,
-        }
-        .add(ctx, &mut builder.statements);
-        call_result.returns.into_iter().next().unwrap()
-    };
-
-    let non_zero_type = corelib::core_nonzero_ty(db, felt252_ty);
-    let else_block_input_var_id = ctx.new_var(VarRequest { ty: non_zero_type, location });
-
-    let match_info = MatchInfo::Extern(MatchExternInfo {
-        function: corelib::core_felt252_is_zero(db).lowered(db),
-        inputs: vec![if_input],
-        arms: vec![
-            MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_zero_variant(
-                    db, felt252_ty,
-                )),
-                block_id: main_block_id,
-                var_ids: vec![],
-            },
-            MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_nonzero_variant(
-                    db, felt252_ty,
-                )),
-                block_id: block_else_id,
-                var_ids: vec![else_block_input_var_id],
-            },
-        ],
-        location,
-    });
-    branches_block_builders.push(MatchLeafBuilder {
-        arm_index,
-        lowering_result: Ok(()),
-        builder: main_block,
-    });
-    if pattern_index + 1 == expr.arms[arm_index].patterns.len() && arm_index == expr.arms.len() - 2
-    {
-        branches_block_builders.push(MatchLeafBuilder {
-            arm_index: arm_index + 1,
-            lowering_result: Ok(()),
-            builder: else_block,
-        });
-    } else {
-        let match_info = lower_expr_felt252_arm(
-            ctx,
-            expr,
-            match_input,
-            &mut else_block,
-            arm_index,
-            pattern_index + 1,
-            branches_block_builders,
-        )?;
-
-        // we can use finalize here because the else block is an inner block of the match expression
-        // and does not have sibling block it goes to.
-        else_block.finalize(ctx, BlockEnd::Match { info: match_info });
-    }
-    Ok(match_info)
-}
-
-/// lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt252,
-/// using an index enum.
-fn lower_expr_match_index_enum<'db>(
-    ctx: &mut LoweringContext<'db, '_>,
-    expr: &semantic::ExprMatch<'db>,
-    match_input: VarUsage<'db>,
-    builder: &BlockBuilder<'db>,
-    literals_to_arm_map: &UnorderedHashMap<usize, usize>,
-    branches_block_builders: &mut Vec<MatchLeafBuilder<'db>>,
-) -> LoweringResult<'db, MatchInfo<'db>> {
-    let location = ctx.get_location(expr.stable_ptr.untyped());
-    let db = ctx.db;
-    let unit_type = unit_ty(db);
-    let mut arm_var_ids = vec![];
-    let mut block_ids = vec![];
-
-    for index in 0..literals_to_arm_map.len() {
-        let subscope = create_subscope(ctx, builder);
-        let block_id = subscope.block_id;
-        block_ids.push(block_id);
-
-        let arm_index = literals_to_arm_map[&index];
-
-        let var_id = ctx.new_var(VarRequest { ty: unit_type, location });
-        arm_var_ids.push(vec![var_id]);
-
-        // Lower the arm expression.
-        branches_block_builders.push(MatchLeafBuilder {
-            arm_index,
-            lowering_result: Ok(()),
-            builder: subscope,
-        });
-    }
-
-    let arms = zip_eq(block_ids, arm_var_ids)
-        .enumerate()
-        .map(|(value, (block_id, var_ids))| MatchArm {
-            arm_selector: MatchArmSelector::Value(ValueSelectorArm { value }),
-            block_id,
-            var_ids,
-        })
-        .collect();
-    let match_info = MatchInfo::Value(MatchEnumValue {
-        num_of_arms: literals_to_arm_map.len(),
-        arms,
-        input: match_input,
-        location,
-    });
-    Ok(match_info)
-}
-
-/// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt252.
-/// using an index enum to create a jump table.
-fn lower_expr_match_value<'db>(
-    ctx: &mut LoweringContext<'db, '_>,
-    expr: semantic::ExprMatch<'db>,
-    mut match_input: VarUsage<'db>,
-    builder: &mut BlockBuilder<'db>,
-) -> LoweringResult<'db, LoweredExpr<'db>> {
-    log::trace!("Lowering a match-value expression.");
-    if expr.arms.is_empty() {
-        return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-            expr.stable_ptr.untyped(),
-            MatchError(MatchError {
-                kind: MatchKind::Match,
-                error: MatchDiagnostic::NonExhaustiveMatchValue,
-            }),
-        )));
-    }
-    let mut max = 0;
-    let mut literals_to_arm_map = UnorderedHashMap::default();
-    let mut otherwise_exist = false;
-    for (arm_index, arm) in expr.arms.iter().enumerate() {
-        for pattern in arm.patterns.iter() {
-            let pattern = &ctx.function_body.arenas.patterns[*pattern];
-            if otherwise_exist {
-                return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-                    pattern.stable_ptr().untyped(),
-                    MatchError(MatchError {
-                        kind: MatchKind::Match,
-                        error: MatchDiagnostic::UnreachableMatchArm,
-                    }),
-                )));
-            }
-            match pattern {
-                semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }) => {
-                    let Some(literal) = literal.value.to_usize() else {
-                        return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-                            expr.stable_ptr.untyped(),
-                            MatchError(MatchError {
-                                kind: MatchKind::Match,
-                                error: MatchDiagnostic::UnsupportedMatchArmNonSequential,
-                            }),
-                        )));
-                    };
-                    if otherwise_exist || literals_to_arm_map.insert(literal, arm_index).is_some() {
-                        return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-                            pattern.stable_ptr().untyped(),
-                            MatchError(MatchError {
-                                kind: MatchKind::Match,
-                                error: MatchDiagnostic::UnreachableMatchArm,
-                            }),
-                        )));
-                    }
-                    if literal > max {
-                        max = literal;
-                    }
-                }
-                semantic::Pattern::Otherwise(_) => otherwise_exist = true,
-                _ => {
-                    return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-                        pattern.stable_ptr().untyped(),
-                        MatchError(MatchError {
-                            kind: MatchKind::Match,
-                            error: MatchDiagnostic::UnsupportedMatchArmNotALiteral,
-                        }),
-                    )));
-                }
-            }
-        }
-    }
-
-    if !otherwise_exist {
-        return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-            expr.stable_ptr.untyped(),
-            MatchError(MatchError {
-                kind: MatchKind::Match,
-                error: MatchDiagnostic::NonExhaustiveMatchValue,
-            }),
-        )));
-    }
-    if max + 1 != literals_to_arm_map.len() {
-        return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-            expr.stable_ptr.untyped(),
-            MatchError(MatchError {
-                kind: MatchKind::Match,
-                error: MatchDiagnostic::UnsupportedMatchArmNonSequential,
-            }),
-        )));
-    };
-    let location = ctx.get_location(expr.stable_ptr.untyped());
-
-    let mut arms_vec = vec![];
-
-    let db = ctx.db;
-
-    let empty_match_info = MatchInfo::Extern(MatchExternInfo {
-        function: corelib::core_felt252_is_zero(db).lowered(db),
-        inputs: vec![match_input],
-        arms: vec![],
-        location,
-    });
-
-    let info = db.core_info();
-    let felt252_ty = info.felt252;
-    let ty = ctx.variables[match_input.var_id].ty;
-
-    // max +2 is the number of arms in the match.
-    if max + 2 < numeric_match_optimization_threshold(ctx, ty != felt252_ty) {
-        if ty != felt252_ty {
-            let function = info
-                .upcast_fn
-                .concretize(
-                    db,
-                    vec![GenericArgumentId::Type(ty), GenericArgumentId::Type(felt252_ty)],
-                )
-                .lowered(db);
-            let call_result = generators::Call {
-                function,
-                inputs: vec![match_input],
-                coupon_input: None,
-                extra_ret_tys: vec![],
-                ret_tys: vec![felt252_ty],
-                location,
-            }
-            .add(ctx, &mut builder.statements);
-
-            match_input = call_result.returns.into_iter().next().unwrap();
-        }
-
-        let match_info =
-            lower_expr_felt252_arm(ctx, &expr, match_input, builder, 0, 0, &mut arms_vec)?;
-
-        let sealed_blocks = group_match_arms(
-            ctx,
-            &empty_match_info,
-            location,
-            &expr.arms.iter().map(|arm| arm.into()).collect_vec(),
-            arms_vec,
-            MatchKind::Match,
-        )?;
-
-        return builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location);
-    }
-
-    let bounded_int_ty = corelib::bounded_int_ty(db, 0.into(), max.into());
-
-    let in_range_block_input_var_id = ctx.new_var(VarRequest { ty: bounded_int_ty, location });
-
-    let in_range_block = create_subscope(ctx, builder);
-    let in_range_block_id = in_range_block.block_id;
-    let inner_match_info = lower_expr_match_index_enum(
-        ctx,
-        &expr,
-        VarUsage { var_id: in_range_block_input_var_id, location: match_input.location },
-        &in_range_block,
-        &literals_to_arm_map,
-        &mut arms_vec,
-    )?;
-    in_range_block.finalize(ctx, BlockEnd::Match { info: inner_match_info });
-
-    let otherwise_block = create_subscope(ctx, builder);
-    let otherwise_block_id = otherwise_block.block_id;
-    arms_vec.push(MatchLeafBuilder {
-        arm_index: expr.arms.len() - 1,
-        lowering_result: Ok(()),
-        builder: otherwise_block,
-    });
-
-    let function_id = info
-        .downcast_fn
-        .concretize(db, vec![GenericArgumentId::Type(ty), GenericArgumentId::Type(bounded_int_ty)])
-        .lowered(db);
-
-    let match_info = MatchInfo::Extern(MatchExternInfo {
-        function: function_id,
-        inputs: vec![match_input],
-        arms: vec![
-            MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::option_some_variant(
-                    db,
-                    bounded_int_ty,
-                )),
-                block_id: in_range_block_id,
-                var_ids: vec![in_range_block_input_var_id],
-            },
-            MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::option_none_variant(
-                    db,
-                    bounded_int_ty,
-                )),
-                block_id: otherwise_block_id,
-                var_ids: vec![],
-            },
-        ],
-        location,
-    });
-    let sealed_blocks = group_match_arms(
-        ctx,
-        &empty_match_info,
-        location,
-        &expr.arms.iter().map(|arm| arm.into()).collect_vec(),
-        arms_vec,
-        MatchKind::Match,
-    )?;
-    builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
 }
 
 /// Returns the threshold for the number of arms for optimising numeric match expressions, by using
