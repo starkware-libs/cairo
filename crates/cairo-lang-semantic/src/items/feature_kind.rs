@@ -253,7 +253,7 @@ fn process_feature_attr_kind<'db>(
 
 /// Extracts the allowed features of an element, considering its parent modules as well as its
 /// attributes.
-pub fn extract_feature_config<'db>(
+pub fn feature_config_from_item_and_parent_modules<'db>(
     db: &'db dyn SemanticGroup,
     element_id: &impl LanguageElementId<'db>,
     syntax: &impl QueryAttrs<'db>,
