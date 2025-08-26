@@ -414,6 +414,7 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
     }
 
     /// Validates the features of the given item, then pushes them into the context.
+    /// IMPORTANT: Don't forget to restore through `restore_features`!
     fn add_features_from_statement(
         &mut self,
         item: &impl QueryAttrs<'ctx>,
@@ -421,6 +422,12 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
         validate_statement_attributes(self, item);
         let crate_id = self.resolver.owning_crate_id;
         self.resolver.extend_feature_config_from_item(self.db, crate_id, self.diagnostics, item)
+    }
+
+    /// Restores the feature config to its state before [Self::add_features_from_statement],
+    /// using the restoration state returned by that method.
+    fn restore_features(&mut self, feature_restore: FeatureConfigRestore<'ctx>) {
+        self.resolver.restore_feature_config(feature_restore);
     }
 }
 
@@ -783,7 +790,7 @@ fn compute_tail_semantic<'db>(
     };
 
     // Pop the statement's attributes from the context.
-    ctx.resolver.restore_feature_config(feature_restore);
+    ctx.restore_features(feature_restore);
     res
 }
 
@@ -4481,7 +4488,7 @@ pub fn compute_and_append_statement_semantic<'db>(
         }
         ast::Statement::Missing(_) => todo!(),
     };
-    ctx.resolver.restore_feature_config(feature_restore);
+    ctx.restore_features(feature_restore);
     Ok(())
 }
 /// Adds an item to the statement environment and reports a diagnostic if the item is already
