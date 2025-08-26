@@ -186,7 +186,7 @@ impl<'db> TypeLongId<'db> {
     /// Returns the module id of the given type if applicable.
     pub fn module_id(&self, db: &'db dyn SemanticGroup) -> Option<ModuleId<'db>> {
         match self {
-            TypeLongId::Concrete(concrete) => Some(concrete.generic_type(db).module_file_id(db).0),
+            TypeLongId::Concrete(concrete) => Some(concrete.generic_type(db).parent_module(db)),
             TypeLongId::Snapshot(ty) => {
                 let (_n_snapshots, inner_ty) = peel_snapshots(db, *ty);
                 inner_ty.module_id(db)

@@ -171,7 +171,7 @@ fn analyze_storage_struct<'db>(
         struct_id.has_attr_with_arg(db, ALLOW_ATTR, ALLOW_COLLIDING_PATHS_ATTR) == Ok(true);
 
     let lookup_context = ImplLookupContext::new(
-        struct_id.module_file_id(db).0,
+        struct_id.parent_module(db),
         match db.struct_generic_params(struct_id) {
             Ok(params) => params.into_iter().map(|p| p.id()).collect(),
             Err(_) => return,

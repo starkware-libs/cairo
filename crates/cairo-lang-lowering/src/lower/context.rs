@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut, Index};
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{LanguageElementId, ModuleFileId};
+use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::ConcreteVariant;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
@@ -36,8 +36,6 @@ pub struct VariableAllocator<'db> {
     pub db: &'db dyn LoweringGroup,
     /// Arena of allocated lowered variables.
     pub variables: VariableArena<'db>,
-    /// Module and file of the declared function.
-    pub module_file_id: ModuleFileId<'db>,
     // Lookup context for impls.
     pub lookup_context: ImplLookupContextId<'db>,
 }
@@ -52,7 +50,6 @@ impl<'db> VariableAllocator<'db> {
         Ok(Self {
             db,
             variables,
-            module_file_id: function_id.module_file_id(db),
             lookup_context: ImplLookupContext::new(
                 function_id.parent_module(db),
                 generic_param_ids,

@@ -601,7 +601,7 @@ fn module_dir_helper<'db>(
         ModuleId::MacroCall { id: macro_call_id, .. } => {
             // This is a macro call, we return the directory for the file that contained the macro
             // call, as it is considered the location of the macro itself.
-            db.module_dir(macro_call_id.module_file_id(db).0).cloned()
+            db.module_dir(macro_call_id.parent_module(db)).cloned()
         }
     }
 }
