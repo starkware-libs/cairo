@@ -280,7 +280,7 @@ Statements:
   (v29: test::MyStruct) <- struct_construct(v10, v15)
   (v30: (test::MyStruct, core::bool)) <- struct_construct(v29, v28)
 End:
-  Goto(blk8, {v29 -> v32, v30 -> v31})
+  Goto(blk8, {v30 -> v31})
 
 blk6:
 Statements:
@@ -294,7 +294,7 @@ Statements:
   (v25: test::MyStruct) <- struct_construct(v19, v20)
   (v26: (test::MyStruct, core::bool)) <- struct_construct(v25, v24)
 End:
-  Goto(blk8, {v25 -> v32, v26 -> v31})
+  Goto(blk8, {v26 -> v31})
 
 blk8:
 Statements:

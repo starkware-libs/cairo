@@ -324,7 +324,13 @@ pub fn borrow_check<'db>(
         (None, BlockId::root()),
     );
     let block_extra_calls = analysis.analyzer.potential_destruct_calls;
-    assert!(root_demand.finalize(), "Undefined variable should not happen at this stage");
+
+    let finalize_res = root_demand.finalize();
+    // If there are errors in the lowering phase, there may be undefined variables (e.g., due to
+    // using a moved variable). Skip the following assert in that case.
+    if !lowered.diagnostics.has_errors() {
+        assert!(finalize_res, "Undefined variable should not happen at this stage");
+    }
 
     BorrowCheckResult { block_extra_calls, diagnostics: diagnostics.build() }
 }
