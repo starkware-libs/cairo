@@ -1147,10 +1147,10 @@ fn deref_impl_diagnostics<'db>(
     let mut visited_impls: OrderedHashSet<ImplDefId<'_>> = OrderedHashSet::default();
     let deref_trait_id = concrete_trait.trait_id(db);
 
-    let impl_module = impl_def_id.module_file_id(db).0;
+    let impl_module = impl_def_id.parent_module(db);
 
     let mut impl_in_valid_location = false;
-    if impl_module == deref_trait_id.module_file_id(db).0 {
+    if impl_module == deref_trait_id.parent_module(db) {
         impl_in_valid_location = true;
     }
 
@@ -1935,17 +1935,14 @@ impl<'db> ImplLookupContext<'db> {
         res
     }
     pub fn insert_lookup_scope(&mut self, db: &'db dyn SemanticGroup, imp: &UninferredImpl<'db>) {
-        let defs_db = db.upcast();
         match imp {
             UninferredImpl::Def(impl_def_id) => {
-                self.insert_module(impl_def_id.module_file_id(defs_db).0, db)
+                self.insert_module(impl_def_id.parent_module(db), db)
             }
             UninferredImpl::ImplAlias(impl_alias_id) => {
-                self.insert_module(impl_alias_id.module_file_id(defs_db).0, db)
+                self.insert_module(impl_alias_id.parent_module(db), db)
             }
-            UninferredImpl::GenericParam(param) => {
-                self.insert_module(param.module_file_id(defs_db).0, db)
-            }
+            UninferredImpl::GenericParam(param) => self.insert_module(param.parent_module(db), db),
             UninferredImpl::ImplImpl(impl_impl_id) => self.insert_impl(impl_impl_id.impl_id, db),
             UninferredImpl::GeneratedImpl(_) => {
                 // GeneratedImpls do not extend the lookup context.
@@ -4081,7 +4078,7 @@ fn is_global_impl<'db>(
     impl_module: ModuleId<'db>,
 ) -> Maybe<bool> {
     let trait_id = impl_id.trait_id(db)?;
-    if trait_id.module_file_id(db).0 == impl_module {
+    if trait_id.parent_module(db) == impl_module {
         return Ok(true);
     }
 

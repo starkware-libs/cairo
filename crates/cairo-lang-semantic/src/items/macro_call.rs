@@ -75,7 +75,7 @@ pub fn priv_macro_call_data<'db>(
             });
         }
     };
-    let defsite_module_id = macro_declaration_id.module_file_id(db).0;
+    let defsite_module_id = macro_declaration_id.parent_module(db);
     let macro_rules = match db.macro_declaration_rules(macro_declaration_id) {
         Ok(rules) => rules,
         Err(diag_added) => {

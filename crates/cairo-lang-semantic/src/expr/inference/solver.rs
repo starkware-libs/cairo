@@ -153,7 +153,7 @@ pub fn enrich_lookup_context<'db>(
     concrete_trait_id: ConcreteTraitId<'db>,
     lookup_context: &mut ImplLookupContext<'db>,
 ) {
-    lookup_context.insert_module(concrete_trait_id.trait_id(db).module_file_id(db).0, db);
+    lookup_context.insert_module(concrete_trait_id.trait_id(db).parent_module(db), db);
     let generic_args = concrete_trait_id.generic_args(db);
     // Add the defining module of the generic args to the lookup.
     for generic_arg in &generic_args {

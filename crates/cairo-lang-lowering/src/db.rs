@@ -393,7 +393,7 @@ fn priv_function_with_body_multi_lowering<'db>(
     db: &'db dyn LoweringGroup,
     function_id: defs::ids::FunctionWithBodyId<'db>,
 ) -> Maybe<Arc<MultiLowering<'db>>> {
-    let crate_id = function_id.module_file_id(db).0.owning_crate(db);
+    let crate_id = function_id.parent_module(db).owning_crate(db);
     if let Some(map) = db.cached_multi_lowerings(crate_id) {
         if let Some(multi_lowering) = map.get(&function_id) {
             return Ok(Arc::new(multi_lowering.clone()));

@@ -99,12 +99,12 @@ pub fn priv_module_type_alias_semantic_data<'db>(
     module_type_alias_id: ModuleTypeAliasId<'db>,
     in_cycle: bool,
 ) -> Maybe<ModuleTypeAliasData<'db>> {
-    let module_file_id = module_type_alias_id.module_file_id(db);
+    let module_id = module_type_alias_id.parent_module(db);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
-    let module_type_aliases = module_file_id.0.module_data(db)?.type_aliases(db);
+    let module_type_aliases = module_id.module_data(db)?.type_aliases(db);
     let module_type_alias_ast = module_type_aliases.get(&module_type_alias_id).to_maybe()?;
     let generic_params_data =
         db.priv_module_type_alias_generic_params_data(module_type_alias_id)?;
