@@ -3,13 +3,19 @@
 BASE_BRANCH=$1
 HEAD_BRANCH=$2
 
+echo "Checking for Sierra updates in $HEAD_BRANCH against $BASE_BRANCH."
+
 # Assuming all updates are provided as inputs - finding if they are in any of the relevant crates.
 MERGE_BASE=$(git merge-base "$BASE_BRANCH" "$HEAD_BRANCH")
+
+echo "Found merge base: $MERGE_BASE"
+
+echo "Found the following file with changes from relevant crates in $MERGE_BASE..$HEAD_BRANCH:"
 git diff --name-only "$MERGE_BASE".."$HEAD_BRANCH" | grep -q -E \
     -e 'crates/cairo-lang-sierra/' \
     -e 'crates/cairo-lang-sierra-gas/' \
     -e 'crates/cairo-lang-sierra-ap-change/' \
-    -e 'crates/cairo-lang-sierra-to-casm/' >/dev/null
+    -e 'crates/cairo-lang-sierra-to-casm/'
 if [ $? -eq 0 ]; then
     # If so, check if the commit message contains an explanation tag.
     git log "$MERGE_BASE".."$HEAD_BRANCH" --pretty=format:"%b" | grep \
