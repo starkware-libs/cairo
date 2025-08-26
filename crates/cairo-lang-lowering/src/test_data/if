@@ -962,7 +962,7 @@ Statements:
 End:
   Match(match_enum(v0) {
     Option::Some(v2) => blk1,
-    Option::None(v3) => blk10,
+    Option::None(v3) => blk8,
   })
 
 blk1:
@@ -970,7 +970,7 @@ Statements:
 End:
   Match(match_enum(v2) {
     Option::Some(v4) => blk2,
-    Option::None(v5) => blk8,
+    Option::None(v5) => blk7,
   })
 
 blk2:
@@ -999,12 +999,12 @@ End:
 blk5:
 Statements:
 End:
-  Goto(blk7, {})
+  Goto(blk9, {})
 
 blk6:
 Statements:
 End:
-  Goto(blk7, {})
+  Goto(blk9, {})
 
 blk7:
 Statements:
@@ -1018,16 +1018,6 @@ End:
 
 blk9:
 Statements:
-End:
-  Goto(blk11, {})
-
-blk10:
-Statements:
-End:
-  Goto(blk11, {})
-
-blk11:
-Statements:
   (v11: core::felt252) <- 0
 End:
   Return(v11)
@@ -1037,7 +1027,7 @@ End:
 //! > Test if let with multiple conditions - with else block
 
 //! > test_runner_name
-test_function_lowering(expect_diagnostics: true)
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(a: Option<Option<felt252>>) -> felt252 {
@@ -1056,16 +1046,45 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported feature.
- --> lib.cairo:4:12-6:5
-      } else {
- ____________^
-|         0
-|     }
-|_____^
 
 //! > lowering_flat
-<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+Parameters: v0: core::option::Option::<core::option::Option::<core::felt252>>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk4,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk2,
+    Option::None(v4) => blk3,
+  })
+
+blk2:
+Statements:
+End:
+  Return(v3)
+
+blk3:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk5:
+Statements:
+  (v5: core::felt252) <- 0
+End:
+  Return(v5)
 
 //! > ==========================================================================
 
