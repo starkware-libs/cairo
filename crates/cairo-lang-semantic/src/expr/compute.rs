@@ -73,7 +73,9 @@ use crate::items::constant::{
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
-use crate::items::imp::{ImplLookupContextId, filter_candidate_traits, infer_impl_by_self};
+use crate::items::imp::{
+    DerefInfo, ImplLookupContextId, filter_candidate_traits, infer_impl_by_self,
+};
 use crate::items::macro_declaration::{MatcherContext, expand_macro_rule, is_macro_rule_match};
 use crate::items::modifiers::compute_mutability;
 use crate::items::visibility;
@@ -897,9 +899,38 @@ fn compute_expr_unary_semantic<'db>(
                     }
                     TypeLongId::Snapshot(ty) => *ty,
                     _ => {
-                        return Err(ctx
-                            .diagnostics
-                            .report(unary_op.stable_ptr(db), DesnapNonSnapshot));
+                        let base_var = match &desnapped_expr.expr {
+                            Expr::Var(expr_var) => Some(expr_var.var),
+                            Expr::MemberAccess(ExprMemberAccess {
+                                member_path: Some(member_path),
+                                ..
+                            }) => Some(member_path.base_var()),
+                            _ => None,
+                        };
+                        let is_mut_var = base_var
+                            .filter(|var_id| matches!(ctx.semantic_defs.get(var_id), Some(var) if var.is_mut()))
+                            .is_some();
+
+                        let deref_chain = ctx.db.deref_chain(
+                            desnapped_expr_type,
+                            ctx.resolver.owning_crate_id,
+                            is_mut_var,
+                        )?;
+                        let Some(DerefInfo { function_id, self_mutability, target_ty: _ }) =
+                            deref_chain.derefs.first()
+                        else {
+                            return Err(ctx.diagnostics.report(
+                                unary_op.stable_ptr(db),
+                                DerefNonRef { ty: desnapped_expr_type },
+                            ));
+                        };
+                        return expr_function_call(
+                            ctx,
+                            *function_id,
+                            vec![NamedArg(desnapped_expr, None, *self_mutability)],
+                            syntax.stable_ptr(db),
+                            syntax.stable_ptr(db).into(),
+                        );
                     }
                 };
                 (desnapped_expr, desnapped_ty)
