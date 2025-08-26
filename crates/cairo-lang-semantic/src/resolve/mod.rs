@@ -47,7 +47,8 @@ use crate::expr::inference::{Inference, InferenceData, InferenceId};
 use crate::items::constant::{ConstValue, ImplConstantId, resolve_const_expr_and_evaluate};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::{
-    FeatureConfig, FeatureKind, HasFeatureKind, feature_config_with_ancestors,
+    FeatureConfig, FeatureConfigRestore, FeatureKind, HasFeatureKind, feature_config_from_ast_item,
+    feature_config_with_ancestors,
 };
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::generic_params_to_args;
@@ -297,6 +298,23 @@ impl<'db> Resolver<'db> {
     ) {
         self.feature_config =
             feature_config_with_ancestors(self.db, element_id, syntax, diagnostics);
+    }
+
+    /// Extends the current feature config with the contents of those extracted from the given item,
+    /// returns the original feature config for restoring it later.
+    pub fn extend_feature_config_from_item(
+        &mut self,
+        db: &'db dyn SemanticGroup,
+        crate_id: CrateId<'db>,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        item: &impl QueryAttrs<'db>,
+    ) -> FeatureConfigRestore<'db> {
+        self.data.feature_config.override_with(feature_config_from_ast_item(
+            db,
+            crate_id,
+            item,
+            diagnostics,
+        ))
     }
 }
 
