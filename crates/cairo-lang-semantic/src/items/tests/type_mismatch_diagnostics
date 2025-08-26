@@ -66,7 +66,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Desnap operator can only be applied on snapshots
+error: Type `core::integer::u32` cannot be dereferenced
  --> lib.cairo:2:22
     let _: felt252 = *3_u32;
                      ^
