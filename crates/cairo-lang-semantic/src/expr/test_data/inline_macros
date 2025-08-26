@@ -2033,3 +2033,107 @@ mod a {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro finding impls in generated code.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    BarTrait::<a::Bar>::bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    pub struct Bar {}
+    macro impl_bar_trait {
+        ($ty: ident) => {
+            impl BarImpl of $defsite::super::BarTrait<$ty> {
+                fn bar() {}
+            }
+        };
+    }
+    impl_bar_trait!(Bar);
+}
+trait BarTrait<T> {
+    fn bar() {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro finding impls of types in generated code.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    BarTrait::<a::Bar>::bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    macro define_ty {
+        ($ty: ident) => {
+            pub struct $ty {}
+        };
+    }
+    define_ty!(Bar);
+    impl BarImpl of super::BarTrait<Bar> {
+        fn bar() {}
+    }
+}
+trait BarTrait<T> {
+    fn bar() {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro finding impl in generated code of types in generated code.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    BarTrait::<a::Bar>::bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    macro define_ty {
+        ($ty: ident) => {
+            pub struct $ty {}
+        };
+    }
+    define_ty!(Bar);
+    macro impl_bar_trait {
+        ($ty: ident) => {
+            impl BarImpl of $defsite::super::BarTrait<$ty> {
+                fn bar() {}
+            }
+        };
+    }
+    impl_bar_trait!(Bar);
+}
+trait BarTrait<T> {
+    fn bar() {}
+}
+
+//! > expected_diagnostics
