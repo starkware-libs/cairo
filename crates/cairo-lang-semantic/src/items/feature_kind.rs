@@ -183,7 +183,7 @@ pub struct FeatureConfigRestore<'db> {
 }
 
 /// Returns the allowed features of an object which supports attributes.
-pub fn extract_item_feature_config<'db>(
+pub fn feature_config_from_ast_item<'db>(
     db: &'db dyn SemanticGroup,
     crate_id: CrateId<'db>,
     syntax: &impl QueryAttrs<'db>,
@@ -262,7 +262,7 @@ pub fn extract_feature_config<'db>(
     let defs_db = db;
     let mut current_module_id = element_id.parent_module(defs_db);
     let crate_id = current_module_id.owning_crate(defs_db);
-    let mut config_stack = vec![extract_item_feature_config(db, crate_id, syntax, diagnostics)];
+    let mut config_stack = vec![feature_config_from_ast_item(db, crate_id, syntax, diagnostics)];
     let mut config = loop {
         match current_module_id {
             ModuleId::CrateRoot(crate_id) => {
@@ -281,7 +281,7 @@ pub fn extract_feature_config<'db>(
                 let module = &current_module_id.module_data(db).unwrap().submodules(db)[&id];
                 // TODO(orizi): Add parent module diagnostics.
                 let ignored = &mut SemanticDiagnostics::default();
-                config_stack.push(extract_item_feature_config(db, crate_id, module, ignored));
+                config_stack.push(feature_config_from_ast_item(db, crate_id, module, ignored));
             }
             ModuleId::MacroCall { id: macro_call_id, generated_file_id: _ } => {
                 current_module_id = macro_call_id.parent_module(db);

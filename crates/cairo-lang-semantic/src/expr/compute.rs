@@ -71,7 +71,7 @@ use crate::items::constant::{
     ConstValue, ConstValueId, resolve_const_expr_and_evaluate, validate_const_expr,
 };
 use crate::items::enm::SemanticEnumEx;
-use crate::items::feature_kind::extract_item_feature_config;
+use crate::items::feature_kind::feature_config_from_ast_item;
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
 use crate::items::imp::{ImplLookupContextId, filter_candidate_traits, infer_impl_by_self};
 use crate::items::macro_declaration::{MatcherContext, expand_macro_rule, is_macro_rule_match};
@@ -757,7 +757,7 @@ fn compute_tail_semantic<'db>(
         .resolver
         .data
         .feature_config
-        .override_with(extract_item_feature_config(db, crate_id, tail, ctx.diagnostics));
+        .override_with(feature_config_from_ast_item(db, crate_id, tail, ctx.diagnostics));
 
     let expr = tail.expr(ctx.db);
     let res = match &expr {
@@ -4136,7 +4136,7 @@ pub fn compute_and_append_statement_semantic<'db>(
         .resolver
         .data
         .feature_config
-        .override_with(extract_item_feature_config(db, crate_id, &syntax, ctx.diagnostics));
+        .override_with(feature_config_from_ast_item(db, crate_id, &syntax, ctx.diagnostics));
     let _ = match &syntax {
         ast::Statement::Let(let_syntax) => {
             let rhs_syntax = &let_syntax.rhs(db);
