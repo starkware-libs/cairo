@@ -202,7 +202,7 @@ pub fn module_usable_trait_ids<'db>(
 ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
     // Get the traits first from the module, do not change this order.
     let mut module_traits = specific_module_usable_trait_ids(db, module_id, module_id)?;
-    for (user_module, containing_module) in &db.priv_module_use_star_modules(module_id).accessible {
+    for (user_module, containing_module) in &db.module_imported_modules(module_id).accessible {
         if let Ok(star_module_traits) =
             specific_module_usable_trait_ids(db, *user_module, *containing_module)
         {

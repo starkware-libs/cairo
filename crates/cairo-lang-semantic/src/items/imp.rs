@@ -4009,7 +4009,7 @@ pub fn module_global_impls<'db>(
 ) -> Maybe<ModuleImpls<'db>> {
     let mut module_impls = ModuleImpls::default();
     let starting_module = &(module_id, module_id);
-    let star_modules = db.priv_module_use_star_modules(module_id);
+    let star_modules = db.module_imported_modules(module_id);
     for (user_module, containing_module) in
         chain!([starting_module], star_modules.accessible.iter())
     {

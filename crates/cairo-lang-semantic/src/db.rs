@@ -168,9 +168,9 @@ pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + 
         &'db self,
         global_use_id: GlobalUseId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>>;
-    /// Private query to compute the imported modules of a module, using global uses.
-    #[salsa::invoke(items::us::priv_module_use_star_modules)]
-    fn priv_module_use_star_modules<'db>(
+    /// Computes the imported modules of a module, using global uses and macro calls.
+    #[salsa::invoke(items::us::module_imported_modules)]
+    fn module_imported_modules<'db>(
         &'db self,
         module_id: ModuleId<'db>,
     ) -> Arc<ImportedModules<'db>>;
