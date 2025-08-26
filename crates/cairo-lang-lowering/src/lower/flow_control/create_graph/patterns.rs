@@ -4,6 +4,7 @@ use cairo_lang_semantic::{
     self as semantic, ConcreteEnumId, ConcreteTypeId, PatternEnumVariant, PatternTuple, TypeId,
     TypeLongId, corelib,
 };
+use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ast::ExprPtr;
 use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -181,7 +182,20 @@ fn create_node_for_enum<'db>(
                 }
             }
             Some(semantic::Pattern::Variable(..)) => unreachable!(),
-            _ => todo!("Pattern {:?} is not supported yet.", pattern),
+            Some(
+                pattern @ (semantic::Pattern::StringLiteral(..)
+                | semantic::Pattern::Literal(..)
+                | semantic::Pattern::Struct(..)
+                | semantic::Pattern::Tuple(..)
+                | semantic::Pattern::FixedSizeArray(..)
+                | semantic::Pattern::Missing(..)),
+            ) => {
+                // This should not be reachable without getting a semantic error.
+                graph.report_with_missing_node(
+                    pattern.stable_ptr().untyped(),
+                    LoweringDiagnosticKind::UnexpectedError,
+                );
+            }
         }
     }
 
@@ -272,16 +286,32 @@ fn create_node_for_tuple_inner<'db>(
     }
 
     // Collect the patterns on the current item.
-    let patterns_on_current_item = patterns
-        .iter()
-        .map(|pattern| match pattern {
+    let mut patterns_on_current_item = Vec::<_>::default();
+    for pattern in patterns {
+        match pattern {
             Some(semantic::Pattern::Tuple(PatternTuple { field_patterns, .. })) => {
-                Some(get_pattern(ctx, field_patterns[item_idx]))
+                patterns_on_current_item.push(Some(get_pattern(ctx, field_patterns[item_idx])));
             }
-            Some(semantic::Pattern::Otherwise(..)) | None => None,
-            Some(_) => todo!(),
-        })
-        .collect_vec();
+            Some(semantic::Pattern::Otherwise(..)) | None => {
+                patterns_on_current_item.push(None);
+            }
+            Some(semantic::Pattern::Variable(..)) => unreachable!(),
+            Some(
+                pattern @ (semantic::Pattern::StringLiteral(..)
+                | semantic::Pattern::EnumVariant(..)
+                | semantic::Pattern::Literal(..)
+                | semantic::Pattern::Struct(..)
+                | semantic::Pattern::FixedSizeArray(..)
+                | semantic::Pattern::Missing(..)),
+            ) => {
+                // This should not be reachable without getting a semantic error.
+                return graph.report_with_missing_node(
+                    pattern.stable_ptr().untyped(),
+                    LoweringDiagnosticKind::UnexpectedError,
+                );
+            }
+        }
+    }
 
     // Create a node to handle the current item. The callback will handle the rest of the tuple.
     create_node_for_patterns(
@@ -349,9 +379,19 @@ fn create_node_for_value<'db>(
                 }
             }
             Some(semantic::Pattern::Variable(..)) => unreachable!(),
-            _ => {
-                // TODO(lior): Report `UnsupportedPattern` diagnostics.
-                todo!();
+            Some(
+                pattern @ (semantic::Pattern::StringLiteral(..)
+                | semantic::Pattern::EnumVariant(..)
+                | semantic::Pattern::Struct(..)
+                | semantic::Pattern::Tuple(..)
+                | semantic::Pattern::FixedSizeArray(..)
+                | semantic::Pattern::Missing(..)),
+            ) => {
+                // This should not be reachable without getting a semantic error.
+                return graph.report_with_missing_node(
+                    pattern.stable_ptr().untyped(),
+                    LoweringDiagnosticKind::UnexpectedError,
+                );
             }
         }
     }
