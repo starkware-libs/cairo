@@ -86,8 +86,13 @@ impl<'db> OptimizationPhase<'db> {
             OptimizationPhase::TrimUnreachable => trim_unreachable(db, lowered),
             OptimizationPhase::LowerImplicits => lower_implicits(db, function, lowered),
             OptimizationPhase::GasRedeposit => gas_redeposit(db, function, lowered),
-            OptimizationPhase::Validate => validate(lowered)
-                .unwrap_or_else(|err| panic!("Failed validation: {:?}", err.to_message())),
+            OptimizationPhase::Validate => validate(lowered).unwrap_or_else(|err| {
+                panic!(
+                    "Failed validation for function {}: {:?}",
+                    function.full_path(db),
+                    err.to_message()
+                )
+            }),
             OptimizationPhase::SubStrategy { strategy, iterations } => {
                 for _ in 1..iterations {
                     let before = lowered.clone();
