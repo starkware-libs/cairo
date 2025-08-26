@@ -1283,3 +1283,63 @@ error: Match is non exhaustive - add a wildcard pattern (`_`).
 
 //! > lowered
 Parameters: v0: core::option::Option::<core::option::Option::<core::felt252>>
+
+//! > ==========================================================================
+
+//! > Unsupported pattern
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: (Option<(felt252, felt252)>, felt252)) -> felt252 {
+    match x {
+        (_, ()) | ((), _) | (Some(None), _) | _ => 0,
+    }
+}
+
+//! > graph
+Root: 7
+7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+6 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(5) }
+5 EnumMatch { matched_var: v1, variants: (NodeId(3), v3), (NodeId(4), v6)}
+4 Missing
+3 Deconstruct { input: v3, outputs: [v4, v5], next: NodeId(2) }
+2 Missing
+1 Missing
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+error: Unexpected type for tuple pattern. "core::felt252" is not a tuple.
+ --> lib.cairo:3:13
+        (_, ()) | ((), _) | (Some(None), _) | _ => 0,
+            ^^
+
+error: Unexpected type for tuple pattern. "core::option::Option::<(core::felt252, core::felt252)>" is not a tuple.
+ --> lib.cairo:3:20
+        (_, ()) | ((), _) | (Some(None), _) | _ => 0,
+                   ^^
+
+error: Unexpected type for enum pattern. "(core::felt252, core::felt252)" is not an enum.
+ --> lib.cairo:3:35
+        (_, ()) | ((), _) | (Some(None), _) | _ => 0,
+                                  ^^^^
+
+//! > lowering_diagnostics
+error: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
+ --> lib.cairo:3:20
+        (_, ()) | ((), _) | (Some(None), _) | _ => 0,
+                   ^^
+
+error: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
+ --> lib.cairo:3:35
+        (_, ()) | ((), _) | (Some(None), _) | _ => 0,
+                                  ^^^^
+
+error: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
+ --> lib.cairo:3:13
+        (_, ()) | ((), _) | (Some(None), _) | _ => 0,
+            ^^
+
+//! > lowered
+Parameters: v0: (core::option::Option::<(core::felt252, core::felt252)>, core::felt252)
