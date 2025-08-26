@@ -332,7 +332,7 @@ pub struct TestsSummary {
 }
 
 /// Auxiliary data that is required when running tests with profiling.
-pub struct PorfilingAuxData<'a> {
+pub struct ProfilingAuxData<'a> {
     pub db: &'a dyn SierraGenGroup,
     pub statements_functions: UnorderedHashMap<StatementIdx, String>,
 }
