@@ -1283,3 +1283,56 @@ error: Match is non exhaustive - add a wildcard pattern (`_`).
 
 //! > lowered
 Parameters: v0: core::option::Option::<core::option::Option::<core::felt252>>
+
+//! > ==========================================================================
+
+//! > Unsupported pattern
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: Option<(felt252, felt252)>) -> felt252 {
+    match x {
+        0 | Some(None) | Some((None, _)) | _ => 0,
+    }
+}
+
+//! > graph
+Root: 5
+5 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(4) }
+4 EnumMatch { matched_var: v0, variants: (NodeId(3), v1), (NodeId(0), v4)}
+3 Deconstruct { input: v1, outputs: [v2, v3], next: NodeId(2) }
+2 Missing
+1 Missing
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+error: Unexpected type for enum pattern. "(core::felt252, core::felt252)" is not an enum.
+ --> lib.cairo:3:18
+        0 | Some(None) | Some((None, _)) | _ => 0,
+                 ^^^^
+
+error: Unexpected type for enum pattern. "core::felt252" is not an enum.
+ --> lib.cairo:3:32
+        0 | Some(None) | Some((None, _)) | _ => 0,
+                               ^^^^
+
+error: Mismatched types. The type `core::option::Option::<(core::felt252, core::felt252)>` cannot be created from a numeric literal.
+ --> lib.cairo:3:9
+        0 | Some(None) | Some((None, _)) | _ => 0,
+        ^
+
+//! > lowering_diagnostics
+error: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
+ --> lib.cairo:3:9
+        0 | Some(None) | Some((None, _)) | _ => 0,
+        ^
+
+error: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
+ --> lib.cairo:3:18
+        0 | Some(None) | Some((None, _)) | _ => 0,
+                 ^^^^
+
+//! > lowered
+Parameters: v0: core::option::Option::<(core::felt252, core::felt252)>
