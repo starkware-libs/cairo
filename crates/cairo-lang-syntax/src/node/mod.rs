@@ -415,7 +415,7 @@ impl<'a> SyntaxNode<'a> {
         Some(self.parent(db)?.parent(db)?.kind(db))
     }
 
-    /// Gets the kind of the given node's grandrandparent if it exists.
+    /// Gets the kind of the given node's grandgrandparent if it exists.
     pub fn grandgrandparent_kind(&self, db: &dyn Database) -> Option<SyntaxKind> {
         Some(self.parent(db)?.parent(db)?.parent(db)?.kind(db))
     }
