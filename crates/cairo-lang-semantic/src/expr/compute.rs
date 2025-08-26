@@ -775,7 +775,7 @@ fn compute_tail_semantic<'db>(
     };
 
     // Pop the statement's attributes from the context.
-    ctx.resolver.data.feature_config.restore(feature_restore);
+    ctx.resolver.restore_feature_config(feature_restore);
     res
 }
 
@@ -4475,7 +4475,7 @@ pub fn compute_and_append_statement_semantic<'db>(
         }
         ast::Statement::Missing(_) => todo!(),
     };
-    ctx.resolver.data.feature_config.restore(feature_restore);
+    ctx.resolver.restore_feature_config(feature_restore);
     Ok(())
 }
 /// Adds an item to the statement environment and reports a diagnostic if the item is already

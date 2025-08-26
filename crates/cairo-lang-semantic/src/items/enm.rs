@@ -226,7 +226,7 @@ pub fn priv_enum_definition_data<'db>(
                 .report(variant.stable_ptr(db), EnumVariantRedefinition { enum_id, variant_name });
         }
         variant_semantic.insert(id, Variant { enum_id, id, ty, idx: variant_idx });
-        resolver.data.feature_config.restore(feature_restore);
+        resolver.restore_feature_config(feature_restore);
     }
 
     // Check fully resolved.
