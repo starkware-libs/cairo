@@ -51,7 +51,7 @@ enum SingleVariant {
 
 fn foo(e: SingleVariant) -> felt252 {
     match e {
-        SingleVariant::Variant(_) => 0,
+        SingleVariant::Variant(_x) => 0,
     }
 }
 
