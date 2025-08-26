@@ -708,7 +708,7 @@ impl<'db> Resolver<'db> {
     ) -> UseStarResult<'db> {
         let mut item_info = None;
         let mut module_items_found: OrderedHashSet<ModuleItemId<'_>> = OrderedHashSet::default();
-        let imported_modules = self.db.priv_module_use_star_modules(module_id);
+        let imported_modules = self.db.module_imported_modules(module_id);
         for (star_module_id, item_module_id) in &imported_modules.accessible {
             if let Some(inner_item_info) =
                 self.resolve_item_in_imported_module(*item_module_id, ident)

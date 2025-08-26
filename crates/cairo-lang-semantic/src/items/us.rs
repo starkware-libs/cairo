@@ -319,8 +319,8 @@ pub struct ImportedModules<'db> {
     pub all: OrderedHashSet<ModuleId<'db>>,
 }
 /// Returns the modules that are imported with `use *` in the current module.
-/// Query implementation of [crate::db::SemanticGroup::priv_module_use_star_modules].
-pub fn priv_module_use_star_modules<'db>(
+/// Query implementation of [crate::db::SemanticGroup::module_imported_modules].
+pub fn module_imported_modules<'db>(
     db: &'db dyn SemanticGroup,
     module_id: ModuleId<'db>,
 ) -> Arc<ImportedModules<'db>> {
