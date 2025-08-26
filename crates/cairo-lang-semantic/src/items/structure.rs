@@ -13,7 +13,7 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::attribute::SemanticQueryAttrs;
-use super::feature_kind::extract_item_feature_config;
+use super::feature_kind::feature_config_from_ast_item;
 use super::generics::{GenericParamsData, semantic_generic_params};
 use super::visibility::Visibility;
 use crate::db::SemanticGroup;
@@ -194,7 +194,7 @@ pub fn priv_struct_definition_data<'db>(
         let feature_restore = resolver
             .data
             .feature_config
-            .override_with(extract_item_feature_config(db, crate_id, &member, &mut diagnostics));
+            .override_with(feature_config_from_ast_item(db, crate_id, &member, &mut diagnostics));
         let id = MemberLongId(module_file_id, member.stable_ptr(db)).intern(db);
         let ty = resolve_type(db, &mut diagnostics, &mut resolver, &member.type_clause(db).ty(db));
         let visibility = Visibility::from_ast(db, &mut diagnostics, &member.visibility(db));

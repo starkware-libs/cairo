@@ -13,7 +13,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, Upcast};
 
 use super::attribute::SemanticQueryAttrs;
-use super::feature_kind::extract_item_feature_config;
+use super::feature_kind::feature_config_from_ast_item;
 use super::generics::{GenericParamsData, semantic_generic_params};
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
@@ -215,7 +215,7 @@ pub fn priv_enum_definition_data<'db>(
         let feature_restore = resolver
             .data
             .feature_config
-            .override_with(extract_item_feature_config(db, crate_id, &variant, &mut diagnostics));
+            .override_with(feature_config_from_ast_item(db, crate_id, &variant, &mut diagnostics));
         let id = VariantLongId(module_file_id, variant.stable_ptr(db)).intern(db);
         let ty = match variant.type_clause(db) {
             ast::OptionTypeClause::Empty(_) => unit_ty(db),
