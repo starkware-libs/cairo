@@ -28,7 +28,6 @@ use crate::{MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo,
 pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<()> {
     let Some(builder) = ctx.get_builder_if_reachable(id) else {
         // If an [ArmExpr] node is unreachable, report an error.
-        // TODO(lior): If the main branch is unreachable, report an proper error.
         if let FlowControlNode::ArmExpr(node) = ctx.graph.node(id) {
             let stable_ptr = ctx.ctx.function_body.arenas.exprs[node.expr].stable_ptr();
 

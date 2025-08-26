@@ -1245,3 +1245,41 @@ blk10:
 Statements:
 End:
   Return(v12)
+
+//! > ==========================================================================
+
+//! > Incomplete match
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: Option<Option<felt252>>) -> felt252 {
+    match x {
+        Some(Some(_)) => 1,
+        None => 2,
+    }
+}
+
+//! > graph
+Root: 5
+5 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(4) }
+4 EnumMatch { matched_var: v0, variants: (NodeId(3), v1), (NodeId(1), v4)}
+3 EnumMatch { matched_var: v1, variants: (NodeId(0), v2), (NodeId(2), v3)}
+2 Missing
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Match is non exhaustive - add a wildcard pattern (`_`).
+ --> lib.cairo:2:5-5:5
+      match x {
+ _____^
+| ...
+|     }
+|_____^
+
+//! > lowered
+Parameters: v0: core::option::Option::<core::option::Option::<core::felt252>>

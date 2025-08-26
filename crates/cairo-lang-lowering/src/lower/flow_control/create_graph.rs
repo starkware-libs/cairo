@@ -9,7 +9,7 @@ use super::graph::{
     ArmExpr, BooleanIf, EvaluateExpr, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode,
     NodeId,
 };
-use crate::diagnostic::MatchKind;
+use crate::diagnostic::{LoweringDiagnosticKind, MatchDiagnostic, MatchError, MatchKind};
 use crate::lower::context::LoweringContext;
 
 mod cache;
@@ -133,7 +133,6 @@ pub fn create_graph_expr_match<'db>(
 
     let mut cache = Cache::default();
 
-    // TODO(lior): add diagnostics if there is an unreachable arm.
     let match_node_id = create_node_for_patterns(
         CreateNodeParams {
             ctx,
@@ -143,8 +142,16 @@ pub fn create_graph_expr_match<'db>(
                 .map(|(pattern, _)| Some(get_pattern(ctx, *pattern)))
                 .collect_vec(),
             build_node_callback: &mut |graph, pattern_indices| {
-                // TODO(lior): add diagnostics if pattern_indices is empty (instead of `unwrap`).
-                let index_and_bindings = pattern_indices.first().unwrap();
+                // Get the first arm that matches.
+                let Some(index_and_bindings) = pattern_indices.first() else {
+                    // If no arm is available, report a non-exhaustive match error.
+                    let kind = LoweringDiagnosticKind::MatchError(MatchError {
+                        kind: MatchKind::Match,
+                        error: MatchDiagnostic::NonExhaustiveMatchValue,
+                    });
+                    return graph.report_with_missing_node(expr.stable_ptr.untyped(), kind);
+                };
+
                 cache.get_or_compute(
                     &mut |graph, index_and_bindings: IndexAndBindings| {
                         let index = index_and_bindings.index();
