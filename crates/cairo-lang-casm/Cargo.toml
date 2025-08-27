@@ -18,11 +18,11 @@ schemars = { workspace = true, features = ["preserve_order"], optional = true }
 serde = { workspace = true, optional = true }
 
 [dev-dependencies]
-env_logger.workspace = true
 itertools = { workspace = true, default-features = true }
 pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true
+tracing.workspace = true
 
 [features]
 default = ["std"]

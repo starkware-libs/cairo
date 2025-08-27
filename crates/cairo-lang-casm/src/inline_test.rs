@@ -4,6 +4,7 @@ use alloc::string::ToString;
 use indoc::indoc;
 use itertools::join;
 use pretty_assertions::assert_eq;
+#[cfg(feature = "std")]
 use test_log::test;
 
 use crate::instructions::Instruction;

@@ -17,4 +17,4 @@ num-traits = { workspace = true, default-features = true }
 thiserror.workspace = true
 
 [dev-dependencies]
-env_logger.workspace = true
+tracing.workspace = true
