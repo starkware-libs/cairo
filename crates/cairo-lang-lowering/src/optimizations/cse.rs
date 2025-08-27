@@ -6,11 +6,12 @@ use std::iter::zip;
 
 use cairo_lang_semantic::{ConcreteVariant, TypeId};
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
+use itertools::Itertools;
 
 use crate::ids::FunctionId;
 use crate::optimizations::var_renamer::VarRenamer;
 use crate::utils::RebuilderEx;
-use crate::{BlockId, Lowered, Statement, VariableArena, VariableId};
+use crate::{BlockEnd, BlockId, Lowered, Statement, VariableArena, VariableId};
 
 /// A key that uniquely identifies a sub-expression that can be eliminated.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -31,7 +32,8 @@ enum ExpressionKey<'db> {
 
 /// Context for the CSE optimization pass.
 struct CseContext<'db> {
-    /// Maps expression keys to the variable that holds the result of that expression
+    /// Maps expression keys to the variable that holds the result of that expression.
+    /// Before each block is initialized with the set of expressions that are valid in the block.
     expression_map: UnorderedHashMap<ExpressionKey<'db>, Vec<VariableId>>,
     /// Maps variables to their replacement (for variables that have been eliminated)
     var_replacements: UnorderedHashMap<VariableId, VariableId>,
@@ -40,8 +42,6 @@ struct CseContext<'db> {
     /// Separate from `var_replacements` to avoid breaking SSA, as this is added for non-removed
     /// statements as well.
     snapshot_remappings: UnorderedHashMap<VariableId, VariableId>,
-    /// Set of statements to remove (by block and statement index)
-    statements_to_remove: Vec<(BlockId, usize)>,
     /// Arena.
     variables: &'db VariableArena<'db>,
 }
@@ -52,17 +52,20 @@ impl<'db> CseContext<'db> {
             expression_map: UnorderedHashMap::default(),
             var_replacements: UnorderedHashMap::default(),
             snapshot_remappings: UnorderedHashMap::default(),
-            statements_to_remove: Vec::new(),
             variables,
         }
     }
 
-    /// Processes a statement and potentially marks it for elimination
-    fn process_statement(&mut self, block_id: BlockId, stmt_idx: usize, stmt: &Statement<'db>) {
-        if stmt.inputs().iter().any(|input| self.variables[input.var_id].info.droppable.is_err())
-            || stmt.outputs().iter().any(|output| self.variables[*output].info.copyable.is_err())
+    /// Processes a statement and returns if it should be eliminated.
+    fn process_statement(&mut self, stmt: &Statement<'db>) -> bool {
+        let outputs = stmt.outputs();
+        if outputs.iter().any(|output| self.variables[*output].info.copyable.is_err())
+            || stmt
+                .inputs()
+                .iter()
+                .any(|input| self.variables[input.var_id].info.droppable.is_err())
         {
-            return;
+            return false;
         }
         // Check if this statement can be eliminated
         let key = match stmt {
@@ -85,16 +88,17 @@ impl<'db> CseContext<'db> {
                 s.function,
                 s.inputs.iter().map(|usage| self.resolve_var(usage.var_id)).collect(),
             ),
-            _ => return, // Not optimizable
+            _ => return false, // Not optimizable
         };
         match self.expression_map.entry(key) {
             Entry::Vacant(entry) => {
-                entry.insert(stmt.outputs().to_vec());
+                entry.insert(outputs.to_vec());
+                false
             }
             Entry::Occupied(entry) => {
-                self.statements_to_remove.push((block_id, stmt_idx));
                 self.var_replacements
-                    .extend(zip(stmt.outputs().iter().copied(), entry.get().iter().copied()));
+                    .extend(zip(outputs.iter().copied(), entry.get().iter().copied()));
+                true
             }
         }
     }
@@ -119,25 +123,73 @@ impl<'db> CseContext<'db> {
 /// Performs common sub-expression elimination on the lowered program.
 /// This optimization identifies identical expressions and replaces redundant computations
 /// with references to the first computed result.
+///
+/// Blocks must be ordered topologically for the execution to be valid.
 pub fn cse<'db>(lowered: &mut Lowered<'db>) {
     if lowered.blocks.is_empty() {
         return;
     }
     let mut ctx = CseContext::new(&lowered.variables);
-
+    let mut block_expression_map = UnorderedHashMap::<BlockId, _>::default();
+    block_expression_map.insert(BlockId::root(), Default::default());
     for block_id in (0..lowered.blocks.len()).map(BlockId) {
-        let block = &lowered.blocks[block_id];
+        let block = &mut lowered.blocks[block_id];
+        ctx.expression_map = block_expression_map
+            .remove(&block_id)
+            .unwrap_or_else(|| panic!("Blk{} expressions were not prepared", block_id.0));
+        let mut statements_to_remove = Vec::new();
         for (stmt_idx, stmt) in block.statements.iter().enumerate() {
-            ctx.process_statement(block_id, stmt_idx, stmt);
+            if ctx.process_statement(stmt) {
+                statements_to_remove.push(stmt_idx);
+            }
         }
-        // Clearing the map to not propagate the optimization between blocks.
-        ctx.expression_map.clear();
+        for stmt_idx in statements_to_remove.into_iter().rev() {
+            block.statements.remove(stmt_idx);
+        }
+        match &block.end {
+            // No following blocks, no need to propagate expressions.
+            BlockEnd::NotSet | BlockEnd::Return(..) | BlockEnd::Panic(..) => {}
+            BlockEnd::Match { info } => {
+                // Propagating expressions to all match arms.
+                for arm in info.arms() {
+                    assert!(
+                        block_expression_map
+                            .insert(arm.block_id, ctx.expression_map.clone())
+                            .is_none(),
+                        "Blk{} was previously propagated - should not happen on match arms.",
+                        arm.block_id.0
+                    );
+                }
+            }
+            BlockEnd::Goto(block_id, _) => match block_expression_map.entry(*block_id) {
+                Entry::Vacant(entry) => {
+                    // First time meeting this block, propagate expressions.
+                    entry.insert(std::mem::take(&mut ctx.expression_map));
+                }
+                Entry::Occupied(mut entry) => {
+                    let e = std::mem::take(entry.get_mut());
+                    // Merge expressions from different `BlockEnd::Goto`s to assure we only leave
+                    // values known by all leading blocks.
+                    entry.insert(e.filter(|k, v| {
+                        if let Some(new_val) = ctx.expression_map.remove(k) {
+                            new_val == *v
+                        } else {
+                            false
+                        }
+                    }));
+                }
+            },
+        }
     }
-    let CseContext { statements_to_remove, var_replacements: renamed_vars, .. } = ctx;
-    // Remove statements in reverse order to maintain correct indices.
-    for (block_id, stmt_idx) in statements_to_remove.into_iter().rev() {
-        lowered.blocks[block_id].statements.remove(stmt_idx);
-    }
+    assert!(
+        block_expression_map.is_empty(),
+        "Some blocks were not processed: [{}]",
+        block_expression_map
+            .iter_sorted_by_key(|(k, _)| k.0)
+            .map(|(k, _)| format!("blk{}", k.0))
+            .join(", ")
+    );
+    let CseContext { var_replacements: renamed_vars, .. } = ctx;
     let mut renamer = VarRenamer { renamed_vars };
     for block in lowered.blocks.iter_mut() {
         *block = renamer.rebuild_block(block);
