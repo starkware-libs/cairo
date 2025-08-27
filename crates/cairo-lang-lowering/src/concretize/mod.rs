@@ -57,7 +57,7 @@ pub fn concretize_lowered<'db>(
                     stmt.variant = substitution.substitute(db, stmt.variant)?;
                 }
                 Statement::Const(stmt) => {
-                    stmt.value = substitution.substitute(db, stmt.value.clone())?;
+                    stmt.value = substitution.substitute(db, stmt.value)?;
                 }
                 Statement::Snapshot(_)
                 | Statement::Desnap(_)

@@ -804,8 +804,8 @@ impl<'db> LiteInference<'db> {
                     zip_eq(const_values, target_const_values).map(
                         |(const_value, target_const_value)| {
                             self.can_conform_const(
-                                (const_value.clone().intern(self.db), candidate_final),
-                                (target_const_value.clone().intern(self.db), target_final),
+                                (*const_value, candidate_final),
+                                (*target_const_value, target_final),
                             )
                         }
                     )
@@ -822,21 +822,21 @@ impl<'db> LiteInference<'db> {
                     (target_concrete_variant.ty, target_final),
                 ),
                 self.can_conform_const(
-                    (const_value.clone().intern(self.db), candidate_final),
-                    (target_const_value.clone().intern(self.db), target_final),
+                    (*const_value, candidate_final),
+                    (*target_const_value, target_final),
                 ),
             ]),
             (ConstValue::Enum(_, _), _) => CanConformResult::Rejected,
             (ConstValue::NonZero(const_value), ConstValue::NonZero(target_const_value)) => self
                 .can_conform_const(
-                    (const_value.clone().intern(self.db), candidate_final),
-                    (target_const_value.clone().intern(self.db), target_final),
+                    (*const_value, candidate_final),
+                    (*target_const_value, target_final),
                 ),
             (ConstValue::NonZero(_), _) => CanConformResult::Rejected,
             (ConstValue::Boxed(const_value), ConstValue::Boxed(target_const_value)) => self
                 .can_conform_const(
-                    (const_value.clone().intern(self.db), candidate_final),
-                    (target_const_value.clone().intern(self.db), target_final),
+                    (*const_value, candidate_final),
+                    (*target_const_value, target_final),
                 ),
             (ConstValue::Boxed(_), _) => CanConformResult::Rejected,
             (ConstValue::Generic(param), _) => {
