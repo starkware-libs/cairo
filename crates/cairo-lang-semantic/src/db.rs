@@ -124,9 +124,6 @@ pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + 
     #[salsa::invoke(items::constant::constant_const_value)]
     #[salsa::cycle(items::constant::constant_const_value_cycle)]
     fn constant_const_value<'db>(&'db self, const_id: ConstantId<'db>) -> Maybe<ConstValueId<'db>>;
-    #[salsa::invoke(items::constant::constant_const_type)]
-    #[salsa::cycle(items::constant::constant_const_type_cycle)]
-    fn constant_const_type<'db>(&'db self, const_id: ConstantId<'db>) -> Maybe<TypeId<'db>>;
     /// Returns information required for const calculations.
     #[salsa::invoke(items::constant::const_calc_info)]
     fn const_calc_info<'db>(&'db self) -> Arc<ConstCalcInfo<'db>>;

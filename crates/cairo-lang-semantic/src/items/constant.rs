@@ -1171,24 +1171,6 @@ pub fn constant_const_value_cycle<'db>(
     Ok(db.priv_constant_semantic_data(const_id, true)?.const_value)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::constant_const_type].
-pub fn constant_const_type<'db>(
-    db: &'db dyn SemanticGroup,
-    const_id: ConstantId<'db>,
-) -> Maybe<TypeId<'db>> {
-    db.priv_constant_semantic_data(const_id, false)?.const_value.ty(db)
-}
-
-/// Cycle handling for [crate::db::SemanticGroup::constant_const_type].
-pub fn constant_const_type_cycle<'db>(
-    db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
-    const_id: ConstantId<'db>,
-) -> Maybe<TypeId<'db>> {
-    // Forwarding cycle handling to `priv_constant_semantic_data` handler.
-    db.priv_constant_semantic_data(const_id, true)?.const_value.ty(db)
-}
-
 /// Query implementation of [crate::db::SemanticGroup::const_calc_info].
 pub fn const_calc_info<'db>(db: &'db dyn SemanticGroup) -> Arc<ConstCalcInfo<'db>> {
     Arc::new(ConstCalcInfo::new(db))
