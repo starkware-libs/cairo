@@ -86,12 +86,12 @@ members = [
 exclude = ["ensure-no_std"]
 
 [workspace.package]
-version = "2.12.0"
 edition = "2024"
-rust-version = "1.86"
-repository = "https://github.com/starkware-libs/cairo/"
 license = "Apache-2.0"
 license-file = "LICENSE"
+repository = "https://github.com/starkware-libs/cairo/"
+rust-version = "1.86"
+version = "2.12.0"
 
 [workspace.dependencies]
 anyhow = "1.0.98"
@@ -111,7 +111,6 @@ const_format = "0.2.34"
 convert_case = "0.8.0"
 derivative = "2.2.0"
 diffy = "0.4.2"
-env_logger = "0.11.8"
 genco = "0.18.0"
 good_lp = { version = "1.14.0", features = ["minilp"], default-features = false }
 hashbrown = "0.15.4"
@@ -147,11 +146,14 @@ starknet-types-core = { version = "0.2.0", features = ["hash", "prime-bigint", "
 syn = { version = "2.0.104", features = ["extra-traits", "full"] }
 test-case = "3.3.1"
 test-case-macros = "3.3.1"
-test-log = "0.2.18"
+test-log = { version = "0.2.18", features = ["trace"] }
 thiserror = "2.0.12"
 time = { version = "0.3.41", features = ["formatting", "local-offset", "macros"] }
 tokio = { version = "1.47.1", features = ["full", "sync"] }
 toml = "0.9.5"
+tracing = "0.1.40"
+tracing-log = "0.2.0"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt", "time"] }
 typetag = "0.2"
 unescaper = "0.1.6"
 vector-map = { version = "1.0.2", features = ["serde_impl"] }
