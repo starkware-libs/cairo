@@ -215,34 +215,33 @@ Statements:
   (v21: core::byte_array::ByteArray) <- struct_construct(v18, v19, v20)
   (v22: core::byte_array::ByteArray, v23: @core::byte_array::ByteArray) <- snapshot(v21)
   (v24: core::array::Span::<core::bytes_31::bytes31>, v25: core::array::Array::<core::bytes_31::bytes31>, v26: ()) <- struct_destructure(v16)
-  (v27: @core::array::Array::<core::bytes_31::bytes31>, v28: @core::felt252, v29: @core::integer::u32) <- struct_destructure(v7)
-  (v30: core::felt252) <- desnap(v28)
-  (v31: core::integer::u32) <- desnap(v29)
-  (v32: core::byte_array::ByteArray) <- struct_construct(v25, v30, v31)
-  (v33: core::RangeCheck, v34: core::gas::GasBuiltin, v35: core::panics::PanicResult::<(core::byte_array::ByteArray, ())>) <- core::byte_array::ByteArrayImpl::append(v13, v14, v32, v23)
+  (v27: core::felt252) <- desnap(v9)
+  (v28: core::integer::u32) <- desnap(v10)
+  (v29: core::byte_array::ByteArray) <- struct_construct(v25, v27, v28)
+  (v30: core::RangeCheck, v31: core::gas::GasBuiltin, v32: core::panics::PanicResult::<(core::byte_array::ByteArray, ())>) <- core::byte_array::ByteArrayImpl::append(v13, v14, v29, v23)
 End:
-  Match(match_enum(v35) {
-    PanicResult::Ok(v36) => blk2,
-    PanicResult::Err(v37) => blk3,
+  Match(match_enum(v32) {
+    PanicResult::Ok(v33) => blk2,
+    PanicResult::Err(v34) => blk3,
   })
 
 blk2:
 Statements:
-  (v38: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v34)
-  (v39: core::byte_array::ByteArray, v40: ()) <- struct_destructure(v36)
-  (v41: (core::byte_array::ByteArray,)) <- struct_construct(v39)
-  (v42: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Ok(v41)
+  (v35: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v31)
+  (v36: core::byte_array::ByteArray, v37: ()) <- struct_destructure(v33)
+  (v38: (core::byte_array::ByteArray,)) <- struct_construct(v36)
+  (v39: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Ok(v38)
 End:
-  Return(v33, v38, v42)
+  Return(v30, v35, v39)
 
 blk3:
 Statements:
-  (v43: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v37)
+  (v40: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v34)
 End:
-  Return(v33, v34, v43)
+  Return(v30, v31, v40)
 
 blk4:
 Statements:
-  (v44: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v17)
+  (v41: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v17)
 End:
-  Return(v13, v14, v44)
+  Return(v13, v14, v41)
