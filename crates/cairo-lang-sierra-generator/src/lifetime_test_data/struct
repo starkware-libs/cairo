@@ -46,22 +46,22 @@ End:
   Return(v13)
 
 //! > last_use
-v13: ((BlockId(0), 11), 0)
-v12: ((BlockId(0), 10), 1)
-v11: ((BlockId(0), 10), 0)
-v9: ((BlockId(0), 7), 0)
-v8: ((BlockId(0), 6), 1)
-v6: ((BlockId(0), 6), 0)
-v7: ((BlockId(0), 5), 0)
-v5: ((BlockId(0), 4), 0)
-v4: ((BlockId(0), 3), 0)
-v2: ((BlockId(0), 2), 1)
-v3: ((BlockId(0), 2), 0)
-v1: ((BlockId(0), 1), 0)
-v0: ((BlockId(0), 0), 0)
+v13: ((blk0, 11), 0)
+v12: ((blk0, 10), 1)
+v11: ((blk0, 10), 0)
+v9: ((blk0, 7), 0)
+v8: ((blk0, 6), 1)
+v6: ((blk0, 6), 0)
+v7: ((blk0, 5), 0)
+v5: ((blk0, 4), 0)
+v4: ((blk0, 3), 0)
+v2: ((blk0, 2), 1)
+v3: ((blk0, 2), 0)
+v1: ((blk0, 1), 0)
+v0: ((blk0, 0), 0)
 
 //! > drops
-PostStatement((BlockId(0), 7)): v10
+PostStatement((blk0, 7)): v10
 
 //! > semantic_diagnostics
 

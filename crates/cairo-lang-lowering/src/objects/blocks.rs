@@ -20,6 +20,11 @@ impl BlockId {
         BlockId(self.0 + 1)
     }
 }
+impl core::fmt::Display for BlockId {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "blk{}", self.0)
+    }
+}
 
 /// A convenient wrapper around a vector of blocks.
 /// This is used instead of id_arena, since the latter is harder to clone and modify.

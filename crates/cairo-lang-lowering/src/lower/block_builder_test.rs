@@ -93,13 +93,7 @@ fn test_merge_block_builders(
     let lowered_blocks = ctx.blocks.build().unwrap();
     let lowered_str = lowered_blocks
         .iter()
-        .map(|(block_id, block)| {
-            format!(
-                "{:?}:\n{:?}\n",
-                block_id.debug(&lowered_formatter),
-                block.debug(&lowered_formatter)
-            )
-        })
+        .map(|(block_id, block)| format!("{block_id}:\n{:?}\n", block.debug(&lowered_formatter)))
         .join("");
 
     TestRunnerResult {

@@ -324,7 +324,7 @@ impl<'db> DebugWithDb<'db> for BlockBuilder<'db> {
     type Db = ExprFormatter<'db>;
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &ExprFormatter<'db>) -> std::fmt::Result {
-        writeln!(f, "block_id: {:?}", self.block_id)?;
+        writeln!(f, "block_id: {}", self.block_id)?;
         if !self.statements.statements.is_empty() {
             writeln!(f, "statements:")?;
             for statement in &self.statements.statements {

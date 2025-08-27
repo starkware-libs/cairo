@@ -136,7 +136,7 @@ pub fn cse<'db>(lowered: &mut Lowered<'db>) {
         let block = &mut lowered.blocks[block_id];
         ctx.expression_map = block_expression_map
             .remove(&block_id)
-            .unwrap_or_else(|| panic!("Blk{} expressions were not prepared", block_id.0));
+            .unwrap_or_else(|| panic!("{block_id} expressions were not prepared"));
         let mut statements_to_remove = Vec::new();
         for (stmt_idx, stmt) in block.statements.iter().enumerate() {
             if ctx.process_statement(stmt) {
@@ -152,12 +152,10 @@ pub fn cse<'db>(lowered: &mut Lowered<'db>) {
             BlockEnd::Match { info } => {
                 // Propagating expressions to all match arms.
                 for arm in info.arms() {
+                    let next = arm.block_id;
                     assert!(
-                        block_expression_map
-                            .insert(arm.block_id, ctx.expression_map.clone())
-                            .is_none(),
-                        "{:?} was previously propagated - should not happen on match arms.",
-                        arm.block_id
+                        block_expression_map.insert(next, ctx.expression_map.clone()).is_none(),
+                        "{next} was previously propagated - should not happen on match arms.",
                     );
                 }
             }
@@ -187,7 +185,7 @@ pub fn cse<'db>(lowered: &mut Lowered<'db>) {
         "Some blocks were not processed: [{}]",
         block_expression_map
             .iter_sorted_by_key(|(k, _)| k.0)
-            .map(|(k, _)| format!("blk{}", k.0))
+            .map(|(k, _)| k.to_string())
             .join(", ")
     );
     let CseContext { var_replacements: renamed_vars, .. } = ctx;
