@@ -139,9 +139,6 @@ pub fn baseline_optimization_strategy<'db>(
     OptimizationStrategy(vec![
         // Must be right before inlining.
         OptimizationPhase::ReorganizeBlocks,
-        // Doing CSE before inlining, since currently only performed on blocks.
-        // TODO(orizi): Remove this once CSE can happen across blocks.
-        OptimizationPhase::Cse,
         OptimizationPhase::ApplyInlining { enable_const_folding: true },
         OptimizationPhase::ReturnOptimization,
         OptimizationPhase::ReorganizeBlocks,
