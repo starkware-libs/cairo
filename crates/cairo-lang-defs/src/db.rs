@@ -1683,7 +1683,7 @@ fn module_ancestors_helper<'db>(
                 ancestors.insert(current);
                 current = submodule_id.parent_module(db);
             }
-            ModuleId::MacroCall { id, generated_file_id: _ } => {
+            ModuleId::MacroCall { id, generated_file_id: _, is_expose: _ } => {
                 current = id.parent_module(db);
             }
         }
@@ -1696,7 +1696,7 @@ fn module_perceived_module_helper<'db>(
     _dummy: FileId<'db>,
     mut module_id: ModuleId<'db>,
 ) -> ModuleId<'db> {
-    while let ModuleId::MacroCall { id, generated_file_id: _ } = module_id {
+    while let ModuleId::MacroCall { id, generated_file_id: _, is_expose: _ } = module_id {
         module_id = id.parent_module(db);
     }
     module_id

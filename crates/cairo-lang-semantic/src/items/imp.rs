@@ -1769,6 +1769,41 @@ pub enum GenericsHeadFilter<'db> {
     NoGenerics,
 }
 
+/// Returns the filtered impl IDs for a specific trait in a module.
+pub fn module_impl_ids_for_trait_filter<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+    trait_filter: TraitFilter<'db>,
+) -> Maybe<Vec<UninferredImpl<'db>>> {
+    // Get the impls first from the module, do not change this order.
+    let mut uninferred_impls: OrderedHashSet<UninferredImplById<'_>> =
+        OrderedHashSet::from_iter(module_impl_ids(db, module_id, module_id)?.iter().cloned());
+    for ((user_module, containing_module), _) in
+        db.module_imported_modules(module_id).accessible.clone()
+    {
+        if let Ok(star_module_uninferred_impls) =
+            module_impl_ids(db, user_module, containing_module)
+        {
+            uninferred_impls.extend(star_module_uninferred_impls.iter().cloned());
+        }
+    }
+    let mut res = Vec::new();
+    for uninferred_impl_by_id in uninferred_impls {
+        let uninferred_impl = uninferred_impl_by_id.0;
+        let Ok(trait_id) = uninferred_impl.trait_id(db) else { continue };
+        if trait_id != trait_filter.trait_id {
+            continue;
+        }
+        let Ok(concrete_trait_id) = uninferred_impl.concrete_trait(db) else {
+            continue;
+        };
+        if concrete_trait_id.trait_id(db) == trait_filter.trait_id {
+            res.push(uninferred_impl);
+        }
+    }
+    Ok(res)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::module_impl_ids].
 /// Returns the uninferred impls in a module.
 pub fn module_impl_ids<'db>(
@@ -4135,7 +4170,7 @@ pub fn module_global_impls<'db>(
     let starting_module = &(module_id, module_id);
     let star_modules = db.module_imported_modules(module_id);
     for (user_module, containing_module) in
-        chain!([starting_module], star_modules.accessible.iter())
+        chain!([starting_module], star_modules.accessible.keys())
     {
         let Ok(module_semantic_data) = db.priv_module_semantic_data(*containing_module) else {
             continue;

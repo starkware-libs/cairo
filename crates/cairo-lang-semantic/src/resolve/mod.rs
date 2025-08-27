@@ -342,8 +342,6 @@ enum UseStarResult<'db> {
     AmbiguousPath(Vec<ModuleItemId<'db>>),
     /// The path was not found, considering only the `use *` imports.
     PathNotFound,
-    /// Item is not visible in the current module, considering only the `use *` imports.
-    ItemNotVisible(ModuleItemId<'db>, Vec<ModuleId<'db>>),
 }
 
 /// A trait for things that can be interpreted as a path of segments.
@@ -537,7 +535,6 @@ impl<'db> Resolver<'db> {
             },
         )
     }
-
     /// Resolves a generic item, given a path.
     /// Guaranteed to result in at most one diagnostic.
     pub fn resolve_generic_path(
@@ -623,7 +620,6 @@ impl<'db> Resolver<'db> {
             },
         )
     }
-
     /// Specializes a ResolvedGenericItem that came from a ModuleItem.
     fn specialize_generic_module_item(
         &mut self,
@@ -735,10 +731,14 @@ impl<'db> Resolver<'db> {
         let mut item_info = None;
         let mut module_items_found: OrderedHashSet<ModuleItemId<'_>> = OrderedHashSet::default();
         let imported_modules = self.db.module_imported_modules(module_id);
-        for (star_module_id, item_module_id) in &imported_modules.accessible {
-            if let Some(inner_item_info) =
-                self.resolve_item_in_imported_module(*item_module_id, ident)
-                && self.is_item_visible(*item_module_id, &inner_item_info, *star_module_id)
+
+        // Iterate over accessible modules, respecting the expose flag
+        for (&(star_module_id, item_module_id), &is_exposed) in imported_modules.accessible.iter() {
+            // Only check modules that are exposed
+            if is_exposed
+                && let Some(inner_item_info) =
+                    self.resolve_item_in_imported_module(item_module_id, ident)
+                && self.is_item_visible(item_module_id, &inner_item_info, star_module_id)
                 && self.is_item_feature_usable(&inner_item_info)
             {
                 item_info = Some(inner_item_info.clone());
@@ -761,11 +761,14 @@ impl<'db> Resolver<'db> {
                         containing_modules.push(*star_module_id);
                     }
                 }
-                if let Some(item_info) = item_info {
+                if let Some(_item_info) = item_info {
                     if module_items_found.len() > 1 {
                         UseStarResult::AmbiguousPath(module_items_found.iter().cloned().collect())
                     } else {
-                        UseStarResult::ItemNotVisible(item_info.item_id, containing_modules)
+                        // When items exist but are only in non-exposed modules,
+                        // treat them as not found rather than not visible,
+                        // since they don't exist in the exposed context
+                        UseStarResult::PathNotFound
                     }
                 } else {
                     UseStarResult::PathNotFound
@@ -816,7 +819,6 @@ impl<'db> Resolver<'db> {
 
         None
     }
-
     pub fn prelude_submodule(&self) -> ModuleId<'db> {
         self.prelude_submodule_ex(&MacroResolutionInfo::from_resolver(self))
     }
@@ -1647,8 +1649,6 @@ enum ResolvedBase<'db> {
     FoundThroughGlobalUse { item_info: ModuleItemInfo<'db>, containing_module: ModuleId<'db> },
     /// The base module is ambiguous.
     Ambiguous(Vec<ModuleItemId<'db>>),
-    /// The base module is inaccessible.
-    ItemNotVisible(ModuleItemId<'db>, Vec<ModuleId<'db>>),
 }
 
 /// The callbacks to be used by `resolve_path_inner`.
@@ -1882,12 +1882,6 @@ impl<'db, 'a> Resolution<'db, 'a> {
                             .diagnostics
                             .report(identifier.stable_ptr(db), AmbiguousPath(module_items)));
                     }
-                    ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
-                        return Err(self.diagnostics.report(
-                            identifier.stable_ptr(db),
-                            ItemNotVisible(module_item_id, containing_modules),
-                        ));
-                    }
                 }
             }
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
@@ -1956,12 +1950,6 @@ impl<'db, 'a> Resolution<'db, 'a> {
                                 .diagnostics
                                 .report(identifier.stable_ptr(db), AmbiguousPath(module_items)));
                         }
-                        ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
-                            return Err(self.diagnostics.report(
-                                identifier.stable_ptr(db),
-                                ItemNotVisible(module_item_id, containing_modules),
-                            ));
-                        }
                     }
                 }
             }
@@ -2015,12 +2003,6 @@ impl<'db, 'a> Resolution<'db, 'a> {
                             .diagnostics
                             .report(identifier.stable_ptr(db), AmbiguousPath(module_items)));
                     }
-                    ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
-                        return Err(self.diagnostics.report(
-                            identifier.stable_ptr(db),
-                            ItemNotVisible(module_item_id, containing_modules),
-                        ));
-                    }
                 }
             }
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
@@ -2053,12 +2035,6 @@ impl<'db, 'a> Resolution<'db, 'a> {
                         return Err(self
                             .diagnostics
                             .report(identifier.stable_ptr(db), AmbiguousPath(module_items)));
-                    }
-                    ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
-                        return Err(self.diagnostics.report(
-                            identifier.stable_ptr(db),
-                            ItemNotVisible(module_item_id, containing_modules),
-                        ));
                     }
                 }
             }
@@ -2110,7 +2086,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                     mark(&mut self.resolver.resolved_items, db, &segment, parent);
                     curr = Some(parent);
                 }
-                ModuleId::MacroCall { id: _, generated_file_id: _ } => {
+                ModuleId::MacroCall { id: _, generated_file_id: _, is_expose: _ } => {
                     return Some(Err(self
                         .diagnostics
                         .report(segment.stable_ptr(db), SuperUsedInMacroCallTopLevel)));
@@ -2150,12 +2126,6 @@ impl<'db, 'a> Resolution<'db, 'a> {
                         Err(self
                             .diagnostics
                             .report(identifier.stable_ptr(db), PathNotFound(item_type)))
-                    }
-                    UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
-                        Err(self.diagnostics.report(
-                            identifier.stable_ptr(db),
-                            ItemNotVisible(module_item_id, containing_modules),
-                        ))
                     }
                 }
             }
@@ -2577,13 +2547,6 @@ impl<'db, 'a> Resolution<'db, 'a> {
                 return Ok(ResolvedBase::Ambiguous(module_items));
             }
             UseStarResult::PathNotFound => {}
-            UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
-                let prelude = self.resolver.prelude_submodule_ex(&self.macro_info);
-                if let Ok(Some(_)) = db.module_item_by_name(prelude, ident.into()) {
-                    return Ok(ResolvedBase::Module(prelude));
-                }
-                return Ok(ResolvedBase::ItemNotVisible(module_item_id, containing_modules));
-            }
         }
         Ok(ResolvedBase::Module(self.resolver.prelude_submodule_ex(&self.macro_info)))
     }

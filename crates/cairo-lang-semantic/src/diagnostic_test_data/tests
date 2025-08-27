@@ -1097,7 +1097,7 @@ INACCESSIBLE
 //! > expected_semantics
 
 //! > expected_diagnostics
-error: Item `test::a::INACCESSIBLE` is not visible in this context through module `test::a`.
+error[E0006]: Identifier not found.
  --> lib.cairo:6:1
 INACCESSIBLE
 ^^^^^^^^^^^^
@@ -1128,7 +1128,7 @@ inaccessible::C
 //! > expected_semantics
 
 //! > expected_diagnostics
-error: Item `test::a::inaccessible` is not visible in this context through module `test::a`.
+error[E0006]: Identifier not found.
  --> lib.cairo:8:1
 inaccessible::C
 ^^^^^^^^^^^^
@@ -1165,7 +1165,7 @@ C
 //! > expected_semantics
 
 //! > expected_diagnostics
-error: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
+error[E0006]: Identifier not found.
  --> lib.cairo:14:1
 C
 ^
@@ -1207,7 +1207,7 @@ C
 //! > expected_semantics
 
 //! > expected_diagnostics
-error: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
+error[E0006]: Identifier not found.
  --> lib.cairo:14:1
 C
 ^
@@ -1250,7 +1250,7 @@ C
 //! > expected_semantics
 
 //! > expected_diagnostics
-error: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
+error[E0006]: Identifier not found.
  --> lib.cairo:20:1
 C
 ^

@@ -186,7 +186,8 @@ pub fn module_attributes<'db>(
     module_id: ModuleId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     Ok(match &module_id {
-        ModuleId::CrateRoot(_) | ModuleId::MacroCall { id: _, generated_file_id: _ } => vec![],
+        ModuleId::CrateRoot(_)
+        | ModuleId::MacroCall { id: _, generated_file_id: _, is_expose: _ } => vec![],
         ModuleId::Submodule(submodule_id) => {
             let module_ast = &submodule_id.module_data(db)?.submodules(db)[submodule_id];
 
@@ -202,7 +203,8 @@ pub fn module_usable_trait_ids<'db>(
 ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
     // Get the traits first from the module, do not change this order.
     let mut module_traits = specific_module_usable_trait_ids(db, module_id, module_id)?;
-    for (user_module, containing_module) in &db.module_imported_modules(module_id).accessible {
+    let accessible = db.module_imported_modules(module_id).accessible.clone();
+    for ((user_module, containing_module), _) in accessible.iter() {
         if let Ok(star_module_traits) =
             specific_module_usable_trait_ids(db, *user_module, *containing_module)
         {
