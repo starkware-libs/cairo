@@ -78,28 +78,28 @@ End:
   Return(v3)
 
 //! > last_use
-v3: ((BlockId(4), 1), 0)
-v12: ((BlockId(4), 0), 0)
-v17: ((BlockId(3), 2), 0)
-v16: ((BlockId(3), 1), 0)
-v2: ((BlockId(3), 0), 0)
-v15: ((BlockId(2), 3), 0)
-v14: ((BlockId(2), 2), 0)
-v2: ((BlockId(2), 1), 1)
-v13: ((BlockId(2), 1), 0)
-v1: ((BlockId(2), 0), 1)
-v5: ((BlockId(2), 0), 0)
-v11: ((BlockId(1), 5), 0)
-v10: ((BlockId(1), 4), 0)
-v8: ((BlockId(1), 2), 0)
-v7: ((BlockId(1), 1), 0)
-v0: ((BlockId(0), 0), 0)
+v3: ((blk4, 1), 0)
+v12: ((blk4, 0), 0)
+v17: ((blk3, 2), 0)
+v16: ((blk3, 1), 0)
+v2: ((blk3, 0), 0)
+v15: ((blk2, 3), 0)
+v14: ((blk2, 2), 0)
+v2: ((blk2, 1), 1)
+v13: ((blk2, 1), 0)
+v1: ((blk2, 0), 1)
+v5: ((blk2, 0), 0)
+v11: ((blk1, 5), 0)
+v10: ((blk1, 4), 0)
+v8: ((blk1, 2), 0)
+v7: ((blk1, 1), 0)
+v0: ((blk0, 0), 0)
 
 //! > drops
-PostStatement((BlockId(4), 0)): v18
-PostStatement((BlockId(1), 2)): v9
-BeginningOfBlock(BlockId(1)): v4, v2, v1
-BeginningOfBlock(BlockId(3)): v6, v1
+PostStatement((blk4, 0)): v18
+PostStatement((blk1, 2)): v9
+BeginningOfBlock(blk1): v4, v2, v1
+BeginningOfBlock(blk3): v6, v1
 
 //! > semantic_diagnostics
 

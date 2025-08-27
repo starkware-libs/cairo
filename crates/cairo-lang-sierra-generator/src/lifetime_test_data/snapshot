@@ -22,11 +22,11 @@ End:
   Return(v2)
 
 //! > last_use
-v2: ((BlockId(0), 1), 0)
-v0: ((BlockId(0), 0), 0)
+v2: ((blk0, 1), 0)
+v0: ((blk0, 0), 0)
 
 //! > drops
-PostStatement((BlockId(0), 0)): v1
+PostStatement((blk0, 0)): v1
 
 //! > semantic_diagnostics
 
