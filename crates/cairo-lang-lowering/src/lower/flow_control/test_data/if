@@ -681,8 +681,8 @@ End:
 test_create_graph(expect_diagnostics: true, skip_lowering: true)
 
 //! > function_code
-fn foo(x: MyStruct) -> felt252 {
-    if let MyStruct { .. } = x {
+fn foo(x: [u16; 2]) -> felt252 {
+    if let [_, _] = x {
         0
     } else {
         1
@@ -705,9 +705,9 @@ Root: 3
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported type in if-let. Type: `test::MyStruct`.
+error: Unsupported type in if-let. Type: `[core::integer::u16; 2]`.
  --> lib.cairo:6:12
-    if let MyStruct { .. } = x {
-           ^^^^^^^^^^^^^^^
+    if let [_, _] = x {
+           ^^^^^^
 
 //! > lowered
