@@ -17,7 +17,6 @@ use cairo_lang_runner::{
     CairoHintProcessor, ProfilingInfoCollectionConfig, RunResultValue, RunnerError,
     SierraCasmRunner, StarknetExecutionResources,
 };
-use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::starknet_plugin_suite;
@@ -27,7 +26,6 @@ use cairo_lang_test_plugin::{
     compile_test_prepared_db, test_plugin_suite,
 };
 use cairo_lang_utils::casts::IntoOrPanic;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use colored::Colorize;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
@@ -329,12 +327,6 @@ pub struct TestsSummary {
     failed: Vec<String>,
     ignored: Vec<String>,
     failed_run_results: Vec<Result<RunResultValue>>,
-}
-
-/// Auxiliary data that is required when running tests with profiling.
-pub struct PorfilingAuxData<'a> {
-    pub db: &'a dyn SierraGenGroup,
-    pub statements_functions: UnorderedHashMap<StatementIdx, String>,
 }
 
 /// Runs the tests and process the results for a summary.
