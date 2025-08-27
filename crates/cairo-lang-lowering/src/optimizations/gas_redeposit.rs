@@ -160,7 +160,7 @@ impl<'db> Analyzer<'db, '_> for GasRedepositContext<'db> {
     fn info_from_return(&mut self, _: StatementLocation, vars: &[VarUsage<'db>]) -> Self::Info {
         // If the function has multiple returns with different gas costs, gas will get burned unless
         // we redeposit it.
-        // If however the this return corresponds to a panic, we dont redeposit due to code size
+        // If however, this return corresponds to a panic, we don't redeposit due to code size
         // concerns.
         match vars.last() {
             Some(VarUsage { var_id, location: _ }) => RedepositState::Return(*var_id),
