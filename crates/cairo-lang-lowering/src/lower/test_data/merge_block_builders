@@ -13,12 +13,12 @@ x: felt252
 );
 
 //! > input_blocks
-block_id: BlockId(0)
+block_id: blk0
 semantics:
   Var(ParamId(test::x)): v0
 
 //! > merged_block_builder
-block_id: BlockId(0)
+block_id: blk0
 semantics:
   Var(ParamId(test::x)): v0
 
@@ -51,20 +51,20 @@ x: felt252, y: felt252, z: felt252, w: felt252
 );
 
 //! > input_blocks
-block_id: BlockId(0)
+block_id: blk0
 semantics:
   Var(ParamId(test::x)): v0
   Var(ParamId(test::y)): v1
   Var(ParamId(test::z)): v2
 
-block_id: BlockId(1)
+block_id: blk1
 semantics:
   Var(ParamId(test::x)): v0
   Var(ParamId(test::y)): v3
   Var(ParamId(test::w)): v4
 
 //! > merged_block_builder
-block_id: BlockId(2)
+block_id: blk2
 semantics:
   Var(ParamId(test::x)): v0
   Var(ParamId(test::y)): v100
@@ -127,20 +127,20 @@ struct B {
 }
 
 //! > merged_block_builder
-block_id: BlockId(3)
+block_id: blk3
 semantics:
   Var(ParamId(test::x)): Scattered(Scattered(v113, v114), v0, v115)
 
 //! > input_blocks
-block_id: BlockId(0)
+block_id: blk0
 semantics:
   Var(ParamId(test::x)): Scattered(v3, v0, v1)
 
-block_id: BlockId(1)
+block_id: blk1
 semantics:
   Var(ParamId(test::x)): Scattered(Scattered(v4, v5), v0, v2)
 
-block_id: BlockId(2)
+block_id: blk2
 semantics:
   Var(ParamId(test::x)): Scattered(Scattered(v4, v5), v0, v2)
 
@@ -211,16 +211,16 @@ struct C {
 }
 
 //! > input_blocks
-block_id: BlockId(0)
+block_id: blk0
 semantics:
   Var(ParamId(test::x)): Scattered(v0, Scattered(v1, v2), Scattered(v4, v7))
 
-block_id: BlockId(1)
+block_id: blk1
 semantics:
   Var(ParamId(test::x)): Scattered(v0, Scattered(v1, v3), Scattered(Scattered(v5, v6), v7))
 
 //! > merged_block_builder
-block_id: BlockId(2)
+block_id: blk2
 semantics:
   Var(ParamId(test::x)): Scattered(v0, Scattered(v1, v116), Scattered(Scattered(v117, v118), v7))
 
