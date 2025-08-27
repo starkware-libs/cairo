@@ -1511,3 +1511,102 @@ error: The value does not fit within the range of type core::integer::u8.
                     ^^^
 
 //! > lowered
+
+//! > ==========================================================================
+
+//! > Match with no arms
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: Option<felt252>) -> felt252 {
+    match x {}
+}
+
+//! > graph
+Root: 1
+1 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(0) }
+0 Missing
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Match is non exhaustive - add a wildcard pattern (`_`).
+ --> lib.cairo:2:5
+    match x {}
+    ^^^^^^^^^^
+
+//! > lowered
+Parameters: v0: core::option::Option::<core::felt252>
+
+//! > ==========================================================================
+
+//! > Match on never type
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(x: never) -> felt252 {
+    match x {}
+}
+
+//! > graph
+Root: 1
+1 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(0) }
+0 EnumMatch { matched_var: v0, variants: }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: core::never
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+  })
+
+//! > ==========================================================================
+
+//! > Match on never type wrapped in single-variant enum
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(x: NeverEnum) -> felt252 {
+    match x {}
+}
+
+//! > module_code
+enum NeverEnum {
+    Never: never,
+}
+
+//! > graph
+Root: 2
+2 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(1) }
+1 EnumMatch { matched_var: v0, variants: (NodeId(0), v1)}
+0 EnumMatch { matched_var: v1, variants: }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: test::NeverEnum
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    NeverEnum::Never(v1) => blk1,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v1) {
+  })
