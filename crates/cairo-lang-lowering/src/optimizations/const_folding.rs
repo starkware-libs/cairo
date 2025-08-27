@@ -703,9 +703,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let val = self.as_const(info.inputs[0].var_id)?;
             let is_zero = match val {
                 ConstValue::Int(v, _) => v.is_zero(),
-                ConstValue::Struct(s, _) => s.iter().all(|v| {
-                    v.clone().into_int().expect("Expected ConstValue::Int for size").is_zero()
-                }),
+                ConstValue::Struct(s, _) => s
+                    .iter()
+                    .all(|v| v.to_int().expect("Expected ConstValue::Int for size").is_zero()),
                 _ => unreachable!(),
             };
             Some(if is_zero {
@@ -909,10 +909,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let generic_arg = generic_args[1];
             let constrain_value = extract_matches!(generic_arg, GenericArgumentId::Constant)
                 .long(db)
-                .clone()
-                .into_int()
-                .unwrap();
-            let arm_idx = if value < &constrain_value { 0 } else { 1 };
+                .to_int()
+                .expect("Expected ConstValue::Int for size");
+            let arm_idx = if value < constrain_value { 0 } else { 1 };
             let output = info.arms[arm_idx].var_ids[0];
             Some((
                 vec![self.propagate_const_and_get_statement(value.clone(), output, nz_ty)],
