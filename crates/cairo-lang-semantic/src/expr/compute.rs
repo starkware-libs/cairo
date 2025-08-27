@@ -73,7 +73,9 @@ use crate::items::constant::{
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::FeatureConfigRestore;
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
-use crate::items::imp::{ImplLookupContextId, filter_candidate_traits, infer_impl_by_self};
+use crate::items::imp::{
+    DerefInfo, ImplLookupContextId, filter_candidate_traits, infer_impl_by_self,
+};
 use crate::items::macro_declaration::{MatcherContext, expand_macro_rule, is_macro_rule_match};
 use crate::items::modifiers::compute_mutability;
 use crate::items::visibility;
@@ -878,6 +880,10 @@ fn compute_expr_unary_semantic<'db>(
             }))
         }
         (UnaryOperator::Desnap(_), inner) => {
+            // If the desnapped expr is a snapshot we `desnap` it.
+            // If it is a known type we look for a deref impl and call it.
+            // Otherwise we conform the desnapped type to snapshot type, and return the inner var
+            // type.
             let (desnapped_expr, desnapped_ty) = {
                 // The expr the desnap acts on. E.g. `x` in `*x`.
                 let desnapped_expr = compute_expr_semantic(ctx, inner);
@@ -908,9 +914,28 @@ fn compute_expr_unary_semantic<'db>(
                     }
                     TypeLongId::Snapshot(ty) => *ty,
                     _ => {
-                        return Err(ctx
-                            .diagnostics
-                            .report(unary_op.stable_ptr(db), DesnapNonSnapshot));
+                        // If the desnapped type is not a snapshot, we look for a deref impl and
+                        // call it.
+                        let deref_chain = ctx.db.deref_chain(
+                            desnapped_expr_type,
+                            ctx.resolver.owning_crate_id,
+                            desnapped_expr.expr.is_mutable_var(&ctx.semantic_defs),
+                        )?;
+                        let Some(DerefInfo { function_id, self_mutability, target_ty: _ }) =
+                            deref_chain.derefs.first()
+                        else {
+                            return Err(ctx.diagnostics.report(
+                                unary_op.stable_ptr(db),
+                                DerefNonRef { ty: desnapped_expr_type },
+                            ));
+                        };
+                        return expr_function_call(
+                            ctx,
+                            *function_id,
+                            vec![NamedArg(desnapped_expr, None, *self_mutability)],
+                            syntax.stable_ptr(db),
+                            syntax.stable_ptr(db).into(),
+                        );
                     }
                 };
                 (desnapped_expr, desnapped_ty)
@@ -2501,18 +2526,11 @@ fn get_method_function_candidates<'db>(
     let mut fixed_expr = self_expr;
     let mut fixed_ty = self_ty;
 
-    let base_var = match &fixed_expr.expr {
-        Expr::Var(expr_var) => Some(expr_var.var),
-        Expr::MemberAccess(ExprMemberAccess { member_path: Some(member_path), .. }) => {
-            Some(member_path.base_var())
-        }
-        _ => None,
-    };
-    let is_mut_var = base_var
-        .filter(|var_id| matches!(ctx.semantic_defs.get(var_id), Some(var) if var.is_mut()))
-        .is_some();
-
-    let deref_chain = ctx.db.deref_chain(self_ty, ctx.resolver.owning_crate_id, is_mut_var)?;
+    let deref_chain = ctx.db.deref_chain(
+        self_ty,
+        ctx.resolver.owning_crate_id,
+        fixed_expr.expr.is_mutable_var(&ctx.semantic_defs),
+    )?;
 
     for deref_info in deref_chain.derefs.iter() {
         let derefed_expr = expr_function_call(
@@ -3706,16 +3724,8 @@ fn get_enriched_type_member_access<'db>(
         ctx.resolver.inference().solve().ok();
         ty = ctx.reduce_ty(ty);
     }
-    let base_var = match &expr.expr {
-        Expr::Var(expr_var) => Some(expr_var.var),
-        Expr::MemberAccess(ExprMemberAccess { member_path: Some(member_path), .. }) => {
-            Some(member_path.base_var())
-        }
-        _ => None,
-    };
-    let is_mut_var = base_var
-        .filter(|var_id| matches!(ctx.semantic_defs.get(var_id), Some(var) if var.is_mut()))
-        .is_some();
+
+    let is_mut_var = expr.expr.is_mutable_var(&ctx.semantic_defs);
     let key = (ty, is_mut_var);
     let mut enriched_members = match ctx.resolver.type_enriched_members.entry(key) {
         Entry::Occupied(entry) => {
