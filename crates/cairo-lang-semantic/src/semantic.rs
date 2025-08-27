@@ -35,6 +35,8 @@ pub struct LocalVariable<'db> {
     pub ty: TypeId<'db>,
     #[dont_rewrite]
     pub is_mut: bool,
+    #[dont_rewrite]
+    pub allow_unused: bool,
 }
 impl<'db> LocalVariable<'db> {
     pub fn stable_ptr(&self, db: &'db dyn Database) -> ast::TerminalIdentifierPtr<'db> {
