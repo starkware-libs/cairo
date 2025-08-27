@@ -748,12 +748,12 @@ End:
 //! > Optimized numeric match u16 with unoptimized literals
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, skip_lowering: true)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
-fn foo(x: u16) -> u16 {
+fn foo(x: u128) -> u128 {
     match x {
-        0 | 2 | 4 | 5 | 6 | 7 | 100 => x,
+        0 | 2 | 4 | 5 | 6 | 7 | 100000000000000000000 => x,
         1 | 3 | 13 | 20 => 1,
         _ => 2,
     }
@@ -765,7 +765,7 @@ Root: 9
 8 Downcast { input: v0, output: v2, in_range: NodeId(7), out_of_range: NodeId(6) }
 7 ValueMatch { matched_var: v2, nodes: [NodeId(0), NodeId(1), NodeId(0), NodeId(1), NodeId(0), NodeId(0), NodeId(0), NodeId(0)] }
 6 Upcast { input: v0, output: v1, next: NodeId(5) }
-5 EqualsLiteral { input: v1, literal: 100, true_branch: NodeId(0), false_branch: NodeId(4) }
+5 EqualsLiteral { input: v1, literal: 100000000000000000000, true_branch: NodeId(0), false_branch: NodeId(4) }
 4 EqualsLiteral { input: v1, literal: 13, true_branch: NodeId(1), false_branch: NodeId(3) }
 3 EqualsLiteral { input: v1, literal: 20, true_branch: NodeId(1), false_branch: NodeId(2) }
 2 ArmExpr { expr: ExprId(3) }
@@ -777,6 +777,136 @@ Root: 9
 //! > lowering_diagnostics
 
 //! > lowered
+Parameters: v0: core::integer::u128
+blk0 (root):
+Statements:
+End:
+  Match(match core::internal::bounded_int::downcast::<core::integer::u128, core::internal::bounded_int::BoundedInt::<0, 7>>(v0) {
+    Option::Some(v1) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum.(v1) {
+    0(v2) => blk3,
+    1(v3) => blk4,
+    2(v4) => blk5,
+    3(v5) => blk6,
+    4(v6) => blk7,
+    5(v7) => blk8,
+    6(v8) => blk9,
+    7(v9) => blk10,
+  })
+
+blk2:
+Statements:
+  (v10: core::felt252) <- core::internal::bounded_int::upcast::<core::integer::u128, core::felt252>(v0)
+  (v11: core::felt252) <- 100000000000000000000
+  (v12: core::felt252) <- core::Felt252Sub::sub(v10, v11)
+End:
+  Match(match core::felt252_is_zero(v12) {
+    IsZeroResult::Zero => blk11,
+    IsZeroResult::NonZero(v13) => blk12,
+  })
+
+blk3:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk17, {})
+
+blk5:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk6:
+Statements:
+End:
+  Goto(blk17, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk8:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk9:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk10:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk11:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk12:
+Statements:
+  (v14: core::felt252) <- 13
+  (v15: core::felt252) <- core::Felt252Sub::sub(v10, v14)
+End:
+  Match(match core::felt252_is_zero(v15) {
+    IsZeroResult::Zero => blk13,
+    IsZeroResult::NonZero(v16) => blk14,
+  })
+
+blk13:
+Statements:
+End:
+  Goto(blk17, {})
+
+blk14:
+Statements:
+  (v17: core::felt252) <- 20
+  (v18: core::felt252) <- core::Felt252Sub::sub(v10, v17)
+End:
+  Match(match core::felt252_is_zero(v18) {
+    IsZeroResult::Zero => blk15,
+    IsZeroResult::NonZero(v19) => blk16,
+  })
+
+blk15:
+Statements:
+End:
+  Goto(blk17, {})
+
+blk16:
+Statements:
+  (v20: core::integer::u128) <- 2
+End:
+  Goto(blk19, {v20 -> v22})
+
+blk17:
+Statements:
+  (v21: core::integer::u128) <- 1
+End:
+  Goto(blk19, {v21 -> v22})
+
+blk18:
+Statements:
+End:
+  Goto(blk19, {v0 -> v22})
+
+blk19:
+Statements:
+End:
+  Return(v22)
 
 //! > ==========================================================================
 
@@ -1343,3 +1473,41 @@ error: Unexpected error has occurred, Please submit a full bug report. See https
 
 //! > lowered
 Parameters: v0: (core::option::Option::<(core::felt252, core::felt252)>, core::felt252)
+
+//! > ==========================================================================
+
+//! > Match with numeric literal out of range
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true, skip_lowering: true)
+
+//! > function_code
+fn foo(a: u8) -> bool {
+    match a {
+        255 | 256 | 257 => false,
+        _ => true,
+    }
+}
+
+//! > graph
+Root: 4
+4 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(3) }
+3 Upcast { input: v0, output: v1, next: NodeId(2) }
+2 EqualsLiteral { input: v1, literal: 255, true_branch: NodeId(0), false_branch: NodeId(1) }
+1 ArmExpr { expr: ExprId(4) }
+0 ArmExpr { expr: ExprId(2) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: The value does not fit within the range of type core::integer::u8.
+ --> lib.cairo:3:15
+        255 | 256 | 257 => false,
+              ^^^
+
+error: The value does not fit within the range of type core::integer::u8.
+ --> lib.cairo:3:21
+        255 | 256 | 257 => false,
+                    ^^^
+
+//! > lowered

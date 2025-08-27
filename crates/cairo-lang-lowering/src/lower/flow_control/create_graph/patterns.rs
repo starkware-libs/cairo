@@ -1,3 +1,4 @@
+use cairo_lang_semantic::corelib::validate_literal;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::{
@@ -9,7 +10,7 @@ use cairo_lang_syntax::node::ast::ExprPtr;
 use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
-use num_traits::ToPrimitive;
+use num_bigint::BigInt;
 
 use super::super::graph::{
     Deconstruct, EnumMatch, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
@@ -349,10 +350,11 @@ fn create_node_for_value<'db>(
     input_var: FlowControlVar,
 ) -> NodeId {
     let CreateNodeParams { ctx, graph, patterns, build_node_callback, location: _ } = params;
+    let var_ty = graph.var_ty(input_var);
 
     // A map from literals to their corresponding filter and the location of the first pattern with
     // this literal.
-    let mut literals_map = OrderedHashMap::<usize, (FilteredPatterns, ExprPtr<'db>)>::default();
+    let mut literals_map = OrderedHashMap::<BigInt, (FilteredPatterns, ExprPtr<'db>)>::default();
 
     // The filter of patterns that correspond to the otherwise patterns.
     let mut otherwise_filter = FilteredPatterns::default();
@@ -361,14 +363,12 @@ fn create_node_for_value<'db>(
     for (pattern_index, pattern) in patterns.iter().enumerate() {
         match pattern {
             Some(semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. })) => {
-                // Extract the literal value as `usize`.
-                let Some(literal_value) = literal.value.to_usize() else {
-                    // TODO(lior): Report diagnostics.
-                    todo!();
-                };
-
+                if let Err(err) = validate_literal(ctx.db, var_ty, &literal.value) {
+                    graph.report(literal.stable_ptr, LoweringDiagnosticKind::LiteralError(err));
+                    continue;
+                }
                 literals_map
-                    .entry(literal_value)
+                    .entry(literal.value.clone())
                     .or_insert((otherwise_filter.clone(), literal.stable_ptr))
                     .0
                     .add(pattern_index);
@@ -398,7 +398,6 @@ fn create_node_for_value<'db>(
     }
 
     let info = ctx.db.core_info();
-    let var_ty = graph.var_ty(input_var);
     let felt252_ty = info.felt252;
 
     let value_match_size = optimized_value_match_size(ctx, &literals_map, var_ty != felt252_ty);
@@ -417,8 +416,9 @@ fn create_node_for_value<'db>(
 
     // Go over the literals (in reverse order), and construct a chain of [BooleanIf] nodes that
     // handle each literal.
+    let value_match_size_bigint = BigInt::from(value_match_size);
     for (literal, (filter, stable_ptr)) in literals_map.iter().rev() {
-        if *literal < value_match_size {
+        if *literal < value_match_size_bigint {
             continue;
         }
         let node_if_literal = build_node_callback(graph, filter.clone());
@@ -430,7 +430,7 @@ fn create_node_for_value<'db>(
 
         current_node = graph.add_node(FlowControlNode::EqualsLiteral(EqualsLiteral {
             input: input_var_felt252,
-            literal: *literal,
+            literal: literal.clone(),
             stable_ptr: *stable_ptr,
             true_branch: node_if_literal,
             false_branch: current_node,
@@ -451,7 +451,7 @@ fn create_node_for_value<'db>(
         let in_range_var = graph.new_var(bounded_int_ty, graph.var_location(input_var));
 
         let nodes = (0..value_match_size)
-            .map(|i| build_node_callback(graph, literals_map[&i].0.clone()))
+            .map(|i| build_node_callback(graph, literals_map[&BigInt::from(i)].0.clone()))
             .collect();
         let value_match_node = graph
             .add_node(FlowControlNode::ValueMatch(ValueMatch { matched_var: in_range_var, nodes }));
@@ -472,12 +472,12 @@ fn create_node_for_value<'db>(
 /// Otherwise, returns 0.
 fn optimized_value_match_size<'db>(
     ctx: &LoweringContext<'_, '_>,
-    values: &OrderedHashMap<usize, (FilteredPatterns, ExprPtr<'db>)>,
+    values: &OrderedHashMap<BigInt, (FilteredPatterns, ExprPtr<'db>)>,
     is_small_type: bool,
 ) -> usize {
     // Find the first missing value.
-    let mut i = 0;
-    while values.contains_key(&i) {
+    let mut i: usize = 0;
+    while values.contains_key(&BigInt::from(i)) {
         i += 1;
     }
 

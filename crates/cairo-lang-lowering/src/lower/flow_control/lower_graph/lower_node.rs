@@ -7,6 +7,7 @@ use cairo_lang_semantic::{
 };
 use cairo_lang_syntax::node::TypedStablePtr;
 use itertools::zip_eq;
+use num_bigint::BigInt;
 
 use super::LowerGraphContext;
 use crate::diagnostic::{
@@ -222,14 +223,12 @@ fn lower_equals_literal<'db>(
     let db = ctx.ctx.db;
     let felt252_ty = db.core_info().felt252;
 
-    // TODO(TomerStarkware): Use the same type of literal as the input, without the cast to
-    //   felt252.
     let literal_stable_ptr = node.stable_ptr.untyped();
     let literal_location = ctx.ctx.get_location(literal_stable_ptr);
     let input_var = ctx.vars[&node.input];
 
     // Lower the expression `input_var - literal`.
-    let is_equal: VarUsage<'db> = if node.literal == 0 {
+    let is_equal: VarUsage<'db> = if node.literal == BigInt::from(0) {
         // If the literal is 0, simply use the input variable.
         input_var
     } else {
@@ -238,7 +237,7 @@ fn lower_equals_literal<'db>(
             ctx.ctx,
             literal_stable_ptr,
             felt252_ty,
-            &node.literal.into(),
+            &node.literal,
             &mut builder,
         );
 
