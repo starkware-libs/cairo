@@ -2316,6 +2316,96 @@ Inlined at:
             let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: array_inline_macro::array_inline_macro
+dup<felt252>([1]) -> ([1], [2])
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+store_temp<felt252>([2]) -> ([2])
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+array_append<felt252>([0], [2]) -> ([3])
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+const_as_immediate<Const<felt252, 2>>() -> ([4])
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+dup<felt252>([4]) -> ([4], [5])
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+store_temp<felt252>([5]) -> ([5])
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+array_append<felt252>([3], [5]) -> ([6])
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+array_new<felt252>() -> ([7])
+Originating location:
+        array_new()
+        ^^^^^^^^^^^
+In function: core::array::ArrayImpl::new
+Inlined at:
+            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+store_temp<felt252>([4]) -> ([4])
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+array_append<felt252>([7], [4]) -> ([8])
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
 store_temp<felt252>([1]) -> ([1])
 Originating location:
         array_append(ref self, value)
@@ -2325,97 +2415,7 @@ Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: array_inline_macro::array_inline_macro
-array_append<felt252>([0], [1]) -> ([2])
-Originating location:
-        array_append(ref self, value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::append
-Inlined at:
-            core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: array_inline_macro::array_inline_macro
-const_as_immediate<Const<felt252, 2>>() -> ([3])
-Originating location:
-        array_append(ref self, value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::append
-Inlined at:
-            core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: array_inline_macro::array_inline_macro
-store_temp<felt252>([3]) -> ([3])
-Originating location:
-        array_append(ref self, value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::append
-Inlined at:
-            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: array_inline_macro::array_inline_macro
-array_append<felt252>([2], [3]) -> ([4])
-Originating location:
-        array_append(ref self, value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::append
-Inlined at:
-            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: array_inline_macro::array_inline_macro
-array_new<felt252>() -> ([5])
-Originating location:
-        array_new()
-        ^^^^^^^^^^^
-In function: core::array::ArrayImpl::new
-Inlined at:
-            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
-                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: array_inline_macro::array_inline_macro
-const_as_immediate<Const<felt252, 2>>() -> ([6])
-Originating location:
-        array_new()
-        ^^^^^^^^^^^
-In function: core::array::ArrayImpl::new
-Inlined at:
-            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
-                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: array_inline_macro::array_inline_macro
-store_temp<felt252>([6]) -> ([6])
-Originating location:
-        array_append(ref self, value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::append
-Inlined at:
-            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: array_inline_macro::array_inline_macro
-array_append<felt252>([5], [6]) -> ([7])
-Originating location:
-        array_append(ref self, value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::append
-Inlined at:
-            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: array_inline_macro::array_inline_macro
-const_as_immediate<Const<felt252, 1>>() -> ([8])
-Originating location:
-        array_append(ref self, value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::append
-Inlined at:
-            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: array_inline_macro::array_inline_macro
-store_temp<felt252>([8]) -> ([8])
-Originating location:
-        array_append(ref self, value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::append
-Inlined at:
-            core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: array_inline_macro::array_inline_macro
-array_append<felt252>([7], [8]) -> ([9])
+array_append<felt252>([8], [1]) -> ([9])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2548,7 +2548,7 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-snapshot_take<Array<felt252>>([4]) -> ([14], [15])
+snapshot_take<Array<felt252>>([6]) -> ([14], [15])
 Originating location:
             __array_builder_macro_result__
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2877,42 +2877,42 @@ Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
+dup<felt252>([35]) -> ([35], [36])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+store_temp<felt252>([36]) -> ([36])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+array_append<felt252>([34], [36]) -> ([37])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+dup<felt252>([35]) -> ([35], [38])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+store_temp<felt252>([38]) -> ([38])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+array_append<felt252>([37], [38]) -> ([39])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
 store_temp<felt252>([35]) -> ([35])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-array_append<felt252>([34], [35]) -> ([36])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-const_as_immediate<Const<felt252, 0>>() -> ([37])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<felt252>([37]) -> ([37])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-array_append<felt252>([36], [37]) -> ([38])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-const_as_immediate<Const<felt252, 0>>() -> ([39])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<felt252>([39]) -> ([39])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-array_append<felt252>([38], [39]) -> ([40])
+array_append<felt252>([39], [35]) -> ([40])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
