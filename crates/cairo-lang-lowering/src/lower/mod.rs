@@ -1644,7 +1644,7 @@ fn call_loop_func_ex<'db>(
                 return Ok(var);
             }
 
-            // TODO(TomerStaskware): make sure this is unreachable and remove
+            // TODO(TomerStarkware): make sure this is unreachable and remove
             // `MemberPathLoop` diagnostic.
             Err(LoweringFlowError::Failed(
                 ctx.diagnostics.report(param.stable_ptr(), MemberPathLoop),
