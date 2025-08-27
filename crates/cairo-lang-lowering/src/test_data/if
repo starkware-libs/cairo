@@ -726,9 +726,9 @@ End:
 test_function_lowering(expect_diagnostics: true)
 
 //! > function
-fn foo(a: MyStruct) -> felt252 {
+fn foo(a: [u16; 2]) -> felt252 {
     let mut y = 0;
-    if let MyStruct { .. } = a {
+    if let [_, _] = a {
         y = y + 5;
     } else {
         y = y + 8;
@@ -750,10 +750,10 @@ struct MyStruct {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported type in if-let. Type: `test::MyStruct`.
+error: Unsupported type in if-let. Type: `[core::integer::u16; 2]`.
  --> lib.cairo:8:12
-    if let MyStruct { .. } = a {
-           ^^^^^^^^^^^^^^^
+    if let [_, _] = a {
+           ^^^^^^
 
 //! > lowering_flat
 <Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
