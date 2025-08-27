@@ -331,12 +331,6 @@ pub struct TestsSummary {
     failed_run_results: Vec<Result<RunResultValue>>,
 }
 
-/// Auxiliary data that is required when running tests with profiling.
-pub struct PorfilingAuxData<'a> {
-    pub db: &'a dyn SierraGenGroup,
-    pub statements_functions: UnorderedHashMap<StatementIdx, String>,
-}
-
 /// Runs the tests and process the results for a summary.
 pub fn run_tests(
     opt_db: Option<&dyn SierraGenGroup>,
