@@ -15,25 +15,26 @@ num-traits.workspace = true
 smol_str.workspace = true
 
 # Optional
-env_logger = { workspace = true, optional = true }
-log = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true, optional = true }
 salsa = { workspace = true, optional = true }
 schemars = { workspace = true, features = ["preserve_order"], optional = true }
 serde = { workspace = true, features = ["alloc"], optional = true }
-time = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+tracing-log = { workspace = true, optional = true }
+tracing-subscriber = { workspace = true, optional = true }
 
 [dev-dependencies]
-env_logger.workspace = true
 serde_json.workspace = true
 test-case.workspace = true
 test-log.workspace = true
+tracing.workspace = true
 
 [features]
-default = ["std"]
-env_logger = ["dep:env_logger", "dep:log", "dep:time", "std"]
+default = ["std", "tracing"]
+env_logger = ["tracing"]
 parity-scale-codec = ["dep:parity-scale-codec"]
 schemars = ["dep:schemars", "serde", "std"]
 serde = ["dep:serde", "indexmap/serde", "num-bigint/serde", "smol_str/serde"]
 std = ["indexmap/std", "num-bigint/std", "num-traits/std", "salsa", "serde?/std", "smol_str/std"]
 testing = []
+tracing = ["dep:tracing", "dep:tracing-log", "dep:tracing-subscriber", "std"]

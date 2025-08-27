@@ -1,6 +1,7 @@
 #[cfg(not(feature = "std"))]
 use alloc::string::ToString;
 
+#[cfg(feature = "std")]
 use test_log::test;
 
 use super::{BinOpOperand, DerefOrImmediate};

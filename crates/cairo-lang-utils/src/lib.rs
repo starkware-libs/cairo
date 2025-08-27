@@ -22,7 +22,7 @@ pub mod extract_matches;
 #[cfg(feature = "std")]
 pub mod graph_algos;
 pub mod iterators;
-#[cfg(feature = "env_logger")]
+#[cfg(feature = "tracing")]
 pub mod logging;
 pub mod ordered_hash_map;
 pub mod ordered_hash_set;
