@@ -302,6 +302,7 @@ impl<'db> Resolver<'db> {
 
     /// Extends the current feature config with the contents of those extracted from the given item,
     /// returns the original feature config for restoring it later.
+    /// IMPORTANT: don't forget to call `restore_feature_config`!
     pub fn extend_feature_config_from_item(
         &mut self,
         db: &'db dyn SemanticGroup,
@@ -315,6 +316,12 @@ impl<'db> Resolver<'db> {
             item,
             diagnostics,
         ))
+    }
+
+    /// Restores the feature config to its state before [Self::extend_feature_config_from_item],
+    /// using the restoration state returned by that method.
+    pub fn restore_feature_config(&mut self, restore: FeatureConfigRestore<'db>) {
+        self.data.feature_config.restore(restore);
     }
 }
 

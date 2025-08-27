@@ -200,7 +200,7 @@ pub fn priv_struct_definition_data<'db>(
             diagnostics
                 .report(member.stable_ptr(db), StructMemberRedefinition { struct_id, member_name });
         }
-        resolver.data.feature_config.restore(feature_restore);
+        resolver.restore_feature_config(feature_restore);
     }
 
     // Check fully resolved.
