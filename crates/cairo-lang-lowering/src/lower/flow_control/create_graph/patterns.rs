@@ -102,16 +102,8 @@ pub fn create_node_for_patterns<'db>(
             )
         };
 
-    // Find the first non-any pattern, if exists.
-    let Some(first_non_any_pattern) =
-        patterns.iter().flatten().find(|pattern| !pattern_is_any(pattern))
-    else {
-        // If all the patterns are catch-all, we do not need to look into `input_var`.
-        // Call the callback with all patterns accepted.
-        return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
-    };
-
     let var_ty = graph.var_ty(input_var);
+    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, var_ty);
 
     let params = CreateNodeParams {
         ctx,
@@ -121,12 +113,29 @@ pub fn create_node_for_patterns<'db>(
         location,
     };
 
+    // If there are no patterns (this can happen with the never type), skip the optimization below.
+    // In such a case, the optimization below would have invoked the callback with an empty filter.
+    if patterns.is_empty()
+        && let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) = long_ty
+        && ctx.db.concrete_enum_variants(concrete_enum_id).unwrap().is_empty()
+    {
+        return create_node_for_enum(params, input_var, concrete_enum_id, n_snapshots);
+    }
+
+    // Find the first non-any pattern, if exists.
+    let Some(first_non_any_pattern) =
+        patterns.iter().flatten().find(|pattern| !pattern_is_any(pattern))
+    else {
+        // If all the patterns are catch-all, we do not need to look into `input_var`.
+        // Call the callback with all patterns accepted.
+        return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
+    };
+
     // Check if this is a numeric type that should use value matching.
     if corelib::numeric_upcastable_to_felt252(ctx.db, var_ty) {
         return create_node_for_value(params, input_var);
     }
 
-    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, var_ty);
     match long_ty {
         TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) => {
             create_node_for_enum(params, input_var, concrete_enum_id, n_snapshots)
