@@ -54,7 +54,7 @@ fn test_specialized_function(
             Some(SpecializationArg::EmptyArray(core.felt252)),
             Some(SpecializationArg::Struct(vec![SpecializationArg::EmptyArray(core.felt252)])),
             None,
-            Some(SpecializationArg::Const(ConstValue::Int(BigInt::one(), core.felt252))),
+            Some(SpecializationArg::Const(ConstValue::Int(BigInt::one(), core.felt252).intern(db))),
         ]),
     };
 
