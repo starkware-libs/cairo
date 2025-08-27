@@ -38,7 +38,7 @@ cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics" }
 cairo-lang-plugins = { path = "../cairo-lang-plugins", features = ["testing"] }
 cairo-lang-semantic = { path = "../cairo-lang-semantic", features = ["testing"] }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
-env_logger.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true
+tracing.workspace = true
