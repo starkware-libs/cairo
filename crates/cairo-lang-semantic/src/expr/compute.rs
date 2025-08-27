@@ -1277,6 +1277,11 @@ fn compute_expr_function_call_semantic<'db>(
                     if arg.2 != Mutability::Immutable {
                         return Err(ctx.diagnostics.report(stable_ptr, RefClosureArgument));
                     }
+                    if arg.1.is_some() {
+                        return Err(ctx
+                            .diagnostics
+                            .report(stable_ptr, NamedArgumentsAreNotSupported));
+                    }
                     args.push(arg.0.id);
                     arg_types.push(arg.0.ty());
                 }
