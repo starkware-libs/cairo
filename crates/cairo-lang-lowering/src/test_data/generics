@@ -213,15 +213,14 @@ fn bar<const N: felt252>() -> felt252 {
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 3
-  (v1: core::felt252) <- 5
-  (v2: core::felt252) <- core::felt252_add(v0, v1)
+  (v0: core::felt252) <- 5
+  (v1: core::felt252) <- 3
+  (v2: core::felt252) <- core::felt252_add(v1, v0)
   (v3: core::felt252) <- 2
-  (v4: core::felt252) <- 5
-  (v5: core::felt252) <- core::felt252_add(v3, v4)
-  (v6: core::felt252) <- core::felt252_add(v2, v5)
+  (v4: core::felt252) <- core::felt252_add(v3, v0)
+  (v5: core::felt252) <- core::felt252_add(v2, v4)
 End:
-  Return(v6)
+  Return(v5)
 
 //! > ==========================================================================
 

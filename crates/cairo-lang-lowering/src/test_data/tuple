@@ -31,9 +31,6 @@ Statements:
   (v1: core::felt252) <- 2
   (v2: (core::felt252, core::felt252)) <- struct_construct(v0, v1)
   (v3: (core::felt252, core::felt252)) <- test::immovable::<(core::felt252, core::felt252)>(v2)
-  (v4: core::felt252) <- 1
-  (v5: core::felt252) <- 2
-  (v6: (core::felt252, core::felt252)) <- struct_construct(v4, v5)
-  (v7: (core::felt252, core::felt252)) <- test::immovable::<(core::felt252, core::felt252)>(v6)
+  (v4: (core::felt252, core::felt252)) <- test::immovable::<(core::felt252, core::felt252)>(v2)
 End:
   Return()
