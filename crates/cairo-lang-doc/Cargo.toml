@@ -29,3 +29,4 @@ cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = [
     "testing",
 ] }
 test-log.workspace = true
+tracing.workspace = true

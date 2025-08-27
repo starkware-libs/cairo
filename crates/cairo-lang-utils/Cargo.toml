@@ -18,7 +18,9 @@ smol_str.workspace = true
 serde = { workspace = true, features = ["alloc"], optional = true }
 schemars = { workspace = true, features = ["preserve_order"], optional = true }
 salsa = { workspace = true, optional = true }
-env_logger = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+tracing-subscriber = { workspace = true, optional = true }
+tracing-log = { workspace = true, optional = true }
 time = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true, optional = true }
@@ -27,7 +29,7 @@ parity-scale-codec = { workspace = true, optional = true }
 serde_json.workspace = true
 test-case.workspace = true
 test-log.workspace = true
-env_logger.workspace = true
+tracing.workspace = true
 
 [features]
 default = ["std"]
@@ -43,4 +45,5 @@ serde = ["dep:serde", "num-bigint/serde", "indexmap/serde", "smol_str/serde"]
 schemars = ["std", "serde", "dep:schemars"]
 parity-scale-codec = ["dep:parity-scale-codec"]
 testing = []
-env_logger = ["std", "dep:env_logger", "dep:time", "dep:log"]
+env_logger = ["tracing"]
+tracing = ["std", "dep:tracing-log", "dep:tracing-subscriber", "dep:tracing", "dep:time", "dep:log"]

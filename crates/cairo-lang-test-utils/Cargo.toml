@@ -21,7 +21,7 @@ pretty_assertions = { workspace = true, optional = true }
 [dev-dependencies]
 cairo-lang-utils = { path = "../cairo-lang-utils" }
 colored.workspace = true
-env_logger.workspace = true
+tracing.workspace = true
 log.workspace = true
 pretty_assertions.workspace = true
 test-log.workspace = true

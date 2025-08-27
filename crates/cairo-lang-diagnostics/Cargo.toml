@@ -14,7 +14,7 @@ salsa.workspace = true
 itertools = { workspace = true, default-features = true }
 
 [dev-dependencies]
-env_logger.workspace = true
+tracing.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true
 test-log.workspace = true

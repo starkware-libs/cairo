@@ -19,7 +19,7 @@ smol_str.workspace = true
 toml.workspace = true
 
 [dev-dependencies]
-env_logger.workspace = true
+tracing.workspace = true
 serde_json.workspace = true
 test-log.workspace = true
 

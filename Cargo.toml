@@ -111,7 +111,6 @@ const_format = "0.2.34"
 convert_case = "0.8.0"
 derivative = "2.2.0"
 diffy = "0.4.2"
-env_logger = "0.11.8"
 genco = "0.18.0"
 good_lp = { version = "1.14.0", features = [
     "minilp",
@@ -126,6 +125,9 @@ itertools = { version = "0.14.0", default-features = false }
 keccak = "0.1.5"
 lalrpop-util = { version = "0.22.2", features = ["lexer"] }
 log = "0.4.27"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt", "time"] }
+tracing-log = "0.2.0"
 num-bigint = { version = "0.4.6", default-features = false }
 num-integer = "0.1.46"
 num-traits = { version = "0.2.19", default-features = false }
@@ -159,7 +161,7 @@ starknet-types-core = { version = "0.2.0", features = [
 syn = { version = "2.0.104", features = ["full", "extra-traits"] }
 test-case = "3.3.1"
 test-case-macros = "3.3.1"
-test-log = "0.2.18"
+test-log = { version = "0.2.18", features = ["trace"] }
 thiserror = "2.0.12"
 time = { version = "0.3.41", features = [
     "formatting",

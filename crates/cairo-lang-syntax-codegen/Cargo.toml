@@ -14,5 +14,5 @@ genco.workspace = true
 xshell.workspace = true
 
 [dev-dependencies]
-env_logger.workspace = true
+tracing.workspace = true
 test-log.workspace = true

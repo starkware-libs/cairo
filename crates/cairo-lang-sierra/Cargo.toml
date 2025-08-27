@@ -38,7 +38,7 @@ bimap.workspace = true
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = [
     "testing",
 ] }
-env_logger.workspace = true
+tracing.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true

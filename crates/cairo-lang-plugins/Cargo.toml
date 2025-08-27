@@ -25,7 +25,7 @@ salsa.workspace = true
 cairo-lang-debug = { path = "../cairo-lang-debug" }
 cairo-lang-parser = { path = "../cairo-lang-parser" }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
-env_logger.workspace = true
+tracing.workspace = true
 indoc.workspace = true
 serde_json.workspace = true
 test-log.workspace = true

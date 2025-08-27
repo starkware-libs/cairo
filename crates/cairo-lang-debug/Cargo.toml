@@ -13,5 +13,5 @@ salsa.workspace = true
 
 [dev-dependencies]
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros" }
-env_logger.workspace = true
+tracing.workspace = true
 test-log.workspace = true

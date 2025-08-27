@@ -39,7 +39,7 @@ cairo-lang-semantic = { path = "../cairo-lang-semantic", features = [
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = [
     "testing",
 ] }
-env_logger.workspace = true
+tracing.workspace = true
 indoc.workspace = true
 log.workspace = true
 pretty_assertions.workspace = true

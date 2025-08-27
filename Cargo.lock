@@ -476,7 +476,6 @@ name = "cairo-lang-casm"
 version = "2.12.0"
 dependencies = [
  "cairo-lang-utils",
- "env_logger",
  "indoc",
  "itertools 0.14.0",
  "num-bigint",
@@ -487,6 +486,7 @@ dependencies = [
  "serde",
  "test-case",
  "test-log",
+ "tracing",
 ]
 
 [[package]]
@@ -520,10 +520,10 @@ version = "2.12.0"
 dependencies = [
  "cairo-lang-proc-macros",
  "cairo-lang-utils",
- "env_logger",
  "id-arena",
  "salsa",
  "test-log",
+ "tracing",
 ]
 
 [[package]]
@@ -538,7 +538,6 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
  "indoc",
  "itertools 0.14.0",
  "pretty_assertions",
@@ -546,6 +545,7 @@ dependencies = [
  "serde",
  "smol_str",
  "test-log",
+ "tracing",
  "typetag",
  "xxhash-rust",
 ]
@@ -557,12 +557,12 @@ dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
  "cairo-lang-utils",
- "env_logger",
  "indoc",
  "itertools 0.14.0",
  "pretty_assertions",
  "salsa",
  "test-log",
+ "tracing",
 ]
 
 [[package]]
@@ -586,6 +586,7 @@ dependencies = [
  "pulldown-cmark",
  "salsa",
  "test-log",
+ "tracing",
 ]
 
 [[package]]
@@ -593,9 +594,9 @@ name = "cairo-lang-eq-solver"
 version = "2.12.0"
 dependencies = [
  "cairo-lang-utils",
- "env_logger",
  "good_lp",
  "test-log",
+ "tracing",
 ]
 
 [[package]]
@@ -633,11 +634,11 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
  "indoc",
  "itertools 0.14.0",
  "salsa",
  "test-log",
+ "tracing",
 ]
 
 [[package]]
@@ -660,7 +661,6 @@ version = "2.12.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-utils",
- "env_logger",
  "path-clean",
  "salsa",
  "semver",
@@ -669,6 +669,7 @@ dependencies = [
  "smol_str",
  "test-log",
  "toml",
+ "tracing",
 ]
 
 [[package]]
@@ -707,7 +708,6 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
  "id-arena",
  "indent",
  "indoc",
@@ -720,6 +720,7 @@ dependencies = [
  "salsa",
  "serde",
  "test-log",
+ "tracing",
 ]
 
 [[package]]
@@ -735,7 +736,6 @@ dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "colored",
- "env_logger",
  "indoc",
  "itertools 0.14.0",
  "num-bigint",
@@ -743,6 +743,7 @@ dependencies = [
  "pretty_assertions",
  "salsa",
  "test-log",
+ "tracing",
  "unescaper",
 ]
 
@@ -758,13 +759,13 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
  "indent",
  "indoc",
  "itertools 0.14.0",
  "salsa",
  "serde_json",
  "test-log",
+ "tracing",
 ]
 
 [[package]]
@@ -835,7 +836,6 @@ dependencies = [
  "cairo-lang-utils",
  "cairo-vm",
  "clap",
- "env_logger",
  "indoc",
  "itertools 0.14.0",
  "keccak",
@@ -849,6 +849,7 @@ dependencies = [
  "test-case",
  "test-log",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -865,7 +866,6 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
  "id-arena",
  "indoc",
  "itertools 0.14.0",
@@ -877,6 +877,7 @@ dependencies = [
  "sha3",
  "test-log",
  "toml",
+ "tracing",
 ]
 
 [[package]]
@@ -890,7 +891,6 @@ dependencies = [
  "const-fnv1a-hash",
  "convert_case",
  "derivative",
- "env_logger",
  "indoc",
  "itertools 0.14.0",
  "lalrpop",
@@ -908,6 +908,7 @@ dependencies = [
  "test-case",
  "test-log",
  "thiserror",
+ "tracing",
  "vector-map",
 ]
 
@@ -919,11 +920,11 @@ dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-sierra-type-size",
  "cairo-lang-utils",
- "env_logger",
  "itertools 0.14.0",
  "num-bigint",
  "num-traits",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -935,7 +936,6 @@ dependencies = [
  "cairo-lang-sierra-type-size",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
  "indoc",
  "itertools 0.14.0",
  "num-bigint",
@@ -944,6 +944,7 @@ dependencies = [
  "test-case",
  "test-log",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -962,7 +963,6 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
  "indoc",
  "itertools 0.14.0",
  "log",
@@ -974,6 +974,7 @@ dependencies = [
  "smol_str",
  "test-case",
  "test-log",
+ "tracing",
 ]
 
 [[package]]
@@ -988,7 +989,6 @@ dependencies = [
  "cairo-lang-sierra-type-size",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
  "indoc",
  "itertools 0.14.0",
  "num-bigint",
@@ -998,6 +998,7 @@ dependencies = [
  "test-case",
  "test-log",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -1029,7 +1030,6 @@ dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "const_format",
- "env_logger",
  "indent",
  "indoc",
  "itertools 0.14.0",
@@ -1041,6 +1041,7 @@ dependencies = [
  "test-case",
  "test-log",
  "thiserror",
+ "tracing",
  "typetag",
 ]
 
@@ -1056,7 +1057,6 @@ dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "convert_case",
- "env_logger",
  "indoc",
  "itertools 0.14.0",
  "num-bigint",
@@ -1071,6 +1071,7 @@ dependencies = [
  "test-case",
  "test-log",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -1081,13 +1082,13 @@ dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-primitive-token",
  "cairo-lang-utils",
- "env_logger",
  "num-bigint",
  "num-traits",
  "pretty_assertions",
  "salsa",
  "serde",
  "test-log",
+ "tracing",
  "unescaper",
 ]
 
@@ -1095,9 +1096,9 @@ dependencies = [
 name = "cairo-lang-syntax-codegen"
 version = "2.12.0"
 dependencies = [
- "env_logger",
  "genco",
  "test-log",
+ "tracing",
  "xshell",
 ]
 
@@ -1158,17 +1159,16 @@ dependencies = [
  "cairo-lang-formatter",
  "cairo-lang-utils",
  "colored",
- "env_logger",
  "log",
  "pretty_assertions",
  "test-log",
+ "tracing",
 ]
 
 [[package]]
 name = "cairo-lang-utils"
 version = "2.12.0"
 dependencies = [
- "env_logger",
  "hashbrown",
  "indexmap",
  "itertools 0.14.0",
@@ -1184,6 +1184,9 @@ dependencies = [
  "test-case",
  "test-log",
  "time",
+ "tracing",
+ "tracing-log",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -1627,7 +1630,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "186e05a59d4c50738528153b83b0b0194d3a29507dfec16eccd4b342903397d0"
 dependencies = [
  "log",
- "regex",
 ]
 
 [[package]]
@@ -1639,7 +1641,6 @@ dependencies = [
  "anstream",
  "anstyle",
  "env_filter",
- "jiff",
  "log",
 ]
 
@@ -2381,30 +2382,6 @@ name = "itoa"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4a5f13b858c8d314ee3e8f639011f7ccefe71f97f96e50151fb991f267928e2c"
-
-[[package]]
-name = "jiff"
-version = "0.2.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be1f93b8b1eb69c77f24bbb0afdf66f54b632ee39af40ca21c4365a1d7347e49"
-dependencies = [
- "jiff-static",
- "log",
- "portable-atomic",
- "portable-atomic-util",
- "serde",
-]
-
-[[package]]
-name = "jiff-static"
-version = "0.2.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03343451ff899767262ec32146f6d559dd759fdadf42ff0e227c7c48f72594b4"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.106",
-]
 
 [[package]]
 name = "js-sys"
@@ -4033,7 +4010,6 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
  "itertools 0.14.0",
  "log",
  "num-bigint",
@@ -4042,6 +4018,7 @@ dependencies = [
  "salsa",
  "starknet-types-core",
  "test-log",
+ "tracing",
 ]
 
 [[package]]
@@ -4294,7 +4271,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "784e0ac535deb450455cbfa28a6f0df145ea1bb7ae51b821cf5e7927fdcfbdd0"
 dependencies = [
  "pin-project-lite",
+ "tracing-attributes",
  "tracing-core",
+]
+
+[[package]]
+name = "tracing-attributes"
+version = "0.1.30"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81383ab64e72a7a8b8e13130c49e3dab29def6d0c7d76a03087b3cf71c5c6903"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -4329,7 +4318,9 @@ dependencies = [
  "once_cell",
  "regex",
  "sharded-slab",
+ "smallvec",
  "thread_local",
+ "time",
  "tracing",
  "tracing-core",
  "tracing-log",

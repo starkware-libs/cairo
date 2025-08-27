@@ -23,7 +23,7 @@ unescaper.workspace = true
 [dev-dependencies]
 anstream = "0.6.19"
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
-env_logger.workspace = true
+tracing.workspace = true
 pretty_assertions.workspace = true
 test-log.workspace = true
 indoc.workspace = true

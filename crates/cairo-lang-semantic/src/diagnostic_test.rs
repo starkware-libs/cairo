@@ -11,7 +11,6 @@ use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use salsa::{AsDynDatabase, Database, Setter};
-use test_log::test;
 
 use crate::db::{SemanticGroup, semantic_group_input};
 use crate::ids::AnalyzerPluginLongId;
@@ -40,7 +39,7 @@ cairo_lang_test_utils::test_file_test!(
     test_expr_diagnostics
 );
 
-#[test]
+#[test_log::test]
 fn test_missing_module_file() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
@@ -140,7 +139,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
     }
 }
 
-#[test]
+#[test_log::test]
 fn test_inline_module_diagnostics() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
@@ -177,7 +176,7 @@ fn test_inline_module_diagnostics() {
     );
 }
 
-#[test]
+#[test_log::test]
 fn test_inline_inline_module_diagnostics() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
@@ -255,7 +254,7 @@ impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
     }
 }
 
-#[test]
+#[test_log::test]
 fn test_analyzer_diagnostics() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
