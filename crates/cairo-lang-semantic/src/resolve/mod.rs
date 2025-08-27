@@ -47,7 +47,7 @@ use crate::expr::inference::{Inference, InferenceData, InferenceId};
 use crate::items::constant::{ConstValue, ImplConstantId, resolve_const_expr_and_evaluate};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::{
-    FeatureConfig, FeatureKind, HasFeatureKind, extract_feature_config,
+    FeatureConfig, FeatureKind, HasFeatureKind, feature_config_from_item_and_parent_modules,
 };
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::generic_params_to_args;
@@ -295,7 +295,8 @@ impl<'db> Resolver<'db> {
         syntax: &impl QueryAttrs<'db>,
         diagnostics: &mut SemanticDiagnostics<'db>,
     ) {
-        self.feature_config = extract_feature_config(self.db, element_id, syntax, diagnostics);
+        self.feature_config =
+            feature_config_from_item_and_parent_modules(self.db, element_id, syntax, diagnostics);
     }
 }
 
