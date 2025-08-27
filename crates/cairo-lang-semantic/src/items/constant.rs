@@ -180,7 +180,7 @@ impl<'db> ConstValue<'db> {
     }
 
     /// Returns the value of an int const as a BigInt.
-    pub fn into_int(self) -> Option<BigInt> {
+    pub fn as_int(&self) -> Option<&BigInt> {
         match self {
             ConstValue::Int(value, _) => Some(value),
             _ => None,
@@ -687,8 +687,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     }
                     crate::FixedSizeArrayItems::ValueAndSize(value, count) => {
                         let value = self.evaluate(*value);
-                        let count = count.long(db).clone();
-                        if let Some(count) = count.into_int() {
+                        if let Some(count) = count.long(db).as_int() {
                             (0..count.to_usize().unwrap()).map(|_| value.clone()).collect()
                         } else {
                             self.diagnostics.report(

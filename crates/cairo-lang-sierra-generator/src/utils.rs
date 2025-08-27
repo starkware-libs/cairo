@@ -398,13 +398,11 @@ pub fn get_concrete_libfunc_id<'db>(
                 generic_args.push(GenericArg::Type(db.get_concrete_type_id(*ty).unwrap()))
             }
             semantic::GenericArgumentId::Constant(value_id) => {
-                let size = value_id
+                generic_args.push(GenericArg::Value(value_id
                     .long(db)
-                    .clone()
-                    .into_int()
-                    .expect("Expected ConstValue::Int for size");
-
-                generic_args.push(GenericArg::Value(size))
+                    .as_int()
+                    .expect("Expected ConstValue::Int for size")
+                    .clone()));
             }
             semantic::GenericArgumentId::Impl(_) | semantic::GenericArgumentId::NegImpl => {
                 // Everything after an impl generic is ignored as it does not exist in Sierra.

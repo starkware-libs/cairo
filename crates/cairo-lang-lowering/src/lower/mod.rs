@@ -836,8 +836,7 @@ fn lower_tuple_like_pattern_helper<'db>(
                 TypeLongId::FixedSizeArray { type_id, size } => {
                     let size = size
                         .long(ctx.db)
-                        .clone()
-                        .into_int()
+                        .as_int()
                         .expect("Expected ConstValue::Int for size")
                         .to_usize()
                         .unwrap();
@@ -1154,8 +1153,7 @@ fn lower_expr_fixed_size_array<'db>(
             let var_usage = lowered_value.as_var_usage(ctx, builder)?;
             let size = size
                 .long(ctx.db)
-                .clone()
-                .into_int()
+                .as_int()
                 .expect("Expected ConstValue::Int for size")
                 .to_usize()
                 .unwrap();

@@ -857,7 +857,7 @@ pub fn try_extract_bounded_int_type_ranges<'db>(
     else {
         return None;
     };
-    let to_int = |id: ConstValueId<'db>| id.long(db).clone().into_int();
+    let to_int = |id: ConstValueId<'db>| id.long(db).as_int().cloned();
 
     Some((to_int(min)?, to_int(max)?))
 }

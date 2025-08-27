@@ -108,13 +108,11 @@ pub fn get_concrete_long_type_id<'db>(
                                     SierraGenericArg::Type(db.get_concrete_type_id(ty).unwrap())
                                 }
                                 semantic::GenericArgumentId::Constant(value_id) => {
-                                    let value = value_id
+                                    SierraGenericArg::Value(value_id
                                         .long(db)
-                                        .clone()
-                                        .into_int()
-                                        .expect("Expected ConstValue::Int for size");
-
-                                    SierraGenericArg::Value(value)
+                                        .as_int()
+                                        .expect("Expected ConstValue::Int for size")
+                                        .clone())
                                 }
                                 semantic::GenericArgumentId::Impl(_) => {
                                     panic!("Extern function with impl generics are not supported.")
@@ -201,8 +199,7 @@ pub fn type_dependencies<'db>(
         semantic::TypeLongId::FixedSizeArray { type_id, size } => {
             let size = size
                 .long(db)
-                .clone()
-                .into_int()
+                .as_int()
                 .expect("Expected ConstValue::Int for size")
                 .to_usize()
                 .unwrap();
