@@ -1143,15 +1143,14 @@ impl<'db> Resolver<'db> {
                 // when we support constant expressions, which need inference.
                 let mut ctx = ComputationContext::new_global(db, diagnostics, self);
                 let value = compute_expr_semantic(&mut ctx, generic_arg_syntax);
-                let const_value = resolve_const_expr_and_evaluate(
+                GenericArgumentId::Constant(resolve_const_expr_and_evaluate(
                     db,
                     &mut ctx,
                     &value,
                     generic_arg_syntax.stable_ptr(db).untyped(),
                     const_param.ty,
                     false,
-                );
-                GenericArgumentId::Constant(const_value.intern(db))
+                ))
             }
 
             GenericParam::Impl(param) => {

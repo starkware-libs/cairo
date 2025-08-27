@@ -958,7 +958,7 @@ fn lower_expr_literal_to_var_usage<'db>(
         .map_err(|err| {
             ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::LiteralError(err))
         })
-        .unwrap_or_else(ConstValue::Missing);
+        .unwrap_or_else(|diag_added| ConstValue::Missing(diag_added).intern(ctx.db));
     let location = ctx.get_location(stable_ptr);
     generators::Const { value, ty, location }.add(ctx, &mut builder.statements)
 }
@@ -1054,7 +1054,8 @@ fn add_chunks_to_data_array<'db, 'r>(
     let remainder = chunks.remainder();
     for chunk in chunks {
         let chunk_usage = generators::Const {
-            value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, chunk), bytes31_ty),
+            value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, chunk), bytes31_ty)
+                .intern(ctx.db),
             ty: bytes31_ty,
             location: ctx.get_location(expr_stable_ptr),
         }
@@ -1088,7 +1089,8 @@ fn add_pending_word<'db>(
     let felt252_ty = ctx.db.core_info().felt252;
 
     let pending_word_usage = generators::Const {
-        value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, pending_word_bytes), felt252_ty),
+        value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, pending_word_bytes), felt252_ty)
+            .intern(ctx.db),
         ty: felt252_ty,
         location: ctx.get_location(expr_stable_ptr),
     }
@@ -1096,7 +1098,7 @@ fn add_pending_word<'db>(
 
     let pending_word_len = expr.value.len() % 31;
     let pending_word_len_usage = generators::Const {
-        value: ConstValue::Int(pending_word_len.into(), u32_ty),
+        value: ConstValue::Int(pending_word_len.into(), u32_ty).intern(ctx.db),
         ty: u32_ty,
         location: ctx.get_location(expr_stable_ptr),
     }
@@ -1110,12 +1112,10 @@ fn lower_expr_constant<'db>(
     builder: &mut BlockBuilder<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!("Lowering a constant: {:?}", expr.debug(&ctx.expr_formatter));
-    let value = expr.const_value_id.long(ctx.db);
-    let ty = expr.ty;
-
     let location = ctx.get_location(expr.stable_ptr.untyped());
     Ok(LoweredExpr::AtVariable(
-        generators::Const { value: value.clone(), ty, location }.add(ctx, &mut builder.statements),
+        generators::Const { value: expr.const_value_id, ty: expr.ty, location }
+            .add(ctx, &mut builder.statements),
     ))
 }
 

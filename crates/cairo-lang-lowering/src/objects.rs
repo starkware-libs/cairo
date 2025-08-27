@@ -13,6 +13,7 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{concrete_destruct_trait, concrete_panic_destruct_trait};
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_semantic::expr::inference::solver::Ambiguity;
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::items::imp::ImplLookupContextId;
 use cairo_lang_semantic::types::TypeInfo;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
@@ -23,7 +24,6 @@ use id_arena::{Arena, DefaultArenaBehavior, Id};
 pub mod blocks;
 pub use blocks::BlockId;
 use semantic::MatchArmSelector;
-use semantic::items::constant::ConstValue;
 
 use self::blocks::Blocks;
 use crate::db::LoweringGroup;
@@ -376,7 +376,7 @@ impl<'db> Statement<'db> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementConst<'db> {
     /// The value of the const.
-    pub value: ConstValue<'db>,
+    pub value: ConstValueId<'db>,
     /// The variable to bind the value to.
     pub output: VariableId,
 }

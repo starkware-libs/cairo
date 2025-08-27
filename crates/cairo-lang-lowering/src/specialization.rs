@@ -3,7 +3,7 @@ use std::vec;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::helper::ModuleHelper;
-use cairo_lang_semantic::items::constant::ConstValue;
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId};
 use itertools::{Itertools, chain, zip_eq};
@@ -20,7 +20,7 @@ use crate::{
 // A const argument for a specialized function.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum SpecializationArg<'db> {
-    Const(ConstValue<'db>),
+    Const(ConstValueId<'db>),
     EmptyArray(TypeId<'db>),
     Struct(Vec<SpecializationArg<'db>>),
 }
@@ -95,10 +95,8 @@ pub fn specialized_function_lowered<'db>(
         match state {
             SpecializationArgBuildingState::Initial(c) => match c {
                 SpecializationArg::Const(value) => {
-                    statements.push(Statement::Const(StatementConst {
-                        value: value.clone(),
-                        output: var_id,
-                    }));
+                    statements
+                        .push(Statement::Const(StatementConst { value: *value, output: var_id }));
                 }
                 SpecializationArg::EmptyArray(ty) => {
                     statements.push(Statement::Call(StatementCall {
