@@ -35,6 +35,8 @@ pub struct LocalVariable<'db> {
     pub ty: TypeId<'db>,
     #[dont_rewrite]
     pub is_mut: bool,
+    #[dont_rewrite]
+    pub allow_unused: bool,
 }
 impl<'db> LocalVariable<'db> {
     pub fn stable_ptr(&self, db: &'db dyn Database) -> ast::TerminalIdentifierPtr<'db> {
@@ -48,6 +50,7 @@ impl<'db> LocalVariable<'db> {
 pub struct LocalItem<'db> {
     pub id: StatementItemId<'db>,
     pub kind: StatementItemKind<'db>,
+    // TODO(gc): Add allow_unused for constants here.
 }
 
 /// Semantic model of statement item kind.

@@ -24,3 +24,50 @@ warning: `allow` attribute argument not supported.
  --> lib.cairo:6:8
 #[allow(invalid_lint)] // Invalid allow arg.
        ^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test allow(unused_variables)
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+}
+
+//! > module_code
+fn without_allow() {
+    let warn_without_allow = 1;
+}
+
+#[allow(unused_variables)]
+fn allow_on_function() {
+    let function_allows_x = 2;
+    let function_allows_y = 3;
+}
+
+fn with_underscore() {
+    let _undescroe_no_warn = 4;
+}
+
+fn allow_on_statements() {
+    #[allow(unused_variables)]
+    let unused_works_on_statements = 5;
+    let warn_since_allow_only_on_prev_statement = 6;
+}
+
+//! > generated_cairo_code
+
+//! > function_body
+
+//! > expected_diagnostics
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:2:9
+    let warn_without_allow = 1;
+        ^^^^^^^^^^^^^^^^^^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:18:9
+    let warn_since_allow_only_on_prev_statement = 6;
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
