@@ -108,11 +108,13 @@ pub fn get_concrete_long_type_id<'db>(
                                     SierraGenericArg::Type(db.get_concrete_type_id(ty).unwrap())
                                 }
                                 semantic::GenericArgumentId::Constant(value_id) => {
-                                    SierraGenericArg::Value(value_id
-                                        .long(db)
-                                        .as_int()
-                                        .expect("Expected ConstValue::Int for size")
-                                        .clone())
+                                    SierraGenericArg::Value(
+                                        value_id
+                                            .long(db)
+                                            .as_int()
+                                            .expect("Expected ConstValue::Int for size")
+                                            .clone(),
+                                    )
                                 }
                                 semantic::GenericArgumentId::Impl(_) => {
                                     panic!("Extern function with impl generics are not supported.")

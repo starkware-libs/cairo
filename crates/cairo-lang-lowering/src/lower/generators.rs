@@ -3,9 +3,9 @@
 
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteVariant;
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_utils::{Intern, extract_matches};
 use itertools::chain;
-use semantic::items::constant::ConstValue;
 
 use super::VariableId;
 use super::context::VarRequest;
@@ -30,7 +30,7 @@ impl<'db> StatementsBuilder<'db> {
 
 /// Generator for [StatementConst].
 pub struct Const<'db> {
-    pub value: ConstValue<'db>,
+    pub value: ConstValueId<'db>,
     pub location: LocationId<'db>,
     // TODO(TomerStarkware): Remove this field and use the type from value.
     pub ty: semantic::TypeId<'db>,
