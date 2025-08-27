@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use itertools::chain;
 use test_case::test_case;
+#[cfg(feature = "std")]
 use test_log::test;
 
 use super::GraphNode;

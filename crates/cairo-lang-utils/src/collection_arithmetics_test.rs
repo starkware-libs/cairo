@@ -3,6 +3,7 @@ use std::collections::hash_map::RandomState as HashBuilderType;
 
 #[cfg(not(feature = "std"))]
 use hashbrown::DefaultHashBuilder as HashBuilderType;
+#[cfg(feature = "std")]
 use test_log::test;
 
 use crate::collection_arithmetics::{AddCollection, SubCollection};

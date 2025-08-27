@@ -28,7 +28,6 @@ cairo-lang-sierra-type-size = { path = "../crates/cairo-lang-sierra-type-size", 
 cairo-lang-syntax = { path = "../crates/cairo-lang-syntax" }
 cairo-lang-test-utils = { path = "../crates/cairo-lang-test-utils", features = ["testing"] }
 cairo-lang-utils = { path = "../crates/cairo-lang-utils" }
-env_logger.workspace = true
 itertools = { workspace = true, default-features = true }
 log.workspace = true
 num-bigint = { workspace = true, default-features = true }
@@ -37,6 +36,7 @@ rstest.workspace = true
 salsa.workspace = true
 starknet-types-core.workspace = true
 test-log.workspace = true
+tracing.workspace = true
 
 [[test]]
 name = "examples_test"

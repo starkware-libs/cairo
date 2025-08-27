@@ -2,6 +2,7 @@
 use alloc::{string::ToString, vec};
 
 use indoc::indoc;
+#[cfg(feature = "std")]
 use test_log::test;
 
 use crate::hints::CoreHint;

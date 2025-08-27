@@ -27,3 +27,4 @@ cairo-lang-semantic = { path = "../cairo-lang-semantic" }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 indoc.workspace = true
 test-log.workspace = true
+tracing.workspace = true
