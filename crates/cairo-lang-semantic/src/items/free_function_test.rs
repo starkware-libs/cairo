@@ -1,8 +1,8 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId};
+use cairo_lang_test_utils::test;
 use cairo_lang_utils::{Upcast, extract_matches};
 use pretty_assertions::assert_eq;
-use test_log::test;
 
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;

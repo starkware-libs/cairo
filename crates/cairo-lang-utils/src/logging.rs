@@ -1,16 +1,24 @@
 use std::sync::Once;
 
-use tracing::Level;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::filter::dynamic_filter_fn;
 use tracing_subscriber::prelude::*;
 
 static INIT: Once = Once::new();
 
+#[allow(dead_code)]
+pub mod level {
+    pub const TRACE: tracing::Level = tracing::Level::TRACE;
+    pub const DEBUG: tracing::Level = tracing::Level::DEBUG;
+    pub const INFO: tracing::Level = tracing::Level::INFO;
+    pub const WARN: tracing::Level = tracing::Level::WARN;
+    pub const ERROR: tracing::Level = tracing::Level::ERROR;
+}
+
 /// Initializes logging (tracing library).
 /// The format is:
 /// `<level>  /path/to/file:<line_number>  <time>  <log_message>`
-pub fn init_logging(level: Level) {
+pub fn init_logging(level: tracing::Level) {
     INIT.call_once(|| {
         // Bridge log records to tracing so existing log macros still work via tracing-log
         tracing_log::LogTracer::init().ok();

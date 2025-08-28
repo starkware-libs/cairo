@@ -1,5 +1,5 @@
+use cairo_lang_test_utils::test;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use test_log::test;
 
 use crate::edit_state::{EditStateError, put_results, take_args};
 use crate::ids::VarId;

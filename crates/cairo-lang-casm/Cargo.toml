@@ -18,10 +18,10 @@ schemars = { workspace = true, features = ["preserve_order"], optional = true }
 serde = { workspace = true, optional = true }
 
 [dev-dependencies]
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 itertools = { workspace = true, default-features = true }
 pretty_assertions.workspace = true
 test-case.workspace = true
-test-log.workspace = true
 tracing.workspace = true
 
 [features]

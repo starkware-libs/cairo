@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
+use cairo_lang_test_utils::test;
 use cairo_lang_utils::Intern;
-use test_log::test;
 
 use super::FilesGroup;
 use crate::cfg::{Cfg, CfgSet};

@@ -1,6 +1,6 @@
 use std::fs;
 
-use test_log::test;
+use cairo_lang_test_utils::test;
 
 use crate::generator::{get_codes, project_root};
 
