@@ -568,10 +568,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     /// Specialization occurs only if `priv_should_specialize` returns true.
     /// Additionally specialization of a callee the with the same base as the caller is currently
     /// not supported.
-    fn try_specialize_call(
-        &mut self,
-        call_stmt: &mut StatementCall<'db>,
-    ) -> Option<Statement<'db>> {
+    fn try_specialize_call(&self, call_stmt: &mut StatementCall<'db>) -> Option<Statement<'db>> {
         if call_stmt.with_coupon {
             return None;
         }
@@ -1059,14 +1056,14 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     }
 
     /// Replaces the inputs in place if they are in the var_info map.
-    fn maybe_replace_inputs(&mut self, inputs: &mut [VarUsage<'db>]) {
+    fn maybe_replace_inputs(&self, inputs: &mut [VarUsage<'db>]) {
         for input in inputs {
             self.maybe_replace_input(input);
         }
     }
 
     /// Replaces the input in place if it is in the var_info map.
-    fn maybe_replace_input(&mut self, input: &mut VarUsage<'db>) {
+    fn maybe_replace_input(&self, input: &mut VarUsage<'db>) {
         if let Some(VarInfo::Var(new_var)) = self.var_info.get(&input.var_id) {
             *input = *new_var;
         }
@@ -1075,7 +1072,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     /// Given a var_info and its type, return the corresponding specialization argument, if it
     /// exists.
     fn try_get_specialization_arg(
-        &mut self,
+        &self,
         var_info: VarInfo<'db>,
         ty: TypeId<'db>,
     ) -> Option<SpecializationArg<'db>> {
