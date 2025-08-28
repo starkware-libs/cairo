@@ -458,9 +458,7 @@ fn add_unused_binding_warning<'db>(
                 }
             }
             Binding::Param(_) => {
-                if !ctx_feature_config.allow_unused_variables {
-                    diagnostics.report(binding.stable_ptr(db), UnusedVariable);
-                }
+                diagnostics.report(binding.stable_ptr(db), UnusedVariable);
             }
         }
     }
