@@ -337,13 +337,15 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
         let outputs = statement.outputs();
         let branch_info = match statement {
             lowering::Statement::Const(statement_literal) => {
-                if matches!(
-                    statement_literal.value.long(self.db),
-                    ConstValue::Int(..)
-                        | ConstValue::Struct(..)
-                        | ConstValue::Enum(..)
-                        | ConstValue::NonZero(..)
-                ) {
+                if !statement_literal.boxed
+                    && matches!(
+                        statement_literal.value.long(self.db),
+                        ConstValue::Int(..)
+                            | ConstValue::Struct(..)
+                            | ConstValue::Enum(..)
+                            | ConstValue::NonZero(..)
+                    )
+                {
                     self.constants.insert(statement_literal.output);
                 }
                 BranchInfo { known_ap_change: true }

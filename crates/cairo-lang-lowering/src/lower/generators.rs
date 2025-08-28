@@ -42,7 +42,7 @@ impl<'db> Const<'db> {
         builder: &mut StatementsBuilder<'db>,
     ) -> VarUsage<'db> {
         let output = ctx.new_var(VarRequest { ty: self.ty, location: self.location });
-        builder.push_statement(Statement::Const(StatementConst { value: self.value, output }));
+        builder.push_statement(Statement::Const(StatementConst::new(self.value, output)));
         VarUsage { var_id: output, location: self.location }
     }
 }
