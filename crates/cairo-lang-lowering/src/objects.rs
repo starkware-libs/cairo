@@ -379,6 +379,22 @@ pub struct StatementConst<'db> {
     pub value: ConstValueId<'db>,
     /// The variable to bind the value to.
     pub output: VariableId,
+    /// Is the const wrapped in a box.
+    pub boxed: bool,
+}
+impl<'db> StatementConst<'db> {
+    /// Creates a new const statement, with the option to wrap the value in a box.
+    pub fn new(value: ConstValueId<'db>, output: VariableId, boxed: bool) -> Self {
+        Self { value, output, boxed }
+    }
+    /// Creates a new const statement, not boxed.
+    pub fn new_flat(value: ConstValueId<'db>, output: VariableId) -> Self {
+        Self::new(value, output, false)
+    }
+    /// Creates a new const statement with the value wrapped in a box.
+    pub fn new_boxed(value: ConstValueId<'db>, output: VariableId) -> Self {
+        Self::new(value, output, true)
+    }
 }
 
 /// A statement that calls a user function.

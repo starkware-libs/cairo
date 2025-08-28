@@ -1251,19 +1251,23 @@ struct StatementConstCached {
     value: ConstValueIdCached,
     /// The variable to bind the value to.
     output: usize,
+    /// Is the const boxed.
+    boxed: bool,
 }
 impl StatementConstCached {
     fn new<'db>(stmt: StatementConst<'db>, ctx: &mut CacheSavingContext<'db>) -> Self {
         Self {
             value: ConstValueIdCached::new(stmt.value, &mut ctx.semantic_ctx),
             output: stmt.output.index(),
+            boxed: stmt.boxed,
         }
     }
     fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> StatementConst<'db> {
-        StatementConst {
-            value: self.value.embed(&mut ctx.semantic_ctx),
-            output: ctx.lowered_variables_id[self.output],
-        }
+        StatementConst::new(
+            self.value.embed(&mut ctx.semantic_ctx),
+            ctx.lowered_variables_id[self.output],
+            self.boxed,
+        )
     }
 }
 
@@ -1273,7 +1277,6 @@ enum ConstValueCached {
     Struct(Vec<ConstValueIdCached>, TypeIdCached),
     Enum(ConcreteVariantCached, ConstValueIdCached),
     NonZero(ConstValueIdCached),
-    Boxed(ConstValueIdCached),
     Generic(GenericParamCached),
     ImplConstant(ImplConstantCached),
 }
@@ -1291,9 +1294,6 @@ impl ConstValueCached {
             ),
             ConstValue::NonZero(value) => {
                 ConstValueCached::NonZero(ConstValueIdCached::new(value, ctx))
-            }
-            ConstValue::Boxed(value) => {
-                ConstValueCached::Boxed(ConstValueIdCached::new(value, ctx))
             }
             ConstValue::Generic(generic_param) => {
                 ConstValueCached::Generic(GenericParamCached::new(generic_param, &mut ctx.defs_ctx))
@@ -1320,7 +1320,6 @@ impl ConstValueCached {
                 ConstValue::Enum(variant.embed(ctx), value.embed(ctx))
             }
             ConstValueCached::NonZero(value) => ConstValue::NonZero(value.embed(ctx)),
-            ConstValueCached::Boxed(value) => ConstValue::Boxed(value.embed(ctx)),
             ConstValueCached::Generic(generic_param) => {
                 ConstValue::Generic(generic_param.get_embedded(&ctx.defs_loading_data, ctx.db))
             }

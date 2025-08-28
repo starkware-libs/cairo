@@ -18,7 +18,7 @@ use crate::{BlockEnd, BlockId, Lowered, Statement, VariableArena, VariableId};
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum ExpressionKey<'db> {
     /// A constant with given value.
-    Const(ConstValueId<'db>),
+    Const(ConstValueId<'db>, bool),
     /// A struct construction with given inputs.
     StructConstruct(TypeId<'db>, Vec<VariableId>),
     /// A member access of a struct.
@@ -72,7 +72,7 @@ impl<'db> CseContext<'db> {
         }
         // Check if this statement can be eliminated
         let key = match stmt {
-            Statement::Const(c) => ExpressionKey::Const(c.value),
+            Statement::Const(c) => ExpressionKey::Const(c.value, c.boxed),
             Statement::StructConstruct(s) => ExpressionKey::StructConstruct(
                 self.variables[s.output].ty,
                 s.inputs.iter().map(|usage| self.resolve_var(usage.var_id)).collect(),
