@@ -26,10 +26,15 @@ pub const INTERNAL_ATTR: &str = "internal";
 /// An attribute to allow code that would normally result in a warning.
 pub const ALLOW_ATTR: &str = "allow";
 
+/// An attribute to represent the unused lint-group, which represents all the unused lints.
+pub const UNUSED_ATTR: &str = "unused";
+
 /// An attribute that represents the unused variables lint.
+/// Also included in the [`UNUSED_ATTR`] lint group.
 pub const UNUSED_VARIABLES_ATTR: &str = "unused_variables";
 
 /// An attribute that represents the unused imports lint.
+/// Also included in the [`UNUSED_ATTR`] lint group.
 pub const UNUSED_IMPORTS_ATTR: &str = "unused_imports";
 
 /// An attribute to allow additional attributes on an item.

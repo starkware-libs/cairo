@@ -57,6 +57,18 @@ fn allow_on_statements() {
     let warn_since_allow_only_on_prev_statement = 6;
 }
 
+#[allow(unused)]
+fn allow_unused_covers_variables() {
+    let covered_by_unused_x = 7;
+    let covered_by_unused_y = 8;
+}
+
+fn allow_unused_on_statement() {
+    #[allow(unused)]
+    let covered_by_unused = 9;
+    let warn_not_covered = 10;
+}
+
 //! > generated_cairo_code
 
 //! > function_body
@@ -71,3 +83,76 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:18:9
     let warn_since_allow_only_on_prev_statement = 6;
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:30:9
+    let warn_not_covered = 10;
+        ^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test allow(unused_imports)
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: false)
+
+//! > expr_code
+{}
+
+//! > module_code
+#[allow(unused_imports)]
+mod allowed_imports {
+    use core::array::ArrayTrait;
+}
+#[allow(unused_imports)]
+use core::option::OptionTrait;
+
+#[allow(unused)]
+mod all_unused {
+    use core::traits::Into; // Covered by mod unused.
+    fn func() {
+        let covered_by_mod_unused = 1;
+    }
+}
+
+//! > generated_cairo_code
+
+//! > function_body
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test combined allow attributes (nested and multiple)
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: false)
+
+//! > expr_code
+{}
+
+//! > module_code
+#[allow(unused_imports)]
+#[allow(unused_variables)] // Doesn't do anything here, just checking the combo.
+fn multiple_allows() {
+    let covered_by_unused_variables = 1;
+}
+
+#[allow(unused)]
+mod broad_parent {
+    use core::traits::Into;
+
+    #[allow(unused_variables)]
+    mod specific_child {
+        use core::box::BoxTrait; // covered by parent's allow(unused)
+        fn func() {
+            let covered_by_both = 4;
+        }
+    }
+}
+
+//! > generated_cairo_code
+
+//! > function_body
+
+//! > expected_diagnostics
