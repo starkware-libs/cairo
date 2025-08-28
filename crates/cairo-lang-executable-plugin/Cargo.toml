@@ -21,5 +21,4 @@ tracing.workspace = true
 indoc.workspace = true
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.12.0" }
 cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "~2.12.0",  features = ["testing"] }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.0" }
-test-log.workspace = true
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.0", features = ["tracing"] }

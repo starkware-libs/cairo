@@ -18,7 +18,7 @@ cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.12.0" }
 cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "~2.12.0" }
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.12.0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.12.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.0", features = ["tracing"] }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "~2.12.0", optional = true, features = ["testing"] }
 id-arena.workspace = true
 indoc.workspace = true
@@ -35,5 +35,4 @@ cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testin
 tracing.workspace = true
 log.workspace = true
 pretty_assertions.workspace = true
-test-log.workspace = true
 toml.workspace = true

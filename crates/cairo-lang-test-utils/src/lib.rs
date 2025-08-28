@@ -1,6 +1,11 @@
 #![cfg(feature = "testing")]
 
 pub mod parse_test_file;
+
+// Re-export the test macro from cairo-lang-proc-macros
+// This allows crates to use the test macro without needing to explicitly
+// depend on cairo-lang-utils with the tracing feature
+pub use cairo_lang_proc_macros::test;
 use std::fs;
 use std::path::Path;
 use std::str::FromStr;
@@ -9,6 +14,8 @@ use std::sync::{Mutex, MutexGuard};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::require;
 pub use parse_test_file::parse_test_file;
+
+pub use cairo_lang_utils::logging;
 
 /// Returns the content of the relevant test file.
 fn get_expected_contents(path: &Path) -> String {

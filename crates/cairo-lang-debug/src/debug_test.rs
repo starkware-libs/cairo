@@ -1,7 +1,7 @@
 use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_test_utils::test;
 use cairo_lang_utils::Upcast;
 use salsa::{Database, Storage};
-use test_log::test;
 
 use crate::debug::DebugWithDb;
 

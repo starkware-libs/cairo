@@ -47,4 +47,3 @@ cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = [
 tracing.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true
-test-log.workspace = true

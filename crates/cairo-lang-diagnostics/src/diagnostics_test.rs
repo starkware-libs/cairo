@@ -1,10 +1,10 @@
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
+use cairo_lang_test_utils::test;
 use cairo_lang_utils::Intern;
 use indoc::indoc;
 use salsa::Database;
-use test_log::test;
 
 use super::{DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder};
 

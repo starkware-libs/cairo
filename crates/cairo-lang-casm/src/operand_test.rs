@@ -1,7 +1,7 @@
 #[cfg(not(feature = "std"))]
 use alloc::string::ToString;
 
-use test_log::test;
+use cairo_lang_test_utils::test;
 
 use super::{BinOpOperand, DerefOrImmediate, Operation};
 use crate::operand::{CellRef, Register, ResOperand};

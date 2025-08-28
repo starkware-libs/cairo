@@ -1,11 +1,10 @@
 use std::path::Path;
 
-use test_log::test;
-
 use crate::parse_test_file;
 
 #[test]
 fn test_parse_test_file() -> Result<(), std::io::Error> {
+    crate::logging::init_logging(crate::logging::level::ERROR);
     let tests = parse_test_file::parse_test_file(Path::new("test_data/test_example"))?;
     let test1 = &tests["Test Example"];
     assert_eq!(test1.attributes["Expression"], "foo");
@@ -20,6 +19,7 @@ fn test_parse_test_file() -> Result<(), std::io::Error> {
 
 #[test]
 fn test_dump_to_test_file() -> Result<(), std::io::Error> {
+    crate::logging::init_logging(crate::logging::level::ERROR);
     let tests = parse_test_file::parse_test_file(Path::new("test_data/test_example"))?;
     parse_test_file::dump_to_test_file(tests, "test_data/test_example_expected")?;
     assert_eq!(

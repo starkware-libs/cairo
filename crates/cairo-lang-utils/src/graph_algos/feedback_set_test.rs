@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use itertools::chain;
 use test_case::test_case;
-use test_log::test;
+use cairo_lang_test_utils::test;
 
 use crate::graph_algos::feedback_set::calc_feedback_set;
 use crate::graph_algos::graph_node::GraphNode;

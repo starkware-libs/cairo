@@ -1,8 +1,8 @@
 #[cfg(not(feature = "std"))]
 use alloc::{string::ToString, vec};
 
+use cairo_lang_test_utils::test;
 use indoc::indoc;
-use test_log::test;
 
 use crate::hints::CoreHint;
 use crate::instructions::{

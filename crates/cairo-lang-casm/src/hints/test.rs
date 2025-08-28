@@ -1,5 +1,5 @@
+use cairo_lang_test_utils::test;
 use indoc::indoc;
-use test_log::test;
 
 use crate::hints::{CoreHint, PythonicHint, StarknetHint};
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};

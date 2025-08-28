@@ -161,7 +161,6 @@ starknet-types-core = { version = "0.2.0", features = [
 syn = { version = "2.0.104", features = ["full", "extra-traits"] }
 test-case = "3.3.1"
 test-case-macros = "3.3.1"
-test-log = { version = "0.2.18", features = ["trace"] }
 thiserror = "2.0.12"
 time = { version = "0.3.41", features = [
     "formatting",

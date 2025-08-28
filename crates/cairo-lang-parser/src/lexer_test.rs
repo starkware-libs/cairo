@@ -1,7 +1,7 @@
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{TokenSingleLineComment, TokenWhitespace};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use test_log::test;
+use cairo_lang_test_utils::test;
 
 use super::Lexer;
 use crate::lexer::LexerTerminal;

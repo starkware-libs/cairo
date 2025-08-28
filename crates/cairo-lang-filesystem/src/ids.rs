@@ -367,7 +367,8 @@ define_short_id!(SmolStrId, SmolStr, FilesGroup);
 
 /// Returns a string with a lifetime that is valid on the database's lifetime.
 pub fn db_str(db: &dyn Database, str: impl Into<SmolStr>) -> &str {
-    str.into().intern(db).long(db)
+    let smol: SmolStr = str.into();
+    SmolStrId::new(db, smol).long(db)
 }
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]

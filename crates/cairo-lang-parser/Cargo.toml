@@ -12,7 +12,7 @@ cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.12.0"
 cairo-lang-primitive-token.workspace = true
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.12.0" }
 cairo-lang-syntax-codegen = { path = "../cairo-lang-syntax-codegen", version = "~2.12.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.0", features = ["tracing"] }
 colored.workspace = true
 itertools = { workspace = true, default-features = true }
 num-bigint = { workspace = true, default-features = true }
@@ -25,5 +25,4 @@ anstream = "0.6.19"
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 tracing.workspace = true
 pretty_assertions.workspace = true
-test-log.workspace = true
 indoc.workspace = true

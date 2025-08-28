@@ -27,7 +27,7 @@ cairo-lang-sierra-to-casm = { path = "../crates/cairo-lang-sierra-to-casm", feat
 cairo-lang-sierra-type-size = { path = "../crates/cairo-lang-sierra-type-size", version = "~2.12.0" }
 cairo-lang-syntax = { path = "../crates/cairo-lang-syntax" }
 cairo-lang-test-utils = { path = "../crates/cairo-lang-test-utils", features = ["testing"] }
-cairo-lang-utils = { path = "../crates/cairo-lang-utils" }
+cairo-lang-utils = { path = "../crates/cairo-lang-utils", features = ["tracing"] }
 tracing.workspace = true
 itertools = { workspace = true, default-features = true }
 log.workspace = true
@@ -36,7 +36,6 @@ pretty_assertions.workspace = true
 rstest.workspace = true
 salsa.workspace = true
 starknet-types-core.workspace = true
-test-log.workspace = true
 
 [[test]]
 name = "examples_test"

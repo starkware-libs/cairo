@@ -2,10 +2,10 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
+use cairo_lang_test_utils::test;
 use cairo_lang_utils::Intern;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use test_log::test;
 
 use super::get_location_marks;
 use crate::DiagnosticLocation;

@@ -18,11 +18,11 @@ schemars = { workspace = true, features = ["preserve_order"], optional = true }
 parity-scale-codec = { workspace = true, optional = true }
 
 [dev-dependencies]
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 tracing.workspace = true
 itertools = { workspace = true, default-features = true }
 pretty_assertions.workspace = true
 test-case.workspace = true
-test-log.workspace = true
 
 [features]
 default = ["std"]
