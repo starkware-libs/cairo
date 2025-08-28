@@ -25,6 +25,7 @@ use cairo_lang_filesystem::ids::{
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_syntax::attribute::consts::UNUSED_VARIABLES;
 use cairo_lang_syntax::node::ast::{
     BinaryOperator, BlockOrIf, ClosureParamWrapper, ConditionListAnd, ExprPtr,
     OptionReturnTypeClause, PatternListOr, PatternStructParam, TerminalIdentifier, UnaryOperator,
@@ -453,12 +454,14 @@ fn add_unused_binding_warning<'db>(
                 }
             },
             Binding::LocalVar(local_var) => {
-                if !local_var.allow_unused && !ctx_feature_config.allow_unused_variables {
+                if !local_var.allow_unused
+                    && !ctx_feature_config.allowed_lints.contains(UNUSED_VARIABLES)
+                {
                     diagnostics.report(binding.stable_ptr(db), UnusedVariable);
                 }
             }
             Binding::Param(_) => {
-                if !ctx_feature_config.allow_unused_variables {
+                if !ctx_feature_config.allowed_lints.contains(UNUSED_VARIABLES) {
                     diagnostics.report(binding.stable_ptr(db), UnusedVariable);
                 }
             }
@@ -3131,7 +3134,7 @@ fn create_variable_pattern<'db>(
             false
         }
     };
-    let allow_unused = ctx.resolver.data.feature_config.allow_unused_variables;
+    let allow_unused = ctx.resolver.data.feature_config.allowed_lints.contains(UNUSED_VARIABLES);
     Pattern::Variable(PatternVariable {
         name: identifier.text(db).into(),
         var: LocalVariable { id: var_id, ty, is_mut, allow_unused },
