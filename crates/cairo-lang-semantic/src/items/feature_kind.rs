@@ -138,10 +138,8 @@ pub struct FeatureConfig<'db> {
     pub allowed_features: OrderedHashSet<StrRef<'db>>,
     /// Whether to allow all deprecated features.
     pub allow_deprecated: bool,
-    /// Whether to allow unused imports.
-    pub allow_unused_imports: bool,
-    /// Whether to allow unused variables.
-    pub allow_unused_variables: bool,
+    /// Which unused lints are allowed.
+    pub allow_unused: OrderedHashSet<UnusedLintType>,
 }
 
 impl<'db> FeatureConfig<'db> {
@@ -152,8 +150,7 @@ impl<'db> FeatureConfig<'db> {
         let mut restore = FeatureConfigRestore {
             features_to_remove: vec![],
             allow_deprecated: self.allow_deprecated,
-            allow_unused_imports: self.allow_unused_imports,
-            allow_unused_variables: self.allow_unused_variables,
+            allow_unused_to_remove: vec![],
         };
         for feature_name in other.allowed_features {
             if self.allowed_features.insert(feature_name) {
@@ -161,8 +158,11 @@ impl<'db> FeatureConfig<'db> {
             }
         }
         self.allow_deprecated |= other.allow_deprecated;
-        self.allow_unused_imports |= other.allow_unused_imports;
-        self.allow_unused_variables |= other.allow_unused_variables;
+        for unused_lint in other.allow_unused {
+            if self.allow_unused.insert(unused_lint) {
+                restore.allow_unused_to_remove.push(unused_lint);
+            }
+        }
         restore
     }
 
@@ -172,8 +172,9 @@ impl<'db> FeatureConfig<'db> {
             self.allowed_features.swap_remove(&feature_name);
         }
         self.allow_deprecated = restore.allow_deprecated;
-        self.allow_unused_imports = restore.allow_unused_imports;
-        self.allow_unused_variables = restore.allow_unused_variables;
+        for unused_lint in restore.allow_unused_to_remove {
+            self.allow_unused.swap_remove(&unused_lint);
+        }
     }
 }
 
@@ -183,10 +184,8 @@ pub struct FeatureConfigRestore<'db> {
     features_to_remove: Vec<StrRef<'db>>,
     /// The previous state of the allow deprecated flag.
     allow_deprecated: bool,
-    /// The previous state of the allow unused imports flag.
-    allow_unused_imports: bool,
-    /// The previous state of the allow unused variables flag.
-    allow_unused_variables: bool,
+    /// The previous state of the allowed unused lints.
+    allow_unused_to_remove: Vec<UnusedLintType>,
 }
 
 /// Returns the allowed features of an object which supports attributes.
@@ -196,6 +195,8 @@ pub fn feature_config_from_ast_item<'db>(
     syntax: &impl QueryAttrs<'db>,
     diagnostics: &mut SemanticDiagnostics<'db>,
 ) -> FeatureConfig<'db> {
+    const DEPRECATED: &str = "deprecated";
+
     let mut config = FeatureConfig::default();
     process_feature_attr_kind(
         db,
@@ -219,20 +220,17 @@ pub fn feature_config_from_ast_item<'db>(
         || SemanticDiagnosticKind::UnsupportedAllowAttrArguments,
         diagnostics,
         |value| match value.as_syntax_node().get_text_without_trivia(db) {
-            "deprecated" => {
+            DEPRECATED => {
                 config.allow_deprecated = true;
                 true
             }
-            // TODO(giladchase): Add support for "unused" lint group that expands to all unused.
-            "unused_imports" => {
-                config.allow_unused_imports = true;
-                true
-            }
-            "unused_variables" => {
-                config.allow_unused_variables = true;
-                true
-            }
-            other => db.declared_allows(crate_id).contains(other),
+            other => match UnusedLintType::from_name(other) {
+                Some(unused_type) => {
+                    let _already_allowed = config.allow_unused.insert(unused_type);
+                    true
+                }
+                None => db.declared_allows(crate_id).contains(other),
+            },
         },
     );
     config
@@ -282,11 +280,14 @@ pub fn feature_config_from_item_and_parent_modules<'db>(
                     .crate_config(crate_id)
                     .map(|config| config.settings.edition.ignore_visibility())
                     .unwrap_or_else(|| default_crate_settings(db).edition.ignore_visibility());
+                let mut allow_unused = OrderedHashSet::default();
+                if settings {
+                    allow_unused.insert(UnusedLintType::Imports);
+                }
                 break FeatureConfig {
                     allowed_features: OrderedHashSet::default(),
                     allow_deprecated: false,
-                    allow_unused_imports: settings,
-                    allow_unused_variables: false,
+                    allow_unused,
                 };
             }
             ModuleId::Submodule(id) => {
@@ -305,4 +306,24 @@ pub fn feature_config_from_item_and_parent_modules<'db>(
         config.override_with(module_config);
     }
     config
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum UnusedLintType {
+    Variables,
+    Imports,
+}
+
+impl UnusedLintType {
+    const UNUSED_VARIABLES: &'static str = "unused_variables";
+    const UNUSED_IMPORTS: &'static str = "unused_imports";
+
+    /// Converts a lint name string to an UnusedLintType.
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name {
+            Self::UNUSED_VARIABLES => Some(Self::Variables),
+            Self::UNUSED_IMPORTS => Some(Self::Imports),
+            _ => None,
+        }
+    }
 }

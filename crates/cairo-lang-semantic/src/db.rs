@@ -29,6 +29,7 @@ use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, InferenceError};
 use crate::ids::{AnalyzerPluginId, AnalyzerPluginLongId};
 use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
+use crate::items::feature_kind::UnusedLintType;
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{GenericFunctionId, ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
@@ -2186,7 +2187,7 @@ fn add_unused_import_diagnostics<'db>(
         ))?;
         require(!all_used_uses.contains(&use_id))?;
         let resolver_data = db.use_resolver_data(use_id).ok()?;
-        require(!resolver_data.feature_config.allow_unused_imports)?;
+        require(!resolver_data.feature_config.allow_unused.contains(&UnusedLintType::Imports))?;
         Some(diagnostics.add(SemanticDiagnostic::new(
             StableLocation::new(use_id.untyped_stable_ptr(db)),
             SemanticDiagnosticKind::UnusedImport(use_id),

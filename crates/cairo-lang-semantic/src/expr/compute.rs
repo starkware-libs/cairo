@@ -69,7 +69,7 @@ use crate::expr::inference::solver::SolutionSet;
 use crate::expr::inference::{ImplVarTraitItemMappings, InferenceId};
 use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate, validate_const_expr};
 use crate::items::enm::SemanticEnumEx;
-use crate::items::feature_kind::{FeatureConfig, FeatureConfigRestore};
+use crate::items::feature_kind::{FeatureConfig, FeatureConfigRestore, UnusedLintType};
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
 use crate::items::imp::{
     DerefInfo, ImplLookupContextId, filter_candidate_traits, infer_impl_by_self,
@@ -453,7 +453,9 @@ fn add_unused_binding_warning<'db>(
                 }
             },
             Binding::LocalVar(local_var) => {
-                if !local_var.allow_unused && !ctx_feature_config.allow_unused_variables {
+                if !local_var.allow_unused
+                    && !ctx_feature_config.allow_unused.contains(&UnusedLintType::Variables)
+                {
                     diagnostics.report(binding.stable_ptr(db), UnusedVariable);
                 }
             }
@@ -3129,7 +3131,8 @@ fn create_variable_pattern<'db>(
             false
         }
     };
-    let allow_unused = ctx.resolver.data.feature_config.allow_unused_variables;
+    let allow_unused =
+        ctx.resolver.data.feature_config.allow_unused.contains(&UnusedLintType::Variables);
     Pattern::Variable(PatternVariable {
         name: identifier.text(db).into(),
         var: LocalVariable { id: var_id, ty, is_mut, allow_unused },
