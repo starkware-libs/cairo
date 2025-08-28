@@ -4,7 +4,8 @@ use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::{FilesGroup, default_crate_settings};
 use cairo_lang_filesystem::ids::{CrateId, StrRef};
 use cairo_lang_syntax::attribute::consts::{
-    ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR, UNUSED_IMPORTS,
+    ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR, UNUSED,
+    UNUSED_IMPORTS, UNUSED_VARIABLES,
 };
 use cairo_lang_syntax::attribute::structured::{
     self, AttributeArg, AttributeArgVariant, AttributeStructurize,
@@ -216,6 +217,15 @@ pub fn feature_config_from_ast_item<'db>(
         diagnostics,
         |value| {
             let allowed = value.as_syntax_node().get_text_without_trivia(db);
+            // Expand lint group UNUSED to include all `unused` lints.
+            if allowed == UNUSED {
+                let all_unused_lints = [UNUSED_VARIABLES, UNUSED_IMPORTS];
+                return all_unused_lints.iter().all(|&lint| {
+                    let _already_allowed = config.allowed_lints.insert(lint.into());
+                    db.declared_allows(crate_id).contains(lint)
+                });
+            }
+
             let _already_allowed = config.allowed_lints.insert(allowed.into());
             db.declared_allows(crate_id).contains(allowed)
         },
