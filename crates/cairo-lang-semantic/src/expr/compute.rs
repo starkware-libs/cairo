@@ -4446,11 +4446,12 @@ pub fn compute_and_append_statement_semantic<'db>(
                         let name = var_def_id.name(db);
                         match resolved_item {
                             ResolvedGenericItem::GenericConstant(const_id) => {
+                                let const_value_id = db.constant_const_value(const_id)?;
                                 let var_def = Binding::LocalItem(LocalItem {
                                     id: var_def_id,
                                     kind: StatementItemKind::Constant(
-                                        db.constant_const_value(const_id)?,
-                                        db.constant_const_type(const_id)?,
+                                        const_value_id,
+                                        const_value_id.ty(db)?,
                                     ),
                                 });
                                 add_value_to_statement_environment(ctx, name, var_def, stable_ptr);
