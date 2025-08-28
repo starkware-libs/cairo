@@ -1399,6 +1399,7 @@ fn lower_expr_loop<'db>(
                 ty: semantic_db.concrete_function_signature(into_iter).unwrap().return_type,
                 is_mut: true,
                 id: extract_matches!(into_iter_member_path.base_var(), VarId::Local),
+                allow_unused: true, // Synthetic variables should never generate unused warnings.
             };
             builder.put_semantic(into_iter_member_path.base_var(), into_iter_var.var_id);
 

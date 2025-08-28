@@ -71,7 +71,7 @@ use crate::items::constant::{
     ConstValue, ConstValueId, resolve_const_expr_and_evaluate, validate_const_expr,
 };
 use crate::items::enm::SemanticEnumEx;
-use crate::items::feature_kind::FeatureConfigRestore;
+use crate::items::feature_kind::{FeatureConfig, FeatureConfigRestore};
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
 use crate::items::imp::{
     DerefInfo, ImplLookupContextId, filter_candidate_traits, infer_impl_by_self,
@@ -338,6 +338,7 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
                         &parent.used_variables,
                         &name,
                         &old_var,
+                        &self.resolver.data.feature_config,
                     );
                 }
                 if let Some(parent_macro_info) = parent.macro_info.as_mut() {
@@ -352,6 +353,7 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
                 &closed.used_variables,
                 &name,
                 &binding,
+                &self.resolver.data.feature_config,
             );
         }
         // Adds warning for unused items if required.
@@ -440,6 +442,7 @@ fn add_unused_binding_warning<'db>(
     used_bindings: &UnorderedHashSet<VarId<'db>>,
     name: &str,
     binding: &Binding<'db>,
+    ctx_feature_config: &FeatureConfig<'db>,
 ) {
     if !name.starts_with('_') && !used_bindings.contains(&binding.id()) {
         match binding {
@@ -451,8 +454,15 @@ fn add_unused_binding_warning<'db>(
                     diagnostics.report(binding.stable_ptr(db), UnusedUse);
                 }
             },
-            Binding::LocalVar(_) | Binding::Param(_) => {
-                diagnostics.report(binding.stable_ptr(db), UnusedVariable);
+            Binding::LocalVar(local_var) => {
+                if !local_var.allow_unused && !ctx_feature_config.allow_unused_variables {
+                    diagnostics.report(binding.stable_ptr(db), UnusedVariable);
+                }
+            }
+            Binding::Param(_) => {
+                if !ctx_feature_config.allow_unused_variables {
+                    diagnostics.report(binding.stable_ptr(db), UnusedVariable);
+                }
             }
         }
     }
@@ -3123,9 +3133,10 @@ fn create_variable_pattern<'db>(
             false
         }
     };
+    let allow_unused = ctx.resolver.data.feature_config.allow_unused_variables;
     Pattern::Variable(PatternVariable {
         name: identifier.text(db).into(),
-        var: LocalVariable { id: var_id, ty, is_mut },
+        var: LocalVariable { id: var_id, ty, is_mut, allow_unused },
         stable_ptr,
     })
 }
@@ -4232,6 +4243,7 @@ pub fn compute_and_append_statement_semantic<'db>(
                         &ctx.environment.used_variables,
                         &v.name,
                         &old_var,
+                        &ctx.resolver.data.feature_config,
                     );
                 }
                 if ctx.macro_defined_var_unhygienic

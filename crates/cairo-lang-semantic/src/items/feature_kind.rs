@@ -140,6 +140,8 @@ pub struct FeatureConfig<'db> {
     pub allow_deprecated: bool,
     /// Whether to allow unused imports.
     pub allow_unused_imports: bool,
+    /// Whether to allow unused variables.
+    pub allow_unused_variables: bool,
 }
 
 impl<'db> FeatureConfig<'db> {
@@ -151,6 +153,7 @@ impl<'db> FeatureConfig<'db> {
             features_to_remove: vec![],
             allow_deprecated: self.allow_deprecated,
             allow_unused_imports: self.allow_unused_imports,
+            allow_unused_variables: self.allow_unused_variables,
         };
         for feature_name in other.allowed_features {
             if self.allowed_features.insert(feature_name) {
@@ -159,6 +162,7 @@ impl<'db> FeatureConfig<'db> {
         }
         self.allow_deprecated |= other.allow_deprecated;
         self.allow_unused_imports |= other.allow_unused_imports;
+        self.allow_unused_variables |= other.allow_unused_variables;
         restore
     }
 
@@ -169,6 +173,7 @@ impl<'db> FeatureConfig<'db> {
         }
         self.allow_deprecated = restore.allow_deprecated;
         self.allow_unused_imports = restore.allow_unused_imports;
+        self.allow_unused_variables = restore.allow_unused_variables;
     }
 }
 
@@ -180,6 +185,8 @@ pub struct FeatureConfigRestore<'db> {
     allow_deprecated: bool,
     /// The previous state of the allow unused imports flag.
     allow_unused_imports: bool,
+    /// The previous state of the allow unused variables flag.
+    allow_unused_variables: bool,
 }
 
 /// Returns the allowed features of an object which supports attributes.
@@ -216,8 +223,13 @@ pub fn feature_config_from_ast_item<'db>(
                 config.allow_deprecated = true;
                 true
             }
+            // TODO(giladchase): Add support for "unused" lint group that expands to all unused.
             "unused_imports" => {
                 config.allow_unused_imports = true;
+                true
+            }
+            "unused_variables" => {
+                config.allow_unused_variables = true;
                 true
             }
             other => db.declared_allows(crate_id).contains(other),
@@ -274,6 +286,7 @@ pub fn feature_config_from_item_and_parent_modules<'db>(
                     allowed_features: OrderedHashSet::default(),
                     allow_deprecated: false,
                     allow_unused_imports: settings,
+                    allow_unused_variables: false,
                 };
             }
             ModuleId::Submodule(id) => {
