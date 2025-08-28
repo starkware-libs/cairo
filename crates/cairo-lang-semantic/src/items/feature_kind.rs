@@ -196,6 +196,7 @@ pub fn feature_config_from_ast_item<'db>(
     diagnostics: &mut SemanticDiagnostics<'db>,
 ) -> FeatureConfig<'db> {
     const DEPRECATED: &str = "deprecated";
+    const UNUSED: &str = "unused";
 
     let mut config = FeatureConfig::default();
     process_feature_attr_kind(
@@ -222,6 +223,11 @@ pub fn feature_config_from_ast_item<'db>(
         |value| match value.as_syntax_node().get_text_without_trivia(db) {
             DEPRECATED => {
                 config.allow_deprecated = true;
+                true
+            }
+            UNUSED => {
+                // The "unused" lint group expands to all unused lint types
+                config.allow_unused = UnusedLintType::all().collect();
                 true
             }
             other => match UnusedLintType::from_name(other) {
@@ -317,6 +323,11 @@ pub enum UnusedLintType {
 impl UnusedLintType {
     const UNUSED_VARIABLES: &'static str = "unused_variables";
     const UNUSED_IMPORTS: &'static str = "unused_imports";
+
+    /// Returns all unused lint types. When adding new variants, they MUST be added here.
+    pub fn all() -> impl Iterator<Item = Self> {
+        [Self::Variables, Self::Imports].into_iter()
+    }
 
     /// Converts a lint name string to an UnusedLintType.
     pub fn from_name(name: &str) -> Option<Self> {
