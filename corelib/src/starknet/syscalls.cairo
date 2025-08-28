@@ -204,7 +204,7 @@ pub extern fn keccak_syscall(
 ///
 /// # Returns
 ///
-/// * The next SHA-256 state of the input with the givens state.
+/// * The next SHA-256 state of the input with the given state.
 ///
 /// The system call does not add any padding and the input needs to be a multiple of 512 bits
 /// (== 16 u32 word).
