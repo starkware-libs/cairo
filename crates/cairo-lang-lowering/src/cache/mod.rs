@@ -24,7 +24,7 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
-use cairo_lang_semantic::items::constant::{ConstValue, ImplConstantId};
+use cairo_lang_semantic::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionId, GenericFunctionWithBodyId, ImplFunctionBodyId,
     ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
@@ -339,6 +339,7 @@ struct SemanticCacheLoadingData<'db> {
     function_ids: OrderedHashMap<SemanticFunctionIdCached, semantic::FunctionId<'db>>,
     type_ids: OrderedHashMap<TypeIdCached, TypeId<'db>>,
     impl_ids: OrderedHashMap<ImplIdCached, ImplId<'db>>,
+    const_value_ids: OrderedHashMap<ConstValueIdCached, ConstValueId<'db>>,
     lookups: SemanticCacheLookups,
 }
 
@@ -348,6 +349,7 @@ impl<'db> SemanticCacheLoadingData<'db> {
             function_ids: OrderedHashMap::default(),
             type_ids: OrderedHashMap::default(),
             impl_ids: OrderedHashMap::default(),
+            const_value_ids: OrderedHashMap::default(),
             lookups,
         }
     }
@@ -389,11 +391,9 @@ impl<'db> DerefMut for SemanticCacheSavingContext<'db> {
 #[derive(Default)]
 struct SemanticCacheSavingData<'db> {
     function_ids: OrderedHashMap<semantic::FunctionId<'db>, SemanticFunctionIdCached>,
-
     type_ids: OrderedHashMap<TypeId<'db>, TypeIdCached>,
-
     impl_ids: OrderedHashMap<ImplId<'db>, ImplIdCached>,
-
+    const_value_ids: OrderedHashMap<ConstValueId<'db>, ConstValueIdCached>,
     lookups: SemanticCacheLookups,
 }
 
@@ -416,6 +416,7 @@ struct SemanticCacheLookups {
     function_ids_lookup: Vec<SemanticFunctionCached>,
     type_ids_lookup: Vec<TypeCached>,
     impl_ids_lookup: Vec<ImplCached>,
+    const_value_ids_lookup: Vec<ConstValueCached>,
 }
 
 /// Cached version of [defs::ids::FunctionWithBodyId]
@@ -1247,14 +1248,14 @@ impl StatementCached {
 #[derive(Serialize, Deserialize)]
 struct StatementConstCached {
     /// The value of the const.
-    value: ConstValueCached,
+    value: ConstValueIdCached,
     /// The variable to bind the value to.
     output: usize,
 }
 impl StatementConstCached {
     fn new<'db>(stmt: StatementConst<'db>, ctx: &mut CacheSavingContext<'db>) -> Self {
         Self {
-            value: ConstValueCached::new(stmt.value, &mut ctx.semantic_ctx),
+            value: ConstValueIdCached::new(stmt.value, &mut ctx.semantic_ctx),
             output: stmt.output.index(),
         }
     }
@@ -1269,33 +1270,30 @@ impl StatementConstCached {
 #[derive(Serialize, Deserialize, Clone)]
 enum ConstValueCached {
     Int(BigInt, TypeIdCached),
-    Struct(Vec<ConstValueCached>, TypeIdCached),
-    Enum(ConcreteVariantCached, Box<ConstValueCached>),
-    NonZero(Box<ConstValueCached>),
-    Boxed(Box<ConstValueCached>),
+    Struct(Vec<ConstValueIdCached>, TypeIdCached),
+    Enum(ConcreteVariantCached, ConstValueIdCached),
+    NonZero(ConstValueIdCached),
+    Boxed(ConstValueIdCached),
     Generic(GenericParamCached),
     ImplConstant(ImplConstantCached),
 }
 impl ConstValueCached {
-    fn new<'db>(
-        const_value_id: ConstValue<'db>,
-        ctx: &mut SemanticCacheSavingContext<'db>,
-    ) -> Self {
-        match const_value_id {
+    fn new<'db>(const_value: ConstValue<'db>, ctx: &mut SemanticCacheSavingContext<'db>) -> Self {
+        match const_value {
             ConstValue::Int(value, ty) => ConstValueCached::Int(value, TypeIdCached::new(ty, ctx)),
             ConstValue::Struct(values, ty) => ConstValueCached::Struct(
-                values.into_iter().map(|v| ConstValueCached::new(v, ctx)).collect(),
+                values.into_iter().map(|v| ConstValueIdCached::new(v, ctx)).collect(),
                 TypeIdCached::new(ty, ctx),
             ),
             ConstValue::Enum(variant, value) => ConstValueCached::Enum(
                 ConcreteVariantCached::new(variant, ctx),
-                Box::new(ConstValueCached::new(*value, ctx)),
+                ConstValueIdCached::new(value, ctx),
             ),
             ConstValue::NonZero(value) => {
-                ConstValueCached::NonZero(Box::new(ConstValueCached::new(*value, ctx)))
+                ConstValueCached::NonZero(ConstValueIdCached::new(value, ctx))
             }
             ConstValue::Boxed(value) => {
-                ConstValueCached::Boxed(Box::new(ConstValueCached::new(*value, ctx)))
+                ConstValueCached::Boxed(ConstValueIdCached::new(value, ctx))
             }
             ConstValue::Generic(generic_param) => {
                 ConstValueCached::Generic(GenericParamCached::new(generic_param, &mut ctx.defs_ctx))
@@ -1306,7 +1304,7 @@ impl ConstValueCached {
             ConstValue::Var(_, _) | ConstValue::Missing(_) => {
                 unreachable!(
                     "Const {:#?} is not supported for caching",
-                    const_value_id.debug(ctx.db.elongate())
+                    const_value.debug(ctx.db.elongate())
                 )
             }
         }
@@ -1319,10 +1317,10 @@ impl ConstValueCached {
                 ty.embed(ctx),
             ),
             ConstValueCached::Enum(variant, value) => {
-                ConstValue::Enum(variant.embed(ctx), Box::new(value.embed(ctx)))
+                ConstValue::Enum(variant.embed(ctx), value.embed(ctx))
             }
-            ConstValueCached::NonZero(value) => ConstValue::NonZero(Box::new(value.embed(ctx))),
-            ConstValueCached::Boxed(value) => ConstValue::Boxed(Box::new(value.embed(ctx))),
+            ConstValueCached::NonZero(value) => ConstValue::NonZero(value.embed(ctx)),
+            ConstValueCached::Boxed(value) => ConstValue::Boxed(value.embed(ctx)),
             ConstValueCached::Generic(generic_param) => {
                 ConstValue::Generic(generic_param.get_embedded(&ctx.defs_loading_data, ctx.db))
             }
@@ -1330,6 +1328,35 @@ impl ConstValueCached {
                 ConstValue::ImplConstant(impl_constant_id.embed(ctx))
             }
         }
+    }
+}
+
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+struct ConstValueIdCached(usize);
+
+impl ConstValueIdCached {
+    fn new<'db>(
+        const_value_id: ConstValueId<'db>,
+        ctx: &mut SemanticCacheSavingContext<'db>,
+    ) -> Self {
+        if let Some(id) = ctx.const_value_ids.get(&const_value_id) {
+            return *id;
+        }
+        let cached = ConstValueCached::new(const_value_id.long(ctx.db).clone(), ctx);
+        let id = Self(ctx.const_value_ids_lookup.len());
+        ctx.const_value_ids_lookup.push(cached);
+        ctx.const_value_ids.insert(const_value_id, id);
+        id
+    }
+    fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> ConstValueId<'db> {
+        if let Some(const_value_id) = ctx.const_value_ids.get(&self) {
+            return *const_value_id;
+        }
+
+        let cached = ctx.const_value_ids_lookup[self.0].clone();
+        let id = cached.embed(ctx).intern(ctx.db);
+        ctx.const_value_ids.insert(self, id);
+        id
     }
 }
 
