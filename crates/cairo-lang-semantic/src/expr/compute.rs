@@ -3217,7 +3217,7 @@ fn struct_ctor_expr<'db>(
                         arg_expr.ty(),
                         member.ty,
                         ctx.diagnostics,
-                        || arg_identifier.stable_ptr(db).untyped(),
+                        || arg_expr.stable_ptr().untyped(),
                         |actual_ty, expected_ty| WrongArgumentType { expected_ty, actual_ty },
                     )
                     .is_err()
