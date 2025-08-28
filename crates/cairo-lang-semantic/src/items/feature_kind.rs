@@ -4,8 +4,8 @@ use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::{FilesGroup, default_crate_settings};
 use cairo_lang_filesystem::ids::{CrateId, StrRef};
 use cairo_lang_syntax::attribute::consts::{
-    ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR, UNUSED_IMPORTS,
-    UNUSED_VARIABLES,
+    ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR, UNUSED,
+    UNUSED_IMPORTS, UNUSED_VARIABLES,
 };
 use cairo_lang_syntax::attribute::structured::{
     self, AttributeArg, AttributeArgVariant, AttributeStructurize,
@@ -220,11 +220,17 @@ pub fn feature_config_from_ast_item<'db>(
                 config.allowed_lints.insert(DEPRECATED_ATTR.into());
                 true
             }
-            // TODO(giladchase): Add support for "unused" lint group that expands to all unused.
+            UNUSED_ATTR => {
+                config.allowed_lints.insert(UNUSED_VARIABLES.into());
+                config.allowed_lints.insert(UNUSED_IMPORTS.into());
+                true
+            }
+            // Also included in the UNUSED_ATTR branch.
             UNUSED_IMPORTS => {
                 config.allowed_lints.insert(UNUSED_IMPORTS.into());
                 true
             }
+            // Also included in the UNUSED_ATTR branch.
             UNUSED_VARIABLES => {
                 config.allowed_lints.insert(UNUSED_VARIABLES.into());
                 true
