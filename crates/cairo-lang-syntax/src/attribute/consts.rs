@@ -26,6 +26,12 @@ pub const INTERNAL_ATTR: &str = "internal";
 /// An attribute to allow code that would normally result in a warning.
 pub const ALLOW_ATTR: &str = "allow";
 
+/// An argument to the `allow` attribute that suppresses warnings for unused variables.
+pub const UNUSED_VARIABLES: &str = "unused_variables";
+
+/// An argument to the `allow` attribute that suppresses warnings for unused imports.
+pub const UNUSED_IMPORTS: &str = "unused_imports";
+
 /// An attribute to allow additional attributes on an item.
 pub const ALLOW_ATTR_ATTR: &str = "allow_attr";
 
