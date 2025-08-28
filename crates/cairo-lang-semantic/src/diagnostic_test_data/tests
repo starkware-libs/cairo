@@ -1515,3 +1515,30 @@ error: Trait `core::string::StringLiteral` should not be implemented outside of 
  --> lib.cairo:5:24
 impl SStringLiteral of StringLiteral<S> {}
                        ^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test wrong argument type in struct literal.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+    S { a: @1 }
+}
+
+//! > module_code
+struct S {
+    a: u8,
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::integer::u8", found: "@?0".
+It is possible that the type inference failed because the types differ in the number of snapshots.
+Consider adding or removing snapshots.
+ --> lib.cairo:6:12
+    S { a: @1 }
+           ^^

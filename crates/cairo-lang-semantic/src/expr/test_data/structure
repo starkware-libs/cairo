@@ -27,9 +27,9 @@ struct A {
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "()", found: "core::felt252".
- --> lib.cairo:8:9
+ --> lib.cairo:8:12
         b: 1_felt252,
-        ^
+           ^^^^^^^^^
 
 error: Unknown member.
  --> lib.cairo:10:9
