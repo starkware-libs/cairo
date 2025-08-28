@@ -544,19 +544,18 @@ End:
 blk1:
 Statements:
   (v2: core::felt252) <- 3
-  (v3: core::felt252) <- 3
-  (v4: core::felt252) <- core::felt252_sub(v2, v3)
+  (v3: core::felt252) <- core::felt252_sub(v2, v2)
 End:
-  Match(match core::felt252_is_zero(v4) {
+  Match(match core::felt252_is_zero(v3) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v5) => blk3,
+    IsZeroResult::NonZero(v4) => blk3,
   })
 
 blk2:
 Statements:
-  (v6: core::felt252) <- core::felt252_add(v0, v1)
+  (v5: core::felt252) <- core::felt252_add(v0, v1)
 End:
-  Goto(blk7, {v6 -> v7})
+  Goto(blk7, {v5 -> v6})
 
 blk3:
 Statements:
@@ -576,14 +575,14 @@ End:
 blk6:
 Statements:
 End:
-  Goto(blk7, {v0 -> v7})
+  Goto(blk7, {v0 -> v6})
 
 blk7:
 Statements:
-  (v8: core::felt252) <- 1
-  (v9: core::felt252) <- core::felt252_add(v7, v8)
+  (v7: core::felt252) <- 1
+  (v8: core::felt252) <- core::felt252_add(v6, v7)
 End:
-  Return(v9)
+  Return(v8)
 
 //! > ==========================================================================
 

@@ -4,6 +4,7 @@ mod test;
 
 use std::iter::zip;
 
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::{ConcreteVariant, TypeId};
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use itertools::Itertools;
@@ -16,6 +17,8 @@ use crate::{BlockEnd, BlockId, Lowered, Statement, VariableArena, VariableId};
 /// A key that uniquely identifies a sub-expression that can be eliminated.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum ExpressionKey<'db> {
+    /// A constant with given value.
+    Const(ConstValueId<'db>),
     /// A struct construction with given inputs.
     StructConstruct(TypeId<'db>, Vec<VariableId>),
     /// A member access of a struct.
@@ -69,6 +72,7 @@ impl<'db> CseContext<'db> {
         }
         // Check if this statement can be eliminated
         let key = match stmt {
+            Statement::Const(c) => ExpressionKey::Const(c.value),
             Statement::StructConstruct(s) => ExpressionKey::StructConstruct(
                 self.variables[s.output].ty,
                 s.inputs.iter().map(|usage| self.resolve_var(usage.var_id)).collect(),
