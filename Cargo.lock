@@ -477,6 +477,7 @@ dependencies = [
 name = "cairo-lang-casm"
 version = "2.12.0"
 dependencies = [
+ "cairo-lang-test-utils",
  "cairo-lang-utils",
  "indoc",
  "itertools 0.14.0",
@@ -487,7 +488,6 @@ dependencies = [
  "schemars",
  "serde",
  "test-case",
- "test-log",
  "tracing",
 ]
 
@@ -521,10 +521,10 @@ name = "cairo-lang-debug"
 version = "2.12.0"
 dependencies = [
  "cairo-lang-proc-macros",
+ "cairo-lang-test-utils",
  "cairo-lang-utils",
  "id-arena",
  "salsa",
- "test-log",
  "tracing",
 ]
 
@@ -546,7 +546,6 @@ dependencies = [
  "salsa",
  "serde",
  "smol_str",
- "test-log",
  "tracing",
  "typetag",
  "xxhash-rust",
@@ -558,12 +557,12 @@ version = "2.12.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
+ "cairo-lang-test-utils",
  "cairo-lang-utils",
  "indoc",
  "itertools 0.14.0",
  "pretty_assertions",
  "salsa",
- "test-log",
  "tracing",
 ]
 
@@ -587,7 +586,6 @@ dependencies = [
  "itertools 0.14.0",
  "pulldown-cmark",
  "salsa",
- "test-log",
  "tracing",
 ]
 
@@ -595,9 +593,9 @@ dependencies = [
 name = "cairo-lang-eq-solver"
 version = "2.12.0"
 dependencies = [
+ "cairo-lang-test-utils",
  "cairo-lang-utils",
  "good_lp",
- "test-log",
  "tracing",
 ]
 
@@ -621,7 +619,6 @@ dependencies = [
  "cairo-vm",
  "itertools 0.14.0",
  "serde",
- "test-log",
 ]
 
 [[package]]
@@ -639,7 +636,6 @@ dependencies = [
  "indoc",
  "itertools 0.14.0",
  "salsa",
- "test-log",
  "tracing",
 ]
 
@@ -662,6 +658,7 @@ name = "cairo-lang-filesystem"
 version = "2.12.0"
 dependencies = [
  "cairo-lang-debug",
+ "cairo-lang-test-utils",
  "cairo-lang-utils",
  "path-clean",
  "salsa",
@@ -669,7 +666,6 @@ dependencies = [
  "serde",
  "serde_json",
  "smol_str",
- "test-log",
  "toml",
  "tracing",
 ]
@@ -721,8 +717,6 @@ dependencies = [
  "pretty_assertions",
  "salsa",
  "serde",
- "test-log",
- "tracing",
 ]
 
 [[package]]
@@ -744,7 +738,6 @@ dependencies = [
  "num-traits",
  "pretty_assertions",
  "salsa",
- "test-log",
  "tracing",
  "unescaper",
 ]
@@ -766,7 +759,6 @@ dependencies = [
  "itertools 0.14.0",
  "salsa",
  "serde_json",
- "test-log",
  "tracing",
 ]
 
@@ -849,7 +841,6 @@ dependencies = [
  "sha2",
  "starknet-types-core",
  "test-case",
- "test-log",
  "thiserror",
  "tracing",
 ]
@@ -877,7 +868,6 @@ dependencies = [
  "pretty_assertions",
  "salsa",
  "sha3",
- "test-log",
  "toml",
  "tracing",
 ]
@@ -908,7 +898,6 @@ dependencies = [
  "smol_str",
  "starknet-types-core",
  "test-case",
- "test-log",
  "thiserror",
  "tracing",
  "vector-map",
@@ -944,7 +933,6 @@ dependencies = [
  "num-traits",
  "pretty_assertions",
  "test-case",
- "test-log",
  "thiserror",
  "tracing",
 ]
@@ -975,7 +963,6 @@ dependencies = [
  "serde_json",
  "smol_str",
  "test-case",
- "test-log",
  "tracing",
 ]
 
@@ -998,7 +985,6 @@ dependencies = [
  "pretty_assertions",
  "starknet-types-core",
  "test-case",
- "test-log",
  "thiserror",
  "tracing",
 ]
@@ -1041,7 +1027,6 @@ dependencies = [
  "serde_json",
  "starknet-types-core",
  "test-case",
- "test-log",
  "thiserror",
  "tracing",
  "typetag",
@@ -1071,7 +1056,6 @@ dependencies = [
  "smol_str",
  "starknet-types-core",
  "test-case",
- "test-log",
  "thiserror",
  "tracing",
 ]
@@ -1083,13 +1067,13 @@ dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
  "cairo-lang-primitive-token",
+ "cairo-lang-test-utils",
  "cairo-lang-utils",
  "num-bigint",
  "num-traits",
  "pretty_assertions",
  "salsa",
  "serde",
- "test-log",
  "tracing",
  "unescaper",
 ]
@@ -1098,8 +1082,9 @@ dependencies = [
 name = "cairo-lang-syntax-codegen"
 version = "2.12.0"
 dependencies = [
+ "cairo-lang-test-utils",
+ "cairo-lang-utils",
  "genco",
- "test-log",
  "tracing",
  "xshell",
 ]
@@ -1159,11 +1144,11 @@ name = "cairo-lang-test-utils"
 version = "2.12.0"
 dependencies = [
  "cairo-lang-formatter",
+ "cairo-lang-proc-macros",
  "cairo-lang-utils",
  "colored",
  "log",
  "pretty_assertions",
- "test-log",
  "tracing",
 ]
 
@@ -1171,6 +1156,7 @@ dependencies = [
 name = "cairo-lang-utils"
 version = "2.12.0"
 dependencies = [
+ "cairo-lang-test-utils",
  "hashbrown",
  "indexmap",
  "itertools 0.14.0",
@@ -1183,7 +1169,6 @@ dependencies = [
  "serde_json",
  "smol_str",
  "test-case",
- "test-log",
  "tracing",
  "tracing-log",
  "tracing-subscriber",
@@ -3907,27 +3892,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "test-log"
-version = "0.2.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e33b98a582ea0be1168eba097538ee8dd4bbe0f2b01b22ac92ea30054e5be7b"
-dependencies = [
- "test-log-macros",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "test-log-macros"
-version = "0.2.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "451b374529930d7601b1eef8d32bc79ae870b6079b069401709c2a8bf9e75f36"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.106",
-]
-
-[[package]]
 name = "tests"
 version = "2.12.0"
 dependencies = [
@@ -3957,7 +3921,6 @@ dependencies = [
  "rstest",
  "salsa",
  "starknet-types-core",
- "test-log",
  "tracing",
 ]
 

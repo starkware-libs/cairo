@@ -1,6 +1,6 @@
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use test_log::test;
+use cairo_lang_test_utils::test;
 
 // Testing by parsing code and printing its display, making sure we get back the formatted code.
 #[test]

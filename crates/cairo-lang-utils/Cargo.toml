@@ -24,9 +24,9 @@ tracing-log = { workspace = true, optional = true }
 tracing-subscriber = { workspace = true, optional = true }
 
 [dev-dependencies]
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 serde_json.workspace = true
 test-case.workspace = true
-test-log.workspace = true
 tracing.workspace = true
 
 [features]

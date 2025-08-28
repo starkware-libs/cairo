@@ -7,7 +7,7 @@ use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_utils::{Intern, extract_matches};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use test_log::test;
+use cairo_lang_test_utils::test;
 
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;

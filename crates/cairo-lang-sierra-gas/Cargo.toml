@@ -10,7 +10,7 @@ description = "Sierra gas computation."
 cairo-lang-eq-solver = { path = "../cairo-lang-eq-solver", version = "~2.12.0" }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.12.0" }
 cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "~2.12.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.0", features = ["tracing"] }
 itertools = { workspace = true, default-features = true }
 num-bigint = { workspace = true }
 num-traits = { workspace = true, default-features = true }
@@ -21,5 +21,4 @@ cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testin
 indoc.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true
-test-log.workspace = true
 tracing.workspace = true

@@ -146,7 +146,6 @@ starknet-types-core = { version = "0.2.0", features = ["hash", "prime-bigint", "
 syn = { version = "2.0.104", features = ["extra-traits", "full"] }
 test-case = "3.3.1"
 test-case-macros = "3.3.1"
-test-log = { version = "0.2.18", features = ["trace"], default-features = false }
 thiserror = "2.0.12"
 time = { version = "0.3.41", features = ["formatting", "local-offset", "macros"] }
 tokio = { version = "1.47.1", features = ["full", "sync"] }

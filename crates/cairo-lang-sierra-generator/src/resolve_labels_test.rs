@@ -1,6 +1,6 @@
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use pretty_assertions::assert_eq;
-use test_log::test;
+use cairo_lang_test_utils::test;
 
 use super::resolve_labels_and_extract_locations;
 use crate::pre_sierra;

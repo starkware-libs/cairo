@@ -56,6 +56,7 @@ cairo_lang_test_utils::test_file_test!(
         strings: "strings",
         while_: "while",
         for_: "for",
+        for_debug: "for_debug",
     },
     test_function_lowering
 );

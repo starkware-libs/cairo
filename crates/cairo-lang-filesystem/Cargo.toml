@@ -17,8 +17,8 @@ smol_str.workspace = true
 toml.workspace = true
 
 [dev-dependencies]
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 serde_json.workspace = true
-test-log.workspace = true
 tracing.workspace = true
 
 [package.metadata.cargo-machete]
