@@ -4,7 +4,7 @@ use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::{FilesGroup, default_crate_settings};
 use cairo_lang_filesystem::ids::{CrateId, StrRef};
 use cairo_lang_syntax::attribute::consts::{
-    ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR,
+    ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR, UNUSED_IMPORTS,
 };
 use cairo_lang_syntax::attribute::structured::{
     self, AttributeArg, AttributeArgVariant, AttributeStructurize,
@@ -136,12 +136,8 @@ fn add_diag<'db>(
 pub struct FeatureConfig<'db> {
     /// The current set of allowed features.
     pub allowed_features: OrderedHashSet<StrRef<'db>>,
-    /// Whether to allow all deprecated features.
-    pub allow_deprecated: bool,
-    /// Whether to allow unused imports.
-    pub allow_unused_imports: bool,
-    /// Whether to allow unused variables.
-    pub allow_unused_variables: bool,
+    /// Which lints are allowed.
+    pub allowed_lints: OrderedHashSet<StrRef<'db>>,
 }
 
 impl<'db> FeatureConfig<'db> {
@@ -149,20 +145,17 @@ impl<'db> FeatureConfig<'db> {
     ///
     /// Returns the data required to restore the configuration.
     pub fn override_with(&mut self, other: Self) -> FeatureConfigRestore<'db> {
-        let mut restore = FeatureConfigRestore {
-            features_to_remove: vec![],
-            allow_deprecated: self.allow_deprecated,
-            allow_unused_imports: self.allow_unused_imports,
-            allow_unused_variables: self.allow_unused_variables,
-        };
+        let mut restore = FeatureConfigRestore::empty();
         for feature_name in other.allowed_features {
             if self.allowed_features.insert(feature_name) {
                 restore.features_to_remove.push(feature_name);
             }
         }
-        self.allow_deprecated |= other.allow_deprecated;
-        self.allow_unused_imports |= other.allow_unused_imports;
-        self.allow_unused_variables |= other.allow_unused_variables;
+        for allow_lint in other.allowed_lints {
+            if self.allowed_lints.insert(allow_lint) {
+                restore.allowed_lints_to_remove.push(allow_lint);
+            }
+        }
         restore
     }
 
@@ -171,22 +164,25 @@ impl<'db> FeatureConfig<'db> {
         for feature_name in restore.features_to_remove {
             self.allowed_features.swap_remove(&feature_name);
         }
-        self.allow_deprecated = restore.allow_deprecated;
-        self.allow_unused_imports = restore.allow_unused_imports;
-        self.allow_unused_variables = restore.allow_unused_variables;
+        for allow_lint in restore.allowed_lints_to_remove {
+            self.allowed_lints.swap_remove(&allow_lint);
+        }
     }
 }
 
 /// The data required to restore the feature configuration after an override.
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct FeatureConfigRestore<'db> {
     /// The features to remove from the configuration after the override.
     features_to_remove: Vec<StrRef<'db>>,
-    /// The previous state of the allow deprecated flag.
-    allow_deprecated: bool,
-    /// The previous state of the allow unused imports flag.
-    allow_unused_imports: bool,
-    /// The previous state of the allow unused variables flag.
-    allow_unused_variables: bool,
+    /// The previous state of the allowed lints.
+    allowed_lints_to_remove: Vec<StrRef<'db>>,
+}
+
+impl FeatureConfigRestore<'_> {
+    pub fn empty() -> Self {
+        Self::default()
+    }
 }
 
 /// Returns the allowed features of an object which supports attributes.
@@ -218,21 +214,10 @@ pub fn feature_config_from_ast_item<'db>(
         ALLOW_ATTR,
         || SemanticDiagnosticKind::UnsupportedAllowAttrArguments,
         diagnostics,
-        |value| match value.as_syntax_node().get_text_without_trivia(db) {
-            "deprecated" => {
-                config.allow_deprecated = true;
-                true
-            }
-            // TODO(giladchase): Add support for "unused" lint group that expands to all unused.
-            "unused_imports" => {
-                config.allow_unused_imports = true;
-                true
-            }
-            "unused_variables" => {
-                config.allow_unused_variables = true;
-                true
-            }
-            other => db.declared_allows(crate_id).contains(other),
+        |value| {
+            let allowed = value.as_syntax_node().get_text_without_trivia(db);
+            let _already_allowed = config.allowed_lints.insert(allowed.into());
+            db.declared_allows(crate_id).contains(allowed)
         },
     );
     config
@@ -278,16 +263,15 @@ pub fn feature_config_from_item_and_parent_modules<'db>(
     let mut config = loop {
         match current_module_id {
             ModuleId::CrateRoot(crate_id) => {
-                let settings = db
+                let all_declarations_pub = db
                     .crate_config(crate_id)
                     .map(|config| config.settings.edition.ignore_visibility())
                     .unwrap_or_else(|| default_crate_settings(db).edition.ignore_visibility());
-                break FeatureConfig {
-                    allowed_features: OrderedHashSet::default(),
-                    allow_deprecated: false,
-                    allow_unused_imports: settings,
-                    allow_unused_variables: false,
-                };
+                let mut allowed_lints = OrderedHashSet::default();
+                if all_declarations_pub {
+                    let _already_allowed = allowed_lints.insert(UNUSED_IMPORTS.into());
+                }
+                break FeatureConfig { allowed_features: OrderedHashSet::default(), allowed_lints };
             }
             ModuleId::Submodule(id) => {
                 current_module_id = id.parent_module(defs_db);
