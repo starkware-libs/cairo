@@ -794,8 +794,7 @@ fn type_size<'db>(db: &'db dyn LoweringGroup, ty: TypeId<'db>) -> usize {
             db.type_size(*type_id)
                 * size
                     .long(db)
-                    .clone()
-                    .into_int()
+                    .to_int()
                     .expect("Expected ConstValue::Int for size")
                     .to_usize()
                     .unwrap()
