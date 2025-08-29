@@ -14,6 +14,7 @@ use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver};
 pub mod attribute;
 pub mod constant;
 pub mod enm;
+pub mod expose_detection;
 pub mod extern_function;
 pub mod extern_type;
 pub mod feature_kind;

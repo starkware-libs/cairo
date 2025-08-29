@@ -10,6 +10,7 @@ use cairo_lang_syntax::node::helpers::UsePathEx;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use salsa::Database;
@@ -313,7 +314,7 @@ pub fn priv_global_use_semantic_data_cycle<'db>(
 #[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
 pub struct ImportedModules<'db> {
     /// The imported modules that have a path where each step is visible by the previous module.
-    pub accessible: OrderedHashSet<(ModuleId<'db>, ModuleId<'db>)>,
+    pub accessible: OrderedHashMap<(ModuleId<'db>, ModuleId<'db>), bool>,
     // TODO(Tomer-StarkWare): consider changing from all_modules to inaccessible_modules
     /// All the imported modules.
     pub all: OrderedHashSet<ModuleId<'db>>,
@@ -326,7 +327,7 @@ pub fn module_imported_modules<'db>(
 ) -> Arc<ImportedModules<'db>> {
     let mut visited = UnorderedHashSet::<_>::default();
     let mut stack = vec![(module_id, module_id)];
-    let mut accessible_modules = OrderedHashSet::default();
+    let mut accessible_modules = OrderedHashMap::default();
     // Iterate over all modules that are imported through `use *`, and are accessible from the
     // current module.
     while let Some((user_module, containing_module)) = stack.pop() {
@@ -336,8 +337,16 @@ pub fn module_imported_modules<'db>(
         if let Ok(macro_call_ids) = db.module_macro_calls_ids(containing_module) {
             for macro_call_id in macro_call_ids.iter() {
                 if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
-                    stack.push((user_module, generated_module_id));
-                    accessible_modules.insert((user_module, generated_module_id));
+                    let is_expose =
+                        if let Ok(macro_call_data) = db.priv_macro_call_data(*macro_call_id) {
+                            macro_call_data.is_expose
+                        } else {
+                            true
+                        };
+                    if is_expose {
+                        stack.push((user_module, generated_module_id));
+                    }
+                    accessible_modules.insert((user_module, generated_module_id), is_expose);
                 }
             }
         }
@@ -350,7 +359,7 @@ pub fn module_imported_modules<'db>(
             };
             if peek_visible_in(db, *item_visibility, containing_module, user_module) {
                 stack.push((containing_module, module_id_found));
-                accessible_modules.insert((containing_module, module_id_found));
+                accessible_modules.insert((containing_module, module_id_found), true);
             }
         }
     }
@@ -383,5 +392,21 @@ pub fn module_imported_modules<'db>(
     // Remove the current module from the list of all modules, as if items in the module not found
     // previously, it was explicitly ignored.
     all_modules.swap_remove(&module_id);
+    let mut to_propagate = vec![];
+    let accessible_keys: Vec<_> = accessible_modules.keys().cloned().collect();
+    for &(user_mod, containing_mod) in &accessible_keys {
+        if accessible_modules.get(&(user_mod, containing_mod)) == Some(&true) {
+            let ancestors = db.module_ancestors(containing_mod);
+            for &parent_module in ancestors {
+                if !accessible_modules.contains_key(&(user_mod, parent_module)) {
+                    to_propagate.push((user_mod, parent_module));
+                }
+            }
+        }
+    }
+    for (user_mod, parent_module) in to_propagate {
+        accessible_modules.insert((user_mod, parent_module), true);
+    }
+
     Arc::new(ImportedModules { accessible: accessible_modules, all: all_modules })
 }

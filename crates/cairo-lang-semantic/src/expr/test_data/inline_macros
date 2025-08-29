@@ -1822,6 +1822,40 @@ error: Mismatched types. The type `core::felt252` cannot be created from a strin
 
 //! > ==========================================================================
 
+//! > Test expose macro for item level macro unhygienic resolution.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > function
+fn test_expose() {
+    helper_function();
+}
+
+//! > function_name
+test_expose
+
+//! > module_code
+macro define_helper {
+    () => {
+        expose!{fn helper_function() -> felt252 { 42 }}
+    };
+}
+
+define_helper!();
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
 //! > Test macro with use-star resolution.
 
 //! > test_runner_name
@@ -1850,7 +1884,7 @@ mod with_bar {
 
 macro import_with_bar {
     () => {
-        use $callsite::with_bar::*;
+        expose!{use $callsite::with_bar::*;}
     };
 }
 
@@ -1929,7 +1963,7 @@ foo
 mod a {
     macro define_bar {
         () => {
-            pub fn bar() {}
+            expose!{pub fn bar() {}}
         };
     }
 
@@ -1969,7 +2003,7 @@ mod a {
 
 macro import_a_star {
     () => {
-        use $callsite::a::*;
+        expose!{use $callsite::a::*;}
     };
 }
 
