@@ -15210,7 +15210,7 @@ mod contract {
 }
 
 //! > expected_diagnostics
-error: Type "core::starknet::storage::storage_base::StorageBase::<test::u256Pair>" has no member "a"
+error[E0007]: Type "core::starknet::storage::storage_base::StorageBase::<test::u256Pair>" has no member "a"
  --> lib.cairo:59:28
             self.u256_pair.a.read()
                            ^

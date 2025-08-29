@@ -1527,6 +1527,7 @@ impl<'db> SemanticDiagnosticKind<'db> {
             Self::MissingItemsInImpl(_) => error_code!(E0004),
             Self::ModuleFileNotFound(_) => error_code!(E0005),
             Self::PathNotFound(_) => error_code!(E0006),
+            Self::NoSuchTypeMember { .. } => error_code!(E0007),
             _ => return None,
         })
     }
