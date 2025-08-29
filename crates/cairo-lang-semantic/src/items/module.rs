@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     GlobalUseId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
     TraitId, UseId,
@@ -212,6 +211,55 @@ pub fn module_usable_trait_ids<'db>(
         }
     }
     Ok(module_traits.into())
+}
+
+/// Returns a map of all names declared in the given module, including names declared in
+/// macro-generated modules (i.e., modules created by macro expansions within this module).
+pub fn module_declared_names<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> OrderedHashMap<StrRef<'db>, ModuleItemId<'db>> {
+    let mut names: OrderedHashMap<StrRef<'db>, ModuleItemId<'db>> = OrderedHashMap::default();
+    if let Ok(items) = module_id.module_data(db).map(|data| data.items(db)) {
+        for item in items.iter() {
+            let name: StrRef<'db> = item.name(db).into();
+            names.entry(name).or_insert(*item);
+        }
+    }
+    if let Ok(macro_call_ids) = db.module_macro_calls_ids(module_id) {
+        for macro_call_id in macro_call_ids.iter() {
+            if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
+                let generated_names = db.module_declared_names(generated_module_id);
+                for (name, id) in generated_names {
+                    names.entry(name).or_insert(id);
+                }
+            }
+        }
+    }
+    names
+}
+
+// Returns all (name, item_id, module_id) triples declared in the given module and all its
+// macro-generated modules.
+pub fn module_all_declared_names<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> Vec<(StrRef<'db>, ModuleItemId<'db>, ModuleId<'db>)> {
+    let mut result = Vec::new();
+    if let Ok(items) = module_id.module_data(db).map(|data| data.items(db)) {
+        for item in items.iter() {
+            let name: StrRef<'db> = item.name(db).into();
+            result.push((name, *item, module_id));
+        }
+    }
+    if let Ok(macro_call_ids) = db.module_macro_calls_ids(module_id) {
+        for macro_call_id in macro_call_ids.iter() {
+            if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
+                result.extend(db.module_all_declared_names(generated_module_id));
+            }
+        }
+    }
+    result
 }
 
 /// Finds all the trait ids usable in the current context, not using `global use` imports.

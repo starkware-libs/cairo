@@ -2036,104 +2036,141 @@ mod a {
 
 //! > ==========================================================================
 
-//! > Test macro finding impls in generated code.
+//! > Test collision: two macro-generated items with the same name.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    BarTrait::<a::Bar>::bar();
+    bar();
 }
 
 //! > function_name
 foo
 
 //! > module_code
-mod a {
-    pub struct Bar {}
-    macro impl_bar_trait {
-        ($ty: ident) => {
-            impl BarImpl of $defsite::super::BarTrait<$ty> {
-                fn bar() {}
-            }
-        };
-    }
-    impl_bar_trait!(Bar);
+macro define_bar1 {
+    () => {
+        fn bar(){}
+    };
 }
-trait BarTrait<T> {
-    fn bar() {}
+macro define_bar2 {
+    () => {
+        fn bar(){}
+    };
 }
+define_bar1!();
+define_bar2!();
 
 //! > expected_diagnostics
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[define_bar2]:1:12
+        fn bar(){}
+           ^^^
 
 //! > ==========================================================================
 
-//! > Test macro finding impls of types in generated code.
+//! > Test duplicate diagnostics for macro-generated module and expanding module.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar() {
+    foo();
+}
+
+//! > function_name
+bar
+
+//! > module_code
+macro define_foo {
+    () => {
+        fn foo() {}
+    };
+}
+macro define_foo_twice {
+    () => {
+        $defsite::define_foo!();
+        fn foo() {}
+    };
+}
+define_foo_twice!();
+fn foo() {}
+
+//! > expected_diagnostics
+error: The name `foo` is defined multiple times.
+ --> lib.cairo[define_foo_twice]:2:12
+        fn foo() {}
+           ^^^
+
+error: The name `foo` is defined multiple times.
+ --> lib.cairo[define_foo_twice][$defsite::define_foo]:1:12
+        fn foo() {}
+           ^^^
+
+//! > ==========================================================================
+
+//! > Test collision: macro-generated item vs existing item.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    BarTrait::<a::Bar>::bar();
+    bar();
 }
 
 //! > function_name
 foo
 
 //! > module_code
-mod a {
-    macro define_ty {
-        ($ty: ident) => {
-            pub struct $ty {}
-        };
-    }
-    define_ty!(Bar);
-    impl BarImpl of super::BarTrait<Bar> {
+fn bar() {}
+
+macro define_bar {
+    () => {
         fn bar() {}
-    }
+    };
 }
-trait BarTrait<T> {
-    fn bar() {}
-}
+define_bar!();
 
 //! > expected_diagnostics
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[define_bar]:1:12
+        fn bar() {}
+           ^^^
 
 //! > ==========================================================================
 
-//! > Test macro finding impl in generated code of types in generated code.
+//! > Test duplicate definitions from expansion within expansion.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-    BarTrait::<a::Bar>::bar();
+    bar();
 }
 
 //! > function_name
 foo
 
 //! > module_code
-mod a {
-    macro define_ty {
-        ($ty: ident) => {
-            pub struct $ty {}
-        };
-    }
-    define_ty!(Bar);
-    macro impl_bar_trait {
-        ($ty: ident) => {
-            impl BarImpl of $defsite::super::BarTrait<$ty> {
-                fn bar() {}
-            }
-        };
-    }
-    impl_bar_trait!(Bar);
+macro inner_macro {
+    () => {
+        fn bar() {}
+    };
 }
-trait BarTrait<T> {
-    fn bar() {}
+
+macro outer_macro {
+    () => {
+        $defsite::inner_macro!();
+    };
 }
+
+fn bar() {}
+
+outer_macro!();
 
 //! > expected_diagnostics

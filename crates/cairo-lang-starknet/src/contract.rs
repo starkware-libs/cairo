@@ -1,5 +1,4 @@
 use anyhow::{Context, bail};
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     FreeFunctionId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
     NamedLanguageElementId, SubmoduleId,

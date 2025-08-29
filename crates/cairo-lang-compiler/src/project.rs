@@ -1,7 +1,6 @@
 use std::ffi::OsStr;
 use std::path::Path;
 
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
     CORELIB_CRATE_NAME, CrateConfiguration, CrateIdentifier, CrateSettings, FilesGroup,

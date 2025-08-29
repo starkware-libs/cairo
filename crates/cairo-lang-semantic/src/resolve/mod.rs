@@ -4,7 +4,6 @@ use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId,
     ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitId, TraitItemId, UseId, VariantId,
