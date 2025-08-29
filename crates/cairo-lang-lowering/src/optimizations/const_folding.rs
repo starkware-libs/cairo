@@ -184,15 +184,15 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     pub fn visit_statement(&mut self, stmt: &mut Statement<'db>) {
         self.maybe_replace_inputs(stmt.inputs_mut());
         match stmt {
-            Statement::Const(StatementConst { value, output }) => match value.long(self.db) {
+            Statement::Const(StatementConst { value, output, boxed }) if *boxed => {
+                self.var_info.insert(*output, VarInfo::Box(VarInfo::Const(*value).into()));
+            }
+            Statement::Const(StatementConst { value, output, .. }) => match value.long(self.db) {
                 ConstValue::Int(..)
                 | ConstValue::Struct(..)
                 | ConstValue::Enum(..)
                 | ConstValue::NonZero(..) => {
                     self.var_info.insert(*output, VarInfo::Const(*value));
-                }
-                ConstValue::Boxed(inner) => {
-                    self.var_info.insert(*output, VarInfo::Box(VarInfo::Const(*inner).into()));
                 }
                 ConstValue::Generic(_)
                 | ConstValue::ImplConstant(_)
@@ -428,10 +428,10 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             for word in panic_data {
                 let to_append = self.variables.alloc(felt252_var.clone());
                 let new_arr = self.variables.alloc(arr_var.clone());
-                self.additional_stmts.push(Statement::Const(StatementConst {
-                    value: ConstValue::Int(word, felt252_ty).intern(db),
-                    output: to_append,
-                }));
+                self.additional_stmts.push(Statement::Const(StatementConst::new(
+                    ConstValue::Int(word, felt252_ty).intern(db),
+                    to_append,
+                )));
                 self.additional_stmts.push(call_stmt(
                     arr_append_fn,
                     vec![as_usage(arr), as_usage(to_append)],
@@ -489,9 +489,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let r_output = stmt.outputs[1];
             let r_value = ConstValue::Int(r, self.variables[r_output].ty).intern(db);
             self.var_info.insert(r_output, VarInfo::Const(r_value));
-            self.additional_stmts
-                .push(Statement::Const(StatementConst { value: r_value, output: r_output }));
-            Some(Statement::Const(StatementConst { value: q_value, output: q_output }))
+            self.additional_stmts.push(Statement::Const(StatementConst::new(r_value, r_output)));
+            Some(Statement::Const(StatementConst::new(q_value, q_output)))
         } else if id == self.storage_base_address_from_felt252 {
             let input_var = stmt.inputs[0].var_id;
             if let Some(const_value) = self.as_const(input_var)
@@ -515,20 +514,14 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             };
             let var_info = var_info.cloned().or_else(|| var_info_if_copy(self.variables, input))?;
             self.var_info.insert(stmt.outputs[0], VarInfo::Box(var_info.into()));
-            Some(Statement::Const(StatementConst {
-                value: ConstValue::Boxed(const_value?).intern(db),
-                output: stmt.outputs[0],
-            }))
+            Some(Statement::Const(StatementConst::new_boxed(const_value?, stmt.outputs[0])))
         } else if id == self.unbox {
             if let VarInfo::Box(inner) = self.var_info.get(&stmt.inputs[0].var_id)? {
                 let inner = inner.as_ref().clone();
                 if let VarInfo::Const(inner) =
                     self.var_info.entry(stmt.outputs[0]).insert_entry(inner).get()
                 {
-                    return Some(Statement::Const(StatementConst {
-                        value: *inner,
-                        output: stmt.outputs[0],
-                    }));
+                    return Some(Statement::Const(StatementConst::new(*inner, stmt.outputs[0])));
                 }
             }
             None
@@ -537,7 +530,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let output = stmt.outputs[0];
             let value = ConstValue::Int(int_value.clone(), self.variables[output].ty).intern(db);
             self.var_info.insert(output, VarInfo::Const(value));
-            Some(Statement::Const(StatementConst { value, output }))
+            Some(Statement::Const(StatementConst::new(value, output)))
         } else if id == self.array_new {
             self.var_info.insert(stmt.outputs[0], VarInfo::Array(vec![]));
             None
@@ -672,7 +665,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             ConstValue::Int(value, ty).intern(self.db)
         };
         self.var_info.insert(output, VarInfo::Const(value));
-        Statement::Const(StatementConst { value, output })
+        Statement::Const(StatementConst::new(value, output))
     }
 
     /// Adds 0 const to `var_info` and return a const statement for it.
@@ -687,7 +680,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         output: VariableId,
     ) -> Option<Statement<'db>> {
         if self.db.type_size_info(self.variables[output].ty) == Ok(TypeSizeInformation::Other) {
-            Some(Statement::Const(StatementConst { value, output }))
+            Some(Statement::Const(StatementConst::new(value, output)))
         } else if matches!(value.long(self.db), ConstValue::Struct(members, _) if members.is_empty())
         {
             // Handling const empty structs - which are not supported in sierra-gen.
@@ -724,7 +717,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 let nz_val = ConstValue::NonZero(val).intern(db);
                 self.var_info.insert(nz_var, VarInfo::Const(nz_val));
                 (
-                    vec![Statement::Const(StatementConst { value: nz_val, output: nz_var })],
+                    vec![Statement::Const(StatementConst::new(nz_val, nz_var))],
                     BlockEnd::Goto(arm.block_id, Default::default()),
                 )
             })
@@ -810,7 +803,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 let value = ConstValue::Int(value, ty).intern(db);
                 self.var_info.insert(actual_output, VarInfo::Const(value));
                 return Some((
-                    vec![Statement::Const(StatementConst { value, output: actual_output })],
+                    vec![Statement::Const(StatementConst::new(value, actual_output))],
                     BlockEnd::Goto(arm.block_id, Default::default()),
                 ));
             }
@@ -905,7 +898,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 let value = ConstValue::Int(value, out_ty).intern(db);
                 self.var_info.insert(success_output, VarInfo::Const(value));
                 (
-                    vec![Statement::Const(StatementConst { value, output: success_output })],
+                    vec![Statement::Const(StatementConst::new(value, success_output))],
                     BlockEnd::Goto(info.arms[success_arm].block_id, Default::default()),
                 )
             } else {
@@ -950,10 +943,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                         ));
                         return Some((
                             vec![
-                                Statement::Const(StatementConst {
-                                    value: ConstValue::Boxed(value).intern(db),
-                                    output: boxed,
-                                }),
+                                Statement::Const(StatementConst::new_boxed(value, boxed)),
                                 Statement::Snapshot(StatementSnapshot {
                                     input: VarUsage { var_id: boxed, location },
                                     outputs: [unused_boxed, snapped],
@@ -1091,7 +1081,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         }
 
         match var_info {
-            VarInfo::Const(c) => Some(SpecializationArg::Const(c)),
+            VarInfo::Const(value) => Some(SpecializationArg::Const { value, boxed: false }),
+            VarInfo::Box(info) => try_extract_matches!(info.as_ref(), VarInfo::Const)
+                .map(|value| SpecializationArg::Const { value: *value, boxed: true }),
             VarInfo::Array(infos) if infos.is_empty() => {
                 let TypeLongId::Concrete(concrete_ty) = ty.long(self.db) else {
                     unreachable!("Expected a concrete type");

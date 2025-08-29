@@ -4,7 +4,7 @@
 test_specialized_function
 
 //! > function
-fn foo(ref arr: Array<felt252>, d: Span<felt252>, x: felt252, y: felt252) {
+fn foo(ref arr: Array<felt252>, d: Span<felt252>, x: felt252, y: felt252, z: Box<felt252>) {
     arr.append(x + y)
 }
 
@@ -17,20 +17,18 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_flat
-Parameters:
-
 //! > full_path
-test::foo{array![], { array![] }, None, 1, }
+test::foo{array![], { array![] }, None, 1, 0.into_box(), }
 
 //! > lowering
 Parameters: v2: core::felt252
 blk0 (root):
 Statements:
+  (v4: core::box::Box::<core::felt252>) <- 0.into_box()
   (v3: core::felt252) <- 1
-  (v4: @core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v1: core::array::Span::<core::felt252>) <- struct_construct(v4)
+  (v5: @core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v1: core::array::Span::<core::felt252>) <- struct_construct(v5)
   (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v5: core::array::Array::<core::felt252>, v6: ()) <- test::foo(v0, v1, v2, v3)
+  (v6: core::array::Array::<core::felt252>, v7: ()) <- test::foo(v0, v1, v2, v3, v4)
 End:
-  Return(v5, v6)
+  Return(v6, v7)

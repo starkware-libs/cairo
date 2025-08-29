@@ -38,6 +38,7 @@ enum CanonicStatement<'db> {
     Const {
         value: ConstValueId<'db>,
         output: CanonicVar,
+        boxed: bool,
     },
     Call {
         function: FunctionId<'db>,
@@ -115,9 +116,11 @@ impl<'db, 'a> CanonicBlockBuilder<'db, 'a> {
     /// Converts a statement to a cononic statement.
     fn handle_statement(&mut self, statement: &Statement<'db>) -> CanonicStatement<'db> {
         match statement {
-            Statement::Const(StatementConst { value, output }) => {
-                CanonicStatement::Const { value: *value, output: self.handle_output(output) }
-            }
+            Statement::Const(StatementConst { value, boxed, output }) => CanonicStatement::Const {
+                value: *value,
+                output: self.handle_output(output),
+                boxed: *boxed,
+            },
             Statement::Call(StatementCall {
                 function,
                 inputs,

@@ -207,7 +207,11 @@ impl<'db> DebugWithDb<'db> for StatementConst<'db> {
     type Db = LoweredFormatter<'db>;
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &Self::Db) -> std::fmt::Result {
-        self.value.fmt(f, ctx.db)
+        self.value.fmt(f, ctx.db)?;
+        if self.boxed {
+            write!(f, ".into_box()")?
+        }
+        Ok(())
     }
 }
 

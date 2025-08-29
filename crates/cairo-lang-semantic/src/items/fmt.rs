@@ -38,10 +38,6 @@ impl<'db> DebugWithDb<'db> for ConstValue<'db> {
                 value.fmt(f, db)?;
                 write!(f, ")")
             }
-            ConstValue::Boxed(value) => {
-                value.fmt(f, db)?;
-                write!(f, ".into_box()")
-            }
             ConstValue::Generic(param) => write!(f, "{}", param.debug_name(db)),
             ConstValue::Var(var, _) => write!(f, "?{}", var.id.0),
             ConstValue::Missing(_) => write!(f, "missing"),
