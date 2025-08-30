@@ -27,6 +27,7 @@ use cairo_lang_syntax::node::ast::ExprPtr;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::Itertools;
+use num_bigint::BigInt;
 
 use crate::diagnostic::{
     LoweringDiagnosticKind, LoweringDiagnostics, LoweringDiagnosticsBuilder, MatchKind,
@@ -129,7 +130,7 @@ pub struct EqualsLiteral<'db> {
     /// The input value to check.
     pub input: FlowControlVar,
     /// The literal to check against.
-    pub literal: usize,
+    pub literal: BigInt,
     /// A stable pointer to the first instance of the literal in the patterns.
     pub stable_ptr: ExprPtr<'db>,
     /// The node to jump to if the value is equal to the literal.
@@ -405,6 +406,15 @@ impl<'db> FlowControlGraphBuilder<'db> {
     /// Returns the location of the given [FlowControlVar].
     pub fn var_location(&self, input_var: FlowControlVar) -> LocationId<'db> {
         self.graph.var_locations[input_var.0]
+    }
+
+    /// Reports a diagnostic.
+    pub fn report(
+        &mut self,
+        stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
+        kind: LoweringDiagnosticKind<'db>,
+    ) {
+        self.diagnostics.report(stable_ptr, kind);
     }
 
     /// Reports a diagnostic, and returns a new [FlowControlNode::Missing] node.
