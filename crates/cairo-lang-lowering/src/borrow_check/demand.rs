@@ -1,4 +1,5 @@
-//! This module provides the Demand utility struct used for analyzing usage of variables.
+///! This module provides the Demand utility struct used for analyzing usage of variables.
+
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 /// A reporting trait that reports each variables dup, drop and last_use positions.
