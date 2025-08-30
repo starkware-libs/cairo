@@ -2137,3 +2137,135 @@ trait BarTrait<T> {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test collision: two macro-generated items with the same name.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro define_bar {
+    () => {
+        fn bar() {}
+    };
+}
+define_bar!();
+define_bar!();
+
+//! > expected_diagnostics
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[define_bar]:1:12
+        fn bar() {}
+           ^^^
+
+//! > ==========================================================================
+
+//! > Test duplicate diagnostics for macro-generated module and expanding module.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro define_bar {
+    () => {
+        fn bar() {}
+    };
+}
+macro define_bar_twice {
+    () => {
+        $defsite::define_bar!();
+        fn bar() {}
+    };
+}
+define_bar_twice!();
+fn bar() {}
+
+//! > expected_diagnostics
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[define_bar_twice]:2:12
+        fn bar() {}
+           ^^^
+
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[define_bar_twice][$defsite::define_bar]:1:12
+        fn bar() {}
+           ^^^
+
+//! > ==========================================================================
+
+//! > Test collision: macro-generated item vs existing item.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar() {}
+
+macro define_bar {
+    () => {
+        fn bar() {}
+    };
+}
+define_bar!();
+
+//! > expected_diagnostics
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[define_bar]:1:12
+        fn bar() {}
+           ^^^
+
+//! > ==========================================================================
+
+//! > Test duplicate definitions from expansion within expansion.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro inner_macro {
+    () => {
+        fn bar() {}
+    };
+}
+
+macro outer_macro {
+    () => {
+        $defsite::inner_macro!();
+    };
+}
+
+fn bar() {}
+
+outer_macro!();
+
+//! > expected_diagnostics
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[outer_macro][$defsite::inner_macro]:1:12
+        fn bar() {}
+           ^^^
