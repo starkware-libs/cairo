@@ -1304,8 +1304,8 @@ impl<'db> Resolver<'db> {
         if containing_module_id == user_module {
             return true;
         }
-        while let ModuleId::MacroCall { id: macro_call_id, .. } = containing_module_id {
-            containing_module_id = macro_call_id.parent_module(self.db);
+        while let ModuleId::MacroCall { id, .. } = containing_module_id {
+            containing_module_id = id.parent_module(self.db);
         }
         self.ignore_visibility_checks_ex(containing_module_id, info)
             || visibility::peek_visible_in(
@@ -2110,7 +2110,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                     mark(&mut self.resolver.resolved_items, db, &segment, parent);
                     curr = Some(parent);
                 }
-                ModuleId::MacroCall { id: _, generated_file_id: _ } => {
+                ModuleId::MacroCall { .. } => {
                     return Some(Err(self
                         .diagnostics
                         .report(segment.stable_ptr(db), SuperUsedInMacroCallTopLevel)));

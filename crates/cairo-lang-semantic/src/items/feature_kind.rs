@@ -290,8 +290,8 @@ pub fn feature_config_from_item_and_parent_modules<'db>(
                 let ignored = &mut SemanticDiagnostics::default();
                 config_stack.push(feature_config_from_ast_item(db, crate_id, module, ignored));
             }
-            ModuleId::MacroCall { id: macro_call_id, generated_file_id: _ } => {
-                current_module_id = macro_call_id.parent_module(db);
+            ModuleId::MacroCall { id, .. } => {
+                current_module_id = id.parent_module(db);
             }
         }
     };

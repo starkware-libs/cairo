@@ -551,10 +551,8 @@ fn module_main_file_helper<'db>(
                 db.module_dir(parent)?.file(db, &name)
             }
         }
-        ModuleId::MacroCall { generated_file_id, .. } => {
-            // This is a macro-generated module, so the main file is the generated file.
-            generated_file_id
-        }
+        // This is a macro-generated module, so the main file is the generated file.
+        ModuleId::MacroCall { generated_file_id, .. } => generated_file_id,
     })
 }
 
@@ -590,11 +588,9 @@ fn module_dir_helper<'db>(
             let name = submodule_id.name(db);
             Ok(db.module_dir(parent)?.subdir(name))
         }
-        ModuleId::MacroCall { id: macro_call_id, .. } => {
-            // This is a macro call, we return the directory for the file that contained the macro
-            // call, as it is considered the location of the macro itself.
-            db.module_dir(macro_call_id.parent_module(db)).cloned()
-        }
+        // This is a macro call, we return the directory for the file that contained the macro
+        // call, as it is considered the location of the macro itself.
+        ModuleId::MacroCall { id, .. } => db.module_dir(id.parent_module(db)).cloned(),
     }
 }
 
@@ -1675,7 +1671,7 @@ fn module_ancestors_helper<'db>(
                 ancestors.insert(current);
                 current = submodule_id.parent_module(db);
             }
-            ModuleId::MacroCall { id, generated_file_id: _ } => {
+            ModuleId::MacroCall { id, .. } => {
                 current = id.parent_module(db);
             }
         }
@@ -1688,7 +1684,7 @@ fn module_perceived_module_helper<'db>(
     _tracked: Tracked,
     mut module_id: ModuleId<'db>,
 ) -> ModuleId<'db> {
-    while let ModuleId::MacroCall { id, generated_file_id: _ } = module_id {
+    while let ModuleId::MacroCall { id, .. } = module_id {
         module_id = id.parent_module(db);
     }
     module_id
