@@ -370,6 +370,8 @@ pub type ImportedModules<'db> = OrderedHashMap<ModuleId<'db>, ImportInfo<'db>>;
 pub struct ImportInfo<'db> {
     /// The modules that directly imported this module.
     pub user_modules: Vec<ModuleId<'db>>,
+    /// Is the module exposed.
+    pub exposed: bool,
 }
 
 /// Returns the modules that are imported with `use *` and macro calls in the current module.
@@ -381,34 +383,51 @@ pub fn module_imported_modules<'db>(
     module_id: ModuleId<'db>,
 ) -> ImportedModules<'db> {
     let mut visited = UnorderedHashSet::<_>::default();
-    let mut stack = vec![(module_id, module_id)];
+    #[derive(Copy, Clone, Hash, Eq, PartialEq)]
+    enum EdgeType {
+        Macro { exposing: bool },
+        Regular,
+    }
+    let mut stack = vec![(module_id, module_id, EdgeType::Regular)];
     let mut modules = OrderedHashMap::<ModuleId<'db>, ImportInfo<'db>>::default();
+    modules.insert(module_id, ImportInfo { user_modules: vec![module_id], exposed: true });
     // Iterate over all modules that are imported through `use *`, and are accessible from the
     // current module.
-    while let Some((user_module, containing_module)) = stack.pop() {
-        if !visited.insert((user_module, containing_module)) {
+    while let Some((user_module, containing_module, edge_type)) = stack.pop() {
+        if !visited.insert((user_module, containing_module, edge_type)) {
             continue;
         }
-        modules.entry(containing_module).or_default().user_modules.push(user_module);
         if let Ok(macro_call_ids) = db.module_macro_calls_ids(containing_module) {
             for macro_call_id in macro_call_ids.iter() {
                 if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
-                    stack.push((user_module, generated_module_id));
+                    let exposing = match edge_type {
+                        EdgeType::Macro { exposing } => exposing,
+                        EdgeType::Regular => false,
+                    } || matches!(generated_module_id, ModuleId::MacroCall { is_expose, ..} if is_expose);
+                    let entry = modules.entry(generated_module_id).or_default();
+                    entry.user_modules.push(user_module);
+                    entry.exposed |= exposing;
+                    stack.push((user_module, generated_module_id, EdgeType::Macro { exposing }));
                 }
             }
         }
         let Ok(glob_uses) = get_module_global_uses(db, containing_module) else {
             continue;
         };
+        let expose = match edge_type {
+            EdgeType::Macro { exposing } => exposing,
+            EdgeType::Regular => true,
+        };
         for (glob_use, item_visibility) in glob_uses.iter() {
             let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use) else {
                 continue;
             };
+            // Add the module to the map to find all reachable modules.
+            let entry = modules.entry(module_id_found).or_default();
+            entry.exposed |= expose;
             if peek_visible_in(db, *item_visibility, containing_module, user_module) {
-                stack.push((containing_module, module_id_found));
-            } else {
-                // Add the module to the map to find all reachable modules.
-                let _ = modules.entry(module_id_found).or_default();
+                stack.push((containing_module, module_id_found, edge_type));
+                entry.user_modules.push(containing_module);
             }
         }
     }

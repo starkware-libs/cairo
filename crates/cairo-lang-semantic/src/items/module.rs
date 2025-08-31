@@ -290,8 +290,9 @@ pub fn module_usable_trait_ids<'db>(
 ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
     let mut module_traits = OrderedHashMap::<TraitId<'db>, LookupItemId<'db>>::default();
     for (containing_module, info) in db.module_imported_modules((), module_id).iter() {
-        if let Ok(star_module_traits) =
-            specific_module_usable_trait_ids(db, info, *containing_module)
+        if info.exposed
+            && let Ok(star_module_traits) =
+                specific_module_usable_trait_ids(db, info, *containing_module)
         {
             for (trait_id, local_item_id) in star_module_traits {
                 module_traits.entry(trait_id).or_insert(local_item_id);

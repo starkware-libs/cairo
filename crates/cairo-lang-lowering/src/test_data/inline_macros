@@ -4,9 +4,7 @@
 test_function_lowering
 
 //! > function
-fn foo() {
-    unreachable_code();
-}
+fn foo() {}
 
 //! > function_name
 foo
