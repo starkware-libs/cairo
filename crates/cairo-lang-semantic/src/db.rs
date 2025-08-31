@@ -168,11 +168,12 @@ pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + 
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>>;
     /// Computes the imported modules of a module, using global uses and macro calls.
     #[salsa::transparent]
-    #[salsa::invoke(items::us::module_imported_modules_tracked)]
+    #[salsa::invoke(items::us::module_imported_modules)]
     fn module_imported_modules<'db>(
         &'db self,
+        _tracked: Tracked,
         module_id: ModuleId<'db>,
-    ) -> Arc<ImportedModules<'db>>;
+    ) -> &'db ImportedModules<'db>;
 
     // Module.
     // ====

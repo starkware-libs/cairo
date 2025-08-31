@@ -20,6 +20,7 @@ use crate::SemanticDiagnostic;
 use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
 use crate::items::feature_kind::HasFeatureKind;
+use crate::items::us::ImportInfo;
 use crate::resolve::ResolvedGenericItem;
 
 /// Information per item in a module.
@@ -287,11 +288,10 @@ pub fn module_usable_trait_ids<'db>(
     db: &'db dyn SemanticGroup,
     module_id: ModuleId<'db>,
 ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
-    // Get the traits first from the module, do not change this order.
-    let mut module_traits = specific_module_usable_trait_ids(db, module_id, module_id)?;
-    for (user_module, containing_module) in &db.module_imported_modules(module_id).accessible {
+    let mut module_traits = OrderedHashMap::<TraitId<'db>, LookupItemId<'db>>::default();
+    for (containing_module, info) in db.module_imported_modules((), module_id).iter() {
         if let Ok(star_module_traits) =
-            specific_module_usable_trait_ids(db, *user_module, *containing_module)
+            specific_module_usable_trait_ids(db, info, *containing_module)
         {
             for (trait_id, local_item_id) in star_module_traits {
                 module_traits.entry(trait_id).or_insert(local_item_id);
@@ -321,7 +321,7 @@ fn module_usable_trait_ids_helper<'db>(
 /// Finds all the trait ids usable in the current context, not using `global use` imports.
 fn specific_module_usable_trait_ids<'db>(
     db: &'db dyn SemanticGroup,
-    user_module: ModuleId<'db>,
+    info: &ImportInfo<'db>,
     containing_module: ModuleId<'db>,
 ) -> Maybe<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>> {
     let mut module_traits: OrderedHashMap<TraitId<'_>, LookupItemId<'_>> =
@@ -336,7 +336,9 @@ fn specific_module_usable_trait_ids<'db>(
         ) {
             continue;
         }
-        if !peek_visible_in(db, item.visibility, containing_module, user_module) {
+        if !info.user_modules.iter().any(|user_module_id| {
+            peek_visible_in(db, item.visibility, containing_module, *user_module_id)
+        }) {
             continue;
         }
         match item.item_id {

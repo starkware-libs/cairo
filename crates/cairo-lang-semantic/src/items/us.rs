@@ -11,8 +11,9 @@ use cairo_lang_syntax::node::helpers::UsePathEx;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use itertools::Itertools;
 use salsa::Database;
 
 use super::module::get_module_global_uses;
@@ -361,52 +362,38 @@ pub fn priv_global_use_semantic_data_cycle<'db>(
     Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module: Err(err) })
 }
 
-/// The modules that are imported by a module, using global uses.
-#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
-pub struct ImportedModules<'db> {
-    /// The imported modules that have a path where each step is visible by the previous module.
-    pub accessible: OrderedHashSet<(ModuleId<'db>, ModuleId<'db>)>,
-    // TODO(Tomer-StarkWare): consider changing from all_modules to inaccessible_modules
-    /// All the imported modules.
-    pub all: OrderedHashSet<ModuleId<'db>>,
-}
-/// Returns the modules that are imported with `use *` in the current module.
-/// Implementation of [crate::db::SemanticGroup::module_imported_modules].
-pub fn module_imported_modules<'db>(
-    db: &'db dyn SemanticGroup,
-    module_id: ModuleId<'db>,
-) -> Arc<ImportedModules<'db>> {
-    priv_module_use_star_modules_helper(db, (), module_id)
+/// The modules that are imported by a module, using global uses and macro calls.
+pub type ImportedModules<'db> = OrderedHashMap<ModuleId<'db>, ImportInfo<'db>>;
+
+/// Information about a module that is imported by a module, using global uses and macro calls.
+#[derive(Debug, Default, Clone, PartialEq, Eq, salsa::Update)]
+pub struct ImportInfo<'db> {
+    /// The modules that directly imported this module.
+    pub user_modules: Vec<ModuleId<'db>>,
 }
 
+/// Returns the modules that are imported with `use *` and macro calls in the current module.
 /// Query implementation of [crate::db::SemanticGroup::module_imported_modules].
-pub fn module_imported_modules_tracked<'db>(
-    db: &'db dyn SemanticGroup,
-    module_id: ModuleId<'db>,
-) -> Arc<ImportedModules<'db>> {
-    module_imported_modules(db, module_id)
-}
-
-#[salsa::tracked]
-fn priv_module_use_star_modules_helper<'db>(
+#[salsa::tracked(returns(ref))]
+pub fn module_imported_modules<'db>(
     db: &'db dyn SemanticGroup,
     _tracked: Tracked,
     module_id: ModuleId<'db>,
-) -> Arc<ImportedModules<'db>> {
+) -> ImportedModules<'db> {
     let mut visited = UnorderedHashSet::<_>::default();
     let mut stack = vec![(module_id, module_id)];
-    let mut accessible_modules = OrderedHashSet::default();
+    let mut modules = OrderedHashMap::<ModuleId<'db>, ImportInfo<'db>>::default();
     // Iterate over all modules that are imported through `use *`, and are accessible from the
     // current module.
     while let Some((user_module, containing_module)) = stack.pop() {
         if !visited.insert((user_module, containing_module)) {
             continue;
         }
+        modules.entry(containing_module).or_default().user_modules.push(user_module);
         if let Ok(macro_call_ids) = db.module_macro_calls_ids(containing_module) {
             for macro_call_id in macro_call_ids.iter() {
                 if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
                     stack.push((user_module, generated_module_id));
-                    accessible_modules.insert((user_module, generated_module_id));
                 }
             }
         }
@@ -419,38 +406,36 @@ fn priv_module_use_star_modules_helper<'db>(
             };
             if peek_visible_in(db, *item_visibility, containing_module, user_module) {
                 stack.push((containing_module, module_id_found));
-                accessible_modules.insert((containing_module, module_id_found));
+            } else {
+                // Add the module to the map to find all reachable modules.
+                let _ = modules.entry(module_id_found).or_default();
             }
         }
     }
-    let mut visited = UnorderedHashSet::<_>::default();
-    let mut stack = vec![module_id];
-    let mut all_modules = OrderedHashSet::default();
+    let mut stack =
+        modules.iter().filter(|(_, v)| v.user_modules.is_empty()).map(|(k, _)| *k).collect_vec();
     // Iterate over all modules that are imported through `use *`.
     while let Some(curr_module_id) = stack.pop() {
-        if !visited.insert(curr_module_id) {
-            continue;
-        }
-        all_modules.insert(curr_module_id);
         // Traverse macro-generated modules immediately.
         if let Ok(macro_call_ids) = db.module_macro_calls_ids(curr_module_id) {
             for macro_call_id in macro_call_ids.iter() {
-                if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
+                if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id)
+                    && let Entry::Vacant(entry) = modules.entry(generated_module_id)
+                {
+                    entry.insert(ImportInfo::default());
                     stack.push(generated_module_id);
-                    all_modules.insert(generated_module_id);
                 }
             }
         }
         let Ok(glob_uses) = get_module_global_uses(db, curr_module_id) else { continue };
         for glob_use in glob_uses.keys() {
-            let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use) else {
-                continue;
-            };
-            stack.push(module_id_found);
+            if let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use)
+                && let Entry::Vacant(entry) = modules.entry(module_id_found)
+            {
+                entry.insert(ImportInfo::default());
+                stack.push(module_id_found);
+            }
         }
     }
-    // Remove the current module from the list of all modules, as if items in the module not found
-    // previously, it was explicitly ignored.
-    all_modules.swap_remove(&module_id);
-    Arc::new(ImportedModules { accessible: accessible_modules, all: all_modules })
+    modules
 }

@@ -4897,19 +4897,15 @@ pub fn module_global_impls<'db>(
     module_id: ModuleId<'db>,
 ) -> Maybe<ModuleImpls<'db>> {
     let mut module_impls = ModuleImpls::default();
-    let starting_module = &(module_id, module_id);
-    let star_modules = db.module_imported_modules(module_id);
-    for (user_module, containing_module) in
-        chain!([starting_module], star_modules.accessible.iter())
-    {
+    for (containing_module, info) in db.module_imported_modules((), module_id).iter() {
         let Ok(module_semantic_data) = db.priv_module_semantic_data(*containing_module) else {
             continue;
         };
-        for item in module_semantic_data
-            .items
-            .values()
-            .filter(|item| peek_visible_in(db, item.visibility, *containing_module, *user_module))
-        {
+        for item in module_semantic_data.items.values().filter(|item| {
+            info.user_modules.iter().any(|user_module| {
+                peek_visible_in(db, item.visibility, *containing_module, *user_module)
+            })
+        }) {
             let imp = match item.item_id {
                 ModuleItemId::Use(use_id) => match db.use_resolved_item(use_id) {
                     Ok(ResolvedGenericItem::Impl(impl_def_id)) => UninferredImpl::Def(impl_def_id),
