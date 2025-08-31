@@ -38,13 +38,40 @@ pub fn priv_macro_call_data<'db>(
     let inference_id = InferenceId::MacroCall(macro_call_id);
     let module_file_id = macro_call_id.module_file_id(db);
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
-    let mut diagnostics = SemanticDiagnostics::default();
     let macro_call_syntax = db.module_macro_call_by_id(macro_call_id)?;
     // Resolve the macro call path, and report diagnostics if it finds no match or
     // the resolved item is not a macro declaration.
     let macro_call_path = macro_call_syntax.path(db);
     let macro_name = macro_call_path.as_syntax_node().get_text_without_trivia(db);
     let callsite_module_id = macro_call_id.parent_module(db);
+    // If the call is to `expose!` and no other `expose` item is locally declared - using expose.
+    if macro_name == EXPOSE_MACRO_NAME
+        && let Ok(None) = db.module_item_by_name(callsite_module_id, macro_name.into())
+    {
+        let (content, mapping) = expose_content_and_mapping(db, macro_call_syntax.arguments(db))?;
+        let code_mappings: Arc<[CodeMapping]> = [mapping].into();
+        let parent_macro_call_data = resolver.macro_call_data;
+        let generated_file_id = FileLongId::Virtual(VirtualFile {
+            parent: Some(macro_call_syntax.stable_ptr(db).untyped().file_id(db)),
+            name: macro_name.into(),
+            content: content.into(),
+            code_mappings: code_mappings.clone(),
+            kind: FileKind::Module,
+            original_item_removed: false,
+        })
+        .intern(db);
+        let macro_call_module = ModuleId::MacroCall { id: macro_call_id, generated_file_id };
+        return Ok(MacroCallData {
+            macro_call_module: Ok(macro_call_module),
+            diagnostics: Default::default(),
+            // Defsite and callsite aren't actually used, as it defines nothing in its code.
+            defsite_module_id: callsite_module_id,
+            callsite_module_id,
+            expansion_mappings: code_mappings,
+            parent_macro_call_data,
+        });
+    }
+    let mut diagnostics = SemanticDiagnostics::default();
     let macro_declaration_id = match resolver.resolve_generic_path(
         &mut diagnostics,
         &macro_call_path,
@@ -110,7 +137,7 @@ pub fn priv_macro_call_data<'db>(
     let mut matcher_ctx = MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
     let expanded_code = expand_macro_rule(db, rule, &mut matcher_ctx).unwrap();
     let parent_macro_call_data = resolver.macro_call_data;
-    let new_file = FileLongId::Virtual(VirtualFile {
+    let generated_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(macro_call_syntax.stable_ptr(db).untyped().file_id(db)),
         name: macro_name.into(),
         content: expanded_code.text.clone(),
@@ -119,7 +146,7 @@ pub fn priv_macro_call_data<'db>(
         original_item_removed: false,
     })
     .intern(db);
-    let macro_call_module = ModuleId::MacroCall { id: macro_call_id, generated_file_id: new_file };
+    let macro_call_module = ModuleId::MacroCall { id: macro_call_id, generated_file_id };
     Ok(MacroCallData {
         macro_call_module: Ok(macro_call_module),
         diagnostics: diagnostics.build(),
