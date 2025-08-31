@@ -5,7 +5,7 @@ use std::sync::Arc;
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe, PluginFileDiagnosticNotes, ToMaybe};
 use cairo_lang_filesystem::db::{ExternalFiles, FilesGroup, TryExtAsVirtual};
 use cairo_lang_filesystem::ids::{
-    CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, VirtualFile,
+    CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, Tracked, VirtualFile,
 };
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
@@ -370,21 +370,13 @@ pub trait DefsGroup: Database {
         &'db self,
         module_id: ModuleId<'db>,
     ) -> &'db OrderedHashSet<ModuleId<'db>> {
-        module_ancestors_helper(
-            self.as_dyn_database(),
-            FileId::dummy(self.as_dyn_database()),
-            module_id,
-        )
+        module_ancestors_helper(self.as_dyn_database(), (), module_id)
     }
     /// Returns the module that the module is perceives as.
     /// Specifically if this is a macro call, it returns the module that the macro call was called
     /// from, including recursive calls.
     fn module_perceived_module<'db>(&'db self, module_id: ModuleId<'db>) -> ModuleId<'db> {
-        module_perceived_module_helper(
-            self.as_dyn_database(),
-            FileId::dummy(self.as_dyn_database()),
-            module_id,
-        )
+        module_perceived_module_helper(self.as_dyn_database(), (), module_id)
     }
 }
 
@@ -540,7 +532,7 @@ fn is_submodule_inline<'db>(db: &'db dyn Database, submodule_id: SubmoduleId<'db
 #[salsa::tracked]
 fn module_main_file_helper<'db>(
     db: &'db dyn Database,
-    _helper: FileId<'db>,
+    _tracked: Tracked,
     module_id: ModuleId<'db>,
 ) -> Maybe<FileId<'db>> {
     Ok(match module_id {
@@ -568,7 +560,7 @@ fn module_main_file_helper<'db>(
 
 fn module_main_file<'db>(db: &'db dyn Database, module_id: ModuleId<'db>) -> Maybe<FileId<'db>> {
     // TODO(eytan-starkware): Remove this dummy file when ModuleId is tracked.
-    module_main_file_helper(db, FileId::dummy(db), module_id)
+    module_main_file_helper(db, (), module_id)
 }
 
 fn module_files<'db>(db: &'db dyn Database, module_id: ModuleId<'db>) -> Maybe<&'db [FileId<'db>]> {
@@ -586,7 +578,7 @@ fn module_file<'db>(
 #[salsa::tracked(returns(ref))]
 fn module_dir_helper<'db>(
     db: &'db dyn Database,
-    _helper: FileId<'db>,
+    _tracked: Tracked,
     module_id: ModuleId<'db>,
 ) -> Maybe<Directory<'db>> {
     match module_id {
@@ -607,7 +599,7 @@ fn module_dir_helper<'db>(
 }
 
 fn module_dir<'db>(db: &'db dyn Database, module_id: ModuleId<'db>) -> Maybe<&'db Directory<'db>> {
-    module_dir_helper(db, FileId::dummy(db), module_id).as_ref().map_err(|x| *x)
+    module_dir_helper(db, (), module_id).as_ref().map_err(|x| *x)
 }
 
 /// Appends all the modules under the given module, including nested modules.
@@ -828,7 +820,7 @@ pub struct PrivModuleSubFiles<'db> {
 #[salsa::tracked]
 fn priv_module_data_helper<'db>(
     db: &'db dyn Database,
-    _helper: FileId<'db>,
+    _tracked: Tracked,
     module_id: ModuleId<'db>,
 ) -> Maybe<ModuleData<'db>> {
     let crate_id = module_id.owning_crate(db);
@@ -1021,7 +1013,7 @@ pub(crate) fn module_data<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<ModuleData<'db>> {
-    priv_module_data_helper(db, FileId::dummy(db), module_id)
+    priv_module_data_helper(db, (), module_id)
 }
 
 pub type ModuleDataCacheAndLoadingData<'db> =
@@ -1668,7 +1660,7 @@ pub fn module_extern_function_by_id<'db>(
 #[salsa::tracked(returns(ref))]
 fn module_ancestors_helper<'db>(
     db: &'db dyn Database,
-    _dummy: FileId<'db>,
+    _tracked: Tracked,
     module_id: ModuleId<'db>,
 ) -> OrderedHashSet<ModuleId<'db>> {
     let mut current = module_id;
@@ -1693,7 +1685,7 @@ fn module_ancestors_helper<'db>(
 #[salsa::tracked]
 fn module_perceived_module_helper<'db>(
     db: &'db dyn Database,
-    _dummy: FileId<'db>,
+    _tracked: Tracked,
     mut module_id: ModuleId<'db>,
 ) -> ModuleId<'db> {
     while let ModuleId::MacroCall { id, generated_file_id: _ } = module_id {
