@@ -1601,3 +1601,100 @@ error: Match is non exhaustive - add a wildcard pattern (`_`).
 
 //! > lowered
 Parameters: v0: test::NeverEnum
+
+//! > ==========================================================================
+
+//! > Structs
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(x: MyStruct) -> felt252 {
+    match x {
+        MyStruct { b: (None, 0), a: Some(x), .. } => x,
+        _ => 0,
+    }
+}
+
+//! > module_code
+struct MyStruct {
+    a: Option<felt252>,
+    b: (Option<felt252>, felt252),
+    c: Option<felt252>,
+}
+
+//! > graph
+Root: 8
+8 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(7) }
+7 Deconstruct { input: v0, outputs: [v1, v2, v3], next: NodeId(6) }
+6 EnumMatch { matched_var: v1, variants: (NodeId(5), v4), (NodeId(1), v9)}
+5 Deconstruct { input: v2, outputs: [v5, v6], next: NodeId(4) }
+4 EnumMatch { matched_var: v5, variants: (NodeId(1), v7), (NodeId(3), v8)}
+3 EqualsLiteral { input: v6, literal: 0, true_branch: NodeId(2), false_branch: NodeId(1) }
+2 BindVar { input: v4, output: PatternVarId(0), next: NodeId(0) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: test::MyStruct
+blk0 (root):
+Statements:
+  (v1: core::option::Option::<core::felt252>, v2: (core::option::Option::<core::felt252>, core::felt252), v3: core::option::Option::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match_enum(v1) {
+    Option::Some(v4) => blk1,
+    Option::None(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v6: core::option::Option::<core::felt252>, v7: core::felt252) <- struct_destructure(v2)
+End:
+  Match(match_enum(v6) {
+    Option::Some(v8) => blk3,
+    Option::None(v9) => blk4,
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk4:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v7) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero(v10) => blk6,
+  })
+
+blk5:
+Statements:
+End:
+  Goto(blk8, {v4 -> v12})
+
+blk6:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk7:
+Statements:
+  (v11: core::felt252) <- 0
+End:
+  Goto(blk8, {v11 -> v12})
+
+blk8:
+Statements:
+End:
+  Return(v12)
