@@ -559,7 +559,6 @@ fn module_main_file_helper<'db>(
 }
 
 fn module_main_file<'db>(db: &'db dyn Database, module_id: ModuleId<'db>) -> Maybe<FileId<'db>> {
-    // TODO(eytan-starkware): Remove this dummy file when ModuleId is tracked.
     module_main_file_helper(db, (), module_id)
 }
 
