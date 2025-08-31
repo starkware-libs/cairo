@@ -3781,7 +3781,7 @@ fn get_enriched_type_member_access<'db>(
             }
         }
     };
-    enrich_members(ctx, &mut enriched_members, stable_ptr, accessed_member_name.into())?;
+    enrich_members(ctx, &mut enriched_members, stable_ptr, accessed_member_name)?;
     let e = ctx.resolver.type_enriched_members.entry(key).or_insert(enriched_members);
     Ok(e.get_member(accessed_member_name))
 }
@@ -3794,7 +3794,7 @@ fn enrich_members<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     enriched_members: &mut EnrichedMembers<'db>,
     stable_ptr: ast::ExprPtr<'db>,
-    accessed_member_name: StrRef<'db>,
+    accessed_member_name: &str,
 ) -> Maybe<()> {
     let EnrichedMembers { members: enriched, deref_chain, explored_derefs } = enriched_members;
 
@@ -3809,7 +3809,7 @@ fn enrich_members<'db>(
                 enriched.entry(*member_name).or_insert_with(|| (member.clone(), *explored_derefs));
             }
             // If member is contained we can stop the calculation post the lookup.
-            if members.contains_key(&accessed_member_name) {
+            if members.contains_key(accessed_member_name) {
                 // Found member, so exploration isn't done.
                 break;
             }
