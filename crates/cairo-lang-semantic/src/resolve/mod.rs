@@ -735,15 +735,23 @@ impl<'db> Resolver<'db> {
     ) -> UseStarResult<'db> {
         let mut item_info = None;
         let mut module_items_found: OrderedHashSet<ModuleItemId<'_>> = OrderedHashSet::default();
-        let imported_modules = self.db.module_imported_modules(module_id);
-        for (star_module_id, item_module_id) in &imported_modules.accessible {
+        let mut other_containing_modules = vec![];
+        for (item_module_id, info) in self.db.module_imported_modules((), module_id).iter() {
+            if *item_module_id == module_id {
+                // Preventing cycles.
+                continue;
+            }
             if let Some(inner_item_info) =
                 self.resolve_item_in_imported_module(*item_module_id, ident)
-                && self.is_item_visible(*item_module_id, &inner_item_info, *star_module_id)
-                && self.is_item_feature_usable(&inner_item_info)
             {
-                item_info = Some(inner_item_info.clone());
-                module_items_found.insert(inner_item_info.item_id);
+                if info.user_modules.iter().any(|user_module_id| {
+                    self.is_item_visible(*item_module_id, &inner_item_info, *user_module_id)
+                }) {
+                    item_info = Some(inner_item_info.clone());
+                    module_items_found.insert(inner_item_info.item_id);
+                } else {
+                    other_containing_modules.push(*item_module_id);
+                }
             }
         }
         if module_items_found.len() > 1 {
@@ -752,21 +760,19 @@ impl<'db> Resolver<'db> {
         match item_info {
             Some(item_info) => UseStarResult::UniquePathFound(item_info),
             None => {
-                let mut containing_modules = vec![];
-                for star_module_id in &imported_modules.all {
+                for item_module_id in &other_containing_modules {
                     if let Some(inner_item_info) =
-                        self.resolve_item_in_imported_module(*star_module_id, ident)
+                        self.resolve_item_in_imported_module(*item_module_id, ident)
                     {
                         item_info = Some(inner_item_info.clone());
                         module_items_found.insert(inner_item_info.item_id);
-                        containing_modules.push(*star_module_id);
                     }
                 }
                 if let Some(item_info) = item_info {
                     if module_items_found.len() > 1 {
                         UseStarResult::AmbiguousPath(module_items_found.iter().cloned().collect())
                     } else {
-                        UseStarResult::ItemNotVisible(item_info.item_id, containing_modules)
+                        UseStarResult::ItemNotVisible(item_info.item_id, other_containing_modules)
                     }
                 } else {
                     UseStarResult::PathNotFound
@@ -1320,18 +1326,6 @@ impl<'db> Resolver<'db> {
     pub fn insert_used_use(&mut self, item_id: ModuleItemId<'db>) {
         if let ModuleItemId::Use(use_id) = item_id {
             self.data.used_uses.insert(use_id);
-        }
-    }
-
-    /// Checks if an item uses a feature that is not allowed.
-    fn is_item_feature_usable(&self, item_info: &ModuleItemInfo<'db>) -> bool {
-        match &item_info.feature_kind {
-            FeatureKind::Unstable { feature, .. }
-            | FeatureKind::Deprecated { feature, .. }
-            | FeatureKind::Internal { feature, .. } => {
-                self.data.feature_config.allowed_features.contains(feature)
-            }
-            _ => true,
         }
     }
 
