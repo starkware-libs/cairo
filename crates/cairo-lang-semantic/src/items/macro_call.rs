@@ -3,9 +3,11 @@ use std::sync::Arc;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LanguageElementId, MacroCallId, ModuleId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
-use cairo_lang_filesystem::ids::{CodeMapping, FileKind, FileLongId, VirtualFile};
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
+use salsa::Database;
 
 use crate::SemanticDiagnostic;
 use crate::db::{SemanticGroup, SemanticGroupData};
@@ -126,6 +128,31 @@ pub fn priv_macro_call_data<'db>(
         expansion_mappings: expanded_code.code_mappings,
         parent_macro_call_data,
     })
+}
+
+/// The name of the `expose!` macro.
+pub const EXPOSE_MACRO_NAME: &str = "expose";
+
+/// Get the content and mappings for the `expose!` macro call.
+pub fn expose_content_and_mapping<'db>(
+    db: &'db dyn Database,
+    args: ast::TokenTreeNode<'db>,
+) -> Maybe<(String, CodeMapping)> {
+    let tokens = match args.subtree(db) {
+        ast::WrappedTokenTree::Parenthesized(tree) => tree.tokens(db),
+        ast::WrappedTokenTree::Braced(tree) => tree.tokens(db),
+        ast::WrappedTokenTree::Bracketed(tree) => tree.tokens(db),
+        ast::WrappedTokenTree::Missing(_) => return Err(skip_diagnostic()),
+    };
+    let tokens_node = tokens.as_syntax_node();
+    let tokens_span = tokens_node.span(db);
+    Ok((
+        tokens_node.get_text(db).to_string(),
+        CodeMapping {
+            span: TextSpan::new_with_width(TextOffset::START, tokens_span.width()),
+            origin: CodeOrigin::Start(tokens_span.start),
+        },
+    ))
 }
 
 /// Cycle handling for the `priv_macro_call_data` query.
