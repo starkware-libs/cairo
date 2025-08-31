@@ -2530,16 +2530,31 @@ fn get_method_function_candidates<'db>(
         return Ok((candidates, self_expr, self_ty, false));
     }
 
-    let mut fixed_expr = self_expr;
-    let mut fixed_ty = self_ty;
-
     let deref_chain = ctx.db.deref_chain(
         self_ty,
         ctx.resolver.owning_crate_id,
-        fixed_expr.expr.is_mutable_var(&ctx.semantic_defs),
+        self_expr.expr.is_mutable_var(&ctx.semantic_defs),
     )?;
 
-    for deref_info in deref_chain.derefs.iter() {
+    // Find the first deref that contains the method.
+    let Some(last_deref_index) = deref_chain.derefs.iter().position(|deref_info| {
+        candidates = filter_candidate_traits(
+            ctx,
+            inference_errors,
+            deref_info.target_ty,
+            candidate_traits,
+            func_name,
+            method_syntax,
+        );
+        !candidates.is_empty()
+    }) else {
+        // Not found in any deref.
+        return Ok((candidates, self_expr, self_ty, false));
+    };
+
+    // Found in a deref - generating deref expressions.
+    let mut fixed_expr = self_expr;
+    for deref_info in &deref_chain.derefs[0..=last_deref_index] {
         let derefed_expr = expr_function_call(
             ctx,
             deref_info.function_id,
@@ -2550,22 +2565,8 @@ fn get_method_function_candidates<'db>(
 
         fixed_expr =
             ExprAndId { expr: derefed_expr.clone(), id: ctx.arenas.exprs.alloc(derefed_expr) };
-
-        candidates = filter_candidate_traits(
-            ctx,
-            inference_errors,
-            deref_info.target_ty,
-            candidate_traits,
-            func_name,
-            method_syntax,
-        );
-        if !candidates.is_empty() {
-            fixed_ty = deref_info.target_ty;
-            break;
-        }
     }
-
-    Ok((candidates, fixed_expr, fixed_ty, true))
+    Ok((candidates, fixed_expr, deref_chain.derefs[last_deref_index].target_ty, true))
 }
 
 /// Computes the semantic model of a pattern.
