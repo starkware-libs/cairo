@@ -1,16 +1,17 @@
-use cairo_lang_defs::patcher::PatchBuilder;
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
     PluginGeneratedFile,
 };
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::ast;
 use indoc::indoc;
 use salsa::Database;
+
+use crate::items::macro_call::{EXPOSE_MACRO_NAME, expose_content_and_mapping};
 
 #[derive(Debug, Default)]
 pub struct ExposeMacro;
 impl NamedPlugin for ExposeMacro {
-    const NAME: &'static str = "expose";
+    const NAME: &'static str = EXPOSE_MACRO_NAME;
 }
 impl InlineMacroExprPlugin for ExposeMacro {
     fn generate_code<'db>(
@@ -19,22 +20,15 @@ impl InlineMacroExprPlugin for ExposeMacro {
         syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult<'db> {
-        let tokens = match syntax.arguments(db).subtree(db) {
-            ast::WrappedTokenTree::Braced(braced) => braced.tokens(db),
-            ast::WrappedTokenTree::Parenthesized(paren) => paren.tokens(db),
-            ast::WrappedTokenTree::Bracketed(bracket) => bracket.tokens(db),
-            ast::WrappedTokenTree::Missing(_) => {
-                return InlinePluginResult { diagnostics: vec![], ..Default::default() };
-            }
+        let Ok((content, code_mapping)) = expose_content_and_mapping(db, syntax.arguments(db))
+        else {
+            return InlinePluginResult { diagnostics: vec![], ..Default::default() };
         };
-        let mut builder = PatchBuilder::new(db, syntax);
-        builder.add_node(tokens.as_syntax_node());
-        let (content, code_mappings) = builder.build();
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
                 name: "expose_inline_macro".into(),
                 content,
-                code_mappings,
+                code_mappings: vec![code_mapping],
                 aux_data: None,
                 diagnostics_note: Default::default(),
                 is_unhygienic: true,
