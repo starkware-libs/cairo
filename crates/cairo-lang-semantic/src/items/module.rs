@@ -186,7 +186,7 @@ pub fn module_attributes<'db>(
     module_id: ModuleId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     Ok(match &module_id {
-        ModuleId::CrateRoot(_) | ModuleId::MacroCall { id: _, generated_file_id: _ } => vec![],
+        ModuleId::CrateRoot(_) | ModuleId::MacroCall { .. } => vec![],
         ModuleId::Submodule(submodule_id) => {
             let module_ast = &submodule_id.module_data(db)?.submodules(db)[submodule_id];
 
