@@ -1,4 +1,4 @@
-/// ! This module provides the Demand utility struct used for analyzing usage of variables.
+//! This module provides the Demand utility struct used for analyzing usage of variables.
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 /// A reporting trait that reports each variables dup, drop and last_use positions.
@@ -28,7 +28,7 @@ impl<Var> DemandReporter<Var> for EmptyDemandReporter {
 }
 
 /// Demanded variables from a certain point in the flow until the end of the function.
-/// Needs to be updates in backwards order.
+/// Needs to be updated in backwards order.
 #[derive(Clone)]
 pub struct Demand<Var: std::hash::Hash + Eq + Copy, UsePosition, Aux: Clone + Default = ()> {
     pub vars: OrderedHashMap<Var, UsePosition>,
