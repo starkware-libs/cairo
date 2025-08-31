@@ -60,7 +60,8 @@ pub fn priv_macro_call_data<'db>(
             original_item_removed: false,
         })
         .intern(db);
-        let macro_call_module = ModuleId::MacroCall { id: macro_call_id, generated_file_id };
+        let macro_call_module =
+            ModuleId::MacroCall { id: macro_call_id, generated_file_id, is_expose: true };
         return Ok(MacroCallData {
             macro_call_module: Ok(macro_call_module),
             diagnostics: Default::default(),
@@ -146,7 +147,8 @@ pub fn priv_macro_call_data<'db>(
         original_item_removed: false,
     })
     .intern(db);
-    let macro_call_module = ModuleId::MacroCall { id: macro_call_id, generated_file_id };
+    let macro_call_module =
+        ModuleId::MacroCall { id: macro_call_id, generated_file_id, is_expose: false };
     Ok(MacroCallData {
         macro_call_module: Ok(macro_call_module),
         diagnostics: diagnostics.build(),
