@@ -1,11 +1,11 @@
 [package]
-name = "cairo-lang-sierra"
-version.workspace = true
-edition.workspace = true
-repository.workspace = true
-license-file.workspace = true
-description = "Sierra representation."
 build = "src/build.rs"                 # LALRPOP preprocessing
+description = "Sierra representation."
+edition.workspace = true
+license-file.workspace = true
+name = "cairo-lang-sierra"
+repository.workspace = true
+version.workspace = true
 
 [build-dependencies]
 lalrpop = "0.22.2"
@@ -14,8 +14,8 @@ regex = "1"
 [dependencies]
 anyhow.workspace = true
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.0", features = [
-    "serde",
-    "schemars",
+  "schemars",
+  "serde",
 ] }
 const-fnv1a-hash.workspace = true
 convert_case.workspace = true
@@ -25,19 +25,17 @@ lalrpop-util.workspace = true
 num-bigint = { workspace = true, default-features = true }
 num-integer = { workspace = true, default-features = true }
 num-traits = { workspace = true, default-features = true }
-starknet-types-core.workspace = true
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 sha3.workspace = true
 smol_str.workspace = true
+starknet-types-core.workspace = true
 thiserror.workspace = true
 vector-map.workspace = true
 
 [dev-dependencies]
 bimap.workspace = true
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = [
-    "testing",
-] }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 env_logger.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true

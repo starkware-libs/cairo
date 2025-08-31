@@ -1,0 +1,17 @@
+# Don’t format Taplo’s own config files
+exclude = ["taplo.toml", ".taplo.toml"]
+
+# Dependencies tables: alphabetical
+[formatting]
+column_width = 100
+reorder_arrays = true
+reorder_keys = true
+
+# Don't reorder the "package" section(s).
+[[rule]]
+formatting = { reorder_keys = false }
+keys = ["package", "workspace"]
+
+[[rule]]
+formatting = { reorder_keys = true }
+keys = ["workspace.members"]
