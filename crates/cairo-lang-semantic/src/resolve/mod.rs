@@ -737,8 +737,10 @@ impl<'db> Resolver<'db> {
         let mut module_items_found: OrderedHashSet<ModuleItemId<'_>> = OrderedHashSet::default();
         let mut other_containing_modules = vec![];
         for (item_module_id, info) in self.db.module_imported_modules((), module_id).iter() {
-            if *item_module_id == module_id {
-                // Preventing cycles.
+            // Not checking the main module to prevent cycles.
+            // Additionally if the module isn't exposed skipping items within it, as we do not see
+            // them.
+            if *item_module_id == module_id || !info.exposed {
                 continue;
             }
             if let Some(inner_item_info) =
@@ -837,18 +839,24 @@ impl<'db> Resolver<'db> {
         let db = self.db;
         let ident = identifier.text(db);
         let mut queue: VecDeque<_> =
-            self.db.module_macro_calls_ids(module_id).ok()?.iter().copied().collect();
-        while let Some(macro_call_id) = queue.pop_front() {
+            self.db.module_macro_calls_ids(module_id).ok()?.iter().map(|id| (*id, false)).collect();
+        while let Some((macro_call_id, exposed)) = queue.pop_front() {
             let Ok(macro_call_module_id) = self.db.macro_call_module_id(macro_call_id) else {
                 continue;
             };
-            let inner_item_info =
-                self.db.module_item_info_by_name(macro_call_module_id, ident.into());
-            if let Ok(Some(inner_item_info)) = inner_item_info {
+            let exposed = exposed
+                || matches!(
+                    macro_call_module_id,
+                    ModuleId::MacroCall { is_expose, .. } if is_expose
+                );
+            if exposed
+                && let Ok(Some(inner_item_info)) =
+                    self.db.module_item_info_by_name(macro_call_module_id, ident.into())
+            {
                 return Some((inner_item_info, macro_call_module_id));
             }
-            if let Ok(x) = db.module_macro_calls_ids(macro_call_module_id) {
-                queue.extend(x.iter().copied());
+            if let Ok(calls) = db.module_macro_calls_ids(macro_call_module_id) {
+                queue.extend(calls.iter().map(|id| (*id, exposed)));
             }
         }
         None
@@ -2559,7 +2567,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                 containing_module: module_id,
             });
         }
-        // If an item with this name is found in one of the 'use *' imports, use the module that
+        // Finding whether the item is an imported module.
         match self.resolver.resolve_path_using_use_star(module_id, ident) {
             UseStarResult::UniquePathFound(inner_module_item) => {
                 return Ok(ResolvedBase::FoundThroughGlobalUse {

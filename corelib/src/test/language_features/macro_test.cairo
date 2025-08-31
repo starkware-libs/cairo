@@ -559,8 +559,9 @@ mod unhygienic_expose_plugin_macro {
 mod item_level_macro {
     macro define_fn {
         ($name:ident) => {
-           fn $name() -> felt252 { 100 }
-
+            expose! {
+                fn $name() -> felt252 { 100 }
+            }
         };
     }
 
@@ -573,9 +574,11 @@ mod item_level_macro {
 
     macro define_ty_and_getter {
         ($ty:ident) => {
-            struct $ty { pub x: felt252 }
-            fn get_x(s: $ty) -> felt252 {
-                s.x
+            expose! {
+                struct $ty { pub x: felt252 }
+                fn get_x(s: $ty) -> felt252 {
+                    s.x
+                }
             }
         };
     }
@@ -590,10 +593,12 @@ mod item_level_macro {
 
     macro define_enum {
         ($name: ident) => {
-            #[derive(PartialEq, Debug, Drop)]
-            enum $name {
-                A,
-                B,
+            expose! {
+                #[derive(PartialEq, Debug, Drop)]
+                enum $name {
+                    A,
+                    B,
+                }
             }
         };
     }
@@ -608,7 +613,9 @@ mod item_level_macro {
 
     macro generic_fn_macro {
         () => {
-            fn id<T>(x: T) -> T { x }
+            expose! {
+                fn id<T>(x: T) -> T { x }
+            }
         };
     }
 
@@ -622,11 +629,12 @@ mod item_level_macro {
 
     macro define_in_mod {
         ($module:ident, $name:ident) => {
-        mod $module {
-            pub fn $name() -> felt252 { 77 }
-        
-        }
-    };
+            expose! {
+                mod $module {
+                    pub fn $name() -> felt252 { 77 }
+                }
+            }
+        };
     }
 
     define_in_mod!(a, b);
@@ -638,9 +646,11 @@ mod item_level_macro {
 
     macro define_outer_and_call_inner {
         () => {
-            fn outer() -> felt252 { 10 }
-            $defsite::define_inner!();
-           };
+            expose! {
+                fn outer() -> felt252 { 10 }
+                $defsite::define_inner!();
+            }
+        };
     }
 
     macro define_inner {
@@ -666,8 +676,10 @@ mod item_level_macro {
 
         macro define_foo {
             () => {
-                fn foo() -> felt252 {
-                    'in macro'
+                expose! {
+                    fn foo() -> felt252 {
+                        'in macro'
+                    }
                 }
             };
         }
@@ -677,6 +689,29 @@ mod item_level_macro {
         #[test]
         fn test_macro_wins_over_global_use() {
             assert_eq!(foo(), 'in macro');
+        }
+    }
+
+    mod unexposed_macro_vs_global_use {
+        mod has_foo {
+            pub fn foo() -> felt252 {
+                'in module'
+            }
+        }
+
+        macro define_foo {
+            () => {
+                fn foo() -> felt252 {
+                    'in macro'
+                }
+            };
+        }
+        use has_foo::*;
+        define_foo!();
+
+        #[test]
+        fn test_unexposed_macro_not_found() {
+            assert_eq!(foo(), 'in module');
         }
     }
 }
