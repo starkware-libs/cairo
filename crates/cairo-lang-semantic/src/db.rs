@@ -15,13 +15,14 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, StrRef};
+use cairo_lang_syntax::attribute::consts::{DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES};
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, Upcast, require};
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use salsa::{Database, Setter};
 
 use crate::corelib::CoreInfo;
@@ -2140,11 +2141,14 @@ fn crate_analyzer_plugins<'db>(
 }
 
 fn declared_allows(db: &dyn SemanticGroup, crate_id: CrateId<'_>) -> Arc<OrderedHashSet<String>> {
-    Arc::new(OrderedHashSet::from_iter(
-        db.crate_analyzer_plugins(crate_id)
-            .iter()
-            .flat_map(|plugin| plugin.long(db).declared_allows()),
-    ))
+    let base_lints = [DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES];
+
+    let crate_analyzer_plugins = db.crate_analyzer_plugins(crate_id);
+
+    Arc::new(OrderedHashSet::from_iter(chain!(
+        base_lints.map(|attr| attr.into()),
+        crate_analyzer_plugins.iter().flat_map(|plugin| plugin.long(db).declared_allows())
+    )))
 }
 
 /// Adds diagnostics for unused items in a module.
@@ -2186,7 +2190,7 @@ fn add_unused_import_diagnostics<'db>(
         ))?;
         require(!all_used_uses.contains(&use_id))?;
         let resolver_data = db.use_resolver_data(use_id).ok()?;
-        require(!resolver_data.feature_config.allow_unused_imports)?;
+        require(!resolver_data.feature_config.allowed_lints.contains(UNUSED_IMPORTS))?;
         Some(diagnostics.add(SemanticDiagnostic::new(
             StableLocation::new(use_id.untyped_stable_ptr(db)),
             SemanticDiagnosticKind::UnusedImport(use_id),

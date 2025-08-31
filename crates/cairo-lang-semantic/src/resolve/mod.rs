@@ -17,6 +17,7 @@ use cairo_lang_filesystem::ids::{CodeMapping, CrateId, CrateLongId, StrRef};
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::attribute::consts::DEPRECATED_ATTR;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -1256,7 +1257,7 @@ impl<'db> Resolver<'db> {
                 );
             }
             FeatureKind::Deprecated { feature, note }
-                if !self.data.feature_config.allow_deprecated
+                if !self.data.feature_config.allowed_lints.contains(DEPRECATED_ATTR)
                     && !self.data.feature_config.allowed_features.contains(feature) =>
             {
                 diagnostics.report(
