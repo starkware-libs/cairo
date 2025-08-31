@@ -146,6 +146,16 @@ jobs:
       - run: >
           scripts/clippy.sh
 
+  taplo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@taplo
+      - run: >
+          scripts/taplo.sh
+
   typos:
     runs-on: ubuntu-latest
     steps:
