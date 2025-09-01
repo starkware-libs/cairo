@@ -731,12 +731,29 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                     BracketedMacro::new_green,
                 )
                 .into(),
-            _ => return Err(TryParseFailure::SkipToken),
+            _ => {
+                self.macro_parsing_context = previous_macro_parsing_context;
+                return Err(TryParseFailure::SkipToken);
+            }
         };
         let arrow = self.parse_token::<TerminalMatchArrow<'_>>();
-        self.macro_parsing_context = MacroParsingContext::MacroExpansion;
-        let macro_body =
-            self.wrap_macro::<TerminalLBrace<'_>, TerminalRBrace<'_>, _, _>(BracedMacro::new_green);
+        if let Err(SkippedError(span)) = self.skip_until(is_of_kind!(rbrace, lbrace)) {
+            self.add_diagnostic(
+                ParserDiagnosticKind::SkippedElement { element_name: "'{'".into() },
+                span,
+            );
+        }
+        let macro_body = if self.peek().kind == SyntaxKind::TerminalLBrace {
+            self.macro_parsing_context = MacroParsingContext::MacroExpansion;
+            self.wrap_macro::<TerminalLBrace<'_>, TerminalRBrace<'_>, _, _>(BracedMacro::new_green)
+        } else {
+            BracedMacro::new_green(
+                self.db,
+                self.create_and_report_missing_terminal::<TerminalLBrace<'_>>(),
+                MacroElements::new_green(self.db, &[]),
+                self.create_and_report_missing_terminal::<TerminalRBrace<'_>>(),
+            )
+        };
         let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
         self.macro_parsing_context = previous_macro_parsing_context;
         Ok(MacroRule::new_green(self.db, wrapped_macro, arrow, macro_body, semicolon))
