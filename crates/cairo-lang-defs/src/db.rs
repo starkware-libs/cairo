@@ -573,7 +573,7 @@ fn module_file<'db>(
     Ok(db.module_files(module_file_id.0)?[module_file_id.1.0])
 }
 
-// TODO(eytan-starkware): This doesnt really need to be tracked.
+// TODO(eytan-starkware): This doesn't really need to be tracked.
 #[salsa::tracked(returns(ref))]
 fn module_dir_helper<'db>(
     db: &'db dyn Database,
