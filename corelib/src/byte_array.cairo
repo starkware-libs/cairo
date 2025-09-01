@@ -42,7 +42,7 @@
 //! assert!(first_byte == 0x41);
 //! ```
 
-use crate::array::{ArrayTrait, SpanTrait};
+use crate::array::{ArrayTrait, SpanTrait as ArraySpanTrait};
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
@@ -583,5 +583,40 @@ impl ByteArrayFromIterator of crate::iter::FromIterator<ByteArray, u8> {
             ba.append_byte(byte);
         }
         ba
+    }
+}
+
+/// Provides an immutable view into a ByteArray.
+pub struct Span {
+    snapshot: @ByteArray,
+}
+
+#[generate_trait]
+pub impl SpanImpl of SpanTrait {
+    #[inline]
+    #[must_use]
+    fn len(self: @Span) -> usize {
+        self.snapshot.len()
+    }
+}
+
+impl SpanCopy of Copy<Span>;
+impl SpanDrop of Drop<Span>;
+
+pub trait ToSpanTrait<C> {
+    #[must_use]
+    fn span(self: @C) -> Span;
+}
+
+impl ByteArrayToSpan of ToSpanTrait<ByteArray> {
+    #[inline]
+    fn span(self: @ByteArray) -> Span {
+        Span { snapshot: self }
+    }
+}
+
+impl SpanIntoByteArraySnap of Into<Span, @ByteArray> {
+    fn into(self: Span) -> @ByteArray {
+        self.snapshot
     }
 }

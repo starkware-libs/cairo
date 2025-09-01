@@ -529,7 +529,7 @@ fn compare_byte_array(
     assert_eq!(ba_pending_word_felt, pending_word);
 }
 
-fn compare_spans<T, +crate::fmt::Debug<T>, +PartialEq<T>, +Copy<T>, +Drop<T>>(
+fn compare_spans<T, +core::fmt::Debug<T>, +PartialEq<T>, +Copy<T>, +Drop<T>>(
     mut a: Span<T>, mut b: Span<T>,
 ) {
     assert_eq!(a.len(), b.len());
@@ -594,4 +594,14 @@ fn test_byte_array_33() -> ByteArray {
     ba2.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f, 31);
     ba2.append_word(0x2021, 2);
     ba2
+}
+
+#[test]
+fn test_span_casts() {
+    let bytes_array: ByteArray = "Hello!";
+    let span = bytes_array.span();
+    assert_eq!(@span.len(), @6);
+
+    let new_bytes_array: @ByteArray = span.into();
+    assert_eq!(new_bytes_array, @bytes_array);
 }
