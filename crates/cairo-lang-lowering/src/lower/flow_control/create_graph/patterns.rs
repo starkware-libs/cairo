@@ -2,8 +2,8 @@ use cairo_lang_semantic::corelib::validate_literal;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::{
-    self as semantic, ConcreteEnumId, ConcreteTypeId, PatternEnumVariant, PatternTuple, TypeId,
-    TypeLongId, corelib,
+    self as semantic, ConcreteEnumId, ConcreteStructId, ConcreteTypeId, PatternEnumVariant,
+    PatternStruct, PatternTuple, TypeId, TypeLongId, corelib,
 };
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ast::ExprPtr;
@@ -102,16 +102,8 @@ pub fn create_node_for_patterns<'db>(
             )
         };
 
-    // Find the first non-any pattern, if exists.
-    let Some(first_non_any_pattern) =
-        patterns.iter().flatten().find(|pattern| !pattern_is_any(pattern))
-    else {
-        // If all the patterns are catch-all, we do not need to look into `input_var`.
-        // Call the callback with all patterns accepted.
-        return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
-    };
-
     let var_ty = graph.var_ty(input_var);
+    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, var_ty);
 
     let params = CreateNodeParams {
         ctx,
@@ -121,15 +113,35 @@ pub fn create_node_for_patterns<'db>(
         location,
     };
 
+    // If there are no patterns (this can happen with the never type), skip the optimization below.
+    // In such a case, the optimization below would have invoked the callback with an empty filter.
+    if patterns.is_empty()
+        && let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) = long_ty
+        && ctx.db.concrete_enum_variants(concrete_enum_id).unwrap().is_empty()
+    {
+        return create_node_for_enum(params, input_var, concrete_enum_id, n_snapshots);
+    }
+
+    // Find the first non-any pattern, if exists.
+    let Some(first_non_any_pattern) =
+        patterns.iter().flatten().find(|pattern| !pattern_is_any(pattern))
+    else {
+        // If all the patterns are catch-all, we do not need to look into `input_var`.
+        // Call the callback with all patterns accepted.
+        return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
+    };
+
     // Check if this is a numeric type that should use value matching.
     if corelib::numeric_upcastable_to_felt252(ctx.db, var_ty) {
         return create_node_for_value(params, input_var);
     }
 
-    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, var_ty);
     match long_ty {
         TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) => {
             create_node_for_enum(params, input_var, concrete_enum_id, n_snapshots)
+        }
+        TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
+            create_node_for_struct(params, input_var, concrete_struct_id, n_snapshots)
         }
         TypeLongId::Tuple(types) => create_node_for_tuple(params, input_var, &types, n_snapshots),
         _ => graph.report_with_missing_node(
@@ -242,7 +254,6 @@ fn create_node_for_enum<'db>(
 }
 
 /// Creates a [Deconstruct] node for the given `input_var` and `patterns`.
-#[allow(clippy::too_many_arguments)]
 fn create_node_for_tuple<'db>(
     params: CreateNodeParams<'db, '_, '_>,
     input_var: FlowControlVar,
@@ -260,6 +271,43 @@ fn create_node_for_tuple<'db>(
         &inner_vars,
         types,
         0,
+        None,
+    );
+
+    // Deconstruct the input variable.
+    graph.add_node(FlowControlNode::Deconstruct(Deconstruct {
+        input: input_var,
+        outputs: inner_vars,
+        next: node,
+    }))
+}
+
+/// Creates a [Deconstruct] node for the given `input_var` and `patterns`.
+fn create_node_for_struct<'db>(
+    params: CreateNodeParams<'db, '_, '_>,
+    input_var: FlowControlVar,
+    concrete_struct_id: ConcreteStructId<'db>,
+    n_snapshots: usize,
+) -> NodeId {
+    let CreateNodeParams { ctx, graph, patterns, build_node_callback, location } = params;
+
+    let members = match ctx.db.concrete_struct_members(concrete_struct_id) {
+        Ok(members) => members,
+        Err(diag_added) => return graph.add_node(FlowControlNode::Missing(diag_added)),
+    };
+
+    let types = members.iter().map(|(_, member)| member.ty).collect_vec();
+    let inner_vars = types
+        .iter()
+        .map(|ty| graph.new_var(wrap_in_snapshots(ctx.db, *ty, n_snapshots), location))
+        .collect_vec();
+
+    let node = create_node_for_tuple_inner(
+        CreateNodeParams { ctx, graph, patterns, build_node_callback, location },
+        &inner_vars,
+        &types,
+        0,
+        Some(&members.iter().map(|(_, member)| member).collect_vec()),
     );
 
     // Deconstruct the input variable.
@@ -273,12 +321,13 @@ fn create_node_for_tuple<'db>(
 /// Helper function for [create_node_for_tuple].
 ///
 /// `item_idx` is the index of the current member that is being processed in the tuple.
-#[allow(clippy::too_many_arguments)]
+/// `struct_members` is the list of members of the struct, or `None` if the type is a tuple.
 fn create_node_for_tuple_inner<'db>(
     params: CreateNodeParams<'db, '_, '_>,
     inner_vars: &Vec<FlowControlVar>,
     types: &Vec<TypeId<'db>>,
     item_idx: usize,
+    struct_members: Option<&Vec<&semantic::Member<'db>>>,
 ) -> NodeId {
     let CreateNodeParams { ctx, graph, patterns, build_node_callback, location } = params;
 
@@ -286,12 +335,28 @@ fn create_node_for_tuple_inner<'db>(
         return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
     }
 
+    // If the type is a struct, get the current member.
+    let current_member = struct_members.map(|members| members[item_idx]);
+
     // Collect the patterns on the current item.
     let mut patterns_on_current_item = Vec::<_>::default();
     for pattern in patterns {
         match pattern {
-            Some(semantic::Pattern::Tuple(PatternTuple { field_patterns, .. })) => {
+            Some(semantic::Pattern::Tuple(PatternTuple { field_patterns, .. }))
+                if current_member.is_none() =>
+            {
                 patterns_on_current_item.push(Some(get_pattern(ctx, field_patterns[item_idx])));
+            }
+            Some(semantic::Pattern::Struct(PatternStruct { field_patterns, .. }))
+                if current_member.is_some() =>
+            {
+                // Extract the pattern for the current member, or `None` if the member is not
+                // listed in the pattern (e.g., with `MyStruct { a: 0, .. }`).
+                let item_pattern = field_patterns
+                    .iter()
+                    .find(|(_, member)| member.id == current_member.unwrap().id)
+                    .map(|(pattern, _)| get_pattern(ctx, *pattern));
+                patterns_on_current_item.push(item_pattern);
             }
             Some(semantic::Pattern::Otherwise(..)) | None => {
                 patterns_on_current_item.push(None);
@@ -301,6 +366,7 @@ fn create_node_for_tuple_inner<'db>(
                 pattern @ (semantic::Pattern::StringLiteral(..)
                 | semantic::Pattern::EnumVariant(..)
                 | semantic::Pattern::Literal(..)
+                | semantic::Pattern::Tuple(..)
                 | semantic::Pattern::Struct(..)
                 | semantic::Pattern::FixedSizeArray(..)
                 | semantic::Pattern::Missing(..)),
@@ -335,6 +401,7 @@ fn create_node_for_tuple_inner<'db>(
                     inner_vars,
                     types,
                     item_idx + 1,
+                    struct_members,
                 )
             },
             location,

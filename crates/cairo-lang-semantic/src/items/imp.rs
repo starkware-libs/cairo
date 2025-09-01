@@ -18,7 +18,7 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, skip_diagnostic,
 };
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId, StrRef, UnstableSalsaId};
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId, StrRef, Tracked, UnstableSalsaId};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{
@@ -1957,7 +1957,7 @@ impl<'db> ImplLookupContext<'db> {
         let module_id = db.module_perceived_module(module_id);
         let default_map = UnorderedHashMap::default();
         let crate_global_impls = db.crate_global_impls(self.crate_id).unwrap_or(&default_map);
-        if let Ok(module_impls) = db.module_global_impls(module_id.owning_crate(db), module_id) {
+        if let Ok(module_impls) = db.module_global_impls((), module_id) {
             module_impls.locals.iter().for_each(|imp| {
                 if let Ok(trait_id) = imp.0.trait_id(db)
                     && let Some(set) = crate_global_impls.get(&trait_id)
@@ -3985,8 +3985,7 @@ fn crate_global_impls_helper<'db>(
     for crate_id in db.priv_crate_dependencies(crate_id).iter() {
         let mut modules = vec![ModuleId::CrateRoot(*crate_id)];
         while let Some(module_id) = modules.pop() {
-            if let Ok(module_impls) = db.module_global_impls(module_id.owning_crate(db), module_id)
-            {
+            if let Ok(module_impls) = db.module_global_impls((), module_id) {
                 for (trait_id, impls) in module_impls.globals_by_trait.iter() {
                     crate_global_impls.entry(*trait_id).or_default().extend(impls.clone());
                 }
@@ -4014,8 +4013,7 @@ pub fn crate_traits_dependencies<'db>(
     for crate_id in db.priv_crate_dependencies(crate_id).iter() {
         let mut modules = vec![ModuleId::CrateRoot(*crate_id)];
         while let Some(module_id) = modules.pop() {
-            if let Ok(module_impls) = db.module_global_impls(module_id.owning_crate(db), module_id)
-            {
+            if let Ok(module_impls) = db.module_global_impls((), module_id) {
                 for (trait_id, impls) in module_impls.trait_deps.iter() {
                     dependencies.entry(*trait_id).or_default().extend(impls.clone());
                 }
@@ -4124,11 +4122,10 @@ pub struct ModuleImpls<'db> {
     locals: BTreeSet<UninferredImplById<'db>>,
 }
 
-/// Todo(TomerStarkware): RemoveCrateID
 #[salsa::tracked(returns(ref))]
 pub fn module_global_impls<'db>(
     db: &'db dyn SemanticGroup,
-    _: CrateId<'db>,
+    _tracked: Tracked,
     module_id: ModuleId<'db>,
 ) -> Maybe<ModuleImpls<'db>> {
     let mut module_impls = ModuleImpls::default();

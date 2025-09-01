@@ -16,18 +16,18 @@ cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.0", features = ["serde"] }
 indoc.workspace = true
 itertools = { workspace = true, default-features = true }
-starknet-types-core.workspace = true
 num-bigint = { workspace = true, default-features = true }
 num-traits = { workspace = true, default-features = true }
+starknet-types-core.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 env_logger.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 
 [features]
 testing = []
