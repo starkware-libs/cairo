@@ -25,8 +25,8 @@ use num_traits::{Num, ToPrimitive, Zero};
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::{ImplId, ImplLongId};
 use crate::corelib::{
-    CoreInfo, LiteralError, core_box_ty, core_nonzero_ty, false_variant, get_core_ty_by_name,
-    true_variant, try_extract_nz_wrapped_type, unit_ty, validate_literal,
+    CoreInfo, LiteralError, core_nonzero_ty, false_variant, get_core_ty_by_name, true_variant,
+    try_extract_nz_wrapped_type, unit_ty, validate_literal,
 };
 use crate::db::{SemanticGroup, SemanticGroupData};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -116,7 +116,6 @@ pub enum ConstValue<'db> {
     Struct(Vec<ConstValueId<'db>>, TypeId<'db>),
     Enum(ConcreteVariant<'db>, ConstValueId<'db>),
     NonZero(ConstValueId<'db>),
-    Boxed(ConstValueId<'db>),
     Generic(#[dont_rewrite] GenericParamId<'db>),
     ImplConstant(ImplConstantId<'db>),
     Var(ConstVar<'db>, TypeId<'db>),
@@ -132,9 +131,7 @@ impl<'db> ConstValue<'db> {
                 ConstValue::Struct(members, _) => {
                     members.iter().all(|member| member.is_fully_concrete(db))
                 }
-                ConstValue::Enum(_, value)
-                | ConstValue::NonZero(value)
-                | ConstValue::Boxed(value) => value.is_fully_concrete(db),
+                ConstValue::Enum(_, val) | ConstValue::NonZero(val) => val.is_fully_concrete(db),
                 ConstValue::Generic(_)
                 | ConstValue::Var(_, _)
                 | ConstValue::Missing(_)
@@ -150,9 +147,7 @@ impl<'db> ConstValue<'db> {
                 ConstValue::Struct(members, _) => {
                     members.iter().all(|member| member.is_var_free(db))
                 }
-                ConstValue::Enum(_, value)
-                | ConstValue::NonZero(value)
-                | ConstValue::Boxed(value) => value.is_var_free(db),
+                ConstValue::Enum(_, val) | ConstValue::NonZero(val) => val.is_var_free(db),
                 ConstValue::Var(_, _) => false,
                 ConstValue::ImplConstant(impl_constant) => impl_constant.impl_id().is_var_free(db),
             }
@@ -167,7 +162,6 @@ impl<'db> ConstValue<'db> {
                 TypeLongId::Concrete(ConcreteTypeId::Enum(variant.concrete_enum_id)).intern(db)
             }
             ConstValue::NonZero(value) => core_nonzero_ty(db, value.ty(db)?),
-            ConstValue::Boxed(value) => core_box_ty(db, value.ty(db)?),
             ConstValue::Generic(param) => {
                 extract_matches!(db.generic_param_semantic(*param)?, GenericParam::Const).ty
             }

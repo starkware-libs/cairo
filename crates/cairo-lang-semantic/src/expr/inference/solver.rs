@@ -833,12 +833,6 @@ impl<'db> LiteInference<'db> {
                     (*target_const_value, target_final),
                 ),
             (ConstValue::NonZero(_), _) => CanConformResult::Rejected,
-            (ConstValue::Boxed(const_value), ConstValue::Boxed(target_const_value)) => self
-                .can_conform_const(
-                    (*const_value, candidate_final),
-                    (*target_const_value, target_final),
-                ),
-            (ConstValue::Boxed(_), _) => CanConformResult::Rejected,
             (ConstValue::Generic(param), _) => {
                 let mut res = CanConformResult::Accepted;
                 match self.substitution.entry(*param) {

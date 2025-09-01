@@ -162,23 +162,22 @@ fn get_libfunc_id_without_generics(
 pub fn const_libfunc_id_by_type(
     db: &dyn SierraGenGroup,
     value: ConstValueId<'_>,
+    boxed: bool,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-    if let ConstValue::Boxed(inner_value) = value.long(db) {
+    let const_ty_arg = GenericArg::Type(const_type_id(db, value));
+    if boxed {
         db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
             generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string(
                 ConstAsBoxLibfunc::STR_ID,
             ),
-            generic_args: vec![
-                GenericArg::Type(const_type_id(db, *inner_value)),
-                GenericArg::Value(0.into()),
-            ],
+            generic_args: vec![const_ty_arg, GenericArg::Value(0.into())],
         })
     } else {
         db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
             generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string(
                 ConstAsImmediateLibfunc::STR_ID,
             ),
-            generic_args: vec![GenericArg::Type(const_type_id(db, value))],
+            generic_args: vec![const_ty_arg],
         })
     }
 }
@@ -211,9 +210,6 @@ fn const_type_id(
                 }
                 ConstValue::NonZero(value) => {
                     vec![first_arg, GenericArg::Type(const_type_id(db, *value))]
-                }
-                ConstValue::Boxed(_) => {
-                    unreachable!("Should be handled by `const_libfunc_id_by_type`.")
                 }
                 ConstValue::Generic(_)
                 | ConstValue::Var(_, _)
