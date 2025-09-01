@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
@@ -29,7 +30,7 @@ pub fn find_executable_function_ids<'db>(
         let executable_attributes = db
             .crate_macro_plugins(crate_id)
             .iter()
-            .flat_map(|plugin| db.lookup_intern_macro_plugin(*plugin).executable_attributes())
+            .flat_map(|plugin| plugin.long(db).executable_attributes())
             .collect::<Vec<_>>();
 
         if executable_attributes.is_empty() {
@@ -37,7 +38,9 @@ pub fn find_executable_function_ids<'db>(
         }
 
         for module in db.crate_modules(crate_id).iter() {
-            if let Some(free_functions) = db.module_free_functions(*module).to_option() {
+            if let Some(free_functions) =
+                module.module_data(db).map(|data| data.free_functions(db)).to_option()
+            {
                 for (free_func_id, body) in free_functions.iter() {
                     let found_attrs = executable_attributes
                         .clone()

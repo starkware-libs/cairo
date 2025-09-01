@@ -1,37 +1,41 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{DefsGroup, DefsGroupEx};
+use cairo_lang_defs::db::{DefsGroup, DefsGroupEx, defs_group_input};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, GlobalUseId, ImplAliasId, ImplConstantDefId,
     ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, ImportableId,
-    InlineMacroExprPluginLongId, LanguageElementId, LookupItemId, MacroCallId, MacroDeclarationId,
-    MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId,
-    TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId,
-    VariantId,
+    InlineMacroExprPluginId, InlineMacroExprPluginLongId, LanguageElementId, LookupItemId,
+    MacroCallId, MacroDeclarationId, MacroPluginId, MacroPluginLongId, ModuleFileId, ModuleId,
+    ModuleItemId, ModuleTypeAliasId, StructId, TraitConstantId, TraitFunctionId, TraitId,
+    TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
-use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, StrRef};
-use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, StrRef, Tracked};
+use cairo_lang_syntax::attribute::consts::{DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES};
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, Upcast, require};
-use itertools::Itertools;
+use itertools::{Itertools, chain};
+use salsa::{Database, Setter};
 
 use crate::corelib::CoreInfo;
 use crate::diagnostic::SemanticDiagnosticKind;
-use crate::expr::inference::{self, ImplVar, ImplVarId, InferenceError};
+use crate::expr::inference::{self, InferenceError};
 use crate::ids::{AnalyzerPluginId, AnalyzerPluginLongId};
 use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{GenericFunctionId, ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{
-    ImplId, ImplImplId, ImplItemInfo, ImplLookupContext, ImplicitImplImplData, UninferredImpl,
+    GenericsHeadFilter, ImplId, ImplImplId, ImplItemInfo, ImplLookupContextId,
+    ImplicitImplImplData, ModuleImpls, UninferredImplById,
 };
 use crate::items::macro_declaration::{MacroDeclarationData, MacroRuleData};
 use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
@@ -44,10 +48,33 @@ use crate::items::visibility::Visibility;
 use crate::plugin::{AnalyzerPlugin, InternedPluginSuite, PluginSuite};
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::substitution::GenericSubstitution;
-use crate::types::{ImplTypeById, ImplTypeId, TypeSizeInformation};
+use crate::types::{ImplTypeById, ImplTypeId, ShallowGenericArg, TypeSizeInformation};
 use crate::{
     FunctionId, Parameter, SemanticDiagnostic, TypeId, corelib, items, lsp_helpers, semantic, types,
 };
+
+#[salsa::input]
+pub struct SemanticGroupInput {
+    #[returns(ref)]
+    pub default_analyzer_plugins: Option<Vec<AnalyzerPluginLongId>>,
+    #[returns(ref)]
+    pub analyzer_plugin_overrides: Option<OrderedHashMap<CrateInput, Arc<[AnalyzerPluginLongId]>>>,
+}
+
+#[salsa::tracked(returns(ref))]
+pub fn semantic_group_input(db: &dyn Database) -> SemanticGroupInput {
+    SemanticGroupInput::new(db, None, None)
+}
+
+fn default_analyzer_plugins_input(db: &dyn Database) -> &[AnalyzerPluginLongId] {
+    semantic_group_input(db).default_analyzer_plugins(db).as_ref().unwrap()
+}
+
+fn analyzer_plugin_overrides_input(
+    db: &dyn Database,
+) -> &OrderedHashMap<CrateInput, Arc<[AnalyzerPluginLongId]>> {
+    semantic_group_input(db).analyzer_plugin_overrides(db).as_ref().unwrap()
+}
 
 /// Helper trait to make sure we can always get a `dyn SemanticGroup + 'static` from a
 /// SemanticGroup.
@@ -62,87 +89,12 @@ pub trait Elongate {
 // Declarations and definitions must not depend on other definitions, only other declarations.
 // This prevents cycles where there shouldn't be any.
 #[cairo_lang_proc_macros::query_group]
-pub trait SemanticGroup:
-    DefsGroup + for<'db> Upcast<'db, dyn DefsGroup> + for<'db> Upcast<'db, dyn ParserGroup> + Elongate
-{
-    #[salsa::interned]
-    fn intern_function<'db>(
+pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + Elongate {
+    #[salsa::interned(revisions = usize::MAX)]
+    fn intern_impl_lookup_context<'db>(
         &'db self,
-        id: items::functions::FunctionLongId<'db>,
-    ) -> semantic::FunctionId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_function_with_body<'db>(
-        &'db self,
-        id: items::functions::ConcreteFunctionWithBody<'db>,
-    ) -> semantic::ConcreteFunctionWithBodyId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_struct<'db>(
-        &'db self,
-        id: types::ConcreteStructLongId<'db>,
-    ) -> types::ConcreteStructId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_enum<'db>(
-        &'db self,
-        id: types::ConcreteEnumLongId<'db>,
-    ) -> types::ConcreteEnumId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_extern_type<'db>(
-        &'db self,
-        id: types::ConcreteExternTypeLongId<'db>,
-    ) -> types::ConcreteExternTypeId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_trait<'db>(
-        &'db self,
-        id: items::trt::ConcreteTraitLongId<'db>,
-    ) -> items::trt::ConcreteTraitId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_trait_function<'db>(
-        &'db self,
-        id: items::trt::ConcreteTraitGenericFunctionLongId<'db>,
-    ) -> items::trt::ConcreteTraitGenericFunctionId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_trait_type<'db>(
-        &'db self,
-        id: items::trt::ConcreteTraitTypeLongId<'db>,
-    ) -> items::trt::ConcreteTraitTypeId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_trait_constant<'db>(
-        &'db self,
-        id: items::trt::ConcreteTraitConstantLongId<'db>,
-    ) -> items::trt::ConcreteTraitConstantId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_impl<'db>(
-        &'db self,
-        id: items::imp::ConcreteImplLongId<'db>,
-    ) -> items::imp::ConcreteImplId<'db>;
-    #[salsa::interned]
-    fn intern_concrete_trait_impl<'db>(
-        &'db self,
-        id: items::trt::ConcreteTraitImplLongId<'db>,
-    ) -> items::trt::ConcreteTraitImplId<'db>;
-    #[salsa::interned]
-    fn intern_type<'db>(&'db self, id: types::TypeLongId<'db>) -> semantic::TypeId<'db>;
-    #[salsa::interned]
-    fn intern_const_value<'db>(
-        &'db self,
-        id: items::constant::ConstValue<'db>,
-    ) -> items::constant::ConstValueId<'db>;
-    #[salsa::interned]
-    fn intern_impl<'db>(&'db self, id: items::imp::ImplLongId<'db>) -> items::imp::ImplId<'db>;
-    #[salsa::interned]
-    fn intern_impl_var<'db>(&'db self, id: ImplVar<'db>) -> ImplVarId<'db>;
-
-    #[salsa::interned]
-    fn intern_generated_impl<'db>(
-        &'db self,
-        id: items::imp::GeneratedImplLongId<'db>,
-    ) -> items::imp::GeneratedImplId<'db>;
-
-    #[salsa::interned]
-    fn intern_uninferred_generated_impl<'db>(
-        &'db self,
-        id: items::imp::UninferredGeneratedImplLongId<'db>,
-    ) -> items::imp::UninferredGeneratedImplId<'db>;
+        id: items::imp::ImplLookupContext<'db>,
+    ) -> items::imp::ImplLookupContextId<'db>;
 
     // Const.
     // ====
@@ -173,9 +125,6 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::constant::constant_const_value)]
     #[salsa::cycle(items::constant::constant_const_value_cycle)]
     fn constant_const_value<'db>(&'db self, const_id: ConstantId<'db>) -> Maybe<ConstValueId<'db>>;
-    #[salsa::invoke(items::constant::constant_const_type)]
-    #[salsa::cycle(items::constant::constant_const_type_cycle)]
-    fn constant_const_type<'db>(&'db self, const_id: ConstantId<'db>) -> Maybe<TypeId<'db>>;
     /// Returns information required for const calculations.
     #[salsa::invoke(items::constant::const_calc_info)]
     fn const_calc_info<'db>(&'db self) -> Arc<ConstCalcInfo<'db>>;
@@ -217,9 +166,9 @@ pub trait SemanticGroup:
         &'db self,
         global_use_id: GlobalUseId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>>;
-    /// Private query to compute the imported modules of a module, using global uses.
-    #[salsa::invoke(items::us::priv_module_use_star_modules)]
-    fn priv_module_use_star_modules<'db>(
+    /// Computes the imported modules of a module, using global uses and macro calls.
+    #[salsa::invoke(items::us::module_imported_modules)]
+    fn module_imported_modules<'db>(
         &'db self,
         module_id: ModuleId<'db>,
     ) -> Arc<ImportedModules<'db>>;
@@ -525,6 +474,14 @@ pub trait SemanticGroup:
         trait_id: TraitId<'db>,
         in_cycle: bool,
     ) -> Maybe<GenericParamsData<'db>>;
+
+    /// Returns the ids of the generic parameters of a trait.
+    #[salsa::invoke(items::trt::trait_generic_params_ids)]
+    fn trait_generic_params_ids<'db>(
+        &'db self,
+        trait_id: TraitId<'db>,
+    ) -> Maybe<Vec<GenericParamId<'db>>>;
+
     /// Returns the attributes of a trait.
     #[salsa::invoke(items::trt::trait_attributes)]
     fn trait_attributes<'db>(&'db self, trait_id: TraitId<'db>) -> Maybe<Vec<Attribute<'db>>>;
@@ -848,28 +805,13 @@ pub trait SemanticGroup:
 
     // Trait filter.
     // ==============
-    /// Returns candidate [ImplDefId]s for a specific trait lookup constraint.
-    #[salsa::invoke(items::imp::module_impl_ids_for_trait_filter)]
-    #[salsa::cycle(items::imp::module_impl_ids_for_trait_filter_cycle)]
-    fn module_impl_ids_for_trait_filter<'db>(
-        &'db self,
-        module_id: ModuleId<'db>,
-        trait_lookup_constraint: items::imp::TraitFilter<'db>,
-    ) -> Maybe<Vec<UninferredImpl<'db>>>;
-    #[salsa::invoke(items::imp::impl_impl_ids_for_trait_filter)]
-    #[salsa::cycle(items::imp::impl_impl_ids_for_trait_filter_cycle)]
-    fn impl_impl_ids_for_trait_filter<'db>(
-        &'db self,
-        impl_id: ImplId<'db>,
-        trait_lookup_constraint: items::imp::TraitFilter<'db>,
-    ) -> Maybe<Vec<UninferredImpl<'db>>>;
     // Returns the solution set for a canonical trait.
     #[salsa::invoke(inference::solver::canonic_trait_solutions)]
     #[salsa::cycle(inference::solver::canonic_trait_solutions_cycle)]
     fn canonic_trait_solutions<'db>(
         &'db self,
         canonical_trait: inference::canonic::CanonicalTrait<'db>,
-        lookup_context: ImplLookupContext<'db>,
+        lookup_context: ImplLookupContextId<'db>,
         impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
     ) -> Result<
         inference::solver::SolutionSet<'db, inference::canonic::CanonicalImpl<'db>>,
@@ -929,6 +871,23 @@ pub trait SemanticGroup:
     /// a trait.
     #[salsa::invoke(items::imp::impl_def_trait)]
     fn impl_def_trait<'db>(&'db self, impl_def_id: ImplDefId<'db>) -> Maybe<TraitId<'db>>;
+
+    /// Returns the shallow trait generic arguments of an impl.
+    #[salsa::invoke(items::imp::impl_def_shallow_trait_generic_args)]
+    #[salsa::transparent]
+    fn impl_def_shallow_trait_generic_args<'db>(
+        &'db self,
+        impl_def_id: ImplDefId<'db>,
+    ) -> Maybe<&'db [(GenericParamId<'db>, ShallowGenericArg<'db>)]>;
+
+    /// Returns the shallow trait generic arguments of an impl alias.
+    #[salsa::invoke(items::imp::impl_alias_trait_generic_args)]
+    #[salsa::transparent]
+    fn impl_alias_trait_generic_args<'db>(
+        &'db self,
+        impl_def_id: ImplAliasId<'db>,
+    ) -> Maybe<&'db [(GenericParamId<'db>, ShallowGenericArg<'db>)]>;
+
     /// Private query to compute declaration data about an impl.
     #[salsa::invoke(items::imp::priv_impl_declaration_data)]
     #[salsa::cycle(items::imp::priv_impl_declaration_data_cycle)]
@@ -1067,6 +1026,14 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId<'db>,
     ) -> Maybe<items::imp::ImplDefinitionData<'db>>;
 
+    /// Returns the uninferred impls in a module.
+    #[salsa::invoke(items::imp::module_impl_ids)]
+    fn module_impl_ids<'db>(
+        &'db self,
+        user_module: ModuleId<'db>,
+        containing_module: ModuleId<'db>,
+    ) -> Maybe<Arc<BTreeSet<UninferredImplById<'db>>>>;
+
     /// Private query to check if an impl is fully concrete.
     #[salsa::invoke(items::imp::priv_impl_is_fully_concrete)]
     fn priv_impl_is_fully_concrete<'db>(&self, impl_id: ImplId<'db>) -> bool;
@@ -1136,6 +1103,7 @@ pub trait SemanticGroup:
     fn deref_chain<'db>(
         &'db self,
         ty: TypeId<'db>,
+        crate_id: CrateId<'db>,
         try_deref_mut: bool,
     ) -> Maybe<items::imp::DerefChain<'db>>;
 
@@ -1406,6 +1374,55 @@ pub trait SemanticGroup:
         &'db self,
         impl_function_id: ImplFunctionId<'db>,
     ) -> Maybe<items::function_with_body::FunctionBodyData<'db>>;
+
+    /// Returns the dependencies of a crate.
+    #[salsa::invoke(items::imp::priv_crate_dependencies)]
+    fn priv_crate_dependencies<'db>(
+        &'db self,
+        crate_id: CrateId<'db>,
+    ) -> Arc<OrderedHashSet<CrateId<'db>>>;
+    /// Returns the uninferred impls of a crate which are global.
+    /// An impl is global if it is defined in the same module as the trait it implements or in the
+    /// same module as one of its concrete traits' types.
+    #[salsa::invoke(items::imp::crate_global_impls)]
+    #[salsa::transparent]
+    fn crate_global_impls<'db>(
+        &'db self,
+        crate_id: CrateId<'db>,
+    ) -> Maybe<&'db UnorderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImplById<'db>>>>;
+
+    /// Returns the traits which impls of a trait directly depend on.
+    #[salsa::invoke(items::imp::crate_traits_dependencies)]
+    fn crate_traits_dependencies<'db>(
+        &'db self,
+        crate_id: CrateId<'db>,
+    ) -> Arc<UnorderedHashMap<TraitId<'db>, OrderedHashSet<TraitId<'db>>>>;
+
+    /// Returns the traits which are reachable from a trait.
+    #[salsa::invoke(items::imp::reachable_trait_dependencies)]
+    fn reachable_trait_dependencies<'db>(
+        &'db self,
+        trait_id: TraitId<'db>,
+        crate_id: CrateId<'db>,
+    ) -> OrderedHashSet<TraitId<'db>>;
+
+    /// Returns the global and local impls of a module.
+    #[salsa::invoke(items::imp::module_global_impls)]
+    #[salsa::transparent]
+    fn module_global_impls<'db>(
+        &'db self,
+        _tracked: Tracked,
+        module_id: ModuleId<'db>,
+    ) -> &'db Maybe<ModuleImpls<'db>>;
+
+    /// Returns the candidates for a trait by its head.
+    #[salsa::invoke(items::imp::trait_candidate_by_head)]
+    #[salsa::transparent]
+    fn trait_candidate_by_head<'db>(
+        &'db self,
+        crate_id: CrateId<'db>,
+        trait_id: TraitId<'db>,
+    ) -> &'db OrderedHashMap<GenericsHeadFilter<'db>, OrderedHashSet<UninferredImplById<'db>>>;
 
     // Implizations.
     // ==============
@@ -1778,6 +1795,14 @@ pub trait SemanticGroup:
         &'db self,
         generic_param_id: GenericParamId<'db>,
     ) -> Maybe<TraitId<'db>>;
+
+    /// Returns the shallow generic args of a generic impl param.
+    #[salsa::invoke(items::generics::generic_impl_param_shallow_trait_generic_args)]
+    #[salsa::transparent]
+    fn generic_impl_param_shallow_trait_generic_args<'db>(
+        &'db self,
+        generic_param: GenericParamId<'db>,
+    ) -> Maybe<&'db [(GenericParamId<'db>, ShallowGenericArg<'db>)]>;
     /// Private query to compute data about a generic param.
     #[salsa::invoke(items::generics::priv_generic_param_data)]
     #[salsa::cycle(items::generics::priv_generic_param_data_cycle)]
@@ -1787,7 +1812,7 @@ pub trait SemanticGroup:
         in_cycle: bool,
     ) -> Maybe<GenericParamData<'db>>;
 
-    /// Returns the type constraints intoduced by the generic params.
+    /// Returns the type constraints introduced by the generic params.
     #[salsa::invoke(items::generics::generic_params_type_constraints)]
     fn generic_params_type_constraints<'db>(
         &'db self,
@@ -1812,7 +1837,7 @@ pub trait SemanticGroup:
     #[salsa::invoke(types::type_info)]
     fn type_info<'db>(
         &'db self,
-        lookup_context: ImplLookupContext<'db>,
+        lookup_context: ImplLookupContextId<'db>,
         ty: types::TypeId<'db>,
     ) -> types::TypeInfo<'db>;
 
@@ -1881,27 +1906,21 @@ pub trait SemanticGroup:
     // Analyzer plugins.
     // ========
 
-    #[salsa::input]
-    fn default_analyzer_plugins_input(&self) -> Arc<[AnalyzerPluginLongId]>;
+    #[salsa::transparent]
+    fn default_analyzer_plugins_input(&self) -> &[AnalyzerPluginLongId];
 
     /// Interned version of `default_analyzer_plugins`.
     fn default_analyzer_plugins<'db>(&'db self) -> Arc<Vec<AnalyzerPluginId<'db>>>;
 
-    #[salsa::input]
+    #[salsa::transparent]
     fn analyzer_plugin_overrides_input(
         &self,
-    ) -> Arc<OrderedHashMap<CrateInput, Arc<[AnalyzerPluginLongId]>>>;
+    ) -> &OrderedHashMap<CrateInput, Arc<[AnalyzerPluginLongId]>>;
 
     /// Interned version of `analyzer_plugin_overrides_input`.
     fn analyzer_plugin_overrides<'db>(
         &'db self,
     ) -> Arc<OrderedHashMap<CrateId<'db>, Arc<Vec<AnalyzerPluginId<'db>>>>>;
-
-    #[salsa::interned]
-    fn intern_analyzer_plugin<'db>(
-        &'db self,
-        plugin: AnalyzerPluginLongId,
-    ) -> AnalyzerPluginId<'db>;
 
     /// Returns [`AnalyzerPluginId`]s of the plugins set for the crate with [`CrateId`].
     /// Returns
@@ -1967,7 +1986,10 @@ pub trait SemanticGroup:
 
 /// Initializes the [`SemanticGroup`] database to a proper state.
 pub fn init_semantic_group(db: &mut dyn SemanticGroup) {
-    db.set_analyzer_plugin_overrides_input(Arc::new(OrderedHashMap::default()));
+    let db_ref = db.as_dyn_database_mut();
+    semantic_group_input(db_ref)
+        .set_analyzer_plugin_overrides(db_ref)
+        .to(Some(OrderedHashMap::default()));
 }
 
 fn default_analyzer_plugins(db: &dyn SemanticGroup) -> Arc<Vec<AnalyzerPluginId<'_>>> {
@@ -1996,7 +2018,9 @@ fn module_semantic_diagnostics<'db>(
     module_id: ModuleId<'db>,
 ) -> Maybe<Diagnostics<'db, SemanticDiagnostic<'db>>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for (_module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)?.iter().cloned() {
+    for (_module_file_id, plugin_diag) in
+        module_id.module_data(db)?.plugin_diagnostics(db).iter().cloned()
+    {
         diagnostics.add(SemanticDiagnostic::new(
             match plugin_diag.inner_span {
                 None => StableLocation::new(plugin_diag.stable_ptr),
@@ -2011,7 +2035,7 @@ fn module_semantic_diagnostics<'db>(
     diagnostics.extend(data.diagnostics.clone());
     // TODO(Gil): Aggregate diagnostics for subitems with semantic model (i.e. impl function, trait
     // functions and generic params) directly and not via the parent item.
-    for item in db.module_items(module_id)?.iter() {
+    for item in module_id.module_data(db)?.items(db).iter() {
         match item {
             ModuleItemId::Constant(const_id) => {
                 diagnostics.extend(db.constant_semantic_diagnostics(*const_id));
@@ -2042,25 +2066,25 @@ fn module_semantic_diagnostics<'db>(
             }
             ModuleItemId::Submodule(submodule_id) => {
                 // Note that the parent module does not report the diagnostics of its submodules.
-                if let Ok(file_id) = db.module_main_file(ModuleId::Submodule(*submodule_id)) {
-                    if db.file_content(file_id).is_none() {
-                        // Note that the error location is in the parent module, not the
-                        // submodule.
+                if let Ok(file_id) = db.module_main_file(ModuleId::Submodule(*submodule_id))
+                    && db.file_content(file_id).is_none()
+                {
+                    // Note that the error location is in the parent module, not the
+                    // submodule.
 
-                        let path = match file_id.long(db) {
-                            FileLongId::OnDisk(path) => path.display().to_string(),
-                            FileLongId::Virtual(_) | FileLongId::External(_) => {
-                                panic!("Expected OnDisk file.")
-                            }
-                        };
+                    let path = match file_id.long(db) {
+                        FileLongId::OnDisk(path) => path.display().to_string(),
+                        FileLongId::Virtual(_) | FileLongId::External(_) => {
+                            panic!("Expected OnDisk file.")
+                        }
+                    };
 
-                        let stable_location =
-                            StableLocation::new(submodule_id.stable_ptr(db).untyped());
-                        diagnostics.add(SemanticDiagnostic::new(
-                            stable_location,
-                            SemanticDiagnosticKind::ModuleFileNotFound(path),
-                        ));
-                    }
+                    let stable_location =
+                        StableLocation::new(submodule_id.stable_ptr(db).untyped());
+                    diagnostics.add(SemanticDiagnostic::new(
+                        stable_location,
+                        SemanticDiagnosticKind::ModuleFileNotFound(path),
+                    ));
                 }
             }
             ModuleItemId::ExternType(extern_type) => {
@@ -2080,20 +2104,20 @@ fn module_semantic_diagnostics<'db>(
             }
         }
     }
-    for global_use in db.module_global_uses(module_id)?.keys() {
+    for global_use in module_id.module_data(db)?.global_uses(db).keys() {
         diagnostics.extend(db.global_use_semantic_diagnostics(*global_use));
     }
     for macro_call in db.module_macro_calls_ids(module_id)?.iter() {
         diagnostics.extend(db.macro_call_diagnostics(*macro_call));
-        if let Ok(macro_module_id) = db.macro_call_module_id(*macro_call) {
-            if let Ok(semantic_diags) = db.module_semantic_diagnostics(macro_module_id) {
-                diagnostics.extend(semantic_diags);
-            }
+        if let Ok(macro_module_id) = db.macro_call_module_id(*macro_call)
+            && let Ok(semantic_diags) = db.module_semantic_diagnostics(macro_module_id)
+        {
+            diagnostics.extend(semantic_diags);
         }
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
     for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db)).iter() {
-        let analyzer_plugin = db.lookup_intern_analyzer_plugin(*analyzer_plugin_id);
+        let analyzer_plugin = analyzer_plugin_id.long(db);
 
         for diag in analyzer_plugin.diagnostics(db, module_id) {
             diagnostics.add(SemanticDiagnostic::new(
@@ -2117,11 +2141,14 @@ fn crate_analyzer_plugins<'db>(
 }
 
 fn declared_allows(db: &dyn SemanticGroup, crate_id: CrateId<'_>) -> Arc<OrderedHashSet<String>> {
-    Arc::new(OrderedHashSet::from_iter(
-        db.crate_analyzer_plugins(crate_id)
-            .iter()
-            .flat_map(|plugin| db.lookup_intern_analyzer_plugin(*plugin).declared_allows()),
-    ))
+    let base_lints = [DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES];
+
+    let crate_analyzer_plugins = db.crate_analyzer_plugins(crate_id);
+
+    Arc::new(OrderedHashSet::from_iter(chain!(
+        base_lints.map(|attr| attr.into()),
+        crate_analyzer_plugins.iter().flat_map(|plugin| plugin.long(db).declared_allows())
+    )))
 }
 
 /// Adds diagnostics for unused items in a module.
@@ -2163,7 +2190,7 @@ fn add_unused_import_diagnostics<'db>(
         ))?;
         require(!all_used_uses.contains(&use_id))?;
         let resolver_data = db.use_resolver_data(use_id).ok()?;
-        require(!resolver_data.feature_config.allow_unused_imports)?;
+        require(!resolver_data.feature_config.allowed_lints.contains(UNUSED_IMPORTS))?;
         Some(diagnostics.add(SemanticDiagnostic::new(
             StableLocation::new(use_id.untyped_stable_ptr(db)),
             SemanticDiagnosticKind::UnusedImport(use_id),
@@ -2273,11 +2300,11 @@ pub trait SemanticGroupEx: SemanticGroup {
         crate_id: CrateId<'_>,
         plugins: Arc<[AnalyzerPluginId<'_>]>,
     ) {
-        let mut overrides = self.analyzer_plugin_overrides_input().as_ref().clone();
-        let plugins =
-            plugins.iter().map(|plugin| self.lookup_intern_analyzer_plugin(*plugin)).collect_vec();
-        overrides.insert(self.crate_input(crate_id), Arc::from(plugins));
-        self.set_analyzer_plugin_overrides_input(Arc::new(overrides));
+        let mut overrides = self.analyzer_plugin_overrides_input().clone();
+        let plugins = plugins.iter().map(|plugin| plugin.long(self).clone()).collect_vec();
+        overrides.insert(self.crate_input(crate_id).clone(), Arc::from(plugins));
+        let db_ref = self.as_dyn_database_mut();
+        semantic_group_input(db_ref).set_analyzer_plugin_overrides(db_ref).to(Some(overrides));
     }
 }
 
@@ -2328,21 +2355,21 @@ pub trait PluginSuiteInput: SemanticGroup {
 
         let macro_plugins = plugins
             .into_iter()
-            .map(|plugin| self.intern_macro_plugin(MacroPluginLongId(plugin)))
+            .map(|plugin| MacroPluginId::new(self, MacroPluginLongId(plugin)))
             .collect::<Arc<[_]>>();
 
         let inline_macro_plugins = Arc::new(
             inline_macro_plugins
                 .into_iter()
                 .map(|(name, plugin)| {
-                    (name, self.intern_inline_macro_plugin(InlineMacroExprPluginLongId(plugin)))
+                    (name, InlineMacroExprPluginId::new(self, InlineMacroExprPluginLongId(plugin)))
                 })
                 .collect::<OrderedHashMap<_, _>>(),
         );
 
         let analyzer_plugins = analyzer_plugins
             .into_iter()
-            .map(|plugin| self.intern_analyzer_plugin(AnalyzerPluginLongId(plugin)))
+            .map(|plugin| AnalyzerPluginId::new(self, AnalyzerPluginLongId(plugin)))
             .collect::<Arc<[_]>>();
 
         InternedPluginSuite { macro_plugins, inline_macro_plugins, analyzer_plugins }
@@ -2358,21 +2385,24 @@ pub trait PluginSuiteInput: SemanticGroup {
         let PluginSuite { plugins, inline_macro_plugins, analyzer_plugins } = suite;
         // let interned = self.intern_plugin_suite(suite);
 
-        let macro_plugins = plugins.into_iter().map(MacroPluginLongId).collect::<Arc<[_]>>();
+        let macro_plugins = plugins.into_iter().map(MacroPluginLongId).collect_vec();
 
-        let inline_macro_plugins = Arc::new(
-            inline_macro_plugins
-                .into_iter()
-                .map(|(name, plugin)| (name, InlineMacroExprPluginLongId(plugin)))
-                .collect::<OrderedHashMap<_, _>>(),
-        );
+        let inline_macro_plugins = inline_macro_plugins
+            .into_iter()
+            .map(|(name, plugin)| (name, InlineMacroExprPluginLongId(plugin)))
+            .collect::<OrderedHashMap<_, _>>();
 
         let analyzer_plugins =
-            analyzer_plugins.into_iter().map(AnalyzerPluginLongId).collect::<Arc<[_]>>();
+            analyzer_plugins.into_iter().map(AnalyzerPluginLongId).collect::<Vec<_>>();
 
-        self.set_default_macro_plugins_input(macro_plugins);
-        self.set_default_inline_macro_plugins_input(inline_macro_plugins);
-        self.set_default_analyzer_plugins_input(analyzer_plugins);
+        let db_ref = self.as_dyn_database_mut();
+        defs_group_input(db_ref).set_default_macro_plugins(db_ref).to(Some(macro_plugins));
+        defs_group_input(db_ref)
+            .set_default_inline_macro_plugins(db_ref)
+            .to(Some(inline_macro_plugins));
+        semantic_group_input(db_ref)
+            .set_default_analyzer_plugins(db_ref)
+            .to(Some(analyzer_plugins));
     }
 
     /// Sets macro, inline macro and analyzer plugins present in the [`PluginSuite`] for a crate
@@ -2395,3 +2425,39 @@ pub trait PluginSuiteInput: SemanticGroup {
 }
 
 impl<T: SemanticGroup + ?Sized> PluginSuiteInput for T {}
+
+/// Returns all ancestors (parents) of the given module, including the module itself, in order from
+/// closest to farthest.
+pub fn module_ancestors<'db>(
+    db: &'db dyn Database,
+    mut module_id: ModuleId<'db>,
+) -> Vec<ModuleId<'db>> {
+    let mut ancestors = Vec::new();
+    ancestors.push(module_id); // Include the module itself first
+    while let ModuleId::Submodule(submodule_id) = module_id {
+        let parent = submodule_id.parent_module(db);
+        ancestors.push(parent);
+        module_id = parent;
+    }
+    ancestors
+}
+
+/// Returns all ancestors (parents) and all macro-generated modules within them.
+pub fn module_fully_accessible_modules<'db>(
+    db: &'db dyn SemanticGroup,
+    module_id: ModuleId<'db>,
+) -> OrderedHashSet<ModuleId<'db>> {
+    let mut result: Vec<ModuleId<'db>> = module_ancestors(db, module_id);
+    let mut index = 0;
+    while let Some(curr) = result.get(index).copied() {
+        index += 1;
+        if let Ok(macro_call_ids) = db.module_macro_calls_ids(curr) {
+            for macro_call_id in macro_call_ids.iter() {
+                if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
+                    result.push(generated_module_id);
+                }
+            }
+        }
+    }
+    result.into_iter().collect()
+}

@@ -1,18 +1,15 @@
 use std::sync::Arc;
 
 use anyhow::{Result, anyhow, bail};
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use cairo_lang_defs::db::{init_defs_group, init_external_files};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::cfg::CfgSet;
-use cairo_lang_filesystem::db::{
-    CORELIB_VERSION, ExternalFiles, FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group,
-};
+use cairo_lang_filesystem::db::{CORELIB_VERSION, FilesGroup, init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::{CrateId, FlagLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{CrateId, FlagLongId};
 use cairo_lang_lowering::db::{ExternalCodeSizeEstimator, LoweringGroup, init_lowering_group};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
 use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
@@ -20,7 +17,6 @@ use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_sierra_generator::db::{SierraGenGroup, init_sierra_gen_group};
 use cairo_lang_sierra_generator::program_generator::get_dummy_program_for_size_estimation;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::Upcast;
 
 use crate::InliningStrategy;
@@ -75,14 +71,11 @@ pub struct RootDatabase {
 }
 #[salsa::db]
 impl salsa::Database for RootDatabase {}
-impl ExternalFiles for RootDatabase {
-    fn try_ext_as_virtual(&self, external_id: salsa::Id) -> Option<VirtualFile<'_>> {
-        try_ext_as_virtual_impl(self, external_id)
-    }
-}
+
 impl RootDatabase {
     fn new(default_plugin_suite: PluginSuite, inlining_strategy: InliningStrategy) -> Self {
         let mut res = Self { storage: Default::default() };
+        init_external_files(&mut res);
         init_files_group(&mut res);
         init_lowering_group(&mut res, inlining_strategy);
         init_defs_group(&mut res);
@@ -226,20 +219,20 @@ impl RootDatabaseBuilder {
 }
 
 /// Validates that the corelib version matches the expected one.
-pub fn validate_corelib(db: &(dyn FilesGroup + 'static)) -> Result<()> {
+pub fn validate_corelib(db: &(dyn salsa::Database + 'static)) -> Result<()> {
     let Some(config) = db.crate_config(CrateId::core(db)) else {
         return Ok(());
     };
-    let Some(found) = config.settings.version else {
+    let Some(found) = &config.settings.version else {
         return Ok(());
     };
     let Ok(expected) = semver::Version::parse(CORELIB_VERSION) else {
         return Ok(());
     };
-    if found == expected {
+    if found == &expected {
         return Ok(());
     }
-    let path_part = match config.root {
+    let path_part = match &config.root {
         cairo_lang_filesystem::ids::Directory::Real(path) => {
             format!(" for `{}`", path.to_string_lossy())
         }
@@ -248,18 +241,8 @@ pub fn validate_corelib(db: &(dyn FilesGroup + 'static)) -> Result<()> {
     bail!("Corelib version mismatch: expected `{expected}`, found `{found}`{path_part}.");
 }
 
-impl<'db> Upcast<'db, dyn FilesGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn FilesGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SyntaxGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn SyntaxGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn DefsGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn DefsGroup {
+impl<'db> Upcast<'db, dyn salsa::Database> for RootDatabase {
+    fn upcast(&self) -> &dyn salsa::Database {
         self
     }
 }
@@ -275,11 +258,6 @@ impl<'db> Upcast<'db, dyn LoweringGroup> for RootDatabase {
 }
 impl<'db> Upcast<'db, dyn SierraGenGroup> for RootDatabase {
     fn upcast(&self) -> &dyn SierraGenGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn ParserGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn ParserGroup {
         self
     }
 }

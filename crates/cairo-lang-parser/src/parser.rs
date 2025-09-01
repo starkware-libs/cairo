@@ -1,16 +1,17 @@
 use std::mem;
 
 use cairo_lang_diagnostics::DiagnosticsBuilder;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::*;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
 use cairo_lang_utils::{extract_matches, require};
+use salsa::Database;
 use syntax::node::green::{GreenNode, GreenNodeDetails};
 use syntax::node::ids::GreenId;
 
@@ -42,7 +43,7 @@ enum MacroParsingContext {
 }
 
 pub struct Parser<'a, 'mt> {
-    db: &'a dyn SyntaxGroup,
+    db: &'a dyn Database,
     file_id: FileId<'a>,
     lexer: Lexer<'a>,
     /// The next terminal to handle.
@@ -124,7 +125,7 @@ macro_rules! or_an_attribute {
 impl<'a, 'mt> Parser<'a, 'mt> {
     /// Creates a new parser.
     pub fn new(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn Database,
         file_id: FileId<'a>,
         text: &'a str,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
@@ -154,7 +155,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Parses a file.
     pub fn parse_file(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn Database,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         text: &'a str,
@@ -166,7 +167,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Parses a file expr.
     pub fn parse_file_expr(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn Database,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         text: &'a str,
@@ -185,7 +186,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Parses a file as a list of statements.
     pub fn parse_file_statement_list(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn Database,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         text: &'a str,
@@ -206,7 +207,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Parses a token stream.
     pub fn parse_token_stream(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn Database,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
@@ -230,7 +231,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Parses a token stream expression.
     pub fn parse_token_stream_expr(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn Database,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         offset: Option<TextOffset>,
@@ -254,7 +255,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         missing_kind: ParserDiagnosticKind,
     ) -> T::Green {
         let next_offset = self.offset.add_width(self.current_width - self.last_trivia_length);
-        self.add_diagnostic(missing_kind, TextSpan { start: next_offset, end: next_offset });
+        self.add_diagnostic(missing_kind, TextSpan::cursor(next_offset));
         T::missing(self.db)
     }
 
@@ -364,10 +365,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                                 identifier: path.identifier(self.db).to_string(),
                                 bracket_type: self.peek().kind,
                             },
-                            TextSpan {
-                                start: self.offset,
-                                end: self.offset.add_width(self.current_width),
-                            },
+                            TextSpan::new(self.offset, self.offset.add_width(self.current_width)),
                         );
                         Ok(self
                             .parse_item_inline_macro_given_bang(
@@ -733,12 +731,29 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                     BracketedMacro::new_green,
                 )
                 .into(),
-            _ => return Err(TryParseFailure::SkipToken),
+            _ => {
+                self.macro_parsing_context = previous_macro_parsing_context;
+                return Err(TryParseFailure::SkipToken);
+            }
         };
         let arrow = self.parse_token::<TerminalMatchArrow<'_>>();
-        self.macro_parsing_context = MacroParsingContext::MacroExpansion;
-        let macro_body =
-            self.wrap_macro::<TerminalLBrace<'_>, TerminalRBrace<'_>, _, _>(BracedMacro::new_green);
+        if let Err(SkippedError(span)) = self.skip_until(is_of_kind!(rbrace, lbrace)) {
+            self.add_diagnostic(
+                ParserDiagnosticKind::SkippedElement { element_name: "'{'".into() },
+                span,
+            );
+        }
+        let macro_body = if self.peek().kind == SyntaxKind::TerminalLBrace {
+            self.macro_parsing_context = MacroParsingContext::MacroExpansion;
+            self.wrap_macro::<TerminalLBrace<'_>, TerminalRBrace<'_>, _, _>(BracedMacro::new_green)
+        } else {
+            BracedMacro::new_green(
+                self.db,
+                self.create_and_report_missing_terminal::<TerminalLBrace<'_>>(),
+                MacroElements::new_green(self.db, &[]),
+                self.create_and_report_missing_terminal::<TerminalRBrace<'_>>(),
+            )
+        };
         let semicolon = self.parse_token::<TerminalSemicolon<'_>>();
         self.macro_parsing_context = previous_macro_parsing_context;
         Ok(MacroRule::new_green(self.db, wrapped_macro, arrow, macro_body, semicolon))
@@ -784,10 +799,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                             {
                                 self.add_diagnostic(
                                     ParserDiagnosticKind::InvalidParamKindInMacroExpansion,
-                                    TextSpan {
-                                        start: self.offset,
-                                        end: self.offset.add_width(self.current_width),
-                                    },
+                                    TextSpan::new_with_width(self.offset, self.current_width),
                                 );
                             }
                             result
@@ -795,10 +807,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                             if let MacroParsingContext::MacroRule = self.macro_parsing_context {
                                 self.add_diagnostic(
                                     ParserDiagnosticKind::InvalidParamKindInMacroRule,
-                                    TextSpan {
-                                        start: self.offset,
-                                        end: self.offset.add_width(self.current_width),
-                                    },
+                                    TextSpan::new_with_width(self.offset, self.current_width),
                                 );
                             }
                             OptionParamKindEmpty::new_green(self.db).into()
@@ -867,7 +876,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         RTerminal: syntax::node::Terminal<'a>,
         ListGreen,
         NewGreen: Fn(
-            &'a dyn SyntaxGroup,
+            &'a dyn Database,
             LTerminal::Green,
             MacroElementsGreen<'a>,
             RTerminal::Green,
@@ -1552,19 +1561,17 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                     ExprIndexed::new_green(self.db, expr, lbrack, index_expr, rbrack).into()
                 }
                 current_op => {
-                    if let Some(child_op_kind) = child_op {
-                        if self.is_comparison_operator(child_op_kind)
-                            && self.is_comparison_operator(current_op)
-                        {
-                            let offset = self.offset.add_width(self.current_width);
-                            self.add_diagnostic(
-                                ParserDiagnosticKind::ConsecutiveMathOperators {
-                                    first_op: child_op_kind,
-                                    second_op: current_op,
-                                },
-                                TextSpan { start: offset, end: offset },
-                            );
-                        }
+                    if let Some(child_op_kind) = child_op
+                        && self.is_comparison_operator(child_op_kind)
+                        && self.is_comparison_operator(current_op)
+                    {
+                        self.add_diagnostic(
+                            ParserDiagnosticKind::ConsecutiveMathOperators {
+                                first_op: child_op_kind,
+                                second_op: current_op,
+                            },
+                            TextSpan::cursor(self.offset.add_width(self.current_width)),
+                        );
                     }
                     child_op = Some(current_op);
                     let op = self.parse_binary_operator();
@@ -1819,12 +1826,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         LTerminal: syntax::node::Terminal<'a>,
         RTerminal: syntax::node::Terminal<'a>,
         ListGreen,
-        NewGreen: Fn(
-            &'a dyn SyntaxGroup,
-            LTerminal::Green,
-            TokenListGreen<'a>,
-            RTerminal::Green,
-        ) -> ListGreen,
+        NewGreen: Fn(&'a dyn Database, LTerminal::Green, TokenListGreen<'a>, RTerminal::Green) -> ListGreen,
     >(
         &mut self,
         new_green: NewGreen,
@@ -1967,7 +1969,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         LTerminal: syntax::node::Terminal<'a>,
         RTerminal: syntax::node::Terminal<'a>,
         ListGreen,
-        NewGreen: Fn(&'a dyn SyntaxGroup, LTerminal::Green, ArgListGreen<'a>, RTerminal::Green) -> ListGreen,
+        NewGreen: Fn(&'a dyn Database, LTerminal::Green, ArgListGreen<'a>, RTerminal::Green) -> ListGreen,
     >(
         &mut self,
         new_green: NewGreen,
@@ -2042,15 +2044,17 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         let value = self.try_parse_expr()?;
         // If the next token is `:` and the expression is an identifier, this is the argument's
         // name.
-        if self.peek().kind == SyntaxKind::TerminalColon {
-            if let Some(argname) = self.try_extract_identifier(value) {
+        Ok(
+            if self.peek().kind == SyntaxKind::TerminalColon
+                && let Some(argname) = self.try_extract_identifier(value)
+            {
                 let colon = self.take::<TerminalColon<'_>>();
                 let expr = self.parse_expr();
-                return Ok(ArgClauseNamed::new_green(self.db, argname, colon, expr).into());
-            }
-        }
-
-        Ok(ArgClauseUnnamed::new_green(self.db, value).into())
+                ArgClauseNamed::new_green(self.db, argname, colon, expr).into()
+            } else {
+                ArgClauseUnnamed::new_green(self.db, value).into()
+            },
+        )
     }
 
     /// If the given `expr` is a simple identifier, returns the corresponding green node.
@@ -2155,7 +2159,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         if let [ExprListElementOrSeparatorGreen::Element(_)] = &exprs[..] {
             self.add_diagnostic(
                 ParserDiagnosticKind::MissingToken(SyntaxKind::TokenComma),
-                TextSpan { start: self.offset, end: self.offset },
+                TextSpan::cursor(self.offset),
             );
         }
         ExprListParenthesized::new_green(
@@ -2321,13 +2325,13 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// kind.
     /// Otherwise, returns `None`.
     fn get_binary_operator(&self, condition: ConditionGreen<'_>) -> Option<SyntaxKind> {
-        let condition_expr_green = self.db.lookup_intern_green(condition.0);
+        let condition_expr_green = condition.0.long(self.db);
         require(condition_expr_green.kind == SyntaxKind::ConditionExpr)?;
 
-        let expr_binary_green = self.db.lookup_intern_green(condition_expr_green.children()[0]);
+        let expr_binary_green = condition_expr_green.children()[0].long(self.db);
         require(expr_binary_green.kind == SyntaxKind::ExprBinary)?;
 
-        Some(self.db.lookup_intern_green(expr_binary_green.children()[1]).kind)
+        Some(expr_binary_green.children()[1].long(self.db).kind)
     }
 
     /// Parses a conjunction of conditions of the form `<condition> && <condition> && ...`,
@@ -2345,19 +2349,16 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
         // If there is more than one condition, check that the first condition does not have a
         // precedence lower than `&&`.
-        if self.peek().kind == SyntaxKind::TerminalAndAnd {
-            if let Some(op) = self.get_binary_operator(condition) {
-                if let Some(precedence) = get_post_operator_precedence(op) {
-                    if precedence > and_and_precedence {
-                        let offset =
-                            self.offset.add_width(self.current_width - self.last_trivia_length);
-                        self.add_diagnostic(
-                            ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op },
-                            TextSpan { start: start_offset, end: offset },
-                        );
-                    }
-                }
-            }
+        if self.peek().kind == SyntaxKind::TerminalAndAnd
+            && let Some(op) = self.get_binary_operator(condition)
+            && let Some(precedence) = get_post_operator_precedence(op)
+            && precedence > and_and_precedence
+        {
+            let offset = self.offset.add_width(self.current_width - self.last_trivia_length);
+            self.add_diagnostic(
+                ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op },
+                TextSpan::new(start_offset, offset),
+            );
         }
 
         while self.peek().kind == SyntaxKind::TerminalAndAnd {
@@ -2369,18 +2370,16 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         }
 
         let peek_item = self.peek();
-        if let Some(op_precedence) = get_post_operator_precedence(peek_item.kind) {
-            if op_precedence > and_and_precedence {
-                let offset = self.offset.add_width(self.current_width);
-                self.add_diagnostic(
-                    ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op: peek_item.kind },
-                    TextSpan { start: offset, end: offset },
-                );
-                // Skip the rest of the tokens until `{`. Don't report additional diagnostics.
-                let _ = self.skip_until(is_of_kind!(rbrace, lbrace, module_item_kw, block));
-            }
+        if let Some(op_precedence) = get_post_operator_precedence(peek_item.kind)
+            && op_precedence > and_and_precedence
+        {
+            self.add_diagnostic(
+                ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op: peek_item.kind },
+                TextSpan::cursor(self.offset.add_width(self.current_width)),
+            );
+            // Skip the rest of the tokens until `{`. Don't report additional diagnostics.
+            let _ = self.skip_until(is_of_kind!(rbrace, lbrace, module_item_kw, block));
         }
-
         ConditionListAnd::new_green(self.db, &conditions)
     }
 
@@ -3184,10 +3183,13 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// Adds a diagnostic of kind `kind` if provided, at the current offset.
     fn add_optional_diagnostic(&mut self, err: Option<ValidationError>) {
         if let Some(err) = err {
-            let span_end = self.offset.add_width(self.current_width);
             let span = match err.location {
-                ValidationLocation::Full => TextSpan { start: self.offset, end: span_end },
-                ValidationLocation::After => TextSpan { start: span_end, end: span_end },
+                ValidationLocation::Full => {
+                    TextSpan::new_with_width(self.offset, self.current_width)
+                }
+                ValidationLocation::After => {
+                    TextSpan::cursor(self.offset.add_width(self.current_width))
+                }
             };
             self.add_diagnostic(err.kind, span);
         }
@@ -3217,17 +3219,17 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
         // If the next token is `:` and the expression is an identifier, this is the argument's
         // name.
-        if self.peek().kind == SyntaxKind::TerminalColon {
-            if let Some(argname) = self.try_extract_identifier(expr) {
-                let colon = self.take::<TerminalColon<'_>>();
-                let expr = if self.peek().kind == SyntaxKind::TerminalUnderscore {
-                    self.take::<TerminalUnderscore<'_>>().into()
-                } else {
-                    let expr = self.parse_type_expr();
-                    GenericArgValueExpr::new_green(self.db, expr).into()
-                };
-                return Ok(GenericArgNamed::new_green(self.db, argname, colon, expr).into());
-            }
+        if self.peek().kind == SyntaxKind::TerminalColon
+            && let Some(argname) = self.try_extract_identifier(expr)
+        {
+            let colon = self.take::<TerminalColon<'_>>();
+            let expr = if self.peek().kind == SyntaxKind::TerminalUnderscore {
+                self.take::<TerminalUnderscore<'_>>().into()
+            } else {
+                let expr = self.parse_type_expr();
+                GenericArgValueExpr::new_green(self.db, expr).into()
+            };
+            return Ok(GenericArgNamed::new_green(self.db, argname, colon, expr).into());
         }
         Ok(GenericArgUnnamed::new_green(
             self.db,
@@ -3461,10 +3463,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                     if let (Some(diagnostic_kind), true) =
                         (forbid_trailing_separator, !children.is_empty())
                     {
-                        self.add_diagnostic(
-                            diagnostic_kind,
-                            TextSpan { start: self.offset, end: self.offset },
-                        );
+                        self.add_diagnostic(diagnostic_kind, TextSpan::cursor(self.offset));
                     }
                     break;
                 }
@@ -3541,7 +3540,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// current trivia as skipped, and continuing the compilation as if it wasn't there.
     fn skip_token(&mut self, diagnostic_kind: ParserDiagnosticKind) {
         if self.peek().kind == SyntaxKind::TerminalEndOfFile {
-            self.add_diagnostic(diagnostic_kind, TextSpan { start: self.offset, end: self.offset });
+            self.add_diagnostic(diagnostic_kind, TextSpan::cursor(self.offset));
             return;
         }
         let terminal = self.take_raw();
@@ -3567,7 +3566,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         self.pending_trivia.extend(terminal.trailing_trivia);
         self.pending_skipped_token_diagnostics.push(PendingParserDiagnostic {
             kind: diagnostic_kind,
-            span: TextSpan { start: diag_start, end: diag_end },
+            span: TextSpan::new(diag_start, diag_end),
             leading_trivia_start: orig_offset,
             trailing_trivia_end: diag_end.add_width(trailing_trivia_width),
         });
@@ -3609,7 +3608,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
         self.pending_skipped_token_diagnostics.push(PendingParserDiagnostic {
             kind: diagnostic_kind,
-            span: TextSpan { start: diag_pos, end: diag_pos },
+            span: TextSpan::cursor(diag_pos),
             leading_trivia_start: start_of_node_offset,
             trailing_trivia_end: end_of_node_offset,
         });
@@ -3655,7 +3654,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             self.pending_trivia.extend(terminal.trailing_trivia);
         }
         if let (Some(diag_start), Some(diag_end)) = (diag_start, diag_end) {
-            Err(SkippedError(TextSpan { start: diag_start, end: diag_end }))
+            Err(SkippedError(TextSpan::new(diag_start, diag_end)))
         } else {
             Ok(())
         }
@@ -3698,7 +3697,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             {
                 // Aggregate this diagnostic with the previous ones.
                 current_diag = PendingParserDiagnostic {
-                    span: TextSpan { start: current_diag.span.start, end: diag.span.end },
+                    span: TextSpan::new(current_diag.span.start, diag.span.end),
                     kind: diag.kind,
                     leading_trivia_start: current_diag.leading_trivia_start,
                     trailing_trivia_end: diag.trailing_trivia_end,
@@ -3860,12 +3859,12 @@ pub struct PendingParserDiagnostic {
 }
 
 /// Returns the total width of the given trivia list.
-fn trivia_total_width(db: &dyn SyntaxGroup, trivia: &[TriviumGreen<'_>]) -> TextWidth {
+fn trivia_total_width(db: &dyn Database, trivia: &[TriviumGreen<'_>]) -> TextWidth {
     trivia.iter().map(|trivium| trivium.0.width(db)).sum::<TextWidth>()
 }
 
 /// The width of the trailing trivia, traversing the tree to the bottom right node.
-fn trailing_trivia_width(db: &dyn SyntaxGroup, green_id: GreenId<'_>) -> Option<TextWidth> {
+fn trailing_trivia_width(db: &dyn Database, green_id: GreenId<'_>) -> Option<TextWidth> {
     let node = green_id.long(db);
     if node.kind == SyntaxKind::Trivia {
         return Some(node.width());

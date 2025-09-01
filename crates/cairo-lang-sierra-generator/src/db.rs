@@ -31,17 +31,17 @@ pub enum SierraGeneratorTypeLongId<'db> {
     Phantom(semantic::TypeId<'db>),
 }
 
-#[salsa::interned]
+#[salsa::interned(revisions = usize::MAX)]
 struct ConcreteLibfuncIdLongWrapper {
     id: cairo_lang_sierra::program::ConcreteLibfuncLongId,
 }
 
-#[salsa::interned]
+#[salsa::interned(revisions = usize::MAX)]
 struct SierraGeneratorTypeLongIdWrapper<'db> {
     id: SierraGeneratorTypeLongId<'db>,
 }
 
-#[salsa::interned]
+#[salsa::interned(revisions = usize::MAX)]
 struct LoweringFunctionIdWrapper<'db> {
     id: lowering::ids::FunctionId<'db>,
 }
@@ -98,12 +98,6 @@ fn lookup_sierra_function<'db>(
 
 #[cairo_lang_proc_macros::query_group]
 pub trait SierraGenGroup: LoweringGroup + for<'db> Upcast<'db, dyn LoweringGroup> {
-    #[salsa::interned]
-    fn intern_label_id<'db>(
-        &'db self,
-        id: pre_sierra::LabelLongId<'db>,
-    ) -> pre_sierra::LabelId<'db>;
-
     fn intern_concrete_lib_func(
         &self,
         id: cairo_lang_sierra::program::ConcreteLibfuncLongId,

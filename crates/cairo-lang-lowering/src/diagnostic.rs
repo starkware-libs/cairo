@@ -173,7 +173,7 @@ impl<'db> MatchError<'db> {
                 "Unreachable pattern arm.".into()
             }
             (MatchDiagnostic::UnreachableMatchArm, MatchKind::IfLet) => {
-                "Unreachable else clause.".into()
+                "Unreachable clause.".into()
             }
             (MatchDiagnostic::UnreachableMatchArm, MatchKind::WhileLet(_, _)) => {
                 unreachable!("While-let does not have two arms.")
@@ -227,11 +227,11 @@ pub enum MatchKind<'db> {
 
 unsafe impl<'db> salsa::Update for MatchKind<'db> {
     unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = &mut *old_pointer;
+        let old_value = unsafe { &mut *old_pointer };
         match (old_value, &new_value) {
             (MatchKind::Match, MatchKind::Match) | (MatchKind::IfLet, MatchKind::IfLet) => false,
             (MatchKind::WhileLet(expr, end_ptr), MatchKind::WhileLet(new_expr, new_end_ptr)) => {
-                if SyntaxStablePtrId::maybe_update(end_ptr, *new_end_ptr) {
+                if unsafe { SyntaxStablePtrId::maybe_update(end_ptr, *new_end_ptr) } {
                     *expr = *new_expr;
                     true
                 } else if expr != new_expr {

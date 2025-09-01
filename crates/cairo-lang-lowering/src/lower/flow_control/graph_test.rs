@@ -20,6 +20,7 @@ use crate::lower::test_utils::{create_encapsulating_ctx, create_lowering_context
 use crate::lower::{
     alloc_empty_block, lowered_expr_to_block_scope_end, wrap_sealed_block_as_function,
 };
+use crate::objects::blocks::Blocks;
 use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
 
 cairo_lang_test_utils::test_file_test!(
@@ -59,7 +60,7 @@ fn test_create_graph(
     let mut encapsulating_ctx =
         create_encapsulating_ctx(db, test_function.function_id, &test_function.signature);
 
-    let ctx = create_lowering_context(
+    let mut ctx = create_lowering_context(
         db,
         test_function.function_id,
         &test_function.signature,
@@ -67,27 +68,32 @@ fn test_create_graph(
     );
 
     let graph = match &expr {
-        semantic::Expr::If(expr) => create_graph_expr_if(&ctx, expr),
-        semantic::Expr::Match(expr) => create_graph_expr_match(&ctx, expr),
+        semantic::Expr::If(expr) => create_graph_expr_if(&mut ctx, expr),
+        semantic::Expr::Match(expr) => create_graph_expr_match(&mut ctx, expr),
         _ => {
             panic!("Unsupported expression: {:?}", expr.debug(&expr_formatter));
         }
     };
 
-    let error = verify_diagnostics_expectation(args, &semantic_diagnostics);
-
     // Lower the graph.
-    let lowered_str = if args.get("skip_lowering").unwrap_or(&"false".into()) == "true" {
-        "".into()
-    } else {
-        let lowered = lower_graph_as_function(ctx, expr_id, &graph);
-        formatted_lowered(db, Some(&lowered))
-    };
+    let (lowered_str, lowering_diagnostics) =
+        if args.get("skip_lowering").unwrap_or(&"false".into()) == "true" {
+            ("".into(), ctx.diagnostics.build().format(db))
+        } else {
+            let lowered = lower_graph_as_function(ctx, expr_id, &graph);
+            (formatted_lowered(db, Some(&lowered)), lowered.diagnostics.format(db))
+        };
+
+    let error = verify_diagnostics_expectation(
+        args,
+        &format!("{semantic_diagnostics}{lowering_diagnostics}"),
+    );
 
     TestRunnerResult {
         outputs: OrderedHashMap::from([
             ("graph".into(), format!("{graph:?}")),
             ("semantic_diagnostics".into(), semantic_diagnostics),
+            ("lowering_diagnostics".into(), lowering_diagnostics),
             ("lowered".into(), lowered_str),
         ]),
         error,
@@ -125,16 +131,27 @@ fn lower_graph_as_function<'db>(
     // Lower the graph into the builder.
     let block_expr = lower_graph(&mut ctx, &mut builder, graph, location);
 
-    let block_sealed = lowered_expr_to_block_scope_end(&mut ctx, builder, block_expr).unwrap();
+    let block_sealed = match lowered_expr_to_block_scope_end(&mut ctx, builder, block_expr) {
+        Ok(block_sealed) => block_sealed,
+        Err(diag_added) => {
+            return Lowered {
+                diagnostics: ctx.diagnostics.build(),
+                variables: ctx.variables.variables,
+                blocks: Blocks::new_errored(diag_added),
+                signature: ctx.signature.clone(),
+                parameters,
+            };
+        }
+    };
 
     let expr = ctx.function_body.arenas.exprs[expr_id].clone();
 
     wrap_sealed_block_as_function(&mut ctx, block_sealed, expr.stable_ptr().untyped()).unwrap();
 
-    let blocks = std::mem::take(&mut ctx.blocks).build().expect("Root block must exist.");
+    let blocks = ctx.blocks.build().expect("Root block must exist.");
     Lowered {
-        diagnostics: std::mem::take(&mut ctx.diagnostics).build(),
-        variables: std::mem::take(&mut ctx.variables.variables),
+        diagnostics: ctx.diagnostics.build(),
+        variables: ctx.variables.variables,
         blocks,
         signature: ctx.signature.clone(),
         parameters,

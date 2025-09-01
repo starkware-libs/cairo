@@ -2,6 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
 use cairo_lang_semantic::{
@@ -1762,8 +1763,7 @@ fn lower_match_arm_expr_and_seal_patterns<'db>(
     }
 
     // A parent block builder where the variables of each pattern are introduced.
-    // The parent block should have the same semantics and changed_member_paths as any of
-    // the child blocks.
+    // The parent block should have the same semantics as any of the child blocks.
     let mut outer_subscope = lowering_inner_pattern_results_and_subscopes[0]
         .1
         .sibling_block_builder(alloc_empty_block(ctx));
@@ -2218,8 +2218,8 @@ fn lower_expr_match_value<'db>(
 /// Returns the threshold for the number of arms for optimising numeric match expressions, by using
 /// a jump table instead of an if-else construct.
 /// `is_small_type` means the matched type has < 2**128 possible values.
-fn numeric_match_optimization_threshold<'db>(
-    ctx: &mut LoweringContext<'db, '_>,
+pub fn numeric_match_optimization_threshold<'db>(
+    ctx: &LoweringContext<'db, '_>,
     is_small_type: bool,
 ) -> usize {
     // For felt252 the number of steps with if-else is 2 * min(n, number_of_arms) + 2 and 11~13 for

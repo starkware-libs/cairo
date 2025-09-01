@@ -1,16 +1,18 @@
 use core::hash::Hash;
 
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, define_short_id, require};
+use salsa::Database;
 
 use self::ast::TriviaGreen;
-use self::db::SyntaxGroup;
 use self::green::GreenNode;
 use self::ids::{GreenId, SyntaxStablePtrId};
 use self::kind::SyntaxKind;
 use self::stable_ptr::SyntaxStablePtr;
+use crate::node::db::SyntaxGroup;
 use crate::node::iter::{Preorder, WalkEvent};
 
 pub mod ast;
@@ -41,15 +43,9 @@ pub struct SyntaxNodeLongId<'a> {
     parent: Option<SyntaxNode<'a>>,
     stable_ptr: SyntaxStablePtrId<'a>,
 }
-define_short_id!(
-    SyntaxNode,
-    SyntaxNodeLongId<'db>,
-    SyntaxGroup,
-    lookup_intern_syntax_node,
-    intern_syntax_node
-);
+define_short_id!(SyntaxNode, SyntaxNodeLongId<'db>, Database);
 impl<'a> SyntaxNode<'a> {
-    pub fn new_root(db: &'a dyn SyntaxGroup, file_id: FileId<'a>, green: GreenId<'a>) -> Self {
+    pub fn new_root(db: &'a dyn Database, file_id: FileId<'a>, green: GreenId<'a>) -> Self {
         Self::new_with_inner(
             db,
             green,
@@ -60,7 +56,7 @@ impl<'a> SyntaxNode<'a> {
     }
 
     pub fn new_root_with_offset(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn Database,
         file_id: FileId<'a>,
         green: GreenId<'a>,
         initial_offset: Option<TextOffset>,
@@ -75,7 +71,7 @@ impl<'a> SyntaxNode<'a> {
     }
 
     pub fn new_with_inner(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn Database,
         green: GreenId<'a>,
         offset: TextOffset,
         parent: Option<SyntaxNode<'a>>,
@@ -84,22 +80,20 @@ impl<'a> SyntaxNode<'a> {
         SyntaxNodeLongId { green, offset, parent, stable_ptr }.intern(db)
     }
 
-    pub fn offset(&self, db: &dyn SyntaxGroup) -> TextOffset {
+    pub fn offset(&self, db: &dyn Database) -> TextOffset {
         self.long(db).offset
     }
-    pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
+    pub fn width(&self, db: &dyn Database) -> TextWidth {
         self.green_node(db).width()
     }
-    pub fn kind(&self, db: &dyn SyntaxGroup) -> SyntaxKind {
+    pub fn kind(&self, db: &dyn Database) -> SyntaxKind {
         self.green_node(db).kind
     }
-    pub fn span(&self, db: &dyn SyntaxGroup) -> TextSpan {
-        let start = self.offset(db);
-        let end = start.add_width(self.width(db));
-        TextSpan { start, end }
+    pub fn span(&self, db: &dyn Database) -> TextSpan {
+        TextSpan::new_with_width(self.offset(db), self.width(db))
     }
     /// Returns the text of the token if this node is a token.
-    pub fn text(&self, db: &'a dyn SyntaxGroup) -> Option<&'a str> {
+    pub fn text(&self, db: &'a dyn Database) -> Option<&'a str> {
         match &self.green_node(db).details {
             green::GreenNodeDetails::Token(text) => Some(text),
             green::GreenNodeDetails::Node { .. } => None,
@@ -107,29 +101,29 @@ impl<'a> SyntaxNode<'a> {
     }
 
     /// Returns the green node of the syntax node.
-    pub fn green_node(&self, db: &'a dyn SyntaxGroup) -> &'a GreenNode<'a> {
+    pub fn green_node(&self, db: &'a dyn Database) -> &'a GreenNode<'a> {
         self.long(db).green.long(db)
     }
 
     /// Returns the span of the syntax node without trivia.
-    pub fn span_without_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
+    pub fn span_without_trivia(&self, db: &dyn Database) -> TextSpan {
         let node = self.long(db);
         let green_node = node.green.long(db);
         let (leading, trailing) = both_trivia_width(db, green_node);
         let start = node.offset.add_width(leading);
         let end = node.offset.add_width(green_node.width()).sub_width(trailing);
-        TextSpan { start, end }
+        TextSpan::new(start, end)
     }
-    pub fn parent(&self, db: &'a dyn SyntaxGroup) -> Option<SyntaxNode<'a>> {
+    pub fn parent(&self, db: &'a dyn Database) -> Option<SyntaxNode<'a>> {
         self.long(db).parent
     }
-    pub fn stable_ptr(&self, db: &'a dyn SyntaxGroup) -> SyntaxStablePtrId<'a> {
+    pub fn stable_ptr(&self, db: &'a dyn Database) -> SyntaxStablePtrId<'a> {
         self.long(db).stable_ptr
     }
 
     /// Gets the inner token from a terminal SyntaxNode. If the given node is not a terminal,
     /// returns None.
-    pub fn get_terminal_token(&'a self, db: &'a dyn SyntaxGroup) -> Option<SyntaxNode<'a>> {
+    pub fn get_terminal_token(&'a self, db: &'a dyn Database) -> Option<SyntaxNode<'a>> {
         let green_node = self.green_node(db);
         require(green_node.kind.is_terminal())?;
         // At this point we know we should have a second child which is the token.
@@ -137,12 +131,12 @@ impl<'a> SyntaxNode<'a> {
     }
 
     /// Gets the children syntax nodes of the current node.
-    pub fn get_children(&self, db: &'a dyn SyntaxGroup) -> &'a [SyntaxNode<'a>] {
+    pub fn get_children(&self, db: &'a dyn Database) -> &'a [SyntaxNode<'a>] {
         db.get_children(*self)
     }
 
     /// Implementation of [SyntaxNode::get_children].
-    fn get_children_impl(&self, db: &'a dyn SyntaxGroup) -> Vec<SyntaxNode<'a>> {
+    fn get_children_impl(&self, db: &'a dyn Database) -> Vec<SyntaxNode<'a>> {
         let self_long_id = self.long(db);
         let mut offset = self_long_id.offset;
         let self_green = self_long_id.green.long(db);
@@ -175,7 +169,7 @@ impl<'a> SyntaxNode<'a> {
     }
 
     /// Returns the start of the span of the syntax node without trivia.
-    pub fn span_start_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
+    pub fn span_start_without_trivia(&self, db: &dyn Database) -> TextOffset {
         let node = self.long(db);
         let green_node = node.green.long(db);
         let leading = leading_trivia_width(db, green_node);
@@ -183,7 +177,7 @@ impl<'a> SyntaxNode<'a> {
     }
 
     /// Returns the end of the span of the syntax node without trivia.
-    pub fn span_end_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
+    pub fn span_end_without_trivia(&self, db: &dyn Database) -> TextOffset {
         let node = self.long(db);
         let green_node = node.green.long(db);
         let trailing = trailing_trivia_width(db, green_node);
@@ -191,7 +185,7 @@ impl<'a> SyntaxNode<'a> {
     }
 
     /// Lookups a syntax node using an offset.
-    pub fn lookup_offset(&self, db: &'a dyn SyntaxGroup, offset: TextOffset) -> SyntaxNode<'a> {
+    pub fn lookup_offset(&self, db: &'a dyn Database, offset: TextOffset) -> SyntaxNode<'a> {
         for child in self.get_children(db).iter() {
             if child.offset(db).add_width(child.width(db)) > offset {
                 return child.lookup_offset(db, offset);
@@ -201,11 +195,7 @@ impl<'a> SyntaxNode<'a> {
     }
 
     /// Lookups a syntax node using a position.
-    pub fn lookup_position(
-        &self,
-        db: &'a dyn SyntaxGroup,
-        position: TextPosition,
-    ) -> SyntaxNode<'a> {
+    pub fn lookup_position(&self, db: &'a dyn Database, position: TextPosition) -> SyntaxNode<'a> {
         match position.offset_in_file(db, self.stable_ptr(db).file_id(db)) {
             Some(offset) => self.lookup_offset(db, offset),
             None => *self,
@@ -213,7 +203,7 @@ impl<'a> SyntaxNode<'a> {
     }
 
     /// Returns all the text under the syntax node.
-    pub fn get_text(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+    pub fn get_text(&self, db: &'a dyn Database) -> &'a str {
         // A `None` return from reading the file content is only expected in the case of an IO
         // error. Since a SyntaxNode exists and is being processed, we should have already
         // successfully accessed this file earlier, therefore it should never fail.
@@ -230,7 +220,7 @@ impl<'a> SyntaxNode<'a> {
     /// It traverses all the syntax tree of the node, but ignores functions and modules.
     /// We ignore those, because if there's some inner functions or modules, we don't want to get
     /// raw text of them. Comments inside them refer themselves directly, not this SyntaxNode.
-    pub fn get_text_without_inner_commentable_children(&self, db: &dyn SyntaxGroup) -> String {
+    pub fn get_text_without_inner_commentable_children(&self, db: &dyn Database) -> String {
         let mut buffer = String::new();
 
         match &self.green_node(db).details {
@@ -259,7 +249,7 @@ impl<'a> SyntaxNode<'a> {
 
     /// Returns all the text of the item without comments trivia.
     /// It traverses all the syntax tree of the node.
-    pub fn get_text_without_all_comment_trivia(&self, db: &dyn SyntaxGroup) -> String {
+    pub fn get_text_without_all_comment_trivia(&self, db: &dyn Database) -> String {
         let mut buffer = String::new();
 
         match &self.green_node(db).details {
@@ -295,7 +285,7 @@ impl<'a> SyntaxNode<'a> {
     /// of the first token and the trailing trivia of the last token).
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
-    pub fn get_text_without_trivia(self, db: &'a dyn SyntaxGroup) -> &'a str {
+    pub fn get_text_without_trivia(self, db: &'a dyn Database) -> &'a str {
         let file_content = db
             .file_content(self.stable_ptr(db).file_id(db))
             .expect("Failed to read file content")
@@ -309,7 +299,7 @@ impl<'a> SyntaxNode<'a> {
     /// `span` is assumed to be contained within the span of self.
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
-    pub fn get_text_of_span(self, db: &'a dyn SyntaxGroup, span: TextSpan) -> &'a str {
+    pub fn get_text_of_span(self, db: &'a dyn Database, span: TextSpan) -> &'a str {
         assert!(self.span(db).contains(span));
         let file_content = db
             .file_content(self.stable_ptr(db).file_id(db))
@@ -322,10 +312,7 @@ impl<'a> SyntaxNode<'a> {
     ///
     /// This is a shortcut for [`Self::preorder`] paired with filtering for [`WalkEvent::Enter`]
     /// events only.
-    pub fn descendants(
-        &self,
-        db: &'a dyn SyntaxGroup,
-    ) -> impl Iterator<Item = SyntaxNode<'a>> + 'a {
+    pub fn descendants(&self, db: &'a dyn Database) -> impl Iterator<Item = SyntaxNode<'a>> + 'a {
         self.preorder(db).filter_map(|event| match event {
             WalkEvent::Enter(node) => Some(node),
             WalkEvent::Leave(_) => None,
@@ -334,12 +321,12 @@ impl<'a> SyntaxNode<'a> {
 
     /// Traverse the subtree rooted at the current node (including the current node) in preorder,
     /// excluding tokens.
-    pub fn preorder(&self, db: &'a dyn SyntaxGroup) -> Preorder<'a> {
+    pub fn preorder(&self, db: &'a dyn Database) -> Preorder<'a> {
         Preorder::new(*self, db)
     }
 
     /// Gets all the leaves of the SyntaxTree, where the self node is the root of a tree.
-    pub fn tokens(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self> + 'a {
+    pub fn tokens(&self, db: &'a dyn Database) -> impl Iterator<Item = Self> + 'a {
         self.preorder(db).filter_map(|event| match event {
             WalkEvent::Enter(node) if node.green_node(db).kind.is_terminal() => Some(node),
             _ => None,
@@ -347,12 +334,12 @@ impl<'a> SyntaxNode<'a> {
     }
 
     /// Mirror of [`TypedSyntaxNode::cast`].
-    pub fn cast<T: TypedSyntaxNode<'a>>(self, db: &'a dyn SyntaxGroup) -> Option<T> {
+    pub fn cast<T: TypedSyntaxNode<'a>>(self, db: &'a dyn Database) -> Option<T> {
         T::cast(db, self)
     }
 
     /// Creates an iterator that yields ancestors of this syntax node.
-    pub fn ancestors(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = SyntaxNode<'a>> + 'a {
+    pub fn ancestors(&self, db: &'a dyn Database) -> impl Iterator<Item = SyntaxNode<'a>> + 'a {
         // We aren't reusing `ancestors_with_self` here to avoid cloning this node.
         std::iter::successors(self.parent(db), |n| n.parent(db))
     }
@@ -360,80 +347,76 @@ impl<'a> SyntaxNode<'a> {
     /// Creates an iterator that yields this syntax node and walks up its ancestors.
     pub fn ancestors_with_self(
         &self,
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn Database,
     ) -> impl Iterator<Item = SyntaxNode<'a>> + 'a {
         std::iter::successors(Some(*self), |n| n.parent(db))
     }
 
     /// Checks whether this syntax node is strictly above the given syntax node in the syntax tree.
-    pub fn is_ancestor(&self, db: &dyn SyntaxGroup, node: &SyntaxNode<'_>) -> bool {
+    pub fn is_ancestor(&self, db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
         node.ancestors(db).any(|n| n == *self)
     }
 
     /// Checks whether this syntax node is strictly under the given syntax node in the syntax tree.
-    pub fn is_descendant(&self, db: &dyn SyntaxGroup, node: &SyntaxNode<'_>) -> bool {
+    pub fn is_descendant(&self, db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
         node.is_ancestor(db, self)
     }
 
     /// Checks whether this syntax node is or is above the given syntax node in the syntax tree.
-    pub fn is_ancestor_or_self(&self, db: &dyn SyntaxGroup, node: &SyntaxNode<'_>) -> bool {
+    pub fn is_ancestor_or_self(&self, db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
         node.ancestors_with_self(db).any(|n| n == *self)
     }
 
     /// Checks whether this syntax node is or is under the given syntax node in the syntax tree.
-    pub fn is_descendant_or_self(&self, db: &dyn SyntaxGroup, node: &SyntaxNode<'_>) -> bool {
+    pub fn is_descendant_or_self(&self, db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
         node.is_ancestor_or_self(db, self)
     }
 
     /// Finds the first ancestor of a given kind.
     pub fn ancestor_of_kind(
         &self,
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn Database,
         kind: SyntaxKind,
     ) -> Option<SyntaxNode<'a>> {
         self.ancestors(db).find(|node| node.kind(db) == kind)
     }
 
     /// Finds the first ancestor of a given kind and returns it in typed form.
-    pub fn ancestor_of_type<T: TypedSyntaxNode<'a>>(&self, db: &'a dyn SyntaxGroup) -> Option<T> {
+    pub fn ancestor_of_type<T: TypedSyntaxNode<'a>>(&self, db: &'a dyn Database) -> Option<T> {
         self.ancestors(db).find_map(|node| T::cast(db, node))
     }
 
     /// Finds the parent of a given kind.
-    pub fn parent_of_kind(
-        &self,
-        db: &'a dyn SyntaxGroup,
-        kind: SyntaxKind,
-    ) -> Option<SyntaxNode<'a>> {
+    pub fn parent_of_kind(&self, db: &'a dyn Database, kind: SyntaxKind) -> Option<SyntaxNode<'a>> {
         self.parent(db).filter(|node| node.kind(db) == kind)
     }
 
     /// Finds the parent of a given kind and returns it in typed form.
-    pub fn parent_of_type<T: TypedSyntaxNode<'a>>(&self, db: &'a dyn SyntaxGroup) -> Option<T> {
+    pub fn parent_of_type<T: TypedSyntaxNode<'a>>(&self, db: &'a dyn Database) -> Option<T> {
         self.parent(db).and_then(|node| T::cast(db, node))
     }
 
     /// Finds the first parent of one of the kinds.
     pub fn ancestor_of_kinds(
         &self,
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn Database,
         kinds: &[SyntaxKind],
     ) -> Option<SyntaxNode<'a>> {
         self.ancestors(db).find(|node| kinds.contains(&node.kind(db)))
     }
 
     /// Gets the kind of the given node's parent if it exists.
-    pub fn parent_kind(&self, db: &dyn SyntaxGroup) -> Option<SyntaxKind> {
+    pub fn parent_kind(&self, db: &dyn Database) -> Option<SyntaxKind> {
         Some(self.parent(db)?.kind(db))
     }
 
     /// Gets the kind of the given node's grandparent if it exists.
-    pub fn grandparent_kind(&self, db: &dyn SyntaxGroup) -> Option<SyntaxKind> {
+    pub fn grandparent_kind(&self, db: &dyn Database) -> Option<SyntaxKind> {
         Some(self.parent(db)?.parent(db)?.kind(db))
     }
 
-    /// Gets the kind of the given node's grandrandparent if it exists.
-    pub fn grandgrandparent_kind(&self, db: &dyn SyntaxGroup) -> Option<SyntaxKind> {
+    /// Gets the kind of the given node's grandgrandparent if it exists.
+    pub fn grandgrandparent_kind(&self, db: &dyn Database) -> Option<SyntaxKind> {
         Some(self.parent(db)?.parent(db)?.parent(db)?.kind(db))
     }
 }
@@ -445,31 +428,31 @@ pub trait TypedSyntaxNode<'a>: Sized {
     const OPTIONAL_KIND: Option<SyntaxKind>;
     type StablePtr: TypedStablePtr<'a>;
     type Green;
-    fn missing(db: &'a dyn SyntaxGroup) -> Self::Green;
-    fn from_syntax_node(db: &'a dyn SyntaxGroup, node: SyntaxNode<'a>) -> Self;
-    fn cast(db: &'a dyn SyntaxGroup, node: SyntaxNode<'a>) -> Option<Self>;
+    fn missing(db: &'a dyn Database) -> Self::Green;
+    fn from_syntax_node(db: &'a dyn Database, node: SyntaxNode<'a>) -> Self;
+    fn cast(db: &'a dyn Database, node: SyntaxNode<'a>) -> Option<Self>;
     fn as_syntax_node(&self) -> SyntaxNode<'a>;
-    fn stable_ptr(&self, db: &'a dyn SyntaxGroup) -> Self::StablePtr;
+    fn stable_ptr(&self, db: &'a dyn Database) -> Self::StablePtr;
 }
 
 pub trait Token<'a>: TypedSyntaxNode<'a> {
-    fn new_green(db: &'a dyn SyntaxGroup, text: &'a str) -> Self::Green;
-    fn text(&self, db: &'a dyn SyntaxGroup) -> &'a str;
+    fn new_green(db: &'a dyn Database, text: &'a str) -> Self::Green;
+    fn text(&self, db: &'a dyn Database) -> &'a str;
 }
 
 pub trait Terminal<'a>: TypedSyntaxNode<'a> {
     const KIND: SyntaxKind;
     type TokenType: Token<'a>;
     fn new_green(
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn Database,
         leading_trivia: TriviaGreen<'a>,
         token: <<Self as Terminal<'a>>::TokenType as TypedSyntaxNode<'a>>::Green,
         trailing_trivia: TriviaGreen<'a>,
     ) -> <Self as TypedSyntaxNode<'a>>::Green;
     /// Returns the text of the token of this terminal (excluding the trivia).
-    fn text(&self, db: &'a dyn SyntaxGroup) -> &'a str;
+    fn text(&self, db: &'a dyn Database) -> &'a str;
     /// Casts a syntax node to this terminal type's token and then walks up to return the terminal.
-    fn cast_token(db: &'a dyn SyntaxGroup, node: SyntaxNode<'a>) -> Option<Self> {
+    fn cast_token(db: &'a dyn Database, node: SyntaxNode<'a>) -> Option<Self> {
         if node.kind(db) == Self::TokenType::OPTIONAL_KIND? {
             Some(Self::from_syntax_node(db, node.parent(db)?))
         } else {
@@ -482,13 +465,13 @@ pub trait Terminal<'a>: TypedSyntaxNode<'a> {
 pub trait TypedStablePtr<'a> {
     type SyntaxNode: TypedSyntaxNode<'a>;
     /// Returns the syntax node pointed to by this stable pointer.
-    fn lookup(&self, db: &'a dyn SyntaxGroup) -> Self::SyntaxNode;
+    fn lookup(&self, db: &'a dyn Database) -> Self::SyntaxNode;
     /// Returns the untyped stable pointer.
     fn untyped(self) -> SyntaxStablePtrId<'a>;
 }
 
 /// Returns the width of the leading trivia of the given green node.
-fn leading_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> TextWidth {
+fn leading_trivia_width<'a>(db: &'a dyn Database, green: &GreenNode<'a>) -> TextWidth {
     match &green.details {
         green::GreenNodeDetails::Token(_) => TextWidth::default(),
         green::GreenNodeDetails::Node { children, width } => {
@@ -506,7 +489,7 @@ fn leading_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> T
 }
 
 /// Returns the width of the trailing trivia of the given green node.
-fn trailing_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> TextWidth {
+fn trailing_trivia_width<'a>(db: &'a dyn Database, green: &GreenNode<'a>) -> TextWidth {
     match &green.details {
         green::GreenNodeDetails::Token(_) => TextWidth::default(),
         green::GreenNodeDetails::Node { children, width } => {
@@ -524,7 +507,7 @@ fn trailing_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> 
 }
 
 /// Returns the width of the leading and trailing trivia of the given green node.
-fn both_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> (TextWidth, TextWidth) {
+fn both_trivia_width<'a>(db: &'a dyn Database, green: &GreenNode<'a>) -> (TextWidth, TextWidth) {
     match &green.details {
         green::GreenNodeDetails::Token(_) => (TextWidth::default(), TextWidth::default()),
         green::GreenNodeDetails::Node { children, width } => {
@@ -551,7 +534,7 @@ fn both_trivia_width<'a>(db: &'a dyn SyntaxGroup, green: &GreenNode<'a>) -> (Tex
 
 /// Finds the first non-empty child in the given iterator.
 fn find_non_empty_child<'a>(
-    db: &'a dyn SyntaxGroup,
+    db: &'a dyn Database,
     child_iter: &mut impl Iterator<Item = &'a GreenId<'a>>,
 ) -> Option<&'a GreenNode<'a>> {
     child_iter.find_map(|child| {

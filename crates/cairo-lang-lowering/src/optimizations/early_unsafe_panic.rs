@@ -104,11 +104,11 @@ impl<'db> Analyzer<'db, '_> for UnsafePanicContext<'db> {
         statement_location: StatementLocation,
         stmt: &Statement<'db>,
     ) {
-        if self.has_side_effects(stmt) {
-            if let ReachableSideEffects::Unreachable(locations) = *info {
-                self.fixes.push((statement_location, locations));
-                *info = ReachableSideEffects::Reachable
-            }
+        if self.has_side_effects(stmt)
+            && let ReachableSideEffects::Unreachable(locations) = *info
+        {
+            self.fixes.push((statement_location, locations));
+            *info = ReachableSideEffects::Reachable
         }
     }
 

@@ -1,4 +1,3 @@
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     EnumId, ImplDefId, ImplItemId, LookupItemId, ModuleId, ModuleItemId, StructId, TraitId,
     TraitItemId,
@@ -62,7 +61,7 @@ impl<'a> ResultSignatureBuilder<'a> {
     }
 
     fn document_module(&mut self, module_id: ModuleId<'_>) {
-        let submodule_items = self.db.module_items(module_id).unwrap();
+        let submodule_items = module_id.module_data(self.db).unwrap().items(self.db);
 
         for submodule_item_id in submodule_items.iter() {
             match submodule_item_id {

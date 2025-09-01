@@ -7,9 +7,12 @@ use std::sync::{Arc, Mutex};
 
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
+use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_lowering::utils::InliningStrategy;
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
 use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -18,7 +21,7 @@ use cairo_lang_sierra_generator::program_generator::{
     SierraProgramWithDebug, try_get_function_with_body_id,
 };
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use salsa::par_map;
@@ -175,6 +178,10 @@ pub enum DbWarmupContext {
     NoWarmup,
 }
 
+/// A special hack. Calling this function runs salsa's hooks, which is needed to register views.
+#[salsa::tracked]
+fn empty_func(_db: &dyn LoweringGroup) {}
+
 impl DbWarmupContext {
     /// Creates a new thread pool.
     pub fn new() -> Self {
@@ -194,21 +201,6 @@ impl DbWarmupContext {
         rayon::current_num_threads() > 1
     }
 
-    /// Performs parallel database warmup (if possible)
-    fn warmup_diagnostics(
-        &self,
-        db: &RootDatabase,
-        diagnostic_reporter: &mut DiagnosticsReporter<'_>,
-    ) {
-        match self {
-            Self::Warmup { pool } => {
-                let db = Box::new(db.clone());
-                pool.install(|| diagnostic_reporter.warm_up_diagnostics(db));
-            }
-            Self::NoWarmup => {}
-        }
-    }
-
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
     /// Returns `Err` if diagnostics were found.
     ///
@@ -218,25 +210,23 @@ impl DbWarmupContext {
         db: &RootDatabase,
         diagnostic_reporter: &mut DiagnosticsReporter<'_>,
     ) -> std::result::Result<(), DiagnosticsError> {
-        self.warmup_diagnostics(db, diagnostic_reporter);
-        diagnostic_reporter.ensure(db)?;
-        Ok(())
-    }
-
-    /// Spawns a task to warm up the db for the requested functions (if possible).
-    // TODO(eytan-starkware): This is now blocking and should be made non-blocking.
-    fn warmup_db<'db>(
-        &self,
-        db: &'db RootDatabase,
-        requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
-    ) {
         match self {
-            Self::Warmup { pool } => {
-                let db = Box::new(db.clone());
-                pool.install(|| warmup_db_blocking(db, requested_function_ids));
-            }
             Self::NoWarmup => {}
+            Self::Warmup { pool } => {
+                let crates = diagnostic_reporter.crates_of_interest(db);
+                let db_fork = Box::new(db.clone());
+
+                // Hack to make the views register. When we clone the database, the views are not
+                // registered anymore, so we need to call any tracked function to register them.
+                // TODO(eytan-starkware): Remove this hack once we move to dyn Database only.
+                empty_func(db_fork.as_ref());
+
+                pool.spawn(move || {
+                    warmup_diagnostics_blocking(db_fork.as_ref(), crates);
+                });
+            }
         }
+        diagnostic_reporter.ensure(db)
     }
 }
 
@@ -246,17 +236,32 @@ impl Default for DbWarmupContext {
     }
 }
 
+/// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
+/// would be faster as the queries were already computed.
+fn warmup_diagnostics_blocking(db: &dyn LoweringGroup, crates: Vec<CrateInput>) {
+    let _: () = par_map(db, crates, |db, crate_input| {
+        let crate_id = crate_input.into_crate_long_id(db).intern(db);
+        let crate_modules = db.crate_modules(crate_id);
+        let _: () = par_map(db, crate_modules, |db, module_id| {
+            for file_id in db.module_files(*module_id).unwrap_or_default().iter().copied() {
+                db.file_syntax_diagnostics(file_id);
+            }
+            let _ = db.module_semantic_diagnostics(*module_id);
+            let _ = db.module_lowering_diagnostics(*module_id);
+        });
+    });
+}
+
 /// Spawns threads to compute the `function_with_body_sierra` query and all dependent queries for
 /// the requested functions and their dependencies.
 ///
 /// Note that typically spawn_warmup_db should be used as this function is blocking.
-fn warmup_db_blocking<'db>(
-    db: Box<RootDatabase>,
+fn warmup_functions_blocking<'db>(
+    db: &'db dyn SierraGenGroup,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
 ) {
-    let sierra_gen_group: &dyn SierraGenGroup = db.as_ref().upcast();
     let processed_function_ids = &Mutex::new(UnorderedHashSet::<salsa::Id>::default());
-    let _: () = par_map(sierra_gen_group, requested_function_ids, move |db, func_id| {
+    let _: () = par_map(db, requested_function_ids, move |db, func_id| {
         fn handle_func_inner<'db>(
             processed_function_ids: &Mutex<UnorderedHashSet<salsa::Id>>,
             snapshot: &dyn SierraGenGroup,
@@ -285,11 +290,21 @@ fn warmup_db_blocking<'db>(
 ///  Checks if there are diagnostics in the database and if there are None, returns
 ///  the [SierraProgramWithDebug] object of the requested functions
 pub fn get_sierra_program_for_functions<'db>(
-    db: &'db RootDatabase,
+    db: &'db dyn SierraGenGroup,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
     context: DbWarmupContext,
 ) -> Result<Arc<SierraProgramWithDebug<'db>>> {
-    context.warmup_db(db, requested_function_ids.clone());
+    match &context {
+        DbWarmupContext::Warmup { pool } => {
+            let requested_function_ids = requested_function_ids.clone();
+            let db_fork = db.fork_db();
+            // TODO(orizi): Use `spawn` instead of `install` to avoid blocking the main thread.
+            pool.install(move || {
+                warmup_functions_blocking(db_fork.as_view(), requested_function_ids)
+            });
+        }
+        DbWarmupContext::NoWarmup => {}
+    }
     db.get_sierra_program_for_functions(requested_function_ids)
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")

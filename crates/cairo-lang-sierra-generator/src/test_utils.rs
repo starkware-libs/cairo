@@ -1,24 +1,21 @@
 use std::sync::{Arc, LazyLock, Mutex};
 
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_filesystem::db::{
-    ExternalFiles, FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group,
-};
+use cairo_lang_filesystem::db::{FilesGroup, init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::{FlagLongId, VirtualFile};
-use cairo_lang_lowering::db::{LoweringGroup, UseApproxCodeSizeEstimator};
-use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_filesystem::ids::FlagLongId;
+use cairo_lang_lowering::db::{LoweringGroup, UseApproxCodeSizeEstimator, lowering_group_input};
 use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::{Intern, Upcast};
 use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
 use lowering::optimizations::config::OptimizationConfig;
+use salsa::Setter;
 use semantic::inline_macros::get_default_plugin_suite;
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
@@ -37,11 +34,7 @@ pub struct SierraGenDatabaseForTesting {
 }
 #[salsa::db]
 impl salsa::Database for SierraGenDatabaseForTesting {}
-impl ExternalFiles for SierraGenDatabaseForTesting {
-    fn try_ext_as_virtual(&self, external_id: salsa::Id) -> Option<VirtualFile<'_>> {
-        try_ext_as_virtual_impl(self, external_id)
-    }
-}
+
 pub static SHARED_DB: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
     LazyLock::new(|| Mutex::new(SierraGenDatabaseForTesting::new_empty()));
 pub static SHARED_DB_WITHOUT_AD_WITHDRAW_GAS: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
@@ -54,6 +47,7 @@ pub static SHARED_DB_WITHOUT_AD_WITHDRAW_GAS: LazyLock<Mutex<SierraGenDatabaseFo
 impl SierraGenDatabaseForTesting {
     pub fn new_empty() -> Self {
         let mut res = SierraGenDatabaseForTesting { storage: Default::default() };
+        init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
@@ -61,9 +55,9 @@ impl SierraGenDatabaseForTesting {
         let plugin_suite = get_default_plugin_suite();
         res.set_default_plugins_from_suite(plugin_suite);
 
-        res.set_optimization_config(Arc::new(
-            OptimizationConfig::default().with_minimal_movable_functions(),
-        ));
+        lowering_group_input(&res)
+            .set_optimization_config(&mut res)
+            .to(Some(OptimizationConfig::default().with_minimal_movable_functions()));
 
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
@@ -82,18 +76,8 @@ impl Default for SierraGenDatabaseForTesting {
         SHARED_DB.lock().unwrap().snapshot()
     }
 }
-impl<'db> Upcast<'db, dyn FilesGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn FilesGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SyntaxGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn SyntaxGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn DefsGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn DefsGroup {
+impl<'db> Upcast<'db, dyn salsa::Database> for SierraGenDatabaseForTesting {
+    fn upcast(&'db self) -> &'db dyn salsa::Database {
         self
     }
 }
@@ -104,11 +88,6 @@ impl<'db> Upcast<'db, dyn SemanticGroup> for SierraGenDatabaseForTesting {
 }
 impl<'db> Upcast<'db, dyn LoweringGroup> for SierraGenDatabaseForTesting {
     fn upcast(&'db self) -> &'db dyn LoweringGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn ParserGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn ParserGroup {
         self
     }
 }

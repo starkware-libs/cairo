@@ -491,6 +491,23 @@ impl ResourceTracker for CairoHintProcessor<'_> {
     }
 }
 
+pub trait StarknetHintProcessor: HintProcessor {
+    /// Take [`StarknetState`] out of this hint processor, resetting own state.
+    fn take_starknet_state(&mut self) -> StarknetState;
+    /// Take [`StarknetExecutionResources`] out of this hint processor, resetting own state.
+    fn take_syscalls_used_resources(&mut self) -> StarknetExecutionResources;
+}
+
+impl StarknetHintProcessor for CairoHintProcessor<'_> {
+    fn take_starknet_state(&mut self) -> StarknetState {
+        std::mem::take(&mut self.starknet_state)
+    }
+
+    fn take_syscalls_used_resources(&mut self) -> StarknetExecutionResources {
+        std::mem::take(&mut self.syscalls_used_resources)
+    }
+}
+
 /// Wrapper trait for a VM owner.
 pub trait VMWrapper {
     fn vm(&mut self) -> &mut VirtualMachine;
@@ -2398,10 +2415,10 @@ fn format_for_debug(mut felts: IntoIter<Felt252>) -> String {
     while let Some(item) = format_next_item(&mut felts) {
         items.push(item);
     }
-    if let [item] = &items[..] {
-        if item.is_string {
-            return item.item.clone();
-        }
+    if let [item] = &items[..]
+        && item.is_string
+    {
+        return item.item.clone();
     }
     items
         .into_iter()
@@ -2441,10 +2458,10 @@ where
 {
     let first_felt = values.next()?;
 
-    if first_felt == Felt252::from_hex(BYTE_ARRAY_MAGIC).unwrap() {
-        if let Some(string) = try_format_string(values) {
-            return Some(FormattedItem { item: string, is_string: true });
-        }
+    if first_felt == Felt252::from_hex(BYTE_ARRAY_MAGIC).unwrap()
+        && let Some(string) = try_format_string(values)
+    {
+        return Some(FormattedItem { item: string, is_string: true });
     }
     Some(FormattedItem { item: format_short_string(&first_felt), is_string: false })
 }

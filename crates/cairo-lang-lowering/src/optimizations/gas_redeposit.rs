@@ -2,6 +2,7 @@
 #[path = "gas_redeposit_test.rs"]
 mod test;
 
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
 use cairo_lang_semantic::{ConcreteVariant, corelib};
@@ -36,17 +37,18 @@ pub fn gas_redeposit<'db>(
     if lowered.blocks.is_empty() {
         return;
     }
-    if matches!(db.get_flag(FlagId::new(db, FlagLongId("add_withdraw_gas".into()))),
-        Some(flag) if matches!(*flag, Flag::AddWithdrawGas(false)))
+    if let Some(Flag::AddWithdrawGas(add_withdraw_gas)) =
+        db.get_flag(FlagId::new(db, FlagLongId("add_withdraw_gas".into())))
+        && !add_withdraw_gas
     {
         return;
     }
     let gb_ty = corelib::get_core_ty_by_name(db, "GasBuiltin", vec![]);
     // Checking if the implicits of this function past lowering includes `GasBuiltin`.
-    if let Ok(implicits) = db.function_with_body_implicits(function_id) {
-        if !implicits.into_iter().contains(&gb_ty) {
-            return;
-        }
+    if let Ok(implicits) = db.function_with_body_implicits(function_id)
+        && !implicits.into_iter().contains(&gb_ty)
+    {
+        return;
     }
     assert!(
         lowered.parameters.iter().all(|p| lowered.variables[*p].ty != gb_ty),
@@ -158,7 +160,7 @@ impl<'db> Analyzer<'db, '_> for GasRedepositContext<'db> {
     fn info_from_return(&mut self, _: StatementLocation, vars: &[VarUsage<'db>]) -> Self::Info {
         // If the function has multiple returns with different gas costs, gas will get burned unless
         // we redeposit it.
-        // If however the this return corresponds to a panic, we dont redeposit due to code size
+        // If however, this return corresponds to a panic, we don't redeposit due to code size
         // concerns.
         match vars.last() {
             Some(VarUsage { var_id, location: _ }) => RedepositState::Return(*var_id),

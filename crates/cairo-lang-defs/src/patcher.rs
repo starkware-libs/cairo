@@ -1,10 +1,10 @@
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
+use salsa::Database;
 
 /// Interface for modifying syntax nodes.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -40,7 +40,7 @@ impl<'db> RewriteNode<'db> {
 
     pub fn mapped_text(
         text: impl Into<String>,
-        db: &dyn SyntaxGroup,
+        db: &dyn Database,
         origin: &impl TypedSyntaxNode<'db>,
     ) -> Self {
         RewriteNode::Text(text.into()).mapped(db, origin)
@@ -61,7 +61,7 @@ impl<'db> RewriteNode<'db> {
     }
 
     /// Prepares a node for modification.
-    pub fn modify(&mut self, db: &'db dyn SyntaxGroup) -> &mut ModifiedNode<'db> {
+    pub fn modify(&mut self, db: &'db dyn Database) -> &mut ModifiedNode<'db> {
         match self {
             RewriteNode::Copied(syntax_node) => {
                 *self = RewriteNode::new_modified(
@@ -136,11 +136,7 @@ impl<'db> RewriteNode<'db> {
     }
 
     /// Prepares a node for modification and returns a specific child.
-    pub fn modify_child(
-        &mut self,
-        db: &'db dyn SyntaxGroup,
-        index: usize,
-    ) -> &mut RewriteNode<'db> {
+    pub fn modify_child(&mut self, db: &'db dyn Database, index: usize) -> &mut RewriteNode<'db> {
         if matches!(self, RewriteNode::Modified(ModifiedNode { children: None })) {
             // Modification of an empty node is idempotent.
             return self;
@@ -214,7 +210,7 @@ impl<'db> RewriteNode<'db> {
     }
 
     /// Creates a new rewrite node wrapped in a mapping to the original code.
-    pub fn mapped(self, db: &dyn SyntaxGroup, origin: &impl TypedSyntaxNode<'db>) -> Self {
+    pub fn mapped(self, db: &dyn Database, origin: &impl TypedSyntaxNode<'db>) -> Self {
         RewriteNode::Mapped {
             origin: origin.as_syntax_node().span_without_trivia(db),
             node: Box::new(self),
@@ -243,19 +239,19 @@ pub struct ModifiedNode<'db> {
 }
 
 pub struct PatchBuilder<'a> {
-    pub db: &'a dyn SyntaxGroup,
+    pub db: &'a dyn Database,
     code: String,
     code_mappings: Vec<CodeMapping>,
     origin: CodeOrigin,
 }
 impl<'db> PatchBuilder<'db> {
     /// Creates a new patch builder, originating from `origin` typed node.
-    pub fn new(db: &'db dyn SyntaxGroup, origin: &impl TypedSyntaxNode<'db>) -> Self {
+    pub fn new(db: &'db dyn Database, origin: &impl TypedSyntaxNode<'db>) -> Self {
         Self::new_ex(db, &origin.as_syntax_node())
     }
 
     /// Creates a new patch builder, originating from `origin` node.
-    pub fn new_ex(db: &'db dyn SyntaxGroup, origin: &SyntaxNode<'db>) -> Self {
+    pub fn new_ex(db: &'db dyn Database, origin: &SyntaxNode<'db>) -> Self {
         Self {
             db,
             code: String::default(),
@@ -317,7 +313,7 @@ impl<'db> PatchBuilder<'db> {
         let start = TextOffset::from_str(&self.code);
         let orig_span = node.span(self.db);
         self.code_mappings.push(CodeMapping {
-            span: TextSpan { start, end: start.add_width(orig_span.width()) },
+            span: TextSpan::new_with_width(start, orig_span.width()),
             origin: CodeOrigin::Start(orig_span.start),
         });
         self.code += node.get_text(self.db);
@@ -327,15 +323,17 @@ impl<'db> PatchBuilder<'db> {
         let start = TextOffset::from_str(&self.code);
         self.add_modified(node);
         let end = TextOffset::from_str(&self.code);
-        self.code_mappings
-            .push(CodeMapping { span: TextSpan { start, end }, origin: CodeOrigin::Span(origin) });
+        self.code_mappings.push(CodeMapping {
+            span: TextSpan::new(start, end),
+            origin: CodeOrigin::Span(origin),
+        });
     }
 
     fn add_trimmed_node(&mut self, node: SyntaxNode<'db>, trim_left: bool, trim_right: bool) {
-        let TextSpan { start: trimmed_start, end: trimmed_end } = node.span_without_trivia(self.db);
-        let orig_start = if trim_left { trimmed_start } else { node.span(self.db).start };
-        let orig_end = if trim_right { trimmed_end } else { node.span(self.db).end };
-        let origin_span = TextSpan { start: orig_start, end: orig_end };
+        let trimmed = node.span_without_trivia(self.db);
+        let orig_start = if trim_left { trimmed.start } else { node.span(self.db).start };
+        let orig_end = if trim_right { trimmed.end } else { node.span(self.db).end };
+        let origin_span = TextSpan::new(orig_start, orig_end);
 
         let text = node.get_text_of_span(self.db, origin_span);
         let start = TextOffset::from_str(&self.code);
@@ -343,7 +341,7 @@ impl<'db> PatchBuilder<'db> {
         self.code += text;
 
         self.code_mappings.push(CodeMapping {
-            span: TextSpan { start, end: start.add_width(TextWidth::from_str(text)) },
+            span: TextSpan::new_with_width(start, TextWidth::from_str(text)),
             origin: CodeOrigin::Start(orig_start),
         });
     }

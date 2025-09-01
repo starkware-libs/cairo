@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs as defs;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ExternFunctionId, LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementLongId,
 };
@@ -18,6 +19,7 @@ use cairo_lang_utils::{Intern, Upcast};
 use defs::ids::NamedLanguageElementId;
 use itertools::{Itertools, chain};
 use num_traits::ToPrimitive;
+use salsa::{Database, Setter};
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::blocks::Blocks;
@@ -35,13 +37,28 @@ use crate::inline::statements_weights::{ApproxCasmInlineWeight, InlineWeight};
 use crate::lower::{MultiLowering, lower_semantic_function};
 use crate::optimizations::config::OptimizationConfig;
 use crate::optimizations::scrub_units::scrub_units;
-use crate::optimizations::strategy::{OptimizationStrategy, OptimizationStrategyId};
+use crate::optimizations::strategy::OptimizationStrategyId;
 use crate::panic::lower_panics;
 use crate::specialization::specialized_function_lowered;
 use crate::utils::InliningStrategy;
 use crate::{
     BlockEnd, BlockId, DependencyType, Location, Lowered, LoweringStage, MatchInfo, Statement, ids,
 };
+
+#[salsa::input]
+pub struct LoweringGroupInput {
+    #[returns(ref)]
+    pub optimization_config: Option<OptimizationConfig>,
+}
+
+#[salsa::tracked(returns(ref))]
+pub fn lowering_group_input(db: &dyn Database) -> LoweringGroupInput {
+    LoweringGroupInput::new(db, None)
+}
+
+fn optimization_config(db: &dyn Database) -> &OptimizationConfig {
+    lowering_group_input(db).optimization_config(db).as_ref().unwrap()
+}
 
 /// A trait for estimation of the code size of a function.
 pub trait ExternalCodeSizeEstimator {
@@ -65,31 +82,6 @@ impl<T: UseApproxCodeSizeEstimator> ExternalCodeSizeEstimator for T {
 pub trait LoweringGroup:
     SemanticGroup + for<'a> Upcast<'a, dyn SemanticGroup> + ExternalCodeSizeEstimator
 {
-    #[salsa::interned]
-    fn intern_lowering_function<'db>(
-        &'db self,
-        id: ids::FunctionLongId<'db>,
-    ) -> ids::FunctionId<'db>;
-    #[salsa::interned]
-    fn intern_lowering_concrete_function_with_body<'db>(
-        &'db self,
-        id: ids::ConcreteFunctionWithBodyLongId<'db>,
-    ) -> ids::ConcreteFunctionWithBodyId<'db>;
-    #[salsa::interned]
-    fn intern_lowering_function_with_body<'db>(
-        &'db self,
-        id: ids::FunctionWithBodyLongId<'db>,
-    ) -> ids::FunctionWithBodyId<'db>;
-
-    #[salsa::interned]
-    fn intern_location<'db>(&'db self, id: Location<'db>) -> ids::LocationId<'db>;
-
-    #[salsa::interned]
-    fn intern_strategy<'db>(
-        &'db self,
-        id: OptimizationStrategy<'db>,
-    ) -> OptimizationStrategyId<'db>;
-
     /// Computes the lowered representation of a function with a body, along with all it generated
     /// functions (e.g. closures, lambdas, loops, ...).
     fn priv_function_with_body_multi_lowering<'db>(
@@ -348,8 +340,8 @@ pub trait LoweringGroup:
     ) -> Maybe<bool>;
 
     /// Returns the configuration struct that controls the behavior of the optimization passes.
-    #[salsa::input]
-    fn optimization_config(&self) -> Arc<OptimizationConfig>;
+    #[salsa::transparent]
+    fn optimization_config(&self) -> &OptimizationConfig;
 
     /// Returns the final optimization strategy that is applied on top of
     /// inlined_function_optimization_strategy.
@@ -382,7 +374,7 @@ pub fn init_lowering_group(
         moveable_functions.push(format!("integer::{ty}_wide_mul"));
     }
 
-    db.set_optimization_config(Arc::new(
+    lowering_group_input(db).set_optimization_config(db).to(Some(
         OptimizationConfig::default()
             .with_moveable_functions(moveable_functions)
             .with_inlining_strategy(inlining_strategy),
@@ -401,7 +393,7 @@ fn priv_function_with_body_multi_lowering<'db>(
     db: &'db dyn LoweringGroup,
     function_id: defs::ids::FunctionWithBodyId<'db>,
 ) -> Maybe<Arc<MultiLowering<'db>>> {
-    let crate_id = function_id.module_file_id(db).0.owning_crate(db);
+    let crate_id = function_id.parent_module(db).owning_crate(db);
     if let Some(map) = db.cached_multi_lowerings(crate_id) {
         if let Some(multi_lowering) = map.get(&function_id) {
             return Ok(Arc::new(multi_lowering.clone()));
@@ -578,10 +570,10 @@ fn functions_with_body_from_function_ids<'db>(
     Ok(function_ids
         .into_iter()
         .map(|concrete| {
-            if dependency_type == DependencyType::Cost {
-                if let Some(function_with_body) = extract_coupon_function(db, concrete)? {
-                    return Ok(Some(function_with_body));
-                }
+            if dependency_type == DependencyType::Cost
+                && let Some(function_with_body) = extract_coupon_function(db, concrete)?
+            {
+                return Ok(Some(function_with_body));
             }
             concrete.body(db)
         })
@@ -712,7 +704,7 @@ fn module_lowering_diagnostics<'db>(
     module_id: ModuleId<'db>,
 ) -> Maybe<Diagnostics<'db, LoweringDiagnostic<'db>>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for item in db.module_items(module_id)?.iter() {
+    for item in module_id.module_data(db)?.items(db).iter() {
         match item {
             ModuleItemId::FreeFunction(free_function) => {
                 let function_id = defs::ids::FunctionWithBodyId::Free(*free_function);
@@ -749,10 +741,10 @@ fn module_lowering_diagnostics<'db>(
         }
     }
     for macro_call in db.module_macro_calls_ids(module_id)?.iter() {
-        if let Ok(macro_module_id) = db.macro_call_module_id(*macro_call) {
-            if let Ok(lowering_diags) = db.module_lowering_diagnostics(macro_module_id) {
-                diagnostics.extend(lowering_diags);
-            }
+        if let Ok(macro_module_id) = db.macro_call_module_id(*macro_call)
+            && let Ok(lowering_diags) = db.module_lowering_diagnostics(macro_module_id)
+        {
+            diagnostics.extend(lowering_diags);
         }
     }
     Ok(diagnostics.build())
@@ -802,8 +794,7 @@ fn type_size<'db>(db: &'db dyn LoweringGroup, ty: TypeId<'db>) -> usize {
             db.type_size(*type_id)
                 * size
                     .long(db)
-                    .clone()
-                    .into_int()
+                    .to_int()
                     .expect("Expected ConstValue::Int for size")
                     .to_usize()
                     .unwrap()

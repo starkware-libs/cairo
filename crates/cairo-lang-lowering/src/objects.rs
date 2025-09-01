@@ -13,7 +13,8 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{concrete_destruct_trait, concrete_panic_destruct_trait};
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_semantic::expr::inference::solver::Ambiguity;
-use cairo_lang_semantic::items::imp::ImplLookupContext;
+use cairo_lang_semantic::items::constant::ConstValueId;
+use cairo_lang_semantic::items::imp::ImplLookupContextId;
 use cairo_lang_semantic::types::TypeInfo;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::Intern;
@@ -23,7 +24,6 @@ use id_arena::{Arena, DefaultArenaBehavior, Id};
 pub mod blocks;
 pub use blocks::BlockId;
 use semantic::MatchArmSelector;
-use semantic::items::constant::ConstValue;
 
 use self::blocks::Blocks;
 use crate::db::LoweringGroup;
@@ -81,7 +81,7 @@ impl<'db> Location<'db> {
 impl<'db> DebugWithDb<'db> for Location<'db> {
     type Db = dyn LoweringGroup;
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn LoweringGroup) -> std::fmt::Result {
-        let files_db = db.upcast();
+        let files_db = db.as_dyn_database();
         self.stable_location.diagnostic_location(db).fmt(f, files_db)?;
 
         for note in &self.notes {
@@ -159,10 +159,11 @@ pub struct Lowered<'db> {
 
 unsafe impl<'db> salsa::Update for Lowered<'db> {
     unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = &mut *old_pointer;
-        let res = Diagnostics::maybe_update(&mut old_value.diagnostics, new_value.diagnostics)
-            | Signature::maybe_update(&mut old_value.signature, new_value.signature)
-            | (old_value.blocks != new_value.blocks);
+        let old_value = unsafe { &mut *old_pointer };
+        let res = unsafe {
+            Diagnostics::maybe_update(&mut old_value.diagnostics, new_value.diagnostics)
+                | Signature::maybe_update(&mut old_value.signature, new_value.signature)
+        } | (old_value.blocks != new_value.blocks);
         if res {
             old_value.variables = new_value.variables;
             old_value.parameters = new_value.parameters;
@@ -249,7 +250,7 @@ impl<'db> DebugWithDb<'db> for Variable<'db> {
 impl<'db> Variable<'db> {
     pub fn new(
         db: &'db dyn LoweringGroup,
-        ctx: ImplLookupContext<'db>,
+        ctx: ImplLookupContextId<'db>,
         ty: semantic::TypeId<'db>,
         location: LocationId<'db>,
     ) -> Self {
@@ -375,7 +376,7 @@ impl<'db> Statement<'db> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementConst<'db> {
     /// The value of the const.
-    pub value: ConstValue<'db>,
+    pub value: ConstValueId<'db>,
     /// The variable to bind the value to.
     pub output: VariableId,
 }

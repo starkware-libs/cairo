@@ -183,7 +183,7 @@ impl<'db> AbiBuilder<'db> {
         let mut structs = Vec::new();
         let mut impl_defs = Vec::new();
         let mut impl_aliases = Vec::new();
-        for item in &*self.db.module_items(ModuleId::Submodule(submodule_id))? {
+        for item in ModuleId::Submodule(submodule_id).module_data(self.db)?.items(self.db).iter() {
             match item {
                 ModuleItemId::FreeFunction(id) => free_functions.push(*id),
                 ModuleItemId::Struct(id) => structs.push(*id),
@@ -779,10 +779,8 @@ impl<'db> AbiBuilder<'db> {
             Item::Impl(item) => format!("Impl '{}'", item.name),
         };
         let already_existed = !self.abi_items.insert(item);
-        if already_existed {
-            if let Some(source) = prevent_dups {
-                return Err(ABIError::InvalidDuplicatedItem { description, source_ptr: source });
-            }
+        if already_existed && let Some(source) = prevent_dups {
+            return Err(ABIError::InvalidDuplicatedItem { description, source_ptr: source });
         }
 
         Ok(())
@@ -836,14 +834,20 @@ fn fetch_event_data<'db>(
     }
     .intern(db);
     // The impl of `starknet::event::Event<ThisEvent>`.
-    let event_impl =
-        get_impl_at_context(db, ImplLookupContext::default(), concrete_trait_id, None).ok()?;
+    let event_impl = get_impl_at_context(
+        db,
+        ImplLookupContext::new_from_type(event_type_id, db).intern(db),
+        concrete_trait_id,
+        None,
+    )
+    .ok()?;
+
     let concrete_event_impl = try_extract_matches!(event_impl.long(db), ImplLongId::Concrete)?;
     let impl_def_id = concrete_event_impl.impl_def_id(db);
 
     // Attempt to extract the event data from the aux data from the impl generation.
     let module_file = impl_def_id.module_file_id(db);
-    let all_aux_data = db.module_generated_file_aux_data(module_file.0).ok()?;
+    let all_aux_data = module_file.0.module_data(db).ok()?.generated_file_aux_data(db);
     let aux_data = all_aux_data.get(module_file.1.0)?.as_ref()?;
     Some(aux_data.0.as_any().downcast_ref::<StarknetEventAuxData>()?.event_data.clone())
 }
@@ -874,13 +878,13 @@ pub enum ABIError<'db> {
     UnexpectedType,
     #[error("Entrypoints must have a self first param.")]
     EntrypointMustHaveSelf,
-    #[error("An embedded impl must be an impl of a trait marked with #[starknet::interface].")]
+    #[error("An embedded impl must be an impl of a trait marked with #[{INTERFACE_ATTR}].")]
     EmbeddedImplMustBeInterface(Source<'db>),
     #[error("Embedded impls must be annotated with #[starknet::embeddable].")]
     EmbeddedImplNotEmbeddable(Source<'db>),
     #[error(
         "An impl marked with #[abi(per_item)] can't be of a trait marked with \
-         #[starknet::interface].\n    Consider using #[abi(embed_v0)] instead, or use a \
+         #[{INTERFACE_ATTR}].\n    Consider using #[abi(embed_v0)] instead, or use a \
          non-interface trait."
     )]
     ContractInterfaceImplCannotBePerItem(Source<'db>),

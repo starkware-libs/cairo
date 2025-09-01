@@ -5,10 +5,10 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::{formatdoc, indoc};
+use salsa::Database;
 
 use super::write::{WriteMacro, WritelnMacro};
 
@@ -21,7 +21,7 @@ impl NamedPlugin for PrintMacro {
 impl InlineMacroExprPlugin for PrintMacro {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult<'db> {
@@ -60,7 +60,7 @@ impl NamedPlugin for PrintlnMacro {
 impl InlineMacroExprPlugin for PrintlnMacro {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult<'db> {
@@ -92,7 +92,7 @@ impl InlineMacroExprPlugin for PrintlnMacro {
 
 fn generate_code_inner<'db>(
     syntax: &ast::ExprInlineMacro<'db>,
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     with_newline: bool,
 ) -> InlinePluginResult<'db> {
     let Some(syntax) = syntax.as_legacy_inline_macro(db) else {

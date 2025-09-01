@@ -7,10 +7,10 @@ use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnost
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::indoc;
 use num_bigint::BigInt;
+use salsa::Database;
 
 #[derive(Debug, Default)]
 pub struct ConstevalIntMacro;
@@ -20,7 +20,7 @@ impl NamedPlugin for ConstevalIntMacro {
 impl InlineMacroExprPlugin for ConstevalIntMacro {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         syntax: &ast::ExprInlineMacro<'db>,
         metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult<'db> {
@@ -99,7 +99,7 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
 /// Compute the actual value of an integer expression, or fail with diagnostics.
 /// This computation handles arbitrary integers, unlike regular Cairo math.
 pub fn compute_constant_expr<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     value: &ast::Expr<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     macro_ast: &ast::ExprInlineMacro<'db>,

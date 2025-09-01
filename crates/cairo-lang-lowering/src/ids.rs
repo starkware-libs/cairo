@@ -31,13 +31,7 @@ pub enum FunctionWithBodyLongId<'db> {
     Semantic(defs::ids::FunctionWithBodyId<'db>),
     Generated { parent: defs::ids::FunctionWithBodyId<'db>, key: GeneratedFunctionKey<'db> },
 }
-define_short_id!(
-    FunctionWithBodyId,
-    FunctionWithBodyLongId<'db>,
-    LoweringGroup,
-    lookup_intern_lowering_function_with_body,
-    intern_lowering_function_with_body
-);
+define_short_id!(FunctionWithBodyId, FunctionWithBodyLongId<'db>, LoweringGroup);
 impl<'db> FunctionWithBodyLongId<'db> {
     pub fn base_semantic_function(
         &self,
@@ -98,13 +92,7 @@ pub enum ConcreteFunctionWithBodyLongId<'db> {
     Generated(GeneratedFunction<'db>),
     Specialized(SpecializedFunction<'db>),
 }
-define_short_id!(
-    ConcreteFunctionWithBodyId,
-    ConcreteFunctionWithBodyLongId<'db>,
-    LoweringGroup,
-    lookup_intern_lowering_concrete_function_with_body,
-    intern_lowering_concrete_function_with_body
-);
+define_short_id!(ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId<'db>, LoweringGroup);
 
 // The result of `generic_or_specialized`.
 pub enum GenericOrSpecialized<'db> {
@@ -114,14 +102,14 @@ pub enum GenericOrSpecialized<'db> {
 
 impl<'db> ConcreteFunctionWithBodyId<'db> {
     pub fn is_panic_destruct_fn(&self, db: &'db dyn LoweringGroup) -> Maybe<bool> {
-        match db.lookup_intern_lowering_concrete_function_with_body(*self) {
+        match self.long(db) {
             ConcreteFunctionWithBodyLongId::Semantic(semantic_func) => {
                 semantic_func.is_panic_destruct_fn(db)
             }
             ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
                 parent: _,
                 key: GeneratedFunctionKey::TraitFunc(function, _),
-            }) => Ok(function == db.core_info().panic_destruct_fn),
+            }) => Ok(function == &db.core_info().panic_destruct_fn),
             _ => Ok(false),
         }
     }
@@ -263,13 +251,7 @@ pub enum FunctionLongId<'db> {
     /// A specialized function.
     Specialized(SpecializedFunction<'db>),
 }
-define_short_id!(
-    FunctionId,
-    FunctionLongId<'db>,
-    LoweringGroup,
-    lookup_intern_lowering_function,
-    intern_lowering_function
-);
+define_short_id!(FunctionId, FunctionLongId<'db>, LoweringGroup);
 impl<'db> FunctionLongId<'db> {
     pub fn body(
         &self,
@@ -280,39 +262,33 @@ impl<'db> FunctionLongId<'db> {
                 let concrete_function = id.get_concrete(db);
                 if let GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }) =
                     concrete_function.generic_function
+                    && let ImplLongId::GeneratedImpl(imp) = impl_id.long(db)
                 {
-                    if let ImplLongId::GeneratedImpl(imp) = db.lookup_intern_impl(impl_id) {
-                        let concrete_trait = imp.concrete_trait(db);
-                        let info = db.core_info();
-                        assert!(
-                            [
-                                info.destruct_fn,
-                                info.panic_destruct_fn,
-                                info.call_fn,
-                                info.call_once_fn
-                            ]
+                    let concrete_trait = imp.concrete_trait(db);
+                    let info = db.core_info();
+                    assert!(
+                        [info.destruct_fn, info.panic_destruct_fn, info.call_fn, info.call_once_fn]
                             .contains(&function)
-                        );
+                    );
 
-                        let generic_args = concrete_trait.generic_args(db);
-                        let Some(GenericArgumentId::Type(ty)) = generic_args.first() else {
-                            unreachable!("Expected Generated Impl to have a type argument");
-                        };
-                        let TypeLongId::Closure(ty) = ty.long(db) else {
-                            unreachable!("Expected Generated Impl to have a closure type argument");
-                        };
+                    let generic_args = concrete_trait.generic_args(db);
+                    let Some(GenericArgumentId::Type(ty)) = generic_args.first() else {
+                        unreachable!("Expected Generated Impl to have a type argument");
+                    };
+                    let TypeLongId::Closure(ty) = ty.long(db) else {
+                        unreachable!("Expected Generated Impl to have a closure type argument");
+                    };
 
-                        let Some(parent) = ty.parent_function?.get_concrete(db).body(db)? else {
-                            return Ok(None);
-                        };
-                        return Ok(Some(
-                            GeneratedFunction {
-                                parent,
-                                key: GeneratedFunctionKey::TraitFunc(function, ty.wrapper_location),
-                            }
-                            .body(db),
-                        ));
-                    }
+                    let Some(parent) = ty.parent_function?.get_concrete(db).body(db)? else {
+                        return Ok(None);
+                    };
+                    return Ok(Some(
+                        GeneratedFunction {
+                            parent,
+                            key: GeneratedFunctionKey::TraitFunc(function, ty.wrapper_location),
+                        }
+                        .body(db),
+                    ));
                 }
 
                 let Some(body) = concrete_function.body(db)? else {
@@ -388,10 +364,10 @@ impl<'db> SemanticFunctionIdEx<'db> for semantic::FunctionId<'db> {
         // If the function is generated, we need to check if it has a body, so we can return its
         // generated function id.
         // TODO(orizi): This is a hack, we should have a better way to do this.
-        if let Ok(Some(body)) = ret.body(db) {
-            if let Ok(id) = body.function_id(db) {
-                return id;
-            }
+        if let Ok(Some(body)) = ret.body(db)
+            && let Ok(id) = body.function_id(db)
+        {
+            return id;
         }
         ret
     }
@@ -585,7 +561,7 @@ pub(crate) fn parameter_as_member_path<'db>(
     })
 }
 
-define_short_id!(LocationId, Location<'db>, LoweringGroup, lookup_intern_location, intern_location);
+define_short_id!(LocationId, Location<'db>, LoweringGroup);
 impl<'db> LocationId<'db> {
     pub fn from_stable_location(
         db: &'db dyn LoweringGroup,

@@ -2,15 +2,17 @@ use std::fmt::Write;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId, NamedLanguageElementId,
-    NamedLanguageElementLongId, TopLevelLanguageElementId, TraitConstantId, TraitConstantLongId,
-    TraitFunctionId, TraitFunctionLongId, TraitId, TraitImplId, TraitImplLongId, TraitItemId,
-    TraitTypeId, TraitTypeLongId, UseId,
+    FunctionTitleId, GenericParamId, GenericParamLongId, LanguageElementId, LookupItemId,
+    ModuleItemId, NamedLanguageElementId, NamedLanguageElementLongId, TopLevelLanguageElementId,
+    TraitConstantId, TraitConstantLongId, TraitFunctionId, TraitFunctionLongId, TraitId,
+    TraitImplId, TraitImplLongId, TraitItemId, TraitTypeId, TraitTypeLongId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::helpers::OptionWrappedGenericParamListHelper;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -66,19 +68,8 @@ impl<'db> DebugWithDb<'db> for ConcreteTraitLongId<'db> {
     }
 }
 
-define_short_id!(
-    ConcreteTraitId,
-    ConcreteTraitLongId<'db>,
-    SemanticGroup,
-    lookup_intern_concrete_trait,
-    intern_concrete_trait
-);
-semantic_object_for_id!(
-    ConcreteTraitId<'a>,
-    lookup_intern_concrete_trait,
-    intern_concrete_trait,
-    ConcreteTraitLongId<'a>
-);
+define_short_id!(ConcreteTraitId, ConcreteTraitLongId<'db>, SemanticGroup);
+semantic_object_for_id!(ConcreteTraitId, ConcreteTraitLongId<'a>);
 impl<'db> ConcreteTraitId<'db> {
     pub fn trait_id(&self, db: &'db dyn SemanticGroup) -> TraitId<'db> {
         self.long(db).trait_id
@@ -144,16 +135,9 @@ impl<'db> ConcreteTraitGenericFunctionLongId<'db> {
 define_short_id!(
     ConcreteTraitGenericFunctionId,
     ConcreteTraitGenericFunctionLongId<'db>,
-    SemanticGroup,
-    lookup_intern_concrete_trait_function,
-    intern_concrete_trait_function
+    SemanticGroup
 );
-semantic_object_for_id!(
-    ConcreteTraitGenericFunctionId<'a>,
-    lookup_intern_concrete_trait_function,
-    intern_concrete_trait_function,
-    ConcreteTraitGenericFunctionLongId<'a>
-);
+semantic_object_for_id!(ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId<'a>);
 impl<'db> ConcreteTraitGenericFunctionId<'db> {
     pub fn new_from_data(
         db: &'db dyn SemanticGroup,
@@ -194,19 +178,8 @@ impl<'db> ConcreteTraitTypeLongId<'db> {
         Self { concrete_trait, trait_type }
     }
 }
-define_short_id!(
-    ConcreteTraitTypeId,
-    ConcreteTraitTypeLongId<'db>,
-    SemanticGroup,
-    lookup_intern_concrete_trait_type,
-    intern_concrete_trait_type
-);
-semantic_object_for_id!(
-    ConcreteTraitTypeId<'a>,
-    lookup_intern_concrete_trait_type,
-    intern_concrete_trait_type,
-    ConcreteTraitTypeLongId<'a>
-);
+define_short_id!(ConcreteTraitTypeId, ConcreteTraitTypeLongId<'db>, SemanticGroup);
+semantic_object_for_id!(ConcreteTraitTypeId, ConcreteTraitTypeLongId<'a>);
 impl<'db> ConcreteTraitTypeId<'db> {
     pub fn new_from_data(
         db: &'db dyn SemanticGroup,
@@ -247,19 +220,8 @@ impl<'db> ConcreteTraitConstantLongId<'db> {
         Self { concrete_trait, trait_constant }
     }
 }
-define_short_id!(
-    ConcreteTraitConstantId,
-    ConcreteTraitConstantLongId<'db>,
-    SemanticGroup,
-    lookup_intern_concrete_trait_constant,
-    intern_concrete_trait_constant
-);
-semantic_object_for_id!(
-    ConcreteTraitConstantId<'a>,
-    lookup_intern_concrete_trait_constant,
-    intern_concrete_trait_constant,
-    ConcreteTraitConstantLongId<'a>
-);
+define_short_id!(ConcreteTraitConstantId, ConcreteTraitConstantLongId<'db>, SemanticGroup);
+semantic_object_for_id!(ConcreteTraitConstantId, ConcreteTraitConstantLongId<'a>);
 impl<'db> ConcreteTraitConstantId<'db> {
     pub fn new_from_data(
         db: &'db dyn SemanticGroup,
@@ -300,19 +262,8 @@ impl<'db> ConcreteTraitImplLongId<'db> {
         Self { concrete_trait, trait_impl }
     }
 }
-define_short_id!(
-    ConcreteTraitImplId,
-    ConcreteTraitImplLongId<'db>,
-    SemanticGroup,
-    lookup_intern_concrete_trait_impl,
-    intern_concrete_trait_impl
-);
-semantic_object_for_id!(
-    ConcreteTraitImplId<'a>,
-    lookup_intern_concrete_trait_impl,
-    intern_concrete_trait_impl,
-    ConcreteTraitImplLongId<'a>
-);
+define_short_id!(ConcreteTraitImplId, ConcreteTraitImplLongId<'db>, SemanticGroup);
+semantic_object_for_id!(ConcreteTraitImplId, ConcreteTraitImplLongId<'a>);
 impl<'db> ConcreteTraitImplId<'db> {
     pub fn new_from_data(
         db: &'db dyn SemanticGroup,
@@ -410,6 +361,30 @@ pub fn trait_generic_params_data_cycle<'db>(
     // Forwarding cycle handling to `priv_generic_param_data` handler.
     trait_generic_params_data(db, trait_id, true)
 }
+
+/// Query implementation of [crate::db::SemanticGroup::trait_generic_params_ids].
+pub fn trait_generic_params_ids<'db>(
+    db: &'db dyn SemanticGroup,
+    trait_id: TraitId<'db>,
+) -> Maybe<Vec<GenericParamId<'db>>> {
+    let module_file_id = trait_id.module_file_id(db);
+    let trait_ast = db.module_trait_by_id(trait_id)?;
+
+    let generic_params = &trait_ast.generic_params(db);
+
+    let syntax_db = db;
+    Ok(match generic_params {
+        syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
+        syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
+            .generic_params(syntax_db)
+            .elements(syntax_db)
+            .map(|param_syntax| {
+                GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db)).intern(db)
+            })
+            .collect(),
+    })
+}
+
 /// Query implementation of [crate::db::SemanticGroup::trait_attributes].
 pub fn trait_attributes<'db>(
     db: &'db dyn SemanticGroup,

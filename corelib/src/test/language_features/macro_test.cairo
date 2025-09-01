@@ -656,4 +656,27 @@ mod item_level_macro {
         assert_eq!(outer(), 10);
         assert_eq!(inner(), 20);
     }
+
+    mod macro_vs_global_use {
+        mod has_foo {
+            pub fn foo() -> felt252 {
+                'in module'
+            }
+        }
+
+        macro define_foo {
+            () => {
+                fn foo() -> felt252 {
+                    'in macro'
+                }
+            };
+        }
+        use has_foo::*;
+        define_foo!();
+
+        #[test]
+        fn test_macro_wins_over_global_use() {
+            assert_eq!(foo(), 'in macro');
+        }
+    }
 }

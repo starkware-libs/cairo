@@ -5,11 +5,11 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::extract_matches;
 use indoc::indoc;
 use itertools::Itertools;
+use salsa::Database;
 
 use crate::db::SemanticGroup;
 use crate::inline_macros::get_default_plugin_suite;
@@ -80,7 +80,7 @@ struct MappingsPlugin;
 impl MacroPlugin for MappingsPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
@@ -99,9 +99,8 @@ impl MacroPlugin for MappingsPlugin {
             .flat_map(|node| {
                 let span_with_trivia = node.span(db);
                 let span_without_trivia = node.span_without_trivia(db);
-                let prefix =
-                    TextSpan { start: span_with_trivia.start, end: span_without_trivia.start };
-                let suffix = TextSpan { start: span_without_trivia.end, end: span_with_trivia.end };
+                let prefix = TextSpan::new(span_with_trivia.start, span_without_trivia.start);
+                let suffix = TextSpan::new(span_without_trivia.end, span_with_trivia.end);
                 vec![
                     CodeMapping { span: prefix, origin: CodeOrigin::Span(prefix) },
                     CodeMapping {

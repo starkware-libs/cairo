@@ -42,17 +42,14 @@ pub fn scrub_units(db: &dyn LoweringGroup, lowered: &mut Lowered<'_>) {
             )
         }
 
-        if let BlockEnd::Return(ref mut inputs, _location) = block.end {
-            if let Some(return_val) = inputs.last() {
-                if lowered.variables[return_val.var_id].ty == unit_ty {
-                    block.statements.push(Statement::StructDestructure(
-                        StatementStructDestructure {
-                            input: inputs.pop().unwrap(),
-                            outputs: vec![],
-                        },
-                    ));
-                }
-            }
+        if let BlockEnd::Return(ref mut inputs, _location) = block.end
+            && let Some(return_val) = inputs.last()
+            && lowered.variables[return_val.var_id].ty == unit_ty
+        {
+            block.statements.push(Statement::StructDestructure(StatementStructDestructure {
+                input: inputs.pop().unwrap(),
+                outputs: vec![],
+            }));
         };
     }
 }

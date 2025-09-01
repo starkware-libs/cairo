@@ -192,14 +192,13 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 expected,
                 actual,
             } => {
-                let defs_db = db;
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(db);
                 format!(
                     "The number of parameters in the impl function `{}::{}` is incompatible with \
                      `{}::{}`. Expected: {}, actual: {}.",
-                    impl_def_id.name(defs_db),
+                    impl_def_id.name(db),
                     function_name,
-                    trait_id.name(defs_db),
+                    trait_id.name(db),
                     function_name,
                     expected,
                     actual,
@@ -215,14 +214,13 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 expected_ty,
                 actual_ty,
             } => {
-                let defs_db = db;
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(db);
                 format!(
                     "Parameter type of impl function `{}::{}` is incompatible with `{}::{}`. \
                      Expected: `{}`, actual: `{}`.",
-                    impl_def_id.name(defs_db),
+                    impl_def_id.name(db),
                     function_name,
-                    trait_id.name(defs_db),
+                    trait_id.name(db),
                     function_name,
                     expected_ty.format(db),
                     actual_ty.format(db)
@@ -232,11 +230,10 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 "Variant constructor argument must be immutable.".to_string()
             }
             SemanticDiagnosticKind::TraitParamMutable { trait_id, function_id } => {
-                let defs_db = db;
                 format!(
                     "Parameter of trait function `{}::{}` can't be defined as mutable.",
-                    trait_id.name(defs_db),
-                    function_id.name(defs_db),
+                    trait_id.name(db),
+                    function_id.name(db),
                 )
             }
             SemanticDiagnosticKind::ParameterShouldBeReference {
@@ -244,14 +241,13 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 impl_function_id,
                 trait_id,
             } => {
-                let defs_db = db;
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(db);
                 format!(
                     "Parameter of impl function {}::{} is incompatible with {}::{}. It should be \
                      a reference.",
-                    impl_def_id.name(defs_db),
+                    impl_def_id.name(db),
                     function_name,
-                    trait_id.name(defs_db),
+                    trait_id.name(db),
                     function_name,
                 )
             }
@@ -772,8 +768,8 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 )
             }
             SemanticDiagnosticKind::InternalInferenceError(err) => err.format(db),
-            SemanticDiagnosticKind::DesnapNonSnapshot => {
-                "Desnap operator can only be applied on snapshots".into()
+            SemanticDiagnosticKind::DerefNonRef { ty } => {
+                format!("Type `{}` cannot be dereferenced", ty.format(db))
             }
             SemanticDiagnosticKind::NoImplementationOfIndexOperator { ty, inference_errors } => {
                 if inference_errors.is_empty() {
@@ -1418,7 +1414,9 @@ pub enum SemanticDiagnosticKind<'db> {
         expected_trt: semantic::ConcreteTraitId<'db>,
         actual_trt: semantic::ConcreteTraitId<'db>,
     },
-    DesnapNonSnapshot,
+    DerefNonRef {
+        ty: semantic::TypeId<'db>,
+    },
     InternalInferenceError(InferenceError<'db>),
     NoImplementationOfIndexOperator {
         ty: semantic::TypeId<'db>,
@@ -1529,6 +1527,7 @@ impl<'db> SemanticDiagnosticKind<'db> {
             Self::MissingItemsInImpl(_) => error_code!(E0004),
             Self::ModuleFileNotFound(_) => error_code!(E0005),
             Self::PathNotFound(_) => error_code!(E0006),
+            Self::NoSuchTypeMember { .. } => error_code!(E0007),
             _ => return None,
         })
     }

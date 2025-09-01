@@ -5,11 +5,11 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::consts::{IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Upcast, try_extract_matches};
 use itertools::Itertools;
+use salsa::Database;
 
 use super::functions::InlineConfiguration;
 use crate::db::SemanticGroup;
@@ -152,10 +152,12 @@ unsafe impl<'db> salsa::Update for FunctionBodyData<'db> {
     // For lookups we assume they are built from the arena,
     // so a change will be detected and they will be copied.
     unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = &mut *old_pointer;
-        let res = Diagnostics::maybe_update(&mut old_value.diagnostics, new_value.diagnostics)
-            | Arc::maybe_update(&mut old_value.resolver_data, new_value.resolver_data)
-            | Arc::maybe_update(&mut old_value.body, new_value.body);
+        let old_value = unsafe { &mut *old_pointer };
+        let res = unsafe {
+            Diagnostics::maybe_update(&mut old_value.diagnostics, new_value.diagnostics)
+                | Arc::maybe_update(&mut old_value.resolver_data, new_value.resolver_data)
+                | Arc::maybe_update(&mut old_value.body, new_value.body)
+        };
         if res {
             old_value.expr_lookup = new_value.expr_lookup;
             old_value.pattern_lookup = new_value.pattern_lookup;
@@ -176,10 +178,10 @@ unsafe impl<'db> salsa::Update for FunctionBody<'db> {
     unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
         // The function body contains both the arena and the expr id, so a change will be detected.
         // The comparison should still be safe to do as we wont follow expired references.
-        let old_value = &*old_pointer;
+        let old_value = unsafe { &mut *old_pointer };
 
         if old_value != &new_value {
-            *old_pointer = new_value;
+            *old_value = new_value;
             return true;
         }
 
@@ -346,7 +348,7 @@ pub fn get_inline_config<'db>(
 /// If there is no implicit precedence influencing attribute, then this function returns
 /// [ImplicitPrecedence::UNSPECIFIED].
 pub fn get_implicit_precedence<'a, 'r>(
-    syntax_db: &'a dyn SyntaxGroup,
+    syntax_db: &'a dyn Database,
     diagnostics: &mut SemanticDiagnostics<'a>,
     resolver: &mut Resolver<'a>,
     attributes: &'r [Attribute<'a>],

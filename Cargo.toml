@@ -2,31 +2,52 @@
 overflow-checks = true # Enable integer overflow checks.
 
 [profile.release-with-debug]
-inherits = "release"
 debug = true
+inherits = "release"
 
 # The profile used for CI in pull requests.
 # External dependencies are built with optimization enabled, while crates in this workspace are built
 # with `dev` profile and full debug info. This is a trade-off between build time and e2e test time.
 [profile.ci-dev]
-inherits = "dev"
 incremental = false
+inherits = "dev"
 [profile.ci-dev.package."*"] # external dependencies
 opt-level = 1
 [profile.ci-dev.package."bimap"]
 opt-level = 3
 [profile.ci-dev.package."cairo-vm"]
 opt-level = 3
+[profile.ci-dev.package."hashbrown"]
+opt-level = 3
+[profile.ci-dev.package."num-bigint"]
+opt-level = 3
 [profile.ci-dev.package."rayon"]
 opt-level = 3
 [profile.ci-dev.package."salsa"]
 opt-level = 3
+[profile.ci-dev.package."starknet-types-core"]
+opt-level = 3
 [profile.ci-dev.package."tokio"]
+opt-level = 3
+[profile.ci-dev.package."vector-map"]
 opt-level = 3
 
 [workspace]
 resolver = "2"
 members = [
+    "crates/bin/cairo-compile",
+    "crates/bin/cairo-execute",
+    "crates/bin/cairo-format",
+    "crates/bin/cairo-run",
+    "crates/bin/cairo-size-profiler",
+    "crates/bin/cairo-test",
+    "crates/bin/generate-syntax",
+    "crates/bin/get-lowering",
+    "crates/bin/sierra-compile",
+    "crates/bin/starknet-compile",
+    "crates/bin/starknet-sierra-compile",
+    "crates/bin/starknet-sierra-extract-code",
+    "crates/bin/starknet-sierra-upgrade-validate",
     "crates/cairo-lang-casm",
     "crates/cairo-lang-compiler",
     "crates/cairo-lang-debug",
@@ -35,6 +56,7 @@ members = [
     "crates/cairo-lang-doc",
     "crates/cairo-lang-eq-solver",
     "crates/cairo-lang-executable",
+    "crates/cairo-lang-executable-plugin",
     "crates/cairo-lang-execute-utils",
     "crates/cairo-lang-filesystem",
     "crates/cairo-lang-formatter",
@@ -59,26 +81,13 @@ members = [
     "crates/cairo-lang-test-plugin",
     "crates/cairo-lang-test-runner",
     "crates/cairo-lang-utils",
-    "crates/bin/cairo-compile",
-    "crates/bin/cairo-execute",
-    "crates/bin/cairo-format",
-    "crates/bin/cairo-run",
-    "crates/bin/cairo-size-profiler",
-    "crates/bin/cairo-test",
-    "crates/bin/generate-syntax",
-    "crates/bin/sierra-compile",
-    "crates/bin/starknet-compile",
-    "crates/bin/starknet-sierra-compile",
-    "crates/bin/starknet-sierra-extract-code",
-    "crates/bin/get-lowering",
-    "crates/bin/starknet-sierra-upgrade-validate",
     "tests",
 ]
 exclude = ["ensure-no_std"]
 
 [workspace.package]
 version = "2.12.0"
-edition = "2021"
+edition = "2024"
 rust-version = "1.86"
 repository = "https://github.com/starkware-libs/cairo/"
 license = "Apache-2.0"
@@ -142,27 +151,27 @@ serde = { version = "1.0.219", default-features = false, features = [
     "rc",
 ] }
 serde_json = "1.0.142"
-typetag = "0.2"
 sha2 = "0.10.9"
 sha3 = "0.10.8"
 smol_str = { version = "0.3.2", default-features = false }
-starknet-types-core = { version = "0.1.7", features = [
+starknet-types-core = { version = "0.2.0", features = [
     "hash",
     "prime-bigint",
     "serde",
 ] }
-syn = { version = "2.0.104", features = ["full", "extra-traits"] }
+syn = { version = "2.0.104", features = ["extra-traits", "full"] }
 test-case = "3.3.1"
 test-case-macros = "3.3.1"
 test-log = "0.2.18"
 thiserror = "2.0.12"
 time = { version = "0.3.41", features = [
     "formatting",
-    "macros",
     "local-offset",
+    "macros",
 ] }
 tokio = { version = "1.47.1", features = ["full", "sync"] }
 toml = "0.9.5"
+typetag = "0.2"
 unescaper = "0.1.6"
 vector-map = { version = "1.0.2", features = ["serde_impl"] }
 xshell = "0.2.7"

@@ -270,19 +270,8 @@ impl<'db> DebugWithDb<'db> for FunctionLongId<'db> {
     }
 }
 
-define_short_id!(
-    FunctionId,
-    FunctionLongId<'db>,
-    SemanticGroup,
-    lookup_intern_function,
-    intern_function
-);
-semantic_object_for_id!(
-    FunctionId<'a>,
-    lookup_intern_function,
-    intern_function,
-    FunctionLongId<'a>
-);
+define_short_id!(FunctionId, FunctionLongId<'db>, SemanticGroup);
+semantic_object_for_id!(FunctionId, FunctionLongId<'a>);
 impl<'db> FunctionId<'db> {
     pub fn get_concrete(&self, db: &'db dyn SemanticGroup) -> ConcreteFunction<'db> {
         self.long(db).function.clone()
@@ -625,19 +614,8 @@ impl<'db> DebugWithDb<'db> for ConcreteFunctionWithBody<'db> {
     }
 }
 
-define_short_id!(
-    ConcreteFunctionWithBodyId,
-    ConcreteFunctionWithBody<'db>,
-    SemanticGroup,
-    lookup_intern_concrete_function_with_body,
-    intern_concrete_function_with_body
-);
-semantic_object_for_id!(
-    ConcreteFunctionWithBodyId<'a>,
-    lookup_intern_concrete_function_with_body,
-    intern_concrete_function_with_body,
-    ConcreteFunctionWithBody<'a>
-);
+define_short_id!(ConcreteFunctionWithBodyId, ConcreteFunctionWithBody<'db>, SemanticGroup);
+semantic_object_for_id!(ConcreteFunctionWithBodyId, ConcreteFunctionWithBody<'a>);
 impl<'db> ConcreteFunctionWithBodyId<'db> {
     pub fn function_with_body_id(&self, db: &'db dyn SemanticGroup) -> FunctionWithBodyId<'db> {
         self.long(db).function_with_body_id(db)
@@ -1055,23 +1033,18 @@ pub fn get_closure_params<'db>(
 
     for param in generic_params {
         if let GenericParam::Impl(generic_param_impl) = param {
-            let trait_id = generic_param_impl.concrete_trait?.trait_id(db);
+            let concrete_trait = generic_param_impl.concrete_trait?;
+            if fn_traits(db).contains(&concrete_trait.trait_id(db)) {
+                let [GenericArgumentId::Type(closure_type), GenericArgumentId::Type(params_type)] =
+                    *concrete_trait.generic_args(db)
+                else {
+                    unreachable!(
+                        "Fn trait must have exactly two generic arguments: closure type and \
+                         parameter type."
+                    )
+                };
 
-            if fn_traits(db).contains(&trait_id) {
-                if let Ok(concrete_trait) = generic_param_impl.concrete_trait {
-                    let [
-                        GenericArgumentId::Type(closure_type),
-                        GenericArgumentId::Type(params_type),
-                    ] = *concrete_trait.generic_args(db)
-                    else {
-                        unreachable!(
-                            "Fn trait must have exactly two generic arguments: closure type and \
-                             parameter type."
-                        )
-                    };
-
-                    closure_params_map.insert(closure_type, params_type);
-                }
+                closure_params_map.insert(closure_type, params_type);
             }
         }
     }

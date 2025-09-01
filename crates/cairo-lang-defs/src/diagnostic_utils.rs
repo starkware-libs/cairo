@@ -4,11 +4,9 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::DiagnosticLocation;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-
-use crate::db::DefsGroup;
+use salsa::Database;
 
 /// A stable location of a real, concrete syntax.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -32,16 +30,16 @@ impl<'db> StableLocation<'db> {
         Self { stable_ptr, inner_span: Some(inner_span) }
     }
 
-    pub fn file_id(&self, db: &'db dyn DefsGroup) -> FileId<'db> {
+    pub fn file_id(&self, db: &'db dyn Database) -> FileId<'db> {
         self.stable_ptr.file_id(db)
     }
 
-    pub fn from_ast<TNode: TypedSyntaxNode<'db>>(db: &'db dyn SyntaxGroup, node: &TNode) -> Self {
+    pub fn from_ast<TNode: TypedSyntaxNode<'db>>(db: &'db dyn Database, node: &TNode) -> Self {
         Self::new(node.as_syntax_node().stable_ptr(db))
     }
 
     /// Returns the [SyntaxNode] that corresponds to the [StableLocation].
-    pub fn syntax_node(&self, db: &'db dyn DefsGroup) -> SyntaxNode<'db> {
+    pub fn syntax_node(&self, db: &'db dyn Database) -> SyntaxNode<'db> {
         self.stable_ptr.lookup(db)
     }
 
@@ -51,12 +49,14 @@ impl<'db> StableLocation<'db> {
     }
 
     /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
-    pub fn diagnostic_location(&self, db: &'db dyn DefsGroup) -> DiagnosticLocation<'db> {
+    pub fn diagnostic_location(&self, db: &'db dyn Database) -> DiagnosticLocation<'db> {
         match self.inner_span {
             Some((start, width)) => {
                 let start = self.syntax_node(db).offset(db).add_width(start);
-                let end = start.add_width(width);
-                DiagnosticLocation { file_id: self.file_id(db), span: TextSpan { start, end } }
+                DiagnosticLocation {
+                    file_id: self.file_id(db),
+                    span: TextSpan::new_with_width(start, width),
+                }
             }
             None => {
                 let syntax_node = self.syntax_node(db);
@@ -71,19 +71,19 @@ impl<'db> StableLocation<'db> {
     /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
     pub fn diagnostic_location_until(
         &self,
-        db: &'db dyn DefsGroup,
+        db: &'db dyn Database,
         until_stable_ptr: SyntaxStablePtrId<'db>,
     ) -> DiagnosticLocation<'db> {
         let start = self.stable_ptr.lookup(db).span_start_without_trivia(db);
         let end = until_stable_ptr.lookup(db).span_end_without_trivia(db);
-        DiagnosticLocation { file_id: self.stable_ptr.file_id(db), span: TextSpan { start, end } }
+        DiagnosticLocation { file_id: self.stable_ptr.file_id(db), span: TextSpan::new(start, end) }
     }
 }
 
 impl<'db> DebugWithDb<'db> for StableLocation<'db> {
-    type Db = dyn DefsGroup;
+    type Db = dyn Database;
 
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &'db dyn DefsGroup) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &'db dyn Database) -> fmt::Result {
         let diag_location = self.diagnostic_location(db);
         diag_location.fmt_location(f, db)
     }

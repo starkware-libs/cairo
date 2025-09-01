@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 
 use assert_matches::assert_matches;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::{Flag, flag_unsafe_panic};
 use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
 use cairo_lang_semantic::corelib::{
@@ -275,12 +276,11 @@ impl<'db> PanicBlockLoweringContext<'db> {
         &mut self,
         stmt: &Statement<'db>,
     ) -> Maybe<Option<(BlockEnd<'db>, Option<BlockId>)>> {
-        if let Statement::Call(call) = &stmt {
-            if let Some(with_body) = call.function.body(self.db())? {
-                if self.db().function_with_body_may_panic(with_body)? {
-                    return Ok(Some(self.handle_call_panic(call)?));
-                }
-            }
+        if let Statement::Call(call) = &stmt
+            && let Some(with_body) = call.function.body(self.db())?
+            && self.db().function_with_body_may_panic(with_body)?
+        {
+            return Ok(Some(self.handle_call_panic(call)?));
         }
         self.statements.push(stmt.clone());
         Ok(None)

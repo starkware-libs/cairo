@@ -2,16 +2,15 @@
 
 use std::collections::{BTreeMap, HashMap};
 use std::hash::Hash;
-use std::mem;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
-    GlobalUseId, ImplAliasId, ImplDefId, ImplFunctionId, ImplImplDefId, LanguageElementId,
-    LocalVarId, LookupItemId, MacroCallId, MemberId, NamedLanguageElementId, ParamId, StructId,
-    TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
+    GlobalUseId, ImplAliasId, ImplDefId, ImplFunctionId, ImplImplDefId, LocalVarId, LookupItemId,
+    MacroCallId, MemberId, NamedLanguageElementId, ParamId, StructId, TraitConstantId,
+    TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -37,7 +36,7 @@ use crate::items::functions::{
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
-    ImplLookupContext, UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
+    ImplLookupContextId, UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
 };
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
@@ -105,7 +104,7 @@ pub struct ImplVar<'db> {
     pub id: LocalImplVarId,
     pub concrete_trait_id: ConcreteTraitId<'db>,
     #[dont_rewrite]
-    pub lookup_context: ImplLookupContext<'db>,
+    pub lookup_context: ImplLookupContextId<'db>,
 }
 impl<'db> ImplVar<'db> {
     pub fn intern(&self, db: &'db dyn SemanticGroup) -> ImplVarId<'db> {
@@ -121,7 +120,7 @@ pub struct LocalImplVarId(pub usize);
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, salsa::Update)]
 pub struct LocalConstVarId(pub usize);
 
-define_short_id!(ImplVarId, ImplVar<'db>, SemanticGroup, lookup_intern_impl_var, intern_impl_var);
+define_short_id!(ImplVarId, ImplVar<'db>, SemanticGroup);
 impl<'db> ImplVarId<'db> {
     pub fn id(&self, db: &dyn SemanticGroup) -> LocalImplVarId {
         self.long(db).id
@@ -129,11 +128,11 @@ impl<'db> ImplVarId<'db> {
     pub fn concrete_trait_id(&self, db: &'db dyn SemanticGroup) -> ConcreteTraitId<'db> {
         self.long(db).concrete_trait_id
     }
-    pub fn lookup_context(&self, db: &'db dyn SemanticGroup) -> ImplLookupContext<'db> {
-        self.long(db).lookup_context.clone()
+    pub fn lookup_context(&self, db: &'db dyn SemanticGroup) -> ImplLookupContextId<'db> {
+        self.long(db).lookup_context
     }
 }
-semantic_object_for_id!(ImplVarId<'a>, lookup_intern_impl_var, intern_impl_var, ImplVar<'a>);
+semantic_object_for_id!(ImplVarId, ImplVar<'a>);
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, SemanticObject, salsa::Update)]
 pub enum InferenceVar {
@@ -283,10 +282,10 @@ pub struct ErrorSet;
 
 pub type InferenceResult<T> = Result<T, ErrorSet>;
 
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub enum InferenceErrorStatus {
-    Pending,
-    Consumed,
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+enum InferenceErrorStatus<'db> {
+    Pending(InferenceError<'db>),
+    Consumed(DiagnosticAdded),
 }
 
 /// A mapping of an impl var's trait items to concrete items
@@ -340,13 +339,8 @@ pub struct InferenceData<'db> {
     /// Mapping from impl types to type variables.
     pub impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
 
-    // Error handling members.
     /// The current error status.
-    pub error_status: Result<(), InferenceErrorStatus>,
-    /// `Some` only when error_state is Err(Pending).
-    error: Option<InferenceError<'db>>,
-    /// `Some` only when error_state is Err(Consumed).
-    consumed_error: Option<DiagnosticAdded>,
+    error_status: Result<(), InferenceErrorStatus<'db>>,
 }
 impl<'db> InferenceData<'db> {
     pub fn new(inference_id: InferenceId<'db>) -> Self {
@@ -366,8 +360,6 @@ impl<'db> InferenceData<'db> {
             ambiguous: Vec::new(),
             impl_type_bounds: Default::default(),
             error_status: Ok(()),
-            error: None,
-            consumed_error: None,
         }
     }
     pub fn inference<'r>(&'r mut self, db: &'db dyn SemanticGroup) -> Inference<'db, 'r> {
@@ -434,9 +426,7 @@ impl<'db> InferenceData<'db> {
             // we do not need to rewrite the impl type bounds, as they all should be var free.
             impl_type_bounds: self.impl_type_bounds.clone(),
 
-            error_status: self.error_status,
-            error: self.error.clone(),
-            consumed_error: self.consumed_error,
+            error_status: self.error_status.clone(),
         }
     }
     pub fn temporary_clone(&self) -> InferenceData<'db> {
@@ -455,9 +445,7 @@ impl<'db> InferenceData<'db> {
             solved: self.solved.clone(),
             ambiguous: self.ambiguous.clone(),
             impl_type_bounds: self.impl_type_bounds.clone(),
-            error_status: self.error_status,
-            error: self.error.clone(),
-            consumed_error: self.consumed_error,
+            error_status: self.error_status.clone(),
         }
     }
 }
@@ -585,7 +573,7 @@ impl<'db, 'id> Inference<'db, 'id> {
         &mut self,
         concrete_trait_id: ConcreteTraitId<'db>,
         stable_ptr: Option<SyntaxStablePtrId<'db>>,
-        lookup_context: ImplLookupContext<'db>,
+        lookup_context: ImplLookupContextId<'db>,
     ) -> ImplId<'db> {
         let var = self.new_impl_var_raw(lookup_context, concrete_trait_id, stable_ptr);
         ImplLongId::ImplVar(self.impl_var(var).intern(self.db)).intern(self.db)
@@ -595,13 +583,10 @@ impl<'db, 'id> Inference<'db, 'id> {
     /// Returns the variable id.
     fn new_impl_var_raw(
         &mut self,
-        lookup_context: ImplLookupContext<'db>,
+        lookup_context: ImplLookupContextId<'db>,
         concrete_trait_id: ConcreteTraitId<'db>,
         stable_ptr: Option<SyntaxStablePtrId<'db>>,
     ) -> LocalImplVarId {
-        let mut lookup_context = lookup_context;
-        lookup_context.insert_module(concrete_trait_id.trait_id(self.db).module_file_id(self.db).0);
-
         let id = LocalImplVarId(self.impl_vars.len());
         if let Some(stable_ptr) = stable_ptr {
             self.stable_ptrs.insert(InferenceVar::Impl(id), stable_ptr);
@@ -810,36 +795,35 @@ impl<'db, 'id> Inference<'db, 'id> {
                 let impl_ty = self
                     .db
                     .impl_type_concrete_implized(ImplTypeId::new(impl_id, trait_type_id, self.db))
-                    .map_err(|_| ErrorSet)?;
+                    .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
                 if let Err(err_set) = self.conform_ty(ty, impl_ty) {
                     // Override the error with ImplTypeMismatch.
                     let ty0 = self.rewrite(ty).no_err();
                     let ty1 = self.rewrite(impl_ty).no_err();
 
-                    self.error =
-                        Some(InferenceError::ImplTypeMismatch { impl_id, trait_type_id, ty0, ty1 });
+                    let error =
+                        InferenceError::ImplTypeMismatch { impl_id, trait_type_id, ty0, ty1 };
+                    self.error_status = Err(InferenceErrorStatus::Pending(error));
                     return Err(err_set);
                 }
             }
             for (trait_constant, constant_id) in mappings.constants {
-                self.conform_const(
-                    constant_id,
-                    self.db
-                        .impl_constant_concrete_implized_value(ImplConstantId::new(
-                            impl_id,
-                            trait_constant,
-                            self.db,
-                        ))
-                        .map_err(|_| ErrorSet)?,
-                )?;
+                let concrete_impl_constant = self
+                    .db
+                    .impl_constant_concrete_implized_value(ImplConstantId::new(
+                        impl_id,
+                        trait_constant,
+                        self.db,
+                    ))
+                    .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
+                self.conform_const(constant_id, concrete_impl_constant)?;
             }
             for (trait_impl, inner_impl_id) in mappings.impls {
-                self.conform_impl(
-                    inner_impl_id,
-                    self.db
-                        .impl_impl_concrete_implized(ImplImplId::new(impl_id, trait_impl, self.db))
-                        .map_err(|_| ErrorSet)?,
-                )?;
+                let concrete_impl_impl = self
+                    .db
+                    .impl_impl_concrete_implized(ImplImplId::new(impl_id, trait_impl, self.db))
+                    .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
+                self.conform_impl(inner_impl_id, concrete_impl_impl)?;
             }
         }
         Ok(impl_id)
@@ -876,12 +860,13 @@ impl<'db, 'id> Inference<'db, 'id> {
             return Err(self.set_error(InferenceError::Cycle(inference_var)));
         }
         // If assigning var to var - making sure assigning to the lower id for proper canonization.
-        if let TypeLongId::Var(other) = ty.long(self.db) {
-            if other.inference_id == self.inference_id && other.id.0 > var.id.0 {
-                let var_ty = TypeLongId::Var(var).intern(self.db);
-                self.type_assignment.insert(other.id, var_ty);
-                return Ok(var_ty);
-            }
+        if let TypeLongId::Var(other) = ty.long(self.db)
+            && other.inference_id == self.inference_id
+            && other.id.0 > var.id.0
+        {
+            let var_ty = TypeLongId::Var(var).intern(self.db);
+            self.type_assignment.insert(other.id, var_ty);
+            return Ok(var_ty);
         }
         self.type_assignment.insert(var.id, ty);
         Ok(ty)
@@ -936,11 +921,12 @@ impl<'db, 'id> Inference<'db, 'id> {
         &mut self,
         concrete_trait_id: ConcreteTraitId<'db>,
         impl_var_trait_item_mappings: ImplVarTraitItemMappings<'db>,
-        mut lookup_context: ImplLookupContext<'db>,
+        lookup_context_id: ImplLookupContextId<'db>,
     ) -> InferenceResult<SolutionSet<'db, (CanonicalImpl<'db>, CanonicalMapping<'db>)>> {
         let impl_var_trait_item_mappings = self.rewrite(impl_var_trait_item_mappings).no_err();
         // TODO(spapini): This is done twice. Consider doing it only here.
         let concrete_trait_id = self.rewrite(concrete_trait_id).no_err();
+        let mut lookup_context = lookup_context_id.long(self.db).clone();
         enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
 
         // Don't try to resolve impls if the first generic param is a variable.
@@ -976,7 +962,7 @@ impl<'db, 'id> Inference<'db, 'id> {
         // is consistent.
         let solution_set = match self.db.canonic_trait_solutions(
             canonical_trait,
-            lookup_context,
+            lookup_context.intern(self.db),
             (*self.data.impl_type_bounds).clone(),
         ) {
             Ok(solution_set) => solution_set,
@@ -996,14 +982,14 @@ impl<'db, 'id> Inference<'db, 'id> {
     /// SolutionSet::Ambiguous(...) otherwise.
     fn validate_neg_impls<'m>(
         &'m mut self,
-        lookup_context: &ImplLookupContext<'db>,
+        lookup_context: ImplLookupContextId<'db>,
         canonical_impl: CanonicalImpl<'db>,
     ) -> InferenceResult<SolutionSet<'db, CanonicalImpl<'db>>> {
         /// Validates that no solution set is found for the negative impls.
         fn validate_no_solution_set<'db, 'mt>(
             inference: &mut Inference<'db, 'mt>,
             canonical_impl: CanonicalImpl<'db>,
-            lookup_context: &ImplLookupContext<'db>,
+            lookup_context: ImplLookupContextId<'db>,
             negative_impls_concrete_traits: impl Iterator<Item = Maybe<ConcreteTraitId<'db>>>,
         ) -> InferenceResult<SolutionSet<'db, CanonicalImpl<'db>>> {
             for concrete_trait_id in negative_impls_concrete_traits {
@@ -1041,7 +1027,7 @@ impl<'db, 'id> Inference<'db, 'id> {
                     inference.trait_solution_set(
                         concrete_trait_id,
                         ImplVarTraitItemMappings::default(),
-                        lookup_context.clone()
+                        lookup_context,
                     )?,
                     SolutionSet::None
                 ) {
@@ -1103,19 +1089,17 @@ impl<'db, 'id> Inference<'db, 'id> {
         if self.error_status.is_err() {
             return ErrorSet;
         }
-        self.error_status = if let InferenceError::Reported(diag_added) = err {
-            self.consumed_error = Some(diag_added);
-            Err(InferenceErrorStatus::Consumed)
+        self.error_status = Err(if let InferenceError::Reported(diag_added) = err {
+            InferenceErrorStatus::Consumed(diag_added)
         } else {
-            self.error = Some(err);
-            Err(InferenceErrorStatus::Pending)
-        };
+            InferenceErrorStatus::Pending(err)
+        });
         ErrorSet
     }
 
     /// Returns whether an error is set (either pending or consumed).
     pub fn is_error_set(&self) -> InferenceResult<()> {
-        if self.error_status.is_err() { Err(ErrorSet) } else { Ok(()) }
+        self.error_status.as_ref().copied().map_err(|_| ErrorSet)
     }
 
     /// Consumes the error but doesn't report it. If there is no error, or the error is consumed,
@@ -1151,13 +1135,15 @@ impl<'db, 'id> Inference<'db, 'id> {
         _err_set: ErrorSet,
         diag_added: DiagnosticAdded,
     ) -> Option<InferenceError<'db>> {
-        if self.error_status != Err(InferenceErrorStatus::Pending) {
-            return None;
-            // panic!("consume_error when there is no pending error");
+        match &mut self.error_status {
+            Err(InferenceErrorStatus::Pending(error)) => {
+                let pending_error = std::mem::replace(error, InferenceError::Reported(diag_added));
+                self.error_status = Err(InferenceErrorStatus::Consumed(diag_added));
+                Some(pending_error)
+            }
+            // TODO(orizi): `panic!("consume_error when there is no pending error")` instead.
+            _ => None,
         }
-        self.error_status = Err(InferenceErrorStatus::Consumed);
-        self.consumed_error = Some(diag_added);
-        self.error.take()
     }
 
     /// Consumes the pending error, if any, and reports it.
@@ -1171,17 +1157,13 @@ impl<'db, 'id> Inference<'db, 'id> {
         diagnostics: &mut SemanticDiagnostics<'db>,
         stable_ptr: SyntaxStablePtrId<'db>,
     ) -> DiagnosticAdded {
-        let Err(state_error) = self.error_status else {
+        let Err(state_error) = &self.error_status else {
             panic!("report_on_pending_error should be called only on error");
         };
         match state_error {
-            InferenceErrorStatus::Consumed => self
-                .consumed_error
-                .expect("consumed_error is not set although error_status is Err(Consumed)"),
-            InferenceErrorStatus::Pending => {
-                let diag_added = match mem::take(&mut self.error)
-                    .expect("error is not set although error_status is Err(Pending)")
-                {
+            InferenceErrorStatus::Consumed(diag_added) => *diag_added,
+            InferenceErrorStatus::Pending(error) => {
+                let diag_added = match error {
                     InferenceError::TypeNotInferred(_) if diagnostics.error_count > 0 => {
                         // If we have other diagnostics, there is no need to TypeNotInferred.
 
@@ -1191,9 +1173,7 @@ impl<'db, 'id> Inference<'db, 'id> {
                     }
                     diag => diag.report(diagnostics, stable_ptr),
                 };
-
-                self.error_status = Err(InferenceErrorStatus::Consumed);
-                self.consumed_error = Some(diag_added);
+                self.error_status = Err(InferenceErrorStatus::Consumed(diag_added));
                 diag_added
             }
         }
@@ -1206,7 +1186,7 @@ impl<'db, 'id> Inference<'db, 'id> {
         err_set: ErrorSet,
         report: impl FnOnce() -> DiagnosticAdded,
     ) {
-        if self.error_status == Err(InferenceErrorStatus::Pending) {
+        if matches!(self.error_status, Err(InferenceErrorStatus::Pending(_))) {
             self.consume_reported_error(err_set, report());
         }
     }

@@ -4,10 +4,10 @@ mod test;
 pub mod consts;
 
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginResult};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use consts::*;
+use salsa::Database;
 
 pub mod aux_data;
 mod derive;
@@ -33,7 +33,7 @@ pub struct StarknetPlugin;
 impl MacroPlugin for StarknetPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {

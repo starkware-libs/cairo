@@ -19,13 +19,7 @@ pub struct LabelLongId<'db> {
     // A unique identifier inside the function
     pub id: usize,
 }
-define_short_id!(
-    LabelId,
-    LabelLongId<'db>,
-    SierraGenGroup,
-    lookup_intern_label_id,
-    intern_label_id
-);
+define_short_id!(LabelId, LabelLongId<'db>, SierraGenGroup);
 
 pub struct LabelIdWithDb<'db> {
     db: &'db dyn SierraGenGroup,
@@ -61,7 +55,7 @@ pub struct Function<'db> {
 
 unsafe impl<'db> salsa::Update for Function<'db> {
     unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = &mut *old_pointer;
+        let old_value = unsafe { &mut *old_pointer };
         if old_value == &new_value {
             return false;
         }

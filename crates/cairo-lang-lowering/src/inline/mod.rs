@@ -38,13 +38,13 @@ pub fn get_inline_diagnostics<'db>(
     };
     let mut diagnostics = LoweringDiagnostics::default();
 
-    if let InlineConfiguration::Always(_) = inline_config {
-        if db.in_cycle(function_id, crate::DependencyType::Call)? {
-            diagnostics.report(
-                function_id.base_semantic_function(db).untyped_stable_ptr(db),
-                LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
-            );
-        }
+    if let InlineConfiguration::Always(_) = inline_config
+        && db.in_cycle(function_id, crate::DependencyType::Call)?
+    {
+        diagnostics.report(
+            function_id.base_semantic_function(db).untyped_stable_ptr(db),
+            LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
+        );
     }
 
     Ok(diagnostics.build())
@@ -337,11 +337,10 @@ where
         if let Some(called_func) = stmt.function.body(db)? {
             if let ConcreteFunctionWithBodyLongId::Specialized(specialized) =
                 calling_function_id.long(db)
+                && specialized.base == called_func
             {
-                if specialized.base == called_func {
-                    // A specialized function should always inline its base.
-                    return Ok(Some((stmt, called_func)));
-                }
+                // A specialized function should always inline its base.
+                return Ok(Some((stmt, called_func)));
             }
 
             // TODO: Implement better logic to avoid inlining of destructors that call

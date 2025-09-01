@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-use cairo_lang_defs::ids::{TraitConstantId, TraitTypeId};
+use cairo_lang_defs::ids::{LanguageElementId, TraitConstantId, TraitTypeId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::Intern;
@@ -112,10 +112,10 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
                     if *inner_ty == ty0 {
                         return Ok((ty1, 1));
                     }
-                    if !matches!(ty0.long(self.db), TypeLongId::Snapshot(_)) {
-                        if let TypeLongId::Var(var) = inner_ty.long(self.db) {
-                            return Ok((self.assign_ty(*var, ty0)?, 1));
-                        }
+                    if !matches!(ty0.long(self.db), TypeLongId::Snapshot(_))
+                        && let TypeLongId::Var(var) = inner_ty.long(self.db)
+                    {
+                        return Ok((self.assign_ty(*var, ty0)?, 1));
                     }
                 }
             }
@@ -622,6 +622,11 @@ impl<'db> Inference<'db, '_> {
         id: ImplVarId<'db>,
         concrete_trait_impl: ConcreteTraitImplId<'db>,
     ) -> ImplId<'db> {
+        let trait_crate = concrete_trait_impl
+            .trait_impl(self.db)
+            .trait_id(self.db)
+            .parent_module(self.db)
+            .owning_crate(self.db);
         self.rewritten_impl_item(
             id,
             concrete_trait_impl.trait_impl(self.db),
@@ -630,7 +635,7 @@ impl<'db> Inference<'db, '_> {
                 inference.new_impl_var(
                     inference.db.concrete_trait_impl_concrete_trait(concrete_trait_impl).unwrap(),
                     stable_ptr,
-                    ImplLookupContext::default(),
+                    ImplLookupContext::new_from_crate(trait_crate).intern(self.db),
                 )
             },
         )

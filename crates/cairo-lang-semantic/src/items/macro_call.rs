@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{LanguageElementId, MacroCallId, ModuleFileId, ModuleId};
+use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::ids::{LanguageElementId, MacroCallId, ModuleId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::ids::{CodeMapping, FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
@@ -21,10 +22,10 @@ pub struct MacroCallData<'db> {
     /// The module to which the macro call was expanded to.
     pub macro_call_module: Maybe<ModuleId<'db>>,
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
-    pub defsite_module_file_id: ModuleFileId<'db>,
-    pub callsite_module_file_id: ModuleFileId<'db>,
+    pub defsite_module_id: ModuleId<'db>,
+    pub callsite_module_id: ModuleId<'db>,
     pub expansion_mappings: Arc<[CodeMapping]>,
-    pub parent_macro_call_data: Option<Box<ResolverMacroData<'db>>>,
+    pub parent_macro_call_data: Option<Arc<ResolverMacroData<'db>>>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_macro_call_data].
@@ -41,7 +42,7 @@ pub fn priv_macro_call_data<'db>(
     // the resolved item is not a macro declaration.
     let macro_call_path = macro_call_syntax.path(db);
     let macro_name = macro_call_path.as_syntax_node().get_text_without_trivia(db);
-    let callsite_module_file_id = macro_call_id.module_file_id(db);
+    let callsite_module_id = macro_call_id.parent_module(db);
     let macro_declaration_id = match resolver.resolve_generic_path(
         &mut diagnostics,
         &macro_call_path,
@@ -57,8 +58,8 @@ pub fn priv_macro_call_data<'db>(
             return Ok(MacroCallData {
                 macro_call_module: Err(diag_added),
                 diagnostics: diagnostics.build(),
-                defsite_module_file_id: callsite_module_file_id,
-                callsite_module_file_id,
+                defsite_module_id: callsite_module_id,
+                callsite_module_id,
                 expansion_mappings: Arc::new([]),
                 parent_macro_call_data: None,
             });
@@ -67,22 +68,22 @@ pub fn priv_macro_call_data<'db>(
             return Ok(MacroCallData {
                 macro_call_module: Err(diag_added),
                 diagnostics: diagnostics.build(),
-                defsite_module_file_id: callsite_module_file_id,
-                callsite_module_file_id,
+                defsite_module_id: callsite_module_id,
+                callsite_module_id,
                 expansion_mappings: Arc::new([]),
                 parent_macro_call_data: None,
             });
         }
     };
-    let defsite_module_file_id = macro_declaration_id.module_file_id(db);
+    let defsite_module_id = macro_declaration_id.parent_module(db);
     let macro_rules = match db.macro_declaration_rules(macro_declaration_id) {
         Ok(rules) => rules,
         Err(diag_added) => {
             return Ok(MacroCallData {
                 macro_call_module: Err(diag_added),
                 diagnostics: diagnostics.build(),
-                defsite_module_file_id,
-                callsite_module_file_id,
+                defsite_module_id,
+                callsite_module_id,
                 expansion_mappings: Arc::new([]),
                 parent_macro_call_data: None,
             });
@@ -98,8 +99,8 @@ pub fn priv_macro_call_data<'db>(
         return Ok(MacroCallData {
             macro_call_module: Err(diag_added),
             diagnostics: diagnostics.build(),
-            defsite_module_file_id,
-            callsite_module_file_id,
+            defsite_module_id,
+            callsite_module_id,
             expansion_mappings: Arc::new([]),
             parent_macro_call_data: None,
         });
@@ -120,10 +121,10 @@ pub fn priv_macro_call_data<'db>(
     Ok(MacroCallData {
         macro_call_module: Ok(macro_call_module),
         diagnostics: diagnostics.build(),
-        defsite_module_file_id,
-        callsite_module_file_id,
+        defsite_module_id,
+        callsite_module_id,
         expansion_mappings: expanded_code.code_mappings,
-        parent_macro_call_data: parent_macro_call_data.map(Box::new),
+        parent_macro_call_data,
     })
 }
 
@@ -138,19 +139,18 @@ pub fn priv_macro_call_data_cycle<'db>(
     let macro_call_syntax = db.module_macro_call_by_id(*macro_call_id)?;
     let macro_call_path = macro_call_syntax.path(db);
     let macro_name = macro_call_path.as_syntax_node().get_text_without_trivia(db);
-    let defsite_module_file_id = macro_call_id.module_file_id(db);
 
     let diag_added = diagnostics.report(
         macro_call_id.stable_ptr(db).untyped(),
         SemanticDiagnosticKind::InlineMacroNotFound(macro_name.into()),
     );
-    let callsite_module_file_id = macro_call_id.module_file_id(db);
+    let module_id = macro_call_id.parent_module(db);
 
     Ok(MacroCallData {
         macro_call_module: Err(diag_added),
         diagnostics: diagnostics.build(),
-        defsite_module_file_id,
-        callsite_module_file_id,
+        defsite_module_id: module_id,
+        callsite_module_id: module_id,
         expansion_mappings: Arc::new([]),
         parent_macro_call_data: None,
     })

@@ -4,14 +4,14 @@ use expect_test::expect;
 mod logger_db;
 use logger_db::LoggerDb;
 
-#[salsa::interned(no_lifetime)]
+#[salsa::interned(no_lifetime, revisions = usize::MAX)]
 pub struct InternedString {
     data: String,
 }
 
 #[query_group]
 pub trait InternedDB: salsa::Database {
-    #[salsa::interned]
+    #[salsa::interned(revisions = usize::MAX)]
     fn intern_string(&self, data: String) -> InternedString;
 
     fn interned_len(&self, id: InternedString) -> usize;

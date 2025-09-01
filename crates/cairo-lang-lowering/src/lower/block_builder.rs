@@ -7,7 +7,6 @@ use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::usage::{MemberPath, Usage};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, require};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
@@ -15,10 +14,7 @@ use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
 use super::generators::StatementsBuilder;
-use super::refs::{
-    SemanticLoweringMapping, StructRecomposer, find_changed_members, merge_semantics,
-};
-use crate::db::LoweringGroup;
+use super::refs::{SemanticLoweringMapping, merge_semantics};
 use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
 use crate::lower::refs::ClosureInfo;
@@ -29,8 +25,6 @@ use crate::{Block, BlockEnd, BlockId, MatchInfo, Statement, VarRemapping, VarUsa
 pub struct BlockBuilder<'db> {
     /// A store for semantic variables, owning their OwnedVariable instances.
     semantics: SemanticLoweringMapping<'db>,
-    /// The semantic variables that are added/changed in this block.
-    changed_member_paths: OrderedHashSet<MemberPath<'db>>,
     /// Current sequence of lowered statements emitted.
     pub statements: StatementsBuilder<'db>,
     /// The block id to use for this block when it's finalized.
@@ -39,39 +33,23 @@ pub struct BlockBuilder<'db> {
 impl<'db> BlockBuilder<'db> {
     /// Creates a new [BlockBuilder] for the root block of a function body.
     pub fn root(block_id: BlockId) -> Self {
-        BlockBuilder {
-            semantics: Default::default(),
-            changed_member_paths: Default::default(),
-            statements: Default::default(),
-            block_id,
-        }
+        BlockBuilder { semantics: Default::default(), statements: Default::default(), block_id }
     }
 
     /// Creates a [BlockBuilder] for a subscope.
     pub fn child_block_builder(&self, block_id: BlockId) -> BlockBuilder<'db> {
-        BlockBuilder {
-            semantics: self.semantics.clone(),
-            changed_member_paths: Default::default(),
-            statements: Default::default(),
-            block_id,
-        }
+        BlockBuilder { semantics: self.semantics.clone(), statements: Default::default(), block_id }
     }
 
     /// Creates a [BlockBuilder] for a sibling builder. This is used when an original block is split
     /// (e.g. after a match statement) to add the ability to 'goto' to after-the-block.
     pub fn sibling_block_builder(&self, block_id: BlockId) -> BlockBuilder<'db> {
-        BlockBuilder {
-            semantics: self.semantics.clone(),
-            changed_member_paths: self.changed_member_paths.clone(),
-            statements: Default::default(),
-            block_id,
-        }
+        BlockBuilder { semantics: self.semantics.clone(), statements: Default::default(), block_id }
     }
 
     /// Binds a semantic variable to a lowered variable.
     pub fn put_semantic(&mut self, semantic_var_id: semantic::VarId<'db>, var: VariableId) {
         self.semantics.introduce(MemberPath::Var(semantic_var_id), var);
-        self.changed_member_paths.insert(MemberPath::Var(semantic_var_id));
     }
 
     pub fn update_ref(
@@ -96,30 +74,60 @@ impl<'db> BlockBuilder<'db> {
             &member_path,
             var,
         );
-        self.changed_member_paths.insert(member_path);
     }
 
+    /// Returns the [VarUsage] for a given `member_path`.
+    ///
+    /// If the `member_path` is not in the semantics, returns `None`.
     pub fn get_ref(
         &mut self,
         ctx: &mut LoweringContext<'db, '_>,
         member_path: &ExprVarMemberPath<'db>,
     ) -> Option<VarUsage<'db>> {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
-        self.get_ref_raw(ctx, &member_path.into(), location)
+        self.get_ref_raw(ctx, &member_path.into(), location, None)
     }
 
+    /// Returns the [VarUsage] for a given `member_path`.
+    ///
+    /// If `member_path` is not in the semantics, or the resulting [VarUsage] does not have the
+    /// expected type, returns `None`.
+    pub fn get_ref_of_type(
+        &mut self,
+        ctx: &mut LoweringContext<'db, '_>,
+        member_path: &ExprVarMemberPath<'db>,
+        expected_ty: semantic::TypeId<'db>,
+    ) -> Option<VarUsage<'db>> {
+        let location = ctx.get_location(member_path.stable_ptr().untyped());
+        self.get_ref_raw(ctx, &member_path.into(), location, Some(expected_ty))
+    }
+
+    /// Returns the [VarUsage] for a given `member_path`.
+    ///
+    /// If `expected_ty` is given (`Some`), returns `None` if the resulting [VarUsage] does not have
+    /// the expected type.
     pub fn get_ref_raw(
         &mut self,
         ctx: &mut LoweringContext<'db, '_>,
         member_path: &MemberPath<'db>,
         location: LocationId<'db>,
+        expected_ty: Option<semantic::TypeId<'db>>,
     ) -> Option<VarUsage<'db>> {
-        self.semantics
-            .get(
-                BlockStructRecomposer { statements: &mut self.statements, ctx, location },
-                member_path,
-            )
-            .map(|var_id| VarUsage { var_id, location })
+        let res = self.semantics.get(
+            BlockStructRecomposer { statements: &mut self.statements, ctx, location },
+            member_path,
+        );
+
+        if let Some(res) = res {
+            if let Some(expected_ty) = expected_ty
+                && ctx.variables[res].ty != expected_ty
+            {
+                return None;
+            }
+            Some(VarUsage { var_id: res, location })
+        } else {
+            None
+        }
     }
 
     /// Introduces a semantic variable as the representation of the given member path.
@@ -224,11 +232,13 @@ impl<'db> BlockBuilder<'db> {
         sealed_blocks: Vec<SealedBlockBuilder<'db>>,
         location: LocationId<'db>,
     ) -> LoweringResult<'db, LoweredExpr<'db>> {
-        let Some((merged_expr, following_block)) = self.merge_sealed(ctx, sealed_blocks, location)
+        let sealed_blocks = sealed_blocks.into_iter().flatten().collect_vec();
+
+        let Some((new_scope, merged_expr)) =
+            merge_sealed_block_builders(ctx, sealed_blocks, location)
         else {
             return Err(LoweringFlowError::Match(match_info));
         };
-        let new_scope = self.sibling_block_builder(following_block);
         let prev_scope = std::mem::replace(self, new_scope);
         prev_scope.finalize(ctx, BlockEnd::Match { info: match_info });
         Ok(merged_expr)
@@ -293,97 +303,6 @@ impl<'db> BlockBuilder<'db> {
         (var_usage, ClosureInfo { members, snapshots })
     }
 
-    /// Merges sibling sealed blocks.
-    /// If there are reachable blocks, returns the converged expression of the blocks, usable at the
-    /// calling builder, and the following block ID.
-    /// Otherwise, returns None.
-    fn merge_sealed(
-        &mut self,
-        ctx: &mut LoweringContext<'db, '_>,
-        sealed_blocks: Vec<SealedBlockBuilder<'db>>,
-        location: LocationId<'db>,
-    ) -> Option<(LoweredExpr<'db>, BlockId)> {
-        // TODO(spapini): When adding Gotos, include the callsite target in the required information
-        // to merge.
-        // TODO(spapini): Don't remap if we have a single reachable branch.
-
-        let mut semantic_remapping = SemanticRemapping::default();
-        let mut n_reachable_blocks = 0;
-
-        // Remap Variables from all blocks.
-        for sealed_block in &sealed_blocks {
-            let Some(SealedGotoCallsite { builder: subscope, expr }) = sealed_block else {
-                continue;
-            };
-            n_reachable_blocks += 1;
-            if let Some(var_usage) = expr {
-                semantic_remapping.expr.get_or_insert_with(|| {
-                    let var = ctx.variables[var_usage.var_id].clone();
-                    ctx.variables.variables.alloc(var)
-                });
-            }
-            for member_path in subscope.changed_member_paths.iter() {
-                let Some(containing_member_path) =
-                    self.semantics.topmost_mapped_containing_member_path(member_path.clone())
-                else {
-                    // This variable is local to the subscope.
-                    continue;
-                };
-                // Consider the topmost used(==mapped) member path that contains the changed member,
-                // as it might be needed in the merge site.
-                let mut queue = vec![containing_member_path];
-                while let Some(v) = queue.pop() {
-                    // If we reached the original member path, it needs to be restructured - so no
-                    // need to continue recursively.
-                    if v != *member_path {
-                        // If it is scattered - add its members instead of itself, to avoid a
-                        // possibly unnecessary restructuring.
-                        if let Some(members) = self.semantics.get_scattered_members(&v) {
-                            queue.extend(members);
-                            continue;
-                        }
-                    }
-                    // Actually adding to the remapping.
-                    semantic_remapping.member_path_value.entry(v.clone()).or_insert_with(|| {
-                        let ty = get_ty(ctx, &v);
-                        ctx.new_var(VarRequest { ty, location })
-                    });
-                }
-            }
-        }
-
-        // Prune parents from semantic_remapping.
-        for member_path in semantic_remapping.member_path_value.keys().cloned().collect_vec() {
-            let mut current = member_path.clone();
-            while let MemberPath::Member { parent, .. } = current {
-                if semantic_remapping.member_path_value.contains_key(&*parent) {
-                    semantic_remapping.member_path_value.swap_remove(&member_path);
-                }
-                current = *parent;
-            }
-        }
-
-        require(n_reachable_blocks != 0)?;
-
-        // If there are reachable blocks, create a new empty block for the code after this match.
-        let following_block = ctx.blocks.alloc_empty();
-
-        for sealed_goto_callsite in sealed_blocks.into_iter().flatten() {
-            sealed_goto_callsite.finalize(ctx, following_block, &semantic_remapping, location);
-        }
-
-        // Apply remapping on builder.
-        for (semantic, var) in semantic_remapping.member_path_value {
-            self.update_ref_raw(ctx, semantic, var, location);
-        }
-
-        let expr = match semantic_remapping.expr {
-            Some(var_id) => LoweredExpr::AtVariable(VarUsage { var_id, location }),
-            None => LoweredExpr::Tuple { exprs: vec![], location },
-        };
-        Some((expr, following_block))
-    }
-
     /// Destructures a closure.
     /// Invalidates the closure variable and returns the captured variables.
     pub fn destructure_closure(
@@ -398,15 +317,6 @@ impl<'db> BlockBuilder<'db> {
             closure_var,
             closure_info,
         )
-    }
-
-    /// Marks the following as changed members:
-    /// (1) the changed members of `parent_builder`,
-    /// (2) the members whose value was changed between `parent_builder` and `self`.
-    fn set_changed_member_paths(&mut self, parent_builder: &Self) {
-        self.changed_member_paths.extend(parent_builder.changed_member_paths.iter().cloned());
-        self.changed_member_paths
-            .extend(find_changed_members(&parent_builder.semantics, &self.semantics));
     }
 }
 
@@ -473,7 +383,10 @@ impl<'db> SealedGotoCallsite<'db> {
         for (semantic, remapped_var) in semantic_remapping.member_path_value.iter() {
             assert!(
                 remapping
-                    .insert(*remapped_var, builder.get_ref_raw(ctx, semantic, location).unwrap())
+                    .insert(
+                        *remapped_var,
+                        builder.get_ref_raw(ctx, semantic, location, None).unwrap()
+                    )
                     .is_none()
             );
         }
@@ -494,13 +407,13 @@ impl<'db> SealedGotoCallsite<'db> {
 #[allow(clippy::large_enum_variant)]
 pub type SealedBlockBuilder<'db> = Option<SealedGotoCallsite<'db>>;
 
-struct BlockStructRecomposer<'a, 'b, 'db> {
+pub struct BlockStructRecomposer<'a, 'b, 'db> {
     statements: &'a mut StatementsBuilder<'db>,
     ctx: &'a mut LoweringContext<'db, 'b>,
     location: LocationId<'db>,
 }
-impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
-    fn deconstruct(
+impl<'db> BlockStructRecomposer<'_, '_, 'db> {
+    pub fn deconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId<'db>,
         value: VariableId,
@@ -514,7 +427,7 @@ impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
         OrderedHashMap::from_iter(zip_eq(member_ids, member_values))
     }
 
-    fn deconstruct_by_types(
+    pub fn deconstruct_by_types(
         &mut self,
         value: VariableId,
         types: impl Iterator<Item = semantic::TypeId<'db>>,
@@ -531,7 +444,7 @@ impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
         .add(self.ctx, self.statements)
     }
 
-    fn reconstruct(
+    pub fn reconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId<'db>,
         members: Vec<VariableId>,
@@ -550,14 +463,6 @@ impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
         .add(self.ctx, self.statements)
         .var_id
     }
-
-    fn var_ty(&self, var: VariableId) -> semantic::TypeId<'db> {
-        self.ctx.variables[var].ty
-    }
-
-    fn db(&self) -> &dyn LoweringGroup {
-        self.ctx.db
-    }
 }
 
 /// Given a list of sealed block builders ([SealedGotoCallsite]), creates a new single block builder
@@ -568,13 +473,9 @@ impl<'db> StructRecomposer<'db> for BlockStructRecomposer<'_, '_, 'db> {
 /// * Variables mapped to the same lowered variable across all input blocks are kept as-is.
 /// * Local variables that appear in only a subset of the blocks are removed.
 /// * Variables with different mappings across blocks are remapped to a new lowered variable.
-///
-/// `parent_builder` is used to compute the [BlockBuilder::changed_member_paths] of the returned
-/// [BlockBuilder].
 pub fn merge_sealed_block_builders<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     sealed_blocks: Vec<SealedGotoCallsite<'db>>,
-    parent_builder: &BlockBuilder<'db>,
     location: LocationId<'db>,
 ) -> Option<(BlockBuilder<'db>, LoweredExpr<'db>)> {
     require(!sealed_blocks.is_empty())?;
@@ -596,8 +497,7 @@ pub fn merge_sealed_block_builders<'db>(
         LoweredExpr::Tuple { exprs: vec![], location }
     };
 
-    let mut merged_builder = merge_block_builders_inner(ctx, sealed_blocks, res_var, location);
-    merged_builder.set_changed_member_paths(parent_builder);
+    let merged_builder = merge_block_builders_inner(ctx, sealed_blocks, res_var, location);
 
     Some((merged_builder, lowered_expr))
 }
@@ -657,10 +557,5 @@ fn merge_block_builders_inner<'db>(
     }
 
     // Create a new [BlockBuilder] with the merged `semantics`.
-    BlockBuilder {
-        semantics,
-        changed_member_paths: Default::default(),
-        statements: Default::default(),
-        block_id,
-    }
+    BlockBuilder { semantics, statements: Default::default(), block_id }
 }

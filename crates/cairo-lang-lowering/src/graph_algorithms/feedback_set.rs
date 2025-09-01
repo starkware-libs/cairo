@@ -1,4 +1,5 @@
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
 use cairo_lang_utils::graph_algos::feedback_set::calc_feedback_set;

@@ -5,7 +5,13 @@ edition = "2021"
 publish = false
 
 [dependencies]
-cairo-lang-utils = { path = "../crates/cairo-lang-utils", default-features = false, features = ["serde", "parity-scale-codec"] }
-cairo-lang-casm = { path = "../crates/cairo-lang-casm", default-features = false, features = ["serde", "parity-scale-codec"] }
+cairo-lang-casm = { path = "../crates/cairo-lang-casm", default-features = false, features = [
+  "parity-scale-codec",
+  "serde",
+] }
+cairo-lang-utils = { path = "../crates/cairo-lang-utils", default-features = false, features = [
+  "parity-scale-codec",
+  "serde",
+] }
 
 esp-alloc = "0.3.0"

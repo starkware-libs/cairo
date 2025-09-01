@@ -7,9 +7,9 @@ use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericImplItemId,
     GenericItemId, GenericKind, GenericModuleItemId, GenericParamId, GenericTraitItemId,
     ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplItemId, ImplTypeDefId,
-    LanguageElementId, LookupItemId, MemberId, ModuleId, ModuleItemId, ModuleTypeAliasId,
-    NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId,
-    TraitId, TraitItemId, TraitTypeId, VariantId,
+    LanguageElementId, LookupItemId, MacroDeclarationId, MemberId, ModuleId, ModuleItemId,
+    ModuleTypeAliasId, NamedLanguageElementId, StructId, TopLevelLanguageElementId,
+    TraitConstantId, TraitFunctionId, TraitId, TraitItemId, TraitTypeId, VariantId,
 };
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::constant::ConstValue;
@@ -20,6 +20,7 @@ use cairo_lang_semantic::items::visibility::Visibility;
 use cairo_lang_semantic::types::TypeId;
 use cairo_lang_semantic::{ConcreteTypeId, Expr, GenericParam, TypeLongId};
 use cairo_lang_syntax::attribute::structured::Attribute;
+use cairo_lang_syntax::node::ast::WrappedMacro;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode, green};
 use itertools::Itertools;
@@ -74,7 +75,7 @@ pub fn get_item_signature_with_links<'db>(
                 ModuleItemId::ExternFunction(item_id) => item_id.get_signature_with_links(&mut f),
                 ModuleItemId::Submodule(_) => (None, vec![]),
                 ModuleItemId::Use(_) => (None, vec![]),
-                ModuleItemId::MacroDeclaration(_) => (None, vec![]),
+                ModuleItemId::MacroDeclaration(item_id) => item_id.get_signature_with_links(&mut f),
             },
             LookupItemId::TraitItem(item_id) => match item_id {
                 TraitItemId::Function(item_id) => item_id.get_signature_with_links(&mut f),
@@ -405,7 +406,7 @@ impl<'db> HirDisplay<'db> for ConstantId<'db> {
                             constant_full_signature.full_path.clone(),
                         )
                     })?;
-                    let constant_value = f.db.lookup_intern_const_value(const_value_id);
+                    let constant_value = const_value_id.long(f.db);
                     if let ConstValue::Int(value, _) = constant_value {
                         write_syntactic_evaluation(f, constant_full_signature.item_id).map_err(
                             |_| {
@@ -651,6 +652,39 @@ impl<'db> HirDisplay<'db> for ExternFunctionId<'db> {
     }
 }
 
+impl<'db> HirDisplay<'db> for MacroDeclarationId<'db> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
+        let module_item_id = ModuleItemId::MacroDeclaration(*self);
+        f.write_str(&format!("macro {} {{", module_item_id.name(f.db)))
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
+        let macro_rules_data =
+            f.db.macro_declaration_rules(*self)
+                .map_err(|_| SignatureError::FailedRetrievingSemanticData(self.full_path(f.db)))?;
+
+        for rule_data in macro_rules_data {
+            let (left_bracket, elements, right_bracket) = match rule_data.pattern {
+                WrappedMacro::Braced(m) => ("{", m.elements(f.db), "}"),
+                WrappedMacro::Bracketed(m) => ("[", m.elements(f.db), "]"),
+                WrappedMacro::Parenthesized(m) => ("(", m.elements(f.db), ")"),
+            };
+            let macro_match = elements
+                .elements_vec(f.db)
+                .iter()
+                .map(|element| element.as_syntax_node().get_text(f.db))
+                .join("")
+                .split_whitespace()
+                .join(" ");
+            f.write_str(
+                format!("\n    {}{}{} => {{ ... }};", left_bracket, macro_match, right_bracket)
+                    .as_str(),
+            )
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
+        }
+        f.write_str("\n} => { ... }")
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
+    }
+}
+
 /// Formats the text of the [`Visibility`] to a relevant string slice.
 pub fn get_syntactic_visibility(semantic_visibility: &Visibility) -> &str {
     match semantic_visibility {
@@ -815,10 +849,10 @@ fn write_function_signature<'db>(
     }
     f.write_str(")")?;
 
-    if let Some(return_type) = documentable_signature.return_type {
-        if !return_type.is_unit(f.db) {
-            f.write_type(Some(" -> "), return_type, None, &documentable_signature.full_path)?;
-        }
+    if let Some(return_type) = documentable_signature.return_type
+        && !return_type.is_unit(f.db)
+    {
+        f.write_type(Some(" -> "), return_type, None, &documentable_signature.full_path)?;
     }
     Ok(())
 }

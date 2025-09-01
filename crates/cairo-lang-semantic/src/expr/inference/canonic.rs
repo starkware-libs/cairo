@@ -235,7 +235,7 @@ impl<'db> SemanticRewriter<TypeLongId<'db>, NoError> for Canonicalizer<'db> {
 }
 impl<'db> SemanticRewriter<ConstValue<'db>, NoError> for Canonicalizer<'db> {
     fn internal_rewrite(&mut self, value: &mut ConstValue<'db>) -> Result<RewriteResult, NoError> {
-        let ConstValue::Var(var, mut ty) = value else {
+        let ConstValue::Var(var, ty) = value else {
             return value.default_rewrite(self);
         };
         if var.inference_id != self.to_canonic.source_inference_id {
@@ -248,7 +248,7 @@ impl<'db> SemanticRewriter<ConstValue<'db>, NoError> for Canonicalizer<'db> {
                 id: *self.to_canonic.const_var_mapping.entry(var.id).or_insert(next_id),
                 inference_id: InferenceId::Canonical,
             },
-            ty,
+            *ty,
         );
         Ok(RewriteResult::Modified)
     }
@@ -278,7 +278,7 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, NoError> for Canonicalizer<'db> {
         let mut var = ImplVar {
             id: *self.to_canonic.impl_var_mapping.entry(var.id).or_insert(next_id),
             inference_id: InferenceId::Canonical,
-            lookup_context: var.lookup_context.clone(),
+            lookup_context: var.lookup_context,
             concrete_trait_id: var.concrete_trait_id,
         };
         var.concrete_trait_id.default_rewrite(self)?;
@@ -345,7 +345,7 @@ impl<'db> SemanticRewriter<TypeLongId<'db>, NoError> for Embedder<'db, '_, '_> {
 }
 impl<'db> SemanticRewriter<ConstValue<'db>, NoError> for Embedder<'db, '_, '_> {
     fn internal_rewrite(&mut self, value: &mut ConstValue<'db>) -> Result<RewriteResult, NoError> {
-        let ConstValue::Var(var, mut ty) = value else {
+        let ConstValue::Var(var, ty) = value else {
             return value.default_rewrite(self);
         };
         if var.inference_id != InferenceId::Canonical {
@@ -357,7 +357,7 @@ impl<'db> SemanticRewriter<ConstValue<'db>, NoError> for Embedder<'db, '_, '_> {
             .const_var_mapping
             .entry(var.id)
             .or_insert_with(|| self.inference.new_const_var_raw(None).id);
-        *value = ConstValue::Var(self.inference.const_vars[new_id.0], ty);
+        *value = ConstValue::Var(self.inference.const_vars[new_id.0], *ty);
         Ok(RewriteResult::Modified)
     }
 }
@@ -383,7 +383,7 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, NoError> for Embedder<'db, '_, '_> {
         }
         let concrete_trait_id = self.rewrite(var.concrete_trait_id)?;
         let new_id = self.from_canonic.impl_var_mapping.entry(var.id).or_insert_with(|| {
-            self.inference.new_impl_var_raw(var.lookup_context.clone(), concrete_trait_id, None)
+            self.inference.new_impl_var_raw(var.lookup_context, concrete_trait_id, None)
         });
         *value = ImplLongId::ImplVar(self.inference.impl_vars[new_id.0].intern(self.get_db()));
         Ok(RewriteResult::Modified)
@@ -455,7 +455,7 @@ impl<'db> SemanticRewriter<ConstValue<'db>, MapperError> for Mapper<'db, '_> {
         &mut self,
         value: &mut ConstValue<'db>,
     ) -> Result<RewriteResult, MapperError> {
-        let ConstValue::Var(var, mut ty) = value else {
+        let ConstValue::Var(var, ty) = value else {
             return value.default_rewrite(self);
         };
         let id = self
@@ -466,7 +466,7 @@ impl<'db> SemanticRewriter<ConstValue<'db>, MapperError> for Mapper<'db, '_> {
             .ok_or(MapperError(InferenceVar::Const(var.id)))?;
         ty.default_rewrite(self)?;
         *value =
-            ConstValue::Var(ConstVar { id, inference_id: self.mapping.target_inference_id }, ty);
+            ConstValue::Var(ConstVar { id, inference_id: self.mapping.target_inference_id }, *ty);
         Ok(RewriteResult::Modified)
     }
 }

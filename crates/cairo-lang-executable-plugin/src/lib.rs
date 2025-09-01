@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod test;
+
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
@@ -7,11 +10,11 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::plugin::{AnalyzerPlugin, PluginSuite};
 use cairo_lang_semantic::{GenericArgumentId, Mutability, corelib};
 use cairo_lang_syntax::attribute::consts::IMPLICIT_PRECEDENCE_ATTR;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{OptionWrappedGenericParamListHelper, QueryAttrs};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use indoc::formatdoc;
 use itertools::Itertools;
+use salsa::Database;
 
 pub const EXECUTABLE_ATTR: &str = "executable";
 pub const EXECUTABLE_RAW_ATTR: &str = "executable_raw";
@@ -37,14 +40,94 @@ const IMPLICIT_PRECEDENCE: &[&str] = &[
     "core::circuit::MulMod",
 ];
 
+/// Plugin to add diagnostics on bad `#[executable_raw]` annotations.
+#[derive(Default, Debug)]
+struct RawExecutableAnalyzer;
+
+impl AnalyzerPlugin for RawExecutableAnalyzer {
+    fn diagnostics<'db>(
+        &self,
+        db: &'db dyn SemanticGroup,
+        module_id: ModuleId<'db>,
+    ) -> Vec<PluginDiagnostic<'db>> {
+        let mut diagnostics = vec![];
+        let Ok(free_functions) = module_id.module_data(db).map(|data| data.free_functions(db))
+        else {
+            return diagnostics;
+        };
+        for (id, item) in free_functions.iter() {
+            if !item.has_attr(db, EXECUTABLE_RAW_ATTR) {
+                continue;
+            }
+            let Ok(signature) = db.free_function_signature(*id) else {
+                continue;
+            };
+            if signature.return_type != corelib::unit_ty(db) {
+                diagnostics.push(PluginDiagnostic::error(
+                    signature.stable_ptr.lookup(db).ret_ty(db).stable_ptr(db),
+                    "Invalid return type for `#[executable_raw]` function, expected `()`."
+                        .to_string(),
+                ));
+            }
+            let [input, output] = &signature.params[..] else {
+                diagnostics.push(PluginDiagnostic::error(
+                    signature.stable_ptr.lookup(db).parameters(db).stable_ptr(db),
+                    "Invalid number of params for `#[executable_raw]` function, expected 2."
+                        .to_string(),
+                ));
+                continue;
+            };
+            if input.ty
+                != corelib::get_core_ty_by_name(
+                    db,
+                    "Span",
+                    vec![GenericArgumentId::Type(db.core_info().felt252)],
+                )
+            {
+                diagnostics.push(PluginDiagnostic::error(
+                    input.stable_ptr.untyped(),
+                    "Invalid first param type for `#[executable_raw]` function, expected \
+                     `Span<felt252>`."
+                        .to_string(),
+                ));
+            }
+            if input.mutability == Mutability::Reference {
+                diagnostics.push(PluginDiagnostic::error(
+                    input.stable_ptr.untyped(),
+                    "Invalid first param mutability for `#[executable_raw]` function, got \
+                     unexpected `ref`."
+                        .to_string(),
+                ));
+            }
+            if output.ty != corelib::core_array_felt252_ty(db) {
+                diagnostics.push(PluginDiagnostic::error(
+                    output.stable_ptr.untyped(),
+                    "Invalid second param type for `#[executable_raw]` function, expected \
+                     `Array<felt252>`."
+                        .to_string(),
+                ));
+            }
+            if output.mutability != Mutability::Reference {
+                diagnostics.push(PluginDiagnostic::error(
+                    output.stable_ptr.untyped(),
+                    "Invalid second param mutability for `#[executable_raw]` function, expected \
+                     `ref`."
+                        .to_string(),
+                ));
+            }
+        }
+        diagnostics
+    }
+}
+
 #[derive(Debug, Default)]
 #[non_exhaustive]
-struct ExecutablePlugin;
+pub struct ExecutablePlugin;
 
 impl MacroPlugin for ExecutablePlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
@@ -144,84 +227,5 @@ impl MacroPlugin for ExecutablePlugin {
 
     fn executable_attributes(&self) -> Vec<String> {
         vec![EXECUTABLE_RAW_ATTR.to_string()]
-    }
-}
-
-/// Plugin to add diagnostics on bad `#[executable_raw]` annotations.
-#[derive(Default, Debug)]
-struct RawExecutableAnalyzer;
-
-impl AnalyzerPlugin for RawExecutableAnalyzer {
-    fn diagnostics<'db>(
-        &self,
-        db: &'db dyn SemanticGroup,
-        module_id: ModuleId<'db>,
-    ) -> Vec<PluginDiagnostic<'db>> {
-        let mut diagnostics = vec![];
-        let Ok(free_functions) = db.module_free_functions(module_id) else {
-            return diagnostics;
-        };
-        for (id, item) in free_functions.iter() {
-            if !item.has_attr(db, EXECUTABLE_RAW_ATTR) {
-                continue;
-            }
-            let Ok(signature) = db.free_function_signature(*id) else {
-                continue;
-            };
-            if signature.return_type != corelib::unit_ty(db) {
-                diagnostics.push(PluginDiagnostic::error(
-                    signature.stable_ptr.lookup(db).ret_ty(db).stable_ptr(db),
-                    "Invalid return type for `#[executable_raw]` function, expected `()`."
-                        .to_string(),
-                ));
-            }
-            let [input, output] = &signature.params[..] else {
-                diagnostics.push(PluginDiagnostic::error(
-                    signature.stable_ptr.lookup(db).parameters(db).stable_ptr(db),
-                    "Invalid number of params for `#[executable_raw]` function, expected 2."
-                        .to_string(),
-                ));
-                continue;
-            };
-            if input.ty
-                != corelib::get_core_ty_by_name(
-                    db,
-                    "Span",
-                    vec![GenericArgumentId::Type(db.core_info().felt252)],
-                )
-            {
-                diagnostics.push(PluginDiagnostic::error(
-                    input.stable_ptr.untyped(),
-                    "Invalid first param type for `#[executable_raw]` function, expected \
-                     `Span<felt252>`."
-                        .to_string(),
-                ));
-            }
-            if input.mutability == Mutability::Reference {
-                diagnostics.push(PluginDiagnostic::error(
-                    input.stable_ptr.untyped(),
-                    "Invalid first param mutability for `#[executable_raw]` function, got \
-                     unexpected `ref`."
-                        .to_string(),
-                ));
-            }
-            if output.ty != corelib::core_array_felt252_ty(db) {
-                diagnostics.push(PluginDiagnostic::error(
-                    output.stable_ptr.untyped(),
-                    "Invalid second param type for `#[executable_raw]` function, expected \
-                     `Array<felt252>`."
-                        .to_string(),
-                ));
-            }
-            if output.mutability != Mutability::Reference {
-                diagnostics.push(PluginDiagnostic::error(
-                    output.stable_ptr.untyped(),
-                    "Invalid second param mutability for `#[executable_raw]` function, expected \
-                     `ref`."
-                        .to_string(),
-                ));
-            }
-        }
-        diagnostics
     }
 }

@@ -1,17 +1,17 @@
 use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_starknet_classes::abi::EventFieldKind;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use const_format::formatcp;
+use salsa::Database;
 use serde::{Deserialize, Serialize};
 
 use super::consts::{EVENT_ATTR, EVENT_TRAIT, EVENT_TYPE_NAME};
 use super::starknet_module::StarknetModuleKind;
 
 /// Generated auxiliary data for the `#[derive(starknet::Event)]` attribute.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum EventData {
     Struct { members: Vec<(String, EventFieldKind)> },
     Enum { variants: Vec<(String, EventFieldKind)> },
@@ -27,7 +27,7 @@ pub enum {EVENT_TYPE_NAME} {{}}
 /// Checks whether the given item is a starknet event, and if so - makes sure it's valid and returns
 /// its variants. Returns None if it's not a starknet event.
 pub fn get_starknet_event_variants<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     item: &ast::ModuleItem<'db>,
     module_kind: StarknetModuleKind,

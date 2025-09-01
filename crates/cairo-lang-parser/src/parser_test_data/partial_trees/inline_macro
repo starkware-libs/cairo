@@ -360,3 +360,85 @@ fn use_macro() {
     │           │       └── semicolon (kind: TokenSemicolon): ';'
     │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test a syntax tree with bad rule.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+macro some_macro {
+    () => (bad prefix {
+        1
+    };
+    () => no-rule
+}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: '{'.
+ --> dummy_file.cairo:2:11
+    () => (bad prefix {
+          ^^^^^^^^^^^
+
+error: Skipped tokens. Expected: '{'.
+ --> dummy_file.cairo:5:11
+    () => no-rule
+          ^^^^^^^
+
+error: Missing token '{'.
+ --> dummy_file.cairo:5:18
+    () => no-rule
+                 ^
+
+error: Missing token '}'.
+ --> dummy_file.cairo:5:18
+    () => no-rule
+                 ^
+
+error: Missing token ';'.
+ --> dummy_file.cairo:5:18
+    () => no-rule
+                 ^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   └── child #0 (kind: ItemMacroDeclaration)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── macro_kw (kind: TokenMacro): 'macro'
+    │       ├── name (kind: TokenIdentifier): 'some_macro'
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── rules (kind: MacroRulesList)
+    │       │   ├── child #0 (kind: MacroRule)
+    │       │   │   ├── lhs (kind: ParenthesizedMacro)
+    │       │   │   │   ├── lparen (kind: TokenLParen): '('
+    │       │   │   │   ├── elements (kind: MacroElements) []
+    │       │   │   │   └── rparen (kind: TokenRParen): ')'
+    │       │   │   ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │       │   │   ├── rhs (kind: BracedMacro)
+    │       │   │   │   ├── lbrace (kind: TokenLBrace): '{'
+    │       │   │   │   ├── elements (kind: MacroElements)
+    │       │   │   │   │   └── child #0 (kind: TokenTreeLeaf)
+    │       │   │   │   │       └── leaf (kind: TokenLiteralNumber): '1'
+    │       │   │   │   └── rbrace (kind: TokenRBrace): '}'
+    │       │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │       │   └── child #1 (kind: MacroRule)
+    │       │       ├── lhs (kind: ParenthesizedMacro)
+    │       │       │   ├── lparen (kind: TokenLParen): '('
+    │       │       │   ├── elements (kind: MacroElements) []
+    │       │       │   └── rparen (kind: TokenRParen): ')'
+    │       │       ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │       │       ├── rhs (kind: BracedMacro)
+    │       │       │   ├── lbrace: Missing
+    │       │       │   ├── elements (kind: MacroElements) []
+    │       │       │   └── rbrace: Missing
+    │       │       └── semicolon: Missing
+    │       └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).

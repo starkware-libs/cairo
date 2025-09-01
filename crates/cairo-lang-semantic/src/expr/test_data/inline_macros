@@ -1825,7 +1825,7 @@ error: Mismatched types. The type `core::felt252` cannot be created from a strin
 //! > Test macro with use-star resolution.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > crate_settings
 edition = "2024_07"
@@ -1857,10 +1857,6 @@ macro import_with_bar {
 import_with_bar!();
 
 //! > expected_diagnostics
-error[E0006]: Function not found.
- --> lib.cairo:13:5
-    bar();
-    ^^^
 
 //! > ==========================================================================
 
@@ -1911,7 +1907,7 @@ error: Expected path after modifier.
 //! > Test macro context resolution through use-star.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > crate_settings
 edition = "2024_07"
@@ -1931,7 +1927,7 @@ foo
 
 //! > module_code
 mod a {
-    pub macro define_bar {
+    macro define_bar {
         () => {
             pub fn bar() {}
         };
@@ -1942,10 +1938,74 @@ mod a {
 use a::*;
 
 //! > expected_diagnostics
-error[E0006]: Function not found.
- --> lib.cairo:12:5
+
+//! > ==========================================================================
+
+//! > Test use-star inside macro context resolution.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > function
+fn foo() {
     bar();
-    ^^^
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    pub fn bar() {}
+}
+
+macro import_a_star {
+    () => {
+        use $callsite::a::*;
+    };
+}
+
+import_a_star!();
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test use-path as placeholder.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    pub fn bar() {}
+}
+
+macro import {
+    ($path:expr) => {
+        use $path;
+    };
+}
+
+import!(a::bar);
+
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -1970,6 +2030,110 @@ mod a {
         };
     }
     define_bar!();
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro finding impls in generated code.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    BarTrait::<a::Bar>::bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    pub struct Bar {}
+    macro impl_bar_trait {
+        ($ty: ident) => {
+            impl BarImpl of $defsite::super::BarTrait<$ty> {
+                fn bar() {}
+            }
+        };
+    }
+    impl_bar_trait!(Bar);
+}
+trait BarTrait<T> {
+    fn bar() {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro finding impls of types in generated code.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    BarTrait::<a::Bar>::bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    macro define_ty {
+        ($ty: ident) => {
+            pub struct $ty {}
+        };
+    }
+    define_ty!(Bar);
+    impl BarImpl of super::BarTrait<Bar> {
+        fn bar() {}
+    }
+}
+trait BarTrait<T> {
+    fn bar() {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro finding impl in generated code of types in generated code.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    BarTrait::<a::Bar>::bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    macro define_ty {
+        ($ty: ident) => {
+            pub struct $ty {}
+        };
+    }
+    define_ty!(Bar);
+    macro impl_bar_trait {
+        ($ty: ident) => {
+            impl BarImpl of $defsite::super::BarTrait<$ty> {
+                fn bar() {}
+            }
+        };
+    }
+    impl_bar_trait!(Bar);
+}
+trait BarTrait<T> {
+    fn bar() {}
 }
 
 //! > expected_diagnostics

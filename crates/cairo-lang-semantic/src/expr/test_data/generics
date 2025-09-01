@@ -471,7 +471,9 @@ fn foo() {
     let _generic = Generic { value: 123 };
 }
 
-impl GenericStructIntrospect<T, impl IntrospectTImp: Introspect<T>> of Introspect<Generic<T>> {}
+impl GenericStructIntrospect<
+    T, impl IntrospectTImp: Introspect<Generic<T>>,
+> of Introspect<Generic<T>> {}
 impl Felt252Introspect of Introspect<felt252> {}
 
 //! > function_name
@@ -480,10 +482,15 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Inference cycle detected
+ --> lib.cairo:14:17
+> of Introspect<Generic<T>> {}
+                ^^^^^^^
+
 error: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
- --> lib.cairo:12:72
-impl GenericStructIntrospect<T, impl IntrospectTImp: Introspect<T>> of Introspect<Generic<T>> {}
-                                                                       ^^^^^^^^^^^^^^^^^^^^^^
+ --> lib.cairo:13:8
+    T, impl IntrospectTImp: Introspect<Generic<T>>,
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 

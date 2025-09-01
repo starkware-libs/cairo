@@ -451,10 +451,10 @@ pub fn compile(
     for (statement_id, statement) in program.statements.iter().enumerate() {
         if let Statement::Invocation(invocation) = statement {
             for branch in &invocation.branches {
-                if let BranchTarget::Statement(target) = branch.target {
-                    if target.0 < statement_id {
-                        backwards_jump_indices.insert(target);
-                    }
+                if let BranchTarget::Statement(target) = branch.target
+                    && target.0 < statement_id
+                {
+                    backwards_jump_indices.insert(target);
                 }
             }
         }
@@ -725,10 +725,10 @@ fn is_branch_align(
         let libfunc = registry
             .get_libfunc(&invocation.libfunc_id)
             .map_err(CompilationError::ProgramRegistryError)?;
-        if let [branch_signature] = libfunc.branch_signatures() {
-            if branch_signature.ap_change == SierraApChange::BranchAlign {
-                return Ok(true);
-            }
+        if let [branch_signature] = libfunc.branch_signatures()
+            && branch_signature.ap_change == SierraApChange::BranchAlign
+        {
+            return Ok(true);
         }
     }
 

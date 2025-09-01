@@ -61,15 +61,16 @@ pub fn validate_literal_number(text: &str) -> Option<ValidationError> {
     }
 
     // Verify suffix.
-    if let Some(ty) = ty {
-        if ty.is_empty() {
-            return Some(ValidationError {
-                kind: ParserDiagnosticKind::MissingLiteralSuffix,
-                location: ValidationLocation::After,
-            });
-        }
+    if let Some(ty) = ty
+        && ty.is_empty()
+    {
+        Some(ValidationError {
+            kind: ParserDiagnosticKind::MissingLiteralSuffix,
+            location: ValidationLocation::After,
+        })
+    } else {
+        None
     }
-    None
 }
 
 /// Validates that the short string literal is valid, after it is consumed by the parser.

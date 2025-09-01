@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Maybe, get_location_marks};
 use cairo_lang_filesystem::ids::CrateId;
@@ -201,7 +202,7 @@ pub struct SierraProgramWithDebug<'db> {
 
 unsafe impl<'db> salsa::Update for SierraProgramWithDebug<'db> {
     unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = &mut *old_pointer;
+        let old_value = unsafe { &mut *old_pointer };
         if old_value == &new_value {
             return false;
         }
@@ -373,7 +374,7 @@ pub fn get_sierra_program<'db>(
     let mut requested_function_ids = vec![];
     for crate_id in requested_crate_ids {
         for module_id in db.crate_modules(crate_id).iter() {
-            for (free_func_id, _) in db.module_free_functions(*module_id)?.iter() {
+            for (free_func_id, _) in module_id.module_data(db)?.free_functions(db).iter() {
                 // TODO(spapini): Search Impl functions.
                 if let Some(function) =
                     ConcreteFunctionWithBodyId::from_no_generics_free(db, *free_func_id)

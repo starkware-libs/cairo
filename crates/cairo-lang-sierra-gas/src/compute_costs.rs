@@ -363,12 +363,12 @@ impl<CostType: CostTypeTrait> WalletInfo<CostType> {
         // by redepositing the difference.
         let is_redeposit = matches!(branch_costs[..], [BranchCost::RedepositGas]);
 
-        if is_branch_align || is_redeposit {
-            if let Some(target_value) = target_value {
-                // If the target value is greater than the maximum value of the branches, use
-                // the target value.
-                max_value = CostType::max([max_value, target_value.clone()].into_iter());
-            }
+        if (is_branch_align || is_redeposit)
+            && let Some(target_value) = target_value
+        {
+            // If the target value is greater than the maximum value of the branches, use the target
+            // value.
+            max_value = CostType::max([max_value, target_value.clone()].into_iter());
         }
 
         WalletInfo { value: max_value }
@@ -428,7 +428,7 @@ impl<CostType: CostTypeTrait, GetCostFn: Fn(&ConcreteLibfuncId) -> Vec<BranchCos
     /// Assumes that [Self::prepare_wallet] was called before.
     ///
     /// For `branch_align` the function returns the result as if the alignment is zero (since the
-    /// alignment is not know at this point).
+    /// alignment is not known at this point).
     fn wallet_at(&self, idx: &StatementIdx) -> WalletInfo<CostType> {
         self.wallet_at_ex(idx, true)
     }
@@ -437,11 +437,11 @@ impl<CostType: CostTypeTrait, GetCostFn: Fn(&ConcreteLibfuncId) -> Vec<BranchCos
     ///
     /// If `with_enforced_values` is `true`, the enforced wallet values are used if set.
     fn wallet_at_ex(&self, idx: &StatementIdx, with_enforced_values: bool) -> WalletInfo<CostType> {
-        if with_enforced_values {
-            if let Some(enforced_wallet_value) = self.enforced_wallet_values.get(idx) {
-                // If there is an enforced value, use it.
-                return WalletInfo::from(enforced_wallet_value.clone());
-            }
+        if with_enforced_values
+            && let Some(enforced_wallet_value) = self.enforced_wallet_values.get(idx)
+        {
+            // If there is an enforced value, use it.
+            return WalletInfo::from(enforced_wallet_value.clone());
         }
 
         self.costs

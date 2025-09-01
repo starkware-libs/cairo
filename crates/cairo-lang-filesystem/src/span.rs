@@ -1,6 +1,7 @@
 use std::iter::Sum;
 use std::ops::{Add, Range, Sub};
 
+use salsa::Database;
 use serde::{Deserialize, Serialize};
 
 use crate::db::FilesGroup;
@@ -133,10 +134,22 @@ pub struct TextSpan {
     pub end: TextOffset,
 }
 impl TextSpan {
+    /// Creates a `TextSpan` from a start and end offset.
+    pub fn new(start: TextOffset, end: TextOffset) -> Self {
+        Self { start, end }
+    }
+    /// Creates a `TextSpan` from a start offset and a width.
+    pub fn new_with_width(start: TextOffset, width: TextWidth) -> Self {
+        Self::new(start, start.add_width(width))
+    }
+    /// Creates a `TextSpan` of width 0, located at the given offset.
+    pub fn cursor(offset: TextOffset) -> Self {
+        Self::new(offset, offset)
+    }
     /// Creates a `TextSpan` for the entirety of a given string.
     #[allow(clippy::should_implement_trait)]
     pub fn from_str(content: &str) -> Self {
-        Self { start: TextOffset::START, end: TextOffset::from_str(content) }
+        Self::new(TextOffset::START, TextOffset::from_str(content))
     }
     pub fn width(self) -> TextWidth {
         self.end - self.start
@@ -152,11 +165,11 @@ impl TextSpan {
     }
     /// Get the span of width 0, located right after this span.
     pub fn after(self) -> Self {
-        Self { start: self.end, end: self.end }
+        Self::cursor(self.end)
     }
     /// Get the span of width 0, located right at the beginning of this span.
     pub fn start_only(self) -> Self {
-        Self { start: self.start, end: self.start }
+        Self::cursor(self.start)
     }
 
     /// Returns self.start..self.end as [`Range<usize>`]
@@ -167,7 +180,7 @@ impl TextSpan {
     /// Convert this span to a [`TextPositionSpan`] in the file.
     pub fn position_in_file<'db>(
         self,
-        db: &'db dyn FilesGroup,
+        db: &'db dyn Database,
         file: FileId<'db>,
     ) -> Option<TextPositionSpan> {
         let start = self.start.position_in_file(db, file)?;
@@ -186,7 +199,7 @@ pub struct TextPosition {
 }
 
 impl TextOffset {
-    fn get_line_number(self, db: &dyn FilesGroup, file: FileId<'_>) -> Option<usize> {
+    fn get_line_number(self, db: &dyn Database, file: FileId<'_>) -> Option<usize> {
         let summary = db.file_summary(file)?;
         assert!(
             self <= summary.last_offset,
@@ -198,12 +211,12 @@ impl TextOffset {
     }
 
     /// Convert this offset to an equivalent [`TextPosition`] in the file.
-    pub fn position_in_file(self, db: &dyn FilesGroup, file: FileId<'_>) -> Option<TextPosition> {
+    pub fn position_in_file(self, db: &dyn Database, file: FileId<'_>) -> Option<TextPosition> {
         let summary = db.file_summary(file)?;
         let line_number = self.get_line_number(db, file)?;
         let line_offset = summary.line_offsets[line_number];
         let content = db.file_content(file)?;
-        let col = TextSpan { start: line_offset, end: self }.n_chars(content.long(db).as_ref());
+        let col = TextSpan::new(line_offset, self).n_chars(content.long(db).as_ref());
         Some(TextPosition { line: line_number, col })
     }
 }
@@ -215,7 +228,7 @@ impl TextPosition {
     /// of line respectively.
     ///
     /// Returns `None` if file is not found in `db`.
-    pub fn offset_in_file(self, db: &dyn FilesGroup, file: FileId<'_>) -> Option<TextOffset> {
+    pub fn offset_in_file(self, db: &dyn Database, file: FileId<'_>) -> Option<TextOffset> {
         let file_summary = db.file_summary(file)?;
         let content = db.file_content(file)?.long(db);
 
@@ -263,12 +276,10 @@ pub struct TextPositionSpan {
 impl TextPositionSpan {
     /// Convert this span to a [`TextSpan`] in the file.
     pub fn offset_in_file<'db>(
-        self,
-        db: &'db dyn FilesGroup,
+        Self { start, end }: Self,
+        db: &'db dyn Database,
         file: FileId<'db>,
     ) -> Option<TextSpan> {
-        let start = self.start.offset_in_file(db, file)?;
-        let end = self.end.offset_in_file(db, file)?;
-        Some(TextSpan { start, end })
+        Some(TextSpan::new(start.offset_in_file(db, file)?, end.offset_in_file(db, file)?))
     }
 }

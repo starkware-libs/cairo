@@ -1,17 +1,18 @@
 use std::sync::Arc;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     GlobalUseId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::UsePathEx;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use salsa::Database;
 
 use super::module::get_module_global_uses;
 use super::visibility::peek_visible_in;
@@ -81,7 +82,7 @@ pub fn priv_use_semantic_data<'db>(
 /// Given the `c` of `use a::b::{c, d};` will return `[a, b, c]`.
 /// Given the `b` of `use a::b::{c, d};` will return `[a, b]`.
 pub fn get_use_path_segments<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     use_path: ast::UsePath<'db>,
 ) -> Maybe<UseAsPathSegments<'db>> {
     let mut rev_segments = vec![];
@@ -117,7 +118,7 @@ pub fn get_use_path_segments<'db>(
 
 /// Returns the parent `UsePathSingle` of a use path if it exists.
 fn get_parent_single_use_path<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     use_path: &ast::UsePath<'db>,
 ) -> Maybe<UsePathOrDollar<'db>> {
     let node = use_path.as_syntax_node();
@@ -318,8 +319,8 @@ pub struct ImportedModules<'db> {
     pub all: OrderedHashSet<ModuleId<'db>>,
 }
 /// Returns the modules that are imported with `use *` in the current module.
-/// Query implementation of [crate::db::SemanticGroup::priv_module_use_star_modules].
-pub fn priv_module_use_star_modules<'db>(
+/// Query implementation of [crate::db::SemanticGroup::module_imported_modules].
+pub fn module_imported_modules<'db>(
     db: &'db dyn SemanticGroup,
     module_id: ModuleId<'db>,
 ) -> Arc<ImportedModules<'db>> {
@@ -331,6 +332,14 @@ pub fn priv_module_use_star_modules<'db>(
     while let Some((user_module, containing_module)) = stack.pop() {
         if !visited.insert((user_module, containing_module)) {
             continue;
+        }
+        if let Ok(macro_call_ids) = db.module_macro_calls_ids(containing_module) {
+            for macro_call_id in macro_call_ids.iter() {
+                if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
+                    stack.push((user_module, generated_module_id));
+                    accessible_modules.insert((user_module, generated_module_id));
+                }
+            }
         }
         let Ok(glob_uses) = get_module_global_uses(db, containing_module) else {
             continue;
@@ -354,6 +363,15 @@ pub fn priv_module_use_star_modules<'db>(
             continue;
         }
         all_modules.insert(curr_module_id);
+        // Traverse macro-generated modules immediately.
+        if let Ok(macro_call_ids) = db.module_macro_calls_ids(curr_module_id) {
+            for macro_call_id in macro_call_ids.iter() {
+                if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
+                    stack.push(generated_module_id);
+                    all_modules.insert(generated_module_id);
+                }
+            }
+        }
         let Ok(glob_uses) = get_module_global_uses(db, curr_module_id) else { continue };
         for glob_use in glob_uses.keys() {
             let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use) else {

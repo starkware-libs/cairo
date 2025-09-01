@@ -5,10 +5,10 @@ use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, GenericParamEx, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use itertools::Itertools;
+use salsa::Database;
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -19,7 +19,7 @@ const GENERATE_TRAIT_ATTR: &str = "generate_trait";
 impl MacroPlugin for GenerateTraitPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
@@ -46,7 +46,7 @@ impl MacroPlugin for GenerateTraitPlugin {
 }
 
 fn generate_trait_for_impl<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     impl_ast: ast::ItemImpl<'db>,
 ) -> PluginResult<'db> {
     let Some(attr) = impl_ast.attributes(db).find_attr(db, GENERATE_TRAIT_ATTR) else {
@@ -113,8 +113,7 @@ fn generate_trait_for_impl<'db>(
                 let trait_generic_args = generic_args.elements(db);
                 let longer_lived = impl_generic_params.generic_params(db);
                 let impl_generic_params = longer_lived.elements(db);
-                // Temporary result is used to avoid the borrow checker error.
-                let temporary_result = zip(trait_generic_args, impl_generic_params).all(
+                zip(trait_generic_args, impl_generic_params).all(
                     |(trait_generic_arg, impl_generic_param)| {
                         let ast::GenericArg::Unnamed(trait_generic_arg) = trait_generic_arg else {
                             return false;
@@ -138,8 +137,7 @@ fn generate_trait_for_impl<'db>(
                         };
                         trait_generic_arg_name.text(db) == impl_generic_param_name.text(db)
                     },
-                );
-                temporary_result
+                )
             } else {
                 false
             }

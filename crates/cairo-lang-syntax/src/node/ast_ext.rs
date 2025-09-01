@@ -5,13 +5,13 @@
 use cairo_lang_utils::require;
 use num_bigint::{BigInt, Sign};
 use num_traits::Num;
+use salsa::Database;
 use unescaper::unescape;
 
 use super::{
     TerminalFalse, TerminalLiteralNumber, TerminalShortString, TerminalString, TerminalTrue,
 };
 use crate::node::Terminal;
-use crate::node::db::SyntaxGroup;
 
 impl<'a> TerminalTrue<'a> {
     #[inline(always)]
@@ -29,14 +29,14 @@ impl<'a> TerminalFalse<'a> {
 
 impl<'a> TerminalLiteralNumber<'a> {
     /// Interpret this terminal as a [`BigInt`] number.
-    pub fn numeric_value(&self, db: &'a dyn SyntaxGroup) -> Option<BigInt> {
+    pub fn numeric_value(&self, db: &'a dyn Database) -> Option<BigInt> {
         self.numeric_value_and_suffix(db).map(|(value, _suffix)| value)
     }
 
     /// Interpret this terminal as a [`BigInt`] number and get the suffix if this literal has one.
     pub fn numeric_value_and_suffix(
         &self,
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn Database,
     ) -> Option<(BigInt, Option<&'a str>)> {
         let text = self.text(db);
 
@@ -70,7 +70,7 @@ impl<'a> TerminalLiteralNumber<'a> {
 
 impl<'a> TerminalShortString<'a> {
     /// Interpret this token/terminal as a string.
-    pub fn string_value(&self, db: &'a dyn SyntaxGroup) -> Option<String> {
+    pub fn string_value(&self, db: &'a dyn Database) -> Option<String> {
         let text = self.text(db);
 
         let (text, _suffix) = string_value(text, '\'')?;
@@ -79,12 +79,12 @@ impl<'a> TerminalShortString<'a> {
     }
 
     /// Interpret this terminal as a [`BigInt`] number.
-    pub fn numeric_value(&self, db: &'a dyn SyntaxGroup) -> Option<BigInt> {
+    pub fn numeric_value(&self, db: &'a dyn Database) -> Option<BigInt> {
         self.string_value(db).map(|string| BigInt::from_bytes_be(Sign::Plus, string.as_bytes()))
     }
 
     /// Get suffix from this literal if it has one.
-    pub fn suffix(&self, db: &'a dyn SyntaxGroup) -> Option<&'a str> {
+    pub fn suffix(&self, db: &'a dyn Database) -> Option<&'a str> {
         let text = self.text(db);
         let (_literal, mut suffix) = text[1..].rsplit_once('\'')?;
         require(!suffix.is_empty())?;
@@ -97,7 +97,7 @@ impl<'a> TerminalShortString<'a> {
 
 impl<'a> TerminalString<'a> {
     /// Interpret this token/terminal as a string.
-    pub fn string_value(&self, db: &'a dyn SyntaxGroup) -> Option<String> {
+    pub fn string_value(&self, db: &'a dyn Database) -> Option<String> {
         let text = self.text(db);
         let (text, suffix) = string_value(text, '"')?;
         if !suffix.is_empty() {

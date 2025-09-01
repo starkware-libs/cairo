@@ -85,6 +85,7 @@ type Poseidon = Poseidon [storable: true, drop: false, dup: false, zero_sized: f
 type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 
 libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
+libfunc dup<felt252> = dup<felt252>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc felt252_add = felt252_add;
 libfunc hades_permutation = hades_permutation;
@@ -94,16 +95,16 @@ libfunc store_temp<Poseidon> = store_temp<Poseidon>;
 
 F0:
 const_as_immediate<Const<felt252, 0>>() -> ([4]);
-store_temp<felt252>([4]) -> ([4]);
-felt252_add([4], [1]) -> ([5]);
-const_as_immediate<Const<felt252, 0>>() -> ([6]);
-store_temp<felt252>([6]) -> ([6]);
-felt252_add([6], [2]) -> ([7]);
-const_as_immediate<Const<felt252, 0>>() -> ([8]);
+dup<felt252>([4]) -> ([4], [5]);
 store_temp<felt252>([5]) -> ([5]);
+felt252_add([5], [1]) -> ([6]);
+dup<felt252>([4]) -> ([4], [7]);
 store_temp<felt252>([7]) -> ([7]);
+felt252_add([7], [2]) -> ([8]);
+store_temp<felt252>([6]) -> ([6]);
 store_temp<felt252>([8]) -> ([8]);
-hades_permutation([0], [5], [7], [8]) -> ([9], [10], [11], [12]);
+store_temp<felt252>([4]) -> ([4]);
+hades_permutation([0], [6], [8], [4]) -> ([9], [10], [11], [12]);
 store_temp<felt252>([10]) -> ([10]);
 felt252_add([10], [3]) -> ([13]);
 const_as_immediate<Const<felt252, 1>>() -> ([14]);

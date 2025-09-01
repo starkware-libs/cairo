@@ -1,3 +1,5 @@
+use salsa::Database;
+
 use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
     ImplItem, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
@@ -8,7 +10,6 @@ use super::ast::{
     TraitItemConstant, TraitItemFunction, TraitItemFunctionPtr, TraitItemImpl, TraitItemType,
     UsePathLeaf, Variant, WrappedArgList,
 };
-use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
 use super::kind::SyntaxKind;
 use super::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
@@ -20,15 +21,15 @@ use crate::node::green::GreenNodeDetails;
 mod test;
 
 pub trait GetIdentifier<'a> {
-    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str;
+    fn identifier(&self, db: &'a dyn Database) -> &'a str;
 }
 impl<'a> ast::UsePathLeafPtr<'a> {
-    pub fn name_green(&self, _syntax_db: &dyn SyntaxGroup) -> Self {
+    pub fn name_green(&self, _syntax_db: &dyn Database) -> Self {
         *self
     }
 }
 impl<'a> GetIdentifier<'a> for ast::UsePathLeafPtr<'a> {
-    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> &'a str {
         let alias_clause_green = self.alias_clause_green(db).0;
         let green_node = alias_clause_green.long(db);
         let children = match &green_node.details {
@@ -59,7 +60,7 @@ impl<'a> GetIdentifier<'a> for ast::UsePathLeafPtr<'a> {
 }
 impl<'a> GetIdentifier<'a> for ast::PathSegmentGreen<'a> {
     /// Retrieves the text of the last identifier in the path.
-    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> &'a str {
         let green_node = self.0.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
@@ -71,7 +72,7 @@ impl<'a> GetIdentifier<'a> for ast::PathSegmentGreen<'a> {
 }
 impl<'a> GetIdentifier<'a> for ast::ExprPathGreen<'a> {
     /// Retrieves the text of the last identifier in the path.
-    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> &'a str {
         let green_node = self.0.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
@@ -84,7 +85,7 @@ impl<'a> GetIdentifier<'a> for ast::ExprPathGreen<'a> {
 
 impl<'a> GetIdentifier<'a> for ast::ExprPathInnerGreen<'a> {
     /// Retrieves the text of the last identifier in the path.
-    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> &'a str {
         let green_node = self.0.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
@@ -96,7 +97,7 @@ impl<'a> GetIdentifier<'a> for ast::ExprPathInnerGreen<'a> {
     }
 }
 impl<'a> GetIdentifier<'a> for ast::TerminalIdentifierGreen<'a> {
-    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> &'a str {
         match &self.0.long(db).details {
             GreenNodeDetails::Token(_) => "Unexpected token",
             GreenNodeDetails::Node { children, width: _ } => {
@@ -107,26 +108,26 @@ impl<'a> GetIdentifier<'a> for ast::TerminalIdentifierGreen<'a> {
 }
 impl<'a> GetIdentifier<'a> for ast::ExprPath<'a> {
     /// Retrieves the identifier of the last segment of the path.
-    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> &'a str {
         self.segments(db).elements(db).next_back().unwrap().identifier(db)
     }
 }
 
 /// Helper trait for ast::PathSegment.
 pub trait PathSegmentEx<'a> {
-    fn identifier_ast(&self, db: &'a dyn SyntaxGroup) -> ast::TerminalIdentifier<'a>;
-    fn generic_args(&self, db: &'a dyn SyntaxGroup) -> Option<Vec<ast::GenericArg<'a>>>;
+    fn identifier_ast(&self, db: &'a dyn Database) -> ast::TerminalIdentifier<'a>;
+    fn generic_args(&self, db: &'a dyn Database) -> Option<Vec<ast::GenericArg<'a>>>;
 }
 impl<'a> PathSegmentEx<'a> for ast::PathSegment<'a> {
     /// Retrieves the identifier ast of a path segment.
-    fn identifier_ast(&self, db: &'a dyn SyntaxGroup) -> ast::TerminalIdentifier<'a> {
+    fn identifier_ast(&self, db: &'a dyn Database) -> ast::TerminalIdentifier<'a> {
         match self {
             ast::PathSegment::Simple(segment) => segment.ident(db),
             ast::PathSegment::WithGenericArgs(segment) => segment.ident(db),
             ast::PathSegment::Missing(missing_segment) => missing_segment.ident(db),
         }
     }
-    fn generic_args(&self, db: &'a dyn SyntaxGroup) -> Option<Vec<ast::GenericArg<'a>>> {
+    fn generic_args(&self, db: &'a dyn Database) -> Option<Vec<ast::GenericArg<'a>>> {
         match self {
             ast::PathSegment::Simple(_) | ast::PathSegment::Missing(_) => None,
             ast::PathSegment::WithGenericArgs(segment) => {
@@ -137,7 +138,7 @@ impl<'a> PathSegmentEx<'a> for ast::PathSegment<'a> {
 }
 impl<'a> GetIdentifier<'a> for ast::PathSegment<'a> {
     /// Retrieves the text of the segment (without the generic args).
-    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> &'a str {
         match self {
             ast::PathSegment::Simple(segment) => segment.identifier(db),
             ast::PathSegment::WithGenericArgs(segment) => segment.identifier(db),
@@ -146,7 +147,7 @@ impl<'a> GetIdentifier<'a> for ast::PathSegment<'a> {
     }
 }
 impl<'a> GetIdentifier<'a> for ast::PathSegmentSimple<'a> {
-    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> &'a str {
         let green_node = self.as_syntax_node().green_node(db);
         let GreenNodeDetails::Node { children, .. } = &green_node.details else {
             panic!("Unexpected token");
@@ -155,7 +156,7 @@ impl<'a> GetIdentifier<'a> for ast::PathSegmentSimple<'a> {
     }
 }
 impl<'a> GetIdentifier<'a> for ast::PathSegmentWithGenericArgs<'a> {
-    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> &'a str {
         let green_node = self.as_syntax_node().green_node(db);
         let GreenNodeDetails::Node { children, .. } = &green_node.details else {
             panic!("Unexpected token");
@@ -165,7 +166,7 @@ impl<'a> GetIdentifier<'a> for ast::PathSegmentWithGenericArgs<'a> {
 }
 
 impl<'a> GetIdentifier<'a> for ast::PathSegmentMissing<'a> {
-    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> &'a str {
         let green_node = self.as_syntax_node().green_node(db);
         let GreenNodeDetails::Node { children, .. } = &green_node.details else {
             panic!("Unexpected token");
@@ -175,7 +176,7 @@ impl<'a> GetIdentifier<'a> for ast::PathSegmentMissing<'a> {
 }
 
 impl<'a> GetIdentifier<'a> for ast::Modifier<'a> {
-    fn identifier(&self, db: &'a dyn SyntaxGroup) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> &'a str {
         match self {
             Modifier::Ref(r) => r.text(db),
             Modifier::Mut(m) => m.text(db),
@@ -186,29 +187,29 @@ impl<'a> GetIdentifier<'a> for ast::Modifier<'a> {
 /// Trait for ast object with a name terminal.
 pub trait NameGreen<'a> {
     /// Returns the TerminalIdentifierGreen of the `name` node.
-    fn name_green(self, db: &'a dyn SyntaxGroup) -> TerminalIdentifierGreen<'a>;
+    fn name_green(self, db: &'a dyn Database) -> TerminalIdentifierGreen<'a>;
 }
 
 impl<'a> NameGreen<'a> for FunctionDeclarationGreen<'a> {
-    fn name_green(self, db: &'a dyn SyntaxGroup) -> TerminalIdentifierGreen<'a> {
+    fn name_green(self, db: &'a dyn Database) -> TerminalIdentifierGreen<'a> {
         TerminalIdentifierGreen(self.0.long(db).children()[FunctionDeclaration::INDEX_NAME])
     }
 }
 
 impl<'a> NameGreen<'a> for FunctionWithBodyPtr<'a> {
-    fn name_green(self, db: &'a dyn SyntaxGroup) -> TerminalIdentifierGreen<'a> {
+    fn name_green(self, db: &'a dyn Database) -> TerminalIdentifierGreen<'a> {
         self.declaration_green(db).name_green(db)
     }
 }
 
 impl<'a> NameGreen<'a> for ItemExternFunctionPtr<'a> {
-    fn name_green(self, db: &'a dyn SyntaxGroup) -> TerminalIdentifierGreen<'a> {
+    fn name_green(self, db: &'a dyn Database) -> TerminalIdentifierGreen<'a> {
         self.declaration_green(db).name_green(db)
     }
 }
 
 impl<'a> NameGreen<'a> for TraitItemFunctionPtr<'a> {
-    fn name_green(self, db: &'a dyn SyntaxGroup) -> TerminalIdentifierGreen<'a> {
+    fn name_green(self, db: &'a dyn Database) -> TerminalIdentifierGreen<'a> {
         self.declaration_green(db).name_green(db)
     }
 }
@@ -216,29 +217,29 @@ impl<'a> NameGreen<'a> for TraitItemFunctionPtr<'a> {
 /// Provides methods to extract a _name_ of AST objects.
 pub trait HasName<'a> {
     /// Gets a [`TerminalIdentifier`] that represents a _name_ of this AST object.
-    fn name(&self, db: &'a dyn SyntaxGroup) -> ast::TerminalIdentifier<'a>;
+    fn name(&self, db: &'a dyn Database) -> ast::TerminalIdentifier<'a>;
 }
 
 impl<'a> HasName<'a> for FunctionWithBody<'a> {
-    fn name(&self, db: &'a dyn SyntaxGroup) -> TerminalIdentifier<'a> {
+    fn name(&self, db: &'a dyn Database) -> TerminalIdentifier<'a> {
         self.declaration(db).name(db)
     }
 }
 
 impl<'a> HasName<'a> for ItemExternFunction<'a> {
-    fn name(&self, db: &'a dyn SyntaxGroup) -> TerminalIdentifier<'a> {
+    fn name(&self, db: &'a dyn Database) -> TerminalIdentifier<'a> {
         self.declaration(db).name(db)
     }
 }
 
 impl<'a> HasName<'a> for TraitItemFunction<'a> {
-    fn name(&self, db: &'a dyn SyntaxGroup) -> TerminalIdentifier<'a> {
+    fn name(&self, db: &'a dyn Database) -> TerminalIdentifier<'a> {
         self.declaration(db).name(db)
     }
 }
 
 impl<'a> HasName<'a> for UsePathLeaf<'a> {
-    fn name(&self, db: &'a dyn SyntaxGroup) -> TerminalIdentifier<'a> {
+    fn name(&self, db: &'a dyn Database) -> TerminalIdentifier<'a> {
         match self.alias_clause(db) {
             ast::OptionAliasClause::Empty(_) => self.ident(db).identifier_ast(db),
             ast::OptionAliasClause::AliasClause(alias) => alias.alias(db),
@@ -248,10 +249,10 @@ impl<'a> HasName<'a> for UsePathLeaf<'a> {
 
 pub trait GenericParamEx<'a> {
     /// Returns the name of a generic param if one exists.
-    fn name(&self, db: &'a dyn SyntaxGroup) -> Option<ast::TerminalIdentifier<'a>>;
+    fn name(&self, db: &'a dyn Database) -> Option<ast::TerminalIdentifier<'a>>;
 }
 impl<'a> GenericParamEx<'a> for ast::GenericParam<'a> {
-    fn name(&self, db: &'a dyn SyntaxGroup) -> Option<ast::TerminalIdentifier<'a>> {
+    fn name(&self, db: &'a dyn Database) -> Option<ast::TerminalIdentifier<'a>> {
         match self {
             ast::GenericParam::Type(t) => Some(t.name(db)),
             ast::GenericParam::Const(c) => Some(c.name(db)),
@@ -263,7 +264,7 @@ impl<'a> GenericParamEx<'a> for ast::GenericParam<'a> {
 }
 
 /// Checks if the given attribute has a single argument with the given name.
-pub fn is_single_arg_attr(db: &dyn SyntaxGroup, attr: &Attribute<'_>, arg_name: &str) -> bool {
+pub fn is_single_arg_attr(db: &dyn Database, attr: &Attribute<'_>, arg_name: &str) -> bool {
     match attr.arguments(db) {
         OptionArgListParenthesized::ArgListParenthesized(args) => {
             matches!(&args.arguments(db).elements_vec(db)[..],
@@ -280,17 +281,17 @@ pub trait QueryAttrs<'a> {
     ///
     /// Implementation detail, should not be used by this trait users.
     #[doc(hidden)]
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>>;
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>>;
 
     /// Generic call to `self.attributes(db).elements(db)`.
-    fn attributes_elements(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Attribute<'a>> {
+    fn attributes_elements(&self, db: &'a dyn Database) -> impl Iterator<Item = Attribute<'a>> {
         self.try_attributes(db).into_iter().flat_map(move |attrs| attrs.elements(db))
     }
 
     /// Collect all attributes named exactly `attr` attached to this node.
     fn query_attr(
         &self,
-        db: &'a dyn SyntaxGroup,
+        db: &'a dyn Database,
         attr: &'a str,
     ) -> impl Iterator<Item = Attribute<'a>> {
         self.attributes_elements(db)
@@ -298,113 +299,108 @@ pub trait QueryAttrs<'a> {
     }
 
     /// Find first attribute named exactly `attr` attached do this node.
-    fn find_attr(&self, db: &'a dyn SyntaxGroup, attr: &'a str) -> Option<Attribute<'a>> {
+    fn find_attr(&self, db: &'a dyn Database, attr: &'a str) -> Option<Attribute<'a>> {
         self.query_attr(db, attr).next()
     }
 
     /// Check if this node has an attribute named exactly `attr`.
-    fn has_attr(&self, db: &'a dyn SyntaxGroup, attr: &'a str) -> bool {
+    fn has_attr(&self, db: &'a dyn Database, attr: &'a str) -> bool {
         self.find_attr(db, attr).is_some()
     }
 
     /// Checks if the given object has an attribute with the given name and argument.
-    fn has_attr_with_arg(
-        &self,
-        db: &'a dyn SyntaxGroup,
-        attr_name: &'a str,
-        arg_name: &str,
-    ) -> bool {
+    fn has_attr_with_arg(&self, db: &'a dyn Database, attr_name: &'a str, arg_name: &str) -> bool {
         self.query_attr(db, attr_name).any(|attr| is_single_arg_attr(db, &attr, arg_name))
     }
 }
 
 impl<'a> QueryAttrs<'a> for ItemConstant<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for ItemModule<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for FunctionWithBody<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for ItemUse<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for ItemExternFunction<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for ItemExternType<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for ItemTrait<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for ItemImpl<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for ItemImplAlias<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for ItemStruct<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for ItemEnum<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for ItemTypeAlias<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for ItemMacroDeclaration<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for TraitItemFunction<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for TraitItemType<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for TraitItemConstant<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for TraitItemImpl<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 impl<'a> QueryAttrs<'a> for TraitItem<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         match self {
             TraitItem::Function(item) => Some(item.attributes(db)),
             TraitItem::Type(item) => Some(item.attributes(db)),
@@ -416,13 +412,13 @@ impl<'a> QueryAttrs<'a> for TraitItem<'a> {
 }
 
 impl<'a> QueryAttrs<'a> for ItemInlineMacro<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 
 impl<'a> QueryAttrs<'a> for ModuleItem<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         match self {
             ModuleItem::Constant(item) => Some(item.attributes(db)),
             ModuleItem::Module(item) => Some(item.attributes(db)),
@@ -447,7 +443,7 @@ impl<'a> QueryAttrs<'a> for ModuleItem<'a> {
 }
 
 impl<'a> QueryAttrs<'a> for ImplItem<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         match self {
             ImplItem::Function(item) => Some(item.attributes(db)),
             ImplItem::Type(item) => Some(item.attributes(db)),
@@ -466,48 +462,48 @@ impl<'a> QueryAttrs<'a> for ImplItem<'a> {
 }
 
 impl<'a> QueryAttrs<'a> for AttributeList<'a> {
-    fn try_attributes(&self, _db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, _db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.clone())
     }
 }
 impl<'a> QueryAttrs<'a> for Member<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 
 impl<'a> QueryAttrs<'a> for Variant<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 
 impl<'a> QueryAttrs<'a> for StatementBreak<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 
 impl<'a> QueryAttrs<'a> for StatementContinue<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 
 impl<'a> QueryAttrs<'a> for StatementReturn<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 
 impl<'a> QueryAttrs<'a> for StatementLet<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
 
 impl<'a> QueryAttrs<'a> for StatementExpr<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         Some(self.attributes(db))
     }
 }
@@ -515,7 +511,7 @@ impl<'a> QueryAttrs<'a> for StatementExpr<'a> {
 /// Allows querying attributes of a syntax node, any typed node which QueryAttrs is implemented for
 /// should be added here.
 impl<'a> QueryAttrs<'a> for SyntaxNode<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         match self.kind(db) {
             SyntaxKind::ItemConstant => {
                 Some(ast::ItemConstant::from_syntax_node(db, *self).attributes(db))
@@ -577,7 +573,7 @@ impl<'a> QueryAttrs<'a> for SyntaxNode<'a> {
 }
 
 impl<'a> QueryAttrs<'a> for Statement<'a> {
-    fn try_attributes(&self, db: &'a dyn SyntaxGroup) -> Option<AttributeList<'a>> {
+    fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>> {
         match self {
             Statement::Break(statement) => Some(statement.attributes(db)),
             Statement::Continue(statement) => Some(statement.attributes(db)),
@@ -591,16 +587,16 @@ impl<'a> QueryAttrs<'a> for Statement<'a> {
 }
 pub trait WrappedArgListHelper<'a> {
     /// Pills the wrapping brackets to get the argument list. Returns None if `self` is `Missing`.
-    fn arg_list(&self, db: &'a dyn SyntaxGroup) -> Option<ast::ArgList<'a>>;
+    fn arg_list(&self, db: &'a dyn Database) -> Option<ast::ArgList<'a>>;
     /// Gets the syntax node of the right wrapping bracket.
-    fn right_bracket_syntax_node(&self, db: &'a dyn SyntaxGroup) -> SyntaxNode<'a>;
+    fn right_bracket_syntax_node(&self, db: &'a dyn Database) -> SyntaxNode<'a>;
     /// Gets the syntax node of the left wrapping bracket.
-    fn left_bracket_syntax_node(&self, db: &'a dyn SyntaxGroup) -> SyntaxNode<'a>;
+    fn left_bracket_syntax_node(&self, db: &'a dyn Database) -> SyntaxNode<'a>;
     /// Gets a stable pointer to the left wrapping bracket.
-    fn left_bracket_stable_ptr(&self, db: &'a dyn SyntaxGroup) -> SyntaxStablePtrId<'a>;
+    fn left_bracket_stable_ptr(&self, db: &'a dyn Database) -> SyntaxStablePtrId<'a>;
 }
 impl<'a> WrappedArgListHelper<'a> for WrappedArgList<'a> {
-    fn arg_list(&self, db: &'a dyn SyntaxGroup) -> Option<ast::ArgList<'a>> {
+    fn arg_list(&self, db: &'a dyn Database) -> Option<ast::ArgList<'a>> {
         match self {
             WrappedArgList::ParenthesizedArgList(args) => Some(args.arguments(db)),
             WrappedArgList::BracketedArgList(args) => Some(args.arguments(db)),
@@ -609,7 +605,7 @@ impl<'a> WrappedArgListHelper<'a> for WrappedArgList<'a> {
         }
     }
 
-    fn right_bracket_syntax_node(&self, db: &'a dyn SyntaxGroup) -> SyntaxNode<'a> {
+    fn right_bracket_syntax_node(&self, db: &'a dyn Database) -> SyntaxNode<'a> {
         match self {
             WrappedArgList::ParenthesizedArgList(args) => args.rparen(db).as_syntax_node(),
             WrappedArgList::BracketedArgList(args) => args.rbrack(db).as_syntax_node(),
@@ -618,7 +614,7 @@ impl<'a> WrappedArgListHelper<'a> for WrappedArgList<'a> {
         }
     }
 
-    fn left_bracket_syntax_node(&self, db: &'a dyn SyntaxGroup) -> SyntaxNode<'a> {
+    fn left_bracket_syntax_node(&self, db: &'a dyn Database) -> SyntaxNode<'a> {
         match self {
             WrappedArgList::ParenthesizedArgList(args) => args.lparen(db).as_syntax_node(),
             WrappedArgList::BracketedArgList(args) => args.lbrack(db).as_syntax_node(),
@@ -627,7 +623,7 @@ impl<'a> WrappedArgListHelper<'a> for WrappedArgList<'a> {
         }
     }
 
-    fn left_bracket_stable_ptr(&self, db: &'a dyn SyntaxGroup) -> SyntaxStablePtrId<'a> {
+    fn left_bracket_stable_ptr(&self, db: &'a dyn Database) -> SyntaxStablePtrId<'a> {
         match self {
             WrappedArgList::ParenthesizedArgList(args) => args.lparen(db).stable_ptr(db).untyped(),
             WrappedArgList::BracketedArgList(args) => args.lbrack(db).stable_ptr(db).untyped(),
@@ -639,10 +635,10 @@ impl<'a> WrappedArgListHelper<'a> for WrappedArgList<'a> {
 
 pub trait WrappedGenericParamListHelper<'a> {
     /// Checks whether there are 0 generic parameters
-    fn is_empty(&'a self, db: &'a dyn SyntaxGroup) -> bool;
+    fn is_empty(&'a self, db: &'a dyn Database) -> bool;
 }
 impl<'a> WrappedGenericParamListHelper<'a> for ast::WrappedGenericParamList<'a> {
-    fn is_empty(&'a self, db: &'a dyn SyntaxGroup) -> bool {
+    fn is_empty(&'a self, db: &'a dyn Database) -> bool {
         self.generic_params(db).elements(db).len() == 0
     }
 }
@@ -650,10 +646,10 @@ impl<'a> WrappedGenericParamListHelper<'a> for ast::WrappedGenericParamList<'a> 
 pub trait OptionWrappedGenericParamListHelper<'a> {
     /// Checks whether there are 0 generic parameters. True either when the generic params clause
     /// doesn't exist or when it's empty
-    fn is_empty(&'a self, db: &'a dyn SyntaxGroup) -> bool;
+    fn is_empty(&'a self, db: &'a dyn Database) -> bool;
 }
 impl<'a> OptionWrappedGenericParamListHelper<'a> for ast::OptionWrappedGenericParamList<'a> {
-    fn is_empty(&'a self, db: &'a dyn SyntaxGroup) -> bool {
+    fn is_empty(&'a self, db: &'a dyn Database) -> bool {
         match self {
             ast::OptionWrappedGenericParamList::Empty(_) => true,
             ast::OptionWrappedGenericParamList::WrappedGenericParamList(
@@ -674,26 +670,26 @@ pub trait BodyItems<'a> {
     /// Don't use on an item that is not the original plugin's context, unless you are sure that
     /// while traversing the AST to get to it from the original plugin's context, you did not go
     /// through another submodule.
-    fn iter_items(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self::Item> + 'a;
+    fn iter_items(&self, db: &'a dyn Database) -> impl Iterator<Item = Self::Item> + 'a;
 }
 
 impl<'a> BodyItems<'a> for ast::ModuleBody<'a> {
     type Item = ModuleItem<'a>;
-    fn iter_items(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self::Item> + 'a {
+    fn iter_items(&self, db: &'a dyn Database) -> impl Iterator<Item = Self::Item> + 'a {
         self.items(db).elements(db)
     }
 }
 
 impl<'a> BodyItems<'a> for ast::TraitBody<'a> {
     type Item = TraitItem<'a>;
-    fn iter_items(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self::Item> + 'a {
+    fn iter_items(&self, db: &'a dyn Database) -> impl Iterator<Item = Self::Item> + 'a {
         self.items(db).elements(db)
     }
 }
 
 impl<'a> BodyItems<'a> for ast::ImplBody<'a> {
     type Item = ImplItem<'a>;
-    fn iter_items(&self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self::Item> + 'a {
+    fn iter_items(&self, db: &'a dyn Database) -> impl Iterator<Item = Self::Item> + 'a {
         self.items(db).elements(db)
     }
 }
@@ -701,10 +697,10 @@ impl<'a> BodyItems<'a> for ast::ImplBody<'a> {
 /// Helper trait for ast::UsePath.
 pub trait UsePathEx<'a> {
     /// Retrieves the item of a use path.
-    fn get_item(&self, db: &'a dyn SyntaxGroup) -> ast::ItemUse<'a>;
+    fn get_item(&self, db: &'a dyn Database) -> ast::ItemUse<'a>;
 }
 impl<'a> UsePathEx<'a> for ast::UsePath<'a> {
-    fn get_item(&self, db: &'a dyn SyntaxGroup) -> ast::ItemUse<'a> {
+    fn get_item(&self, db: &'a dyn Database) -> ast::ItemUse<'a> {
         let mut node = self.as_syntax_node();
         loop {
             let Some(parent) = node.parent(db) else {
@@ -722,7 +718,7 @@ impl<'a> UsePathEx<'a> for ast::UsePath<'a> {
 
 impl<'a> UsePathLeaf<'a> {
     /// Retrieves the stable pointer of the name of the leaf.
-    pub fn name_stable_ptr(&self, db: &'a dyn SyntaxGroup) -> SyntaxStablePtrId<'a> {
+    pub fn name_stable_ptr(&self, db: &'a dyn Database) -> SyntaxStablePtrId<'a> {
         self.name(db).stable_ptr(db).untyped()
     }
 }
@@ -733,11 +729,11 @@ pub trait IsDependentType {
     /// For example given identifier `T` will return true for:
     /// `T`, `Array<T>`, `Array<Array<T>>`, `(T, felt252)`.
     /// Does not resolve paths, type aliases or named generics.
-    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool;
+    fn is_dependent_type(&self, db: &dyn Database, identifiers: &[&str]) -> bool;
 }
 
 impl<'a> IsDependentType for ast::ExprPath<'a> {
-    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool {
+    fn is_dependent_type(&self, db: &dyn Database, identifiers: &[&str]) -> bool {
         let segments = self.segments(db).elements_vec(db);
         if let [ast::PathSegment::Simple(arg_segment)] = &segments[..] {
             identifiers.contains(&arg_segment.identifier(db))
@@ -764,7 +760,7 @@ impl<'a> IsDependentType for ast::ExprPath<'a> {
 }
 
 impl<'a> IsDependentType for ast::Expr<'a> {
-    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool {
+    fn is_dependent_type(&self, db: &dyn Database, identifiers: &[&str]) -> bool {
         match self {
             ast::Expr::Path(type_path) => type_path.is_dependent_type(db, identifiers),
             ast::Expr::Unary(unary) => unary.expr(db).is_dependent_type(db, identifiers),

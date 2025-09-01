@@ -1,6 +1,7 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::{Intern, define_short_id};
 
+use super::cse::cse;
 use super::dedup_blocks::dedup_blocks;
 use super::early_unsafe_panic::early_unsafe_panic;
 use super::gas_redeposit::gas_redeposit;
@@ -30,6 +31,7 @@ pub enum OptimizationPhase<'db> {
     BranchInversion,
     CancelOps,
     ConstFolding,
+    Cse,
     DedupBlocks,
     EarlyUnsafePanic,
     OptimizeMatches,
@@ -72,6 +74,7 @@ impl<'db> OptimizationPhase<'db> {
             OptimizationPhase::BranchInversion => branch_inversion(db, lowered),
             OptimizationPhase::CancelOps => cancel_ops(lowered),
             OptimizationPhase::ConstFolding => const_folding(db, function, lowered),
+            OptimizationPhase::Cse => cse(lowered),
             OptimizationPhase::EarlyUnsafePanic => early_unsafe_panic(db, lowered),
             OptimizationPhase::DedupBlocks => dedup_blocks(lowered),
             OptimizationPhase::OptimizeMatches => optimize_matches(lowered),
@@ -83,8 +86,13 @@ impl<'db> OptimizationPhase<'db> {
             OptimizationPhase::TrimUnreachable => trim_unreachable(db, lowered),
             OptimizationPhase::LowerImplicits => lower_implicits(db, function, lowered),
             OptimizationPhase::GasRedeposit => gas_redeposit(db, function, lowered),
-            OptimizationPhase::Validate => validate(lowered)
-                .unwrap_or_else(|err| panic!("Failed validation: {:?}", err.to_message())),
+            OptimizationPhase::Validate => validate(lowered).unwrap_or_else(|err| {
+                panic!(
+                    "Failed validation for function {}: {:?}",
+                    function.full_path(db),
+                    err.to_message()
+                )
+            }),
             OptimizationPhase::SubStrategy { strategy, iterations } => {
                 for _ in 1..iterations {
                     let before = lowered.clone();
@@ -100,13 +108,7 @@ impl<'db> OptimizationPhase<'db> {
     }
 }
 
-define_short_id!(
-    OptimizationStrategyId,
-    OptimizationStrategy<'db>,
-    LoweringGroup,
-    lookup_intern_strategy,
-    intern_strategy
-);
+define_short_id!(OptimizationStrategyId, OptimizationStrategy<'db>, LoweringGroup);
 
 /// A strategy is a sequence of optimization phases.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -154,6 +156,8 @@ pub fn baseline_optimization_strategy<'db>(
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::CancelOps,
         OptimizationPhase::ReorganizeBlocks,
+        // Performing CSE here after blocks are the most contiguous, to reach maximum effect.
+        OptimizationPhase::Cse,
         OptimizationPhase::DedupBlocks,
         // Re-run ReturnOptimization to eliminate harmful merges introduced by DedupBlocks.
         OptimizationPhase::ReturnOptimization,

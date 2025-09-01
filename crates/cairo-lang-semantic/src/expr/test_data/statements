@@ -196,3 +196,37 @@ error: Unknown statement attribute.
  --> lib.cairo:3:5
     #[unknown_attr2]
     ^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test attributes on statement lists.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let _x = {
+        #[feature("testing")]
+        unstable_function_with_note() // Tail expression has attributes.
+    };
+
+    #[feature("testing")]
+    unstable_function_with_note(); // Non-tail statements have attributes.
+
+    #[feature("testing")]
+    unstable_function_with_note(); // Attr on non-expression tail works.
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[unstable(feature: "testing", note: "Some reason", since: "1.0.0")]
+fn unstable_function_with_note() -> felt252 {
+    0
+}
+
+//! > function_body
+
+//! > expected_diagnostics

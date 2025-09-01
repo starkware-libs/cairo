@@ -1,20 +1,22 @@
 use std::sync::Arc;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MacroDeclarationId, ModuleFileId, ModuleItemId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast::{MacroElement, MacroParam};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use salsa::Database;
 
 use crate::SemanticDiagnostic;
 use crate::db::SemanticGroup;
@@ -173,7 +175,7 @@ pub fn priv_macro_declaration_data<'db>(
 
 /// Helper function to extract pattern elements from a WrappedMacro.
 fn get_macro_elements<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     pattern: ast::WrappedMacro<'db>,
 ) -> ast::MacroElements<'db> {
     match pattern {
@@ -186,7 +188,7 @@ fn get_macro_elements<'db>(
 /// Helper function to extract a placeholder name from an ExprPath node, if it represents a macro
 /// placeholder. Returns None if the path is not a valid macro placeholder.
 fn extract_placeholder<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     path_node: &MacroParam<'db>,
 ) -> Option<&'db str> {
     let placeholder_name = path_node.name(db).as_syntax_node().get_text_without_trivia(db);
@@ -198,7 +200,7 @@ fn extract_placeholder<'db>(
 
 /// Helper function to collect all placeholder names used in a macro expansion.
 fn collect_expansion_placeholders<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     node: SyntaxNode<'db>,
 ) -> Vec<(SyntaxStablePtrId<'db>, &'db str)> {
     let mut placeholders = Vec::new();
@@ -474,7 +476,7 @@ pub struct MacroExpansionResult {
 /// Returns an error if any used placeholder in the expansion is not found in the captures.
 /// When an error is returned, appropriate diagnostics will already have been reported.
 pub fn expand_macro_rule(
-    db: &dyn SyntaxGroup,
+    db: &dyn Database,
     rule: &MacroRuleData<'_>,
     matcher_ctx: &mut MatcherContext<'_>,
 ) -> Maybe<MacroExpansionResult> {
@@ -491,7 +493,7 @@ pub fn expand_macro_rule(
 /// Returns an error if a placeholder is not found in captures.
 /// When an error is returned, appropriate diagnostics will already have been reported.
 fn expand_macro_rule_ex(
-    db: &dyn SyntaxGroup,
+    db: &dyn Database,
     node: SyntaxNode<'_>,
     matcher_ctx: &mut MatcherContext<'_>,
     res_buffer: &mut String,
@@ -512,8 +514,7 @@ fn expand_macro_rule_ex(
                     .and_then(|v| rep_index.map_or_else(|| v.first(), |i| v.get(i)))
                     .ok_or_else(skip_diagnostic)?;
                 let start = TextWidth::from_str(res_buffer).as_offset();
-                let span =
-                    TextSpan { start, end: start.add_width(TextWidth::from_str(&value.text)) };
+                let span = TextSpan::new_with_width(start, TextWidth::from_str(&value.text));
                 res_buffer.push_str(&value.text);
                 code_mappings.push(CodeMapping {
                     span,
@@ -546,10 +547,10 @@ fn expand_macro_rule_ex(
                     )?;
                 }
 
-                if i + 1 < repetition_len {
-                    if let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db) {
-                        res_buffer.push_str(sep.as_syntax_node().get_text(db));
-                    }
+                if i + 1 < repetition_len
+                    && let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db)
+                {
+                    res_buffer.push_str(sep.as_syntax_node().get_text(db));
                 }
             }
 
@@ -580,7 +581,7 @@ fn expand_macro_rule_ex(
 
 /// Gets a Vec of MacroElement, and returns a vec of the params within it.
 fn get_repetition_params<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     elements: impl IntoIterator<Item = MacroElement<'db>>,
 ) -> Vec<MacroParam<'db>> {
     let mut params = vec![];
@@ -590,7 +591,7 @@ fn get_repetition_params<'db>(
 
 /// Recursively extends the provided params vector with all params within the given macro elements.
 fn repetition_params_extend<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     elements: impl IntoIterator<Item = MacroElement<'db>>,
     params: &mut Vec<MacroParam<'db>>,
 ) {

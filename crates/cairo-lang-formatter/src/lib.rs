@@ -8,9 +8,9 @@ pub mod node_properties;
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::parser::Parser;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
+use salsa::Database;
 use serde::{Deserialize, Serialize};
 
 pub use crate::cairo_formatter::{CairoFormatter, FormatOutcome, StdinFmt};
@@ -29,7 +29,7 @@ pub const CAIRO_FMT_IGNORE: &str = ".cairofmtignore";
 /// # Returns
 /// * `String` - The formatted file.
 pub fn get_formatted_file(
-    db: &dyn SyntaxGroup,
+    db: &dyn Database,
     syntax_root: &SyntaxNode<'_>,
     config: FormatterConfig,
 ) -> String {
@@ -43,7 +43,7 @@ pub fn get_formatted_file(
 /// * `content` - The code to format.
 /// # Returns
 /// * `String` - The formatted code.
-pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
+pub fn format_string(db: &dyn Database, content: String) -> String {
     let virtual_file = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "string_to_format".into(),

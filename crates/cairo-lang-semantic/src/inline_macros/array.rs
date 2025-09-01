@@ -7,9 +7,9 @@ use cairo_lang_defs::plugin_utils::{
     PluginResultTrait, not_legacy_macro_diagnostic, unsupported_bracket_diagnostic,
 };
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::indoc;
+use salsa::Database;
 
 #[derive(Debug, Default)]
 pub struct ArrayMacro;
@@ -19,7 +19,7 @@ impl NamedPlugin for ArrayMacro {
 impl InlineMacroExprPlugin for ArrayMacro {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult<'db> {
