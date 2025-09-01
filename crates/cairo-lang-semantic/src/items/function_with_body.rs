@@ -177,7 +177,7 @@ pub struct FunctionBody<'db> {
 unsafe impl<'db> salsa::Update for FunctionBody<'db> {
     unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
         // The function body contains both the arena and the expr id, so a change will be detected.
-        // The comparison should still be safe to do as we wont follow expired references.
+        // The comparison should still be safe to do as we won't follow expired references.
         let old_value = unsafe { &mut *old_pointer };
 
         if old_value != &new_value {
