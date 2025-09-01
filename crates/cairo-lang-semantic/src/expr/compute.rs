@@ -25,11 +25,12 @@ use cairo_lang_filesystem::ids::{
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_syntax::attribute::consts::UNUSED_VARIABLES;
 use cairo_lang_syntax::node::ast::{
     BinaryOperator, BlockOrIf, ClosureParamWrapper, ConditionListAnd, ExprPtr,
     OptionReturnTypeClause, PatternListOr, PatternStructParam, TerminalIdentifier, UnaryOperator,
 };
-use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
+use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -67,13 +68,13 @@ use crate::diagnostic::{
 };
 use crate::expr::inference::solver::SolutionSet;
 use crate::expr::inference::{ImplVarTraitItemMappings, InferenceId};
-use crate::items::constant::{
-    ConstValue, ConstValueId, resolve_const_expr_and_evaluate, validate_const_expr,
-};
+use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate, validate_const_expr};
 use crate::items::enm::SemanticEnumEx;
-use crate::items::feature_kind::extract_item_feature_config;
+use crate::items::feature_kind::{FeatureConfig, FeatureConfigRestore};
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
-use crate::items::imp::{ImplLookupContextId, filter_candidate_traits, infer_impl_by_self};
+use crate::items::imp::{
+    DerefInfo, ImplLookupContextId, filter_candidate_traits, infer_impl_by_self,
+};
 use crate::items::macro_declaration::{MatcherContext, expand_macro_rule, is_macro_rule_match};
 use crate::items::modifiers::compute_mutability;
 use crate::items::visibility;
@@ -336,6 +337,7 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
                         &parent.used_variables,
                         &name,
                         &old_var,
+                        &self.resolver.data.feature_config,
                     );
                 }
                 if let Some(parent_macro_info) = parent.macro_info.as_mut() {
@@ -350,6 +352,7 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
                 &closed.used_variables,
                 &name,
                 &binding,
+                &self.resolver.data.feature_config,
             );
         }
         // Adds warning for unused items if required.
@@ -412,6 +415,23 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
             InnerContextKind::Loop { .. } | InnerContextKind::While | InnerContextKind::For => true,
         }
     }
+
+    /// Validates the features of the given item, then pushes them into the context.
+    /// IMPORTANT: Don't forget to restore through `restore_features`!
+    fn add_features_from_statement(
+        &mut self,
+        item: &impl QueryAttrs<'ctx>,
+    ) -> FeatureConfigRestore<'ctx> {
+        validate_statement_attributes(self, item);
+        let crate_id = self.resolver.owning_crate_id;
+        self.resolver.extend_feature_config_from_item(self.db, crate_id, self.diagnostics, item)
+    }
+
+    /// Restores the feature config to its state before [Self::add_features_from_statement],
+    /// using the restoration state returned by that method.
+    fn restore_features(&mut self, feature_restore: FeatureConfigRestore<'ctx>) {
+        self.resolver.restore_feature_config(feature_restore);
+    }
 }
 
 /// Adds warning for unused bindings if required.
@@ -421,6 +441,7 @@ fn add_unused_binding_warning<'db>(
     used_bindings: &UnorderedHashSet<VarId<'db>>,
     name: &str,
     binding: &Binding<'db>,
+    ctx_feature_config: &FeatureConfig<'db>,
 ) {
     if !name.starts_with('_') && !used_bindings.contains(&binding.id()) {
         match binding {
@@ -432,8 +453,17 @@ fn add_unused_binding_warning<'db>(
                     diagnostics.report(binding.stable_ptr(db), UnusedUse);
                 }
             },
-            Binding::LocalVar(_) | Binding::Param(_) => {
-                diagnostics.report(binding.stable_ptr(db), UnusedVariable);
+            Binding::LocalVar(local_var) => {
+                if !local_var.allow_unused
+                    && !ctx_feature_config.allowed_lints.contains(UNUSED_VARIABLES)
+                {
+                    diagnostics.report(binding.stable_ptr(db), UnusedVariable);
+                }
+            }
+            Binding::Param(_) => {
+                if !ctx_feature_config.allowed_lints.contains(UNUSED_VARIABLES) {
+                    diagnostics.report(binding.stable_ptr(db), UnusedVariable);
+                }
             }
         }
     }
@@ -648,12 +678,12 @@ fn expand_inline_macro<'db>(
             kind: MacroKind::UserDefined,
             vars_to_expose: vec![],
         };
-        ctx.resolver.macro_call_data = Some(ResolverMacroData {
-            defsite_module_file_id: macro_defsite_resolver_data.module_file_id,
-            callsite_module_file_id: callsite_resolver.module_file_id,
+        ctx.resolver.macro_call_data = Some(Arc::new(ResolverMacroData {
+            defsite_module_id: macro_defsite_resolver_data.module_file_id.0,
+            callsite_module_id: callsite_resolver.module_file_id.0,
             expansion_mappings: info.mappings.clone(),
-            parent_macro_call_data: parent_macro_call_data.map(|data| data.into()),
-        });
+            parent_macro_call_data,
+        }));
         Ok(InlineMacroExpansion { content: expanded_code.text, name: macro_name.to_string(), info })
     } else if let Some(macro_plugin_id) =
         ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name.to_string()).cloned()
@@ -749,22 +779,32 @@ fn compute_tail_semantic<'db>(
     tail: &ast::StatementExpr<'db>,
     statements_ids: &mut Vec<StatementId>,
 ) -> ExprAndId<'db> {
-    let expr = tail.expr(ctx.db);
-    let ast::Expr::InlineMacro(inline_macro_syntax) = &expr else {
-        return compute_expr_semantic(ctx, &expr);
-    };
-    match expand_macro_for_statement(ctx, inline_macro_syntax, true, statements_ids) {
-        Ok(Some(expr_and_id)) => expr_and_id,
-        Ok(None) => unreachable!("Tail expression should not be None"),
-        Err(diag_added) => {
-            let expr = Expr::Missing(ExprMissing {
-                ty: TypeId::missing(ctx.db, diag_added),
-                stable_ptr: expr.stable_ptr(ctx.db),
-                diag_added,
-            });
-            ExprAndId { id: ctx.arenas.exprs.alloc(expr.clone()), expr }
+    // Push the statement's attributes into the context, restored after the computation is resolved.
+    let feature_restore = ctx.add_features_from_statement(tail);
+
+    let db = ctx.db;
+    let expr = tail.expr(db);
+    let res = match &expr {
+        ast::Expr::InlineMacro(inline_macro_syntax) => {
+            match expand_macro_for_statement(ctx, inline_macro_syntax, true, statements_ids) {
+                Ok(Some(expr_and_id)) => expr_and_id,
+                Ok(None) => unreachable!("Tail expression should not be None"),
+                Err(diag_added) => {
+                    let expr = Expr::Missing(ExprMissing {
+                        ty: TypeId::missing(db, diag_added),
+                        stable_ptr: expr.stable_ptr(db),
+                        diag_added,
+                    });
+                    ExprAndId { id: ctx.arenas.exprs.alloc(expr.clone()), expr }
+                }
+            }
         }
-    }
+        _ => compute_expr_semantic(ctx, &expr),
+    };
+
+    // Pop the statement's attributes from the context.
+    ctx.restore_features(feature_restore);
+    res
 }
 
 /// Expands an inline macro used in statement position, computes its semantic model, and extends
@@ -851,6 +891,10 @@ fn compute_expr_unary_semantic<'db>(
             }))
         }
         (UnaryOperator::Desnap(_), inner) => {
+            // If the desnapped expr is a snapshot we `desnap` it.
+            // If it is a known type we look for a deref impl and call it.
+            // Otherwise we conform the desnapped type to snapshot type, and return the inner var
+            // type.
             let (desnapped_expr, desnapped_ty) = {
                 // The expr the desnap acts on. E.g. `x` in `*x`.
                 let desnapped_expr = compute_expr_semantic(ctx, inner);
@@ -881,9 +925,28 @@ fn compute_expr_unary_semantic<'db>(
                     }
                     TypeLongId::Snapshot(ty) => *ty,
                     _ => {
-                        return Err(ctx
-                            .diagnostics
-                            .report(unary_op.stable_ptr(db), DesnapNonSnapshot));
+                        // If the desnapped type is not a snapshot, we look for a deref impl and
+                        // call it.
+                        let deref_chain = ctx.db.deref_chain(
+                            desnapped_expr_type,
+                            ctx.resolver.owning_crate_id,
+                            desnapped_expr.expr.is_mutable_var(&ctx.semantic_defs),
+                        )?;
+                        let Some(DerefInfo { function_id, self_mutability, target_ty: _ }) =
+                            deref_chain.derefs.first()
+                        else {
+                            return Err(ctx.diagnostics.report(
+                                unary_op.stable_ptr(db),
+                                DerefNonRef { ty: desnapped_expr_type },
+                            ));
+                        };
+                        return expr_function_call(
+                            ctx,
+                            *function_id,
+                            vec![NamedArg(desnapped_expr, None, *self_mutability)],
+                            syntax.stable_ptr(db),
+                            syntax.stable_ptr(db).into(),
+                        );
                     }
                 };
                 (desnapped_expr, desnapped_ty)
@@ -1139,8 +1202,7 @@ fn compute_expr_fixed_size_array_semantic<'db>(
         let expr_semantic = compute_expr_semantic(ctx, expr);
         let size = size_const_id
             .long(db)
-            .clone()
-            .into_int()
+            .to_int()
             .ok_or_else(|| {
                 ctx.diagnostics.report(syntax.stable_ptr(db), FixedSizeArrayNonNumericSize)
             })?
@@ -1249,6 +1311,11 @@ fn compute_expr_function_call_semantic<'db>(
                     let arg = compute_named_argument_clause(ctx, arg_syntax, None);
                     if arg.2 != Mutability::Immutable {
                         return Err(ctx.diagnostics.report(stable_ptr, RefClosureArgument));
+                    }
+                    if arg.1.is_some() {
+                        return Err(ctx
+                            .diagnostics
+                            .report(stable_ptr, NamedArgumentsAreNotSupported));
                     }
                     args.push(arg.0.id);
                     arg_types.push(arg.0.ty());
@@ -2466,23 +2533,31 @@ fn get_method_function_candidates<'db>(
         return Ok((candidates, self_expr, self_ty, false));
     }
 
-    let mut fixed_expr = self_expr;
-    let mut fixed_ty = self_ty;
+    let deref_chain = ctx.db.deref_chain(
+        self_ty,
+        ctx.resolver.owning_crate_id,
+        self_expr.expr.is_mutable_var(&ctx.semantic_defs),
+    )?;
 
-    let base_var = match &fixed_expr.expr {
-        Expr::Var(expr_var) => Some(expr_var.var),
-        Expr::MemberAccess(ExprMemberAccess { member_path: Some(member_path), .. }) => {
-            Some(member_path.base_var())
-        }
-        _ => None,
+    // Find the first deref that contains the method.
+    let Some(last_deref_index) = deref_chain.derefs.iter().position(|deref_info| {
+        candidates = filter_candidate_traits(
+            ctx,
+            inference_errors,
+            deref_info.target_ty,
+            candidate_traits,
+            func_name,
+            method_syntax,
+        );
+        !candidates.is_empty()
+    }) else {
+        // Not found in any deref.
+        return Ok((candidates, self_expr, self_ty, false));
     };
-    let is_mut_var = base_var
-        .filter(|var_id| matches!(ctx.semantic_defs.get(var_id), Some(var) if var.is_mut()))
-        .is_some();
 
-    let deref_chain = ctx.db.deref_chain(self_ty, ctx.resolver.owning_crate_id, is_mut_var)?;
-
-    for deref_info in deref_chain.derefs.iter() {
+    // Found in a deref - generating deref expressions.
+    let mut fixed_expr = self_expr;
+    for deref_info in &deref_chain.derefs[0..=last_deref_index] {
         let derefed_expr = expr_function_call(
             ctx,
             deref_info.function_id,
@@ -2493,22 +2568,8 @@ fn get_method_function_candidates<'db>(
 
         fixed_expr =
             ExprAndId { expr: derefed_expr.clone(), id: ctx.arenas.exprs.alloc(derefed_expr) };
-
-        candidates = filter_candidate_traits(
-            ctx,
-            inference_errors,
-            deref_info.target_ty,
-            candidate_traits,
-            func_name,
-            method_syntax,
-        );
-        if !candidates.is_empty() {
-            fixed_ty = deref_info.target_ty;
-            break;
-        }
     }
-
-    Ok((candidates, fixed_expr, fixed_ty, true))
+    Ok((candidates, fixed_expr, deref_chain.derefs[last_deref_index].target_ty, true))
 }
 
 /// Computes the semantic model of a pattern.
@@ -3074,9 +3135,10 @@ fn create_variable_pattern<'db>(
             false
         }
     };
+    let allow_unused = ctx.resolver.data.feature_config.allowed_lints.contains(UNUSED_VARIABLES);
     Pattern::Variable(PatternVariable {
         name: identifier.text(db).into(),
-        var: LocalVariable { id: var_id, ty, is_mut },
+        var: LocalVariable { id: var_id, ty, is_mut, allow_unused },
         stable_ptr,
     })
 }
@@ -3167,7 +3229,7 @@ fn struct_ctor_expr<'db>(
                         arg_expr.ty(),
                         member.ty,
                         ctx.diagnostics,
-                        || arg_identifier.stable_ptr(db).untyped(),
+                        || arg_expr.stable_ptr().untyped(),
                         |actual_ty, expected_ty| WrongArgumentType { expected_ty, actual_ty },
                     )
                     .is_err()
@@ -3674,16 +3736,8 @@ fn get_enriched_type_member_access<'db>(
         ctx.resolver.inference().solve().ok();
         ty = ctx.reduce_ty(ty);
     }
-    let base_var = match &expr.expr {
-        Expr::Var(expr_var) => Some(expr_var.var),
-        Expr::MemberAccess(ExprMemberAccess { member_path: Some(member_path), .. }) => {
-            Some(member_path.base_var())
-        }
-        _ => None,
-    };
-    let is_mut_var = base_var
-        .filter(|var_id| matches!(ctx.semantic_defs.get(var_id), Some(var) if var.is_mut()))
-        .is_some();
+
+    let is_mut_var = expr.expr.is_mutable_var(&ctx.semantic_defs);
     let key = (ty, is_mut_var);
     let mut enriched_members = match ctx.resolver.type_enriched_members.entry(key) {
         Entry::Occupied(entry) => {
@@ -3727,7 +3781,7 @@ fn get_enriched_type_member_access<'db>(
             }
         }
     };
-    enrich_members(ctx, &mut enriched_members, stable_ptr, accessed_member_name.into())?;
+    enrich_members(ctx, &mut enriched_members, stable_ptr, accessed_member_name)?;
     let e = ctx.resolver.type_enriched_members.entry(key).or_insert(enriched_members);
     Ok(e.get_member(accessed_member_name))
 }
@@ -3740,7 +3794,7 @@ fn enrich_members<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     enriched_members: &mut EnrichedMembers<'db>,
     stable_ptr: ast::ExprPtr<'db>,
-    accessed_member_name: StrRef<'db>,
+    accessed_member_name: &str,
 ) -> Maybe<()> {
     let EnrichedMembers { members: enriched, deref_chain, explored_derefs } = enriched_members;
 
@@ -3755,7 +3809,7 @@ fn enrich_members<'db>(
                 enriched.entry(*member_name).or_insert_with(|| (member.clone(), *explored_derefs));
             }
             // If member is contained we can stop the calculation post the lookup.
-            if members.contains_key(&accessed_member_name) {
+            if members.contains_key(accessed_member_name) {
                 // Found member, so exploration isn't done.
                 break;
             }
@@ -4030,7 +4084,7 @@ fn maybe_pop_coupon_argument<'db>(
 ) -> Option<ExprId> {
     let mut coupon_arg: Option<ExprId> = None;
     if let Some(NamedArg(arg, Some(name_terminal), mutability)) = named_args.last() {
-        let coupons_enabled = are_coupons_enabled(ctx.db, ctx.resolver.module_file_id);
+        let coupons_enabled = are_coupons_enabled(ctx.db, ctx.resolver.module_file_id.0);
         if name_terminal.text(ctx.db) == "__coupon__" && coupons_enabled {
             // Check that the argument type is correct.
             let expected_ty = TypeLongId::Coupon(function_id).intern(ctx.db);
@@ -4112,17 +4166,10 @@ pub fn compute_and_append_statement_semantic<'db>(
     syntax: ast::Statement<'db>,
     statements: &mut Vec<StatementId>,
 ) -> Maybe<()> {
-    let db = ctx.db;
-    let crate_id = ctx.resolver.owning_crate_id;
+    // Push the statement's attributes into the context, restored after the computation is resolved.
+    let feature_restore = ctx.add_features_from_statement(&syntax);
 
-    // As for now, statement attributes does not have any semantic affect, so we only validate they
-    // are allowed.
-    validate_statement_attributes(ctx, &syntax);
-    let feature_restore = ctx
-        .resolver
-        .data
-        .feature_config
-        .override_with(extract_item_feature_config(db, crate_id, &syntax, ctx.diagnostics));
+    let db = ctx.db;
     let _ = match &syntax {
         ast::Statement::Let(let_syntax) => {
             let rhs_syntax = &let_syntax.rhs(db);
@@ -4198,6 +4245,7 @@ pub fn compute_and_append_statement_semantic<'db>(
                         &ctx.environment.used_variables,
                         &v.name,
                         &old_var,
+                        &ctx.resolver.data.feature_config,
                     );
                 }
                 if ctx.macro_defined_var_unhygienic
@@ -4386,7 +4434,7 @@ pub fn compute_and_append_statement_semantic<'db>(
                     let var_def = Binding::LocalItem(LocalItem {
                         id: StatementItemId::Constant(rhs_id.intern(db)),
                         kind: StatementItemKind::Constant(
-                            ConstValueId::new(db, rhs_resolved_expr.clone()),
+                            rhs_resolved_expr,
                             rhs_resolved_expr.ty(db)?,
                         ),
                     });
@@ -4411,11 +4459,12 @@ pub fn compute_and_append_statement_semantic<'db>(
                         let name = var_def_id.name(db);
                         match resolved_item {
                             ResolvedGenericItem::GenericConstant(const_id) => {
+                                let const_value_id = db.constant_const_value(const_id)?;
                                 let var_def = Binding::LocalItem(LocalItem {
                                     id: var_def_id,
                                     kind: StatementItemKind::Constant(
-                                        db.constant_const_value(const_id)?,
-                                        db.constant_const_type(const_id)?,
+                                        const_value_id,
+                                        const_value_id.ty(db)?,
                                     ),
                                 });
                                 add_value_to_statement_environment(ctx, name, var_def, stable_ptr);
@@ -4468,7 +4517,7 @@ pub fn compute_and_append_statement_semantic<'db>(
         }
         ast::Statement::Missing(_) => todo!(),
     };
-    ctx.resolver.data.feature_config.restore(feature_restore);
+    ctx.restore_features(feature_restore);
     Ok(())
 }
 /// Adds an item to the statement environment and reports a diagnostic if the item is already
@@ -4554,7 +4603,7 @@ fn check_struct_member_is_visible<'db>(
 /// reported.
 fn validate_statement_attributes<'db>(
     ctx: &mut ComputationContext<'db, '_>,
-    syntax: &ast::Statement<'db>,
+    item: &impl QueryAttrs<'db>,
 ) {
     let allowed_attributes = ctx.db.allowed_statement_attributes();
     let mut diagnostics = vec![];
@@ -4562,7 +4611,7 @@ fn validate_statement_attributes<'db>(
         ctx.db,
         allowed_attributes,
         &OrderedHashSet::default(),
-        syntax,
+        item,
         &mut diagnostics,
     );
     // Translate the plugin diagnostics to semantic diagnostics.

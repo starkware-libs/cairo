@@ -122,3 +122,87 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Calling deref on a box.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let mut a = BoxTrait::new(@array![1_u32]);
+    let _ = (*a);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Calling deref on DerefMut.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let mut a = S1 { inner: 1 };
+    let _ = (*a);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct S1 {
+    inner: usize,
+}
+
+impl S1DerefMut of core::ops::DerefMut<S1> {
+    type Target = usize;
+    fn deref_mut(ref self: S1) -> Self::Target {
+        self.inner
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Calling deref on DerefMut with non mutable variable.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let a = S1 { inner: 1 };
+    let _ = (*a);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct S1 {
+    inner: usize,
+}
+
+impl S1DerefMut of core::ops::DerefMut<S1> {
+    type Target = usize;
+    fn deref_mut(ref self: S1) -> Self::Target {
+        self.inner
+    }
+}
+
+//! > expected_diagnostics
+error: Type `test::S1` cannot be dereferenced
+ --> lib.cairo:13:14
+    let _ = (*a);
+             ^

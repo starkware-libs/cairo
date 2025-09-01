@@ -17,6 +17,7 @@ use cairo_lang_filesystem::ids::{CodeMapping, CrateId, CrateLongId, StrRef};
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::attribute::consts::DEPRECATED_ATTR;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -47,7 +48,8 @@ use crate::expr::inference::{Inference, InferenceData, InferenceId};
 use crate::items::constant::{ConstValue, ImplConstantId, resolve_const_expr_and_evaluate};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::{
-    FeatureConfig, FeatureKind, HasFeatureKind, extract_feature_config,
+    FeatureConfig, FeatureConfigRestore, FeatureKind, HasFeatureKind, feature_config_from_ast_item,
+    feature_config_from_item_and_parent_modules,
 };
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::generic_params_to_args;
@@ -159,7 +161,7 @@ pub struct EnrichedTypeMemberAccess<'db> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup)]
-pub enum MacroContextModifier {
+enum MacroContextModifier {
     /// The path is resolved in the macro definition site.
     DefSite,
     /// The path is resolved in the macro call site.
@@ -228,18 +230,37 @@ impl<'db> ResolverData<'db> {
 pub struct ResolverMacroData<'db> {
     /// The module file id of the macro definition site. It is used if the path begins with
     /// `$defsite`.
-    pub defsite_module_file_id: ModuleFileId<'db>,
+    pub defsite_module_id: ModuleId<'db>,
     /// The module file id of the macro call site. Items are resolved in this context in two cases:
     /// 1. The path begins with `$callsite`.
     /// 2. The path was supplied as a macro argument. In other words, the path is an expansion of a
     ///    placeholder and is not a part of the macro expansion template.
-    pub callsite_module_file_id: ModuleFileId<'db>,
+    pub callsite_module_id: ModuleId<'db>,
     /// This is the mappings of the macro expansion. It is used to determine if a part of the
     /// code came from a macro argument or from the macro expansion template.
     pub expansion_mappings: Arc<[CodeMapping]>,
     /// The parent macro data. Exists in case of a macro calling another macro, and is used if we
     /// climb to the callsite environment.
-    pub parent_macro_call_data: Option<Box<ResolverMacroData<'db>>>,
+    pub parent_macro_call_data: Option<Arc<ResolverMacroData<'db>>>,
+}
+
+/// Information for resolving a path in a macro context.
+struct MacroResolutionInfo<'db> {
+    /// The module where the resolved path is defined.
+    base: ModuleId<'db>,
+    /// The macro call data of the current resolution.
+    data: Option<Arc<ResolverMacroData<'db>>>,
+    /// The macro context modifier.
+    modifier: MacroContextModifier,
+}
+impl<'db> MacroResolutionInfo<'db> {
+    fn from_resolver(resolver: &Resolver<'db>) -> Self {
+        Self {
+            base: resolver.data.module_file_id.0,
+            data: resolver.macro_call_data.clone(),
+            modifier: MacroContextModifier::None,
+        }
+    }
 }
 
 /// Resolves paths semantically.
@@ -248,7 +269,7 @@ pub struct Resolver<'db> {
     pub data: ResolverData<'db>,
     /// The resolving context for macro related resolving. Should be `Some` only if the current
     /// code is an expansion of a macro.
-    pub macro_call_data: Option<ResolverMacroData<'db>>,
+    pub macro_call_data: Option<Arc<ResolverMacroData<'db>>>,
     /// If true, allow resolution of path through the module definition, without a modifier.
     /// Should be true only within plugin macros generated code, or item macro call generated code.
     pub default_module_allowed: bool,
@@ -276,7 +297,32 @@ impl<'db> Resolver<'db> {
         syntax: &impl QueryAttrs<'db>,
         diagnostics: &mut SemanticDiagnostics<'db>,
     ) {
-        self.feature_config = extract_feature_config(self.db, element_id, syntax, diagnostics);
+        self.feature_config =
+            feature_config_from_item_and_parent_modules(self.db, element_id, syntax, diagnostics);
+    }
+
+    /// Extends the current feature config with the contents of those extracted from the given item,
+    /// returns the original feature config for restoring it later.
+    /// IMPORTANT: don't forget to call `restore_feature_config`!
+    pub fn extend_feature_config_from_item(
+        &mut self,
+        db: &'db dyn SemanticGroup,
+        crate_id: CrateId<'db>,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        item: &impl QueryAttrs<'db>,
+    ) -> FeatureConfigRestore<'db> {
+        self.data.feature_config.override_with(feature_config_from_ast_item(
+            db,
+            crate_id,
+            item,
+            diagnostics,
+        ))
+    }
+
+    /// Restores the feature config to its state before [Self::extend_feature_config_from_item],
+    /// using the restoration state returned by that method.
+    pub fn restore_feature_config(&mut self, restore: FeatureConfigRestore<'db>) {
+        self.data.feature_config.restore(restore);
     }
 }
 
@@ -370,12 +416,15 @@ impl<'db> Resolver<'db> {
         let macro_call_data = match data.module_file_id.0 {
             ModuleId::CrateRoot(_) | ModuleId::Submodule(_) => None,
             ModuleId::MacroCall { id, .. } => match db.priv_macro_call_data(id) {
-                Ok(data) => Some(ResolverMacroData {
-                    defsite_module_file_id: data.defsite_module_file_id,
-                    callsite_module_file_id: data.callsite_module_file_id,
-                    expansion_mappings: data.expansion_mappings.clone(),
-                    parent_macro_call_data: data.parent_macro_call_data.clone(),
-                }),
+                Ok(data) => Some(
+                    ResolverMacroData {
+                        defsite_module_id: data.defsite_module_id,
+                        callsite_module_id: data.callsite_module_id,
+                        expansion_mappings: data.expansion_mappings.clone(),
+                        parent_macro_call_data: data.parent_macro_call_data,
+                    }
+                    .into(),
+                ),
                 Err(_) => None,
             },
         };
@@ -412,162 +461,48 @@ impl<'db> Resolver<'db> {
 
     /// Return the module_file_id, with respect to the macro context modifier, see
     /// [`MacroContextModifier`].
-    pub fn active_module_file_id(
-        &self,
-        macro_context_modifier: MacroContextModifier,
-    ) -> ModuleFileId<'db> {
-        match macro_context_modifier {
-            MacroContextModifier::DefSite => *self
-                .macro_call_data
-                .as_ref()
-                .map(|data| &data.defsite_module_file_id)
-                .expect("Non-default macro context is set only when macro_call_data is Some."),
-            MacroContextModifier::CallSite => *self
-                .macro_call_data
-                .as_ref()
-                .map(|data| &data.callsite_module_file_id)
-                .expect("Non-default macro context is set only when macro_call_data is Some."),
-            MacroContextModifier::None => self.data.module_file_id,
+    fn active_module_id(&self, info: &MacroResolutionInfo<'db>) -> ModuleId<'db> {
+        if let Some(data) = &info.data {
+            match info.modifier {
+                MacroContextModifier::DefSite => data.defsite_module_id,
+                MacroContextModifier::CallSite => data.callsite_module_id,
+                MacroContextModifier::None => info.base,
+            }
+        } else {
+            assert_eq!(info.modifier, MacroContextModifier::None);
+            info.base
         }
     }
 
     /// Return the module_file_id, with respect to the macro context modifier, see
     /// [`MacroContextModifier`].
-    pub fn try_get_active_module_id(
-        &self,
-        macro_context_modifier: MacroContextModifier,
-    ) -> Option<ModuleId<'db>> {
-        match macro_context_modifier {
-            MacroContextModifier::DefSite => {
-                self.macro_call_data.as_ref().map(|data| data.defsite_module_file_id.0)
+    fn try_get_active_module_id(&self, info: &MacroResolutionInfo<'db>) -> Option<ModuleId<'db>> {
+        if let Some(data) = &info.data {
+            match info.modifier {
+                MacroContextModifier::DefSite => Some(data.defsite_module_id),
+                MacroContextModifier::CallSite => Some(data.callsite_module_id),
+                MacroContextModifier::None => (data.callsite_module_id != info.base
+                    || self.default_module_allowed)
+                    .then_some(info.base),
             }
-            MacroContextModifier::CallSite => {
-                self.macro_call_data.as_ref().map(|data| data.callsite_module_file_id.0)
-            }
-            MacroContextModifier::None => (self.default_module_allowed
-                || self.macro_call_data.is_none())
-            .then_some(self.data.module_file_id.0),
+        } else {
+            Some(info.base)
         }
     }
 
     /// Returns the owning crate id of the active module file id, with respect to the macro context
     /// modifier, see [`MacroContextModifier`].
-    pub fn active_owning_crate_id(
-        &self,
-        macro_context_modifier: MacroContextModifier,
-    ) -> CrateId<'db> {
-        self.active_module_file_id(macro_context_modifier).0.owning_crate(self.db)
+    fn active_owning_crate_id(&self, info: &MacroResolutionInfo<'db>) -> CrateId<'db> {
+        self.active_module_id(info).owning_crate(self.db)
     }
 
     /// Returns the active settings of the owning crate, with respect to the macro context
     /// modifier, see [`MacroContextModifier`].
-    pub fn active_settings(&self, macro_context_modifier: MacroContextModifier) -> &CrateSettings {
+    fn active_settings(&self, info: &MacroResolutionInfo<'db>) -> &CrateSettings {
         self.db
-            .crate_config(self.active_owning_crate_id(macro_context_modifier))
+            .crate_config(self.active_owning_crate_id(info))
             .map(|c| &c.settings)
             .unwrap_or_else(|| default_crate_settings(self.db))
-    }
-
-    /// Resolves an item, given a path.
-    /// Guaranteed to result in at most one diagnostic.
-    fn resolve_path_inner<'a, ResolvedItem: Clone>(
-        &'a mut self,
-        diagnostics: &mut SemanticDiagnostics<'db>,
-        path: impl AsSegments<'db>,
-        item_type: NotFoundItemType,
-        mut callbacks: ResolvePathInnerCallbacks<
-            'db,
-            ResolvedItem,
-            impl FnOnce(
-                &mut Resolver<'db>,
-                &mut SemanticDiagnostics<'db>,
-                &mut Peekable<std::slice::Iter<'_, ast::PathSegment<'db>>>,
-                NotFoundItemType,
-                MacroContextModifier,
-            ) -> Maybe<ResolvedItem>,
-            impl FnMut(
-                &mut Resolver<'db>,
-                &mut SemanticDiagnostics<'db>,
-                &ResolvedItem,
-                &ast::PathSegment<'db>,
-                NotFoundItemType,
-                MacroContextModifier,
-            ) -> Maybe<ResolvedItem>,
-            impl FnMut(&mut SemanticDiagnostics<'db>, &ast::PathSegment<'db>) -> Maybe<()>,
-            impl FnMut(
-                &mut ResolvedItems<'db>,
-                &'db dyn SemanticGroup,
-                &syntax::node::ast::PathSegment<'db>,
-                ResolvedItem,
-            ),
-        >,
-    ) -> Maybe<ResolvedItem>
-    where
-        'db: 'a,
-    {
-        let db = self.db;
-        let placeholder_marker = path.placeholder_marker(db);
-
-        let mut cur_offset =
-            ExpansionOffset::new(path.offset(db).expect("Trying to resolve an empty path."));
-        let elements_vec = path.to_segments(db);
-        let mut segments = elements_vec.iter().peekable();
-        let mut cur_macro_call_data = self.macro_call_data.as_ref();
-        // Climb up the macro call data while the current resolved path is being mapped to an
-        // argument of a macro call.
-        while let Some(macro_call_data) = &cur_macro_call_data {
-            if let Some(new_offset) = cur_offset.mapped(&macro_call_data.expansion_mappings) {
-                cur_macro_call_data =
-                    macro_call_data.parent_macro_call_data.as_ref().map(|data| data.as_ref());
-                cur_offset = new_offset;
-                continue;
-            }
-            break;
-        }
-
-        let macro_context_modifier = if let Some(marker) = placeholder_marker {
-            if cur_macro_call_data.is_some() {
-                self.handle_macro_context_modifier(diagnostics, &mut segments)?
-            } else {
-                return Err(
-                    diagnostics.report(marker.stable_ptr(self.db), DollarNotSupportedInContext)
-                );
-            }
-        } else {
-            MacroContextModifier::None
-        };
-        let base_item_type =
-            if segments.len() == 1 { item_type } else { NotFoundItemType::Identifier };
-        // Find where the first segment lies in.
-        let mut item: ResolvedItem = (callbacks.resolve_path_first_segment)(
-            self,
-            diagnostics,
-            &mut segments,
-            base_item_type,
-            macro_context_modifier,
-        )?;
-
-        // Follow modules.
-        while let Some(segment) = segments.next() {
-            (callbacks.validate_segment)(diagnostics, segment)?;
-
-            // If this is not the last segment, set the expected type to
-            // [NotFoundItemType::Identifier].
-            let cur_item_type =
-                if segments.peek().is_some() { NotFoundItemType::Identifier } else { item_type };
-            // `?` is ok here as the rest of the segments have no meaning if the current one can't
-            // be resolved.
-            item = (callbacks.resolve_path_next_segment)(
-                self,
-                diagnostics,
-                &item,
-                segment,
-                cur_item_type,
-                macro_context_modifier,
-            )?;
-            (callbacks.mark)(&mut self.resolved_items, db, segment, item.clone());
-        }
-        Ok(item)
     }
 
     /// Resolves a concrete item, given a path.
@@ -591,231 +526,17 @@ impl<'db> Resolver<'db> {
         item_type: NotFoundItemType,
         ctx: ResolutionContext<'db, '_>,
     ) -> Maybe<ResolvedConcreteItem<'db>> {
-        self.resolve_path_inner::<ResolvedConcreteItem<'db>>(
-            diagnostics,
-            path,
-            item_type,
-            ResolvePathInnerCallbacks {
-                resolved_item_type: PhantomData,
-                resolve_path_first_segment:
-                    |resolver, diagnostics, segments, item_type, macro_context_modifier| {
-                        resolver.resolve_concrete_path_first_segment(
-                            diagnostics,
-                            segments,
-                            ctx,
-                            item_type,
-                            macro_context_modifier,
-                        )
-                    },
-                resolve_path_next_segment:
-                    |resolver, diagnostics, item, segment, item_type, macro_context_modifier| {
-                        resolver.resolve_path_next_segment_concrete(
-                            diagnostics,
-                            item,
-                            segment,
-                            item_type,
-                            macro_context_modifier,
-                        )
-                    },
-                validate_segment: |_, _| Ok(()),
+        Resolution::new(self, diagnostics, path, item_type, ctx)?.full::<ResolvedConcreteItem<'db>>(
+            ResolutionCallbacks {
+                _phantom: PhantomData,
+                first: |resolution| resolution.first_concrete(),
+                next: |resolution, item, segment| resolution.next_concrete(item, segment),
+                validate: |_, _| Ok(()),
                 mark: |resolved_items: &mut ResolvedItems<'db>, db, segment, item| {
                     resolved_items.mark_concrete(db, segment, item);
                 },
             },
         )
-    }
-
-    /// Specializes the item found in the current segment, and checks its usability.
-    fn specialize_generic_inner_item(
-        &mut self,
-        diagnostics: &mut SemanticDiagnostics<'db>,
-        module_id: ModuleId<'db>,
-        identifier: &TerminalIdentifier<'db>,
-        inner_item_info: ModuleItemInfo<'db>,
-        segment: &ast::PathSegment<'db>,
-        macro_context_modifier: MacroContextModifier,
-    ) -> Maybe<ResolvedConcreteItem<'db>> {
-        let generic_args_syntax = segment.generic_args(self.db);
-        let segment_stable_ptr = segment.stable_ptr(self.db).untyped();
-        self.validate_module_item_usability(
-            diagnostics,
-            module_id,
-            identifier,
-            &inner_item_info,
-            macro_context_modifier,
-        );
-        self.insert_used_use(inner_item_info.item_id);
-        let inner_generic_item =
-            ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)?;
-        let mut specialized_item = self.specialize_generic_module_item(
-            diagnostics,
-            identifier,
-            inner_generic_item.clone(),
-            generic_args_syntax.clone(),
-        )?;
-        self.data.resolved_items.generic.insert(identifier.stable_ptr(self.db), inner_generic_item);
-        self.handle_same_impl_trait(
-            diagnostics,
-            &mut specialized_item,
-            &generic_args_syntax.unwrap_or_default(),
-            segment_stable_ptr,
-        );
-        Ok(specialized_item)
-    }
-
-    /// Resolves the first segment of a concrete path.
-    fn resolve_concrete_path_first_segment(
-        &mut self,
-        diagnostics: &mut SemanticDiagnostics<'db>,
-        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment<'db>>>,
-        ctx: ResolutionContext<'db, '_>,
-        item_type: NotFoundItemType,
-        macro_context_modifier: MacroContextModifier,
-    ) -> Maybe<ResolvedConcreteItem<'db>> {
-        if let Some(base_module) = self.try_handle_super_segments(
-            diagnostics,
-            segments,
-            |resolved_items, db, segment, module_id| {
-                resolved_items.mark_concrete(db, segment, ResolvedConcreteItem::Module(module_id));
-            },
-            macro_context_modifier,
-        ) {
-            return Ok(ResolvedConcreteItem::Module(base_module?));
-        }
-
-        let db = self.db;
-        Ok(match segments.peek().unwrap() {
-            syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
-                let identifier = generic_segment.ident(db);
-                // Identifier with generic args cannot be a local item.
-                match self.determine_base(
-                    diagnostics,
-                    &identifier,
-                    ctx,
-                    item_type,
-                    macro_context_modifier,
-                )? {
-                    ResolvedBase::Module(module_id) => ResolvedConcreteItem::Module(module_id),
-                    ResolvedBase::Crate(_) => {
-                        // Crates do not have generics.
-                        return Err(diagnostics.report(
-                            generic_segment.generic_args(db).stable_ptr(db),
-                            UnexpectedGenericArgs,
-                        ));
-                    }
-                    ResolvedBase::StatementEnvironment(generic_item) => {
-                        let segment = segments.next().unwrap();
-                        let concrete_item = self.specialize_generic_statement_arg(
-                            segment,
-                            diagnostics,
-                            &identifier,
-                            generic_item,
-                            segment.generic_args(db),
-                        );
-                        self.resolved_items.mark_concrete(db, segment, concrete_item)
-                    }
-                    ResolvedBase::FoundThroughGlobalUse {
-                        item_info: inner_module_item,
-                        containing_module: module_id,
-                    } => {
-                        let segment = segments.next().unwrap();
-
-                        let concrete_item = self.specialize_generic_inner_item(
-                            diagnostics,
-                            module_id,
-                            &identifier,
-                            inner_module_item,
-                            segment,
-                            macro_context_modifier,
-                        )?;
-                        self.resolved_items.mark_concrete(db, segment, concrete_item)
-                    }
-                    ResolvedBase::Ambiguous(module_items) => {
-                        return Err(diagnostics
-                            .report(identifier.stable_ptr(db), AmbiguousPath(module_items)));
-                    }
-                    ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
-                        return Err(diagnostics.report(
-                            identifier.stable_ptr(db),
-                            ItemNotVisible(module_item_id, containing_modules),
-                        ));
-                    }
-                }
-            }
-            syntax::node::ast::PathSegment::Simple(simple_segment) => {
-                let identifier = simple_segment.ident(db);
-
-                if let Some(resolved_item) =
-                    resolve_self_segment(db, diagnostics, &identifier, &self.data.trait_or_impl_ctx)
-                {
-                    // The first segment is `Self`. Consume it and return.
-                    return Ok(self.resolved_items.mark_concrete(
-                        db,
-                        segments.next().unwrap(),
-                        resolved_item?,
-                    ));
-                }
-
-                if let Some(local_item) = self.determine_base_item_in_local_scope(&identifier) {
-                    self.resolved_items.mark_concrete(db, segments.next().unwrap(), local_item)
-                } else {
-                    match self.determine_base(
-                        diagnostics,
-                        &identifier,
-                        ctx,
-                        item_type,
-                        macro_context_modifier,
-                    )? {
-                        // This item lies inside a module.
-                        ResolvedBase::Module(module_id) => ResolvedConcreteItem::Module(module_id),
-                        ResolvedBase::Crate(crate_id) => self.resolved_items.mark_concrete(
-                            db,
-                            segments.next().unwrap(),
-                            ResolvedConcreteItem::Module(ModuleId::CrateRoot(crate_id)),
-                        ),
-                        ResolvedBase::StatementEnvironment(generic_item) => {
-                            let segment = segments.next().unwrap();
-
-                            let concrete_item = self.specialize_generic_statement_arg(
-                                segment,
-                                diagnostics,
-                                &identifier,
-                                generic_item,
-                                segment.generic_args(db),
-                            );
-                            self.resolved_items.mark_concrete(db, segment, concrete_item)
-                        }
-                        ResolvedBase::FoundThroughGlobalUse {
-                            item_info: inner_module_item,
-                            containing_module: module_id,
-                        } => {
-                            let segment = segments.next().unwrap();
-                            let concrete_item = self.specialize_generic_inner_item(
-                                diagnostics,
-                                module_id,
-                                &identifier,
-                                inner_module_item,
-                                segment,
-                                macro_context_modifier,
-                            )?;
-                            self.resolved_items.mark_concrete(db, segment, concrete_item)
-                        }
-                        ResolvedBase::Ambiguous(module_items) => {
-                            return Err(diagnostics
-                                .report(identifier.stable_ptr(db), AmbiguousPath(module_items)));
-                        }
-                        ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
-                            return Err(diagnostics.report(
-                                identifier.stable_ptr(db),
-                                ItemNotVisible(module_item_id, containing_modules),
-                            ));
-                        }
-                    }
-                }
-            }
-            // A diagnostic for the missing segment should have been reported from the syntax phase.
-            syntax::node::ast::PathSegment::Missing(_) => return Err(skip_diagnostic()),
-        })
     }
 
     /// Resolves a generic item, given a path.
@@ -882,8 +603,8 @@ impl<'db> Resolver<'db> {
         allow_generic_args: bool,
         ctx: ResolutionContext<'db, '_>,
     ) -> Maybe<ResolvedGenericItem<'db>> {
-        let validate_segment = |diagnostics: &mut SemanticDiagnostics<'db>,
-                                segment: &ast::PathSegment<'db>| {
+        let validate = |diagnostics: &mut SemanticDiagnostics<'db>,
+                        segment: &ast::PathSegment<'db>| {
             match segment {
                 ast::PathSegment::WithGenericArgs(generic_args) if !allow_generic_args => {
                     Err(diagnostics.report(generic_args.stable_ptr(self.db), UnexpectedGenericArgs))
@@ -891,551 +612,17 @@ impl<'db> Resolver<'db> {
                 _ => Ok(()),
             }
         };
-        self.resolve_path_inner::<ResolvedGenericItem<'_>>(
-            diagnostics,
-            path,
-            item_type,
-            ResolvePathInnerCallbacks {
-                resolved_item_type: PhantomData,
-                resolve_path_first_segment:
-                    |resolver, diagnostics, segments, item_type, macro_context_modifier| {
-                        resolver.resolve_generic_path_first_segment(
-                            diagnostics,
-                            segments,
-                            allow_generic_args,
-                            ctx,
-                            item_type,
-                            macro_context_modifier,
-                        )
-                    },
-                resolve_path_next_segment:
-                    |resolver, diagnostics, item, segment, item_type, macro_context_modifier| {
-                        let identifier = segment.identifier_ast(self.db);
-                        resolver.resolve_path_next_segment_generic(
-                            diagnostics,
-                            item,
-                            &identifier,
-                            item_type,
-                            macro_context_modifier,
-                        )
-                    },
-                validate_segment,
+        Resolution::new(self, diagnostics, path, item_type, ctx)?.full::<ResolvedGenericItem<'_>>(
+            ResolutionCallbacks {
+                _phantom: PhantomData,
+                first: |resolution| resolution.first_generic(allow_generic_args),
+                next: |resolution, item, segment| resolution.next_generic(item, segment),
+                validate,
                 mark: |resolved_items, db, segment, item| {
                     resolved_items.mark_generic(db, segment, item);
                 },
             },
         )
-    }
-
-    /// Resolves the first segment of a generic path.
-    /// If `allow_generic_args` is true the generic args will be ignored.
-    fn resolve_generic_path_first_segment(
-        &mut self,
-        diagnostics: &mut SemanticDiagnostics<'db>,
-        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment<'db>>>,
-        allow_generic_args: bool,
-        ctx: ResolutionContext<'db, '_>,
-        item_type: NotFoundItemType,
-        macro_context_modifier: MacroContextModifier,
-    ) -> Maybe<ResolvedGenericItem<'db>> {
-        if let Some(base_module) = self.try_handle_super_segments(
-            diagnostics,
-            segments,
-            |resolved_items, db, segment, module_id| {
-                resolved_items.mark_generic(db, segment, ResolvedGenericItem::Module(module_id));
-            },
-            macro_context_modifier,
-        ) {
-            return Ok(ResolvedGenericItem::Module(base_module?));
-        }
-        let db = self.db;
-        Ok(match segments.peek().unwrap() {
-            syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
-                if !allow_generic_args {
-                    return Err(diagnostics.report(
-                        generic_segment.generic_args(db).stable_ptr(db),
-                        UnexpectedGenericArgs,
-                    ));
-                }
-                let identifier = generic_segment.ident(db);
-                match self.determine_base(
-                    diagnostics,
-                    &identifier,
-                    ctx,
-                    item_type,
-                    macro_context_modifier,
-                )? {
-                    ResolvedBase::Module(module_id) => ResolvedGenericItem::Module(module_id),
-                    ResolvedBase::Crate(_) => {
-                        // Crates do not have generics.
-                        return Err(diagnostics.report(
-                            generic_segment.generic_args(db).stable_ptr(db),
-                            UnexpectedGenericArgs,
-                        ));
-                    }
-                    ResolvedBase::StatementEnvironment(generic_item) => generic_item,
-                    ResolvedBase::FoundThroughGlobalUse {
-                        item_info: inner_module_item, ..
-                    } => {
-                        self.insert_used_use(inner_module_item.item_id);
-                        let generic_item = ResolvedGenericItem::from_module_item(
-                            self.db,
-                            inner_module_item.item_id,
-                        )?;
-                        self.resolved_items.mark_generic(db, segments.next().unwrap(), generic_item)
-                    }
-                    ResolvedBase::Ambiguous(module_items) => {
-                        return Err(diagnostics
-                            .report(identifier.stable_ptr(db), AmbiguousPath(module_items)));
-                    }
-                    ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
-                        return Err(diagnostics.report(
-                            identifier.stable_ptr(db),
-                            ItemNotVisible(module_item_id, containing_modules),
-                        ));
-                    }
-                }
-            }
-            syntax::node::ast::PathSegment::Simple(simple_segment) => {
-                let identifier = simple_segment.ident(db);
-                match self.determine_base(
-                    diagnostics,
-                    &identifier,
-                    ctx,
-                    item_type,
-                    macro_context_modifier,
-                )? {
-                    // This item lies inside a module.
-                    ResolvedBase::Module(module_id) => ResolvedGenericItem::Module(module_id),
-                    ResolvedBase::Crate(crate_id) => self.resolved_items.mark_generic(
-                        db,
-                        segments.next().unwrap(),
-                        ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id)),
-                    ),
-                    ResolvedBase::StatementEnvironment(generic_item) => {
-                        self.resolved_items.mark_generic(db, segments.next().unwrap(), generic_item)
-                    }
-                    ResolvedBase::FoundThroughGlobalUse {
-                        item_info: inner_module_item, ..
-                    } => {
-                        self.insert_used_use(inner_module_item.item_id);
-                        let generic_item = ResolvedGenericItem::from_module_item(
-                            self.db,
-                            inner_module_item.item_id,
-                        )?;
-                        self.resolved_items.mark_generic(db, segments.next().unwrap(), generic_item)
-                    }
-                    ResolvedBase::Ambiguous(module_items) => {
-                        return Err(diagnostics
-                            .report(identifier.stable_ptr(db), AmbiguousPath(module_items)));
-                    }
-                    ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
-                        return Err(diagnostics.report(
-                            identifier.stable_ptr(db),
-                            ItemNotVisible(module_item_id, containing_modules),
-                        ));
-                    }
-                }
-            }
-            // A diagnostic for the missing segment should have been reported from the syntax phase.
-            syntax::node::ast::PathSegment::Missing(_) => return Err(skip_diagnostic()),
-        })
-    }
-
-    /// Handles `super::` initial segments, by removing them, and returning the valid module if
-    /// exists. If there's none - returns None.
-    /// If there are, but that's an invalid path, adds to diagnostics and returns `Some(Err)`.
-    fn try_handle_super_segments(
-        &mut self,
-        diagnostics: &mut SemanticDiagnostics<'db>,
-        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment<'db>>>,
-        mut mark: impl FnMut(
-            &mut ResolvedItems<'db>,
-            &'db dyn SemanticGroup,
-            &syntax::node::ast::PathSegment<'db>,
-            ModuleId<'db>,
-        ),
-        macro_context_modifier: MacroContextModifier,
-    ) -> Option<Maybe<ModuleId<'db>>> {
-        let db = self.db;
-        let mut curr = None;
-        for segment in segments.peeking_take_while(|segment| match segment {
-            ast::PathSegment::WithGenericArgs(_) | ast::PathSegment::Missing(_) => false,
-            ast::PathSegment::Simple(simple) => simple.identifier(db) == SUPER_KW,
-        }) {
-            let module_id = match curr {
-                Some(module_id) => module_id,
-                None => {
-                    if let Some(module_id) = self.try_get_active_module_id(macro_context_modifier) {
-                        module_id
-                    } else {
-                        return Some(Err(diagnostics
-                            .report(segment.stable_ptr(db), SuperUsedInMacroCallTopLevel)));
-                    }
-                }
-            };
-            match module_id {
-                ModuleId::CrateRoot(_) => {
-                    return Some(Err(
-                        diagnostics.report(segment.stable_ptr(db), SuperUsedInRootModule)
-                    ));
-                }
-                ModuleId::Submodule(submodule_id) => {
-                    let db = self.db;
-                    let parent = submodule_id.parent_module(self.db);
-                    mark(&mut self.resolved_items, db, segment, parent);
-                    curr = Some(parent);
-                }
-                ModuleId::MacroCall { id: _, generated_file_id: _ } => {
-                    return Some(Err(
-                        diagnostics.report(segment.stable_ptr(db), SuperUsedInMacroCallTopLevel)
-                    ));
-                }
-            }
-        }
-        curr.map(Ok)
-    }
-
-    /// Resolves the inner item of a module, given the current segment of the path.
-    fn resolve_module_inner_item(
-        &mut self,
-        module_id: &ModuleId<'db>,
-        ident: &'db str,
-        diagnostics: &mut SemanticDiagnostics<'db>,
-        identifier: &TerminalIdentifier<'db>,
-        item_type: NotFoundItemType,
-    ) -> Maybe<ModuleItemInfo<'db>> {
-        let db = self.db;
-        match self.db.module_item_info_by_name(*module_id, ident.into())? {
-            Some(info) => Ok(info),
-            None => {
-                if let Some((info, _macro_mod)) =
-                    self.resolve_item_in_macro_calls(*module_id, identifier)
-                {
-                    return Ok(info);
-                }
-                match self.resolve_path_using_use_star(*module_id, ident) {
-                    UseStarResult::UniquePathFound(item_info) => Ok(item_info),
-                    UseStarResult::AmbiguousPath(module_items) => {
-                        Err(diagnostics
-                            .report(identifier.stable_ptr(db), AmbiguousPath(module_items)))
-                    }
-                    UseStarResult::PathNotFound => {
-                        Err(diagnostics.report(identifier.stable_ptr(db), PathNotFound(item_type)))
-                    }
-                    UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
-                        Err(diagnostics.report(
-                            identifier.stable_ptr(db),
-                            ItemNotVisible(module_item_id, containing_modules),
-                        ))
-                    }
-                }
-            }
-        }
-    }
-
-    /// Given the current resolved item, resolves the next segment.
-    fn resolve_path_next_segment_concrete(
-        &mut self,
-        diagnostics: &mut SemanticDiagnostics<'db>,
-        containing_item: &ResolvedConcreteItem<'db>,
-        segment: &ast::PathSegment<'db>,
-        item_type: NotFoundItemType,
-        macro_context_modifier: MacroContextModifier,
-    ) -> Maybe<ResolvedConcreteItem<'db>> {
-        let db = self.db;
-        let identifier = &segment.identifier_ast(db);
-        let generic_args_syntax = segment.generic_args(db);
-
-        let ident = identifier.text(db);
-
-        if identifier.text(db) == SELF_TYPE_KW {
-            return Err(diagnostics.report(identifier.stable_ptr(db), SelfMustBeFirst));
-        }
-
-        match containing_item {
-            ResolvedConcreteItem::Module(module_id) => {
-                // Prefix `super` segments should be removed earlier. Middle `super` segments are
-                // not allowed.
-                if ident == SUPER_KW {
-                    return Err(diagnostics.report(identifier.stable_ptr(db), InvalidPath));
-                }
-                let inner_item_info = self.resolve_module_inner_item(
-                    module_id,
-                    ident,
-                    diagnostics,
-                    identifier,
-                    item_type,
-                )?;
-
-                self.specialize_generic_inner_item(
-                    diagnostics,
-                    *module_id,
-                    identifier,
-                    inner_item_info,
-                    segment,
-                    macro_context_modifier,
-                )
-            }
-            ResolvedConcreteItem::Type(ty) => {
-                if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) =
-                    ty.long(self.db)
-                {
-                    let enum_id = concrete_enum_id.enum_id(self.db);
-                    let variants = self
-                        .db
-                        .enum_variants(enum_id)
-                        .map_err(|_| diagnostics.report(identifier.stable_ptr(db), UnknownEnum))?;
-                    let variant_id = variants.get(ident).ok_or_else(|| {
-                        diagnostics.report(
-                            identifier.stable_ptr(db),
-                            NoSuchVariant { enum_id, variant_name: ident.into() },
-                        )
-                    })?;
-                    let variant = self.db.variant_semantic(enum_id, *variant_id)?;
-                    let concrete_variant =
-                        self.db.concrete_enum_variant(*concrete_enum_id, &variant)?;
-                    Ok(ResolvedConcreteItem::Variant(concrete_variant))
-                } else {
-                    Err(diagnostics.report(identifier.stable_ptr(db), InvalidPath))
-                }
-            }
-            ResolvedConcreteItem::SelfTrait(concrete_trait_id) => {
-                let impl_id = ImplLongId::SelfImpl(*concrete_trait_id).intern(self.db);
-                let Some(trait_item_id) = self
-                    .db
-                    .trait_item_by_name(concrete_trait_id.trait_id(self.db), ident.into())?
-                else {
-                    return Err(diagnostics.report(identifier.stable_ptr(db), InvalidPath));
-                };
-                if let Ok(Some(trait_item_info)) = self
-                    .db
-                    .trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident.into())
-                {
-                    self.validate_feature_constraints(diagnostics, identifier, &trait_item_info);
-                }
-                Ok(match trait_item_id {
-                    TraitItemId::Function(trait_function_id) => {
-                        ResolvedConcreteItem::Function(self.specialize_function(
-                            diagnostics,
-                            identifier.stable_ptr(db).untyped(),
-                            GenericFunctionId::Impl(ImplGenericFunctionId {
-                                impl_id,
-                                function: trait_function_id,
-                            }),
-                            &generic_args_syntax.unwrap_or_default(),
-                        )?)
-                    }
-                    TraitItemId::Type(trait_type_id) => ResolvedConcreteItem::Type(
-                        TypeLongId::ImplType(ImplTypeId::new(impl_id, trait_type_id, self.db))
-                            .intern(self.db),
-                    ),
-                    TraitItemId::Constant(trait_constant_id) => ResolvedConcreteItem::Constant(
-                        ConstValue::ImplConstant(ImplConstantId::new(
-                            impl_id,
-                            trait_constant_id,
-                            self.db,
-                        ))
-                        .intern(self.db),
-                    ),
-                    TraitItemId::Impl(trait_impl_id) => ResolvedConcreteItem::Impl(
-                        ImplLongId::ImplImpl(ImplImplId::new(impl_id, trait_impl_id, self.db))
-                            .intern(self.db),
-                    ),
-                })
-            }
-            ResolvedConcreteItem::Trait(concrete_trait_id) => {
-                let Some(trait_item_id) = self
-                    .db
-                    .trait_item_by_name(concrete_trait_id.trait_id(self.db), ident.into())?
-                else {
-                    return Err(diagnostics.report(identifier.stable_ptr(db), InvalidPath));
-                };
-
-                if let Ok(Some(trait_item_info)) = self
-                    .db
-                    .trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident.into())
-                {
-                    self.validate_feature_constraints(diagnostics, identifier, &trait_item_info);
-                }
-
-                match trait_item_id {
-                    TraitItemId::Function(trait_function_id) => {
-                        let concrete_trait_function = ConcreteTraitGenericFunctionLongId::new(
-                            self.db,
-                            *concrete_trait_id,
-                            trait_function_id,
-                        )
-                        .intern(self.db);
-                        let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
-                        let impl_lookup_context =
-                            self.impl_lookup_context_ex(macro_context_modifier);
-                        let generic_function =
-                            GenericFunctionId::Impl(self.inference().infer_trait_generic_function(
-                                concrete_trait_function,
-                                impl_lookup_context,
-                                Some(identifier_stable_ptr),
-                            ));
-
-                        Ok(ResolvedConcreteItem::Function(self.specialize_function(
-                            diagnostics,
-                            identifier_stable_ptr,
-                            generic_function,
-                            &generic_args_syntax.unwrap_or_default(),
-                        )?))
-                    }
-                    TraitItemId::Type(trait_type_id) => {
-                        let concrete_trait_type = ConcreteTraitTypeId::new_from_data(
-                            self.db,
-                            *concrete_trait_id,
-                            trait_type_id,
-                        );
-
-                        let impl_lookup_context =
-                            self.impl_lookup_context_ex(macro_context_modifier);
-                        let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
-                        let ty = self.inference().infer_trait_type(
-                            concrete_trait_type,
-                            impl_lookup_context,
-                            Some(identifier_stable_ptr),
-                        );
-                        Ok(ResolvedConcreteItem::Type(self.inference().rewrite(ty).no_err()))
-                    }
-                    TraitItemId::Constant(trait_constant_id) => {
-                        let concrete_trait_constant = ConcreteTraitConstantLongId::new(
-                            self.db,
-                            *concrete_trait_id,
-                            trait_constant_id,
-                        )
-                        .intern(self.db);
-
-                        let impl_lookup_context =
-                            self.impl_lookup_context_ex(macro_context_modifier);
-                        let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
-                        let imp_constant_id = self.inference().infer_trait_constant(
-                            concrete_trait_constant,
-                            impl_lookup_context,
-                            Some(identifier_stable_ptr),
-                        );
-                        // Make sure the inference is solved for successful impl lookup
-                        // Ignore the result of the `solve()` call - the error, if any, will be
-                        // reported later.
-                        self.inference().solve().ok();
-
-                        Ok(ResolvedConcreteItem::Constant(
-                            ConstValue::ImplConstant(imp_constant_id).intern(self.db),
-                        ))
-                    }
-                    TraitItemId::Impl(trait_impl_id) => {
-                        let concrete_trait_impl = ConcreteTraitImplLongId::new_from_data(
-                            self.db,
-                            *concrete_trait_id,
-                            trait_impl_id,
-                        )
-                        .intern(self.db);
-
-                        let impl_lookup_context =
-                            self.impl_lookup_context_ex(macro_context_modifier);
-                        let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
-                        let impl_impl_id = self.inference().infer_trait_impl(
-                            concrete_trait_impl,
-                            impl_lookup_context,
-                            Some(identifier_stable_ptr),
-                        );
-                        // Make sure the inference is solved for successful impl lookup
-                        // Ignore the result of the `solve()` call - the error, if any, will be
-                        // reported later.
-                        self.inference().solve().ok();
-
-                        Ok(ResolvedConcreteItem::Impl(
-                            ImplLongId::ImplImpl(impl_impl_id).intern(self.db),
-                        ))
-                    }
-                }
-            }
-            ResolvedConcreteItem::Impl(impl_id) => {
-                let concrete_trait_id = self.db.impl_concrete_trait(*impl_id)?;
-                let trait_id = concrete_trait_id.trait_id(self.db);
-                let Some(trait_item_id) = self.db.trait_item_by_name(trait_id, ident.into())?
-                else {
-                    return Err(diagnostics.report(identifier.stable_ptr(db), InvalidPath));
-                };
-                if let Ok(Some(trait_item_info)) = self
-                    .db
-                    .trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident.into())
-                {
-                    self.validate_feature_constraints(diagnostics, identifier, &trait_item_info);
-                }
-                if let ImplLongId::Concrete(concrete_impl) = impl_id.long(self.db) {
-                    let impl_def_id: ImplDefId<'_> = concrete_impl.impl_def_id(self.db);
-
-                    if let Ok(Some(impl_item_info)) =
-                        self.db.impl_item_info_by_name(impl_def_id, ident.into())
-                    {
-                        self.validate_feature_constraints(diagnostics, identifier, &impl_item_info);
-                    }
-                }
-
-                match trait_item_id {
-                    TraitItemId::Function(trait_function_id) => {
-                        let generic_function_id = GenericFunctionId::Impl(ImplGenericFunctionId {
-                            impl_id: *impl_id,
-                            function: trait_function_id,
-                        });
-
-                        Ok(ResolvedConcreteItem::Function(self.specialize_function(
-                            diagnostics,
-                            identifier.stable_ptr(db).untyped(),
-                            generic_function_id,
-                            &generic_args_syntax.unwrap_or_default(),
-                        )?))
-                    }
-                    TraitItemId::Type(trait_type_id) => {
-                        let impl_type_id = ImplTypeId::new(*impl_id, trait_type_id, self.db);
-                        let ty = self
-                            .inference()
-                            .reduce_impl_ty(impl_type_id)
-                            .unwrap_or_else(|_| TypeLongId::ImplType(impl_type_id).intern(self.db));
-                        Ok(ResolvedConcreteItem::Type(ty))
-                    }
-                    TraitItemId::Constant(trait_constant_id) => {
-                        let impl_constant_id =
-                            ImplConstantId::new(*impl_id, trait_constant_id, self.db);
-
-                        let constant =
-                            self.inference().reduce_impl_constant(impl_constant_id).unwrap_or_else(
-                                |_| ConstValue::ImplConstant(impl_constant_id).intern(self.db),
-                            );
-
-                        Ok(ResolvedConcreteItem::Constant(constant))
-                    }
-                    TraitItemId::Impl(trait_impl_id) => {
-                        let impl_impl_id = ImplImplId::new(*impl_id, trait_impl_id, self.db);
-                        let imp = self
-                            .inference()
-                            .reduce_impl_impl(impl_impl_id)
-                            .unwrap_or_else(|_| ImplLongId::ImplImpl(impl_impl_id).intern(self.db));
-
-                        Ok(ResolvedConcreteItem::Impl(imp))
-                    }
-                }
-            }
-            ResolvedConcreteItem::Function(function_id) if ident == "Coupon" => {
-                if !are_coupons_enabled(self.db, self.active_module_file_id(macro_context_modifier))
-                {
-                    diagnostics.report(identifier.stable_ptr(db), CouponsDisabled);
-                }
-                if matches!(
-                    function_id.get_concrete(self.db).generic_function,
-                    GenericFunctionId::Extern(_)
-                ) {
-                    return Err(diagnostics
-                        .report(identifier.stable_ptr(db), CouponForExternFunctionNotAllowed));
-                }
-                Ok(ResolvedConcreteItem::Type(TypeLongId::Coupon(*function_id).intern(self.db)))
-            }
-            _ => Err(diagnostics.report(identifier.stable_ptr(db), InvalidPath)),
-        }
     }
 
     /// Specializes a ResolvedGenericItem that came from a ModuleItem.
@@ -1548,7 +735,7 @@ impl<'db> Resolver<'db> {
     ) -> UseStarResult<'db> {
         let mut item_info = None;
         let mut module_items_found: OrderedHashSet<ModuleItemId<'_>> = OrderedHashSet::default();
-        let imported_modules = self.db.priv_module_use_star_modules(module_id);
+        let imported_modules = self.db.module_imported_modules(module_id);
         for (star_module_id, item_module_id) in &imported_modules.accessible {
             if let Some(inner_item_info) =
                 self.resolve_item_in_imported_module(*item_module_id, ident)
@@ -1602,54 +789,8 @@ impl<'db> Resolver<'db> {
         None
     }
 
-    /// Given the current resolved item, resolves the next segment.
-    fn resolve_path_next_segment_generic(
-        &mut self,
-        diagnostics: &mut SemanticDiagnostics<'db>,
-        containing_item: &ResolvedGenericItem<'db>,
-        identifier: &ast::TerminalIdentifier<'db>,
-        item_type: NotFoundItemType,
-        macro_context_modifier: MacroContextModifier,
-    ) -> Maybe<ResolvedGenericItem<'db>> {
-        let db = self.db;
-        let ident = identifier.text(db);
-        match containing_item {
-            ResolvedGenericItem::Module(module_id) => {
-                let inner_item_info = self.resolve_module_inner_item(
-                    module_id,
-                    ident,
-                    diagnostics,
-                    identifier,
-                    item_type,
-                )?;
-
-                self.validate_module_item_usability(
-                    diagnostics,
-                    *module_id,
-                    identifier,
-                    &inner_item_info,
-                    macro_context_modifier,
-                );
-                self.insert_used_use(inner_item_info.item_id);
-                ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)
-            }
-            ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
-                let variants = self.db.enum_variants(*enum_id)?;
-                let variant_id = variants.get(ident).ok_or_else(|| {
-                    diagnostics.report(
-                        identifier.stable_ptr(db),
-                        NoSuchVariant { enum_id: *enum_id, variant_name: ident.into() },
-                    )
-                })?;
-                let variant = self.db.variant_semantic(*enum_id, *variant_id)?;
-                Ok(ResolvedGenericItem::Variant(variant))
-            }
-            _ => Err(diagnostics.report(identifier.stable_ptr(db), InvalidPath)),
-        }
-    }
-
     /// Determines whether the first identifier of a path is a local item.
-    fn determine_base_item_in_local_scope(
+    pub fn determine_base_item_in_local_scope(
         &mut self,
         identifier: &ast::TerminalIdentifier<'db>,
     ) -> Option<ResolvedConcreteItem<'db>> {
@@ -1677,97 +818,8 @@ impl<'db> Resolver<'db> {
         None
     }
 
-    /// Determines the base module or crate for the path resolving. Looks only in non-local scope
-    /// (i.e. current module, or crates).
-    fn determine_base(
-        &mut self,
-        diagnostics: &mut SemanticDiagnostics<'db>,
-        identifier: &ast::TerminalIdentifier<'db>,
-        mut ctx: ResolutionContext<'db, '_>,
-        item_type: NotFoundItemType,
-        macro_context_modifier: MacroContextModifier,
-    ) -> Maybe<ResolvedBase<'db>> {
-        let db = self.db;
-        let ident = identifier.text(db);
-        if let ResolutionContext::Statement(ref mut env) = ctx
-            && let Some(item) = get_statement_item_by_name(env, ident)
-        {
-            return Ok(ResolvedBase::StatementEnvironment(item));
-        }
-
-        let Some(module_id) = self.try_get_active_module_id(macro_context_modifier) else {
-            return Err(diagnostics.report(identifier.stable_ptr(db), PathNotFound(item_type)));
-        };
-        // If an item with this name is found inside the current module, use the current module.
-        if let Ok(Some(item_id)) = db.module_item_by_name(module_id, ident.into())
-            && !matches!(ctx, ResolutionContext::ModuleItem(id) if id == item_id)
-        {
-            return Ok(ResolvedBase::Module(module_id));
-        }
-
-        // If the first element is `crate`, use the crate's root module as the base module.
-        if ident == CRATE_KW {
-            return Ok(ResolvedBase::Crate(self.active_owning_crate_id(macro_context_modifier)));
-        }
-        // If the first segment is a name of a crate, use the crate's root module as the base
-        // module.
-        if let Some(dep) = self.active_settings(macro_context_modifier).dependencies.get(ident) {
-            let dep_crate_id =
-                CrateLongId::Real { name: ident.into(), discriminator: dep.discriminator.clone() }
-                    .intern(db);
-            let configs = db.crate_configs();
-            if !configs.contains_key(&dep_crate_id) {
-                let get_long_id = |crate_id: CrateId<'db>| crate_id.long(db);
-                panic!(
-                    "Invalid crate dependency: {:?}\nconfigured crates: {:#?}",
-                    get_long_id(dep_crate_id),
-                    configs.keys().cloned().map(get_long_id).collect_vec()
-                );
-            }
-
-            return Ok(ResolvedBase::Crate(dep_crate_id));
-        }
-        // If the first segment is `core` - and it was not overridden by a dependency - using it.
-        if ident == CORELIB_CRATE_NAME {
-            return Ok(ResolvedBase::Crate(CrateId::core(db)));
-        }
-        // TODO(orizi): Remove when `starknet` becomes a proper crate.
-        if ident == STARKNET_CRATE_NAME {
-            // Making sure we don't look for it in `*` modules, to prevent cycles.
-            return Ok(ResolvedBase::Module(self.prelude_submodule_ex(macro_context_modifier)));
-        }
-        if let Some((item_info, module_id)) =
-            self.resolve_item_in_macro_calls(module_id, identifier)
-        {
-            return Ok(ResolvedBase::FoundThroughGlobalUse {
-                item_info,
-                containing_module: module_id,
-            });
-        }
-        // If an item with this name is found in one of the 'use *' imports, use the module that
-        match self.resolve_path_using_use_star(module_id, ident) {
-            UseStarResult::UniquePathFound(inner_module_item) => {
-                return Ok(ResolvedBase::FoundThroughGlobalUse {
-                    item_info: inner_module_item,
-                    containing_module: module_id,
-                });
-            }
-            UseStarResult::AmbiguousPath(module_items) => {
-                return Ok(ResolvedBase::Ambiguous(module_items));
-            }
-            UseStarResult::PathNotFound => {}
-            UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
-                let prelude = self.prelude_submodule_ex(macro_context_modifier);
-                if let Ok(Some(_)) = db.module_item_by_name(prelude, ident.into()) {
-                    return Ok(ResolvedBase::Module(prelude));
-                }
-                return Ok(ResolvedBase::ItemNotVisible(module_item_id, containing_modules));
-            }
-        }
-        Ok(ResolvedBase::Module(self.prelude_submodule_ex(macro_context_modifier)))
-    }
     pub fn prelude_submodule(&self) -> ModuleId<'db> {
-        self.prelude_submodule_ex(MacroContextModifier::None)
+        self.prelude_submodule_ex(&MacroResolutionInfo::from_resolver(self))
     }
 
     /// Trying to find an item in a module's item level macro calls expansions.
@@ -1797,11 +849,8 @@ impl<'db> Resolver<'db> {
     }
 
     /// Returns the crate's `prelude` submodule.
-    pub fn prelude_submodule_ex(
-        &self,
-        macro_context_modifier: MacroContextModifier,
-    ) -> ModuleId<'db> {
-        let active_settings = self.active_settings(macro_context_modifier);
+    fn prelude_submodule_ex(&self, info: &MacroResolutionInfo<'db>) -> ModuleId<'db> {
+        let active_settings = self.active_settings(info);
         let prelude_submodule_name = active_settings.edition.prelude_submodule_name();
         let core_prelude_submodule = core_submodule(self.db, "prelude");
         get_submodule(self.db, core_prelude_submodule, prelude_submodule_name).unwrap_or_else(
@@ -1935,17 +984,14 @@ impl<'db> Resolver<'db> {
 
     /// Returns the current impl lookup context.
     pub fn impl_lookup_context(&self) -> ImplLookupContextId<'db> {
-        self.impl_lookup_context_ex(MacroContextModifier::None)
+        self.impl_lookup_context_ex(&MacroResolutionInfo::from_resolver(self))
     }
 
     /// Returns the current impl lookup context, with respect to the macro context modifier,
     /// see [`MacroContextModifier`].
-    pub fn impl_lookup_context_ex(
-        &self,
-        macro_context_modifier: MacroContextModifier,
-    ) -> ImplLookupContextId<'db> {
+    fn impl_lookup_context_ex(&self, info: &MacroResolutionInfo<'db>) -> ImplLookupContextId<'db> {
         let mut lookup_context = ImplLookupContext::new(
-            self.active_module_file_id(macro_context_modifier).0,
+            self.active_module_id(info),
             self.generic_params.clone(),
             self.db,
         );
@@ -1974,8 +1020,11 @@ impl<'db> Resolver<'db> {
         stable_ptr: SyntaxStablePtrId<'db>,
     ) -> Maybe<Vec<GenericArgumentId<'db>>> {
         let mut resolved_args = vec![];
-        let arg_syntax_per_param =
-            self.get_arg_syntax_per_param(diagnostics, generic_params, generic_args_syntax)?;
+        let arg_syntax_per_param = self.get_arg_syntax_per_param(
+            diagnostics,
+            &generic_params.iter().map(|generic_param| generic_param.id()).collect_vec(),
+            generic_args_syntax,
+        )?;
 
         for generic_param in generic_params {
             let generic_param = substitution.substitute(self.db, generic_param.clone())?;
@@ -2002,10 +1051,10 @@ impl<'db> Resolver<'db> {
     }
 
     /// Returns a map of generic param id -> its assigned arg syntax.
-    fn get_arg_syntax_per_param(
+    pub fn get_arg_syntax_per_param(
         &self,
         diagnostics: &mut SemanticDiagnostics<'db>,
-        generic_params: &[GenericParam<'db>],
+        generic_params: &[GenericParamId<'db>],
         generic_args_syntax: &[ast::GenericArg<'db>],
     ) -> Maybe<UnorderedHashMap<GenericParamId<'db>, ast::GenericArgValue<'db>>> {
         let db = self.db;
@@ -2015,7 +1064,7 @@ impl<'db> Resolver<'db> {
         let generic_param_by_name = generic_params
             .iter()
             .enumerate()
-            .filter_map(|(i, param)| Some((param.id().name(self.db)?, (i, param.id()))))
+            .filter_map(|(i, param)| Some((param.name(self.db)?, (i, param))))
             .collect::<UnorderedHashMap<_, _>>();
         for (idx, generic_arg_syntax) in generic_args_syntax.iter().enumerate() {
             match generic_arg_syntax {
@@ -2033,7 +1082,7 @@ impl<'db> Resolver<'db> {
                     }
                     last_named_arg_index = Some(index);
                     if arg_syntax_per_param
-                        .insert(*generic_param_id, arg_syntax.value(db))
+                        .insert(**generic_param_id, arg_syntax.value(db))
                         .is_some()
                     {
                         return Err(diagnostics
@@ -2055,7 +1104,7 @@ impl<'db> Resolver<'db> {
                         )
                     })?;
                     assert_eq!(
-                        arg_syntax_per_param.insert(generic_param.id(), arg_syntax.value(db)),
+                        arg_syntax_per_param.insert(*generic_param, arg_syntax.value(db)),
                         None,
                         "Unexpected duplication in ordered params."
                     );
@@ -2095,15 +1144,14 @@ impl<'db> Resolver<'db> {
                 // when we support constant expressions, which need inference.
                 let mut ctx = ComputationContext::new_global(db, diagnostics, self);
                 let value = compute_expr_semantic(&mut ctx, generic_arg_syntax);
-                let const_value = resolve_const_expr_and_evaluate(
+                GenericArgumentId::Constant(resolve_const_expr_and_evaluate(
                     db,
                     &mut ctx,
                     &value,
                     generic_arg_syntax.stable_ptr(db).untyped(),
                     const_param.ty,
                     false,
-                );
-                GenericArgumentId::Constant(const_value.intern(db))
+                ))
             }
 
             GenericParam::Impl(param) => {
@@ -2170,21 +1218,21 @@ impl<'db> Resolver<'db> {
     /// Should visibility checks not actually happen for lookups in this module.
     // TODO(orizi): Remove this check when performing a major Cairo update.
     pub fn ignore_visibility_checks(&self, module_id: ModuleId<'db>) -> bool {
-        self.ignore_visibility_checks_ex(module_id, MacroContextModifier::None)
+        self.ignore_visibility_checks_ex(module_id, &MacroResolutionInfo::from_resolver(self))
     }
 
     /// Same as [Self::ignore_visibility_checks], but takes into account the current macro context
     /// modifier.
-    pub fn ignore_visibility_checks_ex(
+    fn ignore_visibility_checks_ex(
         &self,
         module_id: ModuleId<'db>,
-        macro_context_modifier: MacroContextModifier,
+        info: &MacroResolutionInfo<'db>,
     ) -> bool {
         let module_crate = module_id.owning_crate(self.db);
         let module_edition =
             self.db.crate_config(module_crate).map(|c| c.settings.edition).unwrap_or_default();
         module_edition.ignore_visibility()
-            || self.active_settings(macro_context_modifier).edition.ignore_visibility()
+            || self.active_settings(info).edition.ignore_visibility()
                 && module_crate == self.db.core_crate()
     }
 
@@ -2209,7 +1257,7 @@ impl<'db> Resolver<'db> {
                 );
             }
             FeatureKind::Deprecated { feature, note }
-                if !self.data.feature_config.allow_deprecated
+                if !self.data.feature_config.allowed_lints.contains(DEPRECATED_ATTR)
                     && !self.data.feature_config.allowed_features.contains(feature) =>
             {
                 diagnostics.report(
@@ -2229,28 +1277,6 @@ impl<'db> Resolver<'db> {
         }
     }
 
-    /// Validates that an item is usable from the current module or adds a diagnostic.
-    /// This includes visibility checks and feature checks.
-    fn validate_module_item_usability(
-        &self,
-        diagnostics: &mut SemanticDiagnostics<'db>,
-        containing_module_id: ModuleId<'db>,
-        identifier: &ast::TerminalIdentifier<'db>,
-        item_info: &ModuleItemInfo<'db>,
-        macro_context_modifier: MacroContextModifier,
-    ) {
-        if !self.is_item_visible_ex(
-            containing_module_id,
-            item_info,
-            self.active_module_file_id(macro_context_modifier).0,
-            macro_context_modifier,
-        ) {
-            diagnostics
-                .report(identifier.stable_ptr(self.db), ItemNotVisible(item_info.item_id, vec![]));
-        }
-
-        self.validate_feature_constraints(diagnostics, identifier, item_info);
-    }
     /// Checks if an item is visible from the current module.
     pub fn is_item_visible(
         &self,
@@ -2262,26 +1288,26 @@ impl<'db> Resolver<'db> {
             containing_module_id,
             item_info,
             user_module,
-            MacroContextModifier::None,
+            &MacroResolutionInfo::from_resolver(self),
         )
     }
 
     /// Same as [Self::is_item_visible], but takes into account the current macro context modifier.
-    pub fn is_item_visible_ex(
+    fn is_item_visible_ex(
         &self,
         mut containing_module_id: ModuleId<'db>, // must never be a macro.
         item_info: &ModuleItemInfo<'db>,
         user_module: ModuleId<'db>,
-        macro_context_modifier: MacroContextModifier,
+        info: &MacroResolutionInfo<'db>,
     ) -> bool {
         let db = self.db;
         if containing_module_id == user_module {
             return true;
         }
         while let ModuleId::MacroCall { id: macro_call_id, .. } = containing_module_id {
-            containing_module_id = macro_call_id.module_file_id(self.db).0;
+            containing_module_id = macro_call_id.parent_module(self.db);
         }
-        self.ignore_visibility_checks_ex(containing_module_id, macro_context_modifier)
+        self.ignore_visibility_checks_ex(containing_module_id, info)
             || visibility::peek_visible_in(
                 db,
                 item_info.visibility,
@@ -2489,8 +1515,8 @@ impl<'db> Resolver<'db> {
     /// Specializes a ResolvedGenericItem that came from a Statement Environment.
     fn specialize_generic_statement_arg(
         &mut self,
-        segment: &ast::PathSegment<'db>,
         diagnostics: &mut SemanticDiagnostics<'db>,
+        segment: &ast::PathSegment<'db>,
         identifier: &ast::TerminalIdentifier<'db>,
         inner_generic_item: ResolvedGenericItem<'db>,
         generic_args_syntax: Option<Vec<ast::GenericArg<'db>>>,
@@ -2512,53 +1538,53 @@ impl<'db> Resolver<'db> {
         );
         specialized_item
     }
+}
 
-    /// Handles a macro context modifier in the path. Macro context modifiers are used to determine
-    /// the context in which a path, which was generated by a macro, should be resolved. The
-    /// supported modifiers are: are `$defsite` and `$callsite`.
-    /// This function checks if the first segment is a valid macro context modifier and does two
-    /// things:
-    ///  - Peels the modifier from the path segments.
-    ///  - Returns the corresponding `MacroContextModifier`.
-    ///
-    /// The function returns an error in the following cases:
-    ///  - The modifier is not supported (i.e. starts with `$` but is not one of the supported
-    ///    modifiers).
-    ///  - The path after the modifier is empty.
-    fn handle_macro_context_modifier(
-        &self,
-        diagnostics: &mut SemanticDiagnostics<'db>,
-        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment<'db>>>,
-    ) -> Maybe<MacroContextModifier> {
-        if segments.len() == 1 {
-            return Err(diagnostics.report_after(
-                segments.next().unwrap().stable_ptr(self.db),
-                EmptyPathAfterResolverModifier,
-            ));
-        }
-        match segments.peek() {
-            Some(ast::PathSegment::Simple(path_segment_simple)) => {
-                let ident = path_segment_simple.ident(self.db);
-                let ident_text = ident.text(self.db);
-                match ident_text {
-                    MACRO_DEF_SITE | MACRO_CALL_SITE => {
-                        segments.next();
-                        if ident_text == MACRO_DEF_SITE {
-                            Ok(MacroContextModifier::DefSite)
-                        } else {
-                            Ok(MacroContextModifier::CallSite)
-                        }
+/// Handles a macro context modifier in the path. Macro context modifiers are used to determine
+/// the context in which a path, which was generated by a macro, should be resolved. The
+/// supported modifiers are: are `$defsite` and `$callsite`.
+/// This function checks if the first segment is a valid macro context modifier and does two
+/// things:
+///  - Peels the modifier from the path segments.
+///  - Returns the corresponding `MacroContextModifier`.
+///
+/// The function returns an error in the following cases:
+///  - The modifier is not supported (i.e. starts with `$` but is not one of the supported
+///    modifiers).
+///  - The path after the modifier is empty.
+fn handle_macro_context_modifier<'db>(
+    db: &'db dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    segments: &mut Peekable<std::vec::IntoIter<ast::PathSegment<'db>>>,
+) -> Maybe<MacroContextModifier> {
+    if segments.len() == 1 {
+        return Err(diagnostics.report_after(
+            segments.next().unwrap().stable_ptr(db),
+            EmptyPathAfterResolverModifier,
+        ));
+    }
+    match segments.peek() {
+        Some(ast::PathSegment::Simple(path_segment_simple)) => {
+            let ident = path_segment_simple.ident(db);
+            let ident_text = ident.text(db);
+            match ident_text {
+                MACRO_DEF_SITE | MACRO_CALL_SITE => {
+                    segments.next();
+                    if ident_text == MACRO_DEF_SITE {
+                        Ok(MacroContextModifier::DefSite)
+                    } else {
+                        Ok(MacroContextModifier::CallSite)
                     }
-                    _ => Err(diagnostics.report(
-                        ident.stable_ptr(self.db),
-                        UnknownResolverModifier { modifier: ident_text.into() },
-                    )),
                 }
+                _ => Err(diagnostics.report(
+                    ident.stable_ptr(db),
+                    UnknownResolverModifier { modifier: ident_text.into() },
+                )),
             }
-            _ => {
-                // Empty path segment after a `$`, diagnostic was added above.
-                Err(skip_diagnostic())
-            }
+        }
+        _ => {
+            // Empty path segment after a `$`, diagnostic was added above.
+            Err(skip_diagnostic())
         }
     }
 }
@@ -2626,22 +1652,13 @@ enum ResolvedBase<'db> {
 }
 
 /// The callbacks to be used by `resolve_path_inner`.
-struct ResolvePathInnerCallbacks<'db, ResolvedItem, ResolveFirst, ResolveNext, Validate, Mark>
+struct ResolutionCallbacks<'db, 'a, ResolvedItem, First, Next, Validate, Mark>
 where
-    ResolveFirst: FnOnce(
-        &mut Resolver<'db>,
-        &mut SemanticDiagnostics<'db>,
-        &mut Peekable<std::slice::Iter<'_, ast::PathSegment<'db>>>,
-        NotFoundItemType,
-        MacroContextModifier,
-    ) -> Maybe<ResolvedItem>,
-    ResolveNext: FnMut(
-        &mut Resolver<'db>,
-        &mut SemanticDiagnostics<'db>,
+    First: FnOnce(&mut Resolution<'db, 'a>) -> Maybe<ResolvedItem>,
+    Next: FnMut(
+        &mut Resolution<'db, 'a>,
         &ResolvedItem,
         &ast::PathSegment<'db>,
-        NotFoundItemType,
-        MacroContextModifier,
     ) -> Maybe<ResolvedItem>,
     Validate: FnMut(&mut SemanticDiagnostics<'db>, &ast::PathSegment<'db>) -> Maybe<()>,
     Mark: FnMut(
@@ -2652,13 +1669,944 @@ where
     ),
 {
     /// Type for the resolved item pointed by the path segments.
-    resolved_item_type: PhantomData<&'db ResolvedItem>,
+    _phantom: PhantomData<(ResolvedItem, &'db (), &'a ())>,
     /// Resolves the first segment of a path.
-    resolve_path_first_segment: ResolveFirst,
+    first: First,
     /// Given the current resolved item, resolves the next segment.
-    resolve_path_next_segment: ResolveNext,
+    next: Next,
     /// An additional validation to perform for each segment. If it fails, the whole resolution
     /// fails.
-    validate_segment: Validate,
+    validate: Validate,
+    /// Marks the resolved item in the resolved items map.
     mark: Mark,
+}
+
+/// The state of a path resolution.
+struct Resolution<'db, 'a> {
+    /// The resolver that is resolving the path.
+    resolver: &'a mut Resolver<'db>,
+    /// The diagnostics to report errors to.
+    diagnostics: &'a mut SemanticDiagnostics<'db>,
+    /// The segments of the path to resolve.
+    segments: Peekable<std::vec::IntoIter<ast::PathSegment<'db>>>,
+    /// The type of item expected by the path.
+    expected_item_type: NotFoundItemType,
+    /// The context of the path resolution.
+    resolution_context: ResolutionContext<'db, 'a>,
+    /// The macro resolution info.
+    macro_info: MacroResolutionInfo<'db>,
+}
+impl<'db, 'a> Resolution<'db, 'a> {
+    /// Creates a new resolution, for resolving the given `path`.
+    /// Panics if the given path is empty.
+    /// May return with error if path had bad `$` usage.
+    fn new(
+        resolver: &'a mut Resolver<'db>,
+        diagnostics: &'a mut SemanticDiagnostics<'db>,
+        path: impl AsSegments<'db>,
+        item_type: NotFoundItemType,
+        resolution_context: ResolutionContext<'db, 'a>,
+    ) -> Maybe<Self> {
+        let db = resolver.db;
+        let placeholder_marker = path.placeholder_marker(db);
+
+        let mut cur_offset =
+            ExpansionOffset::new(path.offset(db).expect("Trying to resolve an empty path."));
+        let elements_vec = path.to_segments(db);
+        let mut segments = elements_vec.into_iter().peekable();
+        let mut cur_macro_call_data = resolver.macro_call_data.as_ref();
+        let mut path_defining_module = resolver.data.module_file_id.0;
+        // Climb up the macro call data while the current resolved path is being mapped to an
+        // argument of a macro call.
+        while let Some(macro_call_data) = &cur_macro_call_data {
+            let Some(new_offset) = cur_offset.mapped(&macro_call_data.expansion_mappings) else {
+                break;
+            };
+            path_defining_module = macro_call_data.callsite_module_id;
+            cur_macro_call_data = macro_call_data.parent_macro_call_data.as_ref();
+            cur_offset = new_offset;
+        }
+        let macro_call_data = cur_macro_call_data.cloned();
+
+        let macro_context_modifier = if let Some(marker) = placeholder_marker {
+            if macro_call_data.is_some() {
+                handle_macro_context_modifier(db, diagnostics, &mut segments)?
+            } else {
+                return Err(diagnostics.report(marker.stable_ptr(db), DollarNotSupportedInContext));
+            }
+        } else {
+            MacroContextModifier::None
+        };
+        let macro_info = MacroResolutionInfo {
+            base: path_defining_module,
+            data: macro_call_data,
+            modifier: macro_context_modifier,
+        };
+        Ok(Resolution {
+            resolver,
+            diagnostics,
+            segments,
+            expected_item_type: item_type,
+            resolution_context,
+            macro_info,
+        })
+    }
+
+    /// Resolves an item, given a path.
+    /// Guaranteed to result in at most one diagnostic.
+    fn full<ResolvedItem: Clone>(
+        mut self,
+        mut callbacks: ResolutionCallbacks<
+            'db,
+            'a,
+            ResolvedItem,
+            impl FnOnce(&mut Resolution<'db, 'a>) -> Maybe<ResolvedItem>,
+            impl FnMut(
+                &mut Resolution<'db, 'a>,
+                &ResolvedItem,
+                &ast::PathSegment<'db>,
+            ) -> Maybe<ResolvedItem>,
+            impl FnMut(&mut SemanticDiagnostics<'db>, &ast::PathSegment<'db>) -> Maybe<()>,
+            impl FnMut(
+                &mut ResolvedItems<'db>,
+                &'db dyn SemanticGroup,
+                &syntax::node::ast::PathSegment<'db>,
+                ResolvedItem,
+            ),
+        >,
+    ) -> Maybe<ResolvedItem>
+    where
+        'db: 'a,
+    {
+        // Find where the first segment lies in.
+        let mut item: ResolvedItem = (callbacks.first)(&mut self)?;
+
+        // Follow modules.
+        while let Some(segment) = self.segments.next() {
+            (callbacks.validate)(self.diagnostics, &segment)?;
+            // `?` is ok here as the rest of the segments have no meaning if the current one can't
+            // be resolved.
+            item = (callbacks.next)(&mut self, &item, &segment)?;
+            let db = self.resolver.db;
+            (callbacks.mark)(&mut self.resolver.resolved_items, db, &segment, item.clone());
+        }
+        Ok(item)
+    }
+
+    /// Specializes the item found in the current segment, and checks its usability.
+    fn specialize_generic_inner_item(
+        &mut self,
+        module_id: ModuleId<'db>,
+        segment: &ast::PathSegment<'db>,
+        identifier: &TerminalIdentifier<'db>,
+        inner_item_info: ModuleItemInfo<'db>,
+    ) -> Maybe<ResolvedConcreteItem<'db>> {
+        let db = self.resolver.db;
+        let generic_args_syntax = segment.generic_args(db);
+        let segment_stable_ptr = segment.stable_ptr(db).untyped();
+        self.validate_module_item_usability(module_id, identifier, &inner_item_info);
+        self.resolver.insert_used_use(inner_item_info.item_id);
+        let inner_generic_item =
+            ResolvedGenericItem::from_module_item(db, inner_item_info.item_id)?;
+        let mut specialized_item = self.resolver.specialize_generic_module_item(
+            self.diagnostics,
+            identifier,
+            inner_generic_item.clone(),
+            generic_args_syntax.clone(),
+        )?;
+        self.resolver
+            .data
+            .resolved_items
+            .generic
+            .insert(identifier.stable_ptr(db), inner_generic_item);
+        self.resolver.handle_same_impl_trait(
+            self.diagnostics,
+            &mut specialized_item,
+            &generic_args_syntax.unwrap_or_default(),
+            segment_stable_ptr,
+        );
+        Ok(specialized_item)
+    }
+
+    /// Resolves the first segment of a concrete path.
+    fn first_concrete(&mut self) -> Maybe<ResolvedConcreteItem<'db>> {
+        if let Some(base_module) =
+            self.try_handle_super_segments(|resolved_items, db, segment, module_id| {
+                resolved_items.mark_concrete(db, segment, ResolvedConcreteItem::Module(module_id));
+            })
+        {
+            return Ok(ResolvedConcreteItem::Module(base_module?));
+        }
+
+        let db = self.resolver.db;
+        Ok(match self.segments.peek().unwrap() {
+            syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
+                let generics_stable_ptr = generic_segment.generic_args(db).stable_ptr(db);
+                let identifier = generic_segment.ident(db);
+                // Identifier with generic args cannot be a local item.
+                match self.determine_base(&identifier)? {
+                    ResolvedBase::Module(module_id) => ResolvedConcreteItem::Module(module_id),
+                    ResolvedBase::Crate(_) => {
+                        // Crates do not have generics.
+                        return Err(self
+                            .diagnostics
+                            .report(generics_stable_ptr, UnexpectedGenericArgs));
+                    }
+                    ResolvedBase::StatementEnvironment(generic_item) => {
+                        let segment = self.segments.next().unwrap();
+                        let concrete_item = self.resolver.specialize_generic_statement_arg(
+                            self.diagnostics,
+                            &segment,
+                            &identifier,
+                            generic_item,
+                            segment.generic_args(db),
+                        );
+                        self.resolver.resolved_items.mark_concrete(db, &segment, concrete_item)
+                    }
+                    ResolvedBase::FoundThroughGlobalUse {
+                        item_info: inner_module_item,
+                        containing_module: module_id,
+                    } => {
+                        let segment = self.segments.next().unwrap();
+
+                        let concrete_item = self.specialize_generic_inner_item(
+                            module_id,
+                            &segment,
+                            &identifier,
+                            inner_module_item,
+                        )?;
+                        self.resolver.resolved_items.mark_concrete(db, &segment, concrete_item)
+                    }
+                    ResolvedBase::Ambiguous(module_items) => {
+                        return Err(self
+                            .diagnostics
+                            .report(identifier.stable_ptr(db), AmbiguousPath(module_items)));
+                    }
+                    ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
+                        return Err(self.diagnostics.report(
+                            identifier.stable_ptr(db),
+                            ItemNotVisible(module_item_id, containing_modules),
+                        ));
+                    }
+                }
+            }
+            syntax::node::ast::PathSegment::Simple(simple_segment) => {
+                let identifier = simple_segment.ident(db);
+
+                if let Some(resolved_item) = resolve_self_segment(
+                    db,
+                    self.diagnostics,
+                    &identifier,
+                    &self.resolver.data.trait_or_impl_ctx,
+                ) {
+                    // The first segment is `Self`. Consume it and return.
+                    return Ok(self.resolver.resolved_items.mark_concrete(
+                        db,
+                        &self.segments.next().unwrap(),
+                        resolved_item?,
+                    ));
+                }
+
+                if let Some(local_item) =
+                    self.resolver.determine_base_item_in_local_scope(&identifier)
+                {
+                    self.resolver.resolved_items.mark_concrete(
+                        db,
+                        &self.segments.next().unwrap(),
+                        local_item,
+                    )
+                } else {
+                    match self.determine_base(&identifier)? {
+                        // This item lies inside a module.
+                        ResolvedBase::Module(module_id) => ResolvedConcreteItem::Module(module_id),
+                        ResolvedBase::Crate(crate_id) => {
+                            self.resolver.resolved_items.mark_concrete(
+                                db,
+                                &self.segments.next().unwrap(),
+                                ResolvedConcreteItem::Module(ModuleId::CrateRoot(crate_id)),
+                            )
+                        }
+                        ResolvedBase::StatementEnvironment(generic_item) => {
+                            let segment = self.segments.next().unwrap();
+
+                            let concrete_item = self.resolver.specialize_generic_statement_arg(
+                                self.diagnostics,
+                                &segment,
+                                &identifier,
+                                generic_item,
+                                segment.generic_args(db),
+                            );
+                            self.resolver.resolved_items.mark_concrete(db, &segment, concrete_item)
+                        }
+                        ResolvedBase::FoundThroughGlobalUse {
+                            item_info: inner_module_item,
+                            containing_module: module_id,
+                        } => {
+                            let segment = self.segments.next().unwrap();
+                            let concrete_item = self.specialize_generic_inner_item(
+                                module_id,
+                                &segment,
+                                &identifier,
+                                inner_module_item,
+                            )?;
+                            self.resolver.resolved_items.mark_concrete(db, &segment, concrete_item)
+                        }
+                        ResolvedBase::Ambiguous(module_items) => {
+                            return Err(self
+                                .diagnostics
+                                .report(identifier.stable_ptr(db), AmbiguousPath(module_items)));
+                        }
+                        ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
+                            return Err(self.diagnostics.report(
+                                identifier.stable_ptr(db),
+                                ItemNotVisible(module_item_id, containing_modules),
+                            ));
+                        }
+                    }
+                }
+            }
+            // A diagnostic for the missing segment should have been reported from the syntax phase.
+            syntax::node::ast::PathSegment::Missing(_) => return Err(skip_diagnostic()),
+        })
+    }
+    /// Resolves the first segment of a generic path.
+    /// If `allow_generic_args` is true the generic args will be ignored.
+    fn first_generic(&mut self, allow_generic_args: bool) -> Maybe<ResolvedGenericItem<'db>> {
+        if let Some(base_module) =
+            self.try_handle_super_segments(|resolved_items, db, segment, module_id| {
+                resolved_items.mark_generic(db, segment, ResolvedGenericItem::Module(module_id));
+            })
+        {
+            return Ok(ResolvedGenericItem::Module(base_module?));
+        }
+        let db = self.resolver.db;
+        Ok(match self.segments.peek().unwrap() {
+            syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
+                let generics_stable_ptr = generic_segment.generic_args(db).stable_ptr(db);
+                if !allow_generic_args {
+                    return Err(self
+                        .diagnostics
+                        .report(generics_stable_ptr, UnexpectedGenericArgs));
+                }
+                let identifier = generic_segment.ident(db);
+                match self.determine_base(&identifier)? {
+                    ResolvedBase::Module(module_id) => ResolvedGenericItem::Module(module_id),
+                    ResolvedBase::Crate(_) => {
+                        // Crates do not have generics.
+                        return Err(self
+                            .diagnostics
+                            .report(generics_stable_ptr, UnexpectedGenericArgs));
+                    }
+                    ResolvedBase::StatementEnvironment(generic_item) => generic_item,
+                    ResolvedBase::FoundThroughGlobalUse {
+                        item_info: inner_module_item, ..
+                    } => {
+                        self.resolver.insert_used_use(inner_module_item.item_id);
+                        let generic_item =
+                            ResolvedGenericItem::from_module_item(db, inner_module_item.item_id)?;
+                        self.resolver.resolved_items.mark_generic(
+                            db,
+                            &self.segments.next().unwrap(),
+                            generic_item,
+                        )
+                    }
+                    ResolvedBase::Ambiguous(module_items) => {
+                        return Err(self
+                            .diagnostics
+                            .report(identifier.stable_ptr(db), AmbiguousPath(module_items)));
+                    }
+                    ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
+                        return Err(self.diagnostics.report(
+                            identifier.stable_ptr(db),
+                            ItemNotVisible(module_item_id, containing_modules),
+                        ));
+                    }
+                }
+            }
+            syntax::node::ast::PathSegment::Simple(simple_segment) => {
+                let identifier = simple_segment.ident(db);
+                match self.determine_base(&identifier)? {
+                    // This item lies inside a module.
+                    ResolvedBase::Module(module_id) => ResolvedGenericItem::Module(module_id),
+                    ResolvedBase::Crate(crate_id) => self.resolver.resolved_items.mark_generic(
+                        db,
+                        &self.segments.next().unwrap(),
+                        ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id)),
+                    ),
+                    ResolvedBase::StatementEnvironment(generic_item) => self
+                        .resolver
+                        .resolved_items
+                        .mark_generic(db, &self.segments.next().unwrap(), generic_item),
+                    ResolvedBase::FoundThroughGlobalUse {
+                        item_info: inner_module_item, ..
+                    } => {
+                        self.resolver.insert_used_use(inner_module_item.item_id);
+                        let generic_item =
+                            ResolvedGenericItem::from_module_item(db, inner_module_item.item_id)?;
+                        self.resolver.resolved_items.mark_generic(
+                            db,
+                            &self.segments.next().unwrap(),
+                            generic_item,
+                        )
+                    }
+                    ResolvedBase::Ambiguous(module_items) => {
+                        return Err(self
+                            .diagnostics
+                            .report(identifier.stable_ptr(db), AmbiguousPath(module_items)));
+                    }
+                    ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
+                        return Err(self.diagnostics.report(
+                            identifier.stable_ptr(db),
+                            ItemNotVisible(module_item_id, containing_modules),
+                        ));
+                    }
+                }
+            }
+            // A diagnostic for the missing segment should have been reported from the syntax phase.
+            syntax::node::ast::PathSegment::Missing(_) => return Err(skip_diagnostic()),
+        })
+    }
+
+    /// Handles `super::` initial segments, by removing them, and returning the valid module if
+    /// exists. If there's none - returns None.
+    /// If there are, but that's an invalid path, adds to diagnostics and returns `Some(Err)`.
+    fn try_handle_super_segments(
+        &mut self,
+        mut mark: impl FnMut(
+            &mut ResolvedItems<'db>,
+            &'db dyn SemanticGroup,
+            &syntax::node::ast::PathSegment<'db>,
+            ModuleId<'db>,
+        ),
+    ) -> Option<Maybe<ModuleId<'db>>> {
+        let db = self.resolver.db;
+        let mut curr = None;
+        for segment in self.segments.peeking_take_while(|segment| match segment {
+            ast::PathSegment::WithGenericArgs(_) | ast::PathSegment::Missing(_) => false,
+            ast::PathSegment::Simple(simple) => simple.identifier(db) == SUPER_KW,
+        }) {
+            let module_id = match curr {
+                Some(module_id) => module_id,
+                None => {
+                    if let Some(module_id) =
+                        self.resolver.try_get_active_module_id(&self.macro_info)
+                    {
+                        module_id
+                    } else {
+                        return Some(Err(self
+                            .diagnostics
+                            .report(segment.stable_ptr(db), SuperUsedInMacroCallTopLevel)));
+                    }
+                }
+            };
+            match module_id {
+                ModuleId::CrateRoot(_) => {
+                    return Some(Err(self
+                        .diagnostics
+                        .report(segment.stable_ptr(db), SuperUsedInRootModule)));
+                }
+                ModuleId::Submodule(submodule_id) => {
+                    let parent = submodule_id.parent_module(db);
+                    mark(&mut self.resolver.resolved_items, db, &segment, parent);
+                    curr = Some(parent);
+                }
+                ModuleId::MacroCall { id: _, generated_file_id: _ } => {
+                    return Some(Err(self
+                        .diagnostics
+                        .report(segment.stable_ptr(db), SuperUsedInMacroCallTopLevel)));
+                }
+            }
+        }
+        curr.map(Ok)
+    }
+
+    /// Resolves the inner item of a module, given the current segment of the path.
+    fn module_inner_item(
+        &mut self,
+        module_id: &ModuleId<'db>,
+        ident: &'db str,
+        identifier: &TerminalIdentifier<'db>,
+    ) -> Maybe<ModuleItemInfo<'db>> {
+        let db = self.resolver.db;
+        match db.module_item_info_by_name(*module_id, ident.into())? {
+            Some(info) => Ok(info),
+            None => {
+                if let Some((info, _macro_mod)) =
+                    self.resolver.resolve_item_in_macro_calls(*module_id, identifier)
+                {
+                    return Ok(info);
+                }
+                match self.resolver.resolve_path_using_use_star(*module_id, ident) {
+                    UseStarResult::UniquePathFound(item_info) => Ok(item_info),
+                    UseStarResult::AmbiguousPath(module_items) => Err(self
+                        .diagnostics
+                        .report(identifier.stable_ptr(db), AmbiguousPath(module_items))),
+                    UseStarResult::PathNotFound => {
+                        let item_type = if self.segments.len() == 0 {
+                            self.expected_item_type
+                        } else {
+                            NotFoundItemType::Identifier
+                        };
+                        Err(self
+                            .diagnostics
+                            .report(identifier.stable_ptr(db), PathNotFound(item_type)))
+                    }
+                    UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
+                        Err(self.diagnostics.report(
+                            identifier.stable_ptr(db),
+                            ItemNotVisible(module_item_id, containing_modules),
+                        ))
+                    }
+                }
+            }
+        }
+    }
+
+    /// Given the current resolved item, resolves the next segment.
+    fn next_concrete(
+        &mut self,
+        containing_item: &ResolvedConcreteItem<'db>,
+        segment: &ast::PathSegment<'db>,
+    ) -> Maybe<ResolvedConcreteItem<'db>> {
+        let db = self.resolver.db;
+        let identifier = &segment.identifier_ast(db);
+        let generic_args_syntax = segment.generic_args(db);
+
+        let ident = identifier.text(db);
+
+        if identifier.text(db) == SELF_TYPE_KW {
+            return Err(self.diagnostics.report(identifier.stable_ptr(db), SelfMustBeFirst));
+        }
+
+        match containing_item {
+            ResolvedConcreteItem::Module(module_id) => {
+                // Prefix `super` segments should be removed earlier. Middle `super` segments are
+                // not allowed.
+                if ident == SUPER_KW {
+                    return Err(self.diagnostics.report(identifier.stable_ptr(db), InvalidPath));
+                }
+                let inner_item_info = self.module_inner_item(module_id, ident, identifier)?;
+
+                self.specialize_generic_inner_item(*module_id, segment, identifier, inner_item_info)
+            }
+            ResolvedConcreteItem::Type(ty) => {
+                if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) = ty.long(db) {
+                    let enum_id = concrete_enum_id.enum_id(db);
+                    let variants = db.enum_variants(enum_id).map_err(|_| {
+                        self.diagnostics.report(identifier.stable_ptr(db), UnknownEnum)
+                    })?;
+                    let variant_id = variants.get(ident).ok_or_else(|| {
+                        self.diagnostics.report(
+                            identifier.stable_ptr(db),
+                            NoSuchVariant { enum_id, variant_name: ident.into() },
+                        )
+                    })?;
+                    let variant = db.variant_semantic(enum_id, *variant_id)?;
+                    let concrete_variant = db.concrete_enum_variant(*concrete_enum_id, &variant)?;
+                    Ok(ResolvedConcreteItem::Variant(concrete_variant))
+                } else {
+                    Err(self.diagnostics.report(identifier.stable_ptr(db), InvalidPath))
+                }
+            }
+            ResolvedConcreteItem::SelfTrait(concrete_trait_id) => {
+                let impl_id = ImplLongId::SelfImpl(*concrete_trait_id).intern(db);
+                let Some(trait_item_id) =
+                    db.trait_item_by_name(concrete_trait_id.trait_id(db), ident.into())?
+                else {
+                    return Err(self.diagnostics.report(identifier.stable_ptr(db), InvalidPath));
+                };
+                if let Ok(Some(trait_item_info)) =
+                    db.trait_item_info_by_name(concrete_trait_id.trait_id(db), ident.into())
+                {
+                    self.resolver.validate_feature_constraints(
+                        self.diagnostics,
+                        identifier,
+                        &trait_item_info,
+                    );
+                }
+                Ok(match trait_item_id {
+                    TraitItemId::Function(trait_function_id) => {
+                        ResolvedConcreteItem::Function(self.resolver.specialize_function(
+                            self.diagnostics,
+                            identifier.stable_ptr(db).untyped(),
+                            GenericFunctionId::Impl(ImplGenericFunctionId {
+                                impl_id,
+                                function: trait_function_id,
+                            }),
+                            &generic_args_syntax.unwrap_or_default(),
+                        )?)
+                    }
+                    TraitItemId::Type(trait_type_id) => ResolvedConcreteItem::Type(
+                        TypeLongId::ImplType(ImplTypeId::new(impl_id, trait_type_id, db))
+                            .intern(db),
+                    ),
+                    TraitItemId::Constant(trait_constant_id) => ResolvedConcreteItem::Constant(
+                        ConstValue::ImplConstant(ImplConstantId::new(
+                            impl_id,
+                            trait_constant_id,
+                            db,
+                        ))
+                        .intern(db),
+                    ),
+                    TraitItemId::Impl(trait_impl_id) => ResolvedConcreteItem::Impl(
+                        ImplLongId::ImplImpl(ImplImplId::new(impl_id, trait_impl_id, db))
+                            .intern(db),
+                    ),
+                })
+            }
+            ResolvedConcreteItem::Trait(concrete_trait_id) => {
+                let Some(trait_item_id) =
+                    db.trait_item_by_name(concrete_trait_id.trait_id(db), ident.into())?
+                else {
+                    return Err(self.diagnostics.report(identifier.stable_ptr(db), InvalidPath));
+                };
+
+                if let Ok(Some(trait_item_info)) =
+                    db.trait_item_info_by_name(concrete_trait_id.trait_id(db), ident.into())
+                {
+                    self.resolver.validate_feature_constraints(
+                        self.diagnostics,
+                        identifier,
+                        &trait_item_info,
+                    );
+                }
+
+                match trait_item_id {
+                    TraitItemId::Function(trait_function_id) => {
+                        let concrete_trait_function = ConcreteTraitGenericFunctionLongId::new(
+                            db,
+                            *concrete_trait_id,
+                            trait_function_id,
+                        )
+                        .intern(db);
+                        let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
+                        let impl_lookup_context =
+                            self.resolver.impl_lookup_context_ex(&self.macro_info);
+                        let generic_function = GenericFunctionId::Impl(
+                            self.resolver.inference().infer_trait_generic_function(
+                                concrete_trait_function,
+                                impl_lookup_context,
+                                Some(identifier_stable_ptr),
+                            ),
+                        );
+
+                        Ok(ResolvedConcreteItem::Function(self.resolver.specialize_function(
+                            self.diagnostics,
+                            identifier_stable_ptr,
+                            generic_function,
+                            &generic_args_syntax.unwrap_or_default(),
+                        )?))
+                    }
+                    TraitItemId::Type(trait_type_id) => {
+                        let concrete_trait_type = ConcreteTraitTypeId::new_from_data(
+                            db,
+                            *concrete_trait_id,
+                            trait_type_id,
+                        );
+
+                        let impl_lookup_context =
+                            self.resolver.impl_lookup_context_ex(&self.macro_info);
+                        let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
+                        let ty = self.resolver.inference().infer_trait_type(
+                            concrete_trait_type,
+                            impl_lookup_context,
+                            Some(identifier_stable_ptr),
+                        );
+                        Ok(ResolvedConcreteItem::Type(
+                            self.resolver.inference().rewrite(ty).no_err(),
+                        ))
+                    }
+                    TraitItemId::Constant(trait_constant_id) => {
+                        let concrete_trait_constant = ConcreteTraitConstantLongId::new(
+                            db,
+                            *concrete_trait_id,
+                            trait_constant_id,
+                        )
+                        .intern(db);
+
+                        let impl_lookup_context =
+                            self.resolver.impl_lookup_context_ex(&self.macro_info);
+                        let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
+                        let imp_constant_id = self.resolver.inference().infer_trait_constant(
+                            concrete_trait_constant,
+                            impl_lookup_context,
+                            Some(identifier_stable_ptr),
+                        );
+                        // Make sure the inference is solved for successful impl lookup
+                        // Ignore the result of the `solve()` call - the error, if any, will be
+                        // reported later.
+                        self.resolver.inference().solve().ok();
+
+                        Ok(ResolvedConcreteItem::Constant(
+                            ConstValue::ImplConstant(imp_constant_id).intern(db),
+                        ))
+                    }
+                    TraitItemId::Impl(trait_impl_id) => {
+                        let concrete_trait_impl = ConcreteTraitImplLongId::new_from_data(
+                            db,
+                            *concrete_trait_id,
+                            trait_impl_id,
+                        )
+                        .intern(db);
+
+                        let impl_lookup_context =
+                            self.resolver.impl_lookup_context_ex(&self.macro_info);
+                        let identifier_stable_ptr = identifier.stable_ptr(db).untyped();
+                        let impl_impl_id = self.resolver.inference().infer_trait_impl(
+                            concrete_trait_impl,
+                            impl_lookup_context,
+                            Some(identifier_stable_ptr),
+                        );
+                        // Make sure the inference is solved for successful impl lookup
+                        // Ignore the result of the `solve()` call - the error, if any, will be
+                        // reported later.
+                        self.resolver.inference().solve().ok();
+
+                        Ok(ResolvedConcreteItem::Impl(
+                            ImplLongId::ImplImpl(impl_impl_id).intern(db),
+                        ))
+                    }
+                }
+            }
+            ResolvedConcreteItem::Impl(impl_id) => {
+                let concrete_trait_id = db.impl_concrete_trait(*impl_id)?;
+                let trait_id = concrete_trait_id.trait_id(db);
+                let Some(trait_item_id) = db.trait_item_by_name(trait_id, ident.into())? else {
+                    return Err(self.diagnostics.report(identifier.stable_ptr(db), InvalidPath));
+                };
+                if let Ok(Some(trait_item_info)) =
+                    db.trait_item_info_by_name(concrete_trait_id.trait_id(db), ident.into())
+                {
+                    self.resolver.validate_feature_constraints(
+                        self.diagnostics,
+                        identifier,
+                        &trait_item_info,
+                    );
+                }
+                if let ImplLongId::Concrete(concrete_impl) = impl_id.long(db) {
+                    let impl_def_id: ImplDefId<'_> = concrete_impl.impl_def_id(db);
+
+                    if let Ok(Some(impl_item_info)) =
+                        db.impl_item_info_by_name(impl_def_id, ident.into())
+                    {
+                        self.resolver.validate_feature_constraints(
+                            self.diagnostics,
+                            identifier,
+                            &impl_item_info,
+                        );
+                    }
+                }
+
+                match trait_item_id {
+                    TraitItemId::Function(trait_function_id) => {
+                        let generic_function_id = GenericFunctionId::Impl(ImplGenericFunctionId {
+                            impl_id: *impl_id,
+                            function: trait_function_id,
+                        });
+
+                        Ok(ResolvedConcreteItem::Function(self.resolver.specialize_function(
+                            self.diagnostics,
+                            identifier.stable_ptr(db).untyped(),
+                            generic_function_id,
+                            &generic_args_syntax.unwrap_or_default(),
+                        )?))
+                    }
+                    TraitItemId::Type(trait_type_id) => {
+                        let impl_type_id = ImplTypeId::new(*impl_id, trait_type_id, db);
+                        let ty = self
+                            .resolver
+                            .inference()
+                            .reduce_impl_ty(impl_type_id)
+                            .unwrap_or_else(|_| TypeLongId::ImplType(impl_type_id).intern(db));
+                        Ok(ResolvedConcreteItem::Type(ty))
+                    }
+                    TraitItemId::Constant(trait_constant_id) => {
+                        let impl_constant_id = ImplConstantId::new(*impl_id, trait_constant_id, db);
+
+                        let constant = self
+                            .resolver
+                            .inference()
+                            .reduce_impl_constant(impl_constant_id)
+                            .unwrap_or_else(|_| {
+                                ConstValue::ImplConstant(impl_constant_id).intern(db)
+                            });
+
+                        Ok(ResolvedConcreteItem::Constant(constant))
+                    }
+                    TraitItemId::Impl(trait_impl_id) => {
+                        let impl_impl_id = ImplImplId::new(*impl_id, trait_impl_id, db);
+                        let imp = self
+                            .resolver
+                            .inference()
+                            .reduce_impl_impl(impl_impl_id)
+                            .unwrap_or_else(|_| ImplLongId::ImplImpl(impl_impl_id).intern(db));
+
+                        Ok(ResolvedConcreteItem::Impl(imp))
+                    }
+                }
+            }
+            ResolvedConcreteItem::Function(function_id) if ident == "Coupon" => {
+                if !are_coupons_enabled(db, self.resolver.active_module_id(&self.macro_info)) {
+                    self.diagnostics.report(identifier.stable_ptr(db), CouponsDisabled);
+                }
+                if matches!(
+                    function_id.get_concrete(db).generic_function,
+                    GenericFunctionId::Extern(_)
+                ) {
+                    return Err(self
+                        .diagnostics
+                        .report(identifier.stable_ptr(db), CouponForExternFunctionNotAllowed));
+                }
+                Ok(ResolvedConcreteItem::Type(TypeLongId::Coupon(*function_id).intern(db)))
+            }
+            _ => Err(self.diagnostics.report(identifier.stable_ptr(db), InvalidPath)),
+        }
+    }
+
+    /// Given the current resolved item, resolves the next segment.
+    fn next_generic(
+        &mut self,
+        containing_item: &ResolvedGenericItem<'db>,
+        segment: &ast::PathSegment<'db>,
+    ) -> Maybe<ResolvedGenericItem<'db>> {
+        let db = self.resolver.db;
+        let identifier = segment.identifier_ast(db);
+        let ident = identifier.text(db);
+        match containing_item {
+            ResolvedGenericItem::Module(module_id) => {
+                let inner_item_info = self.module_inner_item(module_id, ident, &identifier)?;
+
+                self.validate_module_item_usability(*module_id, &identifier, &inner_item_info);
+                self.resolver.insert_used_use(inner_item_info.item_id);
+                ResolvedGenericItem::from_module_item(db, inner_item_info.item_id)
+            }
+            ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
+                let variants = db.enum_variants(*enum_id)?;
+                let variant_id = variants.get(ident).ok_or_else(|| {
+                    self.diagnostics.report(
+                        identifier.stable_ptr(db),
+                        NoSuchVariant { enum_id: *enum_id, variant_name: ident.into() },
+                    )
+                })?;
+                let variant = db.variant_semantic(*enum_id, *variant_id)?;
+                Ok(ResolvedGenericItem::Variant(variant))
+            }
+            _ => Err(self.diagnostics.report(identifier.stable_ptr(db), InvalidPath)),
+        }
+    }
+
+    /// Determines the base module or crate for the path resolving. Looks only in non-local scope
+    /// (i.e. current module, or crates).
+    fn determine_base(
+        &mut self,
+        identifier: &ast::TerminalIdentifier<'db>,
+    ) -> Maybe<ResolvedBase<'db>> {
+        let db = self.resolver.db;
+        let ident = identifier.text(db);
+        if let ResolutionContext::Statement(ref mut env) = self.resolution_context
+            && let Some(item) = get_statement_item_by_name(env, ident)
+        {
+            return Ok(ResolvedBase::StatementEnvironment(item));
+        }
+
+        let Some(module_id) = self.resolver.try_get_active_module_id(&self.macro_info) else {
+            let item_type = if self.segments.len() == 1 {
+                self.expected_item_type
+            } else {
+                NotFoundItemType::Identifier
+            };
+            return Err(self
+                .diagnostics
+                .report(identifier.stable_ptr(db), PathNotFound(item_type)));
+        };
+        // If an item with this name is found inside the current module, use the current module.
+        if let Ok(Some(item_id)) = db.module_item_by_name(module_id, ident.into())
+            && !matches!(self.resolution_context, ResolutionContext::ModuleItem(id) if id == item_id)
+        {
+            return Ok(ResolvedBase::Module(module_id));
+        }
+
+        // If the first element is `crate`, use the crate's root module as the base module.
+        if ident == CRATE_KW {
+            return Ok(ResolvedBase::Crate(self.resolver.active_owning_crate_id(&self.macro_info)));
+        }
+        // If the first segment is a name of a crate, use the crate's root module as the base
+        // module.
+        if let Some(dep) = self.resolver.active_settings(&self.macro_info).dependencies.get(ident) {
+            let dep_crate_id =
+                CrateLongId::Real { name: ident.into(), discriminator: dep.discriminator.clone() }
+                    .intern(db);
+            let configs = db.crate_configs();
+            if !configs.contains_key(&dep_crate_id) {
+                let get_long_id = |crate_id: CrateId<'db>| crate_id.long(db);
+                panic!(
+                    "Invalid crate dependency: {:?}\nconfigured crates: {:#?}",
+                    get_long_id(dep_crate_id),
+                    configs.keys().cloned().map(get_long_id).collect_vec()
+                );
+            }
+
+            return Ok(ResolvedBase::Crate(dep_crate_id));
+        }
+        // If the first segment is `core` - and it was not overridden by a dependency - using it.
+        if ident == CORELIB_CRATE_NAME {
+            return Ok(ResolvedBase::Crate(CrateId::core(db)));
+        }
+        // TODO(orizi): Remove when `starknet` becomes a proper crate.
+        if ident == STARKNET_CRATE_NAME {
+            // Making sure we don't look for it in `*` modules, to prevent cycles.
+            return Ok(ResolvedBase::Module(self.resolver.prelude_submodule_ex(&self.macro_info)));
+        }
+        if let Some((item_info, module_id)) =
+            self.resolver.resolve_item_in_macro_calls(module_id, identifier)
+        {
+            return Ok(ResolvedBase::FoundThroughGlobalUse {
+                item_info,
+                containing_module: module_id,
+            });
+        }
+        // If an item with this name is found in one of the 'use *' imports, use the module that
+        match self.resolver.resolve_path_using_use_star(module_id, ident) {
+            UseStarResult::UniquePathFound(inner_module_item) => {
+                return Ok(ResolvedBase::FoundThroughGlobalUse {
+                    item_info: inner_module_item,
+                    containing_module: module_id,
+                });
+            }
+            UseStarResult::AmbiguousPath(module_items) => {
+                return Ok(ResolvedBase::Ambiguous(module_items));
+            }
+            UseStarResult::PathNotFound => {}
+            UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
+                let prelude = self.resolver.prelude_submodule_ex(&self.macro_info);
+                if let Ok(Some(_)) = db.module_item_by_name(prelude, ident.into()) {
+                    return Ok(ResolvedBase::Module(prelude));
+                }
+                return Ok(ResolvedBase::ItemNotVisible(module_item_id, containing_modules));
+            }
+        }
+        Ok(ResolvedBase::Module(self.resolver.prelude_submodule_ex(&self.macro_info)))
+    }
+    /// Validates that an item is usable from the current module or adds a diagnostic.
+    /// This includes visibility checks and feature checks.
+    fn validate_module_item_usability(
+        &mut self,
+        containing_module_id: ModuleId<'db>,
+        identifier: &ast::TerminalIdentifier<'db>,
+        item_info: &ModuleItemInfo<'db>,
+    ) {
+        if !self.resolver.is_item_visible_ex(
+            containing_module_id,
+            item_info,
+            self.resolver.active_module_id(&self.macro_info),
+            &self.macro_info,
+        ) {
+            self.diagnostics.report(
+                identifier.stable_ptr(self.resolver.db),
+                ItemNotVisible(item_info.item_id, vec![]),
+            );
+        }
+
+        self.resolver.validate_feature_constraints(self.diagnostics, identifier, item_info);
+    }
 }

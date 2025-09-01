@@ -86,8 +86,13 @@ impl<'db> OptimizationPhase<'db> {
             OptimizationPhase::TrimUnreachable => trim_unreachable(db, lowered),
             OptimizationPhase::LowerImplicits => lower_implicits(db, function, lowered),
             OptimizationPhase::GasRedeposit => gas_redeposit(db, function, lowered),
-            OptimizationPhase::Validate => validate(lowered)
-                .unwrap_or_else(|err| panic!("Failed validation: {:?}", err.to_message())),
+            OptimizationPhase::Validate => validate(lowered).unwrap_or_else(|err| {
+                panic!(
+                    "Failed validation for function {}: {:?}",
+                    function.full_path(db),
+                    err.to_message()
+                )
+            }),
             OptimizationPhase::SubStrategy { strategy, iterations } => {
                 for _ in 1..iterations {
                     let before = lowered.clone();
@@ -151,6 +156,8 @@ pub fn baseline_optimization_strategy<'db>(
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::CancelOps,
         OptimizationPhase::ReorganizeBlocks,
+        // Performing CSE here after blocks are the most contiguous, to reach maximum effect.
+        OptimizationPhase::Cse,
         OptimizationPhase::DedupBlocks,
         // Re-run ReturnOptimization to eliminate harmful merges introduced by DedupBlocks.
         OptimizationPhase::ReturnOptimization,

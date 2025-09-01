@@ -160,6 +160,7 @@ type NonZero<core::integer::u256> = NonZero<core::integer::u256> [storable: true
 libfunc u256_is_zero = u256_is_zero;
 libfunc branch_align = branch_align;
 libfunc const_as_immediate<Const<u128, 0>> = const_as_immediate<Const<u128, 0>>;
+libfunc dup<u128> = dup<u128>;
 libfunc struct_construct<core::integer::u256> = struct_construct<core::integer::u256>;
 libfunc store_temp<core::integer::u256> = store_temp<core::integer::u256>;
 libfunc unwrap_non_zero<core::integer::u256> = unwrap_non_zero<core::integer::u256>;
@@ -168,8 +169,8 @@ F0:
 u256_is_zero([0]) { fallthrough() F0_B0([1]) };
 branch_align() -> ();
 const_as_immediate<Const<u128, 0>>() -> ([2]);
-const_as_immediate<Const<u128, 0>>() -> ([3]);
-struct_construct<core::integer::u256>([2], [3]) -> ([4]);
+dup<u128>([2]) -> ([2], [3]);
+struct_construct<core::integer::u256>([3], [2]) -> ([4]);
 store_temp<core::integer::u256>([4]) -> ([4]);
 return([4]);
 F0_B0:

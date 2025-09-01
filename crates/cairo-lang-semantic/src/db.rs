@@ -14,13 +14,15 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, StrRef};
+use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, StrRef, Tracked};
+use cairo_lang_syntax::attribute::consts::{DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES};
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, Upcast, require};
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use salsa::{Database, Setter};
 
 use crate::corelib::CoreInfo;
@@ -32,7 +34,8 @@ use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{GenericFunctionId, ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{
-    ImplId, ImplImplId, ImplItemInfo, ImplLookupContextId, ImplicitImplImplData, UninferredImplById,
+    GenericsHeadFilter, ImplId, ImplImplId, ImplItemInfo, ImplLookupContextId,
+    ImplicitImplImplData, ModuleImpls, UninferredImplById,
 };
 use crate::items::macro_declaration::{MacroDeclarationData, MacroRuleData};
 use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
@@ -45,7 +48,7 @@ use crate::items::visibility::Visibility;
 use crate::plugin::{AnalyzerPlugin, InternedPluginSuite, PluginSuite};
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::substitution::GenericSubstitution;
-use crate::types::{ImplTypeById, ImplTypeId, TypeSizeInformation};
+use crate::types::{ImplTypeById, ImplTypeId, ShallowGenericArg, TypeSizeInformation};
 use crate::{
     FunctionId, Parameter, SemanticDiagnostic, TypeId, corelib, items, lsp_helpers, semantic, types,
 };
@@ -87,7 +90,7 @@ pub trait Elongate {
 // This prevents cycles where there shouldn't be any.
 #[cairo_lang_proc_macros::query_group]
 pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + Elongate {
-    #[salsa::interned]
+    #[salsa::interned(revisions = usize::MAX)]
     fn intern_impl_lookup_context<'db>(
         &'db self,
         id: items::imp::ImplLookupContext<'db>,
@@ -122,9 +125,6 @@ pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + 
     #[salsa::invoke(items::constant::constant_const_value)]
     #[salsa::cycle(items::constant::constant_const_value_cycle)]
     fn constant_const_value<'db>(&'db self, const_id: ConstantId<'db>) -> Maybe<ConstValueId<'db>>;
-    #[salsa::invoke(items::constant::constant_const_type)]
-    #[salsa::cycle(items::constant::constant_const_type_cycle)]
-    fn constant_const_type<'db>(&'db self, const_id: ConstantId<'db>) -> Maybe<TypeId<'db>>;
     /// Returns information required for const calculations.
     #[salsa::invoke(items::constant::const_calc_info)]
     fn const_calc_info<'db>(&'db self) -> Arc<ConstCalcInfo<'db>>;
@@ -166,9 +166,9 @@ pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + 
         &'db self,
         global_use_id: GlobalUseId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>>;
-    /// Private query to compute the imported modules of a module, using global uses.
-    #[salsa::invoke(items::us::priv_module_use_star_modules)]
-    fn priv_module_use_star_modules<'db>(
+    /// Computes the imported modules of a module, using global uses and macro calls.
+    #[salsa::invoke(items::us::module_imported_modules)]
+    fn module_imported_modules<'db>(
         &'db self,
         module_id: ModuleId<'db>,
     ) -> Arc<ImportedModules<'db>>;
@@ -474,6 +474,14 @@ pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + 
         trait_id: TraitId<'db>,
         in_cycle: bool,
     ) -> Maybe<GenericParamsData<'db>>;
+
+    /// Returns the ids of the generic parameters of a trait.
+    #[salsa::invoke(items::trt::trait_generic_params_ids)]
+    fn trait_generic_params_ids<'db>(
+        &'db self,
+        trait_id: TraitId<'db>,
+    ) -> Maybe<Vec<GenericParamId<'db>>>;
+
     /// Returns the attributes of a trait.
     #[salsa::invoke(items::trt::trait_attributes)]
     fn trait_attributes<'db>(&'db self, trait_id: TraitId<'db>) -> Maybe<Vec<Attribute<'db>>>;
@@ -863,6 +871,23 @@ pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + 
     /// a trait.
     #[salsa::invoke(items::imp::impl_def_trait)]
     fn impl_def_trait<'db>(&'db self, impl_def_id: ImplDefId<'db>) -> Maybe<TraitId<'db>>;
+
+    /// Returns the shallow trait generic arguments of an impl.
+    #[salsa::invoke(items::imp::impl_def_shallow_trait_generic_args)]
+    #[salsa::transparent]
+    fn impl_def_shallow_trait_generic_args<'db>(
+        &'db self,
+        impl_def_id: ImplDefId<'db>,
+    ) -> Maybe<&'db [(GenericParamId<'db>, ShallowGenericArg<'db>)]>;
+
+    /// Returns the shallow trait generic arguments of an impl alias.
+    #[salsa::invoke(items::imp::impl_alias_trait_generic_args)]
+    #[salsa::transparent]
+    fn impl_alias_trait_generic_args<'db>(
+        &'db self,
+        impl_def_id: ImplAliasId<'db>,
+    ) -> Maybe<&'db [(GenericParamId<'db>, ShallowGenericArg<'db>)]>;
+
     /// Private query to compute declaration data about an impl.
     #[salsa::invoke(items::imp::priv_impl_declaration_data)]
     #[salsa::cycle(items::imp::priv_impl_declaration_data_cycle)]
@@ -1350,6 +1375,55 @@ pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + 
         impl_function_id: ImplFunctionId<'db>,
     ) -> Maybe<items::function_with_body::FunctionBodyData<'db>>;
 
+    /// Returns the dependencies of a crate.
+    #[salsa::invoke(items::imp::priv_crate_dependencies)]
+    fn priv_crate_dependencies<'db>(
+        &'db self,
+        crate_id: CrateId<'db>,
+    ) -> Arc<OrderedHashSet<CrateId<'db>>>;
+    /// Returns the uninferred impls of a crate which are global.
+    /// An impl is global if it is defined in the same module as the trait it implements or in the
+    /// same module as one of its concrete traits' types.
+    #[salsa::invoke(items::imp::crate_global_impls)]
+    #[salsa::transparent]
+    fn crate_global_impls<'db>(
+        &'db self,
+        crate_id: CrateId<'db>,
+    ) -> Maybe<&'db UnorderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImplById<'db>>>>;
+
+    /// Returns the traits which impls of a trait directly depend on.
+    #[salsa::invoke(items::imp::crate_traits_dependencies)]
+    fn crate_traits_dependencies<'db>(
+        &'db self,
+        crate_id: CrateId<'db>,
+    ) -> Arc<UnorderedHashMap<TraitId<'db>, OrderedHashSet<TraitId<'db>>>>;
+
+    /// Returns the traits which are reachable from a trait.
+    #[salsa::invoke(items::imp::reachable_trait_dependencies)]
+    fn reachable_trait_dependencies<'db>(
+        &'db self,
+        trait_id: TraitId<'db>,
+        crate_id: CrateId<'db>,
+    ) -> OrderedHashSet<TraitId<'db>>;
+
+    /// Returns the global and local impls of a module.
+    #[salsa::invoke(items::imp::module_global_impls)]
+    #[salsa::transparent]
+    fn module_global_impls<'db>(
+        &'db self,
+        _tracked: Tracked,
+        module_id: ModuleId<'db>,
+    ) -> &'db Maybe<ModuleImpls<'db>>;
+
+    /// Returns the candidates for a trait by its head.
+    #[salsa::invoke(items::imp::trait_candidate_by_head)]
+    #[salsa::transparent]
+    fn trait_candidate_by_head<'db>(
+        &'db self,
+        crate_id: CrateId<'db>,
+        trait_id: TraitId<'db>,
+    ) -> &'db OrderedHashMap<GenericsHeadFilter<'db>, OrderedHashSet<UninferredImplById<'db>>>;
+
     // Implizations.
     // ==============
     /// Returns the impl type for the given trait type, by implization by the given impl context, if
@@ -1721,6 +1795,14 @@ pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + 
         &'db self,
         generic_param_id: GenericParamId<'db>,
     ) -> Maybe<TraitId<'db>>;
+
+    /// Returns the shallow generic args of a generic impl param.
+    #[salsa::invoke(items::generics::generic_impl_param_shallow_trait_generic_args)]
+    #[salsa::transparent]
+    fn generic_impl_param_shallow_trait_generic_args<'db>(
+        &'db self,
+        generic_param: GenericParamId<'db>,
+    ) -> Maybe<&'db [(GenericParamId<'db>, ShallowGenericArg<'db>)]>;
     /// Private query to compute data about a generic param.
     #[salsa::invoke(items::generics::priv_generic_param_data)]
     #[salsa::cycle(items::generics::priv_generic_param_data_cycle)]
@@ -2059,11 +2141,14 @@ fn crate_analyzer_plugins<'db>(
 }
 
 fn declared_allows(db: &dyn SemanticGroup, crate_id: CrateId<'_>) -> Arc<OrderedHashSet<String>> {
-    Arc::new(OrderedHashSet::from_iter(
-        db.crate_analyzer_plugins(crate_id)
-            .iter()
-            .flat_map(|plugin| plugin.long(db).declared_allows()),
-    ))
+    let base_lints = [DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES];
+
+    let crate_analyzer_plugins = db.crate_analyzer_plugins(crate_id);
+
+    Arc::new(OrderedHashSet::from_iter(chain!(
+        base_lints.map(|attr| attr.into()),
+        crate_analyzer_plugins.iter().flat_map(|plugin| plugin.long(db).declared_allows())
+    )))
 }
 
 /// Adds diagnostics for unused items in a module.
@@ -2105,7 +2190,7 @@ fn add_unused_import_diagnostics<'db>(
         ))?;
         require(!all_used_uses.contains(&use_id))?;
         let resolver_data = db.use_resolver_data(use_id).ok()?;
-        require(!resolver_data.feature_config.allow_unused_imports)?;
+        require(!resolver_data.feature_config.allowed_lints.contains(UNUSED_IMPORTS))?;
         Some(diagnostics.add(SemanticDiagnostic::new(
             StableLocation::new(use_id.untyped_stable_ptr(db)),
             SemanticDiagnosticKind::UnusedImport(use_id),

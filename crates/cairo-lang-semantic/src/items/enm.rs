@@ -13,7 +13,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, Upcast};
 
 use super::attribute::SemanticQueryAttrs;
-use super::feature_kind::extract_item_feature_config;
 use super::generics::{GenericParamsData, semantic_generic_params};
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
@@ -212,10 +211,8 @@ pub fn priv_enum_definition_data<'db>(
     let mut variants = OrderedHashMap::default();
     let mut variant_semantic = OrderedHashMap::default();
     for (variant_idx, variant) in enum_ast.variants(db).elements(db).enumerate() {
-        let feature_restore = resolver
-            .data
-            .feature_config
-            .override_with(extract_item_feature_config(db, crate_id, &variant, &mut diagnostics));
+        let feature_restore =
+            resolver.extend_feature_config_from_item(db, crate_id, &mut diagnostics, &variant);
         let id = VariantLongId(module_file_id, variant.stable_ptr(db)).intern(db);
         let ty = match variant.type_clause(db) {
             ast::OptionTypeClause::Empty(_) => unit_ty(db),
@@ -229,7 +226,7 @@ pub fn priv_enum_definition_data<'db>(
                 .report(variant.stable_ptr(db), EnumVariantRedefinition { enum_id, variant_name });
         }
         variant_semantic.insert(id, Variant { enum_id, id, ty, idx: variant_idx });
-        resolver.data.feature_config.restore(feature_restore);
+        resolver.restore_feature_config(feature_restore);
     }
 
     // Check fully resolved.

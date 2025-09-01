@@ -20,6 +20,7 @@ use crate::lower::test_utils::{create_encapsulating_ctx, create_lowering_context
 use crate::lower::{
     alloc_empty_block, lowered_expr_to_block_scope_end, wrap_sealed_block_as_function,
 };
+use crate::objects::blocks::Blocks;
 use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
 
 cairo_lang_test_utils::test_file_test!(
@@ -130,16 +131,27 @@ fn lower_graph_as_function<'db>(
     // Lower the graph into the builder.
     let block_expr = lower_graph(&mut ctx, &mut builder, graph, location);
 
-    let block_sealed = lowered_expr_to_block_scope_end(&mut ctx, builder, block_expr).unwrap();
+    let block_sealed = match lowered_expr_to_block_scope_end(&mut ctx, builder, block_expr) {
+        Ok(block_sealed) => block_sealed,
+        Err(diag_added) => {
+            return Lowered {
+                diagnostics: ctx.diagnostics.build(),
+                variables: ctx.variables.variables,
+                blocks: Blocks::new_errored(diag_added),
+                signature: ctx.signature.clone(),
+                parameters,
+            };
+        }
+    };
 
     let expr = ctx.function_body.arenas.exprs[expr_id].clone();
 
     wrap_sealed_block_as_function(&mut ctx, block_sealed, expr.stable_ptr().untyped()).unwrap();
 
-    let blocks = std::mem::take(&mut ctx.blocks).build().expect("Root block must exist.");
+    let blocks = ctx.blocks.build().expect("Root block must exist.");
     Lowered {
-        diagnostics: std::mem::take(&mut ctx.diagnostics).build(),
-        variables: std::mem::take(&mut ctx.variables.variables),
+        diagnostics: ctx.diagnostics.build(),
+        variables: ctx.variables.variables,
         blocks,
         signature: ctx.signature.clone(),
         parameters,

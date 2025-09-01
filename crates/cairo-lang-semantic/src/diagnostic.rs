@@ -768,8 +768,8 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 )
             }
             SemanticDiagnosticKind::InternalInferenceError(err) => err.format(db),
-            SemanticDiagnosticKind::DesnapNonSnapshot => {
-                "Desnap operator can only be applied on snapshots".into()
+            SemanticDiagnosticKind::DerefNonRef { ty } => {
+                format!("Type `{}` cannot be dereferenced", ty.format(db))
             }
             SemanticDiagnosticKind::NoImplementationOfIndexOperator { ty, inference_errors } => {
                 if inference_errors.is_empty() {
@@ -1414,7 +1414,9 @@ pub enum SemanticDiagnosticKind<'db> {
         expected_trt: semantic::ConcreteTraitId<'db>,
         actual_trt: semantic::ConcreteTraitId<'db>,
     },
-    DesnapNonSnapshot,
+    DerefNonRef {
+        ty: semantic::TypeId<'db>,
+    },
     InternalInferenceError(InferenceError<'db>),
     NoImplementationOfIndexOperator {
         ty: semantic::TypeId<'db>,
@@ -1525,6 +1527,7 @@ impl<'db> SemanticDiagnosticKind<'db> {
             Self::MissingItemsInImpl(_) => error_code!(E0004),
             Self::ModuleFileNotFound(_) => error_code!(E0005),
             Self::PathNotFound(_) => error_code!(E0006),
+            Self::NoSuchTypeMember { .. } => error_code!(E0007),
             _ => return None,
         })
     }

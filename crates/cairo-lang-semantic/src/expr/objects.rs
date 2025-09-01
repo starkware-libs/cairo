@@ -4,6 +4,7 @@ use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::{Arena, ArenaBehavior};
 use num_bigint::BigInt;
 
@@ -218,11 +219,26 @@ impl<'db> Expr<'db> {
         }
     }
 
+    /// Returns the member path of the expression, if it is a variable or a member access.
     pub fn as_member_path(&self) -> Option<ExprVarMemberPath<'db>> {
         match self {
             Expr::Var(expr) => Some(ExprVarMemberPath::Var(expr.clone())),
             Expr::MemberAccess(expr) => expr.member_path.clone(),
             _ => None,
+        }
+    }
+
+    /// Returns true if the expression is a variable or a member access of a mutable variable.
+    pub fn is_mutable_var(
+        &self,
+        semantic_defs: &UnorderedHashMap<semantic::VarId<'db>, semantic::Binding<'db>>,
+    ) -> bool {
+        if let Some(base_var) = self.as_member_path().map(|path| path.base_var())
+            && let Some(var_def) = semantic_defs.get(&base_var)
+        {
+            var_def.is_mut()
+        } else {
+            false
         }
     }
 }

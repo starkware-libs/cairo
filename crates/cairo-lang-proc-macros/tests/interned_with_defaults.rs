@@ -3,7 +3,7 @@ use expect_test::expect;
 mod logger_db;
 use logger_db::LoggerDb;
 
-#[salsa::interned(no_lifetime)]
+#[salsa::interned(no_lifetime, revisions = usize::MAX)]
 pub struct InternedWithDefaults {
     data: String,
     debug: Option<String>,
@@ -11,7 +11,7 @@ pub struct InternedWithDefaults {
 
 #[cairo_lang_proc_macros::query_group]
 pub trait InternedWithDefaultsDB: salsa::Database {
-    #[salsa::interned]
+    #[salsa::interned(revisions = usize::MAX)]
     #[default_values(debug=None)]
     fn intern_with_defaults(&self, data: String) -> InternedWithDefaults;
 

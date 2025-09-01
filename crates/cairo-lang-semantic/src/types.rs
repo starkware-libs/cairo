@@ -4,16 +4,17 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, ModuleFileId, ModuleId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, ModuleId,
     NamedLanguageElementId, StructId, TraitTypeId, UnstableSalsaId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
+use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::{Intern, OptionFrom, define_short_id, try_extract_matches};
+use cairo_lang_utils::{Intern, OptionFrom, define_short_id, extract_matches, try_extract_matches};
 use itertools::{Itertools, chain};
 use num_bigint::BigInt;
 use num_traits::Zero;
@@ -22,7 +23,7 @@ use sha3::{Digest, Keccak256};
 
 use crate::corelib::{
     concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
-    concrete_panic_destruct_trait, get_usize_ty,
+    concrete_panic_destruct_trait, get_usize_ty, unit_ty,
 };
 use crate::db::{SemanticGroup, SemanticGroupData};
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -37,7 +38,7 @@ use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_ev
 use crate::items::enm::SemanticEnumEx;
 use crate::items::generics::fmt_generic_args;
 use crate::items::imp::{ImplId, ImplLookupContext, ImplLookupContextId};
-use crate::resolve::{ResolutionContext, ResolvedConcreteItem, Resolver};
+use crate::resolve::{ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id};
 
@@ -131,8 +132,8 @@ impl<'db> TypeLongId<'db> {
             TypeLongId::Snapshot(inner) => TypeHead::Snapshot(Box::new(inner.head(db)?)),
             TypeLongId::Coupon(_) => TypeHead::Coupon,
             TypeLongId::FixedSizeArray { .. } => TypeHead::FixedSizeArray,
-            TypeLongId::GenericParameter(_)
-            | TypeLongId::Var(_)
+            TypeLongId::GenericParameter(generic_param_id) => TypeHead::Generic(*generic_param_id),
+            TypeLongId::Var(_)
             | TypeLongId::Missing(_)
             | TypeLongId::ImplType(_)
             | TypeLongId::Closure(_) => {
@@ -185,7 +186,7 @@ impl<'db> TypeLongId<'db> {
     /// Returns the module id of the given type if applicable.
     pub fn module_id(&self, db: &'db dyn SemanticGroup) -> Option<ModuleId<'db>> {
         match self {
-            TypeLongId::Concrete(concrete) => Some(concrete.generic_type(db).module_file_id(db).0),
+            TypeLongId::Concrete(concrete) => Some(concrete.generic_type(db).parent_module(db)),
             TypeLongId::Snapshot(ty) => {
                 let (_n_snapshots, inner_ty) = peel_snapshots(db, *ty);
                 inner_ty.module_id(db)
@@ -257,10 +258,11 @@ impl<'db> DebugWithDb<'db> for TypeLongId<'db> {
 /// A type that is not one of {generic param, type variable, impl type} has a head, which represents
 /// the kind of the root node in its type tree. This is used for caching queries for fast lookups
 /// when the type is not completely inferred yet.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
 pub enum TypeHead<'db> {
     Concrete(GenericTypeId<'db>),
     Snapshot(Box<TypeHead<'db>>),
+    Generic(GenericParamId<'db>),
     Tuple,
     Coupon,
     FixedSizeArray,
@@ -572,6 +574,7 @@ fn maybe_resolve_type<'db>(
             let ty = resolve_type_ex(db, diagnostics, resolver, &unary_syntax.expr(db), ctx);
             TypeLongId::Snapshot(ty).intern(db)
         }
+        // TODO(TomerStarkware): make sure this is unreachable.
         ast::Expr::Unary(unary_syntax)
             if matches!(unary_syntax.op(db), ast::UnaryOperator::Desnap(_)) =>
         {
@@ -579,7 +582,7 @@ fn maybe_resolve_type<'db>(
             if let Some(desnapped_ty) = try_extract_matches!(ty.long(db), TypeLongId::Snapshot) {
                 *desnapped_ty
             } else {
-                return Err(diagnostics.report(ty_syntax.stable_ptr(db), DesnapNonSnapshot));
+                return Err(diagnostics.report(ty_syntax.stable_ptr(db), DerefNonRef { ty }));
             }
         }
         ast::Expr::FixedSizeArray(array_syntax) => {
@@ -605,6 +608,110 @@ fn maybe_resolve_type<'db>(
     })
 }
 
+/// A generic argument which is not fully inferred. Used to avoid cycles in the inference.
+#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+pub enum ShallowGenericArg<'db> {
+    /// The generic argument is a generic parameter.
+    GenericParameter(GenericParamId<'db>),
+    /// The generic argument is a generic type.
+    GenericType(GenericTypeId<'db>),
+    Snapshot(Box<ShallowGenericArg<'db>>),
+    Tuple,
+    FixedSizeArray,
+}
+
+impl<'db> ShallowGenericArg<'db> {
+    /// Returns the module id of the shallow generic argument.
+    pub fn module_id(&self, db: &'db dyn SemanticGroup) -> Option<ModuleId<'db>> {
+        match self {
+            ShallowGenericArg::GenericParameter(_) => None,
+            ShallowGenericArg::GenericType(ty) => Some(ty.module_file_id(db).0),
+            ShallowGenericArg::Snapshot(inner) => inner.module_id(db),
+            ShallowGenericArg::Tuple => TypeLongId::Tuple(vec![]).module_id(db),
+            ShallowGenericArg::FixedSizeArray => TypeLongId::FixedSizeArray {
+                type_id: unit_ty(db),
+                size: ConstValue::Struct(vec![], unit_ty(db)).intern(db),
+            }
+            .module_id(db),
+        }
+    }
+    pub fn head(&self) -> TypeHead<'db> {
+        match self {
+            ShallowGenericArg::GenericParameter(param) => TypeHead::Generic(*param),
+            ShallowGenericArg::GenericType(ty) => TypeHead::Concrete(*ty),
+            ShallowGenericArg::Snapshot(inner) => TypeHead::Snapshot(Box::new(inner.head())),
+            ShallowGenericArg::Tuple => TypeHead::Tuple,
+            ShallowGenericArg::FixedSizeArray => TypeHead::FixedSizeArray,
+        }
+    }
+}
+/// Resolves a shallow generic argument from a syntax node.
+pub fn maybe_resolve_shallow_generic_arg_type<'db>(
+    db: &'db dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    resolver: &mut Resolver<'db>,
+    ty_syntax: &ast::Expr<'db>,
+) -> Option<ShallowGenericArg<'db>> {
+    Some(match ty_syntax {
+        ast::Expr::Path(path) => {
+            if let [PathSegment::Simple(path)] =
+                path.segments(db).elements(db).collect_vec().as_slice()
+                && let Some(ResolvedConcreteItem::Type(ty)) =
+                    resolver.determine_base_item_in_local_scope(&path.ident(db))
+            {
+                let param = extract_matches!(ty.long(db), TypeLongId::GenericParameter);
+                return Some(ShallowGenericArg::GenericParameter(*param));
+            }
+
+            match resolver
+                .resolve_generic_path_with_args(
+                    diagnostics,
+                    path,
+                    NotFoundItemType::Type,
+                    ResolutionContext::Default,
+                )
+                .ok()?
+            {
+                ResolvedGenericItem::GenericType(ty) => ShallowGenericArg::GenericType(ty),
+                _ => {
+                    return None;
+                }
+            }
+        }
+        ast::Expr::Parenthesized(expr_syntax) => maybe_resolve_shallow_generic_arg_type(
+            db,
+            diagnostics,
+            resolver,
+            &expr_syntax.expr(db),
+        )?,
+        ast::Expr::Tuple(_) => ShallowGenericArg::Tuple,
+        ast::Expr::Unary(unary_syntax)
+            if matches!(unary_syntax.op(db), ast::UnaryOperator::At(_)) =>
+        {
+            ShallowGenericArg::Snapshot(Box::new(maybe_resolve_shallow_generic_arg_type(
+                db,
+                diagnostics,
+                resolver,
+                &unary_syntax.expr(db),
+            )?))
+        }
+        ast::Expr::Unary(unary_syntax)
+            if matches!(unary_syntax.op(db), ast::UnaryOperator::Desnap(_)) =>
+        {
+            maybe_resolve_shallow_generic_arg_type(
+                db,
+                diagnostics,
+                resolver,
+                &unary_syntax.expr(db),
+            )?
+        }
+        ast::Expr::FixedSizeArray(_) => ShallowGenericArg::FixedSizeArray,
+        _ => {
+            return None;
+        }
+    })
+}
+
 /// Extracts the size of a fixed size array, or none if the size is missing. Reports an error if the
 /// size is not a numeric literal.
 pub fn extract_fixed_size_array_size<'db>(
@@ -626,8 +733,8 @@ pub fn extract_fixed_size_array_size<'db>(
                 get_usize_ty(db),
                 false,
             );
-            if matches!(const_value, ConstValue::Int(_, _) | ConstValue::Generic(_)) {
-                Ok(Some(const_value.intern(db)))
+            if matches!(const_value.long(db), ConstValue::Int(_, _) | ConstValue::Generic(_)) {
+                Ok(Some(const_value))
             } else {
                 Err(diagnostics.report(syntax.stable_ptr(db), FixedSizeArrayNonNumericSize))
             }
@@ -1029,11 +1136,8 @@ pub fn wrap_in_snapshots<'db>(
 }
 
 /// Returns `true` if coupons are enabled in the module.
-pub(crate) fn are_coupons_enabled(
-    db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId<'_>,
-) -> bool {
-    let owning_crate = module_file_id.0.owning_crate(db);
+pub(crate) fn are_coupons_enabled(db: &dyn SemanticGroup, module_id: ModuleId<'_>) -> bool {
+    let owning_crate = module_id.owning_crate(db);
     let Some(config) = db.crate_config(owning_crate) else { return false };
     config.settings.experimental_features.coupons
 }

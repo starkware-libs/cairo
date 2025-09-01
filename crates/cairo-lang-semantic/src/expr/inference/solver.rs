@@ -153,7 +153,7 @@ pub fn enrich_lookup_context<'db>(
     concrete_trait_id: ConcreteTraitId<'db>,
     lookup_context: &mut ImplLookupContext<'db>,
 ) {
-    lookup_context.insert_module(concrete_trait_id.trait_id(db).module_file_id(db).0, db);
+    lookup_context.insert_module(concrete_trait_id.trait_id(db).parent_module(db), db);
     let generic_args = concrete_trait_id.generic_args(db);
     // Add the defining module of the generic args to the lookup.
     for generic_arg in &generic_args {
@@ -161,6 +161,7 @@ pub fn enrich_lookup_context<'db>(
             enrich_lookup_context_with_ty(db, *ty, lookup_context);
         }
     }
+    lookup_context.strip_for_trait_id(db, concrete_trait_id.trait_id(db));
 }
 
 /// Adds the defining module of the type to the lookup context.
@@ -235,7 +236,9 @@ fn solve_candidate<'db>(
     lookup_context: ImplLookupContextId<'db>,
     impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
 ) -> InferenceResult<SolutionSet<'db, CanonicalImpl<'db>>> {
-    let candidate_concrete_trait = candidate.concrete_trait(db).unwrap();
+    let Ok(candidate_concrete_trait) = candidate.concrete_trait(db) else {
+        return Err(super::ErrorSet);
+    };
     // If the candidate is fully concrete, or its a generic which is var free, there is nothing
     // to substitute. A generic param may not be var free, if it contains impl types.
     let candidate_final = matches!(candidate, UninferredImpl::GenericParam(_))
@@ -801,8 +804,8 @@ impl<'db> LiteInference<'db> {
                     zip_eq(const_values, target_const_values).map(
                         |(const_value, target_const_value)| {
                             self.can_conform_const(
-                                (const_value.clone().intern(self.db), candidate_final),
-                                (target_const_value.clone().intern(self.db), target_final),
+                                (*const_value, candidate_final),
+                                (*target_const_value, target_final),
                             )
                         }
                     )
@@ -819,21 +822,21 @@ impl<'db> LiteInference<'db> {
                     (target_concrete_variant.ty, target_final),
                 ),
                 self.can_conform_const(
-                    (const_value.clone().intern(self.db), candidate_final),
-                    (target_const_value.clone().intern(self.db), target_final),
+                    (*const_value, candidate_final),
+                    (*target_const_value, target_final),
                 ),
             ]),
             (ConstValue::Enum(_, _), _) => CanConformResult::Rejected,
             (ConstValue::NonZero(const_value), ConstValue::NonZero(target_const_value)) => self
                 .can_conform_const(
-                    (const_value.clone().intern(self.db), candidate_final),
-                    (target_const_value.clone().intern(self.db), target_final),
+                    (*const_value, candidate_final),
+                    (*target_const_value, target_final),
                 ),
             (ConstValue::NonZero(_), _) => CanConformResult::Rejected,
             (ConstValue::Boxed(const_value), ConstValue::Boxed(target_const_value)) => self
                 .can_conform_const(
-                    (const_value.clone().intern(self.db), candidate_final),
-                    (target_const_value.clone().intern(self.db), target_final),
+                    (*const_value, candidate_final),
+                    (*target_const_value, target_final),
                 ),
             (ConstValue::Boxed(_), _) => CanConformResult::Rejected,
             (ConstValue::Generic(param), _) => {

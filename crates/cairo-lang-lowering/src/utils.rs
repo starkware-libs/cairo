@@ -50,7 +50,7 @@ pub trait RebuilderEx<'db>: Rebuilder<'db> {
     fn rebuild_statement(&mut self, statement: &Statement<'db>) -> Statement<'db> {
         let mut statement = match statement {
             Statement::Const(stmt) => Statement::Const(StatementConst {
-                value: stmt.value.clone(),
+                value: stmt.value,
                 output: self.map_var_id(stmt.output),
             }),
             Statement::Call(stmt) => Statement::Call(StatementCall {

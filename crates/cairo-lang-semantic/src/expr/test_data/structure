@@ -27,9 +27,9 @@ struct A {
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "()", found: "core::felt252".
- --> lib.cairo:8:9
+ --> lib.cairo:8:12
         b: 1_felt252,
-        ^
+           ^^^^^^^^^
 
 error: Unknown member.
  --> lib.cairo:10:9
@@ -77,7 +77,7 @@ struct A {
 }
 
 //! > expected_diagnostics
-error: Type "test::A" has no member "f"
+error[E0007]: Type "test::A" has no member "f"
  --> lib.cairo:7:7
     a.f;
       ^
@@ -97,7 +97,7 @@ error: Invalid member expression.
     a.4.4;
         ^
 
-error: Type "core::felt252" has no member "a"
+error[E0007]: Type "core::felt252" has no member "a"
  --> lib.cairo:10:15
     5_felt252.a;
               ^
