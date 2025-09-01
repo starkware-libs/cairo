@@ -14,7 +14,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, StrRef};
+use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, StrRef, Tracked};
 use cairo_lang_syntax::attribute::consts::{DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES};
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
@@ -1411,7 +1411,7 @@ pub trait SemanticGroup: Database + for<'db> Upcast<'db, dyn salsa::Database> + 
     #[salsa::transparent]
     fn module_global_impls<'db>(
         &'db self,
-        crate_id: CrateId<'db>,
+        _tracked: Tracked,
         module_id: ModuleId<'db>,
     ) -> &'db Maybe<ModuleImpls<'db>>;
 
