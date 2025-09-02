@@ -47,7 +47,7 @@ struct Args {
 }
 
 fn main() -> anyhow::Result<()> {
-    init_logging(log::LevelFilter::Off);
+    init_logging(tracing::Level::ERROR);
     log::info!("Starting Cairo compilation.");
 
     let args = Args::parse();
