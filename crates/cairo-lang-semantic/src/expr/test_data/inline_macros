@@ -2269,3 +2269,30 @@ error: The name `bar` is defined multiple times.
  --> lib.cairo[outer_macro][$defsite::inner_macro]:1:12
         fn bar() {}
            ^^^
+
+//! > ==========================================================================
+
+//! > Test handling expose! calls in items.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro define_bar {
+    () => {
+        expose! (
+            fn bar() {}
+        );
+    };
+}
+define_bar!();
+
+//! > expected_diagnostics
