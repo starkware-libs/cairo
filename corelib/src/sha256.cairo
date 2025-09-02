@@ -14,7 +14,9 @@
 //! 0x7d17648, 0x26381969]);
 //! ```
 use starknet::SyscallResultTrait;
-
+use crate::bytes_31::{
+    one_shift_left_bytes_u128,
+};
 /// A handle to the state of a SHA-256 hash.
 pub(crate) extern type Sha256StateHandle;
 
@@ -81,30 +83,50 @@ pub fn compute_sha256_u32_array(
 //! 0x7d17648, 0x26381969]);
 /// ```
 pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
-    let mut word_arr = array![];
-    let len = arr.len();
-    let rem = len % 4;
-    let mut index = 0;
-    let rounded_len = len - rem;
-    while index != rounded_len {
-        let word = arr.at(index + 3).unwrap().into()
-            + arr.at(index + 2).unwrap().into() * 0x100
-            + arr.at(index + 1).unwrap().into() * 0x10000
-            + arr.at(index).unwrap().into() * 0x1000000;
-        word_arr.append(word);
-        index = index + 4;
+    let mut span = Span { snapshot: arr.data };
+
+    let mut words_arr = array![];
+    let mut last_word = 0;
+    let mut last_word_len = 0;
+    while let Option::Some(byte_31) = span.pop_front() {
+        let u256 { mut low, mut high } = (*byte_31).into();
+        let mut shift = BYTES_IN_U128 - 1 - 4 + last_word_len;
+        append_u128_to_words_array(ref words_arr, high, ref last_word, ref last_word_len, shift);
+        let mut shift = BYTES_IN_U128 - 4 + last_word_len;
+        append_u128_to_words_array(ref words_arr, low, ref last_word, ref last_word_len, shift);
+    };
+    let u256 { mut low, mut high } = (*arr.pending_word).into();
+    if *arr.pending_word_len > BYTES_IN_U128 {
+        let mut shift = *arr.pending_word_len - BYTES_IN_U128 + last_word_len;
+        if shift >= 4 {
+            shift = shift - 4;
+            append_u128_to_words_array_partial(
+                ref words_arr, high, ref last_word, ref last_word_len, shift
+            );
+        } else {
+            last_word = (last_word.into() * one_shift_left_bytes_u128(last_word_len) + high)
+                .try_into()
+                .unwrap();
+            last_word_len = last_word_len + *arr.pending_word_len - BYTES_IN_U128;
+        }
+        let mut shift = BYTES_IN_U128 - 4 + last_word_len;
+        append_u128_to_words_array(ref words_arr, low, ref last_word, ref last_word_len, shift);
+    } else {
+        let mut shift = *arr.pending_word_len + last_word_len;
+        if shift >= 4 {
+            shift = shift - 4;
+            append_u128_to_words_array_partial(
+                ref words_arr, low, ref last_word, ref last_word_len, shift
+            );
+        } else {
+            last_word = (last_word.into() * one_shift_left_bytes_u128(*arr.pending_word_len) + low)
+            .try_into()
+            .unwrap();
+            last_word_len = last_word_len + *arr.pending_word_len;
+        }
     }
 
-    let last = match rem {
-        0 => 0,
-        1 => arr.at(len - 1).unwrap().into(),
-        2 => arr.at(len - 1).unwrap().into() + arr.at(len - 2).unwrap().into() * 0x100,
-        _ => arr.at(len - 1).unwrap().into()
-            + arr.at(len - 2).unwrap().into() * 0x100
-            + arr.at(len - 3).unwrap().into() * 0x10000,
-    };
-
-    compute_sha256_u32_array(word_arr, last, rem.into())
+    return compute_sha256_u32_array(words_arr, last_word, last_word_len);
 }
 
 /// Adds padding to the input array according to the SHA-256 specification.
@@ -207,4 +229,95 @@ fn append_zeros(ref arr: Array<u32>, count: felt252) {
         return;
     }
     arr.append(0);
+}
+
+const BYTES_IN_U128: usize = 16;
+
+/// Appends `val` to the words array.
+fn append_u128_to_words_array_partial(
+    ref words_arr: Array<u32>, val: u128, ref last_word: u32, ref last_word_len: u32, mut shift: u32
+) {
+    words_arr
+        .append(
+            (last_word.into() * one_shift_left_bytes_u128(4 - last_word_len)
+                + val / one_shift_left_bytes_u128(shift) % one_shift_left_bytes_u128(4))
+                .try_into()
+                .unwrap()
+        );
+    if shift < 4 {
+        last_word = (val % one_shift_left_bytes_u128(shift)).try_into().unwrap();
+        last_word_len = shift;
+        return;
+    }
+    shift = shift - 4;
+    words_arr
+        .append(
+            (val / one_shift_left_bytes_u128(shift) % one_shift_left_bytes_u128(4))
+                .try_into()
+                .unwrap()
+        );
+    if shift < 4 {
+        last_word = (val % one_shift_left_bytes_u128(shift)).try_into().unwrap();
+        last_word_len = shift;
+        return;
+    }
+    shift = shift - 4;
+    words_arr
+        .append(
+            (val / one_shift_left_bytes_u128(shift) % one_shift_left_bytes_u128(4))
+                .try_into()
+                .unwrap()
+        );
+    if shift < 4 {
+        last_word = (val % one_shift_left_bytes_u128(shift)).try_into().unwrap();
+        last_word_len = shift;
+        return;
+    }
+    shift = shift - 4;
+    words_arr
+        .append(
+            (val / one_shift_left_bytes_u128(shift) % one_shift_left_bytes_u128(4))
+                .try_into()
+                .unwrap()
+        );
+    last_word = (val % one_shift_left_bytes_u128(shift)).try_into().unwrap();
+    last_word_len = shift;
+}
+
+/// Appends `val` to the words array.
+fn append_u128_to_words_array(
+    ref words_arr: Array<u32>, val: u128, ref last_word: u32, ref last_word_len: u32, mut shift: u32
+) {
+    words_arr
+        .append(
+            (last_word.into() * one_shift_left_bytes_u128(4 - last_word_len)
+                + val / one_shift_left_bytes_u128(shift) % one_shift_left_bytes_u128(4))
+                .try_into()
+                .unwrap()
+        );
+    shift = shift - 4;
+    words_arr
+        .append(
+            (val / one_shift_left_bytes_u128(shift) % one_shift_left_bytes_u128(4))
+                .try_into()
+                .unwrap()
+        );
+    shift = shift - 4;
+    words_arr
+        .append(
+            (val / one_shift_left_bytes_u128(shift) % one_shift_left_bytes_u128(4))
+                .try_into()
+                .unwrap()
+        );
+    if shift != 3 {
+        shift = shift - 4;
+        words_arr
+            .append(
+                (val / one_shift_left_bytes_u128(shift) % one_shift_left_bytes_u128(4))
+                    .try_into()
+                    .unwrap()
+            );
+    }
+    last_word = (val % one_shift_left_bytes_u128(shift)).try_into().unwrap();
+    last_word_len = shift;
 }
