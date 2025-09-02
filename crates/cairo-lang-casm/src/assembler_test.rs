@@ -1,7 +1,6 @@
+use cairo_lang_test_utils::test;
 use num_bigint::ToBigInt;
 use pretty_assertions::assert_eq;
-#[cfg(feature = "std")]
-use test_log::test;
 
 use super::InstructionRepr;
 use crate::assembler::{ApUpdate, FpUpdate, Op1Addr, Opcode, OpcodeExtension, PcUpdate, Res};

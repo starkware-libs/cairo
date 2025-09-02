@@ -3,14 +3,13 @@ use std::collections::hash_map::RandomState as HashBuilderType;
 
 #[cfg(not(feature = "std"))]
 use hashbrown::DefaultHashBuilder as HashBuilderType;
-#[cfg(feature = "std")]
-use test_log::test;
 
 use crate::collection_arithmetics::{AddCollection, SubCollection};
 use crate::ordered_hash_map::OrderedHashMap;
 
 #[test]
 fn test_add_map_and_sub_map() {
+    crate::logging::init_logging(crate::logging::level::ERROR);
     let x = OrderedHashMap::<i64, i64, HashBuilderType>::from_iter([
         (10, 3),
         (20, 7),

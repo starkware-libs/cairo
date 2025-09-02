@@ -1,8 +1,8 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ModuleItemId;
+use cairo_lang_test_utils::test;
 use cairo_lang_utils::extract_matches;
 use pretty_assertions::assert_eq;
-use test_log::test;
 
 use crate::db::SemanticGroup;
 use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
