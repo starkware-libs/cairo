@@ -299,7 +299,6 @@ pub enum Expr<'db> {
     Indexed(ExprIndexed<'db>),
     InlineMacro(ExprInlineMacro<'db>),
     FixedSizeArray(ExprFixedSizeArray<'db>),
-    Placeholder(ExprPlaceholder<'db>),
     Missing(ExprMissing<'db>),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -438,11 +437,6 @@ impl<'db> From<ExprFixedSizeArrayPtr<'db>> for ExprPtr<'db> {
         Self(value.0)
     }
 }
-impl<'db> From<ExprPlaceholderPtr<'db>> for ExprPtr<'db> {
-    fn from(value: ExprPlaceholderPtr<'db>) -> Self {
-        Self(value.0)
-    }
-}
 impl<'db> From<ExprMissingPtr<'db>> for ExprPtr<'db> {
     fn from(value: ExprMissingPtr<'db>) -> Self {
         Self(value.0)
@@ -568,11 +562,6 @@ impl<'db> From<ExprFixedSizeArrayGreen<'db>> for ExprGreen<'db> {
         Self(value.0)
     }
 }
-impl<'db> From<ExprPlaceholderGreen<'db>> for ExprGreen<'db> {
-    fn from(value: ExprPlaceholderGreen<'db>) -> Self {
-        Self(value.0)
-    }
-}
 impl<'db> From<ExprMissingGreen<'db>> for ExprGreen<'db> {
     fn from(value: ExprMissingGreen<'db>) -> Self {
         Self(value.0)
@@ -634,9 +623,6 @@ impl<'db> TypedSyntaxNode<'db> for Expr<'db> {
             SyntaxKind::ExprFixedSizeArray => {
                 Expr::FixedSizeArray(ExprFixedSizeArray::from_syntax_node(db, node))
             }
-            SyntaxKind::ExprPlaceholder => {
-                Expr::Placeholder(ExprPlaceholder::from_syntax_node(db, node))
-            }
             SyntaxKind::ExprMissing => Expr::Missing(ExprMissing::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Expr"),
         }
@@ -692,9 +678,6 @@ impl<'db> TypedSyntaxNode<'db> for Expr<'db> {
             SyntaxKind::ExprFixedSizeArray => {
                 Some(Expr::FixedSizeArray(ExprFixedSizeArray::from_syntax_node(db, node)))
             }
-            SyntaxKind::ExprPlaceholder => {
-                Some(Expr::Placeholder(ExprPlaceholder::from_syntax_node(db, node)))
-            }
             SyntaxKind::ExprMissing => Some(Expr::Missing(ExprMissing::from_syntax_node(db, node))),
             _ => None,
         }
@@ -725,7 +708,6 @@ impl<'db> TypedSyntaxNode<'db> for Expr<'db> {
             Expr::Indexed(x) => x.as_syntax_node(),
             Expr::InlineMacro(x) => x.as_syntax_node(),
             Expr::FixedSizeArray(x) => x.as_syntax_node(),
-            Expr::Placeholder(x) => x.as_syntax_node(),
             Expr::Missing(x) => x.as_syntax_node(),
         }
     }
@@ -762,7 +744,6 @@ impl<'db> Expr<'db> {
                 | SyntaxKind::ExprIndexed
                 | SyntaxKind::ExprInlineMacro
                 | SyntaxKind::ExprFixedSizeArray
-                | SyntaxKind::ExprPlaceholder
                 | SyntaxKind::ExprMissing
         )
     }
@@ -6557,98 +6538,6 @@ impl<'db> TypedSyntaxNode<'db> for ClosureParamWrapperNAry<'db> {
     }
     fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
         ClosureParamWrapperNAryPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct ExprPlaceholder<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> ExprPlaceholder<'db> {
-    pub const INDEX_DOLLAR: usize = 0;
-    pub const INDEX_PATH: usize = 1;
-    pub fn new_green(
-        db: &'db dyn Database,
-        dollar: TerminalDollarGreen<'db>,
-        path: ExprPathGreen<'db>,
-    ) -> ExprPlaceholderGreen<'db> {
-        let children = [dollar.0, path.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
-        ExprPlaceholderGreen(
-            GreenNode {
-                kind: SyntaxKind::ExprPlaceholder,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> ExprPlaceholder<'db> {
-    pub fn dollar(&self, db: &'db dyn Database) -> TerminalDollar<'db> {
-        TerminalDollar::from_syntax_node(db, self.node.get_children(db)[0])
-    }
-    pub fn path(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[1])
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct ExprPlaceholderPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> ExprPlaceholderPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for ExprPlaceholderPtr<'db> {
-    type SyntaxNode = ExprPlaceholder<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> ExprPlaceholder<'db> {
-        ExprPlaceholder::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<ExprPlaceholderPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: ExprPlaceholderPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct ExprPlaceholderGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for ExprPlaceholder<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprPlaceholder);
-    type StablePtr = ExprPlaceholderPtr<'db>;
-    type Green = ExprPlaceholderGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        ExprPlaceholderGreen(
-            GreenNode {
-                kind: SyntaxKind::ExprPlaceholder,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalDollar::missing(db).0, ExprPath::missing(db).0].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::ExprPlaceholder,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::ExprPlaceholder
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::ExprPlaceholder {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        ExprPlaceholderPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
