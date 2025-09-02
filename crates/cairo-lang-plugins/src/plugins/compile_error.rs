@@ -2,7 +2,7 @@ use cairo_lang_defs::extract_macro_single_unnamed_arg;
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginResult};
 use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
-use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use salsa::Database;
 
 /// Plugin that allows writing item level `compile_error!` causing a diagnostic.
@@ -18,37 +18,35 @@ impl MacroPlugin for CompileErrorPlugin {
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
-        let item_ast_ptr = item_ast.stable_ptr(db);
-        if let ast::ModuleItem::InlineMacro(inline_macro_ast) = item_ast.clone() {
-            let Some(legacy_inline_macro_ast) = inline_macro_ast.as_legacy_inline_macro(db) else {
-                return PluginResult::diagnostic_only(not_legacy_macro_diagnostic(
-                    inline_macro_ast.as_syntax_node().stable_ptr(db),
-                ));
-            };
-            if legacy_inline_macro_ast.path(db).as_syntax_node().get_text_without_trivia(db)
-                == "compile_error"
-            {
-                let compilation_error_arg = extract_macro_single_unnamed_arg!(
-                    db,
-                    &legacy_inline_macro_ast,
-                    ast::WrappedArgList::ParenthesizedArgList(_),
-                    item_ast_ptr
-                );
-                let ast::Expr::String(err_message) = compilation_error_arg.clone() else {
-                    return PluginResult::diagnostic_only(PluginDiagnostic::error_with_inner_span(
-                        db,
-                        item_ast_ptr,
-                        compilation_error_arg.as_syntax_node(),
-                        "`compile_error!` argument must be an unnamed string argument.".to_string(),
-                    ));
-                };
-                return PluginResult::diagnostic_only(PluginDiagnostic::error(
-                    item_ast_ptr,
-                    err_message.text(db).to_string(),
-                ));
-            }
+        let ast::ModuleItem::InlineMacro(inline_macro_ast) = item_ast else {
+            return Default::default();
+        };
+        if inline_macro_ast.path(db).as_syntax_node().get_text_without_trivia(db) != "compile_error"
+        {
+            return Default::default();
         }
-        PluginResult { code: None, diagnostics: vec![], remove_original_item: false }
+        let item_ast_ptr = inline_macro_ast.stable_ptr(db).untyped();
+        let Some(legacy_inline_macro_ast) = inline_macro_ast.as_legacy_inline_macro(db) else {
+            return PluginResult::diagnostic_only(not_legacy_macro_diagnostic(item_ast_ptr));
+        };
+        let compilation_error_arg = extract_macro_single_unnamed_arg!(
+            db,
+            &legacy_inline_macro_ast,
+            ast::WrappedArgList::ParenthesizedArgList(_),
+            item_ast_ptr
+        );
+        PluginResult::diagnostic_only(
+            if let ast::Expr::String(err_message) = compilation_error_arg {
+                PluginDiagnostic::error(item_ast_ptr, err_message.text(db).to_string())
+            } else {
+                PluginDiagnostic::error_with_inner_span(
+                    db,
+                    item_ast_ptr,
+                    compilation_error_arg.as_syntax_node(),
+                    "`compile_error!` argument must be an unnamed string argument.".to_string(),
+                )
+            },
+        )
     }
 
     fn declared_attributes(&self) -> Vec<String> {
