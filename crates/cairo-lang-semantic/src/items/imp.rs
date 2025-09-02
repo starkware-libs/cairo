@@ -82,6 +82,7 @@ use crate::expr::inference::{
 };
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
+use crate::items::macro_call::module_macro_modules;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{
     AsSegments, ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver,
@@ -4865,60 +4866,66 @@ pub fn module_global_impls<'db>(
 ) -> Maybe<ModuleImpls<'db>> {
     let mut module_impls = ModuleImpls::default();
     for (containing_module, info) in db.module_imported_modules((), module_id).iter() {
-        let Ok(module_semantic_data) = db.priv_module_semantic_data(*containing_module) else {
-            continue;
-        };
-        for item in module_semantic_data.items.values().filter(|item| {
-            info.user_modules.iter().any(|user_module| {
-                peek_visible_in(db, item.visibility, *containing_module, *user_module)
-            })
-        }) {
-            let imp = match item.item_id {
-                ModuleItemId::Use(use_id) => match db.use_resolved_item(use_id) {
-                    Ok(ResolvedGenericItem::Impl(impl_def_id)) => UninferredImpl::Def(impl_def_id),
-                    Ok(ResolvedGenericItem::GenericImplAlias(impl_alias_id)) => {
+        for defined_module in module_macro_modules(db, true, *containing_module) {
+            let Ok(module_semantic_data) = db.priv_module_semantic_data(*defined_module) else {
+                continue;
+            };
+            for item in module_semantic_data.items.values().filter(|item| {
+                info.user_modules.iter().any(|user_module| {
+                    peek_visible_in(db, item.visibility, *containing_module, *user_module)
+                })
+            }) {
+                let imp = match item.item_id {
+                    ModuleItemId::Use(use_id) => match db.use_resolved_item(use_id) {
+                        Ok(ResolvedGenericItem::Impl(impl_def_id)) => {
+                            UninferredImpl::Def(impl_def_id)
+                        }
+                        Ok(ResolvedGenericItem::GenericImplAlias(impl_alias_id)) => {
+                            UninferredImpl::ImplAlias(impl_alias_id)
+                        }
+                        _ => continue,
+                    },
+                    ModuleItemId::Impl(impl_def_id) => {
+                        if let Ok(impl_ast) = db.module_impl_by_id(impl_def_id) {
+                            global_impls_insert_generic_impls(
+                                db,
+                                &impl_ast.generic_params(db),
+                                impl_def_id.module_file_id(db),
+                                &mut module_impls.globals_by_trait,
+                            );
+                        }
+
+                        // TODO(TomerStarkware): Add the generic impls of the functions in the impl.
+
+                        UninferredImpl::Def(impl_def_id)
+                    }
+                    // TODO(TomerStarkware): Add the generic impls of the ImplAlias.
+                    ModuleItemId::ImplAlias(impl_alias_id) => {
                         UninferredImpl::ImplAlias(impl_alias_id)
                     }
+                    ModuleItemId::FreeFunction(free_function_id) => {
+                        if let Ok(function_ast) = db.module_free_function_by_id(free_function_id) {
+                            let declaration = function_ast.declaration(db);
+                            global_impls_insert_generic_impls(
+                                db,
+                                &declaration.generic_params(db),
+                                free_function_id.module_file_id(db),
+                                &mut module_impls.globals_by_trait,
+                            );
+                        }
+                        continue;
+                    }
                     _ => continue,
-                },
-                ModuleItemId::Impl(impl_def_id) => {
-                    if let Ok(impl_ast) = db.module_impl_by_id(impl_def_id) {
-                        global_impls_insert_generic_impls(
-                            db,
-                            &impl_ast.generic_params(db),
-                            impl_def_id.module_file_id(db),
-                            &mut module_impls.globals_by_trait,
-                        );
-                    }
+                };
 
-                    // TODO(TomerStarkware): Add the generic impls of the functions in the impl.
+                uninferred_impl_trait_dependency(db, imp, &mut module_impls.trait_deps)?;
 
-                    UninferredImpl::Def(impl_def_id)
+                if let Ok(true) = is_global_impl(db, imp, module_id) {
+                    let trait_id = imp.trait_id(db)?;
+                    module_impls.globals_by_trait.entry(trait_id).or_default().insert(imp.into());
+                } else {
+                    module_impls.locals.insert(imp.into());
                 }
-                // TODO(TomerStarkware): Add the generic impls of the ImplAlias.
-                ModuleItemId::ImplAlias(impl_alias_id) => UninferredImpl::ImplAlias(impl_alias_id),
-                ModuleItemId::FreeFunction(free_function_id) => {
-                    if let Ok(function_ast) = db.module_free_function_by_id(free_function_id) {
-                        let declaration = function_ast.declaration(db);
-                        global_impls_insert_generic_impls(
-                            db,
-                            &declaration.generic_params(db),
-                            free_function_id.module_file_id(db),
-                            &mut module_impls.globals_by_trait,
-                        );
-                    }
-                    continue;
-                }
-                _ => continue,
-            };
-
-            uninferred_impl_trait_dependency(db, imp, &mut module_impls.trait_deps)?;
-
-            if let Ok(true) = is_global_impl(db, imp, module_id) {
-                let trait_id = imp.trait_id(db)?;
-                module_impls.globals_by_trait.entry(trait_id).or_default().insert(imp.into());
-            } else {
-                module_impls.locals.insert(imp.into());
             }
         }
     }

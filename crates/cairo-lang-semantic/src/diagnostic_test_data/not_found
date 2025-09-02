@@ -46,6 +46,11 @@ error[E0005]: Module file not found. Expected path: module_does_not_exist.cairo
 mod module_does_not_exist;
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+error[E0006]: Function not found.
+ --> lib.cairo:3:24
+module_does_not_exist::bar()
+                       ^^^
+
 //! > ==========================================================================
 
 //! > Test missing implicit in implicit_precedence

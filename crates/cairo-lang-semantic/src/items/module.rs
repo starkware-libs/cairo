@@ -12,6 +12,7 @@ use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::helpers::UsePathEx;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use itertools::chain;
 use salsa::Database;
 
 use super::feature_kind::FeatureKind;
@@ -21,6 +22,7 @@ use crate::SemanticDiagnostic;
 use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
 use crate::items::feature_kind::HasFeatureKind;
+use crate::items::macro_call::module_macro_modules;
 use crate::items::us::ImportInfo;
 use crate::resolve::ResolvedGenericItem;
 
@@ -291,12 +293,15 @@ pub fn module_usable_trait_ids<'db>(
 ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
     let mut module_traits = OrderedHashMap::<TraitId<'db>, LookupItemId<'db>>::default();
     for (containing_module, info) in db.module_imported_modules((), module_id).iter() {
-        if info.exposed
-            && let Ok(star_module_traits) =
-                specific_module_usable_trait_ids(db, info, *containing_module)
+        for defined_module in
+            chain!([containing_module], module_macro_modules(db, false, *containing_module))
         {
-            for (trait_id, local_item_id) in star_module_traits {
-                module_traits.entry(trait_id).or_insert(local_item_id);
+            if let Ok(star_module_traits) =
+                specific_module_usable_trait_ids(db, info, *defined_module)
+            {
+                for (trait_id, local_item_id) in star_module_traits {
+                    module_traits.entry(trait_id).or_insert(local_item_id);
+                }
             }
         }
     }

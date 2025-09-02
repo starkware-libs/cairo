@@ -310,7 +310,7 @@ fn visible_importables_in_module_ex<'db>(
                     result.push((*item_id, format!("super::{path}")));
                 }
             }
-            ModuleId::MacroCall { .. } => todo!(),
+            ModuleId::MacroCall { .. } => {}
         }
     }
     Some(Arc::new(result))

@@ -12,7 +12,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use salsa::Database;
 
 use super::module::get_module_global_uses;
@@ -24,6 +24,7 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
 use crate::expr::inference::InferenceId;
+use crate::items::macro_call::module_macro_modules;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverData};
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
@@ -369,8 +370,6 @@ pub type ImportedModules<'db> = OrderedHashMap<ModuleId<'db>, ImportInfo<'db>>;
 pub struct ImportInfo<'db> {
     /// The modules that directly imported this module.
     pub user_modules: Vec<ModuleId<'db>>,
-    /// Is the module exposed.
-    pub exposed: bool,
 }
 
 /// Returns the modules that are imported with `use *` and macro calls in the current module.
@@ -382,51 +381,31 @@ pub fn module_imported_modules<'db>(
     module_id: ModuleId<'db>,
 ) -> ImportedModules<'db> {
     let mut visited = UnorderedHashSet::<_>::default();
-    #[derive(Copy, Clone, Hash, Eq, PartialEq)]
-    enum EdgeType {
-        Macro { exposing: bool },
-        Regular,
-    }
-    let mut stack = vec![(module_id, module_id, EdgeType::Regular)];
+    let mut stack = vec![(module_id, module_id)];
     let mut modules = OrderedHashMap::<ModuleId<'db>, ImportInfo<'db>>::default();
-    modules.insert(module_id, ImportInfo { user_modules: vec![module_id], exposed: true });
+    modules.insert(module_id, ImportInfo { user_modules: vec![module_id] });
     // Iterate over all modules that are imported through `use *`, and are accessible from the
     // current module.
-    while let Some((user_module, containing_module, edge_type)) = stack.pop() {
-        if !visited.insert((user_module, containing_module, edge_type)) {
+    while let Some((user_module, containing_module)) = stack.pop() {
+        if !visited.insert((user_module, containing_module)) {
             continue;
         }
-        if let Ok(macro_call_ids) = db.module_macro_calls_ids(containing_module) {
-            for macro_call_id in macro_call_ids.iter() {
-                if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id) {
-                    let exposing = match edge_type {
-                        EdgeType::Macro { exposing } => exposing,
-                        EdgeType::Regular => false,
-                    } || matches!(generated_module_id, ModuleId::MacroCall { is_expose, ..} if is_expose);
-                    let entry = modules.entry(generated_module_id).or_default();
-                    entry.user_modules.push(user_module);
-                    entry.exposed |= exposing;
-                    stack.push((user_module, generated_module_id, EdgeType::Macro { exposing }));
-                }
-            }
-        }
-        let Ok(glob_uses) = get_module_global_uses(db, containing_module) else {
-            continue;
-        };
-        let expose = match edge_type {
-            EdgeType::Macro { exposing } => exposing,
-            EdgeType::Regular => true,
-        };
-        for (glob_use, item_visibility) in glob_uses.iter() {
-            let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use) else {
+        for defined_module in
+            chain!([&containing_module], module_macro_modules(db, false, containing_module))
+        {
+            let Ok(glob_uses) = get_module_global_uses(db, *defined_module) else {
                 continue;
             };
-            // Add the module to the map to find all reachable modules.
-            let entry = modules.entry(module_id_found).or_default();
-            entry.exposed |= expose;
-            if peek_visible_in(db, *item_visibility, containing_module, user_module) {
-                stack.push((containing_module, module_id_found, edge_type));
-                entry.user_modules.push(containing_module);
+            for (glob_use, item_visibility) in glob_uses.iter() {
+                let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use) else {
+                    continue;
+                };
+                // Add the module to the map to find all reachable modules.
+                let entry = modules.entry(module_id_found).or_default();
+                if peek_visible_in(db, *item_visibility, containing_module, user_module) {
+                    stack.push((containing_module, module_id_found));
+                    entry.user_modules.push(containing_module);
+                }
             }
         }
     }
@@ -434,24 +413,17 @@ pub fn module_imported_modules<'db>(
         modules.iter().filter(|(_, v)| v.user_modules.is_empty()).map(|(k, _)| *k).collect_vec();
     // Iterate over all modules that are imported through `use *`.
     while let Some(curr_module_id) = stack.pop() {
-        // Traverse macro-generated modules immediately.
-        if let Ok(macro_call_ids) = db.module_macro_calls_ids(curr_module_id) {
-            for macro_call_id in macro_call_ids.iter() {
-                if let Ok(generated_module_id) = db.macro_call_module_id(*macro_call_id)
-                    && let Entry::Vacant(entry) = modules.entry(generated_module_id)
+        for defined_module in
+            chain!([&curr_module_id], module_macro_modules(db, false, curr_module_id))
+        {
+            let Ok(glob_uses) = get_module_global_uses(db, *defined_module) else { continue };
+            for glob_use in glob_uses.keys() {
+                if let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use)
+                    && let Entry::Vacant(entry) = modules.entry(module_id_found)
                 {
                     entry.insert(ImportInfo::default());
-                    stack.push(generated_module_id);
+                    stack.push(module_id_found);
                 }
-            }
-        }
-        let Ok(glob_uses) = get_module_global_uses(db, curr_module_id) else { continue };
-        for glob_use in glob_uses.keys() {
-            if let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use)
-                && let Entry::Vacant(entry) = modules.entry(module_id_found)
-            {
-                entry.insert(ImportInfo::default());
-                stack.push(module_id_found);
             }
         }
     }
