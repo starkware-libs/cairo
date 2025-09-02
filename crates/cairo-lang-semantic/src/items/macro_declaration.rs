@@ -105,7 +105,7 @@ pub struct CapturedValue<'db> {
     pub stable_ptr: SyntaxStablePtrId<'db>,
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_macro_declaration_data].
+/// Implementation of [crate::db::SemanticGroup::priv_macro_declaration_data].
 pub fn priv_macro_declaration_data<'db>(
     db: &'db dyn SemanticGroup,
     macro_declaration_id: MacroDeclarationId<'db>,
@@ -171,6 +171,15 @@ pub fn priv_macro_declaration_data<'db>(
     }
     let resolver_data = Arc::new(resolver.data);
     Ok(MacroDeclarationData { diagnostics: diagnostics.build(), attributes, resolver_data, rules })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_macro_declaration_data].
+#[salsa::tracked]
+pub fn priv_macro_declaration_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<MacroDeclarationData<'db>> {
+    priv_macro_declaration_data(db, macro_declaration_id)
 }
 
 /// Helper function to extract pattern elements from a WrappedMacro.
@@ -613,7 +622,7 @@ fn repetition_params_extend<'db>(
     }
 }
 
-/// Query implementation of [crate::db::SemanticGroup::macro_declaration_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::macro_declaration_diagnostics].
 pub fn macro_declaration_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     macro_declaration_id: MacroDeclarationId<'db>,
@@ -623,7 +632,16 @@ pub fn macro_declaration_diagnostics<'db>(
         .unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::macro_declaration_attributes].
+/// Query implementation of [crate::db::SemanticGroup::macro_declaration_diagnostics].
+#[salsa::tracked]
+pub fn macro_declaration_diagnostics_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    macro_declaration_diagnostics(db, macro_declaration_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::macro_declaration_attributes].
 pub fn macro_declaration_attributes<'db>(
     db: &'db dyn SemanticGroup,
     macro_declaration_id: MacroDeclarationId<'db>,
@@ -631,7 +649,16 @@ pub fn macro_declaration_attributes<'db>(
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.attributes)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::macro_declaration_resolver_data].
+/// Query implementation of [crate::db::SemanticGroup::macro_declaration_attributes].
+#[salsa::tracked]
+pub fn macro_declaration_attributes_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    macro_declaration_attributes(db, macro_declaration_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::macro_declaration_resolver_data].
 pub fn macro_declaration_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     macro_declaration_id: MacroDeclarationId<'db>,
@@ -639,12 +666,30 @@ pub fn macro_declaration_resolver_data<'db>(
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::macro_declaration_rules].
+/// Query implementation of [crate::db::SemanticGroup::macro_declaration_resolver_data].
+#[salsa::tracked]
+pub fn macro_declaration_resolver_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    macro_declaration_resolver_data(db, macro_declaration_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::macro_declaration_rules].
 pub fn macro_declaration_rules<'db>(
     db: &'db dyn SemanticGroup,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Vec<MacroRuleData<'db>>> {
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.rules)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::macro_declaration_rules].
+#[salsa::tracked]
+pub fn macro_declaration_rules_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<Vec<MacroRuleData<'db>>> {
+    macro_declaration_rules(db, macro_declaration_id)
 }
 
 /// Returns true if user defined user macros are enabled for the given module.

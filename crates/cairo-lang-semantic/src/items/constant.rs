@@ -28,7 +28,7 @@ use crate::corelib::{
     CoreInfo, LiteralError, core_nonzero_ty, false_variant, get_core_ty_by_name, true_variant,
     try_extract_nz_wrapped_type, unit_ty, validate_literal,
 };
-use crate::db::{SemanticGroup, SemanticGroupData};
+use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, ExprAndId, compute_expr_semantic};
 use crate::expr::inference::conform::InferenceConform;
@@ -255,10 +255,18 @@ pub fn priv_constant_semantic_data<'db>(
     }
 }
 
+#[salsa::tracked(cycle_result=priv_constant_semantic_data_cycle)]
+pub fn priv_constant_semantic_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    const_id: ConstantId<'db>,
+    in_cycle: bool,
+) -> Maybe<ConstantData<'db>> {
+    priv_constant_semantic_data(db, const_id, in_cycle)
+}
+
 /// Cycle handling for [SemanticGroup::priv_constant_semantic_data].
 pub fn priv_constant_semantic_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     const_id: ConstantId<'db>,
     _in_cycle: bool,
 ) -> Maybe<ConstantData<'db>> {
@@ -397,10 +405,9 @@ pub fn resolve_const_expr_and_evaluate<'db, 'mt>(
         }
         _ => {
             let info = db.const_calc_info();
-            let info_ref = info.as_ref();
             let mut eval_ctx = ConstantEvaluateContext {
                 db,
-                info: info_ref,
+                info: info.as_ref(),
                 arenas: &ctx.arenas,
                 vars: Default::default(),
                 generic_substitution: Default::default(),
@@ -1121,7 +1128,7 @@ fn numeric_arg_value<'db>(db: &'db dyn SemanticGroup, value: ConstValueId<'db>) 
     }
 }
 
-/// Query implementation of [SemanticGroup::constant_semantic_diagnostics].
+/// Implementation of [SemanticGroup::constant_semantic_diagnostics].
 pub fn constant_semantic_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
     const_id: ConstantId<'db>,
@@ -1129,7 +1136,16 @@ pub fn constant_semantic_diagnostics<'db>(
     db.priv_constant_semantic_data(const_id, false).map(|data| data.diagnostics).unwrap_or_default()
 }
 
-/// Query implementation of [SemanticGroup::constant_semantic_data].
+/// Query implementation of [SemanticGroup::constant_semantic_diagnostics].
+#[salsa::tracked]
+pub fn constant_semantic_diagnostics_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    const_id: ConstantId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    constant_semantic_diagnostics(db, const_id)
+}
+
+/// Implementation of [SemanticGroup::constant_semantic_data].
 pub fn constant_semantic_data<'db>(
     db: &'db dyn SemanticGroup,
     const_id: ConstantId<'db>,
@@ -1137,17 +1153,25 @@ pub fn constant_semantic_data<'db>(
     db.priv_constant_semantic_data(const_id, false)?.constant
 }
 
+/// Query implementation of [SemanticGroup::constant_semantic_data].
+#[salsa::tracked(cycle_result=constant_semantic_data_cycle)]
+pub fn constant_semantic_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    const_id: ConstantId<'db>,
+) -> Maybe<Constant<'db>> {
+    constant_semantic_data(db, const_id)
+}
+
 /// Cycle handling for [SemanticGroup::constant_semantic_data].
 pub fn constant_semantic_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     const_id: ConstantId<'db>,
 ) -> Maybe<Constant<'db>> {
     // Forwarding cycle handling to `priv_constant_semantic_data` handler.
-    db.priv_constant_semantic_data(const_id, true)?.constant
+    db.priv_constant_semantic_data(const_id, false)?.constant
 }
 
-/// Query implementation of [crate::db::SemanticGroup::constant_resolver_data].
+/// Implementation of [crate::db::SemanticGroup::constant_resolver_data].
 pub fn constant_resolver_data<'db>(
     db: &'db dyn SemanticGroup,
     const_id: ConstantId<'db>,
@@ -1155,16 +1179,24 @@ pub fn constant_resolver_data<'db>(
     Ok(db.priv_constant_semantic_data(const_id, false)?.resolver_data)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::constant_resolver_data].
+#[salsa::tracked(cycle_result=constant_resolver_data_cycle)]
+pub fn constant_resolver_data_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    const_id: ConstantId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    constant_resolver_data(db, const_id)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::constant_resolver_data].
 pub fn constant_resolver_data_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     const_id: ConstantId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_constant_semantic_data(const_id, true)?.resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::constant_const_value].
+/// Implementation of [crate::db::SemanticGroup::constant_const_value].
 pub fn constant_const_value<'db>(
     db: &'db dyn SemanticGroup,
     const_id: ConstantId<'db>,
@@ -1172,10 +1204,18 @@ pub fn constant_const_value<'db>(
     Ok(db.priv_constant_semantic_data(const_id, false)?.const_value)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::constant_const_value].
+#[salsa::tracked(cycle_result=constant_const_value_cycle)]
+pub fn constant_const_value_tracked<'db>(
+    db: &'db dyn SemanticGroup,
+    const_id: ConstantId<'db>,
+) -> Maybe<ConstValueId<'db>> {
+    constant_const_value(db, const_id)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::constant_const_value].
 pub fn constant_const_value_cycle<'db>(
     db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
     const_id: ConstantId<'db>,
 ) -> Maybe<ConstValueId<'db>> {
     // Forwarding cycle handling to `priv_constant_semantic_data` handler.
@@ -1185,6 +1225,12 @@ pub fn constant_const_value_cycle<'db>(
 /// Query implementation of [crate::db::SemanticGroup::const_calc_info].
 pub fn const_calc_info<'db>(db: &'db dyn SemanticGroup) -> Arc<ConstCalcInfo<'db>> {
     Arc::new(ConstCalcInfo::new(db))
+}
+
+/// Implementation of [crate::db::SemanticGroup::const_calc_info].
+#[salsa::tracked]
+pub fn const_calc_info_tracked<'db>(db: &'db dyn SemanticGroup) -> Arc<ConstCalcInfo<'db>> {
+    const_calc_info(db)
 }
 
 /// Holds static information about extern functions required for const calculations.
