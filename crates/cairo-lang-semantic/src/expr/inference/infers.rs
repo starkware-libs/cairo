@@ -6,6 +6,7 @@ use itertools::Itertools;
 use super::canonic::ResultNoErrEx;
 use super::conform::InferenceConform;
 use super::{Inference, InferenceError, InferenceResult};
+use crate::db::SemanticGroup;
 use crate::items::constant::ImplConstantId;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::GenericParamConst;

@@ -9,6 +9,7 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use thiserror::Error;
@@ -206,7 +207,7 @@ impl<'a> DiagnosticsReporter<'a> {
 
                 if let Ok(group) = db.module_semantic_diagnostics(*module_id) {
                     found_diagnostics |= self.check_diag_group(
-                        db.upcast(),
+                        db.as_dyn_database(),
                         group,
                         ignore_warnings_in_crate,
                         diagnostic_notes,
@@ -219,7 +220,7 @@ impl<'a> DiagnosticsReporter<'a> {
 
                 if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
                     found_diagnostics |= self.check_diag_group(
-                        db.upcast(),
+                        db.as_dyn_database(),
                         group,
                         ignore_warnings_in_crate,
                         diagnostic_notes,

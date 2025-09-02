@@ -5,9 +5,9 @@ use cairo_lang_diagnostics::{
 };
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::LiteralError;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use salsa::Database;
 
 use crate::Location;
 
@@ -43,7 +43,7 @@ pub struct LoweringDiagnostic<'db> {
 }
 
 impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
-    type DbType = dyn SemanticGroup;
+    type DbType = dyn Database;
 
     fn format(&self, db: &Self::DbType) -> String {
         match &self.kind {

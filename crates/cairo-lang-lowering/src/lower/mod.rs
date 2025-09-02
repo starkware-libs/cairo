@@ -25,6 +25,7 @@ use itertools::{Itertools, chain, izip, zip_eq};
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
 use refs::ClosureInfo;
+use salsa::Database;
 use semantic::corelib::{
     core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id, never_ty, unit_ty,
 };
@@ -1381,7 +1382,7 @@ fn lower_expr_loop<'db>(
             into_iter_member_path,
             ..
         }) => {
-            let semantic_db: &dyn SemanticGroup = ctx.db;
+            let semantic_db: &dyn Database = ctx.db;
             let var_id = lower_expr(ctx, builder, expr_id)?.as_var_usage(ctx, builder)?;
             let into_iter_call = generators::Call {
                 function: into_iter.lowered(ctx.db),
@@ -1926,7 +1927,7 @@ fn add_closure_call_function<'db>(
     closure_info: &ClosureInfo<'db>,
     trait_id: cairo_lang_defs::ids::TraitId<'db>,
 ) -> Maybe<()> {
-    let db: &dyn SemanticGroup = encapsulated_ctx.db;
+    let db: &dyn Database = encapsulated_ctx.db;
     let closure_ty = extract_matches!(expr.ty.long(db), TypeLongId::Closure);
     let expr_location = encapsulated_ctx.get_location(expr.stable_ptr.untyped());
     let parameters_ty = TypeLongId::Tuple(closure_ty.param_tys.clone()).intern(db);
@@ -2294,7 +2295,7 @@ fn check_error_free_or_warn<'db>(
             "Function `{function_path}` has semantic diagnostics in its \
              {diagnostics_description}:\n{diagnostics_format}",
             function_path = semantic_function_id.full_path(db),
-            diagnostics_format = diagnostics.format(db.upcast())
+            diagnostics_format = diagnostics.format(db)
         );
     })
 }

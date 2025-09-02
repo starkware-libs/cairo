@@ -8,7 +8,7 @@ use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
+use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::{Intern, Upcast};
 use salsa::Database;
@@ -47,12 +47,6 @@ impl TestDatabase {
     }
 }
 
-impl Elongate for TestDatabase {
-    fn elongate(&self) -> &dyn SemanticGroup {
-        self
-    }
-}
-
 impl<'db> Upcast<'db, dyn DocGroup> for TestDatabase {
     fn upcast(&self) -> &dyn DocGroup {
         self
@@ -60,11 +54,6 @@ impl<'db> Upcast<'db, dyn DocGroup> for TestDatabase {
 }
 impl<'db> Upcast<'db, dyn Database> for TestDatabase {
     fn upcast(&self) -> &dyn Database {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SemanticGroup> for TestDatabase {
-    fn upcast(&self) -> &dyn SemanticGroup {
         self
     }
 }

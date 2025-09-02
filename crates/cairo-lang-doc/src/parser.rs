@@ -23,6 +23,7 @@ use pulldown_cmark::{
     Alignment, BrokenLink, CodeBlockKind, Event, HeadingLevel, LinkType, Options,
     Parser as MarkdownParser, Tag, TagEnd,
 };
+use salsa::Database;
 
 use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
@@ -439,18 +440,14 @@ impl<'db> DocumentationCommentParser<'db> {
 }
 
 trait ToDocumentableItemId<'db, T> {
-    fn to_documentable_item_id(self, db: &'db dyn SemanticGroup)
-    -> Option<DocumentableItemId<'db>>;
+    fn to_documentable_item_id(self, db: &'db dyn Database) -> Option<DocumentableItemId<'db>>;
 }
 
 impl<'db> ToDocumentableItemId<'db, DocumentableItemId<'db>> for ResolvedGenericItem<'db> {
     /// Converts the [ResolvedGenericItem] to [DocumentableItemId].
     /// As for now, returns None only for a common Variable, as those are not a supported
     /// documentable item.
-    fn to_documentable_item_id(
-        self,
-        db: &'db dyn SemanticGroup,
-    ) -> Option<DocumentableItemId<'db>> {
+    fn to_documentable_item_id(self, db: &'db dyn Database) -> Option<DocumentableItemId<'db>> {
         match self {
             ResolvedGenericItem::GenericConstant(id) => Some(DocumentableItemId::LookupItem(
                 LookupItemId::ModuleItem(ModuleItemId::Constant(id)),

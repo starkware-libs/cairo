@@ -19,7 +19,6 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use salsa::Database;
 
 use crate::SemanticDiagnostic;
-use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
 use crate::keyword::{MACRO_CALL_SITE, MACRO_DEF_SITE};
@@ -107,7 +106,7 @@ pub struct CapturedValue<'db> {
 
 /// Implementation of [crate::db::SemanticGroup::priv_macro_declaration_data].
 pub fn priv_macro_declaration_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<MacroDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -176,7 +175,7 @@ pub fn priv_macro_declaration_data<'db>(
 /// Query implementation of [crate::db::SemanticGroup::priv_macro_declaration_data].
 #[salsa::tracked]
 pub fn priv_macro_declaration_data_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<MacroDeclarationData<'db>> {
     priv_macro_declaration_data(db, macro_declaration_id)
@@ -238,7 +237,7 @@ fn collect_expansion_placeholders<'db>(
 /// Given a macro declaration and an input token tree, checks if the input the given rule, and
 /// returns the captured params if it does.
 pub fn is_macro_rule_match<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     rule: &MacroRuleData<'db>,
     input: &ast::TokenTreeNode<'db>,
 ) -> Option<(Captures<'db>, OrderedHashMap<&'db str, RepetitionId>)> {
@@ -264,7 +263,7 @@ pub fn is_macro_rule_match<'db>(
 /// Traverses the macro expansion and replaces the placeholders with the provided values,
 /// while collecting the result in `res_buffer`.
 fn is_macro_rule_match_ex<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     matcher_elements: ast::MacroElements<'db>,
     input_iter: &mut std::iter::Peekable<std::slice::Iter<'_, ast::TokenTree<'db>>>,
     ctx: &mut MatcherContext<'db>,
@@ -624,7 +623,7 @@ fn repetition_params_extend<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::macro_declaration_diagnostics].
 pub fn macro_declaration_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     priv_macro_declaration_data(db, macro_declaration_id)
@@ -635,7 +634,7 @@ pub fn macro_declaration_diagnostics<'db>(
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_diagnostics].
 #[salsa::tracked]
 pub fn macro_declaration_diagnostics_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     macro_declaration_diagnostics(db, macro_declaration_id)
@@ -643,7 +642,7 @@ pub fn macro_declaration_diagnostics_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::macro_declaration_attributes].
 pub fn macro_declaration_attributes<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.attributes)
@@ -652,7 +651,7 @@ pub fn macro_declaration_attributes<'db>(
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_attributes].
 #[salsa::tracked]
 pub fn macro_declaration_attributes_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     macro_declaration_attributes(db, macro_declaration_id)
@@ -660,7 +659,7 @@ pub fn macro_declaration_attributes_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::macro_declaration_resolver_data].
 pub fn macro_declaration_resolver_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.resolver_data)
@@ -669,7 +668,7 @@ pub fn macro_declaration_resolver_data<'db>(
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_resolver_data].
 #[salsa::tracked]
 pub fn macro_declaration_resolver_data_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     macro_declaration_resolver_data(db, macro_declaration_id)
@@ -677,7 +676,7 @@ pub fn macro_declaration_resolver_data_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::macro_declaration_rules].
 pub fn macro_declaration_rules<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Vec<MacroRuleData<'db>>> {
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.rules)
@@ -686,7 +685,7 @@ pub fn macro_declaration_rules<'db>(
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_rules].
 #[salsa::tracked]
 pub fn macro_declaration_rules_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Vec<MacroRuleData<'db>>> {
     macro_declaration_rules(db, macro_declaration_id)
@@ -694,7 +693,7 @@ pub fn macro_declaration_rules_tracked<'db>(
 
 /// Returns true if user defined user macros are enabled for the given module.
 fn are_user_defined_inline_macros_enabled<'db>(
-    db: &dyn SemanticGroup,
+    db: &dyn Database,
     module_file_id: ModuleFileId<'db>,
 ) -> bool {
     let owning_crate = module_file_id.0.owning_crate(db);

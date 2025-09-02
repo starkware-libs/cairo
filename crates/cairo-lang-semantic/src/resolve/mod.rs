@@ -85,7 +85,7 @@ const STARKNET_CRATE_NAME: &str = "starknet";
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
 #[derive(Clone, Default, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct ResolvedItems<'db> {
     pub concrete: UnorderedHashMap<ast::TerminalIdentifierPtr<'db>, ResolvedConcreteItem<'db>>,
     pub generic: UnorderedHashMap<ast::TerminalIdentifierPtr<'db>, ResolvedGenericItem<'db>>,
@@ -95,7 +95,7 @@ impl<'db> ResolvedItems<'db> {
     // be used in "Go to definition".
     pub fn mark_concrete(
         &mut self,
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         segment: &syntax::node::ast::PathSegment<'db>,
         resolved_item: ResolvedConcreteItem<'db>,
     ) -> ResolvedConcreteItem<'db> {
@@ -111,7 +111,7 @@ impl<'db> ResolvedItems<'db> {
     // be used in "Go to definition".
     pub fn mark_generic(
         &mut self,
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         segment: &syntax::node::ast::PathSegment<'db>,
         resolved_item: ResolvedGenericItem<'db>,
     ) -> ResolvedGenericItem<'db> {
@@ -124,7 +124,7 @@ impl<'db> ResolvedItems<'db> {
 /// The enriched members of a type, including direct members of structs, as well as members of
 /// targets of `Deref` and `DerefMut` of the type.
 #[derive(Debug, PartialEq, Eq, DebugWithDb, Clone, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct EnrichedMembers<'db> {
     /// A map from member names to their semantic representation and the number of deref operations
     /// needed to access them.
@@ -160,7 +160,7 @@ pub struct EnrichedTypeMemberAccess<'db> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 enum MacroContextModifier {
     /// The path is resolved in the macro definition site.
     DefSite,
@@ -171,7 +171,7 @@ enum MacroContextModifier {
 }
 
 #[derive(Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct ResolverData<'db> {
     /// Current module in which to resolve the path.
     pub module_file_id: ModuleFileId<'db>,
@@ -208,7 +208,7 @@ impl<'db> ResolverData<'db> {
     }
     pub fn clone_with_inference_id(
         &self,
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         inference_id: InferenceId<'db>,
     ) -> Self {
         Self {
@@ -265,7 +265,7 @@ impl<'db> MacroResolutionInfo<'db> {
 
 /// Resolves paths semantically.
 pub struct Resolver<'db> {
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     pub data: ResolverData<'db>,
     /// The resolving context for macro related resolving. Should be `Some` only if the current
     /// code is an expansion of a macro.
@@ -306,7 +306,7 @@ impl<'db> Resolver<'db> {
     /// IMPORTANT: don't forget to call `restore_feature_config`!
     pub fn extend_feature_config_from_item(
         &mut self,
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         crate_id: CrateId<'db>,
         diagnostics: &mut SemanticDiagnostics<'db>,
         item: &impl QueryAttrs<'db>,
@@ -404,14 +404,14 @@ impl<'db> AsSegments<'db> for UseAsPathSegments<'db> {
 
 impl<'db> Resolver<'db> {
     pub fn new(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         module_file_id: ModuleFileId<'db>,
         inference_id: InferenceId<'db>,
     ) -> Self {
         Self::with_data(db, ResolverData::new(module_file_id, inference_id))
     }
 
-    pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData<'db>) -> Self {
+    pub fn with_data(db: &'db dyn Database, data: ResolverData<'db>) -> Self {
         let owning_crate_id = data.module_file_id.0.owning_crate(db);
         let macro_call_data = match data.module_file_id.0 {
             ModuleId::CrateRoot(_) | ModuleId::Submodule(_) => None,
@@ -633,7 +633,7 @@ impl<'db> Resolver<'db> {
         generic_item: ResolvedGenericItem<'db>,
         generic_args_syntax: Option<Vec<ast::GenericArg<'db>>>,
     ) -> Maybe<ResolvedConcreteItem<'db>> {
-        let db: &'db dyn SemanticGroup = self.db;
+        let db: &'db dyn Database = self.db;
         Ok(match generic_item {
             ResolvedGenericItem::GenericConstant(id) => {
                 ResolvedConcreteItem::Constant(db.constant_const_value(id)?)
@@ -1555,7 +1555,7 @@ impl<'db> Resolver<'db> {
 ///    modifiers).
 ///  - The path after the modifier is empty.
 fn handle_macro_context_modifier<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     segments: &mut Peekable<std::vec::IntoIter<ast::PathSegment<'db>>>,
 ) -> Maybe<MacroContextModifier> {
@@ -1594,7 +1594,7 @@ fn handle_macro_context_modifier<'db>(
 /// Resolves the segment if it's `Self`. Returns the Some(ResolvedConcreteItem) or Some(Err) if
 /// segment == `Self` or None otherwise.
 fn resolve_self_segment<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     identifier: &ast::TerminalIdentifier<'db>,
     trait_or_impl_ctx: &TraitOrImplContext<'db>,
@@ -1605,7 +1605,7 @@ fn resolve_self_segment<'db>(
 
 /// Resolves the `Self` segment given that it's actually `Self`.
 fn resolve_actual_self_segment<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     identifier: &ast::TerminalIdentifier<'db>,
     trait_or_impl_ctx: &TraitOrImplContext<'db>,
@@ -1665,7 +1665,7 @@ where
     Validate: FnMut(&mut SemanticDiagnostics<'db>, &ast::PathSegment<'db>) -> Maybe<()>,
     Mark: FnMut(
         &mut ResolvedItems<'db>,
-        &'db dyn SemanticGroup,
+        &'db dyn Database,
         &syntax::node::ast::PathSegment<'db>,
         ResolvedItem,
     ),
@@ -1771,7 +1771,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
             impl FnMut(&mut SemanticDiagnostics<'db>, &ast::PathSegment<'db>) -> Maybe<()>,
             impl FnMut(
                 &mut ResolvedItems<'db>,
-                &'db dyn SemanticGroup,
+                &'db dyn Database,
                 &syntax::node::ast::PathSegment<'db>,
                 ResolvedItem,
             ),
@@ -2076,7 +2076,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
         &mut self,
         mut mark: impl FnMut(
             &mut ResolvedItems<'db>,
-            &'db dyn SemanticGroup,
+            &'db dyn Database,
             &syntax::node::ast::PathSegment<'db>,
             ModuleId<'db>,
         ),

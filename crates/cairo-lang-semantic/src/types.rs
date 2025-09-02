@@ -69,66 +69,66 @@ impl<'db> OptionFrom<TypeLongId<'db>> for ConcreteTypeId<'db> {
     }
 }
 
-define_short_id!(TypeId, TypeLongId<'db>, SemanticGroup);
+define_short_id!(TypeId, TypeLongId<'db>, Database);
 semantic_object_for_id!(TypeId, TypeLongId<'a>);
 impl<'db> TypeId<'db> {
-    pub fn missing(db: &'db dyn SemanticGroup, diag_added: DiagnosticAdded) -> Self {
+    pub fn missing(db: &'db dyn Database, diag_added: DiagnosticAdded) -> Self {
         TypeLongId::Missing(diag_added).intern(db)
     }
 
-    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+    pub fn format(&self, db: &dyn Database) -> String {
         self.long(db).format(db)
     }
 
     /// Returns [Maybe::Err] if the type is [TypeLongId::Missing].
-    pub fn check_not_missing(&self, db: &dyn SemanticGroup) -> Maybe<()> {
+    pub fn check_not_missing(&self, db: &dyn Database) -> Maybe<()> {
         if let TypeLongId::Missing(diag_added) = self.long(db) { Err(*diag_added) } else { Ok(()) }
     }
 
     /// Returns `true` if the type is [TypeLongId::Missing].
-    pub fn is_missing(&self, db: &dyn SemanticGroup) -> bool {
+    pub fn is_missing(&self, db: &dyn Database) -> bool {
         self.check_not_missing(db).is_err()
     }
 
     /// Returns `true` if the type is `()`.
-    pub fn is_unit(&self, db: &dyn SemanticGroup) -> bool {
+    pub fn is_unit(&self, db: &dyn Database) -> bool {
         matches!(self.long(db), TypeLongId::Tuple(types) if types.is_empty())
     }
 
     /// Returns the [TypeHead] for a type if available.
-    pub fn head(&self, db: &'db dyn SemanticGroup) -> Option<TypeHead<'db>> {
+    pub fn head(&self, db: &'db dyn Database) -> Option<TypeHead<'db>> {
         self.long(db).head(db)
     }
 
     /// Returns true if the type does not depend on any generics.
-    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+    pub fn is_fully_concrete(&self, db: &dyn Database) -> bool {
         db.priv_type_is_fully_concrete(*self)
     }
 
     /// Returns true if the type does not contain any inference variables.
-    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+    pub fn is_var_free(&self, db: &dyn Database) -> bool {
         db.priv_type_is_var_free(*self)
     }
 
     /// Returns whether the type is phantom.
     /// Type is considered phantom if it has the `#[phantom]` attribute, or is a tuple or fixed
     /// sized array containing it.
-    pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
+    pub fn is_phantom(&self, db: &dyn Database) -> bool {
         self.long(db).is_phantom(db)
     }
 
     /// Short name of the type argument.
-    pub fn short_name(&self, db: &dyn SemanticGroup) -> String {
+    pub fn short_name(&self, db: &dyn Database) -> String {
         db.priv_type_short_name(*self)
     }
 }
 impl<'db> TypeLongId<'db> {
-    pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        format!("{:?}", self.debug(db.elongate()))
+    pub fn format(&self, db: &dyn Database) -> String {
+        format!("{:?}", self.debug(db))
     }
 
     /// Returns the [TypeHead] for a type if available.
-    pub fn head(&self, db: &'db dyn SemanticGroup) -> Option<TypeHead<'db>> {
+    pub fn head(&self, db: &'db dyn Database) -> Option<TypeHead<'db>> {
         Some(match self {
             TypeLongId::Concrete(concrete) => TypeHead::Concrete(concrete.generic_type(db)),
             TypeLongId::Tuple(_) => TypeHead::Tuple,
@@ -149,7 +149,7 @@ impl<'db> TypeLongId<'db> {
     /// Type is considered phantom if it has the `#[phantom]` attribute, (or an other attribute
     /// declared by a plugin as defining a phantom type), or is a tuple or fixed sized array
     /// containing it.
-    pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
+    pub fn is_phantom(&self, db: &dyn Database) -> bool {
         match self {
             TypeLongId::Concrete(id) => match id {
                 ConcreteTypeId::Struct(id) => {
@@ -187,7 +187,7 @@ impl<'db> TypeLongId<'db> {
     }
 
     /// Returns the module id of the given type if applicable.
-    pub fn module_id(&self, db: &'db dyn SemanticGroup) -> Option<ModuleId<'db>> {
+    pub fn module_id(&self, db: &'db dyn Database) -> Option<ModuleId<'db>> {
         match self {
             TypeLongId::Concrete(concrete) => Some(concrete.generic_type(db).parent_module(db)),
             TypeLongId::Snapshot(ty) => {
@@ -220,13 +220,9 @@ impl<'db> TypeLongId<'db> {
     }
 }
 impl<'db> DebugWithDb<'db> for TypeLongId<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &'db (dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         match self {
             TypeLongId::Concrete(concrete) => write!(f, "{}", concrete.format(db)),
             TypeLongId::Tuple(inner_types) => {
@@ -247,10 +243,10 @@ impl<'db> DebugWithDb<'db> for TypeLongId<'db> {
             TypeLongId::Coupon(function_id) => write!(f, "{}::Coupon", function_id.full_path(db)),
             TypeLongId::Missing(_) => write!(f, "<missing>"),
             TypeLongId::FixedSizeArray { type_id, size } => {
-                write!(f, "[{}; {:?}]", type_id.format(db), size.debug(db.elongate()))
+                write!(f, "[{}; {:?}]", type_id.format(db), size.debug(db))
             }
             TypeLongId::Closure(closure) => {
-                write!(f, "{:?}", closure.debug(db.elongate()))
+                write!(f, "{:?}", closure.debug(db))
             }
         }
     }
@@ -279,7 +275,7 @@ pub enum ConcreteTypeId<'db> {
 }
 impl<'db> ConcreteTypeId<'db> {
     pub fn new(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         generic_ty: GenericTypeId<'db>,
         generic_args: Vec<semantic::GenericArgumentId<'db>>,
     ) -> Self {
@@ -295,29 +291,26 @@ impl<'db> ConcreteTypeId<'db> {
             ),
         }
     }
-    pub fn generic_type(&self, db: &'db dyn SemanticGroup) -> GenericTypeId<'db> {
+    pub fn generic_type(&self, db: &'db dyn Database) -> GenericTypeId<'db> {
         match self {
             ConcreteTypeId::Struct(id) => GenericTypeId::Struct(id.long(db).struct_id),
             ConcreteTypeId::Enum(id) => GenericTypeId::Enum(id.long(db).enum_id),
             ConcreteTypeId::Extern(id) => GenericTypeId::Extern(id.long(db).extern_type_id),
         }
     }
-    pub fn generic_args(
-        &self,
-        db: &'db dyn SemanticGroup,
-    ) -> Vec<semantic::GenericArgumentId<'db>> {
+    pub fn generic_args(&self, db: &'db dyn Database) -> Vec<semantic::GenericArgumentId<'db>> {
         match self {
             ConcreteTypeId::Struct(id) => id.long(db).generic_args.clone(),
             ConcreteTypeId::Enum(id) => id.long(db).generic_args.clone(),
             ConcreteTypeId::Extern(id) => id.long(db).generic_args.clone(),
         }
     }
-    pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        format!("{:?}", self.debug(db.elongate()))
+    pub fn format(&self, db: &dyn Database) -> String {
+        format!("{:?}", self.debug(db))
     }
 
     /// Returns whether the type has the `#[must_use]` attribute.
-    pub fn is_must_use(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
+    pub fn is_must_use(&self, db: &dyn Database) -> Maybe<bool> {
         match self {
             ConcreteTypeId::Struct(id) => id.has_attr(db, MUST_USE_ATTR),
             ConcreteTypeId::Enum(id) => id.has_attr(db, MUST_USE_ATTR),
@@ -325,24 +318,20 @@ impl<'db> ConcreteTypeId<'db> {
         }
     }
     /// Returns true if the type does not depend on any generics.
-    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+    pub fn is_fully_concrete(&self, db: &dyn Database) -> bool {
         self.generic_args(db)
             .iter()
             .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
     }
     /// Returns true if the type does not contain any inference variables.
-    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+    pub fn is_var_free(&self, db: &dyn Database) -> bool {
         self.generic_args(db).iter().all(|generic_argument_id| generic_argument_id.is_var_free(db))
     }
 }
 impl<'db> DebugWithDb<'db> for ConcreteTypeId<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &'db (dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         let f = &mut CountingWriter::new(f);
         write!(f, "{}", self.generic_type(db).format(db))?;
         fmt_generic_args(&self.generic_args(db), f, db)
@@ -354,21 +343,17 @@ pub struct ConcreteStructLongId<'db> {
     pub struct_id: StructId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
 }
-define_short_id!(ConcreteStructId, ConcreteStructLongId<'db>, SemanticGroup);
+define_short_id!(ConcreteStructId, ConcreteStructLongId<'db>, Database);
 semantic_object_for_id!(ConcreteStructId, ConcreteStructLongId<'a>);
 impl<'db> ConcreteStructId<'db> {
-    pub fn struct_id(&self, db: &'db dyn SemanticGroup) -> StructId<'db> {
+    pub fn struct_id(&self, db: &'db dyn Database) -> StructId<'db> {
         self.long(db).struct_id
     }
 }
 impl<'db> DebugWithDb<'db> for ConcreteStructLongId<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &'db (dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         write!(f, "{:?}", ConcreteTypeId::Struct(self.clone().intern(db)).debug(db))
     }
 }
@@ -379,21 +364,17 @@ pub struct ConcreteEnumLongId<'db> {
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
 }
 impl<'db> DebugWithDb<'db> for ConcreteEnumLongId<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &'db (dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         write!(f, "{:?}", ConcreteTypeId::Enum(self.clone().intern(db)).debug(db))
     }
 }
 
-define_short_id!(ConcreteEnumId, ConcreteEnumLongId<'db>, SemanticGroup);
+define_short_id!(ConcreteEnumId, ConcreteEnumLongId<'db>, Database);
 semantic_object_for_id!(ConcreteEnumId, ConcreteEnumLongId<'a>);
 impl<'db> ConcreteEnumId<'db> {
-    pub fn enum_id(&self, db: &'db dyn SemanticGroup) -> EnumId<'db> {
+    pub fn enum_id(&self, db: &'db dyn Database) -> EnumId<'db> {
         self.long(db).enum_id
     }
 }
@@ -403,10 +384,10 @@ pub struct ConcreteExternTypeLongId<'db> {
     pub extern_type_id: ExternTypeId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
 }
-define_short_id!(ConcreteExternTypeId, ConcreteExternTypeLongId<'db>, SemanticGroup);
+define_short_id!(ConcreteExternTypeId, ConcreteExternTypeLongId<'db>, Database);
 semantic_object_for_id!(ConcreteExternTypeId, ConcreteExternTypeLongId<'a>);
 impl<'db> ConcreteExternTypeId<'db> {
-    pub fn extern_type_id(&self, db: &'db dyn SemanticGroup) -> ExternTypeId<'db> {
+    pub fn extern_type_id(&self, db: &'db dyn Database) -> ExternTypeId<'db> {
         self.long(db).extern_type_id
     }
 }
@@ -428,13 +409,9 @@ pub struct ClosureTypeLongId<'db> {
 }
 
 impl<'db> DebugWithDb<'db> for ClosureTypeLongId<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &'db (dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         write!(f, "{{closure@{:?}}}", self.wrapper_location.debug(db))
     }
 }
@@ -450,7 +427,7 @@ pub struct ImplTypeId<'db> {
 impl<'db> ImplTypeId<'db> {
     /// Creates a new impl type id. For an impl type of a concrete impl, asserts that the trait
     /// type belongs to the same trait that the impl implements (panics if not).
-    pub fn new(impl_id: ImplId<'db>, ty: TraitTypeId<'db>, db: &'db dyn SemanticGroup) -> Self {
+    pub fn new(impl_id: ImplId<'db>, ty: TraitTypeId<'db>, db: &'db dyn Database) -> Self {
         if let crate::items::imp::ImplLongId::Concrete(concrete_impl) = impl_id.long(db) {
             let impl_def_id = concrete_impl.impl_def_id(db);
             assert_eq!(Ok(ty.trait_id(db)), db.impl_def_trait(impl_def_id));
@@ -464,18 +441,14 @@ impl<'db> ImplTypeId<'db> {
     pub fn ty(&self) -> TraitTypeId<'db> {
         self.ty
     }
-    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+    pub fn format(&self, db: &dyn Database) -> String {
         format!("{}::{}", self.impl_id.name(db), self.ty.name(db))
     }
 }
 impl<'db> DebugWithDb<'db> for ImplTypeId<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &'db (dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         write!(f, "{}", self.format(db))
     }
 }
@@ -507,7 +480,7 @@ impl<'db> PartialOrd for ImplTypeById<'db> {
 // TODO(spapini): add a query wrapper.
 /// Resolves a type given a module and a path. Used for resolving from non-statement context.
 pub fn resolve_type<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     resolver: &mut Resolver<'db>,
     ty_syntax: &ast::Expr<'db>,
@@ -516,7 +489,7 @@ pub fn resolve_type<'db>(
 }
 /// Resolves a type given a module and a path. Allows defining a resolution context.
 pub fn resolve_type_ex<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     resolver: &mut Resolver<'db>,
     ty_syntax: &ast::Expr<'db>,
@@ -526,7 +499,7 @@ pub fn resolve_type_ex<'db>(
         .unwrap_or_else(|diag_added| TypeId::missing(db, diag_added))
 }
 fn maybe_resolve_type<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     resolver: &mut Resolver<'db>,
     ty_syntax: &ast::Expr<'db>,
@@ -625,7 +598,7 @@ pub enum ShallowGenericArg<'db> {
 
 impl<'db> ShallowGenericArg<'db> {
     /// Returns the module id of the shallow generic argument.
-    pub fn module_id(&self, db: &'db dyn SemanticGroup) -> Option<ModuleId<'db>> {
+    pub fn module_id(&self, db: &'db dyn Database) -> Option<ModuleId<'db>> {
         match self {
             ShallowGenericArg::GenericParameter(_) => None,
             ShallowGenericArg::GenericType(ty) => Some(ty.module_file_id(db).0),
@@ -650,7 +623,7 @@ impl<'db> ShallowGenericArg<'db> {
 }
 /// Resolves a shallow generic argument from a syntax node.
 pub fn maybe_resolve_shallow_generic_arg_type<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     resolver: &mut Resolver<'db>,
     ty_syntax: &ast::Expr<'db>,
@@ -718,7 +691,7 @@ pub fn maybe_resolve_shallow_generic_arg_type<'db>(
 /// Extracts the size of a fixed size array, or none if the size is missing. Reports an error if the
 /// size is not a numeric literal.
 pub fn extract_fixed_size_array_size<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     syntax: &ast::ExprFixedSizeArray<'db>,
     resolver: &mut Resolver<'db>,
@@ -761,7 +734,7 @@ pub fn verify_fixed_size_array_size<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::generic_type_generic_params].
 pub fn generic_type_generic_params<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     generic_type: GenericTypeId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
     match generic_type {
@@ -773,7 +746,7 @@ pub fn generic_type_generic_params<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::generic_type_generic_params].
 pub fn generic_type_generic_params_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     generic_type: GenericTypeId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
     generic_type_generic_params_helper(db, (), generic_type)
@@ -781,7 +754,7 @@ pub fn generic_type_generic_params_tracked<'db>(
 
 #[salsa::tracked]
 fn generic_type_generic_params_helper<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     _tracked: Tracked,
     generic_type: GenericTypeId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
@@ -798,7 +771,7 @@ pub struct TypeInfo<'db> {
 
 /// Checks if there is at least one impl that can be inferred for a specific concrete trait.
 pub fn get_impl_at_context<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     lookup_context: ImplLookupContextId<'db>,
     concrete_trait_id: ConcreteTraitId<'db>,
     stable_ptr: Option<SyntaxStablePtrId<'db>>,
@@ -823,7 +796,7 @@ pub fn get_impl_at_context<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::single_value_type].
-pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<bool> {
+pub fn single_value_type(db: &dyn Database, ty: TypeId<'_>) -> Maybe<bool> {
     Ok(match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(id) => {
@@ -872,7 +845,7 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<bool> 
 /// Query implementation of [crate::db::SemanticGroup::single_value_type].
 #[salsa::tracked]
 pub fn single_value_type_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: types::TypeId<'db>,
 ) -> Maybe<bool> {
     single_value_type(db, ty)
@@ -880,7 +853,7 @@ pub fn single_value_type_tracked<'db>(
 
 /// Adds diagnostics for a type, post semantic analysis of types.
 pub fn add_type_based_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     ty: TypeId<'db>,
     stable_ptr: impl Into<SyntaxStablePtrId<'db>> + Copy,
@@ -912,7 +885,7 @@ pub enum TypeSizeInformation {
 }
 
 /// Implementation of [crate::db::SemanticGroup::type_size_info].
-pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<TypeSizeInformation> {
+pub fn type_size_info(db: &dyn Database, ty: TypeId<'_>) -> Maybe<TypeSizeInformation> {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(id) => {
@@ -965,7 +938,7 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId<'_>) -> Maybe<TypeSizeI
 /// Query implementation of [crate::db::SemanticGroup::type_size_info].
 #[salsa::tracked(cycle_result=type_size_info_cycle)]
 pub fn type_size_info_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: types::TypeId<'db>,
 ) -> Maybe<TypeSizeInformation> {
     type_size_info(db, ty)
@@ -973,7 +946,7 @@ pub fn type_size_info_tracked<'db>(
 
 /// Checks if all types in the iterator are zero sized.
 fn check_all_type_are_zero_sized<'a>(
-    db: &dyn SemanticGroup,
+    db: &dyn Database,
     types: impl Iterator<Item = &'a TypeId<'a>>,
 ) -> Maybe<bool> {
     let mut zero_sized = true;
@@ -987,7 +960,7 @@ fn check_all_type_are_zero_sized<'a>(
 
 /// Cycle handling of [crate::db::SemanticGroup::type_size_info].
 pub fn type_size_info_cycle<'db>(
-    _db: &'db dyn SemanticGroup,
+    _db: &'db dyn Database,
     _ty: TypeId<'db>,
 ) -> Maybe<TypeSizeInformation> {
     Ok(TypeSizeInformation::Infinite)
@@ -997,7 +970,7 @@ pub fn type_size_info_cycle<'db>(
 // This is to ensure that sierra generator will see a consistent type info of types.
 /// Implementation of [crate::db::SemanticGroup::type_info].
 pub fn type_info<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     lookup_context: ImplLookupContextId<'db>,
     ty: TypeId<'db>,
 ) -> TypeInfo<'db> {
@@ -1014,7 +987,7 @@ pub fn type_info<'db>(
 /// Query implementation of [crate::db::SemanticGroup::type_info].
 #[salsa::tracked]
 pub fn type_info_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     lookup_context: ImplLookupContextId<'db>,
     ty: TypeId<'db>,
 ) -> TypeInfo<'db> {
@@ -1024,7 +997,7 @@ pub fn type_info_tracked<'db>(
 /// Solves a concrete trait without any constraints.
 /// Only works when the given trait is var free.
 fn solve_concrete_trait_no_constraints<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     lookup_context: ImplLookupContextId<'db>,
     id: ConcreteTraitId<'db>,
 ) -> Result<ImplId<'db>, InferenceError<'db>> {
@@ -1044,7 +1017,7 @@ fn solve_concrete_trait_no_constraints<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::copyable].
 pub fn copyable<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> Result<ImplId<'db>, InferenceError<'db>> {
     solve_concrete_trait_no_constraints(
@@ -1057,7 +1030,7 @@ pub fn copyable<'db>(
 /// Query implementation of [crate::db::SemanticGroup::copyable].
 #[salsa::tracked]
 pub fn copyable_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> Result<ImplId<'db>, InferenceError<'db>> {
     copyable(db, ty)
@@ -1065,7 +1038,7 @@ pub fn copyable_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::droppable].
 pub fn droppable<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> Result<ImplId<'db>, InferenceError<'db>> {
     solve_concrete_trait_no_constraints(
@@ -1078,14 +1051,14 @@ pub fn droppable<'db>(
 /// Query implementation of [crate::db::SemanticGroup::droppable].
 #[salsa::tracked]
 pub fn droppable_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> Result<ImplId<'db>, InferenceError<'db>> {
     droppable(db, ty)
 }
 
 /// Implementation of [crate::db::SemanticGroup::priv_type_is_fully_concrete].
-pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId<'_>) -> bool {
+pub fn priv_type_is_fully_concrete(db: &dyn Database, ty: TypeId<'_>) -> bool {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
         TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_fully_concrete(db)),
@@ -1109,13 +1082,13 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId<'_>) -> bo
 /// Query implementation of [crate::db::SemanticGroup::priv_type_is_fully_concrete].
 #[salsa::tracked]
 pub fn priv_type_is_fully_concrete_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: types::TypeId<'db>,
 ) -> bool {
     priv_type_is_fully_concrete(db, ty)
 }
 
-pub fn priv_type_is_var_free<'db>(db: &'db dyn SemanticGroup, ty: TypeId<'db>) -> bool {
+pub fn priv_type_is_var_free<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_var_free(db),
         TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_var_free(db)),
@@ -1138,11 +1111,11 @@ pub fn priv_type_is_var_free<'db>(db: &'db dyn SemanticGroup, ty: TypeId<'db>) -
 
 /// Query implementation of [crate::db::SemanticGroup::priv_type_is_var_free].
 #[salsa::tracked]
-pub fn priv_type_is_var_free_tracked<'db>(db: &'db dyn SemanticGroup, ty: TypeId<'db>) -> bool {
+pub fn priv_type_is_var_free_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
     priv_type_is_var_free(db, ty)
 }
 
-pub fn priv_type_short_name(db: &dyn SemanticGroup, ty: TypeId<'_>) -> String {
+pub fn priv_type_short_name(db: &dyn Database, ty: TypeId<'_>) -> String {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => {
             let mut result = concrete_type_id.generic_type(db).format(db);
@@ -1183,25 +1156,19 @@ pub fn priv_type_short_name(db: &dyn SemanticGroup, ty: TypeId<'_>) -> String {
 }
 
 #[salsa::tracked]
-pub fn priv_type_short_name_tracked<'db>(
-    db: &'db dyn SemanticGroup,
-    ty: types::TypeId<'db>,
-) -> String {
+pub fn priv_type_short_name_tracked<'db>(db: &'db dyn Database, ty: types::TypeId<'db>) -> String {
     priv_type_short_name(db, ty)
 }
 
 /// Peels all wrapping Snapshot (`@`) from the type.
 /// Returns the number of peeled snapshots and the inner type.
-pub fn peel_snapshots<'db>(
-    db: &'db dyn SemanticGroup,
-    ty: TypeId<'db>,
-) -> (usize, TypeLongId<'db>) {
+pub fn peel_snapshots<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> (usize, TypeLongId<'db>) {
     peel_snapshots_ex(db, ty.long(db).clone())
 }
 
 /// Same as `peel_snapshots`, but takes a `TypeLongId` instead of a `TypeId`.
 pub fn peel_snapshots_ex<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     mut long_ty: TypeLongId<'db>,
 ) -> (usize, TypeLongId<'db>) {
     let mut n_snapshots = 0;
@@ -1214,7 +1181,7 @@ pub fn peel_snapshots_ex<'db>(
 
 /// Wraps a type with Snapshot (`@`) `n_snapshots` times.
 pub fn wrap_in_snapshots<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     mut ty: TypeId<'db>,
     n_snapshots: usize,
 ) -> TypeId<'db> {
@@ -1225,7 +1192,7 @@ pub fn wrap_in_snapshots<'db>(
 }
 
 /// Returns `true` if coupons are enabled in the module.
-pub(crate) fn are_coupons_enabled(db: &dyn SemanticGroup, module_id: ModuleId<'_>) -> bool {
+pub(crate) fn are_coupons_enabled(db: &dyn Database, module_id: ModuleId<'_>) -> bool {
     let owning_crate = module_id.owning_crate(db);
     let Some(config) = db.crate_config(owning_crate) else { return false };
     config.settings.experimental_features.coupons

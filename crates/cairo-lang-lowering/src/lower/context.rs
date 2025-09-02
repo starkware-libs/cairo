@@ -4,6 +4,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::ConcreteVariant;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::{ImplLookupContext, ImplLookupContextId};
@@ -110,7 +111,7 @@ impl<'db> EncapsulatingLoweringContext<'db> {
             semantic_function_id,
             function_body,
             semantic_defs: Default::default(),
-            expr_formatter: ExprFormatter { db: db.upcast(), function_id: semantic_function_id },
+            expr_formatter: ExprFormatter { db, function_id: semantic_function_id },
             usages,
             lowerings: Default::default(),
         })

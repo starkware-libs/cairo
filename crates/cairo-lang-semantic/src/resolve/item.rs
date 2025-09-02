@@ -4,8 +4,8 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
+use salsa::Database;
 
-use crate::db::SemanticGroup;
 use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::functions::GenericFunctionId;
 use crate::items::imp::{ImplId, ImplLongId};
@@ -17,7 +17,7 @@ use crate::{ConcreteTraitId, ConcreteVariant, FunctionId, TypeId, TypeLongId, Va
 // ResolvedGenericItem - returned by resolve_generic_path(). Paths without generic arguments.
 
 #[derive(Clone, PartialEq, Eq, Debug, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub enum ResolvedGenericItem<'db> {
     GenericConstant(ConstantId<'db>),
     Module(ModuleId<'db>),
@@ -35,7 +35,7 @@ pub enum ResolvedGenericItem<'db> {
 impl<'db> ResolvedGenericItem<'db> {
     /// Wraps a ModuleItem with the corresponding ResolveGenericItem.
     pub fn from_module_item(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         module_item: ModuleItemId<'db>,
     ) -> Maybe<ResolvedGenericItem<'db>> {
         Ok(match module_item {
@@ -65,7 +65,7 @@ impl<'db> ResolvedGenericItem<'db> {
         })
     }
 
-    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+    pub fn full_path(&self, db: &dyn Database) -> String {
         match self {
             ResolvedGenericItem::GenericConstant(_) => "".into(),
             ResolvedGenericItem::Module(id) => id.full_path(db),
@@ -84,7 +84,7 @@ impl<'db> ResolvedGenericItem<'db> {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub enum ResolvedConcreteItem<'db> {
     Constant(ConstValueId<'db>),
     Module(ModuleId<'db>),
@@ -98,7 +98,7 @@ pub enum ResolvedConcreteItem<'db> {
 }
 
 impl<'db> ResolvedConcreteItem<'db> {
-    pub fn generic(&self, db: &'db dyn SemanticGroup) -> Option<ResolvedGenericItem<'db>> {
+    pub fn generic(&self, db: &'db dyn Database) -> Option<ResolvedGenericItem<'db>> {
         Some(match self {
             ResolvedConcreteItem::Constant(id) => {
                 if let ConstValue::ImplConstant(impl_constant_id) = id.long(db) {

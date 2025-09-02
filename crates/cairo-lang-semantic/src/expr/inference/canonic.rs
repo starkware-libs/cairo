@@ -5,12 +5,12 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use salsa::Database;
 
 use super::{
     ConstVar, ImplVar, ImplVarId, ImplVarTraitItemMappings, Inference, InferenceId, InferenceVar,
     LocalConstVarId, LocalImplVarId, LocalTypeVarId, TypeVar,
 };
-use crate::db::SemanticGroup;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
@@ -49,7 +49,7 @@ pub struct CanonicalTrait<'db> {
 impl<'db> CanonicalTrait<'db> {
     /// Canonicalizes a concrete trait that is part of an [Inference].
     pub fn canonicalize(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         source_inference_id: InferenceId<'db>,
         trait_id: ConcreteTraitId<'db>,
         impl_var_mappings: ImplVarTraitItemMappings<'db>,
@@ -76,7 +76,7 @@ impl<'db> CanonicalImpl<'db> {
     /// Canonicalizes a concrete impl that is part of an [Inference].
     /// Uses the same canonicalization of the trait, to be consistent.
     pub fn canonicalize(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         impl_id: ImplId<'db>,
         mapping: &CanonicalMapping<'db>,
     ) -> Result<Self, MapperError> {
@@ -177,12 +177,12 @@ impl<T> ResultNoErrEx<T> for Result<T, NoError> {
 /// Canonicalization rewriter. Each encountered variable is mapped to a new free variable,
 /// in pre-order.
 struct Canonicalizer<'db> {
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     to_canonic: VarMapping<'db>,
 }
 impl<'db> Canonicalizer<'db> {
     fn canonicalize<T>(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         source_inference_id: InferenceId<'db>,
         value: T,
     ) -> (T, CanonicalMapping<'db>)
@@ -196,8 +196,8 @@ impl<'db> Canonicalizer<'db> {
         (value, mapping)
     }
 }
-impl<'a> HasDb<&'a dyn SemanticGroup> for Canonicalizer<'a> {
-    fn get_db(&self) -> &'a dyn SemanticGroup {
+impl<'a> HasDb<&'a dyn Database> for Canonicalizer<'a> {
+    fn get_db(&self) -> &'a dyn Database {
         self.db
     }
 }
@@ -305,8 +305,8 @@ impl<'db, 'id, 'mt> Embedder<'db, 'id, 'mt> {
     }
 }
 
-impl<'db> HasDb<&'db dyn SemanticGroup> for Embedder<'db, '_, '_> {
-    fn get_db(&self) -> &'db dyn SemanticGroup {
+impl<'db> HasDb<&'db dyn Database> for Embedder<'db, '_, '_> {
+    fn get_db(&self) -> &'db dyn Database {
         self.inference.db
     }
 }
@@ -394,12 +394,12 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, NoError> for Embedder<'db, '_, '_> {
 #[derive(Clone, Debug)]
 pub struct MapperError(pub InferenceVar);
 struct Mapper<'db, 'v> {
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     mapping: &'v VarMapping<'db>,
 }
 impl<'db, 'v> Mapper<'db, 'v> {
     fn map<T>(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         value: T,
         mapping: &'v VarMapping<'db>,
     ) -> Result<T, MapperError>
@@ -411,8 +411,8 @@ impl<'db, 'v> Mapper<'db, 'v> {
     }
 }
 
-impl<'db> HasDb<&'db dyn SemanticGroup> for Mapper<'db, '_> {
-    fn get_db(&self) -> &'db dyn SemanticGroup {
+impl<'db> HasDb<&'db dyn Database> for Mapper<'db, '_> {
+    fn get_db(&self) -> &'db dyn Database {
         self.db
     }
 }

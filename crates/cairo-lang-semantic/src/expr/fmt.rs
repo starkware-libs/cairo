@@ -9,15 +9,10 @@ use crate::{ExprId, PatternId, StatementId};
 /// Holds all the information needed for formatting expressions.
 /// Acts like a "db" for DebugWithDb.
 pub struct ExprFormatter<'db> {
-    pub db: &'db dyn SemanticGroup,
+    pub db: &'db dyn Database,
     pub function_id: FunctionWithBodyId<'db>,
 }
 
-impl<'db> Upcast<'db, dyn SemanticGroup> for ExprFormatter<'db> {
-    fn upcast(&'db self) -> &'db dyn SemanticGroup {
-        self.db
-    }
-}
 impl<'db> Upcast<'db, dyn Database> for ExprFormatter<'db> {
     fn upcast(&'db self) -> &'db dyn Database {
         self.db.upcast()

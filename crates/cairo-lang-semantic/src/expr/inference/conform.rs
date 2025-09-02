@@ -13,6 +13,7 @@ use super::{
     InferenceVar, LocalTypeVarId, TypeVar,
 };
 use crate::corelib::never_ty;
+use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};

@@ -11,6 +11,7 @@ use cairo_lang_defs::ids::{
     ModuleTypeAliasId, NamedLanguageElementId, StructId, TopLevelLanguageElementId,
     TraitConstantId, TraitFunctionId, TraitId, TraitItemId, TraitTypeId, VariantId,
 };
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::items::functions::GenericFunctionId;

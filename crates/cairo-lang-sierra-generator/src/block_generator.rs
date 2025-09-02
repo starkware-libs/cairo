@@ -588,7 +588,7 @@ fn generate_match_value_code<'db>(
     let concrete_enum_type = context.get_db().get_index_enum_type_id(match_info.num_of_arms)?;
     let enum_var = context.allocate_sierra_variable();
     context.push_statement(simple_basic_statement(
-        enum_from_bounded_int_libfunc_id(context.get_db().upcast(), concrete_enum_type.clone()),
+        enum_from_bounded_int_libfunc_id(context.get_db(), concrete_enum_type.clone()),
         &[bounded_int],
         std::slice::from_ref(&enum_var),
     ));

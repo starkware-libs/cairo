@@ -11,6 +11,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{Intern, OptionFrom, extract_matches, require, try_extract_matches};
 use num_bigint::BigInt;
 use num_traits::{Num, Signed, ToPrimitive, Zero};
+use salsa::Database;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -33,20 +34,20 @@ use crate::{
 };
 
 /// Implementation of [SemanticGroup::core_module].
-pub fn core_module(db: &dyn SemanticGroup) -> ModuleId<'_> {
+pub fn core_module(db: &dyn Database) -> ModuleId<'_> {
     let core_crate = db.core_crate();
     ModuleId::CrateRoot(core_crate)
 }
 
 /// Query implementation of [SemanticGroup::core_module].
 #[salsa::tracked]
-pub fn core_module_tracked(db: &dyn SemanticGroup) -> ModuleId<'_> {
+pub fn core_module_tracked(db: &dyn Database) -> ModuleId<'_> {
     core_module(db)
 }
 
 /// Returns the submodule of `base_module`, named `submodule_name`, if exists.
 pub fn get_submodule<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     base_module: ModuleId<'db>,
     submodule_name: &'db str,
 ) -> Option<ModuleId<'db>> {
@@ -60,24 +61,24 @@ pub fn get_submodule<'db>(
 
 /// Returns a submodule of the corelib named `submodule_name`.
 /// If no such submodule exists, panics.
-pub fn core_submodule<'db>(db: &'db dyn SemanticGroup, submodule_name: &'db str) -> ModuleId<'db> {
+pub fn core_submodule<'db>(db: &'db dyn Database, submodule_name: &'db str) -> ModuleId<'db> {
     get_submodule(db, core_module(db), submodule_name)
         .unwrap_or_else(|| panic!("`{submodule_name}` is not a core submodule."))
 }
 
 /// Implementation of [SemanticGroup::core_crate].
-pub fn core_crate(db: &dyn SemanticGroup) -> CrateId<'_> {
+pub fn core_crate(db: &dyn Database) -> CrateId<'_> {
     CrateId::core(db)
 }
 
 /// Query implementation of [SemanticGroup::core_crate].
 #[salsa::tracked]
-pub fn core_crate_tracked(db: &dyn SemanticGroup) -> CrateId<'_> {
+pub fn core_crate_tracked(db: &dyn Database) -> CrateId<'_> {
     core_crate(db)
 }
 
 /// Returns the concrete type of a bounded int type with a given min and max.
-pub fn bounded_int_ty<'db>(db: &'db dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeId<'db> {
+pub fn bounded_int_ty<'db>(db: &'db dyn Database, min: BigInt, max: BigInt) -> TypeId<'db> {
     let internal = core_submodule(db, "internal");
     let bounded_int = get_submodule(db, internal, "bounded_int")
         .expect("Could not find bounded_int submodule in corelib.");
@@ -93,7 +94,7 @@ pub fn bounded_int_ty<'db>(db: &'db dyn SemanticGroup, min: BigInt, max: BigInt)
     .expect("could not find")
 }
 
-pub fn core_nonzero_ty<'db>(db: &'db dyn SemanticGroup, inner_type: TypeId<'db>) -> TypeId<'db> {
+pub fn core_nonzero_ty<'db>(db: &'db dyn Database, inner_type: TypeId<'db>) -> TypeId<'db> {
     get_ty_by_name(
         db,
         core_submodule(db, "zeroable"),
@@ -103,7 +104,7 @@ pub fn core_nonzero_ty<'db>(db: &'db dyn SemanticGroup, inner_type: TypeId<'db>)
 }
 
 pub fn core_result_ty<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ok_type: TypeId<'db>,
     err_type: TypeId<'db>,
 ) -> TypeId<'db> {
@@ -115,7 +116,7 @@ pub fn core_result_ty<'db>(
     )
 }
 
-pub fn core_option_ty<'db>(db: &'db dyn SemanticGroup, some_type: TypeId<'db>) -> TypeId<'db> {
+pub fn core_option_ty<'db>(db: &'db dyn Database, some_type: TypeId<'db>) -> TypeId<'db> {
     get_ty_by_name(
         db,
         core_submodule(db, "option"),
@@ -124,16 +125,16 @@ pub fn core_option_ty<'db>(db: &'db dyn SemanticGroup, some_type: TypeId<'db>) -
     )
 }
 
-pub fn core_box_ty<'db>(db: &'db dyn SemanticGroup, inner_type: TypeId<'db>) -> TypeId<'db> {
+pub fn core_box_ty<'db>(db: &'db dyn Database, inner_type: TypeId<'db>) -> TypeId<'db> {
     get_ty_by_name(db, core_submodule(db, "box"), "Box", vec![GenericArgumentId::Type(inner_type)])
 }
 
-pub fn core_array_felt252_ty<'db>(db: &'db dyn SemanticGroup) -> TypeId<'db> {
+pub fn core_array_felt252_ty<'db>(db: &'db dyn Database) -> TypeId<'db> {
     get_core_ty_by_name(db, "Array", vec![GenericArgumentId::Type(db.core_info().felt252)])
 }
 
 pub fn try_get_core_ty_by_name<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
 ) -> Result<TypeId<'db>, SemanticDiagnosticKind<'db>> {
@@ -141,7 +142,7 @@ pub fn try_get_core_ty_by_name<'db>(
 }
 
 pub fn try_get_ty_by_name<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module: ModuleId<'db>,
     name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
@@ -180,7 +181,7 @@ pub fn try_get_ty_by_name<'db>(
 }
 
 pub fn get_core_ty_by_name<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
 ) -> TypeId<'db> {
@@ -188,7 +189,7 @@ pub fn get_core_ty_by_name<'db>(
 }
 
 pub fn get_ty_by_name<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module: ModuleId<'db>,
     name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
@@ -196,7 +197,7 @@ pub fn get_ty_by_name<'db>(
     try_get_ty_by_name(db, module, name, generic_args).unwrap()
 }
 
-pub fn core_bool_ty<'db>(db: &'db dyn SemanticGroup) -> TypeId<'db> {
+pub fn core_bool_ty<'db>(db: &'db dyn Database) -> TypeId<'db> {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
     let generic_type = db
@@ -210,7 +211,7 @@ pub fn core_bool_ty<'db>(db: &'db dyn SemanticGroup) -> TypeId<'db> {
 
 // TODO(spapini): Consider making all these queries for better caching.
 /// Generates a ConcreteEnumId instance for `bool`.
-pub fn core_bool_enum<'db>(db: &'db dyn SemanticGroup) -> ConcreteEnumId<'db> {
+pub fn core_bool_enum<'db>(db: &'db dyn Database) -> ConcreteEnumId<'db> {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
     let enum_id = db
@@ -222,20 +223,17 @@ pub fn core_bool_enum<'db>(db: &'db dyn SemanticGroup) -> ConcreteEnumId<'db> {
 }
 
 /// Generates a ConcreteVariant instance for `false`.
-pub fn false_variant(db: &dyn SemanticGroup) -> ConcreteVariant<'_> {
+pub fn false_variant(db: &dyn Database) -> ConcreteVariant<'_> {
     get_core_enum_concrete_variant(db, "bool", vec![], "False")
 }
 
 /// Generates a ConcreteVariant instance for `true`.
-pub fn true_variant(db: &dyn SemanticGroup) -> ConcreteVariant<'_> {
+pub fn true_variant(db: &dyn Database) -> ConcreteVariant<'_> {
     get_core_enum_concrete_variant(db, "bool", vec![], "True")
 }
 
 /// Generates a ConcreteVariant instance for `IsZeroResult::<felt252>::Zero`.
-pub fn jump_nz_zero_variant<'db>(
-    db: &'db dyn SemanticGroup,
-    ty: TypeId<'db>,
-) -> ConcreteVariant<'db> {
+pub fn jump_nz_zero_variant<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> ConcreteVariant<'db> {
     get_enum_concrete_variant(
         db,
         core_submodule(db, "zeroable"),
@@ -247,7 +245,7 @@ pub fn jump_nz_zero_variant<'db>(
 
 /// Generates a ConcreteVariant instance for `IsZeroResult::<felt252>::NonZero`.
 pub fn jump_nz_nonzero_variant<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> ConcreteVariant<'db> {
     get_enum_concrete_variant(
@@ -260,10 +258,7 @@ pub fn jump_nz_nonzero_variant<'db>(
 }
 
 /// Generates a ConcreteVariant instance for `Option::Some`.
-pub fn option_some_variant<'db>(
-    db: &'db dyn SemanticGroup,
-    ty: TypeId<'db>,
-) -> ConcreteVariant<'db> {
+pub fn option_some_variant<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> ConcreteVariant<'db> {
     get_enum_concrete_variant(
         db,
         core_submodule(db, "option"),
@@ -274,10 +269,7 @@ pub fn option_some_variant<'db>(
 }
 
 /// Generates a ConcreteVariant instance for `Option::None`.
-pub fn option_none_variant<'db>(
-    db: &'db dyn SemanticGroup,
-    ty: TypeId<'db>,
-) -> ConcreteVariant<'db> {
+pub fn option_none_variant<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> ConcreteVariant<'db> {
     get_enum_concrete_variant(
         db,
         core_submodule(db, "option"),
@@ -289,7 +281,7 @@ pub fn option_none_variant<'db>(
 
 /// Generates a ConcreteVariant instance for `Result::Ok`.
 pub fn result_ok_variant<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ok_ty: TypeId<'db>,
     err_ty: TypeId<'db>,
 ) -> ConcreteVariant<'db> {
@@ -304,7 +296,7 @@ pub fn result_ok_variant<'db>(
 
 /// Generates a ConcreteVariant instance for `Result::Err`.
 pub fn result_err_variant<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ok_ty: TypeId<'db>,
     err_ty: TypeId<'db>,
 ) -> ConcreteVariant<'db> {
@@ -319,7 +311,7 @@ pub fn result_err_variant<'db>(
 
 /// Generates a ConcreteVariant instance for `SignedIntegerResult::InRange`.
 pub fn signed_int_result_in_range_variant<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> ConcreteVariant<'db> {
     get_enum_concrete_variant(
@@ -332,7 +324,7 @@ pub fn signed_int_result_in_range_variant<'db>(
 }
 /// Generates a ConcreteVariant instance for `SignedIntegerResult::Underflow`.
 pub fn signed_int_result_underflow_variant<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> ConcreteVariant<'db> {
     get_enum_concrete_variant(
@@ -345,7 +337,7 @@ pub fn signed_int_result_underflow_variant<'db>(
 }
 /// Generates a ConcreteVariant instance for `SignedIntegerResult::Overflow`.
 pub fn signed_int_result_overflow_variant<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> ConcreteVariant<'db> {
     get_enum_concrete_variant(
@@ -395,7 +387,7 @@ fn get_bool_variant_expr<'db>(
 /// Gets a [ConcreteVariant] instance for an enum variant, by module and name.
 /// Assumes the variant exists.
 pub fn get_enum_concrete_variant<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     enum_name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
@@ -413,7 +405,7 @@ pub fn get_enum_concrete_variant<'db>(
 /// Gets a [ConcreteVariant] instance for an enum variant from the core module, by name.
 /// Assumes the variant exists.
 pub fn get_core_enum_concrete_variant<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
     variant_name: &'db str,
@@ -422,12 +414,12 @@ pub fn get_core_enum_concrete_variant<'db>(
 }
 
 /// Gets the unit type ().
-pub fn unit_ty<'db>(db: &'db dyn SemanticGroup) -> TypeId<'db> {
+pub fn unit_ty<'db>(db: &'db dyn Database) -> TypeId<'db> {
     semantic::TypeLongId::Tuple(vec![]).intern(db)
 }
 
 /// Gets the never type ().
-pub fn never_ty<'db>(db: &'db dyn SemanticGroup) -> TypeId<'db> {
+pub fn never_ty<'db>(db: &'db dyn Database) -> TypeId<'db> {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
     let generic_type = db
@@ -461,7 +453,7 @@ impl<'db> ErrorPropagationType<'db> {
 /// Attempts to unwrap error propagation types (Option, Result).
 /// Returns None if not one of these types.
 pub fn unwrap_error_propagation_type<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> Option<ErrorPropagationType<'db>> {
     match ty.long(db) {
@@ -517,7 +509,7 @@ pub fn unit_expr<'db>(
 }
 
 pub fn core_unary_operator<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     inference: &mut Inference<'db, '_>,
     unary_op: &UnaryOperator<'db>,
     stable_ptr: SyntaxStablePtrId<'db>,
@@ -534,7 +526,7 @@ pub fn core_unary_operator<'db>(
 }
 
 pub fn core_binary_operator<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     inference: &mut Inference<'db, '_>,
     binary_op: &BinaryOperator<'db>,
     stable_ptr: SyntaxStablePtrId<'db>,
@@ -569,13 +561,13 @@ pub fn core_binary_operator<'db>(
     Ok(Ok((get_core_trait_function_infer(db, inference, trait_id, trait_fn, stable_ptr), snapshot)))
 }
 
-pub fn felt252_sub<'db>(db: &'db dyn SemanticGroup) -> FunctionId<'db> {
+pub fn felt252_sub<'db>(db: &'db dyn Database) -> FunctionId<'db> {
     get_core_function_impl_method(db, "Felt252Sub", "sub")
 }
 
 /// Given a core library impl name and a method name, returns [FunctionId].
 fn get_core_function_impl_method<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     impl_name: &'db str,
     method_name: &'db str,
 ) -> FunctionId<'db> {
@@ -613,12 +605,12 @@ fn get_core_function_impl_method<'db>(
     .intern(db)
 }
 
-pub fn core_felt252_is_zero<'db>(db: &'db dyn SemanticGroup) -> FunctionId<'db> {
+pub fn core_felt252_is_zero<'db>(db: &'db dyn Database) -> FunctionId<'db> {
     get_core_function_id(db, "felt252_is_zero", vec![])
 }
 
 /// The gas withdrawal functions from the `gas` submodule.
-pub fn core_withdraw_gas_fns<'db>(db: &'db dyn SemanticGroup) -> [FunctionId<'db>; 2] {
+pub fn core_withdraw_gas_fns<'db>(db: &'db dyn Database) -> [FunctionId<'db>; 2] {
     let gas = core_submodule(db, "gas");
     [
         get_function_id(db, gas, "withdraw_gas", vec![]),
@@ -626,12 +618,12 @@ pub fn core_withdraw_gas_fns<'db>(db: &'db dyn SemanticGroup) -> [FunctionId<'db
     ]
 }
 
-pub fn internal_require_implicit(db: &dyn SemanticGroup) -> GenericFunctionId<'_> {
+pub fn internal_require_implicit(db: &dyn Database) -> GenericFunctionId<'_> {
     get_generic_function_id(db, core_submodule(db, "internal"), "require_implicit")
 }
 /// Given a core library function name and its generic arguments, returns [FunctionId].
 pub fn get_core_function_id<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
 ) -> FunctionId<'db> {
@@ -640,7 +632,7 @@ pub fn get_core_function_id<'db>(
 
 /// Given a module, a library function name and its generic arguments, returns [FunctionId].
 pub fn get_function_id<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module: ModuleId<'db>,
     name: &'db str,
     generic_args: Vec<GenericArgumentId<'db>>,
@@ -650,7 +642,7 @@ pub fn get_function_id<'db>(
 
 /// Given a core library function name, returns [GenericFunctionId].
 pub fn get_core_generic_function_id<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     name: &'db str,
 ) -> GenericFunctionId<'db> {
     get_generic_function_id(db, db.core_module(), name)
@@ -658,7 +650,7 @@ pub fn get_core_generic_function_id<'db>(
 
 /// Given a module and a library function name, returns [GenericFunctionId].
 pub fn get_generic_function_id<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module: ModuleId<'db>,
     name: &'db str,
 ) -> GenericFunctionId<'db> {
@@ -677,49 +669,43 @@ pub fn get_generic_function_id<'db>(
     .unwrap_or_else(|| panic!("{name} is not a function."))
 }
 
-pub fn concrete_copy_trait<'db>(
-    db: &'db dyn SemanticGroup,
-    ty: TypeId<'db>,
-) -> ConcreteTraitId<'db> {
+pub fn concrete_copy_trait<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> ConcreteTraitId<'db> {
     concrete_trait(db, db.core_info().copy_trt, vec![GenericArgumentId::Type(ty)])
 }
 
-pub fn concrete_drop_trait<'db>(
-    db: &'db dyn SemanticGroup,
-    ty: TypeId<'db>,
-) -> ConcreteTraitId<'db> {
+pub fn concrete_drop_trait<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> ConcreteTraitId<'db> {
     concrete_trait(db, db.core_info().drop_trt, vec![GenericArgumentId::Type(ty)])
 }
 
 pub fn concrete_destruct_trait<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> ConcreteTraitId<'db> {
     concrete_trait(db, db.core_info().destruct_trt, vec![GenericArgumentId::Type(ty)])
 }
 
 pub fn concrete_panic_destruct_trait<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> ConcreteTraitId<'db> {
     concrete_trait(db, db.core_info().panic_destruct_trt, vec![GenericArgumentId::Type(ty)])
 }
 
 pub fn concrete_iterator_trait<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> ConcreteTraitId<'db> {
     concrete_trait(db, db.core_info().iterator_trt, vec![GenericArgumentId::Type(ty)])
 }
 
-pub fn fn_traits<'db>(db: &'db dyn SemanticGroup) -> [TraitId<'db>; 2] {
+pub fn fn_traits<'db>(db: &'db dyn Database) -> [TraitId<'db>; 2] {
     let info = db.core_info();
     [info.fn_trt, info.fn_once_trt]
 }
 
 /// Given a core library generic trait and its generic arguments, returns [ConcreteTraitId].
 fn concrete_trait<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
     generic_args: Vec<GenericArgumentId<'db>>,
 ) -> ConcreteTraitId<'db> {
@@ -729,7 +715,7 @@ fn concrete_trait<'db>(
 /// Retrieves a trait function from the core library with type variables as generic arguments, to
 /// be inferred later.
 fn get_core_trait_function_infer<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     inference: &mut Inference<'db, '_>,
     trait_id: TraitId<'db>,
     trait_function: TraitFunctionId<'db>,
@@ -744,16 +730,16 @@ fn get_core_trait_function_infer<'db>(
     ConcreteTraitGenericFunctionLongId::new(db, concrete_trait_id, trait_function).intern(db)
 }
 
-pub fn get_panic_ty<'db>(db: &'db dyn SemanticGroup, inner_ty: TypeId<'db>) -> TypeId<'db> {
+pub fn get_panic_ty<'db>(db: &'db dyn Database, inner_ty: TypeId<'db>) -> TypeId<'db> {
     get_core_ty_by_name(db, "PanicResult", vec![GenericArgumentId::Type(inner_ty)])
 }
 
-pub fn get_usize_ty<'db>(db: &'db dyn SemanticGroup) -> TypeId<'db> {
+pub fn get_usize_ty<'db>(db: &'db dyn Database) -> TypeId<'db> {
     get_core_ty_by_name(db, "usize", vec![])
 }
 
 /// Returns if `ty` is a numeric type upcastable to felt252.
-pub fn numeric_upcastable_to_felt252(db: &dyn SemanticGroup, ty: TypeId<'_>) -> bool {
+pub fn numeric_upcastable_to_felt252(db: &dyn Database, ty: TypeId<'_>) -> bool {
     let info = db.core_info();
     ty == info.felt252
         || ty == info.u8
@@ -775,7 +761,7 @@ pub enum LiteralError<'db> {
     OutOfRange(TypeId<'db>),
 }
 impl<'db> LiteralError<'db> {
-    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+    pub fn format(&self, db: &dyn Database) -> String {
         match self {
             Self::OutOfRange(ty) => {
                 format!("The value does not fit within the range of type {}.", ty.format(db))
@@ -790,7 +776,7 @@ impl<'db> LiteralError<'db> {
 /// Validates that a given type is valid for a literal and that the value fits the range of the
 /// specific type.
 pub fn validate_literal<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
     value: &BigInt,
 ) -> Result<(), LiteralError<'db>> {
@@ -846,7 +832,7 @@ pub fn validate_literal<'db>(
 
 /// Returns the type if the inner value of a `NonZero` type, if it is wrapped in one.
 pub fn try_extract_nz_wrapped_type<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> Option<TypeId<'db>> {
     let concrete_ty = try_extract_matches!(ty.long(db), TypeLongId::Concrete)?;
@@ -858,7 +844,7 @@ pub fn try_extract_nz_wrapped_type<'db>(
 
 /// Returns the ranges of a BoundedInt if it is a BoundedInt type.
 pub fn try_extract_bounded_int_type_ranges<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> Option<(BigInt, BigInt)> {
     let concrete_ty = try_extract_matches!(ty.long(db), TypeLongId::Concrete)?;
@@ -970,7 +956,7 @@ pub struct CoreInfo<'db> {
     pub fixed_size_array_submodule: ModuleId<'db>,
 }
 impl<'db> CoreInfo<'db> {
-    fn new(db: &'db dyn SemanticGroup) -> Self {
+    fn new(db: &'db dyn Database) -> Self {
         let core = ModuleHelper::core(db);
         let integer: ModuleHelper<'db> = core.submodule("integer");
         let traits = core.submodule("traits");
@@ -1112,12 +1098,12 @@ impl<'db> CoreInfo<'db> {
 }
 
 /// Implementation of [SemanticGroup::core_info].
-pub fn core_info(db: &dyn SemanticGroup) -> Arc<CoreInfo<'_>> {
+pub fn core_info(db: &dyn Database) -> Arc<CoreInfo<'_>> {
     CoreInfo::new(db).into()
 }
 
 /// Query implementation of [SemanticGroup::core_info].
 #[salsa::tracked]
-pub fn core_info_tracked(db: &dyn SemanticGroup) -> Arc<CoreInfo<'_>> {
+pub fn core_info_tracked(db: &dyn Database) -> Arc<CoreInfo<'_>> {
     core_info(db)
 }

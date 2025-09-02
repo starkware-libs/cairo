@@ -9,8 +9,8 @@ use cairo_lang_filesystem::db::{
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, CrateLongId, Directory};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
 pub use cairo_lang_project::*;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::Intern;
+use salsa::Database;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ProjectError {
@@ -27,7 +27,7 @@ pub enum ProjectError {
 /// Set up the 'db' to compile the file at the given path.
 /// Returns the id of the generated crate.
 pub fn setup_single_file_project(
-    db: &mut dyn SemanticGroup,
+    db: &mut dyn Database,
     path: &Path,
 ) -> Result<CrateInput, ProjectError> {
     match path.extension().and_then(OsStr::to_str) {
@@ -71,7 +71,7 @@ pub fn setup_single_file_project(
 }
 
 /// Updates the crate roots from a ProjectConfig object.
-pub fn update_crate_roots_from_project_config(db: &mut dyn SemanticGroup, config: &ProjectConfig) {
+pub fn update_crate_roots_from_project_config(db: &mut dyn Database, config: &ProjectConfig) {
     for (crate_identifier, directory_path) in config.content.crate_roots.iter() {
         let root = Directory::Real(config.absolute_crate_root(directory_path));
         update_crate_root(db, config, crate_identifier, root);
@@ -82,7 +82,7 @@ pub fn update_crate_roots_from_project_config(db: &mut dyn SemanticGroup, config
 /// If the crate defines settings in the config, it will be used.
 /// Crate is identified by name and the root directory.
 pub fn update_crate_root(
-    db: &mut dyn SemanticGroup,
+    db: &mut dyn Database,
     config: &ProjectConfig,
     crate_identifier: &CrateIdentifier,
     root: Directory<'_>,
@@ -98,10 +98,7 @@ pub fn update_crate_root(
 /// Setup the 'db' to compile the project in the given path.
 /// The path can be either a directory with cairo project file or a .cairo file.
 /// Returns the ids of the project crates.
-pub fn setup_project(
-    db: &mut dyn SemanticGroup,
-    path: &Path,
-) -> Result<Vec<CrateInput>, ProjectError> {
+pub fn setup_project(db: &mut dyn Database, path: &Path) -> Result<Vec<CrateInput>, ProjectError> {
     if path.is_dir() {
         let config = ProjectConfig::from_directory(path).map_err(ProjectError::LoadProjectError)?;
         let main_crate_ids: Vec<_> = get_main_crate_ids_from_project(db, &config)
@@ -132,7 +129,7 @@ pub fn check_compiler_path(single_file: bool, path: &Path) -> anyhow::Result<()>
 }
 
 pub fn get_main_crate_ids_from_project<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     config: &ProjectConfig,
 ) -> Vec<CrateId<'db>> {
     config
@@ -144,7 +141,7 @@ pub fn get_main_crate_ids_from_project<'db>(
 }
 
 fn get_crate_id_and_settings<'db, 'a>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     crate_identifier: &CrateIdentifier,
     config: &'a ProjectConfig,
 ) -> (CrateId<'db>, &'a CrateSettings) {

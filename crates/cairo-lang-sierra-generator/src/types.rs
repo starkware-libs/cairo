@@ -5,6 +5,7 @@ use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering::ids::SemanticFunctionIdEx;
 use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_sierra::extensions::snapshot::snapshot_ty;
 use cairo_lang_sierra::ids::UserTypeId;

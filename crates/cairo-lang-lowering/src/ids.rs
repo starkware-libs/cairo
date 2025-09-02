@@ -6,6 +6,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::ImplGenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
@@ -436,7 +437,7 @@ impl<'a> DebugWithDb<'a> for GeneratedFunction<'a> {
                     "Generated `{}::{}` for {{closure@{:?}}}",
                     trait_id.full_path(db),
                     trait_func.name(db),
-                    loc.debug(db.upcast()),
+                    loc.debug(db),
                 )
             }
         }

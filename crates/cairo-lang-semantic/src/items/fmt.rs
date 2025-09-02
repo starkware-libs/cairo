@@ -1,14 +1,14 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::NamedLanguageElementId;
+use salsa::Database;
 
 use super::constant::ConstValue;
-use crate::db::SemanticGroup;
 use crate::{ConcreteVariant, MatchArmSelector};
 
 impl<'db> DebugWithDb<'db> for ConstValue<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         match self {
             ConstValue::Int(value, _ty) => write!(f, "{value}"),
             ConstValue::Struct(inner, _) => {
@@ -18,7 +18,7 @@ impl<'db> DebugWithDb<'db> for ConstValue<'db> {
                     write!(f, " ")?;
                     value.fmt(f, db)?;
                     write!(f, ": ")?;
-                    value.ty(db).unwrap().fmt(f, db.elongate())?;
+                    value.ty(db).unwrap().fmt(f, db)?;
                     if inner.peek().is_some() {
                         write!(f, ",")?;
                     } else {
@@ -47,12 +47,12 @@ impl<'db> DebugWithDb<'db> for ConstValue<'db> {
 }
 
 impl<'db> DebugWithDb<'db> for ConcreteVariant<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,
-        semantic_db: &'db (dyn SemanticGroup + 'static),
+        semantic_db: &'db dyn Database,
     ) -> std::fmt::Result {
         let enum_name = self.concrete_enum_id.enum_id(semantic_db).name(semantic_db);
         let variant_name = self.id.name(semantic_db);
@@ -61,12 +61,12 @@ impl<'db> DebugWithDb<'db> for ConcreteVariant<'db> {
 }
 
 impl<'db> DebugWithDb<'db> for MatchArmSelector<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,
-        semantic_db: &'db (dyn SemanticGroup + 'static),
+        semantic_db: &'db dyn Database,
     ) -> std::fmt::Result {
         match self {
             MatchArmSelector::VariantId(variant_id) => {

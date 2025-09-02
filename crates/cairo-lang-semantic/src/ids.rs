@@ -2,8 +2,8 @@ use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
 use cairo_lang_utils::define_short_id;
+use salsa::Database;
 
-use crate::db::SemanticGroup;
 use crate::plugin::AnalyzerPlugin;
 
 /// An Id allowing interning [`AnalyzerPlugin`] into Salsa database.
@@ -13,7 +13,7 @@ pub struct AnalyzerPluginLongId(pub Arc<dyn AnalyzerPlugin>);
 impl AnalyzerPlugin for AnalyzerPluginLongId {
     fn diagnostics<'db>(
         &self,
-        db: &'db dyn crate::db::SemanticGroup,
+        db: &'db dyn Database,
         module_id: cairo_lang_defs::ids::ModuleId<'db>,
     ) -> Vec<cairo_lang_defs::plugin::PluginDiagnostic<'db>> {
         self.0.diagnostics(db, module_id)
@@ -46,4 +46,4 @@ impl Hash for AnalyzerPluginLongId {
     }
 }
 
-define_short_id!(AnalyzerPluginId, AnalyzerPluginLongId, SemanticGroup);
+define_short_id!(AnalyzerPluginId, AnalyzerPluginLongId, Database);

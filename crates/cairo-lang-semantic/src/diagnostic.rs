@@ -20,10 +20,10 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use itertools::Itertools;
+use salsa::Database;
 use syntax::node::ids::SyntaxStablePtrId;
 
 use crate::corelib::LiteralError;
-use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceError;
 use crate::items::feature_kind::FeatureMarkerDiagnostic;
 use crate::items::trt::ConcreteTraitTypeId;
@@ -108,7 +108,7 @@ impl<'db> SemanticDiagnostic<'db> {
     }
 }
 impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
-    type DbType = dyn SemanticGroup;
+    type DbType = dyn Database;
 
     fn format(&self, db: &Self::DbType) -> String {
         match &self.kind {
@@ -1627,7 +1627,7 @@ impl<'db> TraitInferenceErrors<'db> {
         self.traits_and_errors.is_empty()
     }
     /// Format the list of errors.
-    fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
+    fn format(&self, db: &dyn Database) -> String {
         self.traits_and_errors
             .iter()
             .map(|(trait_function_id, inference_error)| {

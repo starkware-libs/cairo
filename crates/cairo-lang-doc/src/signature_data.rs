@@ -7,6 +7,7 @@ use cairo_lang_defs::ids::{
     TraitId, TraitItemId, TraitTypeId,
 };
 use cairo_lang_filesystem::ids::StrRef;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::module::ModuleItemInfo;
 use cairo_lang_semantic::items::visibility::Visibility;
 use cairo_lang_semantic::{Expr, GenericArgumentId, GenericParam, Parameter, TypeId};

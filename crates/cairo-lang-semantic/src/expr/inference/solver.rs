@@ -7,6 +7,7 @@ use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::Entry;
 use itertools::{Itertools, chain, zip_eq};
+use salsa::Database;
 
 use super::canonic::{CanonicalImpl, CanonicalTrait, MapperError, ResultNoErrEx};
 use super::conform::InferenceConform;
@@ -76,7 +77,7 @@ pub enum Ambiguity<'db> {
     },
 }
 impl<'db> Ambiguity<'db> {
-    pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
+    pub fn format(&self, db: &dyn Database) -> String {
         match self {
             Ambiguity::MultipleImplsFound { concrete_trait_id, impls } => {
                 let impls_str = impls.iter().map(|imp| format!("`{}`", imp.format(db))).join(", ");
@@ -106,7 +107,7 @@ impl<'db> Ambiguity<'db> {
 /// Implementation of [SemanticGroup::canonic_trait_solutions].
 /// Assumes the lookup context is already enriched by [enrich_lookup_context].
 pub fn canonic_trait_solutions<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     canonical_trait: CanonicalTrait<'db>,
     lookup_context: ImplLookupContextId<'db>,
     impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
@@ -140,7 +141,7 @@ pub fn canonic_trait_solutions<'db>(
 /// Assumes the lookup context is already enriched by [enrich_lookup_context].
 #[salsa::tracked(cycle_result=canonic_trait_solutions_cycle)]
 pub fn canonic_trait_solutions_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     canonical_trait: CanonicalTrait<'db>,
     lookup_context: ImplLookupContextId<'db>,
     impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
@@ -150,7 +151,7 @@ pub fn canonic_trait_solutions_tracked<'db>(
 
 /// Cycle handling for [canonic_trait_solutions].
 pub fn canonic_trait_solutions_cycle<'db>(
-    _db: &dyn SemanticGroup,
+    _db: &dyn Database,
     _canonical_trait: CanonicalTrait<'db>,
     _lookup_context: ImplLookupContextId<'db>,
     _impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
@@ -160,7 +161,7 @@ pub fn canonic_trait_solutions_cycle<'db>(
 
 /// Adds the defining module of the trait and the generic arguments to the lookup context.
 pub fn enrich_lookup_context<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     concrete_trait_id: ConcreteTraitId<'db>,
     lookup_context: &mut ImplLookupContext<'db>,
 ) {
@@ -177,7 +178,7 @@ pub fn enrich_lookup_context<'db>(
 
 /// Adds the defining module of the type to the lookup context.
 pub fn enrich_lookup_context_with_ty<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
     lookup_context: &mut ImplLookupContext<'db>,
 ) {
@@ -196,7 +197,7 @@ pub fn enrich_lookup_context_with_ty<'db>(
 /// Attempts to solve a `canonical_trait`. Will try to find candidates in the given
 /// `lookup_context`.
 fn solve_canonical_trait<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     canonical_trait: CanonicalTrait<'db>,
     lookup_context: ImplLookupContextId<'db>,
     impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
@@ -241,7 +242,7 @@ fn solve_canonical_trait<'db>(
 
 /// Attempts to solve `candidate` as the requested `canonical_trait`.
 fn solve_candidate<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     canonical_trait: &CanonicalTrait<'db>,
     candidate: UninferredImpl<'db>,
     lookup_context: ImplLookupContextId<'db>,
@@ -411,12 +412,12 @@ impl CanConformResult {
 /// An inference without 'vars' that can be used to solve canonical traits which do not contains
 /// 'vars' or associated items.
 struct LiteInference<'db> {
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     substitution: GenericSubstitution<'db>,
 }
 
 impl<'db> LiteInference<'db> {
-    fn new(db: &'db dyn SemanticGroup) -> Self {
+    fn new(db: &'db dyn Database) -> Self {
         LiteInference { db, substitution: GenericSubstitution::default() }
     }
 

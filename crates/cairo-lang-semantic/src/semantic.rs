@@ -8,7 +8,6 @@ use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use salsa::Database;
 
 pub use super::expr::objects::*;
-use crate::db::SemanticGroup;
 pub use crate::expr::pattern::{
     Pattern, PatternEnumVariant, PatternFixedSizeArray, PatternLiteral, PatternOtherwise,
     PatternStringLiteral, PatternStruct, PatternTuple, PatternVariable,
@@ -29,7 +28,7 @@ pub use crate::types::{
 
 /// Semantic model of a variable.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct LocalVariable<'db> {
     pub id: LocalVarId<'db>,
     pub ty: TypeId<'db>,
@@ -46,7 +45,7 @@ impl<'db> LocalVariable<'db> {
 
 /// Semantic model of a local item.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct LocalItem<'db> {
     pub id: StatementItemId<'db>,
     pub kind: StatementItemKind<'db>,
@@ -54,13 +53,13 @@ pub struct LocalItem<'db> {
 
 /// Semantic model of statement item kind.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub enum StatementItemKind<'db> {
     Constant(ConstValueId<'db>, TypeId<'db>),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct Parameter<'db> {
     pub id: ParamId<'db>,
     #[dont_rewrite]
@@ -91,7 +90,7 @@ pub enum Mutability {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub enum Binding<'db> {
     LocalVar(LocalVariable<'db>),
     Param(Parameter<'db>),

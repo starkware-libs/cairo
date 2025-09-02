@@ -53,6 +53,7 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use id_arena::Arena;
 use num_bigint::BigInt;
+use salsa::Database;
 use serde::{Deserialize, Serialize};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
@@ -316,7 +317,7 @@ struct CacheLookups {
 
 /// Context for loading cache into the database.
 struct SemanticCacheLoadingContext<'db> {
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     data: SemanticCacheLoadingData<'db>,
     defs_loading_data: Arc<DefCacheLoadingData<'db>>,
 }
@@ -370,7 +371,7 @@ impl<'db> DerefMut for SemanticCacheLoadingData<'db> {
 
 /// Context for saving cache from the database.
 struct SemanticCacheSavingContext<'db> {
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     data: SemanticCacheSavingData<'db>,
     defs_ctx: DefCacheSavingContext<'db>,
 }
@@ -1302,10 +1303,7 @@ impl ConstValueCached {
                 ConstValueCached::ImplConstant(ImplConstantCached::new(impl_constant_id, ctx))
             }
             ConstValue::Var(_, _) | ConstValue::Missing(_) => {
-                unreachable!(
-                    "Const {:#?} is not supported for caching",
-                    const_value.debug(ctx.db.elongate())
-                )
+                unreachable!("Const {:#?} is not supported for caching", const_value.debug(ctx.db))
             }
         }
     }
@@ -2011,10 +2009,7 @@ impl TypeCached {
                 TypeCached::ClosureType(ClosureTypeCached::new(closure_ty, ctx))
             }
             TypeLongId::Var(_) | TypeLongId::Missing(_) | TypeLongId::Coupon(_) => {
-                unreachable!(
-                    "type {:?} is not supported for caching",
-                    type_id.debug(ctx.db.elongate())
-                )
+                unreachable!("type {:?} is not supported for caching", type_id.debug(ctx.db))
             }
         }
     }
@@ -2212,10 +2207,7 @@ impl ImplCached {
                 ImplCached::SelfImpl(ConcreteTraitCached::new(concrete_trait, ctx))
             }
             ImplLongId::ImplVar(_) => {
-                unreachable!(
-                    "impl {:?} is not supported for caching",
-                    impl_id.debug(ctx.db.elongate())
-                )
+                unreachable!("impl {:?} is not supported for caching", impl_id.debug(ctx.db))
             }
         }
     }

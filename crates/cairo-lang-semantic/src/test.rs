@@ -28,13 +28,10 @@ fn test_resolve() {
     .split();
 
     let module_id = test_module.module_id;
-    let db: &dyn SemanticGroup = &db_val;
+    let db: &dyn Database = &db_val;
     assert!(db.module_item_by_name(module_id, "doesnt_exist".into()).unwrap().is_none());
     let felt252_add = db.module_item_by_name(module_id, "felt252_add".into()).unwrap();
-    assert_eq!(
-        format!("{:?}", felt252_add.debug(db.upcast())),
-        "Some(ExternFunctionId(test::felt252_add))"
-    );
+    assert_eq!(format!("{:?}", felt252_add.debug(db)), "Some(ExternFunctionId(test::felt252_add))");
     match db.module_item_by_name(module_id, "felt252_add".into()).unwrap().unwrap() {
         ModuleItemId::ExternFunction(_) => {}
         _ => panic!("Expected an extern function"),

@@ -206,7 +206,7 @@ struct InlineMacroExpansion<'db> {
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx, 'mt> {
-    pub db: &'ctx dyn SemanticGroup,
+    pub db: &'ctx dyn Database,
     pub diagnostics: &'mt mut SemanticDiagnostics<'ctx>,
     pub resolver: &'mt mut Resolver<'ctx>,
     signature: Option<&'mt Signature<'ctx>>,
@@ -228,7 +228,7 @@ pub struct ComputationContext<'ctx, 'mt> {
 impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
     /// Creates a new computation context.
     pub fn new(
-        db: &'ctx dyn SemanticGroup,
+        db: &'ctx dyn Database,
         diagnostics: &'mt mut SemanticDiagnostics<'ctx>,
         resolver: &'mt mut Resolver<'ctx>,
         signature: Option<&'mt Signature<'ctx>>,
@@ -257,7 +257,7 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
 
     /// Creates a new computation context for a global scope.
     pub fn new_global(
-        db: &'ctx dyn SemanticGroup,
+        db: &'ctx dyn Database,
         diagnostics: &'mt mut SemanticDiagnostics<'ctx>,
         resolver: &'mt mut Resolver<'ctx>,
     ) -> Self {
@@ -437,7 +437,7 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
 /// Adds warning for unused bindings if required.
 fn add_unused_binding_warning<'db>(
     diagnostics: &mut SemanticDiagnostics<'db>,
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     used_bindings: &UnorderedHashSet<VarId<'db>>,
     name: &str,
     binding: &Binding<'db>,
@@ -476,7 +476,7 @@ type EnvItems<'db> = OrderedHashMap<StrRef<'db>, StatementGenericItemData<'db>>;
 
 /// Struct that holds the resolved generic type of a statement item.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 struct StatementGenericItemData<'db> {
     resolved_generic_item: ResolvedGenericItem<'db>,
     stable_ptr: SyntaxStablePtrId<'db>,
@@ -498,7 +498,7 @@ impl<'db> Environment<'db> {
     /// Adds a parameter to the environment.
     pub fn add_param(
         &mut self,
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         diagnostics: &mut SemanticDiagnostics<'db>,
         semantic_param: Parameter<'db>,
         ast_param: &ast::Param<'db>,
@@ -758,7 +758,7 @@ fn compute_expr_inline_macro_semantic<'db>(
     let expr_syntax = ctx.db.file_expr_syntax(new_file_id)?;
     let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
     if let Err(diag_added) = parser_diagnostics.check_error_free() {
-        for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db.elongate()) {
+        for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
             ctx.diagnostics.report(
                 syntax.stable_ptr(ctx.db),
                 SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
@@ -827,7 +827,7 @@ fn expand_macro_for_statement<'db>(
     .intern(ctx.db);
     let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
     if let Err(diag_added) = parser_diagnostics.check_error_free() {
-        for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db.elongate()) {
+        for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
             ctx.diagnostics.report(
                 syntax.stable_ptr(ctx.db),
                 SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
@@ -1630,7 +1630,7 @@ struct FlowMergeTypeHelper<'db> {
     had_merge_error: bool,
 }
 impl<'db> FlowMergeTypeHelper<'db> {
-    fn new(db: &'db dyn SemanticGroup, multi_arm_expr_kind: MultiArmExprKind) -> Self {
+    fn new(db: &'db dyn Database, multi_arm_expr_kind: MultiArmExprKind) -> Self {
         Self {
             multi_arm_expr_kind,
             never_type: never_ty(db),
@@ -1644,7 +1644,7 @@ impl<'db> FlowMergeTypeHelper<'db> {
     /// the types have already been conformed earlier, in which case it has no external effect.
     fn try_merge_types(
         &mut self,
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         diagnostics: &mut SemanticDiagnostics<'db>,
         inference: &mut Inference<'db, '_>,
         ty: TypeId<'db>,
@@ -2129,7 +2129,7 @@ fn compute_loop_body_semantic<'db>(
     syntax: ast::ExprBlock<'db>,
     kind: InnerContextKind<'db>,
 ) -> (ExprId, InnerContext<'db>) {
-    let db: &dyn SemanticGroup = ctx.db;
+    let db: &dyn Database = ctx.db;
     ctx.run_in_subscope(|new_ctx| {
         let return_type = new_ctx.get_return_type().unwrap();
         let old_inner_ctx = new_ctx.inner_ctx.replace(InnerContext { return_type, kind });
@@ -3304,7 +3304,7 @@ fn struct_ctor_expr<'db>(
 /// A tail expression is the last statement in the list, if it is an expression and
 /// it does not end with a semicolon.
 fn statements_and_tail<'a>(
-    db: &'a dyn SemanticGroup,
+    db: &'a dyn Database,
     syntax: ast::StatementList<'a>,
 ) -> (impl Iterator<Item = ast::Statement<'a>> + 'a, Option<ast::StatementExpr<'a>>) {
     let mut statements = syntax.elements(db);
@@ -3700,10 +3700,7 @@ fn member_access_expr<'db>(
             Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported))
         }
         TypeLongId::ImplType(impl_type_id) => {
-            unreachable!(
-                "Impl type should've been reduced {:?}.",
-                impl_type_id.debug(ctx.db.elongate())
-            )
+            unreachable!("Impl type should've been reduced {:?}.", impl_type_id.debug(ctx.db))
         }
         TypeLongId::Var(_) => Err(ctx.diagnostics.report(
             rhs_syntax.stable_ptr(db),
@@ -4634,7 +4631,7 @@ fn function_parameter_types<'db>(
 /// This function checks for visible traits in the specified module file and filters
 /// methods based on their association with the given type and method name.
 fn match_method_to_traits<'db>(
-    db: &dyn SemanticGroup,
+    db: &dyn Database,
     ty: semantic::TypeId<'db>,
     method_name: &'db str,
     lookup_context: ImplLookupContextId<'db>,
