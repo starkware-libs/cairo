@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsGroup, DefsGroupEx, defs_group_input};
@@ -17,11 +17,11 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, StrRef, Tracked};
 use cairo_lang_syntax::attribute::consts::{DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES};
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
-use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, Upcast, require};
 use itertools::{Itertools, chain};
 use salsa::{Database, Setter};
@@ -2335,12 +2335,7 @@ fn module_semantic_diagnostics<'db>(
         }
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
-    if let Ok(mapping) = name_to_stable_ptr_mapping(db, (), module_id) {
-        for (name, stable_ptr) in &mapping.dups {
-            diagnostics
-                .report(*stable_ptr, SemanticDiagnosticKind::NameDefinedMultipleTimes(*name));
-        }
-    }
+    add_duplicated_names_from_macro_expansions_diagnostics(db, module_id, &mut diagnostics);
     for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db)).iter() {
         let analyzer_plugin = analyzer_plugin_id.long(db);
 
@@ -2355,52 +2350,45 @@ fn module_semantic_diagnostics<'db>(
     Ok(diagnostics.build())
 }
 
-/// A mapping from names to stable ptrs, as well as duplicates names.
-#[derive(Debug, PartialEq, Eq, salsa::Update)]
-struct NameToStablePtrMapping<'db> {
-    /// The actual mapping.
-    mapping: OrderedHashMap<StrRef<'db>, SyntaxStablePtrId<'db>>,
-    /// The duplicates info.
-    dups: Vec<(StrRef<'db>, SyntaxStablePtrId<'db>)>,
-}
-
-/// Find name to stable ptr mapping from a module, as well as duplicates names.
-#[salsa::tracked(returns(ref))]
-fn name_to_stable_ptr_mapping<'db>(
+/// Adds diagnostics for duplicated names from macro expansions.
+fn add_duplicated_names_from_macro_expansions_diagnostics<'db>(
     db: &'db dyn SemanticGroup,
-    _tracked: Tracked,
     module_id: ModuleId<'db>,
-) -> Maybe<NameToStablePtrMapping<'db>> {
-    let mut name_to_stable_ptr = OrderedHashMap::default();
-    let data = db.priv_module_semantic_data(module_id)?;
-    for (name, info) in data.items.iter() {
-        let Ok(stable_ptr) = db.module_item_name_stable_ptr(module_id, info.item_id) else {
-            continue;
-        };
-        name_to_stable_ptr.insert(*name, stable_ptr);
+    diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+) {
+    if matches!(module_id, ModuleId::MacroCall { .. }) {
+        // Macro calls are handled by the caller.
+        return;
     }
-    let mut dups = vec![];
-    if let Ok(macro_calls) = db.module_macro_calls_ids(module_id) {
-        for macro_call in macro_calls.iter() {
-            let Ok(macro_module_id) = db.macro_call_module_id(*macro_call) else {
-                continue;
-            };
-            let Ok(inner) = name_to_stable_ptr_mapping(db, (), macro_module_id) else {
-                continue;
-            };
-            for (name, stable_ptr) in inner.mapping.iter() {
-                match name_to_stable_ptr.entry(*name) {
-                    Entry::Vacant(entry) => {
-                        entry.insert(*stable_ptr);
-                    }
-                    Entry::Occupied(_) => {
-                        dups.push((*name, *stable_ptr));
-                    }
+    let mut names = UnorderedHashSet::<StrRef<'_>>::default();
+    let Ok(data) = db.priv_module_semantic_data(module_id) else {
+        return;
+    };
+    names.extend(data.items.keys().copied());
+    let mut queue = VecDeque::new();
+    queue.push_back((module_id, false));
+    while let Some((module_id, expose)) = queue.pop_front() {
+        let expose = expose || matches!(module_id, ModuleId::MacroCall { is_expose: true, .. });
+        if let Ok(macro_calls) = db.module_macro_calls_ids(module_id) {
+            for macro_call in macro_calls.iter() {
+                if let Ok(macro_module_id) = db.macro_call_module_id(*macro_call) {
+                    queue.push_back((macro_module_id, expose));
+                }
+            }
+        }
+        if expose && let Ok(data) = db.priv_module_semantic_data(module_id) {
+            for (name, info) in data.items.iter() {
+                if !names.insert(*name)
+                    && let Ok(stable_ptr) = db.module_item_name_stable_ptr(module_id, info.item_id)
+                {
+                    diagnostics.report(
+                        stable_ptr,
+                        SemanticDiagnosticKind::NameDefinedMultipleTimes(*name),
+                    );
                 }
             }
         }
     }
-    Ok(NameToStablePtrMapping { mapping: name_to_stable_ptr, dups })
 }
 
 fn crate_analyzer_plugins<'db>(

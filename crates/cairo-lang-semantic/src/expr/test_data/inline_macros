@@ -2170,7 +2170,7 @@ foo
 //! > module_code
 macro define_bar {
     () => {
-        fn bar() {}
+        expose!(fn bar() {});
     };
 }
 define_bar!();
@@ -2178,9 +2178,9 @@ define_bar!();
 
 //! > expected_diagnostics
 error: The name `bar` is defined multiple times.
- --> lib.cairo[define_bar]:1:12
-        fn bar() {}
-           ^^^
+ --> lib.cairo[define_bar]:1:20
+        expose!(fn bar() {});
+                   ^^^
 
 //! > ==========================================================================
 
@@ -2188,6 +2188,45 @@ error: The name `bar` is defined multiple times.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro define_bar {
+    () => {
+        expose!(fn bar() {});
+    };
+}
+macro define_bar_twice {
+    () => {
+        $defsite::define_bar!();
+        expose!(fn bar() {});
+    };
+}
+define_bar_twice!();
+fn bar() {}
+
+//! > expected_diagnostics
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[define_bar_twice]:2:20
+        expose!(fn bar() {});
+                   ^^^
+
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[define_bar_twice][$defsite::define_bar]:1:20
+        expose!(fn bar() {});
+                   ^^^
+
+//! > ==========================================================================
+
+//! > Test collision un-exposed ignored for collisions.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {}
@@ -2211,15 +2250,6 @@ define_bar_twice!();
 fn bar() {}
 
 //! > expected_diagnostics
-error: The name `bar` is defined multiple times.
- --> lib.cairo[define_bar_twice]:2:12
-        fn bar() {}
-           ^^^
-
-error: The name `bar` is defined multiple times.
- --> lib.cairo[define_bar_twice][$defsite::define_bar]:1:12
-        fn bar() {}
-           ^^^
 
 //! > ==========================================================================
 
@@ -2239,16 +2269,16 @@ fn bar() {}
 
 macro define_bar {
     () => {
-        fn bar() {}
+        expose!(fn bar() {});
     };
 }
 define_bar!();
 
 //! > expected_diagnostics
 error: The name `bar` is defined multiple times.
- --> lib.cairo[define_bar]:1:12
-        fn bar() {}
-           ^^^
+ --> lib.cairo[define_bar]:1:20
+        expose!(fn bar() {});
+                   ^^^
 
 //! > ==========================================================================
 
@@ -2266,7 +2296,7 @@ foo
 //! > module_code
 macro inner_macro {
     () => {
-        fn bar() {}
+        expose!(fn bar() {});
     };
 }
 
@@ -2282,9 +2312,9 @@ outer_macro!();
 
 //! > expected_diagnostics
 error: The name `bar` is defined multiple times.
- --> lib.cairo[outer_macro][$defsite::inner_macro]:1:12
-        fn bar() {}
-           ^^^
+ --> lib.cairo[outer_macro][$defsite::inner_macro]:1:20
+        expose!(fn bar() {});
+                   ^^^
 
 //! > ==========================================================================
 
