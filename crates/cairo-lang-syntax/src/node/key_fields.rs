@@ -52,7 +52,6 @@ pub fn get_key_fields<'db>(kind: SyntaxKind, children: &[GreenId<'db>]) -> Box<[
         SyntaxKind::OptionFixedSizeArraySizeEmpty => [].into(),
         SyntaxKind::ExprClosure => [].into(),
         SyntaxKind::ClosureParamWrapperNAry => [].into(),
-        SyntaxKind::ExprPlaceholder => [].into(),
         SyntaxKind::StructArgExpr => [].into(),
         SyntaxKind::OptionStructArgExprEmpty => [].into(),
         SyntaxKind::StructArgSingle => [/* identifier */ children[0]].into(),

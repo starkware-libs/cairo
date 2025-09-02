@@ -800,7 +800,6 @@ impl<'a> IsDependentType for ast::Expr<'a> {
             | ast::Expr::FieldInitShorthand(_)
             | ast::Expr::Indexed(_)
             | ast::Expr::InlineMacro(_)
-            | ast::Expr::Placeholder(_)
             | ast::Expr::Missing(_) => false,
         }
     }

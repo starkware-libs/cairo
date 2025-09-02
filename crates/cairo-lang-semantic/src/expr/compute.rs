@@ -618,7 +618,6 @@ pub fn maybe_compute_expr_semantic<'db>(
         ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
         ast::Expr::For(expr) => compute_expr_for_semantic(ctx, expr),
         ast::Expr::Closure(expr) => compute_expr_closure_semantic(ctx, expr, None),
-        ast::Expr::Placeholder(_) => todo!(),
     }
 }
 
