@@ -12,7 +12,7 @@ use cairo_lang_lowering::db::{ExternalCodeSizeEstimator, LoweringGroup, init_low
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
-use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
+use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_sierra_generator::db::{SierraGenGroup, init_sierra_gen_group};
@@ -246,11 +246,6 @@ impl<'db> Upcast<'db, dyn salsa::Database> for RootDatabase {
         self
     }
 }
-impl<'db> Upcast<'db, dyn SemanticGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn SemanticGroup {
-        self
-    }
-}
 impl<'db> Upcast<'db, dyn LoweringGroup> for RootDatabase {
     fn upcast(&self) -> &dyn LoweringGroup {
         self
@@ -258,12 +253,6 @@ impl<'db> Upcast<'db, dyn LoweringGroup> for RootDatabase {
 }
 impl<'db> Upcast<'db, dyn SierraGenGroup> for RootDatabase {
     fn upcast(&self) -> &dyn SierraGenGroup {
-        self
-    }
-}
-
-impl Elongate for RootDatabase {
-    fn elongate(&self) -> &dyn SemanticGroup {
         self
     }
 }

@@ -226,7 +226,7 @@ struct NoU128RenameAnalyzerPlugin;
 impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
     fn diagnostics<'db>(
         &self,
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         module_id: ModuleId<'db>,
     ) -> Vec<PluginDiagnostic<'db>> {
         let mut diagnostics = vec![];

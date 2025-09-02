@@ -35,6 +35,7 @@ use cairo_lang_utils::ordered_hash_map::{
 };
 use itertools::{Itertools, chain};
 pub use plugin::TestPlugin;
+use salsa::Database;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
 pub use test_config::{TestConfig, try_extract_test_config};
@@ -250,7 +251,7 @@ pub struct TestCompilationMetadata<'db> {
 
 /// Finds the tests in the requested crates.
 fn find_all_tests<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     main_crates: Vec<CrateId<'db>>,
 ) -> Vec<(FreeFunctionId<'db>, TestConfig)> {
     let mut tests = vec![];

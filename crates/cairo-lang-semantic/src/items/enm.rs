@@ -9,8 +9,9 @@ use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, Upcast};
+use salsa::Database;
 
 use super::attribute::SemanticQueryAttrs;
 use super::generics::{GenericParamsData, semantic_generic_params};
@@ -31,7 +32,7 @@ mod test;
 
 // Declaration
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct EnumDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     generic_params: Vec<semantic::GenericParam<'db>>,
@@ -41,7 +42,7 @@ pub struct EnumDeclarationData<'db> {
 
 /// Implementation of [crate::db::SemanticGroup::priv_enum_declaration_data].
 pub fn priv_enum_declaration_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<EnumDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -80,7 +81,7 @@ pub fn priv_enum_declaration_data<'db>(
 /// Query implementation of [crate::db::SemanticGroup::priv_enum_declaration_data].
 #[salsa::tracked]
 pub fn priv_enum_declaration_data_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<EnumDeclarationData<'db>> {
     priv_enum_declaration_data(db, enum_id)
@@ -88,7 +89,7 @@ pub fn priv_enum_declaration_data_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::enum_declaration_diagnostics].
 pub fn enum_declaration_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_enum_declaration_data(enum_id).map(|data| data.diagnostics).unwrap_or_default()
@@ -97,7 +98,7 @@ pub fn enum_declaration_diagnostics<'db>(
 /// Query Implementation of [crate::db::SemanticGroup::enum_declaration_diagnostics].
 #[salsa::tracked]
 pub fn enum_declaration_diagnostics_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     enum_declaration_diagnostics(db, enum_id)
@@ -105,7 +106,7 @@ pub fn enum_declaration_diagnostics_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::enum_generic_params].
 pub fn enum_generic_params<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
     Ok(db.enum_generic_params_data(enum_id)?.generic_params)
@@ -114,7 +115,7 @@ pub fn enum_generic_params<'db>(
 /// Query implementation of [crate::db::SemanticGroup::enum_generic_params].
 #[salsa::tracked]
 pub fn enum_generic_params_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
     enum_generic_params(db, enum_id)
@@ -122,7 +123,7 @@ pub fn enum_generic_params_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::enum_generic_params_data].
 pub fn enum_generic_params_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = enum_id.module_file_id(db);
@@ -152,7 +153,7 @@ pub fn enum_generic_params_data<'db>(
 /// Query implementation of [crate::db::SemanticGroup::enum_generic_params_data].
 #[salsa::tracked]
 pub fn enum_generic_params_data_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     enum_generic_params_data(db, enum_id)
@@ -160,7 +161,7 @@ pub fn enum_generic_params_data_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::enum_attributes].
 pub fn enum_attributes<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_enum_declaration_data(enum_id)?.attributes)
@@ -169,7 +170,7 @@ pub fn enum_attributes<'db>(
 /// Query implementation of [crate::db::SemanticGroup::enum_attributes].
 #[salsa::tracked]
 pub fn enum_attributes_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     enum_attributes(db, enum_id)
@@ -177,7 +178,7 @@ pub fn enum_attributes_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::enum_declaration_resolver_data].
 pub fn enum_declaration_resolver_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_enum_declaration_data(enum_id)?.resolver_data)
@@ -186,7 +187,7 @@ pub fn enum_declaration_resolver_data<'db>(
 /// Query implementation of [crate::db::SemanticGroup::enum_declaration_resolver_data].
 #[salsa::tracked]
 pub fn enum_declaration_resolver_data_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     enum_declaration_resolver_data(db, enum_id)
@@ -194,7 +195,7 @@ pub fn enum_declaration_resolver_data_tracked<'db>(
 
 // Definition
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct EnumDefinitionData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     variants: OrderedHashMap<StrRef<'db>, VariantId<'db>>,
@@ -203,7 +204,7 @@ pub struct EnumDefinitionData<'db> {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct Variant<'db> {
     pub enum_id: EnumId<'db>,
     pub id: VariantId<'db>,
@@ -225,7 +226,7 @@ pub struct ConcreteVariant<'db> {
 /// Selector pattern of a match arm of a match on numeric values.
 /// Required for the dont_rewrite attribute to work.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct ValueSelectorArm {
     #[dont_rewrite]
     pub value: usize,
@@ -240,7 +241,7 @@ pub enum MatchArmSelector<'db> {
 
 /// Implementation of [crate::db::SemanticGroup::priv_enum_definition_data].
 pub fn priv_enum_definition_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<EnumDefinitionData<'db>> {
     let module_file_id = enum_id.module_file_id(db);
@@ -303,7 +304,7 @@ pub fn priv_enum_definition_data<'db>(
 /// Query implementation of [crate::db::SemanticGroup::priv_enum_definition_data].
 #[salsa::tracked]
 pub fn priv_enum_definition_data_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<EnumDefinitionData<'db>> {
     priv_enum_definition_data(db, enum_id)
@@ -311,7 +312,7 @@ pub fn priv_enum_definition_data_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::enum_definition_diagnostics].
 pub fn enum_definition_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     let Ok(data) = db.priv_enum_definition_data(enum_id) else {
@@ -343,7 +344,7 @@ pub fn enum_definition_diagnostics<'db>(
 /// Query implementation of [crate::db::SemanticGroup::enum_definition_diagnostics].
 #[salsa::tracked]
 pub fn enum_definition_diagnostics_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     enum_definition_diagnostics(db, enum_id)
@@ -351,7 +352,7 @@ pub fn enum_definition_diagnostics_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::enum_definition_resolver_data].
 pub fn enum_definition_resolver_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_enum_definition_data(enum_id)?.resolver_data)
@@ -360,7 +361,7 @@ pub fn enum_definition_resolver_data<'db>(
 /// Query implementation of [crate::db::SemanticGroup::enum_definition_resolver_data].
 #[salsa::tracked]
 pub fn enum_definition_resolver_data_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     enum_definition_resolver_data(db, enum_id)
@@ -368,7 +369,7 @@ pub fn enum_definition_resolver_data_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::enum_variants].
 pub fn enum_variants<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<OrderedHashMap<StrRef<'db>, VariantId<'db>>> {
     Ok(db.priv_enum_definition_data(enum_id)?.variants)
@@ -377,7 +378,7 @@ pub fn enum_variants<'db>(
 /// Query implementation of [crate::db::SemanticGroup::enum_variants].
 #[salsa::tracked]
 pub fn enum_variants_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<OrderedHashMap<StrRef<'db>, VariantId<'db>>> {
     enum_variants(db, enum_id)
@@ -385,7 +386,7 @@ pub fn enum_variants_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::variant_semantic].
 pub fn variant_semantic<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
     variant_id: VariantId<'db>,
 ) -> Maybe<Variant<'db>> {
@@ -396,7 +397,7 @@ pub fn variant_semantic<'db>(
 /// Query implementation of [crate::db::SemanticGroup::variant_semantic].
 #[salsa::tracked]
 pub fn variant_semantic_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     enum_id: EnumId<'db>,
     variant_id: VariantId<'db>,
 ) -> Maybe<Variant<'db>> {
@@ -404,7 +405,7 @@ pub fn variant_semantic_tracked<'db>(
 }
 
 // TODO(spapini): Consider making these queries.
-pub trait SemanticEnumEx: for<'a> Upcast<'a, dyn SemanticGroup> {
+pub trait SemanticEnumEx: Database {
     /// Retrieves the [ConcreteVariant] for a [ConcreteEnumId] and a [Variant].
     fn concrete_enum_variant<'db>(
         &'db self,
@@ -413,7 +414,7 @@ pub trait SemanticEnumEx: for<'a> Upcast<'a, dyn SemanticGroup> {
     ) -> Maybe<ConcreteVariant<'db>> {
         // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
         //   always have the correct number of generic arguments.
-        let db = self.upcast();
+        let db = self.as_dyn_database();
         let generic_params = db.enum_generic_params(concrete_enum_id.enum_id(db))?;
         let generic_args = concrete_enum_id.long(db).generic_args.clone();
         GenericSubstitution::new(&generic_params, &generic_args).substitute(
@@ -429,7 +430,7 @@ pub trait SemanticEnumEx: for<'a> Upcast<'a, dyn SemanticGroup> {
     ) -> Maybe<Vec<ConcreteVariant<'db>>> {
         // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
         //   always have the correct number of generic arguments.
-        let db = self.upcast();
+        let db = self.as_dyn_database();
         let enum_id = concrete_enum_id.enum_id(db);
         db.enum_variants(enum_id)?
             .values()
@@ -443,4 +444,4 @@ pub trait SemanticEnumEx: for<'a> Upcast<'a, dyn SemanticGroup> {
     }
 }
 
-impl<T: for<'db> Upcast<'db, dyn SemanticGroup> + ?Sized> SemanticEnumEx for T {}
+impl<T: Database + ?Sized> SemanticEnumEx for T {}

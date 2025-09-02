@@ -188,7 +188,7 @@ impl FeatureConfigRestore<'_> {
 
 /// Returns the allowed features of an object which supports attributes.
 pub fn feature_config_from_ast_item<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
     syntax: &impl QueryAttrs<'db>,
     diagnostics: &mut SemanticDiagnostics<'db>,
@@ -261,7 +261,7 @@ fn process_feature_attr_kind<'db>(
 /// Extracts the allowed features of an element, considering its parent modules as well as its
 /// attributes.
 pub fn feature_config_from_item_and_parent_modules<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     element_id: &impl LanguageElementId<'db>,
     syntax: &impl QueryAttrs<'db>,
     diagnostics: &mut SemanticDiagnostics<'db>,

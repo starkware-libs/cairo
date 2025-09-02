@@ -4,7 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::{init_defs_group, init_external_files};
 use cairo_lang_filesystem::db::{init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
+use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_utils::Upcast;
 use salsa::Database;
@@ -54,19 +54,8 @@ impl Default for LoweringDatabaseForTesting {
     }
 }
 
-impl Elongate for LoweringDatabaseForTesting {
-    fn elongate(&self) -> &(dyn SemanticGroup + 'static) {
-        self
-    }
-}
-
 impl<'db> Upcast<'db, dyn Database> for LoweringDatabaseForTesting {
     fn upcast(&self) -> &dyn Database {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SemanticGroup> for LoweringDatabaseForTesting {
-    fn upcast(&self) -> &dyn SemanticGroup {
         self
     }
 }

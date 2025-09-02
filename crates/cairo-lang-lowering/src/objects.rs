@@ -11,6 +11,7 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{DiagnosticNote, Diagnostics};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{concrete_destruct_trait, concrete_panic_destruct_trait};
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_semantic::expr::inference::solver::Ambiguity;
 use cairo_lang_semantic::items::constant::ConstValueId;

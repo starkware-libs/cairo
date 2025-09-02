@@ -7,6 +7,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId};
 use cairo_lang_filesystem::ids::db_str;
 use cairo_lang_semantic::corelib::try_extract_nz_wrapped_type;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::{ConstCalcInfo, ConstValue, ConstValueId};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, GenericFunctionWithBodyId};

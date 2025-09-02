@@ -5,6 +5,7 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::{
     self as semantic, ConcreteEnumId, ConcreteVariant, GenericArgumentId, VarId, corelib,
 };

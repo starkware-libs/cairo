@@ -2,6 +2,7 @@
 #[path = "return_optimization_test.rs"]
 mod test;
 
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeId, TypeLongId};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, require};

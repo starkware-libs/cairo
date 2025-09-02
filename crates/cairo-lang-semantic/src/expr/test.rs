@@ -6,6 +6,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Upcast, extract_matches};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
+use salsa::Database;
 
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
@@ -107,7 +108,7 @@ fn test_expand_expr(
         inputs.get("crate_settings").map(|x| x.as_str()),
     )
     .split();
-    let sdb: &dyn SemanticGroup = db.upcast();
+    let sdb: &dyn Database = db.upcast();
     let expr = sdb.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
     let error = verify_diagnostics_expectation(args, &diagnostics);
@@ -137,7 +138,7 @@ fn test_expr_semantics(
         inputs.get("crate_settings").map(|x| x.as_str()),
     )
     .split();
-    let sdb: &dyn SemanticGroup = db.upcast();
+    let sdb: &dyn Database = db.upcast();
     let expr = sdb.expr_semantic(test_expr.function_id, test_expr.expr_id);
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
@@ -210,7 +211,7 @@ fn test_expr_var() {
     .unwrap();
     let db = &db_val;
 
-    let sdb: &dyn SemanticGroup = db.upcast();
+    let sdb: &dyn Database = db.upcast();
     let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } = extract_matches!(
         sdb.expr_semantic(test_function.function_id, test_function.body),
         crate::Expr::Block
@@ -244,7 +245,7 @@ fn test_expr_call_failures() {
 
         "}
     );
-    let sdb: &dyn SemanticGroup = db.upcast();
+    let sdb: &dyn Database = db.upcast();
     assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test)");
     assert_eq!(
         format!(
@@ -274,7 +275,7 @@ fn test_function_body() {
 
     let function_id =
         FunctionWithBodyId::Free(extract_matches!(item_id, ModuleItemId::FreeFunction));
-    let sdb: &dyn SemanticGroup = db.upcast();
+    let sdb: &dyn Database = db.upcast();
     let body = sdb.function_body_expr(function_id).unwrap();
 
     // Test the resulting semantic function body.

@@ -9,6 +9,7 @@ use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
+use salsa::Database;
 
 use super::create_graph::{create_graph_expr_if, create_graph_expr_match};
 use super::graph::FlowControlGraph;
@@ -45,7 +46,7 @@ fn test_create_graph(
         inputs.get("module_code").unwrap_or(&"".into()),
     )
     .split();
-    let semantic_db: &dyn SemanticGroup = db;
+    let semantic_db: &dyn Database = db;
 
     // Extract the expression from the function's body.
     let semantic::Expr::Block(semantic::ExprBlock { tail: Some(expr_id), .. }) =

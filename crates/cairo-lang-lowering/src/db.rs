@@ -79,9 +79,7 @@ impl<T: UseApproxCodeSizeEstimator> ExternalCodeSizeEstimator for T {
 
 // Salsa database interface.
 #[cairo_lang_proc_macros::query_group]
-pub trait LoweringGroup:
-    SemanticGroup + for<'a> Upcast<'a, dyn SemanticGroup> + ExternalCodeSizeEstimator
-{
+pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
     /// Computes the lowered representation of a function with a body, along with all it generated
     /// functions (e.g. closures, lambdas, loops, ...).
     fn priv_function_with_body_multi_lowering<'db>(

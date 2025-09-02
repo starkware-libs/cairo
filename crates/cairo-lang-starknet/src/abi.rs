@@ -27,6 +27,7 @@ use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, require, try_extract_matches};
 use itertools::zip_eq;
+use salsa::Database;
 use thiserror::Error;
 
 use crate::plugin::aux_data::StarknetEventAuxData;
@@ -67,7 +68,7 @@ pub struct BuilderConfig {
 
 pub struct AbiBuilder<'db> {
     /// The db.
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     /// The builder configuration.
     config: BuilderConfig,
 
@@ -96,7 +97,7 @@ pub struct AbiBuilder<'db> {
 impl<'db> AbiBuilder<'db> {
     /// Creates an `AbiBuilder` from a Starknet contract module.
     pub fn from_submodule(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         submodule_id: SubmoduleId<'db>,
         config: BuilderConfig,
     ) -> Maybe<Self> {
@@ -801,21 +802,18 @@ impl<'db> AbiBuilder<'db> {
 }
 
 /// Checks whether the impl is marked with #[abi(embed_v0)].
-fn is_impl_abi_embed<'db>(db: &'db dyn SemanticGroup, imp: ImplDefId<'db>) -> Maybe<bool> {
+fn is_impl_abi_embed<'db>(db: &'db dyn Database, imp: ImplDefId<'db>) -> Maybe<bool> {
     imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG)
 }
 
 /// Checks whether the impl is marked with `#[abi(per_item)]`.
-fn is_impl_abi_per_item<'db>(db: &'db dyn SemanticGroup, imp: ImplDefId<'db>) -> Maybe<bool> {
+fn is_impl_abi_per_item<'db>(db: &'db dyn Database, imp: ImplDefId<'db>) -> Maybe<bool> {
     imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_PER_ITEM_ARG)
 }
 
 /// Fetch the event data for the given type. Returns None if the given event type doesn't derive
 /// `starknet::Event` by using the `derive` attribute.
-fn fetch_event_data<'db>(
-    db: &'db dyn SemanticGroup,
-    event_type_id: TypeId<'db>,
-) -> Option<EventData> {
+fn fetch_event_data<'db>(db: &'db dyn Database, event_type_id: TypeId<'db>) -> Option<EventData> {
     let starknet_module = core_submodule(db, "starknet");
     // `starknet::event`.
     let event_module = try_extract_matches!(
@@ -908,7 +906,7 @@ pub enum ABIError<'db> {
     ValidateDeployMismatchingConstructor(Source<'db>),
 }
 impl<'db> ABIError<'db> {
-    pub fn location(&self, db: &'db dyn SemanticGroup) -> Option<SyntaxStablePtrId<'db>> {
+    pub fn location(&self, db: &'db dyn Database) -> Option<SyntaxStablePtrId<'db>> {
         // TODO(orizi): Add more error locations.
         match self {
             ABIError::SemanticError => None,
@@ -954,7 +952,7 @@ pub enum Source<'db> {
     Trait(TraitId<'db>),
 }
 impl<'db> Source<'db> {
-    fn location(&self, db: &'db dyn SemanticGroup) -> SyntaxStablePtrId<'db> {
+    fn location(&self, db: &'db dyn Database) -> SyntaxStablePtrId<'db> {
         match self {
             Source::Function(id) => id.untyped_stable_ptr(db),
             Source::Impl(id) => id.untyped_stable_ptr(db),

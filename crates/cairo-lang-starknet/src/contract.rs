@@ -27,6 +27,7 @@ use cairo_lang_utils::ordered_hash_map::{
     OrderedHashMap, deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec,
 };
 use itertools::{Itertools, chain};
+use salsa::Database;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
@@ -55,7 +56,7 @@ impl<'db> ContractDeclaration<'db> {
 
 /// Returns the contract declaration of a given module if it is a contract module.
 pub fn module_contract<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Option<ContractDeclaration<'db>> {
     let all_aux_data = module_id.module_data(db).ok()?.generated_file_aux_data(db);
@@ -87,7 +88,7 @@ pub fn module_contract<'db>(
 /// Finds the inline modules annotated as contracts in the given crate_ids and
 /// returns the corresponding ContractDeclarations.
 pub fn find_contracts<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     crate_ids: &[CrateId<'db>],
 ) -> Vec<ContractDeclaration<'db>> {
     let mut contract_declarations = vec![];
@@ -103,7 +104,7 @@ pub fn find_contracts<'db>(
 /// Returns the ABI functions of a given contract.
 /// Assumes the given module is a contract module.
 pub fn get_contract_abi_functions<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     contract: &ContractDeclaration<'db>,
     module_name: &'db str,
 ) -> anyhow::Result<Vec<Aliased<semantic::ConcreteFunctionWithBodyId<'db>>>> {
@@ -116,7 +117,7 @@ pub fn get_contract_abi_functions<'db>(
 
 /// Returns the ABI functions in a given internal module in the contract.
 fn get_contract_internal_module_abi_functions<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     contract: &ContractDeclaration<'db>,
     module_name: &'db str,
 ) -> anyhow::Result<Vec<Aliased<SemanticConcreteFunctionWithBodyId<'db>>>> {
@@ -133,7 +134,7 @@ fn get_contract_internal_module_abi_functions<'db>(
 /// Assumes the given module is a generated module containing `use` items pointing to wrapper ABI
 /// functions.
 fn get_module_aliased_functions<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> anyhow::Result<Vec<Aliased<FreeFunctionId<'db>>>> {
     module_id
@@ -163,7 +164,7 @@ fn get_module_aliased_functions<'db>(
 /// `module_prefix` is the prefix of the generated module name outside of the contract, the rest of
 /// the name is defined by the name of the aliased impl.
 fn get_impl_aliases_abi_functions<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     contract: &ContractDeclaration<'db>,
     module_prefix: &str,
 ) -> anyhow::Result<Vec<Aliased<SemanticConcreteFunctionWithBodyId<'db>>>> {
@@ -239,13 +240,13 @@ fn get_impl_aliases_abi_functions<'db>(
     }
     diagnostics
         .build()
-        .expect_with_db(db.elongate(), "Internal error: Inference for wrappers generics failed.");
+        .expect_with_db(db, "Internal error: Inference for wrappers generics failed.");
     Ok(all_abi_functions)
 }
 
 /// Returns the generated contract module.
 fn get_generated_contract_module<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     contract: &ContractDeclaration<'db>,
 ) -> anyhow::Result<ModuleId<'db>> {
     let parent_module_id = contract.submodule_id.parent_module(db);
@@ -265,7 +266,7 @@ fn get_generated_contract_module<'db>(
 
 /// Returns the module id of the submodule of a module.
 fn get_submodule_id<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     submodule_name: &'db str,
 ) -> anyhow::Result<ModuleId<'db>> {

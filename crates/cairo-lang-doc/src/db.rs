@@ -4,16 +4,15 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, TraitItemId};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
-use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::Upcast;
 use itertools::{Itertools, intersperse};
+use salsa::Database;
 
 use crate::documentable_item::DocumentableItemId;
 use crate::location_links::LocationLink;
 use crate::parser::{DocumentationCommentParser, DocumentationCommentToken};
 
 #[cairo_lang_proc_macros::query_group]
-pub trait DocGroup: SemanticGroup + for<'a> Upcast<'a, dyn SemanticGroup> {
+pub trait DocGroup: Database {
     // TODO(mkaput): Support #[doc] attribute. This will be a bigger chunk of work because it would
     //   be the best to convert all /// comments to #[doc] attrs before processing items by plugins,
     //   so that plugins would get a nice and clean syntax of documentation to manipulate further.

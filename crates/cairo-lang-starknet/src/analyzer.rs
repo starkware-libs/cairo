@@ -17,6 +17,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use salsa::Database;
 
 use crate::abi::{ABIError, AbiBuilder, BuilderConfig};
 use crate::contract::module_contract;
@@ -38,7 +39,7 @@ pub struct ABIAnalyzer;
 impl AnalyzerPlugin for ABIAnalyzer {
     fn diagnostics<'db>(
         &self,
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         module_id: ModuleId<'db>,
     ) -> Vec<PluginDiagnostic<'db>> {
         let mut diagnostics = vec![];
@@ -50,7 +51,7 @@ impl AnalyzerPlugin for ABIAnalyzer {
 
 /// Add diagnostics for embeddable impls that do not implement a starknet interface.
 fn add_non_starknet_interface_embeddable_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
@@ -74,7 +75,7 @@ fn add_non_starknet_interface_embeddable_diagnostics<'db>(
 
 /// Add diagnostics for ABI generation.
 fn add_abi_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
@@ -113,7 +114,7 @@ pub struct StorageAnalyzer;
 impl AnalyzerPlugin for StorageAnalyzer {
     fn diagnostics<'db>(
         &self,
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         module_id: ModuleId<'db>,
     ) -> Vec<PluginDiagnostic<'db>> {
         let mut diagnostics = vec![];
@@ -158,7 +159,7 @@ impl AnalyzerPlugin for StorageAnalyzer {
 /// - Ensures all members implement `ValidStorageTypeTrait`.
 /// - Checks for multiple paths to the same location in storage.
 fn analyze_storage_struct<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     struct_id: StructId<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
@@ -202,7 +203,7 @@ fn analyze_storage_struct<'db>(
                          `#[storage_node]`, or use valid args for `Vec` or `Map` library types. \
                          To suppress this warning, use \
                          `#[allow(starknet::invalid_storage_member_types)]`.",
-                        inference_error.format(db.elongate())
+                        inference_error.format(db)
                     ),
                 ));
             }
@@ -267,7 +268,7 @@ impl<'db> StorageStructMembers<'db> {
 /// flat, The function will iterate until it reaches member3 and add the path
 /// member1.member2.member3 to the `StorageStructMembers` struct.
 fn member_analyze<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     member: &Member<'db>,
     member_name: StrRef<'db>,
     paths_data: &mut StorageStructMembers<'db>,
@@ -310,7 +311,7 @@ fn member_analyze<'db>(
 ///
 /// Specifically finds cases missing a `#[default]` variant.
 fn add_derive_store_enum_diags<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     id: EnumId<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
@@ -331,7 +332,7 @@ fn add_derive_store_enum_diags<'db>(
 
 /// Resolves the concrete `ValidStorageTypeTrait` for a given type.
 fn concrete_valid_storage_trait<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> ConcreteTraitId<'db> {
     let module_id = ModuleHelper::core(db).submodule("starknet").submodule("storage").id;

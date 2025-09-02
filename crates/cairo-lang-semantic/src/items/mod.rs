@@ -6,7 +6,6 @@ use cairo_lang_syntax::node::ast::ExprPath;
 use cairo_lang_utils::try_extract_matches;
 use salsa::Database;
 
-use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::NotATrait;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver};
@@ -71,9 +70,9 @@ pub enum TraitOrImplContext<'db> {
 }
 
 impl<'db> DebugWithDb<'db> for TraitOrImplContext<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         match self {
             TraitOrImplContext::None => write!(f, "None"),
             TraitOrImplContext::Trait(trait_ctx) => {

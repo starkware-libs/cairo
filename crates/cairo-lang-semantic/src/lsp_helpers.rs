@@ -11,6 +11,7 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::chain;
+use salsa::Database;
 
 use crate::Variant;
 use crate::corelib::{self, core_submodule, get_submodule};
@@ -33,7 +34,7 @@ pub enum TypeFilter<'db> {
 
 /// Implementation of [crate::db::SemanticGroup::methods_in_module].
 pub fn methods_in_module<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     type_filter: TypeFilter<'db>,
 ) -> Arc<Vec<TraitFunctionId<'db>>> {
@@ -68,7 +69,7 @@ pub fn methods_in_module<'db>(
 /// Query implementation of [crate::db::SemanticGroup::methods_in_module].
 #[salsa::tracked]
 pub fn methods_in_module_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     type_filter: TypeFilter<'db>,
 ) -> Arc<Vec<TraitFunctionId<'db>>> {
@@ -88,7 +89,7 @@ fn fit_for_method(head: &TypeHead<'_>, type_head: &TypeHead<'_>) -> bool {
 
 /// Implementation of [crate::db::SemanticGroup::methods_in_crate].
 pub fn methods_in_crate<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
     type_filter: TypeFilter<'db>,
 ) -> Arc<Vec<TraitFunctionId<'db>>> {
@@ -102,7 +103,7 @@ pub fn methods_in_crate<'db>(
 /// Query implementation of [crate::db::SemanticGroup::methods_in_crate].
 #[salsa::tracked]
 pub fn methods_in_crate_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
     type_filter: TypeFilter<'db>,
 ) -> Arc<Vec<TraitFunctionId<'db>>> {
@@ -111,7 +112,7 @@ pub fn methods_in_crate_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::visible_importables_in_module].
 pub fn visible_importables_in_module<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     user_module_file_id: ModuleFileId<'db>,
     include_parent: bool,
@@ -130,7 +131,7 @@ pub fn visible_importables_in_module<'db>(
 /// Query implementation of [crate::db::SemanticGroup::visible_importables_in_module].
 #[salsa::tracked]
 pub fn visible_importables_in_module_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     user_module_file_id: ModuleFileId<'db>,
     include_parent: bool,
@@ -141,7 +142,7 @@ pub fn visible_importables_in_module_tracked<'db>(
 /// Returns the visible importables in a module, including the importables in the parent module if
 /// needed. The visibility is relative to the module `user_module_id`.
 fn visible_importables_in_module_ex<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     user_module_file_id: ModuleFileId<'db>,
     include_parent: bool,
@@ -317,7 +318,7 @@ fn visible_importables_in_module_ex<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::visible_importables_in_crate].
 pub fn visible_importables_in_crate<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
     user_module_file_id: ModuleFileId<'db>,
 ) -> Arc<Vec<(ImportableId<'db>, String)>> {
@@ -335,7 +336,7 @@ pub fn visible_importables_in_crate<'db>(
 /// Query implementation of [crate::db::SemanticGroup::visible_importables_in_crate].
 #[salsa::tracked]
 pub fn visible_importables_in_crate_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
     user_module_file_id: ModuleFileId<'db>,
 ) -> Arc<Vec<(ImportableId<'db>, String)>> {
@@ -344,7 +345,7 @@ pub fn visible_importables_in_crate_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::visible_importables_from_module].
 pub fn visible_importables_from_module<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_file_id: ModuleFileId<'db>,
 ) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
     let module_id = module_file_id.0;
@@ -406,7 +407,7 @@ pub fn visible_importables_from_module<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::visible_importables_from_module].
 pub fn visible_importables_from_module_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_file_id: ModuleFileId<'db>,
 ) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
     visible_importables_from_module_helper(db, (), module_file_id)
@@ -414,7 +415,7 @@ pub fn visible_importables_from_module_tracked<'db>(
 
 #[salsa::tracked]
 fn visible_importables_from_module_helper<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     _tracked: Tracked,
     module_file_id: ModuleFileId<'db>,
 ) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
@@ -423,7 +424,7 @@ fn visible_importables_from_module_helper<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::visible_traits_from_module].
 pub fn visible_traits_from_module<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_file_id: ModuleFileId<'db>,
 ) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {
     let importables = db.visible_importables_from_module(module_file_id)?;
@@ -445,7 +446,7 @@ pub fn visible_traits_from_module<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::visible_traits_from_module].
 pub fn visible_traits_from_module_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_file_id: ModuleFileId<'db>,
 ) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {
     visible_traits_from_module_helper(db, (), module_file_id)
@@ -453,7 +454,7 @@ pub fn visible_traits_from_module_tracked<'db>(
 
 #[salsa::tracked]
 fn visible_traits_from_module_helper<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     _tracked: Tracked,
     module_file_id: ModuleFileId<'db>,
 ) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {

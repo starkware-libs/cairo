@@ -17,6 +17,7 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, OptionFrom, define_short_id, require, try_extract_matches};
 use itertools::{Itertools, chain};
+use salsa::Database;
 use syntax::attribute::consts::MUST_USE_ATTR;
 use syntax::node::TypedStablePtr;
 
@@ -49,7 +50,7 @@ pub struct ImplGenericFunctionId<'db> {
 }
 impl<'db> ImplGenericFunctionId<'db> {
     /// Gets the impl function language element, if self.impl_id is of a concrete impl.
-    pub fn impl_function(&self, db: &'db dyn SemanticGroup) -> Maybe<Option<ImplFunctionId<'db>>> {
+    pub fn impl_function(&self, db: &'db dyn Database) -> Maybe<Option<ImplFunctionId<'db>>> {
         match self.impl_id.long(db) {
             ImplLongId::Concrete(concrete_impl_id) => {
                 concrete_impl_id.get_impl_function(db, self.function)
@@ -61,18 +62,14 @@ impl<'db> ImplGenericFunctionId<'db> {
             | ImplLongId::GeneratedImpl(_) => Ok(None),
         }
     }
-    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+    pub fn format(&self, db: &dyn Database) -> String {
         format!("{}::{}", self.impl_id.name(db), self.function.name(db))
     }
 }
 impl<'db> DebugWithDb<'db> for ImplGenericFunctionId<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &'db (dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         write!(f, "{}", self.format(db))
     }
 }
@@ -89,7 +86,7 @@ pub enum GenericFunctionId<'db> {
 }
 impl<'db> GenericFunctionId<'db> {
     pub fn from_generic_with_body(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         val: GenericFunctionWithBodyId<'db>,
     ) -> Maybe<Self> {
         Ok(match val {
@@ -112,16 +109,16 @@ impl<'db> GenericFunctionId<'db> {
             }
         })
     }
-    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+    pub fn format(&self, db: &dyn Database) -> String {
         match self {
             GenericFunctionId::Free(id) => id.full_path(db),
             GenericFunctionId::Extern(id) => id.full_path(db),
             GenericFunctionId::Impl(id) => {
-                format!("{:?}::{}", id.impl_id.debug(db.elongate()), id.function.name(db))
+                format!("{:?}::{}", id.impl_id.debug(db), id.function.name(db))
             }
         }
     }
-    pub fn generic_signature(&self, db: &'db dyn SemanticGroup) -> Maybe<Signature<'db>> {
+    pub fn generic_signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
         match *self {
             GenericFunctionId::Free(id) => db.free_function_signature(id),
             GenericFunctionId::Extern(id) => db.extern_function_signature(id),
@@ -139,7 +136,7 @@ impl<'db> GenericFunctionId<'db> {
             }
         }
     }
-    pub fn generic_params(&self, db: &'db dyn SemanticGroup) -> Maybe<Vec<GenericParam<'db>>> {
+    pub fn generic_params(&self, db: &'db dyn Database) -> Maybe<Vec<GenericParam<'db>>> {
         match *self {
             GenericFunctionId::Free(id) => db.free_function_generic_params(id),
             GenericFunctionId::Extern(id) => db.extern_function_declaration_generic_params(id),
@@ -155,7 +152,7 @@ impl<'db> GenericFunctionId<'db> {
             }
         }
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> String {
+    pub fn name(&self, db: &dyn Database) -> String {
         match self {
             GenericFunctionId::Free(free_function) => free_function.name(db).into(),
             GenericFunctionId::Extern(extern_function) => extern_function.name(db).into(),
@@ -163,7 +160,7 @@ impl<'db> GenericFunctionId<'db> {
         }
     }
     /// Returns the ModuleFileId of the function's definition if possible.
-    pub fn module_file_id(&self, db: &'db dyn SemanticGroup) -> Option<ModuleFileId<'db>> {
+    pub fn module_file_id(&self, db: &'db dyn Database) -> Option<ModuleFileId<'db>> {
         match self {
             GenericFunctionId::Free(free_function) => Some(free_function.module_file_id(db)),
             GenericFunctionId::Extern(extern_function) => Some(extern_function.module_file_id(db)),
@@ -180,7 +177,7 @@ impl<'db> GenericFunctionId<'db> {
         }
     }
     /// Returns whether the function has the `#[must_use]` attribute.
-    pub fn is_must_use(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
+    pub fn is_must_use(&self, db: &dyn Database) -> Maybe<bool> {
         match self {
             GenericFunctionId::Free(id) => id.has_attr(db, MUST_USE_ATTR),
             GenericFunctionId::Impl(id) => id.function.has_attr(db, MUST_USE_ATTR),
@@ -188,7 +185,7 @@ impl<'db> GenericFunctionId<'db> {
         }
     }
     /// Returns true if the function does not depend on any generics.
-    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+    pub fn is_fully_concrete(&self, db: &dyn Database) -> bool {
         match self {
             GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => true,
             GenericFunctionId::Impl(impl_generic_function) => {
@@ -197,7 +194,7 @@ impl<'db> GenericFunctionId<'db> {
         }
     }
     /// Returns true if the function does not depend on impl or type variables.
-    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+    pub fn is_var_free(&self, db: &dyn Database) -> bool {
         match self {
             GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => true,
             GenericFunctionId::Impl(impl_generic_function) => {
@@ -208,7 +205,7 @@ impl<'db> GenericFunctionId<'db> {
     /// Returns the concrete function of this generic function with the given generic args.
     pub fn concretize(
         &self,
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         generic_args: Vec<semantic::GenericArgumentId<'db>>,
     ) -> FunctionId<'db> {
         FunctionLongId { function: ConcreteFunction { generic_function: *self, generic_args } }
@@ -236,17 +233,13 @@ impl<'db> OptionFrom<ModuleItemId<'db>> for GenericFunctionId<'db> {
     }
 }
 impl<'db> DebugWithDb<'db> for GenericFunctionId<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &'db (dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         match self {
             GenericFunctionId::Free(func) => write!(f, "{:?}", func.debug(db)),
             GenericFunctionId::Extern(func) => write!(f, "{:?}", func.debug(db)),
-            GenericFunctionId::Impl(func) => write!(f, "{:?}", func.debug(db.elongate())),
+            GenericFunctionId::Impl(func) => write!(f, "{:?}", func.debug(db)),
         }
     }
 }
@@ -259,42 +252,38 @@ pub struct FunctionLongId<'db> {
     pub function: ConcreteFunction<'db>,
 }
 impl<'db> DebugWithDb<'db> for FunctionLongId<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &(dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn Database) -> std::fmt::Result {
         write!(f, "{:?}", self.function.debug(db))
     }
 }
 
-define_short_id!(FunctionId, FunctionLongId<'db>, SemanticGroup);
+define_short_id!(FunctionId, FunctionLongId<'db>, Database);
 semantic_object_for_id!(FunctionId, FunctionLongId<'a>);
 impl<'db> FunctionId<'db> {
-    pub fn get_concrete(&self, db: &'db dyn SemanticGroup) -> ConcreteFunction<'db> {
+    pub fn get_concrete(&self, db: &'db dyn Database) -> ConcreteFunction<'db> {
         self.long(db).function.clone()
     }
 
     /// Returns the ExternFunctionId if this is an extern function. Otherwise returns none.
     pub fn try_get_extern_function_id(
         &self,
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
     ) -> Option<ExternFunctionId<'db>> {
         try_extract_matches!(self.get_concrete(db).generic_function, GenericFunctionId::Extern)
     }
 
-    pub fn name(&self, db: &dyn SemanticGroup) -> String {
+    pub fn name(&self, db: &dyn Database) -> String {
         format!("{:?}", self.get_concrete(db).generic_function.name(db))
     }
 
-    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+    pub fn full_path(&self, db: &dyn Database) -> String {
         self.get_concrete(db).full_path(db)
     }
 
     /// Returns true if the function does not depend on any generics.
-    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+    pub fn is_fully_concrete(&self, db: &dyn Database) -> bool {
         let func = self.get_concrete(db);
         func.generic_function.is_fully_concrete(db)
             && func
@@ -303,7 +292,7 @@ impl<'db> FunctionId<'db> {
                 .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
     }
     /// Returns true if the function does not depend on impl or type variables.
-    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+    pub fn is_var_free(&self, db: &dyn Database) -> bool {
         let func = self.get_concrete(db);
         func.generic_function.is_var_free(db)
             && func
@@ -314,7 +303,7 @@ impl<'db> FunctionId<'db> {
 }
 impl<'db> FunctionLongId<'db> {
     pub fn from_generic(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         generic_function: GenericFunctionId<'db>,
     ) -> Maybe<Self> {
         let generic_params: Vec<_> = generic_function.generic_params(db)?;
@@ -344,20 +333,20 @@ pub enum ImplFunctionBodyId<'db> {
     Trait(TraitFunctionId<'db>),
 }
 impl<'db> ImplFunctionBodyId<'db> {
-    pub fn name(&self, db: &'db dyn SemanticGroup) -> &'db str {
+    pub fn name(&self, db: &'db dyn Database) -> &'db str {
         match self {
             Self::Impl(body_id) => body_id.name(db),
             Self::Trait(body_id) => body_id.name(db),
         }
     }
-    pub fn stable_location(&self, db: &'db dyn SemanticGroup) -> StableLocation<'db> {
+    pub fn stable_location(&self, db: &'db dyn Database) -> StableLocation<'db> {
         match self {
             Self::Impl(body_id) => body_id.stable_location(db),
             Self::Trait(body_id) => body_id.stable_location(db),
         }
     }
 
-    pub fn trait_function(&self, db: &'db dyn SemanticGroup) -> Maybe<TraitFunctionId<'db>> {
+    pub fn trait_function(&self, db: &'db dyn Database) -> Maybe<TraitFunctionId<'db>> {
         match self {
             Self::Impl(impl_function) => db.impl_function_trait_function(*impl_function),
             Self::Trait(trait_function) => Ok(*trait_function),
@@ -374,7 +363,7 @@ pub enum GenericFunctionWithBodyId<'db> {
 }
 impl<'db> GenericFunctionWithBodyId<'db> {
     pub fn from_generic(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         other: GenericFunctionId<'db>,
     ) -> Maybe<Option<Self>> {
         Ok(Some(match other {
@@ -397,7 +386,7 @@ impl<'db> GenericFunctionWithBodyId<'db> {
             _ => return Ok(None),
         }))
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> String {
+    pub fn name(&self, db: &dyn Database) -> String {
         match self {
             GenericFunctionWithBodyId::Free(free) => free.name(db).into(),
             GenericFunctionWithBodyId::Impl(imp) => {
@@ -409,7 +398,7 @@ impl<'db> GenericFunctionWithBodyId<'db> {
         }
     }
 
-    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+    pub fn full_path(&self, db: &dyn Database) -> String {
         match self {
             GenericFunctionWithBodyId::Free(free) => free.full_path(db),
             GenericFunctionWithBodyId::Impl(imp) => {
@@ -426,7 +415,7 @@ impl<'db> GenericFunctionWithBodyId<'db> {
             ),
         }
     }
-    pub fn stable_location(&self, db: &'db dyn SemanticGroup) -> StableLocation<'db> {
+    pub fn stable_location(&self, db: &'db dyn Database) -> StableLocation<'db> {
         match self {
             GenericFunctionWithBodyId::Free(free_function) => free_function.stable_location(db),
             GenericFunctionWithBodyId::Impl(impl_function) => {
@@ -446,7 +435,7 @@ pub struct ConcreteFunctionWithBody<'db> {
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
 }
 impl<'db> ConcreteFunctionWithBody<'db> {
-    pub fn function_with_body_id(&self, db: &'db dyn SemanticGroup) -> FunctionWithBodyId<'db> {
+    pub fn function_with_body_id(&self, db: &'db dyn Database) -> FunctionWithBodyId<'db> {
         match self.generic_function {
             GenericFunctionWithBodyId::Free(id) => FunctionWithBodyId::Free(id),
             GenericFunctionWithBodyId::Impl(id) => match id.function_body {
@@ -458,7 +447,7 @@ impl<'db> ConcreteFunctionWithBody<'db> {
             }
         }
     }
-    pub fn substitution(&self, db: &'db dyn SemanticGroup) -> Maybe<GenericSubstitution<'db>> {
+    pub fn substitution(&self, db: &'db dyn Database) -> Maybe<GenericSubstitution<'db>> {
         Ok(match self.generic_function {
             GenericFunctionWithBodyId::Free(f) => {
                 GenericSubstitution::new(&db.free_function_generic_params(f)?, &self.generic_args)
@@ -519,7 +508,7 @@ impl<'db> ConcreteFunctionWithBody<'db> {
         })
     }
     pub fn from_no_generics_free(
-        db: &dyn SemanticGroup,
+        db: &dyn Database,
         free_function_id: FreeFunctionId<'db>,
     ) -> Option<Self> {
         require(db.free_function_generic_params(free_function_id).ok()?.is_empty())?;
@@ -529,7 +518,7 @@ impl<'db> ConcreteFunctionWithBody<'db> {
         })
     }
     pub fn from_generic(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         function_id: FunctionWithBodyId<'db>,
     ) -> Maybe<Self> {
         Ok(match function_id {
@@ -583,79 +572,75 @@ impl<'db> ConcreteFunctionWithBody<'db> {
             }
         })
     }
-    pub fn concrete(&self, db: &'db dyn SemanticGroup) -> Maybe<ConcreteFunction<'db>> {
+    pub fn concrete(&self, db: &'db dyn Database) -> Maybe<ConcreteFunction<'db>> {
         Ok(ConcreteFunction {
             generic_function: GenericFunctionId::from_generic_with_body(db, self.generic_function)?,
             generic_args: self.generic_args.clone(),
         })
     }
-    pub fn function_id(&self, db: &'db dyn SemanticGroup) -> Maybe<FunctionId<'db>> {
+    pub fn function_id(&self, db: &'db dyn Database) -> Maybe<FunctionId<'db>> {
         Ok(FunctionLongId { function: self.concrete(db)? }.intern(db))
     }
-    pub fn name(&self, db: &'db dyn SemanticGroup) -> &'db str {
+    pub fn name(&self, db: &'db dyn Database) -> &'db str {
         self.function_with_body_id(db).name(db)
     }
-    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
-        format!("{:?}", self.debug(db.elongate()))
+    pub fn full_path(&self, db: &dyn Database) -> String {
+        format!("{:?}", self.debug(db))
     }
 }
 
 impl<'db> DebugWithDb<'db> for ConcreteFunctionWithBody<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &'db (dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         let f = &mut CountingWriter::new(f);
         write!(f, "{}", self.generic_function.full_path(db))?;
         fmt_generic_args(&self.generic_args, f, db)
     }
 }
 
-define_short_id!(ConcreteFunctionWithBodyId, ConcreteFunctionWithBody<'db>, SemanticGroup);
+define_short_id!(ConcreteFunctionWithBodyId, ConcreteFunctionWithBody<'db>, Database);
 semantic_object_for_id!(ConcreteFunctionWithBodyId, ConcreteFunctionWithBody<'a>);
 impl<'db> ConcreteFunctionWithBodyId<'db> {
-    pub fn function_with_body_id(&self, db: &'db dyn SemanticGroup) -> FunctionWithBodyId<'db> {
+    pub fn function_with_body_id(&self, db: &'db dyn Database) -> FunctionWithBodyId<'db> {
         self.long(db).function_with_body_id(db)
     }
-    pub fn substitution(&self, db: &'db dyn SemanticGroup) -> Maybe<GenericSubstitution<'db>> {
+    pub fn substitution(&self, db: &'db dyn Database) -> Maybe<GenericSubstitution<'db>> {
         self.long(db).substitution(db)
     }
     pub fn from_no_generics_free(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         free_function_id: FreeFunctionId<'db>,
     ) -> Option<Self> {
         Some(ConcreteFunctionWithBody::from_no_generics_free(db, free_function_id)?.intern(db))
     }
     pub fn from_generic(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         function_id: FunctionWithBodyId<'db>,
     ) -> Maybe<Self> {
         Ok(ConcreteFunctionWithBody::from_generic(db, function_id)?.intern(db))
     }
-    pub fn concrete(&self, db: &'db dyn SemanticGroup) -> Maybe<ConcreteFunction<'db>> {
+    pub fn concrete(&self, db: &'db dyn Database) -> Maybe<ConcreteFunction<'db>> {
         self.long(db).concrete(db)
     }
-    pub fn function_id(&self, db: &'db dyn SemanticGroup) -> Maybe<FunctionId<'db>> {
+    pub fn function_id(&self, db: &'db dyn Database) -> Maybe<FunctionId<'db>> {
         self.long(db).function_id(db)
     }
-    pub fn generic_function(&self, db: &'db dyn SemanticGroup) -> GenericFunctionWithBodyId<'db> {
+    pub fn generic_function(&self, db: &'db dyn Database) -> GenericFunctionWithBodyId<'db> {
         self.long(db).generic_function
     }
-    pub fn name(&self, db: &'db dyn SemanticGroup) -> &'db str {
+    pub fn name(&self, db: &'db dyn Database) -> &'db str {
         self.long(db).name(db)
     }
-    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+    pub fn full_path(&self, db: &dyn Database) -> String {
         self.long(db).full_path(db)
     }
 
-    pub fn stable_location(&self, db: &'db dyn SemanticGroup) -> StableLocation<'db> {
+    pub fn stable_location(&self, db: &'db dyn Database) -> StableLocation<'db> {
         self.long(db).generic_function.stable_location(db)
     }
 
-    pub fn is_panic_destruct_fn(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
+    pub fn is_panic_destruct_fn(&self, db: &dyn Database) -> Maybe<bool> {
         let trait_function = match self.generic_function(db) {
             GenericFunctionWithBodyId::Free(_) => return Ok(false),
             GenericFunctionWithBodyId::Impl(impl_func) => {
@@ -679,10 +664,7 @@ pub struct ConcreteFunction<'db> {
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
 }
 impl<'db> ConcreteFunction<'db> {
-    pub fn body(
-        &self,
-        db: &'db dyn SemanticGroup,
-    ) -> Maybe<Option<ConcreteFunctionWithBodyId<'db>>> {
+    pub fn body(&self, db: &'db dyn Database) -> Maybe<Option<ConcreteFunctionWithBodyId<'db>>> {
         let Some(generic_function) =
             GenericFunctionWithBodyId::from_generic(db, self.generic_function)?
         else {
@@ -693,18 +675,14 @@ impl<'db> ConcreteFunction<'db> {
                 .intern(db),
         ))
     }
-    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
-        format!("{:?}", self.debug(db.elongate()))
+    pub fn full_path(&self, db: &dyn Database) -> String {
+        format!("{:?}", self.debug(db))
     }
 }
 impl<'db> DebugWithDb<'db> for ConcreteFunction<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &'db (dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         let f = &mut CountingWriter::new(f);
         write!(f, "{}", self.generic_function.format(db))?;
         fmt_generic_args(&self.generic_args, f, db)
@@ -712,7 +690,7 @@ impl<'db> DebugWithDb<'db> for ConcreteFunction<'db> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct Signature<'db> {
     pub params: Vec<semantic::Parameter<'db>>,
     pub return_type: semantic::TypeId<'db>,
@@ -730,7 +708,7 @@ pub struct Signature<'db> {
 impl<'db> Signature<'db> {
     pub fn from_ast(
         diagnostics: &mut SemanticDiagnostics<'db>,
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         resolver: &mut Resolver<'db>,
         declaration_syntax: &ast::FunctionDeclaration<'db>,
         function_title_id: FunctionTitleId<'db>,
@@ -764,7 +742,7 @@ impl<'db> Signature<'db> {
 
 pub fn function_signature_return_type<'db>(
     diagnostics: &mut SemanticDiagnostics<'db>,
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     resolver: &mut Resolver<'db>,
     sig: &ast::FunctionSignature<'db>,
 ) -> semantic::TypeId<'db> {
@@ -780,7 +758,7 @@ pub fn function_signature_return_type<'db>(
 /// Returns the implicit parameters of the given function signature's AST.
 pub fn function_signature_implicit_parameters<'db>(
     diagnostics: &mut SemanticDiagnostics<'db>,
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     resolver: &mut Resolver<'db>,
     sig: &ast::FunctionSignature<'db>,
 ) -> Vec<semantic::TypeId<'db>> {
@@ -799,7 +777,7 @@ pub fn function_signature_implicit_parameters<'db>(
 /// Returns the parameters of the given function signature's AST.
 pub fn function_signature_params<'db>(
     diagnostics: &mut SemanticDiagnostics<'db>,
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     resolver: &mut Resolver<'db>,
     params: &[ast::Param<'db>],
     function_title_id: Option<FunctionTitleId<'db>>,
@@ -810,7 +788,7 @@ pub fn function_signature_params<'db>(
 
 #[salsa::tracked]
 fn function_title_signature_helper<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     _tracked: Tracked,
     function_title_id: FunctionTitleId<'db>,
 ) -> Maybe<Signature<'db>> {
@@ -819,7 +797,7 @@ fn function_title_signature_helper<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::function_title_signature].
 pub fn function_title_signature<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     function_title_id: FunctionTitleId<'db>,
 ) -> Maybe<Signature<'db>> {
     match function_title_id {
@@ -832,7 +810,7 @@ pub fn function_title_signature<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::function_title_signature].
 pub fn function_title_signature_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     function_title_id: FunctionTitleId<'db>,
 ) -> Maybe<Signature<'db>> {
     function_title_signature_helper(db, (), function_title_id)
@@ -840,7 +818,7 @@ pub fn function_title_signature_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::function_title_generic_params].
 pub fn function_title_generic_params<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     function_title_id: FunctionTitleId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
     match function_title_id {
@@ -855,7 +833,7 @@ pub fn function_title_generic_params<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::function_title_generic_params].
 pub fn function_title_generic_params_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     function_title_id: FunctionTitleId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
     function_title_generic_params_helper(db, (), function_title_id)
@@ -863,7 +841,7 @@ pub fn function_title_generic_params_tracked<'db>(
 
 #[salsa::tracked]
 fn function_title_generic_params_helper<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     _tracked: Tracked,
     function_title_id: FunctionTitleId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
@@ -872,7 +850,7 @@ fn function_title_generic_params_helper<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::concrete_function_signature].
 pub fn concrete_function_signature<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     function_id: FunctionId<'db>,
 ) -> Maybe<Signature<'db>> {
     let ConcreteFunction { generic_function, generic_args, .. } =
@@ -888,7 +866,7 @@ pub fn concrete_function_signature<'db>(
 /// Query implementation of [crate::db::SemanticGroup::concrete_function_signature].
 #[salsa::tracked]
 pub fn concrete_function_signature_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     function_id: FunctionId<'db>,
 ) -> Maybe<Signature<'db>> {
     concrete_function_signature(db, function_id)
@@ -896,7 +874,7 @@ pub fn concrete_function_signature_tracked<'db>(
 
 /// Implementation of [crate::db::SemanticGroup::concrete_function_closure_params].
 pub fn concrete_function_closure_params<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     function_id: FunctionId<'db>,
 ) -> Maybe<OrderedHashMap<semantic::TypeId<'db>, semantic::TypeId<'db>>> {
     let ConcreteFunction { generic_function, generic_args, .. } =
@@ -922,7 +900,7 @@ pub fn concrete_function_closure_params<'db>(
 /// Query implementation of [crate::db::SemanticGroup::concrete_function_closure_params].
 #[salsa::tracked]
 pub fn concrete_function_closure_params_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     function_id: FunctionId<'db>,
 ) -> Maybe<OrderedHashMap<semantic::TypeId<'db>, semantic::TypeId<'db>>> {
     concrete_function_closure_params(db, function_id)
@@ -932,7 +910,7 @@ pub fn concrete_function_closure_params_tracked<'db>(
 /// corresponding environment.
 fn update_env_with_ast_params<'db>(
     diagnostics: &mut SemanticDiagnostics<'db>,
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     resolver: &mut Resolver<'db>,
     ast_params: &[ast::Param<'db>],
     function_title_id: Option<FunctionTitleId<'db>>,
@@ -955,7 +933,7 @@ fn update_env_with_ast_params<'db>(
 /// Returns a semantic parameter (and its name) for the given AST parameter.
 fn ast_param_to_semantic<'db>(
     diagnostics: &mut SemanticDiagnostics<'db>,
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     resolver: &mut Resolver<'db>,
     ast_param: &ast::Param<'db>,
 ) -> semantic::Parameter<'db> {
@@ -987,7 +965,7 @@ fn ast_param_to_semantic<'db>(
 // === Function Declaration ===
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct FunctionDeclarationData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     pub signature: semantic::Signature<'db>,
@@ -1059,7 +1037,7 @@ impl<'db> ImplicitPrecedence<'db> {
 
     /// Sort implicits according to this precedence: first the ones with precedence
     /// (according to it), then the others by their name.
-    pub fn apply(&self, implicits: &mut [TypeId<'db>], db: &dyn SemanticGroup) {
+    pub fn apply(&self, implicits: &mut [TypeId<'db>], db: &dyn Database) {
         implicits.sort_by_cached_key(|implicit| {
             if let Some(idx) = self.0.iter().position(|item| item == implicit) {
                 return (idx, "".to_string());
@@ -1078,7 +1056,7 @@ impl<'db> FromIterator<TypeId<'db>> for ImplicitPrecedence<'db> {
 
 /// Implementation of [crate::db::SemanticGroup::get_closure_params].
 pub fn get_closure_params<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     generic_function_id: GenericFunctionId<'db>,
 ) -> Maybe<OrderedHashMap<TypeId<'db>, TypeId<'db>>> {
     let mut closure_params_map = OrderedHashMap::default();
@@ -1106,7 +1084,7 @@ pub fn get_closure_params<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::get_closure_params].
 pub fn get_closure_params_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     generic_function_id: GenericFunctionId<'db>,
 ) -> Maybe<OrderedHashMap<TypeId<'db>, TypeId<'db>>> {
     get_closure_params_helper(db, (), generic_function_id)
@@ -1114,7 +1092,7 @@ pub fn get_closure_params_tracked<'db>(
 
 #[salsa::tracked]
 fn get_closure_params_helper<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     _tracked: Tracked,
     generic_function_id: GenericFunctionId<'db>,
 ) -> Maybe<OrderedHashMap<TypeId<'db>, TypeId<'db>>> {

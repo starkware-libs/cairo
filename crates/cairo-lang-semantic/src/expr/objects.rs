@@ -7,9 +7,9 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::{Arena, ArenaBehavior};
 use num_bigint::BigInt;
+use salsa::Database;
 
 use super::fmt::ExprFormatter;
-use crate::db::SemanticGroup;
 use crate::items::constant::ConstValueId;
 use crate::{ConcreteStructId, FunctionId, TypeId, semantic};
 
@@ -384,9 +384,9 @@ impl<'db> ExprVarMemberPath<'db> {
     }
 }
 impl<'db> DebugWithDb<'db> for ExprVarMemberPath<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         match self {
             ExprVarMemberPath::Var(var) => var.fmt(f, db),
             ExprVarMemberPath::Member { parent, member_id, .. } => {
@@ -505,9 +505,9 @@ pub struct ExprVar<'db> {
     pub stable_ptr: ast::ExprPtr<'db>,
 }
 impl<'db> DebugWithDb<'db> for ExprVar<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         self.var.fmt(f, db)
     }
 }
@@ -623,7 +623,7 @@ pub struct ExprMissing<'db> {
 
 /// Arena for semantic expressions, patterns, and statements.
 #[derive(Clone, Debug, Default, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct Arenas<'db> {
     pub exprs: ExprArena<'db>,
     pub patterns: PatternArena<'db>,

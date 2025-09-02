@@ -3,6 +3,7 @@ use cairo_lang_semantic::corelib::{
     core_module, core_submodule, get_function_id, never_ty, option_none_variant,
     option_some_variant, unit_ty,
 };
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, MatchArmSelector, TypeLongId};
 use cairo_lang_utils::{Intern, extract_matches};

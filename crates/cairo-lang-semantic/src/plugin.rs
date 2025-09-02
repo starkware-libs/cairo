@@ -4,8 +4,8 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{InlineMacroExprPluginId, MacroPluginId, ModuleId};
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin, NamedPlugin, PluginDiagnostic};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use salsa::Database;
 
-use crate::db::SemanticGroup;
 use crate::ids::AnalyzerPluginId;
 
 /// A trait for an analyzer plugin: external plugin that generates additional diagnostics for
@@ -14,7 +14,7 @@ pub trait AnalyzerPlugin: std::fmt::Debug + Sync + Send + Any {
     /// Runs the plugin on a module.
     fn diagnostics<'db>(
         &self,
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         module_id: ModuleId<'db>,
     ) -> Vec<PluginDiagnostic<'db>>;
     /// Allows this plugin supplies.

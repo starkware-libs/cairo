@@ -372,7 +372,7 @@ pub fn run_tests(
         let mut locs = vec![];
         for stmt_idx in err.stmt_indices() {
             if let Some(loc) = statements_locations.statement_diagnostic_location(db, stmt_idx) {
-                locs.push(format!("#{stmt_idx} {:?}", loc.debug(db.elongate())))
+                locs.push(format!("#{stmt_idx} {:?}", loc.debug(db)))
             }
         }
         anyhow::anyhow!("{err}\n{}", locs.join("\n"))

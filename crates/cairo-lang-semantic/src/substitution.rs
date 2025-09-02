@@ -11,6 +11,7 @@ use cairo_lang_utils::deque::Deque;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
+use salsa::Database;
 
 use crate::db::SemanticGroup;
 use crate::expr::inference::canonic::CanonicalTrait;
@@ -85,7 +86,7 @@ impl<'db> GenericSubstitution<'db> {
     pub fn is_empty(&self) -> bool {
         self.param_to_arg.is_empty() && self.self_impl.is_none()
     }
-    pub fn substitute<'a, 'r, Obj>(&'r self, db: &'a dyn SemanticGroup, obj: Obj) -> Maybe<Obj>
+    pub fn substitute<'a, 'r, Obj>(&'r self, db: &'a dyn Database, obj: Obj) -> Maybe<Obj>
     where
         'a: 'r,
         'db: 'a,
@@ -113,7 +114,7 @@ macro_rules! semantic_object_for_id {
         impl<
             'a,
             Error,
-            TRewriter: $crate::substitution::HasDb<&'a dyn $crate::db::SemanticGroup>
+            TRewriter: $crate::substitution::HasDb<&'a dyn Database>
                 + $crate::substitution::SemanticRewriter<$long_ty, Error>,
         > $crate::substitution::SemanticObject<TRewriter, Error> for $name<'a>
         {
@@ -459,11 +460,11 @@ macro_rules! add_expr_rewrites {
 }
 
 pub struct SubstitutionRewriter<'a, 'r> {
-    db: &'a dyn SemanticGroup,
+    db: &'a dyn Database,
     substitution: &'r GenericSubstitution<'a>,
 }
-impl<'a> HasDb<&'a dyn SemanticGroup> for SubstitutionRewriter<'a, '_> {
-    fn get_db(&self) -> &'a dyn SemanticGroup {
+impl<'a> HasDb<&'a dyn Database> for SubstitutionRewriter<'a, '_> {
+    fn get_db(&self) -> &'a dyn Database {
         self.db
     }
 }

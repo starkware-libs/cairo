@@ -2,6 +2,7 @@
 #[path = "trim_unreachable_test.rs"]
 mod test;
 
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 
 use crate::db::LoweringGroup;

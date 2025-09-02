@@ -1,12 +1,13 @@
 use cairo_lang_defs::ids::{ImplDefId, TraitTypeId};
 use cairo_lang_diagnostics::Maybe;
+use salsa::Database;
 
 use crate::TypeId;
 use crate::db::SemanticGroup;
 
 /// Implementation of [crate::db::SemanticGroup::trait_type_implized_by_context].
 pub fn trait_type_implized_by_context<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<TypeId<'db>> {
@@ -18,7 +19,7 @@ pub fn trait_type_implized_by_context<'db>(
 /// Query implementation of [crate::db::SemanticGroup::trait_type_implized_by_context].
 #[salsa::tracked(cycle_result=trait_type_implized_by_context_cycle)]
 pub fn trait_type_implized_by_context_tracked<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<TypeId<'db>> {
@@ -27,7 +28,7 @@ pub fn trait_type_implized_by_context_tracked<'db>(
 
 /// Cycle handling for [crate::db::SemanticGroup::trait_type_implized_by_context].
 pub fn trait_type_implized_by_context_cycle<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<TypeId<'db>> {

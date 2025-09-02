@@ -4,6 +4,7 @@ mod test;
 
 use cairo_lang_defs::ids::TraitFunctionId;
 use cairo_lang_diagnostics::{DiagnosticNote, Diagnostics};
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -138,11 +139,10 @@ impl<'db, 'mt> DemandReporter<VariableId, PanicState> for BorrowChecker<'db, 'mt
         }
         self.diagnostics.report_by_location(
             location
-                .with_note(DiagnosticNote::text_only(drop_err.format(db.upcast())))
-                .with_note(DiagnosticNote::text_only(destruct_err.format(db.upcast())))
+                .with_note(DiagnosticNote::text_only(drop_err.format(db)))
+                .with_note(DiagnosticNote::text_only(destruct_err.format(db)))
                 .maybe_with_note(
-                    panic_destruct_err
-                        .map(|err| DiagnosticNote::text_only(err.format(db.upcast()))),
+                    panic_destruct_err.map(|err| DiagnosticNote::text_only(err.format(db))),
                 ),
             VariableNotDropped { drop_err, destruct_err },
         );
@@ -161,7 +161,7 @@ impl<'db, 'mt> DemandReporter<VariableId, PanicState> for BorrowChecker<'db, 'mt
                     .long(self.db)
                     .clone()
                     .add_note_with_location(self.db, "variable was previously used here", position)
-                    .with_note(DiagnosticNote::text_only(inference_error.format(self.db.upcast()))),
+                    .with_note(DiagnosticNote::text_only(inference_error.format(self.db))),
                 VariableMoved { inference_error },
             );
         }
@@ -199,9 +199,10 @@ impl<'db, 'mt> Analyzer<'db, '_> for BorrowChecker<'db, 'mt, '_> {
                 let var = &self.lowered.variables[stmt.output];
                 if let Err(inference_error) = var.info.copyable.clone() {
                     self.diagnostics.report_by_location(
-                        var.location.long(self.db).clone().with_note(DiagnosticNote::text_only(
-                            inference_error.format(self.db.upcast()),
-                        )),
+                        var.location
+                            .long(self.db)
+                            .clone()
+                            .with_note(DiagnosticNote::text_only(inference_error.format(self.db))),
                         DesnappingANonCopyableType { inference_error },
                     );
                 }

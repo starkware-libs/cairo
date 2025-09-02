@@ -25,6 +25,7 @@ use cairo_lang_lowering::optimizations::scrub_units::scrub_units;
 use cairo_lang_lowering::panic::lower_panics;
 use cairo_lang_lowering::{Lowered, LoweringStage};
 use cairo_lang_semantic::ConcreteImplLongId;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionWithBodyId, ImplFunctionBodyId,
     ImplGenericFunctionWithBodyId,
