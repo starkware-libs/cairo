@@ -1776,13 +1776,15 @@ foo
 //! > module_code
 macro define_items {
     () => {
-        fn fn_item() {}
-        struct StructItem {
-            a: felt252,
-        }
-        enum EnumItem {
-            A,
-            B,
+        expose! {
+            fn fn_item() {}
+            struct StructItem {
+                a: felt252,
+            }
+            enum EnumItem {
+                A,
+                B,
+            }
         }
     };
 }
@@ -1809,16 +1811,18 @@ foo
 //! > module_code
 macro macro_item_level {
     () => {
-        fn item_level() -> felt252 { "100" }
+        expose! {
+            fn item_level() -> felt252 { "100" }
+        }
     };
 }
 macro_item_level!();
 
 //! > expected_diagnostics
 error: Mismatched types. The type `core::felt252` cannot be created from a string literal.
- --> lib.cairo[macro_item_level]:1:38
-        fn item_level() -> felt252 { "100" }
-                                     ^^^^^
+ --> lib.cairo[macro_item_level]:2:42
+            fn item_level() -> felt252 { "100" }
+                                         ^^^^^
 
 //! > ==========================================================================
 
@@ -1850,7 +1854,9 @@ mod with_bar {
 
 macro import_with_bar {
     () => {
-        use $callsite::with_bar::*;
+        expose! {
+            use $callsite::with_bar::*;
+        }
     };
 }
 
@@ -1929,7 +1935,7 @@ foo
 mod a {
     macro define_bar {
         () => {
-            pub fn bar() {}
+            expose!(pub fn bar() {});
         };
     }
 
@@ -1969,7 +1975,9 @@ mod a {
 
 macro import_a_star {
     () => {
-        use $callsite::a::*;
+        expose! {
+            use $callsite::a::*;
+        }
     };
 }
 
@@ -1999,7 +2007,9 @@ mod a {
 
 macro import {
     ($path:expr) => {
-        use $path;
+        expose! {
+            use $path;
+        }
     };
 }
 
@@ -2026,7 +2036,9 @@ foo
 mod a {
     macro define_bar {
         () => {
-            pub fn bar() {}
+            expose! {
+                pub fn bar() {}
+            }
         };
     }
     define_bar!();
@@ -2086,7 +2098,9 @@ foo
 mod a {
     macro define_ty {
         ($ty: ident) => {
-            pub struct $ty {}
+            expose! {
+                pub struct $ty {}
+            }
         };
     }
     define_ty!(Bar);
@@ -2119,7 +2133,9 @@ foo
 mod a {
     macro define_ty {
         ($ty: ident) => {
-            pub struct $ty {}
+            expose! {
+                pub struct $ty {}
+            }
         };
     }
     define_ty!(Bar);
@@ -2296,3 +2312,32 @@ macro define_bar {
 define_bar!();
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test not finding non-expose! macro called items.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro define_bar {
+    () => {
+        fn bar() {}
+    };
+}
+define_bar!();
+
+//! > expected_diagnostics
+error[E0006]: Function not found.
+ --> lib.cairo:8:5
+    bar();
+    ^^^
