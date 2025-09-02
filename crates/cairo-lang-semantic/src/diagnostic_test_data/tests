@@ -987,7 +987,7 @@ AMBIGUOUS
 //! > expected_semantics
 
 //! > expected_diagnostics
-error: Ambiguous path. Multiple matching items: `test::a::AMBIGUOUS`, `test::b::AMBIGUOUS`
+error: Ambiguous path. Multiple matching items: `test::b::AMBIGUOUS`, `test::a::AMBIGUOUS`
  --> lib.cairo:11:1
 AMBIGUOUS
 ^^^^^^^^^
