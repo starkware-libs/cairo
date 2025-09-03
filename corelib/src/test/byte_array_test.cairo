@@ -1,3 +1,5 @@
+#[feature("byte_span")]
+use crate::byte_array::{ByteSpanTrait, ToByteSpanTrait};
 use crate::test::test_utils::{assert_eq, assert_ne};
 
 #[test]
@@ -504,4 +506,52 @@ fn test_from_iterator() {
 fn test_from_collect() {
     let ba: ByteArray = array!['h', 'e', 'l', 'l', 'o'].into_iter().collect();
     assert_eq!(ba, "hello");
+}
+
+// TODO(giladchase): add dedicated is_empty test once we have `slice`.
+#[test]
+fn test_span_len() {
+    // Test simple happy flow --- value is included in the last word.
+    // TODO(giladchase): add short string test here once supported cast into span.
+    let ba: ByteArray = "A";
+    let span = ba.span();
+    assert_eq!(span.len(), 1);
+    assert!(!span.is_empty());
+
+    // Test empty.
+    let empty_ba: ByteArray = "";
+    let empty_span = empty_ba.span();
+    assert_eq!(empty_span.len(), 0);
+    assert!(empty_span.is_empty());
+
+    // TODO(giladchase): Add start-offset using slice once supported.
+    // First word in the array, second in last word.
+    let two_byte31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg";
+    let mut single_span = two_byte31.span();
+    assert_eq!(single_span.len(), 33, "len error with start offset");
+    assert!(!single_span.is_empty());
+
+    // TODO(giladchase): Add start-offset using slice once supported.
+    // First word in the array, second in the array, third in last word.
+    let three_bytes31: ByteArray =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$"; // 64 chars.
+    let mut three_span = three_bytes31.span();
+    assert_eq!(three_span.len(), 64, "len error with size-3 bytearray");
+    assert!(!three_span.is_empty());
+    // TODO(giladchase): use `ByteSpan::PartialEq` to check that a consuming slice == Default.
+}
+
+#[test]
+fn test_span_copy() {
+    let ba: ByteArray = "12";
+    let span = ba.span();
+    assert_eq!(span.len(), 2);
+
+    let other_span = span;
+    assert_eq!(other_span.len(), 2);
+    let span_again = span.span();
+    assert_eq!(span_again.len(), span.len());
+    let even_more_span_again = other_span.span();
+    assert_eq!(even_more_span_again.len(), other_span.len());
+    // TODO(giladchase): verify span content once we add `into` or `PartialEq`.
 }
