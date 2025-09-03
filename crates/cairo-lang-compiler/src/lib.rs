@@ -258,14 +258,14 @@ fn warmup_diagnostics_blocking(db: &dyn Database, crates: Vec<CrateInput>) {
 ///
 /// Note that typically spawn_warmup_db should be used as this function is blocking.
 fn warmup_functions_blocking<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &dyn Database,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
 ) {
     let processed_function_ids = &Mutex::new(UnorderedHashSet::<salsa::Id>::default());
     let _: () = par_map(db, requested_function_ids, move |db, func_id| {
         fn handle_func_inner<'db>(
             processed_function_ids: &Mutex<UnorderedHashSet<salsa::Id>>,
-            snapshot: &dyn SierraGenGroup,
+            snapshot: &dyn Database,
             func_id: ConcreteFunctionWithBodyId<'db>,
         ) {
             if processed_function_ids.lock().unwrap().insert(func_id.as_intern_id()) {
@@ -291,7 +291,7 @@ fn warmup_functions_blocking<'db>(
 ///  Checks if there are diagnostics in the database and if there are None, returns
 ///  the [SierraProgramWithDebug] object of the requested functions
 pub fn get_sierra_program_for_functions<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
     context: DbWarmupContext,
 ) -> Result<Arc<SierraProgramWithDebug<'db>>> {

@@ -15,7 +15,7 @@ use cairo_lang_utils::{Intern, Upcast};
 use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
 use lowering::optimizations::config::OptimizationConfig;
-use salsa::Setter;
+use salsa::{Database, Setter};
 use semantic::inline_macros::get_default_plugin_suite;
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
@@ -108,7 +108,7 @@ pub fn setup_db_and_get_crate_id<'db>(
     crate_id
 }
 
-pub fn get_dummy_function(db: &dyn SierraGenGroup) -> FreeFunctionId<'_> {
+pub fn get_dummy_function<'db>(db: &'db dyn Database) -> FreeFunctionId<'db> {
     let crate_id = setup_test_crate(db, "fn test(){}");
     let module_id = ModuleId::CrateRoot(crate_id);
     db.module_free_functions_ids(module_id).unwrap()[0]
@@ -116,7 +116,7 @@ pub fn get_dummy_function(db: &dyn SierraGenGroup) -> FreeFunctionId<'_> {
 
 /// Generates a dummy statement with the given name, inputs and outputs.
 pub fn dummy_simple_statement<'db>(
-    db: &dyn SierraGenGroup,
+    db: &dyn Database,
     name: &str,
     inputs: &[&str],
     outputs: &[&str],
@@ -128,7 +128,7 @@ pub fn dummy_simple_statement<'db>(
     )
 }
 
-fn dummy_concrete_lib_func_id(db: &dyn SierraGenGroup, name: &str) -> ConcreteLibfuncId {
+fn dummy_concrete_lib_func_id(db: &dyn Database, name: &str) -> ConcreteLibfuncId {
     db.intern_concrete_lib_func(program::ConcreteLibfuncLongId {
         generic_id: GenericLibfuncId::from_string(name),
         generic_args: vec![],
@@ -143,7 +143,7 @@ pub fn as_var_id_vec(ids: &[&str]) -> Vec<cairo_lang_sierra::ids::VarId> {
 /// Generates a dummy statement with two branches. One branch is Fallthrough and the other is to the
 /// given label.
 pub fn dummy_simple_branch<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     name: &str,
     args: &[&str],
     target: usize,
@@ -172,7 +172,7 @@ pub fn dummy_return_statement<'db>(args: &[&str]) -> pre_sierra::StatementWithLo
 
 /// Generates a dummy label.
 pub fn dummy_label<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     id: usize,
 ) -> pre_sierra::StatementWithLocation<'db> {
     pre_sierra::Statement::Label(pre_sierra::Label { id: label_id_from_usize(db, id) })
@@ -181,7 +181,7 @@ pub fn dummy_label<'db>(
 
 /// Generates a dummy jump to label statement.
 pub fn dummy_jump_statement<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     id: usize,
 ) -> pre_sierra::StatementWithLocation<'db> {
     jump_statement(dummy_concrete_lib_func_id(db, "jump"), label_id_from_usize(db, id))
@@ -189,7 +189,7 @@ pub fn dummy_jump_statement<'db>(
 }
 
 /// Returns the [pre_sierra::LabelId] for the given `id`.
-pub fn label_id_from_usize(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::LabelId<'_> {
+pub fn label_id_from_usize(db: &dyn Database, id: usize) -> pre_sierra::LabelId<'_> {
     let free_function_id = get_dummy_function(db);
     let semantic_function = semantic::items::functions::ConcreteFunctionWithBody {
         generic_function: semantic::items::functions::GenericFunctionWithBodyId::Free(
@@ -207,7 +207,7 @@ pub fn label_id_from_usize(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::La
 /// values is a list of pairs (src, dst) where src refers to a variable that should be pushed onto
 /// the stack, and dst is the variable after placing it on the stack.
 pub fn dummy_push_values<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &dyn Database,
     values: &[(&str, &str)],
 ) -> pre_sierra::StatementWithLocation<'db> {
     dummy_push_values_ex(
@@ -218,7 +218,7 @@ pub fn dummy_push_values<'db>(
 
 /// Same as [dummy_push_values] except that it also accepts a value for `dup`.
 pub fn dummy_push_values_ex<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &dyn Database,
     values: &[(&str, &str, bool)],
 ) -> pre_sierra::StatementWithLocation<'db> {
     let felt252_ty =

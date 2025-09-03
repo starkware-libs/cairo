@@ -15,6 +15,7 @@ use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::zip_eq;
+use salsa::Database;
 use sierra::extensions::NamedLibfunc;
 use sierra::extensions::function_call::{CouponCallLibfunc, FunctionCallLibfunc};
 use state::{
@@ -47,7 +48,7 @@ pub struct LibfuncInfo {
 /// `local_variables` is a map from variables that should be stored as local to their allocated
 /// space.
 pub fn add_store_statements<'db, GetLibfuncSignature>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     statements: Vec<pre_sierra::StatementWithLocation<'db>>,
     get_lib_func_signature: &GetLibfuncSignature,
     local_variables: LocalVariables,
@@ -106,7 +107,7 @@ where
 }
 
 struct AddStoreVariableStatements<'db> {
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     local_variables: LocalVariables,
     duplicated_vars: OrderedHashSet<sierra::ids::VarId>,
     /// A list of output statements (the original statement, together with the added statements,
@@ -122,7 +123,7 @@ struct AddStoreVariableStatements<'db> {
 impl<'db> AddStoreVariableStatements<'db> {
     /// Constructs a new [AddStoreVariableStatements] object.
     fn new(
-        db: &'db dyn SierraGenGroup,
+        db: &'db dyn Database,
         local_variables: LocalVariables,
         duplicated_vars: OrderedHashSet<sierra::ids::VarId>,
     ) -> Self {

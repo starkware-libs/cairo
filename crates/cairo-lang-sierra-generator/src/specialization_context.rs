@@ -2,6 +2,7 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_sierra::extensions::lib_func::{SierraApChange, SignatureSpecializationContext};
 use cairo_lang_sierra::extensions::type_specialization_context::TypeSpecializationContext;
 use cairo_lang_sierra::program::ConcreteTypeLongId;
+use salsa::Database;
 
 use crate::db::SierraGenGroup;
 
@@ -9,7 +10,7 @@ use crate::db::SierraGenGroup;
 /// [SignatureSpecializationContext] functionality.
 /// In particular, it can be used when calling
 /// [specialize_signature_by_id](cairo_lang_sierra::extensions::lib_func::GenericLibfuncEx::specialize_signature_by_id).
-pub struct SierraSignatureSpecializationContext<'a>(pub &'a dyn SierraGenGroup);
+pub struct SierraSignatureSpecializationContext<'a>(pub &'a dyn Database);
 
 impl TypeSpecializationContext for SierraSignatureSpecializationContext<'_> {
     fn try_get_type_info(

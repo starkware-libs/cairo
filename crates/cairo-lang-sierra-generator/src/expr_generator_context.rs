@@ -9,6 +9,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use lowering::ids::ConcreteFunctionWithBodyId;
 use lowering::{BlockId, Lowered};
+use salsa::Database;
 
 use crate::ap_tracking::ApTrackingConfiguration;
 use crate::db::SierraGenGroup;
@@ -18,7 +19,7 @@ use crate::pre_sierra;
 
 /// Context for the methods that generate Sierra instructions for an expression.
 pub struct ExprGeneratorContext<'db, 'a> {
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     lowered: &'a Lowered<'db>,
     function_id: ConcreteFunctionWithBodyId<'db>,
     lifetime: &'a VariableLifetimeResult,
@@ -41,7 +42,7 @@ pub struct ExprGeneratorContext<'db, 'a> {
 impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
     /// Constructs an empty [ExprGeneratorContext].
     pub fn new(
-        db: &'db dyn SierraGenGroup,
+        db: &'db dyn Database,
         lowered: &'a Lowered<'db>,
         function_id: ConcreteFunctionWithBodyId<'db>,
         lifetime: &'a VariableLifetimeResult,
@@ -69,7 +70,7 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
     }
 
     /// Returns the SierraGenGroup salsa database.
-    pub fn get_db(&self) -> &'db dyn SierraGenGroup {
+    pub fn get_db(&self) -> &'db dyn Database {
         self.db
     }
 
@@ -204,7 +205,7 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
 /// A variant of ExprGeneratorContext::alloc_label_id that allows the caller to avoid
 /// allocate labels while parts of the context are borrowed.
 pub fn alloc_label_id<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
     label_id_allocator: &mut IdAllocator,
 ) -> pre_sierra::LabelId<'db> {

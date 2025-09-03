@@ -15,7 +15,7 @@ use cairo_lang_runnable_utils::builder::RunnableBuilder;
 use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
-use cairo_lang_sierra_generator::db::{SierraGenGroup, init_sierra_gen_group};
+use cairo_lang_sierra_generator::db::init_sierra_gen_group;
 use cairo_lang_sierra_generator::program_generator::get_dummy_program_for_size_estimation;
 use cairo_lang_utils::Upcast;
 use salsa::Database;
@@ -245,11 +245,6 @@ pub fn validate_corelib(db: &(dyn salsa::Database + 'static)) -> Result<()> {
 
 impl<'db> Upcast<'db, dyn salsa::Database> for RootDatabase {
     fn upcast(&self) -> &dyn salsa::Database {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SierraGenGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn SierraGenGroup {
         self
     }
 }
