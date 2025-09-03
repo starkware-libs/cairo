@@ -42,7 +42,7 @@
 //! assert!(first_byte == 0x41);
 //! ```
 
-use crate::array::{ArrayTrait, SpanTrait};
+use crate::array::{ArrayTrait, Span, SpanTrait};
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
@@ -52,11 +52,16 @@ use crate::clone::Clone;
 use crate::cmp::min;
 #[allow(unused_imports)]
 use crate::integer::{U32TryIntoNonZero, u128_safe_divmod};
+#[feature("bounded-int-utils")]
+use crate::internal::bounded_int::{BoundedInt, downcast};
 #[allow(unused_imports)]
 use crate::serde::Serde;
 use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use crate::zeroable::NonZeroIntoImpl;
+
+/// The number of bytes in [`ByteArray::pending_word`].
+type Bytes31Index = BoundedInt<0, { BYTES_IN_BYTES31_MINUS_ONE.into() }>;
 
 /// A magic constant for identifying serialization of `ByteArray` variables. An array of `felt252`
 /// with this magic value as one of the `felt252` indicates that you should expect right after it a
@@ -584,5 +589,127 @@ impl ByteArrayFromIterator of crate::iter::FromIterator<ByteArray, u8> {
             ba.append_byte(byte);
         }
         ba
+    }
+}
+
+/// A view into a contiguous collection of a string type.
+/// Currently implemented only for `ByteArray`, but will soon be implemented for other string types.
+/// `Span` implements the `Copy` and the `Drop` traits.
+#[derive(Copy, Drop)]
+pub struct ByteSpan {
+    /// A span representing the array of all `bytes31` words in the byte-span, excluding the last
+    /// bytes_31 word that is stored in [Self::last_word].
+    /// Invariant: every byte stored in `data` is part of the span except for the bytes appearing
+    /// before `first_char_start_offset` in the first word.
+    data: Span<bytes31>,
+    /// The offset of the first character in the first entry of [Self::data], for use in span
+    /// slices. When data is empty, this offset applies to remainder_word instead.
+    first_char_start_offset: Bytes31Index,
+    /// Contains the final bytes of the span when the end is either not in memory or isn't aligned
+    /// to a word boundary.
+    /// It is represented as a `felt252` to improve performance of building the byte array, but
+    /// represents a `bytes31`.
+    /// The first byte is the most significant byte among the `pending_word_len` bytes in the word.
+    remainder_word: felt252,
+    /// The number of bytes in [Self::remainder_word].
+    remainder_len: Bytes31Index,
+}
+
+
+#[generate_trait]
+pub impl ByteSpanImpl of ByteSpanTrait {
+    /// Returns the length of the `ByteSpan`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let ba: ByteArray = "byte array";
+    /// let span = ba.span();
+    /// let len = span.len();
+    /// assert!(len == 10);
+    /// ```
+    #[must_use]
+    fn len(self: ByteSpan) -> usize {
+        helpers::calc_bytespan_len(self)
+    }
+
+    /// Returns `true` if the `ByteSpan` has a length of 0.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let ba: ByteArray = "";
+    /// let span = ba.span();
+    /// assert!(span.is_empty());
+    ///
+    /// let ba2: ByteArray = "not empty";
+    /// let span2 = ba2.span();
+    /// assert!(!span2.is_empty());
+    /// ```
+    fn is_empty(self: ByteSpan) -> bool {
+        // No need to check offsets: when `slice` consumes the span it returns `Default::default()`.
+        self.remainder_len == 0 && self.data.len() == 0
+    }
+}
+
+/// Trait for types that can be converted into a `ByteSpan`.
+pub trait ToByteSpanTrait<C> {
+    #[must_use]
+    fn span(self: @C) -> ByteSpan;
+}
+
+impl ByteArrayToByteSpan of ToByteSpanTrait<ByteArray> {
+    fn span(self: @ByteArray) -> ByteSpan {
+        ByteSpan {
+            data: self.data.span(),
+            first_char_start_offset: 0,
+            remainder_word: *self.pending_word,
+            remainder_len: downcast(self.pending_word_len).expect('In [0,30] by assumption'),
+        }
+    }
+}
+
+impl ByteSpanToByteSpan of ToByteSpanTrait<ByteSpan> {
+    fn span(self: @ByteSpan) -> ByteSpan {
+        *self
+    }
+}
+
+mod helpers {
+    use core::num::traits::Bounded;
+    use crate::bytes_31::BYTES_IN_BYTES31;
+    #[feature("bounded-int-utils")]
+    use crate::internal::bounded_int::{
+        self, AddHelper, BoundedInt, MulHelper, SubHelper, UnitInt, downcast,
+    };
+    use super::{BYTES_IN_BYTES31_MINUS_ONE, ByteSpan, Bytes31Index};
+
+    type BytesInBytes31Typed = UnitInt<{ BYTES_IN_BYTES31.into() }>;
+
+    const U32_MAX_TIMES_B31: felt252 = Bounded::<u32>::MAX.into() * BYTES_IN_BYTES31.into();
+    const BYTES_IN_BYTES31_UNIT_INT: BytesInBytes31Typed = downcast(BYTES_IN_BYTES31).unwrap();
+
+    impl U32ByB31 of MulHelper<u32, BytesInBytes31Typed> {
+        type Result = BoundedInt<0, U32_MAX_TIMES_B31>;
+    }
+
+    impl B30AddU32ByB31 of AddHelper<Bytes31Index, U32ByB31::Result> {
+        type Result = BoundedInt<0, { BYTES_IN_BYTES31_MINUS_ONE.into() + U32_MAX_TIMES_B31 }>;
+    }
+
+    impl B30AddU32ByB31SubB30 of SubHelper<B30AddU32ByB31::Result, Bytes31Index> {
+        type Result =
+            BoundedInt<
+                { -BYTES_IN_BYTES31_MINUS_ONE.into() },
+                { BYTES_IN_BYTES31_MINUS_ONE.into() + U32_MAX_TIMES_B31 },
+            >;
+    }
+
+    pub fn calc_bytespan_len(span: ByteSpan) -> usize {
+        let data_bytes = bounded_int::mul(span.data.len(), BYTES_IN_BYTES31_UNIT_INT);
+        let span_bytes_unadjusted = bounded_int::add(span.remainder_len, data_bytes);
+        let span_bytes = bounded_int::sub(span_bytes_unadjusted, span.first_char_start_offset);
+
+        downcast(span_bytes).unwrap()
     }
 }
