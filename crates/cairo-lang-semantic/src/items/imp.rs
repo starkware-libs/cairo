@@ -2322,7 +2322,7 @@ impl<'db> UninferredImpl<'db> {
         }
     }
 
-    /// Returns the shallow generic arguments of the concrte trait of this impl.
+    /// Returns the shallow generic arguments of the concrete trait of this impl.
     fn trait_shallow_generic_args(
         &self,
         db: &'db dyn Database,
