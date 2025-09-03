@@ -51,6 +51,7 @@ impl Default for OptimizationConfig {
     }
 }
 
+#[salsa::tracked]
 pub fn priv_movable_function_ids<'db>(
     db: &'db dyn LoweringGroup,
 ) -> Arc<UnorderedHashSet<ExternFunctionId<'db>>> {

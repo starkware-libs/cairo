@@ -133,6 +133,7 @@ impl<'db> OptimizationStrategyId<'db> {
 }
 
 /// Query implementation of [crate::db::LoweringGroup::baseline_optimization_strategy].
+#[salsa::tracked]
 pub fn baseline_optimization_strategy<'db>(
     db: &'db dyn LoweringGroup,
 ) -> OptimizationStrategyId<'db> {
@@ -168,6 +169,7 @@ pub fn baseline_optimization_strategy<'db>(
 }
 
 /// Query implementation of [crate::db::LoweringGroup::final_optimization_strategy].
+#[salsa::tracked]
 pub fn final_optimization_strategy<'db>(db: &'db dyn LoweringGroup) -> OptimizationStrategyId<'db> {
     OptimizationStrategy(vec![
         OptimizationPhase::GasRedeposit,

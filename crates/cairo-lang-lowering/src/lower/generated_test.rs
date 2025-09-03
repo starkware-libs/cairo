@@ -40,7 +40,8 @@ fn test_generated_function(
     .split();
 
     let mut writer = String::new();
-    if let Ok(multi_lowering) = db.priv_function_with_body_multi_lowering(test_function.function_id)
+    if let Ok(multi_lowering) =
+        db.priv_function_with_body_multi_lowering((), test_function.function_id)
     {
         writeln!(&mut writer, "Main:").unwrap();
         writeln!(
@@ -107,7 +108,7 @@ fn test_generated_function(
     }
 
     let lowering_diagnostics =
-        db.module_lowering_diagnostics(test_function.module_id).unwrap_or_default();
+        db.module_lowering_diagnostics((), test_function.module_id).unwrap_or_default();
 
     TestRunnerResult::success(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),

@@ -1,7 +1,7 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
-use crate::db::{LoweringGroup, LoweringGroupData, get_direct_callees};
+use crate::db::{LoweringGroup, get_direct_callees};
 use crate::ids::{
     ConcreteFunctionWithBodyId, FunctionId, FunctionWithBodyId, GenericOrSpecialized,
 };
@@ -9,6 +9,7 @@ use crate::{DependencyType, LoweringStage};
 
 /// Query implementation of
 /// [crate::db::LoweringGroup::function_with_body_direct_callees].
+#[salsa::tracked]
 pub fn function_with_body_direct_callees<'db>(
     db: &'db dyn LoweringGroup,
     function_id: FunctionWithBodyId<'db>,
@@ -21,6 +22,7 @@ pub fn function_with_body_direct_callees<'db>(
 
 /// Query implementation of
 /// [crate::db::LoweringGroup::function_with_body_direct_function_with_body_callees].
+#[salsa::tracked]
 pub fn function_with_body_direct_function_with_body_callees<'db>(
     db: &'db dyn LoweringGroup,
     function_id: FunctionWithBodyId<'db>,
@@ -43,6 +45,7 @@ pub fn function_with_body_direct_function_with_body_callees<'db>(
 }
 
 /// Query implementation of [LoweringGroup::final_contains_call_cycle].
+#[salsa::tracked(cycle_result=final_contains_call_cycle_handle_cycle)]
 pub fn final_contains_call_cycle<'db>(
     db: &'db dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId<'db>,
@@ -64,13 +67,13 @@ pub fn final_contains_call_cycle<'db>(
 /// Cycle handling for [LoweringGroup::final_contains_call_cycle].
 pub fn final_contains_call_cycle_handle_cycle<'db>(
     _db: &'db dyn LoweringGroup,
-    _cycle: LoweringGroupData,
     _function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
     Ok(true)
 }
 
 /// Query implementation of [LoweringGroup::in_cycle].
+#[salsa::tracked]
 pub fn in_cycle<'db>(
     db: &'db dyn LoweringGroup,
     function_id: FunctionWithBodyId<'db>,
@@ -86,6 +89,7 @@ pub fn in_cycle<'db>(
 }
 
 /// Query implementation of [LoweringGroup::concrete_in_cycle].
+#[salsa::tracked]
 pub fn concrete_in_cycle<'db>(
     db: &'db dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId<'db>,

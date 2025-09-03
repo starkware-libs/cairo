@@ -8,6 +8,7 @@ use crate::{DependencyType, LoweringStage};
 
 /// Query implementation of
 /// [crate::db::LoweringGroup::lowered_scc_representative].
+#[salsa::tracked]
 pub fn lowered_scc_representative<'db>(
     db: &'db dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId<'db>,
@@ -23,6 +24,7 @@ pub fn lowered_scc_representative<'db>(
 }
 
 /// Query implementation of [crate::db::LoweringGroup::lowered_scc].
+#[salsa::tracked]
 pub fn lowered_scc<'db>(
     db: &'db dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId<'db>,

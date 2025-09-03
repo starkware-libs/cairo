@@ -252,6 +252,7 @@ fn lower_function_blocks_implicits<'db>(
 // =========== Query implementations ===========
 
 /// Query implementation of [crate::db::LoweringGroup::function_implicits].
+#[salsa::tracked]
 pub fn function_implicits<'db>(
     db: &'db dyn LoweringGroup,
     function: FunctionId<'db>,
@@ -275,7 +276,7 @@ pub trait FunctionImplicitsTrait<'db>: Upcast<'db, dyn LoweringGroup> {
             DependencyType::Call,
             LoweringStage::PostBaseline,
         );
-        let mut implicits = db.scc_implicits(scc_representative)?;
+        let mut implicits = scc_implicits(db, scc_representative)?;
 
         let precedence = db.function_declaration_implicit_precedence(
             function.base_semantic_function(db).function_with_body_id(db),
@@ -287,12 +288,21 @@ pub trait FunctionImplicitsTrait<'db>: Upcast<'db, dyn LoweringGroup> {
 }
 impl<'db, T: Upcast<'db, dyn LoweringGroup> + ?Sized> FunctionImplicitsTrait<'db> for T {}
 
-/// Query implementation of [LoweringGroup::scc_implicits].
-pub fn scc_implicits<'db>(
+/// Returns all the implicits used by a strongly connected component of functions.
+fn scc_implicits<'db>(
     db: &'db dyn LoweringGroup,
     scc: ConcreteSCCRepresentative<'db>,
 ) -> Maybe<Vec<TypeId<'db>>> {
-    let scc_functions = db.lowered_scc(scc.0, DependencyType::Call, LoweringStage::PostBaseline);
+    scc_implicits_tracked(db, scc.0)
+}
+
+/// Tracked implementation of [scc_implicits].
+#[salsa::tracked]
+fn scc_implicits_tracked<'db>(
+    db: &'db dyn LoweringGroup,
+    rep: ConcreteFunctionWithBodyId<'db>,
+) -> Maybe<Vec<TypeId<'db>>> {
+    let scc_functions = db.lowered_scc(rep, DependencyType::Call, LoweringStage::PostBaseline);
     let mut all_implicits = OrderedHashSet::<_>::default();
     for function in scc_functions {
         // Add the function's explicit implicits.
@@ -307,8 +317,8 @@ pub fn scc_implicits<'db>(
                     DependencyType::Call,
                     LoweringStage::PostBaseline,
                 );
-                if callee_scc != scc {
-                    all_implicits.extend(db.scc_implicits(callee_scc)?);
+                if callee_scc.0 != rep {
+                    all_implicits.extend(scc_implicits(db, callee_scc)?);
                 }
             } else {
                 all_implicits.extend(direct_callee.signature(db)?.implicits);

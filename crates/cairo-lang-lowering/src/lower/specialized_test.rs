@@ -71,7 +71,7 @@ fn test_specialized_function(
     let lowered = format!("{:?}", lowered.debug(&lowered_formatter));
 
     let lowering_diagnostics =
-        db.module_lowering_diagnostics(test_function.module_id).unwrap_or_default();
+        db.module_lowering_diagnostics((), test_function.module_id).unwrap_or_default();
 
     TestRunnerResult::success(OrderedHashMap::from([
         ("full_path".into(), specialized_func.full_path(db)),

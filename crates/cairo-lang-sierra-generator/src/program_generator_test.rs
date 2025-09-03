@@ -61,7 +61,7 @@ fn test_dummy_program_generator(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    db.module_lowering_diagnostics(test_function.module_id)
+    db.module_lowering_diagnostics((), test_function.module_id)
         .unwrap()
         .expect_with_db(db, "Unexpected lowering diagnostics.");
 
