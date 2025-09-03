@@ -3,258 +3,208 @@ use crate::test::test_utils::{assert_eq, assert_ne};
 #[test]
 fn test_append_byte() {
     let mut ba = Default::default();
-    let mut c = 1_u8;
-    loop {
-        if c == 34 {
-            break;
-        }
+    for c in '0'_u8..='Z'_u8 {
         ba.append_byte(c);
-        c += 1;
     }
-
-    let expected_data = [0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f];
-    compare_byte_array(@ba, expected_data.span(), 2, 0x2021);
+    assert_eq!(ba, "0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 }
 
 #[test]
 fn test_append_word() {
     let mut ba = Default::default();
 
-    ba.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e, 30);
-    compare_byte_array(
-        @ba, [].span(), 30, 0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
-    );
+    ba.append_word('ABCDEFGHIJKLMNOPQRSTUVWXYZabcd', 30);
+    let mut expected: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcd";
+    assert_eq!(ba, expected, "appending word in single bytes31");
 
-    ba.append_word(0x1f2021, 3);
-    let expected_data = [0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f];
-    compare_byte_array(@ba, expected_data.span(), 2, 0x2021);
+    ba.append_word('efg', 3);
+    expected = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg";
+    assert_eq!(ba, expected, "append word overflowing pending word");
 
-    ba.append_word(0x2223, 2);
-    compare_byte_array(@ba, expected_data.span(), 4, 0x20212223);
+    ba.append_word('hi', 2);
+    expected = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi";
+    assert_eq!(ba, expected, "append word extending new pending word");
 
     // Length is 0, so nothing is actually appended.
-    ba.append_word(0xffee, 0);
-    compare_byte_array(@ba, expected_data.span(), 4, 0x20212223);
+    ba.append_word('jk', 0);
+    assert_eq!(ba, expected, "append 0 length error");
 
-    ba.append_word(0x2425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e, 27);
-    let expected_data = [
-        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e,
-    ];
-    compare_byte_array(@ba, expected_data.span(), 0, 0);
+    ba.append_word('ABCDEFGHIJKLMNOPQRSTUVWXYZa', 27);
+    expected = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghiABCDEFGHIJKLMNOPQRSTUVWXYZa";
+    assert_eq!(ba, expected, "append word filling pending to capacity");
 
-    ba.append_word(0x3f, 1);
-    compare_byte_array(@ba, expected_data.span(), 1, 0x3f);
+    ba.append_word('b', 1);
+    expected = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghiABCDEFGHIJKLMNOPQRSTUVWXYZab";
+    assert_eq!(ba, expected, "append word starting new pending word");
 }
 
 #[test]
 fn test_append() {
-    let mut ba1 = test_byte_array_32();
-    let ba2 = test_byte_array_32();
+    let mut ba_32: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$";
 
-    ba1.append(@ba2);
+    ba_32.append(@ba_32);
 
-    let expected_data = [
-        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
-    ];
-    compare_byte_array(@ba1, expected_data.span(), 2, 0x1f20);
+    let expected: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$";
+    assert_eq!(ba_32, expected, "append bytearray across new pending word");
 }
 
 // Same as test_append, but with `+=` instead of `append`.
 #[test]
 fn test_add_eq() {
-    let mut ba1 = test_byte_array_32();
-    let ba2 = test_byte_array_32();
+    let mut ba_32: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$";
 
-    ba1 += ba2;
+    ba_32 += ba_32.clone();
 
-    let expected_data = [
-        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
-    ];
-    compare_byte_array(@ba1, expected_data.span(), 2, 0x1f20);
+    let expected: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$";
+    assert_eq!(ba_32, expected, "add-eq bytearray across new pending word");
 }
 
+// Same as test_append and test add_eq, but with `concat`.
 #[test]
 fn test_concat() {
-    let ba1 = test_byte_array_32();
-    let ba2 = test_byte_array_32();
+    let mut ba_32: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$";
 
-    let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
+    let ba = ByteArrayTrait::concat(@ba_32, @ba_32);
 
-    let expected_data = [
-        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
-    ];
-    compare_byte_array(@ba3, expected_data.span(), 2, 0x1f20);
+    let expected: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$";
+    assert_eq!(ba, expected, "add-eq bytearray across new pending word");
 }
 
 // Same as test_concat, but with `+` instead of `concat`.
 #[test]
 fn test_add() {
-    let ba1 = test_byte_array_32();
-    let ba2 = test_byte_array_32();
+    let mut ba_32: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$";
 
-    let ba3 = ba1 + ba2;
+    let ba_32 = ba_32.clone() + ba_32;
 
-    let expected_data = [
-        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
-    ];
-    compare_byte_array(@ba3, expected_data.span(), 2, 0x1f20);
+    let expected: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$";
+    assert_eq!(ba_32, expected, "add-eq bytearray across new pending word");
 }
 
 // Test concat/append, first byte array empty.
 #[test]
 fn test_concat_first_empty() {
-    let ba1 = Default::default();
-    let ba2 = test_byte_array_32();
-
-    let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
-
-    let expected_data = [0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f];
-    compare_byte_array(@ba3, expected_data.span(), 1, 0x20);
+    let ba_32: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
+    let ba_concat = ByteArrayTrait::concat(@Default::default(), @ba_32);
+    assert_eq!(ba_concat, ba_32, "Error concat empty ba");
 }
 
 // Test concat/append, second byte array empty.
 #[test]
 fn test_concat_second_empty() {
-    let ba1 = test_byte_array_32();
-    let ba2 = Default::default();
-
-    let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
-
-    let expected_data = [0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f];
-    compare_byte_array(@ba3, expected_data.span(), 1, 0x20);
+    let ba_32: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
+    let ba_concat = ByteArrayTrait::concat(@ba_32, @Default::default());
+    assert_eq!(ba_concat, ba_32, "Error concat empty ba");
 }
 
 // Test concat/append, first byte array pending word is empty.
 #[test]
 fn test_concat_first_pending_0() {
-    let ba1 = test_byte_array_31();
-    let ba2 = test_byte_array_32();
+    let ba_31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde";
+    let ba_32: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$";
 
-    let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
+    let ba_concat = ByteArrayTrait::concat(@ba_31, @ba_32);
 
-    let expected_data = [
-        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-    ];
-    compare_byte_array(@ba3, expected_data.span(), 1, 0x20);
+    let expected: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdeABCDEFGHIJKLMNOPQRSTUVWXYZabcde$";
+    assert_eq!(ba_concat, expected, "Error concat with overflow into pending word");
 }
 
 // Test concat/append, second byte array pending word is empty.
 #[test]
 fn test_concat_second_pending_0() {
-    let ba1 = test_byte_array_32();
-    let ba2 = test_byte_array_31();
+    let ba_32: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$";
+    let ba_31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde";
 
-    let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
+    let ba_concat = ByteArrayTrait::concat(@ba_32, @ba_31);
 
-    let expected_data = [
-        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
-    ];
-    compare_byte_array(@ba3, expected_data.span(), 1, 0x1f);
+    let expected: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$ABCDEFGHIJKLMNOPQRSTUVWXYZabcde";
+    assert_eq!(ba_concat, expected, "Error concat with overflow into pending word");
 }
 
 // Test concat/append, split index of the words of the second byte array is 16.
 #[test]
 fn test_concat_split_index_16() {
-    let ba1 = test_byte_array_16();
-    let ba2 = test_byte_array_32();
+    let ba_16: ByteArray = "ABCDEFGHIJKLMNO$";
+    let ba_32: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
 
-    let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
+    let ba_concat = ByteArrayTrait::concat(@ba_16, @ba_32);
 
-    let expected_data = [0x0102030405060708091a0b0c0d0e0f100102030405060708091a0b0c0d0e0f];
-    compare_byte_array(@ba3, expected_data.span(), 17, 0x101112131415161718191a1b1c1d1e1f20);
+    let expected: ByteArray = "ABCDEFGHIJKLMNO$ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
+    assert_eq!(ba_concat, expected, "Error concat with split index 16");
 }
 
 // Test concat/append, split index of the words of the second byte array is < 16, specifically 1.
 #[test]
 fn test_concat_split_index_lt_16() {
-    let ba1 = test_byte_array_1();
-    let ba2 = test_byte_array_32();
+    let ba_1: ByteArray = "$";
+    let ba_32: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
 
-    let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
+    let ba_concat = ByteArrayTrait::concat(@ba_1, @ba_32);
 
-    let expected_data = [0x010102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e];
-    compare_byte_array(@ba3, expected_data.span(), 2, 0x1f20);
+    let expected: ByteArray = "$ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
+    assert_eq!(ba_concat, expected, "Error concat with split index < 16");
 }
 
 // Test concat/append, split index of the words of the second byte array is > 16, specifically 30.
 #[test]
 fn test_concat_split_index_gt_16() {
-    let ba1 = test_byte_array_30();
-    let ba2 = test_byte_array_33();
+    let ba_30: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabc$";
+    let ba_33: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg";
 
-    let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
+    let ba_concat = ByteArrayTrait::concat(@ba_30, @ba_33);
 
-    let expected_data = [
-        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e01,
-        0x02030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20,
-    ];
-    compare_byte_array(@ba3, expected_data.span(), 1, 0x21);
+    let expected: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabc$ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg";
+    assert_eq!(ba_concat, expected, "Error concat with split index > 16");
 }
 
 // Sum of the lengths of the pending words of both byte arrays is 31 (a full word).
 #[test]
 fn test_concat_pending_sum_up_to_full() {
-    let ba1 = test_byte_array_32();
-    let ba2 = test_byte_array_30();
+    let ba_32: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$";
+    let ba_30: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcd";
 
-    let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
+    let ba_concat = ByteArrayTrait::concat(@ba_32, @ba_30);
 
-    let expected_data = [
-        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
-    ];
-    compare_byte_array(@ba3, expected_data.span(), 0, 0);
+    let expected: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$ABCDEFGHIJKLMNOPQRSTUVWXYZabcd";
+    assert_eq!(ba_concat, expected, "Error concat with pending word sum up to full");
 }
 
 // Sum of the lengths of the pending words of both byte arrays is 31+16.
 // That is, the pending words aggregate to a full word, and the last split index is 16.
 #[test]
 fn test_concat_pending_sum_up_to_more_than_word_16() {
-    let ba1 = test_byte_array_17();
-    let ba2 = test_byte_array_30();
+    let ba_17: ByteArray = "ABCDEFGHIJKLMNOP$";
+    let ba_30: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcd";
 
-    let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
+    let ba_concat = ByteArrayTrait::concat(@ba_17, @ba_30);
 
-    let expected_data = [0x0102030405060708091a0b0c0d0e0f10110102030405060708091a0b0c0d0e];
-    compare_byte_array(@ba3, expected_data.span(), 16, 0x0f101112131415161718191a1b1c1d1e);
+    let expected: ByteArray = "ABCDEFGHIJKLMNOP$ABCDEFGHIJKLMNOPQRSTUVWXYZabcd";
+    assert_eq!(ba_concat, expected, "Error pending word overflowed concat with split index 16");
 }
 
 // Sum of the lengths of the pending words of both byte arrays is in [32, 31+15].
 // That is, the pending words aggregate to a full word, and the last split index is <16.
 #[test]
 fn test_concat_pending_sum_up_to_more_than_word_lt16() {
-    let ba1 = test_byte_array_2();
-    let ba2 = test_byte_array_30();
+    let ba_2: ByteArray = "A$";
+    let ba_30: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcd";
 
-    let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
+    let ba_concat = ByteArrayTrait::concat(@ba_2, @ba_30);
 
-    let expected_data = [0x01020102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d];
-    compare_byte_array(@ba3, expected_data.span(), 1, 0x1e);
+    let expected: ByteArray = "A$ABCDEFGHIJKLMNOPQRSTUVWXYZabcd";
+    assert_eq!(ba_concat, expected, "Error pending word overflowed concat with split index < 16");
 }
 
 // Sum of the lengths of the pending words of both byte arrays is >31+15
 // That is, the pending words aggregate to a full word, and the last split index is >16.
 #[test]
 fn test_concat_pending_sum_up_to_more_than_word_gt16() {
-    let ba1 = test_byte_array_30();
-    let ba2 = test_byte_array_30();
+    let ba_30: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabc$";
 
-    let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
+    let ba_concat = ByteArrayTrait::concat(@ba_30, @ba_30);
 
-    let expected_data = [0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e01];
-    compare_byte_array(
-        @ba3,
-        expected_data.span(),
-        29,
-        0x02030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
-    );
+    let expected: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabc$ABCDEFGHIJKLMNOPQRSTUVWXYZabc$";
+    assert_eq!(ba_concat, expected, "Error pending word overflowed concat with split index > 16");
 }
 
 #[test]
@@ -505,30 +455,6 @@ fn test_from_collect() {
 
 // ========= Test helper functions =========
 
-fn compare_byte_array(
-    ba: @ByteArray, mut data: Span<felt252>, pending_word_len: usize, pending_word: felt252,
-) {
-    assert(ba.data.len() == data.len(), 'wrong data len');
-    let mut ba_data = ba.data.span();
-
-    let mut data_index = 0;
-    loop {
-        match ba_data.pop_front() {
-            Some(x) => {
-                let actual_word = (*x).into();
-                let expected_word = *data.pop_front().unwrap();
-                assert_eq!(actual_word, expected_word, "wrong data for index: {data_index}");
-            },
-            None(_) => { break; },
-        }
-        data_index += 1;
-    }
-
-    assert_eq!(*ba.pending_word_len, pending_word_len);
-    let ba_pending_word_felt: felt252 = (*ba.pending_word).into();
-    assert_eq!(ba_pending_word_felt, pending_word);
-}
-
 fn compare_spans<T, +crate::fmt::Debug<T>, +PartialEq<T>, +Copy<T>, +Drop<T>>(
     mut a: Span<T>, mut b: Span<T>,
 ) {
@@ -555,12 +481,6 @@ fn test_byte_array_1() -> ByteArray {
 fn test_byte_array_2() -> ByteArray {
     let mut ba1 = Default::default();
     ba1.append_word(0x0102, 2);
-    ba1
-}
-
-fn test_byte_array_16() -> ByteArray {
-    let mut ba1 = Default::default();
-    ba1.append_word(0x0102030405060708091a0b0c0d0e0f10, 16);
     ba1
 }
 
