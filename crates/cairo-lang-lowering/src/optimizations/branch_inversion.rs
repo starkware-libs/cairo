@@ -4,8 +4,8 @@ mod test;
 
 use cairo_lang_semantic::corelib;
 use cairo_lang_utils::Intern;
+use salsa::Database;
 
-use crate::db::LoweringGroup;
 use crate::ids::FunctionLongId;
 use crate::{BlockEnd, Lowered, MatchInfo, Statement, StatementCall};
 
@@ -21,7 +21,7 @@ use crate::{BlockEnd, Lowered, MatchInfo, Statement, StatementCall};
 ///
 /// Note: The call to `bool_not_impl` is not deleted as we don't know if its output
 /// is used by other statements (or block ending).
-pub fn branch_inversion(db: &dyn LoweringGroup, lowered: &mut Lowered<'_>) {
+pub fn branch_inversion(db: &dyn Database, lowered: &mut Lowered<'_>) {
     if lowered.blocks.is_empty() {
         return;
     }

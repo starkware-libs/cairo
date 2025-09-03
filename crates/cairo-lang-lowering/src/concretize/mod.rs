@@ -2,14 +2,14 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::substitution::GenericSubstitution;
 use cairo_lang_semantic::types::TypeInfo;
 use cairo_lang_utils::Intern;
+use salsa::Database;
 
-use crate::db::LoweringGroup;
 use crate::ids::{FunctionId, FunctionLongId, GeneratedFunction, SemanticFunctionIdEx};
 use crate::{BlockEnd, Lowered, MatchArm, Statement};
 
 /// Rewrites a [FunctionId] with a [GenericSubstitution].
 fn concretize_function<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     substitution: &GenericSubstitution<'db>,
     function: FunctionId<'db>,
 ) -> Maybe<FunctionId<'db>> {
@@ -34,7 +34,7 @@ fn concretize_function<'db>(
 /// Concretizes a lowered generic function by applying a generic parameter substitution on its
 /// variable types, variants and called functions.
 pub fn concretize_lowered<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     lowered: &mut Lowered<'db>,
     substitution: &GenericSubstitution<'db>,
 ) -> Maybe<()> {

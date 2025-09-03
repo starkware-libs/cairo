@@ -25,6 +25,7 @@ use itertools::{Itertools, chain, izip, zip_eq};
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
 use refs::ClosureInfo;
+use salsa::Database;
 use semantic::corelib::{
     core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id, never_ty, unit_ty,
 };
@@ -46,7 +47,6 @@ use self::logical_op::lower_logical_op;
 use self::lower_if::lower_expr_if;
 use self::lower_match::lower_expr_match;
 use crate::blocks::Blocks;
-use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::{self, *};
 use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
 use crate::ids::{
@@ -92,7 +92,7 @@ pub struct MultiLowering<'db> {
 
 /// Lowers a semantic free function.
 pub fn lower_semantic_function<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     semantic_function_id: defs::ids::FunctionWithBodyId<'db>,
 ) -> Maybe<MultiLowering<'db>> {
     let declaration_diagnostics = db.function_declaration_diagnostics(semantic_function_id);
@@ -2277,7 +2277,7 @@ fn create_subscope<'db>(
 
 /// Calls `.check_error_free()` and warns (in log) if there are errors.
 fn check_error_free_or_warn<'db>(
-    db: &dyn LoweringGroup,
+    db: &dyn Database,
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     semantic_function_id: defs::ids::FunctionWithBodyId<'db>,
     diagnostics_description: &str,

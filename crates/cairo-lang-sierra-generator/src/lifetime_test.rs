@@ -45,7 +45,7 @@ fn check_variable_lifetime(
     )
     .split();
 
-    let lowering_diagnostics = db.module_lowering_diagnostics((), test_function.module_id).unwrap();
+    let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     assert_eq!(lowering_diagnostics.0.error_count, 0);
 
     let function_id =

@@ -15,6 +15,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use defs::diagnostic_utils::StableLocation;
 use itertools::{Itertools, zip_eq};
+use salsa::Database;
 use semantic::corelib::{core_module, get_ty_by_name};
 use semantic::types::wrap_in_snapshots;
 use semantic::{ExprVarMemberPath, MatchArmSelector, TypeLongId};
@@ -23,7 +24,6 @@ use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 use super::block_builder::BlockBuilder;
 use super::generators;
 use crate::blocks::BlocksBuilder;
-use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::ids::{
     ConcreteFunctionWithBodyId, FunctionWithBodyId, GeneratedFunctionKey, LocationId,
@@ -34,7 +34,7 @@ use crate::objects::Variable;
 use crate::{Lowered, MatchArm, MatchExternInfo, MatchInfo, VarUsage, VariableArena, VariableId};
 
 pub struct VariableAllocator<'db> {
-    pub db: &'db dyn LoweringGroup,
+    pub db: &'db dyn Database,
     /// Arena of allocated lowered variables.
     pub variables: VariableArena<'db>,
     // Lookup context for impls.
@@ -42,7 +42,7 @@ pub struct VariableAllocator<'db> {
 }
 impl<'db> VariableAllocator<'db> {
     pub fn new(
-        db: &'db dyn LoweringGroup,
+        db: &'db dyn Database,
         function_id: defs::ids::FunctionWithBodyId<'db>,
         variables: VariableArena<'db>,
     ) -> Maybe<Self> {
@@ -83,7 +83,7 @@ impl<'db> Index<VariableId> for VariableAllocator<'db> {
 /// Each semantic function may generate multiple lowered functions. This context is common to all
 /// the generated lowered functions of an encapsulating semantic function.
 pub struct EncapsulatingLoweringContext<'db> {
-    pub db: &'db dyn LoweringGroup,
+    pub db: &'db dyn Database,
     /// Id for the current function being lowered.
     pub semantic_function_id: defs::ids::FunctionWithBodyId<'db>,
     /// Semantic model for current function body.
@@ -101,7 +101,7 @@ pub struct EncapsulatingLoweringContext<'db> {
 }
 impl<'db> EncapsulatingLoweringContext<'db> {
     pub fn new(
-        db: &'db dyn LoweringGroup,
+        db: &'db dyn Database,
         semantic_function_id: defs::ids::FunctionWithBodyId<'db>,
     ) -> Maybe<Self> {
         let function_body = db.function_body(semantic_function_id)?;

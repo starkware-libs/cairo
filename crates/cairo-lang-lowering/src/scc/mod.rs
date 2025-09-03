@@ -1,5 +1,6 @@
 use cairo_lang_utils::graph_algos::graph_node::GraphNode;
 use cairo_lang_utils::graph_algos::strongly_connected_components::compute_scc;
+use salsa::Database;
 
 use crate::DependencyType;
 use crate::db::LoweringGroup;
@@ -8,7 +9,7 @@ use crate::ids::FunctionWithBodyId;
 /// Query implementation of [crate::db::LoweringGroup::function_with_body_scc].
 #[salsa::tracked]
 pub fn function_with_body_scc<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
     dependency_type: DependencyType,
 ) -> Vec<FunctionWithBodyId<'db>> {
@@ -20,7 +21,7 @@ pub fn function_with_body_scc<'db>(
 struct FunctionWithBodyNode<'db> {
     function_with_body_id: FunctionWithBodyId<'db>,
     dependency_type: DependencyType,
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
 }
 impl<'db> GraphNode for FunctionWithBodyNode<'db> {
     type NodeId = FunctionWithBodyId<'db>;

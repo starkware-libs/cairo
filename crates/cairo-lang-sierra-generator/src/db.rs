@@ -8,7 +8,6 @@ use cairo_lang_lowering::panic::PanicSignatureInfo;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
-use cairo_lang_utils::Upcast;
 use lowering::ids::ConcreteFunctionWithBodyId;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
@@ -54,8 +53,8 @@ fn intern_concrete_lib_func(
     cairo_lang_sierra::ids::ConcreteLibfuncId::from(interned.0.as_bits())
 }
 
-use salsa::Id;
 use salsa::plumbing::FromId;
+use salsa::{Database, Id};
 
 fn lookup_concrete_lib_func(
     db: &dyn SierraGenGroup,
@@ -97,7 +96,7 @@ fn lookup_sierra_function<'db>(
 }
 
 #[cairo_lang_proc_macros::query_group]
-pub trait SierraGenGroup: LoweringGroup + for<'db> Upcast<'db, dyn LoweringGroup> {
+pub trait SierraGenGroup: Database {
     fn intern_concrete_lib_func(
         &self,
         id: cairo_lang_sierra::program::ConcreteLibfuncLongId,

@@ -4,13 +4,13 @@ mod test;
 
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
+use salsa::Database;
 
-use crate::db::LoweringGroup;
 use crate::{BlockEnd, BlockId, Lowered, MatchEnumInfo, MatchInfo, VarUsage, VariableId};
 
 /// Trims unreachable code.
 /// The unreachable code is detected by the introduction of an enum with 0 variants.
-pub fn trim_unreachable<'db>(db: &'db dyn LoweringGroup, lowered: &mut Lowered<'db>) {
+pub fn trim_unreachable<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>) {
     if lowered.blocks.is_empty() {
         return;
     }

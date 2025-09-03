@@ -37,7 +37,7 @@ fn test_match_optimizer(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    let lowering_diagnostics = db.module_lowering_diagnostics((), test_function.module_id).unwrap();
+    let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     let mut before =
         db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().deref().clone();
     OptimizationPhase::ApplyInlining { enable_const_folding: true }

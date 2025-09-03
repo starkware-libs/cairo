@@ -1,5 +1,6 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use salsa::Database;
 
 use crate::db::{LoweringGroup, get_direct_callees};
 use crate::ids::{
@@ -11,7 +12,7 @@ use crate::{DependencyType, LoweringStage};
 /// [crate::db::LoweringGroup::function_with_body_direct_callees].
 #[salsa::tracked]
 pub fn function_with_body_direct_callees<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
     dependency_type: DependencyType,
 ) -> Maybe<OrderedHashSet<FunctionId<'db>>> {
@@ -24,7 +25,7 @@ pub fn function_with_body_direct_callees<'db>(
 /// [crate::db::LoweringGroup::function_with_body_direct_function_with_body_callees].
 #[salsa::tracked]
 pub fn function_with_body_direct_function_with_body_callees<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
     dependency_type: DependencyType,
 ) -> Maybe<OrderedHashSet<FunctionWithBodyId<'db>>> {
@@ -47,7 +48,7 @@ pub fn function_with_body_direct_function_with_body_callees<'db>(
 /// Query implementation of [LoweringGroup::final_contains_call_cycle].
 #[salsa::tracked(cycle_result=final_contains_call_cycle_handle_cycle)]
 pub fn final_contains_call_cycle<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
     let direct_callees = db.lowered_direct_callees_with_body(
@@ -66,7 +67,7 @@ pub fn final_contains_call_cycle<'db>(
 
 /// Cycle handling for [LoweringGroup::final_contains_call_cycle].
 pub fn final_contains_call_cycle_handle_cycle<'db>(
-    _db: &'db dyn LoweringGroup,
+    _db: &'db dyn Database,
     _function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
     Ok(true)
@@ -75,7 +76,7 @@ pub fn final_contains_call_cycle_handle_cycle<'db>(
 /// Query implementation of [LoweringGroup::in_cycle].
 #[salsa::tracked]
 pub fn in_cycle<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
     dependency_type: DependencyType,
 ) -> Maybe<bool> {
@@ -91,7 +92,7 @@ pub fn in_cycle<'db>(
 /// Query implementation of [LoweringGroup::concrete_in_cycle].
 #[salsa::tracked]
 pub fn concrete_in_cycle<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
     dependency_type: DependencyType,
     stage: LoweringStage,

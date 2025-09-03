@@ -1847,6 +1847,7 @@ dependencies = [
  "clap",
  "convert_case",
  "itertools 0.14.0",
+ "salsa",
 ]
 
 [[package]]

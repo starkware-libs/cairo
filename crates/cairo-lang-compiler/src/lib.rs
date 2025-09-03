@@ -25,7 +25,7 @@ use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use rayon::{ThreadPool, ThreadPoolBuilder};
-use salsa::par_map;
+use salsa::{Database, par_map};
 
 use crate::db::RootDatabase;
 use crate::diagnostics::{DiagnosticsError, DiagnosticsReporter};
@@ -181,7 +181,7 @@ pub enum DbWarmupContext {
 
 /// A special hack. Calling this function runs salsa's hooks, which is needed to register views.
 #[salsa::tracked]
-fn empty_func(_db: &dyn LoweringGroup) {}
+fn empty_func(_db: &dyn Database) {}
 
 impl DbWarmupContext {
     /// Creates a new thread pool.
@@ -239,7 +239,7 @@ impl Default for DbWarmupContext {
 
 /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
 /// would be faster as the queries were already computed.
-fn warmup_diagnostics_blocking(db: &dyn LoweringGroup, crates: Vec<CrateInput>) {
+fn warmup_diagnostics_blocking(db: &dyn Database, crates: Vec<CrateInput>) {
     let _: () = par_map(db, crates, |db, crate_input| {
         let crate_id = crate_input.into_crate_long_id(db).intern(db);
         let crate_modules = db.crate_modules(crate_id);
@@ -248,7 +248,7 @@ fn warmup_diagnostics_blocking(db: &dyn LoweringGroup, crates: Vec<CrateInput>) 
                 db.file_syntax_diagnostics(file_id);
             }
             let _ = db.module_semantic_diagnostics(*module_id);
-            let _ = db.module_lowering_diagnostics((), *module_id);
+            let _ = db.module_lowering_diagnostics(*module_id);
         });
     });
 }

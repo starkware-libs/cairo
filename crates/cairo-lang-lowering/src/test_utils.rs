@@ -10,7 +10,7 @@ use cairo_lang_utils::Upcast;
 use salsa::Database;
 
 use crate::Lowered;
-use crate::db::{LoweringGroup, init_lowering_group};
+use crate::db::init_lowering_group;
 use crate::fmt::LoweredFormatter;
 use crate::utils::InliningStrategy;
 
@@ -57,14 +57,9 @@ impl<'db> Upcast<'db, dyn Database> for LoweringDatabaseForTesting {
         self
     }
 }
-impl<'db> Upcast<'db, dyn LoweringGroup> for LoweringDatabaseForTesting {
-    fn upcast(&self) -> &dyn LoweringGroup {
-        self
-    }
-}
 
 /// Helper for formatting a lowered representation for tests.
-pub fn formatted_lowered(db: &dyn LoweringGroup, lowered: Option<&Lowered<'_>>) -> String {
+pub fn formatted_lowered(db: &dyn Database, lowered: Option<&Lowered<'_>>) -> String {
     match lowered {
         Some(lowered) => {
             let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);

@@ -24,7 +24,7 @@ fn contains_cycles_test(
     // Parse code and create semantic model.
     let test_module = setup_test_module(db, inputs["module_code"].as_str()).unwrap();
 
-    db.module_lowering_diagnostics((), test_module.module_id)
+    db.module_lowering_diagnostics(test_module.module_id)
         .unwrap()
         .expect_with_db(db, "Unexpected diagnostics.");
 

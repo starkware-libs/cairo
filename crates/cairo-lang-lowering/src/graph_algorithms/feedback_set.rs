@@ -4,6 +4,7 @@ use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
 use cairo_lang_utils::graph_algos::feedback_set::calc_feedback_set;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use salsa::Database;
 
 use super::concrete_function_node::ConcreteFunctionWithBodyNode;
 use crate::db::LoweringGroup;
@@ -13,7 +14,7 @@ use crate::{DependencyType, LoweringStage};
 /// Query implementation of [crate::db::LoweringGroup::function_with_body_feedback_set].
 #[salsa::tracked]
 pub fn function_with_body_feedback_set<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function: ConcreteFunctionWithBodyId<'db>,
     stage: LoweringStage,
 ) -> Maybe<OrderedHashSet<ConcreteFunctionWithBodyId<'db>>> {
@@ -22,7 +23,7 @@ pub fn function_with_body_feedback_set<'db>(
 }
 
 /// Returns the value of the `add_withdraw_gas` flag, or `true` if the flag is not set.
-pub fn flag_add_withdraw_gas(db: &dyn LoweringGroup) -> bool {
+pub fn flag_add_withdraw_gas(db: &dyn Database) -> bool {
     db.get_flag(FlagId::new(db, FlagLongId("add_withdraw_gas".into())))
         .map(|flag| *flag == Flag::AddWithdrawGas(true))
         .unwrap_or(true)
@@ -31,7 +32,7 @@ pub fn flag_add_withdraw_gas(db: &dyn LoweringGroup) -> bool {
 /// Query implementation of [crate::db::LoweringGroup::needs_withdraw_gas].
 #[salsa::tracked]
 pub fn needs_withdraw_gas<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
     Ok(flag_add_withdraw_gas(db)
@@ -44,7 +45,7 @@ pub fn needs_withdraw_gas<'db>(
 /// feedback-vertex-set is the set of vertices whose removal leaves a graph without cycles.
 #[salsa::tracked]
 fn function_with_body_feedback_set_of_representative<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
     stage: LoweringStage,
 ) -> Maybe<OrderedHashSet<ConcreteFunctionWithBodyId<'db>>> {

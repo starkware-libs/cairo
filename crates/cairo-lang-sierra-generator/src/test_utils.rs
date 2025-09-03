@@ -79,11 +79,6 @@ impl<'db> Upcast<'db, dyn salsa::Database> for SierraGenDatabaseForTesting {
         self
     }
 }
-impl<'db> Upcast<'db, dyn LoweringGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn LoweringGroup {
-        self
-    }
-}
 
 /// Compiles `content` to sierra and replaces the sierra ids to make it readable.
 pub fn checked_compile_to_sierra(content: &str) -> cairo_lang_sierra::program::Program {
@@ -107,7 +102,7 @@ pub fn setup_db_and_get_crate_id<'db>(
     db.module_semantic_diagnostics(module_id)
         .unwrap()
         .expect_with_db(db, "Unexpected semantic diagnostics");
-    db.module_lowering_diagnostics((), module_id)
+    db.module_lowering_diagnostics(module_id)
         .unwrap()
         .expect_with_db(db, "Unexpected lowering diagnostics.");
     crate_id

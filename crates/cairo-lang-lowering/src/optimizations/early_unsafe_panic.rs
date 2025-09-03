@@ -8,9 +8,9 @@ use cairo_lang_defs::ids::ExternFunctionId;
 use cairo_lang_filesystem::flag::flag_unsafe_panic;
 use cairo_lang_semantic::helper::ModuleHelper;
 use itertools::zip_eq;
+use salsa::Database;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use crate::db::LoweringGroup;
 use crate::ids::{LocationId, SemanticFunctionIdEx};
 use crate::{
     BlockEnd, BlockId, Lowered, MatchExternInfo, MatchInfo, Statement, StatementCall, VarUsage,
@@ -22,7 +22,7 @@ use crate::{
 ///
 /// This step might replace a match on an empty enum with a call to unsafe_panic and we rely on the
 /// 'trim_unreachable' optimization to clean that up.
-pub fn early_unsafe_panic<'db>(db: &'db dyn LoweringGroup, lowered: &mut Lowered<'db>) {
+pub fn early_unsafe_panic<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>) {
     if !flag_unsafe_panic(db) || lowered.blocks.is_empty() {
         return;
     }
@@ -58,7 +58,7 @@ pub fn early_unsafe_panic<'db>(db: &'db dyn LoweringGroup, lowered: &mut Lowered
 }
 
 pub struct UnsafePanicContext<'db> {
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
 
     /// The list of blocks where we can insert unsafe_panic.
     fixes: Vec<(StatementLocation, LocationId<'db>)>,

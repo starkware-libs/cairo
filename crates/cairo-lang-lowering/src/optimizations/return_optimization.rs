@@ -6,10 +6,10 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeId, TypeLongId};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, require};
+use salsa::Database;
 use semantic::MatchArmSelector;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use crate::db::LoweringGroup;
 use crate::ids::LocationId;
 use crate::{
     Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
@@ -22,7 +22,7 @@ use crate::{
 /// This optimization does backward analysis from return statement and keeps track of
 /// each returned value (see `ValueInfo`), whenever all the returned values are available at a block
 /// end and there were no side effects later, the end is replaced with a return statement.
-pub fn return_optimization<'db>(db: &'db dyn LoweringGroup, lowered: &mut Lowered<'db>) {
+pub fn return_optimization<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>) {
     if lowered.blocks.is_empty() {
         return;
     }
@@ -50,7 +50,7 @@ pub fn return_optimization<'db>(db: &'db dyn LoweringGroup, lowered: &mut Lowere
 /// Context for applying an early return to a block.
 struct EarlyReturnContext<'db, 'a> {
     /// The lowering database.
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     /// A map from (type, inputs) to the variable_id for Structs/Enums that were created
     /// while processing the early return.
     constructed: UnorderedHashMap<(TypeId<'db>, Vec<VariableId>), VariableId>,
@@ -123,7 +123,7 @@ impl<'db, 'a> EarlyReturnContext<'db, 'a> {
 }
 
 pub struct ReturnOptimizerContext<'db, 'a> {
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     lowered: &'a Lowered<'db>,
 
     /// The list of fixes that should be applied.

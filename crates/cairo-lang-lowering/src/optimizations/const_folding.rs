@@ -25,6 +25,7 @@ use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::cast::ToPrimitive;
 use num_traits::{Num, One, Zero};
+use salsa::Database;
 
 use crate::db::LoweringGroup;
 use crate::ids::{
@@ -73,7 +74,7 @@ enum Reachability {
 /// Performs constant folding on the lowered program.
 /// The optimization only works when the blocks are topologically sorted.
 pub fn const_folding<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
     lowered: &mut Lowered<'db>,
 ) {
@@ -104,7 +105,7 @@ pub fn const_folding<'db>(
 
 pub struct ConstFoldingContext<'db, 'mt> {
     /// The used database.
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     /// The variables arena, mostly used to get the type of variables.
     pub variables: &'mt mut VariableArena<'db>,
     /// The accumulated information about the const values of variables.
@@ -124,7 +125,7 @@ pub struct ConstFoldingContext<'db, 'mt> {
 
 impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     pub fn new(
-        db: &'db dyn LoweringGroup,
+        db: &'db dyn Database,
         function_id: ConcreteFunctionWithBodyId<'db>,
         variables: &'mt mut VariableArena<'db>,
     ) -> Self {
@@ -1118,7 +1119,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     }
 
     /// Returns true if const-folding should be skipped for the current function.
-    pub fn should_skip_const_folding(&self, db: &'db dyn LoweringGroup) -> bool {
+    pub fn should_skip_const_folding(&self, db: &'db dyn Database) -> bool {
         if db.optimization_config().skip_const_folding {
             return true;
         }
@@ -1145,7 +1146,7 @@ fn var_info_if_copy<'db>(
 /// Query implementation of [LoweringGroup::priv_const_folding_info].
 #[salsa::tracked]
 pub fn priv_const_folding_info<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
 ) -> Arc<crate::optimizations::const_folding::ConstFoldingLibfuncInfo<'db>> {
     Arc::new(ConstFoldingLibfuncInfo::new(db))
 }
@@ -1215,7 +1216,7 @@ pub struct ConstFoldingLibfuncInfo<'db> {
     const_calculation_info: Arc<ConstCalcInfo<'db>>,
 }
 impl<'db> ConstFoldingLibfuncInfo<'db> {
-    fn new(db: &'db dyn LoweringGroup) -> Self {
+    fn new(db: &'db dyn Database) -> Self {
         let core = ModuleHelper::core(db);
         let box_module = core.submodule("box");
         let integer_module = core.submodule("integer");

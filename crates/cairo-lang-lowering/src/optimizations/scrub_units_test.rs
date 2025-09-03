@@ -39,7 +39,7 @@ fn test_scrub_units(
 
     let before = db.lowered_body(function_id, LoweringStage::Monomorphized).unwrap();
 
-    let lowering_diagnostics = db.module_lowering_diagnostics((), test_function.module_id).unwrap();
+    let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     let mut after = before.deref().clone();
     scrub_units(db, &mut after);
 

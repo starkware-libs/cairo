@@ -2,8 +2,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_debug::debug::DebugWithDbOverride;
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use itertools::Itertools;
+use salsa::Database;
 
-use crate::db::LoweringGroup;
 use crate::objects::{
     MatchExternInfo, Statement, StatementCall, StatementConst, StatementStructDestructure,
     VariableId,
@@ -17,12 +17,12 @@ use crate::{
 /// Holds all the information needed for formatting lowered representations.
 /// Acts like a "db" for DebugWithDb.
 pub struct LoweredFormatter<'db> {
-    pub db: &'db dyn LoweringGroup,
+    pub db: &'db dyn Database,
     pub variables: &'db VariableArena<'db>,
     pub include_usage_location: bool,
 }
 impl<'db> LoweredFormatter<'db> {
-    pub fn new(db: &'db dyn LoweringGroup, variables: &'db VariableArena<'db>) -> Self {
+    pub fn new(db: &'db dyn Database, variables: &'db VariableArena<'db>) -> Self {
         Self { db, variables, include_usage_location: false }
     }
 }
