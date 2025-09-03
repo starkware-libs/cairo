@@ -17,7 +17,9 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext};
+use crate::items::imp::{
+    ImplId, ImplImplId, ImplLongId, ImplLookupContext, NegativeImplId, NegativeImplLongId,
+};
 use crate::items::trt::ConcreteTraitImplId;
 use crate::substitution::SemanticRewriter;
 use crate::types::{ClosureTypeLongId, ImplTypeId, peel_snapshots};
@@ -60,6 +62,11 @@ pub trait InferenceConform<'db> {
         impl0: ImplId<'db>,
         impl1: ImplId<'db>,
     ) -> InferenceResult<ImplId<'db>>;
+    fn conform_neg_impl(
+        &mut self,
+        neg_impl0: NegativeImplId<'db>,
+        neg_impl1: NegativeImplId<'db>,
+    ) -> InferenceResult<NegativeImplId<'db>>;
     fn conform_traits(
         &mut self,
         trt0: ConcreteTraitId<'db>,
@@ -77,6 +84,11 @@ pub trait InferenceConform<'db> {
         var: InferenceVar,
     ) -> bool;
     fn impl_contains_var(&mut self, impl_id: ImplId<'db>, var: InferenceVar) -> bool;
+    fn negative_impl_contains_var(
+        &mut self,
+        neg_impl_id: NegativeImplId<'db>,
+        var: InferenceVar,
+    ) -> bool;
     fn function_contains_var(&mut self, function_id: FunctionId<'db>, var: InferenceVar) -> bool;
 }
 
@@ -332,14 +344,12 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
                 };
                 Ok(GenericArgumentId::Impl(self.conform_impl(impl0, impl1)?))
             }
-            GenericArgumentId::NegImpl => match garg1 {
-                GenericArgumentId::NegImpl => Ok(GenericArgumentId::NegImpl),
-                GenericArgumentId::Constant(_)
-                | GenericArgumentId::Type(_)
-                | GenericArgumentId::Impl(_) => {
-                    Err(self.set_error(InferenceError::GenericArgMismatch { garg0, garg1 }))
-                }
-            },
+            GenericArgumentId::NegImpl(neg_impl0) => {
+                let GenericArgumentId::NegImpl(neg_impl1) = garg1 else {
+                    return Err(self.set_error(InferenceError::GenericArgMismatch { garg0, garg1 }));
+                };
+                Ok(GenericArgumentId::NegImpl(self.conform_neg_impl(neg_impl0, neg_impl1)?))
+            }
         }
     }
 
@@ -401,6 +411,45 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
         }
     }
 
+    fn conform_neg_impl(
+        &mut self,
+        neg_impl0: NegativeImplId<'db>,
+        neg_impl1: NegativeImplId<'db>,
+    ) -> InferenceResult<NegativeImplId<'db>> {
+        let neg_impl0 = self.rewrite(neg_impl0).no_err();
+        let neg_impl1 = self.rewrite(neg_impl1).no_err();
+        let long_neg_impl1 = neg_impl1.long(self.db);
+        if neg_impl0 == neg_impl1 {
+            return Ok(neg_impl0);
+        }
+        if let NegativeImplLongId::NegativeImplVar(var) = long_neg_impl1 {
+            let impl_concrete_trait = neg_impl0
+                .concrete_trait(self.db)
+                .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
+            self.conform_traits(var.long(self.db).concrete_trait_id, impl_concrete_trait)?;
+            let neg_impl_id = self.rewrite(neg_impl0).no_err();
+            return self.assign_neg_impl(*var, neg_impl_id);
+        }
+        if let NegativeImplLongId::NegativeImplVar(var) = neg_impl0.long(self.db) {
+            let impl_concrete_trait = neg_impl1
+                .concrete_trait(self.db)
+                .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
+            self.conform_traits(var.long(self.db).concrete_trait_id, impl_concrete_trait)?;
+            let neg_impl_id = self.rewrite(neg_impl1).no_err();
+            return self.assign_neg_impl(*var, neg_impl_id);
+        }
+        // we do not care about multiple negative impls, so we do not check they are of the same
+        // variant, we just conform the traits.
+        let trt0 = neg_impl0
+            .concrete_trait(self.db)
+            .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
+        let trt1 = neg_impl1
+            .concrete_trait(self.db)
+            .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
+        self.conform_traits(trt0, trt1)?;
+        Ok(self.rewrite(neg_impl1).no_err())
+    }
+
     /// Conforms generic traits. See `conform_ty()`.
     fn conform_traits(
         &mut self,
@@ -460,7 +509,7 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
                 GenericArgumentId::Type(ty) => self.internal_ty_contains_var(ty, var),
                 GenericArgumentId::Constant(_) => false,
                 GenericArgumentId::Impl(impl_id) => self.impl_contains_var(impl_id, var),
-                GenericArgumentId::NegImpl => false,
+                GenericArgumentId::NegImpl(_) => false,
             } {
                 return true;
             }
@@ -498,6 +547,35 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
                 &generated_impl.concrete_trait(self.db).generic_args(self.db),
                 var,
             ),
+        }
+    }
+
+    /// Checks if a negative impl contains a certain [InferenceVar] somewhere. Used to avoid inference
+    /// cycles.
+    fn negative_impl_contains_var(
+        &mut self,
+        neg_impl_id: NegativeImplId<'db>,
+        var: InferenceVar,
+    ) -> bool {
+        match neg_impl_id.long(self.db) {
+            NegativeImplLongId::Solved(concrete_trait_id) => {
+                self.generic_args_contain_var(&concrete_trait_id.long(self.db).generic_args, var)
+            }
+            NegativeImplLongId::GenericParameter(_) => false,
+            NegativeImplLongId::NegativeImplVar(new_var) => {
+                let new_var_long_id = new_var.long(self.db);
+                let new_var_local_id = new_var_long_id.id;
+                if InferenceVar::NegativeImpl(new_var_local_id) == var {
+                    return true;
+                }
+                if let Some(neg_impl_id) = self.negative_impl_assignment(new_var_local_id) {
+                    return self.negative_impl_contains_var(neg_impl_id, var);
+                }
+                self.generic_args_contain_var(
+                    &new_var_long_id.concrete_trait_id.generic_args(self.db),
+                    var,
+                )
+            }
         }
     }
 

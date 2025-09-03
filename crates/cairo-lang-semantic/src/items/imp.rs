@@ -78,7 +78,7 @@ use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::solver::{Ambiguity, SolutionSet, enrich_lookup_context_with_ty};
 use crate::expr::inference::{
-    ImplVarId, ImplVarTraitItemMappings, Inference, InferenceError, InferenceId,
+    ImplVarId, ImplVarTraitItemMappings, Inference, InferenceError, InferenceId, NegativeImplVarId,
 };
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
@@ -402,6 +402,60 @@ impl<'db> DebugWithDb<'db> for ImplImplId<'db> {
         write!(f, "{:?}::{}", self.impl_id.debug(db), self.trait_impl_id.name(db))
     }
 }
+
+/// Represents a "callee" impl that can be referred to in the code.
+/// Traits should be resolved to this.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub enum NegativeImplLongId<'db> {
+    Solved(ConcreteTraitId<'db>),
+    GenericParameter(GenericParamId<'db>),
+    NegativeImplVar(NegativeImplVarId<'db>),
+}
+
+impl<'db> NegativeImplLongId<'db> {
+    pub fn concrete_trait(&self, db: &'db dyn Database) -> Maybe<ConcreteTraitId<'db>> {
+        match self {
+            NegativeImplLongId::Solved(concrete_trait_id) => Ok(*concrete_trait_id),
+            NegativeImplLongId::GenericParameter(param) => {
+                let param_impl =
+                    extract_matches!(db.generic_param_semantic(*param)?, GenericParam::NegImpl);
+                param_impl.concrete_trait
+            }
+            NegativeImplLongId::NegativeImplVar(negative_impl_var_id) => {
+                Ok(negative_impl_var_id.long(db).concrete_trait_id)
+            }
+        }
+    }
+    pub fn is_var_free(&self, db: &dyn Database) -> bool {
+        match self {
+            NegativeImplLongId::Solved(concrete_trait_id) => concrete_trait_id.is_var_free(db),
+            NegativeImplLongId::GenericParameter(_) => true,
+            NegativeImplLongId::NegativeImplVar(_) => false,
+        }
+    }
+    pub fn is_fully_concrete(&self, db: &dyn Database) -> bool {
+        match self {
+            NegativeImplLongId::Solved(concrete_trait_id) => concrete_trait_id.is_var_free(db),
+            NegativeImplLongId::GenericParameter(_) | NegativeImplLongId::NegativeImplVar(_) => false,
+        }
+    }
+
+}
+
+define_short_id!(NegativeImplId, NegativeImplLongId<'db>, Database);
+impl<'db> NegativeImplId<'db> {
+    pub fn concrete_trait(&self, db: &'db dyn Database) -> Maybe<ConcreteTraitId<'db>> {
+        self.long(db).concrete_trait(db)
+    }
+    pub fn is_var_free(&self, db: &dyn Database) -> bool {
+        self.long(db).is_var_free(db)
+    }
+    pub fn is_fully_concrete(&self, db: &dyn Database) -> bool {
+        self.long(db).is_fully_concrete(db)
+    }
+
+}
+semantic_object_for_id!(NegativeImplId, NegativeImplLongId<'a>);
 
 impl<'db> UnstableSalsaId for ImplId<'db> {
     fn get_internal_id(&self) -> salsa::Id {
