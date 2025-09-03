@@ -1,5 +1,100 @@
 use crate::test::test_utils::{assert_eq, assert_ne};
 
+// ========= Test-utils =========
+
+fn compare_byte_array(
+    ba: @ByteArray, mut data: Span<felt252>, pending_word_len: usize, pending_word: felt252,
+) {
+    assert(ba.data.len() == data.len(), 'wrong data len');
+    let mut ba_data = ba.data.span();
+
+    let mut data_index = 0;
+    loop {
+        match ba_data.pop_front() {
+            Some(x) => {
+                let actual_word = (*x).into();
+                let expected_word = *data.pop_front().unwrap();
+                assert_eq!(actual_word, expected_word, "wrong data for index: {data_index}");
+            },
+            None(_) => { break; },
+        }
+        data_index += 1;
+    }
+
+    assert_eq!(*ba.pending_word_len, pending_word_len);
+    let ba_pending_word_felt: felt252 = (*ba.pending_word).into();
+    assert_eq!(ba_pending_word_felt, pending_word);
+}
+
+fn compare_spans<T, +crate::fmt::Debug<T>, +PartialEq<T>, +Copy<T>, +Drop<T>>(
+    mut a: Span<T>, mut b: Span<T>,
+) {
+    assert_eq!(a.len(), b.len());
+    let mut index = 0;
+    loop {
+        match a.pop_front() {
+            Some(current_a) => {
+                let current_b = b.pop_front().unwrap();
+                assert_eq!(*current_a, *current_b, "wrong data for index: {index}");
+            },
+            None(_) => { break; },
+        }
+        index += 1;
+    }
+}
+
+fn test_byte_array_1() -> ByteArray {
+    let mut ba1 = Default::default();
+    ba1.append_word(0x01, 1);
+    ba1
+}
+
+fn test_byte_array_2() -> ByteArray {
+    let mut ba1 = Default::default();
+    ba1.append_word(0x0102, 2);
+    ba1
+}
+
+fn test_byte_array_16() -> ByteArray {
+    let mut ba1 = Default::default();
+    ba1.append_word(0x0102030405060708091a0b0c0d0e0f10, 16);
+    ba1
+}
+
+fn test_byte_array_17() -> ByteArray {
+    let mut ba1 = Default::default();
+    ba1.append_word(0x0102030405060708091a0b0c0d0e0f1011, 17);
+    ba1
+}
+
+fn test_byte_array_30() -> ByteArray {
+    let mut ba1 = Default::default();
+    ba1.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e, 30);
+    ba1
+}
+
+fn test_byte_array_31() -> ByteArray {
+    let mut ba1 = Default::default();
+    ba1.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f, 31);
+    ba1
+}
+
+fn test_byte_array_32() -> ByteArray {
+    let mut ba1 = Default::default();
+    ba1.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f, 31);
+    ba1.append_word(0x20, 1);
+    ba1
+}
+
+fn test_byte_array_33() -> ByteArray {
+    let mut ba2 = Default::default();
+    ba2.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f, 31);
+    ba2.append_word(0x2021, 2);
+    ba2
+}
+
+// ========= Tests =========
+
 #[test]
 fn test_append_byte() {
     let mut ba = Default::default();
@@ -501,97 +596,4 @@ fn test_from_iterator() {
 fn test_from_collect() {
     let ba: ByteArray = array!['h', 'e', 'l', 'l', 'o'].into_iter().collect();
     assert_eq!(ba, "hello");
-}
-
-// ========= Test helper functions =========
-
-fn compare_byte_array(
-    ba: @ByteArray, mut data: Span<felt252>, pending_word_len: usize, pending_word: felt252,
-) {
-    assert(ba.data.len() == data.len(), 'wrong data len');
-    let mut ba_data = ba.data.span();
-
-    let mut data_index = 0;
-    loop {
-        match ba_data.pop_front() {
-            Some(x) => {
-                let actual_word = (*x).into();
-                let expected_word = *data.pop_front().unwrap();
-                assert_eq!(actual_word, expected_word, "wrong data for index: {data_index}");
-            },
-            None(_) => { break; },
-        }
-        data_index += 1;
-    }
-
-    assert_eq!(*ba.pending_word_len, pending_word_len);
-    let ba_pending_word_felt: felt252 = (*ba.pending_word).into();
-    assert_eq!(ba_pending_word_felt, pending_word);
-}
-
-fn compare_spans<T, +crate::fmt::Debug<T>, +PartialEq<T>, +Copy<T>, +Drop<T>>(
-    mut a: Span<T>, mut b: Span<T>,
-) {
-    assert_eq!(a.len(), b.len());
-    let mut index = 0;
-    loop {
-        match a.pop_front() {
-            Some(current_a) => {
-                let current_b = b.pop_front().unwrap();
-                assert_eq!(*current_a, *current_b, "wrong data for index: {index}");
-            },
-            None(_) => { break; },
-        }
-        index += 1;
-    }
-}
-
-fn test_byte_array_1() -> ByteArray {
-    let mut ba1 = Default::default();
-    ba1.append_word(0x01, 1);
-    ba1
-}
-
-fn test_byte_array_2() -> ByteArray {
-    let mut ba1 = Default::default();
-    ba1.append_word(0x0102, 2);
-    ba1
-}
-
-fn test_byte_array_16() -> ByteArray {
-    let mut ba1 = Default::default();
-    ba1.append_word(0x0102030405060708091a0b0c0d0e0f10, 16);
-    ba1
-}
-
-fn test_byte_array_17() -> ByteArray {
-    let mut ba1 = Default::default();
-    ba1.append_word(0x0102030405060708091a0b0c0d0e0f1011, 17);
-    ba1
-}
-
-fn test_byte_array_30() -> ByteArray {
-    let mut ba1 = Default::default();
-    ba1.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e, 30);
-    ba1
-}
-
-fn test_byte_array_31() -> ByteArray {
-    let mut ba1 = Default::default();
-    ba1.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f, 31);
-    ba1
-}
-
-fn test_byte_array_32() -> ByteArray {
-    let mut ba1 = Default::default();
-    ba1.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f, 31);
-    ba1.append_word(0x20, 1);
-    ba1
-}
-
-fn test_byte_array_33() -> ByteArray {
-    let mut ba2 = Default::default();
-    ba2.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f, 31);
-    ba2.append_word(0x2021, 2);
-    ba2
 }
