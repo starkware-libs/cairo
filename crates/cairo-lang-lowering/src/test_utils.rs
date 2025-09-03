@@ -10,11 +10,9 @@ use cairo_lang_utils::Upcast;
 use salsa::Database;
 
 use crate::Lowered;
-use crate::db::{LoweringGroup, UseApproxCodeSizeEstimator, init_lowering_group};
+use crate::db::{LoweringGroup, init_lowering_group};
 use crate::fmt::LoweredFormatter;
 use crate::utils::InliningStrategy;
-
-impl UseApproxCodeSizeEstimator for LoweringDatabaseForTesting {}
 
 #[salsa::db]
 #[derive(Clone)]
@@ -36,7 +34,7 @@ impl LoweringDatabaseForTesting {
 
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
-        init_lowering_group(&mut res, InliningStrategy::Default);
+        init_lowering_group(&mut res, InliningStrategy::Default, None);
         res
     }
 

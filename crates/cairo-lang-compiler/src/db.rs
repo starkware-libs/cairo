@@ -8,7 +8,7 @@ use cairo_lang_filesystem::db::{CORELIB_VERSION, FilesGroup, init_dev_corelib, i
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{CrateId, FlagLongId};
-use cairo_lang_lowering::db::{ExternalCodeSizeEstimator, LoweringGroup, init_lowering_group};
+use cairo_lang_lowering::db::{LoweringGroup, init_lowering_group};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
@@ -18,50 +18,52 @@ use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_sierra_generator::db::{SierraGenGroup, init_sierra_gen_group};
 use cairo_lang_sierra_generator::program_generator::get_dummy_program_for_size_estimation;
 use cairo_lang_utils::Upcast;
+use salsa::Database;
 
 use crate::InliningStrategy;
 use crate::project::update_crate_roots_from_project_config;
 
-impl ExternalCodeSizeEstimator for RootDatabase {
-    /// Estimates the size of a function by compiling it to CASM.
-    /// Note that the size is not accurate since we don't use the real costs for the dummy
-    /// functions.
-    fn estimate_size(&self, function_id: ConcreteFunctionWithBodyId<'_>) -> Maybe<isize> {
-        let program = get_dummy_program_for_size_estimation(self, function_id)?;
+/// Estimates the size of a function by compiling it to CASM.
+/// Note that the size is not accurate since we don't use the real costs for the dummy functions.
+fn estimate_code_size(
+    db: &dyn Database,
+    function_id: ConcreteFunctionWithBodyId<'_>,
+) -> Maybe<isize> {
+    let db = db.as_view();
+    let program = get_dummy_program_for_size_estimation(db, function_id)?;
 
-        // All the functions except the first one are dummy functions.
-        let n_dummy_functions = program.funcs.len() - 1;
+    // All the functions except the first one are dummy functions.
+    let n_dummy_functions = program.funcs.len() - 1;
 
-        // TODO(ilya): Consider adding set costs to dummy functions.
-        let builder = match RunnableBuilder::new(program, Default::default()) {
-            Ok(builder) => builder,
-            Err(err) => {
-                if err.is_ap_overflow_error() {
-                    // If the compilation failed due to an AP overflow, we don't want to panic as it
-                    // can happen for valid code. In this case, the function is
-                    // probably too large for inline so we can just return the max size.
-                    return Ok(isize::MAX);
-                }
-                if std::env::var("CAIRO_DEBUG_SIERRA_GEN").is_ok() {
-                    // If we are debugging sierra generation, we want to finish the compilation
-                    // rather than panic.
-                    return Ok(isize::MAX);
-                }
-
-                panic!(
-                    "Internal compiler error: Failed to compile program to casm. You can set the \
-                     CAIRO_DEBUG_SIERRA_GEN environment if you want to finish the compilation and \
-                     debug the sierra program."
-                );
+    // TODO(ilya): Consider adding set costs to dummy functions.
+    let builder = match RunnableBuilder::new(program, Default::default()) {
+        Ok(builder) => builder,
+        Err(err) => {
+            if err.is_ap_overflow_error() {
+                // If the compilation failed due to an AP overflow, we don't want to panic as it can
+                // happen for valid code. In this case, the function is probably too large for
+                // inline so we can just return the max size.
+                return Ok(isize::MAX);
             }
-        };
-        let casm = builder.casm_program();
-        let total_size = casm.instructions.iter().map(|inst| inst.body.op_size()).sum::<usize>();
+            if std::env::var("CAIRO_DEBUG_SIERRA_GEN").is_ok() {
+                // If we are debugging sierra generation, we want to finish the compilation rather
+                // than panic.
+                return Ok(isize::MAX);
+            }
 
-        // The size of a dummy function is currently 3 felts. call (2) + ret (1).
-        const DUMMY_FUNCTION_SIZE: usize = 3;
-        Ok((total_size - (n_dummy_functions * DUMMY_FUNCTION_SIZE)).try_into().unwrap_or(0))
-    }
+            panic!(
+                "Internal compiler error: Failed to compile program to casm. You can set the \
+                 CAIRO_DEBUG_SIERRA_GEN environment if you want to finish the compilation and \
+                 debug the sierra program."
+            );
+        }
+    };
+    let casm = builder.casm_program();
+    let total_size = casm.instructions.iter().map(|inst| inst.body.op_size()).sum::<usize>();
+
+    // The size of a dummy function is currently 3 felts. call (2) + ret (1).
+    const DUMMY_FUNCTION_SIZE: usize = 3;
+    Ok((total_size - (n_dummy_functions * DUMMY_FUNCTION_SIZE)).try_into().unwrap_or(0))
 }
 
 #[salsa::db]
@@ -77,7 +79,7 @@ impl RootDatabase {
         let mut res = Self { storage: Default::default() };
         init_external_files(&mut res);
         init_files_group(&mut res);
-        init_lowering_group(&mut res, inlining_strategy);
+        init_lowering_group(&mut res, inlining_strategy, Some(estimate_code_size));
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
         init_sierra_gen_group(&mut res);

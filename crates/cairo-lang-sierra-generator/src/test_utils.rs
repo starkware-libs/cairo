@@ -6,7 +6,7 @@ use cairo_lang_filesystem::db::{FilesGroup, init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagLongId;
-use cairo_lang_lowering::db::{LoweringGroup, UseApproxCodeSizeEstimator, lowering_group_input};
+use cairo_lang_lowering::db::{LoweringGroup, lowering_group_input};
 use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup, init_semantic_group};
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
@@ -24,8 +24,6 @@ use crate::pre_sierra::{self, LabelLongId};
 use crate::program_generator::SierraProgramWithDebug;
 use crate::replace_ids::replace_sierra_ids_in_program;
 use crate::utils::{jump_statement, return_statement, simple_statement};
-
-impl UseApproxCodeSizeEstimator for SierraGenDatabaseForTesting {}
 
 #[salsa::db]
 #[derive(Clone)]
