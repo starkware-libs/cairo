@@ -44,7 +44,7 @@ fn check_find_local_variables(
     )
     .unwrap();
 
-    db.module_lowering_diagnostics((), test_function.module_id)
+    db.module_lowering_diagnostics(test_function.module_id)
         .unwrap()
         .expect_with_db(db, "Unexpected diagnostics.");
 

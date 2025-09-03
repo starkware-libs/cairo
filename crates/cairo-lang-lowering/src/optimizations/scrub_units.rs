@@ -3,15 +3,15 @@
 mod test;
 
 use cairo_lang_semantic::corelib;
+use salsa::Database;
 
-use crate::db::LoweringGroup;
 use crate::{
     BlockEnd, Lowered, Statement, StatementCall, StatementStructConstruct,
     StatementStructDestructure,
 };
 
 /// Removes unit values from returns and call statements.
-pub fn scrub_units(db: &dyn LoweringGroup, lowered: &mut Lowered<'_>) {
+pub fn scrub_units(db: &dyn Database, lowered: &mut Lowered<'_>) {
     if lowered.blocks.is_empty() {
         return;
     }

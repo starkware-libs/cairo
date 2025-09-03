@@ -3,6 +3,7 @@
 mod test;
 
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 

@@ -7,9 +7,9 @@ use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
 use cairo_lang_semantic::{ConcreteVariant, corelib};
 use itertools::{Itertools, zip_eq};
+use salsa::Database;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId, SemanticFunctionIdEx};
 use crate::implicits::FunctionImplicitsTrait;
 use crate::panic::PanicSignatureInfo;
@@ -30,7 +30,7 @@ use crate::{
 /// Note that for implementation simplicity this stage must be applied before `LowerImplicits`
 /// stage.
 pub fn gas_redeposit<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
     lowered: &mut Lowered<'db>,
 ) {

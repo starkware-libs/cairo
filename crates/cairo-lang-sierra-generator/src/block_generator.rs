@@ -52,7 +52,7 @@ pub fn generate_block_body_code<'db>(
         let statement_lowering_location = (block_id, i);
         let statement_cairo_location = statement
             .location()
-            .map(|location_id| location_id.all_locations(context.get_db().upcast()))
+            .map(|location_id| location_id.all_locations(context.get_db()))
             .unwrap_or_default();
         context.maybe_set_cairo_location(statement_cairo_location);
         generate_statement_code(context, statement, &statement_lowering_location)?;
@@ -172,7 +172,7 @@ fn generate_block_code<'db>(
         // Process the block end if it's a match.
         lowering::BlockEnd::Match { info } => {
             let statement_location = (block_id, block.statements.len());
-            let statement_cairo_location = info.location().all_locations(context.get_db().upcast());
+            let statement_cairo_location = info.location().all_locations(context.get_db());
             if context.should_enable_ap_tracking(&block_id) {
                 context.set_ap_tracking(true);
                 context.push_statement(simple_basic_statement(
@@ -231,7 +231,7 @@ fn generate_push_values_statement_for_remapping<'db, 'mt>(
     let location = remapping
         .iter()
         .last()
-        .map(|(_, inner_output)| inner_output.location.all_locations(context.get_db().upcast()))
+        .map(|(_, inner_output)| inner_output.location.all_locations(context.get_db()))
         .unwrap_or_default();
     Ok(StatementWithLocation {
         statement: pre_sierra::Statement::PushValues(push_values),
@@ -268,7 +268,7 @@ pub fn generate_return_code<'db>(
     }
     let location = returned_variables
         .last()
-        .map(|var| var.location.all_locations(context.get_db().upcast()))
+        .map(|var| var.location.all_locations(context.get_db()))
         .unwrap_or_default();
     context.maybe_set_cairo_location(location);
     context.push_statement(pre_sierra::Statement::PushValues(push_values));

@@ -1,5 +1,6 @@
 use cairo_lang_utils::graph_algos::graph_node::GraphNode;
 use cairo_lang_utils::graph_algos::strongly_connected_components::ComputeScc;
+use salsa::Database;
 
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
@@ -9,7 +10,7 @@ use crate::{DependencyType, LoweringStage};
 #[derive(Clone)]
 pub struct ConcreteFunctionWithBodyNode<'db> {
     pub function_id: ConcreteFunctionWithBodyId<'db>,
-    pub db: &'db dyn LoweringGroup,
+    pub db: &'db dyn Database,
     pub dependency_type: DependencyType,
     pub stage: LoweringStage,
 }

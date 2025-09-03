@@ -8,6 +8,7 @@ use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, MatchArmSelector, TypeLongId};
 use cairo_lang_utils::{Intern, extract_matches};
 use num_bigint::{BigInt, Sign};
+use salsa::Database;
 
 use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId, SemanticFunctionIdEx};
@@ -19,7 +20,7 @@ use crate::{
 /// Main function for the add_withdraw_gas lowering phase. Adds a `withdraw_gas` statement to the
 /// given function, if needed.
 pub fn add_withdraw_gas<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function: ConcreteFunctionWithBodyId<'db>,
     lowered: &mut Lowered<'db>,
 ) -> Maybe<()> {
@@ -34,7 +35,7 @@ pub fn add_withdraw_gas<'db>(
 /// Creates a new root block that matches on `withdraw_gas`, moves the old root block to the success
 /// arm of it, and creates a new panic block for the failure arm.
 fn add_withdraw_gas_to_function<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function: ConcreteFunctionWithBodyId<'db>,
     lowered: &mut Lowered<'db>,
 ) -> Maybe<()> {
@@ -82,7 +83,7 @@ fn add_withdraw_gas_to_function<'db>(
 
 /// Creates the panic block for the case `withdraw_gas` failure.
 fn create_panic_block<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     lowered: &mut Lowered<'db>,
     location: LocationId<'db>,
 ) -> Maybe<Block<'db>> {

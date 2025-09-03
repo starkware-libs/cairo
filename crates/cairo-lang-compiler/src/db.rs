@@ -8,7 +8,7 @@ use cairo_lang_filesystem::db::{CORELIB_VERSION, FilesGroup, init_dev_corelib, i
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{CrateId, FlagLongId};
-use cairo_lang_lowering::db::{LoweringGroup, init_lowering_group};
+use cairo_lang_lowering::db::init_lowering_group;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
@@ -245,11 +245,6 @@ pub fn validate_corelib(db: &(dyn salsa::Database + 'static)) -> Result<()> {
 
 impl<'db> Upcast<'db, dyn salsa::Database> for RootDatabase {
     fn upcast(&self) -> &dyn salsa::Database {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn LoweringGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn LoweringGroup {
         self
     }
 }

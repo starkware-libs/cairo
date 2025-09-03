@@ -4,6 +4,7 @@ use cairo_lang_defs::ids::ExternFunctionId;
 use cairo_lang_filesystem::ids::db_str;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use salsa::Database;
 
 use crate::db::LoweringGroup;
 use crate::utils::InliningStrategy;
@@ -53,7 +54,7 @@ impl Default for OptimizationConfig {
 
 #[salsa::tracked]
 pub fn priv_movable_function_ids<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
 ) -> Arc<UnorderedHashSet<ExternFunctionId<'db>>> {
     let libfunc_by_name = |name: &String| {
         let mut path_iter = name.split("::");

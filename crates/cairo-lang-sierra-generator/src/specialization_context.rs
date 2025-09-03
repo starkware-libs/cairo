@@ -47,7 +47,7 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
         let function = self
             .0
             .lookup_sierra_function(function_id.clone())
-            .body(self.0.upcast())
+            .body(self.0)
             .unwrap_or_default()
             .expect(
                 "Internal compiler error: get_function_ap_change() should only be used for user \

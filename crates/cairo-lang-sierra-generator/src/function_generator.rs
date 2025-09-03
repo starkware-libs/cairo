@@ -5,6 +5,7 @@ mod test;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_lowering::{self as lowering, Lowered, LoweringStage};
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;

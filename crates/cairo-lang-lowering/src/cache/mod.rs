@@ -58,7 +58,6 @@ use serde::{Deserialize, Serialize};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use crate::blocks::BlocksBuilder;
-use crate::db::LoweringGroup;
 use crate::ids::{
     FunctionId, FunctionLongId, GeneratedFunction, GeneratedFunctionKey, LocationId, Signature,
 };
@@ -78,7 +77,7 @@ type LookupCache =
 
 /// Load the cached lowering of a crate if it has a cache file configuration.
 pub fn load_cached_crate_functions<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
 ) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId<'db>, MultiLowering<'db>>>> {
     let blob_id = db.crate_config(crate_id)?.cache_file?;
@@ -122,7 +121,7 @@ pub fn load_cached_crate_functions<'db>(
 
 /// Cache the lowering of each function in the crate into a blob.
 pub fn generate_crate_cache<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     crate_id: cairo_lang_filesystem::ids::CrateId<'db>,
 ) -> Maybe<Vec<u8>> {
     let modules = db.crate_modules(crate_id);
@@ -192,7 +191,7 @@ pub fn generate_crate_cache<'db>(
 struct CacheLoadingContext<'db> {
     /// The variable ids of the flat lowered that is currently being loaded.
     lowered_variables_id: Vec<VariableId>,
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
 
     /// data for loading the entire cache into the database.
     data: CacheLoadingData<'db>,
@@ -202,7 +201,7 @@ struct CacheLoadingContext<'db> {
 
 impl<'db> CacheLoadingContext<'db> {
     fn new(
-        db: &'db dyn LoweringGroup,
+        db: &'db dyn Database,
         lookups: CacheLookups,
         semantic_lookups: SemanticCacheLookups,
         defs_loading_data: Arc<DefCacheLoadingData<'db>>,
@@ -258,7 +257,7 @@ impl DerefMut for CacheLoadingData<'_> {
 
 /// Context for saving cache from the database.
 struct CacheSavingContext<'db> {
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     data: CacheSavingData<'db>,
     semantic_ctx: SemanticCacheSavingContext<'db>,
 }
@@ -275,7 +274,7 @@ impl DerefMut for CacheSavingContext<'_> {
     }
 }
 impl<'db> CacheSavingContext<'db> {
-    fn new(db: &'db dyn LoweringGroup, self_crate_id: CrateId<'db>) -> Self {
+    fn new(db: &'db dyn Database, self_crate_id: CrateId<'db>) -> Self {
         Self {
             db,
             data: CacheSavingData::default(),

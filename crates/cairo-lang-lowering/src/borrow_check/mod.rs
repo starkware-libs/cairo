@@ -9,12 +9,12 @@ use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFuncti
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, zip_eq};
+use salsa::Database;
 
 use self::analysis::{Analyzer, StatementLocation};
 pub use self::demand::Demand;
 use self::demand::{AuxCombine, DemandReporter};
 use crate::borrow_check::analysis::BackAnalysis;
-use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics, LoweringDiagnosticsBuilder};
 use crate::ids::{FunctionId, LocationId, SemanticFunctionIdEx};
@@ -25,7 +25,7 @@ pub mod demand;
 
 pub type BorrowCheckerDemand<'db> = Demand<VariableId, LocationId<'db>, PanicState>;
 pub struct BorrowChecker<'db, 'mt, 'r> {
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     diagnostics: &'mt mut LoweringDiagnostics<'db>,
     lowered: &'r Lowered<'db>,
     potential_destruct_calls: PotentialDestructCalls<'db>,
@@ -64,7 +64,7 @@ pub enum DropPosition<'db> {
     Diverge(LocationId<'db>),
 }
 impl<'db> DropPosition<'db> {
-    fn enrich_as_notes(self, db: &'db dyn LoweringGroup, notes: &mut Vec<DiagnosticNote<'db>>) {
+    fn enrich_as_notes(self, db: &'db dyn Database, notes: &mut Vec<DiagnosticNote<'db>>) {
         let (text, location) = match self {
             Self::Panic(location) => {
                 ("the variable needs to be dropped due to the potential panic here", location)
@@ -296,7 +296,7 @@ pub struct BorrowCheckResult<'db> {
 /// Report borrow checking diagnostics.
 /// Returns the potential destruct function calls per block.
 pub fn borrow_check<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     is_panic_destruct_fn: bool,
     lowered: &Lowered<'db>,
 ) -> BorrowCheckResult<'db> {
@@ -333,7 +333,7 @@ pub fn borrow_check<'db>(
 /// Borrow check the params of the function are panic destruct, as this function may have a gas
 /// withdrawal.
 pub fn borrow_check_possible_withdraw_gas<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     location_id: LocationId<'db>,
     lowered: &Lowered<'db>,
     diagnostics: &mut LoweringDiagnostics<'db>,

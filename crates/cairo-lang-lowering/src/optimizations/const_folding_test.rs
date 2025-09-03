@@ -44,7 +44,7 @@ fn test_match_optimizer(
     OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();
     OptimizationPhase::CancelOps.apply(db, function_id, &mut before).unwrap();
     OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();
-    let lowering_diagnostics = db.module_lowering_diagnostics((), test_function.module_id).unwrap();
+    let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
     let mut after = before.clone();
     OptimizationPhase::ConstFolding.apply(db, function_id, &mut after).unwrap();

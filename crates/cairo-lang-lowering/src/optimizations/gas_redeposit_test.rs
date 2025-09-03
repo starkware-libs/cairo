@@ -46,8 +46,7 @@ impl TestFileRunner for GetRedepositTestRunner {
         let before =
             db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().deref().clone();
 
-        let lowering_diagnostics =
-            db.module_lowering_diagnostics((), test_function.module_id).unwrap();
+        let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
         let mut after = before.clone();
         gas_redeposit(db, function_id, &mut after);

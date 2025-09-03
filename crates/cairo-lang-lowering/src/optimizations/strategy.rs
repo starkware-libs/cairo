@@ -1,5 +1,6 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::{Intern, define_short_id};
+use salsa::Database;
 
 use super::cse::cse;
 use super::dedup_blocks::dedup_blocks;
@@ -8,7 +9,6 @@ use super::gas_redeposit::gas_redeposit;
 use super::trim_unreachable::trim_unreachable;
 use super::validate::validate;
 use crate::Lowered;
-use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
@@ -63,7 +63,7 @@ impl<'db> OptimizationPhase<'db> {
     /// Assumes `lowered` is a lowering of `function`.
     pub fn apply(
         self,
-        db: &'db dyn LoweringGroup,
+        db: &'db dyn Database,
         function: ConcreteFunctionWithBodyId<'db>,
         lowered: &mut Lowered<'db>,
     ) -> Maybe<()> {
@@ -108,7 +108,7 @@ impl<'db> OptimizationPhase<'db> {
     }
 }
 
-define_short_id!(OptimizationStrategyId, OptimizationStrategy<'db>, LoweringGroup);
+define_short_id!(OptimizationStrategyId, OptimizationStrategy<'db>, Database);
 
 /// A strategy is a sequence of optimization phases.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -120,7 +120,7 @@ impl<'db> OptimizationStrategyId<'db> {
     /// Assumes `lowered` is a lowering of `function`.
     pub fn apply_strategy(
         self,
-        db: &'db dyn LoweringGroup,
+        db: &'db dyn Database,
         function: ConcreteFunctionWithBodyId<'db>,
         lowered: &mut Lowered<'db>,
     ) -> Maybe<()> {
@@ -134,9 +134,7 @@ impl<'db> OptimizationStrategyId<'db> {
 
 /// Query implementation of [crate::db::LoweringGroup::baseline_optimization_strategy].
 #[salsa::tracked]
-pub fn baseline_optimization_strategy<'db>(
-    db: &'db dyn LoweringGroup,
-) -> OptimizationStrategyId<'db> {
+pub fn baseline_optimization_strategy<'db>(db: &'db dyn Database) -> OptimizationStrategyId<'db> {
     OptimizationStrategy(vec![
         // Must be right before inlining.
         OptimizationPhase::ReorganizeBlocks,
@@ -170,7 +168,7 @@ pub fn baseline_optimization_strategy<'db>(
 
 /// Query implementation of [crate::db::LoweringGroup::final_optimization_strategy].
 #[salsa::tracked]
-pub fn final_optimization_strategy<'db>(db: &'db dyn LoweringGroup) -> OptimizationStrategyId<'db> {
+pub fn final_optimization_strategy<'db>(db: &'db dyn Database) -> OptimizationStrategyId<'db> {
     OptimizationStrategy(vec![
         OptimizationPhase::GasRedeposit,
         OptimizationPhase::EarlyUnsafePanic,

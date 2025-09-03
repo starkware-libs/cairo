@@ -36,7 +36,7 @@ fn test_function_inlining(
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
     let before = db.lowered_body(function_id, LoweringStage::PreOptimizations).ok();
-    let lowering_diagnostics = db.module_lowering_diagnostics((), test_function.module_id).unwrap();
+    let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     let after = if let Some(before) = &before {
         let mut after = before.deref().clone();
         OptimizationPhase::ApplyInlining { enable_const_folding: false }

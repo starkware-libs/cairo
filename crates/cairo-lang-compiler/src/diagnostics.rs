@@ -12,6 +12,7 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use salsa::Database;
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -140,7 +141,7 @@ impl<'a> DiagnosticsReporter<'a> {
     }
 
     /// Returns the crate ids for which the diagnostics will be checked.
-    pub(crate) fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateInput> {
+    pub(crate) fn crates_of_interest(&self, db: &dyn Database) -> Vec<CrateInput> {
         if let Some(crates) = self.crates.as_ref() {
             crates.clone()
         } else {
@@ -150,7 +151,7 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
     /// Returns `true` if diagnostics were found.
-    pub fn check(&mut self, db: &dyn LoweringGroup) -> bool {
+    pub fn check(&mut self, db: &dyn Database) -> bool {
         let mut found_diagnostics = false;
 
         let crates = self.crates_of_interest(db);
@@ -218,7 +219,7 @@ impl<'a> DiagnosticsReporter<'a> {
                     continue;
                 }
 
-                if let Ok(group) = db.module_lowering_diagnostics((), *module_id) {
+                if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
                     found_diagnostics |= self.check_diag_group(
                         db.as_dyn_database(),
                         group,
@@ -255,7 +256,7 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
     /// Returns `Err` if diagnostics were found.
-    pub fn ensure(&mut self, db: &dyn LoweringGroup) -> Result<(), DiagnosticsError> {
+    pub fn ensure(&mut self, db: &dyn Database) -> Result<(), DiagnosticsError> {
         if self.check(db) { Err(DiagnosticsError) } else { Ok(()) }
     }
 

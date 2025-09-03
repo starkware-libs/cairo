@@ -8,7 +8,6 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
-use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::debug_info::Annotations;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
@@ -20,6 +19,7 @@ use cairo_lang_starknet_classes::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints,
 };
 use itertools::{Itertools, chain};
+use salsa::Database;
 
 use crate::abi::AbiBuilder;
 use crate::aliased::Aliased;
@@ -186,7 +186,7 @@ pub struct SemanticEntryPoints<'db> {
 
 /// Extracts functions from the contract.
 pub fn extract_semantic_entrypoints<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     contract: &ContractDeclaration<'db>,
 ) -> core::result::Result<SemanticEntryPoints<'db>, anyhow::Error> {
     let external: Vec<_> = get_contract_abi_functions(db, contract, EXTERNAL_MODULE)?

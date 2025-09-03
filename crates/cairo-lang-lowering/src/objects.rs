@@ -24,10 +24,10 @@ use id_arena::{Arena, DefaultArenaBehavior, Id};
 
 pub mod blocks;
 pub use blocks::BlockId;
+use salsa::Database;
 use semantic::MatchArmSelector;
 
 use self::blocks::Blocks;
-use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostic;
 use crate::fmt::LoweredFormatter;
 use crate::ids::{FunctionId, LocationId, Signature};
@@ -68,7 +68,7 @@ impl<'db> Location<'db> {
     /// Creates a new Location with a note from the given text and location.
     pub fn add_note_with_location(
         self,
-        db: &'db dyn LoweringGroup,
+        db: &'db dyn Database,
         text: &str,
         location: LocationId<'db>,
     ) -> Self {
@@ -80,8 +80,8 @@ impl<'db> Location<'db> {
 }
 
 impl<'db> DebugWithDb<'db> for Location<'db> {
-    type Db = dyn LoweringGroup;
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn LoweringGroup) -> std::fmt::Result {
+    type Db = dyn Database;
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         self.stable_location.diagnostic_location(db).fmt(f, db)?;
 
         for note in &self.notes {
@@ -94,17 +94,13 @@ impl<'db> DebugWithDb<'db> for Location<'db> {
 
 impl<'db> LocationId<'db> {
     /// Returns the location with the added inlining location of it.
-    pub fn inlined(
-        self,
-        db: &'db dyn LoweringGroup,
-        inlining_location: StableLocation<'db>,
-    ) -> Self {
+    pub fn inlined(self, db: &'db dyn Database, inlining_location: StableLocation<'db>) -> Self {
         let mut location = self.long(db).clone();
         location.inline_locations.push(inlining_location);
         location.intern(db)
     }
     /// Returns all relevant stable pointers of the location.
-    pub fn all_locations(self, db: &'db dyn LoweringGroup) -> Vec<StableLocation<'db>> {
+    pub fn all_locations(self, db: &'db dyn Database) -> Vec<StableLocation<'db>> {
         let location = self.long(db);
         let mut all_locations = vec![location.stable_location];
         all_locations.extend(location.inline_locations.iter().cloned());
@@ -249,7 +245,7 @@ impl<'db> DebugWithDb<'db> for Variable<'db> {
 
 impl<'db> Variable<'db> {
     pub fn new(
-        db: &'db dyn LoweringGroup,
+        db: &'db dyn Database,
         ctx: ImplLookupContextId<'db>,
         ty: semantic::TypeId<'db>,
         location: LocationId<'db>,
@@ -259,7 +255,7 @@ impl<'db> Variable<'db> {
 
     /// Returns a new variable with the type, with info calculated with the default context.
     pub fn with_default_context(
-        db: &'db dyn LoweringGroup,
+        db: &'db dyn Database,
         ty: semantic::TypeId<'db>,
         location: LocationId<'db>,
     ) -> Self {
