@@ -50,7 +50,7 @@ fn check_variable_lifetime(
 
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
-    let lowered_function = &*db.lowered_body(function_id, LoweringStage::Final).unwrap();
+    let lowered_function = db.lowered_body(function_id, LoweringStage::Final).unwrap();
 
     let lowered_formatter = lowering::fmt::LoweredFormatter::new(db, &lowered_function.variables);
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));

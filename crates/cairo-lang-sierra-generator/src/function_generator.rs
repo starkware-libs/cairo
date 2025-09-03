@@ -40,7 +40,7 @@ pub fn priv_function_with_body_sierra_data<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<SierraFunctionWithBodyData<'db>> {
-    let lowered_function = &*db.lowered_body(function_id, LoweringStage::Final)?;
+    let lowered_function = db.lowered_body(function_id, LoweringStage::Final)?;
     lowered_function.blocks.has_root()?;
 
     // Find the local variables.
@@ -161,7 +161,7 @@ pub fn priv_get_dummy_function<'db>(
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<Arc<pre_sierra::Function<'db>>> {
     // TODO(ilya): Remove the following query.
-    let lowered_function = &*db.lowered_body(function_id, LoweringStage::PreOptimizations)?;
+    let lowered_function = db.lowered_body(function_id, LoweringStage::PreOptimizations)?;
     let ap_tracking_configuration = Default::default();
     let lifetime = Default::default();
 

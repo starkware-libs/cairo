@@ -30,7 +30,7 @@ pub fn reorder_statements(db: &dyn Database, lowered: &mut Lowered<'_>) {
     let ctx = ReorderStatementsContext {
         db,
         lowered: &*lowered,
-        moveable_functions: &db.priv_movable_function_ids(),
+        moveable_functions: db.priv_movable_function_ids(),
         statement_to_move: vec![],
     };
     let mut analysis = BackAnalysis::new(lowered, ctx);

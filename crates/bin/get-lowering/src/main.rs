@@ -135,7 +135,7 @@ impl<'a> fmt::Display for PhasesDisplay<'a> {
         let final_state = db.lowered_body(self.function_id, LoweringStage::Final).unwrap();
         assert_eq!(
             LoweredDisplay::new(db, &curr_state).to_string(),
-            LoweredDisplay::new(db, &pre_opts).to_string()
+            LoweredDisplay::new(db, pre_opts).to_string()
         );
         for (strategy, expected) in [
             (db.baseline_optimization_strategy(), post_base_opts),
@@ -148,7 +148,7 @@ impl<'a> fmt::Display for PhasesDisplay<'a> {
             }
             assert_eq!(
                 LoweredDisplay::new(db, &curr_state).to_string(),
-                LoweredDisplay::new(db, &expected).to_string()
+                LoweredDisplay::new(db, expected).to_string()
             );
         }
 
@@ -306,7 +306,7 @@ fn main() -> anyhow::Result<()> {
         if args.all {
             PhasesDisplay { db, function_id }.to_string()
         } else {
-            LoweredDisplay::new(db, &lowered).to_string()
+            LoweredDisplay::new(db, lowered).to_string()
         }
     } else {
         get_all_funcs(db, &main_crate_ids)?.keys().join("\n")
