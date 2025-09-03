@@ -42,7 +42,7 @@
 //! assert!(first_byte == 0x41);
 //! ```
 
-use crate::array::{ArrayTrait, SpanTrait};
+use crate::array::{ArrayTrait, Span, SpanTrait};
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
@@ -52,6 +52,8 @@ use crate::clone::Clone;
 use crate::cmp::min;
 #[allow(unused_imports)]
 use crate::integer::{U32TryIntoNonZero, u128_safe_divmod};
+#[feature("bounded-int-utils")]
+use crate::internal::bounded_int::{BoundedInt, downcast, upcast};
 #[allow(unused_imports)]
 use crate::serde::Serde;
 use crate::traits::{Into, TryInto};
@@ -584,5 +586,56 @@ impl ByteArrayFromIterator of crate::iter::FromIterator<ByteArray, u8> {
             ba.append_byte(byte);
         }
         ba
+    }
+}
+
+/// A view into a contiguous collection of a string type.
+/// Currently implemented only for `ByteArray`, but will soon be implemented for other string types.
+/// `Span` implements the `Copy` and the `Drop` traits.
+#[derive(Copy, Drop)]
+pub struct ByteSpan {
+    /// A span representing the array of all `bytes31` words in the byte-span, excluding the last
+    /// bytes_31 word that is stored in [Self::last_word].
+    /// Invariant: every byte stored in `data` is part of the span except for the bytes appearing
+    /// before `first_char_start_offset` in the first word.
+    data: Span<bytes31>,
+    /// The offset of the first character in the first entry of [Self::data], for use in span
+    /// slices.
+    first_char_start_offset: BoundedInt<0, 30>,
+    /// Contains the final bytes of the span when the end is either not in memory or isn't aligned
+    /// to a word boundary.
+    /// It is represented as a `felt252` to improve performance of building the byte array, but
+    /// represents a `bytes31`.
+    /// The first byte is the most significant byte among the `pending_word_len` bytes in the word.
+    remainder_word: felt252,
+    /// The number of bytes in [Self::remainder_word].
+    remainder_len: BoundedInt<0, 31>,
+}
+
+#[generate_trait]
+pub impl ByteArraySpanImpl of ByteSpanTrait {
+    fn len(self: @ByteSpan) -> usize {
+        let data_bytes = self.data.len() * BYTES_IN_BYTES31;
+        data_bytes - upcast(self.first_char_start_offset) + upcast(self.remainder_len)
+    }
+
+    fn is_empty(self: @ByteSpan) -> bool {
+        self.len() == 0
+    }
+}
+
+pub trait ToByteSpanTrait<C> {
+    #[must_use]
+    fn span(self: @C) -> ByteSpan;
+}
+
+impl ByteArrayToByteSpan of ToByteSpanTrait<ByteArray> {
+    fn span(self: @ByteArray) -> ByteSpan {
+        ByteSpan {
+            data: self.data.span(),
+            first_char_start_offset: downcast(0).unwrap(),
+            remainder_word: *self.pending_word,
+            remainder_len: downcast(self.pending_word_len).expect('In [0,30] by assumption'),
+        }
     }
 }
