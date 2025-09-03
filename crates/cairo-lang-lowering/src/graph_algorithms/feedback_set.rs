@@ -12,7 +12,7 @@ use crate::ids::ConcreteFunctionWithBodyId;
 use crate::{DependencyType, LoweringStage};
 
 /// Query implementation of [crate::db::LoweringGroup::function_with_body_feedback_set].
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 pub fn function_with_body_feedback_set<'db>(
     db: &'db dyn Database,
     function: ConcreteFunctionWithBodyId<'db>,

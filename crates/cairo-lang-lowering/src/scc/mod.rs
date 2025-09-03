@@ -7,7 +7,7 @@ use crate::db::LoweringGroup;
 use crate::ids::FunctionWithBodyId;
 
 /// Query implementation of [crate::db::LoweringGroup::function_with_body_scc].
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 pub fn function_with_body_scc<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
@@ -32,10 +32,10 @@ impl<'db> GraphNode for FunctionWithBodyNode<'db> {
                 self.function_with_body_id,
                 self.dependency_type,
             )
-            .unwrap_or_default()
             .into_iter()
+            .flatten()
             .map(|function_with_body_id| FunctionWithBodyNode {
-                function_with_body_id,
+                function_with_body_id: *function_with_body_id,
                 dependency_type: self.dependency_type,
                 db: self.db,
             })

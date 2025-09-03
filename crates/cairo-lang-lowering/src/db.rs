@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs as defs;
 use cairo_lang_defs::db::DefsGroup;
@@ -67,8 +65,10 @@ pub trait LoweringGroup: Database {
     fn priv_function_with_body_multi_lowering<'db>(
         &'db self,
         function_id: defs::ids::FunctionWithBodyId<'db>,
-    ) -> Maybe<Arc<MultiLowering<'db>>> {
+    ) -> Maybe<&'db MultiLowering<'db>> {
         priv_function_with_body_multi_lowering(self.as_dyn_database(), (), function_id)
+            .as_ref()
+            .map_err(|e| *e)
     }
 
     /// Returns a mapping from function ids to their multi-lowerings for the given loaded from a
@@ -76,15 +76,15 @@ pub trait LoweringGroup: Database {
     fn cached_multi_lowerings<'db>(
         &'db self,
         crate_id: cairo_lang_filesystem::ids::CrateId<'db>,
-    ) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId<'db>, MultiLowering<'db>>>> {
-        cached_multi_lowerings(self.as_dyn_database(), crate_id)
+    ) -> Option<&'db OrderedHashMap<defs::ids::FunctionWithBodyId<'db>, MultiLowering<'db>>> {
+        cached_multi_lowerings(self.as_dyn_database(), crate_id).as_ref()
     }
 
     /// Computes the lowered representation of a function with a body before borrow checking.
     fn priv_function_with_body_lowering<'db>(
         &'db self,
         function_id: ids::FunctionWithBodyId<'db>,
-    ) -> Maybe<Arc<Lowered<'db>>> {
+    ) -> Maybe<&'db Lowered<'db>> {
         priv_function_with_body_lowering(self.as_dyn_database(), function_id)
     }
 
@@ -93,16 +93,18 @@ pub trait LoweringGroup: Database {
     fn function_with_body_lowering_with_borrow_check<'db>(
         &'db self,
         function_id: ids::FunctionWithBodyId<'db>,
-    ) -> Maybe<(Arc<Lowered<'db>>, Arc<PotentialDestructCalls<'db>>)> {
+    ) -> Maybe<&'db (Lowered<'db>, PotentialDestructCalls<'db>)> {
         function_with_body_lowering_with_borrow_check(self.as_dyn_database(), function_id)
+            .as_ref()
+            .map_err(|e| *e)
     }
 
     /// Computes the lowered representation of a function with a body.
     fn function_with_body_lowering<'db>(
         &'db self,
         function_id: ids::FunctionWithBodyId<'db>,
-    ) -> Maybe<Arc<Lowered<'db>>> {
-        function_with_body_lowering(self.as_dyn_database(), function_id)
+    ) -> Maybe<&'db Lowered<'db>> {
+        Ok(&self.function_with_body_lowering_with_borrow_check(function_id)?.0)
     }
 
     /// Computes the lowered representation of a function at the requested lowering stage.
@@ -110,8 +112,8 @@ pub trait LoweringGroup: Database {
         &'db self,
         function_id: ids::ConcreteFunctionWithBodyId<'db>,
         stage: LoweringStage,
-    ) -> Maybe<Arc<Lowered<'db>>> {
-        lowered_body(self.as_dyn_database(), function_id, stage)
+    ) -> Maybe<&'db Lowered<'db>> {
+        lowered_body(self.as_dyn_database(), function_id, stage).as_ref().map_err(|e| *e)
     }
 
     /// Returns the set of direct callees which are functions with body of a concrete function with
@@ -121,8 +123,11 @@ pub trait LoweringGroup: Database {
         function_id: ids::ConcreteFunctionWithBodyId<'db>,
         dependency_type: DependencyType,
         stage: LoweringStage,
-    ) -> Maybe<Vec<ids::FunctionId<'db>>> {
-        lowered_direct_callees(self.as_dyn_database(), function_id, dependency_type, stage)
+    ) -> Maybe<&'db [ids::FunctionId<'db>]> {
+        Ok(lowered_direct_callees(self.as_dyn_database(), function_id, dependency_type, stage)
+            .as_ref()
+            .map_err(|e| *e)?
+            .as_slice())
     }
 
     /// Returns the set of direct callees which are functions with body of a concrete function with
@@ -132,13 +137,16 @@ pub trait LoweringGroup: Database {
         function_id: ids::ConcreteFunctionWithBodyId<'db>,
         dependency_type: DependencyType,
         stage: LoweringStage,
-    ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId<'db>>> {
-        lowered_direct_callees_with_body(
+    ) -> Maybe<&'db [ids::ConcreteFunctionWithBodyId<'db>]> {
+        Ok(lowered_direct_callees_with_body(
             self.as_dyn_database(),
             function_id,
             dependency_type,
             stage,
         )
+        .as_ref()
+        .map_err(|e| *e)?
+        .as_slice())
     }
 
     /// Aggregates function level lowering diagnostics.
@@ -207,12 +215,14 @@ pub trait LoweringGroup: Database {
         &'db self,
         function_id: ids::FunctionWithBodyId<'db>,
         dependency_type: DependencyType,
-    ) -> Maybe<OrderedHashSet<ids::FunctionId<'db>>> {
+    ) -> Maybe<&'db OrderedHashSet<ids::FunctionId<'db>>> {
         crate::graph_algorithms::cycles::function_with_body_direct_callees(
             self.as_dyn_database(),
             function_id,
             dependency_type,
         )
+        .as_ref()
+        .map_err(|e| *e)
     }
     /// Returns the set of direct callees which are functions with body of a function with a body
     /// (i.e. excluding libfunc callees).
@@ -220,12 +230,14 @@ pub trait LoweringGroup: Database {
         &'db self,
         function_id: ids::FunctionWithBodyId<'db>,
         dependency_type: DependencyType,
-    ) -> Maybe<OrderedHashSet<ids::FunctionWithBodyId<'db>>> {
+    ) -> Maybe<&'db OrderedHashSet<ids::FunctionWithBodyId<'db>>> {
         crate::graph_algorithms::cycles::function_with_body_direct_function_with_body_callees(
             self.as_dyn_database(),
             function_id,
             dependency_type,
         )
+        .as_ref()
+        .map_err(|e| *e)
     }
 
     /// Returns `true` if the function (in its final lowering representation) calls (possibly
@@ -311,7 +323,7 @@ pub trait LoweringGroup: Database {
         &'db self,
         function_id: ids::FunctionWithBodyId<'db>,
         dependency_type: DependencyType,
-    ) -> Vec<ids::FunctionWithBodyId<'db>> {
+    ) -> &'db [ids::FunctionWithBodyId<'db>] {
         crate::scc::function_with_body_scc(self.as_dyn_database(), function_id, dependency_type)
     }
 
@@ -323,12 +335,14 @@ pub trait LoweringGroup: Database {
         &'db self,
         function: ids::ConcreteFunctionWithBodyId<'db>,
         stage: LoweringStage,
-    ) -> Maybe<OrderedHashSet<ids::ConcreteFunctionWithBodyId<'db>>> {
+    ) -> Maybe<&'db OrderedHashSet<ids::ConcreteFunctionWithBodyId<'db>>> {
         crate::graph_algorithms::feedback_set::function_with_body_feedback_set(
             self.as_dyn_database(),
             function,
             stage,
         )
+        .as_ref()
+        .map_err(|e| *e)
     }
 
     /// Returns whether the given function needs an additional withdraw_gas call.
@@ -340,15 +354,8 @@ pub trait LoweringGroup: Database {
     }
 
     /// Internal query for reorder_statements to cache the function ids that can be moved.
-    fn priv_movable_function_ids<'db>(&'db self) -> Arc<UnorderedHashSet<ExternFunctionId<'db>>> {
+    fn priv_movable_function_ids<'db>(&'db self) -> &'db UnorderedHashSet<ExternFunctionId<'db>> {
         crate::optimizations::config::priv_movable_function_ids(self.as_dyn_database())
-    }
-
-    /// Internal query for the libfuncs information required for const folding.
-    fn priv_const_folding_info<'db>(
-        &'db self,
-    ) -> Arc<crate::optimizations::const_folding::ConstFoldingLibfuncInfo<'db>> {
-        crate::optimizations::const_folding::priv_const_folding_info(self.as_dyn_database())
     }
 
     // Internal query for a heuristic to decide if a given `function_id` should be inlined.
@@ -439,93 +446,82 @@ pub struct ConcreteSCCRepresentative<'db>(pub ids::ConcreteFunctionWithBodyId<'d
 
 // *** Main lowering phases in order.
 
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 fn priv_function_with_body_multi_lowering<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
     function_id: defs::ids::FunctionWithBodyId<'db>,
-) -> Maybe<Arc<MultiLowering<'db>>> {
+) -> Maybe<MultiLowering<'db>> {
     let crate_id = function_id.parent_module(db).owning_crate(db);
     if let Some(map) = db.cached_multi_lowerings(crate_id) {
         if let Some(multi_lowering) = map.get(&function_id) {
-            return Ok(Arc::new(multi_lowering.clone()));
+            return Ok(multi_lowering.clone());
         } else {
             panic!("function not found in cached lowering {:?}", function_id.debug(db));
         }
     };
 
-    let multi_lowering = lower_semantic_function(db, function_id)?;
-    Ok(Arc::new(multi_lowering))
+    lower_semantic_function(db, function_id)
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 fn cached_multi_lowerings<'db>(
     db: &'db dyn Database,
     crate_id: cairo_lang_filesystem::ids::CrateId<'db>,
-) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId<'db>, MultiLowering<'db>>>> {
+) -> Option<OrderedHashMap<defs::ids::FunctionWithBodyId<'db>, MultiLowering<'db>>> {
     load_cached_crate_functions(db, crate_id)
 }
 
 // * Borrow checking.
-#[salsa::tracked]
 fn priv_function_with_body_lowering<'db>(
     db: &'db dyn Database,
     function_id: ids::FunctionWithBodyId<'db>,
-) -> Maybe<Arc<Lowered<'db>>> {
+) -> Maybe<&'db Lowered<'db>> {
     let semantic_function_id = function_id.base_semantic_function(db);
     let multi_lowering = db.priv_function_with_body_multi_lowering(semantic_function_id)?;
-    let lowered = match &function_id.long(db) {
-        ids::FunctionWithBodyLongId::Semantic(_) => multi_lowering.main_lowering.clone(),
+    Ok(match &function_id.long(db) {
+        ids::FunctionWithBodyLongId::Semantic(_) => &multi_lowering.main_lowering,
         ids::FunctionWithBodyLongId::Generated { key, .. } => {
-            multi_lowering.generated_lowerings[key].clone()
+            &multi_lowering.generated_lowerings[key]
         }
-    };
-    Ok(Arc::new(lowered))
+    })
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 fn function_with_body_lowering_with_borrow_check<'db>(
     db: &'db dyn Database,
     function_id: ids::FunctionWithBodyId<'db>,
-) -> Maybe<(Arc<Lowered<'db>>, Arc<PotentialDestructCalls<'db>>)> {
+) -> Maybe<(Lowered<'db>, PotentialDestructCalls<'db>)> {
     let lowered = db.priv_function_with_body_lowering(function_id)?;
     let borrow_check_result =
-        borrow_check(db, function_id.to_concrete(db)?.is_panic_destruct_fn(db)?, &lowered);
+        borrow_check(db, function_id.to_concrete(db)?.is_panic_destruct_fn(db)?, lowered);
 
     let lowered = match borrow_check_result.diagnostics.check_error_free() {
-        Ok(_) => lowered,
-        Err(diag_added) => Arc::new(Lowered {
+        Ok(_) => lowered.clone(),
+        Err(diag_added) => Lowered {
             diagnostics: borrow_check_result.diagnostics,
             signature: lowered.signature.clone(),
             variables: lowered.variables.clone(),
             blocks: Blocks::new_errored(diag_added),
             parameters: lowered.parameters.clone(),
-        }),
+        },
     };
 
-    Ok((lowered, Arc::new(borrow_check_result.block_extra_calls)))
+    Ok((lowered, borrow_check_result.block_extra_calls))
 }
 
-#[salsa::tracked]
-fn function_with_body_lowering<'db>(
-    db: &'db dyn Database,
-    function_id: ids::FunctionWithBodyId<'db>,
-) -> Maybe<Arc<Lowered<'db>>> {
-    Ok(db.function_with_body_lowering_with_borrow_check(function_id)?.0)
-}
-
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 fn lowered_body<'db>(
     db: &'db dyn Database,
     function: ids::ConcreteFunctionWithBodyId<'db>,
     stage: LoweringStage,
-) -> Maybe<Arc<Lowered<'db>>> {
-    let lowered = match stage {
+) -> Maybe<Lowered<'db>> {
+    Ok(match stage {
         LoweringStage::Monomorphized => match function.generic_or_specialized(db) {
             GenericOrSpecialized::Generic(generic_function_id) => {
                 db.function_with_body_lowering_diagnostics(generic_function_id)?
                     .check_error_free()?;
-                let mut lowered = (*db.function_with_body_lowering(generic_function_id)?).clone();
+                let mut lowered = db.function_with_body_lowering(generic_function_id)?.clone();
                 concretize_lowered(db, &mut lowered, &function.substitution(db)?)?;
                 lowered
             }
@@ -534,7 +530,7 @@ fn lowered_body<'db>(
             }
         },
         LoweringStage::PreOptimizations => {
-            let mut lowered = (*db.lowered_body(function, LoweringStage::Monomorphized)?).clone();
+            let mut lowered = db.lowered_body(function, LoweringStage::Monomorphized)?.clone();
             add_withdraw_gas(db, function, &mut lowered)?;
             lower_panics(db, function, &mut lowered)?;
             add_destructs(db, function, &mut lowered);
@@ -542,18 +538,16 @@ fn lowered_body<'db>(
             lowered
         }
         LoweringStage::PostBaseline => {
-            let mut lowered =
-                (*db.lowered_body(function, LoweringStage::PreOptimizations)?).clone();
+            let mut lowered = db.lowered_body(function, LoweringStage::PreOptimizations)?.clone();
             db.baseline_optimization_strategy().apply_strategy(db, function, &mut lowered)?;
             lowered
         }
         LoweringStage::Final => {
-            let mut lowered = (*db.lowered_body(function, LoweringStage::PostBaseline)?).clone();
+            let mut lowered = db.lowered_body(function, LoweringStage::PostBaseline)?.clone();
             db.final_optimization_strategy().apply_strategy(db, function, &mut lowered)?;
             lowered
         }
-    };
-    Ok(Arc::new(lowered))
+    })
 }
 
 /// Given the lowering of a function, returns the set of direct dependencies of that function,
@@ -621,14 +615,14 @@ pub(crate) fn get_direct_callees<'db>(
 /// For example, for `coupon_buy::<foo::Coupon>()`, `foo` will be added to the list.
 fn functions_with_body_from_function_ids<'db>(
     db: &'db dyn Database,
-    function_ids: Vec<ids::FunctionId<'db>>,
+    function_ids: &'db [ids::FunctionId<'db>],
     dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId<'db>>> {
     Ok(function_ids
-        .into_iter()
+        .iter()
         .map(|concrete| {
             if dependency_type == DependencyType::Cost
-                && let Some(function_with_body) = extract_coupon_function(db, concrete)?
+                && let Some(function_with_body) = extract_coupon_function(db, *concrete)?
             {
                 return Ok(Some(function_with_body));
             }
@@ -682,7 +676,7 @@ fn extract_coupon_function<'db>(
     Ok(Some(ids::ConcreteFunctionWithBodyId::from_semantic(db, coupon_function_with_body_id)))
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 fn lowered_direct_callees<'db>(
     db: &'db dyn Database,
     function_id: ids::ConcreteFunctionWithBodyId<'db>,
@@ -690,10 +684,10 @@ fn lowered_direct_callees<'db>(
     stage: LoweringStage,
 ) -> Maybe<Vec<ids::FunctionId<'db>>> {
     let lowered_function = db.lowered_body(function_id, stage)?;
-    Ok(get_direct_callees(db, &lowered_function, dependency_type, &Default::default()))
+    Ok(get_direct_callees(db, lowered_function, dependency_type, &Default::default()))
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 fn lowered_direct_callees_with_body<'db>(
     db: &'db dyn Database,
     function_id: ids::ConcreteFunctionWithBodyId<'db>,
@@ -725,7 +719,7 @@ fn function_with_body_lowering_diagnostics<'db>(
                     kind: LoweringDiagnosticKind::NoPanicFunctionCycle,
                 });
             }
-            borrow_check_possible_withdraw_gas(db, location.intern(db), &lowered, &mut diagnostics)
+            borrow_check_possible_withdraw_gas(db, location.intern(db), lowered, &mut diagnostics)
         }
     }
 
@@ -887,7 +881,7 @@ fn estimate_size<'db>(
         estimator(db, function_id)
     } else {
         // Calling fallback approximated size heuristic.
-        let lowered = lowered_body(db, function_id, LoweringStage::PostBaseline)?;
-        Ok(ApproxCasmInlineWeight::new(db, &lowered).lowered_weight(&lowered))
+        let lowered = db.lowered_body(function_id, LoweringStage::PostBaseline)?;
+        Ok(ApproxCasmInlineWeight::new(db, lowered).lowered_weight(lowered))
     }
 }

@@ -10,7 +10,7 @@ use crate::{DependencyType, LoweringStage};
 
 /// Query implementation of
 /// [crate::db::LoweringGroup::function_with_body_direct_callees].
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 pub fn function_with_body_direct_callees<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
@@ -18,12 +18,12 @@ pub fn function_with_body_direct_callees<'db>(
 ) -> Maybe<OrderedHashSet<FunctionId<'db>>> {
     let (lowered, block_extra_calls) =
         db.function_with_body_lowering_with_borrow_check(function_id)?;
-    Ok(get_direct_callees(db, &lowered, dependency_type, &block_extra_calls).into_iter().collect())
+    Ok(get_direct_callees(db, lowered, dependency_type, block_extra_calls).into_iter().collect())
 }
 
 /// Query implementation of
 /// [crate::db::LoweringGroup::function_with_body_direct_function_with_body_callees].
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 pub fn function_with_body_direct_function_with_body_callees<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
@@ -57,7 +57,7 @@ pub fn final_contains_call_cycle<'db>(
         LoweringStage::Final,
     )?;
     for callee in direct_callees {
-        if db.final_contains_call_cycle(callee)? {
+        if db.final_contains_call_cycle(*callee)? {
             return Ok(true);
         }
     }

@@ -288,7 +288,7 @@ fn inner_apply_inlining<'db>(
             let mut inline_mapper = Mapper::new(
                 db,
                 const_folding_ctx.variables,
-                &inlined_lowered,
+                inlined_lowered,
                 call_stmt,
                 next_block_id,
             );

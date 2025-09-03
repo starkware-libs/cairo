@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
@@ -43,8 +41,7 @@ fn test_cancel_ops(
         )]));
     }
 
-    let mut before =
-        db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().deref().clone();
+    let mut before = db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().clone();
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     OptimizationPhase::ApplyInlining { enable_const_folding: true }
         .apply(db, function_id, &mut before)

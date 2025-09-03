@@ -35,7 +35,7 @@ fn test_cse(
     let lowered = db.lowered_body(function_id, LoweringStage::Monomorphized);
 
     if let Ok(lowered) = lowered {
-        let before_str = formatted_lowered(db, Some(&lowered));
+        let before_str = formatted_lowered(db, Some(lowered));
 
         let mut lowered_clone = (*lowered).clone();
         cse(&mut lowered_clone);

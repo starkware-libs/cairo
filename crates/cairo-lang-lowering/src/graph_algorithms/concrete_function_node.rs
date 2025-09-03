@@ -26,9 +26,9 @@ impl<'db> GraphNode for ConcreteFunctionWithBodyNode<'db> {
             return vec![];
         };
         direct_callees
-            .into_iter()
+            .iter()
             .map(|callee| ConcreteFunctionWithBodyNode {
-                function_id: callee,
+                function_id: *callee,
                 db: self.db,
                 dependency_type: self.dependency_type,
                 stage: self.stage,

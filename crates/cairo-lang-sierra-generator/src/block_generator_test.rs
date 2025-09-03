@@ -77,11 +77,11 @@ fn block_generator_test(
     };
 
     // Generate (pre-)Sierra statements.
-    let lifetime = find_variable_lifetime(&lowered, &OrderedHashSet::default())
+    let lifetime = find_variable_lifetime(lowered, &OrderedHashSet::default())
         .expect("Failed to retrieve lifetime information.");
     let expr_generator_context = ExprGeneratorContext::new(
         db,
-        &lowered,
+        lowered,
         function_id,
         &lifetime,
         crate::ap_tracking::ApTrackingConfiguration::default(),
