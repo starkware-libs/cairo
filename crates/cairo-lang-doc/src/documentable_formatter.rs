@@ -11,6 +11,7 @@ use cairo_lang_defs::ids::{
     ModuleTypeAliasId, NamedLanguageElementId, StructId, TopLevelLanguageElementId,
     TraitConstantId, TraitFunctionId, TraitId, TraitItemId, TraitTypeId, VariantId,
 };
+use cairo_lang_filesystem::ids::Tracked;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::constant::ConstValue;
@@ -25,8 +26,8 @@ use cairo_lang_syntax::node::ast::WrappedMacro;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode, green};
 use itertools::Itertools;
+use salsa::Database;
 
-use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
 use crate::location_links::{LocationLink, format_signature};
 use crate::signature_data::{
@@ -46,18 +47,12 @@ const INDENT: &str = "    ";
 /// Returned when item's signature could not be determined.
 const MISSING: &str = "<missing>";
 
-/// Gets the signature of an item (i.e., item without its body).
-pub fn get_item_signature<'db>(
-    db: &'db dyn DocGroup,
-    item_id: DocumentableItemId<'db>,
-) -> Option<String> {
-    get_item_signature_with_links(db, item_id).0
-}
-
 /// Gets the signature of an item and a list of [`LocationLink`]s to enable mapping
 /// signature slices on documentable items.
+#[salsa::tracked]
 pub fn get_item_signature_with_links<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
+    _tracked: Tracked,
     item_id: DocumentableItemId<'db>,
 ) -> (Option<String>, Vec<LocationLink<'db>>) {
     let mut f = HirFormatter::new(db);
@@ -123,7 +118,7 @@ pub trait HirDisplay<'db> {
 /// Documentable items signature formatter.
 pub struct HirFormatter<'db> {
     /// The database handle.
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     /// A buffer to intercept writes with.
     buf: String,
     /// Linkable signature items.
@@ -140,7 +135,7 @@ impl<'db> fmt::Write for HirFormatter<'db> {
 /// [`HirFormatter`] implementation.
 impl<'db> HirFormatter<'db> {
     /// Creates new instance of [`HirFormatter`].
-    pub fn new(db: &'db dyn DocGroup) -> Self {
+    pub fn new(db: &'db dyn Database) -> Self {
         Self { db, buf: String::new(), location_links: Vec::new() }
     }
 
@@ -749,7 +744,7 @@ fn format_final_part(slice: &str) -> String {
 /// Takes a list of [`GenericParamId`]s and formats it into a String representation used for
 /// signature documentation.
 fn format_resolver_generic_params<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     params: Vec<GenericParamId<'db>>,
 ) -> String {
     if !params.is_empty() {
@@ -859,7 +854,7 @@ fn write_function_signature<'db>(
 }
 
 /// Retrieves [`SyntaxKind::TypeClause`] text from [`SyntaxNode`].
-fn get_type_clause<'db>(syntax_node: SyntaxNode<'db>, db: &'db dyn DocGroup) -> Option<String> {
+fn get_type_clause<'db>(syntax_node: SyntaxNode<'db>, db: &'db dyn Database) -> Option<String> {
     for child in syntax_node.get_children(db).iter() {
         if child.kind(db) == SyntaxKind::TypeClause {
             return Some(child.get_text_without_all_comment_trivia(db));
@@ -1026,7 +1021,7 @@ fn write_type_signature<'db>(
 /// Returns relevant [`DocumentableItemId`] for [`GenericItemId`] if one can be retrieved.
 fn resolve_generic_item<'db>(
     generic_item_id: GenericItemId<'db>,
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
 ) -> Option<DocumentableItemId<'db>> {
     match generic_item_id {
         GenericItemId::ModuleItem(module_item_id) => {
@@ -1089,7 +1084,7 @@ fn resolve_generic_module_item<'db>(
 /// Returns relevant [`DocumentableItemId`] for [`GenericArgumentId`] if one can be retrieved.
 fn resolve_generic_arg<'db>(
     generic_arg_id: GenericArgumentId<'db>,
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
 ) -> Option<DocumentableItemId<'db>> {
     match generic_arg_id {
         GenericArgumentId::Type(type_id) => resolve_type(db, type_id),
@@ -1112,7 +1107,7 @@ fn resolve_generic_arg<'db>(
 
 /// Returns relevant [`DocumentableItemId`] for [`TypeId`] if one can be retrieved.
 fn resolve_type<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     type_id: TypeId<'db>,
 ) -> Option<DocumentableItemId<'db>> {
     let intern = type_id.long(db);

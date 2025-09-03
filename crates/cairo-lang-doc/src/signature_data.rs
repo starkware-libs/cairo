@@ -12,8 +12,8 @@ use cairo_lang_semantic::items::module::ModuleItemInfo;
 use cairo_lang_semantic::items::visibility::Visibility;
 use cairo_lang_semantic::{Expr, GenericArgumentId, GenericParam, Parameter, TypeId};
 use cairo_lang_syntax::attribute::structured::Attribute;
+use salsa::Database;
 
-use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
 use crate::documentable_item::DocumentableItemId::Member;
 use crate::signature_errors::SignatureError;
@@ -37,7 +37,7 @@ pub(crate) struct DocumentableItemSignatureData<'db> {
 
 /// A utility function, retrieves [`ModuleItemInfo`] for [`ModuleItemId`].
 fn get_module_item_info<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     module_item_id: ModuleItemId<'db>,
 ) -> Result<ModuleItemInfo<'db>, SignatureError> {
     let parent_module = module_item_id.parent_module(db);
@@ -55,7 +55,7 @@ fn get_module_item_info<'db>(
 /// Retrieves data for enum signature formatting. Returns [`SignatureError`] if any relevant data
 /// could not be retrieved from db.
 pub(crate) fn get_enum_signature_data<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: EnumId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::Enum(item_id);
@@ -91,7 +91,7 @@ pub(crate) fn get_enum_signature_data<'db>(
 
 /// Retrieves data for struct signature formatting.
 pub(crate) fn get_struct_signature_data<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: StructId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::Struct(item_id);
@@ -131,7 +131,7 @@ pub(crate) fn get_struct_signature_data<'db>(
 
 /// Retrieves data for member signature formatting.
 pub(crate) fn get_member_signature_data<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: MemberId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let name = item_id.name(db);
@@ -164,7 +164,7 @@ pub(crate) fn get_member_signature_data<'db>(
 
 /// Retrieves data for free function signature formatting.
 pub(crate) fn get_free_function_signature_data<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: FreeFunctionId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::FreeFunction(item_id);
@@ -203,7 +203,7 @@ pub(crate) fn get_free_function_signature_data<'db>(
 
 /// Retrieves data for trait function signature formatting.
 pub(crate) fn get_trait_function_signature_data<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: TraitFunctionId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let signature = db
@@ -237,7 +237,7 @@ pub(crate) fn get_trait_function_signature_data<'db>(
 
 /// Retrieves data for impl function signature formatting.
 pub(crate) fn get_impl_function_signature_data<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: ImplFunctionId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let signature = db
@@ -267,7 +267,7 @@ pub(crate) fn get_impl_function_signature_data<'db>(
 
 /// Retrieves data for constant signature formatting.
 pub(crate) fn get_constant_signature_data<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: ConstantId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::Constant(item_id);
@@ -298,7 +298,7 @@ pub(crate) fn get_constant_signature_data<'db>(
 
 /// Retrieves data for impl constant signature formatting.
 pub(crate) fn get_impl_constant_signature_data<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: ImplConstantDefId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let return_type = db
@@ -326,7 +326,7 @@ pub(crate) fn get_impl_constant_signature_data<'db>(
 
 /// Retrieves data for trait signature formatting.
 pub(crate) fn get_trait_signature_data<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: TraitId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::Trait(item_id);
@@ -355,7 +355,7 @@ pub(crate) fn get_trait_signature_data<'db>(
 
 /// Retrieves data for trait const signature formatting.
 pub(crate) fn get_trait_const_signature_data<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: TraitConstantId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let attributes = db
@@ -385,7 +385,7 @@ pub(crate) fn get_trait_const_signature_data<'db>(
 
 /// Retrieves data for implementation signature formatting.
 pub(crate) fn get_impl_def_signature_data<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: ImplDefId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::Impl(item_id);
@@ -419,7 +419,7 @@ pub(crate) fn get_impl_def_signature_data<'db>(
 
 /// Retrieves data for alias signature formatting.
 pub(crate) fn get_impl_alias_signature_data<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: ImplAliasId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::ImplAlias(item_id);
@@ -446,7 +446,7 @@ pub(crate) fn get_impl_alias_signature_data<'db>(
 
 /// Retrieves data for type alias signature formatting.
 pub(crate) fn get_module_type_alias_full_signature<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: ModuleTypeAliasId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::TypeAlias(item_id);
@@ -481,7 +481,7 @@ pub(crate) fn get_module_type_alias_full_signature<'db>(
 
 /// Retrieves data for trait type signature formatting.
 pub(crate) fn get_trait_type_full_signature<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: TraitTypeId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let generic_params = db
@@ -507,7 +507,7 @@ pub(crate) fn get_trait_type_full_signature<'db>(
 
 /// Retrieves data for type signature formatting.
 pub(crate) fn get_impl_type_def_full_signature<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: ImplTypeDefId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let resolved_type = db
@@ -537,7 +537,7 @@ pub(crate) fn get_impl_type_def_full_signature<'db>(
 
 /// Retrieves data for extern type signature formatting.
 pub(crate) fn get_extern_type_full_signature<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: ExternTypeId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::ExternType(item_id);
@@ -568,7 +568,7 @@ pub(crate) fn get_extern_type_full_signature<'db>(
 
 /// Retrieves data for extern function signature formatting.
 pub(crate) fn get_extern_function_full_signature<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     item_id: ExternFunctionId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::ExternFunction(item_id);
