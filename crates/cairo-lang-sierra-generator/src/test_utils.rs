@@ -109,7 +109,7 @@ pub fn setup_db_and_get_crate_id<'db>(
     db.module_semantic_diagnostics(module_id)
         .unwrap()
         .expect_with_db(db, "Unexpected semantic diagnostics");
-    db.module_lowering_diagnostics(module_id)
+    db.module_lowering_diagnostics((), module_id)
         .unwrap()
         .expect_with_db(db, "Unexpected lowering diagnostics.");
     crate_id

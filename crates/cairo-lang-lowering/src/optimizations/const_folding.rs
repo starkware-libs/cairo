@@ -1143,6 +1143,7 @@ fn var_info_if_copy<'db>(
 }
 
 /// Query implementation of [LoweringGroup::priv_const_folding_info].
+#[salsa::tracked]
 pub fn priv_const_folding_info<'db>(
     db: &'db dyn LoweringGroup,
 ) -> Arc<crate::optimizations::const_folding::ConstFoldingLibfuncInfo<'db>> {

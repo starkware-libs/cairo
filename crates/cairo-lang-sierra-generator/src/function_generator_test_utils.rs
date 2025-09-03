@@ -27,7 +27,7 @@ pub fn test_function_generator(
     .split();
 
     // Verify that there are no diagnostics.
-    let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id);
+    let lowering_diagnostics = db.module_lowering_diagnostics((), test_function.module_id);
 
     // Compile the function.
     let function_id =

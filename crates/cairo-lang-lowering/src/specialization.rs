@@ -178,6 +178,7 @@ pub fn specialized_function_lowered<'db>(
 }
 
 /// Query implementation of [LoweringGroup::priv_should_specialize].
+#[salsa::tracked]
 pub fn priv_should_specialize<'db>(
     db: &'db dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId<'db>,

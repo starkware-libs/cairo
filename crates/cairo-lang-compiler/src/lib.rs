@@ -248,7 +248,7 @@ fn warmup_diagnostics_blocking(db: &dyn LoweringGroup, crates: Vec<CrateInput>) 
                 db.file_syntax_diagnostics(file_id);
             }
             let _ = db.module_semantic_diagnostics(*module_id);
-            let _ = db.module_lowering_diagnostics(*module_id);
+            let _ = db.module_lowering_diagnostics((), *module_id);
         });
     });
 }
