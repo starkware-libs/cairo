@@ -79,7 +79,7 @@ type LookupCache =
 pub fn load_cached_crate_functions<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
-) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId<'db>, MultiLowering<'db>>>> {
+) -> Option<OrderedHashMap<defs::ids::FunctionWithBodyId<'db>, MultiLowering<'db>>> {
     let blob_id = db.crate_config(crate_id)?.cache_file?;
     let Some(content) = db.blob_content(blob_id) else {
         return Default::default();
@@ -114,8 +114,7 @@ pub fn load_cached_crate_functions<'db>(
                 let lowering = lowering.embed(&mut ctx);
                 (function_id, lowering)
             })
-            .collect::<OrderedHashMap<_, _>>()
-            .into(),
+            .collect::<OrderedHashMap<_, _>>(),
     )
 }
 

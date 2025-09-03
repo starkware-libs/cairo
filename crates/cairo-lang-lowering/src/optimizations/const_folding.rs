@@ -111,7 +111,7 @@ pub struct ConstFoldingContext<'db, 'mt> {
     /// The accumulated information about the const values of variables.
     var_info: UnorderedHashMap<VariableId, VarInfo<'db>>,
     /// The libfunc information.
-    libfunc_info: Arc<ConstFoldingLibfuncInfo<'db>>,
+    libfunc_info: &'db ConstFoldingLibfuncInfo<'db>,
     /// The specialization base of the caller function (or the caller if the function is not
     /// specialized).
     caller_base: ConcreteFunctionWithBodyId<'db>,
@@ -1143,12 +1143,12 @@ fn var_info_if_copy<'db>(
     variables[input.var_id].info.copyable.is_ok().then_some(VarInfo::Var(input))
 }
 
-/// Query implementation of [LoweringGroup::priv_const_folding_info].
-#[salsa::tracked]
-pub fn priv_const_folding_info<'db>(
+/// Internal query for the libfuncs information required for const folding.
+#[salsa::tracked(returns(ref))]
+fn priv_const_folding_info<'db>(
     db: &'db dyn Database,
-) -> Arc<crate::optimizations::const_folding::ConstFoldingLibfuncInfo<'db>> {
-    Arc::new(ConstFoldingLibfuncInfo::new(db))
+) -> crate::optimizations::const_folding::ConstFoldingLibfuncInfo<'db> {
+    ConstFoldingLibfuncInfo::new(db)
 }
 
 /// Holds static information about libfuncs required for the optimization.
@@ -1360,7 +1360,7 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
 impl<'db> std::ops::Deref for ConstFoldingContext<'db, '_> {
     type Target = ConstFoldingLibfuncInfo<'db>;
     fn deref(&self) -> &ConstFoldingLibfuncInfo<'db> {
-        &self.libfunc_info
+        self.libfunc_info
     }
 }
 

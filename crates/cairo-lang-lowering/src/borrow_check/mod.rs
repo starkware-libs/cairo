@@ -285,7 +285,7 @@ impl<'db, 'mt> Analyzer<'db, '_> for BorrowChecker<'db, 'mt, '_> {
 pub type PotentialDestructCalls<'db> = UnorderedHashMap<BlockId, Vec<FunctionId<'db>>>;
 
 /// The borrow checker result.
-#[derive(Eq, PartialEq, Debug, Default)]
+#[derive(Eq, PartialEq, Debug, Default, salsa::Update)]
 pub struct BorrowCheckResult<'db> {
     /// The possible destruct calls per block.
     pub block_extra_calls: PotentialDestructCalls<'db>,
@@ -298,7 +298,7 @@ pub struct BorrowCheckResult<'db> {
 pub fn borrow_check<'db>(
     db: &'db dyn Database,
     is_panic_destruct_fn: bool,
-    lowered: &Lowered<'db>,
+    lowered: &'db Lowered<'db>,
 ) -> BorrowCheckResult<'db> {
     if lowered.blocks.has_root().is_err() {
         return Default::default();
