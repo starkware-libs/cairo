@@ -1,7 +1,6 @@
 //! Compiles and runs a Cairo program.
 
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use anyhow::{Context, Ok};
 use cairo_lang_compiler::db::RootDatabase;
@@ -69,16 +68,16 @@ fn main() -> anyhow::Result<()> {
     }
 
     let main_crate_ids = CrateInput::into_crate_ids(db, main_crate_inputs);
-    let SierraProgramWithDebug { program: mut sierra_program, debug_info } = Arc::unwrap_or_clone(
-        db.get_sierra_program(main_crate_ids.clone())
-            .to_option()
-            .with_context(|| "Compilation failed without any diagnostics.")?,
-    );
+    let SierraProgramWithDebug { program: sierra_program, debug_info } = db
+        .get_sierra_program(main_crate_ids.clone())
+        .to_option()
+        .with_context(|| "Compilation failed without any diagnostics.")?;
     let replacer = DebugReplacer { db };
-    replacer.enrich_function_names(&mut sierra_program);
     if args.available_gas.is_none() && sierra_program.requires_gas_counter() {
         anyhow::bail!("Program requires gas counter, please provide `--available-gas` argument.");
     }
+    let mut sierra_program = sierra_program.clone();
+    replacer.enrich_function_names(&mut sierra_program);
 
     let contracts = find_contracts(db, &main_crate_ids);
     let contracts_info = get_contracts_info(db, contracts, &replacer)?;

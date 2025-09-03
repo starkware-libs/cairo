@@ -85,11 +85,10 @@ pub fn checked_compile_to_sierra(content: &str) -> cairo_lang_sierra::program::P
     let db = SierraGenDatabaseForTesting::default();
     let crate_id = setup_db_and_get_crate_id(&db, content);
 
-    let SierraProgramWithDebug { program, .. } =
-        Arc::unwrap_or_clone(db.get_sierra_program(vec![crate_id]).expect(
-            "`get_sierra_program` failed. run with RUST_LOG=warn (or less) to see diagnostics",
-        ));
-    replace_sierra_ids_in_program(&db, &program)
+    let SierraProgramWithDebug { program, .. } = db
+        .get_sierra_program(vec![crate_id])
+        .expect("`get_sierra_program` failed. run with RUST_LOG=warn (or less) to see diagnostics");
+    replace_sierra_ids_in_program(&db, program)
 }
 
 /// Adds `content` to a salsa db and returns the crate id that points to it.

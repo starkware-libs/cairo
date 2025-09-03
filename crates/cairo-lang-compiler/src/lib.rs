@@ -3,7 +3,7 @@
 //! This crate is responsible for compiling a Cairo project into a Sierra program.
 //! It is the main entry point for the compiler.
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
@@ -150,18 +150,17 @@ pub fn compile_prepared_db<'db>(
 ) -> Result<SierraProgramWithDebug<'db>> {
     compiler_config.diagnostics_reporter.ensure(db)?;
 
-    let mut sierra_program_with_debug = Arc::unwrap_or_clone(
-        db.get_sierra_program(main_crate_ids)
-            .to_option()
-            .context("Compilation failed without any diagnostics")?,
-    );
+    let sierra_program_with_debug = db
+        .get_sierra_program(main_crate_ids)
+        .to_option()
+        .context("Compilation failed without any diagnostics")?;
 
-    if compiler_config.replace_ids {
-        sierra_program_with_debug.program =
-            replace_sierra_ids_in_program(db, &sierra_program_with_debug.program);
-    }
-
-    Ok(sierra_program_with_debug)
+    let program = if compiler_config.replace_ids {
+        replace_sierra_ids_in_program(db, &sierra_program_with_debug.program)
+    } else {
+        sierra_program_with_debug.program.clone()
+    };
+    Ok(SierraProgramWithDebug { program, debug_info: sierra_program_with_debug.debug_info.clone() })
 }
 
 /// Context for database warmup.
@@ -294,7 +293,7 @@ pub fn get_sierra_program_for_functions<'db>(
     db: &'db dyn Database,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
     context: DbWarmupContext,
-) -> Result<Arc<SierraProgramWithDebug<'db>>> {
+) -> Result<&'db SierraProgramWithDebug<'db>> {
     match &context {
         DbWarmupContext::Warmup { pool } => {
             let requested_function_ids = requested_function_ids.clone();
@@ -337,27 +336,24 @@ pub fn compile_prepared_db_program_artifact<'db>(
 
     let executable_functions = find_executable_function_ids(db, main_crate_ids.clone());
 
-    let mut sierra_program_with_debug = if executable_functions.is_empty() {
+    let sierra_program_with_debug = if executable_functions.is_empty() {
         // No executables found - compile for all main crates.
         // TODO(maciektr): Deprecate in future. This compilation is useless, without `replace_ids`.
-        Arc::unwrap_or_clone(
-            db.get_sierra_program(main_crate_ids)
-                .to_option()
-                .context("Compilation failed without any diagnostics")?,
-        )
+        db.get_sierra_program(main_crate_ids)
+            .to_option()
+            .context("Compilation failed without any diagnostics")?
     } else {
         // Compile for executable functions only.
-        Arc::unwrap_or_clone(
-            db.get_sierra_program_for_functions(executable_functions.clone().into_keys().collect())
-                .to_option()
-                .context("Compilation failed without any diagnostics")?,
-        )
+        db.get_sierra_program_for_functions(executable_functions.clone().into_keys().collect())
+            .to_option()
+            .context("Compilation failed without any diagnostics")?
     };
 
-    if compiler_config.replace_ids {
-        sierra_program_with_debug.program =
-            replace_sierra_ids_in_program(db, &sierra_program_with_debug.program);
-    }
+    let program = if compiler_config.replace_ids {
+        replace_sierra_ids_in_program(db, &sierra_program_with_debug.program)
+    } else {
+        sierra_program_with_debug.program.clone()
+    };
 
     let mut annotations = Annotations::default();
 
@@ -388,9 +384,7 @@ pub fn compile_prepared_db_program_artifact<'db>(
     };
 
     // Calculate executable function Sierra ids.
-    let executables =
-        collect_executables(db, executable_functions, &sierra_program_with_debug.program);
+    let executables = collect_executables(db, executable_functions, &program);
 
-    Ok(ProgramArtifact::stripped(sierra_program_with_debug.program)
-        .with_debug_info(DebugInfo { executables, ..debug_info }))
+    Ok(ProgramArtifact::stripped(program).with_debug_info(DebugInfo { executables, ..debug_info }))
 }

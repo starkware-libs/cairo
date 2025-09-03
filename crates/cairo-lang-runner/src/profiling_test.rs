@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_semantic::test_utils::setup_test_module;
@@ -52,11 +50,10 @@ pub fn test_profiling(
     DiagnosticsReporter::stderr().with_crates(&[crate_input]).allow_warnings().ensure(&db).unwrap();
 
     // Compile to Sierra.
-    let SierraProgramWithDebug { program: sierra_program, debug_info } =
-        Arc::unwrap_or_clone(db.get_sierra_program(vec![test_module.crate_id]).expect(
-            "`get_sierra_program` failed. run with RUST_LOG=warn (or less) to see diagnostics",
-        ));
-    let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
+    let SierraProgramWithDebug { program: sierra_program, debug_info } = db
+        .get_sierra_program(vec![test_module.crate_id])
+        .expect("`get_sierra_program` failed. run with RUST_LOG=warn (or less) to see diagnostics");
+    let sierra_program = replace_sierra_ids_in_program(&db, sierra_program);
     let statements_functions =
         debug_info.statements_locations.get_statements_functions_map_for_tests(&db);
     let runner = SierraCasmRunner::new(
