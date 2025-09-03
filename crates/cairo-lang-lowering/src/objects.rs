@@ -82,12 +82,11 @@ impl<'db> Location<'db> {
 impl<'db> DebugWithDb<'db> for Location<'db> {
     type Db = dyn LoweringGroup;
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn LoweringGroup) -> std::fmt::Result {
-        let files_db = db.as_dyn_database();
-        self.stable_location.diagnostic_location(db).fmt(f, files_db)?;
+        self.stable_location.diagnostic_location(db).fmt(f, db)?;
 
         for note in &self.notes {
             f.write_str("\nnote: ")?;
-            note.fmt(f, files_db)?;
+            note.fmt(f, db)?;
         }
         Ok(())
     }

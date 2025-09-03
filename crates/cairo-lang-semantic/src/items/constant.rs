@@ -282,7 +282,6 @@ pub fn constant_semantic_data_helper<'db>(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let syntax_db = db;
 
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
 
@@ -294,21 +293,17 @@ pub fn constant_semantic_data_helper<'db>(
     };
     resolver.set_feature_config(element_id, constant_ast, &mut diagnostics);
 
-    let constant_type = resolve_type(
-        db,
-        &mut diagnostics,
-        &mut resolver,
-        &constant_ast.type_clause(syntax_db).ty(syntax_db),
-    );
+    let constant_type =
+        resolve_type(db, &mut diagnostics, &mut resolver, &constant_ast.type_clause(db).ty(db));
 
     let mut ctx = ComputationContext::new_global(db, &mut diagnostics, &mut resolver);
 
-    let value = compute_expr_semantic(&mut ctx, &constant_ast.value(syntax_db));
+    let value = compute_expr_semantic(&mut ctx, &constant_ast.value(db));
     let const_value = resolve_const_expr_and_evaluate(
         db,
         &mut ctx,
         &value,
-        constant_ast.stable_ptr(syntax_db).untyped(),
+        constant_ast.stable_ptr(db).untyped(),
         constant_type,
         true,
     );

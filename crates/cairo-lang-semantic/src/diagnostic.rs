@@ -256,14 +256,13 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 impl_function_id,
                 trait_id,
             } => {
-                let defs_db = db;
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(db);
                 format!(
                     "Parameter of impl function {}::{} is incompatible with {}::{}. It should not \
                      be a reference.",
-                    impl_def_id.name(defs_db),
+                    impl_def_id.name(db),
                     function_name,
-                    trait_id.name(defs_db),
+                    trait_id.name(db),
                     function_name,
                 )
             }
@@ -273,13 +272,12 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 trait_id,
                 expected_name,
             } => {
-                let defs_db = db;
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(db);
                 format!(
                     "Parameter name of impl function {}::{function_name} is incompatible with \
                      {}::{function_name} parameter `{expected_name}`.",
-                    impl_def_id.name(defs_db),
-                    trait_id.name(defs_db)
+                    impl_def_id.name(db),
+                    trait_id.name(db)
                 )
             }
             SemanticDiagnosticKind::WrongType { expected_ty, actual_ty } => {
@@ -341,14 +339,13 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 expected_ty,
                 actual_ty,
             } => {
-                let defs_db = db;
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(db);
                 format!(
                     "Return type of impl function `{}::{}` is incompatible with `{}::{}`. \
                      Expected: `{}`, actual: `{}`.",
-                    impl_def_id.name(defs_db),
+                    impl_def_id.name(db),
                     function_name,
-                    trait_id.name(defs_db),
+                    trait_id.name(db),
                     function_name,
                     expected_ty.format(db),
                     actual_ty.format(db)
@@ -361,14 +358,13 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 expected_trait,
                 actual_trait,
             } => {
-                let defs_db = db;
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(db);
                 format!(
                     "Generic parameter trait of impl function `{}::{}` is incompatible with \
                      `{}::{}`. Expected: `{:?}`, actual: `{:?}`.",
-                    impl_def_id.name(defs_db),
+                    impl_def_id.name(db),
                     function_name,
-                    trait_id.name(defs_db),
+                    trait_id.name(db),
                     function_name,
                     expected_trait.debug(db),
                     actual_trait.debug(db)
@@ -381,14 +377,13 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 expected_kind,
                 actual_kind,
             } => {
-                let defs_db = db;
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(db);
                 format!(
                     "Generic parameter kind of impl function `{}::{}` is incompatible with \
                      `{}::{}`. Expected: `{:?}`, actual: `{:?}`.",
-                    impl_def_id.name(defs_db),
+                    impl_def_id.name(db),
                     function_name,
-                    trait_id.name(defs_db),
+                    trait_id.name(db),
                     function_name,
                     expected_kind,
                     actual_kind

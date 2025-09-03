@@ -25,7 +25,6 @@ use itertools::{Itertools, chain, izip, zip_eq};
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
 use refs::ClosureInfo;
-use salsa::Database;
 use semantic::corelib::{
     core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id, never_ty, unit_ty,
 };
@@ -984,14 +983,14 @@ fn lower_expr_string_literal<'db>(
         "array_new",
         vec![GenericArgumentId::Type(bytes31_ty)],
     ))
-    .intern(ctx.db);
+    .intern(db);
     let data_array_append_function = FunctionLongId::Semantic(get_function_id(
         db,
         array_submodule,
         "array_append",
         vec![GenericArgumentId::Type(bytes31_ty)],
     ))
-    .intern(ctx.db);
+    .intern(db);
 
     // Emit lowering statements to build the ByteArray struct components.
     let mut data_array_usage =
@@ -1371,6 +1370,7 @@ fn lower_expr_loop<'db>(
     builder: &mut BlockBuilder<'db>,
     loop_expr_id: ExprId,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
+    let db = ctx.db;
     let (stable_ptr, return_type) = match ctx.function_body.arenas.exprs[loop_expr_id].clone() {
         semantic::Expr::Loop(semantic::ExprLoop { stable_ptr, ty, .. }) => (stable_ptr, ty),
         semantic::Expr::While(semantic::ExprWhile { stable_ptr, ty, .. }) => (stable_ptr, ty),
@@ -1382,22 +1382,19 @@ fn lower_expr_loop<'db>(
             into_iter_member_path,
             ..
         }) => {
-            let semantic_db: &dyn Database = ctx.db;
             let var_id = lower_expr(ctx, builder, expr_id)?.as_var_usage(ctx, builder)?;
             let into_iter_call = generators::Call {
-                function: into_iter.lowered(ctx.db),
+                function: into_iter.lowered(db),
                 inputs: vec![var_id],
                 coupon_input: None,
                 extra_ret_tys: vec![],
-                ret_tys: vec![
-                    semantic_db.concrete_function_signature(into_iter).unwrap().return_type,
-                ],
+                ret_tys: vec![db.concrete_function_signature(into_iter).unwrap().return_type],
                 location: ctx.get_location(stable_ptr.untyped()),
             }
             .add(ctx, &mut builder.statements);
             let into_iter_var = into_iter_call.returns.into_iter().next().unwrap();
             let sem_var = LocalVariable {
-                ty: semantic_db.concrete_function_signature(into_iter).unwrap().return_type,
+                ty: db.concrete_function_signature(into_iter).unwrap().return_type,
                 is_mut: true,
                 id: extract_matches!(into_iter_member_path.base_var(), VarId::Local),
                 allow_unused: true, // Synthetic variables should never generate unused warnings.
@@ -1412,10 +1409,8 @@ fn lower_expr_loop<'db>(
         _ => unreachable!("Loop expression must be either loop, while or for."),
     };
 
-    let semantic_db = ctx.db;
-
     let usage = &ctx.usages.usages[&loop_expr_id];
-    let has_normal_return = return_type != never_ty(semantic_db);
+    let has_normal_return = return_type != never_ty(db);
 
     let (loop_return_ty, early_return_info) = if !has_normal_return {
         // If the loop does not have a normal return, `LoopResult` is not used
@@ -1427,22 +1422,21 @@ fn lower_expr_loop<'db>(
         let generic_args =
             vec![GenericArgumentId::Type(return_type), GenericArgumentId::Type(ctx.return_type)];
 
-        let internal_module = core_submodule(semantic_db, "internal");
+        let internal_module = core_submodule(db, "internal");
         let ret_ty =
-            try_get_ty_by_name(semantic_db, internal_module, "LoopResult", generic_args.clone())
-                .unwrap();
+            try_get_ty_by_name(db, internal_module, "LoopResult", generic_args.clone()).unwrap();
         (
             ret_ty,
             Some(LoopEarlyReturnInfo {
                 normal_return_variant: get_enum_concrete_variant(
-                    semantic_db,
+                    db,
                     internal_module,
                     "LoopResult",
                     generic_args.clone(),
                     "Normal",
                 ),
                 early_return_variant: get_enum_concrete_variant(
-                    semantic_db,
+                    db,
                     internal_module,
                     "LoopResult",
                     generic_args,
@@ -1459,7 +1453,7 @@ fn lower_expr_loop<'db>(
         .map(|(_, expr)| expr.clone())
         .chain(usage.snap_usage.iter().map(|(_, expr)| match expr {
             ExprVarMemberPath::Var(var) => {
-                ExprVarMemberPath::Var(ExprVar { ty: wrap_in_snapshots(ctx.db, var.ty, 1), ..*var })
+                ExprVarMemberPath::Var(ExprVar { ty: wrap_in_snapshots(db, var.ty, 1), ..*var })
             }
             ExprVarMemberPath::Member { parent, member_id, stable_ptr, concrete_struct_id, ty } => {
                 ExprVarMemberPath::Member {
@@ -1467,7 +1461,7 @@ fn lower_expr_loop<'db>(
                     member_id: *member_id,
                     stable_ptr: *stable_ptr,
                     concrete_struct_id: *concrete_struct_id,
-                    ty: wrap_in_snapshots(ctx.db, *ty, 1),
+                    ty: wrap_in_snapshots(db, *ty, 1),
                 }
             }
         }))
@@ -1489,7 +1483,7 @@ fn lower_expr_loop<'db>(
         parent: ctx.semantic_function_id,
         key: GeneratedFunctionKey::Loop(stable_ptr),
     }
-    .intern(ctx.db);
+    .intern(db);
 
     // Generate the function.
     let encapsulating_ctx = ctx.encapsulating_ctx.take().unwrap();
@@ -1860,16 +1854,16 @@ fn add_capture_destruct_impl<'db>(
     let function = semantic::FunctionLongId {
         function: ConcreteFunction { generic_function, generic_args: vec![] },
     }
-    .intern(ctx.db);
+    .intern(db);
 
-    let signature = Signature::from_semantic(ctx.db, db.concrete_function_signature(function)?);
+    let signature = Signature::from_semantic(db, db.concrete_function_signature(function)?);
 
     let func_key = GeneratedFunctionKey::TraitFunc(trait_function, location);
     let function_id =
         FunctionWithBodyLongId::Generated { parent: ctx.semantic_function_id, key: func_key }
-            .intern(ctx.db);
+            .intern(db);
 
-    let location_id = LocationId::from_stable_location(ctx.db, location);
+    let location_id = LocationId::from_stable_location(db, location);
 
     let encapsulating_ctx = ctx.encapsulating_ctx.take().unwrap();
     let return_type = signature.return_type;
@@ -1927,7 +1921,7 @@ fn add_closure_call_function<'db>(
     closure_info: &ClosureInfo<'db>,
     trait_id: cairo_lang_defs::ids::TraitId<'db>,
 ) -> Maybe<()> {
-    let db: &dyn Database = encapsulated_ctx.db;
+    let db = encapsulated_ctx.db;
     let closure_ty = extract_matches!(expr.ty.long(db), TypeLongId::Closure);
     let expr_location = encapsulated_ctx.get_location(expr.stable_ptr.untyped());
     let parameters_ty = TypeLongId::Tuple(closure_ty.param_tys.clone()).intern(db);
@@ -1969,9 +1963,8 @@ fn add_closure_call_function<'db>(
         parent: encapsulated_ctx.semantic_function_id,
         key: GeneratedFunctionKey::TraitFunc(trait_function, closure_ty.wrapper_location),
     }
-    .intern(encapsulated_ctx.db);
-    let signature =
-        Signature::from_semantic(encapsulated_ctx.db, db.concrete_function_signature(function)?);
+    .intern(db);
+    let signature = Signature::from_semantic(db, db.concrete_function_signature(function)?);
 
     let return_type = signature.return_type;
     let mut ctx =
@@ -1980,7 +1973,7 @@ fn add_closure_call_function<'db>(
     let root_block_id = alloc_empty_block(&mut ctx);
     let mut builder = BlockBuilder::root(root_block_id);
 
-    let info = ctx.db.core_info();
+    let info = db.core_info();
     let (closure_param_var_id, closure_var) = if trait_id == info.fn_once_trt {
         // If the closure is FnOnce, the closure is passed by value.
         let closure_param_var = ctx.new_var(VarRequest { ty: expr.ty, location: expr_location });
