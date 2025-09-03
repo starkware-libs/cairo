@@ -17,7 +17,8 @@ use crate::db::SemanticGroup;
 use crate::expr::inference::canonic::CanonicalTrait;
 use crate::expr::inference::{
     ConstVar, ImplVar, ImplVarId, ImplVarTraitItemMappings, InferenceId, InferenceVar,
-    LocalConstVarId, LocalImplVarId, LocalTypeVarId, TypeVar,
+    LocalConstVarId, LocalImplVarId, LocalNegativeImplVarId, LocalTypeVarId, NegativeImplVar,
+    NegativeImplVarId, TypeVar,
 };
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{
@@ -28,7 +29,8 @@ use crate::items::functions::{
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
-    UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
+    NegativeImplId, NegativeImplLongId, UninferredGeneratedImplId, UninferredGeneratedImplLongId,
+    UninferredImpl,
 };
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
@@ -324,6 +326,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identity_helper_no_lifetime, LocalImplVarId, $($exclude)*);
         $crate::prune_single!(__identity_helper_no_lifetime, LocalTypeVarId, $($exclude)*);
         $crate::prune_single!(__identity_helper_no_lifetime, LocalConstVarId, $($exclude)*);
+        $crate::prune_single!(__identity_helper_no_lifetime, LocalNegativeImplVarId, $($exclude)*);
         $crate::prune_single!(__identity_helper_no_lifetime, InferenceVar, $($exclude)*);
         $crate::prune_single!(__identity_helper, ImplFunctionBodyId, $($exclude)*);
         $crate::prune_single!(__identity_helper_no_lifetime, ExprId, $($exclude)*);
@@ -338,6 +341,8 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ImplGenericFunctionWithBodyId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplVar, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplVarId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, NegativeImplVar, $($exclude)*);
+        $crate::prune_single!(__regular_helper, NegativeImplVarId, $($exclude)*);
         $crate::prune_single!(__regular_helper, Parameter, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericParam, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericParamType, $($exclude)*);
@@ -374,6 +379,8 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, GeneratedImplItems, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, NegativeImplLongId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, NegativeImplId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplTypeId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplConstantId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplImplId, $($exclude)*);
@@ -473,7 +480,7 @@ add_basic_rewrites!(
     <'a, 'r>,
     SubstitutionRewriter<'a, 'r>,
     DiagnosticAdded,
-    @exclude TypeId TypeLongId ImplId ImplLongId ConstValue GenericFunctionWithBodyId
+    @exclude TypeId TypeLongId ImplId ImplLongId ConstValue GenericFunctionWithBodyId NegativeImplId NegativeImplLongId
 );
 
 impl<'db> SemanticRewriter<TypeId<'db>, DiagnosticAdded> for SubstitutionRewriter<'db, '_> {
@@ -487,6 +494,15 @@ impl<'db> SemanticRewriter<TypeId<'db>, DiagnosticAdded> for SubstitutionRewrite
 
 impl<'db> SemanticRewriter<ImplId<'db>, DiagnosticAdded> for SubstitutionRewriter<'db, '_> {
     fn internal_rewrite(&mut self, value: &mut ImplId<'db>) -> Maybe<RewriteResult> {
+        if value.is_fully_concrete(self.db) {
+            return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
+
+impl<'db> SemanticRewriter<NegativeImplId<'db>, DiagnosticAdded> for SubstitutionRewriter<'db, '_> {
+    fn internal_rewrite(&mut self, value: &mut NegativeImplId<'db>) -> Maybe<RewriteResult> {
         if value.is_fully_concrete(self.db) {
             return Ok(RewriteResult::NoChange);
         }
@@ -587,6 +603,23 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, DiagnosticAdded> for SubstitutionRew
         value.default_rewrite(self)
     }
 }
+
+impl<'db> SemanticRewriter<NegativeImplLongId<'db>, DiagnosticAdded>
+    for SubstitutionRewriter<'db, '_>
+{
+    fn internal_rewrite(&mut self, value: &mut NegativeImplLongId<'db>) -> Maybe<RewriteResult> {
+        if let NegativeImplLongId::GenericParameter(generic_param) = value
+            && let Some(generic_arg) = self.substitution.get(generic_param)
+        {
+            *value =
+                extract_matches!(generic_arg, GenericArgumentId::NegImpl).long(self.db).clone();
+            return Ok(RewriteResult::Modified);
+        }
+
+        value.default_rewrite(self)
+    }
+}
+
 impl<'db> SemanticRewriter<GenericFunctionWithBodyId<'db>, DiagnosticAdded>
     for SubstitutionRewriter<'db, '_>
 {
