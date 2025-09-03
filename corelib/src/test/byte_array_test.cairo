@@ -1,3 +1,6 @@
+pub use crate::byte_array::{
+    Span as ByteArraySpan, SpanTrait as ByteArraySpanTrait, ToSpanTrait as ByteArrayToSpanTrait,
+};
 use crate::test::test_utils::{assert_eq, assert_ne};
 
 // ========= Test-utils =========
@@ -91,6 +94,14 @@ fn test_byte_array_33() -> ByteArray {
     ba2.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f, 31);
     ba2.append_word(0x2021, 2);
     ba2
+}
+
+fn test_byte_array_64() -> ByteArray {
+    let mut ba3 = Default::default();
+    ba3.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f, 31);
+    ba3.append_word(0x202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e, 31);
+    ba3.append_word(0x3f40, 2);
+    ba3
 }
 
 // ========= Tests =========
@@ -596,4 +607,48 @@ fn test_from_iterator() {
 fn test_from_collect() {
     let ba: ByteArray = array!['h', 'e', 'l', 'l', 'o'].into_iter().collect();
     assert_eq!(ba, "hello");
+}
+
+
+#[test]
+fn test_span_len() {
+    // Test simple happy flow --- value is included in the last word.
+    // TODO(giladchase): add short string test here once supported cast into span.
+    let ba = test_byte_array_1();
+    let span = ba.span();
+    assert_eq(@span.len(), @1, 'wrong span len');
+    assert!(!span.is_empty());
+
+    // Test empty.
+    let empty_ba: ByteArray = Default::default();
+    let empty_span = empty_ba.span();
+    assert_eq(@empty_span.len(), @0, 'empty span len != 0');
+    assert!(empty_span.is_empty());
+
+    // First word in the array + start offset, second in last word.
+    let two_byte31 = test_byte_array_33();
+    let mut single_span = two_byte31.span();
+    // TODO(giladchase): use slice once supported.
+    single_span.first_char_start_offset = 1;
+
+    assert_eq(@single_span.len(), @32, 'len error with start offset');
+    assert!(!single_span.is_empty());
+
+    // First word in the array + start offset, second in the array, third in last word.
+    let three_bytes31 = test_byte_array_64();
+    let mut three_span = three_bytes31.span();
+    three_span.first_char_start_offset = 1;
+    assert_eq(@three_span.len(), @63, 'len error with size-3 bytearray');
+    assert!(!three_span.is_empty());
+}
+
+#[test]
+fn test_span_copy() {
+    let ba = test_byte_array_2();
+    let span = ba.span();
+    assert_eq(@span.len(), @2, 'wrong span len');
+
+    let other_span = span;
+    assert_eq(@other_span.len(), @2, 'span len is equal to Copy');
+    assert_eq(@other_span.len(), @span.len(), 'original span still usable');
 }
