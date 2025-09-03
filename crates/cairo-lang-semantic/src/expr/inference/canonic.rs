@@ -4,12 +4,14 @@ use cairo_lang_defs::ids::{
     TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
 };
 use cairo_lang_proc_macros::SemanticObject;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use salsa::Database;
 
 use super::{
     ConstVar, ImplVar, ImplVarId, ImplVarTraitItemMappings, Inference, InferenceId, InferenceVar,
-    LocalConstVarId, LocalImplVarId, LocalTypeVarId, TypeVar,
+    LocalConstVarId, LocalImplVarId, LocalNegativeImplVarId, LocalTypeVarId, NegativeImplVar,
+    NegativeImplVarId, TypeVar,
 };
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{
@@ -20,7 +22,8 @@ use crate::items::functions::{
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
-    UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
+    NegativeImplId, NegativeImplLongId, UninferredGeneratedImplId, UninferredGeneratedImplLongId,
+    UninferredImpl,
 };
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
@@ -107,6 +110,11 @@ impl<'db> CanonicalMapping<'db> {
             type_var_mapping: to_canonic.type_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
             const_var_mapping: to_canonic.const_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
             impl_var_mapping: to_canonic.impl_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
+            negative_impl_var_mapping: to_canonic
+                .negative_impl_var_mapping
+                .iter()
+                .map(|(k, v)| (*v, *k))
+                .collect(),
             source_inference_id: to_canonic.target_inference_id,
             target_inference_id: to_canonic.source_inference_id,
         };
@@ -121,6 +129,11 @@ impl<'db> CanonicalMapping<'db> {
                 .map(|(k, v)| (*v, *k))
                 .collect(),
             impl_var_mapping: from_canonic.impl_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
+            negative_impl_var_mapping: from_canonic
+                .negative_impl_var_mapping
+                .iter()
+                .map(|(k, v)| (*v, *k))
+                .collect(),
             source_inference_id: from_canonic.target_inference_id,
             target_inference_id: from_canonic.source_inference_id,
         };
@@ -134,6 +147,7 @@ pub struct VarMapping<'db> {
     type_var_mapping: OrderedHashMap<LocalTypeVarId, LocalTypeVarId>,
     const_var_mapping: OrderedHashMap<LocalConstVarId, LocalConstVarId>,
     impl_var_mapping: OrderedHashMap<LocalImplVarId, LocalImplVarId>,
+    negative_impl_var_mapping: OrderedHashMap<LocalNegativeImplVarId, LocalNegativeImplVarId>,
     source_inference_id: InferenceId<'db>,
     target_inference_id: InferenceId<'db>,
 }
@@ -143,6 +157,7 @@ impl<'db> VarMapping<'db> {
             type_var_mapping: OrderedHashMap::default(),
             const_var_mapping: OrderedHashMap::default(),
             impl_var_mapping: OrderedHashMap::default(),
+            negative_impl_var_mapping: OrderedHashMap::default(),
             source_inference_id,
             target_inference_id: InferenceId::Canonical,
         }
@@ -152,6 +167,7 @@ impl<'db> VarMapping<'db> {
             type_var_mapping: OrderedHashMap::default(),
             const_var_mapping: OrderedHashMap::default(),
             impl_var_mapping: OrderedHashMap::default(),
+            negative_impl_var_mapping: OrderedHashMap::default(),
             source_inference_id: InferenceId::Canonical,
             target_inference_id,
         }
@@ -206,7 +222,7 @@ add_basic_rewrites!(
     <'a>,
     Canonicalizer<'a>,
     NoError,
-    @exclude TypeLongId TypeId ImplLongId ImplId ConstValue
+    @exclude TypeLongId TypeId ImplLongId ImplId ConstValue NegativeImplLongId NegativeImplId
 );
 
 impl<'db> SemanticRewriter<TypeId<'db>, NoError> for Canonicalizer<'db> {
@@ -286,7 +302,45 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, NoError> for Canonicalizer<'db> {
         Ok(RewriteResult::Modified)
     }
 }
+impl<'db> SemanticRewriter<NegativeImplId<'db>, NoError> for Canonicalizer<'db> {
+    fn internal_rewrite(
+        &mut self,
+        value: &mut NegativeImplId<'db>,
+    ) -> Result<RewriteResult, NoError> {
+        if value.is_var_free(self.db) {
+            return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
+impl<'db> SemanticRewriter<NegativeImplLongId<'db>, NoError> for Canonicalizer<'db> {
+    fn internal_rewrite(
+        &mut self,
+        value: &mut NegativeImplLongId<'db>,
+    ) -> Result<RewriteResult, NoError> {
+        let NegativeImplLongId::NegativeImplVar(var_id) = value else {
+            if value.is_var_free(self.db) {
+                return Ok(RewriteResult::NoChange);
+            }
+            return value.default_rewrite(self);
+        };
+        let var = var_id.long(self.db);
+        if var.inference_id != self.to_canonic.source_inference_id {
+            return value.default_rewrite(self);
+        }
+        let next_id = LocalNegativeImplVarId(self.to_canonic.negative_impl_var_mapping.len());
 
+        let mut var = NegativeImplVar {
+            id: *self.to_canonic.negative_impl_var_mapping.entry(var.id).or_insert(next_id),
+            inference_id: InferenceId::Canonical,
+            lookup_context: var.lookup_context,
+            concrete_trait_id: var.concrete_trait_id,
+        };
+        var.concrete_trait_id.default_rewrite(self)?;
+        *value = NegativeImplLongId::NegativeImplVar(var.intern(self.db));
+        Ok(RewriteResult::Modified)
+    }
+}
 /// Embedder rewriter. Each canonical variable is mapped to a new inference variable.
 struct Embedder<'db, 'id, 'mt> {
     inference: &'mt mut Inference<'db, 'id>,
@@ -315,7 +369,7 @@ add_basic_rewrites!(
     <'a, 'id, 'mt>,
     Embedder<'a, 'id, 'mt>,
     NoError,
-    @exclude TypeLongId TypeId ConstValue ImplLongId ImplId
+    @exclude TypeLongId TypeId ConstValue ImplLongId ImplId NegativeImplLongId NegativeImplId
 );
 
 impl<'db> SemanticRewriter<TypeId<'db>, NoError> for Embedder<'db, '_, '_> {
@@ -385,7 +439,49 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, NoError> for Embedder<'db, '_, '_> {
         let new_id = self.from_canonic.impl_var_mapping.entry(var.id).or_insert_with(|| {
             self.inference.new_impl_var_raw(var.lookup_context, concrete_trait_id, None)
         });
-        *value = ImplLongId::ImplVar(self.inference.impl_vars[new_id.0].intern(self.get_db()));
+        *value =
+            ImplLongId::ImplVar(self.inference.impl_vars[new_id.0].clone().intern(self.get_db()));
+        Ok(RewriteResult::Modified)
+    }
+}
+impl<'db> SemanticRewriter<NegativeImplId<'db>, NoError> for Embedder<'db, '_, '_> {
+    fn internal_rewrite(
+        &mut self,
+        value: &mut NegativeImplId<'db>,
+    ) -> Result<RewriteResult, NoError> {
+        if value.is_var_free(self.get_db()) {
+            return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
+impl<'db> SemanticRewriter<NegativeImplLongId<'db>, NoError> for Embedder<'db, '_, '_> {
+    fn internal_rewrite(
+        &mut self,
+        value: &mut NegativeImplLongId<'db>,
+    ) -> Result<RewriteResult, NoError> {
+        let NegativeImplLongId::NegativeImplVar(var_id) = value else {
+            if value.is_var_free(self.get_db()) {
+                return Ok(RewriteResult::NoChange);
+            }
+            return value.default_rewrite(self);
+        };
+        let var = var_id.long(self.get_db());
+        if var.inference_id != InferenceId::Canonical {
+            return value.default_rewrite(self);
+        }
+        let concrete_trait_id = self.rewrite(var.concrete_trait_id)?;
+        let new_id =
+            self.from_canonic.negative_impl_var_mapping.entry(var.id).or_insert_with(|| {
+                self.inference.new_negative_impl_var_raw(
+                    var.lookup_context,
+                    concrete_trait_id,
+                    None,
+                )
+            });
+        *value = NegativeImplLongId::NegativeImplVar(
+            self.inference.negative_impl_vars[new_id.0].clone().intern(self.get_db()),
+        );
         Ok(RewriteResult::Modified)
     }
 }
@@ -421,7 +517,7 @@ add_basic_rewrites!(
     <'a>,
     Mapper<'a, '_>,
     MapperError,
-    @exclude TypeLongId TypeId ImplLongId ImplId ConstValue
+    @exclude TypeLongId TypeId ImplLongId ImplId ConstValue NegativeImplLongId NegativeImplId
 );
 
 impl<'db> SemanticRewriter<TypeId<'db>, MapperError> for Mapper<'db, '_> {
@@ -496,6 +592,39 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, MapperError> for Mapper<'db, '_> {
         let var = ImplVar { id, inference_id: self.mapping.target_inference_id, ..var.clone() };
 
         *value = ImplLongId::ImplVar(var.intern(self.get_db()));
+        Ok(RewriteResult::Modified)
+    }
+}
+impl<'db> SemanticRewriter<NegativeImplId<'db>, MapperError> for Mapper<'db, '_> {
+    fn internal_rewrite(
+        &mut self,
+        value: &mut NegativeImplId<'db>,
+    ) -> Result<RewriteResult, MapperError> {
+        if value.is_var_free(self.db) {
+            return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
+impl<'db> SemanticRewriter<NegativeImplLongId<'db>, MapperError> for Mapper<'db, '_> {
+    fn internal_rewrite(
+        &mut self,
+        value: &mut NegativeImplLongId<'db>,
+    ) -> Result<RewriteResult, MapperError> {
+        let NegativeImplLongId::NegativeImplVar(var_id) = value else {
+            return value.default_rewrite(self);
+        };
+        let var = var_id.long(self.get_db());
+        let id = self
+            .mapping
+            .negative_impl_var_mapping
+            .get(&var.id)
+            .copied()
+            .ok_or(MapperError(InferenceVar::NegativeImpl(var.id)))?;
+        let var =
+            NegativeImplVar { id, inference_id: self.mapping.target_inference_id, ..var.clone() };
+
+        *value = NegativeImplLongId::NegativeImplVar(var.intern(self.get_db()));
         Ok(RewriteResult::Modified)
     }
 }
