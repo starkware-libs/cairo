@@ -1481,7 +1481,7 @@ pub fn impl_type_by_id<'db>(
     impl_type_id: ImplTypeDefId<'db>,
 ) -> Maybe<ast::ItemTypeAlias<'db>> {
     let impl_types = db.impl_types(impl_type_id.impl_def_id(db))?;
-    Ok(impl_types[&impl_type_id].clone())
+    impl_types.get(&impl_type_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_type_by_id].
@@ -1612,7 +1612,7 @@ pub fn impl_impl_by_id<'db>(
     impl_impl_id: ImplImplDefId<'db>,
 ) -> Maybe<ast::ItemImplAlias<'db>> {
     let impl_impls = db.impl_impls(impl_impl_id.impl_def_id(db))?;
-    Ok(impl_impls[&impl_impl_id].clone())
+    impl_impls.get(&impl_impl_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_impl_by_id].

@@ -2,7 +2,9 @@ use std::any::Any;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
-use cairo_lang_diagnostics::{DiagnosticNote, Maybe, PluginFileDiagnosticNotes, ToMaybe};
+use cairo_lang_diagnostics::{
+    DiagnosticNote, Maybe, PluginFileDiagnosticNotes, ToMaybe, skip_diagnostic,
+};
 use cairo_lang_filesystem::db::{ExternalFiles, FilesGroup, TryExtAsVirtual};
 use cairo_lang_filesystem::ids::{
     CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, Tracked, VirtualFile,
@@ -1347,7 +1349,7 @@ pub fn module_constant_by_id<'db>(
     constant_id: ConstantId<'db>,
 ) -> Maybe<ast::ItemConstant<'db>> {
     let module_constants = constant_id.module_data(db)?.constants(db);
-    Ok(module_constants[&constant_id].clone())
+    module_constants.get(&constant_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 #[salsa::tracked(returns(ref))]
@@ -1370,7 +1372,7 @@ pub fn module_submodule_by_id<'db>(
     submodule_id: SubmoduleId<'db>,
 ) -> Maybe<ast::ItemModule<'db>> {
     let module_submodules = submodule_id.module_data(db)?.submodules(db);
-    Ok(module_submodules[&submodule_id].clone())
+    module_submodules.get(&submodule_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 #[salsa::tracked(returns(ref))]
@@ -1392,7 +1394,7 @@ pub fn module_free_function_by_id<'db>(
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<ast::FunctionWithBody<'db>> {
     let module_free_functions = free_function_id.module_data(db)?.free_functions(db);
-    Ok(module_free_functions[&free_function_id].clone())
+    module_free_functions.get(&free_function_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 #[salsa::tracked(returns(ref))]
@@ -1413,7 +1415,7 @@ pub fn module_use_by_id<'db>(
     use_id: UseId<'db>,
 ) -> Maybe<ast::UsePathLeaf<'db>> {
     let module_uses = use_id.module_data(db)?.uses(db);
-    Ok(module_uses[&use_id].clone())
+    module_uses.get(&use_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 /// Returns the `use *` of the given module, by its ID.
@@ -1422,7 +1424,7 @@ pub fn module_global_use_by_id<'db>(
     global_use_id: GlobalUseId<'db>,
 ) -> Maybe<ast::UsePathStar<'db>> {
     let module_global_uses = global_use_id.module_data(db)?.global_uses(db);
-    Ok(module_global_uses[&global_use_id].clone())
+    module_global_uses.get(&global_use_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 #[salsa::tracked(returns(ref))]
@@ -1445,7 +1447,7 @@ pub fn module_struct_by_id<'db>(
     struct_id: StructId<'db>,
 ) -> Maybe<ast::ItemStruct<'db>> {
     let module_structs = struct_id.module_data(db)?.structs(db);
-    Ok(module_structs[&struct_id].clone())
+    module_structs.get(&struct_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 #[salsa::tracked(returns(ref))]
@@ -1468,7 +1470,7 @@ pub fn module_enum_by_id<'db>(
     enum_id: EnumId<'db>,
 ) -> Maybe<ast::ItemEnum<'db>> {
     let module_enums = enum_id.module_data(db)?.enums(db);
-    Ok(module_enums[&enum_id].clone())
+    module_enums.get(&enum_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 #[salsa::tracked(returns(ref))]
@@ -1491,7 +1493,7 @@ pub fn module_type_alias_by_id<'db>(
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<ast::ItemTypeAlias<'db>> {
     let module_type_aliases = module_type_alias_id.module_data(db)?.type_aliases(db);
-    Ok(module_type_aliases[&module_type_alias_id].clone())
+    module_type_aliases.get(&module_type_alias_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 #[salsa::tracked(returns(ref))]
@@ -1514,7 +1516,7 @@ pub fn module_impl_alias_by_id<'db>(
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<ast::ItemImplAlias<'db>> {
     let module_impl_aliases = impl_alias_id.module_data(db)?.impl_aliases(db);
-    Ok(module_impl_aliases[&impl_alias_id].clone())
+    module_impl_aliases.get(&impl_alias_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 #[salsa::tracked(returns(ref))]
@@ -1537,7 +1539,7 @@ pub fn module_trait_by_id<'db>(
     trait_id: TraitId<'db>,
 ) -> Maybe<ast::ItemTrait<'db>> {
     let module_traits = trait_id.module_data(db)?.traits(db);
-    Ok(module_traits[&trait_id].clone())
+    module_traits.get(&trait_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 #[salsa::tracked(returns(ref))]
@@ -1559,7 +1561,7 @@ pub fn module_impl_by_id<'db>(
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<ast::ItemImpl<'db>> {
     let module_impls = impl_def_id.module_data(db)?.impls(db);
-    Ok(module_impls[&impl_def_id].clone())
+    module_impls.get(&impl_def_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 #[salsa::tracked(returns(ref))]
@@ -1580,7 +1582,7 @@ pub fn module_extern_type_by_id<'db>(
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<ast::ItemExternType<'db>> {
     let module_extern_types = extern_type_id.module_data(db)?.extern_types(db);
-    Ok(module_extern_types[&extern_type_id].clone())
+    module_extern_types.get(&extern_type_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 #[salsa::tracked(returns(ref))]
@@ -1604,7 +1606,7 @@ pub fn module_macro_declaration_by_id<'db>(
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<ast::ItemMacroDeclaration<'db>> {
     let module_macro_declarations = macro_declaration_id.module_data(db)?.macro_declarations(db);
-    Ok(module_macro_declarations[&macro_declaration_id].clone())
+    module_macro_declarations.get(&macro_declaration_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 #[salsa::tracked(returns(ref))]
@@ -1627,7 +1629,7 @@ fn module_macro_call_by_id<'db>(
     macro_call_id: MacroCallId<'db>,
 ) -> Maybe<ast::ItemInlineMacro<'db>> {
     let module_macro_calls = macro_call_id.module_data(db)?.macro_calls(db);
-    Ok(module_macro_calls[&macro_call_id].clone())
+    module_macro_calls.get(&macro_call_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 #[salsa::tracked(returns(ref))]
@@ -1649,7 +1651,7 @@ pub fn module_extern_function_by_id<'db>(
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<ast::ItemExternFunction<'db>> {
     let module_extern_functions = extern_function_id.module_data(db)?.extern_functions(db);
-    Ok(module_extern_functions[&extern_function_id].clone())
+    module_extern_functions.get(&extern_function_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 #[salsa::tracked(returns(ref))]

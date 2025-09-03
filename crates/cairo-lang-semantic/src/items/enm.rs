@@ -4,7 +4,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     EnumId, LanguageElementId, LookupItemId, ModuleItemId, VariantId, VariantLongId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -391,7 +391,7 @@ pub fn variant_semantic<'db>(
     variant_id: VariantId<'db>,
 ) -> Maybe<Variant<'db>> {
     let data = db.priv_enum_definition_data(enum_id)?;
-    Ok(data.variant_semantic[&variant_id].clone())
+    data.variant_semantic.get(&variant_id).cloned().ok_or_else(skip_diagnostic)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::variant_semantic].
