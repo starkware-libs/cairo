@@ -1,5 +1,5 @@
 use std::ops::DerefMut;
-use std::sync::{Arc, LazyLock, Mutex};
+use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
@@ -243,12 +243,10 @@ fn run_e2e_test(
         .unwrap();
 
     // Compile to Sierra.
-    let SierraProgramWithDebug { program: sierra_program, .. } = Arc::unwrap_or_clone(
-        db.get_sierra_program(vec![crate_input.into_crate_long_id(&db).intern(&db)]).expect(
-            "`get_sierra_program` failed. run with RUST_LOG=warn (or less) to see diagnostics",
-        ),
-    );
-    let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
+    let SierraProgramWithDebug { program: sierra_program, .. } = db
+        .get_sierra_program(vec![crate_input.into_crate_long_id(&db).intern(&db)])
+        .expect("`get_sierra_program` failed. run with RUST_LOG=warn (or less) to see diagnostics");
+    let sierra_program = replace_sierra_ids_in_program(&db, sierra_program);
     let program_info = ProgramRegistryInfo::new(&sierra_program).unwrap();
     let sierra_program_str = sierra_program.to_string();
 

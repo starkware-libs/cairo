@@ -22,5 +22,5 @@ pub fn get_ap_change(
         return Ok(SierraApChange::Unknown);
     }
 
-    Ok(db.priv_function_with_body_sierra_data(function_id)?.ap_change)
+    Ok(db.priv_function_with_body_sierra_data(function_id)?.ap_change.clone())
 }

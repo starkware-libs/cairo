@@ -3,7 +3,7 @@
 //! This crate is responsible for compiling a Cairo project into a Sierra program.
 //! It is the main entry point for the compiler.
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
@@ -150,11 +150,11 @@ pub fn compile_prepared_db<'db>(
 ) -> Result<SierraProgramWithDebug<'db>> {
     compiler_config.diagnostics_reporter.ensure(db)?;
 
-    let mut sierra_program_with_debug = Arc::unwrap_or_clone(
-        db.get_sierra_program(main_crate_ids)
-            .to_option()
-            .context("Compilation failed without any diagnostics")?,
-    );
+    let mut sierra_program_with_debug = db
+        .get_sierra_program(main_crate_ids)
+        .to_option()
+        .context("Compilation failed without any diagnostics")?
+        .clone();
 
     if compiler_config.replace_ids {
         sierra_program_with_debug.program =
@@ -294,7 +294,7 @@ pub fn get_sierra_program_for_functions<'db>(
     db: &'db dyn Database,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
     context: DbWarmupContext,
-) -> Result<Arc<SierraProgramWithDebug<'db>>> {
+) -> Result<&'db SierraProgramWithDebug<'db>> {
     match &context {
         DbWarmupContext::Warmup { pool } => {
             let requested_function_ids = requested_function_ids.clone();
@@ -308,7 +308,7 @@ pub fn get_sierra_program_for_functions<'db>(
     }
     db.get_sierra_program_for_functions(requested_function_ids)
         .to_option()
-        .with_context(|| "Compilation failed without any diagnostics.")
+        .context("Compilation failed without any diagnostics.")
 }
 
 /// Runs Cairo compiler.
@@ -340,19 +340,14 @@ pub fn compile_prepared_db_program_artifact<'db>(
     let mut sierra_program_with_debug = if executable_functions.is_empty() {
         // No executables found - compile for all main crates.
         // TODO(maciektr): Deprecate in future. This compilation is useless, without `replace_ids`.
-        Arc::unwrap_or_clone(
-            db.get_sierra_program(main_crate_ids)
-                .to_option()
-                .context("Compilation failed without any diagnostics")?,
-        )
+        db.get_sierra_program(main_crate_ids)
     } else {
         // Compile for executable functions only.
-        Arc::unwrap_or_clone(
-            db.get_sierra_program_for_functions(executable_functions.clone().into_keys().collect())
-                .to_option()
-                .context("Compilation failed without any diagnostics")?,
-        )
-    };
+        db.get_sierra_program_for_functions(executable_functions.clone().into_keys().collect())
+    }
+    .to_option()
+    .context("Compilation failed without any diagnostics")?
+    .clone();
 
     if compiler_config.replace_ids {
         sierra_program_with_debug.program =

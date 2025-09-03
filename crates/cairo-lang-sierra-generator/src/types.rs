@@ -47,7 +47,7 @@ pub fn get_concrete_type_id<'db>(
         }
     }
     Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
-        db.get_concrete_long_type_id(type_id)?,
+        db.get_concrete_long_type_id(type_id)?.clone(),
     )))
 }
 
@@ -74,7 +74,7 @@ pub fn get_index_enum_type_id(
 }
 
 /// See [SierraGenGroup::get_concrete_long_type_id] for documentation.
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 pub fn get_concrete_long_type_id<'db>(
     db: &'db dyn Database,
     type_id: semantic::TypeId<'db>,
@@ -180,12 +180,12 @@ pub fn is_self_referential<'db>(
 }
 
 /// See [SierraGenGroup::type_dependencies] for documentation.
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 pub fn type_dependencies<'db>(
     db: &'db dyn Database,
     type_id: semantic::TypeId<'db>,
-) -> Maybe<Arc<Vec<semantic::TypeId<'db>>>> {
-    Ok(Arc::new(match type_id.long(db) {
+) -> Maybe<Vec<semantic::TypeId<'db>>> {
+    Ok(match type_id.long(db) {
         semantic::TypeLongId::Concrete(ty) => match ty {
             semantic::ConcreteTypeId::Struct(structure) => db
                 .concrete_struct_members(*structure)?
@@ -220,7 +220,7 @@ pub fn type_dependencies<'db>(
         | semantic::TypeLongId::Missing(_) => {
             panic!("Types should be fully resolved at this point. Got: `{}`.", type_id.format(db))
         }
-    }))
+    })
 }
 
 /// See [SierraGenGroup::has_in_deps] for documentation.
@@ -230,7 +230,7 @@ pub fn has_in_deps<'db>(
     type_id: semantic::TypeId<'db>,
     needle: semantic::TypeId<'db>,
 ) -> Maybe<bool> {
-    let deps = type_dependencies(db, type_id)?;
+    let deps = db.type_dependencies(type_id)?;
     if deps.contains(&needle) {
         return Ok(true);
     }

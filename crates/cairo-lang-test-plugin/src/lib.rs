@@ -1,5 +1,4 @@
 use std::default::Default;
-use std::sync::Arc;
 
 use anyhow::{Result, ensure};
 use cairo_lang_compiler::db::RootDatabase;
@@ -148,8 +147,8 @@ pub fn compile_test_prepared_db<'db>(
     )
     .collect();
 
-    let SierraProgramWithDebug { program: mut sierra_program, debug_info } =
-        Arc::unwrap_or_clone(get_sierra_program_for_functions(db, func_ids, context)?);
+    let SierraProgramWithDebug { program: sierra_program, debug_info } =
+        get_sierra_program_for_functions(db, func_ids, context)?;
 
     let function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>> = all_entry_points
         .iter()
@@ -162,6 +161,7 @@ pub fn compile_test_prepared_db<'db>(
         .collect();
 
     let replacer = DebugReplacer { db };
+    let mut sierra_program = sierra_program.clone();
     replacer.enrich_function_names(&mut sierra_program);
 
     let mut annotations = Annotations::default();
@@ -208,7 +208,7 @@ pub fn compile_test_prepared_db<'db>(
             named_tests,
             function_set_costs,
             contracts_info,
-            statements_locations: Some(debug_info.statements_locations),
+            statements_locations: Some(debug_info.statements_locations.clone()),
         },
     })
 }
