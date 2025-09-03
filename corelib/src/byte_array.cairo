@@ -42,7 +42,7 @@
 //! assert!(first_byte == 0x41);
 //! ```
 
-use crate::array::{ArrayTrait, SpanTrait};
+use crate::array::{ArrayTrait, Span, SpanTrait};
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
@@ -583,5 +583,51 @@ impl ByteArrayFromIterator of crate::iter::FromIterator<ByteArray, u8> {
             ba.append_byte(byte);
         }
         ba
+    }
+}
+
+/// A view into a contiguous collection of a string type.
+/// Currently implemented only for `ByteArray`, but will soon be implemented for other string types.
+/// `Span` implements the `Copy` and the `Drop` traits.
+#[derive(Copy, Drop)]
+pub struct ByteSpan {
+    pub(crate) raw_data: Span<bytes31>,
+    /// The offset of the first character in the first entry of [Self::raw_data], for use in span
+    /// slices.
+    /// Value should be in the range [0, 30].
+    pub(crate) first_char_start_offset: usize,
+    /// The last word in the span will always be located in this field, to account for bytearrays
+    /// which don't include the pending bytes31 word in the array itself.
+    pub(crate) last_word: felt252,
+    /// The offset of the last character in the last entry of span, located in [Self::last_word].
+    /// Value should be in the range [0, 30].
+    pub(crate) last_char_end_offset: usize,
+}
+
+#[generate_trait]
+pub impl ByteArraySpanImpl of ByteSpanTrait {
+    fn len(self: @ByteSpan) -> usize {
+        let raw_data_bytes = self.raw_data.len() * BYTES_IN_BYTES31;
+        raw_data_bytes - *self.first_char_start_offset + *self.last_char_end_offset
+    }
+
+    fn is_empty(self: @ByteSpan) -> bool {
+        self.len() == 0
+    }
+}
+
+pub trait ToByteSpanTrait<C> {
+    #[must_use]
+    fn span(self: @C) -> ByteSpan;
+}
+
+impl ByteArrayToByteSpan of ToByteSpanTrait<ByteArray> {
+    fn span(self: @ByteArray) -> ByteSpan {
+        ByteSpan {
+            raw_data: self.data.span(),
+            first_char_start_offset: 0,
+            last_word: *self.pending_word,
+            last_char_end_offset: *self.pending_word_len,
+        }
     }
 }

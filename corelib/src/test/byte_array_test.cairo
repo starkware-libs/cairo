@@ -1,3 +1,4 @@
+pub use crate::byte_array::{ByteSpan, ByteSpanTrait, ToByteSpanTrait};
 use crate::test::test_utils::{assert_eq, assert_ne};
 
 #[test]
@@ -464,4 +465,48 @@ fn test_from_iterator() {
 fn test_from_collect() {
     let ba: ByteArray = array!['h', 'e', 'l', 'l', 'o'].into_iter().collect();
     assert_eq!(ba, "hello");
+}
+
+#[test]
+fn test_span_len() {
+    // Test simple happy flow --- value is included in the last word.
+    // TODO(giladchase): add short string test here once supported cast into span.
+    let ba: ByteArray = "A";
+    let span = ba.span();
+    assert_eq(@span.len(), @1, 'wrong span len');
+    assert!(!span.is_empty());
+
+    // Test empty.
+    let empty_ba: ByteArray = "";
+    let empty_span = empty_ba.span();
+    assert_eq(@empty_span.len(), @0, 'empty span len != 0');
+    assert!(empty_span.is_empty());
+
+    // First word in the array + start offset, second in last word.
+    let two_byte31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg";
+    let mut single_span = two_byte31.span();
+    // TODO(giladchase): use slice once supported.
+    single_span.first_char_start_offset = 1;
+
+    assert_eq(@single_span.len(), @32, 'len error with start offset');
+    assert!(!single_span.is_empty());
+
+    // First word in the array + start offset, second in the array, third in last word.
+    let three_bytes31: ByteArray =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$"; // 64 chars.
+    let mut three_span = three_bytes31.span();
+    three_span.first_char_start_offset = 1;
+    assert_eq(@three_span.len(), @63, 'len error with size-3 bytearray');
+    assert!(!three_span.is_empty());
+}
+
+#[test]
+fn test_span_copy() {
+    let ba: ByteArray = "12";
+    let span = ba.span();
+    assert_eq(@span.len(), @2, 'wrong span len');
+
+    let other_span = span;
+    assert_eq(@other_span.len(), @2, 'span len is equal to Copy');
+    assert_eq(@other_span.len(), @span.len(), 'original span still usable');
 }
