@@ -12,12 +12,12 @@ use cairo_lang_defs::ids::{
     MacroCallId, MemberId, NamedLanguageElementId, ParamId, StructId, TraitConstantId,
     TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
 };
-use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
+use cairo_lang_diagnostics::{DiagnosticAdded, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::deque::Deque;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, define_short_id, extract_matches, try_extract_matches};
+use cairo_lang_utils::{Intern, define_short_id, extract_matches};
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{Ambiguity, SolutionSet, enrich_lookup_context};
@@ -36,7 +36,8 @@ use crate::items::functions::{
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
-    ImplLookupContextId, UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
+    ImplLookupContextId, NegativeImplId, NegativeImplLongId, UninferredGeneratedImplId,
+    UninferredGeneratedImplLongId, UninferredImpl,
 };
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
@@ -112,10 +113,30 @@ impl<'db> ImplVar<'db> {
     }
 }
 
+/// A negative impl variable
+#[derive(Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, salsa::Update)]
+#[debug_db(dyn SemanticGroup)]
+pub struct NegativeImplVar<'db> {
+    pub inference_id: InferenceId<'db>,
+    #[dont_rewrite]
+    pub id: LocalNegativeImplVarId,
+    pub concrete_trait_id: ConcreteTraitId<'db>,
+    #[dont_rewrite]
+    pub lookup_context: ImplLookupContextId<'db>,
+}
+impl<'db> NegativeImplVar<'db> {
+    pub fn intern(&self, db: &'db dyn SemanticGroup) -> NegativeImplVarId<'db> {
+        self.clone().intern(db)
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, salsa::Update)]
 pub struct LocalTypeVarId(pub usize);
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, salsa::Update)]
 pub struct LocalImplVarId(pub usize);
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, salsa::Update)]
+pub struct LocalNegativeImplVarId(pub usize);
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, salsa::Update)]
 pub struct LocalConstVarId(pub usize);
@@ -134,11 +155,26 @@ impl<'db> ImplVarId<'db> {
 }
 semantic_object_for_id!(ImplVarId, ImplVar<'a>);
 
+define_short_id!(NegativeImplVarId, NegativeImplVar<'db>, SemanticGroup);
+impl<'db> NegativeImplVarId<'db> {
+    pub fn id(&self, db: &dyn SemanticGroup) -> LocalNegativeImplVarId {
+        self.long(db).id
+    }
+    pub fn concrete_trait_id(&self, db: &'db dyn SemanticGroup) -> ConcreteTraitId<'db> {
+        self.long(db).concrete_trait_id
+    }
+    pub fn lookup_context(&self, db: &'db dyn SemanticGroup) -> ImplLookupContextId<'db> {
+        self.long(db).lookup_context
+    }
+}
+semantic_object_for_id!(NegativeImplVarId, NegativeImplVar<'a>);
+
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, SemanticObject, salsa::Update)]
 pub enum InferenceVar {
     Type(LocalTypeVarId),
     Const(LocalConstVarId),
     Impl(LocalImplVarId),
+    NegativeImpl(LocalNegativeImplVarId),
 }
 
 // TODO(spapini): Add to diagnostics.
@@ -159,6 +195,10 @@ pub enum InferenceError<'db> {
     ImplKindMismatch {
         impl0: ImplId<'db>,
         impl1: ImplId<'db>,
+    },
+    NegativeImplKindMismatch {
+        impl0: NegativeImplId<'db>,
+        impl1: NegativeImplId<'db>,
     },
     GenericArgMismatch {
         garg0: GenericArgumentId<'db>,
@@ -182,6 +222,7 @@ pub enum InferenceError<'db> {
     // TODO(spapini): These are only used for external interface. Separate them along with the
     // finalize() function to a wrapper.
     NoImplsFound(ConcreteTraitId<'db>),
+    NoNegativeImplsFound(ConcreteTraitId<'db>),
     Ambiguity(Ambiguity<'db>),
     TypeNotInferred(TypeId<'db>),
 }
@@ -198,6 +239,13 @@ impl<'db> InferenceError<'db> {
             }
             InferenceError::ImplKindMismatch { impl0, impl1 } => {
                 format!("Impl mismatch: `{:?}` and `{:?}`.", impl0.debug(db), impl1.debug(db))
+            }
+            InferenceError::NegativeImplKindMismatch { impl0, impl1 } => {
+                format!(
+                    "Negative impl mismatch: `{:?}` and `{:?}`.",
+                    impl0.debug(db),
+                    impl1.debug(db)
+                )
             }
             InferenceError::GenericArgMismatch { garg0, garg1 } => {
                 format!(
@@ -238,6 +286,9 @@ impl<'db> InferenceError<'db> {
                     "Trait has no implementation in context: {:?}.",
                     concrete_trait_id.debug(db)
                 )
+            }
+            InferenceError::NoNegativeImplsFound(concrete_trait_id) => {
+                format!("Trait has implementation in context: {:?}.", concrete_trait_id.debug(db))
             }
             InferenceError::Ambiguity(ambiguity) => ambiguity.format(db),
             InferenceError::TypeNotInferred(ty) => {
@@ -317,6 +368,8 @@ pub struct InferenceData<'db> {
     pub const_assignment: OrderedHashMap<LocalConstVarId, ConstValueId<'db>>,
     /// Current inferred assignment for impl variables.
     pub impl_assignment: OrderedHashMap<LocalImplVarId, ImplId<'db>>,
+    /// Current inferred assignment for negative impl variables.
+    pub negative_impl_assignment: OrderedHashMap<LocalNegativeImplVarId, NegativeImplId<'db>>,
     /// Unsolved impl variables mapping to a maps of trait items to a corresponding item variable.
     /// Upon solution of the trait conforms the fully known item to the variable.
     pub impl_vars_trait_item_mappings: HashMap<LocalImplVarId, ImplVarTraitItemMappings<'db>>,
@@ -326,16 +379,24 @@ pub struct InferenceData<'db> {
     pub const_vars: Vec<ConstVar<'db>>,
     /// Impl variables.
     pub impl_vars: Vec<ImplVar<'db>>,
+    /// Negative impl variables.
+    pub negative_impl_vars: Vec<NegativeImplVar<'db>>,
     /// Mapping from variables to stable pointers, if exist.
     pub stable_ptrs: HashMap<InferenceVar, SyntaxStablePtrId<'db>>,
     /// Inference variables that are pending to be solved.
     pending: Deque<LocalImplVarId>,
+    /// Inference negative variables that are pending to be solved.
+    negative_pending: Deque<LocalNegativeImplVarId>,
     /// Inference variables that have been refuted - no solutions exist.
     refuted: Vec<LocalImplVarId>,
+    /// Inference negative variables that have been refuted - no solutions exist.
+    negative_refuted: Vec<LocalNegativeImplVarId>,
     /// Inference variables that have been solved.
     solved: Vec<LocalImplVarId>,
     /// Inference variables that are currently ambiguous. May be solved later.
     ambiguous: Vec<(LocalImplVarId, Ambiguity<'db>)>,
+    /// Negative impl inference variables that are currently ambiguous. May be solved later.
+    negative_ambiguous: Vec<(LocalNegativeImplVarId, Ambiguity<'db>)>,
     /// Mapping from impl types to type variables.
     pub impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
 
@@ -349,15 +410,20 @@ impl<'db> InferenceData<'db> {
             type_assignment: OrderedHashMap::default(),
             impl_assignment: OrderedHashMap::default(),
             const_assignment: OrderedHashMap::default(),
+            negative_impl_assignment: OrderedHashMap::default(),
             impl_vars_trait_item_mappings: HashMap::new(),
             type_vars: Vec::new(),
             impl_vars: Vec::new(),
             const_vars: Vec::new(),
+            negative_impl_vars: Vec::new(),
             stable_ptrs: HashMap::new(),
             pending: Deque::new(),
+            negative_pending: Deque::new(),
             refuted: Vec::new(),
+            negative_refuted: Vec::new(),
             solved: Vec::new(),
             ambiguous: Vec::new(),
+            negative_ambiguous: Vec::new(),
             impl_type_bounds: Default::default(),
             error_status: Ok(()),
         }
@@ -386,6 +452,11 @@ impl<'db> InferenceData<'db> {
                 .collect(),
             impl_assignment: self
                 .impl_assignment
+                .iter()
+                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                .collect(),
+            negative_impl_assignment: self
+                .negative_impl_assignment
                 .iter()
                 .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
                 .collect(),
@@ -418,11 +489,19 @@ impl<'db> InferenceData<'db> {
             type_vars: inference_id_replacer.rewrite(self.type_vars.clone()).no_err(),
             const_vars: inference_id_replacer.rewrite(self.const_vars.clone()).no_err(),
             impl_vars: inference_id_replacer.rewrite(self.impl_vars.clone()).no_err(),
+            negative_impl_vars: inference_id_replacer
+                .rewrite(self.negative_impl_vars.clone())
+                .no_err(),
             stable_ptrs: self.stable_ptrs.clone(),
             pending: inference_id_replacer.rewrite(self.pending.clone()).no_err(),
+            negative_pending: inference_id_replacer.rewrite(self.negative_pending.clone()).no_err(),
             refuted: inference_id_replacer.rewrite(self.refuted.clone()).no_err(),
+            negative_refuted: inference_id_replacer.rewrite(self.negative_refuted.clone()).no_err(),
             solved: inference_id_replacer.rewrite(self.solved.clone()).no_err(),
             ambiguous: inference_id_replacer.rewrite(self.ambiguous.clone()).no_err(),
+            negative_ambiguous: inference_id_replacer
+                .rewrite(self.negative_ambiguous.clone())
+                .no_err(),
             // we do not need to rewrite the impl type bounds, as they all should be var free.
             impl_type_bounds: self.impl_type_bounds.clone(),
 
@@ -435,15 +514,20 @@ impl<'db> InferenceData<'db> {
             type_assignment: self.type_assignment.clone(),
             const_assignment: self.const_assignment.clone(),
             impl_assignment: self.impl_assignment.clone(),
+            negative_impl_assignment: self.negative_impl_assignment.clone(),
             impl_vars_trait_item_mappings: self.impl_vars_trait_item_mappings.clone(),
             type_vars: self.type_vars.clone(),
             const_vars: self.const_vars.clone(),
             impl_vars: self.impl_vars.clone(),
+            negative_impl_vars: self.negative_impl_vars.clone(),
             stable_ptrs: self.stable_ptrs.clone(),
             pending: self.pending.clone(),
+            negative_pending: self.negative_pending.clone(),
             refuted: self.refuted.clone(),
+            negative_refuted: self.negative_refuted.clone(),
             solved: self.solved.clone(),
             ambiguous: self.ambiguous.clone(),
+            negative_ambiguous: self.negative_ambiguous.clone(),
             impl_type_bounds: self.impl_type_bounds.clone(),
             error_status: self.error_status.clone(),
         }
@@ -489,6 +573,19 @@ impl<'db, 'id> Inference<'db, 'id> {
     /// Getter for an impl var assignment.
     pub fn impl_assignment(&self, var_id: LocalImplVarId) -> Option<ImplId<'db>> {
         self.impl_assignment.get(&var_id).copied()
+    }
+
+    /// Getter for a [NegativeImplVar].
+    fn negative_impl_var(&self, var_id: LocalNegativeImplVarId) -> &NegativeImplVar<'db> {
+        &self.negative_impl_vars[var_id.0]
+    }
+
+    /// Getter for a negative impl var assignment.
+    pub fn negative_impl_assignment(
+        &self,
+        var_id: LocalNegativeImplVarId,
+    ) -> Option<NegativeImplId<'db>> {
+        self.negative_impl_assignment.get(&var_id).copied()
     }
 
     /// Getter for a type var assignment.
@@ -579,7 +676,7 @@ impl<'db, 'id> Inference<'db, 'id> {
         ImplLongId::ImplVar(self.impl_var(var).intern(self.db)).intern(self.db)
     }
 
-    /// Allocates a new [ImplVar] for an unknown type that needs to be inferred.
+    /// Allocates a new [ImplVar] for an unknown impl that needs to be inferred.
     /// Returns the variable id.
     fn new_impl_var_raw(
         &mut self,
@@ -595,6 +692,42 @@ impl<'db, 'id> Inference<'db, 'id> {
             ImplVar { inference_id: self.inference_id, id, concrete_trait_id, lookup_context };
         self.impl_vars.push(var);
         self.pending.push_back(id);
+        id
+    }
+
+    /// Allocates a new [NegativeImplVar] for an unknown negative impl that needs to be inferred.
+    /// Returns the variable id.
+    pub fn new_negative_impl_var(
+        &mut self,
+        concrete_trait_id: ConcreteTraitId<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+        lookup_context: ImplLookupContextId<'db>,
+    ) -> NegativeImplId<'db> {
+        let var = self.new_negative_impl_var_raw(lookup_context, concrete_trait_id, stable_ptr);
+        NegativeImplLongId::NegativeImplVar(self.negative_impl_var(var).intern(self.db))
+            .intern(self.db)
+    }
+
+    /// Allocates a new [ImplVar] for an unknown type that needs to be inferred.
+    /// Returns the variable id.
+    fn new_negative_impl_var_raw(
+        &mut self,
+        lookup_context: ImplLookupContextId<'db>,
+        concrete_trait_id: ConcreteTraitId<'db>,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> LocalNegativeImplVarId {
+        let id = LocalNegativeImplVarId(self.negative_impl_vars.len());
+        if let Some(stable_ptr) = stable_ptr {
+            self.stable_ptrs.insert(InferenceVar::NegativeImpl(id), stable_ptr);
+        }
+        let var = NegativeImplVar {
+            inference_id: self.inference_id,
+            id,
+            concrete_trait_id,
+            lookup_context,
+        };
+        self.negative_impl_vars.push(var);
+        self.negative_pending.push_back(id);
         id
     }
 
@@ -614,6 +747,12 @@ impl<'db, 'id> Inference<'db, 'id> {
             // First inference error stops inference.
             self.solve_single_pending(var).map_err(|err_set| {
                 (err_set, self.stable_ptrs.get(&InferenceVar::Impl(var)).copied())
+            })?;
+        }
+        while let Some(var) = self.negative_pending.pop_front() {
+            // First inference error stops inference.
+            self.solve_single_negative_pending(var).map_err(|err_set| {
+                (err_set, self.stable_ptrs.get(&InferenceVar::NegativeImpl(var)).copied())
             })?;
         }
         Ok(())
@@ -643,6 +782,35 @@ impl<'db, 'id> Inference<'db, 'id> {
         let ambiguous = std::mem::take(&mut self.ambiguous).into_iter();
         self.pending.extend(ambiguous.map(|(var, _)| var));
 
+        let negative_ambiguous = std::mem::take(&mut self.negative_ambiguous).into_iter();
+        self.negative_pending.extend(negative_ambiguous.map(|(var, _)| var));
+
+        Ok(())
+    }
+
+    fn solve_single_negative_pending(
+        &mut self,
+        var: LocalNegativeImplVarId,
+    ) -> InferenceResult<()> {
+        if self.negative_impl_assignment.contains_key(&var) {
+            return Ok(());
+        }
+
+        let solution = match self.negative_impl_var_solution_set(var)? {
+            SolutionSet::None => {
+                self.negative_refuted.push(var);
+                return Ok(());
+            }
+            SolutionSet::Ambiguous(ambiguity) => {
+                self.negative_ambiguous.push((var, ambiguity));
+                return Ok(());
+            }
+            SolutionSet::Unique(solution) => solution,
+        };
+
+        // Solution found. Assign it.
+        self.assign_local_negative_impl(var, solution)?;
+
         Ok(())
     }
 
@@ -653,10 +821,17 @@ impl<'db, 'id> Inference<'db, 'id> {
         if !self.refuted.is_empty() {
             return Ok(SolutionSet::None);
         }
+        if !self.negative_refuted.is_empty() {
+            return Ok(SolutionSet::None);
+        }
         if let Some((_, ambiguity)) = self.ambiguous.first() {
             return Ok(SolutionSet::Ambiguous(ambiguity.clone()));
         }
+        if let Some((_, ambiguity)) = self.negative_ambiguous.first() {
+            return Ok(SolutionSet::Ambiguous(ambiguity.clone()));
+        }
         assert!(self.pending.is_empty(), "solution() called on an unsolved solver");
+        assert!(self.negative_pending.is_empty(), "solution() called on an unsolved solver");
         Ok(SolutionSet::Unique(()))
     }
 
@@ -746,11 +921,32 @@ impl<'db, 'id> Inference<'db, 'id> {
                 InferenceError::NoImplsFound(concrete_trait_id),
             ));
         }
+        if let Some(var) = self.negative_refuted.first().copied() {
+            let negative_impl_var = self.negative_impl_var(var).clone();
+            let concrete_trait_id = negative_impl_var.concrete_trait_id;
+            let concrete_trait_id = self.rewrite(concrete_trait_id).no_err();
+            return Some((
+                InferenceVar::NegativeImpl(var),
+                InferenceError::NoNegativeImplsFound(concrete_trait_id),
+            ));
+        }
+
         let mut fallback_ret = None;
         if let Some((var, ambiguity)) = self.ambiguous.first() {
             // Note: do not rewrite `ambiguity`, since it is expressed in canonical variables.
             let ret =
                 Some((InferenceVar::Impl(*var), InferenceError::Ambiguity(ambiguity.clone())));
+            if !matches!(ambiguity, Ambiguity::WillNotInfer(_)) {
+                return ret;
+            } else {
+                fallback_ret = ret;
+            }
+        }
+        if let Some((var, ambiguity)) = self.negative_ambiguous.first() {
+            let ret = Some((
+                InferenceVar::NegativeImpl(*var),
+                InferenceError::Ambiguity(ambiguity.clone()),
+            ));
             if !matches!(ambiguity, Ambiguity::WillNotInfer(_)) {
                 return ret;
             } else {
@@ -845,6 +1041,45 @@ impl<'db, 'id> Inference<'db, 'id> {
         self.assign_local_impl(var.id, impl_id)
     }
 
+    /// Assigns a value to a local negative impl variable id. See assign_neg_impl().
+    fn assign_local_negative_impl(
+        &mut self,
+        var: LocalNegativeImplVarId,
+        neg_impl_id: NegativeImplId<'db>,
+    ) -> InferenceResult<NegativeImplId<'db>> {
+        let concrete_trait = neg_impl_id
+            .concrete_trait(self.db)
+            .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
+        self.conform_traits(self.negative_impl_var(var).concrete_trait_id, concrete_trait)?;
+        if let Some(other_impl) = self.negative_impl_assignment(var) {
+            return self.conform_neg_impl(neg_impl_id, other_impl);
+        }
+        if !neg_impl_id.is_var_free(self.db)
+            && self.negative_impl_contains_var(neg_impl_id, InferenceVar::NegativeImpl(var))
+        {
+            return Err(self.set_error(InferenceError::Cycle(InferenceVar::NegativeImpl(var))));
+        }
+        self.negative_impl_assignment.insert(var, neg_impl_id);
+        Ok(neg_impl_id)
+    }
+
+    /// Tries to assigns value to an [NegativeImplVarId]. Return the assigned negative impl, or an
+    /// error.
+    fn assign_neg_impl(
+        &mut self,
+        var_id: NegativeImplVarId<'db>,
+        neg_impl_id: NegativeImplId<'db>,
+    ) -> InferenceResult<NegativeImplId<'db>> {
+        let var = var_id.long(self.db);
+        if var.inference_id != self.inference_id {
+            return Err(self.set_error(InferenceError::NegativeImplKindMismatch {
+                impl0: NegativeImplLongId::NegativeImplVar(var_id).intern(self.db),
+                impl1: neg_impl_id,
+            }));
+        }
+        self.assign_local_negative_impl(var.id, neg_impl_id)
+    }
+
     /// Assigns a value to a [TypeVar]. Return the assigned type, or an error.
     /// Assumes the variable is not already assigned.
     fn assign_ty(&mut self, var: TypeVar<'db>, ty: TypeId<'db>) -> InferenceResult<TypeId<'db>> {
@@ -916,6 +1151,69 @@ impl<'db, 'id> Inference<'db, 'id> {
         })
     }
 
+    /// Computes the solution set for an negative impl variable with a recursive query.
+    fn negative_impl_var_solution_set(
+        &mut self,
+        var: LocalNegativeImplVarId,
+    ) -> InferenceResult<SolutionSet<'db, NegativeImplId<'db>>> {
+        let negative_impl_var = self.negative_impl_var(var).clone();
+        let concrete_trait_id = self.rewrite(negative_impl_var.concrete_trait_id).no_err();
+
+        let solution_set =
+            self.validate_no_solution_set(concrete_trait_id, negative_impl_var.lookup_context)?;
+        Ok(match solution_set {
+            SolutionSet::Unique(concrete_trait_id) => {
+                SolutionSet::Unique(NegativeImplLongId::Solved(concrete_trait_id).intern(self.db))
+            }
+            SolutionSet::Ambiguous(ambiguity) => SolutionSet::Ambiguous(ambiguity),
+            SolutionSet::None => SolutionSet::None,
+        })
+    }
+
+    /// Validates that no solution set is found for the negative impls.
+    fn validate_no_solution_set(
+        &mut self,
+        concrete_trait_id: ConcreteTraitId<'db>,
+        lookup_context: ImplLookupContextId<'db>,
+    ) -> InferenceResult<SolutionSet<'db, ConcreteTraitId<'db>>> {
+        for garg in concrete_trait_id.generic_args(self.db) {
+            let GenericArgumentId::Type(ty) = garg else {
+                continue;
+            };
+            let ty = self.rewrite(ty).no_err();
+            // If the negative impl has a generic argument that is not fully
+            // concrete we can't tell if we should rule out the candidate impl.
+            // For example if we have -TypeEqual<S, T> we can't tell if S and
+            // T are going to be assigned the same concrete type.
+            // We return `SolutionSet::Ambiguous` here to indicate that more
+            // information is needed.
+            // Closure can only have one type, even if it's not fully concrete, so can use
+            // it and not get ambiguity.
+            if !matches!(ty.long(self.db), TypeLongId::Closure(_)) && !ty.is_fully_concrete(self.db)
+            {
+                // TODO(ilya): Try to detect the ambiguity earlier in the
+                // inference process.
+                return Ok(SolutionSet::Ambiguous(
+                    Ambiguity::NegativeImplWithUnresolvedGenericArgs2 { concrete_trait_id, ty },
+                ));
+            }
+        }
+
+        if !matches!(
+            self.trait_solution_set(
+                concrete_trait_id,
+                ImplVarTraitItemMappings::default(),
+                lookup_context,
+            )?,
+            SolutionSet::None
+        ) {
+            // If a negative impl has an impl, then we should skip it.
+            return Ok(SolutionSet::None);
+        }
+
+        Ok(SolutionSet::Unique(concrete_trait_id))
+    }
+
     /// Computes the solution set for a trait with a recursive query.
     pub fn trait_solution_set(
         &mut self,
@@ -974,108 +1272,6 @@ impl<'db, 'id> Inference<'db, 'id> {
                 Ok(SolutionSet::Unique((canonical_impl, canonicalizer)))
             }
             SolutionSet::Ambiguous(ambiguity) => Ok(SolutionSet::Ambiguous(ambiguity)),
-        }
-    }
-
-    /// Validate that the given impl is valid based on its negative impls arguments.
-    /// Returns `SolutionSet::Unique(canonical_impl)` if the impl is valid and
-    /// SolutionSet::Ambiguous(...) otherwise.
-    fn validate_neg_impls<'m>(
-        &'m mut self,
-        lookup_context: ImplLookupContextId<'db>,
-        canonical_impl: CanonicalImpl<'db>,
-    ) -> InferenceResult<SolutionSet<'db, CanonicalImpl<'db>>> {
-        /// Validates that no solution set is found for the negative impls.
-        fn validate_no_solution_set<'db, 'mt>(
-            inference: &mut Inference<'db, 'mt>,
-            canonical_impl: CanonicalImpl<'db>,
-            lookup_context: ImplLookupContextId<'db>,
-            negative_impls_concrete_traits: impl Iterator<Item = Maybe<ConcreteTraitId<'db>>>,
-        ) -> InferenceResult<SolutionSet<'db, CanonicalImpl<'db>>> {
-            for concrete_trait_id in negative_impls_concrete_traits {
-                let concrete_trait_id = concrete_trait_id.map_err(|diag_added| {
-                    inference.set_error(InferenceError::Reported(diag_added))
-                })?;
-                for garg in concrete_trait_id.generic_args(inference.db) {
-                    let GenericArgumentId::Type(ty) = garg else {
-                        continue;
-                    };
-                    let ty = inference.rewrite(ty).no_err();
-                    // If the negative impl has a generic argument that is not fully
-                    // concrete we can't tell if we should rule out the candidate impl.
-                    // For example if we have -TypeEqual<S, T> we can't tell if S and
-                    // T are going to be assigned the same concrete type.
-                    // We return `SolutionSet::Ambiguous` here to indicate that more
-                    // information is needed.
-                    // Closure can only have one type, even if it's not fully concrete, so can use
-                    // it and not get ambiguity.
-                    if !matches!(ty.long(inference.db), TypeLongId::Closure(_))
-                        && !ty.is_fully_concrete(inference.db)
-                    {
-                        // TODO(ilya): Try to detect the ambiguity earlier in the
-                        // inference process.
-                        return Ok(SolutionSet::Ambiguous(
-                            Ambiguity::NegativeImplWithUnresolvedGenericArgs {
-                                impl_id: canonical_impl.0,
-                                ty,
-                            },
-                        ));
-                    }
-                }
-
-                if !matches!(
-                    inference.trait_solution_set(
-                        concrete_trait_id,
-                        ImplVarTraitItemMappings::default(),
-                        lookup_context,
-                    )?,
-                    SolutionSet::None
-                ) {
-                    // If a negative impl has an impl, then we should skip it.
-                    return Ok(SolutionSet::None);
-                }
-            }
-
-            Ok(SolutionSet::Unique(canonical_impl))
-        }
-        match canonical_impl.0.long(self.db) {
-            ImplLongId::Concrete(concrete_impl) => {
-                let substitution = concrete_impl
-                    .substitution(self.db)
-                    .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
-                let generic_params = self
-                    .db
-                    .impl_def_generic_params(concrete_impl.impl_def_id(self.db))
-                    .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
-                let concrete_traits = generic_params
-                    .iter()
-                    .filter_map(|generic_param| {
-                        try_extract_matches!(generic_param, GenericParam::NegImpl)
-                    })
-                    .map(|generic_param| {
-                        substitution
-                            .substitute(self.db, generic_param.clone())
-                            .and_then(|generic_param| generic_param.concrete_trait)
-                    });
-                validate_no_solution_set(self, canonical_impl, lookup_context, concrete_traits)
-            }
-            ImplLongId::GeneratedImpl(generated_impl) => validate_no_solution_set(
-                self,
-                canonical_impl,
-                lookup_context,
-                generated_impl
-                    .long(self.db)
-                    .generic_params
-                    .iter()
-                    .filter_map(|generic_param| {
-                        try_extract_matches!(generic_param, GenericParam::NegImpl)
-                    })
-                    .map(|generic_param| generic_param.concrete_trait),
-            ),
-            ImplLongId::GenericParameter(_)
-            | ImplLongId::ImplVar(_)
-            | ImplLongId::ImplImpl(_)
-            | ImplLongId::SelfImpl(_) => Ok(SolutionSet::Unique(canonical_impl)),
         }
     }
 
@@ -1197,7 +1393,7 @@ impl<'a, 'mt> HasDb<&'a dyn SemanticGroup> for Inference<'a, 'mt> {
         self.db
     }
 }
-add_basic_rewrites!(<'a, 'mt>, Inference<'a, 'mt>, NoError, @exclude TypeLongId TypeId ImplLongId ImplId ConstValue);
+add_basic_rewrites!(<'a, 'mt>, Inference<'a, 'mt>, NoError, @exclude TypeLongId TypeId ImplLongId ImplId ConstValue NegativeImplLongId NegativeImplId);
 add_expr_rewrites!(<'a, 'mt>, Inference<'a, 'mt>, NoError, @exclude);
 add_rewrite!(<'a, 'mt>, Inference<'a, 'mt>, NoError, Ambiguity<'a>);
 impl<'db, 'mt> SemanticRewriter<TypeId<'db>, NoError> for Inference<'db, 'mt> {
@@ -1216,6 +1412,18 @@ impl<'db, 'mt> SemanticRewriter<ImplId<'db>, NoError> for Inference<'db, 'mt> {
         value.default_rewrite(self)
     }
 }
+impl<'db, 'mt> SemanticRewriter<NegativeImplId<'db>, NoError> for Inference<'db, 'mt> {
+    fn internal_rewrite(
+        &mut self,
+        value: &mut NegativeImplId<'db>,
+    ) -> Result<RewriteResult, NoError> {
+        if value.is_var_free(self.db) {
+            return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
+
 impl<'db, 'mt> SemanticRewriter<TypeLongId<'db>, NoError> for Inference<'db, 'mt> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId<'db>) -> Result<RewriteResult, NoError> {
         match value {
@@ -1379,6 +1587,33 @@ impl<'db, 'mt> SemanticRewriter<ImplLongId<'db>, NoError> for Inference<'db, 'mt
 
             _ => {}
         }
+        if value.is_var_free(self.db) {
+            return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
+
+impl<'db, 'mt> SemanticRewriter<NegativeImplLongId<'db>, NoError> for Inference<'db, 'mt> {
+    fn internal_rewrite(
+        &mut self,
+        value: &mut NegativeImplLongId<'db>,
+    ) -> Result<RewriteResult, NoError> {
+        if let NegativeImplLongId::NegativeImplVar(var) = value {
+            let long_id = var.long(self.db);
+            // Relax the candidates.
+            let neg_impl_var_id = long_id.id;
+            if let Some(impl_id) = self.negative_impl_assignment(neg_impl_var_id) {
+                let mut long_neg_impl_id = impl_id.long(self.db).clone();
+                if let RewriteResult::Modified = self.internal_rewrite(&mut long_neg_impl_id)? {
+                    *self.negative_impl_assignment.get_mut(&neg_impl_var_id).unwrap() =
+                        long_neg_impl_id.clone().intern(self.db);
+                }
+                *value = long_neg_impl_id;
+                return Ok(RewriteResult::Modified);
+            }
+        }
+
         if value.is_var_free(self.db) {
             return Ok(RewriteResult::NoChange);
         }

@@ -32,6 +32,7 @@ use cairo_lang_semantic::items::functions::{
 use cairo_lang_semantic::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use cairo_lang_semantic::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
+    NegativeImplId, NegativeImplLongId,
 };
 use cairo_lang_semantic::items::trt::ConcreteTraitGenericFunctionLongId;
 use cairo_lang_semantic::types::{
@@ -339,6 +340,7 @@ struct SemanticCacheLoadingData<'db> {
     function_ids: OrderedHashMap<SemanticFunctionIdCached, semantic::FunctionId<'db>>,
     type_ids: OrderedHashMap<TypeIdCached, TypeId<'db>>,
     impl_ids: OrderedHashMap<ImplIdCached, ImplId<'db>>,
+    negative_impl_ids: OrderedHashMap<NegativeImplIdCached, NegativeImplId<'db>>,
     lookups: SemanticCacheLookups,
 }
 
@@ -348,6 +350,7 @@ impl<'db> SemanticCacheLoadingData<'db> {
             function_ids: OrderedHashMap::default(),
             type_ids: OrderedHashMap::default(),
             impl_ids: OrderedHashMap::default(),
+            negative_impl_ids: OrderedHashMap::default(),
             lookups,
         }
     }
@@ -394,6 +397,8 @@ struct SemanticCacheSavingData<'db> {
 
     impl_ids: OrderedHashMap<ImplId<'db>, ImplIdCached>,
 
+    negative_impl_ids: OrderedHashMap<NegativeImplId<'db>, NegativeImplIdCached>,
+
     lookups: SemanticCacheLookups,
 }
 
@@ -416,6 +421,7 @@ struct SemanticCacheLookups {
     function_ids_lookup: Vec<SemanticFunctionCached>,
     type_ids_lookup: Vec<TypeCached>,
     impl_ids_lookup: Vec<ImplCached>,
+    negative_impl_ids_lookup: Vec<NegativeImplCached>,
 }
 
 /// Cached version of [defs::ids::FunctionWithBodyId]
@@ -1904,7 +1910,7 @@ enum GenericArgumentCached {
     Type(TypeIdCached),
     Value(ConstValueCached),
     Impl(ImplIdCached),
-    NegImpl,
+    NegImpl(NegativeImplIdCached),
 }
 
 impl GenericArgumentCached {
@@ -1925,7 +1931,9 @@ impl GenericArgumentCached {
             semantic::GenericArgumentId::Impl(impl_id) => {
                 GenericArgumentCached::Impl(ImplIdCached::new(impl_id, ctx))
             }
-            semantic::GenericArgumentId::NegImpl => GenericArgumentCached::NegImpl,
+            semantic::GenericArgumentId::NegImpl(negative_impl) => {
+                GenericArgumentCached::NegImpl(NegativeImplIdCached::new(negative_impl, ctx))
+            }
         }
     }
     fn embed<'db>(
@@ -1938,7 +1946,9 @@ impl GenericArgumentCached {
                 semantic::GenericArgumentId::Constant(value.embed(ctx).intern(ctx.db))
             }
             GenericArgumentCached::Impl(imp) => semantic::GenericArgumentId::Impl(imp.embed(ctx)),
-            GenericArgumentCached::NegImpl => semantic::GenericArgumentId::NegImpl,
+            GenericArgumentCached::NegImpl(negative_impl) => {
+                semantic::GenericArgumentId::NegImpl(negative_impl.embed(ctx))
+            }
         }
     }
 }
@@ -2344,6 +2354,74 @@ impl GeneratedImplCached {
             ),
         }
         .intern(ctx.db)
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+enum NegativeImplCached {
+    Solved(ConcreteTraitCached),
+    GenericParameter(GenericParamCached),
+}
+impl NegativeImplCached {
+    fn new<'db>(
+        negative_impl_id: NegativeImplLongId<'db>,
+        ctx: &mut SemanticCacheSavingContext<'db>,
+    ) -> Self {
+        match negative_impl_id {
+            NegativeImplLongId::Solved(concrete_trait_id) => {
+                NegativeImplCached::Solved(ConcreteTraitCached::new(concrete_trait_id, ctx))
+            }
+            NegativeImplLongId::GenericParameter(generic_param_id) => {
+                NegativeImplCached::GenericParameter(GenericParamCached::new(
+                    generic_param_id,
+                    &mut ctx.defs_ctx,
+                ))
+            }
+            NegativeImplLongId::NegativeImplVar(_) => {
+                unreachable!("negative impl var is not supported for caching",)
+            }
+        }
+    }
+    fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> NegativeImplLongId<'db> {
+        match self {
+            NegativeImplCached::Solved(concrete_trait) => {
+                NegativeImplLongId::Solved(concrete_trait.embed(ctx))
+            }
+            NegativeImplCached::GenericParameter(generic_param) => {
+                NegativeImplLongId::GenericParameter(
+                    generic_param.get_embedded(&ctx.defs_loading_data, ctx.db),
+                )
+            }
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+struct NegativeImplIdCached(usize);
+
+impl NegativeImplIdCached {
+    fn new<'db>(
+        negative_impl_id: NegativeImplId<'db>,
+        ctx: &mut SemanticCacheSavingContext<'db>,
+    ) -> Self {
+        if let Some(id) = ctx.negative_impl_ids.get(&negative_impl_id) {
+            return *id;
+        }
+        let imp = NegativeImplCached::new(negative_impl_id.long(ctx.db).clone(), ctx);
+        let id = NegativeImplIdCached(ctx.negative_impl_ids_lookup.len());
+        ctx.negative_impl_ids_lookup.push(imp);
+        ctx.negative_impl_ids.insert(negative_impl_id, id);
+        id
+    }
+    fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> NegativeImplId<'db> {
+        if let Some(negative_impl_id) = ctx.negative_impl_ids.get(&self) {
+            return *negative_impl_id;
+        }
+
+        let imp = ctx.negative_impl_ids_lookup[self.0].clone();
+        let imp = imp.embed(ctx).intern(ctx.db);
+        ctx.negative_impl_ids.insert(self, imp);
+        imp
     }
 }
 
