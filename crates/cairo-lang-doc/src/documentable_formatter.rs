@@ -1101,7 +1101,7 @@ fn resolve_generic_arg<'db>(
             }
             Err(_) => None,
         },
-        GenericArgumentId::NegImpl => None,
+        GenericArgumentId::NegImpl(_) => None,
     }
 }
 
