@@ -242,7 +242,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// ```
     #[must_use]
     fn len(self: @ByteArray) -> usize {
-        self.data.len() * BYTES_IN_BYTES31.into() + (*self.pending_word_len).into()
+        self.data.len() * BYTES_IN_BYTES31 + *self.pending_word_len
     }
 
     /// Returns an option of the byte at the given index of `self`
@@ -256,7 +256,9 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// assert!(byte == 98);
     /// ```
     fn at(self: @ByteArray, index: usize) -> Option<u8> {
-        let (word_index, index_in_word) = DivRem::div_rem(index, 31);
+        let (word_index, index_in_word) = DivRem::div_rem(
+            index, BYTES_IN_BYTES31.try_into().unwrap(),
+        );
         if word_index == self.data.len() {
             // Index is in pending word.
             if index_in_word >= *self.pending_word_len {
