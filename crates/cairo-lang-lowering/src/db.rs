@@ -11,11 +11,11 @@ use cairo_lang_filesystem::ids::{FileId, Tracked};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeId, TypeLongId, corelib};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{Intern, Upcast};
 use defs::ids::NamedLanguageElementId;
 use itertools::{Itertools, chain};
 use num_traits::ToPrimitive;
@@ -45,41 +45,28 @@ use crate::{
     BlockEnd, BlockId, DependencyType, Location, Lowered, LoweringStage, MatchInfo, Statement, ids,
 };
 
+type CodeSizeEstimator = fn(&dyn Database, ConcreteFunctionWithBodyId<'_>) -> Maybe<isize>;
 #[salsa::input]
 pub struct LoweringGroupInput {
     #[returns(ref)]
     pub optimization_config: Option<OptimizationConfig>,
+    /// A configurable function to get estimated size of the function with the given id.
+    #[returns(ref)]
+    code_size_estimator: Option<CodeSizeEstimator>,
 }
 
 #[salsa::tracked(returns(ref))]
 pub fn lowering_group_input(db: &dyn Database) -> LoweringGroupInput {
-    LoweringGroupInput::new(db, None)
+    LoweringGroupInput::new(db, None, None)
 }
 
 fn optimization_config(db: &dyn Database) -> &OptimizationConfig {
     lowering_group_input(db).optimization_config(db).as_ref().unwrap()
 }
 
-/// A trait for estimation of the code size of a function.
-pub trait ExternalCodeSizeEstimator {
-    /// Returns estimated size of the function with the given id.
-    fn estimate_size(&self, function_id: ConcreteFunctionWithBodyId<'_>) -> Maybe<isize>;
-}
-
-/// Marker trait for using ApproxCasmInlineWeight as the code size estimator.
-pub trait UseApproxCodeSizeEstimator: for<'b> Upcast<'b, dyn LoweringGroup> {}
-
-impl<T: UseApproxCodeSizeEstimator> ExternalCodeSizeEstimator for T {
-    fn estimate_size(&self, function_id: ConcreteFunctionWithBodyId<'_>) -> Maybe<isize> {
-        let db = self.upcast();
-        let lowered = db.lowered_body(function_id, LoweringStage::PostBaseline)?;
-        Ok(ApproxCasmInlineWeight::new(db, &lowered).lowered_weight(&lowered))
-    }
-}
-
 // Salsa database interface.
 #[cairo_lang_proc_macros::query_group]
-pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
+pub trait LoweringGroup: Database {
     /// Computes the lowered representation of a function with a body, along with all it generated
     /// functions (e.g. closures, lambdas, loops, ...).
     #[salsa::transparent]
@@ -368,11 +355,16 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
     /// Returns the expected size of a type.
     #[salsa::transparent]
     fn type_size<'db>(&'db self, ty: TypeId<'db>) -> usize;
+
+    /// Returns the estimated size of the function with the given id.
+    #[salsa::transparent]
+    fn estimate_size<'db>(&'db self, function_id: ConcreteFunctionWithBodyId<'db>) -> Maybe<isize>;
 }
 
 pub fn init_lowering_group(
     db: &mut (dyn LoweringGroup + 'static),
     inlining_strategy: InliningStrategy,
+    code_size_estimator: Option<CodeSizeEstimator>,
 ) {
     let mut moveable_functions: Vec<String> = chain!(
         ["bool_not_impl"],
@@ -392,6 +384,7 @@ pub fn init_lowering_group(
             .with_moveable_functions(moveable_functions)
             .with_inlining_strategy(inlining_strategy),
     ));
+    lowering_group_input(db).set_code_size_estimator(db).to(code_size_estimator);
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
@@ -840,5 +833,19 @@ fn type_size<'db>(db: &'db dyn LoweringGroup, ty: TypeId<'db>) -> usize {
         | TypeLongId::Missing(_) => {
             panic!("Function should only be called with fully concrete types")
         }
+    }
+}
+
+fn estimate_size<'db>(
+    db: &'db dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId<'db>,
+) -> Maybe<isize> {
+    let code_size_estimator = lowering_group_input(db).code_size_estimator(db);
+    if let Some(estimator) = code_size_estimator {
+        estimator(db, function_id)
+    } else {
+        // Calling fallback approximated size heuristic.
+        let lowered = lowered_body(db, function_id, LoweringStage::PostBaseline)?;
+        Ok(ApproxCasmInlineWeight::new(db, &lowered).lowered_weight(&lowered))
     }
 }
