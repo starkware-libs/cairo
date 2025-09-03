@@ -1,5 +1,4 @@
 use std::collections::VecDeque;
-use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
@@ -158,12 +157,12 @@ fn collect_used_types(
 }
 
 /// Query implementation of [SierraGenGroup::priv_libfunc_dependencies].
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 pub fn priv_libfunc_dependencies(
     db: &dyn Database,
     _tracked: Tracked,
     libfunc_id: ConcreteLibfuncId,
-) -> Arc<[ConcreteTypeId]> {
+) -> Vec<ConcreteTypeId> {
     let long_id = db.lookup_concrete_lib_func(libfunc_id.clone());
     let signature = CoreLibfunc::specialize_signature_by_id(
         &SierraSignatureSpecializationContext(db),
@@ -194,7 +193,7 @@ pub fn priv_libfunc_dependencies(
             add_ty(ty);
         }
     }
-    all_types.into()
+    all_types
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -263,13 +262,13 @@ pub struct SierraProgramDebugInfo<'db> {
     pub statements_locations: StatementsLocations<'db>,
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 pub fn get_sierra_program_for_functions<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
-) -> Maybe<Arc<SierraProgramWithDebug<'db>>> {
-    let mut functions: Vec<Arc<pre_sierra::Function<'_>>> = vec![];
+) -> Maybe<SierraProgramWithDebug<'db>> {
+    let mut functions: Vec<&'db pre_sierra::Function<'_>> = vec![];
     let mut statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![];
     let mut processed_function_ids = UnorderedHashSet::<ConcreteFunctionWithBodyId<'_>>::default();
     let mut function_id_queue: VecDeque<ConcreteFunctionWithBodyId<'_>> =
@@ -278,8 +277,8 @@ pub fn get_sierra_program_for_functions<'db>(
         if !processed_function_ids.insert(function_id) {
             continue;
         }
-        let function: Arc<pre_sierra::Function<'_>> = db.function_with_body_sierra(function_id)?;
-        functions.push(function.clone());
+        let function = db.function_with_body_sierra(function_id)?;
+        functions.push(function);
         statements.extend_from_slice(&function.body);
 
         for statement in &function.body {
@@ -290,19 +289,19 @@ pub fn get_sierra_program_for_functions<'db>(
     }
 
     let (program, statements_locations) = assemble_program(db, functions, statements);
-    Ok(Arc::new(SierraProgramWithDebug {
+    Ok(SierraProgramWithDebug {
         program,
         debug_info: SierraProgramDebugInfo {
             statements_locations: StatementsLocations::from_locations_vec(&statements_locations),
         },
-    }))
+    })
 }
 
 /// Given a list of functions and statements, generates a Sierra program.
 /// Returns the program and the locations of the statements in the program.
 pub fn assemble_program<'db>(
     db: &dyn Database,
-    functions: Vec<Arc<pre_sierra::Function<'db>>>,
+    functions: Vec<&'db pre_sierra::Function<'db>>,
     statements: Vec<pre_sierra::StatementWithLocation<'db>>,
 ) -> (program::Program, Vec<Vec<StableLocation<'db>>>) {
     let label_replacer = LabelReplacer::from_statements(&statements);
@@ -372,12 +371,12 @@ pub fn try_get_function_with_body_id<'db>(
     .expect("No diagnostics at this stage.")
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 pub fn get_sierra_program<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
     requested_crate_ids: Vec<CrateId<'db>>,
-) -> Maybe<Arc<SierraProgramWithDebug<'db>>> {
+) -> Maybe<SierraProgramWithDebug<'db>> {
     let mut requested_function_ids = vec![];
     for crate_id in requested_crate_ids {
         for module_id in db.crate_modules(crate_id).iter() {
@@ -391,7 +390,7 @@ pub fn get_sierra_program<'db>(
             }
         }
     }
-    db.get_sierra_program_for_functions(requested_function_ids)
+    db.get_sierra_program_for_functions(requested_function_ids).cloned()
 }
 
 /// Given `function_id` generates a dummy program with the body of the relevant function
@@ -402,12 +401,12 @@ pub fn get_dummy_program_for_size_estimation(
     db: &dyn Database,
     function_id: ConcreteFunctionWithBodyId<'_>,
 ) -> Maybe<Program> {
-    let function: Arc<pre_sierra::Function<'_>> = db.function_with_body_sierra(function_id)?;
+    let function = db.function_with_body_sierra(function_id)?;
 
     let mut processed_function_ids =
         UnorderedHashSet::<ConcreteFunctionWithBodyId<'_>>::from_iter([function_id]);
 
-    let mut functions = vec![function.clone()];
+    let mut functions = vec![function];
 
     for statement in &function.body {
         if let Some(function_id) = try_get_function_with_body_id(db, statement) {

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_lowering::db::LoweringGroup;
@@ -121,9 +119,9 @@ fn test_only_include_dependencies(func_name: &str, sierra_used_funcs: &[&str]) {
     )
     .unwrap();
     let SierraProgramWithDebug { program, .. } =
-        Arc::unwrap_or_clone(db.get_sierra_program_for_functions(vec![func_id]).unwrap());
+        db.get_sierra_program_for_functions(vec![func_id]).unwrap();
     assert_eq!(
-        replace_sierra_ids_in_program(&db, &program)
+        replace_sierra_ids_in_program(&db, program)
             .funcs
             .into_iter()
             .filter_map(|f| f.id.to_string().strip_prefix("test::").map(|s| s.to_string()))

@@ -2,8 +2,6 @@
 #[path = "function_generator_test.rs"]
 mod test;
 
-use std::sync::Arc;
-
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -30,12 +28,12 @@ use crate::utils::{
 
 #[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
 pub struct SierraFunctionWithBodyData<'db> {
-    pub function: Maybe<Arc<pre_sierra::Function<'db>>>,
+    pub function: Maybe<pre_sierra::Function<'db>>,
     pub ap_change: SierraApChange,
 }
 
 /// Query implementation of [SierraGenGroup::priv_function_with_body_sierra_data].
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 pub fn priv_function_with_body_sierra_data<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
@@ -60,21 +58,12 @@ pub fn priv_function_with_body_sierra_data<'db>(
     Ok(SierraFunctionWithBodyData { ap_change, function })
 }
 
-/// Query implementation of [SierraGenGroup::function_with_body_sierra].
-#[salsa::tracked]
-pub fn function_with_body_sierra<'db>(
-    db: &'db dyn Database,
-    function_id: ConcreteFunctionWithBodyId<'db>,
-) -> Maybe<Arc<pre_sierra::Function<'db>>> {
-    db.priv_function_with_body_sierra_data(function_id)?.function
-}
-
 fn get_function_ap_change_and_code<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
     lowered_function: &Lowered<'db>,
     analyze_ap_change_result: AnalyzeApChangesResult,
-) -> Maybe<Arc<pre_sierra::Function<'db>>> {
+) -> Maybe<pre_sierra::Function<'db>> {
     let root_block = lowered_function.blocks.root_block()?;
     let AnalyzeApChangesResult { known_ap_change, local_variables, ap_tracking_configuration } =
         analyze_ap_change_result;
@@ -150,16 +139,15 @@ fn get_function_ap_change_and_code<'db>(
         body: statements,
         entry_point: label_id,
         parameters,
-    }
-    .into())
+    })
 }
 
 /// Query implementation of [SierraGenGroup::priv_get_dummy_function].
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 pub fn priv_get_dummy_function<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
-) -> Maybe<Arc<pre_sierra::Function<'db>>> {
+) -> Maybe<pre_sierra::Function<'db>> {
     // TODO(ilya): Remove the following query.
     let lowered_function = db.lowered_body(function_id, LoweringStage::PreOptimizations)?;
     let ap_tracking_configuration = Default::default();
@@ -194,7 +182,7 @@ pub fn priv_get_dummy_function<'db>(
         .collect::<Result<Vec<_>, _>>()?;
 
     context.push_statement(simple_basic_statement(
-        dummy_call_libfunc_id(db, sierra_id, &sierra_signature),
+        dummy_call_libfunc_id(db, sierra_id, sierra_signature),
         &param_vars[..],
         &ret_vars[..],
     ));
@@ -206,8 +194,7 @@ pub fn priv_get_dummy_function<'db>(
         body: context.statements(),
         entry_point: label_id,
         parameters,
-    }
-    .into())
+    })
 }
 
 /// Allocates space for the local variables.
