@@ -7,7 +7,7 @@ use cairo_lang_defs::ids::{
     ExternFunctionId, LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementLongId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, Tracked};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeId, TypeLongId, corelib};
@@ -82,19 +82,23 @@ impl<T: UseApproxCodeSizeEstimator> ExternalCodeSizeEstimator for T {
 pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
     /// Computes the lowered representation of a function with a body, along with all it generated
     /// functions (e.g. closures, lambdas, loops, ...).
+    #[salsa::transparent]
     fn priv_function_with_body_multi_lowering<'db>(
         &'db self,
+        _tracked: Tracked,
         function_id: defs::ids::FunctionWithBodyId<'db>,
     ) -> Maybe<Arc<MultiLowering<'db>>>;
 
     /// Returns a mapping from function ids to their multi-lowerings for the given loaded from a
     /// cache for the given crate.
+    #[salsa::transparent]
     fn cached_multi_lowerings<'db>(
         &'db self,
         crate_id: cairo_lang_filesystem::ids::CrateId<'db>,
     ) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId<'db>, MultiLowering<'db>>>>;
 
     /// Computes the lowered representation of a function with a body before borrow checking.
+    #[salsa::transparent]
     fn priv_function_with_body_lowering<'db>(
         &'db self,
         function_id: ids::FunctionWithBodyId<'db>,
@@ -102,18 +106,21 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
 
     /// Computes the lowered representation of a function with a body.
     /// Additionally applies borrow checking testing, and returns the possible calls per block.
+    #[salsa::transparent]
     fn function_with_body_lowering_with_borrow_check<'db>(
         &'db self,
         function_id: ids::FunctionWithBodyId<'db>,
     ) -> Maybe<(Arc<Lowered<'db>>, Arc<PotentialDestructCalls<'db>>)>;
 
     /// Computes the lowered representation of a function with a body.
+    #[salsa::transparent]
     fn function_with_body_lowering<'db>(
         &'db self,
         function_id: ids::FunctionWithBodyId<'db>,
     ) -> Maybe<Arc<Lowered<'db>>>;
 
     /// Computes the lowered representation of a function at the requested lowering stage.
+    #[salsa::transparent]
     fn lowered_body<'db>(
         &'db self,
         function_id: ids::ConcreteFunctionWithBodyId<'db>,
@@ -122,6 +129,7 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
 
     /// Returns the set of direct callees which are functions with body of a concrete function with
     /// a body (i.e. excluding libfunc callees), at the given stage.
+    #[salsa::transparent]
     fn lowered_direct_callees<'db>(
         &'db self,
         function_id: ids::ConcreteFunctionWithBodyId<'db>,
@@ -131,6 +139,7 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
 
     /// Returns the set of direct callees which are functions with body of a concrete function with
     /// a body (i.e. excluding libfunc callees), at the given stage.
+    #[salsa::transparent]
     fn lowered_direct_callees_with_body<'db>(
         &'db self,
         function_id: ids::ConcreteFunctionWithBodyId<'db>,
@@ -139,23 +148,29 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
     ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId<'db>>>;
 
     /// Aggregates function level lowering diagnostics.
+    #[salsa::transparent]
     fn function_with_body_lowering_diagnostics<'db>(
         &'db self,
         function_id: ids::FunctionWithBodyId<'db>,
     ) -> Maybe<Diagnostics<'db, LoweringDiagnostic<'db>>>;
     /// Aggregates semantic function level lowering diagnostics - along with all its generated
     /// function.
+    #[salsa::transparent]
     fn semantic_function_with_body_lowering_diagnostics<'db>(
         &'db self,
+        _tracked: Tracked,
         function_id: defs::ids::FunctionWithBodyId<'db>,
     ) -> Maybe<Diagnostics<'db, LoweringDiagnostic<'db>>>;
     /// Aggregates module level lowering diagnostics.
+    #[salsa::transparent]
     fn module_lowering_diagnostics<'db>(
         &'db self,
+        _tracked: Tracked,
         module_id: ModuleId<'db>,
     ) -> Maybe<Diagnostics<'db, LoweringDiagnostic<'db>>>;
 
     /// Aggregates file level lowering diagnostics.
+    #[salsa::transparent]
     fn file_lowering_diagnostics<'db>(
         &'db self,
         file_id: FileId<'db>,
@@ -167,30 +182,22 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
     /// signature and the functions it calls). The items in the returned vector are unique and the
     /// order is consistent, but not necessarily related to the order of the explicit implicits in
     /// the signature of the function.
+    #[salsa::transparent]
     #[salsa::invoke(crate::implicits::function_implicits)]
     fn function_implicits<'db>(
         &'db self,
         function: ids::FunctionId<'db>,
     ) -> Maybe<Vec<TypeId<'db>>>;
 
-    /// Returns all the implicits used by a strongly connected component of functions.
-    #[salsa::invoke(crate::implicits::scc_implicits)]
-    fn scc_implicits<'db>(
-        &'db self,
-        function: ConcreteSCCRepresentative<'db>,
-    ) -> Maybe<Vec<TypeId<'db>>>;
-
     // ### Queries related to panics ###
 
     /// Returns whether the function may panic.
+    #[salsa::transparent]
     #[salsa::invoke(crate::panic::function_may_panic)]
     fn function_may_panic<'db>(&'db self, function: ids::FunctionId<'db>) -> Maybe<bool>;
 
-    /// Returns whether any function in the strongly connected component may panic.
-    #[salsa::invoke(crate::panic::scc_may_panic)]
-    fn scc_may_panic<'db>(&'db self, scc: ConcreteSCCRepresentative<'db>) -> Maybe<bool>;
-
     /// Checks if the function has a block that ends with panic.
+    #[salsa::transparent]
     #[salsa::invoke(crate::panic::has_direct_panic)]
     fn has_direct_panic<'db>(
         &'db self,
@@ -200,6 +207,7 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
     // ### cycles ###
 
     /// Returns the set of direct callees of a function with a body.
+    #[salsa::transparent]
     #[salsa::invoke(crate::graph_algorithms::cycles::function_with_body_direct_callees)]
     fn function_with_body_direct_callees<'db>(
         &'db self,
@@ -208,6 +216,7 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
     ) -> Maybe<OrderedHashSet<ids::FunctionId<'db>>>;
     /// Returns the set of direct callees which are functions with body of a function with a body
     /// (i.e. excluding libfunc callees).
+    #[salsa::transparent]
     #[salsa::invoke(
         crate::graph_algorithms::cycles::function_with_body_direct_function_with_body_callees
     )]
@@ -221,8 +230,8 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
     /// indirectly) itself, or if it calls (possibly indirectly) such a function. For example, if f0
     /// calls f1, f1 calls f2, f2 calls f3, and f3 calls f2, then [Self::final_contains_call_cycle]
     /// will return `true` for all of these functions.
+    #[salsa::transparent]
     #[salsa::invoke(crate::graph_algorithms::cycles::final_contains_call_cycle)]
-    #[salsa::cycle(crate::graph_algorithms::cycles::final_contains_call_cycle_handle_cycle)]
     fn final_contains_call_cycle<'db>(
         &'db self,
         function_id: ids::ConcreteFunctionWithBodyId<'db>,
@@ -231,6 +240,7 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
     /// Returns `true` if the function calls (possibly indirectly) itself. For example, if f0 calls
     /// f1, f1 calls f2, f2 calls f3, and f3 calls f2, then [Self::in_cycle] will return
     /// `true` for f2 and f3, but false for f0 and f1.
+    #[salsa::transparent]
     #[salsa::invoke(crate::graph_algorithms::cycles::in_cycle)]
     fn in_cycle<'db>(
         &'db self,
@@ -239,6 +249,7 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
     ) -> Maybe<bool>;
 
     /// A concrete version of `in_cycle`.
+    #[salsa::transparent]
     #[salsa::invoke(crate::graph_algorithms::cycles::concrete_in_cycle)]
     fn concrete_in_cycle<'db>(
         &'db self,
@@ -251,6 +262,7 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
 
     /// Returns the representative of the concrete function's strongly connected component. The
     /// representative is consistently chosen for all the concrete functions in the same SCC.
+    #[salsa::transparent]
     #[salsa::invoke(
         crate::graph_algorithms::strongly_connected_components::lowered_scc_representative
     )]
@@ -263,6 +275,7 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
 
     /// Returns all the concrete functions in the same strongly connected component as the given
     /// concrete function.
+    #[salsa::transparent]
     #[salsa::invoke(crate::graph_algorithms::strongly_connected_components::lowered_scc)]
     fn lowered_scc<'db>(
         &'db self,
@@ -272,6 +285,7 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
     ) -> Vec<ids::ConcreteFunctionWithBodyId<'db>>;
 
     /// Returns all the functions in the same strongly connected component as the given function.
+    #[salsa::transparent]
     #[salsa::invoke(crate::scc::function_with_body_scc)]
     fn function_with_body_scc<'db>(
         &'db self,
@@ -283,6 +297,7 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
 
     /// Returns the feedback-vertex-set of the given concrete function. A feedback-vertex-set is the
     /// set of vertices whose removal leaves a graph without cycles.
+    #[salsa::transparent]
     #[salsa::invoke(crate::graph_algorithms::feedback_set::function_with_body_feedback_set)]
     fn function_with_body_feedback_set<'db>(
         &'db self,
@@ -291,32 +306,27 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
     ) -> Maybe<OrderedHashSet<ids::ConcreteFunctionWithBodyId<'db>>>;
 
     /// Returns whether the given function needs an additional withdraw_gas call.
+    #[salsa::transparent]
     #[salsa::invoke(crate::graph_algorithms::feedback_set::needs_withdraw_gas)]
     fn needs_withdraw_gas<'db>(
         &'db self,
         function: ids::ConcreteFunctionWithBodyId<'db>,
     ) -> Maybe<bool>;
 
-    /// Returns the feedback-vertex-set of the given concrete-function SCC-representative. A
-    /// feedback-vertex-set is the set of vertices whose removal leaves a graph without cycles.
-    #[salsa::invoke(crate::graph_algorithms::feedback_set::priv_function_with_body_feedback_set_of_representative)]
-    fn priv_function_with_body_feedback_set_of_representative<'db>(
-        &'db self,
-        function: ConcreteSCCRepresentative<'db>,
-        stage: LoweringStage,
-    ) -> Maybe<OrderedHashSet<ids::ConcreteFunctionWithBodyId<'db>>>;
-
     /// Internal query for reorder_statements to cache the function ids that can be moved.
+    #[salsa::transparent]
     #[salsa::invoke(crate::optimizations::config::priv_movable_function_ids)]
     fn priv_movable_function_ids<'db>(&'db self) -> Arc<UnorderedHashSet<ExternFunctionId<'db>>>;
 
     /// Internal query for the libfuncs information required for const folding.
+    #[salsa::transparent]
     #[salsa::invoke(crate::optimizations::const_folding::priv_const_folding_info)]
     fn priv_const_folding_info<'db>(
         &'db self,
     ) -> Arc<crate::optimizations::const_folding::ConstFoldingLibfuncInfo<'db>>;
 
     // Internal query for a heuristic to decide if a given `function_id` should be inlined.
+    #[salsa::transparent]
     #[salsa::invoke(crate::inline::priv_should_inline)]
     fn priv_should_inline<'db>(
         &'db self,
@@ -324,6 +334,7 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
     ) -> Maybe<bool>;
 
     // Internal query for if a function is marked as `#[inline(never)]`.
+    #[salsa::transparent]
     #[salsa::invoke(crate::inline::priv_never_inline)]
     fn priv_never_inline<'db>(
         &'db self,
@@ -331,6 +342,7 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
     ) -> Maybe<bool>;
 
     /// Returns whether a function should be specalized.
+    #[salsa::transparent]
     #[salsa::invoke(crate::specialization::priv_should_specialize)]
     fn priv_should_specialize<'db>(
         &'db self,
@@ -343,15 +355,18 @@ pub trait LoweringGroup: Database + ExternalCodeSizeEstimator {
 
     /// Returns the final optimization strategy that is applied on top of
     /// inlined_function_optimization_strategy.
+    #[salsa::transparent]
     #[salsa::invoke(crate::optimizations::strategy::final_optimization_strategy)]
     fn final_optimization_strategy<'db>(&'db self) -> OptimizationStrategyId<'db>;
 
     /// Returns the baseline optimization strategy.
     /// This strategy is used for inlining decision and as a starting point for the final lowering.
+    #[salsa::transparent]
     #[salsa::invoke(crate::optimizations::strategy::baseline_optimization_strategy)]
     fn baseline_optimization_strategy<'db>(&'db self) -> OptimizationStrategyId<'db>;
 
     /// Returns the expected size of a type.
+    #[salsa::transparent]
     fn type_size<'db>(&'db self, ty: TypeId<'db>) -> usize;
 }
 
@@ -387,8 +402,10 @@ pub struct ConcreteSCCRepresentative<'db>(pub ids::ConcreteFunctionWithBodyId<'d
 
 // *** Main lowering phases in order.
 
+#[salsa::tracked]
 fn priv_function_with_body_multi_lowering<'db>(
     db: &'db dyn LoweringGroup,
+    _tracked: Tracked,
     function_id: defs::ids::FunctionWithBodyId<'db>,
 ) -> Maybe<Arc<MultiLowering<'db>>> {
     let crate_id = function_id.parent_module(db).owning_crate(db);
@@ -404,6 +421,7 @@ fn priv_function_with_body_multi_lowering<'db>(
     Ok(Arc::new(multi_lowering))
 }
 
+#[salsa::tracked]
 fn cached_multi_lowerings<'db>(
     db: &'db dyn LoweringGroup,
     crate_id: cairo_lang_filesystem::ids::CrateId<'db>,
@@ -412,12 +430,13 @@ fn cached_multi_lowerings<'db>(
 }
 
 // * Borrow checking.
+#[salsa::tracked]
 fn priv_function_with_body_lowering<'db>(
     db: &'db dyn LoweringGroup,
     function_id: ids::FunctionWithBodyId<'db>,
 ) -> Maybe<Arc<Lowered<'db>>> {
     let semantic_function_id = function_id.base_semantic_function(db);
-    let multi_lowering = db.priv_function_with_body_multi_lowering(semantic_function_id)?;
+    let multi_lowering = db.priv_function_with_body_multi_lowering((), semantic_function_id)?;
     let lowered = match &function_id.long(db) {
         ids::FunctionWithBodyLongId::Semantic(_) => multi_lowering.main_lowering.clone(),
         ids::FunctionWithBodyLongId::Generated { key, .. } => {
@@ -427,6 +446,7 @@ fn priv_function_with_body_lowering<'db>(
     Ok(Arc::new(lowered))
 }
 
+#[salsa::tracked]
 fn function_with_body_lowering_with_borrow_check<'db>(
     db: &'db dyn LoweringGroup,
     function_id: ids::FunctionWithBodyId<'db>,
@@ -449,6 +469,7 @@ fn function_with_body_lowering_with_borrow_check<'db>(
     Ok((lowered, Arc::new(borrow_check_result.block_extra_calls)))
 }
 
+#[salsa::tracked]
 fn function_with_body_lowering<'db>(
     db: &'db dyn LoweringGroup,
     function_id: ids::FunctionWithBodyId<'db>,
@@ -456,6 +477,7 @@ fn function_with_body_lowering<'db>(
     Ok(db.function_with_body_lowering_with_borrow_check(function_id)?.0)
 }
 
+#[salsa::tracked]
 fn lowered_body<'db>(
     db: &'db dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId<'db>,
@@ -623,6 +645,7 @@ fn extract_coupon_function<'db>(
     Ok(Some(ids::ConcreteFunctionWithBodyId::from_semantic(db, coupon_function_with_body_id)))
 }
 
+#[salsa::tracked]
 fn lowered_direct_callees<'db>(
     db: &'db dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId<'db>,
@@ -633,6 +656,7 @@ fn lowered_direct_callees<'db>(
     Ok(get_direct_callees(db, &lowered_function, dependency_type, &Default::default()))
 }
 
+#[salsa::tracked]
 fn lowered_direct_callees_with_body<'db>(
     db: &'db dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId<'db>,
@@ -646,6 +670,7 @@ fn lowered_direct_callees_with_body<'db>(
     )
 }
 
+#[salsa::tracked]
 fn function_with_body_lowering_diagnostics<'db>(
     db: &'db dyn LoweringGroup,
     function_id: ids::FunctionWithBodyId<'db>,
@@ -674,13 +699,16 @@ fn function_with_body_lowering_diagnostics<'db>(
     Ok(diagnostics.build())
 }
 
+#[salsa::tracked]
 fn semantic_function_with_body_lowering_diagnostics<'db>(
     db: &'db dyn LoweringGroup,
+    _tracked: Tracked,
     semantic_function_id: defs::ids::FunctionWithBodyId<'db>,
 ) -> Maybe<Diagnostics<'db, LoweringDiagnostic<'db>>> {
     let mut diagnostics = DiagnosticsBuilder::default();
 
-    if let Ok(multi_lowering) = db.priv_function_with_body_multi_lowering(semantic_function_id) {
+    if let Ok(multi_lowering) = db.priv_function_with_body_multi_lowering((), semantic_function_id)
+    {
         let function_id = ids::FunctionWithBodyLongId::Semantic(semantic_function_id).intern(db);
         diagnostics
             .extend(db.function_with_body_lowering_diagnostics(function_id).unwrap_or_default());
@@ -697,8 +725,10 @@ fn semantic_function_with_body_lowering_diagnostics<'db>(
     Ok(diagnostics.build())
 }
 
+#[salsa::tracked]
 fn module_lowering_diagnostics<'db>(
     db: &'db dyn LoweringGroup,
+    _tracked: Tracked,
     module_id: ModuleId<'db>,
 ) -> Maybe<Diagnostics<'db, LoweringDiagnostic<'db>>> {
     let mut diagnostics = DiagnosticsBuilder::default();
@@ -707,7 +737,7 @@ fn module_lowering_diagnostics<'db>(
             ModuleItemId::FreeFunction(free_function) => {
                 let function_id = defs::ids::FunctionWithBodyId::Free(*free_function);
                 diagnostics
-                    .extend(db.semantic_function_with_body_lowering_diagnostics(function_id)?);
+                    .extend(db.semantic_function_with_body_lowering_diagnostics((), function_id)?);
             }
             ModuleItemId::Constant(_) => {}
             ModuleItemId::Submodule(_) => {}
@@ -721,7 +751,7 @@ fn module_lowering_diagnostics<'db>(
                     if matches!(db.trait_function_body(*trait_func), Ok(Some(_))) {
                         let function_id = defs::ids::FunctionWithBodyId::Trait(*trait_func);
                         diagnostics.extend(
-                            db.semantic_function_with_body_lowering_diagnostics(function_id)?,
+                            db.semantic_function_with_body_lowering_diagnostics((), function_id)?,
                         );
                     }
                 }
@@ -729,8 +759,9 @@ fn module_lowering_diagnostics<'db>(
             ModuleItemId::Impl(impl_def_id) => {
                 for impl_func in db.impl_functions(*impl_def_id)?.values() {
                     let function_id = defs::ids::FunctionWithBodyId::Impl(*impl_func);
-                    diagnostics
-                        .extend(db.semantic_function_with_body_lowering_diagnostics(function_id)?);
+                    diagnostics.extend(
+                        db.semantic_function_with_body_lowering_diagnostics((), function_id)?,
+                    );
                 }
             }
             ModuleItemId::ExternType(_) => {}
@@ -740,7 +771,7 @@ fn module_lowering_diagnostics<'db>(
     }
     for macro_call in db.module_macro_calls_ids(module_id)?.iter() {
         if let Ok(macro_module_id) = db.macro_call_module_id(*macro_call)
-            && let Ok(lowering_diags) = db.module_lowering_diagnostics(macro_module_id)
+            && let Ok(lowering_diags) = db.module_lowering_diagnostics((), macro_module_id)
         {
             diagnostics.extend(lowering_diags);
         }
@@ -748,19 +779,21 @@ fn module_lowering_diagnostics<'db>(
     Ok(diagnostics.build())
 }
 
+#[salsa::tracked]
 fn file_lowering_diagnostics<'db>(
     db: &'db dyn LoweringGroup,
     file_id: FileId<'db>,
 ) -> Maybe<Diagnostics<'db, LoweringDiagnostic<'db>>> {
     let mut diagnostics = DiagnosticsBuilder::default();
     for module_id in db.file_modules(file_id)?.iter().copied() {
-        if let Ok(module_diagnostics) = db.module_lowering_diagnostics(module_id) {
+        if let Ok(module_diagnostics) = db.module_lowering_diagnostics((), module_id) {
             diagnostics.extend(module_diagnostics)
         }
     }
     Ok(diagnostics.build())
 }
 
+#[salsa::tracked]
 fn type_size<'db>(db: &'db dyn LoweringGroup, ty: TypeId<'db>) -> usize {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {

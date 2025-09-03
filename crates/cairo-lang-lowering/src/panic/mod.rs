@@ -443,6 +443,7 @@ impl<'db> PanicBlockLoweringContext<'db> {
 // ============= Query implementations =============
 
 /// Query implementation of [crate::db::LoweringGroup::function_may_panic].
+#[salsa::tracked]
 pub fn function_may_panic<'db>(
     db: &'db dyn LoweringGroup,
     function: FunctionId<'db>,
@@ -460,23 +461,33 @@ pub trait MayPanicTrait<'db>: Upcast<'db, dyn LoweringGroup> {
         &'db self,
         function: ConcreteFunctionWithBodyId<'db>,
     ) -> Maybe<bool> {
-        let scc_representative = self.upcast().lowered_scc_representative(
+        let db = self.upcast();
+        let scc_representative = db.lowered_scc_representative(
             function,
             DependencyType::Call,
             LoweringStage::Monomorphized,
         );
-        self.upcast().scc_may_panic(scc_representative)
+        scc_may_panic(db, scc_representative)
     }
 }
 impl<'db, T: Upcast<'db, dyn LoweringGroup> + ?Sized> MayPanicTrait<'db> for T {}
 
-/// Query implementation of [crate::db::LoweringGroup::scc_may_panic].
-pub fn scc_may_panic<'db>(
+/// Returns whether any function in the strongly connected component may panic.
+fn scc_may_panic<'db>(
     db: &'db dyn LoweringGroup,
     scc: ConcreteSCCRepresentative<'db>,
 ) -> Maybe<bool> {
+    scc_may_panic_tracked(db, scc.0)
+}
+
+/// Tracked implementation of [scc_may_panic].
+#[salsa::tracked]
+fn scc_may_panic_tracked<'db>(
+    db: &'db dyn LoweringGroup,
+    rep: ConcreteFunctionWithBodyId<'db>,
+) -> Maybe<bool> {
     // Find the SCC representative.
-    let scc_functions = db.lowered_scc(scc.0, DependencyType::Call, LoweringStage::Monomorphized);
+    let scc_functions = db.lowered_scc(rep, DependencyType::Call, LoweringStage::Monomorphized);
     for function in scc_functions {
         if db.needs_withdraw_gas(function)? {
             return Ok(true);
@@ -497,7 +508,7 @@ pub fn scc_may_panic<'db>(
                     DependencyType::Call,
                     LoweringStage::Monomorphized,
                 );
-                if callee_scc != scc && db.scc_may_panic(callee_scc)? {
+                if callee_scc.0 != rep && scc_may_panic(db, callee_scc)? {
                     return Ok(true);
                 }
             } else if direct_callee.signature(db)?.panicable {
@@ -509,6 +520,7 @@ pub fn scc_may_panic<'db>(
 }
 
 /// Query implementation of [crate::db::LoweringGroup::has_direct_panic].
+#[salsa::tracked]
 pub fn has_direct_panic<'db>(
     db: &'db dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId<'db>,

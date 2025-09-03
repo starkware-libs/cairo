@@ -218,7 +218,7 @@ impl<'a> DiagnosticsReporter<'a> {
                     continue;
                 }
 
-                if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
+                if let Ok(group) = db.module_lowering_diagnostics((), *module_id) {
                     found_diagnostics |= self.check_diag_group(
                         db.as_dyn_database(),
                         group,

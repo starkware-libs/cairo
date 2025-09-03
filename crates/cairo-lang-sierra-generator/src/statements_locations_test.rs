@@ -28,7 +28,7 @@ pub fn test_sierra_locations(
     )
     .split();
 
-    let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id);
+    let lowering_diagnostics = db.module_lowering_diagnostics((), test_function.module_id);
 
     // Compile the function.
     let function_id =

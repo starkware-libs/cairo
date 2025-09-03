@@ -32,7 +32,7 @@ fn test_borrow_check(
     )
     .split();
 
-    let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
+    let lowering_diagnostics = db.module_lowering_diagnostics((), test_function.module_id).unwrap();
     let lowering = if let Ok(lowered) = db.priv_function_with_body_lowering(
         FunctionWithBodyLongId::Semantic(test_function.function_id).intern(db),
     ) {

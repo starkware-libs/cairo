@@ -6,6 +6,7 @@ use crate::db::LoweringGroup;
 use crate::ids::FunctionWithBodyId;
 
 /// Query implementation of [crate::db::LoweringGroup::function_with_body_scc].
+#[salsa::tracked]
 pub fn function_with_body_scc<'db>(
     db: &'db dyn LoweringGroup,
     function_id: FunctionWithBodyId<'db>,

@@ -52,6 +52,7 @@ pub fn get_inline_diagnostics<'db>(
 }
 
 /// Query implementation of [LoweringGroup::priv_should_inline].
+#[salsa::tracked]
 pub fn priv_should_inline<'db>(
     db: &'db dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId<'db>,
@@ -82,6 +83,7 @@ pub fn priv_should_inline<'db>(
 }
 
 /// Query implementation of [LoweringGroup::priv_never_inline].
+#[salsa::tracked]
 pub fn priv_never_inline<'db>(
     db: &'db dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId<'db>,
