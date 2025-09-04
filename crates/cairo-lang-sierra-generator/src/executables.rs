@@ -8,6 +8,7 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use salsa::Database;
 
 use crate::db::SierraGenGroup;
 
@@ -21,7 +22,7 @@ use crate::db::SierraGenGroup;
 /// Note, that a single function can be marked with more than one executable attribute.
 /// Only crates declared as _main_crate_ids_ are considered.
 pub fn find_executable_function_ids<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     main_crate_ids: Vec<CrateId<'db>>,
 ) -> HashMap<ConcreteFunctionWithBodyId<'db>, Vec<String>> {
     let mut executable_function_ids = HashMap::new();
@@ -72,7 +73,7 @@ pub fn find_executable_function_ids<'db>(
 /// and finds their corresponding Sierra ids in a Sierra program.
 /// The returned function ids are grouped by the executable attribute name, and sorted by full path.
 pub fn collect_executables(
-    db: &dyn SierraGenGroup,
+    db: &dyn Database,
     mut executable_function_ids: HashMap<ConcreteFunctionWithBodyId<'_>, Vec<String>>,
     sierra_program: &Program,
 ) -> HashMap<String, Vec<FunctionId>> {

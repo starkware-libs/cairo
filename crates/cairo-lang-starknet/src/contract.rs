@@ -304,7 +304,7 @@ pub struct ContractInfo {
 
 /// Returns the list of functions in a given module.
 pub fn get_contracts_info<T: SierraIdReplacer>(
-    db: &dyn SierraGenGroup,
+    db: &dyn Database,
     contracts: Vec<ContractDeclaration<'_>>,
     replacer: &T,
 ) -> Result<OrderedHashMap<Felt252, ContractInfo>, anyhow::Error> {
@@ -318,7 +318,7 @@ pub fn get_contracts_info<T: SierraIdReplacer>(
 
 /// Analyzes a contract and returns its class hash and a list of its functions.
 fn analyze_contract<'db, T: SierraIdReplacer>(
-    db: &'db dyn SierraGenGroup,
+    db: &dyn Database,
     contract: &ContractDeclaration<'db>,
     replacer: &T,
 ) -> anyhow::Result<(Felt252, ContractInfo)> {
@@ -354,7 +354,7 @@ fn analyze_contract<'db, T: SierraIdReplacer>(
 /// Converts a function to a Sierra function.
 /// Returns the selector and the sierra function id.
 pub fn get_selector_and_sierra_function<'db, T: SierraIdReplacer>(
-    db: &'db dyn SierraGenGroup,
+    db: &dyn Database,
     function_with_body: &Aliased<lowering::ids::ConcreteFunctionWithBodyId<'db>>,
     replacer: &T,
 ) -> (Felt252, FunctionId) {

@@ -1,6 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_sierra::program;
 use cairo_lang_utils::extract_matches;
+use salsa::Database;
 
 use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId};
 use crate::pre_sierra::{self, PushValue};
@@ -86,7 +87,7 @@ pub trait SierraIdReplacer {
 ///  - For types: `felt252` or `Box<Box<felt252>>`.
 ///  - For user functions: `test::foo`.
 pub struct DebugReplacer<'a> {
-    pub db: &'a dyn SierraGenGroup,
+    pub db: &'a dyn Database,
 }
 impl SierraIdReplacer for DebugReplacer<'_> {
     fn replace_libfunc_id(
@@ -157,7 +158,7 @@ impl DebugReplacer<'_> {
 }
 
 pub fn replace_sierra_ids<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     statement: &pre_sierra::StatementWithLocation<'db>,
 ) -> pre_sierra::StatementWithLocation<'db> {
     let replacer = DebugReplacer { db };
@@ -203,7 +204,7 @@ pub fn replace_sierra_ids<'db>(
 ///
 /// Similar to [replace_sierra_ids] except that it acts on [cairo_lang_sierra::program::Program].
 pub fn replace_sierra_ids_in_program(
-    db: &dyn SierraGenGroup,
+    db: &dyn Database,
     program: &cairo_lang_sierra::program::Program,
 ) -> cairo_lang_sierra::program::Program {
     DebugReplacer { db }.apply(program)

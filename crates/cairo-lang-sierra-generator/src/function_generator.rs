@@ -13,6 +13,7 @@ use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{Itertools, zip_eq};
+use salsa::Database;
 
 use crate::block_generator::generate_function_statements;
 use crate::db::SierraGenGroup;
@@ -34,8 +35,9 @@ pub struct SierraFunctionWithBodyData<'db> {
 }
 
 /// Query implementation of [SierraGenGroup::priv_function_with_body_sierra_data].
+#[salsa::tracked]
 pub fn priv_function_with_body_sierra_data<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<SierraFunctionWithBodyData<'db>> {
     let lowered_function = &*db.lowered_body(function_id, LoweringStage::Final)?;
@@ -59,15 +61,16 @@ pub fn priv_function_with_body_sierra_data<'db>(
 }
 
 /// Query implementation of [SierraGenGroup::function_with_body_sierra].
+#[salsa::tracked]
 pub fn function_with_body_sierra<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<Arc<pre_sierra::Function<'db>>> {
     db.priv_function_with_body_sierra_data(function_id)?.function
 }
 
 fn get_function_ap_change_and_code<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
     lowered_function: &Lowered<'db>,
     analyze_ap_change_result: AnalyzeApChangesResult,
@@ -152,8 +155,9 @@ fn get_function_ap_change_and_code<'db>(
 }
 
 /// Query implementation of [SierraGenGroup::priv_get_dummy_function].
+#[salsa::tracked]
 pub fn priv_get_dummy_function<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<Arc<pre_sierra::Function<'db>>> {
     // TODO(ilya): Remove the following query.

@@ -10,6 +10,7 @@ use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
+use salsa::Database;
 
 use super::{LibfuncInfo, LocalVariables};
 use crate::db::SierraGenGroup;
@@ -25,7 +26,7 @@ use crate::test_utils::{
 /// Returns the [OutputVarReferenceInfo] information for a given libfunc.
 /// All libfuncs inputs and outputs are felt252s, since [dummy_push_values] is currently with
 /// felt252s.
-fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -> LibfuncSignature {
+fn get_lib_func_signature(db: &dyn Database, libfunc: ConcreteLibfuncId) -> LibfuncSignature {
     let libfunc_long_id = db.lookup_concrete_lib_func(libfunc);
     let felt252_ty =
         db.get_concrete_type_id(db.core_info().felt252).expect("Can't find core::felt252.");

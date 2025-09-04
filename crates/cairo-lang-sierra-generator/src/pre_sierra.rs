@@ -7,8 +7,7 @@ use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program;
 use cairo_lang_utils::{define_short_id, write_comma_separated};
-
-use crate::db::SierraGenGroup;
+use salsa::Database;
 
 /// Represents the long id of a pre-sierra label.
 /// The long id consists of the parent function and a unique identifier inside the function.
@@ -19,10 +18,10 @@ pub struct LabelLongId<'db> {
     // A unique identifier inside the function
     pub id: usize,
 }
-define_short_id!(LabelId, LabelLongId<'db>, SierraGenGroup);
+define_short_id!(LabelId, LabelLongId<'db>, Database);
 
 pub struct LabelIdWithDb<'db> {
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     label_id: LabelId<'db>,
 }
 impl std::fmt::Display for LabelIdWithDb<'_> {
@@ -35,7 +34,7 @@ impl std::fmt::Display for LabelIdWithDb<'_> {
 }
 
 impl<'db> LabelId<'db> {
-    pub fn with_db(&self, db: &'db dyn SierraGenGroup) -> LabelIdWithDb<'db> {
+    pub fn with_db(&self, db: &'db dyn Database) -> LabelIdWithDb<'db> {
         LabelIdWithDb { db, label_id: *self }
     }
 }
@@ -82,7 +81,7 @@ impl<'db> Statement<'db> {
     pub fn into_statement_without_location(self) -> StatementWithLocation<'db> {
         StatementWithLocation { statement: self, location: vec![] }
     }
-    pub fn to_string(&self, db: &dyn SierraGenGroup) -> String {
+    pub fn to_string(&self, db: &dyn Database) -> String {
         StatementWithDb { db, statement: self.clone() }.to_string()
     }
 }
@@ -101,7 +100,7 @@ impl<'db> StatementWithLocation<'db> {
 }
 
 struct StatementWithDb<'db> {
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     statement: Statement<'db>,
 }
 impl<'db> std::fmt::Display for StatementWithDb<'db> {

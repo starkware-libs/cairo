@@ -14,6 +14,7 @@ use sierra::program;
 use {cairo_lang_lowering as lowering, cairo_lang_sierra as sierra};
 
 use crate::block_generator::sierra::ids::ConcreteLibfuncId;
+use crate::db::SierraGenGroup;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::{DropLocation, SierraGenVar, UseLocation};
 use crate::pre_sierra::{self, StatementWithLocation};

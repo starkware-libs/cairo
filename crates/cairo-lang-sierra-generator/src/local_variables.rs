@@ -19,6 +19,7 @@ use lowering::borrow_check::Demand;
 use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use lowering::borrow_check::demand::DemandReporter;
 use lowering::{Lowered, MatchInfo, Statement, VarRemapping, VarUsage};
+use salsa::Database;
 
 use crate::ap_tracking::{ApTrackingConfiguration, get_ap_tracking_configuration};
 use crate::db::SierraGenGroup;
@@ -41,7 +42,7 @@ pub struct AnalyzeApChangesResult {
 /// Does ap change related analysis for a given function.
 /// See [AnalyzeApChangesResult].
 pub fn analyze_ap_changes<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &dyn Database,
     lowered_function: &Lowered<'db>,
 ) -> Maybe<AnalyzeApChangesResult> {
     lowered_function.blocks.has_root()?;
@@ -116,7 +117,7 @@ struct CalledBlockInfo {
 
 /// Context for the find_local_variables logic.
 struct FindLocalsContext<'db, 'a> {
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     lowered_function: &'a Lowered<'db>,
     used_after_revoke: OrderedHashSet<VariableId>,
     block_callers: OrderedHashMap<BlockId, CalledBlockInfo>,
