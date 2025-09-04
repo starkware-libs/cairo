@@ -31,3 +31,38 @@ impl DowncastableTryInto<
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Negative impls with generic args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(a: u8) -> u8 {
+    bar(a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    fn f(t: T) -> T;
+}
+impl MyImpl<T, -Drop<T>> of MyTrait<T> {
+    fn f(t: T) -> T {
+        t
+    }
+}
+
+fn bar<T>(t: T) -> T {
+    MyTrait::f(t)
+}
+
+//! > expected_diagnostics
+error: Cannot infer negative impl in `test::MyImpl::<T, _>` as it contains the unresolved type `T`
+ --> lib.cairo:11:14
+    MyTrait::f(t)
+             ^
