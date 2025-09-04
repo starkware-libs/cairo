@@ -1185,6 +1185,19 @@ impl<'db, 'id> Inference<'db, 'id> {
                 return Ok(SolutionSet::Unique(concrete_trait_id));
             }
         }
+
+        if !matches!(
+            self.trait_solution_set(
+                concrete_trait_id,
+                ImplVarTraitItemMappings::default(),
+                lookup_context,
+            )?,
+            SolutionSet::None
+        ) {
+            // If a negative impl has an impl, then we should skip it.
+            return Ok(SolutionSet::None);
+        }
+
         for garg in concrete_trait_id.generic_args(self.db) {
             let GenericArgumentId::Type(ty) = garg else {
                 continue;
@@ -1206,18 +1219,6 @@ impl<'db, 'id> Inference<'db, 'id> {
                     Ambiguity::NegativeImplWithUnresolvedGenericArgs2 { concrete_trait_id, ty },
                 ));
             }
-        }
-
-        if !matches!(
-            self.trait_solution_set(
-                concrete_trait_id,
-                ImplVarTraitItemMappings::default(),
-                lookup_context,
-            )?,
-            SolutionSet::None
-        ) {
-            // If a negative impl has an impl, then we should skip it.
-            return Ok(SolutionSet::None);
         }
 
         Ok(SolutionSet::Unique(concrete_trait_id))
