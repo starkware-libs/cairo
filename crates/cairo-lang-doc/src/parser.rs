@@ -70,11 +70,11 @@ struct DocCommentListItem {
 
 /// Parses plain documentation comments into [DocumentationCommentToken]s.
 pub struct DocumentationCommentParser<'db> {
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
 }
 
 impl<'db> DocumentationCommentParser<'db> {
-    pub fn new(db: &'db dyn DocGroup) -> Self {
+    pub fn new(db: &'db dyn Database) -> Self {
         Self { db }
     }
 
