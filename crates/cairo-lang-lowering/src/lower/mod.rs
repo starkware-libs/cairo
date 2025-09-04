@@ -908,7 +908,7 @@ fn lower_expr<'db>(
         semantic::Expr::LogicalOperator(expr) => lower_logical_op(ctx, builder, &expr),
         semantic::Expr::Block(expr) => lower_expr_block(ctx, builder, &expr),
         semantic::Expr::FunctionCall(expr) => lower_expr_function_call(ctx, &expr, builder),
-        semantic::Expr::Match(expr) => lower_expr_match(ctx, expr, builder),
+        semantic::Expr::Match(expr) => lower_expr_match(ctx, &expr, builder),
         semantic::Expr::If(expr) => lower_expr_if(ctx, builder, &expr),
         semantic::Expr::Loop(_) | semantic::Expr::While(_) | semantic::Expr::For(_) => {
             lower_expr_loop(ctx, builder, expr_id)

@@ -142,7 +142,5 @@ foo
 Parameters: v0: core::integer::u128
 blk0 (root):
 Statements:
-  (v1: (core::integer::u128,)) <- struct_construct(v0)
-  (v2: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v1)
 End:
-  Return(v2)
+  Return(v0)
