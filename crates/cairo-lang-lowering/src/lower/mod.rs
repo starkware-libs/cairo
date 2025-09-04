@@ -2234,7 +2234,7 @@ fn match_extern_variant_arm_input_types<'db>(
     chain!(ref_tys, variant_input_tys.into_iter()).collect()
 }
 
-/// Binds input references and implicits when matching on extern functions.
+/// Binds input references when matching on extern functions.
 fn match_extern_arm_ref_args_bind<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     arm_inputs: &mut Vec<VariableId>,

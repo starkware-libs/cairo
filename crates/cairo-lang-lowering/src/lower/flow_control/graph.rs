@@ -52,7 +52,6 @@ impl<'db> FlowControlVar {
 
     /// Returns the number of times the variable is used in the graph as an input variable
     /// (see [FlowControlNode::input_var]).
-    #[expect(dead_code)]
     pub fn times_used(&self, graph: &FlowControlGraph<'db>) -> usize {
         graph.times_used[self]
     }
