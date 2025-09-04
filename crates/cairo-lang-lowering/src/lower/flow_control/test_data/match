@@ -1698,3 +1698,283 @@ blk8:
 Statements:
 End:
   Return(v12)
+
+//! > ==========================================================================
+
+//! > Optimized extern match
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(mut x: felt252) -> felt252 {
+    match bar(ref x) {
+        MyEnum::Pair1(a) => {
+            let (b, _c) = a;
+            b.into() + x
+        },
+        MyEnum::Pair2((_, c)) => { c.into() + x },
+        MyEnum::Struct(MyStruct { c, .. }) => { c.into() + x },
+        MyEnum::Single(a) => { a.into() + x },
+        MyEnum::Opt(Some(a)) => { a.into() + x },
+        _ => x + 1,
+    }
+}
+
+//! > module_code
+enum MyEnum {
+    Single: u8,
+    Pair1: (u8, u8),
+    Pair2: (u8, u8),
+    Pair3: (u8, u8),
+    Struct: MyStruct,
+    Opt: Option<u8>,
+}
+
+struct MyStruct {
+    b: u8,
+    c: u8,
+}
+
+extern fn bar(ref x: felt252) -> MyEnum nopanic;
+
+//! > graph
+Root: 15
+15 EvaluateExpr { expr: ExprId(1), var_id: v0, next: NodeId(14) }
+14 EnumMatch { matched_var: v0, variants: (NodeId(6), v1), (NodeId(7), v2), (NodeId(9), v3), (NodeId(5), v6), (NodeId(11), v7), (NodeId(13), v10)}
+13 EnumMatch { matched_var: v10, variants: (NodeId(12), v11), (NodeId(5), v12)}
+12 BindVar { input: v11, output: PatternVarId(4), next: NodeId(4) }
+11 Deconstruct { input: v7, outputs: [v8, v9], next: NodeId(10) }
+10 BindVar { input: v9, output: PatternVarId(3), next: NodeId(2) }
+9 Deconstruct { input: v3, outputs: [v4, v5], next: NodeId(8) }
+8 BindVar { input: v5, output: PatternVarId(2), next: NodeId(1) }
+7 BindVar { input: v2, output: PatternVarId(1), next: NodeId(0) }
+6 BindVar { input: v1, output: PatternVarId(0), next: NodeId(3) }
+5 ArmExpr { expr: ExprId(30) }
+4 ArmExpr { expr: ExprId(27) }
+3 ArmExpr { expr: ExprId(22) }
+2 ArmExpr { expr: ExprId(17) }
+1 ArmExpr { expr: ExprId(12) }
+0 ArmExpr { expr: ExprId(7) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match test::bar(v0) {
+    MyEnum::Single(v1, v2) => blk1,
+    MyEnum::Pair1(v3, v4, v5) => blk2,
+    MyEnum::Pair2(v7, v8, v9) => blk3,
+    MyEnum::Pair3(v11, v12, v13) => blk4,
+    MyEnum::Struct(v15, v16) => blk5,
+    MyEnum::Opt(v17, v18) => blk6,
+  })
+
+blk1:
+Statements:
+  (v30: core::felt252) <- core::integer::U8IntoFelt252::into(v2)
+  (v31: core::felt252) <- core::Felt252Add::add(v30, v1)
+End:
+  Goto(blk10, {v1 -> v41, v31 -> v40})
+
+blk2:
+Statements:
+  (v6: (core::integer::u8, core::integer::u8)) <- struct_construct(v4, v5)
+  (v36: core::integer::u8, v37: core::integer::u8) <- struct_destructure(v6)
+  (v38: core::felt252) <- core::integer::U8IntoFelt252::into(v36)
+  (v39: core::felt252) <- core::Felt252Add::add(v38, v3)
+End:
+  Goto(blk10, {v3 -> v41, v39 -> v40})
+
+blk3:
+Statements:
+  (v10: (core::integer::u8, core::integer::u8)) <- struct_construct(v8, v9)
+  (v23: core::integer::u8, v24: core::integer::u8) <- struct_destructure(v10)
+  (v34: core::felt252) <- core::integer::U8IntoFelt252::into(v24)
+  (v35: core::felt252) <- core::Felt252Add::add(v34, v7)
+End:
+  Goto(blk10, {v7 -> v41, v35 -> v40})
+
+blk4:
+Statements:
+  (v14: (core::integer::u8, core::integer::u8)) <- struct_construct(v12, v13)
+End:
+  Goto(blk9, {v11 -> v25})
+
+blk5:
+Statements:
+  (v21: core::integer::u8, v22: core::integer::u8) <- struct_destructure(v16)
+  (v32: core::felt252) <- core::integer::U8IntoFelt252::into(v22)
+  (v33: core::felt252) <- core::Felt252Add::add(v32, v15)
+End:
+  Goto(blk10, {v15 -> v41, v33 -> v40})
+
+blk6:
+Statements:
+End:
+  Match(match_enum(v18) {
+    Option::Some(v19) => blk7,
+    Option::None(v20) => blk8,
+  })
+
+blk7:
+Statements:
+  (v28: core::felt252) <- core::integer::U8IntoFelt252::into(v19)
+  (v29: core::felt252) <- core::Felt252Add::add(v28, v17)
+End:
+  Goto(blk10, {v17 -> v41, v29 -> v40})
+
+blk8:
+Statements:
+End:
+  Goto(blk9, {v17 -> v25})
+
+blk9:
+Statements:
+  (v26: core::felt252) <- 1
+  (v27: core::felt252) <- core::Felt252Add::add(v25, v26)
+End:
+  Goto(blk10, {v25 -> v41, v27 -> v40})
+
+blk10:
+Statements:
+End:
+  Return(v40)
+
+//! > ==========================================================================
+
+//! > No extern match optimization if the value is bound.
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo() -> felt252 {
+    match bar() {
+        Some(a) => a,
+        _x => 0,
+    }
+}
+
+//! > module_code
+extern fn bar() -> Option<felt252> nopanic;
+
+//! > graph
+Root: 5
+5 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(4) }
+4 EnumMatch { matched_var: v0, variants: (NodeId(2), v1), (NodeId(3), v2)}
+3 BindVar { input: v0, output: PatternVarId(0), next: NodeId(1) }
+2 BindVar { input: v1, output: PatternVarId(1), next: NodeId(0) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters:
+blk0 (root):
+Statements:
+End:
+  Match(match test::bar() {
+    Option::Some(v0) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+  (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
+End:
+  Goto(blk3, {v1 -> v4})
+
+blk2:
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::option::Option::<core::felt252>) <- Option::None(v2)
+End:
+  Goto(blk3, {v3 -> v4})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v4) {
+    Option::Some(v5) => blk4,
+    Option::None(v6) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v5 -> v8})
+
+blk5:
+Statements:
+  (v7: core::felt252) <- 0
+End:
+  Goto(blk6, {v7 -> v8})
+
+blk6:
+Statements:
+End:
+  Return(v8)
+
+//! > ==========================================================================
+
+//! > No extern match optimization when the match is skipped.
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo() -> felt252 {
+    match bar() {
+        _ => 0,
+    }
+}
+
+//! > module_code
+extern fn bar() -> Option<felt252> nopanic;
+
+//! > graph
+Root: 1
+1 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(0) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters:
+blk0 (root):
+Statements:
+End:
+  Match(match test::bar() {
+    Option::Some(v0) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+  (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
+End:
+  Goto(blk3, {v1 -> v4})
+
+blk2:
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::option::Option::<core::felt252>) <- Option::None(v2)
+End:
+  Goto(blk3, {v3 -> v4})
+
+blk3:
+Statements:
+  (v5: core::felt252) <- 0
+End:
+  Return(v5)
